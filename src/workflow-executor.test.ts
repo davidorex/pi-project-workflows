@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import { executeWorkflow } from "./workflow-executor.ts";
-import type { WorkflowSpec, AgentSpec, ExecutionState } from "./types.ts";
+import type { WorkflowSpec, AgentSpec, ExecutionState, GateSpec, TransformSpec } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -184,4 +184,323 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
 
     fs.rmSync(tmpDir, { recursive: true });
   }, { timeout: 60000 });
+});
+
+// ── When conditionals ──
+// These tests don't require pi on PATH since gate/transform/when steps
+// don't use subprocess dispatch.
+
+describe("when conditionals", () => {
+  it("skips step when condition is falsy", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-when-"));
+    const spec: WorkflowSpec = {
+      name: "test-when",
+      description: "test when conditionals",
+      steps: {
+        setup: {
+          agent: "transform",
+          transform: {
+            mapping: { ready: false, value: 42 },
+          },
+        },
+        conditional: {
+          agent: "transform",
+          when: "${{ steps.setup.output.ready }}",
+          transform: {
+            mapping: { result: "should not appear" },
+          },
+        },
+        after: {
+          agent: "transform",
+          transform: {
+            mapping: { final: "done" },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.conditional.status, "skipped");
+    // Subsequent step still runs
+    assert.strictEqual(result.steps.after.status, "completed");
+    assert.deepStrictEqual(result.steps.after.output, { final: "done" });
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("runs step when condition is truthy", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-when-"));
+    const spec: WorkflowSpec = {
+      name: "test-when-truthy",
+      description: "test when conditionals truthy",
+      steps: {
+        setup: {
+          agent: "transform",
+          transform: {
+            mapping: { ready: true },
+          },
+        },
+        conditional: {
+          agent: "transform",
+          when: "${{ steps.setup.output.ready }}",
+          transform: {
+            mapping: { result: "executed" },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.conditional.status, "completed");
+    assert.deepStrictEqual(result.steps.conditional.output, { result: "executed" });
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+});
+
+// ── Gate steps ──
+
+describe("gate steps", () => {
+  it("passes on exit code 0", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+    const spec: WorkflowSpec = {
+      name: "test-gate",
+      description: "test gate step",
+      steps: {
+        verify: {
+          agent: "gate",
+          gate: {
+            check: "echo ok",
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.verify.status, "completed");
+    const gateOutput = result.steps.verify.output as { passed: boolean; exitCode: number; output: string };
+    assert.strictEqual(gateOutput.passed, true);
+    assert.strictEqual(gateOutput.exitCode, 0);
+    assert.strictEqual(gateOutput.output, "ok");
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("fails workflow on gate failure with onFail: fail (default)", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+    const spec: WorkflowSpec = {
+      name: "test-gate-fail",
+      description: "test gate failure",
+      steps: {
+        verify: {
+          agent: "gate",
+          gate: {
+            check: "exit 1",
+          },
+        },
+        after: {
+          agent: "transform",
+          transform: {
+            mapping: { shouldNotRun: true },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "failed");
+    assert.strictEqual(result.steps.verify.status, "failed");
+    assert.ok(result.steps.verify.error?.includes("Gate check failed"));
+    // Second step should not have run
+    assert.ok(!result.steps.after);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("continues on gate failure with onFail: continue", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+    const spec: WorkflowSpec = {
+      name: "test-gate-continue",
+      description: "test gate failure with continue",
+      steps: {
+        verify: {
+          agent: "gate",
+          gate: {
+            check: "exit 1",
+            onFail: "continue",
+          },
+        },
+        after: {
+          agent: "transform",
+          transform: {
+            mapping: { ran: true },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    // Gate step is completed (not failed) because onFail: continue
+    assert.strictEqual(result.steps.verify.status, "completed");
+    const gateOutput = result.steps.verify.output as { passed: boolean };
+    assert.strictEqual(gateOutput.passed, false);
+    // Next step ran
+    assert.strictEqual(result.steps.after.status, "completed");
+    assert.deepStrictEqual(result.steps.after.output, { ran: true });
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("resolves expressions in gate check", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+    const spec: WorkflowSpec = {
+      name: "test-gate-expr",
+      description: "test gate expression resolution",
+      steps: {
+        setup: {
+          agent: "transform",
+          transform: {
+            mapping: { cmd: "echo resolved" },
+          },
+        },
+        verify: {
+          agent: "gate",
+          gate: {
+            check: "${{ steps.setup.output.cmd }}",
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.verify.status, "completed");
+    const gateOutput = result.steps.verify.output as { passed: boolean; output: string };
+    assert.strictEqual(gateOutput.passed, true);
+    assert.strictEqual(gateOutput.output, "resolved");
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+});
+
+// ── Transform steps ──
+
+describe("transform steps", () => {
+  it("produces output from expression mapping", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-transform-"));
+    const spec: WorkflowSpec = {
+      name: "test-transform",
+      description: "test transform step",
+      steps: {
+        merge: {
+          agent: "transform",
+          transform: {
+            mapping: {
+              greeting: "hello",
+              count: 42,
+              nested: { deep: true },
+            },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.merge.status, "completed");
+    assert.strictEqual(result.steps.merge.agent, "transform");
+    const output = result.steps.merge.output as Record<string, unknown>;
+    assert.strictEqual(output.greeting, "hello");
+    assert.strictEqual(output.count, 42);
+    assert.deepStrictEqual(output.nested, { deep: true });
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("costs nothing (usage.cost === 0, usage.turns === 0)", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-transform-"));
+    const spec: WorkflowSpec = {
+      name: "test-transform-cost",
+      description: "test transform zero cost",
+      steps: {
+        merge: {
+          agent: "transform",
+          transform: {
+            mapping: { result: "free" },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.merge.usage.cost, 0);
+    assert.strictEqual(result.steps.merge.usage.turns, 0);
+    assert.strictEqual(result.steps.merge.usage.input, 0);
+    assert.strictEqual(result.steps.merge.usage.output, 0);
+    assert.strictEqual(result.totalUsage.cost, 0);
+    assert.strictEqual(result.totalUsage.turns, 0);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
 });

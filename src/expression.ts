@@ -206,3 +206,24 @@ function buildErrorReason(
 
   return `property '${failedSegment}' is undefined`;
 }
+
+/**
+ * Evaluate a condition expression and return a boolean.
+ *
+ * The expression is a property path (same as resolveExpression) that resolves
+ * to a value. The value is then coerced to boolean using JavaScript truthiness:
+ * - undefined, null, false, 0, "", NaN → false
+ * - everything else → true
+ *
+ * If the expression path fails to resolve (property doesn't exist),
+ * the condition evaluates to false rather than throwing.
+ */
+export function evaluateCondition(expr: string, scope: Record<string, unknown>): boolean {
+  try {
+    const value = resolveExpression(expr, scope);
+    return Boolean(value);
+  } catch {
+    // Unresolvable path → condition is false
+    return false;
+  }
+}

@@ -1,5 +1,5 @@
 import { parse as parseYaml } from "yaml";
-import type { WorkflowSpec, StepSpec, StepOutputSpec, CompletionSpec } from "./types.ts";
+import type { WorkflowSpec, StepSpec, StepOutputSpec, CompletionSpec, GateSpec, TransformSpec } from "./types.ts";
 
 /**
  * Error class for spec parsing failures.
@@ -69,8 +69,12 @@ export function parseWorkflowSpec(content: string, filePath: string, source: "us
     }
     const rawStep = stepValue as Record<string, unknown>;
 
-    // agent is required
-    if (!("agent" in rawStep) || typeof rawStep.agent !== "string") {
+    // A step needs either 'agent', 'gate', or 'transform'
+    const hasGate = "gate" in rawStep && rawStep.gate !== undefined;
+    const hasTransform = "transform" in rawStep && rawStep.transform !== undefined;
+    const hasAgent = "agent" in rawStep && typeof rawStep.agent === "string";
+
+    if (!hasAgent && !hasGate && !hasTransform) {
       throw new WorkflowSpecError(filePath, `step '${stepName}' is missing 'agent'`);
     }
 
@@ -107,8 +111,30 @@ export function parseWorkflowSpec(content: string, filePath: string, source: "us
       }
     }
 
+    // Parse gate spec if present
+    let gateSpec: GateSpec | undefined;
+    if (hasGate) {
+      const rawGate = rawStep.gate as Record<string, unknown>;
+      if (typeof rawGate !== "object" || rawGate === null || typeof rawGate.check !== "string") {
+        throw new WorkflowSpecError(filePath, `step '${stepName}' gate must have a 'check' string`);
+      }
+      gateSpec = { check: rawGate.check as string };
+      if (rawGate.onPass !== undefined) gateSpec.onPass = rawGate.onPass as "continue" | "break";
+      if (rawGate.onFail !== undefined) gateSpec.onFail = rawGate.onFail as "fail" | "continue" | "break";
+    }
+
+    // Parse transform spec if present
+    let transformSpec: TransformSpec | undefined;
+    if (hasTransform) {
+      const rawTransform = rawStep.transform as Record<string, unknown>;
+      if (typeof rawTransform !== "object" || rawTransform === null || !("mapping" in rawTransform)) {
+        throw new WorkflowSpecError(filePath, `step '${stepName}' transform must have a 'mapping' object`);
+      }
+      transformSpec = { mapping: rawTransform.mapping as Record<string, unknown> };
+    }
+
     const step: StepSpec = {
-      agent: rawStep.agent as string,
+      agent: (rawStep.agent as string) ?? (hasGate ? "gate" : hasTransform ? "transform" : "unknown"),
     };
     if (rawStep.model !== undefined) step.model = rawStep.model as string;
     if (rawStep.input !== undefined) step.input = rawStep.input as Record<string, unknown>;
@@ -116,8 +142,8 @@ export function parseWorkflowSpec(content: string, filePath: string, source: "us
     if (rawStep.when !== undefined) step.when = rawStep.when as string;
     if (rawStep.timeout !== undefined) step.timeout = rawStep.timeout as { seconds: number };
     if (rawStep.loop !== undefined) step.loop = rawStep.loop;
-    if (rawStep.gate !== undefined) step.gate = rawStep.gate;
-    if (rawStep.transform !== undefined) step.transform = rawStep.transform;
+    if (gateSpec !== undefined) step.gate = gateSpec;
+    if (transformSpec !== undefined) step.transform = transformSpec;
     if (rawStep.workflow !== undefined) step.workflow = rawStep.workflow as string;
 
     steps[stepName] = step;

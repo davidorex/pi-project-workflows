@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepUsage } from "./types.ts";
+import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepUsage, StepResult, GateSpec, TransformSpec } from "./types.ts";
 import type { ProgressWidgetState } from "./tui.ts";
 import { validate, validateFromFile } from "./schema-validator.ts";
-import { resolveExpressions } from "./expression.ts";
+import { resolveExpressions, evaluateCondition } from "./expression.ts";
 import { dispatch } from "./dispatch.ts";
 import { generateRunId, initRunDir, writeState, writeStepOutput, writeMetrics, buildResult, formatResult } from "./state.ts";
 import { resolveCompletion } from "./completion.ts";
@@ -81,11 +81,93 @@ function buildPrompt(
 }
 
 /**
+ * Execute a gate step: runs a shell command, passes/fails based on exit code.
+ *
+ * The gate's check command is expected to already have ${{ }} expressions resolved
+ * before being passed here.
+ */
+async function executeGate(
+  gate: GateSpec,
+  stepName: string,
+  options: { cwd: string; signal?: AbortSignal },
+): Promise<StepResult> {
+  const startTime = Date.now();
+  try {
+    const { execSync } = await import("node:child_process");
+    const output = execSync(gate.check, {
+      cwd: options.cwd,
+      timeout: 60000,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    return {
+      step: stepName,
+      agent: "gate",
+      status: "completed",
+      textOutput: output.trim(),
+      output: { passed: true, exitCode: 0, output: output.trim() },
+      usage: zeroUsage(),
+      durationMs: Date.now() - startTime,
+    };
+  } catch (err: unknown) {
+    const execErr = err as { status?: number; stdout?: string; stderr?: string };
+    const exitCode = execErr.status ?? 1;
+    const stderr = execErr.stderr?.trim() ?? "";
+    const stdout = execErr.stdout?.trim() ?? "";
+    return {
+      step: stepName,
+      agent: "gate",
+      status: "completed",
+      textOutput: stderr || stdout,
+      output: { passed: false, exitCode, output: stderr || stdout },
+      usage: zeroUsage(),
+      durationMs: Date.now() - startTime,
+    };
+  }
+}
+
+/**
+ * Execute a transform step: produces output by resolving expressions in the mapping.
+ * No LLM call, no subprocess, no shell command — pure expression resolution.
+ */
+function executeTransform(
+  transform: TransformSpec,
+  stepName: string,
+  scope: Record<string, unknown>,
+): StepResult {
+  const startTime = Date.now();
+  try {
+    const output = resolveExpressions(transform.mapping, scope);
+    return {
+      step: stepName,
+      agent: "transform",
+      status: "completed",
+      output,
+      textOutput: JSON.stringify(output, null, 2),
+      usage: zeroUsage(),
+      durationMs: Date.now() - startTime,
+    };
+  } catch (err) {
+    return {
+      step: stepName,
+      agent: "transform",
+      status: "failed",
+      usage: zeroUsage(),
+      durationMs: Date.now() - startTime,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/**
  * Execute a workflow from a parsed spec and validated input.
  *
  * Runs steps sequentially (phase 1), resolving ${{ }} expressions,
  * dispatching subprocesses, validating outputs, persisting state,
  * updating TUI, and injecting the result into the conversation.
+ *
+ * Supports step types: agent (default), gate, transform.
+ * Supports `when` conditionals for skipping steps.
  *
  * Returns the WorkflowResult (also injected into conversation via sendMessage).
  */
@@ -144,14 +226,128 @@ export async function executeWorkflow(
       break;
     }
 
+    // Build expression scope for this step
+    const scope: ExpressionScope = { input: state.input, steps: state.steps };
+
+    // Evaluate `when` conditional — skip step if condition is falsy
+    if (stepSpec.when) {
+      const conditionExpr = stepSpec.when.replace(/^\$\{\{\s*/, "").replace(/\s*\}\}$/, "");
+      const shouldRun = evaluateCondition(conditionExpr, scope as unknown as Record<string, unknown>);
+
+      if (!shouldRun) {
+        state.steps[stepName] = {
+          step: stepName,
+          agent: stepSpec.agent ?? "skipped",
+          status: "skipped",
+          usage: zeroUsage(),
+          durationMs: 0,
+        };
+        writeState(runDir, state);
+        // Update widget after skip
+        if (ctx.hasUI) {
+          ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+        }
+        continue;
+      }
+    }
+
     // Update widget: mark this step as current
     widgetState.currentStep = stepName;
     if (ctx.hasUI) {
       ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
     }
 
+    // ── Gate step ──
+    if (stepSpec.gate) {
+      // Resolve expressions in gate check command
+      const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope as unknown as Record<string, unknown>));
+      const resolvedGate: GateSpec = {
+        ...stepSpec.gate,
+        check: resolvedCheck,
+      };
+
+      const gateResult = await executeGate(resolvedGate, stepName, {
+        cwd: ctx.cwd,
+        signal,
+      });
+
+      const gateOutput = gateResult.output as { passed: boolean; exitCode: number; output: string };
+
+      if (gateOutput.passed) {
+        // Handle onPass
+        const onPass = stepSpec.gate.onPass ?? "continue";
+        state.steps[stepName] = gateResult;
+        writeState(runDir, state);
+        if (ctx.hasUI) {
+          ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+        }
+        if (onPass === "break") {
+          // Signal loop should stop (used inside loops — for now just break the step loop)
+          break;
+        }
+        // onPass === "continue": proceed to next step
+        continue;
+      } else {
+        // Handle onFail
+        const onFail = stepSpec.gate.onFail ?? "fail";
+        if (onFail === "fail") {
+          gateResult.status = "failed";
+          gateResult.error = `Gate check failed (exit ${gateOutput.exitCode}): ${gateOutput.output}`;
+          state.steps[stepName] = gateResult;
+          state.status = "failed";
+          writeState(runDir, state);
+          if (ctx.hasUI) {
+            ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+          }
+          break;
+        } else if (onFail === "continue") {
+          state.steps[stepName] = gateResult;
+          writeState(runDir, state);
+          if (ctx.hasUI) {
+            ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+          }
+          continue;
+        } else if (onFail === "break") {
+          state.steps[stepName] = gateResult;
+          writeState(runDir, state);
+          if (ctx.hasUI) {
+            ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+          }
+          break;
+        }
+      }
+    }
+
+    // ── Transform step ──
+    if (stepSpec.transform) {
+      const transformResult = executeTransform(
+        stepSpec.transform,
+        stepName,
+        scope as unknown as Record<string, unknown>,
+      );
+
+      if (transformResult.output) {
+        writeStepOutput(runDir, stepName, transformResult.output);
+      }
+      state.steps[stepName] = transformResult;
+      writeState(runDir, state);
+      if (ctx.hasUI) {
+        ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+      }
+      // Fail fast on transform failure
+      if (transformResult.status === "failed") {
+        state.status = "failed";
+        break;
+      }
+      continue;
+    }
+
+    // ── Loop step (placeholder for spec 10) ──
+    // Handled by spec 10
+
+    // ── Agent step (default) ──
+
     // Resolve ${{ }} expressions in step input
-    const scope: ExpressionScope = { input: state.input, steps: state.steps };
     let resolvedInput: unknown;
     try {
       resolvedInput = resolveExpressions(stepSpec.input ?? {}, scope);

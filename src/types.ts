@@ -15,7 +15,7 @@ export interface WorkflowSpec {
 }
 
 export interface StepSpec {
-  agent: string;                         // agent name (required in phase 1)
+  agent: string;                         // agent name (required for agent steps)
   model?: string;                        // model override
   input?: Record<string, unknown>;       // values may contain ${{ }} expressions
   output?: StepOutputSpec;
@@ -23,9 +23,23 @@ export interface StepSpec {
   when?: string;
   timeout?: { seconds: number };
   loop?: unknown;
-  gate?: unknown;
-  transform?: unknown;
+  gate?: GateSpec;
+  transform?: TransformSpec;
   workflow?: string;
+}
+
+// ── Gate Spec (phase 2: shell command check) ──
+
+export interface GateSpec {
+  check: string;                         // shell command to execute
+  onPass?: "continue" | "break";         // default: "continue"
+  onFail?: "fail" | "continue" | "break"; // default: "fail"
+}
+
+// ── Transform Spec (phase 2: expression mapping, no LLM) ──
+
+export interface TransformSpec {
+  mapping: Record<string, unknown>;      // expression-resolvable key-value pairs
 }
 
 export interface StepOutputSpec {

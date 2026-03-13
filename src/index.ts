@@ -111,19 +111,60 @@ function formatToolResult(result: WorkflowResult): string {
 
 // ── Command handlers ────────────────────────────────────────────────────────
 
-async function handleList(ctx: any): Promise<void> {
+async function handleList(ctx: any, pi: any): Promise<void> {
   const workflows = discoverWorkflows(ctx.cwd);
   if (workflows.length === 0) {
     ctx.ui.notify("No workflows found in .pi/workflows/ or ~/.pi/agent/workflows/", "info");
     return;
   }
 
-  const lines = workflows.map((w) => {
+  const options = workflows.map((w) => {
     const source = w.source === "project" ? "[project]" : "[user]";
-    const desc = w.description ? ` \u2014 ${w.description}` : "";
-    return `  ${w.name} ${source}${desc}`;
+    const desc = w.description ? ` — ${w.description}` : "";
+    return `${w.name} ${source}${desc}`;
   });
-  ctx.ui.notify(`Available workflows:\n${lines.join("\n")}`, "info");
+
+  const selected = await ctx.ui.select("Run workflow", options);
+  if (!selected) return; // user cancelled
+
+  const name = selected.split(" ")[0];
+  const spec = findWorkflow(name, ctx.cwd);
+  if (!spec) {
+    ctx.ui.notify(`Workflow '${name}' not found.`, "warning");
+    return;
+  }
+
+  // Prompt for required input fields
+  const input: Record<string, unknown> = {};
+  const schema = spec.input as Record<string, unknown> | undefined;
+  if (schema) {
+    const props = schema.properties as Record<string, any> | undefined;
+    const required = new Set(Array.isArray(schema.required) ? schema.required : []);
+    if (props) {
+      for (const [key, val] of Object.entries(props)) {
+        if (!required.has(key) || val?.default !== undefined) continue;
+        const type = val?.type || "string";
+        const desc = val?.description || "";
+        const prompt = desc ? `${key} (${type}): ${desc}` : `${key} (${type})`;
+        const value = await ctx.ui.input(prompt);
+        if (value == null) return; // user cancelled
+        // Coerce from string based on declared type
+        if (type === "number") {
+          input[key] = Number(value);
+        } else if (type === "array" || type === "object") {
+          try { input[key] = JSON.parse(value); } catch { input[key] = value; }
+        } else {
+          input[key] = value;
+        }
+      }
+    }
+  }
+
+  const inputJson = Object.keys(input).length > 0
+    ? JSON.stringify(input)
+    : undefined;
+  const rawArgs = inputJson ? `${name} --input '${inputJson}'` : name;
+  await handleRun(rawArgs, ctx, pi);
 }
 
 async function handleRun(rawArgs: string, ctx: any, pi: any): Promise<void> {
@@ -258,7 +299,7 @@ const extension = (pi: any) => {
       const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
 
       if (subcommand === "list") {
-        await handleList(ctx);
+        await handleList(ctx, pi);
       } else if (subcommand === "run") {
         await handleRun(rest, ctx, pi);
       } else if (subcommand === "status") {

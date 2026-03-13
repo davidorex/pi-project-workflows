@@ -221,6 +221,11 @@ export async function executeWorkflow(
     state.steps[stepName] = result;
     writeState(runDir, state);
 
+    // Refresh widget with completed step data
+    if (ctx.hasUI) {
+      ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    }
+
     // Fail fast
     if (result.status === "failed") {
       state.status = "failed";

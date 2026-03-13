@@ -17,11 +17,19 @@ export interface ProgressWidgetState {
  * The returned component renders a compact progress view:
  *   ─────────────────────────────────────
  *   ● bugfix  step 2/3              1m32s
- *     ✓ diagnose     42s   $0.03
- *     ▸ fix           50s   $0.02
+ *     ✓ diagnose     42s   $0.03  12k tok
+ *     ▸ fix           50s   8k tok...
  *     · verify
  *   ─────────────────────────────────────
  */
+/**
+ * Format token count as compact string: 1234 -> "1k tok", 12345 -> "12k tok"
+ */
+function formatTokens(count: number): string {
+  if (count < 1000) return `${count} tok`;
+  return `${Math.round(count / 1000)}k tok`;
+}
+
 export function createProgressWidget(
   widgetState: ProgressWidgetState,
 ): (tui: TUI, theme: Theme) => Component & { dispose?(): void } {
@@ -67,7 +75,8 @@ export function createProgressWidget(
           if (stepResult && stepResult.status === "completed") {
             const dur = formatDuration(stepResult.durationMs);
             const cost = formatCost(stepResult.usage.cost);
-            line = `  ${theme.fg("success", "\u2713")} ${stepName}  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}`;
+            const tok = formatTokens(stepResult.usage.input + stepResult.usage.output);
+            line = `  ${theme.fg("success", "\u2713")} ${stepName}  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}  ${theme.fg("dim", tok)}`;
           } else if (stepResult && stepResult.status === "failed") {
             const dur = formatDuration(stepResult.durationMs);
             const errorPreview = stepResult.error || "Unknown error";

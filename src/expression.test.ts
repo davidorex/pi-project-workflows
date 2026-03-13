@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { resolveExpressions, resolveExpression, ExpressionError } from "./expression.ts";
+import { resolveExpressions, resolveExpression, evaluateCondition, ExpressionError } from "./expression.ts";
 import type { ExpressionScope, CompletionScope } from "./types.ts";
 
 const scope: ExpressionScope = {
@@ -179,6 +179,56 @@ describe("resolveExpression with CompletionScope", () => {
       resolveExpression("steps.diagnose.status", completionScope as unknown as Record<string, unknown>),
       "completed",
     );
+  });
+});
+
+// ── evaluateCondition tests ──
+
+describe("evaluateCondition", () => {
+  it("returns true for truthy value", () => {
+    assert.strictEqual(evaluateCondition("input.description", scope), true);
+  });
+
+  it("returns true for truthy number", () => {
+    assert.strictEqual(evaluateCondition("input.maxAttempts", scope), true);
+  });
+
+  it("returns false for undefined (missing optional field)", () => {
+    assert.strictEqual(evaluateCondition("input.nonexistent", scope), false);
+  });
+
+  it("supports negation with ! prefix", () => {
+    assert.strictEqual(evaluateCondition("!input.nonexistent", scope), true);
+    assert.strictEqual(evaluateCondition("!input.description", scope), false);
+  });
+
+  it("supports equality with string literal", () => {
+    assert.strictEqual(evaluateCondition("input.description == 'null pointer in login'", scope), true);
+    assert.strictEqual(evaluateCondition("input.description == 'something else'", scope), false);
+  });
+
+  it("supports numeric comparison", () => {
+    assert.strictEqual(evaluateCondition("input.maxAttempts > 2", scope), true);
+    assert.strictEqual(evaluateCondition("input.maxAttempts > 5", scope), false);
+    assert.strictEqual(evaluateCondition("input.maxAttempts >= 3", scope), true);
+    assert.strictEqual(evaluateCondition("input.maxAttempts < 10", scope), true);
+    assert.strictEqual(evaluateCondition("input.maxAttempts <= 3", scope), true);
+  });
+
+  it("treats boolean false as falsy", () => {
+    const boolScope = { flag: false } as unknown as Record<string, unknown>;
+    assert.strictEqual(evaluateCondition("flag", boolScope), false);
+  });
+
+  it("supports != operator", () => {
+    assert.strictEqual(evaluateCondition("steps.diagnose.status != 'failed'", scope), true);
+    assert.strictEqual(evaluateCondition("steps.diagnose.status != 'completed'", scope), false);
+  });
+
+  it("supports comparison with boolean literal", () => {
+    const boolScope = { enabled: true } as unknown as Record<string, unknown>;
+    assert.strictEqual(evaluateCondition("enabled == true", boolScope), true);
+    assert.strictEqual(evaluateCondition("enabled == false", boolScope), false);
   });
 });
 

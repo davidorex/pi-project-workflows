@@ -74,10 +74,10 @@ steps:
     );
   });
 
-  it("throws on step missing agent", () => {
+  it("throws on step with no type", () => {
     assert.throws(
       () => parseWorkflowSpec("name: test\nsteps:\n  s:\n    model: foo", "/t.yaml", "project"),
-      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("agent"),
+      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("must have exactly one of"),
     );
   });
 
@@ -211,6 +211,131 @@ steps:
 `;
     const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
     assert.strictEqual(spec.completion, undefined);
+  });
+
+  // ── Phase 2 step type tests ──
+
+  it("parses gate step", () => {
+    const yaml = `
+name: test
+steps:
+  verify:
+    gate:
+      check: npm test
+      onPass: continue
+      onFail: fail
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.ok(spec.steps.verify.gate);
+    assert.strictEqual(spec.steps.verify.gate.check, "npm test");
+    assert.strictEqual(spec.steps.verify.gate.onPass, "continue");
+    assert.strictEqual(spec.steps.verify.gate.onFail, "fail");
+    assert.strictEqual(spec.steps.verify.agent, undefined);
+  });
+
+  it("parses transform step", () => {
+    const yaml = `
+name: test
+steps:
+  prep:
+    agent: analyzer
+  combine:
+    transform:
+      mapping:
+        summary: \${{ steps.prep.output.summary }}
+        count: 42
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.ok(spec.steps.combine.transform);
+    assert.strictEqual(typeof spec.steps.combine.transform.mapping, "object");
+    assert.strictEqual((spec.steps.combine.transform.mapping as any).count, 42);
+    assert.strictEqual(spec.steps.combine.agent, undefined);
+  });
+
+  it("parses loop step", () => {
+    const yaml = `
+name: test
+steps:
+  retry:
+    loop:
+      maxAttempts: 3
+      steps:
+        attempt:
+          agent: fixer
+        check:
+          gate:
+            check: npm test
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.ok(spec.steps.retry.loop);
+    assert.strictEqual(spec.steps.retry.loop.maxAttempts, 3);
+    assert.strictEqual(Object.keys(spec.steps.retry.loop.steps).length, 2);
+    assert.ok(spec.steps.retry.loop.steps.attempt.agent);
+    assert.ok(spec.steps.retry.loop.steps.check.gate);
+  });
+
+  it("rejects step with both agent and gate", () => {
+    const yaml = `
+name: test
+steps:
+  bad:
+    agent: my-agent
+    gate:
+      check: npm test
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("must have exactly one of"),
+    );
+  });
+
+  it("rejects step with no type (no agent, gate, transform, or loop)", () => {
+    const yaml = `
+name: test
+steps:
+  empty:
+    when: \${{ input.enabled }}
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("must have exactly one of"),
+    );
+  });
+
+  it("rejects step with workflow (not yet supported)", () => {
+    const yaml = `
+name: test
+steps:
+  nested:
+    workflow: other-workflow
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("not yet supported"),
+    );
+  });
+
+  it("parses artifacts", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+artifacts:
+  report:
+    path: ./output/report.md
+    from: \${{ steps.s.textOutput }}
+  data:
+    path: ./output/data.json
+    from: \${{ steps.s.output }}
+    schema: ./schemas/data.schema.json
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.ok(spec.artifacts);
+    assert.strictEqual(Object.keys(spec.artifacts).length, 2);
+    assert.strictEqual(spec.artifacts.report.path, "./output/report.md");
+    assert.strictEqual(spec.artifacts.report.from, "${{ steps.s.textOutput }}");
+    assert.strictEqual(spec.artifacts.data.schema, "./schemas/data.schema.json");
   });
 
   it("preserves step order", () => {

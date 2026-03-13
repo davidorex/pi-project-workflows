@@ -156,6 +156,116 @@ function resolveStringExpressions(value: string, scope: Record<string, unknown>)
   });
 }
 
+// ── Comparison operators for evaluateCondition ──
+
+const COMPARISON_OPS = ["!==", "===", "!=", "==", ">=", "<=", ">", "<"] as const;
+type ComparisonOp = typeof COMPARISON_OPS[number];
+
+/**
+ * Parse a right-hand operand string into a typed value.
+ * Supports: string literals ('value' or "value"), number literals, boolean literals (true/false),
+ * null, undefined, or expression paths resolved against scope.
+ */
+export function parseRightOperand(str: string, scope: Record<string, unknown>): unknown {
+  // String literals (single or double quoted)
+  if ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+    return str.slice(1, -1);
+  }
+
+  // Boolean literals
+  if (str === "true") return true;
+  if (str === "false") return false;
+
+  // null / undefined
+  if (str === "null") return null;
+  if (str === "undefined") return undefined;
+
+  // Number literals
+  const num = Number(str);
+  if (!Number.isNaN(num) && str !== "") return num;
+
+  // Otherwise treat as expression path
+  return resolveExpression(str, scope);
+}
+
+/**
+ * Compare two values using a comparison operator.
+ * == and === both use strict equality (===).
+ */
+export function compare(left: unknown, right: unknown, op: string): boolean {
+  switch (op) {
+    case "==":
+    case "===":
+      return left === right;
+    case "!=":
+    case "!==":
+      return left !== right;
+    case ">":
+      return (left as number) > (right as number);
+    case "<":
+      return (left as number) < (right as number);
+    case ">=":
+      return (left as number) >= (right as number);
+    case "<=":
+      return (left as number) <= (right as number);
+    default:
+      throw new ExpressionError(op, `unknown comparison operator '${op}'`);
+  }
+}
+
+/**
+ * Evaluate a condition expression for boolean truthiness.
+ *
+ * Supports:
+ * - Simple path expressions: truthy/falsy evaluation of the resolved value
+ * - Negation with ! prefix
+ * - Comparison operators: ==, !=, ===, !==, >, <, >=, <=
+ * - Right operands: string literals, number literals, boolean literals, null, undefined, or expression paths
+ *
+ * JS truthiness rules: undefined, null, false, 0, "" are falsy; everything else is truthy.
+ */
+export function evaluateCondition(expr: string, scope: Record<string, unknown>): boolean {
+  const trimmed = expr.trim();
+
+  // Check for comparison operators (split on first occurrence)
+  for (const op of COMPARISON_OPS) {
+    const opIdx = trimmed.indexOf(op);
+    if (opIdx !== -1) {
+      const leftExpr = trimmed.slice(0, opIdx).trim();
+      const rightStr = trimmed.slice(opIdx + op.length).trim();
+
+      // Resolve left side
+      let leftValue: unknown;
+      if (leftExpr.startsWith("!")) {
+        leftValue = !resolveExpressionSafe(leftExpr.slice(1).trim(), scope);
+      } else {
+        leftValue = resolveExpressionSafe(leftExpr, scope);
+      }
+
+      const rightValue = parseRightOperand(rightStr, scope);
+      return compare(leftValue, rightValue, op);
+    }
+  }
+
+  // No comparison operator — evaluate as truthy/falsy
+  if (trimmed.startsWith("!")) {
+    const innerExpr = trimmed.slice(1).trim();
+    const value = resolveExpressionSafe(innerExpr, scope);
+    return !value;
+  }
+
+  const value = resolveExpressionSafe(trimmed, scope);
+  return !!value;
+}
+
+/**
+ * Resolve an expression, returning undefined for missing optional fields
+ * instead of throwing. Root-level misses and missing step references still throw.
+ */
+function resolveExpressionSafe(expr: string, scope: Record<string, unknown>): unknown {
+  return resolveExpression(expr, scope);
+}
+
 /**
  * Stringify a resolved value for embedding in a larger string.
  * Objects and arrays use JSON.stringify; primitives use String().

@@ -9,23 +9,53 @@ export interface WorkflowSpec {
   triggerTurn?: boolean;                  // default: true
   completion?: CompletionSpec;           // controls post-completion message to main LLM
   steps: Record<string, StepSpec>;       // ordered (YAML preserves insertion order)
+  artifacts?: Record<string, ArtifactSpec>; // persistent files written after workflow completion
   // Set by discovery, not by YAML:
   source: "user" | "project";
   filePath: string;
 }
 
+export interface ArtifactSpec {
+  path: string;                          // destination path, may contain ${{ }} expressions
+  from: string;                          // ${{ }} expression for the data source
+  schema?: string;                       // optional JSON Schema to validate before writing
+}
+
 export interface StepSpec {
-  agent: string;                         // agent name (required in phase 1)
+  agent?: string;                        // optional — not needed for gate/transform steps
   model?: string;                        // model override
   input?: Record<string, unknown>;       // values may contain ${{ }} expressions
   output?: StepOutputSpec;
-  // Phase 2+:
-  when?: string;
+  when?: string;                         // ${{ }} expression, evaluated as truthy/falsy
   timeout?: { seconds: number };
-  loop?: unknown;
-  gate?: unknown;
-  transform?: unknown;
-  workflow?: string;
+  loop?: LoopSpec;
+  gate?: GateSpec;
+  transform?: TransformSpec;
+  workflow?: string;                     // phase 6 — not yet supported
+}
+// Note: exactly one of agent, gate, transform must be set.
+// workflow is phase 6. loop wraps a sub-sequence of steps.
+
+export interface LoopSpec {
+  maxAttempts: number;                   // max iterations (required)
+  attempts?: string;                     // ${{ }} expression overriding maxAttempts at runtime
+  steps: Record<string, StepSpec>;       // steps to execute each iteration
+  onExhausted?: StepSpec;               // step to run if all attempts fail
+}
+
+export interface GateSpec {
+  check: string;                         // shell command to run
+  onPass?: "continue" | "break";         // default: "continue" (proceed to next step)
+  onFail?: "continue" | "break" | "fail"; // default: "fail" (stop the workflow)
+}
+
+export interface TransformSpec {
+  /**
+   * A mapping of output field names to ${{ }} expressions.
+   * The result is an object with each field resolved.
+   * No LLM invocation — pure data transformation.
+   */
+  mapping: Record<string, unknown>;
 }
 
 export interface StepOutputSpec {
@@ -53,6 +83,19 @@ export interface ExecutionState {
   input: unknown;
   steps: Record<string, StepResult>;
   status: "running" | "completed" | "failed";
+  loop?: LoopState;                      // set when inside a loop
+}
+
+export interface LoopState {
+  stepName: string;                      // name of the loop step
+  iteration: number;                     // current iteration (0-based)
+  maxAttempts: number;
+  priorAttempts: LoopAttempt[];          // results from previous iterations
+}
+
+export interface LoopAttempt {
+  iteration: number;
+  steps: Record<string, StepResult>;     // results of all steps in this iteration
 }
 
 export interface StepResult {

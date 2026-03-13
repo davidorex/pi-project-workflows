@@ -84,6 +84,23 @@ function listWorkflowNames(cwd: string): string {
   return workflows.map((w) => w.name).join(", ");
 }
 
+/**
+ * Summarize a JSON Schema's expected shape for error messages.
+ * Produces something like: { path: string (required), question?: string }
+ */
+function summarizeInputSchema(schema: Record<string, unknown> | undefined): string {
+  if (!schema) return "(any)";
+  const props = schema.properties as Record<string, any> | undefined;
+  if (!props) return JSON.stringify(schema);
+  const required = new Set(Array.isArray(schema.required) ? schema.required : []);
+  const fields = Object.entries(props).map(([key, val]) => {
+    const type = val?.type || "unknown";
+    const req = required.has(key);
+    return req ? `${key}: ${type} (required)` : `${key}?: ${type}`;
+  });
+  return `{ ${fields.join(", ")} }`;
+}
+
 function formatToolResult(result: WorkflowResult): string {
   const status = result.status === "completed" ? "completed" : "failed";
   const stepSummary = Object.entries(result.steps)
@@ -173,8 +190,19 @@ const extension = (pi: any) => {
         };
       }
 
+      // Defensive: if input arrives as a JSON string (e.g. from Type.Unknown()),
+      // parse it into an object.
+      let input = params.input ?? {};
+      if (typeof input === "string") {
+        try {
+          input = JSON.parse(input);
+        } catch {
+          // leave as string — validation will catch it if schema expects object
+        }
+      }
+
       try {
-        const result = await executeWorkflow(spec, params.input ?? {}, {
+        const result = await executeWorkflow(spec, input, {
           ctx,
           pi,
           signal,
@@ -186,8 +214,10 @@ const extension = (pi: any) => {
           details: result,
         };
       } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const schemaHint = spec.input ? `\nExpected input: ${summarizeInputSchema(spec.input)}` : "";
         return {
-          content: [{ type: "text", text: `Workflow '${params.workflow}' failed: ${err instanceof Error ? err.message : String(err)}` }],
+          content: [{ type: "text", text: `Workflow '${params.workflow}' failed: ${errMsg}${schemaHint}` }],
           details: undefined,
         };
       }

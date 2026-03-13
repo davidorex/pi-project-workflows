@@ -6,6 +6,7 @@ import { validate, validateFromFile } from "./schema-validator.ts";
 import { resolveExpressions } from "./expression.ts";
 import { dispatch } from "./dispatch.ts";
 import { generateRunId, initRunDir, writeState, writeStepOutput, writeMetrics, buildResult, formatResult } from "./state.ts";
+import { resolveCompletion } from "./completion.ts";
 import { createProgressWidget } from "./tui.ts";
 
 export interface ExecuteOptions {
@@ -237,8 +238,21 @@ export async function executeWorkflow(
   // 7. Build and inject result
   const result = buildResult(spec, runId, runDir, state, state.status as "completed" | "failed");
   const triggerTurn = spec.triggerTurn !== false;
+
+  let content: string;
+  if (spec.completion) {
+    try {
+      content = resolveCompletion(spec.completion, result, input);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      content = formatResult(result) + `\n\nCompletion template error: ${msg}`;
+    }
+  } else {
+    content = formatResult(result);
+  }
+
   pi.sendMessage(
-    { customType: "workflow-result", content: formatResult(result), display: "verbose" },
+    { customType: "workflow-result", content, display: "verbose" },
     { triggerTurn },
   );
 

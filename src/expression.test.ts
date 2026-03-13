@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import { resolveExpressions, resolveExpression, ExpressionError } from "./expression.ts";
-import type { ExpressionScope } from "./types.ts";
+import type { ExpressionScope, CompletionScope } from "./types.ts";
 
 const scope: ExpressionScope = {
   input: {
@@ -73,6 +73,111 @@ describe("resolveExpression", () => {
     assert.throws(
       () => resolveExpression("typo.something", scope),
       (err: unknown) => err instanceof ExpressionError,
+    );
+  });
+});
+
+// ── Filter tests ──
+
+describe("resolveExpression filters", () => {
+  it("applies duration filter", () => {
+    assert.strictEqual(
+      resolveExpression("steps.diagnose.durationMs | duration", scope),
+      "42s",
+    );
+  });
+
+  it("applies currency filter", () => {
+    assert.strictEqual(
+      resolveExpression("steps.diagnose.usage.cost | currency", scope),
+      "$0.03",
+    );
+  });
+
+  it("applies json filter", () => {
+    const result = resolveExpression("steps.diagnose.output.fixLocation | json", scope);
+    assert.strictEqual(typeof result, "string");
+    const parsed = JSON.parse(result as string);
+    assert.strictEqual(parsed.file, "src/auth/user-service.ts");
+    assert.strictEqual(parsed.line, 47);
+  });
+
+  it("handles whitespace around pipe", () => {
+    assert.strictEqual(
+      resolveExpression("steps.diagnose.durationMs  |  duration", scope),
+      "42s",
+    );
+  });
+
+  it("throws on unknown filter", () => {
+    assert.throws(
+      () => resolveExpression("steps.diagnose.durationMs | bogus", scope),
+      (err: unknown) => err instanceof ExpressionError && err.message.includes("bogus"),
+    );
+  });
+
+  it("applies filter in embedded expression", () => {
+    const result = resolveExpressions(
+      "Took ${{ steps.diagnose.durationMs | duration }}, cost ${{ steps.diagnose.usage.cost | currency }}",
+      scope,
+    );
+    assert.strictEqual(result, "Took 42s, cost $0.03");
+  });
+
+  it("applies filter in whole-value expression", () => {
+    const result = resolveExpressions("${{ steps.diagnose.durationMs | duration }}", scope);
+    assert.strictEqual(result, "42s");
+  });
+});
+
+// ── Wider scope (CompletionScope) tests ──
+
+describe("resolveExpression with CompletionScope", () => {
+  const completionScope: CompletionScope = {
+    input: { path: "/src" },
+    steps: scope.steps,
+    totalUsage: { input: 1500, output: 700, cacheRead: 0, cacheWrite: 0, cost: 0.05, turns: 3 },
+    totalDurationMs: 92000,
+    runDir: "/tmp/runs/test-run",
+    runId: "test-20260313-120000-abcd",
+    workflow: "explore-summarize",
+    status: "completed",
+    output: "Final summary text",
+  };
+
+  it("resolves root-level completion fields", () => {
+    assert.strictEqual(resolveExpression("workflow", completionScope as unknown as Record<string, unknown>), "explore-summarize");
+    assert.strictEqual(resolveExpression("status", completionScope as unknown as Record<string, unknown>), "completed");
+    assert.strictEqual(resolveExpression("runDir", completionScope as unknown as Record<string, unknown>), "/tmp/runs/test-run");
+    assert.strictEqual(resolveExpression("runId", completionScope as unknown as Record<string, unknown>), "test-20260313-120000-abcd");
+  });
+
+  it("resolves totalUsage fields", () => {
+    assert.strictEqual(
+      resolveExpression("totalUsage.cost", completionScope as unknown as Record<string, unknown>),
+      0.05,
+    );
+  });
+
+  it("applies filters on completion fields", () => {
+    assert.strictEqual(
+      resolveExpression("totalDurationMs | duration", completionScope as unknown as Record<string, unknown>),
+      "1m32s",
+    );
+    assert.strictEqual(
+      resolveExpression("totalUsage.cost | currency", completionScope as unknown as Record<string, unknown>),
+      "$0.05",
+    );
+  });
+
+  it("still resolves input and steps from completion scope", () => {
+    assert.strictEqual(
+      resolveExpression("input.path", completionScope as unknown as Record<string, unknown>),
+      "/src",
+    );
+    assert.strictEqual(
+      resolveExpression("steps.diagnose.status", completionScope as unknown as Record<string, unknown>),
+      "completed",
     );
   });
 });

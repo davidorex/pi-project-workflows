@@ -1,6 +1,17 @@
-import type { ExpressionScope, StepResult } from "./types.ts";
+import type { StepResult } from "./types.ts";
+import { formatDuration, formatCost } from "./format.ts";
 
 const EXPR_PATTERN = /\$\{\{\s*(.*?)\s*\}\}/g;
+
+/**
+ * Built-in filters for expressions.
+ * Applied via pipe syntax: ${{ totalDurationMs | duration }}
+ */
+const FILTERS: Record<string, (value: unknown) => unknown> = {
+  duration: (v) => formatDuration(Number(v)),
+  currency: (v) => formatCost(Number(v)),
+  json: (v) => JSON.stringify(v, null, 2),
+};
 
 /**
  * Error class for expression resolution failures.
@@ -22,10 +33,26 @@ export class ExpressionError extends Error {
  * Resolve a single expression string (without the ${{ }} delimiters).
  * E.g. "steps.diagnose.output.rootCause" walks scope.steps.diagnose.output.rootCause
  *
- * Throws ExpressionError if any segment of the path is undefined or null.
+ * Supports pipe filters: "totalDurationMs | duration"
+ *
+ * Scope is Record<string, unknown> — accepts ExpressionScope, CompletionScope, or any object.
+ *
+ * Throws ExpressionError if any segment of the path is undefined or null,
+ * or if a filter name is unknown.
  */
-export function resolveExpression(expr: string, scope: ExpressionScope): unknown {
-  const segments = expr.split(".");
+export function resolveExpression(expr: string, scope: Record<string, unknown>): unknown {
+  // Parse optional filter: "path | filterName"
+  const pipeIdx = expr.indexOf("|");
+  let pathExpr: string;
+  let filterName: string | undefined;
+  if (pipeIdx !== -1) {
+    pathExpr = expr.slice(0, pipeIdx).trim();
+    filterName = expr.slice(pipeIdx + 1).trim();
+  } else {
+    pathExpr = expr;
+  }
+
+  const segments = pathExpr.split(".");
   let current: unknown = scope;
   const traversed: string[] = [];
 
@@ -58,6 +85,15 @@ export function resolveExpression(expr: string, scope: ExpressionScope): unknown
     }
   }
 
+  // Apply filter if specified
+  if (filterName) {
+    const filterFn = FILTERS[filterName];
+    if (!filterFn) {
+      throw new ExpressionError(expr, `unknown filter '${filterName}'`);
+    }
+    current = filterFn(current);
+  }
+
   return current;
 }
 
@@ -75,7 +111,7 @@ export function resolveExpression(expr: string, scope: ExpressionScope): unknown
  *
  * Throws ExpressionError if a property path doesn't resolve.
  */
-export function resolveExpressions(value: unknown, scope: ExpressionScope): unknown {
+export function resolveExpressions(value: unknown, scope: Record<string, unknown>): unknown {
   if (typeof value === "string") {
     return resolveStringExpressions(value, scope);
   }
@@ -100,7 +136,7 @@ export function resolveExpressions(value: unknown, scope: ExpressionScope): unkn
  * Resolve expressions within a string value.
  * Handles whole-value expressions (type-preserving) and embedded expressions (string interpolation).
  */
-function resolveStringExpressions(value: string, scope: ExpressionScope): unknown {
+function resolveStringExpressions(value: string, scope: Record<string, unknown>): unknown {
   // Check if the entire string is a single whole-value expression
   const wholeMatch = value.match(/^\$\{\{\s*(.*?)\s*\}\}$/);
   if (wholeMatch) {
@@ -138,7 +174,7 @@ function stringify(value: unknown): string {
 function buildErrorReason(
   segments: string[],
   traversed: string[],
-  scope: ExpressionScope,
+  scope: Record<string, unknown>,
 ): string {
   const failedSegment = traversed[traversed.length - 1];
   const parentPath = traversed.slice(0, -1).join(".");
@@ -146,8 +182,8 @@ function buildErrorReason(
   // Special case: referencing a step that doesn't exist in scope.steps
   if (segments[0] === "steps" && traversed.length === 2) {
     const stepName = segments[1];
-    const stepsObj = scope.steps as Record<string, StepResult | undefined>;
-    if (!(stepName in stepsObj)) {
+    const stepsObj = scope.steps as Record<string, StepResult | undefined> | undefined;
+    if (stepsObj && !(stepName in stepsObj)) {
       return `step '${stepName}' has not been executed yet`;
     }
   }
@@ -155,10 +191,12 @@ function buildErrorReason(
   // When the path starts with "steps.", include step status context if available
   if (segments[0] === "steps" && segments.length >= 2) {
     const stepName = segments[1];
-    const stepsObj = scope.steps as Record<string, StepResult | undefined>;
-    const stepResult = stepsObj[stepName];
-    if (stepResult && parentPath) {
-      return `property '${failedSegment}' is undefined on ${parentPath} (step '${stepName}' status: ${stepResult.status})`;
+    const stepsObj = scope.steps as Record<string, StepResult | undefined> | undefined;
+    if (stepsObj) {
+      const stepResult = stepsObj[stepName];
+      if (stepResult && parentPath) {
+        return `property '${failedSegment}' is undefined on ${parentPath} (step '${stepName}' status: ${stepResult.status})`;
+      }
     }
   }
 

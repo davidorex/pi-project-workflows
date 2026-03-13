@@ -1,38 +1,13 @@
 import type { Theme } from "@mariozechner/pi-coding-agent";
 import type { TUI, Component } from "@mariozechner/pi-tui";
 import type { WorkflowSpec, ExecutionState, StepResult } from "./types.ts";
+import { formatDuration, formatCost } from "./format.ts";
 
 export interface ProgressWidgetState {
   spec: WorkflowSpec;
   state: ExecutionState;
   currentStep?: string;          // name of the currently running step
   startTime: number;             // Date.now() when workflow started
-}
-
-/**
- * Format duration in milliseconds to human-readable string.
- * <60s -> "42s", <60m -> "1m32s", >=60m -> "1h02m"
- */
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.round(ms / 1000);
-  if (totalSeconds < 60) {
-    return `${totalSeconds}s`;
-  }
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  if (minutes < 60) {
-    return `${minutes}m${seconds.toString().padStart(2, "0")}s`;
-  }
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return `${hours}h${remainingMinutes.toString().padStart(2, "0")}m`;
-}
-
-/**
- * Format cost as a dollar string.
- */
-function formatCost(cost: number): string {
-  return `$${cost.toFixed(2)}`;
 }
 
 /**

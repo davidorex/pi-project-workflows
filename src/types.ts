@@ -7,6 +7,7 @@ export interface WorkflowSpec {
   input?: Record<string, unknown>;       // JSON Schema object
   output?: Record<string, unknown>;      // JSON Schema object
   triggerTurn?: boolean;                  // default: true
+  completion?: CompletionSpec;           // controls post-completion message to main LLM
   steps: Record<string, StepSpec>;       // ordered (YAML preserves insertion order)
   // Set by discovery, not by YAML:
   source: "user" | "project";
@@ -88,9 +89,31 @@ export interface WorkflowResult {
   runDir: string;                        // absolute path to .pi/workflow-runs/<run-id>/
 }
 
+// ── Completion Spec ──
+
+export interface CompletionSpec {
+  message?: string;                      // LLM instruction text (may contain ${{ }} expressions)
+  include?: string[];                    // expression paths to resolve and attach as data
+  template?: string;                     // full template with ${{ }} (mutually exclusive with message)
+}
+
 // ── Expression Scope (what ${{ }} expressions resolve against) ──
 
 export interface ExpressionScope {
   input: unknown;
   steps: Record<string, StepResult>;
+}
+
+// ── Completion Scope (wider scope for completion templates) ──
+
+export interface CompletionScope {
+  input: unknown;
+  steps: Record<string, StepResult>;
+  totalUsage: StepUsage;
+  totalDurationMs: number;
+  runDir: string;
+  runId: string;
+  workflow: string;
+  status: "completed" | "failed";
+  output?: unknown;
 }

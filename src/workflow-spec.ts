@@ -1,5 +1,5 @@
 import { parse as parseYaml } from "yaml";
-import type { WorkflowSpec, StepSpec, StepOutputSpec } from "./types.ts";
+import type { WorkflowSpec, StepSpec, StepOutputSpec, CompletionSpec } from "./types.ts";
 
 /**
  * Error class for spec parsing failures.
@@ -141,6 +141,52 @@ export function parseWorkflowSpec(content: string, filePath: string, source: "us
     spec.triggerTurn = raw.triggerTurn;
   } else {
     spec.triggerTurn = true;
+  }
+
+  // completion (optional)
+  if ("completion" in raw && raw.completion !== undefined) {
+    if (typeof raw.completion !== "object" || raw.completion === null || Array.isArray(raw.completion)) {
+      throw new WorkflowSpecError(filePath, "'completion' must be an object");
+    }
+    const rawComp = raw.completion as Record<string, unknown>;
+
+    // Mutual exclusivity: template and message cannot coexist
+    if ("template" in rawComp && "message" in rawComp) {
+      throw new WorkflowSpecError(filePath, "'completion' cannot have both 'template' and 'message'");
+    }
+
+    // Must have at least one
+    if (!("template" in rawComp) && !("message" in rawComp)) {
+      throw new WorkflowSpecError(filePath, "'completion' must have either 'template' or 'message'");
+    }
+
+    const completion: CompletionSpec = {};
+
+    if (typeof rawComp.template === "string") {
+      completion.template = rawComp.template;
+    } else if ("template" in rawComp) {
+      throw new WorkflowSpecError(filePath, "'completion.template' must be a string");
+    }
+
+    if (typeof rawComp.message === "string") {
+      completion.message = rawComp.message;
+    } else if ("message" in rawComp) {
+      throw new WorkflowSpecError(filePath, "'completion.message' must be a string");
+    }
+
+    if ("include" in rawComp) {
+      if (!Array.isArray(rawComp.include)) {
+        throw new WorkflowSpecError(filePath, "'completion.include' must be an array of strings");
+      }
+      for (const item of rawComp.include) {
+        if (typeof item !== "string") {
+          throw new WorkflowSpecError(filePath, "'completion.include' must be an array of strings");
+        }
+      }
+      completion.include = rawComp.include as string[];
+    }
+
+    spec.completion = completion;
   }
 
   return spec;

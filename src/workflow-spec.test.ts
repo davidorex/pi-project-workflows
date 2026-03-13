@@ -88,6 +88,131 @@ steps:
     );
   });
 
+  // ── Completion field tests ──
+
+  it("parses completion with template", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+completion:
+  template: |
+    Result: \${{ steps.s.textOutput }}
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.ok(spec.completion);
+    assert.strictEqual(spec.completion.template, "Result: ${{ steps.s.textOutput }}\n");
+    assert.strictEqual(spec.completion.message, undefined);
+  });
+
+  it("parses completion with message and include", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+completion:
+  message: Present these findings.
+  include:
+    - steps.s.textOutput
+    - steps.s.usage
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.ok(spec.completion);
+    assert.strictEqual(spec.completion.message, "Present these findings.");
+    assert.deepStrictEqual(spec.completion.include, ["steps.s.textOutput", "steps.s.usage"]);
+    assert.strictEqual(spec.completion.template, undefined);
+  });
+
+  it("parses completion with message only (no include)", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+completion:
+  message: Just an instruction.
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.ok(spec.completion);
+    assert.strictEqual(spec.completion.message, "Just an instruction.");
+    assert.strictEqual(spec.completion.include, undefined);
+  });
+
+  it("throws when completion has both template and message", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+completion:
+  template: some template
+  message: some message
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("cannot have both"),
+    );
+  });
+
+  it("throws when completion has neither template nor message", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+completion:
+  include:
+    - steps.s.textOutput
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("must have either"),
+    );
+  });
+
+  it("throws when completion is not an object", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+completion: just a string
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("must be an object"),
+    );
+  });
+
+  it("throws when completion.include is not an array", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+completion:
+  message: ok
+  include: not-an-array
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: unknown) => err instanceof WorkflowSpecError && err.message.includes("array of strings"),
+    );
+  });
+
+  it("has no completion when field is absent", () => {
+    const yaml = `
+name: test
+steps:
+  s:
+    agent: a
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.strictEqual(spec.completion, undefined);
+  });
+
   it("preserves step order", () => {
     const yaml = `
 name: test

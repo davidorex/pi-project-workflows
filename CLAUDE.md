@@ -69,6 +69,10 @@ pi-workflows/
 - User agents: `~/.pi/agent/agents/*.md`
 - Run state: `.pi/workflow-runs/<run-id>/` (state.json, sessions/, outputs/, metrics.json)
 
+## Do Not Touch
+
+- **`.pi/` directory**: Never create, copy, modify, or delete files in `.pi/`. This is the user's runtime testing directory. The user manages it manually. Source of truth for demo files is `demo/`.
+
 ## Design Decisions
 
 - Extension owns its own subprocess dispatch — independent of pi-subagents

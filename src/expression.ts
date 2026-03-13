@@ -30,18 +30,31 @@ export function resolveExpression(expr: string, scope: ExpressionScope): unknown
   const traversed: string[] = [];
 
   for (const segment of segments) {
+    // Container is undefined/null — can't traverse further. This is a broken reference.
     if (current === undefined || current === null) {
       const reason = buildErrorReason(segments, traversed, scope);
       throw new ExpressionError(expr, reason);
     }
 
-    const parent = current;
     current = (current as Record<string, unknown>)[segment];
     traversed.push(segment);
 
-    if (current === undefined || current === null) {
-      const reason = buildErrorReason(segments, traversed, scope);
-      throw new ExpressionError(expr, reason);
+    // Property doesn't exist on the container — return undefined (optional field).
+    // But if this is the first segment (root lookup like "steps" or "input"),
+    // or if we're looking up a step name that hasn't executed, that's an error.
+    if (current === undefined) {
+      // Root-level miss (e.g. "typo.something") — always an error
+      if (traversed.length === 1) {
+        const reason = buildErrorReason(segments, traversed, scope);
+        throw new ExpressionError(expr, reason);
+      }
+      // Step reference that doesn't exist (e.g. "steps.nonexistent") — error
+      if (segments[0] === "steps" && traversed.length === 2) {
+        const reason = buildErrorReason(segments, traversed, scope);
+        throw new ExpressionError(expr, reason);
+      }
+      // Otherwise: optional field on an existing object — return undefined
+      return undefined;
     }
   }
 
@@ -102,6 +115,7 @@ function resolveStringExpressions(value: string, scope: ExpressionScope): unknow
   // Embedded expressions: resolve each and interpolate as strings
   return value.replace(EXPR_PATTERN, (_match, expr: string) => {
     const resolved = resolveExpression(expr, scope);
+    if (resolved === undefined || resolved === null) return "";
     return stringify(resolved);
   });
 }

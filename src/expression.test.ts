@@ -54,17 +54,25 @@ describe("resolveExpression", () => {
     assert.strictEqual(resolveExpression("steps.diagnose.usage.cost", scope), 0.03);
   });
 
-  it("throws on undefined property", () => {
-    assert.throws(
-      () => resolveExpression("input.nonexistent", scope),
-      (err: unknown) => err instanceof ExpressionError,
-    );
+  it("returns undefined for missing optional property on input", () => {
+    assert.strictEqual(resolveExpression("input.nonexistent", scope), undefined);
+  });
+
+  it("returns undefined for missing optional property on step output", () => {
+    assert.strictEqual(resolveExpression("steps.diagnose.output.missingField", scope), undefined);
   });
 
   it("throws on unexecuted step", () => {
     assert.throws(
       () => resolveExpression("steps.fix.output", scope),
       (err: unknown) => err instanceof ExpressionError && err.message.includes("fix"),
+    );
+  });
+
+  it("throws on invalid root path", () => {
+    assert.throws(
+      () => resolveExpression("typo.something", scope),
+      (err: unknown) => err instanceof ExpressionError,
     );
   });
 });
@@ -133,6 +141,19 @@ describe("resolveExpressions", () => {
       resolveExpressions("${{   input.description   }}", scope),
       "null pointer in login",
     );
+  });
+
+  it("renders undefined as empty string in embedded expressions", () => {
+    const result = resolveExpressions(
+      "Question: ${{ input.nonexistent }}",
+      scope,
+    );
+    assert.strictEqual(result, "Question: ");
+  });
+
+  it("resolves whole-value undefined for missing optional field", () => {
+    const result = resolveExpressions("${{ input.nonexistent }}", scope);
+    assert.strictEqual(result, undefined);
   });
 
   it("stringifies objects in embedded expressions", () => {

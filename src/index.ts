@@ -126,8 +126,25 @@ async function handleList(ctx: any): Promise<void> {
   ctx.ui.notify(`Available workflows:\n${lines.join("\n")}`, "info");
 }
 
-async function handleRun(args: string[], ctx: any, pi: any): Promise<void> {
-  const name = args[0];
+async function handleRun(rawArgs: string, ctx: any, pi: any): Promise<void> {
+  // Extract workflow name (first token) and --input value (everything after --input flag)
+  const inputFlagIdx = rawArgs.indexOf("--input");
+  let namePart: string;
+  let inputJson: string | undefined;
+
+  if (inputFlagIdx !== -1) {
+    namePart = rawArgs.slice(0, inputFlagIdx).trim();
+    inputJson = rawArgs.slice(inputFlagIdx + "--input".length).trim();
+    // Strip surrounding single or double quotes
+    if ((inputJson.startsWith("'") && inputJson.endsWith("'")) ||
+        (inputJson.startsWith('"') && inputJson.endsWith('"'))) {
+      inputJson = inputJson.slice(1, -1);
+    }
+  } else {
+    namePart = rawArgs.trim();
+  }
+
+  const name = namePart.split(/\s+/)[0];
   if (!name) {
     ctx.ui.notify("Usage: /workflow run <name> [--input '<json>']", "warning");
     return;
@@ -141,12 +158,11 @@ async function handleRun(args: string[], ctx: any, pi: any): Promise<void> {
 
   // Parse --input if provided
   let input: unknown = {};
-  const inputIdx = args.indexOf("--input");
-  if (inputIdx !== -1 && args[inputIdx + 1]) {
+  if (inputJson) {
     try {
-      input = JSON.parse(args[inputIdx + 1]);
+      input = JSON.parse(inputJson);
     } catch {
-      ctx.ui.notify("Invalid JSON for --input", "warning");
+      ctx.ui.notify(`Invalid JSON for --input: ${inputJson}`, "warning");
       return;
     }
   }
@@ -236,13 +252,15 @@ const extension = (pi: any) => {
     },
 
     async handler(args: string, ctx: any) {
-      const parts = args.trim().split(/\s+/);
-      const subcommand = parts[0] || "list";
+      const trimmed = args.trim();
+      const spaceIdx = trimmed.indexOf(" ");
+      const subcommand = spaceIdx === -1 ? trimmed || "list" : trimmed.slice(0, spaceIdx);
+      const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
 
       if (subcommand === "list") {
         await handleList(ctx);
       } else if (subcommand === "run") {
-        await handleRun(parts.slice(1), ctx, pi);
+        await handleRun(rest, ctx, pi);
       } else if (subcommand === "status") {
         ctx.ui.notify("No workflow currently running.", "info");
       } else {

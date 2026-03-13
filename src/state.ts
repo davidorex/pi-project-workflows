@@ -201,6 +201,14 @@ export function formatResult(result: WorkflowResult): string {
     );
   }
 
+  if (result.artifacts && Object.keys(result.artifacts).length > 0) {
+    lines.push("");
+    lines.push("Artifacts:");
+    for (const [name, artifactPath] of Object.entries(result.artifacts)) {
+      lines.push(`  ${name} \u2192 ${artifactPath}`);
+    }
+  }
+
   lines.push("");
   lines.push(`Session logs: ${result.runDir}/sessions/`);
 

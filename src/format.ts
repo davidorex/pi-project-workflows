@@ -28,3 +28,14 @@ export function formatDuration(ms: number): string {
 export function formatCost(cost: number): string {
   return `$${cost.toFixed(2)}`;
 }
+
+/**
+ * Format token count as compact human-readable string.
+ * <1000 -> "123 tok", <10000 -> "1.2k tok", <1000000 -> "42k tok", >=1000000 -> "1.2M tok"
+ */
+export function formatTokens(count: number): string {
+  if (count < 1000) return `${count} tok`;
+  if (count < 10000) return `${(count / 1000).toFixed(1)}k tok`;
+  if (count < 1000000) return `${Math.round(count / 1000)}k tok`;
+  return `${(count / 1000000).toFixed(1)}M tok`;
+}

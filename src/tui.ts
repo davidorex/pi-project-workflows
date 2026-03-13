@@ -1,7 +1,7 @@
 import type { Theme } from "@mariozechner/pi-coding-agent";
 import type { TUI, Component } from "@mariozechner/pi-tui";
 import type { WorkflowSpec, ExecutionState, StepResult } from "./types.ts";
-import { formatDuration, formatCost } from "./format.ts";
+import { formatDuration, formatCost, formatTokens } from "./format.ts";
 
 export interface ProgressWidgetState {
   spec: WorkflowSpec;
@@ -22,14 +22,6 @@ export interface ProgressWidgetState {
  *     · verify
  *   ─────────────────────────────────────
  */
-/**
- * Format token count as compact string: 1234 -> "1k tok", 12345 -> "12k tok"
- */
-function formatTokens(count: number): string {
-  if (count < 1000) return `${count} tok`;
-  return `${Math.round(count / 1000)}k tok`;
-}
-
 export function createProgressWidget(
   widgetState: ProgressWidgetState,
 ): (tui: TUI, theme: Theme) => Component & { dispose?(): void } {

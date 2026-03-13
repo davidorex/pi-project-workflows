@@ -429,6 +429,225 @@ describe("gate steps", () => {
   });
 });
 
+// ── Artifacts ──
+
+describe("artifacts", () => {
+  it("writes artifact files after workflow completion", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+    const spec: WorkflowSpec = {
+      name: "test-artifact",
+      description: "test artifact writing",
+      steps: {
+        produce: {
+          agent: "transform",
+          transform: {
+            mapping: { report: "test report content", count: 42 },
+          },
+        },
+      },
+      artifacts: {
+        textReport: {
+          path: path.join(tmpDir, "reports", "latest.txt"),
+          from: "steps.produce.output.report",
+        },
+        jsonReport: {
+          path: path.join(tmpDir, "reports", "data.json"),
+          from: "steps.produce.output",
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.ok(result.artifacts);
+    assert.ok(result.artifacts!.textReport);
+    assert.ok(result.artifacts!.jsonReport);
+
+    // Verify text artifact written as string (not JSON-wrapped)
+    const textContent = fs.readFileSync(result.artifacts!.textReport, "utf-8");
+    assert.strictEqual(textContent, "test report content");
+
+    // Verify JSON artifact written as formatted JSON
+    const jsonContent = JSON.parse(fs.readFileSync(result.artifacts!.jsonReport, "utf-8"));
+    assert.deepStrictEqual(jsonContent, { report: "test report content", count: 42 });
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("resolves expressions in artifact path", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+    const spec: WorkflowSpec = {
+      name: "test-artifact-path",
+      description: "test artifact path expression",
+      steps: {
+        produce: {
+          agent: "transform",
+          transform: {
+            mapping: { value: "data" },
+          },
+        },
+      },
+      artifacts: {
+        report: {
+          path: path.join(tmpDir, "reports", "run-${{ runId }}.json"),
+          from: "steps.produce.output",
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.ok(result.artifacts);
+    // The artifact path should contain the runId
+    assert.ok(result.artifacts!.report.includes(result.runId));
+    assert.ok(fs.existsSync(result.artifacts!.report));
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("handles relative artifact paths resolved against cwd", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+    const spec: WorkflowSpec = {
+      name: "test-artifact-rel",
+      description: "test relative artifact path",
+      steps: {
+        produce: {
+          agent: "transform",
+          transform: {
+            mapping: { result: "output" },
+          },
+        },
+      },
+      artifacts: {
+        report: {
+          path: "output/latest.json",
+          from: "steps.produce.output",
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.ok(result.artifacts);
+    const expectedPath = path.resolve(tmpDir, "output/latest.json");
+    assert.strictEqual(result.artifacts!.report, expectedPath);
+    assert.ok(fs.existsSync(expectedPath));
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("artifact failure is non-fatal", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+    const notifications: Array<{ msg: string; level: string }> = [];
+    const spec: WorkflowSpec = {
+      name: "test-artifact-fail",
+      description: "test artifact failure handling",
+      steps: {
+        produce: {
+          agent: "transform",
+          transform: {
+            mapping: { value: "data" },
+          },
+        },
+      },
+      artifacts: {
+        bad: {
+          path: path.join(tmpDir, "reports", "output.json"),
+          from: "steps.nonexistent.output",  // expression will fail
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const ctx = {
+      cwd: tmpDir,
+      hasUI: true,
+      ui: {
+        setWidget: () => {},
+        notify: (msg: string, level: string) => notifications.push({ msg, level }),
+        setStatus: () => {},
+        setWorkingMessage: () => {},
+      },
+    } as any;
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx,
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    // Workflow still completes despite artifact failure
+    assert.strictEqual(result.status, "completed");
+    // No artifacts written
+    assert.ok(!result.artifacts || Object.keys(result.artifacts).length === 0);
+    // Warning notification was sent
+    assert.ok(notifications.some((n) => n.msg.includes("bad") && n.level === "warning"));
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("includes artifacts in formatResult output", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+    const spec: WorkflowSpec = {
+      name: "test-artifact-format",
+      description: "test artifact in formatResult",
+      steps: {
+        produce: {
+          agent: "transform",
+          transform: {
+            mapping: { value: "data" },
+          },
+        },
+      },
+      artifacts: {
+        report: {
+          path: path.join(tmpDir, "reports", "latest.json"),
+          from: "steps.produce.output",
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const pi = mockPi();
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi,
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    // The sendMessage content should include artifact info
+    const lastMsg = pi._messages[pi._messages.length - 1];
+    const content = lastMsg.msg.content;
+    assert.ok(content.includes("Artifacts:"));
+    assert.ok(content.includes("report"));
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+});
+
 // ── Transform steps ──
 
 describe("transform steps", () => {
@@ -500,6 +719,181 @@ describe("transform steps", () => {
     assert.strictEqual(result.steps.merge.usage.output, 0);
     assert.strictEqual(result.totalUsage.cost, 0);
     assert.strictEqual(result.totalUsage.turns, 0);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+});
+
+// ── Phase 2 integration tests ──
+// These exercise combined phase 2 features: when, gate, transform, loop
+
+function makeSpec(overrides: Partial<WorkflowSpec> & { steps: WorkflowSpec["steps"] }): WorkflowSpec {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-p2-"));
+  return {
+    name: "test-p2",
+    description: "phase 2 integration test",
+    source: "project",
+    filePath: path.join(tmpDir, "test.workflow.yaml"),
+    ...overrides,
+  };
+}
+
+function defaultOptions(tmpDir?: string) {
+  const cwd = tmpDir ?? fs.mkdtempSync(path.join(os.tmpdir(), "wf-p2-"));
+  return {
+    ctx: mockCtx(cwd),
+    pi: mockPi(),
+    loadAgent: () => ({ name: "default" }),
+  };
+}
+
+describe("phase 2 integration", () => {
+  it("runs a workflow with when, gate, transform", async () => {
+    const spec = makeSpec({
+      steps: {
+        source: {
+          transform: {
+            mapping: { data: "initial" },
+          },
+        },
+        check: {
+          gate: { check: "echo pass", onPass: "continue" },
+        },
+        conditional: {
+          when: "${{ steps.check.output.passed }}",
+          transform: {
+            mapping: {
+              wasChecked: "${{ steps.check.output.passed }}",
+              sourceStatus: "${{ steps.source.status }}",
+            },
+          },
+        },
+      },
+    });
+
+    const result = await executeWorkflow(spec, {}, defaultOptions());
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.check.output.passed, true);
+    assert.strictEqual(result.steps.conditional.output.wasChecked, true);
+    assert.strictEqual(result.steps.conditional.usage.cost, 0);
+  });
+
+  it("skips conditional step when gate fails", async () => {
+    const spec = makeSpec({
+      steps: {
+        check: {
+          gate: { check: "exit 1", onFail: "continue" },
+        },
+        conditional: {
+          when: "${{ steps.check.output.passed }}",
+          transform: {
+            mapping: { result: "should not appear" },
+          },
+        },
+        final: {
+          transform: {
+            mapping: { done: true },
+          },
+        },
+      },
+    });
+
+    const result = await executeWorkflow(spec, {}, defaultOptions());
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.check.output.passed, false);
+    assert.strictEqual(result.steps.conditional.status, "skipped");
+    assert.strictEqual(result.steps.final.status, "completed");
+  });
+
+  it("runs a loop with gate break", async () => {
+    const spec = makeSpec({
+      steps: {
+        retry: {
+          loop: {
+            maxAttempts: 5,
+            steps: {
+              check: {
+                gate: {
+                  check: "echo pass",
+                  onPass: "break",
+                  onFail: "continue",
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const result = await executeWorkflow(spec, {}, defaultOptions());
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.retry.output.iterations, 1);
+  });
+
+  it("combines transform, loop, and artifacts", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-p2-"));
+    const spec: WorkflowSpec = {
+      name: "test-combined",
+      description: "combined phase 2 test",
+      steps: {
+        setup: {
+          transform: {
+            mapping: { prefix: "test" },
+          },
+        },
+        retry: {
+          loop: {
+            maxAttempts: 2,
+            steps: {
+              check: {
+                gate: {
+                  check: "echo pass",
+                  onPass: "break",
+                  onFail: "continue",
+                },
+              },
+            },
+          },
+        },
+        summary: {
+          transform: {
+            mapping: {
+              setupResult: "${{ steps.setup.output.prefix }}",
+              loopIterations: "${{ steps.retry.output.iterations }}",
+              loopStatus: "${{ steps.retry.status }}",
+            },
+          },
+        },
+      },
+      artifacts: {
+        report: {
+          path: path.join(tmpDir, "artifacts", "summary.json"),
+          from: "steps.summary.output",
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+
+    // Verify transform output
+    const summaryOutput = result.steps.summary.output as Record<string, unknown>;
+    assert.strictEqual(summaryOutput.setupResult, "test");
+    assert.strictEqual(summaryOutput.loopIterations, 1);
+    assert.strictEqual(summaryOutput.loopStatus, "completed");
+
+    // Verify artifact was written
+    assert.ok(result.artifacts);
+    assert.ok(result.artifacts!.report);
+    const artifactContent = JSON.parse(fs.readFileSync(result.artifacts!.report, "utf-8"));
+    assert.strictEqual(artifactContent.setupResult, "test");
 
     fs.rmSync(tmpDir, { recursive: true });
   });

@@ -130,6 +130,7 @@ export interface WorkflowResult {
   totalUsage: StepUsage;
   totalDurationMs: number;
   runDir: string;                        // absolute path to .pi/workflow-runs/<run-id>/
+  artifacts?: Record<string, string>;    // name → absolute path of written artifact files
 }
 
 // ── Completion Spec ──

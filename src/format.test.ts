@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { formatDuration, formatCost } from "./format.ts";
+import { formatDuration, formatCost, formatTokens } from "./format.ts";
 
 describe("formatDuration", () => {
   it("formats zero", () => {
@@ -50,5 +50,31 @@ describe("formatCost", () => {
   it("rounds to two decimal places", () => {
     assert.strictEqual(formatCost(0.999), "$1.00");
     assert.strictEqual(formatCost(0.001), "$0.00");
+  });
+});
+
+describe("formatTokens", () => {
+  it("formats small counts as-is", () => {
+    assert.strictEqual(formatTokens(0), "0 tok");
+    assert.strictEqual(formatTokens(42), "42 tok");
+    assert.strictEqual(formatTokens(999), "999 tok");
+  });
+
+  it("formats 1k-10k with one decimal", () => {
+    assert.strictEqual(formatTokens(1000), "1.0k tok");
+    assert.strictEqual(formatTokens(1234), "1.2k tok");
+    assert.strictEqual(formatTokens(9999), "10.0k tok");
+  });
+
+  it("formats 10k-1M as rounded k", () => {
+    assert.strictEqual(formatTokens(10000), "10k tok");
+    assert.strictEqual(formatTokens(12345), "12k tok");
+    assert.strictEqual(formatTokens(999999), "1000k tok");
+  });
+
+  it("formats 1M+ with one decimal", () => {
+    assert.strictEqual(formatTokens(1000000), "1.0M tok");
+    assert.strictEqual(formatTokens(1500000), "1.5M tok");
+    assert.strictEqual(formatTokens(2345678), "2.3M tok");
   });
 });

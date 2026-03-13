@@ -685,14 +685,66 @@ export async function executeWorkflow(
   writeState(runDir, state);
   writeMetrics(runDir, state.steps);
 
-  // 6. Clean up TUI
+  // 6. Process artifacts
+  const writtenArtifacts: Record<string, string> = {};
+  if (spec.artifacts) {
+    const artifactScope: Record<string, unknown> = {
+      input: state.input,
+      steps: state.steps,
+      runId,
+      runDir,
+    };
+
+    for (const [name, artifactSpec] of Object.entries(spec.artifacts)) {
+      try {
+        // Resolve the output path (may contain expressions)
+        const resolvedPath = String(resolveExpressions(artifactSpec.path, artifactScope));
+        const absolutePath = path.isAbsolute(resolvedPath)
+          ? resolvedPath
+          : path.resolve(ctx.cwd, resolvedPath);
+
+        // Resolve the data source — wrap `from` as ${{ from }} for expression resolution
+        const fromExpr = artifactSpec.from.startsWith("${{") ? artifactSpec.from : `\${{ ${artifactSpec.from} }}`;
+        const data = resolveExpressions(fromExpr, artifactScope);
+
+        // Validate against schema if specified
+        if (artifactSpec.schema) {
+          const schemaPath = resolveSchemaPath(artifactSpec.schema, spec.filePath);
+          validateFromFile(schemaPath, data, `artifact '${name}'`);
+        }
+
+        // Write the artifact
+        fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+        if (typeof data === "string") {
+          fs.writeFileSync(absolutePath, data);
+        } else {
+          fs.writeFileSync(absolutePath, JSON.stringify(data, null, 2));
+        }
+
+        writtenArtifacts[name] = absolutePath;
+      } catch (err) {
+        // Artifact write failure is non-fatal — log warning, don't fail the workflow
+        const msg = err instanceof Error ? err.message : String(err);
+        if (ctx.hasUI) {
+          ctx.ui.notify(`Artifact '${name}' failed: ${msg}`, "warning");
+        }
+      }
+    }
+  }
+
+  // 7. Clean up TUI
   if (ctx.hasUI) {
     ctx.ui.setWidget("workflow-progress", undefined);
     ctx.ui.setWorkingMessage(undefined);
   }
 
-  // 7. Build and inject result
+  // 8. Build and inject result
   const result = buildResult(spec, runId, runDir, state, state.status as "completed" | "failed");
+
+  // Attach written artifact paths to the result
+  if (Object.keys(writtenArtifacts).length > 0) {
+    result.artifacts = writtenArtifacts;
+  }
   const triggerTurn = spec.triggerTurn !== false;
 
   let content: string;

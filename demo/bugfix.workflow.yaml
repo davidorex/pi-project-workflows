@@ -1,0 +1,66 @@
+name: bugfix
+description: Diagnose, fix, and verify a bug
+version: "1"
+
+input:
+  type: object
+  required: [description]
+  properties:
+    description:
+      type: string
+      description: Bug description or error message
+    reproCommand:
+      type: string
+      description: Shell command that fails when bug is present, passes when fixed
+    maxAttempts:
+      type: integer
+      default: 3
+
+steps:
+  diagnose:
+    agent: bug-diagnostician
+    input:
+      description: ${{ input.description }}
+      reproCommand: ${{ input.reproCommand }}
+
+  fix-loop:
+    loop:
+      maxAttempts: ${{ input.maxAttempts }}
+      steps:
+        fix:
+          agent: bug-fixer
+          input:
+            diagnosis: ${{ steps.diagnose.textOutput }}
+            attempt: ${{ loop.iteration }}
+            priorAttempts: ${{ loop.priorAttempts }}
+
+        verify:
+          when: ${{ input.reproCommand }}
+          gate:
+            check: ${{ input.reproCommand }}
+            onPass: break
+            onFail: continue
+
+  report:
+    transform:
+      mapping:
+        diagnosis: ${{ steps.diagnose.textOutput }}
+        fixResult: ${{ steps.fix-loop.output }}
+        status: ${{ steps.fix-loop.status }}
+
+artifacts:
+  summary:
+    path: .pi/reports/bugfix-latest.md
+    from: steps.report.output
+
+completion:
+  message: |
+    This is the result of the bugfix workflow.
+    Present the outcome clearly. If the fix succeeded, show what was changed.
+    If it failed, explain what was tried and why it didn't work.
+    Do not ask questions or suggest next steps.
+
+    Diagnosis: ${{ steps.diagnose.textOutput }}
+
+    Fix result (${{ steps.fix-loop.output.iterations }} attempts):
+    Status: ${{ steps.fix-loop.status }}

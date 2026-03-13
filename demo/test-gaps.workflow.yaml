@@ -32,11 +32,11 @@ steps:
 
 completion:
   message: |
-    Here are the gaps. For each one, show the spec requirement
-    and a concrete test case that should be added. Prioritize
-    by risk — what breaks silently if untested.
-
-    Do not offer to fix or provide tests to fill any gaps.
-    Purely report in specific detail.
+    This is the output of the test-gaps workflow you just ran.
+    Present the findings below to the user exactly as reported.
+    Do not summarize, reinterpret, or add commentary.
+    Do not offer to fix anything or provide code.
+    Do not ask questions or suggest next steps.
+    Just present the report.
 
     ${{ steps.diff.textOutput }}

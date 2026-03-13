@@ -54,7 +54,7 @@ export function createProgressWidget(
     let pulseOn = true;
     const interval = setInterval(() => {
       pulseOn = !pulseOn;
-      tui.draw();
+      tui.requestRender();
     }, 800);
 
     return {

@@ -284,11 +284,13 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
     }
     const rawLoop = rawStep.loop as Record<string, unknown>;
 
-    // Must have maxAttempts (number) or attempts (string expression)
-    const hasMaxAttempts = "maxAttempts" in rawLoop && typeof rawLoop.maxAttempts === "number";
+    // Must have maxAttempts (number or expression string) or attempts (string expression)
+    const maxAttemptsRaw = rawLoop.maxAttempts;
+    const hasMaxAttemptsNum = typeof maxAttemptsRaw === "number";
+    const hasMaxAttemptsExpr = typeof maxAttemptsRaw === "string";
     const hasAttempts = "attempts" in rawLoop && typeof rawLoop.attempts === "string";
-    if (!hasMaxAttempts && !hasAttempts) {
-      throw new WorkflowSpecError(filePath, `step '${stepName}' loop must have 'maxAttempts' (number) or 'attempts' (expression)`);
+    if (!hasMaxAttemptsNum && !hasMaxAttemptsExpr && !hasAttempts) {
+      throw new WorkflowSpecError(filePath, `step '${stepName}' loop must have 'maxAttempts' (number or expression) or 'attempts' (expression)`);
     }
 
     // Must have non-empty steps
@@ -307,11 +309,15 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
     }
 
     const loop: LoopSpec = {
-      maxAttempts: hasMaxAttempts ? rawLoop.maxAttempts as number : 0,
+      maxAttempts: hasMaxAttemptsNum ? maxAttemptsRaw as number : undefined,
       steps: loopSteps,
     };
+    // If maxAttempts is an expression string, treat it as the `attempts` field
+    if (hasMaxAttemptsExpr) {
+      loop.attempts = maxAttemptsRaw as string;
+    }
     if (hasAttempts) loop.attempts = rawLoop.attempts as string;
-    if (hasMaxAttempts) loop.maxAttempts = rawLoop.maxAttempts as number;
+    if (hasMaxAttemptsNum) loop.maxAttempts = maxAttemptsRaw as number;
 
     // onExhausted is an optional step
     if ("onExhausted" in rawLoop && rawLoop.onExhausted !== undefined) {

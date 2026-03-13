@@ -60,10 +60,13 @@ export function parseAgentFrontmatter(filePath: string): AgentSpec {
 // ── Agent loader factory ────────────────────────────────────────────────────
 
 export function createAgentLoader(cwd: string): (name: string) => AgentSpec {
+  const demoAgentsDir = path.resolve(import.meta.dirname, "..", "demo", "agents");
+
   return (name: string): AgentSpec => {
     const searchPaths = [
       path.join(cwd, ".pi", "agents", `${name}.md`),
       path.join(os.homedir(), ".pi", "agent", "agents", `${name}.md`),
+      path.join(demoAgentsDir, `${name}.md`),
     ];
 
     for (const agentPath of searchPaths) {

@@ -50,7 +50,7 @@ steps:
 
 artifacts:
   summary:
-    path: .pi/reports/bugfix-latest.md
+    path: latest.md
     from: steps.report.output
 
 completion:

@@ -5,6 +5,9 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
+// Use a nonexistent dir as builtinDir so tests don't pick up real demo workflows
+const NO_BUILTINS = path.join(os.tmpdir(), "wf-no-builtins-nonexistent");
+
 describe("discoverWorkflows", () => {
   it("discovers workflows from project directory", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
@@ -15,7 +18,7 @@ describe("discoverWorkflows", () => {
       "name: test\nsteps:\n  s:\n    agent: a",
     );
 
-    const specs = discoverWorkflows(tmpDir);
+    const specs = discoverWorkflows(tmpDir, NO_BUILTINS);
     assert.strictEqual(specs.length, 1);
     assert.strictEqual(specs[0].name, "test");
     assert.strictEqual(specs[0].source, "project");
@@ -25,7 +28,7 @@ describe("discoverWorkflows", () => {
 
   it("returns empty array when no workflow directories exist", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
-    const specs = discoverWorkflows(tmpDir);
+    const specs = discoverWorkflows(tmpDir, NO_BUILTINS);
     assert.strictEqual(specs.length, 0);
     fs.rmSync(tmpDir, { recursive: true });
   });
@@ -40,7 +43,7 @@ describe("discoverWorkflows", () => {
       "name: good\nsteps:\n  s:\n    agent: a",
     );
 
-    const specs = discoverWorkflows(tmpDir);
+    const specs = discoverWorkflows(tmpDir, NO_BUILTINS);
     assert.strictEqual(specs.length, 1);
     assert.strictEqual(specs[0].name, "good");
 
@@ -56,14 +59,22 @@ describe("discoverWorkflows", () => {
       "name: shared\ndescription: project version\nsteps:\n  s:\n    agent: a",
     );
 
-    // Note: testing user-level discovery requires mocking os.homedir()
-    // or injecting the user workflows dir. For unit tests, verify the
-    // dedup logic by calling parseWorkflowSpec directly and testing
-    // the dedup in a focused helper.
-
-    const specs = discoverWorkflows(tmpDir);
+    const specs = discoverWorkflows(tmpDir, NO_BUILTINS);
     assert.strictEqual(specs.length, 1);
     assert.strictEqual(specs[0].source, "project");
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("discovers builtin demo workflows", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
+    const demoDir = path.resolve(import.meta.dirname, "..", "demo");
+
+    const specs = discoverWorkflows(tmpDir, demoDir);
+    assert.ok(specs.length > 0, "should find at least one demo workflow");
+
+    const names = specs.map((s) => s.name);
+    assert.ok(names.includes("explore-summarize"), "should find explore-summarize demo");
 
     fs.rmSync(tmpDir, { recursive: true });
   });
@@ -79,7 +90,7 @@ describe("findWorkflow", () => {
       "name: bugfix\nsteps:\n  s:\n    agent: a",
     );
 
-    const spec = findWorkflow("bugfix", tmpDir);
+    const spec = findWorkflow("bugfix", tmpDir, NO_BUILTINS);
     assert.ok(spec);
     assert.strictEqual(spec.name, "bugfix");
 
@@ -88,7 +99,7 @@ describe("findWorkflow", () => {
 
   it("returns undefined for unknown workflow", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
-    assert.strictEqual(findWorkflow("nonexistent", tmpDir), undefined);
+    assert.strictEqual(findWorkflow("nonexistent", tmpDir, NO_BUILTINS), undefined);
     fs.rmSync(tmpDir, { recursive: true });
   });
 });

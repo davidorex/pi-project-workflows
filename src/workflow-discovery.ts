@@ -5,29 +5,35 @@ import type { WorkflowSpec } from "./types.ts";
 import { parseWorkflowSpec } from "./workflow-spec.ts";
 
 /**
- * Discover all workflow specs from project and user directories.
+ * Discover all workflow specs from project, user, and builtin directories.
  *
- * Scans:
+ * Scans (highest priority first):
  *   1. .pi/workflows/             (project-level, source: "project")
  *   2. ~/.pi/agent/workflows/     (user-level, source: "user")
+ *   3. <package>/demo/            (builtin demos, source: "user")
  *
- * Project-level specs take precedence over user-level specs with the same name.
+ * Higher-priority specs shadow lower-priority specs with the same name.
  *
  * @param cwd - current working directory (project root)
+ * @param builtinDir - optional path to builtin demo workflows (defaults to demo/ relative to this file)
  * @returns Array of parsed WorkflowSpec objects. Specs that fail parsing are
  *          skipped with a warning (logged to stderr), not thrown.
  */
-export function discoverWorkflows(cwd: string): WorkflowSpec[] {
+export function discoverWorkflows(cwd: string, builtinDir?: string): WorkflowSpec[] {
   const projectDir = path.join(cwd, ".pi", "workflows");
   const userDir = path.join(os.homedir(), ".pi", "agent", "workflows");
+  const demoDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "demo");
 
   const projectSpecs = scanDirectory(projectDir, "project");
   const userSpecs = scanDirectory(userDir, "user");
+  const builtinSpecs = scanDirectory(demoDir, "user");
 
-  // Deduplicate: project-level specs shadow user-level specs with the same name
+  // Deduplicate: project > user > builtin (last write wins, so add lowest priority first)
   const byName = new Map<string, WorkflowSpec>();
 
-  // Add user specs first, then project specs overwrite
+  for (const spec of builtinSpecs) {
+    byName.set(spec.name, spec);
+  }
   for (const spec of userSpecs) {
     byName.set(spec.name, spec);
   }
@@ -45,8 +51,8 @@ export function discoverWorkflows(cwd: string): WorkflowSpec[] {
  * Find a workflow by name from discovered workflows.
  * Returns undefined if not found.
  */
-export function findWorkflow(name: string, cwd: string): WorkflowSpec | undefined {
-  const specs = discoverWorkflows(cwd);
+export function findWorkflow(name: string, cwd: string, builtinDir?: string): WorkflowSpec | undefined {
+  const specs = discoverWorkflows(cwd, builtinDir);
   return specs.find((s) => s.name === name);
 }
 

@@ -1,0 +1,42 @@
+name: test-gaps
+description: Find untested requirements by diffing impl specs against test files
+
+input:
+  type: object
+  properties:
+    specPaths:
+      type: array
+      items: { type: string }
+      default: ["docs/impl/"]
+    testPaths:
+      type: array
+      items: { type: string }
+      default: ["src/*.test.ts"]
+
+steps:
+  extract-requirements:
+    agent: requirement-extractor
+    input:
+      paths: ${{ input.specPaths }}
+
+  extract-tests:
+    agent: test-extractor
+    input:
+      paths: ${{ input.testPaths }}
+
+  diff:
+    agent: gap-analyzer
+    input:
+      requirements: ${{ steps.extract-requirements.textOutput }}
+      tests: ${{ steps.extract-tests.textOutput }}
+
+completion:
+  message: |
+    Here are the gaps. For each one, show the spec requirement
+    and a concrete test case that should be added. Prioritize
+    by risk — what breaks silently if untested.
+
+    Do not offer to fix or provide tests to fill any gaps.
+    Purely report in specific detail.
+
+    ${{ steps.diff.textOutput }}

@@ -13,6 +13,11 @@ input:
       items: { type: string }
       default: ["src/*.test.ts"]
 
+artifacts:
+  latest:
+    path: latest.md
+    from: steps.diff.textOutput
+
 steps:
   extract-requirements:
     agent: requirement-extractor

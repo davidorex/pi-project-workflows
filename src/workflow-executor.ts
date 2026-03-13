@@ -5,7 +5,7 @@ import type { ProgressWidgetState } from "./tui.ts";
 import { validate, validateFromFile } from "./schema-validator.ts";
 import { resolveExpressions, evaluateCondition } from "./expression.ts";
 import { dispatch } from "./dispatch.ts";
-import { generateRunId, initRunDir, writeState, writeStepOutput, writeMetrics, buildResult, formatResult } from "./state.ts";
+import { generateRunId, initRunDir, getWorkflowDir, writeState, writeStepOutput, writeMetrics, buildResult, formatResult } from "./state.ts";
 import { resolveCompletion } from "./completion.ts";
 import { createProgressWidget } from "./tui.ts";
 
@@ -416,7 +416,7 @@ export async function executeWorkflow(
 
   // 2. Initialize run directory and state
   const runId = generateRunId(spec.name);
-  const runDir = initRunDir(ctx.cwd, runId);
+  const runDir = initRunDir(ctx.cwd, spec.name, runId);
   const state: ExecutionState = {
     input,
     steps: {},
@@ -688,6 +688,7 @@ export async function executeWorkflow(
   // 6. Process artifacts
   const writtenArtifacts: Record<string, string> = {};
   if (spec.artifacts) {
+    const workflowDir = getWorkflowDir(ctx.cwd, spec.name);
     const artifactScope: Record<string, unknown> = {
       input: state.input,
       steps: state.steps,
@@ -698,10 +699,11 @@ export async function executeWorkflow(
     for (const [name, artifactSpec] of Object.entries(spec.artifacts)) {
       try {
         // Resolve the output path (may contain expressions)
+        // Relative paths resolve against the workflow's output directory
         const resolvedPath = String(resolveExpressions(artifactSpec.path, artifactScope));
         const absolutePath = path.isAbsolute(resolvedPath)
           ? resolvedPath
-          : path.resolve(ctx.cwd, resolvedPath);
+          : path.resolve(workflowDir, resolvedPath);
 
         // Resolve the data source — wrap `from` as ${{ from }} for expression resolution
         const fromExpr = artifactSpec.from.startsWith("${{") ? artifactSpec.from : `\${{ ${artifactSpec.from} }}`;

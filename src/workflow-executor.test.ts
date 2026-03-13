@@ -519,7 +519,7 @@ describe("artifacts", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  it("handles relative artifact paths resolved against cwd", async () => {
+  it("handles relative artifact paths resolved against workflow dir", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
     const spec: WorkflowSpec = {
       name: "test-artifact-rel",
@@ -534,7 +534,7 @@ describe("artifacts", () => {
       },
       artifacts: {
         report: {
-          path: "output/latest.json",
+          path: "latest.json",
           from: "steps.produce.output",
         },
       },
@@ -550,7 +550,9 @@ describe("artifacts", () => {
 
     assert.strictEqual(result.status, "completed");
     assert.ok(result.artifacts);
-    const expectedPath = path.resolve(tmpDir, "output/latest.json");
+    // Artifact path should be under .pi/workflow-runs/<workflow-name>/
+    const workflowDir = path.join(tmpDir, ".pi", "workflow-runs", "test-artifact-rel");
+    const expectedPath = path.resolve(workflowDir, "latest.json");
     assert.strictEqual(result.artifacts!.report, expectedPath);
     assert.ok(fs.existsSync(expectedPath));
 

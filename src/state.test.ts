@@ -23,11 +23,12 @@ describe("generateRunId", () => {
 });
 
 describe("initRunDir", () => {
-  it("creates directory structure", () => {
+  it("creates directory structure under workflow name", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-state-"));
-    const runDir = initRunDir(tmpDir, "test-run-1");
+    const runDir = initRunDir(tmpDir, "test-wf", "test-run-1");
 
     assert.ok(fs.existsSync(runDir));
+    assert.ok(runDir.includes(path.join("test-wf", "runs", "test-run-1")));
     assert.ok(fs.existsSync(path.join(runDir, "sessions")));
     assert.ok(fs.existsSync(path.join(runDir, "outputs")));
 

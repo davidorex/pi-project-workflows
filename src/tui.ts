@@ -72,11 +72,16 @@ export function createProgressWidget(
           const stepResult: StepResult | undefined = widgetState.state.steps[stepName];
           let line: string;
 
-          if (stepResult && stepResult.status === "completed") {
+          if (stepResult && stepResult.status === "skipped") {
+            // Skipped step: ⊘ stepName [skipped]
+            line = `  ${theme.fg("dim", "\u2298")} ${stepName} ${theme.fg("dim", "[skipped]")}`;
+          } else if (stepResult && stepResult.status === "completed") {
             const dur = formatDuration(stepResult.durationMs);
             const cost = formatCost(stepResult.usage.cost);
             const tok = formatTokens(stepResult.usage.input + stepResult.usage.output);
-            line = `  ${theme.fg("success", "\u2713")} ${stepName}  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}  ${theme.fg("dim", tok)}`;
+            // Show step type indicator for gate/transform
+            const typeTag = stepResult.agent === "gate" ? " [gate]" : stepResult.agent === "transform" ? " [transform]" : "";
+            line = `  ${theme.fg("success", "\u2713")} ${stepName}${typeTag}  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}  ${theme.fg("dim", tok)}`;
           } else if (stepResult && stepResult.status === "failed") {
             const dur = formatDuration(stepResult.durationMs);
             const errorPreview = stepResult.error || "Unknown error";

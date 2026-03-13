@@ -1,0 +1,46 @@
+{
+  "totalUsage": {
+    "input": 13,
+    "output": 18392,
+    "cacheRead": 65364,
+    "cacheWrite": 82484,
+    "cost": 1.008072,
+    "turns": 10
+  },
+  "totalDurationMs": 361266,
+  "steps": {
+    "extract-requirements": {
+      "usage": {
+        "input": 5,
+        "output": 8810,
+        "cacheRead": 15499,
+        "cacheWrite": 32332,
+        "cost": 0.43009949999999997,
+        "turns": 4
+      },
+      "durationMs": 161228
+    },
+    "extract-tests": {
+      "usage": {
+        "input": 4,
+        "output": 5829,
+        "cacheRead": 9454,
+        "cacheWrite": 23594,
+        "cost": 0.29793450000000005,
+        "turns": 3
+      },
+      "durationMs": 110089
+    },
+    "diff": {
+      "usage": {
+        "input": 4,
+        "output": 3753,
+        "cacheRead": 40411,
+        "cacheWrite": 26558,
+        "cost": 0.280038,
+        "turns": 3
+      },
+      "durationMs": 89949
+    }
+  }
+}

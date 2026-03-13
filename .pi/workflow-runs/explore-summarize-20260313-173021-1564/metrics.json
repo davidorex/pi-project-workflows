@@ -1,0 +1,35 @@
+{
+  "totalUsage": {
+    "input": 6,
+    "output": 2685,
+    "cacheRead": 9466,
+    "cacheWrite": 31991,
+    "cost": 0.27183175,
+    "turns": 4
+  },
+  "totalDurationMs": 64510,
+  "steps": {
+    "explore": {
+      "usage": {
+        "input": 4,
+        "output": 1959,
+        "cacheRead": 9466,
+        "cacheWrite": 26246,
+        "cost": 0.2177655,
+        "turns": 3
+      },
+      "durationMs": 45344
+    },
+    "summarize": {
+      "usage": {
+        "input": 2,
+        "output": 726,
+        "cacheRead": 0,
+        "cacheWrite": 5745,
+        "cost": 0.054066249999999996,
+        "turns": 1
+      },
+      "durationMs": 19166
+    }
+  }
+}

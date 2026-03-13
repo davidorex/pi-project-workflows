@@ -316,3 +316,4 @@ function buildErrorReason(
 
   return `property '${failedSegment}' is undefined`;
 }
+

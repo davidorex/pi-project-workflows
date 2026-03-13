@@ -1,0 +1,23 @@
+{
+  "input": {
+    "path": "src/"
+  },
+  "steps": {
+    "explore": {
+      "step": "explore",
+      "agent": "demo-explorer",
+      "status": "failed",
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 0
+      },
+      "durationMs": 0,
+      "error": "Expression error in '${{ input.question }}': property 'question' is undefined on input"
+    }
+  },
+  "status": "failed"
+}

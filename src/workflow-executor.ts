@@ -120,7 +120,12 @@ export async function executeWorkflow(
     ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
   }
 
-  // 4. Execute steps in declared order
+  // 4. Set working message
+  if (ctx.hasUI) {
+    ctx.ui.setWorkingMessage(`Running ${spec.name} workflow...`);
+  }
+
+  // 5. Execute steps in declared order
   const stepEntries = Object.entries(spec.steps);
   for (let i = 0; i < stepEntries.length; i++) {
     const [stepName, stepSpec] = stepEntries[i];
@@ -233,6 +238,7 @@ export async function executeWorkflow(
   // 6. Clean up TUI
   if (ctx.hasUI) {
     ctx.ui.setWidget("workflow-progress", undefined);
+    ctx.ui.setWorkingMessage(undefined);
   }
 
   // 7. Build and inject result

@@ -1,0 +1,19 @@
+{
+  "number": 5,
+  "name": "Templates",
+  "intent": "Integrate Nunjucks template engine for prompt composition with three-tier resolution, template inheritance, and ${{ }} protection.",
+  "status": "completed",
+  "success_criteria": [
+    { "criterion": "Nunjucks renders {% extends %}/{% block %}/{% include %}/{% macro %}", "verify_method": "command" },
+    { "criterion": "Three-tier template discovery: project > user > builtin", "verify_method": "command" },
+    { "criterion": "${{ }} expressions protected from Nunjucks interpretation", "verify_method": "command" },
+    { "criterion": "Agent specs compile prompts through Nunjucks unconditionally", "verify_method": "command" },
+    { "criterion": "Template analysis demo with shared base template works", "verify_method": "command" }
+  ],
+  "specs": [
+    { "number": 18, "name": "Template Engine", "intent": "Nunjucks integration with FileSystemLoader, ${{ }} protection, three-tier resolution", "status": "completed", "acceptance_criteria": ["renderTemplate() resolves templates from three tiers", "${{ }} syntax preserved through Nunjucks rendering", "{% extends %} and {% block %} work across tiers"] },
+    { "number": 19, "name": "Template Demo", "intent": "Demonstrate template inheritance with analyzers sharing a base template", "status": "completed", "acceptance_criteria": ["Three analyzers extend base template", "Task templates render from typed input data", "End-to-end demo produces correct output"] }
+  ],
+  "dependencies": [1],
+  "artifacts_produced": ["src/template.ts"]
+}

@@ -1,0 +1,27 @@
+{
+  "number": 1,
+  "name": "Foundation",
+  "intent": "Build the minimal foundation for sequential workflow execution with typed data flow — enough to parse specs, validate schemas, dispatch subprocesses, resolve expressions, persist state, and show TUI progress.",
+  "status": "completed",
+  "success_criteria": [
+    { "criterion": "Workflow spec parsing from YAML produces valid WorkflowSpec", "verify_method": "command" },
+    { "criterion": "AJV validates input against workflow input schema", "verify_method": "command" },
+    { "criterion": "Sequential steps execute as pi subprocesses", "verify_method": "command" },
+    { "criterion": "${{ }} expressions resolve property access paths", "verify_method": "command" },
+    { "criterion": "Step outputs are named and accessible to downstream steps", "verify_method": "command" },
+    { "criterion": "State persisted to disk after each step", "verify_method": "command" },
+    { "criterion": "TUI progress widget displays during execution", "verify_method": "inspect" },
+    { "criterion": "Demo workflow (explore → summarize) runs end-to-end", "verify_method": "command" }
+  ],
+  "specs": [
+    { "number": 1, "name": "Types and Schema Validation", "intent": "Define core interfaces and AJV validation wrapper", "status": "completed", "acceptance_criteria": ["WorkflowSpec, StepSpec, StepResult, WorkflowResult types defined", "validate() and validateFromFile() work with AJV"] },
+    { "number": 2, "name": "Expression Evaluator", "intent": "Implement ${{ }} property access resolution", "status": "completed", "acceptance_criteria": ["resolveExpression() handles nested property paths", "resolveExpressions() recursively resolves objects/arrays", "Undefined paths produce clear errors"] },
+    { "number": 3, "name": "Workflow Spec Parsing and Discovery", "intent": "Parse .workflow.yaml files and scan directories", "status": "completed", "acceptance_criteria": ["YAML parsed to WorkflowSpec", "Discovery scans .pi/workflows/ and ~/.pi/agent/workflows/"] },
+    { "number": 4, "name": "Subprocess Dispatch", "intent": "Spawn pi --mode json with model override, tool filtering, session capture", "status": "completed", "acceptance_criteria": ["Subprocess spawned with correct args", "Usage accumulated from message_end events", "Output extracted from last assistant message"] },
+    { "number": 5, "name": "State Persistence and TUI", "intent": "Run directory management, atomic state writes, progress widget", "status": "completed", "acceptance_criteria": ["Run directory created with sessions/ and outputs/", "State written atomically (tmp + rename)", "Widget renders step status and timing"] },
+    { "number": 6, "name": "Workflow Executor", "intent": "Main orchestration loop connecting all modules", "status": "completed", "acceptance_criteria": ["Steps execute sequentially", "Expressions resolved before dispatch", "Output validated against schema", "Fail-fast on step failure"] },
+    { "number": 7, "name": "Extension Entry Point and Demo", "intent": "Register tool, commands, and provide working demo", "status": "completed", "acceptance_criteria": ["workflow tool registered", "/workflow commands registered", "explore-summarize demo runs end-to-end"] }
+  ],
+  "dependencies": [],
+  "artifacts_produced": ["src/types.ts", "src/schema-validator.ts", "src/expression.ts", "src/workflow-spec.ts", "src/workflow-discovery.ts", "src/dispatch.ts", "src/state.ts", "src/tui.ts", "src/workflow-executor.ts", "src/index.ts", "demo/explore-summarize.workflow.yaml"]
+}

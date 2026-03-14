@@ -1,0 +1,21 @@
+{
+  "number": 7,
+  "name": "Project Structure, Execution Primitives, Verification",
+  "intent": "Decompose project into typed JSON blocks, add forEach and command step types, add verification as typed results, and build a self-implementing workflow demo.",
+  "status": "in-progress",
+  "success_criteria": [
+    { "criterion": "Project decomposed into typed JSON blocks with schemas", "verify_method": "command" },
+    { "criterion": "forEach step iterates over arrays, binds each element via as:", "verify_method": "command" },
+    { "criterion": "command step runs shell operations and captures output as typed JSON", "verify_method": "command" },
+    { "criterion": "verify step produces truths, artifacts, requirements_coverage, criteria_results, gaps", "verify_method": "command" },
+    { "criterion": "Self-implementing workflow demo runs on spec 27", "verify_method": "human" }
+  ],
+  "specs": [
+    { "number": 26, "name": "Project Contracts and Blocks", "intent": "Define JSON schemas and populate typed blocks from master doc content — project becomes structured data that templates compose from", "status": "in-progress", "acceptance_criteria": ["6 schema files in project/schemas/", "7+ block files in project/", "All blocks validate against schemas", "Content from master doc fully represented"] },
+    { "number": 27, "name": "forEach and command Step Types", "intent": "Add forEach (iterate over array, bind each element, collect outputs) and command (run shell operation, capture stdout as typed data) step types", "status": "planned", "acceptance_criteria": ["forEach iterates with as: binding", "command captures stdout", "Both have tests"] },
+    { "number": 28, "name": "Verification as Typed Results", "intent": "Add verify step type with truths/evidence, artifact checks, requirements coverage, criteria evaluation, gaps, and human verification items", "status": "planned", "acceptance_criteria": ["verify step produces structured result", "Gaps trigger retry or blocker artifacts", "Human verification items trigger pause"] },
+    { "number": 29, "name": "Self-Implementing Workflow Demo", "intent": "Workflow reads project blocks, decomposes phase spec into plans, executes plans, verifies results — project implements itself", "status": "planned", "acceptance_criteria": ["Reads project blocks via templates", "Plan decomposition produces informed implementation plans", "Verification against success criteria", "End-to-end demo runs"] }
+  ],
+  "dependencies": [1, 2, 3, 4, 5],
+  "artifacts_produced": ["project/schemas/", "project/*.json", "project/phases/*.json"]
+}

@@ -1,0 +1,166 @@
+/**
+ * Parallel step executors — concurrent step execution within a layer
+ * or within a single parallel step declaration.
+ */
+import type { StepResult, StepSpec, ExecutionState, WorkflowSpec } from "./types.ts";
+import type { ProgressWidgetState } from "./tui.ts";
+import type { ExecutionLayer } from "./dag.ts";
+import { createProgressWidget } from "./tui.ts";
+import { zeroUsage, addUsage, WIDGET_ID } from "./step-shared.ts";
+
+/** Options shared by parallel execution helpers. */
+export interface ParallelOptions {
+  ctx: any;
+  pi: any;
+  signal?: AbortSignal;
+  loadAgent: (name: string) => any;
+  runDir: string;
+  spec: WorkflowSpec;
+  widgetState: ProgressWidgetState;
+}
+
+/** Callback type for executing a single step — injected to avoid circular imports. */
+export type SingleStepExecutor = (
+  stepName: string,
+  stepSpec: StepSpec,
+  state: ExecutionState,
+  options: ParallelOptions,
+) => Promise<boolean>;
+
+/**
+ * Execute all steps in a layer concurrently.
+ *
+ * All steps start at the same time. If any step fails, remaining steps
+ * are cancelled via a shared AbortController. All results are collected
+ * before proceeding to the next layer.
+ *
+ * Parallel steps write to distinct keys in `state.steps`, which is safe
+ * in single-threaded Node.js. `writeState` uses atomic write (tmp + rename),
+ * so concurrent calls are safe — last one wins.
+ */
+export async function executeParallelLayer(
+  layer: ExecutionLayer,
+  spec: WorkflowSpec,
+  state: ExecutionState,
+  executeSingleStep: SingleStepExecutor,
+  options: ParallelOptions,
+): Promise<void> {
+  const { ctx, signal, widgetState } = options;
+
+  // Create a child AbortController to cancel siblings on failure
+  const layerController = new AbortController();
+  if (signal) {
+    if (signal.aborted) {
+      layerController.abort(signal.reason);
+    } else {
+      signal.addEventListener("abort", () => layerController.abort(signal.reason), { once: true });
+    }
+  }
+
+  // Update widget to show all parallel steps as running
+  widgetState.currentStep = layer.steps.join(", ");
+  if (ctx.hasUI) {
+    ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
+  }
+
+  // Launch all steps concurrently
+  const promises = layer.steps.map(async (stepName) => {
+    const stepSpec = spec.steps[stepName];
+    const success = await executeSingleStep(stepName, stepSpec, state, {
+      ...options,
+      signal: layerController.signal,
+    });
+    if (!success && !layerController.signal.aborted) {
+      layerController.abort(new Error(`Step '${stepName}' failed`));
+    }
+    return { stepName, success };
+  });
+
+  const results = await Promise.allSettled(promises);
+
+  // Check for failures
+  for (const result of results) {
+    if (result.status === "rejected") {
+      state.status = "failed";
+      break;
+    }
+    if (result.status === "fulfilled" && !result.value.success) {
+      state.status = "failed";
+      break;
+    }
+  }
+}
+
+/**
+ * Execute a parallel step — runs all named sub-steps concurrently.
+ *
+ * Similar to executeParallelLayer but operates on sub-steps within
+ * a single declared step. The parallel step's result aggregates
+ * all sub-step results. Sub-step outputs are accessible via
+ * `${{ steps.<parallelStepName>.output.<subStepName> }}`.
+ */
+export async function executeParallelStep(
+  parallelSpec: Record<string, StepSpec>,
+  stepName: string,
+  state: ExecutionState,
+  executeSingleStep: SingleStepExecutor,
+  options: ParallelOptions,
+): Promise<StepResult> {
+  const startTime = Date.now();
+  const { signal } = options;
+
+  const parallelController = new AbortController();
+  if (signal) {
+    if (signal.aborted) {
+      parallelController.abort(signal.reason);
+    } else {
+      signal.addEventListener("abort", () => parallelController.abort(signal.reason), { once: true });
+    }
+  }
+
+  // Sub-steps share the outer state for reading but write to their own keys
+  const subResults: Record<string, StepResult> = {};
+
+  const subPromises = Object.entries(parallelSpec).map(async ([subName, subSpec]) => {
+    const success = await executeSingleStep(subName, subSpec, state, {
+      ...options,
+      signal: parallelController.signal,
+    });
+    subResults[subName] = state.steps[subName];
+    if (!success && !parallelController.signal.aborted) {
+      parallelController.abort(new Error(`Sub-step '${subName}' failed`));
+    }
+    return success;
+  });
+
+  const settled = await Promise.allSettled(subPromises);
+
+  // Aggregate usage and outputs
+  const totalUsage = zeroUsage();
+  const subOutputs: Record<string, unknown> = {};
+  let anyFailed = false;
+
+  for (const [subName] of Object.entries(parallelSpec)) {
+    const sub = subResults[subName];
+    if (sub) {
+      addUsage(totalUsage, sub.usage);
+      subOutputs[subName] = sub.output ?? sub.textOutput;
+      if (sub.status === "failed") anyFailed = true;
+    }
+  }
+
+  // Check for rejected promises too
+  for (const s of settled) {
+    if (s.status === "rejected") anyFailed = true;
+  }
+
+  return {
+    step: stepName,
+    agent: "parallel",
+    status: anyFailed ? "failed" : "completed",
+    output: subOutputs,
+    textOutput: JSON.stringify(subOutputs, null, 2),
+    usage: totalUsage,
+    durationMs: Date.now() - startTime,
+  };
+}

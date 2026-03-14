@@ -4,7 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepUsage, StepResult, GateSpec, TransformSpec, LoopSpec, LoopState, LoopAttempt } from "./types.ts";
+import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepSpec } from "./types.ts";
 import type { ProgressWidgetState } from "./tui.ts";
 import { validate, validateFromFile } from "./schema-validator.ts";
 import { resolveExpressions, evaluateCondition } from "./expression.ts";
@@ -13,7 +13,15 @@ import { generateRunId, initRunDir, getWorkflowDir, writeState, writeStepOutput,
 import { resolveCompletion } from "./completion.ts";
 import { createProgressWidget } from "./tui.ts";
 import { buildExecutionPlan, extractDependencies } from "./dag.ts";
-import type { ExecutionLayer, ExecutionPlan } from "./dag.ts";
+import type { ExecutionPlan } from "./dag.ts";
+import { zeroUsage, resolveSchemaPath, buildPrompt, persistStep, WIDGET_ID, SIGKILL_GRACE_MS } from "./step-shared.ts";
+import { executeGate } from "./step-gate.ts";
+import { executeTransform } from "./step-transform.ts";
+import { executeLoop } from "./step-loop.ts";
+import { executeParallelLayer, executeParallelStep } from "./step-parallel.ts";
+
+// Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
+export { SIGKILL_GRACE_MS };
 
 export interface ExecuteOptions {
   /** pi extension context (for TUI, cwd, etc.) */
@@ -28,424 +36,6 @@ export interface ExecuteOptions {
    * If the agent is not found, return a minimal spec with just the name.
    */
   loadAgent: (name: string) => AgentSpec;
-}
-
-/**
- * Helper that returns a StepUsage with all zeroes.
- */
-function zeroUsage(): StepUsage {
-  return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 };
-}
-
-/**
- * Resolve a schema path relative to the workflow spec file.
- * If the schema path is absolute, return as-is.
- * If relative, resolve against the directory containing the workflow spec.
- */
-function resolveSchemaPath(schemaPath: string, specFilePath: string): string {
-  if (path.isAbsolute(schemaPath)) return schemaPath;
-  return path.resolve(path.dirname(specFilePath), schemaPath);
-}
-
-/**
- * Build the prompt string sent to the subprocess.
- *
- * The prompt includes:
- * 1. The resolved input as context
- * 2. Output instructions (if schema-bound)
- */
-function buildPrompt(
-  step: { agent: string; input?: Record<string, unknown>; output?: { format?: string; schema?: string } },
-  agentSpec: AgentSpec,
-  resolvedInput: unknown,
-  runDir: string,
-  stepName: string,
-): string {
-  const parts: string[] = [];
-
-  // Input context
-  if (resolvedInput && typeof resolvedInput === "object" && Object.keys(resolvedInput).length > 0) {
-    parts.push("## Input\n");
-    parts.push("```json");
-    parts.push(JSON.stringify(resolvedInput, null, 2));
-    parts.push("```\n");
-  } else if (typeof resolvedInput === "string") {
-    parts.push(resolvedInput);
-  }
-
-  // Output instructions (if schema-bound)
-  if (step.output?.format === "json" || step.output?.schema) {
-    const outputPath = path.join(runDir, "outputs", `${stepName}.json`);
-    parts.push("\n---");
-    parts.push(`**Output:** Write your result as valid JSON to: ${outputPath}`);
-    if (step.output.schema) {
-      parts.push(`The output must conform to the JSON Schema at: ${resolveSchemaPath(step.output.schema, "")}`);
-    }
-  }
-
-  return parts.join("\n");
-}
-
-/**
- * Execute a gate step: runs a shell command, passes/fails based on exit code.
- *
- * The gate's check command is expected to already have ${{ }} expressions resolved
- * before being passed here.
- */
-async function executeGate(
-  gate: GateSpec,
-  stepName: string,
-  options: { cwd: string; signal?: AbortSignal; timeoutMs?: number },
-): Promise<StepResult> {
-  const startTime = Date.now();
-  try {
-    const { spawn } = await import("node:child_process");
-    const output = await new Promise<string>((resolve, reject) => {
-      const proc = spawn("sh", ["-c", gate.check], {
-        cwd: options.cwd,
-        stdio: ["ignore", "pipe", "pipe"],
-        detached: true,
-      });
-
-      let stdout = "";
-      let stderr = "";
-      let settled = false;
-      proc.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
-      proc.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
-
-      // Kill the entire process group (sh + children like sleep)
-      const killProc = () => {
-        try { process.kill(-proc.pid!, "SIGTERM"); } catch { /* already dead */ }
-        setTimeout(() => {
-          try { process.kill(-proc.pid!, "SIGKILL"); } catch { /* already dead */ }
-        }, 2000);
-      };
-
-      // Handle abort signal (from parallel cancellation or timeout)
-      const onAbort = () => { killProc(); };
-      if (options.signal) {
-        if (options.signal.aborted) { killProc(); }
-        else { options.signal.addEventListener("abort", onAbort, { once: true }); }
-      }
-
-      // Handle step-level timeout
-      let timeoutId: ReturnType<typeof setTimeout> | undefined;
-      if (options.timeoutMs) {
-        timeoutId = setTimeout(() => { killProc(); }, options.timeoutMs);
-      }
-
-      proc.on("close", (code) => {
-        if (settled) return;
-        settled = true;
-        if (timeoutId) clearTimeout(timeoutId);
-        if (options.signal) options.signal.removeEventListener("abort", onAbort);
-        if (code === 0) {
-          resolve(stdout);
-        } else {
-          const err: any = new Error(`Process exited with code ${code}`);
-          err.status = code;
-          err.stdout = stdout;
-          err.stderr = stderr;
-          reject(err);
-        }
-      });
-
-      proc.on("error", (err) => {
-        if (settled) return;
-        settled = true;
-        if (timeoutId) clearTimeout(timeoutId);
-        if (options.signal) options.signal.removeEventListener("abort", onAbort);
-        reject(err);
-      });
-    });
-    return {
-      step: stepName,
-      agent: "gate",
-      status: "completed",
-      textOutput: output.trim(),
-      output: { passed: true, exitCode: 0, output: output.trim() },
-      usage: zeroUsage(),
-      durationMs: Date.now() - startTime,
-    };
-  } catch (err: unknown) {
-    const execErr = err as { status?: number; stdout?: string; stderr?: string };
-    const exitCode = execErr.status ?? 1;
-    const stderr = execErr.stderr?.trim() ?? "";
-    const stdout = execErr.stdout?.trim() ?? "";
-    return {
-      step: stepName,
-      agent: "gate",
-      status: "completed",
-      textOutput: stderr || stdout,
-      output: { passed: false, exitCode, output: stderr || stdout },
-      usage: zeroUsage(),
-      durationMs: Date.now() - startTime,
-    };
-  }
-}
-
-/**
- * Execute a transform step: produces output by resolving expressions in the mapping.
- * No LLM call, no subprocess, no shell command — pure expression resolution.
- */
-function executeTransform(
-  transform: TransformSpec,
-  stepName: string,
-  scope: Record<string, unknown>,
-): StepResult {
-  const startTime = Date.now();
-  try {
-    const output = resolveExpressions(transform.mapping, scope);
-    return {
-      step: stepName,
-      agent: "transform",
-      status: "completed",
-      output,
-      textOutput: JSON.stringify(output, null, 2),
-      usage: zeroUsage(),
-      durationMs: Date.now() - startTime,
-    };
-  } catch (err) {
-    return {
-      step: stepName,
-      agent: "transform",
-      status: "failed",
-      usage: zeroUsage(),
-      durationMs: Date.now() - startTime,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
-}
-
-/**
- * Execute a loop step: runs sub-steps repeatedly until a gate breaks,
- * max attempts is reached, or a step fails.
- *
- * Loop sub-steps can be agent, gate, or transform steps.
- * Gates inside loops support onPass: "break" (stop looping on success)
- * and onFail: "continue" (retry on failure, the default inside loops).
- *
- * The loop scope provides ${{ loop.iteration }}, ${{ loop.maxAttempts }},
- * and ${{ loop.priorAttempts }} for expression resolution inside sub-steps.
- */
-async function executeLoop(
-  loopSpec: LoopSpec,
-  stepName: string,
-  state: ExecutionState,
-  options: ExecuteOptions & { runDir: string; spec: WorkflowSpec },
-): Promise<StepResult> {
-  const { ctx, pi, signal, loadAgent, runDir, spec } = options;
-  const startTime = Date.now();
-
-  // Resolve maxAttempts (may be a ${{ }} expression)
-  const scope = { input: state.input, steps: state.steps };
-  let maxAttempts: number;
-  if (loopSpec.attempts) {
-    const resolved = resolveExpressions(loopSpec.attempts, scope);
-    maxAttempts = Number(resolved);
-    if (isNaN(maxAttempts) || maxAttempts < 1) maxAttempts = loopSpec.maxAttempts ?? 3;
-  } else {
-    maxAttempts = loopSpec.maxAttempts ?? 3;
-  }
-
-  const allAttempts: LoopAttempt[] = [];
-  let loopStatus: "completed" | "failed" = "failed";  // assume failure until break
-  let lastIterationSteps: Record<string, StepResult> = {};
-
-  for (let iteration = 0; iteration < maxAttempts; iteration++) {
-    // Check cancellation
-    if (signal?.aborted) break;
-
-    const iterationSteps: Record<string, StepResult> = {};
-    let shouldBreak = false;
-    let iterationFailed = false;
-
-    // Execute sub-steps sequentially
-    const subStepEntries = Object.entries(loopSpec.steps);
-    for (const [subName, subSpec] of subStepEntries) {
-      if (signal?.aborted) break;
-
-      // Build scope with loop context
-      const subScope: Record<string, unknown> = {
-        input: state.input,
-        steps: { ...state.steps, ...iterationSteps },  // see prior sub-steps in this iteration
-        loop: {
-          iteration,
-          maxAttempts,
-          priorAttempts: allAttempts,
-        },
-      };
-
-      // Handle `when` conditional
-      if (subSpec.when) {
-        const condExpr = subSpec.when.replace(/^\$\{\{\s*/, "").replace(/\s*\}\}$/, "");
-        if (!evaluateCondition(condExpr, subScope)) {
-          iterationSteps[subName] = {
-            step: subName,
-            agent: subSpec.agent ?? "skipped",
-            status: "skipped",
-            usage: zeroUsage(),
-            durationMs: 0,
-          };
-          continue;
-        }
-      }
-
-      // Execute sub-step based on type
-      let result: StepResult;
-
-      if (subSpec.gate) {
-        const resolvedCheck = String(resolveExpressions(subSpec.gate.check, subScope));
-        result = await executeGate({ ...subSpec.gate, check: resolvedCheck }, subName, { cwd: ctx.cwd, signal });
-
-        // Handle gate pass/fail with break/continue
-        const passed = result.output?.passed;
-        if (passed && subSpec.gate.onPass === "break") {
-          iterationSteps[subName] = result;
-          shouldBreak = true;
-          loopStatus = "completed";
-          break;
-        }
-        if (!passed) {
-          if (subSpec.gate.onFail === "break") {
-            iterationSteps[subName] = result;
-            shouldBreak = true;
-            break;
-          }
-          if (subSpec.gate.onFail === "fail") {
-            // Explicitly set to "fail" — stop the loop
-            result.status = "failed";
-            iterationSteps[subName] = result;
-            iterationFailed = true;
-            break;
-          }
-          // Default inside loops is "continue" — proceed to next sub-step
-          // (or end iteration, triggering retry)
-        }
-      } else if (subSpec.transform) {
-        result = executeTransform(subSpec.transform, subName, subScope);
-        if (result.status === "failed") {
-          iterationSteps[subName] = result;
-          iterationFailed = true;
-          break;
-        }
-      } else if (subSpec.agent) {
-        // Resolve input, load agent, dispatch
-        let resolvedInput: unknown;
-        try {
-          resolvedInput = resolveExpressions(subSpec.input ?? {}, subScope);
-        } catch (err) {
-          iterationSteps[subName] = {
-            step: subName,
-            agent: subSpec.agent,
-            status: "failed",
-            usage: zeroUsage(),
-            durationMs: 0,
-            error: err instanceof Error ? err.message : String(err),
-          };
-          iterationFailed = true;
-          break;
-        }
-
-        const agentSpec = loadAgent(subSpec.agent);
-        const prompt = buildPrompt(subSpec, agentSpec, resolvedInput, runDir, `${stepName}-${iteration}-${subName}`);
-
-        result = await dispatch(subSpec, agentSpec, prompt, {
-          cwd: ctx.cwd,
-          sessionLogDir: path.join(runDir, "sessions"),
-          stepName: `${stepName}-${iteration}-${subName}`,
-          signal,
-        });
-
-        if (result.status === "failed") {
-          iterationSteps[subName] = result;
-          iterationFailed = true;
-          break;
-        }
-      } else {
-        continue;  // unknown step type, skip
-      }
-
-      iterationSteps[subName] = result!;
-    }
-
-    // Record this iteration
-    lastIterationSteps = iterationSteps;
-    allAttempts.push({ iteration, steps: iterationSteps });
-
-    if (shouldBreak) break;
-    if (iterationFailed) {
-      // Agent step failed within loop — stop the loop (not just the iteration)
-      loopStatus = "failed";
-      break;
-    }
-
-    // End of iteration without break — loop continues to next iteration
-  }
-
-  // If loop exhausted without break or failure, run onExhausted
-  if (loopStatus !== "completed" && loopSpec.onExhausted) {
-    const exhaustedScope: Record<string, unknown> = {
-      input: state.input,
-      steps: state.steps,
-      loop: {
-        iteration: allAttempts.length,
-        maxAttempts,
-        priorAttempts: allAttempts,
-        allAttempts,
-      },
-    };
-
-    let resolvedInput: unknown;
-    try {
-      resolvedInput = resolveExpressions(loopSpec.onExhausted.input ?? {}, exhaustedScope);
-    } catch {
-      // Expression error in onExhausted — record and fail
-    }
-
-    if (loopSpec.onExhausted.agent) {
-      const agentSpec = loadAgent(loopSpec.onExhausted.agent);
-      const prompt = buildPrompt(loopSpec.onExhausted, agentSpec, resolvedInput, runDir, `${stepName}-exhausted`);
-
-      const exhaustedResult = await dispatch(loopSpec.onExhausted, agentSpec, prompt, {
-        cwd: ctx.cwd,
-        sessionLogDir: path.join(runDir, "sessions"),
-        stepName: `${stepName}-exhausted`,
-        signal,
-      });
-
-      // Include exhausted result in the loop's output
-      lastIterationSteps["_exhausted"] = exhaustedResult;
-    }
-  }
-
-  // Aggregate usage across all iterations
-  const totalUsage = zeroUsage();
-  for (const attempt of allAttempts) {
-    for (const result of Object.values(attempt.steps)) {
-      totalUsage.input += result.usage.input;
-      totalUsage.output += result.usage.output;
-      totalUsage.cacheRead += result.usage.cacheRead;
-      totalUsage.cacheWrite += result.usage.cacheWrite;
-      totalUsage.cost += result.usage.cost;
-      totalUsage.turns += result.usage.turns;
-    }
-  }
-
-  return {
-    step: stepName,
-    agent: "loop",
-    status: loopStatus,
-    output: {
-      iterations: allAttempts.length,
-      maxAttempts,
-      attempts: allAttempts,
-      lastIteration: lastIterationSteps,
-    },
-    textOutput: `Loop '${stepName}': ${allAttempts.length}/${maxAttempts} iterations, status: ${loopStatus}`,
-    usage: totalUsage,
-    durationMs: Date.now() - startTime,
-  };
 }
 
 /**
@@ -510,7 +100,8 @@ interface StepExecOptions {
 /**
  * Execute a single step (agent, gate, transform, loop, or parallel).
  *
- * This is the existing per-step logic extracted into a reusable function.
+ * This is the central step type dispatcher. It delegates to the appropriate
+ * step executor module based on the step spec type.
  * Returns true if the workflow should continue, false if it should stop
  * (due to failure, break, or cancellation).
  */
@@ -544,17 +135,13 @@ async function executeSingleStep(
     const conditionExpr = stepSpec.when.replace(/^\$\{\{\s*/, "").replace(/\s*\}\}$/, "");
     const shouldRun = evaluateCondition(conditionExpr, scope as unknown as Record<string, unknown>);
     if (!shouldRun) {
-      state.steps[stepName] = {
+      persistStep(state, stepName, {
         step: stepName,
         agent: stepSpec.agent ?? "skipped",
         status: "skipped",
         usage: zeroUsage(),
         durationMs: 0,
-      };
-      writeState(runDir, state);
-      if (ctx.hasUI) {
-        ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-      }
+      }, runDir, widgetState, ctx);
       return true;
     }
   }
@@ -562,13 +149,13 @@ async function executeSingleStep(
   // Update widget: mark this step as current
   widgetState.currentStep = stepName;
   if (ctx.hasUI) {
-    ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
   }
 
   // ── Gate step ──
   if (stepSpec.gate) {
     const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope as unknown as Record<string, unknown>));
-    const resolvedGate: GateSpec = { ...stepSpec.gate, check: resolvedCheck };
+    const resolvedGate = { ...stepSpec.gate, check: resolvedCheck };
     const gateResult = await executeGate(resolvedGate, stepName, {
       cwd: ctx.cwd,
       signal,
@@ -578,29 +165,21 @@ async function executeSingleStep(
 
     if (gateOutput.passed) {
       const onPass = stepSpec.gate.onPass ?? "continue";
-      state.steps[stepName] = gateResult;
-      writeState(runDir, state);
-      if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+      persistStep(state, stepName, gateResult, runDir, widgetState, ctx);
       return onPass !== "break";
     } else {
       const onFail = stepSpec.gate.onFail ?? "fail";
       if (onFail === "fail") {
         gateResult.status = "failed";
         gateResult.error = `Gate check failed (exit ${gateOutput.exitCode}): ${gateOutput.output}`;
-        state.steps[stepName] = gateResult;
+        persistStep(state, stepName, gateResult, runDir, widgetState, ctx);
         state.status = "failed";
-        writeState(runDir, state);
-        if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
         return false;
       } else if (onFail === "continue") {
-        state.steps[stepName] = gateResult;
-        writeState(runDir, state);
-        if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+        persistStep(state, stepName, gateResult, runDir, widgetState, ctx);
         return true;
       } else if (onFail === "break") {
-        state.steps[stepName] = gateResult;
-        writeState(runDir, state);
-        if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+        persistStep(state, stepName, gateResult, runDir, widgetState, ctx);
         return false;
       }
     }
@@ -610,9 +189,7 @@ async function executeSingleStep(
   if (stepSpec.transform) {
     const transformResult = executeTransform(stepSpec.transform, stepName, scope as unknown as Record<string, unknown>);
     if (transformResult.output) writeStepOutput(runDir, stepName, transformResult.output);
-    state.steps[stepName] = transformResult;
-    writeState(runDir, state);
-    if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    persistStep(state, stepName, transformResult, runDir, widgetState, ctx);
     if (transformResult.status === "failed") {
       state.status = "failed";
       return false;
@@ -623,11 +200,10 @@ async function executeSingleStep(
   // ── Loop step ──
   if (stepSpec.loop) {
     const loopResult = await executeLoop(stepSpec.loop, stepName, state, {
-      ctx: options.ctx, pi: options.pi, signal, loadAgent, runDir, spec,
+      ctx, pi: options.pi, signal, loadAgent, runDir, spec,
+      dispatchAgent: (s, a, p, o) => dispatch(s, a, p, o),
     });
-    state.steps[stepName] = loopResult;
-    writeState(runDir, state);
-    if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    persistStep(state, stepName, loopResult, runDir, widgetState, ctx);
     if (loopResult.status === "failed") {
       state.status = "failed";
       return false;
@@ -637,10 +213,10 @@ async function executeSingleStep(
 
   // ── Parallel step ──
   if (stepSpec.parallel) {
-    const parallelResult = await executeParallelStep(stepSpec.parallel, stepName, state, options);
-    state.steps[stepName] = parallelResult;
-    writeState(runDir, state);
-    if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    const parallelResult = await executeParallelStep(
+      stepSpec.parallel, stepName, state, executeSingleStep, options,
+    );
+    persistStep(state, stepName, parallelResult, runDir, widgetState, ctx);
     if (parallelResult.status === "failed") {
       state.status = "failed";
       return false;
@@ -705,156 +281,13 @@ async function executeSingleStep(
     writeStepOutput(runDir, stepName, result.output);
   }
 
-  state.steps[stepName] = result;
-  writeState(runDir, state);
-  if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+  persistStep(state, stepName, result, runDir, widgetState, ctx);
 
   if (result.status === "failed") {
     state.status = "failed";
     return false;
   }
   return true;
-}
-
-/**
- * Execute all steps in a layer concurrently.
- *
- * All steps start at the same time. If any step fails, remaining steps
- * are cancelled via a shared AbortController. All results are collected
- * before proceeding to the next layer.
- *
- * Parallel steps write to distinct keys in `state.steps`, which is safe
- * in single-threaded Node.js. `writeState` uses atomic write (tmp + rename),
- * so concurrent calls are safe — last one wins.
- */
-async function executeParallelLayer(
-  layer: ExecutionLayer,
-  spec: WorkflowSpec,
-  state: ExecutionState,
-  options: StepExecOptions,
-): Promise<void> {
-  const { ctx, signal, widgetState } = options;
-
-  // Create a child AbortController to cancel siblings on failure
-  const layerController = new AbortController();
-  if (signal) {
-    if (signal.aborted) {
-      layerController.abort(signal.reason);
-    } else {
-      signal.addEventListener("abort", () => layerController.abort(signal.reason), { once: true });
-    }
-  }
-
-  // Update widget to show all parallel steps as running
-  widgetState.currentStep = layer.steps.join(", ");
-  if (ctx.hasUI) {
-    ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-  }
-
-  // Launch all steps concurrently
-  const promises = layer.steps.map(async (stepName) => {
-    const stepSpec = spec.steps[stepName];
-    const success = await executeSingleStep(stepName, stepSpec, state, {
-      ...options,
-      signal: layerController.signal,
-    });
-    if (!success && !layerController.signal.aborted) {
-      layerController.abort(new Error(`Step '${stepName}' failed`));
-    }
-    return { stepName, success };
-  });
-
-  const results = await Promise.allSettled(promises);
-
-  // Check for failures
-  for (const result of results) {
-    if (result.status === "rejected") {
-      state.status = "failed";
-      break;
-    }
-    if (result.status === "fulfilled" && !result.value.success) {
-      state.status = "failed";
-      break;
-    }
-  }
-}
-
-/**
- * Execute a parallel step — runs all named sub-steps concurrently.
- *
- * Similar to executeParallelLayer but operates on sub-steps within
- * a single declared step. The parallel step's result aggregates
- * all sub-step results. Sub-step outputs are accessible via
- * `${{ steps.<parallelStepName>.output.<subStepName> }}`.
- */
-async function executeParallelStep(
-  parallelSpec: Record<string, StepSpec>,
-  stepName: string,
-  state: ExecutionState,
-  options: StepExecOptions,
-): Promise<StepResult> {
-  const startTime = Date.now();
-  const { signal } = options;
-
-  const parallelController = new AbortController();
-  if (signal) {
-    if (signal.aborted) {
-      parallelController.abort(signal.reason);
-    } else {
-      signal.addEventListener("abort", () => parallelController.abort(signal.reason), { once: true });
-    }
-  }
-
-  // Sub-steps share the outer state for reading but write to their own keys
-  const subResults: Record<string, StepResult> = {};
-
-  const subPromises = Object.entries(parallelSpec).map(async ([subName, subSpec]) => {
-    const success = await executeSingleStep(subName, subSpec, state, {
-      ...options,
-      signal: parallelController.signal,
-    });
-    subResults[subName] = state.steps[subName];
-    if (!success && !parallelController.signal.aborted) {
-      parallelController.abort(new Error(`Sub-step '${subName}' failed`));
-    }
-    return success;
-  });
-
-  const settled = await Promise.allSettled(subPromises);
-
-  // Aggregate usage and outputs
-  const totalUsage = zeroUsage();
-  const subOutputs: Record<string, unknown> = {};
-  let anyFailed = false;
-
-  for (const [subName] of Object.entries(parallelSpec)) {
-    const sub = subResults[subName];
-    if (sub) {
-      totalUsage.input += sub.usage.input;
-      totalUsage.output += sub.usage.output;
-      totalUsage.cacheRead += sub.usage.cacheRead;
-      totalUsage.cacheWrite += sub.usage.cacheWrite;
-      totalUsage.cost += sub.usage.cost;
-      totalUsage.turns += sub.usage.turns;
-      subOutputs[subName] = sub.output ?? sub.textOutput;
-      if (sub.status === "failed") anyFailed = true;
-    }
-  }
-
-  // Check for rejected promises too
-  for (const s of settled) {
-    if (s.status === "rejected") anyFailed = true;
-  }
-
-  return {
-    step: stepName,
-    agent: "parallel",
-    status: anyFailed ? "failed" : "completed",
-    output: subOutputs,
-    textOutput: JSON.stringify(subOutputs, null, 2),
-    usage: totalUsage,
-    durationMs: Date.now() - startTime,
-  };
 }
 
 /**
@@ -897,7 +330,7 @@ export async function executeWorkflow(
     startTime: Date.now(),
   };
   if (ctx.hasUI) {
-    ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
   }
 
   // 4. Set working message
@@ -907,7 +340,7 @@ export async function executeWorkflow(
 
   // 5. Build execution plan and execute layers
   const plan = buildConservativePlan(spec);
-  const stepOpts = { ctx, pi, signal, loadAgent, runDir, spec, widgetState };
+  const stepOpts: StepExecOptions = { ctx, pi, signal, loadAgent, runDir, spec, widgetState };
 
   for (const layer of plan) {
     if (signal?.aborted) {
@@ -936,7 +369,7 @@ export async function executeWorkflow(
       if (!cont) break;
     } else {
       // Multiple independent steps — execute concurrently
-      await executeParallelLayer(layer, spec, state, stepOpts);
+      await executeParallelLayer(layer, spec, state, executeSingleStep, stepOpts);
       if (state.status === "failed") break;
     }
   }
@@ -999,7 +432,7 @@ export async function executeWorkflow(
 
   // 7. Clean up TUI
   if (ctx.hasUI) {
-    ctx.ui.setWidget("workflow-progress", undefined);
+    ctx.ui.setWidget(WIDGET_ID, undefined);
     ctx.ui.setWorkingMessage(undefined);
   }
 

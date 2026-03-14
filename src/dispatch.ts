@@ -8,6 +8,9 @@ import path from "node:path";
 import os from "node:os";
 import type { StepSpec, StepResult, StepUsage, AgentSpec } from "./types.ts";
 
+/** Grace period (ms) between SIGTERM and SIGKILL when killing subprocesses. */
+const SIGKILL_GRACE_MS = 3000;
+
 export interface DispatchOptions {
   cwd: string;
   sessionLogDir: string;      // directory for session log file (e.g. <runDir>/sessions/)
@@ -149,7 +152,7 @@ export async function dispatch(
   if (options.signal) {
     const kill = () => {
       proc.kill("SIGTERM");
-      setTimeout(() => { if (!proc.killed) proc.kill("SIGKILL"); }, 3000);
+      setTimeout(() => { if (!proc.killed) proc.kill("SIGKILL"); }, SIGKILL_GRACE_MS);
     };
     if (options.signal.aborted) kill();
     else options.signal.addEventListener("abort", kill, { once: true });
@@ -165,7 +168,7 @@ export async function dispatch(
       proc.kill("SIGTERM");
       killTimer = setTimeout(() => {
         if (!proc.killed) proc.kill("SIGKILL");
-      }, 5000);
+      }, SIGKILL_GRACE_MS);
     }, options.timeoutMs);
   }
 

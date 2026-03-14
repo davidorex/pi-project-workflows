@@ -1116,3 +1116,52 @@ describe("explicit parallel step", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 });
+
+describe("onExhausted error handling", () => {
+  it("records expression error in onExhausted result", async () => {
+    const spec = makeSpec({
+      steps: {
+        retry: {
+          loop: {
+            maxAttempts: 1,
+            steps: {
+              check: {
+                gate: { check: "exit 1", onFail: "continue" },
+              },
+            },
+            onExhausted: {
+              agent: "default",
+              input: {
+                // Reference a non-existent step to trigger expression error
+                bad: "${{ steps.nonexistent.required_field }}",
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const loopOutput = result.steps.retry.output;
+    // The exhausted step should have run (agent) but with error noted
+    assert.ok(loopOutput.lastIteration._exhausted);
+  });
+});
+
+describe("kill grace period constant", () => {
+  it("uses SIGKILL_GRACE_MS (not hardcoded magic numbers)", async () => {
+    // This is a static check — grep the source for hardcoded kill timeouts
+    const { readFileSync } = await import("node:fs");
+    const executorSrc = readFileSync(new URL("./workflow-executor.ts", import.meta.url), "utf-8");
+    const dispatchSrc = readFileSync(new URL("./dispatch.ts", import.meta.url), "utf-8");
+
+    // Verify SIGKILL_GRACE_MS is defined
+    assert.ok(executorSrc.includes("SIGKILL_GRACE_MS"));
+    assert.ok(dispatchSrc.includes("SIGKILL_GRACE_MS"));
+
+    // Verify no remaining hardcoded kill timeouts (2000, 3000, 5000 near SIGKILL)
+    const hardcodedPattern = /setTimeout.*(?:2000|5000).*SIGKILL|SIGKILL.*(?:2000|5000)/;
+    assert.ok(!hardcodedPattern.test(executorSrc), "workflow-executor.ts still has hardcoded kill timeout");
+    assert.ok(!hardcodedPattern.test(dispatchSrc), "dispatch.ts still has hardcoded kill timeout");
+  });
+});

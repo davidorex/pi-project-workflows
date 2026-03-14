@@ -32,6 +32,7 @@ export interface StepSpec {
   gate?: GateSpec;
   transform?: TransformSpec;
   parallel?: Record<string, StepSpec>;   // named sub-steps to run concurrently
+  pause?: string | boolean;              // pause step — string is message to display, true = pause with no message
   workflow?: string;                     // phase 6 — not yet supported
 }
 // Note: exactly one of agent, gate, transform, loop, or parallel must be set.
@@ -84,7 +85,7 @@ export interface AgentSpec {
 export interface ExecutionState {
   input: unknown;
   steps: Record<string, StepResult>;
-  status: "running" | "completed" | "failed";
+  status: "running" | "completed" | "failed" | "paused";
   loop?: LoopState;                      // set when inside a loop
   // Resume support:
   workflowName?: string;       // which workflow this run belongs to
@@ -131,7 +132,7 @@ export interface StepUsage {
 export interface WorkflowResult {
   workflow: string;
   runId: string;
-  status: "completed" | "failed";
+  status: "completed" | "failed" | "paused";
   steps: Record<string, StepResult>;
   output?: unknown;                      // final workflow output (last step's output, or explicit)
   totalUsage: StepUsage;

@@ -78,6 +78,12 @@ export function createProgressWidget(
           lines.push(resumedLine.length > width ? resumedLine.slice(0, width) : resumedLine);
         }
 
+        // Paused indicator
+        if (widgetState.state.status === "paused") {
+          const pausedLine = `  ${theme.fg("yellow", "\u23f8")} Paused`;
+          lines.push(pausedLine.length > width ? pausedLine.slice(0, width) : pausedLine);
+        }
+
         // Step lines
         for (const stepName of stepNames) {
           const stepResult: StepResult | undefined = widgetState.state.steps[stepName];

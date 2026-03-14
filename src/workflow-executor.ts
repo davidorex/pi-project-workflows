@@ -22,9 +22,23 @@ import { executeTransform } from "./step-transform.ts";
 import { executeLoop } from "./step-loop.ts";
 import { executeParallelLayer, executeParallelStep } from "./step-parallel.ts";
 import { executeAgentStep } from "./step-agent.ts";
+import { executePause } from "./step-pause.ts";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
+
+/** Module-level flag set by the Ctrl+H keybinding handler. */
+let pauseRequested = false;
+
+/** Set by the extension keybinding to request a pause after the current step. */
+export function requestPause(): void {
+  pauseRequested = true;
+}
+
+/** Clear the pause flag (called at the start of each workflow execution). */
+function clearPauseRequest(): void {
+  pauseRequested = false;
+}
 
 export interface ExecuteOptions {
   /** pi extension context (for TUI, cwd, etc.) */
@@ -39,6 +53,8 @@ export interface ExecuteOptions {
    * If the agent is not found, return a minimal spec with just the name.
    */
   loadAgent: (name: string) => AgentSpec;
+  /** Injectable dispatch function for testing; defaults to real dispatch. */
+  dispatchFn?: typeof dispatch;
   /** Resume from an incomplete run instead of starting fresh. */
   resume?: {
     runId: string;
@@ -84,6 +100,7 @@ interface StepExecOptions {
   spec: WorkflowSpec;
   widgetState: ProgressWidgetState;
   templateEnv?: nunjucks.Environment;
+  dispatchFn?: typeof dispatch;
 }
 
 /**
@@ -190,7 +207,7 @@ async function executeSingleStep(
   if (stepSpec.loop) {
     const loopResult = await executeLoop(stepSpec.loop, stepName, state, {
       ctx, pi: options.pi, signal, loadAgent, runDir, spec,
-      dispatchAgent: (s, a, p, o) => dispatch(s, a, p, o),
+      dispatchAgent: (s, a, p, o) => (options.dispatchFn ?? dispatch)(s, a, p, o),
       templateEnv: options.templateEnv,
     });
     persistStep(state, stepName, loopResult, runDir, widgetState, ctx);
@@ -214,12 +231,25 @@ async function executeSingleStep(
     return true;
   }
 
+  // ── Pause step ──
+  if (stepSpec.pause !== undefined) {
+    const message = typeof stepSpec.pause === "string" ? stepSpec.pause : undefined;
+    const pauseResult = executePause(stepName, message);
+    persistStep(state, stepName, pauseResult, runDir, widgetState, ctx);
+    state.status = "paused";
+    if (ctx.hasUI) {
+      ctx.ui.notify(message || "Workflow paused. Use /workflow resume or Ctrl+J to continue.", "info");
+    }
+    return false;
+  }
+
   // ── Agent step (default) ──
   const agentResult = await executeAgentStep(stepName, stepSpec, state, {
     ctx, signal, loadAgent, runDir,
     specFilePath: spec.filePath,
     widgetState,
     templateEnv: options.templateEnv,
+    dispatchFn: options.dispatchFn,
   });
   persistStep(state, stepName, agentResult, runDir, widgetState, ctx);
   if (agentResult.status === "failed") {
@@ -247,6 +277,7 @@ export async function executeWorkflow(
   options: ExecuteOptions,
 ): Promise<WorkflowResult> {
   const { ctx, pi, signal, loadAgent } = options;
+  clearPauseRequest();
 
   // 1. Validate input against workflow input schema (if defined)
   //    Skip on resume — input was validated on first run.
@@ -307,7 +338,7 @@ export async function executeWorkflow(
   // 5. Build execution plan and execute layers
   const plan = buildConservativePlan(spec);
   const templateEnv = createTemplateEnv(ctx.cwd);
-  const stepOpts: StepExecOptions = { ctx, pi, signal, loadAgent, runDir, spec, widgetState, templateEnv };
+  const stepOpts: StepExecOptions = { ctx, pi, signal, loadAgent, runDir, spec, widgetState, templateEnv, dispatchFn: options.dispatchFn };
 
   for (const layer of plan) {
     if (signal?.aborted) {
@@ -343,7 +374,18 @@ export async function executeWorkflow(
       // Run only the pending steps concurrently
       const pendingLayer = { steps: pendingSteps };
       await executeParallelLayer(pendingLayer, spec, state, executeSingleStep, stepOpts);
-      if (state.status === "failed") break;
+      if (state.status === "failed" || state.status === "paused") break;
+    }
+
+    // Check keybinding-initiated pause (between layers/steps)
+    if (pauseRequested) {
+      pauseRequested = false;
+      state.status = "paused";
+      writeState(runDir, state);
+      if (ctx.hasUI) {
+        ctx.ui.notify("Workflow paused. Use /workflow resume or Ctrl+J to continue.", "info");
+      }
+      break;
     }
   }
 
@@ -410,7 +452,7 @@ export async function executeWorkflow(
   }
 
   // 8. Build and inject result
-  const result = buildResult(spec, runId, runDir, state, state.status as "completed" | "failed");
+  const result = buildResult(spec, runId, runDir, state, state.status as "completed" | "failed" | "paused");
 
   // Attach written artifact paths to the result
   if (Object.keys(writtenArtifacts).length > 0) {
@@ -418,22 +460,32 @@ export async function executeWorkflow(
   }
   const triggerTurn = spec.triggerTurn !== false;
 
-  let content: string;
-  if (spec.completion) {
-    try {
-      content = resolveCompletion(spec.completion, result, input);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      content = formatResult(result) + `\n\nCompletion template error: ${msg}`;
-    }
+  if (state.status === "paused") {
+    const completedCount = Object.values(state.steps).filter(s => s.status === "completed").length;
+    const totalCount = Object.keys(spec.steps).length;
+    const pauseContent = `Workflow '${spec.name}' paused (${completedCount}/${totalCount} steps completed). Use /workflow resume ${spec.name} or Ctrl+J to continue.`;
+    pi.sendMessage(
+      { customType: "workflow-result", content: pauseContent, display: "verbose" },
+      { triggerTurn: false },
+    );
   } else {
-    content = formatResult(result);
-  }
+    let content: string;
+    if (spec.completion) {
+      try {
+        content = resolveCompletion(spec.completion, result, input);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        content = formatResult(result) + `\n\nCompletion template error: ${msg}`;
+      }
+    } else {
+      content = formatResult(result);
+    }
 
-  pi.sendMessage(
-    { customType: "workflow-result", content, display: "verbose" },
-    { triggerTurn },
-  );
+    pi.sendMessage(
+      { customType: "workflow-result", content, display: "verbose" },
+      { triggerTurn },
+    );
+  }
 
   return result;
 }

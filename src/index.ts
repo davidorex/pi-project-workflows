@@ -1,6 +1,6 @@
 import { parse as parseYaml } from "yaml";
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
-import { executeWorkflow } from "./workflow-executor.ts";
+import { executeWorkflow, requestPause } from "./workflow-executor.ts";
 import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
 import type { AgentSpec, WorkflowResult } from "./types.ts";
 import fs from "node:fs";
@@ -12,6 +12,13 @@ import os from "node:os";
 // which are peer dependencies that may not be resolvable at test time.
 // We define minimal compatible interfaces here so this module can be imported
 // without those packages installed.
+
+let Key: any;
+try {
+  Key = (await import("@mariozechner/pi-tui")).Key;
+} catch {
+  Key = null;
+}
 
 let Type: any;
 try {
@@ -422,6 +429,63 @@ const extension = (pi: any) => {
       }
     },
   });
+
+  // ── Keybindings ──
+
+  if (Key) {
+    pi.registerShortcut(Key.ctrl("h"), {
+      description: "Pause running workflow",
+      handler: async (ctx: any) => {
+        requestPause();
+        ctx.ui.notify("Pause requested — workflow will pause after current step completes.", "info");
+      },
+    });
+
+    pi.registerShortcut(Key.ctrl("j"), {
+      description: "Resume paused workflow",
+      handler: async (ctx: any) => {
+        const workflows = discoverWorkflows(ctx.cwd);
+        let found: { spec: any; incomplete: any } | null = null;
+
+        for (const wfSpec of workflows) {
+          const incomplete = findIncompleteRun(ctx.cwd, wfSpec.name);
+          if (incomplete) {
+            const compat = validateResumeCompatibility(incomplete.state, wfSpec);
+            if (!compat) {
+              found = { spec: wfSpec, incomplete };
+              break;
+            }
+          }
+        }
+
+        if (!found) {
+          ctx.ui.notify("No paused or incomplete workflows to resume.", "info");
+          return;
+        }
+
+        const summary = formatIncompleteRun(found.incomplete, found.spec);
+        ctx.ui.notify(`Resuming: ${summary}`, "info");
+
+        try {
+          await executeWorkflow(found.spec, found.incomplete.state.input, {
+            ctx,
+            pi,
+            loadAgent: createAgentLoader(ctx.cwd),
+            resume: {
+              runId: found.incomplete.runId,
+              runDir: found.incomplete.runDir,
+              state: found.incomplete.state,
+            },
+          });
+        } catch (err) {
+          ctx.ui.notify(
+            `Resume failed: ${err instanceof Error ? err.message : String(err)}`,
+            "error",
+          );
+        }
+      },
+    });
+  }
 };
 
 export default extension;

@@ -141,7 +141,7 @@ export function buildResult(
   runId: string,
   runDir: string,
   state: ExecutionState,
-  status: "completed" | "failed",
+  status: "completed" | "failed" | "paused",
 ): WorkflowResult {
   const totalUsage = aggregateUsage(state.steps);
   const totalDurationMs = Object.values(state.steps).reduce((sum, s) => sum + s.durationMs, 0);
@@ -184,6 +184,10 @@ export function formatResult(result: WorkflowResult): string {
 
   if (result.status === "completed") {
     lines.push(`Workflow '${result.workflow}' completed (${totalSteps} steps, ${duration}, ${cost})`);
+  } else if (result.status === "paused") {
+    lines.push(
+      `Workflow '${result.workflow}' paused (${completedSteps}/${totalSteps} steps completed, ${duration}, ${cost})`,
+    );
   } else {
     // Find the failed step name
     const failedStep = stepEntries.find((s) => s.status === "failed");

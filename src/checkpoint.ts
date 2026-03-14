@@ -44,7 +44,7 @@ export function findIncompleteRun(cwd: string, workflowName: string): Incomplete
     const state = readState(runDir);
     if (!state) continue;
 
-    if (state.status === "running" || state.status === "failed") {
+    if (state.status === "running" || state.status === "failed" || state.status === "paused") {
       const completedSteps = Object.entries(state.steps)
         .filter(([, r]) => r.status === "completed" || r.status === "skipped")
         .map(([name]) => name);
@@ -129,7 +129,9 @@ export function computeResumePoint(
 export function formatIncompleteRun(run: IncompleteRun, spec: WorkflowSpec): string {
   const totalSteps = Object.keys(spec.steps).length;
   const completed = run.completedSteps.length;
-  const status = run.state.status === "running" ? "interrupted" : "failed";
+  const status = run.state.status === "paused" ? "paused"
+    : run.state.status === "running" ? "interrupted"
+    : "failed";
   const failedInfo = run.failedStep ? ` at step '${run.failedStep}'` : "";
   const timeInfo = run.updatedAt ? ` (last updated: ${run.updatedAt})` : "";
 

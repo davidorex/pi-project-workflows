@@ -20,6 +20,7 @@ export interface AgentStepOptions {
   specFilePath: string;
   widgetState: ProgressWidgetState;
   templateEnv?: nunjucks.Environment;
+  dispatchFn?: typeof dispatch;   // injectable for testing; defaults to real dispatch
 }
 
 /**
@@ -58,7 +59,8 @@ export async function executeAgentStep(
 
   const prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
 
-  const result = await dispatch(stepSpec, agentSpec, prompt, {
+  const dispatchFn = options.dispatchFn ?? dispatch;
+  const result = await dispatchFn(stepSpec, agentSpec, prompt, {
     cwd: ctx.cwd,
     sessionLogDir: path.join(runDir, "sessions"),
     stepName,

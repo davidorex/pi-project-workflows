@@ -272,6 +272,26 @@ describe("createProgressWidget", () => {
     assert.strictEqual(lines.length, 5);
   });
 
+  it("renders paused indicator when state status is paused", () => {
+    const widgetState = makeWidgetState();
+    widgetState.state.status = "paused";
+    widgetState.state.steps.explore = {
+      step: "explore",
+      agent: "explorer",
+      status: "completed",
+      usage: zeroUsage(),
+      durationMs: 10000,
+    };
+    const factory = createProgressWidget(widgetState);
+    const component = factory(mockTUI(), mockTheme());
+    const lines = component.render(120);
+    component.dispose!();
+
+    const pausedLine = lines.find(l => l.includes("Paused"));
+    assert.ok(pausedLine, "should have a paused indicator line");
+    assert.ok(pausedLine.includes("⏸"), "should have ⏸ symbol");
+  });
+
   it("does not render resumed indicator when resumedSteps is not set", () => {
     const widgetState = makeWidgetState();
     const factory = createProgressWidget(widgetState);

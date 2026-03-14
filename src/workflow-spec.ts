@@ -192,14 +192,15 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
   const hasTransform = "transform" in rawStep && rawStep.transform !== undefined;
   const hasLoop = "loop" in rawStep && rawStep.loop !== undefined;
   const hasParallel = "parallel" in rawStep && rawStep.parallel !== undefined;
+  const hasPause = "pause" in rawStep && rawStep.pause !== undefined;
 
-  const typeCount = [hasAgent, hasGate, hasTransform, hasLoop, hasParallel].filter(Boolean).length;
+  const typeCount = [hasAgent, hasGate, hasTransform, hasLoop, hasParallel, hasPause].filter(Boolean).length;
 
   if (typeCount === 0) {
-    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, or parallel`);
+    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, parallel, or pause`);
   }
   if (typeCount > 1) {
-    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, or parallel`);
+    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, parallel, or pause`);
   }
 
   const step: StepSpec = {};
@@ -207,6 +208,15 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
   // Common optional fields
   if (rawStep.when !== undefined) step.when = rawStep.when as string;
   if (rawStep.timeout !== undefined) step.timeout = rawStep.timeout as { seconds: number };
+
+  // Pause step
+  if (hasPause) {
+    if (typeof rawStep.pause !== "string" && rawStep.pause !== true) {
+      throw new WorkflowSpecError(filePath, `step '${stepName}' pause must be a string or true`);
+    }
+    step.pause = rawStep.pause as string | boolean;
+    return step;
+  }
 
   // Agent step
   if (hasAgent) {

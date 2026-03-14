@@ -8,6 +8,8 @@ import { resolveExpressions, evaluateCondition } from "./expression.ts";
 import { executeGate } from "./step-gate.ts";
 import { executeTransform } from "./step-transform.ts";
 import { zeroUsage, addUsage, buildPrompt, DEFAULT_MAX_ATTEMPTS } from "./step-shared.ts";
+import { hasTemplateSyntax, renderTemplate, renderTemplateFile } from "./template.ts";
+import type nunjucks from "nunjucks";
 
 /** Options for executeLoop, including callback-injected dispatch to avoid circular imports. */
 export interface LoopExecuteOptions {
@@ -23,6 +25,7 @@ export interface LoopExecuteOptions {
   ) => Promise<StepResult>;
   runDir: string;
   spec: WorkflowSpec;
+  templateEnv?: nunjucks.Environment;
 }
 
 /**
@@ -155,7 +158,23 @@ export async function executeLoop(
           break;
         }
 
-        const agentSpec = loadAgent(subSpec.agent);
+        let agentSpec = loadAgent(subSpec.agent);
+
+        // Render system prompt template if applicable
+        if (options.templateEnv) {
+          const templateContext = typeof resolvedInput === "object" && resolvedInput !== null
+            ? resolvedInput as Record<string, unknown>
+            : {};
+
+          if (agentSpec.promptTemplate) {
+            const rendered = renderTemplateFile(options.templateEnv, agentSpec.promptTemplate, templateContext);
+            agentSpec = { ...agentSpec, systemPrompt: rendered, promptTemplate: undefined };
+          } else if (agentSpec.systemPrompt && hasTemplateSyntax(agentSpec.systemPrompt)) {
+            const rendered = renderTemplate(options.templateEnv, agentSpec.systemPrompt, templateContext);
+            agentSpec = { ...agentSpec, systemPrompt: rendered };
+          }
+        }
+
         const prompt = buildPrompt(subSpec, agentSpec, resolvedInput, runDir, `${stepName}-${iteration}-${subName}`);
 
         result = await dispatchAgent(subSpec, agentSpec, prompt, {

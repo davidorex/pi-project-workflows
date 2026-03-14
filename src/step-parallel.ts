@@ -6,6 +6,7 @@ import type { StepResult, StepSpec, ExecutionState, WorkflowSpec } from "./types
 import type { ProgressWidgetState } from "./tui.ts";
 import type { ExecutionLayer } from "./dag.ts";
 import { createProgressWidget } from "./tui.ts";
+import type nunjucks from "nunjucks";
 import { zeroUsage, addUsage, WIDGET_ID } from "./step-shared.ts";
 
 /** Options shared by parallel execution helpers. */
@@ -17,6 +18,7 @@ export interface ParallelOptions {
   runDir: string;
   spec: WorkflowSpec;
   widgetState: ProgressWidgetState;
+  templateEnv?: nunjucks.Environment;
 }
 
 /** Callback type for executing a single step — injected to avoid circular imports. */

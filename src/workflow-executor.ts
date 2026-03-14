@@ -15,6 +15,8 @@ import { createProgressWidget } from "./tui.ts";
 import { buildExecutionPlan, extractDependencies } from "./dag.ts";
 import type { ExecutionPlan } from "./dag.ts";
 import { zeroUsage, resolveSchemaPath, buildPrompt, persistStep, WIDGET_ID, SIGKILL_GRACE_MS } from "./step-shared.ts";
+import { createTemplateEnv, hasTemplateSyntax, renderTemplate, renderTemplateFile } from "./template.ts";
+import type nunjucks from "nunjucks";
 import { executeGate } from "./step-gate.ts";
 import { executeTransform } from "./step-transform.ts";
 import { executeLoop } from "./step-loop.ts";
@@ -95,6 +97,7 @@ interface StepExecOptions {
   runDir: string;
   spec: WorkflowSpec;
   widgetState: ProgressWidgetState;
+  templateEnv?: nunjucks.Environment;
 }
 
 /**
@@ -202,6 +205,7 @@ async function executeSingleStep(
     const loopResult = await executeLoop(stepSpec.loop, stepName, state, {
       ctx, pi: options.pi, signal, loadAgent, runDir, spec,
       dispatchAgent: (s, a, p, o) => dispatch(s, a, p, o),
+      templateEnv: options.templateEnv,
     });
     persistStep(state, stepName, loopResult, runDir, widgetState, ctx);
     if (loopResult.status === "failed") {
@@ -241,7 +245,23 @@ async function executeSingleStep(
     return false;
   }
 
-  const agentSpec = loadAgent(stepSpec.agent);
+  let agentSpec = loadAgent(stepSpec.agent);
+
+  // Render system prompt template if applicable
+  if (options.templateEnv) {
+    const templateContext = typeof resolvedInput === "object" && resolvedInput !== null
+      ? resolvedInput as Record<string, unknown>
+      : {};
+
+    if (agentSpec.promptTemplate) {
+      const rendered = renderTemplateFile(options.templateEnv, agentSpec.promptTemplate, templateContext);
+      agentSpec = { ...agentSpec, systemPrompt: rendered, promptTemplate: undefined };
+    } else if (agentSpec.systemPrompt && hasTemplateSyntax(agentSpec.systemPrompt)) {
+      const rendered = renderTemplate(options.templateEnv, agentSpec.systemPrompt, templateContext);
+      agentSpec = { ...agentSpec, systemPrompt: rendered };
+    }
+  }
+
   const prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
 
   const result = await dispatch(stepSpec, agentSpec, prompt, {
@@ -340,7 +360,8 @@ export async function executeWorkflow(
 
   // 5. Build execution plan and execute layers
   const plan = buildConservativePlan(spec);
-  const stepOpts: StepExecOptions = { ctx, pi, signal, loadAgent, runDir, spec, widgetState };
+  const templateEnv = createTemplateEnv(ctx.cwd);
+  const stepOpts: StepExecOptions = { ctx, pi, signal, loadAgent, runDir, spec, widgetState, templateEnv };
 
   for (const layer of plan) {
     if (signal?.aborted) {

@@ -1,0 +1,48 @@
+name: template-analysis
+description: Like parallel-analysis, but agents use template inheritance
+version: "1"
+
+input:
+  type: object
+  required: [path]
+  properties:
+    path:
+      type: string
+      description: Path to analyze
+
+steps:
+  explore:
+    agent: code-explorer
+    input:
+      path: ${{ input.path }}
+
+  analyze-structure:
+    agent: tmpl-structure-analyzer
+    input:
+      exploration: ${{ steps.explore.textOutput }}
+      path: ${{ input.path }}
+
+  analyze-quality:
+    agent: tmpl-quality-analyzer
+    input:
+      exploration: ${{ steps.explore.textOutput }}
+      path: ${{ input.path }}
+
+  analyze-patterns:
+    agent: tmpl-pattern-analyzer
+    input:
+      exploration: ${{ steps.explore.textOutput }}
+      path: ${{ input.path }}
+
+  synthesize:
+    agent: synthesizer
+    input:
+      structure: ${{ steps.analyze-structure.textOutput }}
+      quality: ${{ steps.analyze-quality.textOutput }}
+      patterns: ${{ steps.analyze-patterns.textOutput }}
+
+completion:
+  message: |
+    Present this code analysis report to the user.
+  include:
+    - steps.synthesize.textOutput

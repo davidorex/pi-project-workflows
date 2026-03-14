@@ -54,6 +54,7 @@ export function parseAgentFrontmatter(filePath: string): AgentSpec {
     skills: frontmatter.skills,
     output: frontmatter.output,
     systemPrompt: systemPrompt || undefined,
+    promptTemplate: frontmatter.prompt?.system || undefined,
   };
 }
 

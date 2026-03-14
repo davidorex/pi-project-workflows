@@ -69,7 +69,8 @@ export interface StepOutputSpec {
 export interface AgentSpec {
   name: string;
   description?: string;
-  systemPrompt?: string;
+  systemPrompt?: string;                 // inline system prompt (body of .md file)
+  promptTemplate?: string;               // path to template file (from prompt.system frontmatter)
   model?: string;
   thinking?: string;
   tools?: string[];

@@ -1,28 +1,30 @@
 {
   "current_phase": 7,
-  "current_spec": 28,
-  "test_count": 333,
-  "last_commit": "6634f19",
+  "current_spec": 29,
+  "test_count": 354,
+  "last_commit": "",
   "accumulated_context": {
     "decisions": [
-      "Project blocks live in .workflow/ — the project artifact directory",
+      "Project blocks live in .workflow/ \u2014 the project artifact directory",
       "Specs 26-29 form Phase 7: project structure, execution primitives, verification",
-      "forEach when: conditional applies globally (before iteration starts), not per-iteration — per-iteration conditions require when to be expressible without forEach-scoped variables at the top level",
+      "forEach when: conditional applies globally (before iteration starts), not per-iteration \u2014 per-iteration conditions require when to be expressible without forEach-scoped variables at the top level",
       "command step fails on non-zero exit (unlike gate which always returns completed with passed: true/false)"
     ],
     "todos": [
-      "Spec 28: Verification as typed results",
       "Spec 29: Self-implementing workflow demo",
       "Delete old .md demo agents (demo proved out with .agent.yaml)",
       "Remove dead code: writeStepOutput in state.ts"
     ],
     "issues": [
-      { "severity": "low", "description": "Expression parser has known limitation with adjacent ${{ }}${{ }} expressions in a single string — whole-value regex can misparse them. Pre-existing, not introduced by spec 27." }
+      {
+        "severity": "low",
+        "description": "Expression parser has known limitation with adjacent ${{ }}${{ }} expressions in a single string \u2014 whole-value regex can misparse them. Pre-existing, not introduced by spec 27."
+      }
     ],
     "blockers": []
   },
   "session": {
-    "last_action": "Completed specs 26-27: project blocks in .workflow/, forEach and command step types (333 tests)",
-    "next_action": "Implement spec 28: verification as typed results (verifier-output schema, verifier agent spec, templates)"
+    "last_action": "Completed spec 28: verifier-output schema, verifier agent spec, plan-breakdown and execution-results schemas (354 tests)",
+    "next_action": "Implement spec 29: self-implementing workflow demo"
   }
 }

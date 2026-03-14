@@ -1116,6 +1116,107 @@ describe("onExhausted error handling", () => {
   });
 });
 
+describe("verify step as typed agent output", () => {
+  it("mock dispatch returning verifier-output JSON produces typed step output", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-verify-"));
+    const verifierOutput = {
+      status: "passed",
+      score: "2/2",
+      truths: [
+        { truth: "Tests pass", status: "verified", evidence: "exit code 0" },
+      ],
+      criteria_results: [
+        { criterion: "Tests pass", verify_method: "command", status: "passed", evidence: "3 passing" },
+        { criterion: "File exists", verify_method: "inspect", status: "passed", evidence: "found" },
+      ],
+      gaps: [],
+    };
+
+    const spec: WorkflowSpec = {
+      name: "test-verify",
+      description: "test verify step",
+      steps: {
+        implement: {
+          transform: {
+            mapping: { code: "done", files: ["src/index.ts"] },
+          },
+        },
+        verify: {
+          transform: {
+            mapping: verifierOutput,
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "verifier" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.verify.status, "completed");
+    const output = result.steps.verify.output as any;
+    assert.strictEqual(output.status, "passed");
+    assert.strictEqual(output.score, "2/2");
+    assert.strictEqual(output.truths.length, 1);
+    assert.strictEqual(output.criteria_results.length, 2);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("downstream step reads verify output via expressions", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-verify-expr-"));
+    const spec: WorkflowSpec = {
+      name: "test-verify-expr",
+      description: "test verify expression access",
+      steps: {
+        verify: {
+          transform: {
+            mapping: {
+              status: "gaps_found",
+              score: "1/3",
+              truths: [{ truth: "Tests pass", status: "verified", evidence: "ok" }],
+              criteria_results: [{ criterion: "C1", verify_method: "command", status: "passed", evidence: "ok" }],
+              gaps: [{ truth: "Feature X", status: "failed", reason: "Not implemented" }],
+            },
+          },
+        },
+        react: {
+          transform: {
+            mapping: {
+              verifyStatus: "${{ steps.verify.output.status }}",
+              verifyGaps: "${{ steps.verify.output.gaps }}",
+              gapCount: "${{ steps.verify.output.gaps.length }}",
+            },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    const reactOutput = result.steps.react.output as any;
+    assert.strictEqual(reactOutput.verifyStatus, "gaps_found");
+    assert.ok(Array.isArray(reactOutput.verifyGaps));
+    assert.strictEqual(reactOutput.verifyGaps.length, 1);
+    assert.strictEqual(reactOutput.verifyGaps[0].reason, "Not implemented");
+    assert.strictEqual(reactOutput.gapCount, 1);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+});
+
 describe("kill grace period constant", () => {
   it("uses SIGKILL_GRACE_MS (not hardcoded magic numbers)", async () => {
     // This is a static check — grep the source for hardcoded kill timeouts

@@ -155,3 +155,32 @@ describe("compileAgentSpec", () => {
     assert.strictEqual(result.taskTemplate, "task.md");
   });
 });
+
+describe("verifier agent spec", () => {
+  const builtinDir = path.resolve(import.meta.dirname, "..", "demo", "agents");
+
+  it("parses verifier.agent.yaml correctly", () => {
+    const specPath = path.join(builtinDir, "verifier.agent.yaml");
+    const spec = parseAgentYaml(specPath);
+    assert.strictEqual(spec.name, "verifier");
+    assert.strictEqual(spec.role, "quality");
+    assert.strictEqual(spec.description, "Verifies step outputs against declared intent and success criteria");
+    assert.strictEqual(spec.model, "anthropic/claude-sonnet-4");
+    assert.strictEqual(spec.outputFormat, "json");
+    assert.strictEqual(spec.outputSchema, "schemas/verifier-output.schema.json");
+    assert.strictEqual(spec.taskTemplate, "verifier/task.md");
+  });
+
+  it("has correct tools for verification", () => {
+    const specPath = path.join(builtinDir, "verifier.agent.yaml");
+    const spec = parseAgentYaml(specPath);
+    assert.deepStrictEqual(spec.tools, ["read", "bash", "grep", "find"]);
+  });
+
+  it("output schema path resolves to a valid file", () => {
+    const specPath = path.join(builtinDir, "verifier.agent.yaml");
+    const spec = parseAgentYaml(specPath);
+    const schemaPath = path.resolve(path.dirname(specPath), "..", "schemas", spec.outputSchema!.replace("schemas/", ""));
+    assert.ok(fs.existsSync(schemaPath), `Schema file not found at ${schemaPath}`);
+  });
+});

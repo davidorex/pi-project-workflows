@@ -148,6 +148,7 @@ export interface CompletionSpec {
 export interface ExpressionScope {
   input: unknown;
   steps: Record<string, StepResult>;
+  [key: string]: unknown;  // allows use as Record<string, unknown>
 }
 
 // ── Completion Scope (wider scope for completion templates) ──
@@ -162,4 +163,5 @@ export interface CompletionScope {
   workflow: string;
   status: "completed" | "failed";
   output?: unknown;
+  [key: string]: unknown;  // allows use as Record<string, unknown>
 }

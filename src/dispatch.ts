@@ -7,9 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import type { StepSpec, StepResult, StepUsage, AgentSpec } from "./types.ts";
-
-/** Grace period (ms) between SIGTERM and SIGKILL when killing subprocesses. */
-const SIGKILL_GRACE_MS = 3000;
+import { SIGKILL_GRACE_MS } from "./step-shared.ts";
 
 export interface DispatchOptions {
   cwd: string;
@@ -30,7 +28,16 @@ export interface ProcessEvent {
   usage?: Partial<StepUsage>;  // usage delta for message_end
 }
 
+/**
+ * Prompt length threshold (chars) for switching to @file argument passing.
+ * Avoids OS-level argument length limits (typically 128–256 KB) with headroom
+ * for the rest of the CLI args. 8000 chars is well under all limits while
+ * keeping short prompts as direct args for simplicity.
+ */
 const PROMPT_ARG_LIMIT = 8000;
+
+/** Maximum stdout buffer size (10 MB) to prevent OOM from runaway subprocesses. */
+const MAX_STDOUT_BYTES = 10 * 1024 * 1024;
 
 export function extractText(content: unknown): string {
   if (!content || !Array.isArray(content)) return "";
@@ -221,7 +228,10 @@ export async function dispatch(
 
   // Stream stdout as newline-delimited JSON
   let buf = "";
+  let bufBytes = 0;
   proc.stdout!.on("data", (chunk: Buffer) => {
+    bufBytes += chunk.length;
+    if (bufBytes > MAX_STDOUT_BYTES) return;  // stop accumulating to prevent OOM
     buf += chunk.toString();
     const lines = buf.split("\n");
     buf = lines.pop() || "";

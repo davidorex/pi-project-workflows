@@ -1,32 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import { executeWorkflow } from "./workflow-executor.ts";
-import type { WorkflowSpec, AgentSpec, ExecutionState, GateSpec, TransformSpec } from "./types.ts";
+import type { WorkflowSpec } from "./types.ts";
+import { mockCtx, mockPi, makeSpec } from "./test-helpers.ts";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-
-// Mock ExtensionContext and ExtensionAPI for testing
-function mockCtx(cwd: string) {
-  return {
-    cwd,
-    hasUI: false,
-    ui: {
-      setWidget: () => {},
-      notify: () => {},
-      setStatus: () => {},
-    },
-    // ... other ctx fields as needed (most unused in headless mode)
-  } as any;
-}
-
-function mockPi() {
-  const messages: any[] = [];
-  return {
-    sendMessage: (msg: any, opts: any) => messages.push({ msg, opts }),
-    _messages: messages,
-  } as any;
-}
 
 // Skip if pi is not available
 let hasPi = false;
@@ -728,17 +707,6 @@ describe("transform steps", () => {
 
 // ── Phase 2 integration tests ──
 // These exercise combined phase 2 features: when, gate, transform, loop
-
-function makeSpec(overrides: Partial<WorkflowSpec> & { steps: WorkflowSpec["steps"] }): WorkflowSpec {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-p2-"));
-  return {
-    name: "test-p2",
-    description: "phase 2 integration test",
-    source: "project",
-    filePath: path.join(tmpDir, "test.workflow.yaml"),
-    ...overrides,
-  };
-}
 
 function defaultOptions(tmpDir?: string) {
   const cwd = tmpDir ?? fs.mkdtempSync(path.join(os.tmpdir(), "wf-p2-"));

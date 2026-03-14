@@ -12,15 +12,16 @@ import { dispatch } from "./dispatch.ts";
 import { generateRunId, initRunDir, getWorkflowDir, writeState, writeStepOutput, writeMetrics, buildResult, formatResult } from "./state.ts";
 import { resolveCompletion } from "./completion.ts";
 import { createProgressWidget } from "./tui.ts";
-import { buildExecutionPlan, extractDependencies } from "./dag.ts";
+import { extractDependencies, buildPlanFromDeps } from "./dag.ts";
 import type { ExecutionPlan } from "./dag.ts";
-import { zeroUsage, resolveSchemaPath, buildPrompt, persistStep, WIDGET_ID, SIGKILL_GRACE_MS } from "./step-shared.ts";
-import { createTemplateEnv, hasTemplateSyntax, renderTemplate, renderTemplateFile } from "./template.ts";
+import { zeroUsage, resolveSchemaPath, persistStep, WIDGET_ID, SIGKILL_GRACE_MS } from "./step-shared.ts";
+import { createTemplateEnv } from "./template.ts";
 import type nunjucks from "nunjucks";
 import { executeGate } from "./step-gate.ts";
 import { executeTransform } from "./step-transform.ts";
 import { executeLoop } from "./step-loop.ts";
 import { executeParallelLayer, executeParallelStep } from "./step-parallel.ts";
+import { executeAgentStep } from "./step-agent.ts";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
@@ -64,28 +65,7 @@ function buildConservativePlan(spec: WorkflowSpec): ExecutionPlan {
     }
   }
 
-  // Topological sort with layer grouping (same algorithm as buildExecutionPlan)
-  const plan: ExecutionPlan = [];
-  const placed = new Set<string>();
-
-  while (placed.size < allSteps.length) {
-    const layer: string[] = [];
-    for (const step of allSteps) {
-      if (placed.has(step)) continue;
-      const stepDeps = deps.get(step) ?? new Set();
-      if ([...stepDeps].every((d) => placed.has(d))) {
-        layer.push(step);
-      }
-    }
-    if (layer.length === 0) {
-      const remaining = allSteps.filter((s) => !placed.has(s));
-      throw new Error(`Dependency cycle detected among steps: ${remaining.join(", ")}`);
-    }
-    plan.push({ steps: layer });
-    for (const s of layer) placed.add(s);
-  }
-
-  return plan;
+  return buildPlanFromDeps(allSteps, deps);
 }
 
 /** Options passed to single-step and parallel-layer execution helpers. */
@@ -136,7 +116,7 @@ async function executeSingleStep(
   // Evaluate `when` conditional
   if (stepSpec.when) {
     const conditionExpr = stepSpec.when.replace(/^\$\{\{\s*/, "").replace(/\s*\}\}$/, "");
-    const shouldRun = evaluateCondition(conditionExpr, scope as unknown as Record<string, unknown>);
+    const shouldRun = evaluateCondition(conditionExpr, scope);
     if (!shouldRun) {
       persistStep(state, stepName, {
         step: stepName,
@@ -157,7 +137,7 @@ async function executeSingleStep(
 
   // ── Gate step ──
   if (stepSpec.gate) {
-    const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope as unknown as Record<string, unknown>));
+    const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope));
     const resolvedGate = { ...stepSpec.gate, check: resolvedCheck };
     const gateResult = await executeGate(resolvedGate, stepName, {
       cwd: ctx.cwd,
@@ -190,7 +170,7 @@ async function executeSingleStep(
 
   // ── Transform step ──
   if (stepSpec.transform) {
-    const transformResult = executeTransform(stepSpec.transform, stepName, scope as unknown as Record<string, unknown>);
+    const transformResult = executeTransform(stepSpec.transform, stepName, scope);
     if (transformResult.output) writeStepOutput(runDir, stepName, transformResult.output);
     persistStep(state, stepName, transformResult, runDir, widgetState, ctx);
     if (transformResult.status === "failed") {
@@ -229,81 +209,14 @@ async function executeSingleStep(
   }
 
   // ── Agent step (default) ──
-  let resolvedInput: unknown;
-  try {
-    resolvedInput = resolveExpressions(stepSpec.input ?? {}, scope);
-  } catch (err) {
-    state.steps[stepName] = {
-      step: stepName,
-      agent: stepSpec.agent,
-      status: "failed",
-      usage: zeroUsage(),
-      durationMs: 0,
-      error: err instanceof Error ? err.message : String(err),
-    };
-    state.status = "failed";
-    return false;
-  }
-
-  let agentSpec = loadAgent(stepSpec.agent);
-
-  // Render system prompt template if applicable
-  if (options.templateEnv) {
-    const templateContext = typeof resolvedInput === "object" && resolvedInput !== null
-      ? resolvedInput as Record<string, unknown>
-      : {};
-
-    if (agentSpec.promptTemplate) {
-      const rendered = renderTemplateFile(options.templateEnv, agentSpec.promptTemplate, templateContext);
-      agentSpec = { ...agentSpec, systemPrompt: rendered, promptTemplate: undefined };
-    } else if (agentSpec.systemPrompt && hasTemplateSyntax(agentSpec.systemPrompt)) {
-      const rendered = renderTemplate(options.templateEnv, agentSpec.systemPrompt, templateContext);
-      agentSpec = { ...agentSpec, systemPrompt: rendered };
-    }
-  }
-
-  const prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
-
-  const result = await dispatch(stepSpec, agentSpec, prompt, {
-    cwd: ctx.cwd,
-    sessionLogDir: path.join(runDir, "sessions"),
-    stepName,
-    signal,
-    timeoutMs: stepSpec.timeout ? stepSpec.timeout.seconds * 1000 : undefined,
-    onEvent: () => {},
+  const agentResult = await executeAgentStep(stepName, stepSpec, state, {
+    ctx, signal, loadAgent, runDir,
+    specFilePath: spec.filePath,
+    widgetState,
+    templateEnv: options.templateEnv,
   });
-
-  // Validate output against schema (if defined)
-  if (stepSpec.output?.schema && result.status === "completed") {
-    const schemaPath = resolveSchemaPath(stepSpec.output.schema, spec.filePath);
-    try {
-      const outputFilePath = path.join(runDir, "outputs", `${stepName}.json`);
-      if (fs.existsSync(outputFilePath)) {
-        const rawOutput = JSON.parse(fs.readFileSync(outputFilePath, "utf-8"));
-        validateFromFile(schemaPath, rawOutput, `step output for '${stepName}'`);
-        result.output = rawOutput;
-      } else {
-        try {
-          const parsed = JSON.parse(result.textOutput || "");
-          validateFromFile(schemaPath, parsed, `step output for '${stepName}'`);
-          result.output = parsed;
-          writeStepOutput(runDir, stepName, parsed);
-        } catch {
-          result.status = "failed";
-          result.error = `Step '${stepName}' has output schema but no valid JSON output was produced`;
-        }
-      }
-    } catch (err) {
-      result.status = "failed";
-      result.error = err instanceof Error ? err.message : String(err);
-    }
-  } else if (result.output) {
-    writeStepOutput(runDir, stepName, result.output);
-  }
-
-  persistStep(state, stepName, result, runDir, widgetState, ctx);
-
-  if (result.status === "failed") {
+  persistStep(state, stepName, agentResult, runDir, widgetState, ctx);
+  if (agentResult.status === "failed") {
     state.status = "failed";
     return false;
   }

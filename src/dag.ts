@@ -148,36 +148,30 @@ function extractStepReferences(expr: string, validStepNames: Set<string>): Set<s
 }
 
 /**
- * Build an execution plan from a workflow spec.
- *
+ * Build an execution plan from a pre-computed dependency map.
  * Performs topological sort, grouping independent steps into layers.
- * Steps within a layer can execute concurrently.
- *
  * Throws if the dependency graph contains a cycle.
  */
-export function buildExecutionPlan(spec: WorkflowSpec): ExecutionPlan {
-  const deps = extractDependencies(spec);
-  const allSteps = Object.keys(spec.steps);
+export function buildPlanFromDeps(
+  allSteps: string[],
+  deps: Map<string, Set<string>>,
+): ExecutionPlan {
   const plan: ExecutionPlan = [];
   const placed = new Set<string>();
 
   while (placed.size < allSteps.length) {
-    // Find all steps whose dependencies are fully satisfied
     const layer: string[] = [];
 
     for (const step of allSteps) {
       if (placed.has(step)) continue;
 
       const stepDeps = deps.get(step) ?? new Set();
-      const satisfied = [...stepDeps].every((d) => placed.has(d));
-
-      if (satisfied) {
+      if ([...stepDeps].every((d) => placed.has(d))) {
         layer.push(step);
       }
     }
 
     if (layer.length === 0) {
-      // Remaining steps all have unsatisfied deps → cycle
       const remaining = allSteps.filter((s) => !placed.has(s));
       throw new Error(
         `Dependency cycle detected among steps: ${remaining.join(", ")}`,
@@ -191,6 +185,19 @@ export function buildExecutionPlan(spec: WorkflowSpec): ExecutionPlan {
   }
 
   return plan;
+}
+
+/**
+ * Build an execution plan from a workflow spec.
+ *
+ * Performs topological sort, grouping independent steps into layers.
+ * Steps within a layer can execute concurrently.
+ *
+ * Throws if the dependency graph contains a cycle.
+ */
+export function buildExecutionPlan(spec: WorkflowSpec): ExecutionPlan {
+  const deps = extractDependencies(spec);
+  return buildPlanFromDeps(Object.keys(spec.steps), deps);
 }
 
 /**

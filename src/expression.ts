@@ -156,8 +156,12 @@ function resolveStringExpressions(value: string, scope: Record<string, unknown>)
   });
 }
 
-// ── Comparison operators for evaluateCondition ──
-
+/**
+ * Comparison operators, ordered from longest to shortest.
+ * Order matters: the first-match scan in evaluateCondition must try
+ * longer operators before shorter ones to avoid matching "!=" when
+ * the actual operator is "!==" (or "==" when "===" is intended).
+ */
 const COMPARISON_OPS = ["!==", "===", "!=", "==", ">=", "<=", ">", "<"] as const;
 type ComparisonOp = typeof COMPARISON_OPS[number];
 

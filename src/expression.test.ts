@@ -146,37 +146,37 @@ describe("resolveExpression with CompletionScope", () => {
   };
 
   it("resolves root-level completion fields", () => {
-    assert.strictEqual(resolveExpression("workflow", completionScope as unknown as Record<string, unknown>), "explore-summarize");
-    assert.strictEqual(resolveExpression("status", completionScope as unknown as Record<string, unknown>), "completed");
-    assert.strictEqual(resolveExpression("runDir", completionScope as unknown as Record<string, unknown>), "/tmp/runs/test-run");
-    assert.strictEqual(resolveExpression("runId", completionScope as unknown as Record<string, unknown>), "test-20260313-120000-abcd");
+    assert.strictEqual(resolveExpression("workflow", completionScope), "explore-summarize");
+    assert.strictEqual(resolveExpression("status", completionScope), "completed");
+    assert.strictEqual(resolveExpression("runDir", completionScope), "/tmp/runs/test-run");
+    assert.strictEqual(resolveExpression("runId", completionScope), "test-20260313-120000-abcd");
   });
 
   it("resolves totalUsage fields", () => {
     assert.strictEqual(
-      resolveExpression("totalUsage.cost", completionScope as unknown as Record<string, unknown>),
+      resolveExpression("totalUsage.cost", completionScope),
       0.05,
     );
   });
 
   it("applies filters on completion fields", () => {
     assert.strictEqual(
-      resolveExpression("totalDurationMs | duration", completionScope as unknown as Record<string, unknown>),
+      resolveExpression("totalDurationMs | duration", completionScope),
       "1m32s",
     );
     assert.strictEqual(
-      resolveExpression("totalUsage.cost | currency", completionScope as unknown as Record<string, unknown>),
+      resolveExpression("totalUsage.cost | currency", completionScope),
       "$0.05",
     );
   });
 
   it("still resolves input and steps from completion scope", () => {
     assert.strictEqual(
-      resolveExpression("input.path", completionScope as unknown as Record<string, unknown>),
+      resolveExpression("input.path", completionScope),
       "/src",
     );
     assert.strictEqual(
-      resolveExpression("steps.diagnose.status", completionScope as unknown as Record<string, unknown>),
+      resolveExpression("steps.diagnose.status", completionScope),
       "completed",
     );
   });

@@ -1,19 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import { extractDependencies, buildExecutionPlan, isSequential } from "./dag.ts";
-import type { WorkflowSpec, StepSpec } from "./types.ts";
+import type { StepSpec } from "./types.ts";
+import { makeSpec as makeSpecFull } from "./test-helpers.ts";
 
 /**
  * Helper: build a minimal WorkflowSpec from a steps object.
  */
-function makeSpec(steps: Record<string, StepSpec>): WorkflowSpec {
-  return {
-    name: "test",
-    description: "test workflow",
-    steps,
-    source: "project",
-    filePath: "/test.workflow.yaml",
-  };
+function makeSpec(steps: Record<string, StepSpec>) {
+  return makeSpecFull({ steps });
 }
 
 describe("extractDependencies", () => {

@@ -2,41 +2,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert";
 import { executeWorkflow } from "./workflow-executor.ts";
 import type { WorkflowSpec } from "./types.ts";
+import { mockCtx, mockPi, makeSpec } from "./test-helpers.ts";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-
-// Mock ExtensionContext and ExtensionAPI for testing
-function mockCtx(cwd: string) {
-  return {
-    cwd,
-    hasUI: false,
-    ui: {
-      setWidget: () => {},
-      notify: () => {},
-      setStatus: () => {},
-    },
-  } as any;
-}
-
-function mockPi() {
-  const messages: any[] = [];
-  return {
-    sendMessage: (msg: any, opts: any) => messages.push({ msg, opts }),
-    _messages: messages,
-  } as any;
-}
-
-function makeSpec(overrides: Partial<WorkflowSpec> & { steps: WorkflowSpec["steps"] }): WorkflowSpec {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-loop-"));
-  return {
-    name: "test-loop",
-    description: "test loop step",
-    source: "project",
-    filePath: path.join(tmpDir, "test.workflow.yaml"),
-    ...overrides,
-  };
-}
 
 function defaultOptions(tmpDir?: string) {
   const cwd = tmpDir ?? fs.mkdtempSync(path.join(os.tmpdir(), "wf-loop-"));
@@ -44,6 +13,7 @@ function defaultOptions(tmpDir?: string) {
     ctx: mockCtx(cwd),
     pi: mockPi(),
     loadAgent: () => ({ name: "default" }),
+    _cwd: cwd,
   };
 }
 
@@ -56,7 +26,7 @@ try {
 } catch {}
 
 describe("loop steps", () => {
-  it("breaks on gate pass", async () => {
+  it("breaks on gate pass", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -76,12 +46,16 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.strictEqual(result.status, "completed");
     assert.strictEqual(result.steps.retry.output.iterations, 1); // broke on first pass
   });
 
-  it("retries on gate fail and exhausts", async () => {
+  it("retries on gate fail and exhausts", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -101,12 +75,16 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.strictEqual(result.steps.retry.status, "failed");
     assert.strictEqual(result.steps.retry.output.iterations, 2);
   });
 
-  it("accumulates prior attempts in loop scope", async () => {
+  it("accumulates prior attempts in loop scope", async (t: any) => {
     // This test verifies that the loop scope includes priorAttempts.
     // We use a transform step inside the loop to capture the iteration count.
     const spec = makeSpec({
@@ -136,7 +114,11 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     const attempts = result.steps.retry.output.attempts;
 
     // First iteration: iteration=0, priorCount=0
@@ -146,7 +128,7 @@ describe("loop steps", () => {
     assert.strictEqual(attempts[1].steps.capture.output.iteration, 1);
   });
 
-  it("runs onExhausted when all attempts fail", { skip: !hasPi ? "pi not available" : undefined, timeout: 60000 }, async () => {
+  it("runs onExhausted when all attempts fail", { skip: !hasPi ? "pi not available" : undefined, timeout: 60000 }, async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -165,11 +147,15 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.ok(result.steps.retry.output.lastIteration._exhausted);
   });
 
-  it("agent step inside loop with retry", { skip: !hasPi ? "pi not available" : undefined, timeout: 120000 }, async () => {
+  it("agent step inside loop with retry", { skip: !hasPi ? "pi not available" : undefined, timeout: 120000 }, async (t: any) => {
     // Agent runs, gate fails, agent retries with priorAttempts context
     const spec = makeSpec({
       steps: {
@@ -196,14 +182,18 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.strictEqual(result.steps.retry.output.iterations, 2);
     // Both iterations should have a 'work' step that completed
     assert.strictEqual(result.steps.retry.output.attempts[0].steps.work.status, "completed");
     assert.strictEqual(result.steps.retry.output.attempts[1].steps.work.status, "completed");
   });
 
-  it("gate onFail: fail stops the loop", async () => {
+  it("gate onFail: fail stops the loop", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -222,13 +212,17 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.strictEqual(result.status, "failed");
     assert.strictEqual(result.steps.retry.status, "failed");
     assert.strictEqual(result.steps.retry.output.iterations, 1); // stopped after first iteration
   });
 
-  it("gate onFail: break stops the loop without marking failed", async () => {
+  it("gate onFail: break stops the loop without marking failed", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -247,13 +241,17 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     // onFail: break stops the loop but loopStatus remains "failed" (no gate passed)
     assert.strictEqual(result.steps.retry.status, "failed");
     assert.strictEqual(result.steps.retry.output.iterations, 1);
   });
 
-  it("transform step inside loop", async () => {
+  it("transform step inside loop", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -280,7 +278,11 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     const attempts = result.steps.retry.output.attempts;
 
     // First iteration: value=0
@@ -291,7 +293,7 @@ describe("loop steps", () => {
     assert.strictEqual(attempts[1].steps.compute.output.value, 1);
   });
 
-  it("loop aggregates usage across iterations", async () => {
+  it("loop aggregates usage across iterations", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -311,13 +313,17 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     // Gates have zero usage, but the aggregation should still work
     assert.strictEqual(result.steps.retry.usage.cost, 0);
     assert.strictEqual(result.steps.retry.usage.turns, 0);
   });
 
-  it("when conditional skips sub-steps inside loop", async () => {
+  it("when conditional skips sub-steps inside loop", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -343,7 +349,11 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     const attempts = result.steps.retry.output.attempts;
 
     // Both iterations should have skipped the transform step
@@ -351,7 +361,7 @@ describe("loop steps", () => {
     assert.strictEqual(attempts[1].steps.skipped.status, "skipped");
   });
 
-  it("loop with dynamic attempts via expression", async () => {
+  it("loop with dynamic attempts via expression", async (t: any) => {
     const spec = makeSpec({
       input: {
         type: "object",
@@ -376,12 +386,16 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, { maxRetries: 2 }, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, { maxRetries: 2 }, opts);
     assert.strictEqual(result.steps.retry.output.iterations, 2);
     assert.strictEqual(result.steps.retry.output.maxAttempts, 2);
   });
 
-  it("loop followed by regular step", async () => {
+  it("loop followed by regular step", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -406,14 +420,18 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.strictEqual(result.status, "completed");
     assert.strictEqual(result.steps.retry.status, "completed");
     assert.strictEqual(result.steps.after.status, "completed");
     assert.deepStrictEqual(result.steps.after.output, { completed: true });
   });
 
-  it("failed loop prevents subsequent steps", async () => {
+  it("failed loop prevents subsequent steps", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -437,13 +455,17 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.strictEqual(result.status, "failed");
     assert.strictEqual(result.steps.retry.status, "failed");
     assert.ok(!result.steps.after); // never executed
   });
 
-  it("current iteration sub-steps visible to later sub-steps", async () => {
+  it("current iteration sub-steps visible to later sub-steps", async (t: any) => {
     const spec = makeSpec({
       steps: {
         retry: {
@@ -474,13 +496,17 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.strictEqual(result.status, "completed");
     const attempts = result.steps.retry.output.attempts;
     assert.strictEqual(attempts[0].steps.second.output.fromFirst, 42);
   });
 
-  it("outer steps accessible from inside loop", async () => {
+  it("outer steps accessible from inside loop", async (t: any) => {
     const spec = makeSpec({
       steps: {
         setup: {
@@ -511,7 +537,11 @@ describe("loop steps", () => {
       },
     });
 
-    const result = await executeWorkflow(spec, {}, defaultOptions());
+    const opts = defaultOptions();
+
+    t.after(() => { fs.rmSync(path.dirname(spec.filePath), { recursive: true, force: true }); fs.rmSync(opts._cwd, { recursive: true, force: true }); });
+
+    const result = await executeWorkflow(spec, {}, opts);
     assert.strictEqual(result.status, "completed");
     const attempts = result.steps.retry.output.attempts;
     assert.strictEqual(attempts[0].steps.capture.output.outerValue, "from-outer");

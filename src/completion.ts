@@ -33,11 +33,8 @@ export function resolveCompletion(
     output: result.output,
   };
 
-  // Cast to Record<string, unknown> for the expression engine
-  const scopeRecord = scope as unknown as Record<string, unknown>;
-
   if (spec.template) {
-    const resolved = resolveExpressions(spec.template, scopeRecord);
+    const resolved = resolveExpressions(spec.template, scope);
     return String(resolved ?? "");
   }
 
@@ -45,14 +42,14 @@ export function resolveCompletion(
   const parts: string[] = [];
 
   if (spec.message) {
-    const resolvedMessage = resolveExpressions(spec.message, scopeRecord);
+    const resolvedMessage = resolveExpressions(spec.message, scope);
     parts.push(String(resolvedMessage ?? ""));
   }
 
   if (spec.include && spec.include.length > 0) {
     const included: Record<string, unknown> = {};
     for (const path of spec.include) {
-      const value = resolveExpression(path, scopeRecord);
+      const value = resolveExpression(path, scope);
       included[path] = value;
     }
 

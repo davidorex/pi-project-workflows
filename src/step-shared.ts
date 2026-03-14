@@ -1,12 +1,14 @@
 /**
  * Shared helpers for step executors — constants, usage aggregation,
- * prompt building, schema resolution, and state persistence.
+ * prompt building, schema resolution, state persistence, and template resolution.
  */
 import path from "node:path";
-import type { StepUsage, StepResult, ExecutionState } from "./types.ts";
+import type { StepUsage, StepResult, ExecutionState, AgentSpec } from "./types.ts";
 import type { ProgressWidgetState } from "./tui.ts";
 import { writeState } from "./state.ts";
 import { createProgressWidget } from "./tui.ts";
+import { hasTemplateSyntax, renderTemplate, renderTemplateFile } from "./template.ts";
+import type nunjucks from "nunjucks";
 
 /** Grace period (ms) between SIGTERM and SIGKILL when killing subprocesses. */
 export const SIGKILL_GRACE_MS = 3000;
@@ -102,4 +104,33 @@ export function persistStep(
   if (ctx.hasUI) {
     ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
   }
+}
+
+/**
+ * Resolve template rendering for an agent spec.
+ * Checks promptTemplate (file reference) first, then inline systemPrompt.
+ * Returns a new AgentSpec with the rendered systemPrompt.
+ */
+export function resolveAgentTemplate(
+  agentSpec: AgentSpec,
+  resolvedInput: unknown,
+  templateEnv?: nunjucks.Environment,
+): AgentSpec {
+  if (!templateEnv) return agentSpec;
+
+  const templateContext = typeof resolvedInput === "object" && resolvedInput !== null
+    ? resolvedInput as Record<string, unknown>
+    : {};
+
+  if (agentSpec.promptTemplate) {
+    const rendered = renderTemplateFile(templateEnv, agentSpec.promptTemplate, templateContext);
+    return { ...agentSpec, systemPrompt: rendered, promptTemplate: undefined };
+  }
+
+  if (agentSpec.systemPrompt && hasTemplateSyntax(agentSpec.systemPrompt)) {
+    const rendered = renderTemplate(templateEnv, agentSpec.systemPrompt, templateContext);
+    return { ...agentSpec, systemPrompt: rendered };
+  }
+
+  return agentSpec;
 }

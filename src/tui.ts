@@ -31,11 +31,13 @@ export function createProgressWidget(
   widgetState: ProgressWidgetState,
 ): (tui: TUI, theme: Theme) => Component & { dispose?(): void } {
   return (tui: TUI, theme: Theme) => {
+    /** Pulse interval (ms) for the elapsed-time ticker. Balances update frequency vs overhead. */
+    const PULSE_INTERVAL_MS = 800;
     let pulseOn = true;
     const interval = setInterval(() => {
       pulseOn = !pulseOn;
       tui.requestRender();
-    }, 800);
+    }, PULSE_INTERVAL_MS);
 
     return {
       render(width: number): string[] {

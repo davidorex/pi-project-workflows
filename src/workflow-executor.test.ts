@@ -1217,6 +1217,240 @@ describe("verify step as typed agent output", () => {
   });
 });
 
+// ── Self-implement workflow integration tests ──
+// These use transforms to simulate agent outputs, avoiding real subprocess dispatch.
+
+describe("self-implement workflow", () => {
+  it("parses and executes with mock data — all steps complete, gate passes", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-self-impl-"));
+    const planOutput = {
+      plans: [
+        {
+          name: "step-foreach",
+          intent: "Implement forEach step type",
+          tasks: ["Create step-foreach.ts", "Add tests"],
+          files_to_change: ["src/step-foreach.ts", "src/step-foreach.test.ts"],
+          acceptance_criteria: ["forEach iterates array", "Tests pass"],
+          context_needed: ["src/types.ts"],
+          parallel_group: "a",
+        },
+        {
+          name: "step-command",
+          intent: "Implement command step type",
+          tasks: ["Create step-command.ts", "Add tests"],
+          files_to_change: ["src/step-command.ts", "src/step-command.test.ts"],
+          acceptance_criteria: ["Command executes", "Tests pass"],
+          context_needed: ["src/types.ts"],
+          parallel_group: "a",
+        },
+      ],
+    };
+
+    const execResult = {
+      status: "complete",
+      tasks: [{ name: "implement", status: "done", files_modified: ["src/step-foreach.ts"] }],
+      decisions: [],
+      issues: [],
+      test_count: 5,
+      commit_hash: "",
+    };
+
+    const verifyOutput = {
+      status: "passed",
+      score: "3/3",
+      truths: [{ truth: "All tests pass", status: "verified", evidence: "exit 0" }],
+      criteria_results: [
+        { criterion: "forEach works", verify_method: "command", status: "passed", evidence: "ok" },
+        { criterion: "command works", verify_method: "command", status: "passed", evidence: "ok" },
+        { criterion: "Tests pass", verify_method: "command", status: "passed", evidence: "3 passing" },
+      ],
+      gaps: [],
+    };
+
+    // Build a spec that uses transforms to simulate agent outputs
+    const spec: WorkflowSpec = {
+      name: "self-implement",
+      description: "mock self-implement",
+      input: {
+        type: "object",
+        required: ["phaseSpec", "architecture", "conventions"],
+        properties: {
+          phaseSpec: { type: "object" },
+          architecture: { type: "object" },
+          conventions: { type: "object" },
+        },
+      },
+      steps: {
+        plan: {
+          transform: { mapping: planOutput },
+        },
+        implement: {
+          forEach: "${{ steps.plan.output.plans }}",
+          as: "plan",
+          transform: {
+            mapping: execResult,
+          },
+        },
+        verify: {
+          transform: { mapping: verifyOutput },
+        },
+        check: {
+          gate: {
+            check: "echo '${{ steps.verify.output.status }}' | grep -q passed",
+            onFail: "fail",
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {
+      phaseSpec: { name: "test-phase", success_criteria: [] },
+      architecture: { modules: [] },
+      conventions: { rules: [] },
+    }, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.plan.status, "completed");
+    assert.strictEqual(result.steps.implement.status, "completed");
+    assert.strictEqual(result.steps.verify.status, "completed");
+    assert.strictEqual(result.steps.check.status, "completed");
+
+    // Gate passed
+    const gateOutput = result.steps.check.output as { passed: boolean };
+    assert.strictEqual(gateOutput.passed, true);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("fails gate when verification finds gaps", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-self-impl-fail-"));
+    const planOutput = {
+      plans: [
+        {
+          name: "plan-a",
+          intent: "Do something",
+          tasks: ["Task 1"],
+          acceptance_criteria: ["Works"],
+        },
+      ],
+    };
+
+    const execResult = {
+      status: "complete",
+      tasks: [{ name: "task-1", status: "done" }],
+      decisions: [],
+      issues: [],
+      test_count: 1,
+      commit_hash: "",
+    };
+
+    const verifyOutput = {
+      status: "gaps_found",
+      score: "1/3",
+      truths: [{ truth: "Feature missing", status: "failed", evidence: "not found" }],
+      criteria_results: [
+        { criterion: "Feature works", verify_method: "inspect", status: "failed", evidence: "missing" },
+      ],
+      gaps: [{ truth: "Feature missing", status: "failed", reason: "Not implemented" }],
+    };
+
+    const spec: WorkflowSpec = {
+      name: "self-implement-fail",
+      description: "mock self-implement with gaps",
+      steps: {
+        plan: {
+          transform: { mapping: planOutput },
+        },
+        implement: {
+          forEach: "${{ steps.plan.output.plans }}",
+          as: "plan",
+          transform: { mapping: execResult },
+        },
+        verify: {
+          transform: { mapping: verifyOutput },
+        },
+        check: {
+          gate: {
+            check: "echo '${{ steps.verify.output.status }}' | grep -q passed",
+            onFail: "fail",
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "failed");
+    assert.strictEqual(result.steps.check.status, "failed");
+    const gateOutput = result.steps.check.output as { passed: boolean };
+    assert.strictEqual(gateOutput.passed, false);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("forEach iterates over plans from decomposition", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-self-impl-foreach-"));
+    const planOutput = {
+      plans: [
+        { name: "plan-alpha", intent: "Alpha work", tasks: ["A1", "A2"], acceptance_criteria: ["Alpha done"] },
+        { name: "plan-beta", intent: "Beta work", tasks: ["B1"], acceptance_criteria: ["Beta done"] },
+        { name: "plan-gamma", intent: "Gamma work", tasks: ["G1"], acceptance_criteria: ["Gamma done"] },
+      ],
+    };
+
+    const spec: WorkflowSpec = {
+      name: "self-implement-foreach",
+      description: "test forEach plan iteration",
+      steps: {
+        plan: {
+          transform: { mapping: planOutput },
+        },
+        implement: {
+          forEach: "${{ steps.plan.output.plans }}",
+          as: "plan",
+          transform: {
+            mapping: {
+              planName: "${{ plan.name }}",
+              planIntent: "${{ plan.intent }}",
+            },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.implement.status, "completed");
+    const output = result.steps.implement.output as any[];
+    assert.strictEqual(output.length, 3);
+    assert.strictEqual(output[0].planName, "plan-alpha");
+    assert.strictEqual(output[0].planIntent, "Alpha work");
+    assert.strictEqual(output[1].planName, "plan-beta");
+    assert.strictEqual(output[2].planName, "plan-gamma");
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+});
+
 describe("kill grace period constant", () => {
   it("uses SIGKILL_GRACE_MS (not hardcoded magic numbers)", async () => {
     // This is a static check — grep the source for hardcoded kill timeouts

@@ -1,7 +1,7 @@
 {
   "current_phase": 7,
   "current_spec": 29,
-  "test_count": 354,
+  "test_count": 358,
   "last_commit": "",
   "accumulated_context": {
     "decisions": [
@@ -11,9 +11,9 @@
       "command step fails on non-zero exit (unlike gate which always returns completed with passed: true/false)"
     ],
     "todos": [
-      "Spec 29: Self-implementing workflow demo",
       "Delete old .md demo agents (demo proved out with .agent.yaml)",
-      "Remove dead code: writeStepOutput in state.ts"
+      "Remove dead code: writeStepOutput in state.ts",
+      "Run self-implement workflow end-to-end on a real target"
     ],
     "issues": [
       {
@@ -24,7 +24,7 @@
     "blockers": []
   },
   "session": {
-    "last_action": "Completed spec 28: verifier-output schema, verifier agent spec, plan-breakdown and execution-results schemas (354 tests)",
-    "next_action": "Implement spec 29: self-implementing workflow demo"
+    "last_action": "Completed spec 29: self-implement workflow, plan-decomposer + spec-implementer agents, templates, integration tests (358 tests)",
+    "next_action": "Run self-implement workflow end-to-end on a real spec to prove the full cycle"
   }
 }

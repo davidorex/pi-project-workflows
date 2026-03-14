@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
+import { readFileSync } from "node:fs";
 import { parseWorkflowSpec, WorkflowSpecError } from "./workflow-spec.ts";
 
 describe("parseWorkflowSpec", () => {
@@ -539,5 +540,36 @@ steps:
       () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
       (err: any) => err.message.includes("exactly one"),
     );
+  });
+});
+
+describe("self-implement workflow spec", () => {
+  it("parses demo/self-implement.workflow.yaml successfully", () => {
+    const content = readFileSync("demo/self-implement.workflow.yaml", "utf-8");
+    const spec = parseWorkflowSpec(content, "demo/self-implement.workflow.yaml", "project");
+
+    assert.strictEqual(spec.name, "self-implement");
+    assert.strictEqual(spec.version, "1");
+    assert.ok(spec.input);
+    assert.deepStrictEqual((spec.input as any).required, ["phaseSpec", "architecture", "conventions"]);
+
+    // Step names
+    const stepNames = Object.keys(spec.steps);
+    assert.deepStrictEqual(stepNames, ["plan", "implement", "verify", "check"]);
+
+    // Step types
+    assert.strictEqual(spec.steps.plan.agent, "plan-decomposer");
+    assert.strictEqual(spec.steps.implement.agent, "spec-implementer");
+    assert.strictEqual(spec.steps.implement.forEach, "${{ steps.plan.output.plans }}");
+    assert.strictEqual(spec.steps.implement.as, "plan");
+    assert.strictEqual(spec.steps.verify.agent, "verifier");
+    assert.ok(spec.steps.check.gate);
+    assert.strictEqual(spec.steps.check.gate!.onFail, "fail");
+
+    // Completion
+    assert.ok(spec.completion);
+    assert.ok(spec.completion!.message);
+    assert.ok(spec.completion!.include);
+    assert.strictEqual(spec.completion!.include!.length, 2);
   });
 });

@@ -1,0 +1,13 @@
+name: plan-decomposer
+role: reasoning
+description: Decomposes a phase spec into focused implementation plans with context decisions
+
+model: anthropic/claude-sonnet-4
+tools: [read, bash, grep, find]
+
+output:
+  format: json
+  schema: schemas/plan-breakdown.schema.json
+
+prompt:
+  task: plan-decomposer/task.md

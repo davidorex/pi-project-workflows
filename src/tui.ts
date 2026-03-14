@@ -80,7 +80,7 @@ export function createProgressWidget(
 
         // Paused indicator
         if (widgetState.state.status === "paused") {
-          const pausedLine = `  ${theme.fg("yellow", "\u23f8")} Paused`;
+          const pausedLine = `  ${theme.fg("accent", "\u23f8")} Paused`;
           lines.push(pausedLine.length > width ? pausedLine.slice(0, width) : pausedLine);
         }
 

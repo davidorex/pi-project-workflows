@@ -191,14 +191,15 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
   const hasGate = "gate" in rawStep && rawStep.gate !== undefined;
   const hasTransform = "transform" in rawStep && rawStep.transform !== undefined;
   const hasLoop = "loop" in rawStep && rawStep.loop !== undefined;
+  const hasParallel = "parallel" in rawStep && rawStep.parallel !== undefined;
 
-  const typeCount = [hasAgent, hasGate, hasTransform, hasLoop].filter(Boolean).length;
+  const typeCount = [hasAgent, hasGate, hasTransform, hasLoop, hasParallel].filter(Boolean).length;
 
   if (typeCount === 0) {
-    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, or loop`);
+    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, or parallel`);
   }
   if (typeCount > 1) {
-    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, or loop`);
+    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, or parallel`);
   }
 
   const step: StepSpec = {};
@@ -325,6 +326,24 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
     }
 
     step.loop = loop;
+  }
+
+  // Parallel step
+  if (hasParallel) {
+    if (typeof rawStep.parallel !== "object" || rawStep.parallel === null || Array.isArray(rawStep.parallel)) {
+      throw new WorkflowSpecError(filePath, `step '${stepName}' parallel must be a non-empty object`);
+    }
+    const rawParallel = rawStep.parallel as Record<string, unknown>;
+    if (Object.keys(rawParallel).length === 0) {
+      throw new WorkflowSpecError(filePath, `step '${stepName}' parallel must be a non-empty object`);
+    }
+
+    // Recursively validate sub-steps
+    const parallelSteps: Record<string, StepSpec> = {};
+    for (const [subName, subValue] of Object.entries(rawParallel)) {
+      parallelSteps[subName] = validateStep(subValue, `${stepName}.parallel.${subName}`, filePath);
+    }
+    step.parallel = parallelSteps;
   }
 
   return step;

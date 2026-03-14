@@ -1,3 +1,7 @@
+/**
+ * Workflow executor — orchestrates step execution with DAG-based layering,
+ * parallel dispatch, timeout enforcement, state persistence, and TUI updates.
+ */
 import fs from "node:fs";
 import path from "node:path";
 import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepUsage, StepResult, GateSpec, TransformSpec, LoopSpec, LoopState, LoopAttempt } from "./types.ts";
@@ -8,6 +12,8 @@ import { dispatch } from "./dispatch.ts";
 import { generateRunId, initRunDir, getWorkflowDir, writeState, writeStepOutput, writeMetrics, buildResult, formatResult } from "./state.ts";
 import { resolveCompletion } from "./completion.ts";
 import { createProgressWidget } from "./tui.ts";
+import { buildExecutionPlan, extractDependencies } from "./dag.ts";
+import type { ExecutionLayer, ExecutionPlan } from "./dag.ts";
 
 export interface ExecuteOptions {
   /** pi extension context (for TUI, cwd, etc.) */
@@ -391,6 +397,411 @@ async function executeLoop(
 }
 
 /**
+ * Build a conservative execution plan that preserves declaration-order
+ * sequencing for steps without explicit `${{ steps.X }}` dependencies.
+ *
+ * Steps with no explicit dependencies implicitly depend on the previous
+ * step in declaration order. This ensures backward compatibility with
+ * workflows written for sequential execution while still allowing
+ * DAG-inferred parallelism for steps that DO have explicit dependencies
+ * (e.g., diamond patterns where two steps both depend on an earlier step).
+ */
+function buildConservativePlan(spec: WorkflowSpec): ExecutionPlan {
+  const deps = extractDependencies(spec);
+  const allSteps = Object.keys(spec.steps);
+
+  // Add implicit declaration-order dependency for steps with no explicit deps.
+  // If a step has no ${{ steps.X }} references at all, it depends on the
+  // immediately preceding step in YAML order.
+  for (let i = 1; i < allSteps.length; i++) {
+    const stepDeps = deps.get(allSteps[i])!;
+    if (stepDeps.size === 0) {
+      stepDeps.add(allSteps[i - 1]);
+    }
+  }
+
+  // Topological sort with layer grouping (same algorithm as buildExecutionPlan)
+  const plan: ExecutionPlan = [];
+  const placed = new Set<string>();
+
+  while (placed.size < allSteps.length) {
+    const layer: string[] = [];
+    for (const step of allSteps) {
+      if (placed.has(step)) continue;
+      const stepDeps = deps.get(step) ?? new Set();
+      if ([...stepDeps].every((d) => placed.has(d))) {
+        layer.push(step);
+      }
+    }
+    if (layer.length === 0) {
+      const remaining = allSteps.filter((s) => !placed.has(s));
+      throw new Error(`Dependency cycle detected among steps: ${remaining.join(", ")}`);
+    }
+    plan.push({ steps: layer });
+    for (const s of layer) placed.add(s);
+  }
+
+  return plan;
+}
+
+/** Options passed to single-step and parallel-layer execution helpers. */
+interface StepExecOptions {
+  ctx: any;
+  pi: any;
+  signal?: AbortSignal;
+  loadAgent: (name: string) => AgentSpec;
+  runDir: string;
+  spec: WorkflowSpec;
+  widgetState: ProgressWidgetState;
+}
+
+/**
+ * Execute a single step (agent, gate, transform, loop, or parallel).
+ *
+ * This is the existing per-step logic extracted into a reusable function.
+ * Returns true if the workflow should continue, false if it should stop
+ * (due to failure, break, or cancellation).
+ */
+async function executeSingleStep(
+  stepName: string,
+  stepSpec: StepSpec,
+  state: ExecutionState,
+  options: StepExecOptions,
+): Promise<boolean> {
+  const { ctx, signal, loadAgent, runDir, spec, widgetState } = options;
+
+  // Check cancellation
+  if (signal?.aborted) {
+    state.steps[stepName] = {
+      step: stepName,
+      agent: stepSpec.agent,
+      status: "failed",
+      usage: zeroUsage(),
+      durationMs: 0,
+      error: "Workflow cancelled",
+    };
+    state.status = "failed";
+    return false;
+  }
+
+  // Build expression scope
+  const scope: ExpressionScope = { input: state.input, steps: state.steps };
+
+  // Evaluate `when` conditional
+  if (stepSpec.when) {
+    const conditionExpr = stepSpec.when.replace(/^\$\{\{\s*/, "").replace(/\s*\}\}$/, "");
+    const shouldRun = evaluateCondition(conditionExpr, scope as unknown as Record<string, unknown>);
+    if (!shouldRun) {
+      state.steps[stepName] = {
+        step: stepName,
+        agent: stepSpec.agent ?? "skipped",
+        status: "skipped",
+        usage: zeroUsage(),
+        durationMs: 0,
+      };
+      writeState(runDir, state);
+      if (ctx.hasUI) {
+        ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+      }
+      return true;
+    }
+  }
+
+  // Update widget: mark this step as current
+  widgetState.currentStep = stepName;
+  if (ctx.hasUI) {
+    ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+  }
+
+  // ── Gate step ──
+  if (stepSpec.gate) {
+    const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope as unknown as Record<string, unknown>));
+    const resolvedGate: GateSpec = { ...stepSpec.gate, check: resolvedCheck };
+    const gateResult = await executeGate(resolvedGate, stepName, { cwd: ctx.cwd, signal });
+    const gateOutput = gateResult.output as { passed: boolean; exitCode: number; output: string };
+
+    if (gateOutput.passed) {
+      const onPass = stepSpec.gate.onPass ?? "continue";
+      state.steps[stepName] = gateResult;
+      writeState(runDir, state);
+      if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+      return onPass !== "break";
+    } else {
+      const onFail = stepSpec.gate.onFail ?? "fail";
+      if (onFail === "fail") {
+        gateResult.status = "failed";
+        gateResult.error = `Gate check failed (exit ${gateOutput.exitCode}): ${gateOutput.output}`;
+        state.steps[stepName] = gateResult;
+        state.status = "failed";
+        writeState(runDir, state);
+        if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+        return false;
+      } else if (onFail === "continue") {
+        state.steps[stepName] = gateResult;
+        writeState(runDir, state);
+        if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+        return true;
+      } else if (onFail === "break") {
+        state.steps[stepName] = gateResult;
+        writeState(runDir, state);
+        if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+        return false;
+      }
+    }
+  }
+
+  // ── Transform step ──
+  if (stepSpec.transform) {
+    const transformResult = executeTransform(stepSpec.transform, stepName, scope as unknown as Record<string, unknown>);
+    if (transformResult.output) writeStepOutput(runDir, stepName, transformResult.output);
+    state.steps[stepName] = transformResult;
+    writeState(runDir, state);
+    if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    if (transformResult.status === "failed") {
+      state.status = "failed";
+      return false;
+    }
+    return true;
+  }
+
+  // ── Loop step ──
+  if (stepSpec.loop) {
+    const loopResult = await executeLoop(stepSpec.loop, stepName, state, {
+      ctx: options.ctx, pi: options.pi, signal, loadAgent, runDir, spec,
+    });
+    state.steps[stepName] = loopResult;
+    writeState(runDir, state);
+    if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    if (loopResult.status === "failed") {
+      state.status = "failed";
+      return false;
+    }
+    return true;
+  }
+
+  // ── Parallel step ──
+  if (stepSpec.parallel) {
+    const parallelResult = await executeParallelStep(stepSpec.parallel, stepName, state, options);
+    state.steps[stepName] = parallelResult;
+    writeState(runDir, state);
+    if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+    if (parallelResult.status === "failed") {
+      state.status = "failed";
+      return false;
+    }
+    return true;
+  }
+
+  // ── Agent step (default) ──
+  let resolvedInput: unknown;
+  try {
+    resolvedInput = resolveExpressions(stepSpec.input ?? {}, scope);
+  } catch (err) {
+    state.steps[stepName] = {
+      step: stepName,
+      agent: stepSpec.agent,
+      status: "failed",
+      usage: zeroUsage(),
+      durationMs: 0,
+      error: err instanceof Error ? err.message : String(err),
+    };
+    state.status = "failed";
+    return false;
+  }
+
+  const agentSpec = loadAgent(stepSpec.agent);
+  const prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
+
+  const result = await dispatch(stepSpec, agentSpec, prompt, {
+    cwd: ctx.cwd,
+    sessionLogDir: path.join(runDir, "sessions"),
+    stepName,
+    signal,
+    timeoutMs: stepSpec.timeout ? stepSpec.timeout.seconds * 1000 : undefined,
+    onEvent: () => {},
+  });
+
+  // Validate output against schema (if defined)
+  if (stepSpec.output?.schema && result.status === "completed") {
+    const schemaPath = resolveSchemaPath(stepSpec.output.schema, spec.filePath);
+    try {
+      const outputFilePath = path.join(runDir, "outputs", `${stepName}.json`);
+      if (fs.existsSync(outputFilePath)) {
+        const rawOutput = JSON.parse(fs.readFileSync(outputFilePath, "utf-8"));
+        validateFromFile(schemaPath, rawOutput, `step output for '${stepName}'`);
+        result.output = rawOutput;
+      } else {
+        try {
+          const parsed = JSON.parse(result.textOutput || "");
+          validateFromFile(schemaPath, parsed, `step output for '${stepName}'`);
+          result.output = parsed;
+          writeStepOutput(runDir, stepName, parsed);
+        } catch {
+          result.status = "failed";
+          result.error = `Step '${stepName}' has output schema but no valid JSON output was produced`;
+        }
+      }
+    } catch (err) {
+      result.status = "failed";
+      result.error = err instanceof Error ? err.message : String(err);
+    }
+  } else if (result.output) {
+    writeStepOutput(runDir, stepName, result.output);
+  }
+
+  state.steps[stepName] = result;
+  writeState(runDir, state);
+  if (ctx.hasUI) ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+
+  if (result.status === "failed") {
+    state.status = "failed";
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Execute all steps in a layer concurrently.
+ *
+ * All steps start at the same time. If any step fails, remaining steps
+ * are cancelled via a shared AbortController. All results are collected
+ * before proceeding to the next layer.
+ *
+ * Parallel steps write to distinct keys in `state.steps`, which is safe
+ * in single-threaded Node.js. `writeState` uses atomic write (tmp + rename),
+ * so concurrent calls are safe — last one wins.
+ */
+async function executeParallelLayer(
+  layer: ExecutionLayer,
+  spec: WorkflowSpec,
+  state: ExecutionState,
+  options: StepExecOptions,
+): Promise<void> {
+  const { ctx, signal, widgetState } = options;
+
+  // Create a child AbortController to cancel siblings on failure
+  const layerController = new AbortController();
+  if (signal) {
+    if (signal.aborted) {
+      layerController.abort(signal.reason);
+    } else {
+      signal.addEventListener("abort", () => layerController.abort(signal.reason), { once: true });
+    }
+  }
+
+  // Update widget to show all parallel steps as running
+  widgetState.currentStep = layer.steps.join(", ");
+  if (ctx.hasUI) {
+    ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+  }
+
+  // Launch all steps concurrently
+  const promises = layer.steps.map(async (stepName) => {
+    const stepSpec = spec.steps[stepName];
+    const success = await executeSingleStep(stepName, stepSpec, state, {
+      ...options,
+      signal: layerController.signal,
+    });
+    if (!success && !layerController.signal.aborted) {
+      layerController.abort(new Error(`Step '${stepName}' failed`));
+    }
+    return { stepName, success };
+  });
+
+  const results = await Promise.allSettled(promises);
+
+  // Check for failures
+  for (const result of results) {
+    if (result.status === "rejected") {
+      state.status = "failed";
+      break;
+    }
+    if (result.status === "fulfilled" && !result.value.success) {
+      state.status = "failed";
+      break;
+    }
+  }
+}
+
+/**
+ * Execute a parallel step — runs all named sub-steps concurrently.
+ *
+ * Similar to executeParallelLayer but operates on sub-steps within
+ * a single declared step. The parallel step's result aggregates
+ * all sub-step results. Sub-step outputs are accessible via
+ * `${{ steps.<parallelStepName>.output.<subStepName> }}`.
+ */
+async function executeParallelStep(
+  parallelSpec: Record<string, StepSpec>,
+  stepName: string,
+  state: ExecutionState,
+  options: StepExecOptions,
+): Promise<StepResult> {
+  const startTime = Date.now();
+  const { signal } = options;
+
+  const parallelController = new AbortController();
+  if (signal) {
+    if (signal.aborted) {
+      parallelController.abort(signal.reason);
+    } else {
+      signal.addEventListener("abort", () => parallelController.abort(signal.reason), { once: true });
+    }
+  }
+
+  // Sub-steps share the outer state for reading but write to their own keys
+  const subResults: Record<string, StepResult> = {};
+
+  const subPromises = Object.entries(parallelSpec).map(async ([subName, subSpec]) => {
+    const success = await executeSingleStep(subName, subSpec, state, {
+      ...options,
+      signal: parallelController.signal,
+    });
+    subResults[subName] = state.steps[subName];
+    if (!success && !parallelController.signal.aborted) {
+      parallelController.abort(new Error(`Sub-step '${subName}' failed`));
+    }
+    return success;
+  });
+
+  const settled = await Promise.allSettled(subPromises);
+
+  // Aggregate usage and outputs
+  const totalUsage = zeroUsage();
+  const subOutputs: Record<string, unknown> = {};
+  let anyFailed = false;
+
+  for (const [subName] of Object.entries(parallelSpec)) {
+    const sub = subResults[subName];
+    if (sub) {
+      totalUsage.input += sub.usage.input;
+      totalUsage.output += sub.usage.output;
+      totalUsage.cacheRead += sub.usage.cacheRead;
+      totalUsage.cacheWrite += sub.usage.cacheWrite;
+      totalUsage.cost += sub.usage.cost;
+      totalUsage.turns += sub.usage.turns;
+      subOutputs[subName] = sub.output ?? sub.textOutput;
+      if (sub.status === "failed") anyFailed = true;
+    }
+  }
+
+  // Check for rejected promises too
+  for (const s of settled) {
+    if (s.status === "rejected") anyFailed = true;
+  }
+
+  return {
+    step: stepName,
+    agent: "parallel",
+    status: anyFailed ? "failed" : "completed",
+    output: subOutputs,
+    textOutput: JSON.stringify(subOutputs, null, 2),
+    usage: totalUsage,
+    durationMs: Date.now() - startTime,
+  };
+}
+
+/**
  * Execute a workflow from a parsed spec and validated input.
  *
  * Runs steps sequentially (phase 1), resolving ${{ }} expressions,
@@ -438,243 +849,39 @@ export async function executeWorkflow(
     ctx.ui.setWorkingMessage(`Running ${spec.name} workflow...`);
   }
 
-  // 5. Execute steps in declared order
-  const stepEntries = Object.entries(spec.steps);
-  for (let i = 0; i < stepEntries.length; i++) {
-    const [stepName, stepSpec] = stepEntries[i];
+  // 5. Build execution plan and execute layers
+  const plan = buildConservativePlan(spec);
+  const stepOpts = { ctx, pi, signal, loadAgent, runDir, spec, widgetState };
 
-    // Check cancellation
+  for (const layer of plan) {
     if (signal?.aborted) {
-      state.status = "failed";
-      state.steps[stepName] = {
-        step: stepName,
-        agent: stepSpec.agent,
-        status: "failed",
-        usage: zeroUsage(),
-        durationMs: 0,
-        error: "Workflow cancelled",
-      };
-      break;
-    }
-
-    // Build expression scope for this step
-    const scope: ExpressionScope = { input: state.input, steps: state.steps };
-
-    // Evaluate `when` conditional — skip step if condition is falsy
-    if (stepSpec.when) {
-      const conditionExpr = stepSpec.when.replace(/^\$\{\{\s*/, "").replace(/\s*\}\}$/, "");
-      const shouldRun = evaluateCondition(conditionExpr, scope as unknown as Record<string, unknown>);
-
-      if (!shouldRun) {
-        state.steps[stepName] = {
-          step: stepName,
-          agent: stepSpec.agent ?? "skipped",
-          status: "skipped",
-          usage: zeroUsage(),
-          durationMs: 0,
-        };
-        writeState(runDir, state);
-        // Update widget after skip
-        if (ctx.hasUI) {
-          ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-        }
-        continue;
-      }
-    }
-
-    // Update widget: mark this step as current
-    widgetState.currentStep = stepName;
-    if (ctx.hasUI) {
-      ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-    }
-
-    // ── Gate step ──
-    if (stepSpec.gate) {
-      // Resolve expressions in gate check command
-      const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope as unknown as Record<string, unknown>));
-      const resolvedGate: GateSpec = {
-        ...stepSpec.gate,
-        check: resolvedCheck,
-      };
-
-      const gateResult = await executeGate(resolvedGate, stepName, {
-        cwd: ctx.cwd,
-        signal,
-      });
-
-      const gateOutput = gateResult.output as { passed: boolean; exitCode: number; output: string };
-
-      if (gateOutput.passed) {
-        // Handle onPass
-        const onPass = stepSpec.gate.onPass ?? "continue";
-        state.steps[stepName] = gateResult;
-        writeState(runDir, state);
-        if (ctx.hasUI) {
-          ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-        }
-        if (onPass === "break") {
-          // Signal loop should stop (used inside loops — for now just break the step loop)
-          break;
-        }
-        // onPass === "continue": proceed to next step
-        continue;
-      } else {
-        // Handle onFail
-        const onFail = stepSpec.gate.onFail ?? "fail";
-        if (onFail === "fail") {
-          gateResult.status = "failed";
-          gateResult.error = `Gate check failed (exit ${gateOutput.exitCode}): ${gateOutput.output}`;
-          state.steps[stepName] = gateResult;
-          state.status = "failed";
-          writeState(runDir, state);
-          if (ctx.hasUI) {
-            ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-          }
-          break;
-        } else if (onFail === "continue") {
-          state.steps[stepName] = gateResult;
-          writeState(runDir, state);
-          if (ctx.hasUI) {
-            ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-          }
-          continue;
-        } else if (onFail === "break") {
-          state.steps[stepName] = gateResult;
-          writeState(runDir, state);
-          if (ctx.hasUI) {
-            ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-          }
-          break;
+      // Mark first unprocessed step as cancelled
+      for (const sn of layer.steps) {
+        if (!state.steps[sn]) {
+          state.steps[sn] = {
+            step: sn,
+            agent: spec.steps[sn].agent,
+            status: "failed",
+            usage: zeroUsage(),
+            durationMs: 0,
+            error: "Workflow cancelled",
+          };
         }
       }
-    }
-
-    // ── Transform step ──
-    if (stepSpec.transform) {
-      const transformResult = executeTransform(
-        stepSpec.transform,
-        stepName,
-        scope as unknown as Record<string, unknown>,
-      );
-
-      if (transformResult.output) {
-        writeStepOutput(runDir, stepName, transformResult.output);
-      }
-      state.steps[stepName] = transformResult;
-      writeState(runDir, state);
-      if (ctx.hasUI) {
-        ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-      }
-      // Fail fast on transform failure
-      if (transformResult.status === "failed") {
-        state.status = "failed";
-        break;
-      }
-      continue;
-    }
-
-    // ── Loop step ──
-    if (stepSpec.loop) {
-      const loopResult = await executeLoop(stepSpec.loop, stepName, state, {
-        ...options,
-        runDir,
-        spec,
-      });
-
-      state.steps[stepName] = loopResult;
-      writeState(runDir, state);
-      if (ctx.hasUI) {
-        ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-      }
-      // Fail fast on loop failure
-      if (loopResult.status === "failed") {
-        state.status = "failed";
-        break;
-      }
-      continue;
-    }
-
-    // ── Agent step (default) ──
-
-    // Resolve ${{ }} expressions in step input
-    let resolvedInput: unknown;
-    try {
-      resolvedInput = resolveExpressions(stepSpec.input ?? {}, scope);
-    } catch (err) {
-      // Expression resolution failed — record as step failure
-      state.steps[stepName] = {
-        step: stepName,
-        agent: stepSpec.agent,
-        status: "failed",
-        usage: zeroUsage(),
-        durationMs: 0,
-        error: err instanceof Error ? err.message : String(err),
-      };
       state.status = "failed";
       break;
     }
 
-    // Load agent spec
-    const agentSpec = loadAgent(stepSpec.agent);
-
-    // Build prompt from resolved input
-    const prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
-
-    // Dispatch subprocess
-    const result = await dispatch(stepSpec, agentSpec, prompt, {
-      cwd: ctx.cwd,
-      sessionLogDir: path.join(runDir, "sessions"),
-      stepName,
-      signal,
-      onEvent: (evt) => {
-        // Could update widget with live tool info here (later enhancement)
-      },
-    });
-
-    // Validate output against schema (if defined)
-    if (stepSpec.output?.schema && result.status === "completed") {
-      const schemaPath = resolveSchemaPath(stepSpec.output.schema, spec.filePath);
-      try {
-        // Read output file written by the agent
-        const outputFilePath = path.join(runDir, "outputs", `${stepName}.json`);
-        if (fs.existsSync(outputFilePath)) {
-          const rawOutput = JSON.parse(fs.readFileSync(outputFilePath, "utf-8"));
-          validateFromFile(schemaPath, rawOutput, `step output for '${stepName}'`);
-          result.output = rawOutput;
-        } else {
-          // Try to parse structured output from the text output
-          try {
-            const parsed = JSON.parse(result.textOutput || "");
-            validateFromFile(schemaPath, parsed, `step output for '${stepName}'`);
-            result.output = parsed;
-            writeStepOutput(runDir, stepName, parsed);
-          } catch {
-            result.status = "failed";
-            result.error = `Step '${stepName}' has output schema but no valid JSON output was produced`;
-          }
-        }
-      } catch (err) {
-        result.status = "failed";
-        result.error = err instanceof Error ? err.message : String(err);
-      }
-    } else if (result.output) {
-      // No schema, but structured output exists — persist it
-      writeStepOutput(runDir, stepName, result.output);
-    }
-
-    // Store result
-    state.steps[stepName] = result;
-    writeState(runDir, state);
-
-    // Refresh widget with completed step data
-    if (ctx.hasUI) {
-      ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
-    }
-
-    // Fail fast
-    if (result.status === "failed") {
-      state.status = "failed";
-      break;
+    if (layer.steps.length === 1) {
+      // Single step — execute exactly as before
+      const stepName = layer.steps[0];
+      const stepSpec = spec.steps[stepName];
+      const cont = await executeSingleStep(stepName, stepSpec, state, stepOpts);
+      if (!cont) break;
+    } else {
+      // Multiple independent steps — execute concurrently
+      await executeParallelLayer(layer, spec, state, stepOpts);
+      if (state.status === "failed") break;
     }
   }
 

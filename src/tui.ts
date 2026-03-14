@@ -1,3 +1,7 @@
+/**
+ * TUI progress widget for workflow execution.
+ * Shows step status, timing, cost, and parallel execution indicators.
+ */
 import type { Theme } from "@mariozechner/pi-coding-agent";
 import type { TUI, Component } from "@mariozechner/pi-tui";
 import type { WorkflowSpec, ExecutionState, StepResult } from "./types.ts";
@@ -6,8 +10,9 @@ import { formatDuration, formatCost, formatTokens } from "./format.ts";
 export interface ProgressWidgetState {
   spec: WorkflowSpec;
   state: ExecutionState;
-  currentStep?: string;          // name of the currently running step
+  currentStep?: string;          // name of the currently running step (comma-separated for parallel)
   startTime: number;             // Date.now() when workflow started
+  parallelSubSteps?: Record<string, import("./types.ts").StepResult>;  // live sub-step results for parallel step
 }
 
 /**
@@ -38,10 +43,14 @@ export function createProgressWidget(
         const stepNames = Object.keys(widgetState.spec.steps);
         const totalSteps = stepNames.length;
 
+        // Parse current steps (may be comma-separated for parallel)
+        const currentSteps = widgetState.currentStep?.split(", ") ?? [];
+        const parallelCount = currentSteps.length;
+
         // Determine current step number
         let currentStepNum = 0;
-        if (widgetState.currentStep) {
-          const idx = stepNames.indexOf(widgetState.currentStep);
+        if (currentSteps.length > 0 && currentSteps[0]) {
+          const idx = stepNames.indexOf(currentSteps[0]);
           currentStepNum = idx >= 0 ? idx + 1 : 0;
         } else {
           // Count completed steps
@@ -56,7 +65,8 @@ export function createProgressWidget(
           ? theme.fg("accent", "\u25cf")
           : theme.fg("dim", "\u25cf");
 
-        const headerLine = `${indicator} ${workflowName}  step ${currentStepNum}/${totalSteps}  ${theme.fg("dim", elapsed)}`;
+        const parallelTag = parallelCount > 1 ? ` [${parallelCount} parallel]` : "";
+        const headerLine = `${indicator} ${workflowName}  step ${currentStepNum}/${totalSteps}${parallelTag}  ${theme.fg("dim", elapsed)}`;
         lines.push(headerLine.length > width ? headerLine.slice(0, width) : headerLine);
 
         // Step lines
@@ -78,7 +88,13 @@ export function createProgressWidget(
             const dur = formatDuration(stepResult.durationMs);
             const errorPreview = stepResult.error || "Unknown error";
             line = `  ${theme.fg("error", "\u2717")} ${stepName}  ${theme.fg("dim", dur)}  ${errorPreview}`;
-          } else if (stepName === widgetState.currentStep) {
+          } else if (stepResult && stepResult.agent === "parallel") {
+            // Completed parallel step — show with sub-step count
+            const dur = formatDuration(stepResult.durationMs);
+            const cost = formatCost(stepResult.usage.cost);
+            const tok = formatTokens(stepResult.usage.input + stepResult.usage.output);
+            line = `  ${theme.fg("success", "\u2713")} ${stepName} [parallel]  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}  ${theme.fg("dim", tok)}`;
+          } else if (currentSteps.includes(stepName)) {
             const stepElapsed = formatDuration(Date.now() - widgetState.startTime);
             line = `  ${theme.fg("accent", "\u25b8")} ${theme.fg("accent", stepName)}  ${theme.fg("dim", stepElapsed + "...")}`;
           } else {

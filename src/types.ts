@@ -31,10 +31,11 @@ export interface StepSpec {
   loop?: LoopSpec;
   gate?: GateSpec;
   transform?: TransformSpec;
+  parallel?: Record<string, StepSpec>;   // named sub-steps to run concurrently
   workflow?: string;                     // phase 6 — not yet supported
 }
-// Note: exactly one of agent, gate, transform must be set.
-// workflow is phase 6. loop wraps a sub-sequence of steps.
+// Note: exactly one of agent, gate, transform, loop, or parallel must be set.
+// workflow is phase 6.
 
 export interface LoopSpec {
   maxAttempts: number;                   // max iterations (required)

@@ -1,3 +1,7 @@
+/**
+ * Subprocess dispatch for workflow steps — spawns pi in JSON mode,
+ * collects events, usage, and output. Supports cancellation and timeout.
+ */
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -9,6 +13,7 @@ export interface DispatchOptions {
   sessionLogDir: string;      // directory for session log file (e.g. <runDir>/sessions/)
   stepName: string;            // used for naming the session log file
   signal?: AbortSignal;        // for cancellation
+  timeoutMs?: number;          // timeout in milliseconds — kills subprocess after deadline
   onEvent?: (event: ProcessEvent) => void;  // live event callback for TUI updates
 }
 
@@ -150,6 +155,20 @@ export async function dispatch(
     else options.signal.addEventListener("abort", kill, { once: true });
   }
 
+  // Timeout support: SIGTERM after deadline, SIGKILL after 5s grace
+  let timedOut = false;
+  let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
+  let killTimer: ReturnType<typeof setTimeout> | undefined;
+  if (options.timeoutMs) {
+    timeoutTimer = setTimeout(() => {
+      timedOut = true;
+      proc.kill("SIGTERM");
+      killTimer = setTimeout(() => {
+        if (!proc.killed) proc.kill("SIGKILL");
+      }, 5000);
+    }, options.timeoutMs);
+  }
+
   // Collect result
   const messages: unknown[] = [];
   const usage: StepUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 };
@@ -234,6 +253,10 @@ export async function dispatch(
     });
   });
 
+  // Clear timeout timers
+  if (timeoutTimer) clearTimeout(timeoutTimer);
+  if (killTimer) clearTimeout(killTimer);
+
   // Cleanup temp files
   if (tmpDir) {
     try {
@@ -241,6 +264,21 @@ export async function dispatch(
     } catch {
       // Best-effort cleanup
     }
+  }
+
+  // Timeout overrides exit code interpretation
+  if (timedOut) {
+    return {
+      step: options.stepName,
+      agent: step.agent,
+      status: "failed",
+      output: undefined,
+      textOutput: lastAssistantText,
+      sessionLog: options.sessionLogDir,
+      usage,
+      durationMs: Date.now() - startTime,
+      error: `Step timed out after ${options.timeoutMs! / 1000}s`,
+    };
   }
 
   return {

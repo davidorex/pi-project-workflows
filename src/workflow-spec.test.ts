@@ -353,4 +353,69 @@ steps:
     const stepNames = Object.keys(spec.steps);
     assert.deepStrictEqual(stepNames, ["third", "first", "second"]);
   });
+
+  it("parses parallel step", () => {
+    const yaml = `
+name: test
+steps:
+  both:
+    parallel:
+      a:
+        agent: analyzer-a
+      b:
+        agent: analyzer-b
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.ok(spec.steps.both.parallel);
+    assert.ok(spec.steps.both.parallel!.a);
+    assert.ok(spec.steps.both.parallel!.b);
+    assert.strictEqual(spec.steps.both.parallel!.a.agent, "analyzer-a");
+    assert.strictEqual(spec.steps.both.parallel!.b.agent, "analyzer-b");
+  });
+
+  it("rejects empty parallel step", () => {
+    const yaml = `
+name: test
+steps:
+  both:
+    parallel: {}
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: any) => err.message.includes("non-empty"),
+    );
+  });
+
+  it("rejects step with both agent and parallel", () => {
+    const yaml = `
+name: test
+steps:
+  both:
+    agent: default
+    parallel:
+      a:
+        agent: default
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: any) => err.message.includes("exactly one"),
+    );
+  });
+
+  it("validates sub-steps within parallel", () => {
+    const yaml = `
+name: test
+steps:
+  both:
+    parallel:
+      a:
+        agent: analyzer
+      b:
+        notAType: true
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: any) => err.message.includes("exactly one"),
+    );
+  });
 });

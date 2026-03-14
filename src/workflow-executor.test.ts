@@ -900,3 +900,219 @@ describe("phase 2 integration", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 });
+
+describe("parallel execution (DAG-inferred)", () => {
+  it("runs independent steps in parallel when they have explicit deps", async () => {
+    // Two steps both depend on a source step → they form a parallel layer
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));
+    const spec: WorkflowSpec = {
+      name: "test-parallel",
+      description: "test parallel",
+      steps: {
+        source: {
+          transform: { mapping: { data: "hello" } },
+        },
+        analyzerA: {
+          transform: {
+            mapping: { result: "${{ steps.source.output.data }}-A" },
+          },
+        },
+        analyzerB: {
+          transform: {
+            mapping: { result: "${{ steps.source.output.data }}-B" },
+          },
+        },
+        merge: {
+          transform: {
+            mapping: {
+              a: "${{ steps.analyzerA.output.result }}",
+              b: "${{ steps.analyzerB.output.result }}",
+            },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.source.status, "completed");
+    assert.strictEqual(result.steps.analyzerA.status, "completed");
+    assert.strictEqual(result.steps.analyzerB.status, "completed");
+    assert.strictEqual(result.steps.merge.status, "completed");
+
+    const mergeOutput = result.steps.merge.output as Record<string, unknown>;
+    assert.strictEqual(mergeOutput.a, "hello-A");
+    assert.strictEqual(mergeOutput.b, "hello-B");
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("fails fast when parallel step fails", async () => {
+    // source → (analyzerA, failGate) → merge
+    // failGate fails, so merge should not run
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));
+    const spec: WorkflowSpec = {
+      name: "test-parallel-fail",
+      description: "test parallel fail",
+      steps: {
+        source: {
+          transform: { mapping: { data: "hello" } },
+        },
+        analyzerA: {
+          transform: {
+            mapping: { result: "${{ steps.source.output.data }}" },
+          },
+        },
+        failGate: {
+          gate: { check: "exit 1" },
+          when: "${{ steps.source.output.data }}",
+        },
+        merge: {
+          transform: {
+            mapping: {
+              a: "${{ steps.analyzerA.output.result }}",
+              b: "${{ steps.failGate.output }}",
+            },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "failed");
+    assert.strictEqual(result.steps.failGate.status, "failed");
+    // merge should not have run
+    assert.ok(!result.steps.merge);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("sequential steps without deps remain sequential", async () => {
+    // Steps without ${{ steps.X }} deps are sequential by declaration order
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-seq-"));
+    const spec: WorkflowSpec = {
+      name: "test-seq",
+      description: "test sequential",
+      steps: {
+        a: { transform: { mapping: { x: 1 } } },
+        b: { transform: { mapping: { y: 2 } } },
+        c: { transform: { mapping: { z: 3 } } },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.a.status, "completed");
+    assert.strictEqual(result.steps.b.status, "completed");
+    assert.strictEqual(result.steps.c.status, "completed");
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+});
+
+describe("explicit parallel step", () => {
+  it("runs sub-steps concurrently", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-explpar-"));
+    const spec: WorkflowSpec = {
+      name: "test-explicit-parallel",
+      description: "test explicit parallel",
+      steps: {
+        source: {
+          transform: { mapping: { data: "hello" } },
+        },
+        analyzers: {
+          parallel: {
+            security: {
+              transform: {
+                mapping: { result: "${{ steps.source.output.data }}-sec" },
+              },
+            },
+            performance: {
+              transform: {
+                mapping: { result: "${{ steps.source.output.data }}-perf" },
+              },
+            },
+          },
+        },
+        merge: {
+          transform: {
+            mapping: {
+              results: "${{ steps.analyzers.output }}",
+            },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.steps.analyzers.agent, "parallel");
+    assert.strictEqual(result.steps.analyzers.status, "completed");
+    const output = result.steps.analyzers.output as Record<string, unknown>;
+    assert.ok(output.security);
+    assert.ok(output.performance);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("fails if any sub-step fails", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-explpar-fail-"));
+    const spec: WorkflowSpec = {
+      name: "test-parallel-subfail",
+      description: "test parallel sub-step failure",
+      steps: {
+        both: {
+          parallel: {
+            good: {
+              transform: { mapping: { ok: true } },
+            },
+            bad: {
+              gate: { check: "exit 1", onFail: "fail" },
+            },
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const result = await executeWorkflow(spec, {}, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    assert.strictEqual(result.steps.both.status, "failed");
+    assert.strictEqual(result.status, "failed");
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+});

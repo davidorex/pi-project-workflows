@@ -1,6 +1,7 @@
 import { parse as parseYaml } from "yaml";
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
 import { executeWorkflow } from "./workflow-executor.ts";
+import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
 import type { AgentSpec, WorkflowResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -201,6 +202,40 @@ async function handleRun(rawArgs: string, ctx: any, pi: any): Promise<void> {
     return;
   }
 
+  // Check for resumable run before starting fresh
+  const incomplete = findIncompleteRun(ctx.cwd, spec.name);
+  if (incomplete) {
+    const compat = validateResumeCompatibility(incomplete.state, spec);
+    if (!compat) {
+      const summary = formatIncompleteRun(incomplete, spec);
+      const choice = await ctx.ui.select(
+        `${summary}\n\nResume this run?`,
+        ["Yes — resume from checkpoint", "No — start fresh"],
+      );
+      if (choice === "Yes — resume from checkpoint") {
+        try {
+          await executeWorkflow(spec, incomplete.state.input, {
+            ctx,
+            pi,
+            loadAgent: createAgentLoader(ctx.cwd),
+            resume: {
+              runId: incomplete.runId,
+              runDir: incomplete.runDir,
+              state: incomplete.state,
+            },
+          });
+        } catch (err) {
+          ctx.ui.notify(
+            `Resume failed: ${err instanceof Error ? err.message : String(err)}`,
+            "error",
+          );
+        }
+        return;
+      }
+      // User chose fresh — fall through to normal execution
+    }
+  }
+
   // Parse --input if provided
   let input: unknown = {};
   if (inputJson) {
@@ -227,6 +262,59 @@ async function handleRun(rawArgs: string, ctx: any, pi: any): Promise<void> {
   }
 }
 
+async function handleResume(rawArgs: string, ctx: any, pi: any): Promise<void> {
+  const name = rawArgs.trim().split(/\s+/)[0];
+  if (!name) {
+    ctx.ui.notify("Usage: /workflow resume <name>", "warning");
+    return;
+  }
+
+  const spec = findWorkflow(name, ctx.cwd);
+  if (!spec) {
+    ctx.ui.notify(`Workflow '${name}' not found.`, "warning");
+    return;
+  }
+
+  const incomplete = findIncompleteRun(ctx.cwd, spec.name);
+  if (!incomplete) {
+    ctx.ui.notify(`No incomplete runs found for '${name}'.`, "info");
+    return;
+  }
+
+  // Validate compatibility
+  const compat = validateResumeCompatibility(incomplete.state, spec);
+  if (compat) {
+    ctx.ui.notify(`Cannot resume: ${compat}`, "warning");
+    return;
+  }
+
+  // Show summary and confirm
+  const summary = formatIncompleteRun(incomplete, spec);
+  const choice = await ctx.ui.select(
+    `${summary}\n\nResume this run?`,
+    ["Yes — resume", "No — cancel"],
+  );
+  if (choice !== "Yes — resume") return;
+
+  try {
+    await executeWorkflow(spec, incomplete.state.input, {
+      ctx,
+      pi,
+      loadAgent: createAgentLoader(ctx.cwd),
+      resume: {
+        runId: incomplete.runId,
+        runDir: incomplete.runDir,
+        state: incomplete.state,
+      },
+    });
+  } catch (err) {
+    ctx.ui.notify(
+      `Resume failed: ${err instanceof Error ? err.message : String(err)}`,
+      "error",
+    );
+  }
+}
+
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: any) => {
@@ -240,6 +328,7 @@ const extension = (pi: any) => {
     parameters: Type.Object({
       workflow: Type.String({ description: "Name of the workflow to run" }),
       input: Type.Optional(Type.Unknown({ description: "Input data for the workflow (validated against workflow's input schema)" })),
+      fresh: Type.Optional(Type.String({ description: "Set to 'true' to start a fresh run, ignoring any incomplete prior runs" })),
     }),
 
     async execute(toolCallId: string, params: any, signal: AbortSignal, onUpdate: any, ctx: any) {
@@ -262,12 +351,30 @@ const extension = (pi: any) => {
         }
       }
 
+      // Check for resumable run (unless explicitly requesting fresh)
+      let resumeOpts: { runId: string; runDir: string; state: import("./types.ts").ExecutionState } | undefined;
+      if (params.fresh !== "true") {
+        const incomplete = findIncompleteRun(ctx.cwd, spec.name);
+        if (incomplete) {
+          const compat = validateResumeCompatibility(incomplete.state, spec);
+          if (!compat) {
+            resumeOpts = {
+              runId: incomplete.runId,
+              runDir: incomplete.runDir,
+              state: incomplete.state,
+            };
+          }
+          // If incompatible, silently start fresh
+        }
+      }
+
       try {
         const result = await executeWorkflow(spec, input, {
           ctx,
           pi,
           signal,
           loadAgent: createAgentLoader(ctx.cwd),
+          resume: resumeOpts,
         });
 
         return {
@@ -290,7 +397,7 @@ const extension = (pi: any) => {
   pi.registerCommand("workflow", {
     description: "List and run workflows",
     getArgumentCompletions: (prefix: string) => {
-      const subcommands = ["run", "list", "status"];
+      const subcommands = ["run", "list", "status", "resume"];
       return subcommands
         .filter((s) => s.startsWith(prefix))
         .map((s) => ({ value: s, label: s }));
@@ -306,10 +413,12 @@ const extension = (pi: any) => {
         await handleList(ctx, pi);
       } else if (subcommand === "run") {
         await handleRun(rest, ctx, pi);
+      } else if (subcommand === "resume") {
+        await handleResume(rest, ctx, pi);
       } else if (subcommand === "status") {
         ctx.ui.notify("No workflow currently running.", "info");
       } else {
-        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: list, run, status`, "warning");
+        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: list, run, resume, status`, "warning");
       }
     },
   });

@@ -243,6 +243,45 @@ describe("createProgressWidget", () => {
     }
   });
 
+  it("renders resumed indicator when resumedSteps is set", () => {
+    const widgetState = makeWidgetState({ resumedSteps: 3, currentStep: "report" });
+    widgetState.state.steps.explore = {
+      step: "explore",
+      agent: "explorer",
+      status: "completed",
+      usage: zeroUsage(),
+      durationMs: 10000,
+    };
+    widgetState.state.steps.analyze = {
+      step: "analyze",
+      agent: "analyzer",
+      status: "completed",
+      usage: zeroUsage(),
+      durationMs: 20000,
+    };
+    const factory = createProgressWidget(widgetState);
+    const component = factory(mockTUI(), mockTheme());
+    const lines = component.render(120);
+    component.dispose!();
+
+    const resumedLine = lines.find(l => l.includes("Resumed"));
+    assert.ok(resumedLine, "should have a resumed indicator line");
+    assert.ok(resumedLine.includes("↻"), "should have ↻ symbol");
+    assert.ok(resumedLine.includes("3 steps from prior run"), "should show step count");
+    // Header + resumed line + 3 steps = 5 lines
+    assert.strictEqual(lines.length, 5);
+  });
+
+  it("does not render resumed indicator when resumedSteps is not set", () => {
+    const widgetState = makeWidgetState();
+    const factory = createProgressWidget(widgetState);
+    const component = factory(mockTUI(), mockTheme());
+    const lines = component.render(120);
+    component.dispose!();
+
+    assert.ok(!lines.some(l => l.includes("Resumed")), "should not have resumed indicator");
+  });
+
   it("dispose clears the pulse interval", () => {
     const widgetState = makeWidgetState();
     const factory = createProgressWidget(widgetState);

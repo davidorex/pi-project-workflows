@@ -13,6 +13,7 @@ export interface ProgressWidgetState {
   currentStep?: string;          // name of the currently running step (comma-separated for parallel)
   startTime: number;             // Date.now() when workflow started
   parallelSubSteps?: Record<string, import("./types.ts").StepResult>;  // live sub-step results for parallel step
+  resumedSteps?: number;         // number of steps carried from a prior run (resume indicator)
 }
 
 /**
@@ -70,6 +71,12 @@ export function createProgressWidget(
         const parallelTag = parallelCount > 1 ? ` [${parallelCount} parallel]` : "";
         const headerLine = `${indicator} ${workflowName}  step ${currentStepNum}/${totalSteps}${parallelTag}  ${theme.fg("dim", elapsed)}`;
         lines.push(headerLine.length > width ? headerLine.slice(0, width) : headerLine);
+
+        // Resumed indicator
+        if (widgetState.resumedSteps) {
+          const resumedLine = `  ${theme.fg("dim", "\u21bb")} Resumed: ${widgetState.resumedSteps} steps from prior run`;
+          lines.push(resumedLine.length > width ? resumedLine.slice(0, width) : resumedLine);
+        }
 
         // Step lines
         for (const stepName of stepNames) {

@@ -290,6 +290,11 @@ export async function executeWorkflow(
     state,
     startTime: Date.now(),
   };
+  if (options.resume) {
+    widgetState.resumedSteps = Object.keys(state.steps).filter(
+      s => state.steps[s].status === "completed" || state.steps[s].status === "skipped"
+    ).length;
+  }
   if (ctx.hasUI) {
     ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
   }

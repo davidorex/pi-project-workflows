@@ -8,8 +8,8 @@ import type { ProgressWidgetState } from "./tui.ts";
 import { resolveExpressions } from "./expression.ts";
 import { dispatch } from "./dispatch.ts";
 import { validateFromFile } from "./schema-validator.ts";
-import { writeStepOutput } from "./state.ts";
-import { zeroUsage, resolveSchemaPath, buildPrompt, resolveAgentTemplate } from "./step-shared.ts";
+import { persistStepOutput } from "./output.ts";
+import { zeroUsage, resolveSchemaPath, buildPrompt, compileAgentSpec } from "./step-shared.ts";
 import type nunjucks from "nunjucks";
 
 export interface AgentStepOptions {
@@ -55,7 +55,7 @@ export async function executeAgentStep(
 
   // Load and optionally render agent template
   let agentSpec = loadAgent(stepSpec.agent);
-  agentSpec = resolveAgentTemplate(agentSpec, resolvedInput, templateEnv);
+  agentSpec = compileAgentSpec(agentSpec, resolvedInput, templateEnv);
 
   const prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
 
@@ -68,6 +68,11 @@ export async function executeAgentStep(
     timeoutMs: stepSpec.timeout ? stepSpec.timeout.seconds * 1000 : undefined,
     onEvent: () => {},
   });
+
+  // Resolve output path from spec (may contain ${{ }} expressions)
+  const resolvedOutputPath = stepSpec.output?.path
+    ? String(resolveExpressions(stepSpec.output.path, scope))
+    : undefined;
 
   // Validate output against schema (if defined)
   if (stepSpec.output?.schema && result.status === "completed") {
@@ -83,7 +88,7 @@ export async function executeAgentStep(
           const parsed = JSON.parse(result.textOutput || "");
           validateFromFile(schemaPath, parsed, `step output for '${stepName}'`);
           result.output = parsed;
-          writeStepOutput(runDir, stepName, parsed);
+          result.outputPath = persistStepOutput(runDir, stepName, parsed, undefined, resolvedOutputPath);
         } catch {
           result.status = "failed";
           result.error = `Step '${stepName}' has output schema but no valid JSON output was produced`;
@@ -93,8 +98,8 @@ export async function executeAgentStep(
       result.status = "failed";
       result.error = err instanceof Error ? err.message : String(err);
     }
-  } else if (result.output) {
-    writeStepOutput(runDir, stepName, result.output);
+  } else {
+    result.outputPath = persistStepOutput(runDir, stepName, result.output, result.textOutput, resolvedOutputPath);
   }
 
   return result;

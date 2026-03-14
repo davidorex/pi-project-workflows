@@ -74,17 +74,6 @@ function escapeRegExp(s: string): string {
 }
 
 /**
- * Check if a string contains Nunjucks template syntax.
- * Used for early-exit optimization — skip Nunjucks for plain text.
- *
- * Returns true for {{ }} or {% %} but NOT for ${{ }} (workflow expressions).
- * Uses negative lookbehind to exclude ${{ from matching.
- */
-export function hasTemplateSyntax(text: string): boolean {
-  return /(?<!\$)\{\{|{%/.test(text);
-}
-
-/**
  * Render a named template file through Nunjucks.
  *
  * Used when an agent spec references a template by path:

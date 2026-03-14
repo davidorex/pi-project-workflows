@@ -9,7 +9,7 @@ import type { ProgressWidgetState } from "./tui.ts";
 import { validate, validateFromFile } from "./schema-validator.ts";
 import { resolveExpressions, evaluateCondition } from "./expression.ts";
 import { dispatch } from "./dispatch.ts";
-import { generateRunId, initRunDir, getWorkflowDir, writeState, writeStepOutput, writeMetrics, buildResult, formatResult } from "./state.ts";
+import { generateRunId, initRunDir, getWorkflowDir, writeState, writeMetrics, buildResult, formatResult } from "./state.ts";
 import { resolveCompletion } from "./completion.ts";
 import { createProgressWidget } from "./tui.ts";
 import { extractDependencies, buildPlanFromDeps } from "./dag.ts";
@@ -162,10 +162,15 @@ async function executeSingleStep(
   if (stepSpec.gate) {
     const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope));
     const resolvedGate = { ...stepSpec.gate, check: resolvedCheck };
+    const resolvedGateOutputPath = stepSpec.output?.path
+      ? String(resolveExpressions(stepSpec.output.path, scope))
+      : undefined;
     const gateResult = await executeGate(resolvedGate, stepName, {
       cwd: ctx.cwd,
       signal,
       timeoutMs: stepSpec.timeout ? stepSpec.timeout.seconds * 1000 : undefined,
+      runDir,
+      outputPath: resolvedGateOutputPath,
     });
     const gateOutput = gateResult.output as { passed: boolean; exitCode: number; output: string };
 
@@ -193,8 +198,10 @@ async function executeSingleStep(
 
   // ── Transform step ──
   if (stepSpec.transform) {
-    const transformResult = executeTransform(stepSpec.transform, stepName, scope);
-    if (transformResult.output) writeStepOutput(runDir, stepName, transformResult.output);
+    const resolvedTransformOutputPath = stepSpec.output?.path
+      ? String(resolveExpressions(stepSpec.output.path, scope))
+      : undefined;
+    const transformResult = executeTransform(stepSpec.transform, stepName, scope, runDir, resolvedTransformOutputPath);
     persistStep(state, stepName, transformResult, runDir, widgetState, ctx);
     if (transformResult.status === "failed") {
       state.status = "failed";
@@ -205,10 +212,14 @@ async function executeSingleStep(
 
   // ── Loop step ──
   if (stepSpec.loop) {
+    const resolvedLoopOutputPath = stepSpec.output?.path
+      ? String(resolveExpressions(stepSpec.output.path, scope))
+      : undefined;
     const loopResult = await executeLoop(stepSpec.loop, stepName, state, {
       ctx, pi: options.pi, signal, loadAgent, runDir, spec,
       dispatchAgent: (s, a, p, o) => (options.dispatchFn ?? dispatch)(s, a, p, o),
       templateEnv: options.templateEnv,
+      outputPath: resolvedLoopOutputPath,
     });
     persistStep(state, stepName, loopResult, runDir, widgetState, ctx);
     if (loopResult.status === "failed") {

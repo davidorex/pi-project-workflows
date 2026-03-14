@@ -1,11 +1,10 @@
-import { parse as parseYaml } from "yaml";
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
 import { executeWorkflow, requestPause } from "./workflow-executor.ts";
 import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
-import type { AgentSpec, WorkflowResult } from "./types.ts";
+import { createAgentLoader } from "./agent-spec.ts";
+import type { WorkflowResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 
 // ── Minimal type declarations for pi extension API ──────────────────────────
 // The actual types come from @mariozechner/pi-coding-agent and @sinclair/typebox,
@@ -31,60 +30,6 @@ try {
     String: (opts?: unknown) => ({ type: "string", ...(opts || {}) }),
     Optional: (schema: unknown) => schema,
     Unknown: (opts?: unknown) => ({ ...(opts || {}) }),
-  };
-}
-
-// ── parseAgentFrontmatter ───────────────────────────────────────────────────
-
-/**
- * Parse YAML frontmatter from a .md agent file.
- * Frontmatter is between --- markers at the start of the file.
- * Content after frontmatter is the system prompt.
- */
-export function parseAgentFrontmatter(filePath: string): AgentSpec {
-  const content = fs.readFileSync(filePath, "utf-8");
-  const match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-
-  if (!match) {
-    return { name: path.basename(filePath, ".md") };
-  }
-
-  const frontmatter = parseYaml(match[1]);
-  const systemPrompt = match[2].trim();
-
-  return {
-    name: frontmatter.name || path.basename(filePath, ".md"),
-    description: frontmatter.description,
-    model: frontmatter.model,
-    thinking: frontmatter.thinking,
-    tools: frontmatter.tools,
-    extensions: frontmatter.extensions,
-    skills: frontmatter.skills,
-    output: frontmatter.output,
-    systemPrompt: systemPrompt || undefined,
-    promptTemplate: frontmatter.prompt?.system || undefined,
-  };
-}
-
-// ── Agent loader factory ────────────────────────────────────────────────────
-
-export function createAgentLoader(cwd: string): (name: string) => AgentSpec {
-  const demoAgentsDir = path.resolve(import.meta.dirname, "..", "demo", "agents");
-
-  return (name: string): AgentSpec => {
-    const searchPaths = [
-      path.join(cwd, ".pi", "agents", `${name}.md`),
-      path.join(os.homedir(), ".pi", "agent", "agents", `${name}.md`),
-      path.join(demoAgentsDir, `${name}.md`),
-    ];
-
-    for (const agentPath of searchPaths) {
-      if (fs.existsSync(agentPath)) {
-        return parseAgentFrontmatter(agentPath);
-      }
-    }
-
-    return { name };
   };
 }
 

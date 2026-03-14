@@ -7,7 +7,8 @@ import type { LoopSpec, StepResult, StepUsage, ExecutionState, AgentSpec, StepSp
 import { resolveExpressions, evaluateCondition } from "./expression.ts";
 import { executeGate } from "./step-gate.ts";
 import { executeTransform } from "./step-transform.ts";
-import { zeroUsage, addUsage, buildPrompt, DEFAULT_MAX_ATTEMPTS, resolveAgentTemplate } from "./step-shared.ts";
+import { zeroUsage, addUsage, buildPrompt, DEFAULT_MAX_ATTEMPTS, compileAgentSpec } from "./step-shared.ts";
+import { persistStepOutput } from "./output.ts";
 import type nunjucks from "nunjucks";
 
 /** Options for executeLoop, including callback-injected dispatch to avoid circular imports. */
@@ -25,6 +26,7 @@ export interface LoopExecuteOptions {
   runDir: string;
   spec: WorkflowSpec;
   templateEnv?: nunjucks.Environment;
+  outputPath?: string;                   // author-declared output path (resolved ${{ }} expressions)
 }
 
 /**
@@ -158,7 +160,7 @@ export async function executeLoop(
         }
 
         let agentSpec = loadAgent(subSpec.agent);
-        agentSpec = resolveAgentTemplate(agentSpec, resolvedInput, options.templateEnv);
+        agentSpec = compileAgentSpec(agentSpec, resolvedInput, options.templateEnv);
 
         const prompt = buildPrompt(subSpec, agentSpec, resolvedInput, runDir, `${stepName}-${iteration}-${subName}`);
 
@@ -256,18 +258,23 @@ export async function executeLoop(
     }
   }
 
-  return {
+  const loopOutput = {
+    iterations: allAttempts.length,
+    maxAttempts,
+    attempts: allAttempts,
+    lastIteration: lastIterationSteps,
+  };
+  const loopTextOutput = `Loop '${stepName}': ${allAttempts.length}/${maxAttempts} iterations, status: ${loopStatus}`;
+
+  const result: StepResult = {
     step: stepName,
     agent: "loop",
     status: loopStatus,
-    output: {
-      iterations: allAttempts.length,
-      maxAttempts,
-      attempts: allAttempts,
-      lastIteration: lastIterationSteps,
-    },
-    textOutput: `Loop '${stepName}': ${allAttempts.length}/${maxAttempts} iterations, status: ${loopStatus}`,
+    output: loopOutput,
+    textOutput: loopTextOutput,
     usage: totalUsage,
     durationMs: Date.now() - startTime,
   };
+  result.outputPath = persistStepOutput(runDir, stepName, loopOutput, loopTextOutput, options.outputPath);
+  return result;
 }

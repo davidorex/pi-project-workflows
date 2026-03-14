@@ -3,6 +3,7 @@
  */
 import type { GateSpec, StepResult } from "./types.ts";
 import { zeroUsage, SIGKILL_GRACE_MS } from "./step-shared.ts";
+import { persistStepOutput } from "./output.ts";
 
 /**
  * Execute a gate step: runs a shell command, passes/fails based on exit code.
@@ -13,7 +14,7 @@ import { zeroUsage, SIGKILL_GRACE_MS } from "./step-shared.ts";
 export async function executeGate(
   gate: GateSpec,
   stepName: string,
-  options: { cwd: string; signal?: AbortSignal; timeoutMs?: number },
+  options: { cwd: string; signal?: AbortSignal; timeoutMs?: number; runDir?: string; outputPath?: string },
 ): Promise<StepResult> {
   const startTime = Date.now();
   try {
@@ -78,28 +79,38 @@ export async function executeGate(
         reject(err);
       });
     });
-    return {
+    const gateOutput = { passed: true, exitCode: 0, output: output.trim() };
+    const result: StepResult = {
       step: stepName,
       agent: "gate",
       status: "completed",
       textOutput: output.trim(),
-      output: { passed: true, exitCode: 0, output: output.trim() },
+      output: gateOutput,
       usage: zeroUsage(),
       durationMs: Date.now() - startTime,
     };
+    if (options.runDir) {
+      result.outputPath = persistStepOutput(options.runDir, stepName, gateOutput, undefined, options.outputPath);
+    }
+    return result;
   } catch (err: unknown) {
     const execErr = err as { status?: number; stdout?: string; stderr?: string };
     const exitCode = execErr.status ?? 1;
     const stderr = execErr.stderr?.trim() ?? "";
     const stdout = execErr.stdout?.trim() ?? "";
-    return {
+    const gateOutput = { passed: false, exitCode, output: stderr || stdout };
+    const result: StepResult = {
       step: stepName,
       agent: "gate",
       status: "completed",
       textOutput: stderr || stdout,
-      output: { passed: false, exitCode, output: stderr || stdout },
+      output: gateOutput,
       usage: zeroUsage(),
       durationMs: Date.now() - startTime,
     };
+    if (options.runDir) {
+      result.outputPath = persistStepOutput(options.runDir, stepName, gateOutput, undefined, options.outputPath);
+    }
+    return result;
   }
 }

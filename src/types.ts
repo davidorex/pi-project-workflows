@@ -63,6 +63,7 @@ export interface TransformSpec {
 export interface StepOutputSpec {
   format?: "json" | "text";              // default: "text"
   schema?: string;                       // path to JSON Schema file, relative to workflow spec
+  path?: string;                         // output file path — may contain ${{ }} expressions
 }
 
 // ── Agent Spec (loaded from .md frontmatter or .agent.yaml) ──
@@ -70,14 +71,19 @@ export interface StepOutputSpec {
 export interface AgentSpec {
   name: string;
   description?: string;
-  systemPrompt?: string;                 // inline system prompt (body of .md file)
-  promptTemplate?: string;               // path to template file (from prompt.system frontmatter)
+  role?: string;                         // sensor | reasoning | action | quality
+  systemPrompt?: string;                 // compiled system prompt (from template rendering)
+  promptTemplate?: string;               // system prompt template path
+  taskTemplate?: string;                 // task prompt template path
   model?: string;
   thinking?: string;
   tools?: string[];
   extensions?: string[];
   skills?: string[];
   output?: string;                       // output file path
+  inputSchema?: Record<string, unknown>; // JSON Schema for input
+  outputFormat?: "json" | "text";        // what the agent produces
+  outputSchema?: string;                 // path to output JSON Schema
 }
 
 // ── Execution State ──
@@ -112,6 +118,7 @@ export interface StepResult {
   status: "completed" | "failed" | "skipped";
   output?: unknown;                      // parsed structured output (if schema-bound)
   textOutput?: string;                   // raw text from last assistant message
+  outputPath?: string;                   // absolute path to persisted output JSON
   sessionLog?: string;                   // path to session log file
   usage: StepUsage;
   durationMs: number;

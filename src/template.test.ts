@@ -1,39 +1,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { createTemplateEnv, renderTemplate, hasTemplateSyntax, renderTemplateFile } from "./template.ts";
+import { createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.ts";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-
-describe("hasTemplateSyntax", () => {
-  it("detects {{ }} variable syntax", () => {
-    assert.ok(hasTemplateSyntax("Hello {{ name }}"));
-  });
-
-  it("detects {% %} tag syntax", () => {
-    assert.ok(hasTemplateSyntax("{% if x %}yes{% endif %}"));
-  });
-
-  it("returns false for plain text", () => {
-    assert.ok(!hasTemplateSyntax("Hello world, no templates here"));
-  });
-
-  it("returns false for ${{ }} workflow expressions", () => {
-    assert.ok(!hasTemplateSyntax("${{ steps.explore.output }}"));
-  });
-
-  it("returns false for multiple ${{ }} expressions", () => {
-    assert.ok(!hasTemplateSyntax("${{ input.x }} and ${{ steps.y.output }}"));
-  });
-
-  it("returns true for mixed ${{ }} and {{ }}", () => {
-    assert.ok(hasTemplateSyntax("${{ steps.x.output }} and {{ name }}"));
-  });
-
-  it("returns true when {{ appears at start of string", () => {
-    assert.ok(hasTemplateSyntax("{{ name }} is here"));
-  });
-});
 
 describe("renderTemplate", () => {
   it("renders variable substitution", () => {

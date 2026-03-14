@@ -257,6 +257,12 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
         }
         output.schema = rawOutput.schema;
       }
+      if ("path" in rawOutput) {
+        if (typeof rawOutput.path !== "string") {
+          throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
+        }
+        output.path = rawOutput.path;
+      }
       step.output = output;
     }
   }

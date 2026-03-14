@@ -7,7 +7,7 @@ import type { StepUsage, StepResult, ExecutionState, AgentSpec } from "./types.t
 import type { ProgressWidgetState } from "./tui.ts";
 import { writeState } from "./state.ts";
 import { createProgressWidget } from "./tui.ts";
-import { hasTemplateSyntax, renderTemplate, renderTemplateFile } from "./template.ts";
+import { renderTemplate, renderTemplateFile } from "./template.ts";
 import type nunjucks from "nunjucks";
 
 /** Grace period (ms) between SIGTERM and SIGKILL when killing subprocesses. */
@@ -52,20 +52,23 @@ export function resolveSchemaPath(schemaPath: string, specFilePath: string): str
  * Build the prompt string sent to the subprocess.
  *
  * The prompt includes:
- * 1. The resolved input as context
+ * 1. The compiled task template (if set), or the resolved input as context
  * 2. Output instructions (if schema-bound)
  */
 export function buildPrompt(
   step: { agent?: string; input?: Record<string, unknown>; output?: { format?: string; schema?: string } },
-  _agentSpec: unknown,
+  agentSpec: AgentSpec,
   resolvedInput: unknown,
   runDir: string,
   stepName: string,
 ): string {
   const parts: string[] = [];
 
-  // Input context
-  if (resolvedInput && typeof resolvedInput === "object" && Object.keys(resolvedInput).length > 0) {
+  // Task template was compiled by compileAgentSpec — use it
+  if (agentSpec.taskTemplate) {
+    parts.push(agentSpec.taskTemplate);
+  } else if (resolvedInput && typeof resolvedInput === "object" && Object.keys(resolvedInput).length > 0) {
+    // No task template — serialize input as JSON
     parts.push("## Input\n");
     parts.push("```json");
     parts.push(JSON.stringify(resolvedInput, null, 2));
@@ -107,30 +110,38 @@ export function persistStep(
 }
 
 /**
- * Resolve template rendering for an agent spec.
- * Checks promptTemplate (file reference) first, then inline systemPrompt.
- * Returns a new AgentSpec with the rendered systemPrompt.
+ * Compile an agent spec: render system and task templates through Nunjucks.
+ *
+ * Every agent's prompts go through Nunjucks. Plain text without template
+ * tags renders to itself. The .md that pi receives is compiled output.
  */
-export function resolveAgentTemplate(
+export function compileAgentSpec(
   agentSpec: AgentSpec,
   resolvedInput: unknown,
   templateEnv?: nunjucks.Environment,
 ): AgentSpec {
   if (!templateEnv) return agentSpec;
 
-  const templateContext = typeof resolvedInput === "object" && resolvedInput !== null
+  const ctx = typeof resolvedInput === "object" && resolvedInput !== null
     ? resolvedInput as Record<string, unknown>
     : {};
 
+  let result = agentSpec;
+
+  // System prompt: file template or inline — always rendered
   if (agentSpec.promptTemplate) {
-    const rendered = renderTemplateFile(templateEnv, agentSpec.promptTemplate, templateContext);
-    return { ...agentSpec, systemPrompt: rendered, promptTemplate: undefined };
+    const rendered = renderTemplateFile(templateEnv, agentSpec.promptTemplate, ctx);
+    result = { ...result, systemPrompt: rendered, promptTemplate: undefined };
+  } else if (agentSpec.systemPrompt) {
+    const rendered = renderTemplate(templateEnv, agentSpec.systemPrompt, ctx);
+    result = { ...result, systemPrompt: rendered };
   }
 
-  if (agentSpec.systemPrompt && hasTemplateSyntax(agentSpec.systemPrompt)) {
-    const rendered = renderTemplate(templateEnv, agentSpec.systemPrompt, templateContext);
-    return { ...agentSpec, systemPrompt: rendered };
+  // Task prompt: file template — rendered from typed input
+  if (agentSpec.taskTemplate) {
+    const rendered = renderTemplateFile(templateEnv, agentSpec.taskTemplate, ctx);
+    result = { ...result, taskTemplate: rendered };
   }
 
-  return agentSpec;
+  return result;
 }

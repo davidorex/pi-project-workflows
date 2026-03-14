@@ -160,6 +160,34 @@
       "rationale": "Command produces data \u2014 non-zero exit means the data is not available. Gate judges a condition \u2014 both pass and fail are valid outcomes.",
       "phase": 7,
       "status": "decided"
+    },
+    {
+      "id": "output-write-nonfatal",
+      "decision": "Output write failures are non-fatal \u2014 step data is in memory for downstream expressions",
+      "rationale": "Output files are supplementary persistence. The step already ran. Aligns with artifact write treatment.",
+      "phase": 7,
+      "status": "decided"
+    },
+    {
+      "id": "state-write-fatal",
+      "decision": "State write failures are fatal and halt the workflow",
+      "rationale": "state.json is the sole checkpoint for resume. Continuing without it risks silent progress loss.",
+      "phase": 7,
+      "status": "decided"
+    },
+    {
+      "id": "truncation-not-failure",
+      "decision": "Truncated steps remain status:completed with truncated flag and warnings",
+      "rationale": "Truncation is orchestrator visibility loss, not agent failure. The subprocess may have succeeded.",
+      "phase": 7,
+      "status": "decided"
+    },
+    {
+      "id": "missing-agent-explicit-fail",
+      "decision": "Missing agents throw AgentNotFoundError instead of returning silent { name } fallback",
+      "rationale": "Silent fallback made typos and missing specs indistinguishable from valid agents. Breaking change \u2014 clear error listing all search paths.",
+      "phase": 7,
+      "status": "decided"
     }
   ]
 }

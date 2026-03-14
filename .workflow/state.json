@@ -1,8 +1,8 @@
 {
   "current_phase": 7,
-  "current_spec": 29,
-  "test_count": 358,
-  "last_commit": "",
+  "current_spec": 34,
+  "test_count": 504,
+  "last_commit": "11c6b00",
   "accumulated_context": {
     "decisions": [
       "Project blocks live in .workflow/ \u2014 the project artifact directory",
@@ -11,20 +11,20 @@
       "command step fails on non-zero exit (unlike gate which always returns completed with passed: true/false)"
     ],
     "todos": [
-      "Delete old .md demo agents (demo proved out with .agent.yaml)",
-      "Remove dead code: writeStepOutput in state.ts",
-      "Run self-implement workflow end-to-end on a real target"
+      "Delete old .md demo agents",
+      "Remove dead writeStepOutput in state.ts",
+      "Phase 6: Composition (workflow inheritance, nesting, custom TUI)"
     ],
     "issues": [
       {
         "severity": "low",
-        "description": "Expression parser has known limitation with adjacent ${{ }}${{ }} expressions in a single string \u2014 whole-value regex can misparse them. Pre-existing, not introduced by spec 27."
+        "description": "Expression parser: adjacent ${{ }}${{ }} in a single string can misparse (whole-value regex). Pre-existing."
       }
     ],
     "blockers": []
   },
   "session": {
-    "last_action": "Completed spec 29: self-implement workflow, plan-decomposer + spec-implementer agents, templates, integration tests (358 tests)",
-    "next_action": "Run self-implement workflow end-to-end on a real spec to prove the full cycle"
+    "last_action": "Completed hardening round (specs 31-34): error handling, truncation detection, 125 step executor tests. 504 total tests.",
+    "next_action": "Cleanup: delete old .md demo agents, remove dead writeStepOutput. Then Phase 6."
   }
 }

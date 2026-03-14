@@ -100,10 +100,18 @@ export function persistStep(
   result: StepResult,
   runDir: string,
   widgetState: ProgressWidgetState,
-  ctx: { hasUI: boolean; ui: { setWidget(id: string, w: unknown): void } },
+  ctx: { hasUI: boolean; ui: { setWidget(id: string, w: unknown): void; notify?(msg: string, level: string): void } },
 ): void {
   state.steps[stepName] = result;
-  writeState(runDir, state);
+  try {
+    writeState(runDir, state);
+  } catch (err) {
+    if (ctx.hasUI && ctx.ui.notify) {
+      const msg = err instanceof Error ? err.message : String(err);
+      ctx.ui.notify(`State write failed after step '${stepName}': ${msg}`, "error");
+    }
+    throw err;  // re-throw — state write failure is fatal
+  }
   if (ctx.hasUI) {
     ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
   }

@@ -443,7 +443,14 @@ export async function executeWorkflow(
     if (pauseRequested) {
       pauseRequested = false;
       state.status = "paused";
-      writeState(runDir, state);
+      try {
+        writeState(runDir, state);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (ctx.hasUI) {
+          ctx.ui.notify(`Warning: state write failed after pause — resume may not work: ${msg}`, "error");
+        }
+      }
       if (ctx.hasUI) {
         ctx.ui.notify("Workflow paused. Use /workflow resume or Ctrl+J to continue.", "info");
       }
@@ -455,7 +462,14 @@ export async function executeWorkflow(
   if (state.status === "running") {
     state.status = "completed";
   }
-  writeState(runDir, state);
+  try {
+    writeState(runDir, state);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (ctx.hasUI) {
+      ctx.ui.notify(`Warning: final state write failed — run history may be incomplete: ${msg}`, "error");
+    }
+  }
   writeMetrics(runDir, state.steps);
 
   // 6. Process artifacts

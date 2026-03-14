@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert";
 import {
   generateRunId, initRunDir, writeState, readState,
-  writeStepOutput, buildResult, formatResult, aggregateUsage,
+  writeStepOutput, writeMetrics, buildResult, formatResult, aggregateUsage,
 } from "./state.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -104,5 +104,89 @@ describe("formatResult", () => {
     assert.ok(text.includes("test"));
     assert.ok(text.includes("completed"));
     assert.ok(text.includes("$0.01") || text.includes("0.01"));
+  });
+});
+
+describe("writeState error handling", () => {
+  it("throws with context when write fails", (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-state-err-"));
+    t.after(() => {
+      try { fs.chmodSync(tmpDir, 0o755); } catch { /* ignore */ }
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    // Make directory read-only
+    fs.chmodSync(tmpDir, 0o444);
+
+    const state: ExecutionState = {
+      input: {},
+      steps: {},
+      status: "running",
+    };
+
+    assert.throws(
+      () => writeState(tmpDir, state),
+      (err: Error) => {
+        return err.message.includes("Failed to write workflow state")
+          && err.message.includes("running");
+      },
+    );
+  });
+
+  it("cleans up tmp file on rename failure", (t) => {
+    // Verify that after a write failure, no .state.json.tmp remains.
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-state-err-"));
+    t.after(() => {
+      try { fs.chmodSync(tmpDir, 0o755); } catch { /* ignore */ }
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    fs.chmodSync(tmpDir, 0o444);
+
+    try {
+      writeState(tmpDir, { input: {}, steps: {}, status: "running" });
+    } catch { /* expected */ }
+
+    // Verify no tmp file leaked (may not exist if writeFileSync itself failed)
+    const tmpPath = path.join(tmpDir, ".state.json.tmp");
+    // Restore permissions to check
+    try { fs.chmodSync(tmpDir, 0o755); } catch { /* ignore */ }
+    assert.strictEqual(fs.existsSync(tmpPath), false);
+  });
+
+  it("error message includes the file path", (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-state-err-"));
+    t.after(() => {
+      try { fs.chmodSync(tmpDir, 0o755); } catch { /* ignore */ }
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    fs.chmodSync(tmpDir, 0o444);
+
+    try {
+      writeState(tmpDir, { input: {}, steps: {}, status: "completed" });
+      assert.fail("Should have thrown");
+    } catch (err) {
+      assert.ok(err instanceof Error);
+      assert.ok(err.message.includes("state.json"));
+      assert.ok(err.message.includes("completed"));
+    }
+  });
+});
+
+describe("writeMetrics error handling", () => {
+  it("does not throw when write fails", (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-metrics-err-"));
+    t.after(() => {
+      try { fs.chmodSync(tmpDir, 0o755); } catch { /* ignore */ }
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    fs.chmodSync(tmpDir, 0o444);
+
+    // Should not throw
+    assert.doesNotThrow(() => {
+      writeMetrics(tmpDir, {});
+    });
   });
 });

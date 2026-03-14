@@ -64,8 +64,17 @@ export function writeState(runDir: string, state: ExecutionState): void {
   state.updatedAt = new Date().toISOString();
   const tmpPath = path.join(runDir, ".state.json.tmp");
   const finalPath = path.join(runDir, "state.json");
-  fs.writeFileSync(tmpPath, JSON.stringify(state, null, 2), "utf-8");
-  fs.renameSync(tmpPath, finalPath);
+  try {
+    fs.writeFileSync(tmpPath, JSON.stringify(state, null, 2), "utf-8");
+    fs.renameSync(tmpPath, finalPath);
+  } catch (err) {
+    // Best-effort cleanup of partial tmp file
+    try { fs.unlinkSync(tmpPath); } catch { /* ignore cleanup failure */ }
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Failed to write workflow state to ${finalPath} (status: ${state.status}): ${msg}`,
+    );
+  }
 }
 
 /**
@@ -103,7 +112,14 @@ export function writeMetrics(runDir: string, steps: Record<string, StepResult>):
       Object.entries(steps).map(([name, s]) => [name, { usage: s.usage, durationMs: s.durationMs }]),
     ),
   };
-  fs.writeFileSync(path.join(runDir, "metrics.json"), JSON.stringify(metrics, null, 2), "utf-8");
+  try {
+    fs.writeFileSync(path.join(runDir, "metrics.json"), JSON.stringify(metrics, null, 2), "utf-8");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(
+      `[pi-workflows] Warning: failed to write metrics to ${runDir}/metrics.json: ${msg}\n`,
+    );
+  }
 }
 
 /**

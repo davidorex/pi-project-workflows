@@ -37,17 +37,33 @@ export function persistStepOutput(
 
   // Structured output — the primary case
   if (output !== undefined && output !== null && typeof output === "object") {
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(output, null, 2), "utf-8");
-    return filePath;
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(filePath, JSON.stringify(output, null, 2), "utf-8");
+      return filePath;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      process.stderr.write(
+        `[pi-workflows] Warning: failed to persist output for step '${stepName}' to ${filePath}: ${msg}\n`,
+      );
+      return undefined;
+    }
   }
 
   // String output — wrap in JSON to maintain uniform contract
   const text = typeof output === "string" ? output : textOutput;
   if (text) {
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify({ text }, null, 2), "utf-8");
-    return filePath;
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(filePath, JSON.stringify({ text }, null, 2), "utf-8");
+      return filePath;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      process.stderr.write(
+        `[pi-workflows] Warning: failed to persist output for step '${stepName}' to ${filePath}: ${msg}\n`,
+      );
+      return undefined;
+    }
   }
 
   return undefined;

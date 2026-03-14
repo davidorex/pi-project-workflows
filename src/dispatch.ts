@@ -229,9 +229,25 @@ export async function dispatch(
   // Stream stdout as newline-delimited JSON
   let buf = "";
   let bufBytes = 0;
+  let stdoutTruncated = false;
   proc.stdout!.on("data", (chunk: Buffer) => {
     bufBytes += chunk.length;
-    if (bufBytes > MAX_STDOUT_BYTES) return;  // stop accumulating to prevent OOM
+    if (bufBytes > MAX_STDOUT_BYTES) {
+      if (!stdoutTruncated) {
+        stdoutTruncated = true;
+        // Process any remaining partial line in buf before discarding
+        if (buf.trim()) {
+          try {
+            const evt = JSON.parse(buf);
+            processEvent(evt);
+          } catch {
+            // incomplete JSON line — discard
+          }
+          buf = "";
+        }
+      }
+      return;
+    }
     buf += chunk.toString();
     const lines = buf.split("\n");
     buf = lines.pop() || "";
@@ -281,6 +297,14 @@ export async function dispatch(
 
   // Timeout overrides exit code interpretation
   if (timedOut) {
+    const warnings: string[] = [];
+    if (stdoutTruncated) {
+      warnings.push(
+        `Stdout exceeded ${MAX_STDOUT_BYTES / (1024 * 1024)}MB limit — ` +
+        `output stream was truncated at ${bufBytes} bytes. ` +
+        `Usage counters (tokens, cost, turns) and textOutput may be incomplete.`
+      );
+    }
     return {
       step: options.stepName,
       agent: step.agent,
@@ -291,7 +315,18 @@ export async function dispatch(
       usage,
       durationMs: Date.now() - startTime,
       error: `Step timed out after ${options.timeoutMs! / 1000}s`,
+      truncated: stdoutTruncated || undefined,
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
+  }
+
+  const warnings: string[] = [];
+  if (stdoutTruncated) {
+    warnings.push(
+      `Stdout exceeded ${MAX_STDOUT_BYTES / (1024 * 1024)}MB limit — ` +
+      `output stream was truncated at ${bufBytes} bytes. ` +
+      `Usage counters (tokens, cost, turns) and textOutput may be incomplete.`
+    );
   }
 
   return {
@@ -304,5 +339,7 @@ export async function dispatch(
     usage,
     durationMs: Date.now() - startTime,
     error: exitCode !== 0 ? (stderrBuf.trim() || "Process exited with code " + exitCode) : undefined,
+    truncated: stdoutTruncated || undefined,
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }

@@ -302,6 +302,47 @@ describe("createProgressWidget", () => {
     assert.ok(!lines.some(l => l.includes("Resumed")), "should not have resumed indicator");
   });
 
+  it("shows [truncated] indicator for truncated step", () => {
+    const widgetState = makeWidgetState({ currentStep: "analyze" });
+    widgetState.state.steps.explore = {
+      step: "explore",
+      agent: "explorer",
+      status: "completed",
+      usage: { input: 1000, output: 500, cacheRead: 0, cacheWrite: 0, cost: 0.01, turns: 1 },
+      durationMs: 5000,
+      truncated: true,
+      warnings: ["Stdout exceeded 10MB limit"],
+    };
+    const factory = createProgressWidget(widgetState);
+    const component = factory(mockTUI(), mockTheme());
+    const lines = component.render(120);
+    component.dispose!();
+
+    // Find the explore line and verify it contains a truncated indicator
+    const exploreLine = lines.find(l => l.includes("explore"));
+    assert.ok(exploreLine, "explore line should exist");
+    assert.ok(exploreLine.includes("truncated"), "Truncated step should show [truncated] indicator");
+  });
+
+  it("does not show [truncated] indicator for non-truncated step", () => {
+    const widgetState = makeWidgetState({ currentStep: "analyze" });
+    widgetState.state.steps.explore = {
+      step: "explore",
+      agent: "explorer",
+      status: "completed",
+      usage: { input: 1000, output: 500, cacheRead: 0, cacheWrite: 0, cost: 0.01, turns: 1 },
+      durationMs: 5000,
+    };
+    const factory = createProgressWidget(widgetState);
+    const component = factory(mockTUI(), mockTheme());
+    const lines = component.render(120);
+    component.dispose!();
+
+    const exploreLine = lines.find(l => l.includes("explore"));
+    assert.ok(exploreLine, "explore line should exist");
+    assert.ok(!exploreLine.includes("truncated"), "Non-truncated step should not show [truncated]");
+  });
+
   it("dispose clears the pulse interval", () => {
     const widgetState = makeWidgetState();
     const factory = createProgressWidget(widgetState);

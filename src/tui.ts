@@ -98,7 +98,8 @@ export function createProgressWidget(
             const tok = formatTokens(stepResult.usage.input + stepResult.usage.output);
             // Show step type indicator for gate/transform
             const typeTag = stepResult.agent === "gate" ? " [gate]" : stepResult.agent === "transform" ? " [transform]" : "";
-            line = `  ${theme.fg("success", "\u2713")} ${stepName}${typeTag}  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}  ${theme.fg("dim", tok)}`;
+            const truncTag = stepResult.truncated ? ` ${theme.fg("warning", "[truncated]")}` : "";
+            line = `  ${theme.fg("success", "\u2713")} ${stepName}${typeTag}  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}  ${theme.fg("dim", tok)}${truncTag}`;
           } else if (stepResult && stepResult.status === "failed") {
             const dur = formatDuration(stepResult.durationMs);
             const errorPreview = stepResult.error || "Unknown error";

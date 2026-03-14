@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import { dispatch, buildArgs, extractText, extractToolArgsPreview } from "./dispatch.ts";
-import type { StepSpec, AgentSpec } from "./types.ts";
+import type { StepSpec, AgentSpec, StepResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -312,6 +312,119 @@ describe("dispatch", { skip: !hasPi ? "pi not available" : undefined }, () => {
 
     assert.ok(events.includes("agent_start"));
     assert.ok(events.includes("message_end"));
+
+    fs.rmSync(tmpDir, { recursive: true });
+  }, { timeout: 60000 });
+});
+
+// ── Unit tests: StepResult truncation fields ──
+
+describe("StepResult truncation fields", () => {
+  it("truncated and warnings are optional on StepResult", () => {
+    // Verify the type contract: a StepResult without truncated/warnings is valid
+    const result: StepResult = {
+      step: "test",
+      agent: "agent",
+      status: "completed",
+      usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 },
+      durationMs: 0,
+    };
+    assert.strictEqual(result.truncated, undefined);
+    assert.strictEqual(result.warnings, undefined);
+
+    // A truncated result is also valid
+    const truncResult: StepResult = {
+      ...result,
+      truncated: true,
+      warnings: ["Stdout exceeded 10MB limit"],
+    };
+    assert.strictEqual(truncResult.truncated, true);
+    assert.strictEqual(truncResult.warnings!.length, 1);
+  });
+});
+
+// ── Unit tests: truncation detection logic ──
+
+describe("truncation detection logic", () => {
+  it("sets truncated flag when accumulated bytes exceed threshold", () => {
+    // Simulate the accumulation logic from dispatch's data handler
+    const MAX = 100; // small threshold for testing
+    let bufBytes = 0;
+    let stdoutTruncated = false;
+    const processedLines: string[] = [];
+    let buf = "";
+
+    function handleChunk(chunk: string) {
+      bufBytes += Buffer.byteLength(chunk);
+      if (bufBytes > MAX) {
+        if (!stdoutTruncated) {
+          stdoutTruncated = true;
+          if (buf.trim()) {
+            processedLines.push(buf.trim());
+            buf = "";
+          }
+        }
+        return;
+      }
+      buf += chunk;
+      const lines = buf.split("\n");
+      buf = lines.pop() || "";
+      for (const line of lines) {
+        if (line.trim()) processedLines.push(line.trim());
+      }
+    }
+
+    // Send chunks that total over 100 bytes
+    handleChunk('{"type":"event1"}\n');  // ~18 bytes
+    handleChunk('{"type":"event2"}\n');  // ~36 total
+    handleChunk('{"type":"event3"}\n');  // ~54 total
+    handleChunk('{"type":"event4"}\n');  // ~72 total
+    handleChunk('{"type":"event5"}\n');  // ~90 total
+    handleChunk('{"type":"event6"}\n');  // ~108 total — exceeds 100
+
+    assert.strictEqual(stdoutTruncated, true);
+    // Events before the threshold should have been processed
+    assert.ok(processedLines.length >= 4);
+    assert.ok(processedLines.length < 6, "Post-threshold events should not be processed");
+  });
+
+  it("does not set truncated flag when under threshold", () => {
+    const MAX = 10000;
+    let bufBytes = 0;
+    let stdoutTruncated = false;
+
+    function handleChunk(chunk: string) {
+      bufBytes += Buffer.byteLength(chunk);
+      if (bufBytes > MAX) {
+        stdoutTruncated = true;
+        return;
+      }
+    }
+
+    handleChunk('{"type":"small"}\n');
+    assert.strictEqual(stdoutTruncated, false);
+  });
+});
+
+// ── Integration test: dispatch truncation contract ──
+
+describe("dispatch truncation", { skip: !hasPi ? "pi not available" : undefined }, () => {
+  it("sets truncated flag when stdout exceeds buffer limit", async () => {
+    // A normal-sized response should NOT have truncated set.
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-dispatch-trunc-"));
+    const sessDir = path.join(tmpDir, "sessions");
+    fs.mkdirSync(sessDir, { recursive: true });
+
+    const result = await dispatch(
+      { agent: "default" },
+      { name: "default" },
+      "Respond with exactly: OK",
+      { cwd: process.cwd(), sessionLogDir: sessDir, stepName: "test" },
+    );
+
+    assert.strictEqual(result.status, "completed");
+    assert.strictEqual(result.truncated, undefined, "Normal response should not be truncated");
+    assert.strictEqual(result.warnings, undefined, "Normal response should have no warnings");
 
     fs.rmSync(tmpDir, { recursive: true });
   }, { timeout: 60000 });

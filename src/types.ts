@@ -126,6 +126,8 @@ export interface StepResult {
   usage: StepUsage;
   durationMs: number;
   error?: string;                        // error message if failed
+  truncated?: boolean;                   // true if stdout exceeded MAX_STDOUT_BYTES and data was lost
+  warnings?: string[];                   // non-fatal issues encountered during step execution
 }
 
 export interface StepUsage {

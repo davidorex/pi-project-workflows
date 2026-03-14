@@ -1,25 +1,165 @@
 {
   "decisions": [
-    { "id": "subprocess-dispatch", "decision": "Extension owns its own subprocess dispatch via spawning pi --mode json", "rationale": "Independence from pi-subagents — two tools can coexist without shared state or import relationship", "phase": 1, "status": "decided" },
-    { "id": "control-plane", "decision": "Main conversation is the control plane; workflows are subordinate work", "rationale": "User never loses their interactive session — when workflow completes, conversation continues with the result", "phase": 1, "status": "decided" },
-    { "id": "fail-fast", "decision": "Fail-fast on step failure in sequential execution", "rationale": "Simplest correct behavior for phase 1 — no partial results, no recovery complexity", "phase": 1, "status": "decided" },
-    { "id": "expression-minimal", "decision": "Expression evaluator supports property access only — no arithmetic, no logic, no function calls", "rationale": "Push logic into transform steps where it's explicit and testable, keep ${{ }} simple and predictable", "phase": 1, "status": "decided" },
-    { "id": "expression-filters", "decision": "Pipe syntax for formatting: ${{ path | duration }}, ${{ path | currency }}, ${{ path | json }}", "rationale": "Formatting is display concern, not logic — safe to add to expressions without crossing into computation", "phase": 1, "status": "decided" },
-    { "id": "output-post-hoc", "decision": "Output validation is post-hoc AJV after step completes", "rationale": "In-loop validation (steering agent toward schema compliance) adds complexity — defer to later phase", "phase": 1, "status": "decided" },
-    { "id": "atomic-state", "decision": "State persisted via atomic write (tmp file + rename)", "rationale": "Crash safety — partial writes never corrupt state.json", "phase": 1, "status": "decided" },
-    { "id": "completion-syntax", "decision": "Completion field uses ${{ }} syntax consistently, not {{ }} Nunjucks syntax", "rationale": "Completion templates resolve against CompletionScope which extends ExpressionScope — same engine, same syntax", "phase": 1, "status": "decided" },
-    { "id": "completion-forms", "decision": "Two mutually exclusive completion forms: template (inline interpolation) or message + include (instruction text with data attachments)", "rationale": "Template form for simple cases, message+include for structured data injection into LLM context", "phase": 1, "status": "decided" },
-    { "id": "artifact-paths", "decision": "Artifacts support latest overwrite pattern and runId-stamped history accumulation", "rationale": "latest.md always current without knowing run ID; timestamped files accumulate history for comparison", "phase": 2, "status": "decided" },
-    { "id": "conservative-plan", "decision": "buildConservativePlan() adds implicit sequential deps for steps without explicit ${{ steps.X }} refs", "rationale": "Parallelism is opt-in — safe default prevents unintended concurrent side effects", "phase": 3, "status": "decided" },
-    { "id": "parallel-structured-only", "decision": "Phase 3 parallelism limited to read-only/structured-output workflows", "rationale": "Parallel steps writing to working directory share cwd and may interfere — filesystem isolation deferred", "phase": 3, "status": "decided" },
-    { "id": "nunjucks-unconditional", "decision": "compileAgentSpec() renders both system and task prompts through Nunjucks unconditionally", "rationale": "No hasTemplateSyntax gate needed — plain text renders to itself, template syntax renders correctly", "phase": 5, "status": "decided" },
-    { "id": "template-protection", "decision": "${{ }} workflow expressions protected from Nunjucks interpretation during template rendering", "rationale": "Two expression syntaxes coexist — Nunjucks must not interpret ${{ }} as its own {{ }}", "phase": 5, "status": "decided" },
-    { "id": "three-tier-resolution", "decision": "Three-tier resource resolution: .pi/<dir>/ > ~/.pi/agent/<dir>/ > <package>/<dir>/", "rationale": "Project-level overrides user-level overrides package defaults — standard precedence", "phase": 5, "status": "decided" },
-    { "id": "checkpoint-resume", "decision": "Resume reuses run dir and state, layer loop skips completed steps, re-runs failed steps", "rationale": "Partial parallel layers resume correctly — only pending steps in each layer execute", "phase": 4, "status": "decided" },
-    { "id": "pause-mechanisms", "decision": "Three pause mechanisms: workflow-authored (pause: step), user-initiated (Ctrl+H), crash recovery", "rationale": "Deliberate pause points, interactive control, and crash safety are three distinct use cases needing unified resume", "phase": 4, "status": "decided" },
-    { "id": "output-persistence", "decision": "Every step writes output as JSON to disk via persistStepOutput() — file system is the data bus", "rationale": "One workflow's output is another workflow's input. StepResult.outputPath holds the absolute path.", "phase": 4, "status": "decided" },
-    { "id": "agent-yaml-compilation", "decision": "Agent specs are YAML declaring typed contracts; .md is compiled at dispatch time from spec + templates + input", "rationale": "The .md exists in memory for milliseconds — written to temp file, passed to pi, deleted. Never hand-authored.", "phase": 5, "status": "decided" },
-    { "id": "project-as-data", "decision": "Project structure decomposed into typed JSON blocks that templates compose from", "rationale": "Master planning doc is a monolith — no part independently injectable into agent prompts. Blocks enable selective context injection.", "phase": 7, "status": "decided" },
-    { "id": "budget-defer", "decision": "Budget enforcement deferred — accumulation via addUsage() works but no ceiling gate", "rationale": "Needs design for configurable actions (pause, fail, warn) — accumulation sufficient for now", "phase": 4, "status": "tentative" }
+    {
+      "id": "subprocess-dispatch",
+      "decision": "Extension owns its own subprocess dispatch via spawning pi --mode json",
+      "rationale": "Independence from pi-subagents \u2014 two tools can coexist without shared state or import relationship",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "control-plane",
+      "decision": "Main conversation is the control plane; workflows are subordinate work",
+      "rationale": "User never loses their interactive session \u2014 when workflow completes, conversation continues with the result",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "fail-fast",
+      "decision": "Fail-fast on step failure in sequential execution",
+      "rationale": "Simplest correct behavior for phase 1 \u2014 no partial results, no recovery complexity",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "expression-minimal",
+      "decision": "Expression evaluator supports property access only \u2014 no arithmetic, no logic, no function calls",
+      "rationale": "Push logic into transform steps where it's explicit and testable, keep ${{ }} simple and predictable",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "expression-filters",
+      "decision": "Pipe syntax for formatting: ${{ path | duration }}, ${{ path | currency }}, ${{ path | json }}",
+      "rationale": "Formatting is display concern, not logic \u2014 safe to add to expressions without crossing into computation",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "output-post-hoc",
+      "decision": "Output validation is post-hoc AJV after step completes",
+      "rationale": "In-loop validation (steering agent toward schema compliance) adds complexity \u2014 defer to later phase",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "atomic-state",
+      "decision": "State persisted via atomic write (tmp file + rename)",
+      "rationale": "Crash safety \u2014 partial writes never corrupt state.json",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "completion-syntax",
+      "decision": "Completion field uses ${{ }} syntax consistently, not {{ }} Nunjucks syntax",
+      "rationale": "Completion templates resolve against CompletionScope which extends ExpressionScope \u2014 same engine, same syntax",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "completion-forms",
+      "decision": "Two mutually exclusive completion forms: template (inline interpolation) or message + include (instruction text with data attachments)",
+      "rationale": "Template form for simple cases, message+include for structured data injection into LLM context",
+      "phase": 1,
+      "status": "decided"
+    },
+    {
+      "id": "artifact-paths",
+      "decision": "Artifacts support latest overwrite pattern and runId-stamped history accumulation",
+      "rationale": "latest.md always current without knowing run ID; timestamped files accumulate history for comparison",
+      "phase": 2,
+      "status": "decided"
+    },
+    {
+      "id": "conservative-plan",
+      "decision": "buildConservativePlan() adds implicit sequential deps for steps without explicit ${{ steps.X }} refs",
+      "rationale": "Parallelism is opt-in \u2014 safe default prevents unintended concurrent side effects",
+      "phase": 3,
+      "status": "decided"
+    },
+    {
+      "id": "parallel-structured-only",
+      "decision": "Phase 3 parallelism limited to read-only/structured-output workflows",
+      "rationale": "Parallel steps writing to working directory share cwd and may interfere \u2014 filesystem isolation deferred",
+      "phase": 3,
+      "status": "decided"
+    },
+    {
+      "id": "nunjucks-unconditional",
+      "decision": "compileAgentSpec() renders both system and task prompts through Nunjucks unconditionally",
+      "rationale": "No hasTemplateSyntax gate needed \u2014 plain text renders to itself, template syntax renders correctly",
+      "phase": 5,
+      "status": "decided"
+    },
+    {
+      "id": "template-protection",
+      "decision": "${{ }} workflow expressions protected from Nunjucks interpretation during template rendering",
+      "rationale": "Two expression syntaxes coexist \u2014 Nunjucks must not interpret ${{ }} as its own {{ }}",
+      "phase": 5,
+      "status": "decided"
+    },
+    {
+      "id": "three-tier-resolution",
+      "decision": "Three-tier resource resolution: .pi/<dir>/ > ~/.pi/agent/<dir>/ > <package>/<dir>/",
+      "rationale": "Project-level overrides user-level overrides package defaults \u2014 standard precedence",
+      "phase": 5,
+      "status": "decided"
+    },
+    {
+      "id": "checkpoint-resume",
+      "decision": "Resume reuses run dir and state, layer loop skips completed steps, re-runs failed steps",
+      "rationale": "Partial parallel layers resume correctly \u2014 only pending steps in each layer execute",
+      "phase": 4,
+      "status": "decided"
+    },
+    {
+      "id": "pause-mechanisms",
+      "decision": "Three pause mechanisms: workflow-authored (pause: step), user-initiated (Ctrl+H), crash recovery",
+      "rationale": "Deliberate pause points, interactive control, and crash safety are three distinct use cases needing unified resume",
+      "phase": 4,
+      "status": "decided"
+    },
+    {
+      "id": "output-persistence",
+      "decision": "Every step writes output as JSON to disk via persistStepOutput() \u2014 file system is the data bus",
+      "rationale": "One workflow's output is another workflow's input. StepResult.outputPath holds the absolute path.",
+      "phase": 4,
+      "status": "decided"
+    },
+    {
+      "id": "agent-yaml-compilation",
+      "decision": "Agent specs are YAML declaring typed contracts; .md is compiled at dispatch time from spec + templates + input",
+      "rationale": "The .md exists in memory for milliseconds \u2014 written to temp file, passed to pi, deleted. Never hand-authored.",
+      "phase": 5,
+      "status": "decided"
+    },
+    {
+      "id": "project-as-data",
+      "decision": "Project structure decomposed into typed JSON blocks that templates compose from",
+      "rationale": "Master planning doc is a monolith \u2014 no part independently injectable into agent prompts. Blocks enable selective context injection.",
+      "phase": 7,
+      "status": "decided"
+    },
+    {
+      "id": "budget-defer",
+      "decision": "Budget enforcement deferred \u2014 accumulation via addUsage() works but no ceiling gate",
+      "rationale": "Needs design for configurable actions (pause, fail, warn) \u2014 accumulation sufficient for now",
+      "phase": 4,
+      "status": "tentative"
+    },
+    {
+      "id": "foreach-when-global",
+      "decision": "forEach when: conditional applies globally before iteration starts, not per-iteration",
+      "rationale": "Per-iteration conditions require the as-bound variable in the when expression, but when is evaluated before forEach binding happens. Authors use transform + filter to pre-filter the array instead.",
+      "phase": 7,
+      "status": "decided"
+    },
+    {
+      "id": "command-fails-nonzero",
+      "decision": "command step fails on non-zero exit (unlike gate which always returns completed)",
+      "rationale": "Command produces data \u2014 non-zero exit means the data is not available. Gate judges a condition \u2014 both pass and fail are valid outcomes.",
+      "phase": 7,
+      "status": "decided"
+    }
   ]
 }

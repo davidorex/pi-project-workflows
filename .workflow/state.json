@@ -1,24 +1,28 @@
 {
   "current_phase": 7,
-  "current_spec": 26,
-  "test_count": 300,
-  "last_commit": "",
+  "current_spec": 28,
+  "test_count": 333,
+  "last_commit": "6634f19",
   "accumulated_context": {
     "decisions": [
-      "Project blocks supplement the master doc — they don't replace it",
-      "Specs 26-29 form Phase 7: project structure, execution primitives, verification"
+      "Project blocks live in .workflow/ — the project artifact directory",
+      "Specs 26-29 form Phase 7: project structure, execution primitives, verification",
+      "forEach when: conditional applies globally (before iteration starts), not per-iteration — per-iteration conditions require when to be expressible without forEach-scoped variables at the top level",
+      "command step fails on non-zero exit (unlike gate which always returns completed with passed: true/false)"
     ],
     "todos": [
-      "Spec 26: Project contracts and blocks (in progress)",
-      "Spec 27: forEach and command step types",
       "Spec 28: Verification as typed results",
-      "Spec 29: Self-implementing workflow demo"
+      "Spec 29: Self-implementing workflow demo",
+      "Delete old .md demo agents (demo proved out with .agent.yaml)",
+      "Remove dead code: writeStepOutput in state.ts"
     ],
-    "issues": [],
+    "issues": [
+      { "severity": "low", "description": "Expression parser has known limitation with adjacent ${{ }}${{ }} expressions in a single string — whole-value regex can misparse them. Pre-existing, not introduced by spec 27." }
+    ],
     "blockers": []
   },
   "session": {
-    "last_action": "Completed specs 24-25: output persistence, agent compilation pipeline, typed analysis demo",
-    "next_action": "Implement spec 26: decompose master doc into typed JSON blocks with schemas"
+    "last_action": "Completed specs 26-27: project blocks in .workflow/, forEach and command step types (333 tests)",
+    "next_action": "Implement spec 28: verification as typed results (verifier-output schema, verifier agent spec, templates)"
   }
 }

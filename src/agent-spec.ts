@@ -18,14 +18,65 @@ import { parse as parseYaml } from "yaml";
 import type { AgentSpec } from "./types.ts";
 
 /**
+ * Thrown when an agent spec file is not found in any search path.
+ */
+export class AgentNotFoundError extends Error {
+  public readonly agentName: string;
+  public readonly searchPaths: string[];
+
+  constructor(agentName: string, searchPaths: string[]) {
+    const pathList = searchPaths.map(p => `  - ${p}`).join("\n");
+    super(`Agent '${agentName}' not found. Searched:\n${pathList}`);
+    this.name = "AgentNotFoundError";
+    this.agentName = agentName;
+    this.searchPaths = searchPaths;
+  }
+}
+
+/**
+ * Thrown when an agent spec file exists but cannot be read or parsed.
+ */
+export class AgentParseError extends Error {
+  public readonly agentName: string;
+  public readonly filePath: string;
+  public readonly cause: Error;
+
+  constructor(agentName: string, filePath: string, cause: Error) {
+    super(`Agent '${agentName}' at ${filePath}: ${cause.message}`);
+    this.name = "AgentParseError";
+    this.agentName = agentName;
+    this.filePath = filePath;
+    this.cause = cause;
+  }
+}
+
+/**
  * Parse a YAML agent spec file into an AgentSpec.
  */
 export function parseAgentYaml(filePath: string): AgentSpec {
-  const content = fs.readFileSync(filePath, "utf-8");
-  const spec = parseYaml(content);
+  const name = path.basename(filePath, ".agent.yaml");
+
+  let content: string;
+  try {
+    content = fs.readFileSync(filePath, "utf-8");
+  } catch (err) {
+    throw new AgentParseError(name, filePath, err instanceof Error ? err : new Error(String(err)));
+  }
+
+  let spec: any;
+  try {
+    spec = parseYaml(content);
+  } catch (err) {
+    throw new AgentParseError(name, filePath, err instanceof Error ? err : new Error(String(err)));
+  }
+
+  // Handle null/undefined from parsing empty file or non-mapping YAML
+  if (!spec || typeof spec !== "object") {
+    throw new AgentParseError(name, filePath, new Error("File is empty or does not contain a YAML mapping"));
+  }
 
   return {
-    name: spec.name || path.basename(filePath, ".agent.yaml"),
+    name: spec.name || name,
     description: spec.description,
     role: spec.role,
     model: spec.model,
@@ -59,6 +110,6 @@ export function createAgentLoader(cwd: string, builtinDir?: string): (name: stri
       if (fs.existsSync(p)) return parseAgentYaml(p);
     }
 
-    return { name };
+    throw new AgentNotFoundError(name, searchPaths);
   };
 }

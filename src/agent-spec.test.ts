@@ -3,7 +3,7 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { parseAgentYaml, createAgentLoader } from "./agent-spec.ts";
+import { parseAgentYaml, createAgentLoader, AgentNotFoundError, AgentParseError } from "./agent-spec.ts";
 import { compileAgentSpec } from "./step-shared.ts";
 import { createTemplateEnv } from "./template.ts";
 
@@ -63,6 +63,80 @@ prompt:
     const spec = parseAgentYaml(specPath);
     assert.strictEqual(spec.name, "my-agent");
   });
+
+  it("throws AgentParseError for malformed YAML", (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+    const specPath = path.join(tmpDir, "bad.agent.yaml");
+    fs.writeFileSync(specPath, `
+name: bad-agent
+tools: [read
+  this is not valid yaml: {{{}}}
+`);
+
+    assert.throws(
+      () => parseAgentYaml(specPath),
+      (err: any) => {
+        assert.strictEqual(err.name, "AgentParseError");
+        assert.strictEqual(err.agentName, "bad");
+        assert.strictEqual(err.filePath, specPath);
+        assert.ok(err.message.includes("bad"), "error message should include agent name");
+        assert.ok(err.message.includes(specPath), "error message should include file path");
+        return true;
+      },
+    );
+  });
+
+  it("throws AgentParseError for empty file", (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+    const specPath = path.join(tmpDir, "empty.agent.yaml");
+    fs.writeFileSync(specPath, "");
+
+    assert.throws(
+      () => parseAgentYaml(specPath),
+      (err: any) => {
+        assert.strictEqual(err.name, "AgentParseError");
+        assert.ok(err.message.includes("empty") || err.message.includes("does not contain"));
+        return true;
+      },
+    );
+  });
+
+  it("throws AgentParseError for file with only document markers", (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+    const specPath = path.join(tmpDir, "marker.agent.yaml");
+    fs.writeFileSync(specPath, "---\n---\n");
+
+    assert.throws(
+      () => parseAgentYaml(specPath),
+      (err: any) => {
+        assert.strictEqual(err.name, "AgentParseError");
+        return true;
+      },
+    );
+  });
+
+  it("throws AgentParseError for scalar YAML content", (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+    const specPath = path.join(tmpDir, "scalar.agent.yaml");
+    fs.writeFileSync(specPath, "just a string, not a mapping\n");
+
+    assert.throws(
+      () => parseAgentYaml(specPath),
+      (err: any) => {
+        assert.strictEqual(err.name, "AgentParseError");
+        assert.ok(err.message.includes("does not contain a YAML mapping"));
+        return true;
+      },
+    );
+  });
 });
 
 describe("createAgentLoader", () => {
@@ -97,14 +171,43 @@ describe("createAgentLoader", () => {
     assert.strictEqual(spec.role, "quality");
   });
 
-  it("returns bare spec for unknown agents", (t) => {
+  it("throws AgentNotFoundError for missing agent", (t) => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const loader = createAgentLoader(tmpDir);
-    const spec = loader("nonexistent");
-    assert.strictEqual(spec.name, "nonexistent");
-    assert.strictEqual(spec.tools, undefined);
+    const loader = createAgentLoader(tmpDir, tmpDir);  // builtinDir also empty
+    assert.throws(
+      () => loader("nonexistent-agent"),
+      (err: any) => {
+        assert.strictEqual(err.name, "AgentNotFoundError");
+        assert.strictEqual(err.agentName, "nonexistent-agent");
+        assert.ok(Array.isArray(err.searchPaths));
+        assert.ok(err.searchPaths.length >= 2, "should list at least project and user search paths");
+        assert.ok(err.message.includes("nonexistent-agent"), "error message should include agent name");
+        assert.ok(err.message.includes("Searched"), "error message should indicate search was performed");
+        return true;
+      },
+    );
+  });
+
+  it("throws AgentParseError when found file has invalid YAML", (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+    const agentDir = path.join(tmpDir, ".pi", "agents");
+    fs.mkdirSync(agentDir, { recursive: true });
+    fs.writeFileSync(path.join(agentDir, "broken.agent.yaml"), "name: broken\ntools: [read\n");
+
+    const loader = createAgentLoader(tmpDir, tmpDir);
+    assert.throws(
+      () => loader("broken"),
+      (err: any) => {
+        assert.strictEqual(err.name, "AgentParseError");
+        assert.strictEqual(err.agentName, "broken");
+        assert.ok(err.filePath.includes("broken.agent.yaml"));
+        return true;
+      },
+    );
   });
 });
 

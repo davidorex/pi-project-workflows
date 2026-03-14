@@ -159,7 +159,21 @@ export async function executeLoop(
           break;
         }
 
-        let agentSpec = loadAgent(subSpec.agent);
+        let agentSpec: AgentSpec;
+        try {
+          agentSpec = loadAgent(subSpec.agent);
+        } catch (err) {
+          iterationSteps[subName] = {
+            step: subName,
+            agent: subSpec.agent,
+            status: "failed",
+            usage: zeroUsage(),
+            durationMs: 0,
+            error: err instanceof Error ? err.message : String(err),
+          };
+          iterationFailed = true;
+          break;
+        }
         agentSpec = compileAgentSpec(agentSpec, resolvedInput, options.templateEnv);
 
         const prompt = buildPrompt(subSpec, agentSpec, resolvedInput, runDir, `${stepName}-${iteration}-${subName}`);
@@ -221,21 +235,37 @@ export async function executeLoop(
     }
 
     if (loopSpec.onExhausted.agent) {
-      const agentSpec = loadAgent(loopSpec.onExhausted.agent);
-      const prompt = buildPrompt(loopSpec.onExhausted, agentSpec, resolvedInput, runDir, `${stepName}-exhausted`);
-
-      const exhaustedResult = await dispatchAgent(loopSpec.onExhausted, agentSpec, prompt, {
-        cwd: ctx.cwd,
-        sessionLogDir: path.join(runDir, "sessions"),
-        stepName: `${stepName}-exhausted`,
-        signal,
-      });
-
-      if (exhaustedResult && exhaustedError) {
-        exhaustedResult.error = `Expression error in onExhausted input: ${exhaustedError}. Agent ran with empty input.`;
+      let agentSpec: AgentSpec;
+      try {
+        agentSpec = loadAgent(loopSpec.onExhausted.agent);
+      } catch (err) {
+        lastIterationSteps["_exhausted"] = {
+          step: `${stepName}-exhausted`,
+          agent: loopSpec.onExhausted.agent,
+          status: "failed",
+          usage: zeroUsage(),
+          durationMs: 0,
+          error: err instanceof Error ? err.message : String(err),
+        };
+        agentSpec = null as any;
       }
-      // Include exhausted result in the loop's output
-      lastIterationSteps["_exhausted"] = exhaustedResult;
+
+      if (agentSpec) {
+        const prompt = buildPrompt(loopSpec.onExhausted, agentSpec, resolvedInput, runDir, `${stepName}-exhausted`);
+
+        const exhaustedResult = await dispatchAgent(loopSpec.onExhausted, agentSpec, prompt, {
+          cwd: ctx.cwd,
+          sessionLogDir: path.join(runDir, "sessions"),
+          stepName: `${stepName}-exhausted`,
+          signal,
+        });
+
+        if (exhaustedResult && exhaustedError) {
+          exhaustedResult.error = `Expression error in onExhausted input: ${exhaustedError}. Agent ran with empty input.`;
+        }
+        // Include exhausted result in the loop's output
+        lastIterationSteps["_exhausted"] = exhaustedResult;
+      }
     }
 
     if (!loopSpec.onExhausted.agent && exhaustedError) {
@@ -275,6 +305,19 @@ export async function executeLoop(
     usage: totalUsage,
     durationMs: Date.now() - startTime,
   };
+
+  // Propagate truncation from any sub-step
+  const anyTruncated = allAttempts.some(a =>
+    Object.values(a.steps).some(s => s.truncated)
+  );
+  if (anyTruncated) {
+    result.truncated = true;
+    result.warnings = [
+      ...(result.warnings ?? []),
+      "One or more loop sub-steps had truncated stdout — usage totals may undercount.",
+    ];
+  }
+
   result.outputPath = persistStepOutput(runDir, stepName, loopOutput, loopTextOutput, options.outputPath);
   return result;
 }

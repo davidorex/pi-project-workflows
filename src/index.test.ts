@@ -101,13 +101,14 @@ prompt:
     assert.deepStrictEqual(spec.tools, ["bash", "edit"]);
   });
 
-  it("returns minimal spec when agent not found", (t) => {
+  it("throws AgentNotFoundError for unknown agents", (t) => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-loader-"));
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
     const loader = createAgentLoader(tmpDir);
-    const spec = loader("nonexistent-agent");
-    assert.strictEqual(spec.name, "nonexistent-agent");
-    assert.strictEqual(spec.tools, undefined);
+    assert.throws(
+      () => loader("nonexistent"),
+      (err: any) => err.name === "AgentNotFoundError",
+    );
   });
 });

@@ -54,7 +54,19 @@ export async function executeAgentStep(
   }
 
   // Load and optionally render agent template
-  let agentSpec = loadAgent(stepSpec.agent);
+  let agentSpec: AgentSpec;
+  try {
+    agentSpec = loadAgent(stepSpec.agent);
+  } catch (err) {
+    return {
+      step: stepName,
+      agent: stepSpec.agent,
+      status: "failed",
+      usage: zeroUsage(),
+      durationMs: 0,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
   agentSpec = compileAgentSpec(agentSpec, resolvedInput, templateEnv);
 
   const prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);

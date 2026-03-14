@@ -95,16 +95,68 @@ function buildPrompt(
 async function executeGate(
   gate: GateSpec,
   stepName: string,
-  options: { cwd: string; signal?: AbortSignal },
+  options: { cwd: string; signal?: AbortSignal; timeoutMs?: number },
 ): Promise<StepResult> {
   const startTime = Date.now();
   try {
-    const { execSync } = await import("node:child_process");
-    const output = execSync(gate.check, {
-      cwd: options.cwd,
-      timeout: 60000,
-      encoding: "utf-8",
-      stdio: ["ignore", "pipe", "pipe"],
+    const { spawn } = await import("node:child_process");
+    const output = await new Promise<string>((resolve, reject) => {
+      const proc = spawn("sh", ["-c", gate.check], {
+        cwd: options.cwd,
+        stdio: ["ignore", "pipe", "pipe"],
+        detached: true,
+      });
+
+      let stdout = "";
+      let stderr = "";
+      let settled = false;
+      proc.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
+      proc.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+
+      // Kill the entire process group (sh + children like sleep)
+      const killProc = () => {
+        try { process.kill(-proc.pid!, "SIGTERM"); } catch { /* already dead */ }
+        setTimeout(() => {
+          try { process.kill(-proc.pid!, "SIGKILL"); } catch { /* already dead */ }
+        }, 2000);
+      };
+
+      // Handle abort signal (from parallel cancellation or timeout)
+      const onAbort = () => { killProc(); };
+      if (options.signal) {
+        if (options.signal.aborted) { killProc(); }
+        else { options.signal.addEventListener("abort", onAbort, { once: true }); }
+      }
+
+      // Handle step-level timeout
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      if (options.timeoutMs) {
+        timeoutId = setTimeout(() => { killProc(); }, options.timeoutMs);
+      }
+
+      proc.on("close", (code) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        if (options.signal) options.signal.removeEventListener("abort", onAbort);
+        if (code === 0) {
+          resolve(stdout);
+        } else {
+          const err: any = new Error(`Process exited with code ${code}`);
+          err.status = code;
+          err.stdout = stdout;
+          err.stderr = stderr;
+          reject(err);
+        }
+      });
+
+      proc.on("error", (err) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        if (options.signal) options.signal.removeEventListener("abort", onAbort);
+        reject(err);
+      });
     });
     return {
       step: stepName,
@@ -517,7 +569,11 @@ async function executeSingleStep(
   if (stepSpec.gate) {
     const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope as unknown as Record<string, unknown>));
     const resolvedGate: GateSpec = { ...stepSpec.gate, check: resolvedCheck };
-    const gateResult = await executeGate(resolvedGate, stepName, { cwd: ctx.cwd, signal });
+    const gateResult = await executeGate(resolvedGate, stepName, {
+      cwd: ctx.cwd,
+      signal,
+      timeoutMs: stepSpec.timeout ? stepSpec.timeout.seconds * 1000 : undefined,
+    });
     const gateOutput = gateResult.output as { passed: boolean; exitCode: number; output: string };
 
     if (gateOutput.passed) {

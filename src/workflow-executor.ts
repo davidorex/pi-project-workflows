@@ -39,6 +39,12 @@ export interface ExecuteOptions {
    * If the agent is not found, return a minimal spec with just the name.
    */
   loadAgent: (name: string) => AgentSpec;
+  /** Resume from an incomplete run instead of starting fresh. */
+  resume?: {
+    runId: string;
+    runDir: string;
+    state: ExecutionState;
+  };
 }
 
 /**
@@ -243,18 +249,40 @@ export async function executeWorkflow(
   const { ctx, pi, signal, loadAgent } = options;
 
   // 1. Validate input against workflow input schema (if defined)
-  if (spec.input) {
+  //    Skip on resume — input was validated on first run.
+  if (!options.resume && spec.input) {
     validate(spec.input, input, `workflow input for '${spec.name}'`);
   }
 
-  // 2. Initialize run directory and state
-  const runId = generateRunId(spec.name);
-  const runDir = initRunDir(ctx.cwd, spec.name, runId);
-  const state: ExecutionState = {
-    input,
-    steps: {},
-    status: "running",
-  };
+  // 2. Initialize or resume run
+  let runId: string;
+  let runDir: string;
+  let state: ExecutionState;
+
+  if (options.resume) {
+    runId = options.resume.runId;
+    runDir = options.resume.runDir;
+    state = options.resume.state;
+    // Reset failed steps so they re-run
+    for (const [name, result] of Object.entries(state.steps)) {
+      if (result.status === "failed") {
+        delete state.steps[name];
+      }
+    }
+    state.status = "running";
+    input = state.input;  // use original input
+  } else {
+    runId = generateRunId(spec.name);
+    runDir = initRunDir(ctx.cwd, spec.name, runId);
+    state = {
+      input,
+      steps: {},
+      status: "running",
+      workflowName: spec.name,
+      specVersion: spec.version,
+      startedAt: new Date().toISOString(),
+    };
+  }
 
   // 3. Show TUI progress widget
   const widgetState: ProgressWidgetState = {
@@ -295,15 +323,21 @@ export async function executeWorkflow(
       break;
     }
 
-    if (layer.steps.length === 1) {
-      // Single step — execute exactly as before
-      const stepName = layer.steps[0];
+    // Filter to only pending steps in this layer (resume support)
+    const pendingSteps = layer.steps.filter(
+      s => !state.steps[s] || state.steps[s].status === "failed"
+    );
+    if (pendingSteps.length === 0) continue;  // entire layer already done
+
+    if (pendingSteps.length === 1) {
+      const stepName = pendingSteps[0];
       const stepSpec = spec.steps[stepName];
       const cont = await executeSingleStep(stepName, stepSpec, state, stepOpts);
       if (!cont) break;
     } else {
-      // Multiple independent steps — execute concurrently
-      await executeParallelLayer(layer, spec, state, executeSingleStep, stepOpts);
+      // Run only the pending steps concurrently
+      const pendingLayer = { steps: pendingSteps };
+      await executeParallelLayer(pendingLayer, spec, state, executeSingleStep, stepOpts);
       if (state.status === "failed") break;
     }
   }

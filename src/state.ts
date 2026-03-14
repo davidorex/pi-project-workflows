@@ -61,6 +61,7 @@ export function getWorkflowDir(cwd: string, workflowName: string): string {
  * Uses atomic write: write to .state.json.tmp, then fs.renameSync to state.json.
  */
 export function writeState(runDir: string, state: ExecutionState): void {
+  state.updatedAt = new Date().toISOString();
   const tmpPath = path.join(runDir, ".state.json.tmp");
   const finalPath = path.join(runDir, "state.json");
   fs.writeFileSync(tmpPath, JSON.stringify(state, null, 2), "utf-8");

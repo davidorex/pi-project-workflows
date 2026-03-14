@@ -86,6 +86,11 @@ export interface ExecutionState {
   steps: Record<string, StepResult>;
   status: "running" | "completed" | "failed";
   loop?: LoopState;                      // set when inside a loop
+  // Resume support:
+  workflowName?: string;       // which workflow this run belongs to
+  specVersion?: string;        // workflow spec version at time of run
+  startedAt?: string;          // ISO timestamp of run start
+  updatedAt?: string;          // ISO timestamp of last state write
 }
 
 export interface LoopState {

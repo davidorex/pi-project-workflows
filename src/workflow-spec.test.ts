@@ -418,4 +418,126 @@ steps:
       (err: any) => err.message.includes("exactly one"),
     );
   });
+
+  // ── forEach and as field tests ──
+
+  it("parses forEach and as fields", () => {
+    const yaml = `
+name: test
+steps:
+  process:
+    forEach: \${{ input.items }}
+    as: item
+    transform:
+      mapping:
+        value: \${{ item }}
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.strictEqual(spec.steps.process.forEach, "${{ input.items }}");
+    assert.strictEqual(spec.steps.process.as, "item");
+    assert.ok(spec.steps.process.transform);
+  });
+
+  it("parses forEach without as (default)", () => {
+    const yaml = `
+name: test
+steps:
+  process:
+    forEach: \${{ input.items }}
+    transform:
+      mapping:
+        value: \${{ item }}
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.strictEqual(spec.steps.process.forEach, "${{ input.items }}");
+    assert.strictEqual(spec.steps.process.as, undefined);
+  });
+
+  it("rejects forEach with non-string value", () => {
+    const yaml = `
+name: test
+steps:
+  process:
+    forEach: 42
+    transform:
+      mapping:
+        value: test
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: any) => err.message.includes("forEach must be a string"),
+    );
+  });
+
+  it("rejects as with non-string value", () => {
+    const yaml = `
+name: test
+steps:
+  process:
+    forEach: \${{ input.items }}
+    as: 42
+    transform:
+      mapping:
+        value: test
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: any) => err.message.includes("as must be a string"),
+    );
+  });
+
+  // ── command step type tests ──
+
+  it("parses command step", () => {
+    const yaml = `
+name: test
+steps:
+  run:
+    command: echo hello
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.strictEqual(spec.steps.run.command, "echo hello");
+    assert.strictEqual(spec.steps.run.agent, undefined);
+  });
+
+  it("parses command step with output format", () => {
+    const yaml = `
+name: test
+steps:
+  run:
+    command: cat data.json
+    output:
+      format: json
+`;
+    const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+    assert.strictEqual(spec.steps.run.command, "cat data.json");
+    assert.strictEqual(spec.steps.run.output?.format, "json");
+  });
+
+  it("rejects command with non-string value", () => {
+    const yaml = `
+name: test
+steps:
+  run:
+    command: 42
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: any) => err.message.includes("command must be a string"),
+    );
+  });
+
+  it("rejects command + agent together", () => {
+    const yaml = `
+name: test
+steps:
+  bad:
+    command: echo hello
+    agent: my-agent
+`;
+    assert.throws(
+      () => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+      (err: any) => err.message.includes("exactly one"),
+    );
+  });
 });

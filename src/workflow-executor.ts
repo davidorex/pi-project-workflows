@@ -23,6 +23,8 @@ import { executeLoop } from "./step-loop.ts";
 import { executeParallelLayer, executeParallelStep } from "./step-parallel.ts";
 import { executeAgentStep } from "./step-agent.ts";
 import { executePause } from "./step-pause.ts";
+import { executeCommand } from "./step-command.ts";
+import { executeForEach } from "./step-foreach.ts";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
@@ -135,6 +137,19 @@ async function executeSingleStep(
 
   // Build expression scope
   const scope: ExpressionScope = { input: state.input, steps: state.steps };
+  // Expose forEach bindings (as name + forEach metadata) if present on the state
+  const stateAny = state as Record<string, unknown>;
+  if (stateAny.forEach !== undefined) {
+    scope.forEach = stateAny.forEach;
+  }
+  // Expose any custom bindings (e.g. from forEach as)
+  for (const key of Object.keys(stateAny)) {
+    if (key !== "input" && key !== "steps" && key !== "status" && key !== "loop" &&
+        key !== "workflowName" && key !== "specVersion" && key !== "startedAt" &&
+        key !== "updatedAt" && key !== "forEach") {
+      scope[key] = stateAny[key];
+    }
+  }
 
   // Evaluate `when` conditional
   if (stepSpec.when) {
@@ -156,6 +171,21 @@ async function executeSingleStep(
   widgetState.currentStep = stepName;
   if (ctx.hasUI) {
     ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
+  }
+
+  // ── ForEach step (wraps any step type) ──
+  if (stepSpec.forEach) {
+    const asName = stepSpec.as ?? "item";
+    const forEachResult = await executeForEach(
+      stepName, stepSpec, state, stepSpec.forEach, asName,
+      executeSingleStep, options,
+    );
+    persistStep(state, stepName, forEachResult, runDir, widgetState, ctx);
+    if (forEachResult.status === "failed") {
+      state.status = "failed";
+      return false;
+    }
+    return true;
   }
 
   // ── Gate step ──
@@ -194,6 +224,27 @@ async function executeSingleStep(
         return false;
       }
     }
+  }
+
+  // ── Command step ──
+  if (stepSpec.command) {
+    const resolvedCommand = String(resolveExpressions(stepSpec.command, scope));
+    const resolvedCommandOutputPath = stepSpec.output?.path
+      ? String(resolveExpressions(stepSpec.output.path, scope))
+      : undefined;
+    const commandResult = await executeCommand(resolvedCommand, stepName, {
+      cwd: ctx.cwd,
+      signal,
+      timeoutMs: stepSpec.timeout ? stepSpec.timeout.seconds * 1000 : undefined,
+      runDir,
+      outputPath: resolvedCommandOutputPath,
+    }, stepSpec.output?.format);
+    persistStep(state, stepName, commandResult, runDir, widgetState, ctx);
+    if (commandResult.status === "failed") {
+      state.status = "failed";
+      return false;
+    }
+    return true;
   }
 
   // ── Transform step ──

@@ -193,14 +193,15 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
   const hasLoop = "loop" in rawStep && rawStep.loop !== undefined;
   const hasParallel = "parallel" in rawStep && rawStep.parallel !== undefined;
   const hasPause = "pause" in rawStep && rawStep.pause !== undefined;
+  const hasCommand = "command" in rawStep && rawStep.command !== undefined;
 
-  const typeCount = [hasAgent, hasGate, hasTransform, hasLoop, hasParallel, hasPause].filter(Boolean).length;
+  const typeCount = [hasAgent, hasGate, hasTransform, hasLoop, hasParallel, hasPause, hasCommand].filter(Boolean).length;
 
   if (typeCount === 0) {
-    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, parallel, or pause`);
+    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, parallel, pause, or command`);
   }
   if (typeCount > 1) {
-    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, parallel, or pause`);
+    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, parallel, pause, or command`);
   }
 
   const step: StepSpec = {};
@@ -209,12 +210,63 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
   if (rawStep.when !== undefined) step.when = rawStep.when as string;
   if (rawStep.timeout !== undefined) step.timeout = rawStep.timeout as { seconds: number };
 
+  // forEach and as (can combine with any step type)
+  if ("forEach" in rawStep && rawStep.forEach !== undefined) {
+    if (typeof rawStep.forEach !== "string") {
+      throw new WorkflowSpecError(filePath, `step '${stepName}' forEach must be a string`);
+    }
+    step.forEach = rawStep.forEach;
+  }
+  if ("as" in rawStep && rawStep.as !== undefined) {
+    if (typeof rawStep.as !== "string") {
+      throw new WorkflowSpecError(filePath, `step '${stepName}' as must be a string`);
+    }
+    step.as = rawStep.as;
+  }
+
   // Pause step
   if (hasPause) {
     if (typeof rawStep.pause !== "string" && rawStep.pause !== true) {
       throw new WorkflowSpecError(filePath, `step '${stepName}' pause must be a string or true`);
     }
     step.pause = rawStep.pause as string | boolean;
+    return step;
+  }
+
+  // Command step
+  if (hasCommand) {
+    if (typeof rawStep.command !== "string") {
+      throw new WorkflowSpecError(filePath, `step '${stepName}' command must be a string`);
+    }
+    step.command = rawStep.command;
+
+    // output spec (optional, same as agent)
+    if ("output" in rawStep && rawStep.output !== undefined) {
+      if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {
+        throw new WorkflowSpecError(filePath, `step '${stepName}' output must be an object`);
+      }
+      const rawOutput = rawStep.output as Record<string, unknown>;
+      const output: StepOutputSpec = {};
+      if ("format" in rawOutput) {
+        output.format = rawOutput.format as StepOutputSpec["format"];
+      }
+      if ("path" in rawOutput) {
+        if (typeof rawOutput.path !== "string") {
+          throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
+        }
+        output.path = rawOutput.path;
+      }
+      step.output = output;
+    }
+
+    // input (optional, for expression resolution context)
+    if ("input" in rawStep && rawStep.input !== undefined) {
+      if (typeof rawStep.input !== "object" || rawStep.input === null || Array.isArray(rawStep.input)) {
+        throw new WorkflowSpecError(filePath, `step '${stepName}' input must be an object`);
+      }
+      step.input = rawStep.input as Record<string, unknown>;
+    }
+
     return step;
   }
 

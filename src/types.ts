@@ -33,6 +33,9 @@ export interface StepSpec {
   transform?: TransformSpec;
   parallel?: Record<string, StepSpec>;   // named sub-steps to run concurrently
   pause?: string | boolean;              // pause step — string is message to display, true = pause with no message
+  command?: string;                      // shell command to run (captures stdout as output)
+  forEach?: string;                      // ${{ }} expression resolving to an array
+  as?: string;                           // variable name to bind each element (default: "item")
   workflow?: string;                     // phase 6 — not yet supported
 }
 // Note: exactly one of agent, gate, transform, loop, or parallel must be set.

@@ -20,10 +20,10 @@ steps:
   load:
     command: |
       node --experimental-strip-types -e "
-        import fs from 'fs';
+        import { readBlock } from './src/block-api.ts';
         const gapId = process.argv[1];
-        const gaps = JSON.parse(fs.readFileSync('.workflow/gaps.json', 'utf8'));
-        const gap = gaps.gaps.find(g => g.id === gapId);
+        const data = readBlock('.', 'gaps');
+        const gap = data.gaps.find(g => g.id === gapId);
         if (!gap) { console.error('Gap not found: ' + gapId); process.exit(1); }
         if (gap.status === 'resolved') { console.error('Gap already resolved: ' + gapId); process.exit(1); }
         console.log(JSON.stringify({ gap }));
@@ -127,20 +127,16 @@ steps:
     when: "${{ steps.verify.output.passed }}"
     command: |
       node --experimental-strip-types -e "
-        import fs from 'fs';
+        import { readBlock, writeBlock } from './src/block-api.ts';
         const gapId = process.argv[1];
-
-        // Update gap status
-        const gapsPath = '.workflow/gaps.json';
-        const g = JSON.parse(fs.readFileSync(gapsPath, 'utf8'));
-        const gap = g.gaps.find(g => g.id === gapId);
+        const data = readBlock('.', 'gaps');
+        const gap = data.gaps.find(g => g.id === gapId);
         if (gap) {
           gap.status = 'resolved';
           gap.resolved_by = 'do-gap-workflow';
-          fs.writeFileSync(gapsPath, JSON.stringify(g, null, 2) + '\n');
+          writeBlock('.', 'gaps', data);
         }
-
-        console.log(JSON.stringify({ routed: true, gap_id: gapId, status: 'resolved' }));
+        console.log(JSON.stringify({ routed: true, gap_id: gapId, status: gap ? 'resolved' : 'not-found' }));
       " '${{ input.gap_id }}'
     output:
       format: json

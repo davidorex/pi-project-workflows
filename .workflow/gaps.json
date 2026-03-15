@@ -131,11 +131,12 @@
     {
       "id": "gap-recording-tool",
       "description": "No tool or command exists for agents or main context to record gaps during execution. Gap recording is post-hoc and opt-in. Need a record-gap tool available mid-task that writes to gaps.json — as frictionless as git commit.",
-      "status": "open",
+      "status": "resolved",
       "category": "capability",
       "priority": "high",
       "details": "Monitor writes directly to gaps.json with source:'monitor'. No agent steering needed — monitor observes friction in execution trace, appends gap, done. Human/main-context reviews monitor-created gaps and marks actionable or deletes. Query by source: gaps.filter(g => g.source === 'monitor'). Three-layer design: (1) monitor writes gaps directly (non-bypassable), (2) execution-results.issues[] required in schema (agent-reported), (3) route-results routes agent-reported issues with source:'agent'.",
-      "source": "human"
+      "source": "human",
+      "resolved_by": "record-gap-tool"
     },
     {
       "id": "command-step-data-passing",
@@ -211,11 +212,12 @@
     {
       "id": "gap-to-phase-flow",
       "description": "No mechanism to go from a gap ID to a phase spec. create-phase takes free-text intent, not a gap reference. Need: load gap by ID → enrich with details/doc path → pass to phase-author.",
-      "status": "open",
+      "status": "resolved",
       "category": "composition",
       "priority": "high",
       "source": "human",
-      "details": "Currently the human manually reads the gap, reads referenced docs, formulates intent, then runs create-phase. The gap entry already has description, details, and doc paths — that's the input the phase-author needs."
+      "details": "Currently the human manually reads the gap, reads referenced docs, formulates intent, then runs create-phase. The gap entry already has description, details, and doc paths — that's the input the phase-author needs.",
+      "resolved_by": "gap-to-phase-workflow"
     },
     {
       "id": "workflow-event-shapes",
@@ -274,11 +276,12 @@
     {
       "id": "do-gap-workflow",
       "description": "Fixed workflow: load gap → investigate + research (parallel) → decompose → implement (forEach) → verify → route. The standard path from 'work on X' to done.",
-      "status": "open",
+      "status": "resolved",
       "category": "composition",
       "priority": "high",
       "source": "human",
-      "details": "Investigate produces structured findings (affected files, current behavior, constraints). Research produces external/cross-project findings (patterns, prior art, heuristics). Both feed into decompose which produces specs with file targets, dependencies, acceptance criteria, parallelization decisions. Implement forEach over specs. Verify runs tests/lint/block validation. Route updates project blocks and gap status."
+      "details": "Investigate produces structured findings (affected files, current behavior, constraints). Research produces external/cross-project findings (patterns, prior art, heuristics). Both feed into decompose which produces specs with file targets, dependencies, acceptance criteria, parallelization decisions. Implement forEach over specs. Verify runs tests/lint/block validation. Route updates project blocks and gap status.",
+      "resolved_by": "do-gap-workflow-block-api"
     },
     {
       "id": "investigation-findings-schema",

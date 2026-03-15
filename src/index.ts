@@ -6,7 +6,7 @@ import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
 import { executeWorkflow, requestPause } from "./workflow-executor.ts";
 import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
 import { createAgentLoader } from "./agent-spec.ts";
-import { readBlock } from "./block-api.ts";
+import { readBlock, appendToBlock } from "./block-api.ts";
 import type { WorkflowResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -467,6 +467,46 @@ const extension = (pi: ExtensionAPI) => {
         content: [{ type: "text", text: formatToolResult(result) }],
         details: result,
       };
+    },
+  });
+
+  // ── Tool: record-gap ───────────────────────────────────────────────────
+
+  pi.registerTool({
+    name: "record-gap",
+    label: "Record Gap",
+    description: "Record a capability gap, issue, or cleanup item to .workflow/gaps.json with schema validation",
+    promptSnippet: "Record gaps, issues, and cleanup items to the project's typed gap tracker",
+    parameters: Type.Object({
+      id: Type.String({ description: "Kebab-case unique ID for the gap" }),
+      description: Type.String({ description: "What is missing or broken" }),
+      category: Type.String({ enum: ["primitive", "issue", "cleanup", "capability", "composition"], description: "Gap category" }),
+      priority: Type.String({ enum: ["low", "medium", "high", "critical"], description: "Priority level" }),
+      details: Type.Optional(Type.String({ description: "Additional context, constraints, or references" })),
+    }),
+    async execute(_toolCallId: string, params: Record<string, unknown>, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+      const entry: Record<string, unknown> = {
+        id: params.id,
+        description: params.description,
+        status: "open",
+        category: params.category,
+        priority: params.priority,
+        source: "agent",
+      };
+      if (params.details) entry.details = params.details;
+
+      // Check for duplicate ID
+      try {
+        const data = readBlock(ctx.cwd, "gaps") as { gaps: Array<{ id: string }> };
+        if (data.gaps.some(g => g.id === entry.id)) {
+          return { content: [{ type: "text", text: `Gap '${entry.id}' already exists` }] };
+        }
+      } catch {
+        // gaps.json doesn't exist — appendToBlock will fail with a clear error
+      }
+
+      appendToBlock(ctx.cwd, "gaps", "gaps", entry);
+      return { content: [{ type: "text", text: `Recorded gap '${entry.id}' (${entry.category}/${entry.priority})` }] };
     },
   });
 

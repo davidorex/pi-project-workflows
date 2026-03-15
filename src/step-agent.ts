@@ -39,6 +39,19 @@ export async function executeAgentStep(
   const { ctx, signal, loadAgent, runDir, specFilePath, templateEnv } = options;
   const scope: ExpressionScope = { input: state.input, steps: state.steps };
 
+  // Expose forEach bindings (as name + forEach metadata) if present on the state
+  const stateAny = state as Record<string, unknown>;
+  if (stateAny.forEach !== undefined) {
+    scope.forEach = stateAny.forEach;
+  }
+  for (const key of Object.keys(stateAny)) {
+    if (key !== "input" && key !== "steps" && key !== "status" && key !== "loop" &&
+        key !== "workflowName" && key !== "specVersion" && key !== "startedAt" &&
+        key !== "updatedAt" && key !== "forEach") {
+      scope[key] = stateAny[key];
+    }
+  }
+
   // Resolve input expressions
   let resolvedInput: unknown;
   try {

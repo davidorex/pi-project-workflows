@@ -4,8 +4,9 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { executeWorkflow } from "./workflow-executor.ts";
-import type { WorkflowSpec } from "./types.ts";
+import type { WorkflowSpec, StepResult, StepSpec, AgentSpec } from "./types.ts";
 import { mockCtx, mockPi, makeSpec } from "./test-helpers.ts";
+import { zeroUsage } from "./step-shared.ts";
 
 describe("forEach steps", () => {
   it("iterates over array with transform body", async () => {
@@ -566,6 +567,80 @@ describe("forEach steps", () => {
     assert.strictEqual(result.steps.process.usage.cost, 0);
     assert.strictEqual(result.steps.process.usage.turns, 0);
     assert.strictEqual(result.totalUsage.cost, 0);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it("as binding is visible in agent step input expressions", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+    const capture = { calls: [] as any[] };
+
+    const mockDispatchFn = async (step: StepSpec, agentSpec: AgentSpec, prompt: string, opts: any): Promise<StepResult> => {
+      capture.calls.push({ step, agentSpec, prompt, opts });
+      return {
+        step: opts.stepName,
+        agent: step.agent ?? "mock",
+        status: "completed" as const,
+        usage: zeroUsage(),
+        durationMs: 100,
+        textOutput: JSON.stringify({ result: "done" }),
+        output: { result: "done" },
+      };
+    };
+
+    const spec: WorkflowSpec = {
+      name: "test-foreach-agent-as",
+      description: "test forEach as binding in agent step input",
+      input: {
+        type: "object",
+        properties: {
+          tasks: { type: "array" },
+        },
+      },
+      steps: {
+        process: {
+          forEach: "${{ input.tasks }}",
+          as: "task",
+          agent: "test-agent",
+          input: {
+            task: "${{ task }}",
+            description: "${{ task.description }}",
+            extra: "${{ input.extra }}",
+          },
+        },
+      },
+      source: "project",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const inputData = {
+      tasks: [
+        { description: "Fix bug A", file: "a.ts" },
+        { description: "Fix bug B", file: "b.ts" },
+      ],
+      extra: "shared-context",
+    };
+
+    const result = await executeWorkflow(spec, inputData, {
+      ctx: mockCtx(tmpDir),
+      pi: mockPi(),
+      loadAgent: () => ({ name: "test-agent" }),
+      dispatchFn: mockDispatchFn,
+    });
+
+    assert.strictEqual(result.status, "completed", `Workflow failed: ${JSON.stringify(result.steps)}`);
+    assert.strictEqual(result.steps.process.status, "completed");
+
+    // Verify dispatch was called twice (once per task)
+    assert.strictEqual(capture.calls.length, 2);
+
+    // Verify the prompt contains the resolved task data (not "${{ task }}")
+    const prompt0 = capture.calls[0].prompt;
+    assert.ok(prompt0.includes("Fix bug A"), `Expected prompt to contain task description, got: ${prompt0}`);
+    assert.ok(prompt0.includes("shared-context"), `Expected prompt to contain extra, got: ${prompt0}`);
+
+    const prompt1 = capture.calls[1].prompt;
+    assert.ok(prompt1.includes("Fix bug B"), `Expected prompt to contain task description, got: ${prompt1}`);
 
     fs.rmSync(tmpDir, { recursive: true });
   });

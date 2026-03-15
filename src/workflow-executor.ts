@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepSpec } from "./types.ts";
-import type { ProgressWidgetState } from "./tui.ts";
+import type { ProgressWidgetState, StepOutputSummary } from "./tui.ts";
 import { validate, validateFromFile } from "./schema-validator.ts";
 import { resolveExpressions, evaluateCondition } from "./expression.ts";
 import { dispatch } from "./dispatch.ts";
@@ -322,6 +322,34 @@ async function executeSingleStep(
       state.steps[stepName].priorErrors = attempt > 1 ? [...priorErrors] : undefined;
     }
 
+    // Parse step output into a summary for TUI display
+    const stepOutput = state.steps[stepName]?.output;
+    if (stepOutput && typeof stepOutput === "object") {
+      const out = stepOutput as Record<string, unknown>;
+      const summary: StepOutputSummary = {};
+      if (Array.isArray(out.tasks)) {
+        summary.tasks = out.tasks
+          .filter((t: unknown) => t && typeof t === "object")
+          .map((t: Record<string, unknown>) => ({
+            name: String(t.name ?? "?"),
+            status: String(t.status ?? "?"),
+            files: Array.isArray(t.files_modified) ? t.files_modified.map(String) : undefined,
+          }));
+      }
+      if (typeof out.test_count === "number") {
+        summary.testCount = out.test_count;
+      }
+      if (typeof out.notes === "string") {
+        summary.note = out.notes;
+      }
+      if (summary.tasks || summary.testCount || summary.note) {
+        widgetState.outputSummaries.set(stepName, summary);
+        if (ctx.hasUI) {
+          ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
+        }
+      }
+    }
+
     return continueWorkflow;
   }
 
@@ -572,6 +600,7 @@ export async function executeWorkflow(
     state,
     startTime: Date.now(),
     activities: new Map(),
+    outputSummaries: new Map(),
   };
   if (options.resume) {
     widgetState.resumedSteps = Object.keys(state.steps).filter(

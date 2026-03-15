@@ -1,176 +1,25 @@
 {
   "modules": [
     {
-      "name": "workflow-executor",
-      "file": "src/workflow-executor.ts",
-      "responsibility": "Main orchestration: buildConservativePlan(), executeSingleStep(), executeWorkflow(), pause flag",
-      "dependencies": [
-        "types",
-        "schema-validator",
-        "expression",
-        "dispatch",
-        "state",
-        "tui",
-        "workflow-spec",
-        "dag",
-        "step-agent",
-        "step-gate",
-        "step-transform",
-        "step-loop",
-        "step-parallel",
-        "step-pause",
-        "step-shared",
-        "checkpoint",
-        "output",
-        "completion"
-      ],
-      "lines": 502
-    },
-    {
-      "name": "index",
-      "file": "src/index.ts",
-      "responsibility": "Extension entry point: registers workflow tool, /workflow commands, keybindings (Ctrl+H pause, Ctrl+J resume)",
-      "dependencies": [
-        "types",
-        "workflow-spec",
-        "workflow-discovery",
-        "workflow-executor"
-      ],
-      "lines": 436
-    },
-    {
-      "name": "workflow-spec",
-      "file": "src/workflow-spec.ts",
-      "responsibility": "YAML parsing: WorkflowSpec from .workflow.yaml files, including completion field and artifacts",
-      "dependencies": [
-        "types"
-      ],
-      "lines": 366
-    },
-    {
-      "name": "expression",
-      "file": "src/expression.ts",
-      "responsibility": "${{ }} expression evaluator: property access, pipe filters (duration, currency, json), resolveExpressions()",
-      "dependencies": [
-        "types"
-      ],
-      "lines": 323
-    },
-    {
-      "name": "dispatch",
-      "file": "src/dispatch.ts",
-      "responsibility": "Subprocess spawn: pi --mode json, model override, tool filtering, extension/skill scoping, session log capture, usage accumulation",
-      "dependencies": [
-        "types"
-      ],
-      "lines": 308
-    },
-    {
-      "name": "step-loop",
-      "file": "src/step-loop.ts",
-      "responsibility": "Loop iteration with accumulated evidence, receives dispatchAgent callback, onExhausted handling",
-      "dependencies": [
-        "types",
-        "step-shared"
-      ],
-      "lines": 280
-    },
-    {
-      "name": "state",
-      "file": "src/state.ts",
-      "responsibility": "Run directory initialization, state persistence via atomic write (tmp + rename), metrics tracking",
-      "dependencies": [
-        "types"
-      ],
-      "lines": 237
-    },
-    {
-      "name": "dag",
-      "file": "src/dag.ts",
-      "responsibility": "Dependency graph: buildPlanFromDeps(), conservative plan adds implicit sequential deps for steps without explicit refs",
-      "dependencies": [
-        "types"
-      ],
-      "lines": 209
-    },
-    {
       "name": "types",
       "file": "src/types.ts",
-      "responsibility": "All shared interfaces: WorkflowSpec, StepSpec, AgentSpec, ExecutionState, StepResult, WorkflowResult, CompletionSpec, ExpressionScope",
+      "responsibility": "All shared interfaces: WorkflowSpec, StepSpec, AgentSpec, ExecutionState, StepResult, WorkflowResult, CompletionSpec, ExpressionScope, LoopSpec, GateSpec, TransformSpec, RetryConfig, ArtifactSpec",
       "dependencies": [],
-      "lines": 180
+      "lines": 195
     },
     {
-      "name": "step-parallel",
-      "file": "src/step-parallel.ts",
-      "responsibility": "executeParallelLayer() + executeParallelStep(), receives executeSingleStep callback",
-      "dependencies": [
-        "types",
-        "step-shared"
-      ],
-      "lines": 168
+      "name": "format",
+      "file": "src/format.ts",
+      "responsibility": "Shared formatDuration/formatCost/formatTokens utilities",
+      "dependencies": [],
+      "lines": 41
     },
     {
-      "name": "step-shared",
-      "file": "src/step-shared.ts",
-      "responsibility": "Shared utilities: zeroUsage(), addUsage(), buildPrompt(), persistStep(), compileAgentSpec(), constants",
-      "dependencies": [
-        "types",
-        "template",
-        "agent-spec"
-      ],
-      "lines": 147
-    },
-    {
-      "name": "checkpoint",
-      "file": "src/checkpoint.ts",
-      "responsibility": "findIncompleteRun(), validateResumeCompatibility(), computeResumePoint()",
-      "dependencies": [
-        "types",
-        "state"
-      ],
-      "lines": 139
-    },
-    {
-      "name": "tui",
-      "file": "src/tui.ts",
-      "responsibility": "Progress widget with token display, step status, timing, cost",
-      "dependencies": [
-        "types",
-        "format"
-      ],
-      "lines": 129
-    },
-    {
-      "name": "step-gate",
-      "file": "src/step-gate.ts",
-      "responsibility": "Async gate execution with process groups, onPass/onFail handling",
-      "dependencies": [
-        "types",
-        "step-shared"
-      ],
-      "lines": 116
-    },
-    {
-      "name": "workflow-discovery",
-      "file": "src/workflow-discovery.ts",
-      "responsibility": "Directory scanning for .workflow.yaml: project (.pi/workflows/) and user (~/.pi/agent/workflows/)",
-      "dependencies": [
-        "workflow-spec"
-      ],
-      "lines": 113
-    },
-    {
-      "name": "step-agent",
-      "file": "src/step-agent.ts",
-      "responsibility": "Agent dispatch with injectable dispatchFn, template compilation, output path resolution",
-      "dependencies": [
-        "types",
-        "step-shared",
-        "dispatch",
-        "agent-spec"
-      ],
-      "lines": 106
+      "name": "schema-validator",
+      "file": "src/schema-validator.ts",
+      "responsibility": "AJV wrapper: validate(), validateFromFile(), ValidationError class with formatted messages",
+      "dependencies": [],
+      "lines": 62
     },
     {
       "name": "template",
@@ -178,6 +27,74 @@
       "responsibility": "Nunjucks three-tier rendering (project > user > builtin), ${{ }} protection from Nunjucks interpretation",
       "dependencies": [],
       "lines": 92
+    },
+    {
+      "name": "expression",
+      "file": "src/expression.ts",
+      "responsibility": "${{ }} expression evaluator: property access, pipe filters (duration, currency, json), resolveExpressions(), evaluateCondition() for when: clauses",
+      "dependencies": [
+        "types",
+        "format"
+      ],
+      "lines": 326
+    },
+    {
+      "name": "state",
+      "file": "src/state.ts",
+      "responsibility": "Run directory initialization, state persistence via atomic write (tmp + rename), metrics tracking, generateRunId(), buildResult(), formatResult()",
+      "dependencies": [
+        "types",
+        "format"
+      ],
+      "lines": 253
+    },
+    {
+      "name": "tui",
+      "file": "src/tui.ts",
+      "responsibility": "Progress widget with token display, step status, timing, cost, StepActivity and StepOutputSummary tracking",
+      "dependencies": [
+        "types",
+        "format"
+      ],
+      "lines": 182
+    },
+    {
+      "name": "output",
+      "file": "src/output.ts",
+      "responsibility": "persistStepOutput(): writes all outputs as JSON, supports author-declared output.path",
+      "dependencies": [],
+      "lines": 70
+    },
+    {
+      "name": "step-shared",
+      "file": "src/step-shared.ts",
+      "responsibility": "Shared utilities: zeroUsage(), addUsage(), buildPrompt(), persistStep(), compileAgentSpec(), resolveSchemaPath(), constants (SIGKILL_GRACE_MS, WIDGET_ID, DEFAULT_MAX_ATTEMPTS)",
+      "dependencies": [
+        "types",
+        "tui",
+        "state",
+        "template"
+      ],
+      "lines": 157
+    },
+    {
+      "name": "agent-spec",
+      "file": "src/agent-spec.ts",
+      "responsibility": "YAML agent spec loader: parseAgentYaml, createAgentLoader, three-tier search (.pi/agents/ > ~/.pi/agent/agents/ > package/demo/agents/), AgentNotFoundError, AgentParseError",
+      "dependencies": [
+        "types"
+      ],
+      "lines": 122
+    },
+    {
+      "name": "dispatch",
+      "file": "src/dispatch.ts",
+      "responsibility": "Subprocess spawn: pi --mode json, model override, tool filtering, extension/skill scoping, session log capture, usage accumulation, ModelConfig resolution",
+      "dependencies": [
+        "types",
+        "step-shared"
+      ],
+      "lines": 353
     },
     {
       "name": "completion",
@@ -190,30 +107,41 @@
       "lines": 68
     },
     {
-      "name": "agent-spec",
-      "file": "src/agent-spec.ts",
-      "responsibility": "YAML agent spec loader: parseAgentYaml, createAgentLoader, three-tier search (.pi/agents/ > ~/.pi/agent/agents/ > package/demo/agents/)",
+      "name": "dag",
+      "file": "src/dag.ts",
+      "responsibility": "Dependency graph: buildPlanFromDeps(), conservative plan adds implicit sequential deps for steps without explicit refs, extractDependencies(), isSequential()",
       "dependencies": [
         "types"
       ],
-      "lines": 64
+      "lines": 219
     },
     {
-      "name": "schema-validator",
-      "file": "src/schema-validator.ts",
-      "responsibility": "AJV wrapper: validate(), validateFromFile(), ValidationError class with formatted messages",
-      "dependencies": [],
-      "lines": 62
+      "name": "block-validation",
+      "file": "src/block-validation.ts",
+      "responsibility": "Post-step block validation: snapshotBlockFiles(), validateChangedBlocks() with rollback support for .workflow/*.json files",
+      "dependencies": [
+        "schema-validator"
+      ],
+      "lines": 163
     },
     {
-      "name": "output",
-      "file": "src/output.ts",
-      "responsibility": "persistStepOutput(): writes all outputs as JSON, supports author-declared output.path",
+      "name": "checkpoint",
+      "file": "src/checkpoint.ts",
+      "responsibility": "findIncompleteRun(), validateResumeCompatibility(), computeResumePoint(), formatIncompleteRun() for crash recovery and resume",
       "dependencies": [
         "types",
-        "expression"
+        "state"
       ],
-      "lines": 54
+      "lines": 139
+    },
+    {
+      "name": "step-pause",
+      "file": "src/step-pause.ts",
+      "responsibility": "Pause step: returns completed immediately, executor sets status=paused",
+      "dependencies": [
+        "types"
+      ],
+      "lines": 27
     },
     {
       "name": "step-transform",
@@ -222,107 +150,133 @@
       "dependencies": [
         "types",
         "expression",
-        "step-shared"
+        "step-shared",
+        "output"
       ],
       "lines": 47
     },
     {
-      "name": "format",
-      "file": "src/format.ts",
-      "responsibility": "Shared formatDuration/formatCost utilities",
-      "dependencies": [],
-      "lines": 41
-    },
-    {
-      "name": "step-pause",
-      "file": "src/step-pause.ts",
-      "responsibility": "Pause step: returns completed immediately, executor sets status=paused",
+      "name": "step-gate",
+      "file": "src/step-gate.ts",
+      "responsibility": "Async gate execution with process groups, onPass/onFail handling, shell command pass/fail based on exit code",
       "dependencies": [
         "types",
-        "step-shared"
+        "step-shared",
+        "output"
       ],
-      "lines": 27
-    },
-    {
-      "name": "test-helpers",
-      "file": "src/test-helpers.ts",
-      "responsibility": "Shared mockCtx(), mockPi(), makeSpec() for tests",
-      "dependencies": [
-        "types"
-      ],
-      "lines": 51
-    },
-    {
-      "name": "step-shared.test",
-      "file": "src/step-shared.test.ts",
-      "responsibility": "Dedicated unit tests for step-shared.ts",
-      "lines": 355
-    },
-    {
-      "name": "step-transform.test",
-      "file": "src/step-transform.test.ts",
-      "responsibility": "Dedicated unit tests for step-transform.ts",
-      "lines": 155
-    },
-    {
-      "name": "step-gate.test",
-      "file": "src/step-gate.test.ts",
-      "responsibility": "Dedicated unit tests for step-gate.ts",
-      "lines": 185
-    },
-    {
-      "name": "step-agent.test",
-      "file": "src/step-agent.test.ts",
-      "responsibility": "Dedicated unit tests for step-agent.ts",
-      "lines": 327
-    },
-    {
-      "name": "step-loop.test",
-      "file": "src/step-loop.test.ts",
-      "responsibility": "Dedicated unit tests for step-loop.ts",
-      "lines": 626
-    },
-    {
-      "name": "step-parallel.test",
-      "file": "src/step-parallel.test.ts",
-      "responsibility": "Dedicated unit tests for step-parallel.ts",
-      "lines": 475
-    },
-    {
-      "name": "step-foreach",
-      "file": "src/step-foreach.ts",
-      "responsibility": "forEach iteration: resolves array, binds element via as, adds forEach.index/length to scope, collects outputs",
-      "lines": 148
+      "lines": 116
     },
     {
       "name": "step-command",
       "file": "src/step-command.ts",
       "responsibility": "Shell command execution: sh -c, captures stdout as JSON or text, fails on non-zero exit",
+      "dependencies": [
+        "types",
+        "step-shared",
+        "output"
+      ],
       "lines": 132
     },
     {
-      "name": "step-foreach.test",
-      "file": "src/step-foreach.test.ts",
-      "responsibility": "Tests for forEach step type",
-      "lines": 572
+      "name": "step-agent",
+      "file": "src/step-agent.ts",
+      "responsibility": "Agent dispatch with injectable dispatchFn, template compilation, output path resolution, output schema validation, RetryContext support",
+      "dependencies": [
+        "types",
+        "tui",
+        "expression",
+        "dispatch",
+        "schema-validator",
+        "output",
+        "step-shared"
+      ],
+      "lines": 178
     },
     {
-      "name": "step-command.test",
-      "file": "src/step-command.test.ts",
-      "responsibility": "Tests for command step type",
-      "lines": 330
+      "name": "step-foreach",
+      "file": "src/step-foreach.ts",
+      "responsibility": "forEach iteration: resolves array, binds element via as, adds forEach.index/length to scope, collects outputs",
+      "dependencies": [
+        "types",
+        "expression",
+        "step-shared",
+        "output"
+      ],
+      "lines": 148
     },
     {
-      "name": "output.test",
-      "file": "src/output.test.ts",
-      "responsibility": "Tests for output persistence including error handling",
-      "lines": 213
+      "name": "step-loop",
+      "file": "src/step-loop.ts",
+      "responsibility": "Loop iteration with accumulated evidence, receives dispatchAgent callback, onExhausted handling, gate and transform execution",
+      "dependencies": [
+        "types",
+        "expression",
+        "step-gate",
+        "step-transform",
+        "step-shared",
+        "output"
+      ],
+      "lines": 323
     },
     {
-      "name": "verifier-schema.test",
-      "file": "src/verifier-schema.test.ts",
-      "responsibility": "Schema validation tests for verifier-output, plan-breakdown, execution-results",
-      "lines": 226
+      "name": "step-parallel",
+      "file": "src/step-parallel.ts",
+      "responsibility": "executeParallelLayer() + executeParallelStep(), receives executeSingleStep callback, concurrent execution with Promise.allSettled",
+      "dependencies": [
+        "types",
+        "tui",
+        "dag",
+        "step-shared"
+      ],
+      "lines": 168
+    },
+    {
+      "name": "workflow-spec",
+      "file": "src/workflow-spec.ts",
+      "responsibility": "YAML parsing: WorkflowSpec from .workflow.yaml files, including completion field and artifacts, WorkflowSpecError class",
+      "dependencies": [
+        "types"
+      ],
+      "lines": 446
+    },
+    {
+      "name": "workflow-discovery",
+      "file": "src/workflow-discovery.ts",
+      "responsibility": "Directory scanning for .workflow.yaml: project (.pi/workflows/) and user (~/.pi/agent/workflows/), discoverWorkflows(), findWorkflow()",
+      "dependencies": [
+        "types",
+        "workflow-spec"
+      ],
+      "lines": 113
+    },
+    {
+      "name": "workflow-executor",
+      "file": "src/workflow-executor.ts",
+      "responsibility": "Main orchestration: buildConservativePlan(), executeSingleStep(), executeWorkflow(), pause flag, DAG layering, block validation integration",
+      "dependencies": [
+        "types",
+        "tui",
+        "schema-validator",
+        "expression",
+        "dispatch",
+        "state",
+        "completion",
+        "dag"
+      ],
+      "lines": 802
+    },
+    {
+      "name": "index",
+      "file": "src/index.ts",
+      "responsibility": "Extension entry point: registers workflow tool, /workflow commands (run, list, resume, status, add-work), keybindings (Ctrl+H pause, Ctrl+J resume)",
+      "dependencies": [
+        "types",
+        "workflow-discovery",
+        "workflow-executor",
+        "checkpoint",
+        "agent-spec"
+      ],
+      "lines": 565
     }
   ],
   "patterns": [
@@ -337,7 +291,7 @@
     },
     {
       "name": "expression-resolution",
-      "description": "${{ }} expressions resolve via property access only \u2014 no eval(), no arithmetic. Pipe filters for formatting.",
+      "description": "${{ }} expressions resolve via property access only — no eval(), no arithmetic. Pipe filters for formatting.",
       "used_in": [
         "expression",
         "workflow-executor",
@@ -387,17 +341,26 @@
         "template",
         "step-shared"
       ]
+    },
+    {
+      "name": "block-validation-rollback",
+      "description": "Post-step validation of .workflow/*.json files with snapshot-based rollback on schema violation.",
+      "used_in": [
+        "block-validation",
+        "workflow-executor"
+      ]
     }
   ],
   "boundaries": [
-    "Extension owns subprocess dispatch \u2014 no dependency on pi-subagents",
-    "types.ts is the single source for all shared interfaces \u2014 no type definitions elsewhere",
+    "Extension owns subprocess dispatch — no dependency on pi-subagents",
+    "types.ts is the single source for all shared interfaces — no type definitions elsewhere",
     "Step executors (step-*.ts) receive callbacks, never import workflow-executor directly",
-    "Template engine (template.ts) has no dependency on workflow types \u2014 pure Nunjucks wrapper",
-    "schema-validator.ts is a standalone AJV wrapper \u2014 no workflow-specific logic"
+    "Template engine (template.ts) has no dependency on workflow types — pure Nunjucks wrapper",
+    "schema-validator.ts is a standalone AJV wrapper — no workflow-specific logic",
+    "block-validation.ts operates independently — snapshot/validate/rollback with no workflow state coupling"
   ],
   "compilation_pipeline": {
-    "description": "YAML spec + Nunjucks templates + resolved input \u2192 rendered .md \u2192 pi subprocess. Agent specs are YAML (.agent.yaml). They declare input schema, output schema, model, tools, role, and template references (prompt.system, prompt.task). The .md that pi consumes is compiled at dispatch time from spec + templates + typed input data. It exists in memory for milliseconds \u2014 written to a temp file, passed to pi --append-system-prompt, deleted. It is never a hand-authored source file.",
+    "description": "YAML spec + Nunjucks templates + resolved input → rendered .md → pi subprocess. Agent specs are YAML (.agent.yaml). They declare input schema, output schema, model, tools, role, and template references (prompt.system, prompt.task). The .md that pi consumes is compiled at dispatch time from spec + templates + typed input data. It exists in memory for milliseconds — written to a temp file, passed to pi --append-system-prompt, deleted. It is never a hand-authored source file.",
     "stages": [
       {
         "name": "YAML spec parsing",
@@ -415,7 +378,7 @@
         "name": "Template rendering",
         "input": "Nunjucks template + resolved typed input data",
         "output": "Rendered .md prompt text",
-        "description": "compileAgentSpec() renders both system and task prompts through Nunjucks unconditionally. No hasTemplateSyntax gate \u2014 every prompt goes through the template engine. Plain text renders to itself. ${{ }} workflow expressions are protected from Nunjucks interpretation."
+        "description": "compileAgentSpec() renders both system and task prompts through Nunjucks unconditionally. No hasTemplateSyntax gate — every prompt goes through the template engine. Plain text renders to itself. ${{ }} workflow expressions are protected from Nunjucks interpretation."
       },
       {
         "name": "Subprocess dispatch",
@@ -424,12 +387,12 @@
         "description": "Prompt written to temp file, passed to pi --mode json as a child process. Process exit is the definitive completion signal."
       }
     ],
-    "intermediate_representation": "JSON is the intermediate representation between steps. Every step produces outputs/<stepName>.json (or an author-declared path via output.path). Structured data written directly; string output wrapped as { \"text\": \"...\" }. Downstream agents consume typed JSON fields via templates \u2014 not string pastes."
+    "intermediate_representation": "JSON is the intermediate representation between steps. Every step produces outputs/<stepName>.json (or an author-declared path via output.path). Structured data written directly; string output wrapped as { \"text\": \"...\" }. Downstream agents consume typed JSON fields via templates — not string pastes."
   },
   "execution_model": {
     "description": "Conservative plan, layer-based execution with resume support, nine step types, three-tier resolution, pause/resume mechanisms.",
     "conservative_plan": "buildConservativePlan() adds implicit sequential deps for steps without explicit ${{ steps.X }} refs. Parallelism is opt-in.",
-    "layer_execution": "Processes layers of the dependency graph. Filters to pending steps within each layer. Partial parallel layers resume correctly \u2014 only pending steps in each layer execute.",
+    "layer_execution": "Processes layers of the dependency graph. Filters to pending steps within each layer. Partial parallel layers resume correctly — only pending steps in each layer execute.",
     "step_types": [
       "agent",
       "gate",
@@ -441,7 +404,7 @@
       "command"
     ],
     "three_tier_resolution": {
-      "pattern": ".pi/<dir>/ > ~/.pi/agent/<dir>/ > <package>/<dir>/ \u2014 project-level overrides user-level overrides package defaults",
+      "pattern": ".pi/<dir>/ > ~/.pi/agent/<dir>/ > <package>/<dir>/ — project-level overrides user-level overrides package defaults",
       "tiers": [
         {
           "level": "project",
@@ -484,10 +447,10 @@
     }
   },
   "dispatch_design": {
-    "method": "Subprocess spawn via pi --mode json. Each step spawns a separate pi process. The main pi instance orchestrates \u2014 parsing specs, validating schemas, resolving expressions, dispatching subprocesses, collecting results \u2014 but never yields its own session or agent loop.",
-    "rationale": "Independence from pi-subagents \u2014 two tools can coexist without shared state or import relationship. The user never loses their interactive session. When a workflow completes, the result surfaces in the main conversation.",
+    "method": "Subprocess spawn via pi --mode json. Each step spawns a separate pi process. The main pi instance orchestrates — parsing specs, validating schemas, resolving expressions, dispatching subprocesses, collecting results — but never yields its own session or agent loop.",
+    "rationale": "Independence from pi-subagents — two tools can coexist without shared state or import relationship. The user never loses their interactive session. When a workflow completes, the result surfaces in the main conversation.",
     "alternative_considered": "In-process dispatch via newSession() + sendMessage() within the same pi instance, with the workflow owning the agent loop (GSD-2 pattern).",
-    "alternative_rationale": "Sacrifices the user interactive session \u2014 each unit wipes the context, and the user becomes an observer. Exists as an optimization for long-running autonomous execution where subprocess overhead per step is wasteful and mid-turn supervision (steering messages) is valuable. Could be added later as explicit opt-in escalation.",
-    "parallelism_model": "Sequential steps run one subprocess at a time. Parallel steps (independent steps with no data dependencies) spawn multiple subprocesses concurrently. Falls out naturally from the subprocess model \u2014 parallelism is just multiple processes, no special execution mode needed."
+    "alternative_rationale": "Sacrifices the user interactive session — each unit wipes the context, and the user becomes an observer. Exists as an optimization for long-running autonomous execution where subprocess overhead per step is wasteful and mid-turn supervision (steering messages) is valuable. Could be added later as explicit opt-in escalation.",
+    "parallelism_model": "Sequential steps run one subprocess at a time. Parallel steps (independent steps with no data dependencies) spawn multiple subprocesses concurrently. Falls out naturally from the subprocess model — parallelism is just multiple processes, no special execution mode needed."
   }
 }

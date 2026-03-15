@@ -356,6 +356,41 @@
       "rationale": "We practiced this pattern manually (investigate agent \u2192 implement agent for graduated-failure). The workflow codifies it. It's not dynamically generated \u2014 the same workflow runs for every gap. The intelligence is in the agents and their composed prompts, not in the workflow structure.",
       "phase": 8,
       "status": "decided"
+    },
+    {
+      "id": "output-schema-injection",
+      "decision": "Step executor reads output schema file and injects content into template context as output_schema variable. Templates render {{ output_schema }} instead of duplicating JSON structure.",
+      "rationale": "Single source of truth. Schema changes propagate automatically to all agent prompts. Eliminates drift between what the prompt shows and what the validator checks.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "agent-prompts-xml-structure",
+      "decision": "Agent system prompts use XML tags (objective, workflow, constraints, anti_patterns, success_criteria) instead of markdown headings or freeform prose.",
+      "rationale": "XML provides semantic boundaries, better parsing, lower token usage. Based on Claude Code best practices. Required tags ensure every agent has scope boundaries, explicit constraints, and verifiable success criteria.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "block-validation-always-rollback",
+      "decision": "Block validation rollback runs on every validation failure, not just retry attempts. Invalid data must not persist on disk regardless of whether the step will be retried.",
+      "rationale": "Previous behavior: rollback only on attempt < totalAttempts. Final attempt or no-retry steps left corrupted data on disk. Rollback is a data integrity operation, not a retry operation.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "tui-single-activity-line",
+      "decision": "TUI shows only the most recent tool activity under running steps, not the full ring buffer history.",
+      "rationale": "Full buffer caused visual duplication and clutter. Single line gives current status without noise. Ring buffer retained in memory for potential future use but only latest rendered.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "prompt-best-practices-as-skill",
+      "decision": "Agent prompt authoring best practices are a pi skill (.pi/skills/author-agent-prompts/) not inline documentation. Loaded on demand when creating or editing agent specs.",
+      "rationale": "Progressive disclosure \u2014 skill is only loaded when needed. Contains audit checklist, concrete patterns from our agents, and output schema injection flow. Follows pi skill standard with SKILL.md + references/.",
+      "phase": 8,
+      "status": "decided"
     }
   ]
 }

@@ -1,8 +1,8 @@
 {
   "current_phase": 8,
-  "current_spec": 35,
-  "test_count": 509,
-  "last_commit": "11c6b00",
+  "current_spec": 0,
+  "test_count": 543,
+  "last_commit": "8389f4d",
   "accumulated_context": {
     "decisions": [
       "Project blocks live in .workflow/ — the project artifact directory",
@@ -24,7 +24,7 @@
     "blockers": []
   },
   "session": {
-    "last_action": "fix-audit workflow: 8 tasks completed",
-    "next_action": "Implement spec 35: execution results router"
+    "last_action": "Phase 8: Block Production and Routing Automation. 543 tests, 13 agents, 9 workflows. do-gap workflow validated end-to-end. TUI step activity and output summaries implemented. Agent prompts rewritten with XML structure. Block validation always-rollback fix. Monitor enum values fixed.",
+    "next_action": "Pending next specification"
   }
 }

@@ -100,6 +100,28 @@
         "do-gap-is-fixed-workflow"
       ],
       "phase": 8
+    },
+    {
+      "id": "prompt-engineering-for-workflow-agents",
+      "title": "Prompt Engineering as Infrastructure",
+      "narrative": "Agent prompts are infrastructure, not documentation. When the investigator omitted required schema fields, the fix wasn't 'tell the agent to try harder' \u2014 it was showing the exact output shape in the prompt. When agents spent 20 minutes on trivial gaps, the fix wasn't 'add a timeout' \u2014 it was calibrating the prompt's degree of freedom to task complexity. XML structure, explicit constraints, anti-patterns, and success criteria are not style preferences \u2014 they directly determine whether the agent produces valid output on the first attempt. The output schema injection pattern (reading the schema file and rendering it in the template) eliminated the class of errors where prompts and validators disagree. The author-agent-prompts skill codifies these patterns so every new agent starts from proven structure.",
+      "related_decisions": [
+        "output-schema-injection",
+        "agent-prompts-xml-structure",
+        "prompt-best-practices-as-skill"
+      ],
+      "phase": 8
+    },
+    {
+      "id": "monitor-workflow-coexistence",
+      "title": "Monitor and Workflow Coexistence",
+      "narrative": "The fragility monitor and workflow executor share the same filesystem and conversation context but serve different purposes. The monitor observes agent behavior and writes gaps. The executor runs steps and validates block files. When the monitor writes to gaps.json during a workflow step, block validation sees the change and attributes it to the step. Three fixes were needed: (1) fix the monitor's enum values to match the gaps schema, (2) fix block validation to always rollback on failure (not just retries), (3) accept that valid monitor writes during steps are harmless \u2014 they pass validation and persist. False positives from the monitor observing subprocess artifacts (truncated output, conversation fragments) remain an open issue but don't break execution.",
+      "related_decisions": [
+        "block-validation-always-rollback",
+        "deterministic-validation-not-monitors",
+        "monitors-peer-not-dependency"
+      ],
+      "phase": 8
     }
   ]
 }

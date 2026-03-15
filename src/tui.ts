@@ -13,6 +13,12 @@ export interface StepActivity {
   timestamp: number;
 }
 
+export interface StepOutputSummary {
+  tasks?: Array<{ name: string; status: string; files?: string[] }>;
+  testCount?: number;
+  note?: string;
+}
+
 export interface ProgressWidgetState {
   spec: WorkflowSpec;
   state: ExecutionState;
@@ -21,6 +27,7 @@ export interface ProgressWidgetState {
   parallelSubSteps?: Record<string, import("./types.ts").StepResult>;  // live sub-step results for parallel step
   resumedSteps?: number;         // number of steps carried from a prior run (resume indicator)
   activities: Map<string, StepActivity[]>;  // stepName → recent tool calls (ring buffer, last 5)
+  outputSummaries: Map<string, StepOutputSummary>; // stepName → parsed output after completion
 }
 
 /**
@@ -107,6 +114,34 @@ export function createProgressWidget(
             const typeTag = stepResult.agent === "gate" ? " [gate]" : stepResult.agent === "transform" ? " [transform]" : "";
             const truncTag = stepResult.truncated ? ` ${theme.fg("warning", "[truncated]")}` : "";
             line = `  ${theme.fg("success", "\u2713")} ${stepName}${typeTag}  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}  ${theme.fg("dim", tok)}${truncTag}`;
+            lines.push(line.length > width ? line.slice(0, width) : line);
+
+            // Render output summary sub-lines (capped at 3)
+            const summary = widgetState.outputSummaries?.get(stepName);
+            if (summary) {
+              let summaryLines = 0;
+              const MAX_SUMMARY_LINES = 3;
+              if (summary.tasks) {
+                for (const task of summary.tasks) {
+                  if (summaryLines >= MAX_SUMMARY_LINES) break;
+                  const files = task.files?.join(", ") || "";
+                  const statusIcon = task.status === "done" ? "\u2713" : task.status === "failed" ? "\u2717" : "\u00b7";
+                  const taskLine = `      ${theme.fg("dim", statusIcon)} ${theme.fg("dim", task.name)}${files ? "  " + theme.fg("dim", files) : ""}`;
+                  lines.push(taskLine.length > width ? taskLine.slice(0, width) : taskLine);
+                  summaryLines++;
+                }
+              }
+              if (summary.testCount && summaryLines < MAX_SUMMARY_LINES) {
+                const testLine = `      ${theme.fg("dim", `${summary.testCount} tests pass`)}`;
+                lines.push(testLine.length > width ? testLine.slice(0, width) : testLine);
+                summaryLines++;
+              }
+              if (summary.note && summaryLines < MAX_SUMMARY_LINES) {
+                const noteLine = `      ${theme.fg("dim", summary.note)}`;
+                lines.push(noteLine.length > width ? noteLine.slice(0, width) : noteLine);
+              }
+            }
+            continue;  // skip the push below, already pushed
           } else if (stepResult && stepResult.status === "failed") {
             const dur = formatDuration(stepResult.durationMs);
             const errorPreview = stepResult.error || "Unknown error";

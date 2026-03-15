@@ -293,6 +293,13 @@
       "rationale": "Intent capture shouldn't require a separate step. The user types a rough idea after the command, it gets processed into typed blocks. Quick capture, structured later.",
       "phase": 8,
       "status": "decided"
+    },
+    {
+      "id": "monitors-peer-not-dependency",
+      "decision": "pi-behavior-monitors is a peer extension, not a dependency. Workflow extension emits structured events into pi's event system. Monitors optionally observe them. No import, no hard coupling.",
+      "rationale": "Separation of concerns. The workflow extension knows its domain (steps, blocks, schemas). Monitors know observation patterns (friction detection, gap recording). The contract is the event shape, not the implementation. If monitors aren't installed, the workflow extension still works \u2014 events go nowhere.",
+      "phase": 8,
+      "status": "decided"
     }
   ]
 }

@@ -58,6 +58,15 @@
         "add-work-captures-raw-intent"
       ],
       "phase": 8
+    },
+    {
+      "id": "monitor-integration-architecture",
+      "title": "Monitors as peer observers via event bus, not built-in",
+      "narrative": "Two options for workflow observability: build monitoring into the workflow extension, or emit events and let a separate monitor extension observe them.\n\nBuilding in seems simpler but conflates concerns. Every observation point is workflow-specific (step failures, schema violations, agent output quality), but what to DO with observations is a monitoring concern (write gaps, alert, aggregate). The workflow extension shouldn't decide monitoring policy.\n\nThe event bus is the boundary. Workflow emits structured events at key lifecycle points. pi-behavior-monitors (already installed globally) can observe these events and write to .workflow/gaps.json with source:'monitor'. The workflow extension never imports monitor code.\n\nThe contract is the event shapes \u2014 what a workflow:step-complete carries, what workflow:block-write includes. Defining these shapes is the work. The implementation on both sides is straightforward once the shapes exist.",
+      "related_decisions": [
+        "monitors-peer-not-dependency"
+      ],
+      "phase": 8
     }
   ]
 }

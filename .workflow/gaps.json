@@ -211,6 +211,15 @@
       "priority": "high",
       "source": "human",
       "details": "Currently the human manually reads the gap, reads referenced docs, formulates intent, then runs create-phase. The gap entry already has description, details, and doc paths \u2014 that's the input the phase-author needs."
+    },
+    {
+      "id": "workflow-event-shapes",
+      "description": "No defined event shapes for workflow lifecycle events. Workflow extension needs to emit structured events (step-complete, step-failed, block-write, schema-validation-failed) that external monitors can observe via pi's event system.",
+      "status": "open",
+      "category": "composition",
+      "priority": "medium",
+      "source": "human",
+      "details": "Contract between workflow extension and pi-behavior-monitors. Events are the boundary \u2014 workflow emits, monitors consume. No hard dependency. If monitors aren't installed, events go nowhere. Shapes needed: workflow:step-complete, workflow:step-failed, workflow:block-write, workflow:schema-validation-failed, workflow:output-quality-signal."
     }
   ]
 }

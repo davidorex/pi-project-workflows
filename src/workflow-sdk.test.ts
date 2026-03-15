@@ -143,11 +143,19 @@ describe("projectState", () => {
     // Set up a minimal git repo
     execSync("git init && git commit --allow-empty -m 'init'", { cwd: tmpDir, stdio: "ignore" });
 
+    // Set up test files for dynamic test count
+    const srcDir = path.join(tmpDir, "src");
+    fs.mkdirSync(srcDir, { recursive: true });
+    fs.writeFileSync(path.join(srcDir, "example.test.ts"), `
+      it("test one", () => {});
+      it("test two", () => {});
+      it("test three", () => {});
+    `);
+
     // Set up blocks
     const wfDir = path.join(tmpDir, ".workflow");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
-    fs.writeFileSync(path.join(wfDir, "inventory.json"), JSON.stringify({ test_count: 42 }));
     fs.writeFileSync(path.join(wfDir, "gaps.json"), JSON.stringify({
       gaps: [
         { id: "g1", description: "open gap", status: "open", category: "issue", priority: "high" },
@@ -164,7 +172,7 @@ describe("projectState", () => {
 
     const state = projectState(tmpDir);
 
-    assert.strictEqual(state.testCount, 42);
+    assert.strictEqual(state.testCount, 3); // 3 it() declarations in example.test.ts
     assert.ok(state.lastCommit.length > 0);
     assert.strictEqual(state.lastCommitMessage, "init");
     assert.strictEqual(state.gaps.open, 2);

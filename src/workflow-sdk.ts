@@ -162,12 +162,19 @@ export function projectState(cwd: string): ProjectState {
     lastCommitMessage = execSync("git log -1 --format=%s", { cwd, encoding: "utf-8" }).trim();
   } catch { /* not a git repo or no commits */ }
 
-  // Test count from inventory (authoritative source)
+  // Test count derived from static scan of it() declarations in test files
   let testCount = 0;
   try {
-    const inv = readBlock(cwd, "inventory") as { test_count?: number };
-    testCount = inv.test_count ?? 0;
-  } catch { /* no inventory */ }
+    const srcDir = path.join(cwd, "src");
+    if (fs.existsSync(srcDir)) {
+      for (const file of fs.readdirSync(srcDir)) {
+        if (!file.endsWith(".test.ts")) continue;
+        const content = fs.readFileSync(path.join(srcDir, file), "utf-8");
+        const matches = content.match(/^\s*it\s*\(/gm);
+        if (matches) testCount += matches.length;
+      }
+    }
+  } catch { /* no src dir or read error */ }
 
   // Gaps
   let gapEntries: GapEntry[] = [];

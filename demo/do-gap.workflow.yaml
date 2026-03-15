@@ -8,7 +8,13 @@ input:
   properties:
     gap_id:
       type: string
-      description: ID of the gap to work on (from .workflow/gaps.json)
+      description: ID of the gap to work on
+      source:
+        file: .workflow/gaps.json
+        array: gaps
+        filter: { status: open }
+        label: id
+        value: id
 
 steps:
   load:

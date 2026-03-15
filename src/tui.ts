@@ -7,6 +7,12 @@ import type { TUI, Component } from "@mariozechner/pi-tui";
 import type { WorkflowSpec, ExecutionState, StepResult } from "./types.ts";
 import { formatDuration, formatCost, formatTokens } from "./format.ts";
 
+export interface StepActivity {
+  tool: string;      // "read", "edit", "bash", etc.
+  preview: string;   // "src/index.ts", "npm test", etc.
+  timestamp: number;
+}
+
 export interface ProgressWidgetState {
   spec: WorkflowSpec;
   state: ExecutionState;
@@ -14,6 +20,7 @@ export interface ProgressWidgetState {
   startTime: number;             // Date.now() when workflow started
   parallelSubSteps?: Record<string, import("./types.ts").StepResult>;  // live sub-step results for parallel step
   resumedSteps?: number;         // number of steps carried from a prior run (resume indicator)
+  activities: Map<string, StepActivity[]>;  // stepName → recent tool calls (ring buffer, last 5)
 }
 
 /**
@@ -113,6 +120,17 @@ export function createProgressWidget(
           } else if (currentSteps.includes(stepName)) {
             const stepElapsed = formatDuration(Date.now() - widgetState.startTime);
             line = `  ${theme.fg("accent", "\u25b8")} ${theme.fg("accent", stepName)}  ${theme.fg("dim", stepElapsed + "...")}`;
+            lines.push(line.length > width ? line.slice(0, width) : line);
+
+            // Render live tool activity under running step
+            const activities = widgetState.activities?.get(stepName);
+            if (activities && activities.length > 0) {
+              for (const act of activities) {
+                const actLine = `      ${theme.fg("dim", act.tool)} ${theme.fg("dim", act.preview)}`;
+                lines.push(actLine.length > width ? actLine.slice(0, width) : actLine);
+              }
+            }
+            continue;  // skip the push below, already pushed
           } else {
             line = `  ${theme.fg("dim", "\u00b7")} ${stepName}`;
           }

@@ -40,6 +40,80 @@ function summarizeInputSchema(schema: Record<string, unknown> | undefined): stri
   return `{ ${fields.join(", ")} }`;
 }
 
+/**
+ * Prompt for workflow input fields. Supports `source` field for select-from-file.
+ * Returns the input object, or null if user cancelled.
+ */
+async function promptForInput(
+  spec: { input?: unknown },
+  ctx: ExtensionCommandContext,
+): Promise<Record<string, unknown> | null> {
+  const schema = spec.input as Record<string, unknown> | undefined;
+  if (!schema) return {};
+
+  const props = schema.properties as Record<string, Record<string, unknown>> | undefined;
+  const required = new Set(Array.isArray(schema.required) ? (schema.required as string[]) : []);
+  if (!props) return {};
+
+  const inputObj: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(props)) {
+    if (!required.has(key) || val?.default !== undefined) continue;
+    if (!ctx.hasUI) {
+      ctx.ui.notify("Workflow input prompts require interactive mode.", "warning");
+      return null;
+    }
+
+    const source = val?.source as Record<string, unknown> | undefined;
+    if (source?.file && source?.array) {
+      // Source-based select: load options from a JSON file
+      const filePath = String(source.file);
+      const arrayField = String(source.array);
+      const labelField = String(source.label || "id");
+      const valueField = String(source.value || "id");
+      const filter = source.filter as Record<string, unknown> | undefined;
+
+      try {
+        const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+        let items = data[arrayField] as Record<string, unknown>[];
+        if (filter) {
+          items = items.filter((item) =>
+            Object.entries(filter).every(([k, v]) => item[k] === v),
+          );
+        }
+        if (items.length === 0) {
+          ctx.ui.notify(`No items found in ${filePath} matching filter.`, "warning");
+          return null;
+        }
+        const options = items.map((item) => String(item[labelField] ?? ""));
+        const desc = (val?.description as string) || key;
+        const selected = await ctx.ui.select(desc, options);
+        if (selected == null) return null;
+        // Map label back to value
+        const selectedItem = items.find((item) => String(item[labelField]) === selected);
+        inputObj[key] = selectedItem ? String(selectedItem[valueField]) : selected;
+      } catch {
+        ctx.ui.notify(`Failed to load options from ${filePath}`, "warning");
+        return null;
+      }
+    } else {
+      // Standard text input
+      const type = (val?.type as string) || "string";
+      const desc = (val?.description as string) || "";
+      const prompt = desc ? `${key} (${type}): ${desc}` : `${key} (${type})`;
+      const value = await ctx.ui.input(prompt);
+      if (value == null) return null;
+      if (type === "number") {
+        inputObj[key] = Number(value);
+      } else if (type === "array" || type === "object") {
+        try { inputObj[key] = JSON.parse(value); } catch { inputObj[key] = value; }
+      } else {
+        inputObj[key] = value;
+      }
+    }
+  }
+  return inputObj;
+}
+
 function formatToolResult(result: WorkflowResult): string {
   const status = result.status === "completed" ? "completed" : "failed";
   const stepSummary = Object.entries(result.steps)
@@ -78,34 +152,8 @@ async function handleList(ctx: ExtensionCommandContext, pi: ExtensionAPI): Promi
   }
 
   // Prompt for required input fields
-  const input: Record<string, unknown> = {};
-  const schema = spec.input as Record<string, unknown> | undefined;
-  if (schema) {
-    const props = schema.properties as Record<string, any> | undefined;
-    const required = new Set(Array.isArray(schema.required) ? schema.required : []);
-    if (props) {
-      for (const [key, val] of Object.entries(props)) {
-        if (!required.has(key) || val?.default !== undefined) continue;
-        const type = val?.type || "string";
-        const desc = val?.description || "";
-        const prompt = desc ? `${key} (${type}): ${desc}` : `${key} (${type})`;
-        if (!ctx.hasUI) {
-          ctx.ui.notify("Workflow input prompts require interactive mode.", "warning");
-          return;
-        }
-        const value = await ctx.ui.input(prompt);
-        if (value == null) return; // user cancelled
-        // Coerce from string based on declared type
-        if (type === "number") {
-          input[key] = Number(value);
-        } else if (type === "array" || type === "object") {
-          try { input[key] = JSON.parse(value); } catch { input[key] = value; }
-        } else {
-          input[key] = value;
-        }
-      }
-    }
-  }
+  const input = await promptForInput(spec, ctx);
+  if (input === null) return;
 
   const inputJson = Object.keys(input).length > 0
     ? JSON.stringify(input)
@@ -209,33 +257,9 @@ async function handleRun(rawArgs: string, ctx: ExtensionCommandContext, pi: Exte
       return;
     }
   } else if (spec.input) {
-    // If workflow has input schema, prompt for required fields
-    const schema = spec.input as Record<string, unknown>;
-    const props = schema.properties as Record<string, Record<string, unknown>> | undefined;
-    const required = new Set(Array.isArray(schema.required) ? schema.required as string[] : []);
-    if (props) {
-      const inputObj: Record<string, unknown> = {};
-      for (const [key, val] of Object.entries(props)) {
-        if (!required.has(key) || val?.default !== undefined) continue;
-        const type = (val?.type as string) || "string";
-        const desc = (val?.description as string) || "";
-        const prompt = desc ? `${key} (${type}): ${desc}` : `${key} (${type})`;
-        if (!ctx.hasUI) {
-          ctx.ui.notify("Workflow input prompts require interactive mode.", "warning");
-          return;
-        }
-        const value = await ctx.ui.input(prompt);
-        if (value == null) return;
-        if (type === "number") {
-          inputObj[key] = Number(value);
-        } else if (type === "array" || type === "object") {
-          try { inputObj[key] = JSON.parse(value); } catch { inputObj[key] = value; }
-        } else {
-          inputObj[key] = value;
-        }
-      }
-      input = inputObj;
-    }
+    const prompted = await promptForInput(spec, ctx);
+    if (prompted === null) return;
+    input = prompted;
   }
 
   try {

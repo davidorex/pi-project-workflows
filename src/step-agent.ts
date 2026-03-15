@@ -30,6 +30,7 @@ export interface AgentStepOptions {
   dispatchFn?: typeof dispatch;   // injectable for testing; defaults to real dispatch
   modelConfig?: import("./dispatch.ts").ModelConfig;
   retryContext?: RetryContext;    // set on retry attempts (attempt > 1)
+  onStepActivity?: (activity: { tool: string; preview: string; timestamp: number }) => void;
 }
 
 /**
@@ -120,7 +121,15 @@ export async function executeAgentStep(
     stepName,
     signal,
     timeoutMs: stepSpec.timeout ? stepSpec.timeout.seconds * 1000 : undefined,
-    onEvent: () => {},
+    onEvent: (event) => {
+      if (event.type === "tool_execution_start" && event.toolName && options.onStepActivity) {
+        options.onStepActivity({
+          tool: event.toolName,
+          preview: event.toolArgs || "",
+          timestamp: Date.now(),
+        });
+      }
+    },
     modelConfig: options.modelConfig,
   });
 

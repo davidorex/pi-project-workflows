@@ -103,6 +103,8 @@ export function persistStep(
   ctx: { hasUI: boolean; ui: { setWidget(id: string, w: unknown): void; notify?(msg: string, level: string): void } },
 ): void {
   state.steps[stepName] = result;
+  // Clear activity buffer for completed step
+  widgetState.activities?.delete(stepName);
   try {
     writeState(runDir, state);
   } catch (err) {

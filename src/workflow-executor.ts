@@ -489,6 +489,16 @@ async function executeStepByType(
     dispatchFn: options.dispatchFn,
     modelConfig: options.modelConfig,
     retryContext,
+    onStepActivity: (activity) => {
+      if (!widgetState.activities) widgetState.activities = new Map();
+      const existing = widgetState.activities.get(stepName) || [];
+      if (existing.length >= 5) existing.shift();
+      existing.push(activity);
+      widgetState.activities.set(stepName, existing);
+      if (ctx.hasUI) {
+        ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+      }
+    },
   });
   persistStep(state, stepName, agentResult, runDir, widgetState, ctx);
   if (agentResult.status === "failed") {
@@ -559,6 +569,7 @@ export async function executeWorkflow(
     spec,
     state,
     startTime: Date.now(),
+    activities: new Map(),
   };
   if (options.resume) {
     widgetState.resumedSteps = Object.keys(state.steps).filter(

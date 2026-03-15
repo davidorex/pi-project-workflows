@@ -266,6 +266,48 @@
       "priority": "medium",
       "source": "human",
       "details": "Currently route-results is inline Node.js reading and writing block files. With a project extension, it would emit project:write-block events or call a project API. The workflow extension shouldn't know block file structure."
+    },
+    {
+      "id": "do-gap-workflow",
+      "description": "Fixed workflow: load gap \u2192 investigate + research (parallel) \u2192 decompose \u2192 implement (forEach) \u2192 verify \u2192 route. The standard path from 'work on X' to done.",
+      "status": "open",
+      "category": "composition",
+      "priority": "high",
+      "source": "human",
+      "details": "Investigate produces structured findings (affected files, current behavior, constraints). Research produces external/cross-project findings (patterns, prior art, heuristics). Both feed into decompose which produces specs with file targets, dependencies, acceptance criteria, parallelization decisions. Implement forEach over specs. Verify runs tests/lint/block validation. Route updates project blocks and gap status."
+    },
+    {
+      "id": "investigation-findings-schema",
+      "description": "Output schema for investigation findings \u2014 affected files, current behavior, constraints, risks, related code. Distinct from a plan. Input to the decompose agent.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "high",
+      "source": "human"
+    },
+    {
+      "id": "research-findings-schema",
+      "description": "Output schema for research findings \u2014 known solutions, heuristics, patterns, prior art, references. Parallel to investigation findings but looks outward (other projects, docs, pattern libraries) rather than inward (codebase).",
+      "status": "open",
+      "category": "primitive",
+      "priority": "high",
+      "source": "human"
+    },
+    {
+      "id": "decompose-agent",
+      "description": "Agent that takes investigation + research findings and produces specs \u2014 units of work with file targets, dependencies, acceptance criteria, parallelization decisions. Consumes heuristic/policy blocks via template composition.",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "source": "human",
+      "details": "Key heuristics to compose in: file overlap analysis (specs touching same files must be sequential), interface dependency detection, test isolation boundaries, context window budgeting. These are known software engineering patterns, not novel invention. Composed into the agent's prompt as project-level policy blocks."
+    },
+    {
+      "id": "parallel-foreach",
+      "description": "forEach is sequential. If decompose produces parallel-safe specs (no file overlap, no mutual dependencies), we need a way to dispatch them in parallel. Either parallel:true flag on forEach, or decompose produces explicit parallel step structure.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "medium",
+      "source": "human"
     }
   ]
 }

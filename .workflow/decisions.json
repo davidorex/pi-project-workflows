@@ -335,6 +335,27 @@
       "rationale": "Extracting now would require guessing the API. Building through use cases \u2014 add-work, block validation, model-config resolution, route-results \u2014 reveals the actual contract between the two domains. The boundary becomes obvious when the use cases stabilize.",
       "phase": 8,
       "status": "decided"
+    },
+    {
+      "id": "investigate-not-plan",
+      "decision": "Investigation produces structured findings (understanding), not a plan. Decomposition is a separate step that takes findings and produces specs. Different cognitive tasks, different context needs, different output schemas.",
+      "rationale": "An investigator that also plans is doing two things \u2014 plan quality suffers because the context window is full of codebase analysis when it should be focused on decomposition heuristics. Separation gives the decompose agent clean input from both investigation and research.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "research-parallel-to-investigate",
+      "decision": "Research (external patterns, prior art, heuristics) runs in parallel with investigation (codebase analysis). Both take the gap as input, both produce structured findings, neither depends on the other. DAG planner puts them in the same layer automatically.",
+      "rationale": "Decompose agent gets richer input: here's what the codebase looks like (investigate), here's how others have solved this (research). Better decomposition because it works from both the problem and the solution space. Parallel execution is free \u2014 no mutual ${{ steps.X }} references.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "do-gap-is-fixed-workflow",
+      "decision": "The do-gap workflow has a fixed structure: load \u2192 investigate + research \u2192 decompose \u2192 implement \u2192 verify \u2192 route. The steps don't change per gap. The gap is the input. The investigation shapes what decompose produces, which shapes what implement iterates over.",
+      "rationale": "We practiced this pattern manually (investigate agent \u2192 implement agent for graduated-failure). The workflow codifies it. It's not dynamically generated \u2014 the same workflow runs for every gap. The intelligence is in the agents and their composed prompts, not in the workflow structure.",
+      "phase": 8,
+      "status": "decided"
     }
   ]
 }

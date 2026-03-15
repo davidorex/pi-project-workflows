@@ -89,6 +89,17 @@
         "project-build-through-use-cases"
       ],
       "phase": 8
+    },
+    {
+      "id": "do-gap-workflow-design",
+      "title": "The standard path from gap to done \u2014 fixed workflow, composed intelligence",
+      "narrative": "The question was: given an intent for work to be done, what steps are nearly always necessary? The answer is a fixed workflow with six steps: load the gap, investigate the codebase, research known solutions (in parallel with investigation), decompose findings into specs, implement each spec, verify and route results.\n\nThe workflow structure never changes. What changes is the content flowing through it \u2014 different gaps produce different investigation findings, different decomposition specs, different implementation tasks. The intelligence lives in the agents and their composed prompts (heuristics, policies, project context via templates), not in the workflow topology.\n\nKey separation: investigation produces understanding (what's the problem), not plans. Decomposition produces plans (what to do about it). These are different cognitive tasks needing different context. An investigator stuffed with planning heuristics wastes context window on the wrong concern. A decomposer that also had to investigate would duplicate work the investigator already did.\n\nParallelism falls out naturally. Investigation and research have no mutual data dependency \u2014 the DAG planner puts them in the same layer. The decompose agent decides which implementation specs are parallel based on file overlap and dependency analysis \u2014 known software engineering heuristics composed into its prompt, not hardcoded in the engine.",
+      "related_decisions": [
+        "investigate-not-plan",
+        "research-parallel-to-investigate",
+        "do-gap-is-fixed-workflow"
+      ],
+      "phase": 8
     }
   ]
 }

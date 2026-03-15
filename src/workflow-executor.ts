@@ -248,9 +248,11 @@ async function executeSingleStep(
         blockValidationFailed = true;
         priorErrors.push(msg);
 
+        // Always rollback — invalid data must not persist
+        rollbackBlockFiles(ctx.cwd, blockSnapshot);
+
         if (attempt < totalAttempts) {
-          // Rollback and retry
-          rollbackBlockFiles(ctx.cwd, blockSnapshot);
+          // Retry
           continue;
         }
 

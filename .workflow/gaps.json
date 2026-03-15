@@ -2,7 +2,7 @@
   "gaps": [
     {
       "id": "dynamic-dispatch-loops",
-      "description": "Dynamic dispatch in loops — a loop that evaluates which step to run each iteration based on current state. Any state machine workflow needs this: legal review routing on document classification, data pipelines branching on quality scores. The general primitive: a loop with a dispatch table of steps guarded by when: conditions evaluated per iteration.",
+      "description": "Dynamic dispatch in loops \u2014 a loop that evaluates which step to run each iteration based on current state. Any state machine workflow needs this: legal review routing on document classification, data pipelines branching on quality scores. The general primitive: a loop with a dispatch table of steps guarded by when: conditions evaluated per iteration.",
       "status": "open",
       "category": "primitive",
       "priority": "high",
@@ -10,7 +10,7 @@
     },
     {
       "id": "expression-functions",
-      "description": "Expression functions — ${{ }} expressions that call functions, not just access properties. ${{ loadFile(path) }} is the general case. The function system is domain-agnostic — specific functions are user-provided or workflow-provided. Needed for context loaders, file operations, data derivation.",
+      "description": "Expression functions \u2014 ${{ }} expressions that call functions, not just access properties. ${{ loadFile(path) }} is the general case. The function system is domain-agnostic \u2014 specific functions are user-provided or workflow-provided. Needed for context loaders, file operations, data derivation.",
       "status": "open",
       "category": "primitive",
       "priority": "high",
@@ -18,7 +18,7 @@
     },
     {
       "id": "timeout-actions",
-      "description": "Timeout actions — configurable responses beyond kill. Steering messages, idle detection, inspect-and-retry. Any long-running agent in any domain needs this.",
+      "description": "Timeout actions \u2014 configurable responses beyond kill. Steering messages, idle detection, inspect-and-retry. Any long-running agent in any domain needs this.",
       "status": "open",
       "category": "primitive",
       "priority": "medium",
@@ -26,7 +26,7 @@
     },
     {
       "id": "budget-enforcement",
-      "description": "Budget enforcement — cost ceiling with configurable action (pause, fail, warn). addUsage() accumulates but no gate. Any production workflow needs this.",
+      "description": "Budget enforcement \u2014 cost ceiling with configurable action (pause, fail, warn). addUsage() accumulates but no gate. Any production workflow needs this.",
       "status": "deferred",
       "category": "primitive",
       "priority": "medium",
@@ -36,7 +36,7 @@
     },
     {
       "id": "command-steps",
-      "description": "Command steps — shell command execution with captured stdout as JSON or text.",
+      "description": "Command steps \u2014 shell command execution with captured stdout as JSON or text.",
       "status": "resolved",
       "category": "primitive",
       "priority": "high",
@@ -45,7 +45,7 @@
     },
     {
       "id": "post-step-artifact-verification",
-      "description": "A verify block on the step spec declares assertions the runtime checks after the step completes. Not a separate step — built into the step definition. Assertion types: file exists, file changed, output field non-empty, output field matches pattern, shell command exits 0. These are deterministic, no LLM.",
+      "description": "A verify block on the step spec declares assertions the runtime checks after the step completes. Not a separate step \u2014 built into the step definition. Assertion types: file exists, file changed, output field non-empty, output field matches pattern, shell command exits 0. These are deterministic, no LLM.",
       "status": "open",
       "category": "primitive",
       "priority": "medium",
@@ -53,7 +53,7 @@
     },
     {
       "id": "requirement-tracking",
-      "description": "Requirement tracking (must-haves) — the step's input declares requirements (via schema or explicit requires field). The verify block checks the output addresses them. Cross-references input requirements against output content using heuristic matching (keyword/token presence in output fields). Domain-agnostic: works for code tasks, compliance points, synthesis criteria.",
+      "description": "Requirement tracking (must-haves) \u2014 the step's input declares requirements (via schema or explicit requires field). The verify block checks the output addresses them. Cross-references input requirements against output content using heuristic matching (keyword/token presence in output fields). Domain-agnostic: works for code tasks, compliance points, synthesis criteria.",
       "status": "open",
       "category": "primitive",
       "priority": "medium",
@@ -61,17 +61,17 @@
     },
     {
       "id": "graduated-failure",
-      "description": "Graduated failure — not binary pass/fail. The failure cascade: soft timeout → steer the agent → hard timeout → inspect durability (what artifacts exist so far?) → retry with gap analysis injected → skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
+      "description": "Graduated failure \u2014 not binary pass/fail. The failure cascade: soft timeout \u2192 steer the agent \u2192 hard timeout \u2192 inspect durability (what artifacts exist so far?) \u2192 retry with gap analysis injected \u2192 skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
       "status": "resolved",
       "category": "primitive",
       "priority": "medium",
       "source": "human",
-      "details": "GSD's recovery model is the reference: inspectExecuteTaskDurability() checks what the agent actually accomplished on disk before deciding action. Pattern: inspect what happened → rollback invalid state → steer with specific error context (agent steps only) → escalate on repeated failure → skip after max attempts. For block validation failures specifically: rollback file to pre-step snapshot, steer agent with schema error + rolled-back state, max N retries before fail-fast. Command steps can't be steered (no conversation), so they fail immediately with diagnostics. Two layers: orchestrator rollback (non-bypassable safety net) + monitor steering (in-flight correction for agent steps).",
+      "details": "GSD's recovery model is the reference: inspectExecuteTaskDurability() checks what the agent actually accomplished on disk before deciding action. Pattern: inspect what happened \u2192 rollback invalid state \u2192 steer with specific error context (agent steps only) \u2192 escalate on repeated failure \u2192 skip after max attempts. For block validation failures specifically: rollback file to pre-step snapshot, steer agent with schema error + rolled-back state, max N retries before fail-fast. Command steps can't be steered (no conversation), so they fail immediately with diagnostics. Two layers: orchestrator rollback (non-bypassable safety net) + monitor steering (in-flight correction for agent steps).",
       "resolved_by": "commit-84c2947"
     },
     {
       "id": "blocker-propagation",
-      "description": "Blocker propagation — when a step is skipped after exhausting retries, a blocker placeholder artifact is written. Downstream steps see the placeholder and can decide what to do. The pipeline doesn't silently drop work — it records what failed and why, in a structured artifact visible to subsequent steps and to the user.",
+      "description": "Blocker propagation \u2014 when a step is skipped after exhausting retries, a blocker placeholder artifact is written. Downstream steps see the placeholder and can decide what to do. The pipeline doesn't silently drop work \u2014 it records what failed and why, in a structured artifact visible to subsequent steps and to the user.",
       "status": "open",
       "category": "primitive",
       "priority": "medium",
@@ -79,7 +79,7 @@
     },
     {
       "id": "pre-step-validation",
-      "description": "Pre-step validation — gate checks on inputs before dispatch. Already supported as gate steps. The richer form: validate that the previous step's output has the content quality needed for this step to succeed. Not just 'does the file exist' but 'does the plan have a verification section, are scope estimates within thresholds.'",
+      "description": "Pre-step validation \u2014 gate checks on inputs before dispatch. Already supported as gate steps. The richer form: validate that the previous step's output has the content quality needed for this step to succeed. Not just 'does the file exist' but 'does the plan have a verification section, are scope estimates within thresholds.'",
       "status": "open",
       "category": "primitive",
       "priority": "low",
@@ -87,7 +87,7 @@
     },
     {
       "id": "adjacent-expression-misparse",
-      "description": "Expression parser: adjacent ${{ }}${{ }} in a single string — whole-value regex can misparse them. Pre-existing limitation.",
+      "description": "Expression parser: adjacent ${{ }}${{ }} in a single string \u2014 whole-value regex can misparse them. Pre-existing limitation.",
       "status": "open",
       "category": "issue",
       "priority": "low",
@@ -95,7 +95,7 @@
     },
     {
       "id": "delete-md-demo-agents",
-      "description": "Delete old .md demo agents — .agent.yaml versions are the source of truth, .md files are dead weight.",
+      "description": "Delete old .md demo agents \u2014 .agent.yaml versions are the source of truth, .md files are dead weight.",
       "status": "open",
       "category": "cleanup",
       "priority": "low",
@@ -103,7 +103,7 @@
     },
     {
       "id": "remove-dead-writeStepOutput",
-      "description": "Remove dead writeStepOutput in state.ts — superseded by output.ts persistStepOutput().",
+      "description": "Remove dead writeStepOutput in state.ts \u2014 superseded by output.ts persistStepOutput().",
       "status": "open",
       "category": "cleanup",
       "priority": "low",
@@ -115,7 +115,7 @@
       "status": "open",
       "category": "capability",
       "priority": "high",
-      "details": "Blocked by: nested workflow invocation (Phase 6) for per-spec cycles. Workaround: flatten — one planning step reads full phase spec, produces flat plans array, forEach implements all, one verify pass. Add load-phase and update-phase-status command steps to self-implement.workflow.yaml.",
+      "details": "Blocked by: nested workflow invocation (Phase 6) for per-spec cycles. Workaround: flatten \u2014 one planning step reads full phase spec, produces flat plans array, forEach implements all, one verify pass. Add load-phase and update-phase-status command steps to self-implement.workflow.yaml.",
       "source": "human"
     },
     {
@@ -129,11 +129,11 @@
     },
     {
       "id": "gap-recording-tool",
-      "description": "No tool or command exists for agents or main context to record gaps during execution. Gap recording is post-hoc and opt-in. Need a record-gap tool available mid-task that writes to gaps.json — as frictionless as git commit.",
+      "description": "No tool or command exists for agents or main context to record gaps during execution. Gap recording is post-hoc and opt-in. Need a record-gap tool available mid-task that writes to gaps.json \u2014 as frictionless as git commit.",
       "status": "open",
       "category": "capability",
       "priority": "high",
-      "details": "Monitor writes directly to gaps.json with source:'monitor'. No agent steering needed — monitor observes friction in execution trace, appends gap, done. Human/main-context reviews monitor-created gaps and marks actionable or deletes. Query by source: gaps.filter(g => g.source === 'monitor'). Three-layer design: (1) monitor writes gaps directly (non-bypassable), (2) execution-results.issues[] required in schema (agent-reported), (3) route-results routes agent-reported issues with source:'agent'.",
+      "details": "Monitor writes directly to gaps.json with source:'monitor'. No agent steering needed \u2014 monitor observes friction in execution trace, appends gap, done. Human/main-context reviews monitor-created gaps and marks actionable or deletes. Query by source: gaps.filter(g => g.source === 'monitor'). Three-layer design: (1) monitor writes gaps directly (non-bypassable), (2) execution-results.issues[] required in schema (agent-reported), (3) route-results routes agent-reported issues with source:'agent'.",
       "source": "human"
     },
     {
@@ -143,7 +143,7 @@
       "category": "primitive",
       "priority": "medium",
       "source": "human",
-      "details": "Discovered when fix-audit workflow failed: ${{ expr | json }} in shell arguments breaks on JSON containing single quotes. All command steps rewritten to read files directly. The output.path → read-from-disk pattern works but is manual and requires coordinating paths between steps."
+      "details": "Discovered when fix-audit workflow failed: ${{ expr | json }} in shell arguments breaks on JSON containing single quotes. All command steps rewritten to read files directly. The output.path \u2192 read-from-disk pattern works but is manual and requires coordinating paths between steps."
     },
     {
       "id": "issue-finding-p1-type-any-typebox-was-already-resolved-s",
@@ -160,7 +160,7 @@
       "category": "capability",
       "priority": "medium",
       "source": "human",
-      "details": "Design doc: docs/mar-15-workflow-visibility-details-for-tui.md. Three-file change: dispatch.ts (forward onEvent tool calls), step-agent.ts (capture tool activity via onStepActivity callback), tui.ts (StepActivity ring buffer per step, StepOutputSummary after completion), workflow-executor.ts (wire activity callback, parse output summary, refresh widget). New types: StepActivity { tool, preview, timestamp }, StepOutputSummary { tasks[], testCount, note }. Data flow: subprocess JSONL → dispatch onEvent → step-agent onStepActivity → widget state ring buffer (last 5) → TUI renders indented sub-lines under running step. On completion: activity cleared, output parsed for summary, summary rendered as indented sub-lines under completed step."
+      "details": "Design doc: docs/mar-15-workflow-visibility-details-for-tui.md. Three-file change: dispatch.ts (forward onEvent tool calls), step-agent.ts (capture tool activity via onStepActivity callback), tui.ts (StepActivity ring buffer per step, StepOutputSummary after completion), workflow-executor.ts (wire activity callback, parse output summary, refresh widget). New types: StepActivity { tool, preview, timestamp }, StepOutputSummary { tasks[], testCount, note }. Data flow: subprocess JSONL \u2192 dispatch onEvent \u2192 step-agent onStepActivity \u2192 widget state ring buffer (last 5) \u2192 TUI renders indented sub-lines under running step. On completion: activity cleared, output parsed for summary, summary rendered as indented sub-lines under completed step."
     },
     {
       "id": "dag-foreach-command-scanning",
@@ -203,16 +203,16 @@
       "category": "issue",
       "priority": "high",
       "source": "human",
-      "details": "Discovered when add-work validated decisions.json and found 6 entries missing required 'phase' field — written by fix-audit implementing agents via route-results. Fix: route-results should validate each block after merging, before writing."
+      "details": "Discovered when add-work validated decisions.json and found 6 entries missing required 'phase' field \u2014 written by fix-audit implementing agents via route-results. Fix: route-results should validate each block after merging, before writing."
     },
     {
       "id": "gap-to-phase-flow",
-      "description": "No mechanism to go from a gap ID to a phase spec. create-phase takes free-text intent, not a gap reference. Need: load gap by ID → enrich with details/doc path → pass to phase-author.",
+      "description": "No mechanism to go from a gap ID to a phase spec. create-phase takes free-text intent, not a gap reference. Need: load gap by ID \u2192 enrich with details/doc path \u2192 pass to phase-author.",
       "status": "open",
       "category": "composition",
       "priority": "high",
       "source": "human",
-      "details": "Currently the human manually reads the gap, reads referenced docs, formulates intent, then runs create-phase. The gap entry already has description, details, and doc paths — that's the input the phase-author needs."
+      "details": "Currently the human manually reads the gap, reads referenced docs, formulates intent, then runs create-phase. The gap entry already has description, details, and doc paths \u2014 that's the input the phase-author needs."
     },
     {
       "id": "workflow-event-shapes",
@@ -221,11 +221,11 @@
       "category": "composition",
       "priority": "medium",
       "source": "human",
-      "details": "Contract between workflow extension and pi-behavior-monitors. Events are the boundary — workflow emits, monitors consume. No hard dependency. If monitors aren't installed, events go nowhere. Shapes needed: workflow:step-complete, workflow:step-failed, workflow:block-write, workflow:schema-validation-failed, workflow:output-quality-signal."
+      "details": "Contract between workflow extension and pi-behavior-monitors. Events are the boundary \u2014 workflow emits, monitors consume. No hard dependency. If monitors aren't installed, events go nowhere. Shapes needed: workflow:step-complete, workflow:step-failed, workflow:block-write, workflow:schema-validation-failed, workflow:output-quality-signal."
     },
     {
       "id": "block-write-validation",
-      "description": "No schema validation on writes to .workflow/ block files. route-results and any step writing to blocks should validate against the block's schema before writing. Deterministic check — AJV, not LLM.",
+      "description": "No schema validation on writes to .workflow/ block files. route-results and any step writing to blocks should validate against the block's schema before writing. Deterministic check \u2014 AJV, not LLM.",
       "status": "open",
       "category": "issue",
       "priority": "high",
@@ -239,7 +239,7 @@
       "category": "capability",
       "priority": "medium",
       "source": "human",
-      "details": "A project wanting a schema validation monitor can't express it in the current spec format. The split: deterministic checks belong in the producing extension (workflow validates its own writes). Behavioral observation (patterns over time, agent quality trends) belongs in monitors with LLM classification. Events from workflow extension are additive for monitors — richer signal without parsing conversation text."
+      "details": "A project wanting a schema validation monitor can't express it in the current spec format. The split: deterministic checks belong in the producing extension (workflow validates its own writes). Behavioral observation (patterns over time, agent quality trends) belongs in monitors with LLM classification. Events from workflow extension are additive for monitors \u2014 richer signal without parsing conversation text."
     },
     {
       "id": "project-extension-extraction",
@@ -269,7 +269,7 @@
     },
     {
       "id": "do-gap-workflow",
-      "description": "Fixed workflow: load gap → investigate + research (parallel) → decompose → implement (forEach) → verify → route. The standard path from 'work on X' to done.",
+      "description": "Fixed workflow: load gap \u2192 investigate + research (parallel) \u2192 decompose \u2192 implement (forEach) \u2192 verify \u2192 route. The standard path from 'work on X' to done.",
       "status": "open",
       "category": "composition",
       "priority": "high",
@@ -278,7 +278,7 @@
     },
     {
       "id": "investigation-findings-schema",
-      "description": "Output schema for investigation findings — affected files, current behavior, constraints, risks, related code. Distinct from a plan. Input to the decompose agent.",
+      "description": "Output schema for investigation findings \u2014 affected files, current behavior, constraints, risks, related code. Distinct from a plan. Input to the decompose agent.",
       "status": "open",
       "category": "primitive",
       "priority": "high",
@@ -286,7 +286,7 @@
     },
     {
       "id": "research-findings-schema",
-      "description": "Output schema for research findings — known solutions, heuristics, patterns, prior art, references. Parallel to investigation findings but looks outward (other projects, docs, pattern libraries) rather than inward (codebase).",
+      "description": "Output schema for research findings \u2014 known solutions, heuristics, patterns, prior art, references. Parallel to investigation findings but looks outward (other projects, docs, pattern libraries) rather than inward (codebase).",
       "status": "open",
       "category": "primitive",
       "priority": "high",
@@ -294,7 +294,7 @@
     },
     {
       "id": "decompose-agent",
-      "description": "Agent that takes investigation + research findings and produces specs — units of work with file targets, dependencies, acceptance criteria, parallelization decisions. Consumes heuristic/policy blocks via template composition.",
+      "description": "Agent that takes investigation + research findings and produces specs \u2014 units of work with file targets, dependencies, acceptance criteria, parallelization decisions. Consumes heuristic/policy blocks via template composition.",
       "status": "open",
       "category": "capability",
       "priority": "high",
@@ -311,20 +311,12 @@
     },
     {
       "id": "agent-prompt-quality",
-      "description": "Agent system prompts and task templates are loosely written — vague directives like 'read the relevant code' cause unbounded exploration. Prompts need to be best-practices templates: scoped, bounded, with explicit stop conditions, depth matched to task category/priority.",
+      "description": "Agent system prompts and task templates are loosely written \u2014 vague directives like 'read the relevant code' cause unbounded exploration. Prompts need to be best-practices templates: scoped, bounded, with explicit stop conditions, depth matched to task category/priority.",
       "status": "open",
       "category": "issue",
       "priority": "high",
       "source": "human",
-      "details": "All 13 agent specs need prompt review. Key principles: scope reads to named files or directory scans (not content), match investigation depth to gap category/priority, explicit stop conditions (don't explore further than X), output-first (state the output shape upfront so the agent works toward it). The investigator template was fixed as an example — others need the same treatment."
-    },
-    {
-      "id": "fragility-fragility-mmri61me",
-      "description": "Agent planned to delegate TUI visibility work to a subagent instead of handling the complete solution themselves, leaving the fragmented responsibility unresolved.",
-      "status": "open",
-      "category": "fragility",
-      "priority": "warning",
-      "source": "monitor"
+      "details": "All 13 agent specs need prompt review. Key principles: scope reads to named files or directory scans (not content), match investigation depth to gap category/priority, explicit stop conditions (don't explore further than X), output-first (state the output shape upfront so the agent works toward it). The investigator template was fixed as an example \u2014 others need the same treatment."
     }
   ]
 }

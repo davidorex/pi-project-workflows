@@ -93,6 +93,16 @@ function collectExpressions(step: StepSpec): string[] {
     exprs.push(step.loop.attempts);
   }
 
+  // forEach expression
+  if (step.forEach) {
+    collectExpressionsFromValue(step.forEach, exprs);
+  }
+
+  // command expression (may contain ${{ }} references)
+  if (step.command) {
+    collectExpressionsFromValue(step.command, exprs);
+  }
+
   return exprs;
 }
 

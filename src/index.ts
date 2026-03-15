@@ -7,6 +7,7 @@ import { executeWorkflow, requestPause } from "./workflow-executor.ts";
 import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
 import { createAgentLoader } from "./agent-spec.ts";
 import { readBlock, appendToBlock } from "./block-api.ts";
+import { projectState } from "./workflow-sdk.ts";
 import type { WorkflowResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -336,6 +337,45 @@ async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: E
 }
 
 /**
+ * /workflow status — derives project state from authoritative sources and
+ * sends it as a structured message. Available to human, LLM, and system.
+ */
+function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
+  const state = projectState(ctx.cwd);
+
+  const lines: string[] = [];
+  lines.push(`## Project Status`);
+  lines.push("");
+  lines.push(`**Tests:** ${state.testCount} | **Commit:** ${state.lastCommit} (${state.lastCommitMessage})`);
+  lines.push(`**Agents:** ${state.agents} | **Workflows:** ${state.workflows} | **Blocks:** ${state.blocks}`);
+  lines.push("");
+  lines.push(`**Gaps:** ${state.gaps.open} open, ${state.gaps.resolved} resolved, ${state.gaps.deferred} deferred`);
+
+  if (state.gaps.open > 0) {
+    const byCat = Object.entries(state.gaps.byCategory).map(([k, v]) => `${k}: ${v}`).join(", ");
+    const byPri = Object.entries(state.gaps.byPriority).map(([k, v]) => `${k}: ${v}`).join(", ");
+    lines.push(`  By category: ${byCat}`);
+    lines.push(`  By priority: ${byPri}`);
+  }
+
+  lines.push(`**Decisions:** ${state.decisions.total} total (${state.decisions.decided} decided, ${state.decisions.tentative} tentative)`);
+
+  if (state.openGaps.length > 0) {
+    lines.push("");
+    lines.push("**Open gaps (high priority):**");
+    for (const g of state.openGaps.filter(g => g.priority === "high" || g.priority === "critical")) {
+      lines.push(`- \`${g.id}\` (${g.category}) — ${g.description.slice(0, 80)}`);
+    }
+  }
+
+  pi.sendMessage({
+    customType: "workflow-status",
+    content: lines.join("\n"),
+    display: true,
+  });
+}
+
+/**
  * /workflow add-work — reads project block schemas and current state,
  * returns a structured instruction for main context to extract
  * gaps, decisions, and rationale from the conversation into typed JSON blocks.
@@ -534,7 +574,7 @@ const extension = (pi: ExtensionAPI) => {
       } else if (subcommand === "resume") {
         await handleResume(rest, ctx, pi);
       } else if (subcommand === "status") {
-        ctx.ui.notify("No workflow currently running.", "info");
+        handleStatus(ctx, pi);
       } else if (subcommand === "add-work") {
         await handleAddWork(rest, ctx, pi);
       } else {

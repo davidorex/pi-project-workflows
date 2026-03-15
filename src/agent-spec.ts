@@ -13,6 +13,12 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+
+/** Check if a prompt.system value looks like a template file path vs inline text. */
+function isTemplatePath(value: string | undefined): boolean {
+  if (!value) return false;
+  return value.endsWith(".md") || value.endsWith(".txt") || (value.includes("/") && !value.includes("\n"));
+}
 import os from "node:os";
 import { parse as parseYaml } from "yaml";
 import type { AgentSpec } from "./types.ts";
@@ -85,7 +91,8 @@ export function parseAgentYaml(filePath: string): AgentSpec {
     extensions: spec.extensions,
     skills: spec.skills,
     output: spec.output?.file,
-    promptTemplate: spec.prompt?.system,
+    promptTemplate: isTemplatePath(spec.prompt?.system) ? spec.prompt?.system : undefined,
+    systemPrompt: isTemplatePath(spec.prompt?.system) ? undefined : spec.prompt?.system,
     taskTemplate: spec.prompt?.task,
     inputSchema: spec.input,
     outputFormat: spec.output?.format,

@@ -27,6 +27,7 @@ import { executePause } from "./step-pause.ts";
 import { executeCommand } from "./step-command.ts";
 import { executeForEach } from "./step-foreach.ts";
 import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "./block-validation.ts";
+import { readBlock, writeBlock } from "./block-api.ts";
 import type { BlockSnapshot } from "./block-validation.ts";
 import type { RetryConfig } from "./types.ts";
 
@@ -620,8 +621,7 @@ export async function executeWorkflow(
   let modelConfig = options.modelConfig;
   if (!modelConfig) {
     try {
-      const configPath = path.join(ctx.cwd, ".workflow", "model-config.json");
-      modelConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      modelConfig = readBlock(ctx.cwd, "model-config") as typeof modelConfig;
     } catch { /* no config file — models come from agent specs or step specs */ }
   }
 
@@ -730,15 +730,22 @@ export async function executeWorkflow(
           validateFromFile(schemaPath, data, `artifact '${name}'`);
         }
 
-        // Write the artifact
-        fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
-        if (typeof data === "string") {
-          fs.writeFileSync(absolutePath, data);
+        // Route .workflow/ JSON targets through block-api for block-schema validation
+        const workflowPrefix = path.join(ctx.cwd, ".workflow") + path.sep;
+        if (absolutePath.startsWith(workflowPrefix) && absolutePath.endsWith(".json")) {
+          const blockName = path.basename(absolutePath, ".json");
+          writeBlock(ctx.cwd, blockName, data);
+          writtenArtifacts[name] = absolutePath;
         } else {
-          fs.writeFileSync(absolutePath, JSON.stringify(data, null, 2));
+          // Write non-block artifacts directly
+          fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+          if (typeof data === "string") {
+            fs.writeFileSync(absolutePath, data);
+          } else {
+            fs.writeFileSync(absolutePath, JSON.stringify(data, null, 2));
+          }
+          writtenArtifacts[name] = absolutePath;
         }
-
-        writtenArtifacts[name] = absolutePath;
       } catch (err) {
         // Artifact write failure is non-fatal — log warning, don't fail the workflow
         const msg = err instanceof Error ? err.message : String(err);

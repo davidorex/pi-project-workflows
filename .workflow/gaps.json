@@ -201,11 +201,12 @@
     {
       "id": "route-results-no-validation",
       "description": "route-results step merges agent output into project blocks (.workflow/*.json) without validating against block schemas. Agents can write malformed entries that only surface when something else reads the block later.",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "high",
       "source": "human",
-      "details": "Discovered when add-work validated decisions.json and found 6 entries missing required 'phase' field — written by fix-audit implementing agents via route-results. Fix: route-results should validate each block after merging, before writing."
+      "details": "Discovered when add-work validated decisions.json and found 6 entries missing required 'phase' field — written by fix-audit implementing agents via route-results. Fix: route-results should validate each block after merging, before writing.",
+      "resolved_by": "block-api-module"
     },
     {
       "id": "gap-to-phase-flow",
@@ -228,11 +229,12 @@
     {
       "id": "block-write-validation",
       "description": "No schema validation on writes to .workflow/ block files. route-results and any step writing to blocks should validate against the block's schema before writing. Deterministic check — AJV, not LLM.",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "high",
       "source": "human",
-      "details": "Distinct from monitor-based observation. This is the workflow extension's own responsibility at write time. Monitors observe behavioral patterns over time (agent repeatedly producing invalid output). Validation at write time prevents invalid data from being persisted in the first place."
+      "details": "Distinct from monitor-based observation. This is the workflow extension's own responsibility at write time. Monitors observe behavioral patterns over time (agent repeatedly producing invalid output). Validation at write time prevents invalid data from being persisted in the first place.",
+      "resolved_by": "block-api-module"
     },
     {
       "id": "monitor-programmatic-mode",

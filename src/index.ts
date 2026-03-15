@@ -6,6 +6,7 @@ import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
 import { executeWorkflow, requestPause } from "./workflow-executor.ts";
 import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
 import { createAgentLoader } from "./agent-spec.ts";
+import { readBlock } from "./block-api.ts";
 import type { WorkflowResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -359,13 +360,11 @@ async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: Ext
 
     const schema = fs.readFileSync(schemaPath, "utf8");
     let currentCount = "";
-    if (fs.existsSync(dataPath)) {
-      try {
-        const data = JSON.parse(fs.readFileSync(dataPath, "utf8"));
-        const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]));
-        if (arrayKey) currentCount = ` (${data[arrayKey].length} existing)`;
-      } catch { /* ignore parse errors */ }
-    }
+    try {
+      const data = readBlock(ctx.cwd, block) as Record<string, unknown>;
+      const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]));
+      if (arrayKey) currentCount = ` (${(data[arrayKey] as unknown[]).length} existing)`;
+    } catch { /* block file doesn't exist or invalid — skip count */ }
 
     blockInfo.push(`### ${block}${currentCount}\nSchema: ${schemaPath}\nData: ${dataPath}\n\`\`\`json\n${schema}\n\`\`\``);
   }

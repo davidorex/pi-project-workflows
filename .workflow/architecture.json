@@ -125,6 +125,15 @@
       "lines": 163
     },
     {
+      "name": "block-api",
+      "file": "src/block-api.ts",
+      "responsibility": "Centralized block I/O: readBlock(), writeBlock(), appendToBlock() with write-time schema validation and atomic writes",
+      "dependencies": [
+        "schema-validator"
+      ],
+      "lines": 95
+    },
+    {
       "name": "checkpoint",
       "file": "src/checkpoint.ts",
       "responsibility": "findIncompleteRun(), validateResumeCompatibility(), computeResumePoint(), formatIncompleteRun() for crash recovery and resume",

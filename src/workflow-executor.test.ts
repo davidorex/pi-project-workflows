@@ -589,6 +589,66 @@ describe("artifacts", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
+  it("validates artifact targeting .workflow/ against block schema", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+
+    // Create .workflow/schemas/ with a schema that requires { items: array }
+    const schemasDir = path.join(tmpDir, ".workflow", "schemas");
+    fs.mkdirSync(schemasDir, { recursive: true });
+    fs.writeFileSync(path.join(schemasDir, "test-block.schema.json"), JSON.stringify({
+      type: "object",
+      required: ["items"],
+      properties: { items: { type: "array" } },
+    }));
+
+    const spec: WorkflowSpec = {
+      name: "test-artifact-block",
+      description: "test block-api routing for .workflow/ artifacts",
+      steps: {
+        produce: {
+          agent: "transform",
+          transform: {
+            mapping: { bad: "data" }, // does NOT match schema (missing items)
+          },
+        },
+      },
+      artifacts: {
+        block: {
+          path: path.join(tmpDir, ".workflow", "test-block.json"),
+          from: "steps.produce.output",
+        },
+      },
+      source: "test",
+      version: "1.0",
+      filePath: path.join(tmpDir, "test.workflow.yaml"),
+    };
+
+    const notifications: { msg: string; level: string }[] = [];
+    const result = await executeWorkflow(spec, {}, {
+      ctx: {
+        cwd: tmpDir,
+        hasUI: true,
+        ui: {
+          setWidget: () => {},
+          notify: (msg: string, level: string) => { notifications.push({ msg, level }); },
+          setStatus: () => {},
+          setWorkingMessage: () => {},
+        },
+      } as unknown as ExtensionContext,
+      pi: mockPi(),
+      loadAgent: () => ({ name: "default" }),
+    });
+
+    // Workflow completes (artifact failure is non-fatal)
+    assert.strictEqual(result.status, "completed");
+    // Block file should NOT have been written (validation failed)
+    assert.ok(!fs.existsSync(path.join(tmpDir, ".workflow", "test-block.json")));
+    // Warning about validation failure
+    assert.ok(notifications.some(n => n.msg.includes("test-block") && n.level === "warning"));
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
   it("includes artifacts in formatResult output", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
     const spec: WorkflowSpec = {

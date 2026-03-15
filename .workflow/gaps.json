@@ -333,6 +333,14 @@
       "category": "issue",
       "priority": "medium",
       "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mmrkbtra",
+      "description": "The agent saw warning messages about failed output persistence (EEXIST, ENOTDIR, EACCES errors) in the test output but chose not to investigate or address these filesystem-related failures.",
+      "status": "open",
+      "category": "issue",
+      "priority": "medium",
+      "source": "monitor"
     }
   ]
 }

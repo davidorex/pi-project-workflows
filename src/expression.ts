@@ -16,6 +16,12 @@ const FILTERS: Record<string, (value: unknown) => unknown> = {
   filter: (v) => Array.isArray(v) ? v.filter(Boolean) : v,
 };
 
+/** Filter names derived from the FILTERS registry — add a filter above, this updates automatically. */
+export const FILTER_NAMES = Object.keys(FILTERS);
+
+/** Known root-level expression scope keys. */
+export const EXPRESSION_ROOTS = ["input", "steps"] as const;
+
 /**
  * Error class for expression resolution failures.
  * Contains the original expression and a diagnostic reason.

@@ -1,6 +1,29 @@
 import { parse as parseYaml } from "yaml";
 import type { WorkflowSpec, StepSpec, StepOutputSpec, CompletionSpec, ArtifactSpec, LoopSpec, GateSpec, TransformSpec, RetryConfig } from "./types.ts";
 
+/** Descriptor for a workflow step type — used by SDK and spec validation. */
+export interface StepTypeDescriptor {
+  name: string;
+  field: string;
+  retryable: boolean;
+  supportsInput: boolean;
+  supportsOutput: boolean;
+}
+
+/** Step type registry — add a step type here, parsing and SDK both see it automatically. */
+export const STEP_TYPES: StepTypeDescriptor[] = [
+  { name: "agent",     field: "agent",     retryable: true,  supportsInput: true,  supportsOutput: true },
+  { name: "gate",      field: "gate",      retryable: false, supportsInput: false, supportsOutput: false },
+  { name: "transform", field: "transform", retryable: false, supportsInput: false, supportsOutput: false },
+  { name: "loop",      field: "loop",      retryable: true,  supportsInput: false, supportsOutput: false },
+  { name: "parallel",  field: "parallel",  retryable: true,  supportsInput: false, supportsOutput: false },
+  { name: "pause",     field: "pause",     retryable: false, supportsInput: false, supportsOutput: false },
+  { name: "command",   field: "command",   retryable: false, supportsInput: true,  supportsOutput: true },
+];
+
+/** Set of valid step type field names — derived from STEP_TYPES. */
+export const STEP_TYPE_FIELDS = new Set(STEP_TYPES.map(t => t.field));
+
 /**
  * Error class for spec parsing failures.
  */
@@ -186,23 +209,25 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
     throw new WorkflowSpecError(filePath, `step '${stepName}': nested workflows ('workflow') are not yet supported`);
   }
 
-  // Count step types
-  const hasAgent = "agent" in rawStep && rawStep.agent !== undefined;
-  const hasGate = "gate" in rawStep && rawStep.gate !== undefined;
-  const hasTransform = "transform" in rawStep && rawStep.transform !== undefined;
-  const hasLoop = "loop" in rawStep && rawStep.loop !== undefined;
-  const hasParallel = "parallel" in rawStep && rawStep.parallel !== undefined;
-  const hasPause = "pause" in rawStep && rawStep.pause !== undefined;
-  const hasCommand = "command" in rawStep && rawStep.command !== undefined;
+  // Count step types (derived from STEP_TYPES registry)
+  const presentTypes = STEP_TYPES.filter(t => t.field in rawStep && rawStep[t.field] !== undefined);
+  const stepTypeList = STEP_TYPES.map(t => t.field).join(", ");
 
-  const typeCount = [hasAgent, hasGate, hasTransform, hasLoop, hasParallel, hasPause, hasCommand].filter(Boolean).length;
+  if (presentTypes.length === 0) {
+    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: ${stepTypeList}`);
+  }
+  if (presentTypes.length > 1) {
+    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: ${stepTypeList}`);
+  }
 
-  if (typeCount === 0) {
-    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, parallel, pause, or command`);
-  }
-  if (typeCount > 1) {
-    throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: agent, gate, transform, loop, parallel, pause, or command`);
-  }
+  // Individual flags for downstream parsing (derived from presentTypes check above)
+  const hasAgent = presentTypes[0].field === "agent";
+  const hasGate = presentTypes[0].field === "gate";
+  const hasTransform = presentTypes[0].field === "transform";
+  const hasLoop = presentTypes[0].field === "loop";
+  const hasParallel = presentTypes[0].field === "parallel";
+  const hasPause = presentTypes[0].field === "pause";
+  const hasCommand = presentTypes[0].field === "command";
 
   const step: StepSpec = {};
 

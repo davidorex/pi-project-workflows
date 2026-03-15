@@ -62,21 +62,16 @@ steps:
 
   author:
     agent: phase-author
-    input: |
-      Create a phase spec for this gap:
-
-      Gap ID: ${{ steps.load-gap.output.gap.id }}
-      Description: ${{ steps.load-gap.output.gap.description }}
-      Category: ${{ steps.load-gap.output.gap.category }}
-      Priority: ${{ steps.load-gap.output.gap.priority }}
-      Details: ${{ steps.load-gap.output.gap.details }}
-
-      Existing phases: ${{ steps.load-context.output.phases | json }}
-      Architecture: ${{ steps.load-context.output.architecture | json }}
-      Conventions: ${{ steps.load-context.output.conventions | json }}
-      Open gaps: ${{ steps.load-context.output.gaps | json }}
-      Inventory: ${{ steps.load-context.output.inventory | json }}
+    input:
+      intent: "Implement gap ${{ steps.load-gap.output.gap.id }}: ${{ steps.load-gap.output.gap.description }}"
+      gap: "${{ steps.load-gap.output.gap }}"
+      phases: "${{ steps.load-context.output.phases }}"
+      architecture: "${{ steps.load-context.output.architecture }}"
+      conventions: "${{ steps.load-context.output.conventions }}"
+      gaps: "${{ steps.load-context.output.gaps }}"
+      inventory: "${{ steps.load-context.output.inventory }}"
     output:
+      format: json
       schema: ../../.workflow/schemas/phase.schema.json
 
   write-phase:

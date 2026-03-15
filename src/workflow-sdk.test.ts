@@ -3,9 +3,11 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { execSync } from "node:child_process";
 import {
   filterNames, stepTypes, expressionRoots,
   availableAgents, availableTemplates, availableSchemas, availableBlocks,
+  projectState,
   extractExpressions, declaredSteps, declaredAgentRefs, declaredSchemaRefs,
   FILTER_NAMES, STEP_TYPES,
 } from "./workflow-sdk.ts";
@@ -128,6 +130,67 @@ describe("discovery", () => {
     assert.strictEqual(gaps!.hasSchema, true);
     assert.ok(config);
     assert.strictEqual(config!.hasSchema, false);
+  });
+});
+
+// ── Derived State ────────────────────────────────────────────────────────────
+
+describe("projectState", () => {
+  it("derives state from blocks and git", (t) => {
+    const tmpDir = makeTmpDir("state");
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+    // Set up a minimal git repo
+    execSync("git init && git commit --allow-empty -m 'init'", { cwd: tmpDir, stdio: "ignore" });
+
+    // Set up blocks
+    const wfDir = path.join(tmpDir, ".workflow");
+    const schemasDir = path.join(wfDir, "schemas");
+    fs.mkdirSync(schemasDir, { recursive: true });
+    fs.writeFileSync(path.join(wfDir, "inventory.json"), JSON.stringify({ test_count: 42 }));
+    fs.writeFileSync(path.join(wfDir, "gaps.json"), JSON.stringify({
+      gaps: [
+        { id: "g1", description: "open gap", status: "open", category: "issue", priority: "high" },
+        { id: "g2", description: "resolved", status: "resolved", category: "cleanup", priority: "low" },
+        { id: "g3", description: "another open", status: "open", category: "capability", priority: "medium" },
+      ],
+    }));
+    fs.writeFileSync(path.join(wfDir, "decisions.json"), JSON.stringify({
+      decisions: [
+        { id: "d1", decision: "use X", rationale: "because", phase: 1, status: "decided" },
+        { id: "d2", decision: "maybe Y", rationale: "unclear", phase: 1, status: "tentative" },
+      ],
+    }));
+
+    const state = projectState(tmpDir);
+
+    assert.strictEqual(state.testCount, 42);
+    assert.ok(state.lastCommit.length > 0);
+    assert.strictEqual(state.lastCommitMessage, "init");
+    assert.strictEqual(state.gaps.open, 2);
+    assert.strictEqual(state.gaps.resolved, 1);
+    assert.strictEqual(state.gaps.byCategory.issue, 1);
+    assert.strictEqual(state.gaps.byCategory.capability, 1);
+    assert.strictEqual(state.gaps.byPriority.high, 1);
+    assert.strictEqual(state.gaps.byPriority.medium, 1);
+    assert.strictEqual(state.decisions.total, 2);
+    assert.strictEqual(state.decisions.decided, 1);
+    assert.strictEqual(state.decisions.tentative, 1);
+    assert.strictEqual(state.openGaps.length, 2);
+    assert.ok(state.openGaps.some(g => g.id === "g1"));
+  });
+
+  it("handles missing blocks gracefully", (t) => {
+    const tmpDir = makeTmpDir("state-empty");
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+    const state = projectState(tmpDir);
+
+    assert.strictEqual(state.testCount, 0);
+    assert.strictEqual(state.lastCommit, "unknown");
+    assert.strictEqual(state.gaps.open, 0);
+    assert.strictEqual(state.decisions.total, 0);
+    assert.strictEqual(state.openGaps.length, 0);
   });
 });
 

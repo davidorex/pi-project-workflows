@@ -7,8 +7,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { execSync } from "node:child_process";
 import { FILTER_NAMES, EXPRESSION_ROOTS } from "./expression.ts";
 import { STEP_TYPES } from "./workflow-spec.ts";
+import { readBlock } from "./block-api.ts";
 import type { StepTypeDescriptor } from "./workflow-spec.ts";
 import { discoverWorkflows } from "./workflow-discovery.ts";
 import { parseAgentYaml } from "./agent-spec.ts";
@@ -117,6 +119,99 @@ export function availableBlocks(cwd: string): BlockInfo[] {
     blocks.push({ name, hasSchema });
   }
   return blocks.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// ── Derived State (computed at query time, never cached) ─────────────────────
+
+interface GapEntry {
+  id: string;
+  status: string;
+  category: string;
+  priority: string;
+  description: string;
+}
+
+interface DecisionEntry {
+  id: string;
+  decision: string;
+  status: string;
+}
+
+export interface ProjectState {
+  testCount: number;
+  lastCommit: string;
+  lastCommitMessage: string;
+  gaps: { open: number; resolved: number; deferred: number; byCategory: Record<string, number>; byPriority: Record<string, number> };
+  decisions: { total: number; decided: number; tentative: number };
+  agents: number;
+  workflows: number;
+  blocks: number;
+  openGaps: Array<{ id: string; category: string; priority: string; description: string }>;
+}
+
+/**
+ * Derive project state from authoritative sources at query time.
+ * No cache, no stale data — computed fresh on every call.
+ */
+export function projectState(cwd: string): ProjectState {
+  // Git state
+  let lastCommit = "unknown";
+  let lastCommitMessage = "";
+  try {
+    lastCommit = execSync("git log -1 --format=%h", { cwd, encoding: "utf-8" }).trim();
+    lastCommitMessage = execSync("git log -1 --format=%s", { cwd, encoding: "utf-8" }).trim();
+  } catch { /* not a git repo or no commits */ }
+
+  // Test count from inventory (authoritative source)
+  let testCount = 0;
+  try {
+    const inv = readBlock(cwd, "inventory") as { test_count?: number };
+    testCount = inv.test_count ?? 0;
+  } catch { /* no inventory */ }
+
+  // Gaps
+  let gapEntries: GapEntry[] = [];
+  try {
+    const g = readBlock(cwd, "gaps") as { gaps: GapEntry[] };
+    gapEntries = g.gaps;
+  } catch { /* no gaps */ }
+
+  const openGaps = gapEntries.filter(g => g.status === "open");
+  const byCategory: Record<string, number> = {};
+  const byPriority: Record<string, number> = {};
+  for (const g of openGaps) {
+    byCategory[g.category] = (byCategory[g.category] ?? 0) + 1;
+    byPriority[g.priority] = (byPriority[g.priority] ?? 0) + 1;
+  }
+
+  // Decisions
+  let decisionEntries: DecisionEntry[] = [];
+  try {
+    const d = readBlock(cwd, "decisions") as { decisions: DecisionEntry[] };
+    decisionEntries = d.decisions;
+  } catch { /* no decisions */ }
+
+  return {
+    testCount,
+    lastCommit,
+    lastCommitMessage,
+    gaps: {
+      open: openGaps.length,
+      resolved: gapEntries.filter(g => g.status === "resolved").length,
+      deferred: gapEntries.filter(g => g.status === "deferred").length,
+      byCategory,
+      byPriority,
+    },
+    decisions: {
+      total: decisionEntries.length,
+      decided: decisionEntries.filter(d => d.status === "decided").length,
+      tentative: decisionEntries.filter(d => d.status === "tentative").length,
+    },
+    agents: availableAgents(cwd).length,
+    workflows: availableWorkflows(cwd).length,
+    blocks: availableBlocks(cwd).length,
+    openGaps: openGaps.map(g => ({ id: g.id, category: g.category, priority: g.priority, description: g.description })),
+  };
 }
 
 // ── Introspection (derived from parsed spec) ─────────────────────────────────

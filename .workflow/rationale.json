@@ -67,6 +67,18 @@
         "monitors-peer-not-dependency"
       ],
       "phase": 8
+    },
+    {
+      "id": "validation-vs-observation-split",
+      "title": "Deterministic validation at write time vs behavioral observation over time",
+      "narrative": "Two concerns that look similar but have different owners and mechanisms.\n\nDeterministic validation: 'is this JSON valid against its schema?' Runs at write time, in the producing code (workflow extension). AJV, a few lines. If it fails, the write doesn't happen. No LLM, no monitor, no event system. The extension validates its own output.\n\nBehavioral observation: 'this agent keeps producing invalid output' or 'the same finding recurs across runs.' Requires seeing patterns over time, across multiple events. LLM classification is appropriate here \u2014 the monitor reads conversation context, matches against a pattern library, steers or records. This is what pi-behavior-monitors is built for.\n\nThe mistake would be making validation depend on monitors. That makes it bypassable (don't install monitors \u2192 no validation). Validation must be in the write path. Monitors add value on top \u2014 detecting trends, learning patterns, steering agents \u2014 but the baseline guarantee (valid data in blocks) comes from the producing extension.\n\nThe event system (pi.events) is the bridge. Workflow extension emits events at lifecycle points. Monitors can subscribe for richer signal. But the events are additive \u2014 monitors work without them (they read conversation context), and validation works without monitors (it's in the write path).",
+      "related_decisions": [
+        "deterministic-validation-not-monitors",
+        "workflow-events-additive-not-required",
+        "monitors-peer-not-dependency",
+        "extension-communication-via-events"
+      ],
+      "phase": 8
     }
   ]
 }

@@ -300,6 +300,27 @@
       "rationale": "Separation of concerns. The workflow extension knows its domain (steps, blocks, schemas). Monitors know observation patterns (friction detection, gap recording). The contract is the event shape, not the implementation. If monitors aren't installed, the workflow extension still works \u2014 events go nowhere.",
       "phase": 8,
       "status": "decided"
+    },
+    {
+      "id": "deterministic-validation-not-monitors",
+      "decision": "Schema validation on block writes is the workflow extension's responsibility, not a monitor's. Monitors observe behavioral patterns over time via LLM classification. Deterministic checks (AJV) happen at write time in the producing code.",
+      "rationale": "Monitor architecture requires LLM classification \u2014 overkill for 'run AJV, pass or fail'. More importantly, validation at write time prevents invalid data from being persisted. Monitors observing after the fact can only report the damage. The producing extension is the right place for write-time guards.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "workflow-events-additive-not-required",
+      "decision": "Workflow extension emitting events (workflow:block-write, workflow:step-complete) is additive for monitors, not required for validation. Events give monitors richer signal without parsing conversation text, but validation doesn't depend on monitors being installed.",
+      "rationale": "If validation required monitors, it would be bypassable by not installing the monitor extension. Validation must be in the write path. Events let monitors detect higher-level patterns (agent repeatedly producing invalid output, same finding recurring across runs) \u2014 that's behavioral observation, not validation.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "extension-communication-via-events",
+      "decision": "Extensions communicate via pi.events.emit/on with agreed event names and payload shapes. No import, no dependency. Event contract is the interface.",
+      "rationale": "pi-behavior-monitors already uses pi.events.emit('monitors:abort'). The pattern works for cross-extension communication. Workflow extension emits workflow:* events, monitors optionally consume them. If either extension is absent, nothing breaks.",
+      "phase": 8,
+      "status": "decided"
     }
   ]
 }

@@ -220,6 +220,24 @@
       "priority": "medium",
       "source": "human",
       "details": "Contract between workflow extension and pi-behavior-monitors. Events are the boundary \u2014 workflow emits, monitors consume. No hard dependency. If monitors aren't installed, events go nowhere. Shapes needed: workflow:step-complete, workflow:step-failed, workflow:block-write, workflow:schema-validation-failed, workflow:output-quality-signal."
+    },
+    {
+      "id": "block-write-validation",
+      "description": "No schema validation on writes to .workflow/ block files. route-results and any step writing to blocks should validate against the block's schema before writing. Deterministic check \u2014 AJV, not LLM.",
+      "status": "open",
+      "category": "issue",
+      "priority": "high",
+      "source": "human",
+      "details": "Distinct from monitor-based observation. This is the workflow extension's own responsibility at write time. Monitors observe behavioral patterns over time (agent repeatedly producing invalid output). Validation at write time prevents invalid data from being persisted in the first place."
+    },
+    {
+      "id": "monitor-programmatic-mode",
+      "description": "pi-behavior-monitors requires LLM classification (classify.prompt and patterns.path mandatory). No way to define a purely programmatic monitor via .monitor.json. Projects can't create deterministic check monitors without the extension being updated.",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "source": "human",
+      "details": "A project wanting a schema validation monitor can't express it in the current spec format. The split: deterministic checks belong in the producing extension (workflow validates its own writes). Behavioral observation (patterns over time, agent quality trends) belongs in monitors with LLM classification. Events from workflow extension are additive for monitors \u2014 richer signal without parsing conversation text."
     }
   ]
 }

@@ -287,7 +287,7 @@ async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: E
  * returns a structured instruction for main context to extract
  * gaps, decisions, and rationale from the conversation into typed JSON blocks.
  */
-async function handleAddWork(_args: string, ctx: ExtensionCommandContext): Promise<void> {
+async function handleAddWork(_args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
   const workflowDir = path.join(ctx.cwd, ".workflow");
   const schemasDir = path.join(workflowDir, "schemas");
 
@@ -340,7 +340,14 @@ ${blockInfo.join("\n\n")}
 - Use \`source: "human"\` for content from this conversation
 - Architecture changes and phase creation are separate processes — do not attempt them here`;
 
-  ctx.ui.notify(instruction, "info");
+  pi.sendMessage({
+    customType: "workflow-add-work",
+    content: instruction,
+    display: false,
+  }, {
+    triggerTurn: true,
+    deliverAs: "followUp",
+  });
 }
 
 // ── Extension factory ───────────────────────────────────────────────────────
@@ -434,7 +441,7 @@ const extension = (pi: ExtensionAPI) => {
       } else if (subcommand === "status") {
         ctx.ui.notify("No workflow currently running.", "info");
       } else if (subcommand === "add-work") {
-        await handleAddWork(rest, ctx);
+        await handleAddWork(rest, ctx, pi);
       } else {
         ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: list, run, resume, status, add-work`, "warning");
       }

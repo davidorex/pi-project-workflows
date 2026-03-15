@@ -199,7 +199,7 @@ async function handleRun(rawArgs: string, ctx: ExtensionCommandContext, pi: Exte
     }
   }
 
-  // Parse --input if provided
+  // Parse input: --input JSON, or infer single required field from positional arg
   let input: unknown = {};
   if (inputJson) {
     try {
@@ -207,6 +207,34 @@ async function handleRun(rawArgs: string, ctx: ExtensionCommandContext, pi: Exte
     } catch {
       ctx.ui.notify(`Invalid JSON for --input: ${inputJson}`, "warning");
       return;
+    }
+  } else if (spec.input) {
+    // If workflow has input schema, prompt for required fields
+    const schema = spec.input as Record<string, unknown>;
+    const props = schema.properties as Record<string, Record<string, unknown>> | undefined;
+    const required = new Set(Array.isArray(schema.required) ? schema.required as string[] : []);
+    if (props) {
+      const inputObj: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(props)) {
+        if (!required.has(key) || val?.default !== undefined) continue;
+        const type = (val?.type as string) || "string";
+        const desc = (val?.description as string) || "";
+        const prompt = desc ? `${key} (${type}): ${desc}` : `${key} (${type})`;
+        if (!ctx.hasUI) {
+          ctx.ui.notify("Workflow input prompts require interactive mode.", "warning");
+          return;
+        }
+        const value = await ctx.ui.input(prompt);
+        if (value == null) return;
+        if (type === "number") {
+          inputObj[key] = Number(value);
+        } else if (type === "array" || type === "object") {
+          try { inputObj[key] = JSON.parse(value); } catch { inputObj[key] = value; }
+        } else {
+          inputObj[key] = value;
+        }
+      }
+      input = inputObj;
     }
   }
 

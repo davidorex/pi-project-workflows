@@ -57,6 +57,8 @@ export interface ExecuteOptions {
   loadAgent: (name: string) => AgentSpec;
   /** Injectable dispatch function for testing; defaults to real dispatch. */
   dispatchFn?: typeof dispatch;
+  /** Project-level model config; loaded from .workflow/model-config.json if not provided. */
+  modelConfig?: import("./dispatch.ts").ModelConfig;
   /** Resume from an incomplete run instead of starting fresh. */
   resume?: {
     runId: string;
@@ -103,6 +105,7 @@ interface StepExecOptions {
   widgetState: ProgressWidgetState;
   templateEnv?: nunjucks.Environment;
   dispatchFn?: typeof dispatch;
+  modelConfig?: import("./dispatch.ts").ModelConfig;
 }
 
 /**
@@ -268,7 +271,7 @@ async function executeSingleStep(
       : undefined;
     const loopResult = await executeLoop(stepSpec.loop, stepName, state, {
       ctx, pi: options.pi, signal, loadAgent, runDir, spec,
-      dispatchAgent: (s, a, p, o) => (options.dispatchFn ?? dispatch)(s, a, p, o),
+      dispatchAgent: (s, a, p, o) => (options.dispatchFn ?? dispatch)(s, a, p, { ...o, modelConfig: options.modelConfig }),
       templateEnv: options.templateEnv,
       outputPath: resolvedLoopOutputPath,
     });
@@ -312,6 +315,7 @@ async function executeSingleStep(
     widgetState,
     templateEnv: options.templateEnv,
     dispatchFn: options.dispatchFn,
+    modelConfig: options.modelConfig,
   });
   persistStep(state, stepName, agentResult, runDir, widgetState, ctx);
   if (agentResult.status === "failed") {
@@ -397,10 +401,19 @@ export async function executeWorkflow(
     ctx.ui.setWorkingMessage(`Running ${spec.name} workflow...`);
   }
 
-  // 5. Build execution plan and execute layers
+  // 5. Load model config (project-level model assignments by role)
+  let modelConfig = options.modelConfig;
+  if (!modelConfig) {
+    try {
+      const configPath = path.join(ctx.cwd, ".workflow", "model-config.json");
+      modelConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    } catch { /* no config file — models come from agent specs or step specs */ }
+  }
+
+  // 6. Build execution plan and execute layers
   const plan = buildConservativePlan(spec);
   const templateEnv = createTemplateEnv(ctx.cwd);
-  const stepOpts: StepExecOptions = { ctx, pi, signal, loadAgent, runDir, spec, widgetState, templateEnv, dispatchFn: options.dispatchFn };
+  const stepOpts: StepExecOptions = { ctx, pi, signal, loadAgent, runDir, spec, widgetState, templateEnv, dispatchFn: options.dispatchFn, modelConfig };
 
   for (const layer of plan) {
     if (signal?.aborted) {

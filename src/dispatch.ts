@@ -9,6 +9,11 @@ import os from "node:os";
 import type { StepSpec, StepResult, StepUsage, AgentSpec } from "./types.ts";
 import { SIGKILL_GRACE_MS } from "./step-shared.ts";
 
+export interface ModelConfig {
+  default?: string;
+  by_role?: Record<string, string>;
+}
+
 export interface DispatchOptions {
   cwd: string;
   sessionLogDir: string;      // directory for session log file (e.g. <runDir>/sessions/)
@@ -16,6 +21,7 @@ export interface DispatchOptions {
   signal?: AbortSignal;        // for cancellation
   timeoutMs?: number;          // timeout in milliseconds — kills subprocess after deadline
   onEvent?: (event: ProcessEvent) => void;  // live event callback for TUI updates
+  modelConfig?: ModelConfig;   // project-level model assignments by role
 }
 
 export interface ProcessEvent {
@@ -67,8 +73,10 @@ export function buildArgs(step: StepSpec, agentSpec: AgentSpec, prompt: string, 
   // Session log
   args.push("--session-dir", options.sessionLogDir);
 
-  // Model: step overrides agent spec
-  const model = step.model ?? agentSpec.model;
+  // Model: step > agent spec > model-config by role > model-config default
+  const model = step.model ?? agentSpec.model
+    ?? (agentSpec.role && options.modelConfig?.by_role?.[agentSpec.role])
+    ?? options.modelConfig?.default;
   if (model) {
     const modelArg = agentSpec.thinking ? `${model}:${agentSpec.thinking}` : model;
     args.push("--models", modelArg);

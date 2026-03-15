@@ -2,7 +2,6 @@ name: spec-implementer
 role: action
 description: Implements a single plan from a phase decomposition
 
-model: anthropic/claude-sonnet-4
 tools: [read, write, edit, bash, grep, find]
 
 output:

@@ -2,7 +2,6 @@ name: verifier
 role: quality
 description: Verifies step outputs against declared intent and success criteria
 
-model: anthropic/claude-sonnet-4
 tools: [read, bash, grep, find]
 
 output:

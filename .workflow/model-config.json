@@ -1,0 +1,9 @@
+{
+  "default": "anthropic/claude-opus-4",
+  "by_role": {
+    "reasoning": "anthropic/claude-opus-4",
+    "action": "anthropic/claude-opus-4",
+    "quality": "anthropic/claude-opus-4",
+    "sensor": "anthropic/claude-sonnet-4"
+  }
+}

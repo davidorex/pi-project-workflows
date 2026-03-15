@@ -175,6 +175,48 @@ describe("buildArgs", () => {
     assert.strictEqual(args[idx + 1], "claude-sonnet-4-20250514:16k");
   });
 
+  it("resolves model from modelConfig by role when agent has no model", () => {
+    const step: StepSpec = { agent: "coder" };
+    const agent: AgentSpec = { name: "coder", role: "action" };
+    const opts = { ...baseOptions, modelConfig: { default: "fallback-model", by_role: { action: "opus-4" } } };
+    const args = buildArgs(step, agent, "do it", opts);
+
+    const idx = args.indexOf("--models");
+    assert.ok(idx >= 0);
+    assert.strictEqual(args[idx + 1], "opus-4");
+  });
+
+  it("resolves model from modelConfig default when no role match", () => {
+    const step: StepSpec = { agent: "coder" };
+    const agent: AgentSpec = { name: "coder", role: "unknown-role" };
+    const opts = { ...baseOptions, modelConfig: { default: "fallback-model", by_role: { action: "opus-4" } } };
+    const args = buildArgs(step, agent, "do it", opts);
+
+    const idx = args.indexOf("--models");
+    assert.ok(idx >= 0);
+    assert.strictEqual(args[idx + 1], "fallback-model");
+  });
+
+  it("step model overrides modelConfig", () => {
+    const step: StepSpec = { agent: "coder", model: "step-override" };
+    const agent: AgentSpec = { name: "coder", role: "action" };
+    const opts = { ...baseOptions, modelConfig: { default: "fallback-model", by_role: { action: "opus-4" } } };
+    const args = buildArgs(step, agent, "do it", opts);
+
+    const idx = args.indexOf("--models");
+    assert.strictEqual(args[idx + 1], "step-override");
+  });
+
+  it("agent model overrides modelConfig", () => {
+    const step: StepSpec = { agent: "coder" };
+    const agent: AgentSpec = { name: "coder", model: "agent-model", role: "action" };
+    const opts = { ...baseOptions, modelConfig: { default: "fallback-model", by_role: { action: "opus-4" } } };
+    const args = buildArgs(step, agent, "do it", opts);
+
+    const idx = args.indexOf("--models");
+    assert.strictEqual(args[idx + 1], "agent-model");
+  });
+
   it("handles builtin tools", () => {
     const step: StepSpec = { agent: "coder" };
     const agent: AgentSpec = { name: "coder", tools: ["bash", "read", "write"] };

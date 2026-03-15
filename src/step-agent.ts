@@ -21,6 +21,7 @@ export interface AgentStepOptions {
   widgetState: ProgressWidgetState;
   templateEnv?: nunjucks.Environment;
   dispatchFn?: typeof dispatch;   // injectable for testing; defaults to real dispatch
+  modelConfig?: import("./dispatch.ts").ModelConfig;
 }
 
 /**
@@ -79,6 +80,7 @@ export async function executeAgentStep(
     signal,
     timeoutMs: stepSpec.timeout ? stepSpec.timeout.seconds * 1000 : undefined,
     onEvent: () => {},
+    modelConfig: options.modelConfig,
   });
 
   // Resolve output path from spec (may contain ${{ }} expressions)

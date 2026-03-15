@@ -102,6 +102,37 @@ describe("resolveExpression filters", () => {
     assert.strictEqual(parsed.line, 47);
   });
 
+  it("applies length filter to array", () => {
+    const result = resolveExpression("input.tags | length", scope);
+    assert.strictEqual(result, 2);
+  });
+
+  it("applies length filter to string", () => {
+    const result = resolveExpression("input.description | length", scope);
+    assert.strictEqual(result, 21);
+  });
+
+  it("applies length filter to non-array/string returns 0", () => {
+    const result = resolveExpression("input.maxAttempts | length", scope);
+    assert.strictEqual(result, 0);
+  });
+
+  it("applies keys filter to object", () => {
+    const result = resolveExpression("steps.diagnose.output.fixLocation | keys", scope);
+    assert.ok(Array.isArray(result));
+    assert.ok((result as string[]).includes("file"));
+    assert.ok((result as string[]).includes("line"));
+  });
+
+  it("applies filter filter removes falsy values", () => {
+    const scopeWithFalsy = {
+      ...scope,
+      input: { ...scope.input, items: [1, 0, null, "hello", "", false, true] },
+    };
+    const result = resolveExpression("input.items | filter", scopeWithFalsy);
+    assert.deepStrictEqual(result, [1, "hello", true]);
+  });
+
   it("handles whitespace around pipe", () => {
     assert.strictEqual(
       resolveExpression("steps.diagnose.durationMs  |  duration", scope),

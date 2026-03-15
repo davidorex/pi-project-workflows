@@ -11,6 +11,9 @@ const FILTERS: Record<string, (value: unknown) => unknown> = {
   duration: (v) => formatDuration(Number(v)),
   currency: (v) => formatCost(Number(v)),
   json: (v) => JSON.stringify(v, null, 2),
+  length: (v) => Array.isArray(v) ? v.length : typeof v === "string" ? v.length : 0,
+  keys: (v) => typeof v === "object" && v !== null ? Object.keys(v) : [],
+  filter: (v) => Array.isArray(v) ? v.filter(Boolean) : v,
 };
 
 /**

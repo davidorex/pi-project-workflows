@@ -96,10 +96,11 @@
     {
       "id": "delete-md-demo-agents",
       "description": "Delete old .md demo agents — .agent.yaml versions are the source of truth, .md files are dead weight.",
-      "status": "open",
+      "status": "resolved",
       "category": "cleanup",
       "priority": "low",
-      "source": "human"
+      "source": "human",
+      "resolved_by": "do-gap-workflow"
     },
     {
       "id": "remove-dead-writeStepOutput",
@@ -337,6 +338,30 @@
     {
       "id": "fragility-fragility-mmrkbtra",
       "description": "The agent saw warning messages about failed output persistence (EEXIST, ENOTDIR, EACCES errors) in the test output but chose not to investigate or address these filesystem-related failures.",
+      "status": "open",
+      "category": "issue",
+      "priority": "medium",
+      "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mmrkila1",
+      "description": "Identified that block validation incorrectly attributes monitor-generated file changes to workflow steps, but chose to investigate further rather than fixing the attribution logic or preventing the false blame.",
+      "status": "open",
+      "category": "issue",
+      "priority": "medium",
+      "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mmrkmhd5",
+      "description": "The agent encountered file system errors but provided no response or action to handle them, effectively ignoring the problems entirely.",
+      "status": "open",
+      "category": "issue",
+      "priority": "medium",
+      "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mmrku75c",
+      "description": "The agent encountered clear file system errors (file not found and illegal directory operation) but provided no response or action to address these failures, leaving broken state unhandled.",
       "status": "open",
       "category": "issue",
       "priority": "medium",

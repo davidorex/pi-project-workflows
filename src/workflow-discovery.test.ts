@@ -74,7 +74,7 @@ describe("discoverWorkflows", () => {
     assert.ok(specs.length > 0, "should find at least one demo workflow");
 
     const names = specs.map((s) => s.name);
-    assert.ok(names.includes("explore-summarize"), "should find explore-summarize demo");
+    assert.ok(names.includes("typed-analysis"), "should find typed-analysis demo");
 
     fs.rmSync(tmpDir, { recursive: true });
   });

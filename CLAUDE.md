@@ -5,7 +5,7 @@ Workflow orchestration extension for Pi. Typed, multi-step workflow execution vi
 ## Commands
 
 ```bash
-# Run tests (509+, must stay at 0 failures)
+# Run tests (590+, must stay at 0 failures)
 node --experimental-strip-types --test src/*.test.ts
 
 # Lint changed files
@@ -18,7 +18,7 @@ node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-va
 ## Conventions
 
 - ESM, TypeScript loaded directly by pi (`--experimental-strip-types`, no build step)
-- Extension registers: `workflow` tool + `/workflow` command (subcommands: `run`, `list`, `resume`, `status`, `add-work`)
+- Extension registers: `workflow` tool + `record-gap` tool + `/workflow` command (subcommands: `run`, `list`, `resume`, `status`, `add-work`)
 - Tests: node test runner, `src/*.test.ts`
 - All warnings from linter must be resolved
 
@@ -31,14 +31,15 @@ node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-va
 
 ```
 src/
-  index.ts              — extension entry point (tool, commands, /workflow add-work)
+  index.ts              — extension entry point (workflow tool, record-gap tool, /workflow command)
   types.ts              — all shared interfaces
   workflow-executor.ts  — main orchestration loop
-  workflow-spec.ts      — YAML parsing
+  workflow-spec.ts      — YAML parsing, STEP_TYPES registry
   workflow-discovery.ts — directory scanning
+  workflow-sdk.ts       — SDK: vocabulary, discovery, spec introspection
   dag.ts                — dependency graph, execution plan
   dispatch.ts           — subprocess spawn (pi --mode json)
-  expression.ts         — ${{ }} evaluator with pipe filters
+  expression.ts         — ${{ }} evaluator with pipe filters, FILTER_NAMES export
   template.ts           — Nunjucks environment (three-tier search)
   agent-spec.ts         — .agent.yaml loader and compilation
   step-agent.ts         — agent step executor
@@ -52,6 +53,7 @@ src/
   checkpoint.ts         — checkpoint/resume
   output.ts             — output persistence
   completion.ts         — completion field resolution
+  block-api.ts          — centralized block I/O with write-time schema validation
   schema-validator.ts   — AJV wrapper
   format.ts             — formatDuration/formatCost
   tui.ts                — progress widget
@@ -93,10 +95,12 @@ Typed JSON files with schemas. Source of truth for project state.
 
 ```
 demo/
-  agents/               — 10 .agent.yaml specs (audit-fixer, verifier, phase-author, etc.)
-  schemas/              — output schemas (verifier-output, execution-results)
-  fix-audit.workflow.yaml
+  agents/               — 13 .agent.yaml specs (investigator, decomposer, phase-author, etc.)
+  schemas/              — output schemas (investigation-findings, execution-results, etc.)
+  do-gap.workflow.yaml
+  gap-to-phase.workflow.yaml
   create-phase.workflow.yaml
+  fix-audit.workflow.yaml
   self-implement.workflow.yaml
   typed-analysis.workflow.yaml
 templates/              — Nunjucks templates (referenced by agent specs, relative to this dir)
@@ -115,12 +119,15 @@ templates/              — Nunjucks templates (referenced by agent specs, relat
 
 ## Design Decisions & Gaps
 
-Full records in `.workflow/decisions.json` (46 decisions) and `.workflow/gaps.json` (28 gaps). Key decisions:
+Full records in `.workflow/decisions.json` (46 decisions) and `.workflow/gaps.json`. Key decisions:
 
 - Fail-fast on step failure. No graduated retry yet (gap: `graduated-failure`).
 - forEach `when:` is global (before iteration, not per-item)
 - Command step fails on non-zero exit
 - Output write failures are non-fatal; state write failures are fatal
 - Deterministic validation (AJV) at write time, not via monitors
+- Block writes via `block-api.ts` (readBlock/writeBlock/appendToBlock) with schema validation
 - Extensions communicate via `pi.events.emit/on`, no imports
 - `/workflow add-work` appends to array blocks (gaps, decisions, rationale). Phase creation and architecture refresh are separate workflows.
+- `record-gap` tool enables agents to record gaps mid-task via appendToBlock
+- Workflow SDK (`workflow-sdk.ts`) provides dynamic vocabulary, discovery, and spec introspection for authoring and validation

@@ -131,7 +131,20 @@
       "dependencies": [
         "schema-validator"
       ],
-      "lines": 95
+      "lines": 94
+    },
+    {
+      "name": "workflow-sdk",
+      "file": "src/workflow-sdk.ts",
+      "responsibility": "SDK facade: vocabulary (filterNames, stepTypes, expressionRoots), discovery (agents, templates, schemas, workflows, blocks), introspection (extractExpressions, declaredSteps, declaredAgentRefs, declaredSchemaRefs)",
+      "dependencies": [
+        "expression",
+        "workflow-spec",
+        "workflow-discovery",
+        "agent-spec",
+        "types"
+      ],
+      "lines": 283
     },
     {
       "name": "checkpoint",
@@ -277,15 +290,16 @@
     {
       "name": "index",
       "file": "src/index.ts",
-      "responsibility": "Extension entry point: registers workflow tool, /workflow commands (run, list, resume, status, add-work), keybindings (Ctrl+H pause, Ctrl+J resume)",
+      "responsibility": "Extension entry point: registers workflow tool, record-gap tool, /workflow commands (run, list, resume, status, add-work), keybindings (Ctrl+H pause, Ctrl+J resume)",
       "dependencies": [
         "types",
         "workflow-discovery",
         "workflow-executor",
         "checkpoint",
-        "agent-spec"
+        "agent-spec",
+        "block-api"
       ],
-      "lines": 565
+      "lines": 604
     }
   ],
   "patterns": [

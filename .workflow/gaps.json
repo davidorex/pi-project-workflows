@@ -308,6 +308,15 @@
       "category": "primitive",
       "priority": "medium",
       "source": "human"
+    },
+    {
+      "id": "agent-prompt-quality",
+      "description": "Agent system prompts and task templates are loosely written \u2014 vague directives like 'read the relevant code' cause unbounded exploration. Prompts need to be best-practices templates: scoped, bounded, with explicit stop conditions, depth matched to task category/priority.",
+      "status": "open",
+      "category": "issue",
+      "priority": "high",
+      "source": "human",
+      "details": "All 13 agent specs need prompt review. Key principles: scope reads to named files or directory scans (not content), match investigation depth to gap category/priority, explicit stop conditions (don't explore further than X), output-first (state the output shape upfront so the agent works toward it). The investigator template was fixed as an example \u2014 others need the same treatment."
     }
   ]
 }

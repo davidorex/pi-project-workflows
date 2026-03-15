@@ -287,7 +287,7 @@ async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: E
  * returns a structured instruction for main context to extract
  * gaps, decisions, and rationale from the conversation into typed JSON blocks.
  */
-async function handleAddWork(_args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
+async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
   const workflowDir = path.join(ctx.cwd, ".workflow");
   const schemasDir = path.join(workflowDir, "schemas");
 
@@ -320,9 +320,13 @@ async function handleAddWork(_args: string, ctx: ExtensionCommandContext, pi: Ex
 
   const validateCmd = `node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';const s=process.argv[1],d=process.argv[2];validateFromFile(s,JSON.parse(fs.readFileSync(d,'utf8')),d);console.log('✓ valid')" SCHEMA_PATH DATA_PATH`;
 
+  const inputSection = args.trim()
+    ? `**Input:**\n${args.trim()}\n\n`
+    : "";
+
   const instruction = `## Add Work to Project Blocks
 
-Read the recent conversation and extract gaps, decisions, and rationale into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
+${inputSection}Read the recent conversation and extract gaps, decisions, and rationale into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
 
 **Blocks to update:**
 

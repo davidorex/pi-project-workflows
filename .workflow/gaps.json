@@ -150,10 +150,11 @@
     {
       "id": "issue-finding-p1-type-any-typebox-was-already-resolved-s",
       "description": "Finding p1-type-any-typebox was already resolved: src/index.ts correctly imports Type from @sinclair/typebox with no `let Type: any` present.",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "low",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "false-positive"
     },
     {
       "id": "tui-step-visibility",
@@ -286,27 +287,30 @@
     {
       "id": "investigation-findings-schema",
       "description": "Output schema for investigation findings — affected files, current behavior, constraints, risks, related code. Distinct from a plan. Input to the decompose agent.",
-      "status": "open",
+      "status": "resolved",
       "category": "primitive",
       "priority": "high",
-      "source": "human"
+      "source": "human",
+      "resolved_by": "demo/schemas/investigation-findings.schema.json"
     },
     {
       "id": "research-findings-schema",
       "description": "Output schema for research findings — known solutions, heuristics, patterns, prior art, references. Parallel to investigation findings but looks outward (other projects, docs, pattern libraries) rather than inward (codebase).",
-      "status": "open",
+      "status": "resolved",
       "category": "primitive",
       "priority": "high",
-      "source": "human"
+      "source": "human",
+      "resolved_by": "demo/schemas/research-findings.schema.json"
     },
     {
       "id": "decompose-agent",
       "description": "Agent that takes investigation + research findings and produces specs — units of work with file targets, dependencies, acceptance criteria, parallelization decisions. Consumes heuristic/policy blocks via template composition.",
-      "status": "open",
+      "status": "resolved",
       "category": "capability",
       "priority": "high",
       "source": "human",
-      "details": "Key heuristics to compose in: file overlap analysis (specs touching same files must be sequential), interface dependency detection, test isolation boundaries, context window budgeting. These are known software engineering patterns, not novel invention. Composed into the agent's prompt as project-level policy blocks."
+      "details": "Key heuristics to compose in: file overlap analysis (specs touching same files must be sequential), interface dependency detection, test isolation boundaries, context window budgeting. These are known software engineering patterns, not novel invention. Composed into the agent's prompt as project-level policy blocks.",
+      "resolved_by": "demo/agents/decomposer.agent.yaml"
     },
     {
       "id": "parallel-foreach",

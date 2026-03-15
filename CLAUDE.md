@@ -11,23 +11,17 @@ node --experimental-strip-types --test src/*.test.ts
 # Lint changed files
 /Users/david/Projects/pi-extension-linter/pi-extension-lint.sh src/index.ts
 
-# Validate a project block against its schema
-node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';validateFromFile('.workflow/schemas/BLOCK.schema.json',JSON.parse(fs.readFileSync('.workflow/BLOCK.json','utf8')),'BLOCK');console.log('✓')"
-
-# Derive current project state (test count, gaps, decisions, agents, workflows)
+# Derive full project state (all metrics, dynamically computed)
 node --experimental-strip-types -e "import{projectState}from'./src/workflow-sdk.ts';console.log(JSON.stringify(projectState('.'),null,2))"
 
-# List step types, filters, expression roots
-node --experimental-strip-types -e "import{stepTypes,filterNames,expressionRoots}from'./src/workflow-sdk.ts';console.log('Steps:',stepTypes().map(t=>t.name));console.log('Filters:',filterNames());console.log('Roots:',expressionRoots())"
-
-# List available agents, workflows, schemas, blocks
-node --experimental-strip-types -e "import{availableAgents,availableWorkflows,availableSchemas,availableBlocks}from'./src/workflow-sdk.ts';console.log('Agents:',availableAgents('.').map(a=>a.name));console.log('Workflows:',availableWorkflows('.').map(w=>w.name));console.log('Blocks:',availableBlocks('.').map(b=>b.name))"
+# Query SDK vocabulary and discovery (step types, filters, agents, workflows, etc.)
+node --experimental-strip-types -e "import * as sdk from'./src/workflow-sdk.ts';console.log('Steps:',sdk.stepTypes().map(t=>t.name));console.log('Filters:',sdk.filterNames());console.log('Agents:',sdk.availableAgents('.').map(a=>a.name));console.log('Workflows:',sdk.availableWorkflows('.').map(w=>w.name))"
 ```
 
 ## Conventions
 
 - ESM, TypeScript loaded directly by pi (`--experimental-strip-types`, no build step)
-- Extension registers: `workflow` tool + `record-gap` tool + `/workflow` command (subcommands: `run`, `list`, `resume`, `status`, `add-work`)
+- Extension registers: `workflow` tool + `record-gap` tool + `update-gap` tool + `/workflow` command (subcommands: `run`, `list`, `resume`, `status`, `add-work`)
 - Tests: node test runner, `src/*.test.ts`
 - All warnings from linter must be resolved
 
@@ -56,22 +50,14 @@ Single queryable surface for the extension's capabilities. All functions derive 
 
 - **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`
 - **Discovery**: `availableAgents(cwd)`, `availableWorkflows(cwd)`, `availableTemplates(cwd)`, `availableSchemas(cwd)`, `availableBlocks(cwd)`
-- **Derived state**: `projectState(cwd)` — test count, commit, gaps, decisions, agent/workflow/block counts
+- **Derived state**: `projectState(cwd)` — all project metrics computed at query time (source files/lines, tests, phases, gaps, decisions, agents, workflows, schemas, templates, blocks, recent commits)
 - **Introspection**: `extractExpressions(spec)`, `declaredSteps(spec)`, `declaredAgentRefs(spec)`, `declaredSchemaRefs(spec)`
 
 Use `/workflow status` to see derived state in conversation.
 
-## Expression Syntax
-
-- `${{ input.field }}` / `${{ steps.name.output }}` — workflow data flow (property access, no eval)
-- `${{ path | filter }}` — pipe filters (run `filterNames()` for current list)
-- `{{ var }}` / `{% tag %}` — Nunjucks (prompt templates, separate concern)
-
 ## Project Blocks (`.workflow/`)
 
-Typed JSON files with schemas. Source of truth for project state. Run `availableBlocks('.')` for current list.
-
-**Always validate after writing to a block file.** Use `writeBlock()`/`appendToBlock()` from `block-api.ts` for validated writes, or the CLI validate command above.
+Typed JSON files with schemas. Use `writeBlock()`/`appendToBlock()`/`updateItemInBlock()` from `block-api.ts` for validated writes — schema validation is automatic.
 
 ## Key Architecture
 
@@ -85,10 +71,4 @@ Typed JSON files with schemas. Source of truth for project state. Run `available
 
 ## Design Decisions & Gaps
 
-Full records in `.workflow/decisions.json` and `.workflow/gaps.json`. Read via `readBlock('.', 'decisions')` / `readBlock('.', 'gaps')`. Key architectural decisions:
-
-- Fail-fast on step failure
-- Deterministic validation (AJV) at write time, not via monitors
-- Block writes through `block-api.ts` with schema validation
-- Extensions communicate via `pi.events.emit/on`, no imports
-- Output write failures are non-fatal; state write failures are fatal
+Read via `readBlock('.', 'decisions')` / `readBlock('.', 'gaps')`, or `/workflow status` for a summary.

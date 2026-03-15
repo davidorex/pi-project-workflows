@@ -61,7 +61,7 @@ src/
 
 ## Step Types
 
-`agent`, `command`, `transform`, `gate`, `loop`, `forEach` (wraps any step type)
+`agent`, `command`, `transform`, `gate`, `loop`, `parallel`, `pause` — plus `forEach` as a common field that wraps any step type
 
 ## Expression Syntax
 

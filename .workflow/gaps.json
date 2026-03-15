@@ -116,7 +116,7 @@
       "status": "open",
       "category": "capability",
       "priority": "high",
-      "details": "Three layers: (1) explicit tool/command for mid-execution recording, (2) structural enforcement \u2014 execution-results.issues[] required not optional so agents must actively declare no issues, (3) trace analysis \u2014 post-step inspection of execution traces for unreported friction (repeated retries, workarounds, architecture drift)."
+      "details": "Three layers: (1) explicit tool/command for mid-execution recording, (2) structural enforcement \u2014 execution-results.issues[] required not optional so agents must actively declare no issues, (3) trace analysis via pi-behavior-monitors \u2014 a gap-detector monitor fires on turn_end, classifies agent execution traces for unreported friction/workarounds, steers agent to record in issues[]. Monitors work in subprocesses if the extension is installed. Pattern: monitor observes \u2192 classifies \u2192 steers \u2192 agent records in typed output \u2192 route-results writes to gaps.json. Non-bypassable."
     }
   ]
 }

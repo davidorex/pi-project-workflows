@@ -283,11 +283,11 @@ async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: E
 }
 
 /**
- * /workflow ingest — reads project block schemas and current state,
+ * /workflow add-work — reads project block schemas and current state,
  * returns a structured instruction for main context to extract
  * gaps, decisions, and rationale from the conversation into typed JSON blocks.
  */
-async function handleIngest(_args: string, ctx: ExtensionCommandContext): Promise<void> {
+async function handleAddWork(_args: string, ctx: ExtensionCommandContext): Promise<void> {
   const workflowDir = path.join(ctx.cwd, ".workflow");
   const schemasDir = path.join(workflowDir, "schemas");
 
@@ -320,7 +320,7 @@ async function handleIngest(_args: string, ctx: ExtensionCommandContext): Promis
 
   const validateCmd = `node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';const s=process.argv[1],d=process.argv[2];validateFromFile(s,JSON.parse(fs.readFileSync(d,'utf8')),d);console.log('✓ valid')" SCHEMA_PATH DATA_PATH`;
 
-  const instruction = `## Ingest into Project Blocks
+  const instruction = `## Add Work to Project Blocks
 
 Read the recent conversation and extract gaps, decisions, and rationale into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
 
@@ -413,7 +413,7 @@ const extension = (pi: ExtensionAPI) => {
   pi.registerCommand("workflow", {
     description: "List and run workflows",
     getArgumentCompletions: (prefix: string) => {
-      const subcommands = ["run", "list", "status", "resume", "ingest"];
+      const subcommands = ["run", "list", "status", "resume", "add-work"];
       return subcommands
         .filter((s) => s.startsWith(prefix))
         .map((s) => ({ value: s, label: s }));
@@ -433,10 +433,10 @@ const extension = (pi: ExtensionAPI) => {
         await handleResume(rest, ctx, pi);
       } else if (subcommand === "status") {
         ctx.ui.notify("No workflow currently running.", "info");
-      } else if (subcommand === "ingest") {
-        await handleIngest(rest, ctx);
+      } else if (subcommand === "add-work") {
+        await handleAddWork(rest, ctx);
       } else {
-        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: list, run, resume, status, ingest`, "warning");
+        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: list, run, resume, status, add-work`, "warning");
       }
     },
   });

@@ -1,6 +1,6 @@
 {
-  "current_phase": 7,
-  "current_spec": 34,
+  "current_phase": 8,
+  "current_spec": 35,
   "test_count": 504,
   "last_commit": "11c6b00",
   "accumulated_context": {
@@ -24,7 +24,7 @@
     "blockers": []
   },
   "session": {
-    "last_action": "Completed hardening round (specs 31-34): error handling, truncation detection, 125 step executor tests. 504 total tests.",
-    "next_action": "Cleanup: delete old .md demo agents, remove dead writeStepOutput. Then Phase 6."
+    "last_action": "Decomposed master doc into 11 JSON blocks, created audit+conformance schemas, created Phase 8 spec",
+    "next_action": "Implement spec 35: execution results router"
   }
 }

@@ -158,7 +158,7 @@
       "category": "capability",
       "priority": "medium",
       "source": "human",
-      "details": "Design doc exists at docs/mar-15-workflow-visibility-details-for-tui.md. Touches dispatch.ts (onEvent forwarding), step-agent.ts (activity capture), tui.ts (StepActivity/StepOutputSummary rendering), workflow-executor.ts (ring buffer + summary parsing)."
+      "details": "Design doc: docs/mar-15-workflow-visibility-details-for-tui.md. Three-file change: dispatch.ts (forward onEvent tool calls), step-agent.ts (capture tool activity via onStepActivity callback), tui.ts (StepActivity ring buffer per step, StepOutputSummary after completion), workflow-executor.ts (wire activity callback, parse output summary, refresh widget). New types: StepActivity { tool, preview, timestamp }, StepOutputSummary { tasks[], testCount, note }. Data flow: subprocess JSONL \u2192 dispatch onEvent \u2192 step-agent onStepActivity \u2192 widget state ring buffer (last 5) \u2192 TUI renders indented sub-lines under running step. On completion: activity cleared, output parsed for summary, summary rendered as indented sub-lines under completed step."
     },
     {
       "id": "dag-foreach-command-scanning",

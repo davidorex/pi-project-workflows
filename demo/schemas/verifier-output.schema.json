@@ -59,7 +59,7 @@
         "required": ["criterion", "verify_method", "status"],
         "properties": {
           "criterion": { "type": "string" },
-          "verify_method": { "type": "string", "enum": ["command", "grep", "inspect", "human"] },
+          "verify_method": { "type": "string", "enum": ["command", "grep", "inspect"] },
           "status": { "type": "string", "enum": ["passed", "failed", "uncertain", "skipped"] },
           "expected_outcome": { "type": "string" },
           "actual_outcome": { "type": "string" },

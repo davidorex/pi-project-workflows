@@ -12,6 +12,7 @@ import { dispatch } from "./dispatch.ts";
 import { generateRunId, initRunDir, getWorkflowDir, writeState, writeMetrics, buildResult, formatResult } from "./state.ts";
 import { resolveCompletion } from "./completion.ts";
 import { createProgressWidget } from "./tui.ts";
+import { truncateTail } from "@mariozechner/pi-coding-agent";
 import { extractDependencies, buildPlanFromDeps } from "./dag.ts";
 import type { ExecutionPlan } from "./dag.ts";
 import { zeroUsage, resolveSchemaPath, persistStep, WIDGET_ID, SIGKILL_GRACE_MS } from "./step-shared.ts";
@@ -568,6 +569,13 @@ export async function executeWorkflow(
       }
     } else {
       content = formatResult(result);
+    }
+
+    // P7: Truncate completion message to avoid context overflow (50KB / 2000 lines)
+    const truncated = truncateTail(content, 2000, 50 * 1024);
+    content = truncated.content;
+    if (truncated.truncated) {
+      content += `\n\n[Truncated: output exceeded ${truncated.truncatedBy === "bytes" ? "50KB" : "2000 lines"}. Full output in run dir: ${runDir}]`;
     }
 
     pi.sendMessage(

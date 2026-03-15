@@ -1,46 +1,203 @@
 {
-  "test_count": 504,
+  "test_count": 509,
   "step_types": [
-    { "name": "agent", "module": "step-agent.ts", "description": "Agent dispatch with injectable dispatchFn, template compilation, output path resolution", "phase_added": 1 },
-    { "name": "gate", "module": "step-gate.ts", "description": "Async gate execution with process groups, onPass/onFail handling", "phase_added": 2 },
-    { "name": "transform", "module": "step-transform.ts", "description": "Pure expression mapping: no LLM invocation, resolves mapping fields via ${{ }}", "phase_added": 2 },
-    { "name": "loop", "module": "step-loop.ts", "description": "Loop iteration with accumulated evidence, receives dispatchAgent callback, onExhausted handling", "phase_added": 2 },
-    { "name": "parallel", "module": "step-parallel.ts", "description": "executeParallelLayer() + executeParallelStep(), receives executeSingleStep callback", "phase_added": 3 },
-    { "name": "pause", "module": "step-pause.ts", "description": "Pause step: returns completed immediately, executor sets status=paused", "phase_added": 4 },
-    { "name": "forEach", "module": "step-foreach.ts", "description": "forEach iteration: resolves array, binds element via as, adds forEach.index/length to scope, collects outputs", "phase_added": 7 },
-    { "name": "command", "module": "step-command.ts", "description": "Shell command execution: sh -c, captures stdout as JSON or text, fails on non-zero exit", "phase_added": 7 }
+    {
+      "name": "agent",
+      "module": "step-agent.ts",
+      "description": "Agent dispatch with injectable dispatchFn, template compilation, output path resolution",
+      "phase_added": 1
+    },
+    {
+      "name": "gate",
+      "module": "step-gate.ts",
+      "description": "Async gate execution with process groups, onPass/onFail handling",
+      "phase_added": 2
+    },
+    {
+      "name": "transform",
+      "module": "step-transform.ts",
+      "description": "Pure expression mapping: no LLM invocation, resolves mapping fields via ${{ }}",
+      "phase_added": 2
+    },
+    {
+      "name": "loop",
+      "module": "step-loop.ts",
+      "description": "Loop iteration with accumulated evidence, receives dispatchAgent callback, onExhausted handling",
+      "phase_added": 2
+    },
+    {
+      "name": "parallel",
+      "module": "step-parallel.ts",
+      "description": "executeParallelLayer() + executeParallelStep(), receives executeSingleStep callback",
+      "phase_added": 3
+    },
+    {
+      "name": "pause",
+      "module": "step-pause.ts",
+      "description": "Pause step: returns completed immediately, executor sets status=paused",
+      "phase_added": 4
+    },
+    {
+      "name": "forEach",
+      "module": "step-foreach.ts",
+      "description": "forEach iteration: resolves array, binds element via as, adds forEach.index/length to scope, collects outputs",
+      "phase_added": 7
+    },
+    {
+      "name": "command",
+      "module": "step-command.ts",
+      "description": "Shell command execution: sh -c, captures stdout as JSON or text, fails on non-zero exit",
+      "phase_added": 7
+    }
   ],
   "agent_specs": [
-    { "name": "code-explorer", "role": "sensor", "description": "Explores codebase structure" },
-    { "name": "structure-analyzer", "role": "reasoning", "description": "Analyzes code structure" },
-    { "name": "pattern-analyzer", "role": "reasoning", "description": "Analyzes code patterns" },
-    { "name": "quality-analyzer", "role": "reasoning", "description": "Analyzes code quality" },
-    { "name": "synthesizer", "role": "reasoning", "description": "Synthesizes analysis results" },
-    { "name": "plan-decomposer", "role": "reasoning", "description": "Renders phase spec + architecture + conventions into planning prompt via Nunjucks, produces plan-breakdown JSON" },
-    { "name": "spec-implementer", "role": "action", "description": "Renders individual plan into implementation prompt, produces execution-results JSON" },
-    { "name": "verifier", "role": "quality", "description": "Verifier agent with typed verifier-output schema (truths, criteria_results, artifacts, gaps, human_verification)" }
+    {
+      "name": "code-explorer",
+      "role": "sensor",
+      "description": "Explores codebase structure"
+    },
+    {
+      "name": "structure-analyzer",
+      "role": "reasoning",
+      "description": "Analyzes code structure"
+    },
+    {
+      "name": "pattern-analyzer",
+      "role": "reasoning",
+      "description": "Analyzes code patterns"
+    },
+    {
+      "name": "quality-analyzer",
+      "role": "reasoning",
+      "description": "Analyzes code quality"
+    },
+    {
+      "name": "synthesizer",
+      "role": "reasoning",
+      "description": "Synthesizes analysis results"
+    },
+    {
+      "name": "plan-decomposer",
+      "role": "reasoning",
+      "description": "Renders phase spec + architecture + conventions into planning prompt via Nunjucks, produces plan-breakdown JSON"
+    },
+    {
+      "name": "spec-implementer",
+      "role": "action",
+      "description": "Renders individual plan into implementation prompt, produces execution-results JSON"
+    },
+    {
+      "name": "verifier",
+      "role": "quality",
+      "description": "Verifier agent with typed verifier-output schema (truths, criteria_results, artifacts, gaps, human_verification)"
+    }
   ],
   "schemas": [
-    { "name": "structure-analysis", "file": "demo/schemas/structure-analysis.schema.json", "category": "step-output", "description": "Structure analysis output" },
-    { "name": "pattern-analysis", "file": "demo/schemas/pattern-analysis.schema.json", "category": "step-output", "description": "Pattern analysis output" },
-    { "name": "quality-analysis", "file": "demo/schemas/quality-analysis.schema.json", "category": "step-output", "description": "Quality analysis output" },
-    { "name": "synthesis", "file": "demo/schemas/synthesis.schema.json", "category": "step-output", "description": "Synthesis output" },
-    { "name": "plan-breakdown", "file": "demo/schemas/plan-breakdown.schema.json", "category": "step-output", "description": "Plan decomposition output with plans[], parallel groups" },
-    { "name": "execution-results", "file": "demo/schemas/execution-results.schema.json", "category": "step-output", "description": "What agents produce: tasks, decisions, issues, deviations" },
-    { "name": "verifier-output", "file": "demo/schemas/verifier-output.schema.json", "category": "step-output", "description": "Verification result: truths, artifacts, requirements_coverage, criteria_results, gaps, human_verification" },
-    { "name": "audit", "file": ".workflow/schemas/audit.schema.json", "category": "project", "description": "Audit output: checks, findings with severity/location/fix, summary" },
-    { "name": "conformance-reference", "file": ".workflow/schemas/conformance-reference.schema.json", "category": "project", "description": "Conformance rules: principles, rules with check_method/patterns/severity" }
+    {
+      "name": "structure-analysis",
+      "file": "demo/schemas/structure-analysis.schema.json",
+      "category": "step-output",
+      "description": "Structure analysis output"
+    },
+    {
+      "name": "pattern-analysis",
+      "file": "demo/schemas/pattern-analysis.schema.json",
+      "category": "step-output",
+      "description": "Pattern analysis output"
+    },
+    {
+      "name": "quality-analysis",
+      "file": "demo/schemas/quality-analysis.schema.json",
+      "category": "step-output",
+      "description": "Quality analysis output"
+    },
+    {
+      "name": "synthesis",
+      "file": "demo/schemas/synthesis.schema.json",
+      "category": "step-output",
+      "description": "Synthesis output"
+    },
+    {
+      "name": "plan-breakdown",
+      "file": "demo/schemas/plan-breakdown.schema.json",
+      "category": "step-output",
+      "description": "Plan decomposition output with plans[], parallel groups"
+    },
+    {
+      "name": "execution-results",
+      "file": "demo/schemas/execution-results.schema.json",
+      "category": "step-output",
+      "description": "What agents produce: tasks, decisions, issues, deviations"
+    },
+    {
+      "name": "verifier-output",
+      "file": "demo/schemas/verifier-output.schema.json",
+      "category": "step-output",
+      "description": "Verification result: truths, artifacts, requirements_coverage, criteria_results, gaps, human_verification"
+    },
+    {
+      "name": "audit",
+      "file": ".workflow/schemas/audit.schema.json",
+      "category": "project",
+      "description": "Audit output: checks, findings with severity/location/fix, summary"
+    },
+    {
+      "name": "conformance-reference",
+      "file": ".workflow/schemas/conformance-reference.schema.json",
+      "category": "project",
+      "description": "Conformance rules: principles, rules with check_method/patterns/severity"
+    }
   ],
   "demo_workflows": [
-    { "name": "typed-analysis", "file": "demo/typed-analysis.workflow.yaml", "description": "5 YAML agent specs, 4 JSON schemas, Nunjucks task templates rendering from typed data", "proves": "YAML spec → template composition → typed JSON output → template-rendered task prompt → agent working from structured data" },
-    { "name": "self-implement", "file": "demo/self-implement.workflow.yaml", "description": "plan-decomposer + forEach spec-implementer + verifier + gate", "proves": "project blocks → template composition → plan decomposition → forEach execution → verification → typed results" }
+    {
+      "name": "typed-analysis",
+      "file": "demo/typed-analysis.workflow.yaml",
+      "description": "5 YAML agent specs, 4 JSON schemas, Nunjucks task templates rendering from typed data",
+      "proves": "YAML spec → template composition → typed JSON output → template-rendered task prompt → agent working from structured data"
+    },
+    {
+      "name": "self-implement",
+      "file": "demo/self-implement.workflow.yaml",
+      "description": "plan-decomposer + forEach spec-implementer + verifier + gate",
+      "proves": "project blocks → template composition → plan decomposition → forEach execution → verification → typed results"
+    }
   ],
   "phases_completed": [
-    { "number": 1, "name": "Foundation", "status": "completed", "specs": "01-07" },
-    { "number": 2, "name": "Control flow & artifacts", "status": "completed", "specs": "08-11" },
-    { "number": 3, "name": "Parallelism & supervision", "status": "completed", "specs": "12-14" },
-    { "number": 5, "name": "Templates", "status": "completed", "specs": "18-19" },
-    { "number": 4, "name": "Durability", "status": "completed", "specs": "21-23" },
-    { "number": 7, "name": "Project structure, execution primitives, verification", "status": "completed", "specs": "26-29" }
+    {
+      "number": 1,
+      "name": "Foundation",
+      "status": "completed",
+      "specs": "01-07"
+    },
+    {
+      "number": 2,
+      "name": "Control flow & artifacts",
+      "status": "completed",
+      "specs": "08-11"
+    },
+    {
+      "number": 3,
+      "name": "Parallelism & supervision",
+      "status": "completed",
+      "specs": "12-14"
+    },
+    {
+      "number": 5,
+      "name": "Templates",
+      "status": "completed",
+      "specs": "18-19"
+    },
+    {
+      "number": 4,
+      "name": "Durability",
+      "status": "completed",
+      "specs": "21-23"
+    },
+    {
+      "number": 7,
+      "name": "Project structure, execution primitives, verification",
+      "status": "completed",
+      "specs": "26-29"
+    }
   ]
 }

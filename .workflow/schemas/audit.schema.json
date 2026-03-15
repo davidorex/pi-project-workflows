@@ -43,7 +43,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "severity", "principle", "description", "locations"],
+        "required": ["id", "severity", "principle", "description", "locations", "fix"],
         "properties": {
           "id": {
             "type": "string",
@@ -66,7 +66,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["file"],
+              "required": ["file", "snippet"],
               "properties": {
                 "file": { "type": "string" },
                 "lines": {
@@ -76,30 +76,41 @@
                 },
                 "snippet": {
                   "type": "string",
-                  "description": "Relevant code snippet, if available"
+                  "description": "Relevant code at the finding location"
                 }
               }
             }
           },
           "fix": {
             "type": "object",
+            "required": ["suggestion", "verify_method"],
             "description": "How to fix and how to verify the fix",
             "properties": {
               "suggestion": { "type": "string" },
               "verify_method": {
                 "type": "string",
-                "enum": ["command", "grep", "inspect", "human"],
+                "enum": ["command", "grep", "inspect"],
                 "description": "How to verify the fix was applied correctly"
               },
               "verify_command": {
                 "type": "string",
-                "description": "Shell command that exits 0 when fixed (when verify_method is command)"
+                "description": "Shell command that exits 0 when fixed"
               },
               "verify_pattern": {
                 "type": "string",
-                "description": "Grep pattern to check (when verify_method is grep)"
+                "description": "Grep pattern that should NOT match after fix"
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": { "properties": { "verify_method": { "const": "command" } } },
+                "then": { "required": ["verify_command"] }
+              },
+              {
+                "if": { "properties": { "verify_method": { "const": "grep" } } },
+                "then": { "required": ["verify_pattern"] }
+              }
+            ]
           },
           "related": {
             "type": "array",

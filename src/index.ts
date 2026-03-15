@@ -1,3 +1,7 @@
+/**
+ * Extension entry point — registers the `workflow` tool and `/workflow` command
+ * for discovering, executing, and managing multi-step workflow runs.
+ */
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
 import { executeWorkflow, requestPause } from "./workflow-executor.ts";
 import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
@@ -6,32 +10,10 @@ import type { WorkflowResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
 
-// ── Minimal type declarations for pi extension API ──────────────────────────
-// The actual types come from @mariozechner/pi-coding-agent and @sinclair/typebox,
-// which are peer dependencies that may not be resolvable at test time.
-// We define minimal compatible interfaces here so this module can be imported
-// without those packages installed.
-
-let Key: any;
-try {
-  Key = (await import("@mariozechner/pi-tui")).Key;
-} catch {
-  Key = null;
-}
-
-let Type: any;
-try {
-  Type = (await import("@sinclair/typebox")).Type;
-} catch {
-  // typebox not available — provide a minimal shim for tests that import
-  // this module but never exercise the extension factory.
-  Type = {
-    Object: (props: Record<string, unknown>) => ({ type: "object", properties: props }),
-    String: (opts?: unknown) => ({ type: "string", ...(opts || {}) }),
-    Optional: (schema: unknown) => schema,
-    Unknown: (opts?: unknown) => ({ ...(opts || {}) }),
-  };
-}
+import { Key } from "@mariozechner/pi-tui";
+import { Type } from "@sinclair/typebox";
+import type { ExtensionAPI, ExtensionContext, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
+import type { AgentToolUpdateCallback, AgentToolResult } from "@mariozechner/pi-coding-agent";
 
 // ── Helper functions ────────────────────────────────────────────────────────
 
@@ -68,7 +50,7 @@ function formatToolResult(result: WorkflowResult): string {
 
 // ── Command handlers ────────────────────────────────────────────────────────
 
-async function handleList(ctx: any, pi: any): Promise<void> {
+async function handleList(ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
   const workflows = discoverWorkflows(ctx.cwd);
   if (workflows.length === 0) {
     ctx.ui.notify("No workflows found in .pi/workflows/ or ~/.pi/agent/workflows/", "info");
@@ -81,6 +63,10 @@ async function handleList(ctx: any, pi: any): Promise<void> {
     return `${w.name} ${source}${desc}`;
   });
 
+  if (!ctx.hasUI) {
+    ctx.ui.notify("Workflow list requires interactive mode.", "warning");
+    return;
+  }
   const selected = await ctx.ui.select("Run workflow", options);
   if (!selected) return; // user cancelled
 
@@ -103,6 +89,10 @@ async function handleList(ctx: any, pi: any): Promise<void> {
         const type = val?.type || "string";
         const desc = val?.description || "";
         const prompt = desc ? `${key} (${type}): ${desc}` : `${key} (${type})`;
+        if (!ctx.hasUI) {
+          ctx.ui.notify("Workflow input prompts require interactive mode.", "warning");
+          return;
+        }
         const value = await ctx.ui.input(prompt);
         if (value == null) return; // user cancelled
         // Coerce from string based on declared type
@@ -124,7 +114,7 @@ async function handleList(ctx: any, pi: any): Promise<void> {
   await handleRun(rawArgs, ctx, pi);
 }
 
-async function handleRun(rawArgs: string, ctx: any, pi: any): Promise<void> {
+async function handleRun(rawArgs: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
   // Extract workflow name (first token) and --input value (everything after --input flag)
   const inputFlagIdx = rawArgs.indexOf("--input");
   let namePart: string;
@@ -160,6 +150,27 @@ async function handleRun(rawArgs: string, ctx: any, pi: any): Promise<void> {
     const compat = validateResumeCompatibility(incomplete.state, spec);
     if (!compat) {
       const summary = formatIncompleteRun(incomplete, spec);
+      if (!ctx.hasUI) {
+        // Non-interactive mode: auto-resume incomplete run
+        try {
+          await executeWorkflow(spec, incomplete.state.input, {
+            ctx,
+            pi,
+            loadAgent: createAgentLoader(ctx.cwd),
+            resume: {
+              runId: incomplete.runId,
+              runDir: incomplete.runDir,
+              state: incomplete.state,
+            },
+          });
+        } catch (err) {
+          ctx.ui.notify(
+            `Resume failed: ${err instanceof Error ? err.message : String(err)}`,
+            "error",
+          );
+        }
+        return;
+      }
       const choice = await ctx.ui.select(
         `${summary}\n\nResume this run?`,
         ["Yes — resume from checkpoint", "No — start fresh"],
@@ -214,7 +225,7 @@ async function handleRun(rawArgs: string, ctx: any, pi: any): Promise<void> {
   }
 }
 
-async function handleResume(rawArgs: string, ctx: any, pi: any): Promise<void> {
+async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
   const name = rawArgs.trim().split(/\s+/)[0];
   if (!name) {
     ctx.ui.notify("Usage: /workflow resume <name>", "warning");
@@ -242,11 +253,15 @@ async function handleResume(rawArgs: string, ctx: any, pi: any): Promise<void> {
 
   // Show summary and confirm
   const summary = formatIncompleteRun(incomplete, spec);
-  const choice = await ctx.ui.select(
-    `${summary}\n\nResume this run?`,
-    ["Yes — resume", "No — cancel"],
-  );
-  if (choice !== "Yes — resume") return;
+  if (!ctx.hasUI) {
+    // Non-interactive mode: auto-resume without confirmation
+  } else {
+    const choice = await ctx.ui.select(
+      `${summary}\n\nResume this run?`,
+      ["Yes — resume", "No — cancel"],
+    );
+    if (choice !== "Yes — resume") return;
+  }
 
   try {
     await executeWorkflow(spec, incomplete.state.input, {
@@ -269,7 +284,7 @@ async function handleResume(rawArgs: string, ctx: any, pi: any): Promise<void> {
 
 // ── Extension factory ───────────────────────────────────────────────────────
 
-const extension = (pi: any) => {
+const extension = (pi: ExtensionAPI) => {
   // ── Tool: workflow ──────────────────────────────────────────────────────
 
   pi.registerTool({
@@ -283,13 +298,10 @@ const extension = (pi: any) => {
       fresh: Type.Optional(Type.String({ description: "Set to 'true' to start a fresh run, ignoring any incomplete prior runs" })),
     }),
 
-    async execute(toolCallId: string, params: any, signal: AbortSignal, onUpdate: any, ctx: any) {
+    async execute(toolCallId: string, params: { workflow: string; input?: unknown; fresh?: string }, signal: AbortSignal | undefined, _onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext) {
       const spec = findWorkflow(params.workflow, ctx.cwd);
       if (!spec) {
-        return {
-          content: [{ type: "text", text: `Workflow '${params.workflow}' not found. Available workflows: ${listWorkflowNames(ctx.cwd)}` }],
-          details: undefined,
-        };
+        throw new Error(`Workflow '${params.workflow}' not found. Available workflows: ${listWorkflowNames(ctx.cwd)}`);
       }
 
       // Defensive: if input arrives as a JSON string (e.g. from Type.Unknown()),
@@ -320,27 +332,18 @@ const extension = (pi: any) => {
         }
       }
 
-      try {
-        const result = await executeWorkflow(spec, input, {
-          ctx,
-          pi,
-          signal,
-          loadAgent: createAgentLoader(ctx.cwd),
-          resume: resumeOpts,
-        });
+      const result = await executeWorkflow(spec, input, {
+        ctx,
+        pi,
+        signal,
+        loadAgent: createAgentLoader(ctx.cwd),
+        resume: resumeOpts,
+      });
 
-        return {
-          content: [{ type: "text", text: formatToolResult(result) }],
-          details: result,
-        };
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        const schemaHint = spec.input ? `\nExpected input: ${summarizeInputSchema(spec.input)}` : "";
-        return {
-          content: [{ type: "text", text: `Workflow '${params.workflow}' failed: ${errMsg}${schemaHint}` }],
-          details: undefined,
-        };
-      }
+      return {
+        content: [{ type: "text", text: formatToolResult(result) }],
+        details: result,
+      };
     },
   });
 
@@ -355,7 +358,7 @@ const extension = (pi: any) => {
         .map((s) => ({ value: s, label: s }));
     },
 
-    async handler(args: string, ctx: any) {
+    async handler(args: string, ctx: ExtensionCommandContext) {
       const trimmed = args.trim();
       const spaceIdx = trimmed.indexOf(" ");
       const subcommand = spaceIdx === -1 ? trimmed || "list" : trimmed.slice(0, spaceIdx);
@@ -380,7 +383,7 @@ const extension = (pi: any) => {
   if (Key) {
     pi.registerShortcut(Key.ctrl("h"), {
       description: "Pause running workflow",
-      handler: async (ctx: any) => {
+      handler: async (ctx: ExtensionContext) => {
         requestPause();
         ctx.ui.notify("Pause requested — workflow will pause after current step completes.", "info");
       },
@@ -388,7 +391,7 @@ const extension = (pi: any) => {
 
     pi.registerShortcut(Key.ctrl("j"), {
       description: "Resume paused workflow",
-      handler: async (ctx: any) => {
+      handler: async (ctx: ExtensionContext) => {
         const workflows = discoverWorkflows(ctx.cwd);
         let found: { spec: any; incomplete: any } | null = null;
 

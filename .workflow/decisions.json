@@ -3,27 +3,27 @@
     {
       "id": "subprocess-dispatch",
       "decision": "Extension owns its own subprocess dispatch via spawning pi --mode json",
-      "rationale": "Independence from pi-subagents \u2014 two tools can coexist without shared state or import relationship",
+      "rationale": "Independence from pi-subagents — two tools can coexist without shared state or import relationship",
       "phase": 1,
       "status": "decided"
     },
     {
       "id": "control-plane",
       "decision": "Main conversation is the control plane; workflows are subordinate work",
-      "rationale": "User never loses their interactive session \u2014 when workflow completes, conversation continues with the result",
+      "rationale": "User never loses their interactive session — when workflow completes, conversation continues with the result",
       "phase": 1,
       "status": "decided"
     },
     {
       "id": "fail-fast",
       "decision": "Fail-fast on step failure in sequential execution",
-      "rationale": "Simplest correct behavior for phase 1 \u2014 no partial results, no recovery complexity",
+      "rationale": "Simplest correct behavior for phase 1 — no partial results, no recovery complexity",
       "phase": 1,
       "status": "decided"
     },
     {
       "id": "expression-minimal",
-      "decision": "Expression evaluator supports property access only \u2014 no arithmetic, no logic, no function calls",
+      "decision": "Expression evaluator supports property access only — no arithmetic, no logic, no function calls",
       "rationale": "Push logic into transform steps where it's explicit and testable, keep ${{ }} simple and predictable",
       "phase": 1,
       "status": "decided"
@@ -31,28 +31,28 @@
     {
       "id": "expression-filters",
       "decision": "Pipe syntax for formatting: ${{ path | duration }}, ${{ path | currency }}, ${{ path | json }}",
-      "rationale": "Formatting is display concern, not logic \u2014 safe to add to expressions without crossing into computation",
+      "rationale": "Formatting is display concern, not logic — safe to add to expressions without crossing into computation",
       "phase": 1,
       "status": "decided"
     },
     {
       "id": "output-post-hoc",
       "decision": "Output validation is post-hoc AJV after step completes",
-      "rationale": "In-loop validation (steering agent toward schema compliance) adds complexity \u2014 defer to later phase",
+      "rationale": "In-loop validation (steering agent toward schema compliance) adds complexity — defer to later phase",
       "phase": 1,
       "status": "decided"
     },
     {
       "id": "atomic-state",
       "decision": "State persisted via atomic write (tmp file + rename)",
-      "rationale": "Crash safety \u2014 partial writes never corrupt state.json",
+      "rationale": "Crash safety — partial writes never corrupt state.json",
       "phase": 1,
       "status": "decided"
     },
     {
       "id": "completion-syntax",
       "decision": "Completion field uses ${{ }} syntax consistently, not {{ }} Nunjucks syntax",
-      "rationale": "Completion templates resolve against CompletionScope which extends ExpressionScope \u2014 same engine, same syntax",
+      "rationale": "Completion templates resolve against CompletionScope which extends ExpressionScope — same engine, same syntax",
       "phase": 1,
       "status": "decided"
     },
@@ -73,42 +73,42 @@
     {
       "id": "conservative-plan",
       "decision": "buildConservativePlan() adds implicit sequential deps for steps without explicit ${{ steps.X }} refs",
-      "rationale": "Parallelism is opt-in \u2014 safe default prevents unintended concurrent side effects",
+      "rationale": "Parallelism is opt-in — safe default prevents unintended concurrent side effects",
       "phase": 3,
       "status": "decided"
     },
     {
       "id": "parallel-structured-only",
       "decision": "Phase 3 parallelism limited to read-only/structured-output workflows",
-      "rationale": "Parallel steps writing to working directory share cwd and may interfere \u2014 filesystem isolation deferred",
+      "rationale": "Parallel steps writing to working directory share cwd and may interfere — filesystem isolation deferred",
       "phase": 3,
       "status": "decided"
     },
     {
       "id": "nunjucks-unconditional",
       "decision": "compileAgentSpec() renders both system and task prompts through Nunjucks unconditionally",
-      "rationale": "No hasTemplateSyntax gate needed \u2014 plain text renders to itself, template syntax renders correctly",
+      "rationale": "No hasTemplateSyntax gate needed — plain text renders to itself, template syntax renders correctly",
       "phase": 5,
       "status": "decided"
     },
     {
       "id": "template-protection",
       "decision": "${{ }} workflow expressions protected from Nunjucks interpretation during template rendering",
-      "rationale": "Two expression syntaxes coexist \u2014 Nunjucks must not interpret ${{ }} as its own {{ }}",
+      "rationale": "Two expression syntaxes coexist — Nunjucks must not interpret ${{ }} as its own {{ }}",
       "phase": 5,
       "status": "decided"
     },
     {
       "id": "three-tier-resolution",
       "decision": "Three-tier resource resolution: .pi/<dir>/ > ~/.pi/agent/<dir>/ > <package>/<dir>/",
-      "rationale": "Project-level overrides user-level overrides package defaults \u2014 standard precedence",
+      "rationale": "Project-level overrides user-level overrides package defaults — standard precedence",
       "phase": 5,
       "status": "decided"
     },
     {
       "id": "checkpoint-resume",
       "decision": "Resume reuses run dir and state, layer loop skips completed steps, re-runs failed steps",
-      "rationale": "Partial parallel layers resume correctly \u2014 only pending steps in each layer execute",
+      "rationale": "Partial parallel layers resume correctly — only pending steps in each layer execute",
       "phase": 4,
       "status": "decided"
     },
@@ -121,7 +121,7 @@
     },
     {
       "id": "output-persistence",
-      "decision": "Every step writes output as JSON to disk via persistStepOutput() \u2014 file system is the data bus",
+      "decision": "Every step writes output as JSON to disk via persistStepOutput() — file system is the data bus",
       "rationale": "One workflow's output is another workflow's input. StepResult.outputPath holds the absolute path.",
       "phase": 4,
       "status": "decided"
@@ -129,21 +129,21 @@
     {
       "id": "agent-yaml-compilation",
       "decision": "Agent specs are YAML declaring typed contracts; .md is compiled at dispatch time from spec + templates + input",
-      "rationale": "The .md exists in memory for milliseconds \u2014 written to temp file, passed to pi, deleted. Never hand-authored.",
+      "rationale": "The .md exists in memory for milliseconds — written to temp file, passed to pi, deleted. Never hand-authored.",
       "phase": 5,
       "status": "decided"
     },
     {
       "id": "project-as-data",
       "decision": "Project structure decomposed into typed JSON blocks that templates compose from",
-      "rationale": "Master planning doc is a monolith \u2014 no part independently injectable into agent prompts. Blocks enable selective context injection.",
+      "rationale": "Master planning doc is a monolith — no part independently injectable into agent prompts. Blocks enable selective context injection.",
       "phase": 7,
       "status": "decided"
     },
     {
       "id": "budget-defer",
-      "decision": "Budget enforcement deferred \u2014 accumulation via addUsage() works but no ceiling gate",
-      "rationale": "Needs design for configurable actions (pause, fail, warn) \u2014 accumulation sufficient for now",
+      "decision": "Budget enforcement deferred — accumulation via addUsage() works but no ceiling gate",
+      "rationale": "Needs design for configurable actions (pause, fail, warn) — accumulation sufficient for now",
       "phase": 4,
       "status": "tentative"
     },
@@ -157,13 +157,13 @@
     {
       "id": "command-fails-nonzero",
       "decision": "command step fails on non-zero exit (unlike gate which always returns completed)",
-      "rationale": "Command produces data \u2014 non-zero exit means the data is not available. Gate judges a condition \u2014 both pass and fail are valid outcomes.",
+      "rationale": "Command produces data — non-zero exit means the data is not available. Gate judges a condition — both pass and fail are valid outcomes.",
       "phase": 7,
       "status": "decided"
     },
     {
       "id": "output-write-nonfatal",
-      "decision": "Output write failures are non-fatal \u2014 step data is in memory for downstream expressions",
+      "decision": "Output write failures are non-fatal — step data is in memory for downstream expressions",
       "rationale": "Output files are supplementary persistence. The step already ran. Aligns with artifact write treatment.",
       "phase": 7,
       "status": "decided"
@@ -185,8 +185,44 @@
     {
       "id": "missing-agent-explicit-fail",
       "decision": "Missing agents throw AgentNotFoundError instead of returning silent { name } fallback",
-      "rationale": "Silent fallback made typos and missing specs indistinguishable from valid agents. Breaking change \u2014 clear error listing all search paths.",
+      "rationale": "Silent fallback made typos and missing specs indistinguishable from valid agents. Breaking change — clear error listing all search paths.",
       "phase": 7,
+      "status": "decided"
+    },
+    {
+      "id": "d1-propagate-not-catch",
+      "decision": "Remove the try/catch entirely rather than re-throwing with a modified message",
+      "rationale": "The original catch was adding an input schema hint to the error message, but this is better handled by the framework or the workflow executor itself. Keeping the error unmodified preserves the original stack trace and error context.",
+      "status": "decided"
+    },
+    {
+      "id": "non-interactive-resume-behavior",
+      "decision": "Auto-resume incomplete runs in non-interactive mode instead of failing",
+      "rationale": "In handleRun and handleResume, the select() prompts ask whether to resume. In non-interactive mode, auto-resuming is the safer default since the user explicitly invoked run/resume. For handleList, we return early since interactive selection is fundamental to its purpose.",
+      "status": "decided"
+    },
+    {
+      "id": "d1-context-type-distinction",
+      "decision": "Use ExtensionCommandContext for command handlers (handleList, handleRun, handleResume, /workflow handler) and ExtensionContext for tool execute and shortcut handlers",
+      "rationale": "ExtensionCommandContext extends ExtensionContext with waitForIdle() and is the type expected by RegisteredCommand.handler. Tool execute and shortcut handlers receive ExtensionContext per the pi SDK type definitions.",
+      "status": "decided"
+    },
+    {
+      "id": "d2-params-inline-type",
+      "decision": "Used inline object type `{ workflow: string; input?: unknown; fresh?: string }` for execute params instead of Static<typeof schema>",
+      "rationale": "The parameter schema uses Type.Optional(Type.Unknown()) for input which makes Static inference awkward. Inline type matches the actual shape and is clearer.",
+      "status": "decided"
+    },
+    {
+      "id": "truncation-point",
+      "decision": "Truncate in workflow-executor.ts at the sendMessage call site rather than in formatResult or index.ts",
+      "rationale": "The sendMessage path in workflow-executor.ts is the unbounded path identified in the finding. formatToolResult in index.ts is already a compact one-liner summary. Truncating at sendMessage covers both the formatResult and resolveCompletion code paths.",
+      "status": "decided"
+    },
+    {
+      "id": "truncation-limits",
+      "decision": "Use 50KB / 2000 lines matching pi built-in limits",
+      "rationale": "P7 conformance reference specifies 50KB / 2000 lines as the built-in limit. Using truncateTail from pi-coding-agent as required by P7.1.",
       "status": "decided"
     }
   ]

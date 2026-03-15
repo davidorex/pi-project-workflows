@@ -31,7 +31,7 @@ function validVerifierOutput() {
       },
       {
         criterion: "UI renders correctly",
-        verify_method: "human",
+        verify_method: "inspect",
         status: "skipped",
         evidence: "Requires visual inspection",
       },

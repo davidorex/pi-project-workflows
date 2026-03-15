@@ -1,13 +1,13 @@
 {
   "current_phase": 8,
   "current_spec": 35,
-  "test_count": 504,
+  "test_count": 509,
   "last_commit": "11c6b00",
   "accumulated_context": {
     "decisions": [
-      "Project blocks live in .workflow/ \u2014 the project artifact directory",
+      "Project blocks live in .workflow/ — the project artifact directory",
       "Specs 26-29 form Phase 7: project structure, execution primitives, verification",
-      "forEach when: conditional applies globally (before iteration starts), not per-iteration \u2014 per-iteration conditions require when to be expressible without forEach-scoped variables at the top level",
+      "forEach when: conditional applies globally (before iteration starts), not per-iteration — per-iteration conditions require when to be expressible without forEach-scoped variables at the top level",
       "command step fails on non-zero exit (unlike gate which always returns completed with passed: true/false)"
     ],
     "todos": [
@@ -24,7 +24,7 @@
     "blockers": []
   },
   "session": {
-    "last_action": "Decomposed master doc into 11 JSON blocks, created audit+conformance schemas, created Phase 8 spec",
+    "last_action": "fix-audit workflow: 8 tasks completed",
     "next_action": "Implement spec 35: execution results router"
   }
 }

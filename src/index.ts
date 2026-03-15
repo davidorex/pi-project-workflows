@@ -282,6 +282,67 @@ async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: E
   }
 }
 
+/**
+ * /workflow ingest — reads project block schemas and current state,
+ * returns a structured instruction for main context to extract
+ * gaps, decisions, and rationale from the conversation into typed JSON blocks.
+ */
+async function handleIngest(_args: string, ctx: ExtensionCommandContext): Promise<void> {
+  const workflowDir = path.join(ctx.cwd, ".workflow");
+  const schemasDir = path.join(workflowDir, "schemas");
+
+  if (!fs.existsSync(schemasDir)) {
+    ctx.ui.notify("No .workflow/schemas/ directory found.", "warning");
+    return;
+  }
+
+  const targetBlocks = ["gaps", "decisions", "rationale"] as const;
+  const blockInfo: string[] = [];
+
+  for (const block of targetBlocks) {
+    const schemaPath = path.join(schemasDir, `${block}.schema.json`);
+    const dataPath = path.join(workflowDir, `${block}.json`);
+
+    if (!fs.existsSync(schemaPath)) continue;
+
+    const schema = fs.readFileSync(schemaPath, "utf8");
+    let currentCount = "";
+    if (fs.existsSync(dataPath)) {
+      try {
+        const data = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+        const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]));
+        if (arrayKey) currentCount = ` (${data[arrayKey].length} existing)`;
+      } catch { /* ignore parse errors */ }
+    }
+
+    blockInfo.push(`### ${block}${currentCount}\nSchema: ${schemaPath}\nData: ${dataPath}\n\`\`\`json\n${schema}\n\`\`\``);
+  }
+
+  const validateCmd = `node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';const s=process.argv[1],d=process.argv[2];validateFromFile(s,JSON.parse(fs.readFileSync(d,'utf8')),d);console.log('✓ valid')" SCHEMA_PATH DATA_PATH`;
+
+  const instruction = `## Ingest into Project Blocks
+
+Read the recent conversation and extract gaps, decisions, and rationale into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
+
+**Blocks to update:**
+
+${blockInfo.join("\n\n")}
+
+**Process:**
+1. Read the conversation for capability gaps, design decisions, and rationale narratives
+2. Read the current block files to check for duplicates
+3. Append new entries — do NOT replace existing content
+4. For each block modified, validate:
+   \`${validateCmd}\`
+
+**Rules:**
+- IDs must be kebab-case and unique within their block
+- Use \`source: "human"\` for content from this conversation
+- Architecture changes and phase creation are separate processes — do not attempt them here`;
+
+  ctx.ui.notify(instruction, "info");
+}
+
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
@@ -352,7 +413,7 @@ const extension = (pi: ExtensionAPI) => {
   pi.registerCommand("workflow", {
     description: "List and run workflows",
     getArgumentCompletions: (prefix: string) => {
-      const subcommands = ["run", "list", "status", "resume"];
+      const subcommands = ["run", "list", "status", "resume", "ingest"];
       return subcommands
         .filter((s) => s.startsWith(prefix))
         .map((s) => ({ value: s, label: s }));
@@ -372,8 +433,10 @@ const extension = (pi: ExtensionAPI) => {
         await handleResume(rest, ctx, pi);
       } else if (subcommand === "status") {
         ctx.ui.notify("No workflow currently running.", "info");
+      } else if (subcommand === "ingest") {
+        await handleIngest(rest, ctx);
       } else {
-        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: list, run, resume, status`, "warning");
+        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: list, run, resume, status, ingest`, "warning");
       }
     },
   });

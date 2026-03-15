@@ -136,15 +136,16 @@
     {
       "name": "workflow-sdk",
       "file": "src/workflow-sdk.ts",
-      "responsibility": "SDK facade: vocabulary (filterNames, stepTypes, expressionRoots), discovery (agents, templates, schemas, workflows, blocks), introspection (extractExpressions, declaredSteps, declaredAgentRefs, declaredSchemaRefs)",
+      "responsibility": "SDK facade: vocabulary (filterNames, stepTypes, expressionRoots), discovery (agents, templates, schemas, workflows, blocks), derived state (projectState), introspection (extractExpressions, declaredSteps, declaredAgentRefs, declaredSchemaRefs)",
       "dependencies": [
         "expression",
         "workflow-spec",
         "workflow-discovery",
         "agent-spec",
+        "block-api",
         "types"
       ],
-      "lines": 283
+      "lines": 378
     },
     {
       "name": "checkpoint",
@@ -290,16 +291,17 @@
     {
       "name": "index",
       "file": "src/index.ts",
-      "responsibility": "Extension entry point: registers workflow tool, record-gap tool, /workflow commands (run, list, resume, status, add-work), keybindings (Ctrl+H pause, Ctrl+J resume)",
+      "responsibility": "Extension entry point: registers workflow tool, record-gap tool, /workflow commands (run, list, resume, status, add-work), keybindings (Ctrl+H pause, Ctrl+J resume). /workflow status derives state via SDK.",
       "dependencies": [
         "types",
         "workflow-discovery",
         "workflow-executor",
         "checkpoint",
         "agent-spec",
-        "block-api"
+        "block-api",
+        "workflow-sdk"
       ],
-      "lines": 604
+      "lines": 644
     }
   ],
   "patterns": [

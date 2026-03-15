@@ -133,6 +133,15 @@
       "priority": "high",
       "details": "Monitor writes directly to gaps.json with source:'monitor'. No agent steering needed \u2014 monitor observes friction in execution trace, appends gap, done. Human/main-context reviews monitor-created gaps and marks actionable or deletes. Query by source: gaps.filter(g => g.source === 'monitor'). Three-layer design: (1) monitor writes gaps directly (non-bypassable), (2) execution-results.issues[] required in schema (agent-reported), (3) route-results routes agent-reported issues with source:'agent'.",
       "source": "human"
+    },
+    {
+      "id": "command-step-data-passing",
+      "description": "No safe mechanism to pass structured data to command steps. Shell argument quoting breaks on JSON with quotes. Current workaround: persist to known file path via output.path, next step reads from disk. Need: stdin piping, env var injection, or temp file abstraction in the command step runtime.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "medium",
+      "source": "human",
+      "details": "Discovered when fix-audit workflow failed: ${{ expr | json }} in shell arguments breaks on JSON containing single quotes. All command steps rewritten to read files directly. The output.path \u2192 read-from-disk pattern works but is manual and requires coordinating paths between steps."
     }
   ]
 }

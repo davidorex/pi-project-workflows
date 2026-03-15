@@ -12,13 +12,15 @@
 
 For each question:
 1. Answer based on known software engineering patterns, best practices, and established solutions
-2. Rate your confidence: high (well-known, widely used), medium (established but context-dependent), low (best guess or novel territory)
-3. List sources where possible — documentation, known projects, pattern names, reference implementations
+2. Rate your confidence: `high` (well-known, widely used), `medium` (established but context-dependent), `low` (best guess)
+3. List sources where possible — documentation, known projects, pattern names
 
-Also identify:
-- **Patterns**: Named design patterns or architectural patterns that apply to this problem
-- **Recommendations**: Concrete suggestions based on your findings
+Also identify applicable patterns and concrete recommendations.
 
-## Output
+## Required Output Schema
 
-Produce JSON conforming to the research-findings schema.
+You MUST produce JSON conforming exactly to this schema. Every required field must be present.
+
+```json
+{{ output_schema }}
+```

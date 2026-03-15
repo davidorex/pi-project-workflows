@@ -90,6 +90,14 @@ export async function executeAgentStep(
       error: err instanceof Error ? err.message : String(err),
     };
   }
+  // Inject output schema into template context if available
+  if (stepSpec.output?.schema && typeof resolvedInput === "object" && resolvedInput !== null) {
+    const schemaPath = resolveSchemaPath(stepSpec.output.schema, options.specFilePath);
+    try {
+      const schemaContent = fs.readFileSync(schemaPath, "utf8");
+      (resolvedInput as Record<string, unknown>).output_schema = schemaContent;
+    } catch { /* schema file not found — template can still render without it */ }
+  }
   agentSpec = compileAgentSpec(agentSpec, resolvedInput, templateEnv);
 
   let prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);

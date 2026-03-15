@@ -38,17 +38,19 @@
 
 ## Instructions
 
-Decompose this gap into implementation specs. Each spec is a unit of work for a single implementing agent with its own context window.
+Decompose this gap into implementation specs. Each spec is a unit of work for a single implementing agent.
 
 1. Break the work into the smallest meaningful units
 2. Declare file targets for each spec
-3. Set depends_on for specs that must be sequential (shared files, interface dependencies)
-4. Mark parallel_safe for specs that can run concurrently
-5. Write acceptance criteria that are verifiable (grep patterns, test commands, not just "it works")
+3. Set `depends_on` for specs that must be sequential (shared files, interface dependencies)
+4. Mark `parallel_safe` for specs that can run concurrently
+5. Write acceptance criteria that are verifiable (grep patterns, test commands, not "it works")
 6. Estimate complexity per spec
 
-Explain your ordering rationale — why this structure, why these parallelization decisions.
+## Required Output Schema
 
-## Output
+You MUST produce JSON conforming exactly to this schema. Every required field must be present.
 
-Produce JSON conforming to the decomposition-specs schema.
+```json
+{{ output_schema }}
+```

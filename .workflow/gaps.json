@@ -62,11 +62,12 @@
     {
       "id": "graduated-failure",
       "description": "Graduated failure \u2014 not binary pass/fail. The failure cascade: soft timeout \u2192 steer the agent \u2192 hard timeout \u2192 inspect durability (what artifacts exist so far?) \u2192 retry with gap analysis injected \u2192 skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
-      "status": "open",
+      "status": "resolved",
       "category": "primitive",
       "priority": "medium",
       "source": "human",
-      "details": "GSD's recovery model is the reference: inspectExecuteTaskDurability() checks what the agent actually accomplished on disk before deciding action. Pattern: inspect what happened \u2192 rollback invalid state \u2192 steer with specific error context (agent steps only) \u2192 escalate on repeated failure \u2192 skip after max attempts. For block validation failures specifically: rollback file to pre-step snapshot, steer agent with schema error + rolled-back state, max N retries before fail-fast. Command steps can't be steered (no conversation), so they fail immediately with diagnostics. Two layers: orchestrator rollback (non-bypassable safety net) + monitor steering (in-flight correction for agent steps)."
+      "details": "GSD's recovery model is the reference: inspectExecuteTaskDurability() checks what the agent actually accomplished on disk before deciding action. Pattern: inspect what happened \u2192 rollback invalid state \u2192 steer with specific error context (agent steps only) \u2192 escalate on repeated failure \u2192 skip after max attempts. For block validation failures specifically: rollback file to pre-step snapshot, steer agent with schema error + rolled-back state, max N retries before fail-fast. Command steps can't be steered (no conversation), so they fail immediately with diagnostics. Two layers: orchestrator rollback (non-bypassable safety net) + monitor steering (in-flight correction for agent steps).",
+      "resolved_by": "commit-84c2947"
     },
     {
       "id": "blocker-propagation",

@@ -3,9 +3,12 @@ description: Standard path from gap to implementation — investigate, research,
 version: "1"
 
 input:
-  gap_id:
-    type: string
-    description: ID of the gap to work on (from .workflow/gaps.json)
+  type: object
+  required: [gap_id]
+  properties:
+    gap_id:
+      type: string
+      description: ID of the gap to work on (from .workflow/gaps.json)
 
 steps:
   load:

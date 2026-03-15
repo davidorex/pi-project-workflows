@@ -2,28 +2,28 @@
   "gaps": [
     {
       "id": "dynamic-dispatch-loops",
-      "description": "Dynamic dispatch in loops — a loop that evaluates which step to run each iteration based on current state. Any state machine workflow needs this: legal review routing on document classification, data pipelines branching on quality scores. The general primitive: a loop with a dispatch table of steps guarded by when: conditions evaluated per iteration.",
+      "description": "Dynamic dispatch in loops \u2014 a loop that evaluates which step to run each iteration based on current state. Any state machine workflow needs this: legal review routing on document classification, data pipelines branching on quality scores. The general primitive: a loop with a dispatch table of steps guarded by when: conditions evaluated per iteration.",
       "status": "open",
       "category": "primitive",
       "priority": "high"
     },
     {
       "id": "expression-functions",
-      "description": "Expression functions — ${{ }} expressions that call functions, not just access properties. ${{ loadFile(path) }} is the general case. The function system is domain-agnostic — specific functions are user-provided or workflow-provided. Needed for context loaders, file operations, data derivation.",
+      "description": "Expression functions \u2014 ${{ }} expressions that call functions, not just access properties. ${{ loadFile(path) }} is the general case. The function system is domain-agnostic \u2014 specific functions are user-provided or workflow-provided. Needed for context loaders, file operations, data derivation.",
       "status": "open",
       "category": "primitive",
       "priority": "high"
     },
     {
       "id": "timeout-actions",
-      "description": "Timeout actions — configurable responses beyond kill. Steering messages, idle detection, inspect-and-retry. Any long-running agent in any domain needs this.",
+      "description": "Timeout actions \u2014 configurable responses beyond kill. Steering messages, idle detection, inspect-and-retry. Any long-running agent in any domain needs this.",
       "status": "open",
       "category": "primitive",
       "priority": "medium"
     },
     {
       "id": "budget-enforcement",
-      "description": "Budget enforcement — cost ceiling with configurable action (pause, fail, warn). addUsage() accumulates but no gate. Any production workflow needs this.",
+      "description": "Budget enforcement \u2014 cost ceiling with configurable action (pause, fail, warn). addUsage() accumulates but no gate. Any production workflow needs this.",
       "status": "deferred",
       "category": "primitive",
       "priority": "medium",
@@ -32,7 +32,7 @@
     },
     {
       "id": "command-steps",
-      "description": "Command steps — shell command execution with captured stdout as JSON or text.",
+      "description": "Command steps \u2014 shell command execution with captured stdout as JSON or text.",
       "status": "resolved",
       "category": "primitive",
       "priority": "high",
@@ -40,59 +40,75 @@
     },
     {
       "id": "post-step-artifact-verification",
-      "description": "A verify block on the step spec declares assertions the runtime checks after the step completes. Not a separate step — built into the step definition. Assertion types: file exists, file changed, output field non-empty, output field matches pattern, shell command exits 0. These are deterministic, no LLM.",
+      "description": "A verify block on the step spec declares assertions the runtime checks after the step completes. Not a separate step \u2014 built into the step definition. Assertion types: file exists, file changed, output field non-empty, output field matches pattern, shell command exits 0. These are deterministic, no LLM.",
       "status": "open",
       "category": "primitive",
       "priority": "medium"
     },
     {
       "id": "requirement-tracking",
-      "description": "Requirement tracking (must-haves) — the step's input declares requirements (via schema or explicit requires field). The verify block checks the output addresses them. Cross-references input requirements against output content using heuristic matching (keyword/token presence in output fields). Domain-agnostic: works for code tasks, compliance points, synthesis criteria.",
+      "description": "Requirement tracking (must-haves) \u2014 the step's input declares requirements (via schema or explicit requires field). The verify block checks the output addresses them. Cross-references input requirements against output content using heuristic matching (keyword/token presence in output fields). Domain-agnostic: works for code tasks, compliance points, synthesis criteria.",
       "status": "open",
       "category": "primitive",
       "priority": "medium"
     },
     {
       "id": "graduated-failure",
-      "description": "Graduated failure — not binary pass/fail. The failure cascade: soft timeout → steer the agent → hard timeout → inspect durability (what artifacts exist so far?) → retry with gap analysis injected → skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
+      "description": "Graduated failure \u2014 not binary pass/fail. The failure cascade: soft timeout \u2192 steer the agent \u2192 hard timeout \u2192 inspect durability (what artifacts exist so far?) \u2192 retry with gap analysis injected \u2192 skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
       "status": "open",
       "category": "primitive",
       "priority": "medium"
     },
     {
       "id": "blocker-propagation",
-      "description": "Blocker propagation — when a step is skipped after exhausting retries, a blocker placeholder artifact is written. Downstream steps see the placeholder and can decide what to do. The pipeline doesn't silently drop work — it records what failed and why, in a structured artifact visible to subsequent steps and to the user.",
+      "description": "Blocker propagation \u2014 when a step is skipped after exhausting retries, a blocker placeholder artifact is written. Downstream steps see the placeholder and can decide what to do. The pipeline doesn't silently drop work \u2014 it records what failed and why, in a structured artifact visible to subsequent steps and to the user.",
       "status": "open",
       "category": "primitive",
       "priority": "medium"
     },
     {
       "id": "pre-step-validation",
-      "description": "Pre-step validation — gate checks on inputs before dispatch. Already supported as gate steps. The richer form: validate that the previous step's output has the content quality needed for this step to succeed. Not just 'does the file exist' but 'does the plan have a verification section, are scope estimates within thresholds.'",
+      "description": "Pre-step validation \u2014 gate checks on inputs before dispatch. Already supported as gate steps. The richer form: validate that the previous step's output has the content quality needed for this step to succeed. Not just 'does the file exist' but 'does the plan have a verification section, are scope estimates within thresholds.'",
       "status": "open",
       "category": "primitive",
       "priority": "low"
     },
     {
       "id": "adjacent-expression-misparse",
-      "description": "Expression parser: adjacent ${{ }}${{ }} in a single string — whole-value regex can misparse them. Pre-existing limitation.",
+      "description": "Expression parser: adjacent ${{ }}${{ }} in a single string \u2014 whole-value regex can misparse them. Pre-existing limitation.",
       "status": "open",
       "category": "issue",
       "priority": "low"
     },
     {
       "id": "delete-md-demo-agents",
-      "description": "Delete old .md demo agents — .agent.yaml versions are the source of truth, .md files are dead weight.",
+      "description": "Delete old .md demo agents \u2014 .agent.yaml versions are the source of truth, .md files are dead weight.",
       "status": "open",
       "category": "cleanup",
       "priority": "low"
     },
     {
       "id": "remove-dead-writeStepOutput",
-      "description": "Remove dead writeStepOutput in state.ts — superseded by output.ts persistStepOutput().",
+      "description": "Remove dead writeStepOutput in state.ts \u2014 superseded by output.ts persistStepOutput().",
       "status": "open",
       "category": "cleanup",
       "priority": "low"
+    },
+    {
+      "id": "do-phase-workflow",
+      "description": "No 'do phase' workflow exists. Main agent saying 'do phase 8' requires: load phase spec by number, plan decomposition across all specs, forEach implement, route results to blocks, verify against phase success criteria, update phase status. self-implement.workflow.yaml is close but needs a load-phase command step at the front and phase-status-update at the end.",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "details": "Blocked by: nested workflow invocation (Phase 6) for per-spec cycles. Workaround: flatten \u2014 one planning step reads full phase spec, produces flat plans array, forEach implements all, one verify pass. Add load-phase and update-phase-status command steps to self-implement.workflow.yaml."
+    },
+    {
+      "id": "nested-workflow-invocation",
+      "description": "forEach step body can only be a single step type (agent, transform, command, gate). Cannot invoke a sub-workflow per iteration. Needed for: per-spec plan-implement-verify cycles within a phase. This is the 'workflow' step type placeholder from Phase 6.",
+      "status": "open",
+      "category": "composition",
+      "priority": "high",
+      "details": "Phase 6 deliverable. Without it, phase execution must flatten all specs into one plan-implement-verify pass rather than modular per-spec cycles."
     }
   ]
 }

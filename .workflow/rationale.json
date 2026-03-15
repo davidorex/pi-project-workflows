@@ -79,6 +79,16 @@
         "extension-communication-via-events"
       ],
       "phase": 8
+    },
+    {
+      "id": "project-as-separate-domain",
+      "title": "Project and workflow are separate domains, discovered through entanglement",
+      "narrative": "The workflow extension grew to contain two things: an execution engine and a typed knowledge structure. The execution engine (YAML specs, DAG planning, subprocess dispatch, checkpoint/resume) knows nothing about gaps, decisions, or phases. The knowledge structure (.workflow/ blocks, schemas, validation, model-config) knows nothing about step execution or subprocess dispatch.\n\nThe entanglement is visible in specific places: /workflow add-work is a project command wearing a workflow hat. route-results is a workflow step that directly manipulates project files. model-config.json is project-level configuration consumed by the workflow engine.\n\nRather than extract prematurely, we'll build the project layer through use-case modeling \u2014 each time we encounter project functionality (add-work, validate, block writes, model resolution), we note what the project extension would own vs what the workflow extension would consume. The boundary emerges from usage, not from architecture diagrams.\n\nThe end state: pi-project as a lightweight extension owning .workflow/ (or .project/), registering /project commands, emitting block-write events, providing schema validation. pi-workflows as a peer that consumes project infrastructure for model config and result routing, but runs independently for pure execution.",
+      "related_decisions": [
+        "project-workflow-peer-extensions",
+        "project-build-through-use-cases"
+      ],
+      "phase": 8
     }
   ]
 }

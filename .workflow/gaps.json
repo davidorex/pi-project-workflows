@@ -238,6 +238,32 @@
       "priority": "medium",
       "source": "human",
       "details": "A project wanting a schema validation monitor can't express it in the current spec format. The split: deterministic checks belong in the producing extension (workflow validates its own writes). Behavioral observation (patterns over time, agent quality trends) belongs in monitors with LLM classification. Events from workflow extension are additive for monitors \u2014 richer signal without parsing conversation text."
+    },
+    {
+      "id": "project-extension-extraction",
+      "description": "Project infrastructure (.workflow/ blocks, schemas, validation, /add-work, model-config) is tangled inside the workflow extension. Should be a separate lightweight pi extension (pi-project) that workflow consumes as a peer. Currently blocked on use-case modeling to define the boundary.",
+      "status": "open",
+      "category": "composition",
+      "priority": "high",
+      "source": "human",
+      "details": "Project owns: .workflow/ directory, block schemas, schema validation, /project add-work, /project validate, /project status, model-config.json, block-write events. Workflow owns: YAML specs, step execution, DAG planning, subprocess dispatch, checkpoint/resume, TUI widget. Overlap: model-config resolution (project config consumed by workflow engine), route-results (workflow step writing to project blocks). Build project through use-case modeling alongside workflow, extract when boundary is clear."
+    },
+    {
+      "id": "add-work-ownership",
+      "description": "/workflow add-work is a project command living in the workflow extension. When project becomes its own extension, add-work moves to /project add-work.",
+      "status": "open",
+      "category": "cleanup",
+      "priority": "low",
+      "source": "human"
+    },
+    {
+      "id": "route-results-coupling",
+      "description": "route-results workflow step writes directly to project blocks (.workflow/*.json). When project is a separate extension, this should go through project's write API or events, not direct file manipulation.",
+      "status": "open",
+      "category": "composition",
+      "priority": "medium",
+      "source": "human",
+      "details": "Currently route-results is inline Node.js reading and writing block files. With a project extension, it would emit project:write-block events or call a project API. The workflow extension shouldn't know block file structure."
     }
   ]
 }

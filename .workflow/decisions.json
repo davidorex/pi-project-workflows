@@ -321,6 +321,20 @@
       "rationale": "pi-behavior-monitors already uses pi.events.emit('monitors:abort'). The pattern works for cross-extension communication. Workflow extension emits workflow:* events, monitors optionally consume them. If either extension is absent, nothing breaks.",
       "phase": 8,
       "status": "decided"
+    },
+    {
+      "id": "project-workflow-peer-extensions",
+      "decision": "Project and workflow are separate domains that should be peer pi extensions. Project owns typed knowledge structure (.workflow/ blocks, schemas, validation). Workflow owns execution engine (YAML specs, DAG, dispatch, state). Neither imports the other \u2014 they communicate via pi events and shared file conventions.",
+      "rationale": "The test: can you use project without workflows? Yes \u2014 manual block management, add-work from conversation, schema validation. Can you use workflows without project? Yes \u2014 YAML specs, step execution, subprocess dispatch. The coupling is incidental \u2014 project infrastructure was built inside workflow because that's where we were working.",
+      "phase": 8,
+      "status": "decided"
+    },
+    {
+      "id": "project-build-through-use-cases",
+      "decision": "Build project extension through use-case modeling alongside workflow, not by premature extraction. Keep project code in this repo, discover the boundary through actual usage, extract when the interface is clear.",
+      "rationale": "Extracting now would require guessing the API. Building through use cases \u2014 add-work, block validation, model-config resolution, route-results \u2014 reveals the actual contract between the two domains. The boundary becomes obvious when the use cases stabilize.",
+      "phase": 8,
+      "status": "decided"
     }
   ]
 }

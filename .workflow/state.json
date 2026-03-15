@@ -1,30 +1,38 @@
 {
   "current_phase": 8,
   "current_spec": 0,
-  "test_count": 543,
-  "last_commit": "8389f4d",
+  "test_count": 590,
+  "last_commit": "bac0872",
   "accumulated_context": {
     "decisions": [
       "Project blocks live in .workflow/ — the project artifact directory",
-      "Specs 26-29 form Phase 7: project structure, execution primitives, verification",
-      "forEach when: conditional applies globally (before iteration starts), not per-iteration — per-iteration conditions require when to be expressible without forEach-scoped variables at the top level",
-      "command step fails on non-zero exit (unlike gate which always returns completed with passed: true/false)"
+      "Block writes go through block-api.ts (readBlock/writeBlock/appendToBlock) with schema validation",
+      "Workflow SDK (workflow-sdk.ts) provides dynamic vocabulary, discovery, and spec introspection",
+      "STEP_TYPES registry in workflow-spec.ts is the single source of truth for step type validation",
+      "FILTER_NAMES exported from expression.ts derives from FILTERS keys — add a filter, SDK sees it",
+      "Subprocess thinking defaults to :off when agent spec omits thinking (Pi v0.56.0 compatibility)",
+      "record-gap tool enables agents to record gaps mid-task via appendToBlock"
     ],
     "todos": [
-      "Delete old .md demo agents",
       "Remove dead writeStepOutput in state.ts",
-      "Phase 6: Composition (workflow inheritance, nesting, custom TUI)"
+      "Phase 6: Composition (workflow inheritance, nesting, custom TUI)",
+      "Implement workflow validator using SDK (validate-workflow command)",
+      "Retire demo/ directory to canonical layout (gap: retire-demo-directory)"
     ],
     "issues": [
       {
         "severity": "low",
         "description": "Expression parser: adjacent ${{ }}${{ }} in a single string can misparse (whole-value regex). Pre-existing."
+      },
+      {
+        "severity": "medium",
+        "description": "10 fragility-fragility-* monitor false positives in gaps.json from workflow subprocess artifacts. Root cause: monitor-false-positives gap."
       }
     ],
     "blockers": []
   },
   "session": {
-    "last_action": "Phase 8: Block Production and Routing Automation. 543 tests, 13 agents, 9 workflows. do-gap workflow validated end-to-end. TUI step activity and output summaries implemented. Agent prompts rewritten with XML structure. Block validation always-rollback fix. Monitor enum values fixed.",
+    "last_action": "Post-phase-8 hardening: Pi 0.58.3 breaking changes audit (1 fix applied: thinking:off default), block-api module (readBlock/writeBlock/appendToBlock with schema validation), record-gap tool, do-gap workflow block-api migration, gap-to-phase workflow, workflow SDK (vocabulary/discovery/introspection), author-workflows skill. 590 tests, 15 resolved gaps.",
     "next_action": "Pending next specification"
   }
 }

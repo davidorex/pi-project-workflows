@@ -193,6 +193,15 @@
       "category": "capability",
       "priority": "low",
       "source": "human"
+    },
+    {
+      "id": "route-results-no-validation",
+      "description": "route-results step merges agent output into project blocks (.workflow/*.json) without validating against block schemas. Agents can write malformed entries that only surface when something else reads the block later.",
+      "status": "open",
+      "category": "issue",
+      "priority": "high",
+      "source": "human",
+      "details": "Discovered when add-work validated decisions.json and found 6 entries missing required 'phase' field \u2014 written by fix-audit implementing agents via route-results. Fix: route-results should validate each block after merging, before writing."
     }
   ]
 }

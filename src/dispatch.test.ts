@@ -154,7 +154,7 @@ describe("buildArgs", () => {
 
     const idx = args.indexOf("--models");
     assert.ok(idx >= 0);
-    assert.strictEqual(args[idx + 1], "claude-sonnet-4-20250514");
+    assert.strictEqual(args[idx + 1], "claude-sonnet-4-20250514:off");
   });
 
   it("step model overrides agent model", () => {
@@ -163,7 +163,7 @@ describe("buildArgs", () => {
     const args = buildArgs(step, agent, "do it", baseOptions);
 
     const idx = args.indexOf("--models");
-    assert.strictEqual(args[idx + 1], "claude-opus-4-20250514");
+    assert.strictEqual(args[idx + 1], "claude-opus-4-20250514:off");
   });
 
   it("appends thinking suffix to model", () => {
@@ -183,7 +183,7 @@ describe("buildArgs", () => {
 
     const idx = args.indexOf("--models");
     assert.ok(idx >= 0);
-    assert.strictEqual(args[idx + 1], "opus-4");
+    assert.strictEqual(args[idx + 1], "opus-4:off");
   });
 
   it("resolves model from modelConfig default when no role match", () => {
@@ -194,7 +194,7 @@ describe("buildArgs", () => {
 
     const idx = args.indexOf("--models");
     assert.ok(idx >= 0);
-    assert.strictEqual(args[idx + 1], "fallback-model");
+    assert.strictEqual(args[idx + 1], "fallback-model:off");
   });
 
   it("step model overrides modelConfig", () => {
@@ -204,7 +204,7 @@ describe("buildArgs", () => {
     const args = buildArgs(step, agent, "do it", opts);
 
     const idx = args.indexOf("--models");
-    assert.strictEqual(args[idx + 1], "step-override");
+    assert.strictEqual(args[idx + 1], "step-override:off");
   });
 
   it("agent model overrides modelConfig", () => {
@@ -214,7 +214,7 @@ describe("buildArgs", () => {
     const args = buildArgs(step, agent, "do it", opts);
 
     const idx = args.indexOf("--models");
-    assert.strictEqual(args[idx + 1], "agent-model");
+    assert.strictEqual(args[idx + 1], "agent-model:off");
   });
 
   it("handles builtin tools", () => {

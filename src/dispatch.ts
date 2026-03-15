@@ -78,7 +78,7 @@ export function buildArgs(step: StepSpec, agentSpec: AgentSpec, prompt: string, 
     ?? (agentSpec.role && options.modelConfig?.by_role?.[agentSpec.role])
     ?? options.modelConfig?.default;
   if (model) {
-    const modelArg = agentSpec.thinking ? `${model}:${agentSpec.thinking}` : model;
+    const modelArg = `${model}:${agentSpec.thinking ?? "off"}`;
     args.push("--models", modelArg);
   }
 

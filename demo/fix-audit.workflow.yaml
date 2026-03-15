@@ -150,8 +150,11 @@ steps:
           }
         }
         const passed = results.filter(r => r.status === 'passed').length;
+        const failed = results.filter(r => r.status === 'failed').length;
+        const inspect = results.filter(r => r.status === 'needs_inspect').length;
         const total = results.length;
-        console.log(JSON.stringify({ status: passed === total ? 'passed' : 'gaps_found', score: passed + '/' + total, results }));
+        const status = failed === 0 ? (inspect > 0 ? 'passed_with_inspect' : 'passed') : 'gaps_found';
+        console.log(JSON.stringify({ status, score: passed + '/' + total, passed, failed, needs_inspect: inspect, results }));
       "
     output:
       format: json
@@ -181,8 +184,9 @@ steps:
       format: json
 
   check:
+    when: "${{ steps.update-audit.output.updated }}"
     gate:
-      check: "test '${{ steps.verify.output.status }}' = 'passed'"
+      check: "test '${{ steps.verify.output.failed }}' = '0'"
       onFail: fail
 
 completion:

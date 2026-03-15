@@ -21,6 +21,12 @@ export interface ArtifactSpec {
   schema?: string;                       // optional JSON Schema to validate before writing
 }
 
+export interface RetryConfig {
+  maxAttempts?: number;                  // default 1 (no retry). Total attempts, not retries.
+  onExhausted?: 'fail' | 'skip';        // default 'fail'
+  steeringMessage?: string;             // optional custom steering text for retries (agent steps only)
+}
+
 export interface StepSpec {
   agent?: string;                        // optional — not needed for gate/transform steps
   model?: string;                        // model override
@@ -28,6 +34,7 @@ export interface StepSpec {
   output?: StepOutputSpec;
   when?: string;                         // ${{ }} expression, evaluated as truthy/falsy
   timeout?: { seconds: number };
+  retry?: RetryConfig;                   // per-step retry config
   loop?: LoopSpec;
   gate?: GateSpec;
   transform?: TransformSpec;
@@ -128,6 +135,9 @@ export interface StepResult {
   error?: string;                        // error message if failed
   truncated?: boolean;                   // true if stdout exceeded MAX_STDOUT_BYTES and data was lost
   warnings?: string[];                   // non-fatal issues encountered during step execution
+  attempt?: number;                      // which attempt this result is from (1-based)
+  totalAttempts?: number;                // total attempts made
+  priorErrors?: string[];                // error messages from prior failed attempts
 }
 
 export interface StepUsage {

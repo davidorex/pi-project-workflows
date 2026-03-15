@@ -1,6 +1,7 @@
 /**
- * Post-step block validation — snapshot .workflow/*.json mtimes before step
+ * Post-step block validation — snapshot .workflow/*.json contents before step
  * execution, then validate any changed files against their schemas after.
+ * Supports rollback of block files to pre-step state on validation failure.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -9,13 +10,19 @@ import { validateFromFile } from "./schema-validator.ts";
 const WORKFLOW_DIR = ".workflow";
 const SCHEMAS_DIR = "schemas";
 
+export interface BlockFileSnapshot {
+  mtime: number;
+  content: string;
+}
+export type BlockSnapshot = Map<string, BlockFileSnapshot>;
+
 /**
- * Snapshot mtimes of all .workflow/*.json files.
- * Returns a Map of absolute filepath → mtime (ms since epoch).
+ * Snapshot mtimes and contents of all .workflow/*.json files.
+ * Returns a Map of absolute filepath → { mtime, content }.
  * If .workflow/ doesn't exist, returns an empty map.
  */
-export function snapshotBlockFiles(cwd: string): Map<string, number> {
-  const result = new Map<string, number>();
+export function snapshotBlockFiles(cwd: string): BlockSnapshot {
+  const result: BlockSnapshot = new Map();
   const workflowDir = path.join(cwd, WORKFLOW_DIR);
 
   try {
@@ -26,7 +33,8 @@ export function snapshotBlockFiles(cwd: string): Map<string, number> {
       try {
         const stat = fs.statSync(fullPath);
         if (stat.isFile()) {
-          result.set(fullPath, stat.mtimeMs);
+          const content = fs.readFileSync(fullPath, "utf-8");
+          result.set(fullPath, { mtime: stat.mtimeMs, content });
         }
       } catch {
         // File disappeared between readdir and stat — skip
@@ -48,7 +56,7 @@ export function snapshotBlockFiles(cwd: string): Map<string, number> {
  *
  * @throws Error if any changed block file fails schema validation
  */
-export function validateChangedBlocks(cwd: string, before: Map<string, number>): void {
+export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void {
   const workflowDir = path.join(cwd, WORKFLOW_DIR);
   const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
 
@@ -73,8 +81,8 @@ export function validateChangedBlocks(cwd: string, before: Map<string, number>):
     }
     if (!stat.isFile()) continue;
 
-    const prevMtime = before.get(fullPath);
-    const isChanged = prevMtime === undefined || stat.mtimeMs !== prevMtime;
+    const prev = before.get(fullPath);
+    const isChanged = prev === undefined || stat.mtimeMs !== prev.mtime;
     if (!isChanged) continue;
 
     // Changed or new file — look for a schema
@@ -97,4 +105,59 @@ export function validateChangedBlocks(cwd: string, before: Map<string, number>):
   if (errors.length > 0) {
     throw new Error(`Block validation failed:\n${errors.join("\n")}`);
   }
+}
+
+/**
+ * Rollback .workflow/*.json files to their pre-step state.
+ * - Files that existed in the snapshot and changed: restore content via atomic write (tmp + rename)
+ * - New files (not in snapshot): delete them
+ * Returns list of rolled-back file paths.
+ */
+export function rollbackBlockFiles(cwd: string, before: BlockSnapshot): string[] {
+  const workflowDir = path.join(cwd, WORKFLOW_DIR);
+  const rolledBack: string[] = [];
+
+  // Gather current files
+  let currentEntries: string[];
+  try {
+    currentEntries = fs.readdirSync(workflowDir).filter(e => e.endsWith(".json"));
+  } catch {
+    return rolledBack;
+  }
+
+  for (const entry of currentEntries) {
+    const fullPath = path.join(workflowDir, entry);
+
+    let stat: fs.Stats;
+    try {
+      stat = fs.statSync(fullPath);
+    } catch {
+      continue;
+    }
+    if (!stat.isFile()) continue;
+
+    const prev = before.get(fullPath);
+
+    if (prev === undefined) {
+      // New file — delete it
+      try {
+        fs.unlinkSync(fullPath);
+        rolledBack.push(fullPath);
+      } catch {
+        // best effort
+      }
+    } else if (stat.mtimeMs !== prev.mtime) {
+      // Changed file — restore content via atomic write
+      try {
+        const tmpPath = fullPath + `.rollback-${process.pid}.tmp`;
+        fs.writeFileSync(tmpPath, prev.content);
+        fs.renameSync(tmpPath, fullPath);
+        rolledBack.push(fullPath);
+      } catch {
+        // best effort
+      }
+    }
+  }
+
+  return rolledBack;
 }

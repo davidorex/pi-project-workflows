@@ -1,5 +1,5 @@
 import { parse as parseYaml } from "yaml";
-import type { WorkflowSpec, StepSpec, StepOutputSpec, CompletionSpec, ArtifactSpec, LoopSpec, GateSpec, TransformSpec } from "./types.ts";
+import type { WorkflowSpec, StepSpec, StepOutputSpec, CompletionSpec, ArtifactSpec, LoopSpec, GateSpec, TransformSpec, RetryConfig } from "./types.ts";
 
 /**
  * Error class for spec parsing failures.
@@ -209,6 +209,34 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
   // Common optional fields
   if (rawStep.when !== undefined) step.when = rawStep.when as string;
   if (rawStep.timeout !== undefined) step.timeout = rawStep.timeout as { seconds: number };
+
+  // Retry config (optional)
+  if ("retry" in rawStep && rawStep.retry !== undefined) {
+    if (typeof rawStep.retry !== "object" || rawStep.retry === null || Array.isArray(rawStep.retry)) {
+      throw new WorkflowSpecError(filePath, `step '${stepName}' retry must be an object`);
+    }
+    const rawRetry = rawStep.retry as Record<string, unknown>;
+    const retry: RetryConfig = {};
+    if ("maxAttempts" in rawRetry) {
+      if (typeof rawRetry.maxAttempts !== "number" || !Number.isInteger(rawRetry.maxAttempts) || rawRetry.maxAttempts < 1) {
+        throw new WorkflowSpecError(filePath, `step '${stepName}' retry.maxAttempts must be a positive integer`);
+      }
+      retry.maxAttempts = rawRetry.maxAttempts;
+    }
+    if ("onExhausted" in rawRetry) {
+      if (rawRetry.onExhausted !== "fail" && rawRetry.onExhausted !== "skip") {
+        throw new WorkflowSpecError(filePath, `step '${stepName}' retry.onExhausted must be 'fail' or 'skip'`);
+      }
+      retry.onExhausted = rawRetry.onExhausted;
+    }
+    if ("steeringMessage" in rawRetry) {
+      if (typeof rawRetry.steeringMessage !== "string") {
+        throw new WorkflowSpecError(filePath, `step '${stepName}' retry.steeringMessage must be a string`);
+      }
+      retry.steeringMessage = rawRetry.steeringMessage;
+    }
+    step.retry = retry;
+  }
 
   // forEach and as (can combine with any step type)
   if ("forEach" in rawStep && rawStep.forEach !== undefined) {

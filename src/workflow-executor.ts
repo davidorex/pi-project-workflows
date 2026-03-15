@@ -26,7 +26,9 @@ import { executeAgentStep } from "./step-agent.ts";
 import { executePause } from "./step-pause.ts";
 import { executeCommand } from "./step-command.ts";
 import { executeForEach } from "./step-foreach.ts";
-import { snapshotBlockFiles, validateChangedBlocks } from "./block-validation.ts";
+import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "./block-validation.ts";
+import type { BlockSnapshot } from "./block-validation.ts";
+import type { RetryConfig } from "./types.ts";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
@@ -111,12 +113,26 @@ interface StepExecOptions {
 }
 
 /**
+ * Determine if a step type supports retry.
+ * Agent, forEach, and loop steps are retryable.
+ * Command, gate, and transform are deterministic and not retryable.
+ */
+function isRetryableStepType(stepSpec: StepSpec): boolean {
+  if (stepSpec.command || stepSpec.gate || stepSpec.transform) return false;
+  return true;
+}
+
+/**
  * Execute a single step (agent, gate, transform, loop, or parallel).
  *
  * This is the central step type dispatcher. It delegates to the appropriate
  * step executor module based on the step spec type.
  * Returns true if the workflow should continue, false if it should stop
  * (due to failure, break, or cancellation).
+ *
+ * Supports per-step retry: if step.retry is configured and the step type
+ * is retryable, failures (including block validation) trigger rollback
+ * and re-execution with error context injected into the prompt.
  */
 async function executeSingleStep(
   stepName: string,
@@ -172,37 +188,150 @@ async function executeSingleStep(
     }
   }
 
-  // Snapshot .workflow/ block files before step execution for post-step validation
-  const blockSnapshot = snapshotBlockFiles(ctx.cwd);
+  // Determine retry config
+  const retryConfig = stepSpec.retry;
+  const maxAttempts = (retryConfig?.maxAttempts ?? 1);
+  const canRetry = isRetryableStepType(stepSpec) && maxAttempts > 1;
+  const totalAttempts = canRetry ? maxAttempts : 1;
 
-  // Update widget: mark this step as current
-  widgetState.currentStep = stepName;
-  if (ctx.hasUI) {
-    ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
-  }
+  const priorErrors: string[] = [];
 
-  // Execute the step, then validate any changed block files
-  const continueWorkflow = await executeStepByType(
-    stepName, stepSpec, state, scope, options,
-  );
-
-  // Post-step block validation: if the step succeeded, validate changed .workflow/ files
-  if (continueWorkflow && state.steps[stepName]?.status === "completed") {
-    try {
-      validateChangedBlocks(ctx.cwd, blockSnapshot);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      // Mark step as failed
-      state.steps[stepName].status = "failed";
-      state.steps[stepName].error = msg;
+  for (let attempt = 1; attempt <= totalAttempts; attempt++) {
+    // Check cancellation between retry attempts
+    if (attempt > 1 && signal?.aborted) {
+      state.steps[stepName] = {
+        step: stepName,
+        agent: stepSpec.agent,
+        status: "failed",
+        usage: zeroUsage(),
+        durationMs: 0,
+        error: "Workflow cancelled",
+      };
       state.status = "failed";
-      // Re-persist the step with failed status
-      persistStep(state, stepName, state.steps[stepName], runDir, widgetState, ctx);
       return false;
     }
+
+    // Snapshot .workflow/ block files before step execution for post-step validation
+    const blockSnapshot = snapshotBlockFiles(ctx.cwd);
+
+    // Update widget: mark this step as current
+    widgetState.currentStep = stepName;
+    if (ctx.hasUI) {
+      ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
+    }
+
+    // Build retry context for this attempt (if retrying)
+    const retryContext = attempt > 1 ? {
+      attempt,
+      priorErrors: [...priorErrors],
+      steeringMessage: retryConfig?.steeringMessage,
+    } : undefined;
+
+    // Execute the step, then validate any changed block files
+    // Reset failed status before re-attempt
+    if (attempt > 1) {
+      delete state.steps[stepName];
+      state.status = "running";
+    }
+
+    const continueWorkflow = await executeStepByType(
+      stepName, stepSpec, state, scope, options, retryContext,
+    );
+
+    // Post-step block validation: if the step succeeded, validate changed .workflow/ files
+    let blockValidationFailed = false;
+    if (continueWorkflow && state.steps[stepName]?.status === "completed") {
+      try {
+        validateChangedBlocks(ctx.cwd, blockSnapshot);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        blockValidationFailed = true;
+        priorErrors.push(msg);
+
+        if (attempt < totalAttempts) {
+          // Rollback and retry
+          rollbackBlockFiles(ctx.cwd, blockSnapshot);
+          continue;
+        }
+
+        // Last attempt — mark failed
+        state.steps[stepName].status = "failed";
+        state.steps[stepName].error = msg;
+        state.steps[stepName].attempt = attempt;
+        state.steps[stepName].totalAttempts = attempt;
+        state.steps[stepName].priorErrors = [...priorErrors];
+        state.status = "failed";
+        persistStep(state, stepName, state.steps[stepName], runDir, widgetState, ctx);
+
+        // Check onExhausted
+        if (retryConfig?.onExhausted === "skip") {
+          state.steps[stepName].status = "skipped";
+          state.steps[stepName].warnings = [
+            ...(state.steps[stepName].warnings ?? []),
+            `Step skipped after ${attempt} failed attempts (onExhausted: skip)`,
+          ];
+          state.status = "running";
+          persistStep(state, stepName, state.steps[stepName], runDir, widgetState, ctx);
+          return true;
+        }
+        return false;
+      }
+    }
+
+    if (!continueWorkflow || state.steps[stepName]?.status === "failed") {
+      const errorMsg = state.steps[stepName]?.error ?? "Step failed";
+      priorErrors.push(errorMsg);
+
+      if (attempt < totalAttempts && canRetry) {
+        // Rollback block files and retry
+        rollbackBlockFiles(ctx.cwd, blockSnapshot);
+        continue;
+      }
+
+      // Last attempt or not retryable — annotate and return
+      if (state.steps[stepName]) {
+        state.steps[stepName].attempt = attempt;
+        state.steps[stepName].totalAttempts = attempt;
+        state.steps[stepName].priorErrors = attempt > 1 ? [...priorErrors] : undefined;
+        persistStep(state, stepName, state.steps[stepName], runDir, widgetState, ctx);
+      }
+
+      // Check onExhausted
+      if (canRetry && retryConfig?.onExhausted === "skip") {
+        if (state.steps[stepName]) {
+          state.steps[stepName].status = "skipped";
+          state.steps[stepName].warnings = [
+            ...(state.steps[stepName].warnings ?? []),
+            `Step skipped after ${attempt} failed attempts (onExhausted: skip)`,
+          ];
+          state.status = "running";
+          persistStep(state, stepName, state.steps[stepName], runDir, widgetState, ctx);
+        }
+        return true;
+      }
+
+      return false;
+    }
+
+    // Success — annotate with attempt tracking
+    if (state.steps[stepName]) {
+      state.steps[stepName].attempt = attempt;
+      state.steps[stepName].totalAttempts = attempt;
+      state.steps[stepName].priorErrors = attempt > 1 ? [...priorErrors] : undefined;
+    }
+
+    return continueWorkflow;
   }
 
-  return continueWorkflow;
+  // Should not reach here, but safety net
+  return false;
+}
+
+/** Retry context passed to step executors on retry attempts. */
+export interface RetryContext {
+  attempt: number;
+  priorErrors: string[];
+  steeringMessage?: string;
 }
 
 /**
@@ -215,6 +344,7 @@ async function executeStepByType(
   state: ExecutionState,
   scope: ExpressionScope,
   options: StepExecOptions,
+  retryContext?: RetryContext,
 ): Promise<boolean> {
   const { ctx, signal, loadAgent, runDir, spec, widgetState } = options;
 
@@ -358,6 +488,7 @@ async function executeStepByType(
     templateEnv: options.templateEnv,
     dispatchFn: options.dispatchFn,
     modelConfig: options.modelConfig,
+    retryContext,
   });
   persistStep(state, stepName, agentResult, runDir, widgetState, ctx);
   if (agentResult.status === "failed") {

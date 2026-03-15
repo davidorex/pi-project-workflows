@@ -12,6 +12,13 @@ import { persistStepOutput } from "./output.ts";
 import { zeroUsage, resolveSchemaPath, buildPrompt, compileAgentSpec } from "./step-shared.ts";
 import type nunjucks from "nunjucks";
 
+/** Retry context passed from the executor on retry attempts. */
+export interface RetryContext {
+  attempt: number;
+  priorErrors: string[];
+  steeringMessage?: string;
+}
+
 export interface AgentStepOptions {
   ctx: any;
   signal?: AbortSignal;
@@ -22,6 +29,7 @@ export interface AgentStepOptions {
   templateEnv?: nunjucks.Environment;
   dispatchFn?: typeof dispatch;   // injectable for testing; defaults to real dispatch
   modelConfig?: import("./dispatch.ts").ModelConfig;
+  retryContext?: RetryContext;    // set on retry attempts (attempt > 1)
 }
 
 /**
@@ -83,7 +91,27 @@ export async function executeAgentStep(
   }
   agentSpec = compileAgentSpec(agentSpec, resolvedInput, templateEnv);
 
-  const prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
+  let prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
+
+  // Inject retry context if this is a retry attempt
+  if (options.retryContext) {
+    const rc = options.retryContext;
+    const retryParts: string[] = [];
+    retryParts.push(`## Retry Context (attempt ${rc.attempt})\n`);
+    retryParts.push("Your previous attempt failed. The filesystem has been rolled back to its pre-attempt state.\n");
+    retryParts.push("### Prior Errors");
+    for (let i = 0; i < rc.priorErrors.length; i++) {
+      retryParts.push(`${i + 1}. ${rc.priorErrors[i]}`);
+    }
+    retryParts.push("");
+    if (rc.steeringMessage) {
+      retryParts.push("### Steering");
+      retryParts.push(rc.steeringMessage);
+      retryParts.push("");
+    }
+    retryParts.push("---\n");
+    prompt = retryParts.join("\n") + prompt;
+  }
 
   const dispatchFn = options.dispatchFn ?? dispatch;
   const result = await dispatchFn(stepSpec, agentSpec, prompt, {

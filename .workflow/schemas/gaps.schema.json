@@ -16,6 +16,7 @@
           "category": { "type": "string", "enum": ["primitive", "issue", "cleanup", "capability", "composition"] },
           "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
           "resolved_by": { "type": "string", "description": "Spec ID or reference if resolved" },
+          "source": { "type": "string", "enum": ["human", "agent", "monitor", "workflow"], "description": "How this gap was created" },
           "details": { "type": "string" }
         }
       }

@@ -5,21 +5,24 @@
       "description": "Dynamic dispatch in loops \u2014 a loop that evaluates which step to run each iteration based on current state. Any state machine workflow needs this: legal review routing on document classification, data pipelines branching on quality scores. The general primitive: a loop with a dispatch table of steps guarded by when: conditions evaluated per iteration.",
       "status": "open",
       "category": "primitive",
-      "priority": "high"
+      "priority": "high",
+      "source": "human"
     },
     {
       "id": "expression-functions",
       "description": "Expression functions \u2014 ${{ }} expressions that call functions, not just access properties. ${{ loadFile(path) }} is the general case. The function system is domain-agnostic \u2014 specific functions are user-provided or workflow-provided. Needed for context loaders, file operations, data derivation.",
       "status": "open",
       "category": "primitive",
-      "priority": "high"
+      "priority": "high",
+      "source": "human"
     },
     {
       "id": "timeout-actions",
       "description": "Timeout actions \u2014 configurable responses beyond kill. Steering messages, idle detection, inspect-and-retry. Any long-running agent in any domain needs this.",
       "status": "open",
       "category": "primitive",
-      "priority": "medium"
+      "priority": "medium",
+      "source": "human"
     },
     {
       "id": "budget-enforcement",
@@ -28,7 +31,8 @@
       "category": "primitive",
       "priority": "medium",
       "resolved_by": "budget-defer",
-      "details": "Accumulation via addUsage() works. No ceiling enforcement yet. Needs design for configurable actions."
+      "details": "Accumulation via addUsage() works. No ceiling enforcement yet. Needs design for configurable actions.",
+      "source": "human"
     },
     {
       "id": "command-steps",
@@ -36,63 +40,72 @@
       "status": "resolved",
       "category": "primitive",
       "priority": "high",
-      "resolved_by": "spec-27"
+      "resolved_by": "spec-27",
+      "source": "human"
     },
     {
       "id": "post-step-artifact-verification",
       "description": "A verify block on the step spec declares assertions the runtime checks after the step completes. Not a separate step \u2014 built into the step definition. Assertion types: file exists, file changed, output field non-empty, output field matches pattern, shell command exits 0. These are deterministic, no LLM.",
       "status": "open",
       "category": "primitive",
-      "priority": "medium"
+      "priority": "medium",
+      "source": "human"
     },
     {
       "id": "requirement-tracking",
       "description": "Requirement tracking (must-haves) \u2014 the step's input declares requirements (via schema or explicit requires field). The verify block checks the output addresses them. Cross-references input requirements against output content using heuristic matching (keyword/token presence in output fields). Domain-agnostic: works for code tasks, compliance points, synthesis criteria.",
       "status": "open",
       "category": "primitive",
-      "priority": "medium"
+      "priority": "medium",
+      "source": "human"
     },
     {
       "id": "graduated-failure",
       "description": "Graduated failure \u2014 not binary pass/fail. The failure cascade: soft timeout \u2192 steer the agent \u2192 hard timeout \u2192 inspect durability (what artifacts exist so far?) \u2192 retry with gap analysis injected \u2192 skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
       "status": "open",
       "category": "primitive",
-      "priority": "medium"
+      "priority": "medium",
+      "source": "human"
     },
     {
       "id": "blocker-propagation",
       "description": "Blocker propagation \u2014 when a step is skipped after exhausting retries, a blocker placeholder artifact is written. Downstream steps see the placeholder and can decide what to do. The pipeline doesn't silently drop work \u2014 it records what failed and why, in a structured artifact visible to subsequent steps and to the user.",
       "status": "open",
       "category": "primitive",
-      "priority": "medium"
+      "priority": "medium",
+      "source": "human"
     },
     {
       "id": "pre-step-validation",
       "description": "Pre-step validation \u2014 gate checks on inputs before dispatch. Already supported as gate steps. The richer form: validate that the previous step's output has the content quality needed for this step to succeed. Not just 'does the file exist' but 'does the plan have a verification section, are scope estimates within thresholds.'",
       "status": "open",
       "category": "primitive",
-      "priority": "low"
+      "priority": "low",
+      "source": "human"
     },
     {
       "id": "adjacent-expression-misparse",
       "description": "Expression parser: adjacent ${{ }}${{ }} in a single string \u2014 whole-value regex can misparse them. Pre-existing limitation.",
       "status": "open",
       "category": "issue",
-      "priority": "low"
+      "priority": "low",
+      "source": "human"
     },
     {
       "id": "delete-md-demo-agents",
       "description": "Delete old .md demo agents \u2014 .agent.yaml versions are the source of truth, .md files are dead weight.",
       "status": "open",
       "category": "cleanup",
-      "priority": "low"
+      "priority": "low",
+      "source": "human"
     },
     {
       "id": "remove-dead-writeStepOutput",
       "description": "Remove dead writeStepOutput in state.ts \u2014 superseded by output.ts persistStepOutput().",
       "status": "open",
       "category": "cleanup",
-      "priority": "low"
+      "priority": "low",
+      "source": "human"
     },
     {
       "id": "do-phase-workflow",
@@ -100,7 +113,8 @@
       "status": "open",
       "category": "capability",
       "priority": "high",
-      "details": "Blocked by: nested workflow invocation (Phase 6) for per-spec cycles. Workaround: flatten \u2014 one planning step reads full phase spec, produces flat plans array, forEach implements all, one verify pass. Add load-phase and update-phase-status command steps to self-implement.workflow.yaml."
+      "details": "Blocked by: nested workflow invocation (Phase 6) for per-spec cycles. Workaround: flatten \u2014 one planning step reads full phase spec, produces flat plans array, forEach implements all, one verify pass. Add load-phase and update-phase-status command steps to self-implement.workflow.yaml.",
+      "source": "human"
     },
     {
       "id": "nested-workflow-invocation",
@@ -108,7 +122,8 @@
       "status": "open",
       "category": "composition",
       "priority": "high",
-      "details": "Phase 6 deliverable. Without it, phase execution must flatten all specs into one plan-implement-verify pass rather than modular per-spec cycles."
+      "details": "Phase 6 deliverable. Without it, phase execution must flatten all specs into one plan-implement-verify pass rather than modular per-spec cycles.",
+      "source": "human"
     },
     {
       "id": "gap-recording-tool",
@@ -116,7 +131,8 @@
       "status": "open",
       "category": "capability",
       "priority": "high",
-      "details": "Three layers: (1) explicit tool/command for mid-execution recording, (2) structural enforcement \u2014 execution-results.issues[] required not optional so agents must actively declare no issues, (3) trace analysis via pi-behavior-monitors \u2014 a gap-detector monitor fires on turn_end, classifies agent execution traces for unreported friction/workarounds, steers agent to record in issues[]. Monitors work in subprocesses if the extension is installed. Pattern: monitor observes \u2192 classifies \u2192 steers \u2192 agent records in typed output \u2192 route-results writes to gaps.json. Non-bypassable."
+      "details": "Monitor writes directly to gaps.json with source:'monitor'. No agent steering needed \u2014 monitor observes friction in execution trace, appends gap, done. Human/main-context reviews monitor-created gaps and marks actionable or deletes. Query by source: gaps.filter(g => g.source === 'monitor'). Three-layer design: (1) monitor writes gaps directly (non-bypassable), (2) execution-results.issues[] required in schema (agent-reported), (3) route-results routes agent-reported issues with source:'agent'.",
+      "source": "human"
     }
   ]
 }

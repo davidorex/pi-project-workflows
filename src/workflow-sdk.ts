@@ -139,12 +139,18 @@ interface DecisionEntry {
 
 export interface ProjectState {
   testCount: number;
+  sourceFiles: number;
+  sourceLines: number;
   lastCommit: string;
   lastCommitMessage: string;
+  recentCommits: string[];
   gaps: { open: number; resolved: number; deferred: number; byCategory: Record<string, number>; byPriority: Record<string, number> };
   decisions: { total: number; decided: number; tentative: number };
+  phases: { total: number; current: number };
   agents: number;
   workflows: number;
+  schemas: number;
+  templates: number;
   blocks: number;
   openGaps: Array<{ id: string; category: string; priority: string; description: string }>;
 }
@@ -161,6 +167,28 @@ export function projectState(cwd: string): ProjectState {
     lastCommit = execSync("git log -1 --format=%h", { cwd, encoding: "utf-8" }).trim();
     lastCommitMessage = execSync("git log -1 --format=%s", { cwd, encoding: "utf-8" }).trim();
   } catch { /* not a git repo or no commits */ }
+
+  // Recent commits
+  let recentCommits: string[] = [];
+  try {
+    const log = execSync("git log --oneline -5", { cwd, encoding: "utf-8" }).trim();
+    if (log) recentCommits = log.split("\n");
+  } catch { /* not a git repo */ }
+
+  // Source file count and line count (non-test .ts files)
+  let sourceFiles = 0;
+  let sourceLines = 0;
+  try {
+    const srcDir = path.join(cwd, "src");
+    if (fs.existsSync(srcDir)) {
+      for (const file of fs.readdirSync(srcDir)) {
+        if (!file.endsWith(".ts") || file.endsWith(".test.ts")) continue;
+        sourceFiles++;
+        const content = fs.readFileSync(path.join(srcDir, file), "utf-8");
+        sourceLines += content.split("\n").length;
+      }
+    }
+  } catch { /* no src dir */ }
 
   // Test count derived from static scan of it() declarations in test files
   let testCount = 0;
@@ -198,10 +226,28 @@ export function projectState(cwd: string): ProjectState {
     decisionEntries = d.decisions;
   } catch { /* no decisions */ }
 
+  // Phases from .workflow/phases/*.json
+  let phaseTotal = 0;
+  let phaseCurrent = 0;
+  try {
+    const phasesDir = path.join(cwd, ".workflow", "phases");
+    if (fs.existsSync(phasesDir)) {
+      const files = fs.readdirSync(phasesDir).filter(f => f.endsWith(".json")).sort();
+      phaseTotal = files.length;
+      if (files.length > 0) {
+        const last = files[files.length - 1];
+        phaseCurrent = parseInt(last.split("-")[0], 10) || 0;
+      }
+    }
+  } catch { /* no phases dir */ }
+
   return {
     testCount,
+    sourceFiles,
+    sourceLines,
     lastCommit,
     lastCommitMessage,
+    recentCommits,
     gaps: {
       open: openGaps.length,
       resolved: gapEntries.filter(g => g.status === "resolved").length,
@@ -214,8 +260,11 @@ export function projectState(cwd: string): ProjectState {
       decided: decisionEntries.filter(d => d.status === "decided").length,
       tentative: decisionEntries.filter(d => d.status === "tentative").length,
     },
+    phases: { total: phaseTotal, current: phaseCurrent },
     agents: availableAgents(cwd).length,
     workflows: availableWorkflows(cwd).length,
+    schemas: availableSchemas(cwd).length,
+    templates: availableTemplates(cwd).length,
     blocks: availableBlocks(cwd).length,
     openGaps: openGaps.map(g => ({ id: g.id, category: g.category, priority: g.priority, description: g.description })),
   };

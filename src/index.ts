@@ -346,8 +346,10 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
   const lines: string[] = [];
   lines.push(`## Project Status`);
   lines.push("");
-  lines.push(`**Tests:** ${state.testCount} | **Commit:** ${state.lastCommit} (${state.lastCommitMessage})`);
-  lines.push(`**Agents:** ${state.agents} | **Workflows:** ${state.workflows} | **Blocks:** ${state.blocks}`);
+  lines.push(`**Source:** ${state.sourceFiles} files, ${state.sourceLines} lines | **Tests:** ${state.testCount}`);
+  lines.push(`**Agents:** ${state.agents} | **Workflows:** ${state.workflows} | **Schemas:** ${state.schemas} | **Templates:** ${state.templates}`);
+  lines.push(`**Phases:** ${state.phases.total} (current: ${state.phases.current}) | **Blocks:** ${state.blocks}`);
+  lines.push(`**Commit:** ${state.lastCommit} (${state.lastCommitMessage})`);
   lines.push("");
   lines.push(`**Gaps:** ${state.gaps.open} open, ${state.gaps.resolved} resolved, ${state.gaps.deferred} deferred`);
 
@@ -366,6 +368,12 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
     for (const g of state.openGaps.filter(g => g.priority === "high" || g.priority === "critical")) {
       lines.push(`- \`${g.id}\` (${g.category}) — ${g.description.slice(0, 80)}`);
     }
+  }
+
+  if (state.recentCommits.length > 0) {
+    lines.push("");
+    lines.push("**Recent:**");
+    for (const c of state.recentCommits) lines.push(`  ${c}`);
   }
 
   pi.sendMessage({

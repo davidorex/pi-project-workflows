@@ -143,7 +143,7 @@ describe("projectState", () => {
     // Set up a minimal git repo
     execSync("git init && git commit --allow-empty -m 'init'", { cwd: tmpDir, stdio: "ignore" });
 
-    // Set up test files for dynamic test count
+    // Set up source files
     const srcDir = path.join(tmpDir, "src");
     fs.mkdirSync(srcDir, { recursive: true });
     fs.writeFileSync(path.join(srcDir, "example.test.ts"), `
@@ -151,11 +151,22 @@ describe("projectState", () => {
       it("test two", () => {});
       it("test three", () => {});
     `);
+    fs.writeFileSync(path.join(srcDir, "module-a.ts"), "export function a() {}\nexport function b() {}\n");
+    fs.writeFileSync(path.join(srcDir, "module-b.ts"), "export const x = 1;\n");
 
     // Set up blocks
     const wfDir = path.join(tmpDir, ".workflow");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
+    fs.writeFileSync(path.join(schemasDir, "gaps.schema.json"), "{}");
+
+    // Set up phases
+    const phasesDir = path.join(wfDir, "phases");
+    fs.mkdirSync(phasesDir, { recursive: true });
+    fs.writeFileSync(path.join(phasesDir, "01-foundation.json"), "{}");
+    fs.writeFileSync(path.join(phasesDir, "02-control.json"), "{}");
+    fs.writeFileSync(path.join(phasesDir, "08-automation.json"), "{}");
+
     fs.writeFileSync(path.join(wfDir, "gaps.json"), JSON.stringify({
       gaps: [
         { id: "g1", description: "open gap", status: "open", category: "issue", priority: "high" },
@@ -173,8 +184,12 @@ describe("projectState", () => {
     const state = projectState(tmpDir);
 
     assert.strictEqual(state.testCount, 3); // 3 it() declarations in example.test.ts
+    assert.strictEqual(state.sourceFiles, 2); // module-a.ts, module-b.ts (not .test.ts)
+    assert.ok(state.sourceLines > 0);
     assert.ok(state.lastCommit.length > 0);
     assert.strictEqual(state.lastCommitMessage, "init");
+    assert.ok(state.recentCommits.length > 0);
+    assert.ok(state.recentCommits[0].includes("init"));
     assert.strictEqual(state.gaps.open, 2);
     assert.strictEqual(state.gaps.resolved, 1);
     assert.strictEqual(state.gaps.byCategory.issue, 1);
@@ -184,6 +199,9 @@ describe("projectState", () => {
     assert.strictEqual(state.decisions.total, 2);
     assert.strictEqual(state.decisions.decided, 1);
     assert.strictEqual(state.decisions.tentative, 1);
+    assert.strictEqual(state.phases.total, 3);
+    assert.strictEqual(state.phases.current, 8); // highest number from 08-automation.json
+    assert.ok(state.schemas >= 1); // at least gaps.schema.json (builtins may add more)
     assert.strictEqual(state.openGaps.length, 2);
     assert.ok(state.openGaps.some(g => g.id === "g1"));
   });
@@ -195,9 +213,17 @@ describe("projectState", () => {
     const state = projectState(tmpDir);
 
     assert.strictEqual(state.testCount, 0);
+    assert.strictEqual(state.sourceFiles, 0);
+    assert.strictEqual(state.sourceLines, 0);
     assert.strictEqual(state.lastCommit, "unknown");
+    assert.deepStrictEqual(state.recentCommits, []);
     assert.strictEqual(state.gaps.open, 0);
     assert.strictEqual(state.decisions.total, 0);
+    assert.strictEqual(state.phases.total, 0);
+    assert.strictEqual(state.phases.current, 0);
+    // schemas and templates may be > 0 because discovery includes builtins
+    assert.ok(typeof state.schemas === "number");
+    assert.ok(typeof state.templates === "number");
     assert.strictEqual(state.openGaps.length, 0);
   });
 });

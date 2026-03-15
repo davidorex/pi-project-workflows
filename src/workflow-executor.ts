@@ -26,6 +26,7 @@ import { executeAgentStep } from "./step-agent.ts";
 import { executePause } from "./step-pause.ts";
 import { executeCommand } from "./step-command.ts";
 import { executeForEach } from "./step-foreach.ts";
+import { snapshotBlockFiles, validateChangedBlocks } from "./block-validation.ts";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
@@ -171,11 +172,51 @@ async function executeSingleStep(
     }
   }
 
+  // Snapshot .workflow/ block files before step execution for post-step validation
+  const blockSnapshot = snapshotBlockFiles(ctx.cwd);
+
   // Update widget: mark this step as current
   widgetState.currentStep = stepName;
   if (ctx.hasUI) {
     ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
   }
+
+  // Execute the step, then validate any changed block files
+  const continueWorkflow = await executeStepByType(
+    stepName, stepSpec, state, scope, options,
+  );
+
+  // Post-step block validation: if the step succeeded, validate changed .workflow/ files
+  if (continueWorkflow && state.steps[stepName]?.status === "completed") {
+    try {
+      validateChangedBlocks(ctx.cwd, blockSnapshot);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // Mark step as failed
+      state.steps[stepName].status = "failed";
+      state.steps[stepName].error = msg;
+      state.status = "failed";
+      // Re-persist the step with failed status
+      persistStep(state, stepName, state.steps[stepName], runDir, widgetState, ctx);
+      return false;
+    }
+  }
+
+  return continueWorkflow;
+}
+
+/**
+ * Execute a step based on its type (agent, gate, transform, etc.).
+ * Factored out of executeSingleStep to allow post-step validation.
+ */
+async function executeStepByType(
+  stepName: string,
+  stepSpec: StepSpec,
+  state: ExecutionState,
+  scope: ExpressionScope,
+  options: StepExecOptions,
+): Promise<boolean> {
+  const { ctx, signal, loadAgent, runDir, spec, widgetState } = options;
 
   // ── ForEach step (wraps any step type) ──
   if (stepSpec.forEach) {

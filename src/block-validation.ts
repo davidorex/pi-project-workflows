@@ -1,0 +1,100 @@
+/**
+ * Post-step block validation — snapshot .workflow/*.json mtimes before step
+ * execution, then validate any changed files against their schemas after.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { validateFromFile } from "./schema-validator.ts";
+
+const WORKFLOW_DIR = ".workflow";
+const SCHEMAS_DIR = "schemas";
+
+/**
+ * Snapshot mtimes of all .workflow/*.json files.
+ * Returns a Map of absolute filepath → mtime (ms since epoch).
+ * If .workflow/ doesn't exist, returns an empty map.
+ */
+export function snapshotBlockFiles(cwd: string): Map<string, number> {
+  const result = new Map<string, number>();
+  const workflowDir = path.join(cwd, WORKFLOW_DIR);
+
+  try {
+    const entries = fs.readdirSync(workflowDir);
+    for (const entry of entries) {
+      if (!entry.endsWith(".json")) continue;
+      const fullPath = path.join(workflowDir, entry);
+      try {
+        const stat = fs.statSync(fullPath);
+        if (stat.isFile()) {
+          result.set(fullPath, stat.mtimeMs);
+        }
+      } catch {
+        // File disappeared between readdir and stat — skip
+      }
+    }
+  } catch {
+    // .workflow/ doesn't exist — no block files to track
+  }
+
+  return result;
+}
+
+/**
+ * Compare current .workflow/*.json mtimes against a prior snapshot.
+ * Validate any changed or newly created files against their schemas.
+ *
+ * Schema path convention: .workflow/foo.json → .workflow/schemas/foo.schema.json
+ * Files with no corresponding schema are silently skipped.
+ *
+ * @throws Error if any changed block file fails schema validation
+ */
+export function validateChangedBlocks(cwd: string, before: Map<string, number>): void {
+  const workflowDir = path.join(cwd, WORKFLOW_DIR);
+  const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
+
+  // Gather current state
+  let currentEntries: string[];
+  try {
+    currentEntries = fs.readdirSync(workflowDir).filter(e => e.endsWith(".json"));
+  } catch {
+    return; // .workflow/ doesn't exist
+  }
+
+  const errors: string[] = [];
+
+  for (const entry of currentEntries) {
+    const fullPath = path.join(workflowDir, entry);
+
+    let stat: fs.Stats;
+    try {
+      stat = fs.statSync(fullPath);
+    } catch {
+      continue;
+    }
+    if (!stat.isFile()) continue;
+
+    const prevMtime = before.get(fullPath);
+    const isChanged = prevMtime === undefined || stat.mtimeMs !== prevMtime;
+    if (!isChanged) continue;
+
+    // Changed or new file — look for a schema
+    const baseName = entry.replace(/\.json$/, "");
+    const schemaPath = path.join(schemasDir, `${baseName}.schema.json`);
+
+    if (!fs.existsSync(schemaPath)) continue; // no schema → skip silently
+
+    // Validate
+    try {
+      const content = fs.readFileSync(fullPath, "utf-8");
+      const data = JSON.parse(content);
+      validateFromFile(schemaPath, data, `block file '${entry}'`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`${entry}: ${msg}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Block validation failed:\n${errors.join("\n")}`);
+  }
+}

@@ -2,21 +2,23 @@ name: fix-audit
 description: Fix audit findings grouped by related clusters
 version: "1"
 
-input:
-  type: object
-  required: [audit]
-  properties:
-    audit:
-      type: object
-      description: Structured audit JSON conforming to audit.schema.json
-    conformance_reference:
-      type: object
-      description: Conformance reference JSON for context on principles
-    audit_path:
-      type: string
-      description: Path to the audit JSON file (for updating resolution status)
-
 steps:
+  load:
+    command: |
+      node --experimental-strip-types -e "
+        import fs from 'fs';
+        const auditsDir = '.workflow/audits';
+        const files = fs.readdirSync(auditsDir).filter(f => f.endsWith('.json')).sort();
+        const latestFile = files[files.length - 1];
+        const auditPath = auditsDir + '/' + latestFile;
+        const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
+        let conformance_reference = null;
+        try { conformance_reference = JSON.parse(fs.readFileSync('.workflow/conformance-reference.json', 'utf8')); } catch {}
+        console.log(JSON.stringify({ audit, conformance_reference, audit_path: auditPath }));
+      "
+    output:
+      format: json
+
   cluster:
     command: |
       node --experimental-strip-types -e "
@@ -48,7 +50,7 @@ steps:
           });
         }
         console.log(JSON.stringify({ tasks }));
-      " '${{ input.audit.findings | json }}'
+      " '${{ steps.load.output.audit.findings | json }}'
     output:
       format: json
     description: Group related findings into implementation tasks
@@ -59,7 +61,7 @@ steps:
     agent: audit-fixer
     input:
       task: "${{ task }}"
-      conformance_reference: "${{ input.conformance_reference }}"
+      conformance_reference: "${{ steps.load.output.conformance_reference }}"
     output:
       format: json
       schema: schemas/execution-results.schema.json
@@ -153,7 +155,7 @@ steps:
         const passed = results.filter(r => r.status === 'passed').length;
         const total = results.length;
         console.log(JSON.stringify({ status: passed === total ? 'passed' : 'gaps_found', score: passed + '/' + total, results }));
-      " '${{ input.audit | json }}'
+      " '${{ steps.load.output.audit | json }}'
     output:
       format: json
 
@@ -178,7 +180,7 @@ steps:
         } else {
           console.log(JSON.stringify({ updated: null, reason: 'no audit path provided' }));
         }
-      " '${{ steps.verify.output | json }}' '${{ input.audit_path }}'
+      " '${{ steps.verify.output | json }}' '${{ steps.load.output.audit_path }}'
     output:
       format: json
 

@@ -23,8 +23,28 @@ steps:
     command: |
       node --experimental-strip-types -e "
         import fs from 'fs';
+        import { execSync } from 'child_process';
         const audit = JSON.parse(fs.readFileSync('.workflow/audits/' + fs.readdirSync('.workflow/audits').filter(f => f.endsWith('.json')).sort().pop(), 'utf8'));
-        const findings = audit.findings;
+
+        // Filter to findings that still need fixing (code is source of truth)
+        const findings = audit.findings.filter(f => {
+          if (!f.fix) return false;
+          if (f.fix.verify_method === 'grep' && f.fix.verify_pattern) {
+            try {
+              execSync('grep -rn ' + JSON.stringify(f.fix.verify_pattern) + ' ' + f.locations.map(l => l.file).join(' '), { stdio: 'pipe' });
+              return true;  // pattern still matches — needs fixing
+            } catch { return false; }  // pattern gone — already fixed
+          }
+          // inspect findings: check resolution field, skip if already resolved
+          if (f.resolution && f.resolution.status === 'passed') return false;
+          return true;  // no automated check — include it
+        });
+
+        if (findings.length === 0) {
+          console.log(JSON.stringify({ tasks: [], message: 'All findings already resolved' }));
+          process.exit(0);
+        }
+
         const visited = new Set();
         const tasks = [];
         for (const f of findings) {

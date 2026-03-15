@@ -5,7 +5,7 @@ Workflow orchestration extension for Pi. Typed, multi-step workflow execution vi
 ## Commands
 
 ```bash
-# Run tests (590+, must stay at 0 failures)
+# Run tests (must stay at 0 failures)
 node --experimental-strip-types --test src/*.test.ts
 
 # Lint changed files
@@ -13,6 +13,15 @@ node --experimental-strip-types --test src/*.test.ts
 
 # Validate a project block against its schema
 node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';validateFromFile('.workflow/schemas/BLOCK.schema.json',JSON.parse(fs.readFileSync('.workflow/BLOCK.json','utf8')),'BLOCK');console.log('✓')"
+
+# Derive current project state (test count, gaps, decisions, agents, workflows)
+node --experimental-strip-types -e "import{projectState}from'./src/workflow-sdk.ts';console.log(JSON.stringify(projectState('.'),null,2))"
+
+# List step types, filters, expression roots
+node --experimental-strip-types -e "import{stepTypes,filterNames,expressionRoots}from'./src/workflow-sdk.ts';console.log('Steps:',stepTypes().map(t=>t.name));console.log('Filters:',filterNames());console.log('Roots:',expressionRoots())"
+
+# List available agents, workflows, schemas, blocks
+node --experimental-strip-types -e "import{availableAgents,availableWorkflows,availableSchemas,availableBlocks}from'./src/workflow-sdk.ts';console.log('Agents:',availableAgents('.').map(a=>a.name));console.log('Workflows:',availableWorkflows('.').map(w=>w.name));console.log('Blocks:',availableBlocks('.').map(b=>b.name))"
 ```
 
 ## Conventions
@@ -29,105 +38,57 @@ node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-va
 
 ## Source Layout
 
-```
-src/
-  index.ts              — extension entry point (workflow tool, record-gap tool, /workflow command)
-  types.ts              — all shared interfaces
-  workflow-executor.ts  — main orchestration loop
-  workflow-spec.ts      — YAML parsing, STEP_TYPES registry
-  workflow-discovery.ts — directory scanning
-  workflow-sdk.ts       — SDK: vocabulary, discovery, spec introspection
-  dag.ts                — dependency graph, execution plan
-  dispatch.ts           — subprocess spawn (pi --mode json)
-  expression.ts         — ${{ }} evaluator with pipe filters, FILTER_NAMES export
-  template.ts           — Nunjucks environment (three-tier search)
-  agent-spec.ts         — .agent.yaml loader and compilation
-  step-agent.ts         — agent step executor
-  step-foreach.ts       — forEach iteration
-  step-command.ts       — shell command steps
-  step-gate.ts          — gate (pass/fail check)
-  step-transform.ts     — data transform steps
-  step-loop.ts          — retry loop steps
-  step-shared.ts        — shared step utilities, prompt compilation
-  state.ts              — run directory, state persistence
-  checkpoint.ts         — checkpoint/resume
-  output.ts             — output persistence
-  completion.ts         — completion field resolution
-  block-api.ts          — centralized block I/O with write-time schema validation
-  schema-validator.ts   — AJV wrapper
-  format.ts             — formatDuration/formatCost
-  tui.ts                — progress widget
-```
+`ls src/*.ts` for current files. Key modules:
 
-## Step Types
+- `index.ts` — extension entry point (tools, commands, keybindings)
+- `workflow-sdk.ts` — SDK: vocabulary, discovery, derived state, spec introspection
+- `workflow-executor.ts` — main orchestration loop
+- `workflow-spec.ts` — YAML parsing, `STEP_TYPES` registry
+- `block-api.ts` — centralized block I/O with write-time schema validation
+- `expression.ts` — `${{ }}` evaluator, `FILTER_NAMES` export
+- `dispatch.ts` — subprocess spawn (`pi --mode json`)
+- `dag.ts` — dependency graph, execution plan
+- `step-*.ts` — step type executors (one per type)
 
-`agent`, `command`, `transform`, `gate`, `loop`, `parallel`, `pause` — plus `forEach` as a common field that wraps any step type
+## Workflow SDK (`src/workflow-sdk.ts`)
+
+Single queryable surface for the extension's capabilities. All functions derive dynamically from code registries and filesystem — add a filter, agent, template, or schema and it appears automatically.
+
+- **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`
+- **Discovery**: `availableAgents(cwd)`, `availableWorkflows(cwd)`, `availableTemplates(cwd)`, `availableSchemas(cwd)`, `availableBlocks(cwd)`
+- **Derived state**: `projectState(cwd)` — test count, commit, gaps, decisions, agent/workflow/block counts
+- **Introspection**: `extractExpressions(spec)`, `declaredSteps(spec)`, `declaredAgentRefs(spec)`, `declaredSchemaRefs(spec)`
+
+Use `/workflow status` to see derived state in conversation.
 
 ## Expression Syntax
 
 - `${{ input.field }}` / `${{ steps.name.output }}` — workflow data flow (property access, no eval)
-- `${{ path | filter }}` — pipe filters: `json`, `duration`, `currency`, `keys`, `length`, `filter`
+- `${{ path | filter }}` — pipe filters (run `filterNames()` for current list)
 - `{{ var }}` / `{% tag %}` — Nunjucks (prompt templates, separate concern)
 
 ## Project Blocks (`.workflow/`)
 
-Typed JSON files with schemas. Source of truth for project state.
+Typed JSON files with schemas. Source of truth for project state. Run `availableBlocks('.')` for current list.
 
-```
-.workflow/
-  schemas/              — 13 JSON Schema files (architecture, audit, gaps, decisions, etc.)
-  audits/               — conformance audit instances
-  phases/               — phase specs (NN-name.json)
-  model-config.json     — role → model mapping (resolution: step > agent > by_role > default)
-  gaps.json             — capability gaps, issues, cleanup items
-  decisions.json        — design decisions with rationale
-  rationale.json        — narrative design rationale
-  architecture.json     — module inventory
-  inventory.json        — test counts, step types, agents
-  state.json            — session state
-  conventions.json      — project conventions
-  conformance-reference.json — 10 principles, 29 rules
-```
-
-**Always validate after writing to a block file.**
-
-## Demo Assets
-
-```
-demo/
-  agents/               — 13 .agent.yaml specs (investigator, decomposer, phase-author, etc.)
-  schemas/              — output schemas (investigation-findings, execution-results, etc.)
-  do-gap.workflow.yaml
-  gap-to-phase.workflow.yaml
-  create-phase.workflow.yaml
-  fix-audit.workflow.yaml
-  self-implement.workflow.yaml
-  typed-analysis.workflow.yaml
-templates/              — Nunjucks templates (referenced by agent specs, relative to this dir)
-```
+**Always validate after writing to a block file.** Use `writeBlock()`/`appendToBlock()` from `block-api.ts` for validated writes, or the CLI validate command above.
 
 ## Key Architecture
 
 - Each workflow step runs as a subprocess (`pi --mode json`) with its own context window
 - Main conversation is the control plane; workflows are subordinate
-- DAG planner infers parallelism from `${{ steps.X }}` references (scans input, when, forEach, command, gate, transform, loop fields)
+- DAG planner infers parallelism from `${{ steps.X }}` references
 - Agent specs are `.agent.yaml` only (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time.
-- Output persistence: step output → JSON file in run dir. `output.path` for user-defined paths.
 - State persisted atomically after each step (tmp + rename). State write failure is fatal.
 - Checkpoint/resume: incomplete runs can be resumed from last completed step
-- `completion` field controls post-workflow message to main LLM (template or message+include form)
+- `completion` field controls post-workflow message to main LLM
 
 ## Design Decisions & Gaps
 
-Full records in `.workflow/decisions.json` (46 decisions) and `.workflow/gaps.json`. Key decisions:
+Full records in `.workflow/decisions.json` and `.workflow/gaps.json`. Read via `readBlock('.', 'decisions')` / `readBlock('.', 'gaps')`. Key architectural decisions:
 
-- Fail-fast on step failure. No graduated retry yet (gap: `graduated-failure`).
-- forEach `when:` is global (before iteration, not per-item)
-- Command step fails on non-zero exit
-- Output write failures are non-fatal; state write failures are fatal
+- Fail-fast on step failure
 - Deterministic validation (AJV) at write time, not via monitors
-- Block writes via `block-api.ts` (readBlock/writeBlock/appendToBlock) with schema validation
+- Block writes through `block-api.ts` with schema validation
 - Extensions communicate via `pi.events.emit/on`, no imports
-- `/workflow add-work` appends to array blocks (gaps, decisions, rationale). Phase creation and architecture refresh are separate workflows.
-- `record-gap` tool enables agents to record gaps mid-task via appendToBlock
-- Workflow SDK (`workflow-sdk.ts`) provides dynamic vocabulary, discovery, and spec introspection for authoring and validation
+- Output write failures are non-fatal; state write failures are fatal

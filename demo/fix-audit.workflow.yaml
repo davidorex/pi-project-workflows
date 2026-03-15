@@ -22,7 +22,9 @@ steps:
   cluster:
     command: |
       node --experimental-strip-types -e "
-        const findings = JSON.parse(process.argv[1]);
+        import fs from 'fs';
+        const audit = JSON.parse(fs.readFileSync('.workflow/audits/' + fs.readdirSync('.workflow/audits').filter(f => f.endsWith('.json')).sort().pop(), 'utf8'));
+        const findings = audit.findings;
         const visited = new Set();
         const tasks = [];
         for (const f of findings) {
@@ -37,8 +39,7 @@ steps:
               }
             }
           }
-          const locations = cluster.flatMap(c => c.locations);
-          const files = [...new Set(locations.map(l => l.file))];
+          const files = [...new Set(cluster.flatMap(c => c.locations).map(l => l.file))];
           tasks.push({
             name: cluster[0].id,
             findings: cluster,
@@ -46,14 +47,16 @@ steps:
             principle: cluster[0].principle,
             category: cluster[0].category,
             severity: cluster.some(c => c.severity === 'error') ? 'error' : cluster[0].severity,
-            acceptance_criteria: cluster.map(c => c.fix?.verify_method === 'grep' ? 'grep -rn pattern should not match: ' + (c.fix.verify_pattern || '') + ' in ' + c.locations.map(l=>l.file).join(', ') : 'Fix: ' + (c.fix?.suggestion || c.description))
+            acceptance_criteria: cluster.map(c => {
+              if (c.fix && c.fix.verify_method === 'grep' && c.fix.verify_pattern) return 'grep pattern should not match: ' + c.fix.verify_pattern + ' in ' + c.locations.map(l=>l.file).join(', ');
+              return 'Fix: ' + (c.fix?.suggestion || c.description);
+            })
           });
         }
         console.log(JSON.stringify({ tasks }));
-      " '${{ steps.load.output.audit.findings | json }}'
+      "
     output:
       format: json
-    description: Group related findings into implementation tasks
 
   implement:
     forEach: "${{ steps.cluster.output.tasks }}"
@@ -65,58 +68,51 @@ steps:
     output:
       format: json
       schema: schemas/execution-results.schema.json
+      path: .workflow/fix-audit-results.json
 
   route-results:
     command: |
       node --experimental-strip-types -e "
         import fs from 'fs';
-        const results = JSON.parse(process.argv[1]);
-        const items = Array.isArray(results) ? results : [results];
+        const raw = JSON.parse(fs.readFileSync('.workflow/fix-audit-results.json', 'utf8'));
+        const items = Array.isArray(raw) ? raw : [raw];
 
-        // Route decisions
         const decisionsPath = '.workflow/decisions.json';
         if (fs.existsSync(decisionsPath)) {
           const d = JSON.parse(fs.readFileSync(decisionsPath, 'utf8'));
           const existingIds = new Set(d.decisions.map(x => x.id));
           for (const r of items) {
-            if (r.decisions) {
-              for (const dec of r.decisions) {
-                if (!existingIds.has(dec.id)) { d.decisions.push(dec); existingIds.add(dec.id); }
-              }
+            for (const dec of r.decisions || []) {
+              if (!existingIds.has(dec.id)) { d.decisions.push(dec); existingIds.add(dec.id); }
             }
           }
-          fs.writeFileSync(decisionsPath, JSON.stringify(d, null, 2) + '\\n');
+          fs.writeFileSync(decisionsPath, JSON.stringify(d, null, 2) + '\n');
         }
 
-        // Route issues to gaps
         const gapsPath = '.workflow/gaps.json';
         if (fs.existsSync(gapsPath)) {
           const g = JSON.parse(fs.readFileSync(gapsPath, 'utf8'));
           const existingIds = new Set(g.gaps.map(x => x.id));
           for (const r of items) {
-            if (r.issues) {
-              for (const issue of r.issues) {
-                const id = 'issue-' + issue.description.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
-                if (!existingIds.has(id)) {
-                  g.gaps.push({ id, description: issue.description, status: 'open', category: 'issue', priority: issue.severity === 'critical' ? 'high' : issue.severity === 'error' ? 'medium' : 'low' });
-                  existingIds.add(id);
-                }
+            for (const issue of r.issues || []) {
+              const id = 'issue-' + issue.description.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
+              if (!existingIds.has(id)) {
+                g.gaps.push({ id, description: issue.description, status: 'open', category: 'issue', priority: issue.severity === 'critical' ? 'high' : issue.severity === 'error' ? 'medium' : 'low', source: 'agent' });
+                existingIds.add(id);
               }
             }
           }
-          fs.writeFileSync(gapsPath, JSON.stringify(g, null, 2) + '\\n');
+          fs.writeFileSync(gapsPath, JSON.stringify(g, null, 2) + '\n');
         }
 
-        // Update inventory test count (take highest)
         const invPath = '.workflow/inventory.json';
         if (fs.existsSync(invPath)) {
           const inv = JSON.parse(fs.readFileSync(invPath, 'utf8'));
           let maxTests = inv.test_count || 0;
           for (const r of items) { if (r.test_count && r.test_count > maxTests) maxTests = r.test_count; }
-          if (maxTests > (inv.test_count || 0)) { inv.test_count = maxTests; fs.writeFileSync(invPath, JSON.stringify(inv, null, 2) + '\\n'); }
+          if (maxTests > inv.test_count) { inv.test_count = maxTests; fs.writeFileSync(invPath, JSON.stringify(inv, null, 2) + '\n'); }
         }
 
-        // Update state
         const statePath = '.workflow/state.json';
         if (fs.existsSync(statePath)) {
           const s = JSON.parse(fs.readFileSync(statePath, 'utf8'));
@@ -125,11 +121,11 @@ steps:
           const maxTests = Math.max(...items.map(r => r.test_count || 0));
           if (maxTests > 0) s.test_count = maxTests;
           s.session.last_action = 'fix-audit workflow: ' + items.length + ' tasks completed';
-          fs.writeFileSync(statePath, JSON.stringify(s, null, 2) + '\\n');
+          fs.writeFileSync(statePath, JSON.stringify(s, null, 2) + '\n');
         }
 
         console.log(JSON.stringify({ routed: items.length, decisions_added: items.reduce((s,r) => s + (r.decisions?.length || 0), 0), issues_added: items.reduce((s,r) => s + (r.issues?.length || 0), 0) }));
-      " '${{ steps.implement.output | json }}'
+      "
     output:
       format: json
 
@@ -137,15 +133,16 @@ steps:
     command: |
       node --experimental-strip-types -e "
         import fs from 'fs';
-        const audit = JSON.parse(process.argv[1]);
+        import { execSync } from 'child_process';
+        const auditPath = '.workflow/audits/' + fs.readdirSync('.workflow/audits').filter(f => f.endsWith('.json')).sort().pop();
+        const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
         const results = [];
         for (const finding of audit.findings) {
           const fix = finding.fix;
           if (!fix) { results.push({ id: finding.id, status: 'skipped', reason: 'no fix defined' }); continue; }
           if (fix.verify_method === 'grep' && fix.verify_pattern) {
-            const { execSync } = await import('child_process');
             try {
-              execSync('grep -rn \"' + fix.verify_pattern.replace(/\"/g, '\\\\\"') + '\" ' + finding.locations.map(l => l.file).join(' '), { encoding: 'utf8' });
+              execSync('grep -rn ' + JSON.stringify(fix.verify_pattern) + ' ' + finding.locations.map(l => l.file).join(' '), { encoding: 'utf8' });
               results.push({ id: finding.id, status: 'failed', reason: 'pattern still matches' });
             } catch { results.push({ id: finding.id, status: 'passed' }); }
           } else {
@@ -155,38 +152,37 @@ steps:
         const passed = results.filter(r => r.status === 'passed').length;
         const total = results.length;
         console.log(JSON.stringify({ status: passed === total ? 'passed' : 'gaps_found', score: passed + '/' + total, results }));
-      " '${{ steps.load.output.audit | json }}'
+      "
     output:
       format: json
+      path: .workflow/fix-audit-verify.json
 
   update-audit:
     command: |
       node --experimental-strip-types -e "
         import fs from 'fs';
-        const verifyResults = JSON.parse(process.argv[1]);
-        const auditPath = process.argv[2];
-        if (auditPath && fs.existsSync(auditPath)) {
-          const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
-          for (const vr of verifyResults.results || []) {
-            const finding = audit.findings.find(f => f.id === vr.id);
-            if (finding) {
-              finding.resolution = { status: vr.status, verified_at: new Date().toISOString() };
-            }
+        const auditPath = '.workflow/audits/' + fs.readdirSync('.workflow/audits').filter(f => f.endsWith('.json')).sort().pop();
+        const verifyPath = '.workflow/fix-audit-verify.json';
+        let verifyResults;
+        try { verifyResults = JSON.parse(fs.readFileSync(verifyPath, 'utf8')); } catch { console.log(JSON.stringify({ updated: null, reason: 'cannot read verify output' })); process.exit(0); }
+        const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
+        for (const vr of verifyResults.results || []) {
+          const finding = audit.findings.find(f => f.id === vr.id);
+          if (finding) {
+            finding.resolution = { status: vr.status, verified_at: new Date().toISOString() };
           }
-          const passed = (verifyResults.results || []).filter(r => r.status === 'passed').length;
-          audit.summary.resolved = passed;
-          fs.writeFileSync(auditPath, JSON.stringify(audit, null, 2) + '\\n');
-          console.log(JSON.stringify({ updated: auditPath, resolved: passed, total: audit.findings.length }));
-        } else {
-          console.log(JSON.stringify({ updated: null, reason: 'no audit path provided' }));
         }
-      " '${{ steps.verify.output | json }}' '${{ steps.load.output.audit_path }}'
+        const passed = (verifyResults.results || []).filter(r => r.status === 'passed').length;
+        audit.summary.resolved = passed;
+        fs.writeFileSync(auditPath, JSON.stringify(audit, null, 2) + '\n');
+        console.log(JSON.stringify({ updated: auditPath, resolved: passed, total: audit.findings.length }));
+      "
     output:
       format: json
 
   check:
     gate:
-      check: "echo '${{ steps.verify.output.status }}' | grep -q passed"
+      check: "test '${{ steps.verify.output.status }}' = 'passed'"
       onFail: fail
 
 completion:

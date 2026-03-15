@@ -325,6 +325,14 @@
       "category": "issue",
       "priority": "medium",
       "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mmrk21gi",
+      "description": "The agent encountered a bash command error that was aborted but provided no response or explanation about what failed or how to address it.",
+      "status": "open",
+      "category": "issue",
+      "priority": "medium",
+      "source": "monitor"
     }
   ]
 }

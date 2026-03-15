@@ -395,5 +395,99 @@
     "Step executors (step-*.ts) receive callbacks, never import workflow-executor directly",
     "Template engine (template.ts) has no dependency on workflow types \u2014 pure Nunjucks wrapper",
     "schema-validator.ts is a standalone AJV wrapper \u2014 no workflow-specific logic"
-  ]
+  ],
+  "compilation_pipeline": {
+    "description": "YAML spec + Nunjucks templates + resolved input \u2192 rendered .md \u2192 pi subprocess. Agent specs are YAML (.agent.yaml). They declare input schema, output schema, model, tools, role, and template references (prompt.system, prompt.task). The .md that pi consumes is compiled at dispatch time from spec + templates + typed input data. It exists in memory for milliseconds \u2014 written to a temp file, passed to pi --append-system-prompt, deleted. It is never a hand-authored source file.",
+    "stages": [
+      {
+        "name": "YAML spec parsing",
+        "input": ".agent.yaml file",
+        "output": "AgentSpec object",
+        "description": "parseAgentYaml loads and validates the agent spec declaring input schema, output schema, model, tools, role, and template references"
+      },
+      {
+        "name": "Template resolution",
+        "input": "AgentSpec.prompt.system and AgentSpec.prompt.task template references",
+        "output": "Nunjucks template source",
+        "description": "Three-tier search resolves template files: .pi/templates/ > ~/.pi/agent/templates/ > package/demo/templates/"
+      },
+      {
+        "name": "Template rendering",
+        "input": "Nunjucks template + resolved typed input data",
+        "output": "Rendered .md prompt text",
+        "description": "compileAgentSpec() renders both system and task prompts through Nunjucks unconditionally. No hasTemplateSyntax gate \u2014 every prompt goes through the template engine. Plain text renders to itself. ${{ }} workflow expressions are protected from Nunjucks interpretation."
+      },
+      {
+        "name": "Subprocess dispatch",
+        "input": "Rendered .md prompt + agent config (model, tools, extensions, skills)",
+        "output": "StepResult with output, usage, session log",
+        "description": "Prompt written to temp file, passed to pi --mode json as a child process. Process exit is the definitive completion signal."
+      }
+    ],
+    "intermediate_representation": "JSON is the intermediate representation between steps. Every step produces outputs/<stepName>.json (or an author-declared path via output.path). Structured data written directly; string output wrapped as { \"text\": \"...\" }. Downstream agents consume typed JSON fields via templates \u2014 not string pastes."
+  },
+  "execution_model": {
+    "description": "Conservative plan, layer-based execution with resume support, nine step types, three-tier resolution, pause/resume mechanisms.",
+    "conservative_plan": "buildConservativePlan() adds implicit sequential deps for steps without explicit ${{ steps.X }} refs. Parallelism is opt-in.",
+    "layer_execution": "Processes layers of the dependency graph. Filters to pending steps within each layer. Partial parallel layers resume correctly \u2014 only pending steps in each layer execute.",
+    "step_types": [
+      "agent",
+      "gate",
+      "transform",
+      "loop",
+      "parallel",
+      "pause",
+      "forEach",
+      "command"
+    ],
+    "three_tier_resolution": {
+      "pattern": ".pi/<dir>/ > ~/.pi/agent/<dir>/ > <package>/<dir>/ \u2014 project-level overrides user-level overrides package defaults",
+      "tiers": [
+        {
+          "level": "project",
+          "path": ".pi/<dir>/",
+          "priority": 1
+        },
+        {
+          "level": "user",
+          "path": "~/.pi/agent/<dir>/",
+          "priority": 2
+        },
+        {
+          "level": "package",
+          "path": "<package>/<dir>/",
+          "priority": 3
+        }
+      ],
+      "used_by": [
+        "agents",
+        "templates",
+        "workflows"
+      ]
+    },
+    "pause_resume": {
+      "mechanisms": [
+        "Workflow-authored: pause: step type returns completed immediately, executor sets status=paused",
+        "User-initiated: Ctrl+H pauses after current step completes",
+        "Crash recovery: auto-detect incomplete runs on /workflow run and workflow tool"
+      ],
+      "statuses": [
+        "running",
+        "completed",
+        "failed",
+        "paused"
+      ],
+      "keybindings": {
+        "Ctrl+H": "Pause after current step",
+        "Ctrl+J": "Resume paused workflow"
+      }
+    }
+  },
+  "dispatch_design": {
+    "method": "Subprocess spawn via pi --mode json. Each step spawns a separate pi process. The main pi instance orchestrates \u2014 parsing specs, validating schemas, resolving expressions, dispatching subprocesses, collecting results \u2014 but never yields its own session or agent loop.",
+    "rationale": "Independence from pi-subagents \u2014 two tools can coexist without shared state or import relationship. The user never loses their interactive session. When a workflow completes, the result surfaces in the main conversation.",
+    "alternative_considered": "In-process dispatch via newSession() + sendMessage() within the same pi instance, with the workflow owning the agent loop (GSD-2 pattern).",
+    "alternative_rationale": "Sacrifices the user interactive session \u2014 each unit wipes the context, and the user becomes an observer. Exists as an optimization for long-running autonomous execution where subprocess overhead per step is wasteful and mid-turn supervision (steering messages) is valuable. Could be added later as explicit opt-in escalation.",
+    "parallelism_model": "Sequential steps run one subprocess at a time. Parallel steps (independent steps with no data dependencies) spawn multiple subprocesses concurrently. Falls out naturally from the subprocess model \u2014 parallelism is just multiple processes, no special execution mode needed."
+  }
 }

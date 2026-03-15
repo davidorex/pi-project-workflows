@@ -33,6 +33,82 @@
     "boundaries": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "compilation_pipeline": {
+      "type": "object",
+      "required": ["description", "stages"],
+      "properties": {
+        "description": { "type": "string" },
+        "stages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "input", "output"],
+            "properties": {
+              "name": { "type": "string" },
+              "input": { "type": "string" },
+              "output": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "intermediate_representation": { "type": "string" }
+      }
+    },
+    "execution_model": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": { "type": "string" },
+        "conservative_plan": { "type": "string" },
+        "layer_execution": { "type": "string" },
+        "step_types": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "three_tier_resolution": {
+          "type": "object",
+          "required": ["pattern", "tiers"],
+          "properties": {
+            "pattern": { "type": "string" },
+            "tiers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["level", "path"],
+                "properties": {
+                  "level": { "type": "string" },
+                  "path": { "type": "string" },
+                  "priority": { "type": "integer" }
+                }
+              }
+            },
+            "used_by": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "pause_resume": {
+          "type": "object",
+          "properties": {
+            "mechanisms": { "type": "array", "items": { "type": "string" } },
+            "statuses": { "type": "array", "items": { "type": "string" } },
+            "keybindings": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "dispatch_design": {
+      "type": "object",
+      "required": ["method", "rationale"],
+      "properties": {
+        "method": { "type": "string" },
+        "rationale": { "type": "string" },
+        "alternative_considered": { "type": "string" },
+        "alternative_rationale": { "type": "string" },
+        "parallelism_model": { "type": "string" }
+      }
     }
   }
 }

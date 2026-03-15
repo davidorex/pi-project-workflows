@@ -1,0 +1,98 @@
+{
+  "gaps": [
+    {
+      "id": "dynamic-dispatch-loops",
+      "description": "Dynamic dispatch in loops — a loop that evaluates which step to run each iteration based on current state. Any state machine workflow needs this: legal review routing on document classification, data pipelines branching on quality scores. The general primitive: a loop with a dispatch table of steps guarded by when: conditions evaluated per iteration.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "high"
+    },
+    {
+      "id": "expression-functions",
+      "description": "Expression functions — ${{ }} expressions that call functions, not just access properties. ${{ loadFile(path) }} is the general case. The function system is domain-agnostic — specific functions are user-provided or workflow-provided. Needed for context loaders, file operations, data derivation.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "high"
+    },
+    {
+      "id": "timeout-actions",
+      "description": "Timeout actions — configurable responses beyond kill. Steering messages, idle detection, inspect-and-retry. Any long-running agent in any domain needs this.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "medium"
+    },
+    {
+      "id": "budget-enforcement",
+      "description": "Budget enforcement — cost ceiling with configurable action (pause, fail, warn). addUsage() accumulates but no gate. Any production workflow needs this.",
+      "status": "deferred",
+      "category": "primitive",
+      "priority": "medium",
+      "resolved_by": "budget-defer",
+      "details": "Accumulation via addUsage() works. No ceiling enforcement yet. Needs design for configurable actions."
+    },
+    {
+      "id": "command-steps",
+      "description": "Command steps — shell command execution with captured stdout as JSON or text.",
+      "status": "resolved",
+      "category": "primitive",
+      "priority": "high",
+      "resolved_by": "spec-27"
+    },
+    {
+      "id": "post-step-artifact-verification",
+      "description": "A verify block on the step spec declares assertions the runtime checks after the step completes. Not a separate step — built into the step definition. Assertion types: file exists, file changed, output field non-empty, output field matches pattern, shell command exits 0. These are deterministic, no LLM.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "medium"
+    },
+    {
+      "id": "requirement-tracking",
+      "description": "Requirement tracking (must-haves) — the step's input declares requirements (via schema or explicit requires field). The verify block checks the output addresses them. Cross-references input requirements against output content using heuristic matching (keyword/token presence in output fields). Domain-agnostic: works for code tasks, compliance points, synthesis criteria.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "medium"
+    },
+    {
+      "id": "graduated-failure",
+      "description": "Graduated failure — not binary pass/fail. The failure cascade: soft timeout → steer the agent → hard timeout → inspect durability (what artifacts exist so far?) → retry with gap analysis injected → skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "medium"
+    },
+    {
+      "id": "blocker-propagation",
+      "description": "Blocker propagation — when a step is skipped after exhausting retries, a blocker placeholder artifact is written. Downstream steps see the placeholder and can decide what to do. The pipeline doesn't silently drop work — it records what failed and why, in a structured artifact visible to subsequent steps and to the user.",
+      "status": "open",
+      "category": "primitive",
+      "priority": "medium"
+    },
+    {
+      "id": "pre-step-validation",
+      "description": "Pre-step validation — gate checks on inputs before dispatch. Already supported as gate steps. The richer form: validate that the previous step's output has the content quality needed for this step to succeed. Not just 'does the file exist' but 'does the plan have a verification section, are scope estimates within thresholds.'",
+      "status": "open",
+      "category": "primitive",
+      "priority": "low"
+    },
+    {
+      "id": "adjacent-expression-misparse",
+      "description": "Expression parser: adjacent ${{ }}${{ }} in a single string — whole-value regex can misparse them. Pre-existing limitation.",
+      "status": "open",
+      "category": "issue",
+      "priority": "low"
+    },
+    {
+      "id": "delete-md-demo-agents",
+      "description": "Delete old .md demo agents — .agent.yaml versions are the source of truth, .md files are dead weight.",
+      "status": "open",
+      "category": "cleanup",
+      "priority": "low"
+    },
+    {
+      "id": "remove-dead-writeStepOutput",
+      "description": "Remove dead writeStepOutput in state.ts — superseded by output.ts persistStepOutput().",
+      "status": "open",
+      "category": "cleanup",
+      "priority": "low"
+    }
+  ]
+}

@@ -1,0 +1,275 @@
+{
+  "step_types": [
+    {
+      "name": "agent",
+      "semantics": "Dispatches a pi subprocess with a compiled prompt (agent spec + templates + resolved input). The subprocess runs autonomously, produces output, and exits. Output is captured and validated against schema if declared.",
+      "executor_module": "step-agent.ts",
+      "fields": [
+        { "name": "agent", "type": "string", "description": "Name of the agent spec to invoke", "required": true },
+        { "name": "model", "type": "string", "description": "Model override for this step (overrides agent spec model)", "required": false },
+        { "name": "input", "type": "object", "description": "Input expressions (${{ ... }}) resolved against scope", "required": false },
+        { "name": "output", "type": "object", "description": "Output format and schema declaration", "required": false }
+      ],
+      "output_behavior": "Output extracted from last assistant message. Structured JSON read from output file if schema-bound. Text output from message content. Written to outputs/<stepName>.json or author-declared output.path."
+    },
+    {
+      "name": "gate",
+      "semantics": "Async gate execution with process groups. Always returns completed with { passed: true/false }. Both outcomes are valid — gate judges a condition. Supports onPass/onFail handlers.",
+      "executor_module": "step-gate.ts",
+      "fields": [
+        { "name": "gate", "type": "object", "description": "Gate configuration with agent, onPass, onFail", "required": true },
+        { "name": "input", "type": "object", "description": "Input expressions resolved against scope", "required": false }
+      ],
+      "output_behavior": "Always returns { passed: boolean }. Gate steps never fail — both pass and fail are valid outcomes."
+    },
+    {
+      "name": "transform",
+      "semantics": "Pure expression mapping — no LLM invocation. Resolves mapping fields via ${{ }} expressions. Used for data reshaping between steps.",
+      "executor_module": "step-transform.ts",
+      "fields": [
+        { "name": "transform", "type": "object", "description": "Mapping of output field names to ${{ }} expressions", "required": true }
+      ],
+      "output_behavior": "Produces a JSON object with fields resolved from expressions. No subprocess spawned."
+    },
+    {
+      "name": "loop",
+      "semantics": "Loop iteration with accumulated evidence. Receives dispatchAgent callback. Each iteration can observe previous iteration results. Supports maxIterations and onExhausted handling.",
+      "executor_module": "step-loop.ts",
+      "fields": [
+        { "name": "loop", "type": "object", "description": "Loop configuration with agent, maxIterations, until, onExhausted", "required": true },
+        { "name": "input", "type": "object", "description": "Input expressions resolved per iteration", "required": false }
+      ],
+      "output_behavior": "Output from the final successful iteration. Each iteration accumulates evidence for the next."
+    },
+    {
+      "name": "parallel",
+      "semantics": "Executes multiple steps concurrently. executeParallelLayer() processes a set of independent steps. Receives executeSingleStep callback for each parallel step.",
+      "executor_module": "step-parallel.ts",
+      "fields": [
+        { "name": "parallel", "type": "object", "description": "Parallel step configuration with steps array", "required": true }
+      ],
+      "output_behavior": "Each parallel step produces its own output. Results collected as a map of step name to result."
+    },
+    {
+      "name": "pause",
+      "semantics": "Returns completed immediately. The executor then sets the workflow status to paused. Workflow-authored deliberate pause points for human review or intervention.",
+      "executor_module": "step-pause.ts",
+      "fields": [
+        { "name": "pause", "type": "object", "description": "Pause configuration (may include message)", "required": true }
+      ],
+      "output_behavior": "No output. Step completes, workflow pauses. Resume via Ctrl+J or /workflow resume."
+    },
+    {
+      "name": "forEach",
+      "semantics": "Iterates over an array. Resolves the array from an expression, binds each element via the as: field, adds forEach.index and forEach.length to the expression scope. Collects outputs as an array.",
+      "executor_module": "step-foreach.ts",
+      "fields": [
+        { "name": "forEach", "type": "object", "description": "forEach configuration: items (array expression), as (binding name), step (agent/transform to run per item)", "required": true },
+        { "name": "when", "type": "string", "description": "Global conditional — applies before iteration starts, not per-iteration", "required": false }
+      ],
+      "output_behavior": "Collects outputs from all iterations as an array. Each iteration's output is appended."
+    },
+    {
+      "name": "command",
+      "semantics": "Runs sh -c <command>. Captures stdout as JSON or text. Fails on non-zero exit code (unlike gate). Supports ${{ }} expressions in command string, timeout, signal cancellation.",
+      "executor_module": "step-command.ts",
+      "fields": [
+        { "name": "command", "type": "string", "description": "Shell command to execute (supports ${{ }} expressions)", "required": true },
+        { "name": "timeout", "type": "integer", "description": "Timeout in seconds", "required": false }
+      ],
+      "output_behavior": "Captures stdout. If stdout is valid JSON, parsed as structured output. Otherwise wrapped as { text: '...' }. Non-zero exit code marks step as failed."
+    }
+  ],
+  "expression_syntax": {
+    "delimiter": "${{ }}",
+    "capabilities": [
+      { "name": "Property access", "description": "Dot-separated path into scope object", "example": "${{ input.description }}" },
+      { "name": "Nested access", "description": "Deep property traversal", "example": "${{ steps.diagnose.output.fixLocation.file }}" },
+      { "name": "Whole object reference", "description": "Passes the entire object, not just a field", "example": "${{ steps.diagnose.output }}" },
+      { "name": "Pipe filters", "description": "Formatting via pipe syntax", "example": "${{ totalDurationMs | duration }}" },
+      { "name": "String interpolation", "description": "${{ }} embedded in strings resolves inline", "example": "File: ${{ steps.explore.output.path }}" }
+    ],
+    "scope_keys": [
+      { "key": "input.*", "description": "The workflow's validated input" },
+      { "key": "steps.<name>.*", "description": "Completed step results (output, textOutput, status, usage, durationMs)" },
+      { "key": "forEach.index", "description": "Current iteration index (in forEach steps)" },
+      { "key": "forEach.length", "description": "Total array length (in forEach steps)" }
+    ],
+    "pipe_filters": [
+      { "name": "duration", "description": "Format milliseconds as human-readable duration", "example": "${{ totalDurationMs | duration }}" },
+      { "name": "currency", "description": "Format number as currency", "example": "${{ totalUsage.cost | currency }}" },
+      { "name": "json", "description": "Serialize value as JSON string", "example": "${{ steps.analyze.output | json }}" }
+    ],
+    "limitations": [
+      "No arithmetic or string concatenation — use transform steps for computation",
+      "No function calls — planned as a future gap (expression-functions)",
+      "No ternary operators",
+      "Adjacent ${{ }}${{ }} in a single string can misparse (whole-value regex limitation)"
+    ]
+  },
+  "dispatch_protocol": {
+    "command": "pi --mode json",
+    "subprocess_environment": [
+      { "aspect": "Working directory", "description": "Same cwd as the main pi instance (the project directory)" },
+      { "aspect": "Environment variables", "description": "Full process.env from the main process, including API keys, PATH, etc." },
+      { "aspect": "Pi configuration", "description": "Same .pi/ project config and ~/.pi/agent/ user config (pi discovers these from cwd and home directory)" },
+      { "aspect": "Extensions", "description": "By default, normal discovery. If agent spec declares extensions: [...], only those are loaded (--no-extensions + explicit --extension flags)" },
+      { "aspect": "Skills", "description": "If agent spec declares skills: [...], only those are loaded (--no-skills + explicit injection). Otherwise, normal skill discovery." },
+      { "aspect": "Session", "description": "Subprocess writes session file to --session-dir <run-dir>/sessions/. Captures full session log for tracing." },
+      { "aspect": "stdin", "description": "Ignored (stdio: ['ignore', 'pipe', 'pipe']). Subprocess cannot prompt user — intentional for autonomous workflow steps." }
+    ],
+    "event_stream": [
+      { "event": "{\"type\":\"session\",...}", "description": "Header event at process start" },
+      { "event": "{\"type\":\"agent_start\"}", "description": "Agent run begins" },
+      { "event": "{\"type\":\"turn_start\"}", "description": "Turn begins (one LLM API call)" },
+      { "event": "{\"type\":\"message_end\",\"message\":{...}}", "description": "Message with content and usage data" },
+      { "event": "{\"type\":\"turn_end\",...}", "description": "Turn completes" },
+      { "event": "{\"type\":\"agent_end\",\"messages\":[...]}", "description": "Agent run complete — contains all messages" }
+    ],
+    "completion_detection": "Process exit is the definitive completion signal (exit code 0 = success, non-zero = failure). The agent_end event fires before exit and contains all messages, but process exit also catches unexpected termination.",
+    "output_extraction": "Walk the messages array backward from the agent_end event, find the last assistant message, extract its text content. If step has output schema, agent writes JSON to a file — executor reads that file after process exits and validates against schema.",
+    "usage_tracking": "Each message_end event for assistant messages includes a usage field with token counts and cost. The executor accumulates these across turns.",
+    "error_detection": "If exit code is non-zero, or if the last tool result contains error patterns (permission denied, segmentation fault, etc.), the step is marked failed.",
+    "model_override": "Step-level model overrides agent-level model. Subprocess receives via --models <model-id>. If neither is set, pi uses its default.",
+    "tool_filtering": "Agent specs declare tools: [read, bash, grep]. Dispatch separates built-in tool names (go to --tools) from extension paths containing / or ending in .ts/.js (go to --extension)."
+  },
+  "state_management": {
+    "run_directory": {
+      "path": ".pi/workflow-runs/<run-id>/",
+      "contents": [
+        { "name": "state.json", "description": "Current execution state: which steps completed, their outputs, workflow status" },
+        { "name": "sessions/", "description": "Full session logs from each step subprocess (one .session.json per step)" },
+        { "name": "outputs/", "description": "Step outputs as schema-validated JSON (one file per step, default: outputs/<stepName>.json)" },
+        { "name": "metrics.json", "description": "Aggregated cost/token tracking across all steps" }
+      ]
+    },
+    "statuses": ["running", "completed", "failed", "paused"],
+    "persistence_method": "State persisted after each step via atomic write (tmp file + rename). State write failures are fatal — state.json is the sole checkpoint for resume. Output write failures are non-fatal — step data is in memory for downstream expressions.",
+    "step_statuses": ["completed", "failed", "skipped"]
+  },
+  "tui": {
+    "widget": {
+      "description": "Persistent compact view showing current step, progress, cost. Visible while the workflow runs.",
+      "api_method": "ctx.ui.setWidget('workflow-progress', createProgressWidget(spec, state))",
+      "shows": ["Current step name", "Step progress (N/M)", "Cost so far", "Duration", "Token counts"]
+    },
+    "dashboard": {
+      "description": "Detailed view toggled by shortcut. Shows all steps with status, outputs, timing, cost breakdown. Scrollable.",
+      "api_method": "ctx.ui.custom() with overlay: true",
+      "shows": ["All steps with status", "Per-step outputs", "Per-step timing", "Cost breakdown", "Session log paths"]
+    },
+    "keybindings": [
+      { "key": "Ctrl+H", "action": "Pause workflow after current step completes" },
+      { "key": "Ctrl+J", "action": "Resume paused workflow" }
+    ],
+    "indicators": [
+      { "symbol": "↻", "meaning": "Resumed run" },
+      { "symbol": "⏸", "meaning": "Paused workflow" },
+      { "symbol": "[truncated]", "meaning": "Step output exceeded MAX_STDOUT_BYTES (10MB)" }
+    ]
+  },
+  "completion": {
+    "forms": [
+      {
+        "name": "template",
+        "description": "Inline interpolation — a single string with ${{ }} expressions that resolve against CompletionScope. For simple cases where the result message is a formatted string.",
+        "fields": ["template"],
+        "syntax": "${{ }}"
+      },
+      {
+        "name": "message + include",
+        "description": "Instruction text with data attachments. message is the text shown to the LLM. include lists scope paths whose values are attached as structured data. For structured data injection into LLM context.",
+        "fields": ["message", "include"],
+        "syntax": "${{ }}"
+      }
+    ],
+    "scope": [
+      { "key": "input.*", "description": "Workflow's validated input" },
+      { "key": "steps.*", "description": "All step results" },
+      { "key": "runId", "description": "Run identifier" },
+      { "key": "runDir", "description": "Run directory path" },
+      { "key": "totalUsage", "description": "Aggregated usage (input tokens, output tokens, cost)" },
+      { "key": "totalDurationMs", "description": "Total workflow duration in milliseconds" },
+      { "key": "status", "description": "Workflow status (completed/failed)" }
+    ]
+  },
+  "events": [
+    { "name": "workflow:step_start", "description": "Step began", "payload": "step name, agent, input" },
+    { "name": "workflow:step_end", "description": "Step completed", "payload": "step name, status, output, usage, duration" },
+    { "name": "workflow:complete", "description": "Workflow finished", "payload": "status, total usage" },
+    { "name": "workflow:error", "description": "Step or workflow failed", "payload": "error details" }
+  ],
+  "artifacts": {
+    "description": "Persistent files written to user-defined paths after workflow completion. Each workflow owns a directory under .pi/workflow-runs/<workflow-name>/. Run state goes in runs/ subdirectories; artifacts live at the top level as the workflow's persistent, findable output.",
+    "spec_fields": [
+      { "name": "path", "description": "Destination path relative to the workflow's output directory. May contain ${{ }} expressions (e.g. ${{ runId }} for history accumulation, or a fixed name for the latest pattern)." },
+      { "name": "from", "description": "Expression path resolving to the data to write (structured output, text output, or any scope value). Resolves against CompletionScope." },
+      { "name": "schema", "description": "Optional JSON Schema for validation before writing. Reuses existing schema validation infrastructure." }
+    ],
+    "patterns": [
+      { "name": "latest", "description": "Fixed filename (e.g. latest.md) overwritten each run. Always current without knowing run ID.", "example": "path: latest.md" },
+      { "name": "history", "description": "Filename with ${{ runId }} accumulates history. Past runs preserved for comparison.", "example": "path: ${{ runId }}.json" }
+    ]
+  },
+  "naming": [
+    { "concept": "One run of an agent (prompt in → response out, possibly multi-turn)", "name": "agent run", "not": "session (a session contains agent runs)" },
+    { "concept": "A session that was interrupted before completion", "name": "interrupted session", "not": "crash" },
+    { "concept": "Workflow execution without user intervention between steps", "name": "autonomous execution", "not": "auto mode" },
+    { "concept": "The event fired when an agent run completes", "name": "agent_end", "rationale": "pi's existing event name, accurate as-is" },
+    { "concept": "A workflow step's subprocess", "name": "step process", "not": "subagent (that's a different extension)" }
+  ],
+  "core_types": [
+    {
+      "name": "WorkflowSpec",
+      "description": "Parsed workflow specification from .workflow.yaml",
+      "key_fields": [
+        { "name": "name", "type": "string", "description": "Workflow name" },
+        { "name": "description", "type": "string", "description": "Human-readable description" },
+        { "name": "input", "type": "object", "description": "JSON Schema for workflow input" },
+        { "name": "output", "type": "object", "description": "JSON Schema for workflow output" },
+        { "name": "triggerTurn", "type": "boolean", "description": "Inject result into conversation and trigger LLM response (default: true)" },
+        { "name": "steps", "type": "Record<string, StepSpec>", "description": "Named steps in execution order" },
+        { "name": "source", "type": "\"user\" | \"project\"", "description": "Where the workflow was discovered" }
+      ]
+    },
+    {
+      "name": "StepSpec",
+      "description": "Specification for a single workflow step",
+      "key_fields": [
+        { "name": "agent", "type": "string", "description": "Agent name to invoke" },
+        { "name": "model", "type": "string", "description": "Model override (overrides agent spec model)" },
+        { "name": "input", "type": "Record<string, unknown>", "description": "Input expressions (${{ ... }})" },
+        { "name": "output", "type": "object", "description": "Output format and schema" },
+        { "name": "when", "type": "string", "description": "Conditional expression" }
+      ]
+    },
+    {
+      "name": "StepResult",
+      "description": "Result from executing a single step",
+      "key_fields": [
+        { "name": "step", "type": "string", "description": "Step name" },
+        { "name": "status", "type": "\"completed\" | \"failed\" | \"skipped\"", "description": "Step outcome" },
+        { "name": "output", "type": "unknown", "description": "Parsed structured output" },
+        { "name": "textOutput", "type": "string", "description": "Raw text output" },
+        { "name": "usage", "type": "{ input, output, cost }", "description": "Token counts and cost" },
+        { "name": "durationMs", "type": "number", "description": "Step duration" },
+        { "name": "truncated", "type": "boolean", "description": "Whether MAX_STDOUT_BYTES was exceeded" },
+        { "name": "warnings", "type": "string[]", "description": "Truncation or other warnings" }
+      ]
+    },
+    {
+      "name": "WorkflowResult",
+      "description": "Result from executing a complete workflow",
+      "key_fields": [
+        { "name": "workflow", "type": "string", "description": "Workflow name" },
+        { "name": "runId", "type": "string", "description": "Run identifier" },
+        { "name": "status", "type": "\"completed\" | \"failed\"", "description": "Workflow outcome" },
+        { "name": "steps", "type": "Record<string, StepResult>", "description": "All step results" },
+        { "name": "output", "type": "unknown", "description": "Final workflow output" },
+        { "name": "totalUsage", "type": "{ input, output, cost }", "description": "Aggregated usage" },
+        { "name": "totalDurationMs", "type": "number", "description": "Total duration" },
+        { "name": "runDir", "type": "string", "description": "Path to run directory" }
+      ]
+    }
+  ]
+}

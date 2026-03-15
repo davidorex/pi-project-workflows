@@ -286,6 +286,13 @@
       "rationale": "ctx.ui.notify displays text to the user but doesn't enter the LLM's conversation. pi.sendMessage with triggerTurn:true and deliverAs:followUp waits for the current turn to finish, then the LLM receives the instruction and acts autonomously.",
       "phase": 8,
       "status": "decided"
+    },
+    {
+      "id": "add-work-captures-raw-intent",
+      "decision": "/workflow add-work accepts inline text as raw intent capture. '/workflow add-work we need X because Y' passes the text through to the LLM instruction. No args = reads from conversation.",
+      "rationale": "Intent capture shouldn't require a separate step. The user types a rough idea after the command, it gets processed into typed blocks. Quick capture, structured later.",
+      "phase": 8,
+      "status": "decided"
     }
   ]
 }

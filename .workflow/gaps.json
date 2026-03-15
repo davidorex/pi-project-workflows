@@ -202,6 +202,15 @@
       "priority": "high",
       "source": "human",
       "details": "Discovered when add-work validated decisions.json and found 6 entries missing required 'phase' field \u2014 written by fix-audit implementing agents via route-results. Fix: route-results should validate each block after merging, before writing."
+    },
+    {
+      "id": "gap-to-phase-flow",
+      "description": "No mechanism to go from a gap ID to a phase spec. create-phase takes free-text intent, not a gap reference. Need: load gap by ID \u2192 enrich with details/doc path \u2192 pass to phase-author.",
+      "status": "open",
+      "category": "composition",
+      "priority": "high",
+      "source": "human",
+      "details": "Currently the human manually reads the gap, reads referenced docs, formulates intent, then runs create-phase. The gap entry already has description, details, and doc paths \u2014 that's the input the phase-author needs."
     }
   ]
 }

@@ -48,6 +48,16 @@
         "add-work-sends-message"
       ],
       "phase": 8
+    },
+    {
+      "id": "gap-to-implementation-pipeline",
+      "title": "The gap between 'work on X' and the system working on X",
+      "narrative": "When the user says 'work on tui-step-visibility', what should happen is: load the gap \u2192 read referenced design docs \u2192 produce a phase spec \u2192 forEach over specs \u2192 implement \u2192 verify. What actually happens: the human manually reads the gap, reads the doc, formulates a task, delegates to a subagent. The human is the orchestrator.\n\nThree missing pieces:\n1. gap-to-phase: a workflow or command that loads a gap by ID, enriches it with referenced details, and feeds it to create-phase.\n2. do-phase: a workflow that takes a phase spec, iterates over specs, implements each, verifies against acceptance criteria. Recorded as an open gap, partially blocked by nested-workflow-invocation for the full version but buildable as a flat single-phase flow now.\n3. The connection between them: 'work on gap X' \u2192 gap-to-phase \u2192 do-phase \u2192 done.\n\nThis is the meta-gap: the system can record what needs doing (gaps, phases, specs) but can't yet execute the full cycle from intent to implementation without human orchestration.",
+      "related_decisions": [
+        "add-work-command-scope",
+        "add-work-captures-raw-intent"
+      ],
+      "phase": 8
     }
   ]
 }

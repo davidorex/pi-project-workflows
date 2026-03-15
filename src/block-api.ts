@@ -92,3 +92,39 @@ export function appendToBlock(cwd: string, blockName: string, arrayKey: string, 
   record[arrayKey] = [...(record[arrayKey] as unknown[]), item];
   writeBlock(cwd, blockName, record);
 }
+
+/**
+ * Find an item in data[arrayKey] by predicate, shallow-merge updates onto it,
+ * validate whole file against schema, write atomically. Throws if no item
+ * matches, if arrayKey is missing or not an array, or if validation fails.
+ */
+export function updateItemInBlock(
+  cwd: string,
+  blockName: string,
+  arrayKey: string,
+  predicate: (item: Record<string, unknown>) => boolean,
+  updates: Record<string, unknown>,
+): void {
+  const data = readBlock(cwd, blockName);
+
+  if (!data || typeof data !== "object") {
+    throw new Error(`Block '${blockName}' is not an object`);
+  }
+
+  const record = data as Record<string, unknown>;
+  if (!(arrayKey in record)) {
+    throw new Error(`Block '${blockName}' has no key '${arrayKey}'`);
+  }
+  if (!Array.isArray(record[arrayKey])) {
+    throw new Error(`Block '${blockName}' key '${arrayKey}' is not an array`);
+  }
+
+  const arr = record[arrayKey] as Record<string, unknown>[];
+  const item = arr.find(predicate);
+  if (!item) {
+    throw new Error(`No matching item in block '${blockName}' key '${arrayKey}'`);
+  }
+
+  Object.assign(item, updates);
+  writeBlock(cwd, blockName, record);
+}

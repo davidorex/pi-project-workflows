@@ -8,7 +8,7 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { readBlock, appendToBlock } from "./block-api.ts";
+import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
 import { ValidationError } from "./schema-validator.ts";
 
 function makeTmpDir(): string {
@@ -141,5 +141,53 @@ describe("record-gap", () => {
 
     const data = readBlock(tmpDir, "gaps") as { gaps: Array<Record<string, unknown>> };
     assert.strictEqual(data.gaps[0].details, "Extra context about the gap");
+  });
+});
+
+describe("update-gap", () => {
+  it("updates gap status and resolved_by", (t) => {
+    const tmpDir = makeTmpDir();
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupGapsBlock(tmpDir, [
+      { id: "g1", description: "to resolve", status: "open", category: "issue", priority: "high", source: "human" },
+    ]);
+
+    updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "resolved", resolved_by: "test-fix" });
+
+    const data = readBlock(tmpDir, "gaps") as { gaps: Array<Record<string, unknown>> };
+    assert.strictEqual(data.gaps[0].status, "resolved");
+    assert.strictEqual(data.gaps[0].resolved_by, "test-fix");
+    assert.strictEqual(data.gaps[0].description, "to resolve"); // unchanged
+  });
+
+  it("throws on nonexistent gap ID", (t) => {
+    const tmpDir = makeTmpDir();
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupGapsBlock(tmpDir, [
+      { id: "g1", description: "exists", status: "open", category: "issue", priority: "low", source: "human" },
+    ]);
+
+    assert.throws(
+      () => updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "nonexistent", { status: "resolved" }),
+      (err: unknown) => {
+        assert.ok(err instanceof Error);
+        assert.ok(err.message.includes("No matching item"));
+        return true;
+      },
+    );
+  });
+
+  it("no-op when updates object is empty", (t) => {
+    const tmpDir = makeTmpDir();
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupGapsBlock(tmpDir, [
+      { id: "g1", description: "stable", status: "open", category: "issue", priority: "low", source: "human" },
+    ]);
+
+    // Empty updates still writes (Object.assign with {} is a no-op on content)
+    updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", {});
+
+    const data = readBlock(tmpDir, "gaps") as { gaps: Array<Record<string, unknown>> };
+    assert.strictEqual(data.gaps[0].status, "open"); // unchanged
   });
 });

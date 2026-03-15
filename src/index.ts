@@ -6,7 +6,7 @@ import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
 import { executeWorkflow, requestPause } from "./workflow-executor.ts";
 import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
 import { createAgentLoader } from "./agent-spec.ts";
-import { readBlock, appendToBlock } from "./block-api.ts";
+import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
 import { projectState } from "./workflow-sdk.ts";
 import type { WorkflowResult } from "./types.ts";
 import fs from "node:fs";
@@ -547,6 +547,36 @@ const extension = (pi: ExtensionAPI) => {
 
       appendToBlock(ctx.cwd, "gaps", "gaps", entry);
       return { content: [{ type: "text", text: `Recorded gap '${entry.id}' (${entry.category}/${entry.priority})` }] };
+    },
+  });
+
+  // ── Tool: update-gap ──────────────────────────────────────────────────
+
+  pi.registerTool({
+    name: "update-gap",
+    label: "Update Gap",
+    description: "Update fields on an existing gap in .workflow/gaps.json (status, priority, resolved_by, details)",
+    promptSnippet: "Update existing gaps — mark resolved, change priority, add details",
+    parameters: Type.Object({
+      id: Type.String({ description: "ID of the gap to update" }),
+      status: Type.Optional(Type.String({ enum: ["open", "resolved", "deferred"], description: "New status" })),
+      priority: Type.Optional(Type.String({ enum: ["low", "medium", "high", "critical"], description: "New priority" })),
+      resolved_by: Type.Optional(Type.String({ description: "What resolved this gap" })),
+      details: Type.Optional(Type.String({ description: "Additional context to set or replace" })),
+    }),
+    async execute(_toolCallId: string, params: Record<string, unknown>, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+      const updates: Record<string, unknown> = {};
+      if (params.status !== undefined) updates.status = params.status;
+      if (params.priority !== undefined) updates.priority = params.priority;
+      if (params.resolved_by !== undefined) updates.resolved_by = params.resolved_by;
+      if (params.details !== undefined) updates.details = params.details;
+
+      if (Object.keys(updates).length === 0) {
+        return { content: [{ type: "text", text: "No fields to update" }] };
+      }
+
+      updateItemInBlock(ctx.cwd, "gaps", "gaps", (g) => g.id === params.id, updates);
+      return { content: [{ type: "text", text: `Updated gap '${params.id}': ${Object.keys(updates).join(", ")}` }] };
     },
   });
 

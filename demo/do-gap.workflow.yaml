@@ -127,16 +127,13 @@ steps:
     when: "${{ steps.verify.output.passed }}"
     command: |
       node --experimental-strip-types -e "
-        import { readBlock, writeBlock } from './src/block-api.ts';
+        import { updateItemInBlock } from './src/block-api.ts';
         const gapId = process.argv[1];
-        const data = readBlock('.', 'gaps');
-        const gap = data.gaps.find(g => g.id === gapId);
-        if (gap) {
-          gap.status = 'resolved';
-          gap.resolved_by = 'do-gap-workflow';
-          writeBlock('.', 'gaps', data);
-        }
-        console.log(JSON.stringify({ routed: true, gap_id: gapId, status: gap ? 'resolved' : 'not-found' }));
+        updateItemInBlock('.', 'gaps', 'gaps',
+          (g) => g.id === gapId,
+          { status: 'resolved', resolved_by: 'do-gap-workflow' }
+        );
+        console.log(JSON.stringify({ routed: true, gap_id: gapId, status: 'resolved' }));
       " '${{ input.gap_id }}'
     output:
       format: json

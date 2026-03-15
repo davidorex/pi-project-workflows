@@ -3,7 +3,7 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { readBlock, writeBlock, appendToBlock } from "./block-api.ts";
+import { readBlock, writeBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
 import { ValidationError } from "./schema-validator.ts";
 
 function makeTmpDir(prefix: string): string {
@@ -382,5 +382,110 @@ describe("appendToBlock", () => {
 
     const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "list.json"), "utf-8"));
     assert.deepStrictEqual(onDisk.items, ["first", "second"]);
+  });
+});
+
+describe("updateItemInBlock", () => {
+  it("updates matching item fields", (t) => {
+    const tmpDir = makeTmpDir("update-match");
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupWorkflowDir(tmpDir);
+    setupSchema(tmpDir, "gaps", gapsSchema);
+
+    const initial = { gaps: [{ id: "g1", description: "test", status: "open" }] };
+    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), JSON.stringify(initial));
+
+    updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "resolved", resolved_by: "test" });
+
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8"));
+    assert.strictEqual(onDisk.gaps[0].status, "resolved");
+    assert.strictEqual(onDisk.gaps[0].resolved_by, "test");
+    assert.strictEqual(onDisk.gaps[0].id, "g1"); // unchanged
+  });
+
+  it("throws when no item matches predicate", (t) => {
+    const tmpDir = makeTmpDir("update-nomatch");
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupWorkflowDir(tmpDir);
+
+    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), JSON.stringify({ gaps: [{ id: "g1" }] }));
+
+    assert.throws(
+      () => updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "nonexistent", { status: "resolved" }),
+      (err: unknown) => {
+        assert.ok(err instanceof Error);
+        assert.ok(err.message.includes("No matching item"));
+        return true;
+      },
+    );
+  });
+
+  it("throws ValidationError when update produces invalid data — original unchanged", (t) => {
+    const tmpDir = makeTmpDir("update-invalid");
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupWorkflowDir(tmpDir);
+    setupSchema(tmpDir, "gaps", gapsSchema);
+
+    const original = { gaps: [{ id: "g1", description: "test", status: "open" }] };
+    const originalStr = JSON.stringify(original);
+    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), originalStr);
+
+    assert.throws(
+      () => updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "invalid-status" }),
+      (err: unknown) => {
+        assert.ok(err instanceof ValidationError);
+        return true;
+      },
+    );
+
+    // Original file unchanged
+    const afterStr = fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8");
+    assert.strictEqual(afterStr, originalStr);
+  });
+
+  it("preserves other items in array", (t) => {
+    const tmpDir = makeTmpDir("update-preserve");
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupWorkflowDir(tmpDir);
+
+    const initial = { items: [{ id: "a", val: 1 }, { id: "b", val: 2 }, { id: "c", val: 3 }] };
+    fs.writeFileSync(path.join(tmpDir, ".workflow", "data.json"), JSON.stringify(initial));
+
+    updateItemInBlock(tmpDir, "data", "items", (i) => i.id === "b", { val: 99 });
+
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "data.json"), "utf-8"));
+    assert.strictEqual(onDisk.items[0].val, 1);
+    assert.strictEqual(onDisk.items[1].val, 99);
+    assert.strictEqual(onDisk.items[2].val, 3);
+  });
+
+  it("shallow merge — new field added, existing field overwritten", (t) => {
+    const tmpDir = makeTmpDir("update-merge");
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupWorkflowDir(tmpDir);
+
+    fs.writeFileSync(path.join(tmpDir, ".workflow", "data.json"), JSON.stringify({
+      items: [{ id: "x", existing: "old", keep: "this" }],
+    }));
+
+    updateItemInBlock(tmpDir, "data", "items", (i) => i.id === "x", { existing: "new", added: "field" });
+
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "data.json"), "utf-8"));
+    assert.strictEqual(onDisk.items[0].existing, "new");
+    assert.strictEqual(onDisk.items[0].added, "field");
+    assert.strictEqual(onDisk.items[0].keep, "this");
+  });
+
+  it("works on block without schema", (t) => {
+    const tmpDir = makeTmpDir("update-noschema");
+    t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+    setupWorkflowDir(tmpDir);
+
+    fs.writeFileSync(path.join(tmpDir, ".workflow", "custom.json"), JSON.stringify({ items: [{ id: "a", v: 1 }] }));
+
+    updateItemInBlock(tmpDir, "custom", "items", (i) => i.id === "a", { v: 2 });
+
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "custom.json"), "utf-8"));
+    assert.strictEqual(onDisk.items[0].v, 2);
   });
 });

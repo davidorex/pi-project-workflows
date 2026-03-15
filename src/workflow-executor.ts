@@ -498,7 +498,7 @@ async function executeStepByType(
       existing.push(activity);
       widgetState.activities.set(stepName, existing);
       if (ctx.hasUI) {
-        ctx.ui.setWidget("workflow-progress", createProgressWidget(widgetState));
+        ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
       }
     },
   });

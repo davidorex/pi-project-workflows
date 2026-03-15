@@ -122,13 +122,12 @@ export function createProgressWidget(
             line = `  ${theme.fg("accent", "\u25b8")} ${theme.fg("accent", stepName)}  ${theme.fg("dim", stepElapsed + "...")}`;
             lines.push(line.length > width ? line.slice(0, width) : line);
 
-            // Render live tool activity under running step
+            // Render most recent tool activity under running step
             const activities = widgetState.activities?.get(stepName);
             if (activities && activities.length > 0) {
-              for (const act of activities) {
-                const actLine = `      ${theme.fg("dim", act.tool)} ${theme.fg("dim", act.preview)}`;
-                lines.push(actLine.length > width ? actLine.slice(0, width) : actLine);
-              }
+              const latest = activities[activities.length - 1];
+              const actLine = `      ${theme.fg("dim", latest.tool)} ${theme.fg("dim", latest.preview)}`;
+              lines.push(actLine.length > width ? actLine.slice(0, width) : actLine);
             }
             continue;  // skip the push below, already pushed
           } else {

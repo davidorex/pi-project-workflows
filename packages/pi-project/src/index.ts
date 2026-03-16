@@ -137,6 +137,72 @@ ${blockInfo.join("\n\n")}
   });
 }
 
+/**
+ * /project init — scaffold .project/ directory with default schemas and
+ * empty block files. Idempotent: skips files that already exist.
+ */
+function handleInit(ctx: ExtensionCommandContext): void {
+  const projectDir = path.join(ctx.cwd, PROJECT_DIR);
+  const schemasDir = path.join(projectDir, SCHEMAS_DIR);
+  const phasesDir = path.join(projectDir, "phases");
+
+  const defaultsDir = path.resolve(import.meta.dirname, "..", "defaults");
+  const defaultSchemasDir = path.join(defaultsDir, "schemas");
+  const defaultBlocksDir = path.join(defaultsDir, "blocks");
+
+  const created: string[] = [];
+  const skipped: string[] = [];
+
+  // Create directories
+  for (const dir of [projectDir, schemasDir, phasesDir]) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      created.push(path.relative(ctx.cwd, dir) + "/");
+    }
+  }
+
+  // Copy default schemas
+  if (fs.existsSync(defaultSchemasDir)) {
+    for (const file of fs.readdirSync(defaultSchemasDir)) {
+      const dest = path.join(schemasDir, file);
+      if (fs.existsSync(dest)) {
+        skipped.push(`${SCHEMAS_DIR}/${file}`);
+      } else {
+        fs.copyFileSync(path.join(defaultSchemasDir, file), dest);
+        created.push(`${SCHEMAS_DIR}/${file}`);
+      }
+    }
+  }
+
+  // Create default block files
+  if (fs.existsSync(defaultBlocksDir)) {
+    for (const file of fs.readdirSync(defaultBlocksDir)) {
+      const dest = path.join(projectDir, file);
+      if (fs.existsSync(dest)) {
+        skipped.push(file);
+      } else {
+        fs.copyFileSync(path.join(defaultBlocksDir, file), dest);
+        created.push(file);
+      }
+    }
+  }
+
+  const lines: string[] = [];
+  lines.push(`## Project Initialized`);
+  lines.push("");
+  if (created.length > 0) {
+    lines.push(`**Created (${created.length}):** ${created.join(", ")}`);
+  }
+  if (skipped.length > 0) {
+    lines.push(`**Skipped (${skipped.length}, already exist):** ${skipped.join(", ")}`);
+  }
+  if (created.length === 0 && skipped.length > 0) {
+    lines.push("Project already initialized — nothing to do.");
+  }
+
+  ctx.ui.notify(lines.join("\n"), "info");
+}
+
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
@@ -205,7 +271,7 @@ const extension = (pi: ExtensionAPI) => {
   pi.registerCommand("project", {
     description: "Project state management",
     getArgumentCompletions: (prefix: string) => {
-      const subcommands = ["status", "add-work"];
+      const subcommands = ["init", "status", "add-work"];
       return subcommands
         .filter((s) => s.startsWith(prefix))
         .map((s) => ({ value: s, label: s }));
@@ -217,12 +283,14 @@ const extension = (pi: ExtensionAPI) => {
       const subcommand = spaceIdx === -1 ? trimmed || "status" : trimmed.slice(0, spaceIdx);
       const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
 
-      if (subcommand === "status") {
+      if (subcommand === "init") {
+        handleInit(ctx);
+      } else if (subcommand === "status") {
         handleStatus(ctx, pi);
       } else if (subcommand === "add-work") {
         await handleAddWork(rest, ctx, pi);
       } else {
-        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: status, add-work`, "warning");
+        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, status, add-work`, "warning");
       }
     },
   });

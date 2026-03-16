@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
-import { findAppendableBlocks } from "./index.ts";
+import { findAppendableBlocks } from "./project-sdk.ts";
 import { ValidationError } from "./schema-validator.ts";
 
 function makeTmpDir(): string {

@@ -1,0 +1,234 @@
+/**
+ * Extension entry point for pi-project — registers block tools and the
+ * /project command for project state management.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { Type } from "@sinclair/typebox";
+import type { ExtensionAPI, ExtensionContext, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
+import type { AgentToolUpdateCallback, AgentToolResult } from "@mariozechner/pi-coding-agent";
+import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
+import { projectState, findAppendableBlocks } from "./project-sdk.ts";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
+
+// ── Command handlers ────────────────────────────────────────────────────────
+
+/**
+ * /project status — derives project state from authoritative sources and
+ * sends it as a structured message. Available to human, LLM, and system.
+ */
+function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
+  const state = projectState(ctx.cwd);
+
+  const lines: string[] = [];
+  lines.push(`## Project Status`);
+  lines.push("");
+  lines.push(`**Source:** ${state.sourceFiles} files, ${state.sourceLines} lines | **Tests:** ${state.testCount}`);
+  lines.push(`**Schemas:** ${state.schemas} | **Blocks:** ${state.blocks}`);
+  lines.push(`**Phases:** ${state.phases.total} (current: ${state.phases.current})`);
+  lines.push(`**Commit:** ${state.lastCommit} (${state.lastCommitMessage})`);
+
+  // Block summaries
+  const summaryEntries = Object.entries(state.blockSummaries);
+  if (summaryEntries.length > 0) {
+    lines.push("");
+    lines.push("**Blocks:**");
+    for (const [name, summary] of summaryEntries) {
+      const arrayEntries = Object.entries(summary.arrays);
+      if (arrayEntries.length === 1) {
+        // Single-array block — compact display
+        const [, arr] = arrayEntries[0];
+        let detail = `${arr.total} items`;
+        if (arr.byStatus) {
+          detail += ` (${Object.entries(arr.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ")})`;
+        }
+        lines.push(`- **${name}:** ${detail}`);
+      } else {
+        // Multi-array block — show each array
+        lines.push(`- **${name}:**`);
+        for (const [key, arr] of arrayEntries) {
+          lines.push(`    ${key}: ${arr.total}`);
+        }
+      }
+    }
+  }
+
+  if (state.recentCommits.length > 0) {
+    lines.push("");
+    lines.push("**Recent:**");
+    for (const c of state.recentCommits) lines.push(`  ${c}`);
+  }
+
+  pi.sendMessage({
+    customType: "project-status",
+    content: lines.join("\n"),
+    display: true,
+  });
+}
+
+/**
+ * /project add-work — discovers appendable blocks from schemas,
+ * returns a structured instruction for main context to extract
+ * items from the conversation into typed JSON blocks.
+ */
+async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
+  const workflowDir = path.join(ctx.cwd, PROJECT_DIR);
+  const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
+
+  if (!fs.existsSync(schemasDir)) {
+    ctx.ui.notify(`No ${PROJECT_DIR}/${SCHEMAS_DIR}/ directory found.`, "warning");
+    return;
+  }
+
+  const appendableBlocks = findAppendableBlocks(ctx.cwd);
+  const blockInfo: string[] = [];
+
+  for (const { block, arrayKey, schemaPath } of appendableBlocks) {
+    const dataPath = path.join(workflowDir, `${block}.json`);
+
+    const schema = fs.readFileSync(schemaPath, "utf8");
+    let currentCount = "";
+    try {
+      const data = readBlock(ctx.cwd, block) as Record<string, unknown>;
+      const arr = data[arrayKey];
+      if (Array.isArray(arr)) currentCount = ` (${arr.length} existing)`;
+    } catch { /* block file doesn't exist or invalid — skip count */ }
+
+    blockInfo.push(`### ${block} (array: ${arrayKey})${currentCount}\nSchema: ${schemaPath}\nData: ${dataPath}\n\`\`\`json\n${schema}\n\`\`\``);
+  }
+
+  const validateCmd = `node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';const s=process.argv[1],d=process.argv[2];validateFromFile(s,JSON.parse(fs.readFileSync(d,'utf8')),d);console.log('✓ valid')" SCHEMA_PATH DATA_PATH`;
+
+  const inputSection = args.trim()
+    ? `**Input:**\n${args.trim()}\n\n`
+    : "";
+
+  const blockNames = appendableBlocks.map(b => b.block).join(", ");
+
+  const instruction = `## Add Work to Project Blocks
+
+${inputSection}Read the recent conversation and extract relevant items into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
+
+**Appendable blocks:** ${blockNames}
+
+**Blocks to update:**
+
+${blockInfo.join("\n\n")}
+
+**Process:**
+1. Read the conversation for items that belong in the appendable blocks
+2. Read the current block files to check for duplicates
+3. Append new entries — do NOT replace existing content
+4. For each block modified, validate:
+   \`${validateCmd}\`
+
+**Rules:**
+- IDs must be kebab-case and unique within their block
+- Use \`source: "human"\` for content from this conversation
+- Architecture changes and phase creation are separate processes — do not attempt them here`;
+
+  pi.sendMessage({
+    customType: "project-add-work",
+    content: instruction,
+    display: false,
+  }, {
+    triggerTurn: true,
+    deliverAs: "followUp",
+  });
+}
+
+// ── Extension factory ───────────────────────────────────────────────────────
+
+const extension = (pi: ExtensionAPI) => {
+  // ── Tool: append-block-item ─────────────────────────────────────────
+
+  pi.registerTool({
+    name: "append-block-item",
+    label: "Append Block Item",
+    description: "Append an item to an array in a project block file. Schema validation is automatic.",
+    promptSnippet: "Append items to project blocks (gaps, decisions, or any user-defined block)",
+    parameters: Type.Object({
+      block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
+      arrayKey: Type.String({ description: "Array key in the block (e.g., 'gaps', 'decisions')" }),
+      item: Type.Any({ description: "Item object to append — must conform to block schema" }),
+    }),
+    async execute(_toolCallId: string, params: { block: string; arrayKey: string; item: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+      // Duplicate check if item has an id field
+      if (params.item && typeof params.item === "object" && "id" in params.item) {
+        try {
+          const data = readBlock(ctx.cwd, params.block) as Record<string, unknown>;
+          const arr = data[params.arrayKey];
+          if (Array.isArray(arr) && arr.some((i: Record<string, unknown>) => i.id === params.item.id)) {
+            return { content: [{ type: "text", text: `Item '${params.item.id}' already exists in ${params.block}.${params.arrayKey}` }] };
+          }
+        } catch { /* block doesn't exist — appendToBlock will handle */ }
+      }
+
+      appendToBlock(ctx.cwd, params.block, params.arrayKey, params.item);
+      const id = params.item?.id ? ` '${params.item.id}'` : "";
+      return { content: [{ type: "text", text: `Appended item${id} to ${params.block}.${params.arrayKey}` }] };
+    },
+  });
+
+  // ── Tool: update-block-item ───────────────────────────────────────────
+
+  pi.registerTool({
+    name: "update-block-item",
+    label: "Update Block Item",
+    description: "Update fields on an item in a project block array. Finds by predicate field match.",
+    promptSnippet: "Update items in project blocks — change status, add details, mark resolved",
+    parameters: Type.Object({
+      block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
+      arrayKey: Type.String({ description: "Array key in the block" }),
+      match: Type.Record(Type.String(), Type.Any(), { description: "Fields to match (e.g., { id: 'gap-123' })" }),
+      updates: Type.Record(Type.String(), Type.Any(), { description: "Fields to update (e.g., { status: 'resolved' })" }),
+    }),
+    async execute(_toolCallId: string, params: { block: string; arrayKey: string; match: Record<string, unknown>; updates: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+      if (Object.keys(params.updates).length === 0) {
+        return { content: [{ type: "text", text: "No fields to update" }] };
+      }
+
+      const matchEntries = Object.entries(params.match);
+      updateItemInBlock(
+        ctx.cwd, params.block, params.arrayKey,
+        (item) => matchEntries.every(([k, v]) => item[k] === v),
+        params.updates,
+      );
+
+      const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+      return { content: [{ type: "text", text: `Updated item (${matchDesc}) in ${params.block}.${params.arrayKey}: ${Object.keys(params.updates).join(", ")}` }] };
+    },
+  });
+
+  // ── Command: /project ──────────────────────────────────────────────────
+
+  pi.registerCommand("project", {
+    description: "Project state management",
+    getArgumentCompletions: (prefix: string) => {
+      const subcommands = ["status", "add-work"];
+      return subcommands
+        .filter((s) => s.startsWith(prefix))
+        .map((s) => ({ value: s, label: s }));
+    },
+
+    async handler(args: string, ctx: ExtensionCommandContext) {
+      const trimmed = args.trim();
+      const spaceIdx = trimmed.indexOf(" ");
+      const subcommand = spaceIdx === -1 ? trimmed || "status" : trimmed.slice(0, spaceIdx);
+      const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
+
+      if (subcommand === "status") {
+        handleStatus(ctx, pi);
+      } else if (subcommand === "add-work") {
+        await handleAddWork(rest, ctx, pi);
+      } else {
+        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: status, add-work`, "warning");
+      }
+    },
+  });
+};
+
+export default extension;
+
+// Re-export for consumers
+export { findAppendableBlocks } from "./project-sdk.ts";

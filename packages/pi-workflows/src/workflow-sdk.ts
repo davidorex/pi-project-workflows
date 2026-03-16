@@ -7,11 +7,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { execSync } from "node:child_process";
 import { FILTER_NAMES, EXPRESSION_ROOTS } from "./expression.ts";
 import { STEP_TYPES } from "./workflow-spec.ts";
-import { readBlock } from "./block-api.ts";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
 import type { StepTypeDescriptor } from "./workflow-spec.ts";
 import { discoverWorkflows } from "./workflow-discovery.ts";
 import { parseAgentYaml } from "./agent-spec.ts";
@@ -80,9 +77,8 @@ export function availableTemplates(cwd: string, builtinDir?: string): string[] {
 }
 
 export function availableSchemas(cwd: string, builtinDir?: string): string[] {
-  const defaultBuiltinSchemas = builtinDir ?? path.resolve(import.meta.dirname, "..", "demo", "schemas");
+  const defaultBuiltinSchemas = builtinDir ?? path.resolve(import.meta.dirname, "..", "schemas");
   const dirs = [
-    path.join(cwd, PROJECT_DIR, SCHEMAS_DIR),
     defaultBuiltinSchemas,
   ];
   const schemas: string[] = [];
@@ -100,168 +96,6 @@ export function availableSchemas(cwd: string, builtinDir?: string): string[] {
 
 export function availableWorkflows(cwd: string): WorkflowSpec[] {
   return discoverWorkflows(cwd);
-}
-
-export interface BlockInfo {
-  name: string;
-  hasSchema: boolean;
-}
-
-export function availableBlocks(cwd: string): BlockInfo[] {
-  const workflowDir = path.join(cwd, PROJECT_DIR);
-  const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
-  if (!fs.existsSync(workflowDir)) return [];
-
-  const blocks: BlockInfo[] = [];
-  for (const file of fs.readdirSync(workflowDir)) {
-    if (!file.endsWith(".json")) continue;
-    const name = file.replace(".json", "");
-    const hasSchema = fs.existsSync(path.join(schemasDir, `${name}.schema.json`));
-    blocks.push({ name, hasSchema });
-  }
-  return blocks.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-// ── Derived State (computed at query time, never cached) ─────────────────────
-
-export interface ArraySummary {
-  total: number;
-  byStatus?: Record<string, number>;
-}
-
-export interface BlockSummary {
-  arrays: Record<string, ArraySummary>;
-}
-
-export interface ProjectState {
-  testCount: number;
-  sourceFiles: number;
-  sourceLines: number;
-  lastCommit: string;
-  lastCommitMessage: string;
-  recentCommits: string[];
-  blockSummaries: Record<string, BlockSummary>;
-  phases: { total: number; current: number };
-  agents: number;
-  workflows: number;
-  schemas: number;
-  templates: number;
-  blocks: number;
-}
-
-/**
- * Derive project state from authoritative sources at query time.
- * No cache, no stale data — computed fresh on every call.
- */
-export function projectState(cwd: string): ProjectState {
-  // Git state
-  let lastCommit = "unknown";
-  let lastCommitMessage = "";
-  try {
-    lastCommit = execSync("git log -1 --format=%h", { cwd, encoding: "utf-8" }).trim();
-    lastCommitMessage = execSync("git log -1 --format=%s", { cwd, encoding: "utf-8" }).trim();
-  } catch { /* not a git repo or no commits */ }
-
-  // Recent commits
-  let recentCommits: string[] = [];
-  try {
-    const log = execSync("git log --oneline -5", { cwd, encoding: "utf-8" }).trim();
-    if (log) recentCommits = log.split("\n");
-  } catch { /* not a git repo */ }
-
-  // Source file count and line count (non-test .ts files)
-  let sourceFiles = 0;
-  let sourceLines = 0;
-  try {
-    const srcDir = path.join(cwd, "src");
-    if (fs.existsSync(srcDir)) {
-      for (const file of fs.readdirSync(srcDir)) {
-        if (!file.endsWith(".ts") || file.endsWith(".test.ts")) continue;
-        sourceFiles++;
-        const content = fs.readFileSync(path.join(srcDir, file), "utf-8");
-        sourceLines += content.split("\n").length;
-      }
-    }
-  } catch { /* no src dir */ }
-
-  // Test count derived from static scan of it() declarations in test files
-  let testCount = 0;
-  try {
-    const srcDir = path.join(cwd, "src");
-    if (fs.existsSync(srcDir)) {
-      for (const file of fs.readdirSync(srcDir)) {
-        if (!file.endsWith(".test.ts")) continue;
-        const content = fs.readFileSync(path.join(srcDir, file), "utf-8");
-        const matches = content.match(/^\s*it\s*\(/gm);
-        if (matches) testCount += matches.length;
-      }
-    }
-  } catch { /* no src dir or read error */ }
-
-  // Block summaries — scan all blocks, report item counts and status distribution
-  const blockSummaries: Record<string, BlockSummary> = {};
-  const blockDir = path.join(cwd, PROJECT_DIR);
-  try {
-    if (fs.existsSync(blockDir)) {
-      for (const file of fs.readdirSync(blockDir)) {
-        if (!file.endsWith(".json")) continue;
-        const blockName = file.replace(".json", "");
-        try {
-          const data = readBlock(cwd, blockName) as Record<string, unknown>;
-          const arrays: Record<string, ArraySummary> = {};
-          for (const [key, val] of Object.entries(data)) {
-            if (!Array.isArray(val)) continue;
-            const items = val as Record<string, unknown>[];
-            const arrSummary: ArraySummary = { total: items.length };
-            // Aggregate by status if items have a status field
-            if (items.length > 0 && typeof items[0] === "object" && items[0] !== null && "status" in items[0]) {
-              const byStatus: Record<string, number> = {};
-              for (const item of items) {
-                const s = String((item as Record<string, unknown>).status ?? "unknown");
-                byStatus[s] = (byStatus[s] ?? 0) + 1;
-              }
-              arrSummary.byStatus = byStatus;
-            }
-            arrays[key] = arrSummary;
-          }
-          if (Object.keys(arrays).length > 0) {
-            blockSummaries[blockName] = { arrays };
-          }
-        } catch { /* skip unreadable blocks */ }
-      }
-    }
-  } catch { /* no block dir */ }
-
-  // Phases from PROJECT_DIR/phases/*.json
-  let phaseTotal = 0;
-  let phaseCurrent = 0;
-  try {
-    const phasesDir = path.join(cwd, PROJECT_DIR, "phases");
-    if (fs.existsSync(phasesDir)) {
-      const files = fs.readdirSync(phasesDir).filter(f => f.endsWith(".json")).sort();
-      phaseTotal = files.length;
-      if (files.length > 0) {
-        const last = files[files.length - 1];
-        phaseCurrent = parseInt(last.split("-")[0], 10) || 0;
-      }
-    }
-  } catch { /* no phases dir */ }
-
-  return {
-    testCount,
-    sourceFiles,
-    sourceLines,
-    lastCommit,
-    lastCommitMessage,
-    recentCommits,
-    blockSummaries,
-    phases: { total: phaseTotal, current: phaseCurrent },
-    agents: availableAgents(cwd).length,
-    workflows: availableWorkflows(cwd).length,
-    schemas: availableSchemas(cwd).length,
-    templates: availableTemplates(cwd).length,
-    blocks: availableBlocks(cwd).length,
-  };
 }
 
 // ── Introspection (derived from parsed spec) ─────────────────────────────────

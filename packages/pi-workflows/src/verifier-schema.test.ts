@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import path from "node:path";
-import { validateFromFile } from "pi-project/src/schema-validator.ts";
+import { validateFromFile } from "@davidorex/pi-project/src/schema-validator.ts";
 
 const schemaPath = path.resolve(import.meta.dirname, "..", "schemas", "verifier-output.schema.json");
 

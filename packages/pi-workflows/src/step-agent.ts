@@ -7,7 +7,7 @@ import type { StepSpec, AgentSpec, StepResult, ExecutionState, ExpressionScope }
 import type { ProgressWidgetState } from "./tui.ts";
 import { resolveExpressions } from "./expression.ts";
 import { dispatch } from "./dispatch.ts";
-import { validateFromFile } from "pi-project/src/schema-validator.ts";
+import { validateFromFile } from "@davidorex/pi-project/src/schema-validator.ts";
 import { persistStepOutput } from "./output.ts";
 import { zeroUsage, resolveSchemaPath, buildPrompt, compileAgentSpec } from "./step-shared.ts";
 import type nunjucks from "nunjucks";

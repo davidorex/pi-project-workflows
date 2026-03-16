@@ -1,5 +1,5 @@
 {
-  "name": "pi-workflows",
+  "name": "@davidorex/pi-workflows",
   "version": "0.1.0",
   "description": "Workflow orchestration extension for Pi",
   "license": "MIT",
@@ -32,7 +32,7 @@
     "@mariozechner/pi-coding-agent": "*",
     "@mariozechner/pi-tui": "*",
     "@sinclair/typebox": "*",
-    "pi-project": "*"
+    "@davidorex/pi-project": "*"
   },
   "devDependencies": {
     "@types/nunjucks": "^3.2.6"

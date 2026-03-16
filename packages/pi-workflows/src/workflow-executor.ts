@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepSpec } from "./types.ts";
 import type { ProgressWidgetState, StepOutputSummary } from "./tui.ts";
-import { validate, validateFromFile } from "pi-project/src/schema-validator.ts";
+import { validate, validateFromFile } from "@davidorex/pi-project/src/schema-validator.ts";
 import { resolveExpressions, evaluateCondition } from "./expression.ts";
 import { dispatch } from "./dispatch.ts";
 import { generateRunId, initRunDir, getWorkflowDir, writeState, writeMetrics, buildResult, formatResult } from "./state.ts";
@@ -26,10 +26,10 @@ import { executeAgentStep } from "./step-agent.ts";
 import { executePause } from "./step-pause.ts";
 import { executeCommand } from "./step-command.ts";
 import { executeForEach } from "./step-foreach.ts";
-import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "pi-project/src/block-validation.ts";
-import { readBlock, writeBlock } from "pi-project/src/block-api.ts";
-import { PROJECT_DIR } from "pi-project/src/project-dir.ts";
-import type { BlockSnapshot } from "pi-project/src/block-validation.ts";
+import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "@davidorex/pi-project/src/block-validation.ts";
+import { readBlock, writeBlock } from "@davidorex/pi-project/src/block-api.ts";
+import { PROJECT_DIR } from "@davidorex/pi-project/src/project-dir.ts";
+import type { BlockSnapshot } from "@davidorex/pi-project/src/block-validation.ts";
 import type { RetryConfig } from "./types.ts";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it

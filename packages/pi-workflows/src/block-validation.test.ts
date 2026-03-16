@@ -6,7 +6,7 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { snapshotBlockFiles, validateChangedBlocks } from "pi-project/src/block-validation.ts";
+import { snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-project/src/block-validation.ts";
 import { executeWorkflow } from "./workflow-executor.ts";
 import type { WorkflowSpec } from "./types.ts";
 import { mockCtx, mockPi } from "./test-helpers.ts";

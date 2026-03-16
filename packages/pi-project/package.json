@@ -1,5 +1,5 @@
 {
-  "name": "pi-project",
+  "name": "@davidorex/pi-project",
   "version": "0.1.0",
   "description": "Schema-driven project state management for Pi",
   "license": "MIT",

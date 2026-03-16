@@ -6,16 +6,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { validateFromFile } from "./schema-validator.ts";
-
-const WORKFLOW_DIR = ".workflow";
-const SCHEMAS_DIR = "schemas";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
 
 function blockFilePath(cwd: string, blockName: string): string {
-  return path.join(cwd, WORKFLOW_DIR, `${blockName}.json`);
+  return path.join(cwd, PROJECT_DIR, `${blockName}.json`);
 }
 
 function blockSchemaPath(cwd: string, blockName: string): string {
-  return path.join(cwd, WORKFLOW_DIR, SCHEMAS_DIR, `${blockName}.schema.json`);
+  return path.join(cwd, PROJECT_DIR, SCHEMAS_DIR, `${blockName}.schema.json`);
 }
 
 /**

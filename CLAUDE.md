@@ -21,7 +21,7 @@ node --experimental-strip-types -e "import * as sdk from'./src/workflow-sdk.ts';
 ## Conventions
 
 - ESM, TypeScript loaded directly by pi (`--experimental-strip-types`, no build step)
-- Extension registers: `workflow` tool + `record-gap` tool + `update-gap` tool + `/workflow` command (subcommands: `run`, `list`, `resume`, `status`, `add-work`)
+- Extension registers: `workflow` tool + `append-block-item` tool + `update-block-item` tool + `/workflow` command (subcommands: `run`, `list`, `resume`, `status`, `add-work`)
 - Tests: node test runner, `src/*.test.ts`
 - All warnings from linter must be resolved
 
@@ -35,6 +35,7 @@ node --experimental-strip-types -e "import * as sdk from'./src/workflow-sdk.ts';
 `ls src/*.ts` for current files. Key modules:
 
 - `index.ts` — extension entry point (tools, commands, keybindings)
+- `project-dir.ts` — `PROJECT_DIR` and `SCHEMAS_DIR` constants (single source for `.workflow/` path)
 - `workflow-sdk.ts` — SDK: vocabulary, discovery, derived state, spec introspection
 - `workflow-executor.ts` — main orchestration loop
 - `workflow-spec.ts` — YAML parsing, `STEP_TYPES` registry
@@ -50,7 +51,7 @@ Single queryable surface for the extension's capabilities. All functions derive 
 
 - **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`
 - **Discovery**: `availableAgents(cwd)`, `availableWorkflows(cwd)`, `availableTemplates(cwd)`, `availableSchemas(cwd)`, `availableBlocks(cwd)`
-- **Derived state**: `projectState(cwd)` — all project metrics computed at query time (source files/lines, tests, phases, gaps, decisions, agents, workflows, schemas, templates, blocks, recent commits)
+- **Derived state**: `projectState(cwd)` — all project metrics computed at query time (source files/lines, tests, phases, blockSummaries, agents, workflows, schemas, templates, blocks, recent commits)
 - **Introspection**: `extractExpressions(spec)`, `declaredSteps(spec)`, `declaredAgentRefs(spec)`, `declaredSchemaRefs(spec)`
 
 Use `/workflow status` to see derived state in conversation.

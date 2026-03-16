@@ -8,6 +8,7 @@ import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } f
 import { createAgentLoader } from "./agent-spec.ts";
 import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
 import { projectState } from "./workflow-sdk.ts";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
 import type { WorkflowResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -350,23 +351,29 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
   lines.push(`**Agents:** ${state.agents} | **Workflows:** ${state.workflows} | **Schemas:** ${state.schemas} | **Templates:** ${state.templates}`);
   lines.push(`**Phases:** ${state.phases.total} (current: ${state.phases.current}) | **Blocks:** ${state.blocks}`);
   lines.push(`**Commit:** ${state.lastCommit} (${state.lastCommitMessage})`);
-  lines.push("");
-  lines.push(`**Gaps:** ${state.gaps.open} open, ${state.gaps.resolved} resolved, ${state.gaps.deferred} deferred`);
 
-  if (state.gaps.open > 0) {
-    const byCat = Object.entries(state.gaps.byCategory).map(([k, v]) => `${k}: ${v}`).join(", ");
-    const byPri = Object.entries(state.gaps.byPriority).map(([k, v]) => `${k}: ${v}`).join(", ");
-    lines.push(`  By category: ${byCat}`);
-    lines.push(`  By priority: ${byPri}`);
-  }
-
-  lines.push(`**Decisions:** ${state.decisions.total} total (${state.decisions.decided} decided, ${state.decisions.tentative} tentative)`);
-
-  if (state.openGaps.length > 0) {
+  // Block summaries
+  const summaryEntries = Object.entries(state.blockSummaries);
+  if (summaryEntries.length > 0) {
     lines.push("");
-    lines.push("**Open gaps (high priority):**");
-    for (const g of state.openGaps.filter(g => g.priority === "high" || g.priority === "critical")) {
-      lines.push(`- \`${g.id}\` (${g.category}) — ${g.description.slice(0, 80)}`);
+    lines.push("**Blocks:**");
+    for (const [name, summary] of summaryEntries) {
+      const arrayEntries = Object.entries(summary.arrays);
+      if (arrayEntries.length === 1) {
+        // Single-array block — compact display
+        const [, arr] = arrayEntries[0];
+        let detail = `${arr.total} items`;
+        if (arr.byStatus) {
+          detail += ` (${Object.entries(arr.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ")})`;
+        }
+        lines.push(`- **${name}:** ${detail}`);
+      } else {
+        // Multi-array block — show each array
+        lines.push(`- **${name}:**`);
+        for (const [key, arr] of arrayEntries) {
+          lines.push(`    ${key}: ${arr.total}`);
+        }
+      }
     }
   }
 
@@ -384,37 +391,61 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
 }
 
 /**
- * /workflow add-work — reads project block schemas and current state,
+ * Discover blocks with array properties by scanning PROJECT_DIR/SCHEMAS_DIR
+ * for schemas whose root type has at least one array property.
+ * Returns block name, first array key, and schema path for each.
+ */
+export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayKey: string; schemaPath: string }> {
+  const schemasDir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
+  if (!fs.existsSync(schemasDir)) return [];
+  const results: Array<{ block: string; arrayKey: string; schemaPath: string }> = [];
+  for (const file of fs.readdirSync(schemasDir)) {
+    if (!file.endsWith(".schema.json")) continue;
+    const blockName = file.replace(".schema.json", "");
+    try {
+      const schema = JSON.parse(fs.readFileSync(path.join(schemasDir, file), "utf-8"));
+      if (schema.properties) {
+        for (const [key, prop] of Object.entries(schema.properties)) {
+          if ((prop as Record<string, unknown>).type === "array") {
+            results.push({ block: blockName, arrayKey: key, schemaPath: path.join(schemasDir, file) });
+            break; // first array property
+          }
+        }
+      }
+    } catch { /* skip malformed schemas */ }
+  }
+  return results;
+}
+
+/**
+ * /workflow add-work — discovers appendable blocks from schemas,
  * returns a structured instruction for main context to extract
- * gaps, decisions, and rationale from the conversation into typed JSON blocks.
+ * items from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
-  const workflowDir = path.join(ctx.cwd, ".workflow");
-  const schemasDir = path.join(workflowDir, "schemas");
+  const workflowDir = path.join(ctx.cwd, PROJECT_DIR);
+  const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
 
   if (!fs.existsSync(schemasDir)) {
-    ctx.ui.notify("No .workflow/schemas/ directory found.", "warning");
+    ctx.ui.notify(`No ${PROJECT_DIR}/${SCHEMAS_DIR}/ directory found.`, "warning");
     return;
   }
 
-  const targetBlocks = ["gaps", "decisions", "rationale"] as const;
+  const appendableBlocks = findAppendableBlocks(ctx.cwd);
   const blockInfo: string[] = [];
 
-  for (const block of targetBlocks) {
-    const schemaPath = path.join(schemasDir, `${block}.schema.json`);
+  for (const { block, arrayKey, schemaPath } of appendableBlocks) {
     const dataPath = path.join(workflowDir, `${block}.json`);
-
-    if (!fs.existsSync(schemaPath)) continue;
 
     const schema = fs.readFileSync(schemaPath, "utf8");
     let currentCount = "";
     try {
       const data = readBlock(ctx.cwd, block) as Record<string, unknown>;
-      const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]));
-      if (arrayKey) currentCount = ` (${(data[arrayKey] as unknown[]).length} existing)`;
+      const arr = data[arrayKey];
+      if (Array.isArray(arr)) currentCount = ` (${arr.length} existing)`;
     } catch { /* block file doesn't exist or invalid — skip count */ }
 
-    blockInfo.push(`### ${block}${currentCount}\nSchema: ${schemaPath}\nData: ${dataPath}\n\`\`\`json\n${schema}\n\`\`\``);
+    blockInfo.push(`### ${block} (array: ${arrayKey})${currentCount}\nSchema: ${schemaPath}\nData: ${dataPath}\n\`\`\`json\n${schema}\n\`\`\``);
   }
 
   const validateCmd = `node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';const s=process.argv[1],d=process.argv[2];validateFromFile(s,JSON.parse(fs.readFileSync(d,'utf8')),d);console.log('✓ valid')" SCHEMA_PATH DATA_PATH`;
@@ -423,16 +454,20 @@ async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: Ext
     ? `**Input:**\n${args.trim()}\n\n`
     : "";
 
+  const blockNames = appendableBlocks.map(b => b.block).join(", ");
+
   const instruction = `## Add Work to Project Blocks
 
-${inputSection}Read the recent conversation and extract gaps, decisions, and rationale into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
+${inputSection}Read the recent conversation and extract relevant items into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
+
+**Appendable blocks:** ${blockNames}
 
 **Blocks to update:**
 
 ${blockInfo.join("\n\n")}
 
 **Process:**
-1. Read the conversation for capability gaps, design decisions, and rationale narratives
+1. Read the conversation for items that belong in the appendable blocks
 2. Read the current block files to check for duplicates
 3. Append new entries — do NOT replace existing content
 4. For each block modified, validate:
@@ -518,73 +553,63 @@ const extension = (pi: ExtensionAPI) => {
     },
   });
 
-  // ── Tool: record-gap ───────────────────────────────────────────────────
+  // ── Tool: append-block-item ─────────────────────────────────────────
 
   pi.registerTool({
-    name: "record-gap",
-    label: "Record Gap",
-    description: "Record a capability gap, issue, or cleanup item to .workflow/gaps.json with schema validation",
-    promptSnippet: "Record gaps, issues, and cleanup items to the project's typed gap tracker",
+    name: "append-block-item",
+    label: "Append Block Item",
+    description: "Append an item to an array in a project block file. Schema validation is automatic.",
+    promptSnippet: "Append items to project blocks (gaps, decisions, or any user-defined block)",
     parameters: Type.Object({
-      id: Type.String({ description: "Kebab-case unique ID for the gap" }),
-      description: Type.String({ description: "What is missing or broken" }),
-      category: Type.String({ enum: ["primitive", "issue", "cleanup", "capability", "composition"], description: "Gap category" }),
-      priority: Type.String({ enum: ["low", "medium", "high", "critical"], description: "Priority level" }),
-      details: Type.Optional(Type.String({ description: "Additional context, constraints, or references" })),
+      block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
+      arrayKey: Type.String({ description: "Array key in the block (e.g., 'gaps', 'decisions')" }),
+      item: Type.Any({ description: "Item object to append — must conform to block schema" }),
     }),
-    async execute(_toolCallId: string, params: Record<string, unknown>, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
-      const entry: Record<string, unknown> = {
-        id: params.id,
-        description: params.description,
-        status: "open",
-        category: params.category,
-        priority: params.priority,
-        source: "agent",
-      };
-      if (params.details) entry.details = params.details;
-
-      // Check for duplicate ID
-      try {
-        const data = readBlock(ctx.cwd, "gaps") as { gaps: Array<{ id: string }> };
-        if (data.gaps.some(g => g.id === entry.id)) {
-          return { content: [{ type: "text", text: `Gap '${entry.id}' already exists` }] };
-        }
-      } catch {
-        // gaps.json doesn't exist — appendToBlock will fail with a clear error
+    async execute(_toolCallId: string, params: { block: string; arrayKey: string; item: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+      // Duplicate check if item has an id field
+      if (params.item && typeof params.item === "object" && "id" in params.item) {
+        try {
+          const data = readBlock(ctx.cwd, params.block) as Record<string, unknown>;
+          const arr = data[params.arrayKey];
+          if (Array.isArray(arr) && arr.some((i: Record<string, unknown>) => i.id === params.item.id)) {
+            return { content: [{ type: "text", text: `Item '${params.item.id}' already exists in ${params.block}.${params.arrayKey}` }] };
+          }
+        } catch { /* block doesn't exist — appendToBlock will handle */ }
       }
 
-      appendToBlock(ctx.cwd, "gaps", "gaps", entry);
-      return { content: [{ type: "text", text: `Recorded gap '${entry.id}' (${entry.category}/${entry.priority})` }] };
+      appendToBlock(ctx.cwd, params.block, params.arrayKey, params.item);
+      const id = params.item?.id ? ` '${params.item.id}'` : "";
+      return { content: [{ type: "text", text: `Appended item${id} to ${params.block}.${params.arrayKey}` }] };
     },
   });
 
-  // ── Tool: update-gap ──────────────────────────────────────────────────
+  // ── Tool: update-block-item ───────────────────────────────────────────
 
   pi.registerTool({
-    name: "update-gap",
-    label: "Update Gap",
-    description: "Update fields on an existing gap in .workflow/gaps.json (status, priority, resolved_by, details)",
-    promptSnippet: "Update existing gaps — mark resolved, change priority, add details",
+    name: "update-block-item",
+    label: "Update Block Item",
+    description: "Update fields on an item in a project block array. Finds by predicate field match.",
+    promptSnippet: "Update items in project blocks — change status, add details, mark resolved",
     parameters: Type.Object({
-      id: Type.String({ description: "ID of the gap to update" }),
-      status: Type.Optional(Type.String({ enum: ["open", "resolved", "deferred"], description: "New status" })),
-      priority: Type.Optional(Type.String({ enum: ["low", "medium", "high", "critical"], description: "New priority" })),
-      resolved_by: Type.Optional(Type.String({ description: "What resolved this gap" })),
-      details: Type.Optional(Type.String({ description: "Additional context to set or replace" })),
+      block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
+      arrayKey: Type.String({ description: "Array key in the block" }),
+      match: Type.Record(Type.String(), Type.Any(), { description: "Fields to match (e.g., { id: 'gap-123' })" }),
+      updates: Type.Record(Type.String(), Type.Any(), { description: "Fields to update (e.g., { status: 'resolved' })" }),
     }),
-    async execute(_toolCallId: string, params: Record<string, unknown>, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
-      const updates: Record<string, unknown> = {};
-      if (params.status !== undefined) updates.status = params.status;
-      if (params.priority !== undefined) updates.priority = params.priority;
-      if (params.resolved_by !== undefined) updates.resolved_by = params.resolved_by;
-      if (params.details !== undefined) updates.details = params.details;
-
-      if (Object.keys(updates).length === 0) {
+    async execute(_toolCallId: string, params: { block: string; arrayKey: string; match: Record<string, unknown>; updates: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+      if (Object.keys(params.updates).length === 0) {
         return { content: [{ type: "text", text: "No fields to update" }] };
       }
 
-      updateItemInBlock(ctx.cwd, "gaps", "gaps", (g) => g.id === params.id, updates);
-      return { content: [{ type: "text", text: `Updated gap '${params.id}': ${Object.keys(updates).join(", ")}` }] };
+      const matchEntries = Object.entries(params.match);
+      updateItemInBlock(
+        ctx.cwd, params.block, params.arrayKey,
+        (item) => matchEntries.every(([k, v]) => item[k] === v),
+        params.updates,
+      );
+
+      const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+      return { content: [{ type: "text", text: `Updated item (${matchDesc}) in ${params.block}.${params.arrayKey}: ${Object.keys(params.updates).join(", ")}` }] };
     },
   });
 

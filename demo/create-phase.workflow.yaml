@@ -15,14 +15,18 @@ steps:
     command: |
       node --experimental-strip-types -e "
         import fs from 'fs';
-        const phases = fs.readdirSync('.workflow/phases')
+        import { readBlock } from './src/block-api.ts';
+        import { PROJECT_DIR } from './src/project-dir.ts';
+        import path from 'path';
+        const phasesDir = path.join(PROJECT_DIR, 'phases');
+        const phases = fs.readdirSync(phasesDir)
           .filter(f => f.endsWith('.json'))
-          .map(f => JSON.parse(fs.readFileSync('.workflow/phases/' + f, 'utf8')));
-        const arch = JSON.parse(fs.readFileSync('.workflow/architecture.json', 'utf8'));
-        const conv = JSON.parse(fs.readFileSync('.workflow/conventions.json', 'utf8'));
-        const gaps = JSON.parse(fs.readFileSync('.workflow/gaps.json', 'utf8'));
-        const inv = JSON.parse(fs.readFileSync('.workflow/inventory.json', 'utf8'));
-        console.log(JSON.stringify({ phases, architecture: arch, conventions: conv, gaps: gaps.gaps, inventory: inv }));
+          .map(f => JSON.parse(fs.readFileSync(path.join(phasesDir, f), 'utf8')));
+        const arch = readBlock('.', 'architecture');
+        const conv = readBlock('.', 'conventions');
+        const gapsData = readBlock('.', 'gaps');
+        const inv = readBlock('.', 'inventory');
+        console.log(JSON.stringify({ phases, architecture: arch, conventions: conv, gaps: gapsData.gaps, inventory: inv }));
       "
     output:
       format: json

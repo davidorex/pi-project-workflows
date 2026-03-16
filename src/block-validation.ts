@@ -6,9 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { validateFromFile } from "./schema-validator.ts";
-
-const WORKFLOW_DIR = ".workflow";
-const SCHEMAS_DIR = "schemas";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
 
 export interface BlockFileSnapshot {
   mtime: number;
@@ -23,7 +21,7 @@ export type BlockSnapshot = Map<string, BlockFileSnapshot>;
  */
 export function snapshotBlockFiles(cwd: string): BlockSnapshot {
   const result: BlockSnapshot = new Map();
-  const workflowDir = path.join(cwd, WORKFLOW_DIR);
+  const workflowDir = path.join(cwd, PROJECT_DIR);
 
   try {
     const entries = fs.readdirSync(workflowDir);
@@ -57,7 +55,7 @@ export function snapshotBlockFiles(cwd: string): BlockSnapshot {
  * @throws Error if any changed block file fails schema validation
  */
 export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void {
-  const workflowDir = path.join(cwd, WORKFLOW_DIR);
+  const workflowDir = path.join(cwd, PROJECT_DIR);
   const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
 
   // Gather current state
@@ -114,7 +112,7 @@ export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void 
  * Returns list of rolled-back file paths.
  */
 export function rollbackBlockFiles(cwd: string, before: BlockSnapshot): string[] {
-  const workflowDir = path.join(cwd, WORKFLOW_DIR);
+  const workflowDir = path.join(cwd, PROJECT_DIR);
   const rolledBack: string[] = [];
 
   // Gather current files

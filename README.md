@@ -1,18 +1,23 @@
 # pi-project-workflows
 
-Monorepo for two [Pi](https://github.com/badlogic/pi-mono) extensions that give Pi agents structured project state and multi-step workflow orchestration.
+Two [Pi](https://github.com/badlogic/pi-mono) extensions that give Pi agents structured, schema-driven project state and typed workflow orchestration.
+
+Schemas are the contract layer. In pi-project, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
 
 ## Packages
 
 | Package | npm | Description |
 |---------|-----|-------------|
-| [@davidorex/pi-project](packages/pi-project/) | `npm:@davidorex/pi-project` | Schema-driven project state management — typed JSON blocks with write-time validation, generic CRUD tools, dynamically derived state |
-| [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Workflow orchestration — YAML specs, DAG execution, 8 step types, expression engine, checkpoint/resume |
+| [@davidorex/pi-project](packages/pi-project/) | `npm:@davidorex/pi-project` | Schema-driven project state — typed JSON blocks, write-time validation, generic CRUD tools, dynamically derived state. Add a schema, get a new block type with tooling. No code changes. |
+| [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, 8 step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
 
 ## Quick Start
 
 ```bash
-# Install both extensions in any Pi project
+# Install both extensions in any Pi project (one command)
+pi install npm:@davidorex/pi-project-workflows
+
+# Or install individually
 pi install npm:@davidorex/pi-project
 pi install npm:@davidorex/pi-workflows
 

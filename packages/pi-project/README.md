@@ -1,6 +1,8 @@
 # pi-project
 
-Schema-driven project state management for [Pi](https://github.com/badlogic/pi-mono). Typed JSON block files with write-time validation, generic CRUD tools, and dynamically derived project state.
+Schema-driven project state management for [Pi](https://github.com/badlogic/pi-mono).
+
+Schemas are the design language. You define what your project tracks by writing JSON Schemas, and the entire system — tools, validation, derived state, workflow integration — adapts automatically. Drop a new `.schema.json` file into `.project/schemas/` and it instantly becomes an addressable block type with write-time validation, discovery, and generic CRUD tooling. No code changes.
 
 ## Install
 
@@ -16,9 +18,22 @@ pi install npm:@davidorex/pi-project
 
 Creates `.project/` with 13 default schemas and 4 starter blocks (gaps, decisions, rationale, project). Idempotent — safe to run again.
 
-## What It Does
+## How It Works
 
-pi-project manages structured project data in `.project/` — JSON files validated against JSON Schemas. Users define their own block types by adding schemas; no code changes needed.
+Project data lives in `.project/` as typed JSON block files. Each block has a corresponding JSON Schema that defines its shape. All writes — whether from tools, workflows, or agents — are validated against the schema before data hits disk. Invalid data is never persisted.
+
+```
+.project/
+  schemas/          — JSON Schema files define block types
+    gaps.schema.json
+    decisions.schema.json
+    features.schema.json     ← user-defined, works immediately
+  phases/           — phase specification files
+  gaps.json         — block data, validated against gaps.schema.json
+  decisions.json    — block data, validated against decisions.schema.json
+```
+
+The schema is the contract. When pi-workflows agents produce output that writes to project blocks, the schema enforces the shape. When `/project add-work` extracts items from conversation, the schema constrains what gets written. When `projectState()` derives block summaries, it reads the typed data the schemas guarantee.
 
 **Tools registered:**
 - `append-block-item` — append an item to any block array (schema validation automatic)
@@ -26,19 +41,8 @@ pi-project manages structured project data in `.project/` — JSON files validat
 
 **Commands registered:**
 - `/project init` — scaffold `.project/` with default schemas and empty blocks
-- `/project status` — display derived project state (source files, tests, phases, block summaries, recent commits)
-- `/project add-work` — extract items from conversation into typed blocks
-
-## Directory Layout
-
-```
-.project/
-  schemas/          — JSON Schema files (*.schema.json)
-  phases/           — phase specs (NN-name.json)
-  *.json            — block data files (e.g., gaps.json, decisions.json)
-```
-
-Users add schemas to `.project/schemas/`. A block file is any `.project/*.json` — if a matching `.project/schemas/{name}.schema.json` exists, all writes are validated against it.
+- `/project status` — derived project state (source metrics, test counts, block summaries, git state)
+- `/project add-work` — extract structured items from conversation into typed blocks
 
 ## Source Files
 

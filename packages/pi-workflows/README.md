@@ -1,6 +1,10 @@
 # pi-workflows
 
-Workflow orchestration extension for [Pi](https://github.com/badlogic/pi-mono). Define multi-step workflows in YAML, execute them as DAGs with typed data flow between agents, and resume from checkpoints on failure.
+Schema-driven workflow orchestration for [Pi](https://github.com/badlogic/pi-mono).
+
+Data flows through workflows as typed JSON, not strings. Each agent step declares an `output.schema` — the agent's output is validated against a JSON Schema before it's accepted into the pipeline. The expression engine passes typed fields between steps (`${{ steps.investigate.output.findings }}`), not raw text. Templates compose typed data into agent prompts, so agents receive structured context. The entire pipeline is schema-governed: **schema defines shape → agent produces to shape → validator enforces shape → next step consumes typed fields.**
+
+The schemas in `schemas/` (investigation-findings, decomposition-specs, execution-results, etc.) are the typed contracts between workflow steps. They're not metadata — they're the enforcement boundary.
 
 ## Install
 
@@ -8,6 +12,8 @@ Workflow orchestration extension for [Pi](https://github.com/badlogic/pi-mono). 
 pi install npm:@davidorex/pi-project    # peer dependency
 pi install npm:@davidorex/pi-workflows
 ```
+
+Or install both at once: `pi install npm:@davidorex/pi-project-workflows`
 
 ## Getting Started
 
@@ -20,6 +26,8 @@ Creates `.workflows/` for run state. Workflow YAML specs are discovered automati
 ## What It Does
 
 pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orchestration. Workflows are YAML specs. Steps run as subprocesses (`pi --mode json`) with their own context windows. The main conversation is the control plane; workflows are subordinate.
+
+Workflows consume project blocks as typed input via `readBlock()` — structured data, not raw files. When workflow agents write back to project blocks, pi-project's schema validation enforces the shape at write time. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
 
 **Tool registered:**
 - `workflow` — run a named workflow with typed input

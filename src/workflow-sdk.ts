@@ -124,9 +124,13 @@ export function availableBlocks(cwd: string): BlockInfo[] {
 
 // ── Derived State (computed at query time, never cached) ─────────────────────
 
-export interface BlockSummary {
+export interface ArraySummary {
   total: number;
   byStatus?: Record<string, number>;
+}
+
+export interface BlockSummary {
+  arrays: Record<string, ArraySummary>;
 }
 
 export interface ProjectState {
@@ -204,11 +208,11 @@ export function projectState(cwd: string): ProjectState {
         const blockName = file.replace(".json", "");
         try {
           const data = readBlock(cwd, blockName) as Record<string, unknown>;
-          // Find first array property
-          for (const [, val] of Object.entries(data)) {
+          const arrays: Record<string, ArraySummary> = {};
+          for (const [key, val] of Object.entries(data)) {
             if (!Array.isArray(val)) continue;
             const items = val as Record<string, unknown>[];
-            const summary: BlockSummary = { total: items.length };
+            const arrSummary: ArraySummary = { total: items.length };
             // Aggregate by status if items have a status field
             if (items.length > 0 && typeof items[0] === "object" && items[0] !== null && "status" in items[0]) {
               const byStatus: Record<string, number> = {};
@@ -216,10 +220,12 @@ export function projectState(cwd: string): ProjectState {
                 const s = String((item as Record<string, unknown>).status ?? "unknown");
                 byStatus[s] = (byStatus[s] ?? 0) + 1;
               }
-              summary.byStatus = byStatus;
+              arrSummary.byStatus = byStatus;
             }
-            blockSummaries[blockName] = summary;
-            break; // first array property
+            arrays[key] = arrSummary;
+          }
+          if (Object.keys(arrays).length > 0) {
+            blockSummaries[blockName] = { arrays };
           }
         } catch { /* skip unreadable blocks */ }
       }

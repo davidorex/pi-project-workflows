@@ -190,19 +190,21 @@ describe("projectState", () => {
     assert.strictEqual(state.lastCommitMessage, "init");
     assert.ok(state.recentCommits.length > 0);
     assert.ok(state.recentCommits[0].includes("init"));
-    // blockSummaries: gaps has 3 items with status distribution
+    // blockSummaries: gaps block has a "gaps" array with 3 items and status distribution
     assert.ok(state.blockSummaries.gaps);
-    assert.strictEqual(state.blockSummaries.gaps.total, 3);
-    assert.ok(state.blockSummaries.gaps.byStatus);
-    assert.strictEqual(state.blockSummaries.gaps.byStatus!.open, 2);
-    assert.strictEqual(state.blockSummaries.gaps.byStatus!.resolved, 1);
+    assert.ok(state.blockSummaries.gaps.arrays.gaps);
+    assert.strictEqual(state.blockSummaries.gaps.arrays.gaps.total, 3);
+    assert.ok(state.blockSummaries.gaps.arrays.gaps.byStatus);
+    assert.strictEqual(state.blockSummaries.gaps.arrays.gaps.byStatus!.open, 2);
+    assert.strictEqual(state.blockSummaries.gaps.arrays.gaps.byStatus!.resolved, 1);
 
-    // blockSummaries: decisions has 2 items with status distribution
+    // blockSummaries: decisions block has a "decisions" array with 2 items and status distribution
     assert.ok(state.blockSummaries.decisions);
-    assert.strictEqual(state.blockSummaries.decisions.total, 2);
-    assert.ok(state.blockSummaries.decisions.byStatus);
-    assert.strictEqual(state.blockSummaries.decisions.byStatus!.decided, 1);
-    assert.strictEqual(state.blockSummaries.decisions.byStatus!.tentative, 1);
+    assert.ok(state.blockSummaries.decisions.arrays.decisions);
+    assert.strictEqual(state.blockSummaries.decisions.arrays.decisions.total, 2);
+    assert.ok(state.blockSummaries.decisions.arrays.decisions.byStatus);
+    assert.strictEqual(state.blockSummaries.decisions.arrays.decisions.byStatus!.decided, 1);
+    assert.strictEqual(state.blockSummaries.decisions.arrays.decisions.byStatus!.tentative, 1);
 
     assert.strictEqual(state.phases.total, 3);
     assert.strictEqual(state.phases.current, 8); // highest number from 08-automation.json

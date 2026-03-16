@@ -356,14 +356,24 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
   const summaryEntries = Object.entries(state.blockSummaries);
   if (summaryEntries.length > 0) {
     lines.push("");
-    lines.push("**Block summaries:**");
+    lines.push("**Blocks:**");
     for (const [name, summary] of summaryEntries) {
-      let detail = `${summary.total} items`;
-      if (summary.byStatus) {
-        const statusParts = Object.entries(summary.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ");
-        detail += ` (${statusParts})`;
+      const arrayEntries = Object.entries(summary.arrays);
+      if (arrayEntries.length === 1) {
+        // Single-array block — compact display
+        const [, arr] = arrayEntries[0];
+        let detail = `${arr.total} items`;
+        if (arr.byStatus) {
+          detail += ` (${Object.entries(arr.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ")})`;
+        }
+        lines.push(`- **${name}:** ${detail}`);
+      } else {
+        // Multi-array block — show each array
+        lines.push(`- **${name}:**`);
+        for (const [key, arr] of arrayEntries) {
+          lines.push(`    ${key}: ${arr.total}`);
+        }
       }
-      lines.push(`- **${name}:** ${detail}`);
     }
   }
 

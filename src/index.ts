@@ -385,9 +385,36 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
 }
 
 /**
- * /workflow add-work — reads project block schemas and current state,
+ * Discover blocks with array properties by scanning PROJECT_DIR/SCHEMAS_DIR
+ * for schemas whose root type has at least one array property.
+ * Returns block name, first array key, and schema path for each.
+ */
+export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayKey: string; schemaPath: string }> {
+  const schemasDir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
+  if (!fs.existsSync(schemasDir)) return [];
+  const results: Array<{ block: string; arrayKey: string; schemaPath: string }> = [];
+  for (const file of fs.readdirSync(schemasDir)) {
+    if (!file.endsWith(".schema.json")) continue;
+    const blockName = file.replace(".schema.json", "");
+    try {
+      const schema = JSON.parse(fs.readFileSync(path.join(schemasDir, file), "utf-8"));
+      if (schema.properties) {
+        for (const [key, prop] of Object.entries(schema.properties)) {
+          if ((prop as Record<string, unknown>).type === "array") {
+            results.push({ block: blockName, arrayKey: key, schemaPath: path.join(schemasDir, file) });
+            break; // first array property
+          }
+        }
+      }
+    } catch { /* skip malformed schemas */ }
+  }
+  return results;
+}
+
+/**
+ * /workflow add-work — discovers appendable blocks from schemas,
  * returns a structured instruction for main context to extract
- * gaps, decisions, and rationale from the conversation into typed JSON blocks.
+ * items from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
   const workflowDir = path.join(ctx.cwd, PROJECT_DIR);
@@ -398,24 +425,21 @@ async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: Ext
     return;
   }
 
-  const targetBlocks = ["gaps", "decisions", "rationale"] as const;
+  const appendableBlocks = findAppendableBlocks(ctx.cwd);
   const blockInfo: string[] = [];
 
-  for (const block of targetBlocks) {
-    const schemaPath = path.join(schemasDir, `${block}.schema.json`);
+  for (const { block, arrayKey, schemaPath } of appendableBlocks) {
     const dataPath = path.join(workflowDir, `${block}.json`);
-
-    if (!fs.existsSync(schemaPath)) continue;
 
     const schema = fs.readFileSync(schemaPath, "utf8");
     let currentCount = "";
     try {
       const data = readBlock(ctx.cwd, block) as Record<string, unknown>;
-      const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]));
-      if (arrayKey) currentCount = ` (${(data[arrayKey] as unknown[]).length} existing)`;
+      const arr = data[arrayKey];
+      if (Array.isArray(arr)) currentCount = ` (${arr.length} existing)`;
     } catch { /* block file doesn't exist or invalid — skip count */ }
 
-    blockInfo.push(`### ${block}${currentCount}\nSchema: ${schemaPath}\nData: ${dataPath}\n\`\`\`json\n${schema}\n\`\`\``);
+    blockInfo.push(`### ${block} (array: ${arrayKey})${currentCount}\nSchema: ${schemaPath}\nData: ${dataPath}\n\`\`\`json\n${schema}\n\`\`\``);
   }
 
   const validateCmd = `node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';const s=process.argv[1],d=process.argv[2];validateFromFile(s,JSON.parse(fs.readFileSync(d,'utf8')),d);console.log('✓ valid')" SCHEMA_PATH DATA_PATH`;
@@ -424,16 +448,20 @@ async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: Ext
     ? `**Input:**\n${args.trim()}\n\n`
     : "";
 
+  const blockNames = appendableBlocks.map(b => b.block).join(", ");
+
   const instruction = `## Add Work to Project Blocks
 
-${inputSection}Read the recent conversation and extract gaps, decisions, and rationale into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
+${inputSection}Read the recent conversation and extract relevant items into the project's typed JSON blocks. Each block has a schema — conform to it exactly.
+
+**Appendable blocks:** ${blockNames}
 
 **Blocks to update:**
 
 ${blockInfo.join("\n\n")}
 
 **Process:**
-1. Read the conversation for capability gaps, design decisions, and rationale narratives
+1. Read the conversation for items that belong in the appendable blocks
 2. Read the current block files to check for duplicates
 3. Append new entries — do NOT replace existing content
 4. For each block modified, validate:

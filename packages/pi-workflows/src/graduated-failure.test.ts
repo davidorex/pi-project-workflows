@@ -199,7 +199,7 @@ describe("graduated failure retry", () => {
   beforeEach(() => {
     tmpDir = makeTmpDir();
     // Create minimal run dir structure
-    const runDir = path.join(tmpDir, ".pi", "workflow-runs", "test", "runs");
+    const runDir = path.join(tmpDir, ".workflows", "runs", "test", "runs");
     fs.mkdirSync(runDir, { recursive: true });
   });
 

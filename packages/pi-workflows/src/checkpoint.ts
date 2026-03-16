@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ExecutionState, WorkflowSpec } from "./types.ts";
 import { readState } from "./state.ts";
+import { WORKFLOWS_DIR } from "./workflows-dir.ts";
 
 export interface IncompleteRun {
   runId: string;
@@ -21,14 +22,14 @@ export interface IncompleteRun {
 /**
  * Find the most recent incomplete run for a workflow.
  *
- * Scans .pi/workflow-runs/<name>/runs/ for state.json files
+ * Scans .workflows/runs/<name>/runs/ for state.json files
  * with status "running" or "failed". Returns the most recent one
  * (by directory name, which encodes timestamp).
  *
  * Returns null if no incomplete runs exist.
  */
 export function findIncompleteRun(cwd: string, workflowName: string): IncompleteRun | null {
-  const runsDir = path.join(cwd, ".pi", "workflow-runs", workflowName, "runs");
+  const runsDir = path.join(cwd, WORKFLOWS_DIR, "runs", workflowName, "runs");
   if (!fs.existsSync(runsDir)) return null;
 
   const entries = fs.readdirSync(runsDir)

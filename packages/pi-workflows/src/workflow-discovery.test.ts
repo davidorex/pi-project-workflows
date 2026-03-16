@@ -11,7 +11,7 @@ const NO_BUILTINS = path.join(os.tmpdir(), "wf-no-builtins-nonexistent");
 describe("discoverWorkflows", () => {
   it("discovers workflows from project directory", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
-    const wfDir = path.join(tmpDir, ".pi", "workflows");
+    const wfDir = path.join(tmpDir, ".workflows");
     fs.mkdirSync(wfDir, { recursive: true });
     fs.writeFileSync(
       path.join(wfDir, "test.workflow.yaml"),
@@ -35,7 +35,7 @@ describe("discoverWorkflows", () => {
 
   it("skips invalid specs with warning (no throw)", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
-    const wfDir = path.join(tmpDir, ".pi", "workflows");
+    const wfDir = path.join(tmpDir, ".workflows");
     fs.mkdirSync(wfDir, { recursive: true });
     fs.writeFileSync(path.join(wfDir, "bad.workflow.yaml"), "not: valid: workflow");
     fs.writeFileSync(
@@ -52,7 +52,7 @@ describe("discoverWorkflows", () => {
 
   it("project specs shadow user specs with same name", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
-    const projectDir = path.join(tmpDir, ".pi", "workflows");
+    const projectDir = path.join(tmpDir, ".workflows");
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(
       path.join(projectDir, "shared.workflow.yaml"),
@@ -83,7 +83,7 @@ describe("discoverWorkflows", () => {
 describe("findWorkflow", () => {
   it("finds a workflow by name", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
-    const wfDir = path.join(tmpDir, ".pi", "workflows");
+    const wfDir = path.join(tmpDir, ".workflows");
     fs.mkdirSync(wfDir, { recursive: true });
     fs.writeFileSync(
       path.join(wfDir, "bugfix.workflow.yaml"),

@@ -128,7 +128,7 @@ function formatToolResult(result: WorkflowResult): string {
 async function handleList(ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
   const workflows = discoverWorkflows(ctx.cwd);
   if (workflows.length === 0) {
-    ctx.ui.notify("No workflows found in .pi/workflows/ or ~/.pi/agent/workflows/", "info");
+    ctx.ui.notify("No workflows found in .workflows/ or ~/.pi/agent/workflows/", "info");
     return;
   }
 
@@ -367,7 +367,7 @@ const extension = (pi: ExtensionAPI) => {
   pi.registerTool({
     name: "workflow",
     label: "Workflow",
-    description: "Run a named workflow with typed input. Discovers workflows from .pi/workflows/ and ~/.pi/agent/workflows/.",
+    description: "Run a named workflow with typed input. Discovers workflows from .workflows/ and ~/.pi/agent/workflows/.",
     promptSnippet: "Run a multi-step workflow with typed data flow between agents",
     parameters: Type.Object({
       workflow: Type.String({ description: "Name of the workflow to run" }),

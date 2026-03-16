@@ -3,12 +3,13 @@ import path from "node:path";
 import os from "node:os";
 import type { WorkflowSpec } from "./types.ts";
 import { parseWorkflowSpec } from "./workflow-spec.ts";
+import { WORKFLOWS_DIR } from "./workflows-dir.ts";
 
 /**
  * Discover all workflow specs from project, user, and builtin directories.
  *
  * Scans (highest priority first):
- *   1. .pi/workflows/             (project-level, source: "project")
+ *   1. .workflows/                (project-level, source: "project")
  *   2. ~/.pi/agent/workflows/     (user-level, source: "user")
  *   3. <package>/workflows/       (builtin workflows, source: "user")
  *
@@ -20,7 +21,7 @@ import { parseWorkflowSpec } from "./workflow-spec.ts";
  *          skipped with a warning (logged to stderr), not thrown.
  */
 export function discoverWorkflows(cwd: string, builtinDir?: string): WorkflowSpec[] {
-  const projectDir = path.join(cwd, ".pi", "workflows");
+  const projectDir = path.join(cwd, WORKFLOWS_DIR);
   const userDir = path.join(os.homedir(), ".pi", "agent", "workflows");
   const demoDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "workflows");
 

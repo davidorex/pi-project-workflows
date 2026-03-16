@@ -529,8 +529,8 @@ describe("artifacts", () => {
 
     assert.strictEqual(result.status, "completed");
     assert.ok(result.artifacts);
-    // Artifact path should be under .pi/workflow-runs/<workflow-name>/
-    const workflowDir = path.join(tmpDir, ".pi", "workflow-runs", "test-artifact-rel");
+    // Artifact path should be under .workflows/runs/<workflow-name>/
+    const workflowDir = path.join(tmpDir, ".workflows", "runs", "test-artifact-rel");
     const expectedPath = path.resolve(workflowDir, "latest.json");
     assert.strictEqual(result.artifacts!.report, expectedPath);
     assert.ok(fs.existsSync(expectedPath));

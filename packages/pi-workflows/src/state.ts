@@ -3,6 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import type { ExecutionState, WorkflowResult, WorkflowSpec, StepResult, StepUsage } from "./types.ts";
 import { formatDuration, formatCost } from "./format.ts";
+import { WORKFLOWS_DIR } from "./workflows-dir.ts";
 
 /**
  * Generate a unique run ID.
@@ -24,11 +25,11 @@ export function generateRunId(workflowName: string): string {
 /**
  * Initialize the run directory structure.
  * Creates:
- *   .pi/workflow-runs/<workflowName>/runs/<runId>/
- *   .pi/workflow-runs/<workflowName>/runs/<runId>/sessions/
- *   .pi/workflow-runs/<workflowName>/runs/<runId>/outputs/
+ *   .workflows/runs/<workflowName>/runs/<runId>/
+ *   .workflows/runs/<workflowName>/runs/<runId>/sessions/
+ *   .workflows/runs/<workflowName>/runs/<runId>/outputs/
  *
- * Each workflow owns a directory under .pi/workflow-runs/<name>/.
+ * Each workflow owns a directory under .workflows/runs/<name>/.
  * Run state goes in runs/<runId>/; artifacts live at the workflow level.
  *
  * @param cwd - project root
@@ -37,7 +38,7 @@ export function generateRunId(workflowName: string): string {
  * @returns absolute path to the run directory
  */
 export function initRunDir(cwd: string, workflowName: string, runId: string): string {
-  const runDir = path.join(cwd, ".pi", "workflow-runs", workflowName, "runs", runId);
+  const runDir = path.join(cwd, WORKFLOWS_DIR, "runs", workflowName, "runs", runId);
   fs.mkdirSync(path.join(runDir, "sessions"), { recursive: true });
   fs.mkdirSync(path.join(runDir, "outputs"), { recursive: true });
   return runDir;
@@ -49,10 +50,10 @@ export function initRunDir(cwd: string, workflowName: string, runId: string): st
  *
  * @param cwd - project root
  * @param workflowName - name of the workflow
- * @returns absolute path to .pi/workflow-runs/<workflowName>/
+ * @returns absolute path to .workflows/runs/<workflowName>/
  */
 export function getWorkflowDir(cwd: string, workflowName: string): string {
-  return path.join(cwd, ".pi", "workflow-runs", workflowName);
+  return path.join(cwd, WORKFLOWS_DIR, "runs", workflowName);
 }
 
 /**

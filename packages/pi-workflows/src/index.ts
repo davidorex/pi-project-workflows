@@ -7,7 +7,9 @@ import { executeWorkflow, requestPause } from "./workflow-executor.ts";
 import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
 import { createAgentLoader } from "./agent-spec.ts";
 import type { WorkflowResult } from "./types.ts";
+import { WORKFLOWS_DIR } from "./workflows-dir.ts";
 import fs from "node:fs";
+import path from "node:path";
 
 import { Key } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
@@ -126,7 +128,7 @@ function formatToolResult(result: WorkflowResult): string {
 async function handleList(ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
   const workflows = discoverWorkflows(ctx.cwd);
   if (workflows.length === 0) {
-    ctx.ui.notify("No workflows found in .pi/workflows/ or ~/.pi/agent/workflows/", "info");
+    ctx.ui.notify("No workflows found in .workflows/ or ~/.pi/agent/workflows/", "info");
     return;
   }
 
@@ -333,6 +335,30 @@ async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: E
   }
 }
 
+/**
+ * /workflow init — scaffold .workflows/ directory for user workflow specs
+ * and run state. Idempotent.
+ */
+function handleWorkflowInit(ctx: ExtensionCommandContext): void {
+  const workflowsDir = path.join(ctx.cwd, WORKFLOWS_DIR);
+  const runsDir = path.join(workflowsDir, "runs");
+
+  const created: string[] = [];
+
+  for (const dir of [workflowsDir, runsDir]) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      created.push(path.relative(ctx.cwd, dir) + "/");
+    }
+  }
+
+  if (created.length > 0) {
+    ctx.ui.notify(`Workflows initialized: created ${created.join(", ")}`, "info");
+  } else {
+    ctx.ui.notify("Workflows already initialized — nothing to do.", "info");
+  }
+}
+
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
@@ -341,7 +367,7 @@ const extension = (pi: ExtensionAPI) => {
   pi.registerTool({
     name: "workflow",
     label: "Workflow",
-    description: "Run a named workflow with typed input. Discovers workflows from .pi/workflows/ and ~/.pi/agent/workflows/.",
+    description: "Run a named workflow with typed input. Discovers workflows from .workflows/ and ~/.pi/agent/workflows/.",
     promptSnippet: "Run a multi-step workflow with typed data flow between agents",
     parameters: Type.Object({
       workflow: Type.String({ description: "Name of the workflow to run" }),
@@ -403,7 +429,7 @@ const extension = (pi: ExtensionAPI) => {
   pi.registerCommand("workflow", {
     description: "List and run workflows",
     getArgumentCompletions: (prefix: string) => {
-      const subcommands = ["run", "list", "resume"];
+      const subcommands = ["init", "run", "list", "resume"];
       return subcommands
         .filter((s) => s.startsWith(prefix))
         .map((s) => ({ value: s, label: s }));
@@ -415,14 +441,16 @@ const extension = (pi: ExtensionAPI) => {
       const subcommand = spaceIdx === -1 ? trimmed || "list" : trimmed.slice(0, spaceIdx);
       const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
 
-      if (subcommand === "list") {
+      if (subcommand === "init") {
+        handleWorkflowInit(ctx);
+      } else if (subcommand === "list") {
         await handleList(ctx, pi);
       } else if (subcommand === "run") {
         await handleRun(rest, ctx, pi);
       } else if (subcommand === "resume") {
         await handleResume(rest, ctx, pi);
       } else {
-        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: list, run, resume`, "warning");
+        ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, list, run, resume`, "warning");
       }
     },
   });

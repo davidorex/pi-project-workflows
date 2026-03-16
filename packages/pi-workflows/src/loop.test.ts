@@ -17,13 +17,15 @@ function defaultOptions(tmpDir?: string) {
   };
 }
 
-// Skip if pi is not available
+// Skip integration tests unless RUN_INTEGRATION=1 and pi is available
 let hasPi = false;
-try {
-  const { execSync } = await import("node:child_process");
-  execSync("pi --version", { stdio: "ignore" });
-  hasPi = true;
-} catch {}
+if (process.env.RUN_INTEGRATION === "1") {
+  try {
+    const { execSync } = await import("node:child_process");
+    execSync("pi --version", { stdio: "ignore" });
+    hasPi = true;
+  } catch {}
+}
 
 describe("loop steps", () => {
   it("breaks on gate pass", async (t: any) => {

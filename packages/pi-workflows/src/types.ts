@@ -159,7 +159,7 @@ export interface WorkflowResult {
   output?: unknown;                      // final workflow output (last step's output, or explicit)
   totalUsage: StepUsage;
   totalDurationMs: number;
-  runDir: string;                        // absolute path to .pi/workflow-runs/<name>/runs/<run-id>/
+  runDir: string;                        // absolute path to .workflows/runs/<name>/runs/<run-id>/
   artifacts?: Record<string, string>;    // name → absolute path of written artifact files
 }
 

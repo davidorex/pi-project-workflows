@@ -1,23 +1,39 @@
 # pi-workflows
 
-Workflow orchestration extension for [Pi](https://github.com/badlogic/pi-mono). Define multi-step workflows in YAML, execute them as DAGs with typed data flow between agents, and resume from checkpoints on failure.
+Schema-driven workflow orchestration for [Pi](https://github.com/badlogic/pi-mono).
+
+Data flows through workflows as typed JSON, not strings. Each agent step declares an `output.schema` — the agent's output is validated against a JSON Schema before it's accepted into the pipeline. The expression engine passes typed fields between steps (`${{ steps.investigate.output.findings }}`), not raw text. Templates compose typed data into agent prompts, so agents receive structured context. The entire pipeline is schema-governed: **schema defines shape → agent produces to shape → validator enforces shape → next step consumes typed fields.**
+
+The schemas in `schemas/` (investigation-findings, decomposition-specs, execution-results, etc.) are the typed contracts between workflow steps. They're not metadata — they're the enforcement boundary.
 
 ## Install
 
 ```bash
-pi install pi-workflows
+pi install npm:@davidorex/pi-project    # peer dependency
+pi install npm:@davidorex/pi-workflows
 ```
 
-Requires `pi-project` as a peer dependency (installed separately).
+Or install both at once: `pi install npm:@davidorex/pi-project-workflows`
+
+## Getting Started
+
+```
+/workflow init
+```
+
+Creates `.workflows/` for run state. Workflow YAML specs are discovered automatically from the package's bundled workflows — no setup needed to start running them.
 
 ## What It Does
 
 pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orchestration. Workflows are YAML specs. Steps run as subprocesses (`pi --mode json`) with their own context windows. The main conversation is the control plane; workflows are subordinate.
 
+Workflows consume project blocks as typed input via `readBlock()` — structured data, not raw files. When workflow agents write back to project blocks, pi-project's schema validation enforces the shape at write time. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
+
 **Tool registered:**
 - `workflow` — run a named workflow with typed input
 
 **Commands registered:**
+- `/workflow init` — scaffold `.workflows/` directory for run state
 - `/workflow list` — discover and select a workflow to run
 - `/workflow run <name> [--input '<json>']` — execute a workflow
 - `/workflow resume <name>` — resume an incomplete run from checkpoint
@@ -28,7 +44,7 @@ pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orch
 
 ## Workflow Spec Format
 
-Workflows are `.workflow.yaml` files discovered from `.pi/workflows/` (project), `~/.pi/agent/workflows/` (user), or the package's `workflows/` directory (builtin).
+Workflows are `.workflow.yaml` files discovered from `.workflows/` (project), `~/.pi/agent/workflows/` (user), or the package's `workflows/` directory (builtin).
 
 ```yaml
 name: my-workflow
@@ -143,7 +159,7 @@ declaredSchemaRefs(spec): string[]
 - DAG planner infers parallelism from `${{ steps.X }}` references — no manual dependency declaration
 - Agent specs are `.agent.yaml` only. Compiled to prompts via Nunjucks at dispatch time.
 - State persisted atomically after each step (tmp + rename). State write failure is fatal.
-- Three-tier resource search: project `.pi/` > user `~/.pi/agent/` > package builtin
+- Three-tier resource search: project (`.workflows/`, `.pi/agents/`, `.pi/templates/`) > user `~/.pi/agent/` > package builtin
 - `completion` field controls what message is sent back to the main conversation after a workflow finishes
 
 ## For LLMs

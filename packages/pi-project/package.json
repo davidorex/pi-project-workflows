@@ -1,6 +1,6 @@
 {
   "name": "@davidorex/pi-project",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Schema-driven project state management for Pi",
   "license": "MIT",
   "author": "David Ryan",
@@ -15,7 +15,7 @@
   "pi": {
     "extensions": ["./src/index.ts"]
   },
-  "files": ["src/", "*.md"],
+  "files": ["src/", "defaults/", "*.md"],
   "scripts": {
     "test": "node --experimental-strip-types --test src/*.test.ts",
     "release": "npx changelogen --bump --release",

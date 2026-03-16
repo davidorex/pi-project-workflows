@@ -7,13 +7,15 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-// Skip if pi is not available
+// Skip integration tests unless RUN_INTEGRATION=1 and pi is available
 let hasPi = false;
-try {
-  const { execSync } = await import("node:child_process");
-  execSync("pi --version", { stdio: "ignore" });
-  hasPi = true;
-} catch {}
+if (process.env.RUN_INTEGRATION === "1") {
+  try {
+    const { execSync } = await import("node:child_process");
+    execSync("pi --version", { stdio: "ignore" });
+    hasPi = true;
+  } catch {}
+}
 
 describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, () => {
   it("runs a single-step workflow", async () => {
@@ -529,8 +531,8 @@ describe("artifacts", () => {
 
     assert.strictEqual(result.status, "completed");
     assert.ok(result.artifacts);
-    // Artifact path should be under .pi/workflow-runs/<workflow-name>/
-    const workflowDir = path.join(tmpDir, ".pi", "workflow-runs", "test-artifact-rel");
+    // Artifact path should be under .workflows/runs/<workflow-name>/
+    const workflowDir = path.join(tmpDir, ".workflows", "runs", "test-artifact-rel");
     const expectedPath = path.resolve(workflowDir, "latest.json");
     assert.strictEqual(result.artifacts!.report, expectedPath);
     assert.ok(fs.existsSync(expectedPath));

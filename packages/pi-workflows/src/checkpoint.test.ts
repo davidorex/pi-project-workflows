@@ -18,7 +18,7 @@ describe("findIncompleteRun", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ckpt-"));
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const runDir = path.join(tmpDir, ".pi", "workflow-runs", "test", "runs", "test-20260314-120000-abcd");
+    const runDir = path.join(tmpDir, ".workflows", "runs", "test", "runs", "test-20260314-120000-abcd");
     fs.mkdirSync(runDir, { recursive: true });
     writeState(runDir, { input: {}, steps: {}, status: "completed" });
 
@@ -30,7 +30,7 @@ describe("findIncompleteRun", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ckpt-"));
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const runDir = path.join(tmpDir, ".pi", "workflow-runs", "test", "runs", "test-20260314-120000-abcd");
+    const runDir = path.join(tmpDir, ".workflows", "runs", "test", "runs", "test-20260314-120000-abcd");
     fs.mkdirSync(runDir, { recursive: true });
 
     const state: ExecutionState = {
@@ -57,7 +57,7 @@ describe("findIncompleteRun", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ckpt-"));
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const runDir = path.join(tmpDir, ".pi", "workflow-runs", "test", "runs", "test-20260314-120000-abcd");
+    const runDir = path.join(tmpDir, ".workflows", "runs", "test", "runs", "test-20260314-120000-abcd");
     fs.mkdirSync(runDir, { recursive: true });
 
     const state: ExecutionState = {
@@ -88,7 +88,7 @@ describe("findIncompleteRun", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ckpt-"));
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const runsBase = path.join(tmpDir, ".pi", "workflow-runs", "test", "runs");
+    const runsBase = path.join(tmpDir, ".workflows", "runs", "test", "runs");
 
     // Older run (completed)
     const oldDir = path.join(runsBase, "test-20260314-100000-aaaa");

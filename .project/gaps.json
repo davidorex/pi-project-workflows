@@ -251,28 +251,31 @@
     {
       "id": "project-extension-extraction",
       "description": "Project infrastructure (.workflow/ blocks, schemas, validation, /add-work, model-config) is tangled inside the workflow extension. Should be a separate lightweight pi extension (pi-project) that workflow consumes as a peer. Currently blocked on use-case modeling to define the boundary.",
-      "status": "open",
+      "status": "resolved",
       "category": "composition",
       "priority": "high",
       "source": "human",
-      "details": "Project owns: .workflow/ directory, block schemas, schema validation, /project add-work, /project validate, /project status, model-config.json, block-write events. Workflow owns: YAML specs, step execution, DAG planning, subprocess dispatch, checkpoint/resume, TUI widget. Overlap: model-config resolution (project config consumed by workflow engine), route-results (workflow step writing to project blocks). Build project through use-case modeling alongside workflow, extract when boundary is clear."
+      "details": "Resolved by monorepo restructure: pi-project owns .project/ directory, block CRUD, schema validation, derived state (projectState), /project status, /project add-work. pi-workflows owns YAML specs, step execution, DAG planning, subprocess dispatch, checkpoint/resume, TUI widget. pi-workflows declares pi-project as peer dependency. Two independent npm packages in packages/ workspace.",
+      "resolved_by": "monorepo-restructure-branch"
     },
     {
       "id": "add-work-ownership",
       "description": "/workflow add-work is a project command living in the workflow extension. When project becomes its own extension, add-work moves to /project add-work.",
-      "status": "open",
+      "status": "resolved",
       "category": "cleanup",
       "priority": "low",
-      "source": "human"
+      "source": "human",
+      "resolved_by": "monorepo-restructure-branch",
+      "details": "Resolved: /project add-work now lives in packages/pi-project/src/index.ts. /workflow no longer registers add-work or status subcommands."
     },
     {
       "id": "route-results-coupling",
-      "description": "route-results workflow step writes directly to project blocks (.workflow/*.json). When project is a separate extension, this should go through project's write API or events, not direct file manipulation.",
+      "description": "route-results workflow step writes directly to project blocks (.project/*.json). With project as a separate extension, this should go through project's write API (block-api) or events, not direct file manipulation.",
       "status": "open",
       "category": "composition",
       "priority": "medium",
       "source": "human",
-      "details": "Currently route-results is inline Node.js reading and writing block files. With a project extension, it would emit project:write-block events or call a project API. The workflow extension shouldn't know block file structure."
+      "details": "Currently route-results is inline Node.js reading and writing block files. pi-project now exposes readBlock/writeBlock/appendToBlock/updateItemInBlock as its public API. Route-results should import from pi-project peer dependency rather than manipulating .project/*.json directly."
     },
     {
       "id": "do-gap-workflow",
@@ -412,11 +415,12 @@
     {
       "id": "retire-demo-directory",
       "description": "demo/ mixes agent specs, schemas, workflows, and templates in a flat structure. Migrate to canonical project directory layout: agents/ for .agent.yaml, schemas/ for output schemas, workflows/ for .workflow.yaml, templates/ for Nunjucks templates. Update discovery code and all references.",
-      "status": "open",
+      "status": "resolved",
       "category": "cleanup",
       "priority": "high",
       "source": "human",
-      "details": "Current layout: demo/agents/*.agent.yaml, demo/schemas/*.schema.json, demo/*.workflow.yaml, templates/*/task.md. Target: agents/*.agent.yaml, schemas/*.schema.json, workflows/*.workflow.yaml, templates/*/task.md. Requires updating workflow-discovery.ts, agent-spec.ts (search paths), template.ts (search paths), all workflow YAML agent/schema references, and CLAUDE.md source layout section."
+      "details": "Resolved by monorepo restructure: demo/agents/ → packages/pi-workflows/agents/, demo/schemas/ → packages/pi-workflows/schemas/, demo/*.workflow.yaml → packages/pi-workflows/workflows/, templates/ → packages/pi-workflows/templates/. Discovery code updated to resolve from package directory.",
+      "resolved_by": "monorepo-restructure-branch"
     },
     {
       "id": "monitor-false-positives",

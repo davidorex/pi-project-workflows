@@ -327,7 +327,7 @@
       "category": "issue",
       "priority": "high",
       "source": "human",
-      "details": "All 13 agent specs need prompt review. Key principles: scope reads to named files or directory scans (not content), match investigation depth to gap category/priority, explicit stop conditions (don't explore further than X), output-first (state the output shape upfront so the agent works toward it). The investigator template was fixed as an example — others need the same treatment."
+      "details": "3 of 13 agents rewritten with XML-structured prompts (investigator, researcher, decomposer — commit efe0215). author-agent-prompts skill provides the audit checklist and patterns. 10 agents still need the treatment: audit-fixer, code-explorer, pattern-analyzer, phase-author, plan-decomposer, quality-analyzer, spec-implementer, structure-analyzer, synthesizer, verifier. The skill + output_schema injection infrastructure is in place — this is now a mechanical apply-the-pattern task."
     },
     {
       "id": "fragility-fragility-mmrjmlrs",

@@ -10,7 +10,7 @@
   },
   "files": ["src/", "agents/", "schemas/", "workflows/", "templates/", "*.md"],
   "scripts": {
-    "test": "node --experimental-strip-types --test src/*.test.ts"
+    "test": "node --experimental-strip-types run-tests.ts"
   },
   "dependencies": {
     "nunjucks": "^3.2.4",

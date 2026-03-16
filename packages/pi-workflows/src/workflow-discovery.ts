@@ -10,19 +10,19 @@ import { parseWorkflowSpec } from "./workflow-spec.ts";
  * Scans (highest priority first):
  *   1. .pi/workflows/             (project-level, source: "project")
  *   2. ~/.pi/agent/workflows/     (user-level, source: "user")
- *   3. <package>/demo/            (builtin demos, source: "user")
+ *   3. <package>/workflows/       (builtin workflows, source: "user")
  *
  * Higher-priority specs shadow lower-priority specs with the same name.
  *
  * @param cwd - current working directory (project root)
- * @param builtinDir - optional path to builtin demo workflows (defaults to demo/ relative to this file)
+ * @param builtinDir - optional path to builtin workflows (defaults to workflows/ relative to package root)
  * @returns Array of parsed WorkflowSpec objects. Specs that fail parsing are
  *          skipped with a warning (logged to stderr), not thrown.
  */
 export function discoverWorkflows(cwd: string, builtinDir?: string): WorkflowSpec[] {
   const projectDir = path.join(cwd, ".pi", "workflows");
   const userDir = path.join(os.homedir(), ".pi", "agent", "workflows");
-  const demoDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "demo");
+  const demoDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "workflows");
 
   const projectSpecs = scanDirectory(projectDir, "project");
   const userSpecs = scanDirectory(userDir, "user");

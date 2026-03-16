@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
+import path from "node:path";
 import { readFileSync } from "node:fs";
 import { parseWorkflowSpec, WorkflowSpecError } from "./workflow-spec.ts";
 
@@ -544,9 +545,9 @@ steps:
 });
 
 describe("self-implement workflow spec", () => {
-  it("parses demo/self-implement.workflow.yaml successfully", () => {
-    const content = readFileSync("demo/self-implement.workflow.yaml", "utf-8");
-    const spec = parseWorkflowSpec(content, "demo/self-implement.workflow.yaml", "project");
+  it("parses self-implement.workflow.yaml successfully", () => {
+    const content = readFileSync(path.resolve(import.meta.dirname, "..", "workflows", "self-implement.workflow.yaml"), "utf-8");
+    const spec = parseWorkflowSpec(content, "workflows/self-implement.workflow.yaml", "project");
 
     assert.strictEqual(spec.name, "self-implement");
     assert.strictEqual(spec.version, "1");

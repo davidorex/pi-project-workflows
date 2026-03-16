@@ -9,7 +9,7 @@
  * Search order (first match wins):
  *   1. .pi/agents/<name>.agent.yaml     (project)
  *   2. ~/.pi/agent/agents/<name>.agent.yaml  (user)
- *   3. <package>/demo/agents/<name>.agent.yaml (builtin)
+ *   3. <package>/agents/<name>.agent.yaml (builtin)
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -104,7 +104,7 @@ export function parseAgentYaml(filePath: string): AgentSpec {
  * Create an agent loader that finds .agent.yaml specs.
  */
 export function createAgentLoader(cwd: string, builtinDir?: string): (name: string) => AgentSpec {
-  const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "demo", "agents");
+  const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "agents");
 
   return (name: string): AgentSpec => {
     const searchPaths = [

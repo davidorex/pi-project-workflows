@@ -29,7 +29,7 @@ export function expressionRoots(): readonly string[] { return EXPRESSION_ROOTS; 
 // ── Discovery (derived from filesystem) ──────────────────────────────────────
 
 export function availableAgents(cwd: string, builtinDir?: string): AgentSpec[] {
-  const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "demo", "agents");
+  const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "agents");
   const searchDirs = [
     path.join(cwd, ".pi", "agents"),
     path.join(os.homedir(), ".pi", "agent", "agents"),

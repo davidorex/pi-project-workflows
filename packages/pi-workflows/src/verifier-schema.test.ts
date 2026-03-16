@@ -1,9 +1,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import path from "node:path";
-import { validateFromFile } from "./schema-validator.ts";
+import { validateFromFile } from "pi-project/src/schema-validator.ts";
 
-const schemaPath = path.resolve(import.meta.dirname, "..", "demo", "schemas", "verifier-output.schema.json");
+const schemaPath = path.resolve(import.meta.dirname, "..", "schemas", "verifier-output.schema.json");
 
 function validVerifierOutput() {
   return {
@@ -165,7 +165,7 @@ describe("verifier-output schema validation", () => {
 });
 
 describe("plan-breakdown schema validation", () => {
-  const planSchemaPath = path.resolve(import.meta.dirname, "..", "demo", "schemas", "plan-breakdown.schema.json");
+  const planSchemaPath = path.resolve(import.meta.dirname, "..", "schemas", "plan-breakdown.schema.json");
 
   it("validates a valid plan breakdown", () => {
     const data = {
@@ -195,7 +195,7 @@ describe("plan-breakdown schema validation", () => {
 });
 
 describe("execution-results schema validation", () => {
-  const execSchemaPath = path.resolve(import.meta.dirname, "..", "demo", "schemas", "execution-results.schema.json");
+  const execSchemaPath = path.resolve(import.meta.dirname, "..", "schemas", "execution-results.schema.json");
 
   it("validates a valid execution result", () => {
     const data = {

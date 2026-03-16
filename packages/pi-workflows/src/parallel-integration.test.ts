@@ -52,7 +52,7 @@ function makeSpec(overrides: Partial<WorkflowSpec> & { steps: WorkflowSpec["step
 describe("parallel integration — DAG analysis", () => {
   it("DAG-inferred parallel workflow produces correct execution plan", () => {
     const yaml = fs.readFileSync(
-      path.resolve(import.meta.dirname, "../demo/parallel-analysis.workflow.yaml"),
+      path.resolve(import.meta.dirname, "../workflows/parallel-analysis.workflow.yaml"),
       "utf-8",
     );
     const spec = parseWorkflowSpec(yaml, "parallel-analysis.workflow.yaml", "project");
@@ -73,7 +73,7 @@ describe("parallel integration — DAG analysis", () => {
 
   it("explicit parallel workflow parses correctly", () => {
     const yaml = fs.readFileSync(
-      path.resolve(import.meta.dirname, "../demo/parallel-explicit.workflow.yaml"),
+      path.resolve(import.meta.dirname, "../workflows/parallel-explicit.workflow.yaml"),
       "utf-8",
     );
     const spec = parseWorkflowSpec(yaml, "parallel-explicit.workflow.yaml", "project");

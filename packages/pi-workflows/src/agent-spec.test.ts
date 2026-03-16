@@ -260,7 +260,7 @@ describe("compileAgentSpec", () => {
 });
 
 describe("verifier agent spec", () => {
-  const builtinDir = path.resolve(import.meta.dirname, "..", "demo", "agents");
+  const builtinDir = path.resolve(import.meta.dirname, "..", "agents");
 
   it("parses verifier.agent.yaml correctly", () => {
     const specPath = path.join(builtinDir, "verifier.agent.yaml");

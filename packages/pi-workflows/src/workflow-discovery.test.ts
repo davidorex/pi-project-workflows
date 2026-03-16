@@ -68,7 +68,7 @@ describe("discoverWorkflows", () => {
 
   it("discovers builtin demo workflows", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-test-"));
-    const demoDir = path.resolve(import.meta.dirname, "..", "demo");
+    const demoDir = path.resolve(import.meta.dirname, "..", "workflows");
 
     const specs = discoverWorkflows(tmpDir, demoDir);
     assert.ok(specs.length > 0, "should find at least one demo workflow");

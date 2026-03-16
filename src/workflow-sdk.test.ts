@@ -190,20 +190,23 @@ describe("projectState", () => {
     assert.strictEqual(state.lastCommitMessage, "init");
     assert.ok(state.recentCommits.length > 0);
     assert.ok(state.recentCommits[0].includes("init"));
-    assert.strictEqual(state.gaps.open, 2);
-    assert.strictEqual(state.gaps.resolved, 1);
-    assert.strictEqual(state.gaps.byCategory.issue, 1);
-    assert.strictEqual(state.gaps.byCategory.capability, 1);
-    assert.strictEqual(state.gaps.byPriority.high, 1);
-    assert.strictEqual(state.gaps.byPriority.medium, 1);
-    assert.strictEqual(state.decisions.total, 2);
-    assert.strictEqual(state.decisions.decided, 1);
-    assert.strictEqual(state.decisions.tentative, 1);
+    // blockSummaries: gaps has 3 items with status distribution
+    assert.ok(state.blockSummaries.gaps);
+    assert.strictEqual(state.blockSummaries.gaps.total, 3);
+    assert.ok(state.blockSummaries.gaps.byStatus);
+    assert.strictEqual(state.blockSummaries.gaps.byStatus!.open, 2);
+    assert.strictEqual(state.blockSummaries.gaps.byStatus!.resolved, 1);
+
+    // blockSummaries: decisions has 2 items with status distribution
+    assert.ok(state.blockSummaries.decisions);
+    assert.strictEqual(state.blockSummaries.decisions.total, 2);
+    assert.ok(state.blockSummaries.decisions.byStatus);
+    assert.strictEqual(state.blockSummaries.decisions.byStatus!.decided, 1);
+    assert.strictEqual(state.blockSummaries.decisions.byStatus!.tentative, 1);
+
     assert.strictEqual(state.phases.total, 3);
     assert.strictEqual(state.phases.current, 8); // highest number from 08-automation.json
     assert.ok(state.schemas >= 1); // at least gaps.schema.json (builtins may add more)
-    assert.strictEqual(state.openGaps.length, 2);
-    assert.ok(state.openGaps.some(g => g.id === "g1"));
   });
 
   it("handles missing blocks gracefully", (t) => {
@@ -217,14 +220,12 @@ describe("projectState", () => {
     assert.strictEqual(state.sourceLines, 0);
     assert.strictEqual(state.lastCommit, "unknown");
     assert.deepStrictEqual(state.recentCommits, []);
-    assert.strictEqual(state.gaps.open, 0);
-    assert.strictEqual(state.decisions.total, 0);
+    assert.deepStrictEqual(state.blockSummaries, {}); // no blocks at all
     assert.strictEqual(state.phases.total, 0);
     assert.strictEqual(state.phases.current, 0);
     // schemas and templates may be > 0 because discovery includes builtins
     assert.ok(typeof state.schemas === "number");
     assert.ok(typeof state.templates === "number");
-    assert.strictEqual(state.openGaps.length, 0);
   });
 });
 

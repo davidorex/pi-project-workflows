@@ -124,18 +124,9 @@ export function availableBlocks(cwd: string): BlockInfo[] {
 
 // ── Derived State (computed at query time, never cached) ─────────────────────
 
-interface GapEntry {
-  id: string;
-  status: string;
-  category: string;
-  priority: string;
-  description: string;
-}
-
-interface DecisionEntry {
-  id: string;
-  decision: string;
-  status: string;
+export interface BlockSummary {
+  total: number;
+  byStatus?: Record<string, number>;
 }
 
 export interface ProjectState {
@@ -145,15 +136,13 @@ export interface ProjectState {
   lastCommit: string;
   lastCommitMessage: string;
   recentCommits: string[];
-  gaps: { open: number; resolved: number; deferred: number; byCategory: Record<string, number>; byPriority: Record<string, number> };
-  decisions: { total: number; decided: number; tentative: number };
+  blockSummaries: Record<string, BlockSummary>;
   phases: { total: number; current: number };
   agents: number;
   workflows: number;
   schemas: number;
   templates: number;
   blocks: number;
-  openGaps: Array<{ id: string; category: string; priority: string; description: string }>;
 }
 
 /**
@@ -205,27 +194,37 @@ export function projectState(cwd: string): ProjectState {
     }
   } catch { /* no src dir or read error */ }
 
-  // Gaps
-  let gapEntries: GapEntry[] = [];
+  // Block summaries — scan all blocks, report item counts and status distribution
+  const blockSummaries: Record<string, BlockSummary> = {};
+  const blockDir = path.join(cwd, PROJECT_DIR);
   try {
-    const g = readBlock(cwd, "gaps") as { gaps: GapEntry[] };
-    gapEntries = g.gaps;
-  } catch { /* no gaps */ }
-
-  const openGaps = gapEntries.filter(g => g.status === "open");
-  const byCategory: Record<string, number> = {};
-  const byPriority: Record<string, number> = {};
-  for (const g of openGaps) {
-    byCategory[g.category] = (byCategory[g.category] ?? 0) + 1;
-    byPriority[g.priority] = (byPriority[g.priority] ?? 0) + 1;
-  }
-
-  // Decisions
-  let decisionEntries: DecisionEntry[] = [];
-  try {
-    const d = readBlock(cwd, "decisions") as { decisions: DecisionEntry[] };
-    decisionEntries = d.decisions;
-  } catch { /* no decisions */ }
+    if (fs.existsSync(blockDir)) {
+      for (const file of fs.readdirSync(blockDir)) {
+        if (!file.endsWith(".json")) continue;
+        const blockName = file.replace(".json", "");
+        try {
+          const data = readBlock(cwd, blockName) as Record<string, unknown>;
+          // Find first array property
+          for (const [, val] of Object.entries(data)) {
+            if (!Array.isArray(val)) continue;
+            const items = val as Record<string, unknown>[];
+            const summary: BlockSummary = { total: items.length };
+            // Aggregate by status if items have a status field
+            if (items.length > 0 && typeof items[0] === "object" && items[0] !== null && "status" in items[0]) {
+              const byStatus: Record<string, number> = {};
+              for (const item of items) {
+                const s = String((item as Record<string, unknown>).status ?? "unknown");
+                byStatus[s] = (byStatus[s] ?? 0) + 1;
+              }
+              summary.byStatus = byStatus;
+            }
+            blockSummaries[blockName] = summary;
+            break; // first array property
+          }
+        } catch { /* skip unreadable blocks */ }
+      }
+    }
+  } catch { /* no block dir */ }
 
   // Phases from PROJECT_DIR/phases/*.json
   let phaseTotal = 0;
@@ -249,25 +248,13 @@ export function projectState(cwd: string): ProjectState {
     lastCommit,
     lastCommitMessage,
     recentCommits,
-    gaps: {
-      open: openGaps.length,
-      resolved: gapEntries.filter(g => g.status === "resolved").length,
-      deferred: gapEntries.filter(g => g.status === "deferred").length,
-      byCategory,
-      byPriority,
-    },
-    decisions: {
-      total: decisionEntries.length,
-      decided: decisionEntries.filter(d => d.status === "decided").length,
-      tentative: decisionEntries.filter(d => d.status === "tentative").length,
-    },
+    blockSummaries,
     phases: { total: phaseTotal, current: phaseCurrent },
     agents: availableAgents(cwd).length,
     workflows: availableWorkflows(cwd).length,
     schemas: availableSchemas(cwd).length,
     templates: availableTemplates(cwd).length,
     blocks: availableBlocks(cwd).length,
-    openGaps: openGaps.map(g => ({ id: g.id, category: g.category, priority: g.priority, description: g.description })),
   };
 }
 

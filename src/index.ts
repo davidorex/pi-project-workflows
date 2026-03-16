@@ -351,23 +351,19 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
   lines.push(`**Agents:** ${state.agents} | **Workflows:** ${state.workflows} | **Schemas:** ${state.schemas} | **Templates:** ${state.templates}`);
   lines.push(`**Phases:** ${state.phases.total} (current: ${state.phases.current}) | **Blocks:** ${state.blocks}`);
   lines.push(`**Commit:** ${state.lastCommit} (${state.lastCommitMessage})`);
-  lines.push("");
-  lines.push(`**Gaps:** ${state.gaps.open} open, ${state.gaps.resolved} resolved, ${state.gaps.deferred} deferred`);
 
-  if (state.gaps.open > 0) {
-    const byCat = Object.entries(state.gaps.byCategory).map(([k, v]) => `${k}: ${v}`).join(", ");
-    const byPri = Object.entries(state.gaps.byPriority).map(([k, v]) => `${k}: ${v}`).join(", ");
-    lines.push(`  By category: ${byCat}`);
-    lines.push(`  By priority: ${byPri}`);
-  }
-
-  lines.push(`**Decisions:** ${state.decisions.total} total (${state.decisions.decided} decided, ${state.decisions.tentative} tentative)`);
-
-  if (state.openGaps.length > 0) {
+  // Block summaries
+  const summaryEntries = Object.entries(state.blockSummaries);
+  if (summaryEntries.length > 0) {
     lines.push("");
-    lines.push("**Open gaps (high priority):**");
-    for (const g of state.openGaps.filter(g => g.priority === "high" || g.priority === "critical")) {
-      lines.push(`- \`${g.id}\` (${g.category}) — ${g.description.slice(0, 80)}`);
+    lines.push("**Block summaries:**");
+    for (const [name, summary] of summaryEntries) {
+      let detail = `${summary.total} items`;
+      if (summary.byStatus) {
+        const statusParts = Object.entries(summary.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ");
+        detail += ` (${statusParts})`;
+      }
+      lines.push(`- **${name}:** ${detail}`);
     }
   }
 

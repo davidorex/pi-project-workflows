@@ -1,0 +1,25 @@
+{
+  "name": "@davidorex/pi-project-workflows",
+  "version": "0.2.0",
+  "description": "Pi extensions for structured project state and workflow orchestration — installs both @davidorex/pi-project and @davidorex/pi-workflows",
+  "license": "MIT",
+  "author": "David Ryan",
+  "type": "module",
+  "keywords": ["pi-package"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidorex/pi-project-workflows.git"
+  },
+  "homepage": "https://github.com/davidorex/pi-project-workflows",
+  "files": ["*.ts", "*.md"],
+  "pi": {
+    "extensions": [
+      "./project-extension.ts",
+      "./workflows-extension.ts"
+    ]
+  },
+  "dependencies": {
+    "@davidorex/pi-project": "*",
+    "@davidorex/pi-workflows": "*"
+  }
+}

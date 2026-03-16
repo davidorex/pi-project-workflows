@@ -519,73 +519,63 @@ const extension = (pi: ExtensionAPI) => {
     },
   });
 
-  // ── Tool: record-gap ───────────────────────────────────────────────────
+  // ── Tool: append-block-item ─────────────────────────────────────────
 
   pi.registerTool({
-    name: "record-gap",
-    label: "Record Gap",
-    description: "Record a capability gap, issue, or cleanup item to .workflow/gaps.json with schema validation",
-    promptSnippet: "Record gaps, issues, and cleanup items to the project's typed gap tracker",
+    name: "append-block-item",
+    label: "Append Block Item",
+    description: "Append an item to an array in a project block file. Schema validation is automatic.",
+    promptSnippet: "Append items to project blocks (gaps, decisions, or any user-defined block)",
     parameters: Type.Object({
-      id: Type.String({ description: "Kebab-case unique ID for the gap" }),
-      description: Type.String({ description: "What is missing or broken" }),
-      category: Type.String({ enum: ["primitive", "issue", "cleanup", "capability", "composition"], description: "Gap category" }),
-      priority: Type.String({ enum: ["low", "medium", "high", "critical"], description: "Priority level" }),
-      details: Type.Optional(Type.String({ description: "Additional context, constraints, or references" })),
+      block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
+      arrayKey: Type.String({ description: "Array key in the block (e.g., 'gaps', 'decisions')" }),
+      item: Type.Any({ description: "Item object to append — must conform to block schema" }),
     }),
-    async execute(_toolCallId: string, params: Record<string, unknown>, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
-      const entry: Record<string, unknown> = {
-        id: params.id,
-        description: params.description,
-        status: "open",
-        category: params.category,
-        priority: params.priority,
-        source: "agent",
-      };
-      if (params.details) entry.details = params.details;
-
-      // Check for duplicate ID
-      try {
-        const data = readBlock(ctx.cwd, "gaps") as { gaps: Array<{ id: string }> };
-        if (data.gaps.some(g => g.id === entry.id)) {
-          return { content: [{ type: "text", text: `Gap '${entry.id}' already exists` }] };
-        }
-      } catch {
-        // gaps.json doesn't exist — appendToBlock will fail with a clear error
+    async execute(_toolCallId: string, params: { block: string; arrayKey: string; item: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+      // Duplicate check if item has an id field
+      if (params.item && typeof params.item === "object" && "id" in params.item) {
+        try {
+          const data = readBlock(ctx.cwd, params.block) as Record<string, unknown>;
+          const arr = data[params.arrayKey];
+          if (Array.isArray(arr) && arr.some((i: Record<string, unknown>) => i.id === params.item.id)) {
+            return { content: [{ type: "text", text: `Item '${params.item.id}' already exists in ${params.block}.${params.arrayKey}` }] };
+          }
+        } catch { /* block doesn't exist — appendToBlock will handle */ }
       }
 
-      appendToBlock(ctx.cwd, "gaps", "gaps", entry);
-      return { content: [{ type: "text", text: `Recorded gap '${entry.id}' (${entry.category}/${entry.priority})` }] };
+      appendToBlock(ctx.cwd, params.block, params.arrayKey, params.item);
+      const id = params.item?.id ? ` '${params.item.id}'` : "";
+      return { content: [{ type: "text", text: `Appended item${id} to ${params.block}.${params.arrayKey}` }] };
     },
   });
 
-  // ── Tool: update-gap ──────────────────────────────────────────────────
+  // ── Tool: update-block-item ───────────────────────────────────────────
 
   pi.registerTool({
-    name: "update-gap",
-    label: "Update Gap",
-    description: "Update fields on an existing gap in .workflow/gaps.json (status, priority, resolved_by, details)",
-    promptSnippet: "Update existing gaps — mark resolved, change priority, add details",
+    name: "update-block-item",
+    label: "Update Block Item",
+    description: "Update fields on an item in a project block array. Finds by predicate field match.",
+    promptSnippet: "Update items in project blocks — change status, add details, mark resolved",
     parameters: Type.Object({
-      id: Type.String({ description: "ID of the gap to update" }),
-      status: Type.Optional(Type.String({ enum: ["open", "resolved", "deferred"], description: "New status" })),
-      priority: Type.Optional(Type.String({ enum: ["low", "medium", "high", "critical"], description: "New priority" })),
-      resolved_by: Type.Optional(Type.String({ description: "What resolved this gap" })),
-      details: Type.Optional(Type.String({ description: "Additional context to set or replace" })),
+      block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
+      arrayKey: Type.String({ description: "Array key in the block" }),
+      match: Type.Record(Type.String(), Type.Any(), { description: "Fields to match (e.g., { id: 'gap-123' })" }),
+      updates: Type.Record(Type.String(), Type.Any(), { description: "Fields to update (e.g., { status: 'resolved' })" }),
     }),
-    async execute(_toolCallId: string, params: Record<string, unknown>, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
-      const updates: Record<string, unknown> = {};
-      if (params.status !== undefined) updates.status = params.status;
-      if (params.priority !== undefined) updates.priority = params.priority;
-      if (params.resolved_by !== undefined) updates.resolved_by = params.resolved_by;
-      if (params.details !== undefined) updates.details = params.details;
-
-      if (Object.keys(updates).length === 0) {
+    async execute(_toolCallId: string, params: { block: string; arrayKey: string; match: Record<string, unknown>; updates: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+      if (Object.keys(params.updates).length === 0) {
         return { content: [{ type: "text", text: "No fields to update" }] };
       }
 
-      updateItemInBlock(ctx.cwd, "gaps", "gaps", (g) => g.id === params.id, updates);
-      return { content: [{ type: "text", text: `Updated gap '${params.id}': ${Object.keys(updates).join(", ")}` }] };
+      const matchEntries = Object.entries(params.match);
+      updateItemInBlock(
+        ctx.cwd, params.block, params.arrayKey,
+        (item) => matchEntries.every(([k, v]) => item[k] === v),
+        params.updates,
+      );
+
+      const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+      return { content: [{ type: "text", text: `Updated item (${matchDesc}) in ${params.block}.${params.arrayKey}: ${Object.keys(params.updates).join(", ")}` }] };
     },
   });
 

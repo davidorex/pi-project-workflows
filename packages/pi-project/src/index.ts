@@ -10,6 +10,7 @@ import type { AgentToolUpdateCallback, AgentToolResult } from "@mariozechner/pi-
 import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
 import { projectState, findAppendableBlocks } from "./project-sdk.ts";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
+import { checkForUpdates } from "./update-check.ts";
 
 // ── Command handlers ────────────────────────────────────────────────────────
 
@@ -206,6 +207,11 @@ function handleInit(ctx: ExtensionCommandContext): void {
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
+  // ── Update check on session start (non-blocking) ───────────────────
+  pi.on("session_start", async (_event, ctx) => {
+    checkForUpdates((msg, level) => ctx.ui.notify(msg, level)).catch(() => {});
+  });
+
   // ── Tool: append-block-item ─────────────────────────────────────────
 
   pi.registerTool({

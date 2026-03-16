@@ -1,46 +1,105 @@
 {
   "modules": [
     {
+      "name": "project-dir",
+      "package": "pi-project",
+      "file": "packages/pi-project/src/project-dir.ts",
+      "responsibility": "PROJECT_DIR and SCHEMAS_DIR constants — single source for .project/ path (renamed from .workflow/ during monorepo restructure)",
+      "dependencies": [],
+      "lines": 3
+    },
+    {
+      "name": "schema-validator",
+      "package": "pi-project",
+      "file": "packages/pi-project/src/schema-validator.ts",
+      "responsibility": "AJV wrapper: validate(), validateFromFile(), ValidationError class with formatted messages",
+      "dependencies": [],
+      "lines": 62
+    },
+    {
+      "name": "block-api",
+      "package": "pi-project",
+      "file": "packages/pi-project/src/block-api.ts",
+      "responsibility": "Centralized block I/O: readBlock(), writeBlock(), appendToBlock(), updateItemInBlock() with write-time schema validation and atomic writes against .project/*.json files",
+      "dependencies": [
+        "schema-validator",
+        "project-dir"
+      ],
+      "lines": 128
+    },
+    {
+      "name": "block-validation",
+      "package": "pi-project",
+      "file": "packages/pi-project/src/block-validation.ts",
+      "responsibility": "Post-step block validation: snapshotBlockFiles(), validateChangedBlocks() with rollback support for .project/*.json files",
+      "dependencies": [
+        "schema-validator",
+        "project-dir"
+      ],
+      "lines": 161
+    },
+    {
+      "name": "project-sdk",
+      "package": "pi-project",
+      "file": "packages/pi-project/src/project-sdk.ts",
+      "responsibility": "Project state SDK: availableBlocks(), availableSchemas(), findAppendableBlocks(), projectState() — all derived dynamically from filesystem and git. Moved from workflow-sdk during monorepo split.",
+      "dependencies": [
+        "block-api",
+        "project-dir"
+      ],
+      "lines": 211
+    },
+    {
+      "name": "pi-project-index",
+      "package": "pi-project",
+      "file": "packages/pi-project/src/index.ts",
+      "responsibility": "Extension entry point for pi-project: registers append-block-item tool, update-block-item tool, and /project command (status, add-work). Extracted from pi-workflows index during monorepo split.",
+      "dependencies": [
+        "block-api",
+        "project-sdk",
+        "project-dir"
+      ],
+      "lines": 234
+    },
+    {
       "name": "types",
-      "file": "src/types.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/types.ts",
       "responsibility": "All shared interfaces: WorkflowSpec, StepSpec, AgentSpec, ExecutionState, StepResult, WorkflowResult, CompletionSpec, ExpressionScope, LoopSpec, GateSpec, TransformSpec, RetryConfig, ArtifactSpec",
       "dependencies": [],
       "lines": 195
     },
     {
       "name": "format",
-      "file": "src/format.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/format.ts",
       "responsibility": "Shared formatDuration/formatCost/formatTokens utilities",
       "dependencies": [],
       "lines": 41
     },
     {
-      "name": "schema-validator",
-      "file": "src/schema-validator.ts",
-      "responsibility": "AJV wrapper: validate(), validateFromFile(), ValidationError class with formatted messages",
-      "dependencies": [],
-      "lines": 62
-    },
-    {
       "name": "template",
-      "file": "src/template.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/template.ts",
       "responsibility": "Nunjucks three-tier rendering (project > user > builtin), ${{ }} protection from Nunjucks interpretation",
       "dependencies": [],
       "lines": 92
     },
     {
       "name": "expression",
-      "file": "src/expression.ts",
-      "responsibility": "${{ }} expression evaluator: property access, pipe filters (duration, currency, json), resolveExpressions(), evaluateCondition() for when: clauses",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/expression.ts",
+      "responsibility": "${{ }} expression evaluator: property access, pipe filters (duration, currency, json, length, keys, filter), resolveExpressions(), evaluateCondition() for when: clauses",
       "dependencies": [
         "types",
         "format"
       ],
-      "lines": 326
+      "lines": 332
     },
     {
       "name": "state",
-      "file": "src/state.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/state.ts",
       "responsibility": "Run directory initialization, state persistence via atomic write (tmp + rename), metrics tracking, generateRunId(), buildResult(), formatResult()",
       "dependencies": [
         "types",
@@ -50,7 +109,8 @@
     },
     {
       "name": "tui",
-      "file": "src/tui.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/tui.ts",
       "responsibility": "Progress widget with token display, step status, timing, cost, StepActivity and StepOutputSummary tracking",
       "dependencies": [
         "types",
@@ -60,14 +120,16 @@
     },
     {
       "name": "output",
-      "file": "src/output.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/output.ts",
       "responsibility": "persistStepOutput(): writes all outputs as JSON, supports author-declared output.path",
       "dependencies": [],
       "lines": 70
     },
     {
       "name": "step-shared",
-      "file": "src/step-shared.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-shared.ts",
       "responsibility": "Shared utilities: zeroUsage(), addUsage(), buildPrompt(), persistStep(), compileAgentSpec(), resolveSchemaPath(), constants (SIGKILL_GRACE_MS, WIDGET_ID, DEFAULT_MAX_ATTEMPTS)",
       "dependencies": [
         "types",
@@ -79,8 +141,9 @@
     },
     {
       "name": "agent-spec",
-      "file": "src/agent-spec.ts",
-      "responsibility": "YAML agent spec loader: parseAgentYaml, createAgentLoader, three-tier search (.pi/agents/ > ~/.pi/agent/agents/ > package/demo/agents/), AgentNotFoundError, AgentParseError",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/agent-spec.ts",
+      "responsibility": "YAML agent spec loader: parseAgentYaml, createAgentLoader, three-tier search (.pi/agents/ > ~/.pi/agent/agents/ > packages/pi-workflows/agents/), AgentNotFoundError, AgentParseError",
       "dependencies": [
         "types"
       ],
@@ -88,7 +151,8 @@
     },
     {
       "name": "dispatch",
-      "file": "src/dispatch.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/dispatch.ts",
       "responsibility": "Subprocess spawn: pi --mode json, model override, tool filtering, extension/skill scoping, session log capture, usage accumulation, ModelConfig resolution",
       "dependencies": [
         "types",
@@ -98,7 +162,8 @@
     },
     {
       "name": "completion",
-      "file": "src/completion.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/completion.ts",
       "responsibility": "Completion field resolution: template and message+include forms, resolves against CompletionScope",
       "dependencies": [
         "types",
@@ -108,7 +173,8 @@
     },
     {
       "name": "dag",
-      "file": "src/dag.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/dag.ts",
       "responsibility": "Dependency graph: buildPlanFromDeps(), conservative plan adds implicit sequential deps for steps without explicit refs, extractDependencies(), isSequential()",
       "dependencies": [
         "types"
@@ -116,40 +182,23 @@
       "lines": 219
     },
     {
-      "name": "block-validation",
-      "file": "src/block-validation.ts",
-      "responsibility": "Post-step block validation: snapshotBlockFiles(), validateChangedBlocks() with rollback support for .workflow/*.json files",
-      "dependencies": [
-        "schema-validator"
-      ],
-      "lines": 163
-    },
-    {
-      "name": "block-api",
-      "file": "src/block-api.ts",
-      "responsibility": "Centralized block I/O: readBlock(), writeBlock(), appendToBlock() with write-time schema validation and atomic writes",
-      "dependencies": [
-        "schema-validator"
-      ],
-      "lines": 94
-    },
-    {
       "name": "workflow-sdk",
-      "file": "src/workflow-sdk.ts",
-      "responsibility": "SDK facade: vocabulary (filterNames, stepTypes, expressionRoots), discovery (agents, templates, schemas, workflows, blocks), derived state (projectState), introspection (extractExpressions, declaredSteps, declaredAgentRefs, declaredSchemaRefs)",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/workflow-sdk.ts",
+      "responsibility": "Workflow SDK facade: vocabulary (filterNames, stepTypes, expressionRoots), discovery (agents, templates, schemas, workflows), introspection (extractExpressions, declaredSteps, declaredAgentRefs, declaredSchemaRefs). Project state functions (projectState, availableBlocks, findAppendableBlocks) moved to pi-project/project-sdk.",
       "dependencies": [
         "expression",
         "workflow-spec",
         "workflow-discovery",
         "agent-spec",
-        "block-api",
         "types"
       ],
-      "lines": 378
+      "lines": 262
     },
     {
       "name": "checkpoint",
-      "file": "src/checkpoint.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/checkpoint.ts",
       "responsibility": "findIncompleteRun(), validateResumeCompatibility(), computeResumePoint(), formatIncompleteRun() for crash recovery and resume",
       "dependencies": [
         "types",
@@ -159,7 +208,8 @@
     },
     {
       "name": "step-pause",
-      "file": "src/step-pause.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-pause.ts",
       "responsibility": "Pause step: returns completed immediately, executor sets status=paused",
       "dependencies": [
         "types"
@@ -168,7 +218,8 @@
     },
     {
       "name": "step-transform",
-      "file": "src/step-transform.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-transform.ts",
       "responsibility": "Pure expression mapping: no LLM invocation, resolves mapping fields via ${{ }}",
       "dependencies": [
         "types",
@@ -180,7 +231,8 @@
     },
     {
       "name": "step-gate",
-      "file": "src/step-gate.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-gate.ts",
       "responsibility": "Async gate execution with process groups, onPass/onFail handling, shell command pass/fail based on exit code",
       "dependencies": [
         "types",
@@ -191,7 +243,8 @@
     },
     {
       "name": "step-command",
-      "file": "src/step-command.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-command.ts",
       "responsibility": "Shell command execution: sh -c, captures stdout as JSON or text, fails on non-zero exit",
       "dependencies": [
         "types",
@@ -202,14 +255,15 @@
     },
     {
       "name": "step-agent",
-      "file": "src/step-agent.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-agent.ts",
       "responsibility": "Agent dispatch with injectable dispatchFn, template compilation, output path resolution, output schema validation, RetryContext support",
       "dependencies": [
         "types",
         "tui",
         "expression",
         "dispatch",
-        "schema-validator",
+        "pi-project/schema-validator",
         "output",
         "step-shared"
       ],
@@ -217,7 +271,8 @@
     },
     {
       "name": "step-foreach",
-      "file": "src/step-foreach.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-foreach.ts",
       "responsibility": "forEach iteration: resolves array, binds element via as, adds forEach.index/length to scope, collects outputs",
       "dependencies": [
         "types",
@@ -229,7 +284,8 @@
     },
     {
       "name": "step-loop",
-      "file": "src/step-loop.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-loop.ts",
       "responsibility": "Loop iteration with accumulated evidence, receives dispatchAgent callback, onExhausted handling, gate and transform execution",
       "dependencies": [
         "types",
@@ -243,7 +299,8 @@
     },
     {
       "name": "step-parallel",
-      "file": "src/step-parallel.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/step-parallel.ts",
       "responsibility": "executeParallelLayer() + executeParallelStep(), receives executeSingleStep callback, concurrent execution with Promise.allSettled",
       "dependencies": [
         "types",
@@ -255,16 +312,18 @@
     },
     {
       "name": "workflow-spec",
-      "file": "src/workflow-spec.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/workflow-spec.ts",
       "responsibility": "YAML parsing: WorkflowSpec from .workflow.yaml files, including completion field and artifacts, WorkflowSpecError class",
       "dependencies": [
         "types"
       ],
-      "lines": 446
+      "lines": 471
     },
     {
       "name": "workflow-discovery",
-      "file": "src/workflow-discovery.ts",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/workflow-discovery.ts",
       "responsibility": "Directory scanning for .workflow.yaml: project (.pi/workflows/) and user (~/.pi/agent/workflows/), discoverWorkflows(), findWorkflow()",
       "dependencies": [
         "types",
@@ -274,34 +333,37 @@
     },
     {
       "name": "workflow-executor",
-      "file": "src/workflow-executor.ts",
-      "responsibility": "Main orchestration: buildConservativePlan(), executeSingleStep(), executeWorkflow(), pause flag, DAG layering, block validation integration",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/workflow-executor.ts",
+      "responsibility": "Main orchestration: buildConservativePlan(), executeSingleStep(), executeWorkflow(), pause flag, DAG layering, block validation integration. Cross-package dependency on pi-project for schema validation and block I/O.",
       "dependencies": [
         "types",
         "tui",
-        "schema-validator",
+        "pi-project/schema-validator",
         "expression",
         "dispatch",
         "state",
         "completion",
-        "dag"
+        "dag",
+        "pi-project/block-validation",
+        "pi-project/block-api",
+        "pi-project/project-dir"
       ],
-      "lines": 802
+      "lines": 810
     },
     {
-      "name": "index",
-      "file": "src/index.ts",
-      "responsibility": "Extension entry point: registers workflow tool, record-gap tool, /workflow commands (run, list, resume, status, add-work), keybindings (Ctrl+H pause, Ctrl+J resume). /workflow status derives state via SDK.",
+      "name": "pi-workflows-index",
+      "package": "pi-workflows",
+      "file": "packages/pi-workflows/src/index.ts",
+      "responsibility": "Extension entry point for pi-workflows: registers workflow tool, /workflow command (run, list, resume), keybindings (Ctrl+H pause, Ctrl+J resume). Block tools and /project command moved to pi-project/index.",
       "dependencies": [
         "types",
         "workflow-discovery",
         "workflow-executor",
         "checkpoint",
-        "agent-spec",
-        "block-api",
-        "workflow-sdk"
+        "agent-spec"
       ],
-      "lines": 644
+      "lines": 488
     }
   ],
   "patterns": [
@@ -327,7 +389,7 @@
     },
     {
       "name": "three-tier-search",
-      "description": "Resources resolved: .pi/<dir>/ > ~/.pi/agent/<dir>/ > <package>/<dir>/. Used for agents, templates, and workflows.",
+      "description": "Resources resolved: .pi/<dir>/ > ~/.pi/agent/<dir>/ > packages/pi-workflows/<dir>/. Used for agents, templates, and workflows.",
       "used_in": [
         "agent-spec",
         "template",
@@ -369,7 +431,7 @@
     },
     {
       "name": "block-validation-rollback",
-      "description": "Post-step validation of .workflow/*.json files with snapshot-based rollback on schema violation.",
+      "description": "Post-step validation of .project/*.json files with snapshot-based rollback on schema violation.",
       "used_in": [
         "block-validation",
         "workflow-executor"
@@ -377,12 +439,15 @@
     }
   ],
   "boundaries": [
+    "Two-package monorepo: pi-project owns block I/O, schema validation, and project state; pi-workflows owns workflow orchestration, step execution, and agent dispatch",
+    "pi-workflows depends on pi-project (cross-package imports for schema-validator, block-validation, block-api, project-dir) — pi-project has no dependency on pi-workflows",
     "Extension owns subprocess dispatch — no dependency on pi-subagents",
-    "types.ts is the single source for all shared interfaces — no type definitions elsewhere",
+    "types.ts is the single source for all shared workflow interfaces — no type definitions elsewhere",
     "Step executors (step-*.ts) receive callbacks, never import workflow-executor directly",
     "Template engine (template.ts) has no dependency on workflow types — pure Nunjucks wrapper",
     "schema-validator.ts is a standalone AJV wrapper — no workflow-specific logic",
-    "block-validation.ts operates independently — snapshot/validate/rollback with no workflow state coupling"
+    "block-validation.ts operates independently — snapshot/validate/rollback with no workflow state coupling",
+    "pi-project index.ts registers block tools and /project command; pi-workflows index.ts registers workflow tool and /workflow command — separate extension entry points"
   ],
   "compilation_pipeline": {
     "description": "YAML spec + Nunjucks templates + resolved input → rendered .md → pi subprocess. Agent specs are YAML (.agent.yaml). They declare input schema, output schema, model, tools, role, and template references (prompt.system, prompt.task). The .md that pi consumes is compiled at dispatch time from spec + templates + typed input data. It exists in memory for milliseconds — written to a temp file, passed to pi --append-system-prompt, deleted. It is never a hand-authored source file.",
@@ -397,7 +462,7 @@
         "name": "Template resolution",
         "input": "AgentSpec.prompt.system and AgentSpec.prompt.task template references",
         "output": "Nunjucks template source",
-        "description": "Three-tier search resolves template files: .pi/templates/ > ~/.pi/agent/templates/ > package/demo/templates/"
+        "description": "Three-tier search resolves template files: .pi/templates/ > ~/.pi/agent/templates/ > packages/pi-workflows/templates/"
       },
       {
         "name": "Template rendering",
@@ -429,7 +494,7 @@
       "command"
     ],
     "three_tier_resolution": {
-      "pattern": ".pi/<dir>/ > ~/.pi/agent/<dir>/ > <package>/<dir>/ — project-level overrides user-level overrides package defaults",
+      "pattern": ".pi/<dir>/ > ~/.pi/agent/<dir>/ > packages/pi-workflows/<dir>/ — project-level overrides user-level overrides package defaults",
       "tiers": [
         {
           "level": "project",
@@ -443,7 +508,7 @@
         },
         {
           "level": "package",
-          "path": "<package>/<dir>/",
+          "path": "packages/pi-workflows/<dir>/",
           "priority": 3
         }
       ],

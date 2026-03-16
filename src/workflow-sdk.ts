@@ -11,6 +11,7 @@ import { execSync } from "node:child_process";
 import { FILTER_NAMES, EXPRESSION_ROOTS } from "./expression.ts";
 import { STEP_TYPES } from "./workflow-spec.ts";
 import { readBlock } from "./block-api.ts";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
 import type { StepTypeDescriptor } from "./workflow-spec.ts";
 import { discoverWorkflows } from "./workflow-discovery.ts";
 import { parseAgentYaml } from "./agent-spec.ts";
@@ -81,7 +82,7 @@ export function availableTemplates(cwd: string, builtinDir?: string): string[] {
 export function availableSchemas(cwd: string, builtinDir?: string): string[] {
   const defaultBuiltinSchemas = builtinDir ?? path.resolve(import.meta.dirname, "..", "demo", "schemas");
   const dirs = [
-    path.join(cwd, ".workflow", "schemas"),
+    path.join(cwd, PROJECT_DIR, SCHEMAS_DIR),
     defaultBuiltinSchemas,
   ];
   const schemas: string[] = [];
@@ -107,8 +108,8 @@ export interface BlockInfo {
 }
 
 export function availableBlocks(cwd: string): BlockInfo[] {
-  const workflowDir = path.join(cwd, ".workflow");
-  const schemasDir = path.join(workflowDir, "schemas");
+  const workflowDir = path.join(cwd, PROJECT_DIR);
+  const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
   if (!fs.existsSync(workflowDir)) return [];
 
   const blocks: BlockInfo[] = [];
@@ -226,11 +227,11 @@ export function projectState(cwd: string): ProjectState {
     decisionEntries = d.decisions;
   } catch { /* no decisions */ }
 
-  // Phases from .workflow/phases/*.json
+  // Phases from PROJECT_DIR/phases/*.json
   let phaseTotal = 0;
   let phaseCurrent = 0;
   try {
-    const phasesDir = path.join(cwd, ".workflow", "phases");
+    const phasesDir = path.join(cwd, PROJECT_DIR, "phases");
     if (fs.existsSync(phasesDir)) {
       const files = fs.readdirSync(phasesDir).filter(f => f.endsWith(".json")).sort();
       phaseTotal = files.length;

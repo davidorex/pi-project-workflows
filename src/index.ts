@@ -8,6 +8,7 @@ import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } f
 import { createAgentLoader } from "./agent-spec.ts";
 import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
 import { projectState } from "./workflow-sdk.ts";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
 import type { WorkflowResult } from "./types.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -389,11 +390,11 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
  * gaps, decisions, and rationale from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
-  const workflowDir = path.join(ctx.cwd, ".workflow");
-  const schemasDir = path.join(workflowDir, "schemas");
+  const workflowDir = path.join(ctx.cwd, PROJECT_DIR);
+  const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
 
   if (!fs.existsSync(schemasDir)) {
-    ctx.ui.notify("No .workflow/schemas/ directory found.", "warning");
+    ctx.ui.notify(`No ${PROJECT_DIR}/${SCHEMAS_DIR}/ directory found.`, "warning");
     return;
   }
 

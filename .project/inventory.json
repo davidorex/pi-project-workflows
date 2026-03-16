@@ -1,0 +1,411 @@
+{
+  "test_count": 612,
+  "step_types": [
+    {
+      "name": "agent",
+      "module": "step-agent.ts",
+      "description": "Agent step executor — dispatches an LLM subprocess and validates output",
+      "phase_added": 1
+    },
+    {
+      "name": "command",
+      "module": "step-command.ts",
+      "description": "Command step executor — runs a shell command and captures output as data (structured or text)",
+      "phase_added": 7
+    },
+    {
+      "name": "transform",
+      "module": "step-transform.ts",
+      "description": "Transform step executor — produces output by resolving expressions in a mapping (no LLM, no subprocess)",
+      "phase_added": 2
+    },
+    {
+      "name": "gate",
+      "module": "step-gate.ts",
+      "description": "Gate step executor — runs a shell command and passes/fails based on exit code",
+      "phase_added": 2
+    },
+    {
+      "name": "loop",
+      "module": "step-loop.ts",
+      "description": "Loop step executor — runs sub-steps repeatedly until a gate breaks, max attempts is reached, or a step fails",
+      "phase_added": 2
+    },
+    {
+      "name": "forEach",
+      "module": "step-foreach.ts",
+      "description": "ForEach step executor — iterates over an array, executing the step body once per element with the element bound to a named variable in scope",
+      "phase_added": 7
+    },
+    {
+      "name": "parallel",
+      "module": "step-parallel.ts",
+      "description": "Parallel step executors — concurrent step execution within a layer or within a single parallel step declaration",
+      "phase_added": 3
+    },
+    {
+      "name": "pause",
+      "module": "step-pause.ts",
+      "description": "Pause step executor — halts workflow execution at a deliberate checkpoint (resumable via /workflow resume or Ctrl+J)",
+      "phase_added": 4
+    }
+  ],
+  "agent_specs": [
+    {
+      "name": "audit-fixer",
+      "role": "action",
+      "description": "Fixes a cluster of related audit findings in source code"
+    },
+    {
+      "name": "code-explorer",
+      "role": "sensor",
+      "description": "Explore a codebase path and produce a structural overview"
+    },
+    {
+      "name": "decomposer",
+      "role": "decomposer",
+      "description": "Decomposes investigation findings into implementation specs with parallelization decisions"
+    },
+    {
+      "name": "investigator",
+      "role": "investigator",
+      "description": "Investigates a gap by reading the codebase — produces structured findings"
+    },
+    {
+      "name": "pattern-analyzer",
+      "role": "sensor",
+      "description": "Analyze design patterns and return typed findings"
+    },
+    {
+      "name": "phase-author",
+      "role": "reasoning",
+      "description": "Converts unstructured intent from conversation into a structured phase spec with numbered specs, acceptance criteria, and success criteria"
+    },
+    {
+      "name": "plan-decomposer",
+      "role": "reasoning",
+      "description": "Decomposes a phase spec into focused implementation plans with context decisions"
+    },
+    {
+      "name": "quality-analyzer",
+      "role": "sensor",
+      "description": "Analyze code quality and return typed findings"
+    },
+    {
+      "name": "researcher",
+      "role": "researcher",
+      "description": "Researches known solutions, patterns, and heuristics relevant to a gap"
+    },
+    {
+      "name": "spec-implementer",
+      "role": "action",
+      "description": "Implements a single plan from a phase decomposition"
+    },
+    {
+      "name": "structure-analyzer",
+      "role": "sensor",
+      "description": "Analyze code structure and return typed findings"
+    },
+    {
+      "name": "synthesizer",
+      "role": "reasoning",
+      "description": "Synthesize typed analysis findings into a unified report"
+    },
+    {
+      "name": "verifier",
+      "role": "quality",
+      "description": "Verifies step outputs against declared intent and success criteria"
+    }
+  ],
+  "schemas": [
+    {
+      "name": "decomposition-specs",
+      "file": "packages/pi-workflows/schemas/decomposition-specs.schema.json",
+      "category": "step-output",
+      "description": "Implementation specs from decomposition with dependencies and parallelization"
+    },
+    {
+      "name": "execution-results",
+      "file": "packages/pi-workflows/schemas/execution-results.schema.json",
+      "category": "step-output",
+      "description": "Agent execution results: tasks, decisions, issues, deviations, test count, commit hash"
+    },
+    {
+      "name": "investigation-findings",
+      "file": "packages/pi-workflows/schemas/investigation-findings.schema.json",
+      "category": "step-output",
+      "description": "Investigation findings: affected files, constraints, risks, complexity, needs_research"
+    },
+    {
+      "name": "pattern-analysis",
+      "file": "packages/pi-workflows/schemas/pattern-analysis.schema.json",
+      "category": "step-output",
+      "description": "Pattern analysis output from codebase exploration"
+    },
+    {
+      "name": "plan-breakdown",
+      "file": "packages/pi-workflows/schemas/plan-breakdown.schema.json",
+      "category": "step-output",
+      "description": "Plan decomposition output with plans array and parallel grouping"
+    },
+    {
+      "name": "quality-analysis",
+      "file": "packages/pi-workflows/schemas/quality-analysis.schema.json",
+      "category": "step-output",
+      "description": "Quality analysis output from codebase exploration"
+    },
+    {
+      "name": "research-findings",
+      "file": "packages/pi-workflows/schemas/research-findings.schema.json",
+      "category": "step-output",
+      "description": "Research findings: answers to specific technical questions with confidence ratings"
+    },
+    {
+      "name": "structure-analysis",
+      "file": "packages/pi-workflows/schemas/structure-analysis.schema.json",
+      "category": "step-output",
+      "description": "Structure analysis output from codebase exploration"
+    },
+    {
+      "name": "synthesis",
+      "file": "packages/pi-workflows/schemas/synthesis.schema.json",
+      "category": "step-output",
+      "description": "Synthesis of multiple analysis outputs into unified report"
+    },
+    {
+      "name": "verifier-output",
+      "file": "packages/pi-workflows/schemas/verifier-output.schema.json",
+      "category": "step-output",
+      "description": "Verification result: truths, artifacts, requirements_coverage, criteria_results, gaps, human_verification"
+    },
+    {
+      "name": "architecture",
+      "file": ".project/schemas/architecture.schema.json",
+      "category": "project",
+      "description": "Architecture module inventory with dependencies and concerns"
+    },
+    {
+      "name": "audit",
+      "file": ".project/schemas/audit.schema.json",
+      "category": "project",
+      "description": "Audit output: checks, findings with severity/location/fix, summary"
+    },
+    {
+      "name": "conformance-reference",
+      "file": ".project/schemas/conformance-reference.schema.json",
+      "category": "project",
+      "description": "Conformance rules: principles, rules with check_method/patterns/severity"
+    },
+    {
+      "name": "conventions",
+      "file": ".project/schemas/conventions.schema.json",
+      "category": "project",
+      "description": "Project conventions: code style, testing, error handling, naming"
+    },
+    {
+      "name": "decisions",
+      "file": ".project/schemas/decisions.schema.json",
+      "category": "project",
+      "description": "Design decisions with rationale, alternatives, and consequences"
+    },
+    {
+      "name": "gaps",
+      "file": ".project/schemas/gaps.schema.json",
+      "category": "project",
+      "description": "Capability gaps, issues, cleanup items with severity and status"
+    },
+    {
+      "name": "inventory",
+      "file": ".project/schemas/inventory.schema.json",
+      "category": "project",
+      "description": "Project inventory: test counts, step types, agents, schemas, workflows"
+    },
+    {
+      "name": "phase",
+      "file": ".project/schemas/phase.schema.json",
+      "category": "project",
+      "description": "Phase specification with numbered specs, acceptance criteria, success criteria"
+    },
+    {
+      "name": "project",
+      "file": ".project/schemas/project.schema.json",
+      "category": "project",
+      "description": "Project identity: name, purpose, scope, constraints"
+    },
+    {
+      "name": "rationale",
+      "file": ".project/schemas/rationale.schema.json",
+      "category": "project",
+      "description": "Design rationale: narrative explanations of architectural decisions"
+    },
+    {
+      "name": "reference-contracts",
+      "file": ".project/schemas/reference-contracts.schema.json",
+      "category": "project",
+      "description": "Reference contracts for workflow system interfaces and behaviors"
+    },
+    {
+      "name": "runtime-spec",
+      "file": ".project/schemas/runtime-spec.schema.json",
+      "category": "project",
+      "description": "Runtime specification: behavior definitions and requirements"
+    },
+    {
+      "name": "state",
+      "file": ".project/schemas/state.schema.json",
+      "category": "project",
+      "description": "Project state: session metadata and workflow execution state"
+    }
+  ],
+  "demo_workflows": [
+    {
+      "name": "create-phase",
+      "file": "packages/pi-workflows/workflows/create-phase.workflow.yaml",
+      "description": "Convert unstructured intent into a structured phase spec",
+      "proves": "Intent → phase-author agent → structured phase spec with numbered specs and criteria"
+    },
+    {
+      "name": "do-gap",
+      "file": "packages/pi-workflows/workflows/do-gap.workflow.yaml",
+      "description": "Standard path from gap to implementation — investigate, research, decompose, implement, verify, route",
+      "proves": "Complete gap resolution pipeline with conditional research and parallel implementation"
+    },
+    {
+      "name": "fix-audit",
+      "file": "packages/pi-workflows/workflows/fix-audit.workflow.yaml",
+      "description": "Fix audit findings grouped by related clusters",
+      "proves": "Audit loading → forEach cluster → audit-fixer agent → project block updates"
+    },
+    {
+      "name": "parallel-analysis",
+      "file": "packages/pi-workflows/workflows/parallel-analysis.workflow.yaml",
+      "description": "Analyze a codebase from multiple angles concurrently, then synthesize findings",
+      "proves": "Parallel step execution → concurrent analysis → sequential synthesis"
+    },
+    {
+      "name": "parallel-explicit",
+      "file": "packages/pi-workflows/workflows/parallel-explicit.workflow.yaml",
+      "description": "Demo of explicit parallel step syntax",
+      "proves": "Explicit parallel step declaration with concurrent execution"
+    },
+    {
+      "name": "pausable-analysis",
+      "file": "packages/pi-workflows/workflows/pausable-analysis.workflow.yaml",
+      "description": "Multi-step analysis with deliberate pause point — demonstrates checkpoint/resume",
+      "proves": "Pause step → workflow stops → resumable from checkpoint"
+    },
+    {
+      "name": "resumable-analysis",
+      "file": "packages/pi-workflows/workflows/resumable-analysis.workflow.yaml",
+      "description": "A multi-step analysis workflow that demonstrates checkpoint/resume",
+      "proves": "Workflow can be interrupted and resumed from last completed step"
+    },
+    {
+      "name": "self-implement",
+      "file": "packages/pi-workflows/workflows/self-implement.workflow.yaml",
+      "description": "Read project blocks, decompose into plans, implement, verify",
+      "proves": "Project blocks → template composition → plan decomposition → forEach execution → verification → typed results"
+    },
+    {
+      "name": "typed-analysis",
+      "file": "packages/pi-workflows/workflows/typed-analysis.workflow.yaml",
+      "description": "Codebase analysis with typed JSON data flow. Analyzers produce schema-bound JSON. Synthesizer renders from typed data via templates. Proves: YAML spec → template composition → typed output → template task → agent.",
+      "proves": "YAML spec → template composition → typed JSON output → template-rendered task prompt → agent working from structured data"
+    }
+  ],
+  "templates": [
+    {
+      "name": "analyzers",
+      "path": "packages/pi-workflows/templates/analyzers",
+      "description": "Pattern, quality, and structure analysis templates"
+    },
+    {
+      "name": "audit-fixer",
+      "path": "packages/pi-workflows/templates/audit-fixer",
+      "description": "Audit finding fix templates"
+    },
+    {
+      "name": "decomposer",
+      "path": "packages/pi-workflows/templates/decomposer",
+      "description": "Gap decomposition templates"
+    },
+    {
+      "name": "explorer",
+      "path": "packages/pi-workflows/templates/explorer",
+      "description": "Codebase exploration templates"
+    },
+    {
+      "name": "investigator",
+      "path": "packages/pi-workflows/templates/investigator",
+      "description": "Gap investigation templates"
+    },
+    {
+      "name": "phase-author",
+      "path": "packages/pi-workflows/templates/phase-author",
+      "description": "Phase specification authoring templates"
+    },
+    {
+      "name": "plan-decomposer",
+      "path": "packages/pi-workflows/templates/plan-decomposer",
+      "description": "Phase-to-plan decomposition templates"
+    },
+    {
+      "name": "researcher",
+      "path": "packages/pi-workflows/templates/researcher",
+      "description": "Technical research templates"
+    },
+    {
+      "name": "spec-implementer",
+      "path": "packages/pi-workflows/templates/spec-implementer",
+      "description": "Plan implementation templates"
+    },
+    {
+      "name": "synthesizer",
+      "path": "packages/pi-workflows/templates/synthesizer",
+      "description": "Analysis synthesis templates"
+    },
+    {
+      "name": "verifier",
+      "path": "packages/pi-workflows/templates/verifier",
+      "description": "Verification templates"
+    }
+  ],
+  "phases_completed": [
+    {
+      "number": 1,
+      "name": "Foundation",
+      "status": "completed",
+      "specs": "01-07"
+    },
+    {
+      "number": 2,
+      "name": "Control flow & artifacts",
+      "status": "completed",
+      "specs": "08-11"
+    },
+    {
+      "number": 3,
+      "name": "Parallelism & supervision",
+      "status": "completed",
+      "specs": "12-14"
+    },
+    {
+      "number": 4,
+      "name": "Durability",
+      "status": "completed",
+      "specs": "21-23"
+    },
+    {
+      "number": 5,
+      "name": "Templates",
+      "status": "completed",
+      "specs": "18-19"
+    },
+    {
+      "number": 7,
+      "name": "Project structure, execution primitives, verification",
+      "status": "completed",
+      "specs": "26-29"
+    }
+  ]
+}

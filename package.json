@@ -1,38 +1,9 @@
 {
-  "name": "pi-workflows",
-  "version": "0.1.0",
-  "description": "Workflow orchestration extension for pi",
-  "license": "MIT",
-  "type": "module",
-  "keywords": [
-    "pi-package"
-  ],
-  "pi": {
-    "extensions": [
-      "./src/index.ts"
-    ]
-  },
-  "files": [
-    "*.ts",
-    "src/",
-    "*.md",
-    "demo/"
-  ],
+  "private": true,
+  "workspaces": ["packages/*"],
   "scripts": {
-    "test": "node --experimental-strip-types --test src/*.test.ts",
-    "test:integration": "node --experimental-strip-types --test src/*.test.ts"
-  },
-  "dependencies": {
-    "ajv": "^8.17.1",
-    "nunjucks": "^3.2.4",
-    "yaml": "^2.7.1"
-  },
-  "peerDependencies": {
-    "@mariozechner/pi-coding-agent": "*",
-    "@mariozechner/pi-tui": "*",
-    "@sinclair/typebox": "*"
-  },
-  "devDependencies": {
-    "@types/nunjucks": "^3.2.6"
+    "test": "npm test --workspaces",
+    "test:project": "npm test -w packages/pi-project",
+    "test:workflows": "npm test -w packages/pi-workflows"
   }
 }

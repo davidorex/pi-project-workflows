@@ -3,3 +3,6 @@ node_modules/
 .claude/
 .pi/
 CLAUDE.md
+# Test artifacts — block-validation tests may create .workflow/ in package dirs
+packages/*/.workflow/
+packages/*/.project/

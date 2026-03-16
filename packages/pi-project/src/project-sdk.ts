@@ -118,34 +118,63 @@ export function projectState(cwd: string): ProjectState {
     if (log) recentCommits = log.split("\n");
   } catch { /* not a git repo */ }
 
+  // Resolve src dirs — workspace-aware: if cwd has a package.json with
+  // "workspaces" globs, collect src/ from each matched package directory;
+  // otherwise fall back to the single cwd/src/ directory.
+  const srcDirs: string[] = [];
+  try {
+    const rootPkg = path.join(cwd, "package.json");
+    if (fs.existsSync(rootPkg)) {
+      const pkg = JSON.parse(fs.readFileSync(rootPkg, "utf-8"));
+      if (Array.isArray(pkg.workspaces) && pkg.workspaces.length > 0) {
+        for (const pattern of pkg.workspaces as string[]) {
+          // Support trailing /* glob (e.g. "packages/*")
+          const base = pattern.replace(/\/?\*$/, "");
+          const baseDir = path.join(cwd, base);
+          if (fs.existsSync(baseDir) && fs.statSync(baseDir).isDirectory()) {
+            for (const entry of fs.readdirSync(baseDir)) {
+              const pkgSrc = path.join(baseDir, entry, "src");
+              if (fs.existsSync(pkgSrc) && fs.statSync(pkgSrc).isDirectory()) {
+                srcDirs.push(pkgSrc);
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch { /* failed to read/parse package.json — fall through */ }
+  // Fallback: if no workspace dirs found, use cwd/src as before
+  if (srcDirs.length === 0) {
+    const single = path.join(cwd, "src");
+    if (fs.existsSync(single)) srcDirs.push(single);
+  }
+
   // Source file count and line count (non-test .ts files)
   let sourceFiles = 0;
   let sourceLines = 0;
-  try {
-    const srcDir = path.join(cwd, "src");
-    if (fs.existsSync(srcDir)) {
+  for (const srcDir of srcDirs) {
+    try {
       for (const file of fs.readdirSync(srcDir)) {
         if (!file.endsWith(".ts") || file.endsWith(".test.ts")) continue;
         sourceFiles++;
         const content = fs.readFileSync(path.join(srcDir, file), "utf-8");
         sourceLines += content.split("\n").length;
       }
-    }
-  } catch { /* no src dir */ }
+    } catch { /* unreadable src dir */ }
+  }
 
   // Test count derived from static scan of it() declarations in test files
   let testCount = 0;
-  try {
-    const srcDir = path.join(cwd, "src");
-    if (fs.existsSync(srcDir)) {
+  for (const srcDir of srcDirs) {
+    try {
       for (const file of fs.readdirSync(srcDir)) {
         if (!file.endsWith(".test.ts")) continue;
         const content = fs.readFileSync(path.join(srcDir, file), "utf-8");
         const matches = content.match(/^\s*it\s*\(/gm);
         if (matches) testCount += matches.length;
       }
-    }
-  } catch { /* no src dir or read error */ }
+    } catch { /* unreadable src dir */ }
+  }
 
   // Block summaries — scan all blocks, report item counts and status distribution
   const blockSummaries: Record<string, BlockSummary> = {};

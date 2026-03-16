@@ -23,7 +23,7 @@ describe("availableBlocks", () => {
     const tmpDir = makeTmpDir("blocks");
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
     fs.writeFileSync(path.join(wfDir, "gaps.json"), "{}");
@@ -39,7 +39,7 @@ describe("availableBlocks", () => {
     assert.strictEqual(config!.hasSchema, false);
   });
 
-  it("returns empty array when .workflow/ does not exist", (t) => {
+  it("returns empty array when .project/ does not exist", (t) => {
     const tmpDir = makeTmpDir("blocks-empty");
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
@@ -49,11 +49,11 @@ describe("availableBlocks", () => {
 });
 
 describe("availableSchemas", () => {
-  it("finds .workflow/schemas/*.schema.json", (t) => {
+  it("finds .project/schemas/*.schema.json", (t) => {
     const tmpDir = makeTmpDir("schemas");
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const schemasDir = path.join(tmpDir, ".workflow", "schemas");
+    const schemasDir = path.join(tmpDir, ".project", "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
     fs.writeFileSync(path.join(schemasDir, "gaps.schema.json"), "{}");
 
@@ -92,7 +92,7 @@ describe("projectState", () => {
     fs.writeFileSync(path.join(srcDir, "module-b.ts"), "export const x = 1;\n");
 
     // Set up blocks
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
     fs.writeFileSync(path.join(schemasDir, "gaps.schema.json"), "{}");

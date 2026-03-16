@@ -42,7 +42,7 @@ describe("snapshotBlockFiles", () => {
   });
 
   it("captures file content", () => {
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     fs.mkdirSync(wfDir, { recursive: true });
     fs.writeFileSync(path.join(wfDir, "state.json"), '{"version": 1}');
     fs.writeFileSync(path.join(wfDir, "gaps.json"), '{"gaps": []}');
@@ -60,7 +60,7 @@ describe("snapshotBlockFiles", () => {
     assert.equal(gapsSnap.content, '{"gaps": []}');
   });
 
-  it("returns empty map when .workflow/ does not exist", () => {
+  it("returns empty map when .project/ does not exist", () => {
     const snapshot = snapshotBlockFiles(tmpDir);
     assert.equal(snapshot.size, 0);
   });
@@ -78,7 +78,7 @@ describe("rollbackBlockFiles", () => {
   });
 
   it("restores changed file content", () => {
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     fs.mkdirSync(wfDir, { recursive: true });
     fs.writeFileSync(path.join(wfDir, "state.json"), '{"version": 1}');
 
@@ -95,7 +95,7 @@ describe("rollbackBlockFiles", () => {
   });
 
   it("deletes new files not in snapshot", () => {
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     fs.mkdirSync(wfDir, { recursive: true });
 
     const snapshot = snapshotBlockFiles(tmpDir);
@@ -109,7 +109,7 @@ describe("rollbackBlockFiles", () => {
   });
 
   it("does not touch unchanged files", () => {
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     fs.mkdirSync(wfDir, { recursive: true });
     fs.writeFileSync(path.join(wfDir, "state.json"), '{"version": 1}');
 
@@ -139,7 +139,7 @@ steps:
       onExhausted: skip
       steeringMessage: Focus on valid JSON output.
 `;
-    const spec = parseWorkflowSpec(yaml, "/test.workflow.yaml", "project");
+    const spec = parseWorkflowSpec(yaml, "/test.project.yaml", "project");
     const step = spec.steps.analyze;
     assert.ok(step.retry);
     assert.equal(step.retry.maxAttempts, 3);
@@ -155,7 +155,7 @@ steps:
   analyze:
     agent: code-analyzer
 `;
-    const spec = parseWorkflowSpec(yaml, "/test.workflow.yaml", "project");
+    const spec = parseWorkflowSpec(yaml, "/test.project.yaml", "project");
     assert.equal(spec.steps.analyze.retry, undefined);
   });
 
@@ -170,7 +170,7 @@ steps:
       maxAttempts: -1
 `;
     assert.throws(() => {
-      parseWorkflowSpec(yaml, "/test.workflow.yaml", "project");
+      parseWorkflowSpec(yaml, "/test.project.yaml", "project");
     }, /retry\.maxAttempts must be a positive integer/);
   });
 
@@ -186,7 +186,7 @@ steps:
       onExhausted: retry
 `;
     assert.throws(() => {
-      parseWorkflowSpec(yaml, "/test.workflow.yaml", "project");
+      parseWorkflowSpec(yaml, "/test.project.yaml", "project");
     }, /retry\.onExhausted must be 'fail' or 'skip'/);
   });
 });
@@ -262,7 +262,7 @@ steps:
     retry:
       maxAttempts: 3
 `;
-    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.workflow.yaml"), "project");
+    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
     const dispatchFn = buildDispatchFn(1);
 
     const result = await executeWorkflow(spec, {}, {
@@ -293,7 +293,7 @@ steps:
       maxAttempts: 3
       onExhausted: fail
 `;
-    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.workflow.yaml"), "project");
+    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
     const dispatchFn = buildDispatchFn(5); // always fails
 
     const result = await executeWorkflow(spec, {}, {
@@ -325,7 +325,7 @@ steps:
   followup:
     agent: test-agent
 `;
-    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.workflow.yaml"), "project");
+    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
     let callCount = 0;
     const dispatchFn = async (_stepSpec: any, _agentSpec: any, _prompt: string, opts: any): Promise<StepResult> => {
       callCount++;
@@ -367,7 +367,7 @@ steps:
     retry:
       maxAttempts: 3
 `;
-    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.workflow.yaml"), "project");
+    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
 
     const result = await executeWorkflow(spec, {}, {
       ctx: mockCtx(),
@@ -384,8 +384,8 @@ steps:
   });
 
   it("block validation failure triggers rollback and retry", async () => {
-    // Create .workflow dir with a schema that demands version=1
-    const wfDir = path.join(tmpDir, ".workflow");
+    // Create .project dir with a schema that demands version=1
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
     fs.writeFileSync(path.join(wfDir, "state.json"), '{"version": 1}');
@@ -404,7 +404,7 @@ steps:
     retry:
       maxAttempts: 3
 `;
-    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.workflow.yaml"), "project");
+    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
 
     let attemptCount = 0;
     const dispatchFn = async (_stepSpec: any, _agentSpec: any, _prompt: string, opts: any): Promise<StepResult> => {
@@ -436,7 +436,7 @@ steps:
   });
 
   it("block validation rollback deletes new files created during step", async () => {
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
     // Schema that always fails for newfile
@@ -455,7 +455,7 @@ steps:
     retry:
       maxAttempts: 2
 `;
-    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.workflow.yaml"), "project");
+    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
 
     let attemptCount = 0;
     const dispatchFn = async (_stepSpec: any, _agentSpec: any, _prompt: string, opts: any): Promise<StepResult> => {
@@ -492,7 +492,7 @@ steps:
   analyze:
     agent: test-agent
 `;
-    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.workflow.yaml"), "project");
+    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
     const dispatchFn = buildDispatchFn(0); // succeeds immediately
 
     const result = await executeWorkflow(spec, {}, {
@@ -520,7 +520,7 @@ steps:
     retry:
       maxAttempts: 5
 `;
-    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.workflow.yaml"), "project");
+    const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
     const controller = new AbortController();
 
     let callCount = 0;

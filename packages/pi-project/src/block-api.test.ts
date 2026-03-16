@@ -11,13 +11,13 @@ function makeTmpDir(prefix: string): string {
 }
 
 function setupWorkflowDir(tmpDir: string): string {
-  const wfDir = path.join(tmpDir, ".workflow");
+  const wfDir = path.join(tmpDir, ".project");
   fs.mkdirSync(wfDir, { recursive: true });
   return wfDir;
 }
 
 function setupSchema(tmpDir: string, blockName: string, schema: Record<string, unknown>): void {
-  const schemasDir = path.join(tmpDir, ".workflow", "schemas");
+  const schemasDir = path.join(tmpDir, ".project", "schemas");
   fs.mkdirSync(schemasDir, { recursive: true });
   fs.writeFileSync(
     path.join(schemasDir, `${blockName}.schema.json`),
@@ -72,7 +72,7 @@ describe("readBlock", () => {
     );
   });
 
-  it("throws when .workflow/ dir does not exist", (t) => {
+  it("throws when .project/ dir does not exist", (t) => {
     const tmpDir = makeTmpDir("read-nodir");
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
@@ -138,7 +138,7 @@ describe("writeBlock", () => {
     const data = { gaps: [{ id: "g1", description: "test", status: "open" }] };
     writeBlock(tmpDir, "gaps", data);
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
     assert.deepStrictEqual(onDisk, data);
   });
 
@@ -158,7 +158,7 @@ describe("writeBlock", () => {
       },
     );
 
-    assert.ok(!fs.existsSync(path.join(tmpDir, ".workflow", "gaps.json")));
+    assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "gaps.json")));
   });
 
   it("writes without validation when no schema exists", (t) => {
@@ -169,18 +169,18 @@ describe("writeBlock", () => {
     const data = { anything: "goes" };
     writeBlock(tmpDir, "custom", data);
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "custom.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "custom.json"), "utf-8"));
     assert.deepStrictEqual(onDisk, data);
   });
 
-  it("creates .workflow/ dir if missing", (t) => {
+  it("creates .project/ dir if missing", (t) => {
     const tmpDir = makeTmpDir("write-mkdir");
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
     const data = { test: true };
     writeBlock(tmpDir, "new-block", data);
 
-    assert.ok(fs.existsSync(path.join(tmpDir, ".workflow", "new-block.json")));
+    assert.ok(fs.existsSync(path.join(tmpDir, ".project", "new-block.json")));
   });
 
   it("no tmp file remains after successful write", (t) => {
@@ -190,7 +190,7 @@ describe("writeBlock", () => {
 
     writeBlock(tmpDir, "clean", { data: true });
 
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const files = fs.readdirSync(wfDir);
     const tmpFiles = files.filter(f => f.includes(".tmp"));
     assert.strictEqual(tmpFiles.length, 0);
@@ -206,7 +206,7 @@ describe("writeBlock", () => {
       writeBlock(tmpDir, "gaps", { gaps: "not an array" });
     } catch { /* expected */ }
 
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const files = fs.readdirSync(wfDir);
     assert.ok(!files.includes("gaps.json"));
     const tmpFiles = files.filter(f => f.includes(".tmp"));
@@ -221,7 +221,7 @@ describe("writeBlock", () => {
     writeBlock(tmpDir, "data", { version: 1 });
     writeBlock(tmpDir, "data", { version: 2 });
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "data.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "data.json"), "utf-8"));
     assert.strictEqual(onDisk.version, 2);
   });
 
@@ -232,7 +232,7 @@ describe("writeBlock", () => {
 
     writeBlock(tmpDir, "fmt", { key: "value" });
 
-    const raw = fs.readFileSync(path.join(tmpDir, ".workflow", "fmt.json"), "utf-8");
+    const raw = fs.readFileSync(path.join(tmpDir, ".project", "fmt.json"), "utf-8");
     assert.ok(raw.includes("  \"key\""));
   });
 });
@@ -245,11 +245,11 @@ describe("appendToBlock", () => {
     setupSchema(tmpDir, "gaps", gapsSchema);
 
     const initial = { gaps: [{ id: "g1", description: "first", status: "open" }] };
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), JSON.stringify(initial));
+    fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify(initial));
 
     appendToBlock(tmpDir, "gaps", "gaps", { id: "g2", description: "second", status: "open" });
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
     assert.strictEqual(onDisk.gaps.length, 2);
     assert.strictEqual(onDisk.gaps[1].id, "g2");
   });
@@ -260,11 +260,11 @@ describe("appendToBlock", () => {
     setupWorkflowDir(tmpDir);
     setupSchema(tmpDir, "gaps", gapsSchema);
 
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), JSON.stringify({ gaps: [] }));
+    fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [] }));
 
     appendToBlock(tmpDir, "gaps", "gaps", { id: "g1", description: "first", status: "open" });
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
     assert.strictEqual(onDisk.gaps.length, 1);
   });
 
@@ -276,7 +276,7 @@ describe("appendToBlock", () => {
 
     const original = { gaps: [{ id: "g1", description: "valid", status: "open" }] };
     const originalStr = JSON.stringify(original);
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), originalStr);
+    fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), originalStr);
 
     assert.throws(
       () => appendToBlock(tmpDir, "gaps", "gaps", { id: 999, description: "bad" }), // missing status, bad id type
@@ -286,7 +286,7 @@ describe("appendToBlock", () => {
       },
     );
 
-    const afterStr = fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8");
+    const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8");
     assert.strictEqual(afterStr, originalStr);
   });
 
@@ -310,7 +310,7 @@ describe("appendToBlock", () => {
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
     setupWorkflowDir(tmpDir);
 
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), JSON.stringify({ gaps: [] }));
+    fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [] }));
 
     assert.throws(
       () => appendToBlock(tmpDir, "gaps", "decisions", { id: "d1" }),
@@ -327,7 +327,7 @@ describe("appendToBlock", () => {
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
     setupWorkflowDir(tmpDir);
 
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "data.json"), JSON.stringify({ items: "string" }));
+    fs.writeFileSync(path.join(tmpDir, ".project", "data.json"), JSON.stringify({ items: "string" }));
 
     assert.throws(
       () => appendToBlock(tmpDir, "data", "items", { id: "x" }),
@@ -346,13 +346,13 @@ describe("appendToBlock", () => {
     setupSchema(tmpDir, "gaps", gapsSchema);
 
     const original = { gaps: [{ id: "g1", description: "safe", status: "open" }] };
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), JSON.stringify(original, null, 2));
+    fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify(original, null, 2));
 
     try {
       appendToBlock(tmpDir, "gaps", "gaps", { broken: true });
     } catch { /* expected */ }
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
     assert.strictEqual(onDisk.gaps.length, 1);
     assert.strictEqual(onDisk.gaps[0].id, "g1");
   });
@@ -362,11 +362,11 @@ describe("appendToBlock", () => {
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
     setupWorkflowDir(tmpDir);
 
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "custom.json"), JSON.stringify({ items: [1] }));
+    fs.writeFileSync(path.join(tmpDir, ".project", "custom.json"), JSON.stringify({ items: [1] }));
 
     appendToBlock(tmpDir, "custom", "items", 2);
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "custom.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "custom.json"), "utf-8"));
     assert.deepStrictEqual(onDisk.items, [1, 2]);
   });
 
@@ -375,12 +375,12 @@ describe("appendToBlock", () => {
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
     setupWorkflowDir(tmpDir);
 
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "list.json"), JSON.stringify({ items: [] }));
+    fs.writeFileSync(path.join(tmpDir, ".project", "list.json"), JSON.stringify({ items: [] }));
 
     appendToBlock(tmpDir, "list", "items", "first");
     appendToBlock(tmpDir, "list", "items", "second");
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "list.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "list.json"), "utf-8"));
     assert.deepStrictEqual(onDisk.items, ["first", "second"]);
   });
 });
@@ -393,11 +393,11 @@ describe("updateItemInBlock", () => {
     setupSchema(tmpDir, "gaps", gapsSchema);
 
     const initial = { gaps: [{ id: "g1", description: "test", status: "open" }] };
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), JSON.stringify(initial));
+    fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify(initial));
 
     updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "resolved", resolved_by: "test" });
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
     assert.strictEqual(onDisk.gaps[0].status, "resolved");
     assert.strictEqual(onDisk.gaps[0].resolved_by, "test");
     assert.strictEqual(onDisk.gaps[0].id, "g1"); // unchanged
@@ -408,7 +408,7 @@ describe("updateItemInBlock", () => {
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
     setupWorkflowDir(tmpDir);
 
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), JSON.stringify({ gaps: [{ id: "g1" }] }));
+    fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [{ id: "g1" }] }));
 
     assert.throws(
       () => updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "nonexistent", { status: "resolved" }),
@@ -428,7 +428,7 @@ describe("updateItemInBlock", () => {
 
     const original = { gaps: [{ id: "g1", description: "test", status: "open" }] };
     const originalStr = JSON.stringify(original);
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "gaps.json"), originalStr);
+    fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), originalStr);
 
     assert.throws(
       () => updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "invalid-status" }),
@@ -439,7 +439,7 @@ describe("updateItemInBlock", () => {
     );
 
     // Original file unchanged
-    const afterStr = fs.readFileSync(path.join(tmpDir, ".workflow", "gaps.json"), "utf-8");
+    const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8");
     assert.strictEqual(afterStr, originalStr);
   });
 
@@ -449,11 +449,11 @@ describe("updateItemInBlock", () => {
     setupWorkflowDir(tmpDir);
 
     const initial = { items: [{ id: "a", val: 1 }, { id: "b", val: 2 }, { id: "c", val: 3 }] };
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "data.json"), JSON.stringify(initial));
+    fs.writeFileSync(path.join(tmpDir, ".project", "data.json"), JSON.stringify(initial));
 
     updateItemInBlock(tmpDir, "data", "items", (i) => i.id === "b", { val: 99 });
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "data.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "data.json"), "utf-8"));
     assert.strictEqual(onDisk.items[0].val, 1);
     assert.strictEqual(onDisk.items[1].val, 99);
     assert.strictEqual(onDisk.items[2].val, 3);
@@ -464,13 +464,13 @@ describe("updateItemInBlock", () => {
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
     setupWorkflowDir(tmpDir);
 
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "data.json"), JSON.stringify({
+    fs.writeFileSync(path.join(tmpDir, ".project", "data.json"), JSON.stringify({
       items: [{ id: "x", existing: "old", keep: "this" }],
     }));
 
     updateItemInBlock(tmpDir, "data", "items", (i) => i.id === "x", { existing: "new", added: "field" });
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "data.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "data.json"), "utf-8"));
     assert.strictEqual(onDisk.items[0].existing, "new");
     assert.strictEqual(onDisk.items[0].added, "field");
     assert.strictEqual(onDisk.items[0].keep, "this");
@@ -481,11 +481,11 @@ describe("updateItemInBlock", () => {
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
     setupWorkflowDir(tmpDir);
 
-    fs.writeFileSync(path.join(tmpDir, ".workflow", "custom.json"), JSON.stringify({ items: [{ id: "a", v: 1 }] }));
+    fs.writeFileSync(path.join(tmpDir, ".project", "custom.json"), JSON.stringify({ items: [{ id: "a", v: 1 }] }));
 
     updateItemInBlock(tmpDir, "custom", "items", (i) => i.id === "a", { v: 2 });
 
-    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".workflow", "custom.json"), "utf-8"));
+    const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "custom.json"), "utf-8"));
     assert.strictEqual(onDisk.items[0].v, 2);
   });
 });

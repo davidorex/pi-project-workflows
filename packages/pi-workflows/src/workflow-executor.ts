@@ -28,6 +28,7 @@ import { executeCommand } from "./step-command.ts";
 import { executeForEach } from "./step-foreach.ts";
 import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "pi-project/src/block-validation.ts";
 import { readBlock, writeBlock } from "pi-project/src/block-api.ts";
+import { PROJECT_DIR } from "pi-project/src/project-dir.ts";
 import type { BlockSnapshot } from "pi-project/src/block-validation.ts";
 import type { RetryConfig } from "./types.ts";
 
@@ -62,7 +63,7 @@ export interface ExecuteOptions {
   loadAgent: (name: string) => AgentSpec;
   /** Injectable dispatch function for testing; defaults to real dispatch. */
   dispatchFn?: typeof dispatch;
-  /** Project-level model config; loaded from .workflow/model-config.json if not provided. */
+  /** Project-level model config; loaded from .project/model-config.json if not provided. */
   modelConfig?: import("./dispatch.ts").ModelConfig;
   /** Resume from an incomplete run instead of starting fresh. */
   resume?: {
@@ -212,7 +213,7 @@ async function executeSingleStep(
       return false;
     }
 
-    // Snapshot .workflow/ block files before step execution for post-step validation
+    // Snapshot project block files before step execution for post-step validation
     const blockSnapshot = snapshotBlockFiles(ctx.cwd);
 
     // Update widget: mark this step as current
@@ -239,7 +240,7 @@ async function executeSingleStep(
       stepName, stepSpec, state, scope, options, retryContext,
     );
 
-    // Post-step block validation: if the step succeeded, validate changed .workflow/ files
+    // Post-step block validation: if the step succeeded, validate changed project block files
     let blockValidationFailed = false;
     if (continueWorkflow && state.steps[stepName]?.status === "completed") {
       try {
@@ -730,8 +731,8 @@ export async function executeWorkflow(
           validateFromFile(schemaPath, data, `artifact '${name}'`);
         }
 
-        // Route .workflow/ JSON targets through block-api for block-schema validation
-        const workflowPrefix = path.join(ctx.cwd, ".workflow") + path.sep;
+        // Route project block JSON targets through block-api for block-schema validation
+        const workflowPrefix = path.join(ctx.cwd, PROJECT_DIR) + path.sep;
         if (absolutePath.startsWith(workflowPrefix) && absolutePath.endsWith(".json")) {
           const blockName = path.basename(absolutePath, ".json");
           writeBlock(ctx.cwd, blockName, data);

@@ -10,7 +10,7 @@ input:
       type: string
       description: ID of the gap to convert into a phase
       source:
-        file: .workflow/gaps.json
+        file: .project/gaps.json
         array: gaps
         filter: { status: open }
         label: id
@@ -39,7 +39,7 @@ steps:
         import { readBlock } from './src/block-api.ts';
 
         const phases = [];
-        const phasesDir = '.workflow/phases';
+        const phasesDir = '.project/phases';
         if (fs.existsSync(phasesDir)) {
           for (const f of fs.readdirSync(phasesDir).filter(f => f.endsWith('.json')).sort()) {
             phases.push(JSON.parse(fs.readFileSync(path.join(phasesDir, f), 'utf8')));
@@ -72,7 +72,7 @@ steps:
       inventory: "${{ steps.load-context.output.inventory }}"
     output:
       format: json
-      schema: ../../.workflow/schemas/phase.schema.json
+      schema: ../../.project/schemas/phase.schema.json
 
   write-phase:
     command: |
@@ -81,8 +81,8 @@ steps:
         const phase = JSON.parse(process.argv[1]);
         const num = String(phase.number).padStart(2, '0');
         const name = phase.name.toLowerCase().replace(/\s+/g, '-');
-        const filename = '.workflow/phases/' + num + '-' + name + '.json';
-        fs.mkdirSync('.workflow/phases', { recursive: true });
+        const filename = '.project/phases/' + num + '-' + name + '.json';
+        fs.mkdirSync('.project/phases', { recursive: true });
         fs.writeFileSync(filename, JSON.stringify(phase, null, 2));
         console.log(JSON.stringify({ path: filename, phase_number: phase.number, spec_count: (phase.specs || []).length }));
       " '${{ steps.author.output | json }}'

@@ -25,7 +25,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
         greet: { agent: "default" },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const pi = mockPi();
@@ -60,7 +60,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
         shouldNotRun: { agent: "default" },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const controller = new AbortController();
@@ -93,7 +93,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
       },
       steps: { s: { agent: "default" } },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     await assert.rejects(
@@ -124,7 +124,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -146,7 +146,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
       description: "test",
       steps: { s: { agent: "default" } },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -197,7 +197,7 @@ describe("when conditionals", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -236,7 +236,7 @@ describe("when conditionals", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -270,7 +270,7 @@ describe("gate steps", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -309,7 +309,7 @@ describe("gate steps", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -348,7 +348,7 @@ describe("gate steps", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -389,7 +389,7 @@ describe("gate steps", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -435,7 +435,7 @@ describe("artifacts", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -480,7 +480,7 @@ describe("artifacts", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -518,7 +518,7 @@ describe("artifacts", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -559,7 +559,7 @@ describe("artifacts", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const ctx = {
@@ -589,11 +589,11 @@ describe("artifacts", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  it("validates artifact targeting .workflow/ against block schema", async () => {
+  it("validates artifact targeting .project/ against block schema", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
 
-    // Create .workflow/schemas/ with a schema that requires { items: array }
-    const schemasDir = path.join(tmpDir, ".workflow", "schemas");
+    // Create .project/schemas/ with a schema that requires { items: array }
+    const schemasDir = path.join(tmpDir, ".project", "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
     fs.writeFileSync(path.join(schemasDir, "test-block.schema.json"), JSON.stringify({
       type: "object",
@@ -603,7 +603,7 @@ describe("artifacts", () => {
 
     const spec: WorkflowSpec = {
       name: "test-artifact-block",
-      description: "test block-api routing for .workflow/ artifacts",
+      description: "test block-api routing for .project/ artifacts",
       steps: {
         produce: {
           agent: "transform",
@@ -614,13 +614,13 @@ describe("artifacts", () => {
       },
       artifacts: {
         block: {
-          path: path.join(tmpDir, ".workflow", "test-block.json"),
+          path: path.join(tmpDir, ".project", "test-block.json"),
           from: "steps.produce.output",
         },
       },
       source: "test",
       version: "1.0",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const notifications: { msg: string; level: string }[] = [];
@@ -642,7 +642,7 @@ describe("artifacts", () => {
     // Workflow completes (artifact failure is non-fatal)
     assert.strictEqual(result.status, "completed");
     // Block file should NOT have been written (validation failed)
-    assert.ok(!fs.existsSync(path.join(tmpDir, ".workflow", "test-block.json")));
+    assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "test-block.json")));
     // Warning about validation failure
     assert.ok(notifications.some(n => n.msg.includes("test-block") && n.level === "warning"));
 
@@ -669,7 +669,7 @@ describe("artifacts", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const pi = mockPi();
@@ -710,7 +710,7 @@ describe("transform steps", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -744,7 +744,7 @@ describe("transform steps", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -902,7 +902,7 @@ describe("phase 2 integration", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -960,7 +960,7 @@ describe("parallel execution (DAG-inferred)", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -1012,7 +1012,7 @@ describe("parallel execution (DAG-inferred)", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -1041,7 +1041,7 @@ describe("parallel execution (DAG-inferred)", () => {
         c: { transform: { mapping: { z: 3 } } },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -1092,7 +1092,7 @@ describe("explicit parallel step", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -1129,7 +1129,7 @@ describe("explicit parallel step", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -1208,7 +1208,7 @@ describe("verify step as typed agent output", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -1256,7 +1256,7 @@ describe("verify step as typed agent output", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -1362,7 +1362,7 @@ describe("self-implement workflow", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {
@@ -1443,7 +1443,7 @@ describe("self-implement workflow", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -1489,7 +1489,7 @@ describe("self-implement workflow", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {

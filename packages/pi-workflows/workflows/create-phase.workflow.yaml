@@ -42,7 +42,7 @@ steps:
       inventory: "${{ steps.load-context.output.inventory }}"
     output:
       format: json
-      schema: ../../.workflow/schemas/phase.schema.json
+      schema: ../../.project/schemas/phase.schema.json
 
   write-phase:
     command: |
@@ -50,8 +50,8 @@ steps:
         import fs from 'fs';
         import { validateFromFile } from './src/schema-validator.ts';
         const phase = JSON.parse(process.argv[1]);
-        validateFromFile('.workflow/schemas/phase.schema.json', phase, 'phase');
-        const filename = '.workflow/phases/' + String(phase.number).padStart(2, '0') + '-' + phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '') + '.json';
+        validateFromFile('.project/schemas/phase.schema.json', phase, 'phase');
+        const filename = '.project/phases/' + String(phase.number).padStart(2, '0') + '-' + phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '') + '.json';
         fs.writeFileSync(filename, JSON.stringify(phase, null, 2) + '\n');
         console.log(JSON.stringify({ path: filename, phase_number: phase.number, spec_count: phase.specs.length }));
       " '${{ steps.author.output | json }}'

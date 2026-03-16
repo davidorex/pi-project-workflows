@@ -268,7 +268,7 @@ describe("verifier agent spec", () => {
     assert.strictEqual(spec.name, "verifier");
     assert.strictEqual(spec.role, "quality");
     assert.strictEqual(spec.description, "Verifies step outputs against declared intent and success criteria");
-    assert.strictEqual(spec.model, undefined);  // model comes from .workflow/model-config.json, not agent spec
+    assert.strictEqual(spec.model, undefined);  // model comes from .project/model-config.json, not agent spec
     assert.strictEqual(spec.outputFormat, "json");
     assert.strictEqual(spec.outputSchema, "schemas/verifier-output.schema.json");
     assert.strictEqual(spec.taskTemplate, "verifier/task.md");

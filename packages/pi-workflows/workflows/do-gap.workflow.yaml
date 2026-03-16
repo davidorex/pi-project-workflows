@@ -10,7 +10,7 @@ input:
       type: string
       description: ID of the gap to work on
       source:
-        file: .workflow/gaps.json
+        file: .project/gaps.json
         array: gaps
         filter: { status: open }
         label: id
@@ -104,11 +104,11 @@ steps:
         // Validate blocks
         try {
           const fs = await import('fs');
-          const schemasDir = '.workflow/schemas';
+          const schemasDir = '.project/schemas';
           const schemas = fs.readdirSync(schemasDir).filter(f => f.endsWith('.schema.json'));
           for (const s of schemas) {
             const blockName = s.replace('.schema.json', '');
-            const blockPath = '.workflow/' + blockName + '.json';
+            const blockPath = '.project/' + blockName + '.json';
             if (fs.existsSync(blockPath)) {
               try {
                 execSync('node --experimental-strip-types -e \"import{validateFromFile}from' + String.fromCharCode(39) + './src/schema-validator.ts' + String.fromCharCode(39) + ';import fs from' + String.fromCharCode(39) + 'fs' + String.fromCharCode(39) + ';validateFromFile(' + String.fromCharCode(39) + schemasDir + '/' + s + String.fromCharCode(39) + ',JSON.parse(fs.readFileSync(' + String.fromCharCode(39) + blockPath + String.fromCharCode(39) + ',' + String.fromCharCode(39) + 'utf8' + String.fromCharCode(39) + ')),' + String.fromCharCode(39) + blockName + String.fromCharCode(39) + ')\"', { stdio: 'pipe' });

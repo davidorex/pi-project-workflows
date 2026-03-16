@@ -24,7 +24,7 @@ function setupBlock(
   schema: Record<string, unknown>,
   items: unknown[] = [],
 ): void {
-  const wfDir = path.join(tmpDir, ".workflow");
+  const wfDir = path.join(tmpDir, ".project");
   const schemasDir = path.join(wfDir, "schemas");
   fs.mkdirSync(schemasDir, { recursive: true });
   fs.writeFileSync(path.join(schemasDir, `${blockName}.schema.json`), JSON.stringify(schema));
@@ -319,7 +319,7 @@ describe("findAppendableBlocks", () => {
     const tmpDir = makeTmpDir();
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const schemasDir = path.join(tmpDir, ".workflow", "schemas");
+    const schemasDir = path.join(tmpDir, ".project", "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
 
     // Schema with array property
@@ -368,7 +368,7 @@ describe("findAppendableBlocks", () => {
     const tmpDir = makeTmpDir();
     t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-    const schemasDir = path.join(tmpDir, ".workflow", "schemas");
+    const schemasDir = path.join(tmpDir, ".project", "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
 
     fs.writeFileSync(path.join(schemasDir, "good.schema.json"), JSON.stringify({

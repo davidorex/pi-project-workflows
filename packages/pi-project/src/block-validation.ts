@@ -1,5 +1,5 @@
 /**
- * Post-step block validation — snapshot .workflow/*.json contents before step
+ * Post-step block validation — snapshot .project/*.json contents before step
  * execution, then validate any changed files against their schemas after.
  * Supports rollback of block files to pre-step state on validation failure.
  */
@@ -15,9 +15,9 @@ export interface BlockFileSnapshot {
 export type BlockSnapshot = Map<string, BlockFileSnapshot>;
 
 /**
- * Snapshot mtimes and contents of all .workflow/*.json files.
+ * Snapshot mtimes and contents of all .project/*.json files.
  * Returns a Map of absolute filepath → { mtime, content }.
- * If .workflow/ doesn't exist, returns an empty map.
+ * If .project/ doesn't exist, returns an empty map.
  */
 export function snapshotBlockFiles(cwd: string): BlockSnapshot {
   const result: BlockSnapshot = new Map();
@@ -39,17 +39,17 @@ export function snapshotBlockFiles(cwd: string): BlockSnapshot {
       }
     }
   } catch {
-    // .workflow/ doesn't exist — no block files to track
+    // .project/ doesn't exist — no block files to track
   }
 
   return result;
 }
 
 /**
- * Compare current .workflow/*.json mtimes against a prior snapshot.
+ * Compare current .project/*.json mtimes against a prior snapshot.
  * Validate any changed or newly created files against their schemas.
  *
- * Schema path convention: .workflow/foo.json → .workflow/schemas/foo.schema.json
+ * Schema path convention: .project/foo.json → .project/schemas/foo.schema.json
  * Files with no corresponding schema are silently skipped.
  *
  * @throws Error if any changed block file fails schema validation
@@ -63,7 +63,7 @@ export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void 
   try {
     currentEntries = fs.readdirSync(workflowDir).filter(e => e.endsWith(".json"));
   } catch {
-    return; // .workflow/ doesn't exist
+    return; // .project/ doesn't exist
   }
 
   const errors: string[] = [];
@@ -106,7 +106,7 @@ export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void 
 }
 
 /**
- * Rollback .workflow/*.json files to their pre-step state.
+ * Rollback .project/*.json files to their pre-step state.
  * - Files that existed in the snapshot and changed: restore content via atomic write (tmp + rename)
  * - New files (not in snapshot): delete them
  * Returns list of rolled-back file paths.

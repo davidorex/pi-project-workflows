@@ -1,3 +1,3 @@
-/** Project directory name — the single constant that changes for .workflow/ -> .project/ migration */
-export const PROJECT_DIR = ".workflow";
+/** Project directory name — renamed from .workflow/ to .project/ during monorepo restructure */
+export const PROJECT_DIR = ".project";
 export const SCHEMAS_DIR = "schemas";

@@ -14,16 +14,16 @@ import { mockCtx, mockPi } from "./test-helpers.ts";
 // ── Unit tests for snapshotBlockFiles / validateChangedBlocks ──
 
 describe("snapshotBlockFiles", () => {
-  it("returns empty map when .workflow/ does not exist", () => {
+  it("returns empty map when .project/ does not exist", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-snap-"));
     const result = snapshotBlockFiles(tmpDir);
     assert.strictEqual(result.size, 0);
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  it("snapshots .json files in .workflow/", () => {
+  it("snapshots .json files in .project/", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-snap-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     fs.mkdirSync(wfDir, { recursive: true });
     fs.writeFileSync(path.join(wfDir, "gaps.json"), "{}");
     fs.writeFileSync(path.join(wfDir, "decisions.json"), "[]");
@@ -42,7 +42,7 @@ describe("snapshotBlockFiles", () => {
 describe("validateChangedBlocks", () => {
   it("does nothing when no files changed", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     fs.mkdirSync(wfDir, { recursive: true });
     fs.writeFileSync(path.join(wfDir, "gaps.json"), "{}");
 
@@ -55,7 +55,7 @@ describe("validateChangedBlocks", () => {
 
   it("skips changed files with no matching schema", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     fs.mkdirSync(wfDir, { recursive: true });
 
     const before = snapshotBlockFiles(tmpDir);
@@ -71,7 +71,7 @@ describe("validateChangedBlocks", () => {
 
   it("validates changed file against its schema — passes", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
 
@@ -94,7 +94,7 @@ describe("validateChangedBlocks", () => {
 
   it("throws on validation failure", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
 
@@ -120,7 +120,7 @@ describe("validateChangedBlocks", () => {
 
   it("detects modified files (not just new files)", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
 
@@ -161,7 +161,7 @@ describe("validateChangedBlocks", () => {
 // ── Integration tests: block validation in workflow executor ──
 
 describe("post-step block validation in executor", () => {
-  it("step that does not modify .workflow/ passes normally", async () => {
+  it("step that does not modify .project/ passes normally", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
     const spec: WorkflowSpec = {
       name: "bv-no-change",
@@ -172,7 +172,7 @@ describe("post-step block validation in executor", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -187,9 +187,9 @@ describe("post-step block validation in executor", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  it("step that writes valid data to a .workflow/ block passes", async () => {
+  it("step that writes valid data to a .project/ block passes", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
 
@@ -210,7 +210,7 @@ describe("post-step block validation in executor", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -225,9 +225,9 @@ describe("post-step block validation in executor", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  it("step that writes invalid data to a .workflow/ block fails", async () => {
+  it("step that writes invalid data to a .project/ block fails", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
 
@@ -251,7 +251,7 @@ describe("post-step block validation in executor", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -269,9 +269,9 @@ describe("post-step block validation in executor", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  it("changed .workflow/ file with no matching schema is skipped", async () => {
+  it("changed .project/ file with no matching schema is skipped", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     fs.mkdirSync(wfDir, { recursive: true });
     // No schemas directory at all
 
@@ -285,7 +285,7 @@ describe("post-step block validation in executor", () => {
         },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {
@@ -302,7 +302,7 @@ describe("post-step block validation in executor", () => {
 
   it("validates multiple changed block files in one step", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
-    const wfDir = path.join(tmpDir, ".workflow");
+    const wfDir = path.join(tmpDir, ".project");
     const schemasDir = path.join(wfDir, "schemas");
     fs.mkdirSync(schemasDir, { recursive: true });
 
@@ -332,7 +332,7 @@ describe("post-step block validation in executor", () => {
         writeBlocks: { command: cmd },
       },
       source: "project",
-      filePath: path.join(tmpDir, "test.workflow.yaml"),
+      filePath: path.join(tmpDir, "test.project.yaml"),
     };
 
     const result = await executeWorkflow(spec, {}, {

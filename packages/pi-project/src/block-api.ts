@@ -1,5 +1,5 @@
 /**
- * Centralized read/write API for .workflow/*.json project block files.
+ * Centralized read/write API for .project/*.json project block files.
  * Validates data against schemas before writing; uses atomic writes (tmp + rename).
  * Future extraction seam for pi-project extension.
  */
@@ -17,7 +17,7 @@ function blockSchemaPath(cwd: string, blockName: string): string {
 }
 
 /**
- * Read and parse a .workflow/{blockName}.json file.
+ * Read and parse a .project/{blockName}.json file.
  * Throws if the file does not exist or contains invalid JSON.
  */
 export function readBlock(cwd: string, blockName: string): unknown {
@@ -26,20 +26,20 @@ export function readBlock(cwd: string, blockName: string): unknown {
   try {
     content = fs.readFileSync(filePath, "utf-8");
   } catch {
-    throw new Error(`Block file not found: .workflow/${blockName}.json`);
+    throw new Error(`Block file not found: .project/${blockName}.json`);
   }
 
   try {
     return JSON.parse(content);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(`Invalid JSON in block file: .workflow/${blockName}.json: ${msg}`);
+    throw new Error(`Invalid JSON in block file: .project/${blockName}.json: ${msg}`);
   }
 }
 
 /**
  * Validate data against its schema (if one exists) and write atomically
- * to .workflow/{blockName}.json. Throws ValidationError on schema failure.
+ * to .project/{blockName}.json. Throws ValidationError on schema failure.
  * Files without a corresponding schema are written without validation.
  */
 export function writeBlock(cwd: string, blockName: string, data: unknown): void {
@@ -63,7 +63,7 @@ export function writeBlock(cwd: string, blockName: string, data: unknown): void 
     // Best-effort cleanup of partial tmp file
     try { fs.unlinkSync(tmpPath); } catch { /* ignore cleanup failure */ }
     const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(`Failed to write block file .workflow/${blockName}.json: ${msg}`);
+    throw new Error(`Failed to write block file .project/${blockName}.json: ${msg}`);
   }
 }
 

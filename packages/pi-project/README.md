@@ -5,8 +5,16 @@ Schema-driven project state management for [Pi](https://github.com/badlogic/pi-m
 ## Install
 
 ```bash
-pi install pi-project
+pi install npm:@davidorex/pi-project
 ```
+
+## Getting Started
+
+```
+/project init
+```
+
+Creates `.project/` with 13 default schemas and 4 starter blocks (gaps, decisions, rationale, project). Idempotent — safe to run again.
 
 ## What It Does
 
@@ -17,6 +25,7 @@ pi-project manages structured project data in `.project/` — JSON files validat
 - `update-block-item` — update fields on a block item by predicate match
 
 **Commands registered:**
+- `/project init` — scaffold `.project/` with default schemas and empty blocks
 - `/project status` — display derived project state (source files, tests, phases, block summaries, recent commits)
 - `/project add-work` — extract items from conversation into typed blocks
 

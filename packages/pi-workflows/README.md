@@ -5,10 +5,17 @@ Workflow orchestration extension for [Pi](https://github.com/badlogic/pi-mono). 
 ## Install
 
 ```bash
-pi install pi-workflows
+pi install npm:@davidorex/pi-project    # peer dependency
+pi install npm:@davidorex/pi-workflows
 ```
 
-Requires `pi-project` as a peer dependency (installed separately).
+## Getting Started
+
+```
+/workflow init
+```
+
+Creates `.workflows/` for run state. Workflow YAML specs are discovered automatically from the package's bundled workflows — no setup needed to start running them.
 
 ## What It Does
 
@@ -18,6 +25,7 @@ pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orch
 - `workflow` — run a named workflow with typed input
 
 **Commands registered:**
+- `/workflow init` — scaffold `.workflows/` directory for run state
 - `/workflow list` — discover and select a workflow to run
 - `/workflow run <name> [--input '<json>']` — execute a workflow
 - `/workflow resume <name>` — resume an incomplete run from checkpoint
@@ -28,7 +36,7 @@ pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orch
 
 ## Workflow Spec Format
 
-Workflows are `.workflow.yaml` files discovered from `.pi/workflows/` (project), `~/.pi/agent/workflows/` (user), or the package's `workflows/` directory (builtin).
+Workflows are `.workflow.yaml` files discovered from `.workflows/` (project), `~/.pi/agent/workflows/` (user), or the package's `workflows/` directory (builtin).
 
 ```yaml
 name: my-workflow
@@ -143,7 +151,7 @@ declaredSchemaRefs(spec): string[]
 - DAG planner infers parallelism from `${{ steps.X }}` references — no manual dependency declaration
 - Agent specs are `.agent.yaml` only. Compiled to prompts via Nunjucks at dispatch time.
 - State persisted atomically after each step (tmp + rename). State write failure is fatal.
-- Three-tier resource search: project `.pi/` > user `~/.pi/agent/` > package builtin
+- Three-tier resource search: project (`.workflows/`, `.pi/agents/`, `.pi/templates/`) > user `~/.pi/agent/` > package builtin
 - `completion` field controls what message is sent back to the main conversation after a workflow finishes
 
 ## For LLMs

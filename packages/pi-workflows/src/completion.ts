@@ -29,7 +29,7 @@ export function resolveCompletion(
     runDir: result.runDir,
     runId: result.runId,
     workflow: result.workflow,
-    status: result.status,
+    status: result.status as "completed" | "failed",
     output: result.output,
   };
 

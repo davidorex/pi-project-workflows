@@ -224,21 +224,21 @@ const extension = (pi: ExtensionAPI) => {
       arrayKey: Type.String({ description: "Array key in the block (e.g., 'gaps', 'decisions')" }),
       item: Type.Any({ description: "Item object to append — must conform to block schema" }),
     }),
-    async execute(_toolCallId: string, params: { block: string; arrayKey: string; item: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+    async execute(_toolCallId: string, params: { block: string; arrayKey: string; item: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult<any>> {
       // Duplicate check if item has an id field
       if (params.item && typeof params.item === "object" && "id" in params.item) {
         try {
           const data = readBlock(ctx.cwd, params.block) as Record<string, unknown>;
           const arr = data[params.arrayKey];
           if (Array.isArray(arr) && arr.some((i: Record<string, unknown>) => i.id === params.item.id)) {
-            return { content: [{ type: "text", text: `Item '${params.item.id}' already exists in ${params.block}.${params.arrayKey}` }] };
+            return { details: undefined, content: [{ type: "text", text: `Item '${params.item.id}' already exists in ${params.block}.${params.arrayKey}` }] };
           }
         } catch { /* block doesn't exist — appendToBlock will handle */ }
       }
 
       appendToBlock(ctx.cwd, params.block, params.arrayKey, params.item);
       const id = params.item?.id ? ` '${params.item.id}'` : "";
-      return { content: [{ type: "text", text: `Appended item${id} to ${params.block}.${params.arrayKey}` }] };
+      return { details: undefined, content: [{ type: "text", text: `Appended item${id} to ${params.block}.${params.arrayKey}` }] };
     },
   });
 
@@ -255,9 +255,9 @@ const extension = (pi: ExtensionAPI) => {
       match: Type.Record(Type.String(), Type.Any(), { description: "Fields to match (e.g., { id: 'gap-123' })" }),
       updates: Type.Record(Type.String(), Type.Any(), { description: "Fields to update (e.g., { status: 'resolved' })" }),
     }),
-    async execute(_toolCallId: string, params: { block: string; arrayKey: string; match: Record<string, unknown>; updates: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult> {
+    async execute(_toolCallId: string, params: { block: string; arrayKey: string; match: Record<string, unknown>; updates: Record<string, unknown> }, _signal: AbortSignal, _onUpdate: AgentToolUpdateCallback, ctx: ExtensionContext): Promise<AgentToolResult<any>> {
       if (Object.keys(params.updates).length === 0) {
-        return { content: [{ type: "text", text: "No fields to update" }] };
+        return { details: undefined, content: [{ type: "text", text: "No fields to update" }] };
       }
 
       const matchEntries = Object.entries(params.match);
@@ -268,7 +268,7 @@ const extension = (pi: ExtensionAPI) => {
       );
 
       const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
-      return { content: [{ type: "text", text: `Updated item (${matchDesc}) in ${params.block}.${params.arrayKey}: ${Object.keys(params.updates).join(", ")}` }] };
+      return { details: undefined, content: [{ type: "text", text: `Updated item (${matchDesc}) in ${params.block}.${params.arrayKey}: ${Object.keys(params.updates).join(", ")}` }] };
     },
   });
 

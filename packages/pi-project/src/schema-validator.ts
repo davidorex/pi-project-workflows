@@ -1,7 +1,9 @@
-import Ajv from "ajv";
+import _Ajv from "ajv";
 import type { ErrorObject } from "ajv";
 import fs from "node:fs";
 
+// Node16 module resolution + CJS interop: default import is the module namespace
+const Ajv = (_Ajv as any).default ?? _Ajv;
 const ajv = new Ajv({ allErrors: true, strict: false });
 
 /**

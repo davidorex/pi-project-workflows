@@ -12,17 +12,17 @@
     "directory": "packages/pi-workflows"
   },
   "homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-workflows",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "pi": {
-    "extensions": ["./src/index.ts"]
+    "extensions": ["./dist/index.js"]
   },
-  "files": ["src/", "agents/", "schemas/", "workflows/", "templates/", "*.md"],
+  "files": ["dist/", "agents/", "schemas/", "workflows/", "templates/", "*.md"],
   "scripts": {
-    "test": "node --experimental-strip-types run-tests.ts",
-    "release": "npx changelogen --bump --release",
-    "release:patch": "npx changelogen --bump --release --patch",
-    "release:minor": "npx changelogen --bump --release --minor",
-    "release:major": "npx changelogen --bump --release --major",
-    "release:push": "git push --follow-tags"
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "nunjucks": "^3.2.4",

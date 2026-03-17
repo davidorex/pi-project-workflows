@@ -315,7 +315,7 @@ export async function dispatch(
     }
     return {
       step: options.stepName,
-      agent: step.agent,
+      agent: step.agent!,
       status: "failed",
       output: undefined,
       textOutput: lastAssistantText,
@@ -339,7 +339,7 @@ export async function dispatch(
 
   return {
     step: options.stepName,
-    agent: step.agent,
+    agent: step.agent!,
     status: exitCode === 0 ? "completed" : "failed",
     output: undefined,          // structured output handled by caller (workflow-executor)
     textOutput: lastAssistantText,

@@ -1,9 +1,18 @@
 {
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "test": "npm test --workspaces",
-    "test:project": "npm test -w packages/pi-project",
-    "test:workflows": "npm test -w packages/pi-workflows"
+    "clean": "npm run clean --workspaces --if-present",
+    "build": "npm run build -w @davidorex/pi-project && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors",
+    "test": "npm test --workspaces --if-present",
+    "test:project": "npm test -w @davidorex/pi-project",
+    "test:workflows": "npm test -w @davidorex/pi-workflows",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

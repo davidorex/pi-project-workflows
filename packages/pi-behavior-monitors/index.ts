@@ -16,7 +16,6 @@ import type {
 	AgentEndEvent,
 	ExtensionAPI,
 	ExtensionContext,
-	MessageEndEvent,
 	SessionEntry,
 	SessionMessageEntry,
 	TurnEndEvent,
@@ -292,7 +291,7 @@ function seedExamples(): number {
 
 const TRUNCATE = 2000;
 
-function extractText(parts: (TextContent | ToolCall)[]): string {
+function extractText(parts: readonly { type: string }[]): string {
 	return parts.filter((b): b is TextContent => b.type === "text").map((b) => b.text).join("");
 }
 
@@ -371,7 +370,7 @@ function collectCustomMessages(branch: SessionEntry[]): string {
 		const entry = branch[i];
 		if (!isMessageEntry(entry)) continue;
 		if (entry.message.role === "user") break;
-		const msg = entry.message as Record<string, unknown>;
+		const msg = entry.message as unknown as Record<string, unknown>;
 		if (msg.customType) {
 			msgs.unshift(`[${msg.customType}] ${msg.content ?? ""}`);
 		}
@@ -819,6 +818,7 @@ async function activate(
 	branch: SessionEntry[],
 	steeredThisTurn: Set<string>,
 	updateStatus: () => void,
+	pendingAgentEndSteers: BufferedSteer[],
 ): Promise<void> {
 	if (!monitorsEnabled) return;
 	if (monitor.dismissed) return;
@@ -1094,30 +1094,30 @@ export default function (pi: ExtensionAPI) {
 					description: m.description || `Run ${m.name} monitor`,
 					handler: async (_args: string, ctx: ExtensionContext) => {
 						const branch = ctx.sessionManager.getBranch();
-						await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus);
+						await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 					},
 				});
 			}
 		} else if (event === "message_end") {
-			pi.on("message_end", async (ev: MessageEndEvent, ctx: ExtensionContext) => {
+			pi.on("message_end", async (ev, ctx: ExtensionContext) => {
 				if (ev.message.role !== "assistant") return;
 				const branch = ctx.sessionManager.getBranch();
 				for (const m of group) {
-					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus);
+					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 				}
 			});
 		} else if (event === "turn_end") {
 			pi.on("turn_end", async (_ev: TurnEndEvent, ctx: ExtensionContext) => {
 				const branch = ctx.sessionManager.getBranch();
 				for (const m of group) {
-					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus);
+					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 				}
 			});
 		} else if (event === "agent_end") {
 			pi.on("agent_end", async (_ev: AgentEndEvent, ctx: ExtensionContext) => {
 				const branch = ctx.sessionManager.getBranch();
 				for (const m of group) {
-					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus);
+					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 				}
 			});
 		}

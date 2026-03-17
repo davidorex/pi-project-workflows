@@ -431,7 +431,7 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
     }
 
     const loop: LoopSpec = {
-      maxAttempts: hasMaxAttemptsNum ? maxAttemptsRaw as number : undefined,
+      maxAttempts: hasMaxAttemptsNum ? maxAttemptsRaw as number : 0,
       steps: loopSteps,
     };
     // If maxAttempts is an expression string, treat it as the `attempts` field

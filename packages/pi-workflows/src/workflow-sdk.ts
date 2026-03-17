@@ -148,7 +148,7 @@ export function extractExpressions(spec: WorkflowSpec): ExpressionRef[] {
 function extractFromStep(step: StepSpec, prefix: string, refs: ExpressionRef[]): void {
   if (step.when) extractFromString(step.when, `${prefix}.when`, refs);
   if (step.forEach) extractFromString(step.forEach, `${prefix}.forEach`, refs);
-  if (step.input) extractFromString(step.input as string, `${prefix}.input`, refs);
+  if (step.input) extractFromString(step.input as unknown as string, `${prefix}.input`, refs);
   if (step.command) extractFromString(step.command, `${prefix}.command`, refs);
 
   // Gate check

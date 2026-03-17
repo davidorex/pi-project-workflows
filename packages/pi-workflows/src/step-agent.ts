@@ -46,10 +46,11 @@ export async function executeAgentStep(
   options: AgentStepOptions,
 ): Promise<StepResult> {
   const { ctx, signal, loadAgent, runDir, specFilePath, templateEnv } = options;
+  const agentName = stepSpec.agent!;
   const scope: ExpressionScope = { input: state.input, steps: state.steps };
 
   // Expose forEach bindings (as name + forEach metadata) if present on the state
-  const stateAny = state as Record<string, unknown>;
+  const stateAny = state as unknown as Record<string, unknown>;
   if (stateAny.forEach !== undefined) {
     scope.forEach = stateAny.forEach;
   }
@@ -68,7 +69,7 @@ export async function executeAgentStep(
   } catch (err) {
     return {
       step: stepName,
-      agent: stepSpec.agent,
+      agent: agentName,
       status: "failed",
       usage: zeroUsage(),
       durationMs: 0,
@@ -79,11 +80,11 @@ export async function executeAgentStep(
   // Load and optionally render agent template
   let agentSpec: AgentSpec;
   try {
-    agentSpec = loadAgent(stepSpec.agent);
+    agentSpec = loadAgent(agentName);
   } catch (err) {
     return {
       step: stepName,
-      agent: stepSpec.agent,
+      agent: agentName,
       status: "failed",
       usage: zeroUsage(),
       durationMs: 0,

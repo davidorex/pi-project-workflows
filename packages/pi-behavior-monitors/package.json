@@ -13,8 +13,10 @@
     "url": "git+https://github.com/davidorex/pi-behavior-monitors.git"
   },
   "homepage": "https://github.com/davidorex/pi-behavior-monitors",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
-    "index.ts",
+    "dist/",
     "examples",
     "schemas",
     "skills",
@@ -23,20 +25,18 @@
   ],
   "pi": {
     "extensions": [
-      "./index.ts"
+      "./dist/index.js"
     ],
     "skills": [
       "./skills"
     ]
   },
   "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run clean && npm run build",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "release": "npx changelogen --bump --release",
-    "release:patch": "npx changelogen --bump --release --patch",
-    "release:minor": "npx changelogen --bump --release --minor",
-    "release:major": "npx changelogen --bump --release --major",
-    "release:push": "git push --follow-tags"
+    "test:watch": "vitest"
   },
   "peerDependencies": {
     "@mariozechner/pi-ai": "*",

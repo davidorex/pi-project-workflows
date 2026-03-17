@@ -148,7 +148,7 @@ async function executeSingleStep(
   if (signal?.aborted) {
     state.steps[stepName] = {
       step: stepName,
-      agent: stepSpec.agent,
+      agent: stepSpec.agent ?? "",
       status: "failed",
       usage: zeroUsage(),
       durationMs: 0,
@@ -161,7 +161,7 @@ async function executeSingleStep(
   // Build expression scope
   const scope: ExpressionScope = { input: state.input, steps: state.steps };
   // Expose forEach bindings (as name + forEach metadata) if present on the state
-  const stateAny = state as Record<string, unknown>;
+  const stateAny = state as unknown as Record<string, unknown>;
   if (stateAny.forEach !== undefined) {
     scope.forEach = stateAny.forEach;
   }
@@ -203,7 +203,7 @@ async function executeSingleStep(
     if (attempt > 1 && signal?.aborted) {
       state.steps[stepName] = {
         step: stepName,
-        agent: stepSpec.agent,
+        agent: stepSpec.agent ?? "",
         status: "failed",
         usage: zeroUsage(),
         durationMs: 0,
@@ -638,7 +638,7 @@ export async function executeWorkflow(
         if (!state.steps[sn]) {
           state.steps[sn] = {
             step: sn,
-            agent: spec.steps[sn].agent,
+            agent: spec.steps[sn].agent ?? "",
             status: "failed",
             usage: zeroUsage(),
             durationMs: 0,
@@ -794,7 +794,7 @@ export async function executeWorkflow(
     }
 
     // P7: Truncate completion message to avoid context overflow (50KB / 2000 lines)
-    const truncated = truncateTail(content, 2000, 50 * 1024);
+    const truncated = truncateTail(content, { maxLines: 2000, maxBytes: 50 * 1024 });
     content = truncated.content;
     if (truncated.truncated) {
       content += `\n\n[Truncated: output exceeded ${truncated.truncatedBy === "bytes" ? "50KB" : "2000 lines"}. Full output in run dir: ${runDir}]`;

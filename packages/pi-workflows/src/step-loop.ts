@@ -111,7 +111,7 @@ export async function executeLoop(
         result = await executeGate({ ...subSpec.gate, check: resolvedCheck }, subName, { cwd: ctx.cwd, signal });
 
         // Handle gate pass/fail with break/continue
-        const passed = result.output?.passed;
+        const passed = (result.output as Record<string, unknown> | undefined)?.passed;
         if (passed && subSpec.gate.onPass === "break") {
           iterationSteps[subName] = result;
           shouldBreak = true;

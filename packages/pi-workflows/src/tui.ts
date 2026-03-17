@@ -174,6 +174,7 @@ export function createProgressWidget(
 
         return lines;
       },
+      invalidate() { /* no cached state to clear */ },
       dispose() {
         clearInterval(interval);
       },

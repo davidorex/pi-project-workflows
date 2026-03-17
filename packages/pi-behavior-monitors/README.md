@@ -7,8 +7,10 @@ Monitors are JSON files (`.monitor.json`) with typed blocks: classify (LLM side-
 ## Install
 
 ```bash
-pi install npm:pi-behavior-monitors
+pi install npm:@davidorex/pi-behavior-monitors
 ```
+
+Or install all three extensions at once: `pi install npm:@davidorex/pi-project-workflows`
 
 On first run, if no monitors exist in your project, example monitors are seeded into `.pi/monitors/`. Edit or delete them to customize.
 
@@ -57,3 +59,9 @@ Create a `.monitor.json` file in `.pi/monitors/` conforming to `schemas/monitor.
 
 - `schemas/monitor.schema.json` — monitor definition format
 - `schemas/monitor-pattern.schema.json` — pattern library entry format
+
+## Development
+
+Part of the [`pi-project-workflows`](../../README.md) monorepo. All three packages (pi-project, pi-workflows, pi-behavior-monitors) are versioned in lockstep at 0.2.0.
+
+`npm run build` compiles TypeScript to `dist/` via `tsc`. The package ships `dist/`, not `src/`. Tests use `vitest run` (`npm test`).

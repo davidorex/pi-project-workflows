@@ -119,6 +119,9 @@ Available filters: `length`, `keys`, `filter`, `json`, `upper`, `lower`, `trim`,
 | `src/completion.ts` | Post-workflow message resolution |
 | `src/tui.ts` | Terminal progress widget |
 | `src/types.ts` | Shared type definitions |
+| `src/format.ts` | Output formatting utilities |
+| `src/step-shared.ts` | Shared step execution utilities |
+| `src/workflows-dir.ts` | `WORKFLOWS_DIR` constant (`.workflows`) |
 | `src/step-*.ts` | Step type executors (one per type) |
 
 ## Bundled Resources
@@ -126,7 +129,7 @@ Available filters: `length`, `keys`, `filter`, `json`, `upper`, `lower`, `trim`,
 | Directory | Contents |
 |-----------|----------|
 | `agents/` | 13 agent specs (`.agent.yaml`): investigator, decomposer, verifier, synthesizer, etc. |
-| `schemas/` | 10 output schemas (`.schema.json`): investigation-findings, execution-results, etc. |
+| `schemas/` | 11 output schemas (`.schema.json`): investigation-findings, execution-results, etc. |
 | `workflows/` | 10 workflow specs (`.workflow.yaml`): do-gap, create-phase, parallel-analysis, etc. |
 | `templates/` | Nunjucks prompt templates organized by agent role |
 
@@ -182,4 +185,10 @@ When working with this extension:
 npm test
 ```
 
-Runs `node --experimental-strip-types run-tests.ts` which discovers and executes all `src/*.test.ts` files. 500+ tests covering step types, expressions, DAG planning, state persistence, checkpoint/resume, and template compilation.
+Runs `tsx --test src/*.test.ts`. 500+ tests covering step types, expressions, DAG planning, state persistence, checkpoint/resume, and template compilation.
+
+## Development
+
+Part of the [`pi-project-workflows`](../../README.md) monorepo. All three packages (pi-project, pi-workflows, pi-behavior-monitors) are versioned in lockstep at 0.2.0.
+
+`npm run build` compiles TypeScript to `dist/` via `tsc`. The package ships `dist/`, not `src/` — the `pi.extensions` entry point is `./dist/index.js`.

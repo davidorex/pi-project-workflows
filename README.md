@@ -10,6 +10,7 @@ Schemas are the contract layer. In pi-project, you define what your project trac
 |---------|-----|-------------|
 | [@davidorex/pi-project](packages/pi-project/) | `npm:@davidorex/pi-project` | Schema-driven project state — typed JSON blocks, write-time validation, generic CRUD tools, dynamically derived state. Add a schema, get a new block type with tooling. No code changes. |
 | [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, 8 step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
+| [@davidorex/pi-behavior-monitors](packages/pi-behavior-monitors/) | `npm:@davidorex/pi-behavior-monitors` | Behavior monitors — autonomous watchdogs that classify agent activity against JSON pattern libraries, steer corrections, and write structured findings. |
 
 ## Quick Start
 
@@ -75,27 +76,39 @@ After initialization, three directories coexist in a project:
 # Install dependencies
 npm install
 
-# Run all tests (600 total: 58 pi-project + 542 pi-workflows)
+# Build all packages (tsc compiles to dist/)
+npm run build
+
+# Run all tests
 npm test
 
 # Run per-package
 npm test -w packages/pi-project
 npm test -w packages/pi-workflows
+npm test -w packages/pi-behavior-monitors
 
 # Run integration tests (requires pi on PATH, spawns LLM subprocesses)
 RUN_INTEGRATION=1 npm test -w packages/pi-workflows
 
+# Lint and format (uses Biome)
+npm run lint       # check for lint issues
+npm run format     # auto-fix formatting
+npm run check      # lint + typecheck (biome check + tsc --noEmit)
+
+# Clean build artifacts
+npm run clean
+
 # Derive project state
-node --experimental-strip-types -e "
-  import { projectState } from './packages/pi-project/src/project-sdk.ts';
+npx tsx -e "
+  import { projectState } from './packages/pi-project/src/project-sdk.js';
   console.log(JSON.stringify(projectState('.'), null, 2));
 "
 ```
 
 ## Architecture
 
-- **ESM, TypeScript** loaded directly by Pi via `--experimental-strip-types` (no build step)
-- **npm workspaces** — cross-package imports via workspace symlinks (`@davidorex/pi-project/src/...`)
+- **ESM, TypeScript** compiled via `tsc` to `dist/`. Pi loads compiled JS from each package's `dist/index.js`.
+- **npm workspaces** — cross-package imports via workspace symlinks, using `.js` extensions for Node16 module resolution (e.g., `@davidorex/pi-project/src/block-api.js` in source, resolving to `dist/` in published packages)
 - **pi-workflows depends on pi-project** as a peer dependency. pi-project has no knowledge of workflows.
 - **Atomic writes** — all block and state persistence uses tmp file + rename for crash safety
 - **Three-tier resource search** — project `.pi/` > user `~/.pi/agent/` > package builtin (agents, templates, workflows)
@@ -105,7 +118,7 @@ node --experimental-strip-types -e "
 
 When working in this repository:
 
-- **Read package READMEs** for detailed API docs: [pi-project](packages/pi-project/README.md), [pi-workflows](packages/pi-workflows/README.md)
+- **Read package READMEs** for detailed API docs: [pi-project](packages/pi-project/README.md), [pi-workflows](packages/pi-workflows/README.md), [pi-behavior-monitors](packages/pi-behavior-monitors/README.md)
 - **`packages/pi-project/src/project-sdk.ts`** — derived state, block discovery, the `projectState()` function
 - **`packages/pi-project/src/block-api.ts`** — block CRUD with schema validation
 - **`packages/pi-workflows/src/workflow-sdk.ts`** — vocabulary, discovery, introspection for workflows
@@ -116,21 +129,15 @@ When working in this repository:
 
 ## Release
 
-Each package has changelogen-based release scripts:
+All packages use lockstep versioning — every release bumps all three packages to the same version. Run from the repo root:
 
 ```bash
-cd packages/pi-project
-npm run release:patch    # bump, changelog, commit, tag
-npm run release:push     # push commit + tag
-npm publish --access public
-
-cd packages/pi-workflows
-npm run release:patch
-npm run release:push
-npm publish --access public
+npm run release:patch    # bump all packages patch, update CHANGELOGs, commit, tag, publish, push
+npm run release:minor    # bump all packages minor
+npm run release:major    # bump all packages major
 ```
 
-Publish pi-project first (pi-workflows depends on it as a peer).
+This invokes `scripts/release.mjs`, which: bumps versions across all workspaces (via `scripts/sync-versions.js`), stamps `[Unreleased]` CHANGELOG sections with the new version and date, commits, tags `vX.Y.Z`, publishes all packages to npm, adds fresh `[Unreleased]` sections, commits again, and pushes.
 
 ## License
 

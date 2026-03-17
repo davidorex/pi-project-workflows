@@ -1,8 +1,8 @@
 # pi-project-workflows
 
-Two [Pi](https://github.com/badlogic/pi-mono) extensions that give Pi agents structured, schema-driven project state and typed workflow orchestration.
+Three [Pi](https://github.com/badlogic/pi-mono) extensions: typed, multi-step workflow execution via `.workflow.yaml` specs; schema-driven project state in `.project/`; and behavior monitors that classify agent activity and steer corrections.
 
-Schemas are the contract layer. In pi-project, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
+Schemas are the contract layer. In pi-project, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. The three extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
 
 ## Packages
 
@@ -107,12 +107,15 @@ npx tsx -e "
 
 ## Architecture
 
-- **ESM, TypeScript** compiled via `tsc` to `dist/`. Pi loads compiled JS from each package's `dist/index.js`.
-- **npm workspaces** — cross-package imports via workspace symlinks, using `.js` extensions for Node16 module resolution (e.g., `@davidorex/pi-project/src/block-api.js` in source, resolving to `dist/` in published packages)
-- **pi-workflows depends on pi-project** as a peer dependency. pi-project has no knowledge of workflows.
-- **Atomic writes** — all block and state persistence uses tmp file + rename for crash safety
+- **Main conversation is the control plane; workflows are subordinate.** Each workflow step runs as a subprocess (`pi --mode json`) with its own context window. The main LLM orchestrates; step agents execute.
+- **Agent specs are `.agent.yaml` only** (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time.
+- **DAG planner infers parallelism** from `${{ steps.X }}` expression references. Steps without explicit dependencies run sequentially by declaration order.
+- **Atomic writes** — all block and state persistence uses tmp file + rename for crash safety. State write failure is fatal.
+- **Checkpoint/resume** — incomplete runs can be resumed from last completed step. `completion` field controls post-workflow message to main LLM.
 - **Three-tier resource search** — project `.pi/` > user `~/.pi/agent/` > package builtin (agents, templates, workflows)
-- **Subprocess dispatch** — each workflow step spawns `pi --mode json` as a child process. Main conversation is the control plane.
+- **Workflow SDK** (`packages/pi-workflows/src/workflow-sdk.ts`) — single queryable surface for the extension's capabilities. All functions derive dynamically from code registries and filesystem — add a filter, agent, template, or schema and it appears automatically.
+- **ESM, TypeScript** compiled via `tsc` to `dist/`. Pi loads compiled JS from each package's `dist/index.js`. Cross-package imports use `.js` extensions for Node16 module resolution.
+- **pi-workflows depends on pi-project** as a peer dependency. pi-project has no knowledge of workflows. pi-behavior-monitors is independent of both.
 
 ## For LLMs
 

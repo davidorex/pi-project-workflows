@@ -25,7 +25,7 @@ steps:
       conventions: "${{ input.conventions }}"
     output:
       format: json
-      schema: schemas/plan-breakdown.schema.json
+      schema: ../schemas/plan-breakdown.schema.json
 
   implement:
     forEach: "${{ steps.plan.output.plans }}"
@@ -37,7 +37,7 @@ steps:
       conventions: "${{ input.conventions }}"
     output:
       format: json
-      schema: schemas/execution-results.schema.json
+      schema: ../schemas/execution-results.schema.json
 
   verify:
     agent: verifier
@@ -46,7 +46,7 @@ steps:
       step_output: "${{ steps.implement.output }}"
     output:
       format: json
-      schema: schemas/verifier-output.schema.json
+      schema: ../schemas/verifier-output.schema.json
 
   check:
     gate:

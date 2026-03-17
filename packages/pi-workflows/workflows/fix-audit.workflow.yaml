@@ -87,7 +87,7 @@ steps:
       conformance_reference: "${{ steps.load.output.conformance_reference }}"
     output:
       format: json
-      schema: schemas/execution-results.schema.json
+      schema: ../schemas/execution-results.schema.json
       path: .project/fix-audit-results.json
 
   route-results:

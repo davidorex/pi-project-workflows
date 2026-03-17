@@ -37,7 +37,7 @@ steps:
       gap: "${{ steps.load.output.gap }}"
     output:
       format: json
-      schema: schemas/investigation-findings.schema.json
+      schema: ../schemas/investigation-findings.schema.json
 
   research:
     when: "${{ steps.investigate.output.needs_research }}"
@@ -47,7 +47,7 @@ steps:
       research_questions: "${{ steps.investigate.output.research_questions }}"
     output:
       format: json
-      schema: schemas/research-findings.schema.json
+      schema: ../schemas/research-findings.schema.json
 
   decompose:
     agent: decomposer
@@ -57,7 +57,7 @@ steps:
       research: "${{ steps.research.output }}"
     output:
       format: json
-      schema: schemas/decomposition-specs.schema.json
+      schema: ../schemas/decomposition-specs.schema.json
 
   implement:
     forEach: "${{ steps.decompose.output.specs }}"
@@ -72,7 +72,7 @@ steps:
       onExhausted: fail
     output:
       format: json
-      schema: schemas/execution-results.schema.json
+      schema: ../schemas/execution-results.schema.json
 
   verify:
     command: |

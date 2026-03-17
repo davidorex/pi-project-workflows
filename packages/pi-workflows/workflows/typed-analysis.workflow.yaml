@@ -26,7 +26,7 @@ steps:
       path: ${{ input.path }}
     output:
       format: json
-      schema: schemas/structure-analysis.schema.json
+      schema: ../schemas/structure-analysis.schema.json
 
   analyze-quality:
     agent: quality-analyzer
@@ -35,7 +35,7 @@ steps:
       path: ${{ input.path }}
     output:
       format: json
-      schema: schemas/quality-analysis.schema.json
+      schema: ../schemas/quality-analysis.schema.json
 
   analyze-patterns:
     agent: pattern-analyzer
@@ -44,7 +44,7 @@ steps:
       path: ${{ input.path }}
     output:
       format: json
-      schema: schemas/pattern-analysis.schema.json
+      schema: ../schemas/pattern-analysis.schema.json
 
   synthesize:
     agent: synthesizer
@@ -54,7 +54,7 @@ steps:
       patterns: ${{ steps.analyze-patterns.output }}
     output:
       format: json
-      schema: schemas/synthesis.schema.json
+      schema: ../schemas/synthesis.schema.json
 
 completion:
   message: |

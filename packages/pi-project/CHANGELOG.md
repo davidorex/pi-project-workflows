@@ -1,13 +1,17 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [Unreleased]
 
-## v0.1.0
-
-Initial release.
+## [0.2.0] - 2026-03-17
 
 ### Added
+- `/project init` command to scaffold `.project/` directory with default schemas and empty block files
+- Update check on session start for `@davidorex/pi-project-workflows` meta-package
+- Monorepo integration as workspace package
 
+## [0.1.0] - 2026-03-14
+
+### Added
 - Block CRUD: `readBlock`, `writeBlock`, `appendToBlock`, `updateItemInBlock` with atomic writes (tmp + rename)
 - Write-time schema validation via AJV against `.project/schemas/*.schema.json`
 - `ValidationError` class with structured error reporting

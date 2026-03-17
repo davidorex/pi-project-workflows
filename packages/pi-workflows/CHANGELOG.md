@@ -1,13 +1,16 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [Unreleased]
 
-## v0.1.0
-
-Initial release.
+## [0.2.0] - 2026-03-17
 
 ### Added
+- Monorepo integration as workspace package
+- Bundled workflow YAML schema path resolution relative to package
 
+## [0.1.0] - 2026-03-14
+
+### Added
 - Workflow orchestration via `.workflow.yaml` specs with DAG-based execution planning
 - Step types: agent, command, transform, gate, parallel, foreach, loop, pause
 - Expression evaluator (`${{ }}`) with filters: length, keys, filter, json, upper, lower, trim, default, first, last, join, split, replace, includes, map, sum, min, max, sort, unique, flatten, zip, group_by, count_by, chunk, pick, omit, entries, from_entries, merge, values, not, and, or

@@ -6,7 +6,7 @@ Pi extension that adds behavior monitors — autonomous watchdogs that classify 
 
 ## Structure
 
-- `index.ts` — extension entry point (single file)
+- `src/index.ts` — extension entry point; compiled to `dist/` for publishing
 - `examples/` — bundled monitor JSON files (seeded into `.pi/monitors/` on first run)
 - `schemas/` — JSON schemas for monitor definitions and patterns
 - `skills/` — SKILL.md for LLM-assisted monitor creation
@@ -23,12 +23,12 @@ Use conventional commits. Prefix determines version bump:
 
 ## Releasing
 
+This package is part of the `pi-project-workflows` monorepo. All packages are versioned and released together from the repo root:
+
 ```bash
-npm run release          # auto-detect bump from commits
-npm run release:patch    # force patch
-npm run release:minor    # force minor
-npm run release:major    # force major
-npm run release:push     # git push --follow-tags
+npm run release:patch    # bump all packages patch, commit, tag
+npm run release:minor    # bump all packages minor, commit, tag
+npm run release:major    # bump all packages major, commit, tag
 ```
 
 ## Publishing to npm
@@ -41,7 +41,7 @@ npm publish              # publish current version
 npm pack --dry-run       # preview what would be published (check files whitelist)
 ```
 
-The `files` field in package.json controls what's included: `index.ts`, `examples/`, `schemas/`, `skills/`, `README.md`, `CHANGELOG.md`. Everything else (`docs/`, `test/`, `.claude/`, etc.) is excluded.
+The `files` field in package.json controls what's included: `dist/`, `examples/`, `schemas/`, `skills/`, `README.md`, `CHANGELOG.md`. Everything else (`src/`, `docs/`, `test/`, `.claude/`, etc.) is excluded.
 
 ## Dependencies
 

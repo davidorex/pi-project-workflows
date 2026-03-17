@@ -1,1 +1,1 @@
-export { default } from "@davidorex/pi-behavior-monitors/index.js";
+export { default } from "@davidorex/pi-behavior-monitors";

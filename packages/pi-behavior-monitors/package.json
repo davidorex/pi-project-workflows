@@ -10,9 +10,10 @@
 	"author": "David Ryan",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/davidorex/pi-behavior-monitors.git"
+		"url": "git+https://github.com/davidorex/pi-project-workflows.git",
+		"directory": "packages/pi-behavior-monitors"
 	},
-	"homepage": "https://github.com/davidorex/pi-behavior-monitors",
+	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-behavior-monitors",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"files": [

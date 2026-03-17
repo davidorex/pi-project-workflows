@@ -16,13 +16,27 @@
 	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-project",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./src/*.js": {
+			"types": "./dist/*.d.ts",
+			"default": "./dist/*.js"
+		}
+	},
 	"pi": {
 		"extensions": [
 			"./dist/index.js"
+		],
+		"skills": [
+			"./skills"
 		]
 	},
 	"files": [
 		"dist/",
+		"skills/",
 		"defaults/",
 		"*.md"
 	],

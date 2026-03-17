@@ -1,0 +1,50 @@
+{
+  "name": "@davidorex/pi-behavior-monitors",
+  "version": "0.1.4",
+  "description": "Behavior monitors for pi that watch agent activity and steer corrections",
+  "type": "module",
+  "keywords": [
+    "pi-package"
+  ],
+  "license": "MIT",
+  "author": "David Ryan",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidorex/pi-behavior-monitors.git"
+  },
+  "homepage": "https://github.com/davidorex/pi-behavior-monitors",
+  "files": [
+    "index.ts",
+    "examples",
+    "schemas",
+    "skills",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "skills": [
+      "./skills"
+    ]
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "release": "npx changelogen --bump --release",
+    "release:patch": "npx changelogen --bump --release --patch",
+    "release:minor": "npx changelogen --bump --release --minor",
+    "release:major": "npx changelogen --bump --release --major",
+    "release:push": "git push --follow-tags"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*",
+    "@sinclair/typebox": "*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}

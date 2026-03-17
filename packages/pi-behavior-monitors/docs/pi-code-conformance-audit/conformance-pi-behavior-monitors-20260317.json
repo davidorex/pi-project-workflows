@@ -1,0 +1,134 @@
+{
+  "subject": {
+    "project": "pi-behavior-monitors",
+    "files": ["index.ts"],
+    "scope": "full"
+  },
+  "auditor": {
+    "name": "pi-code-conformance",
+    "version": "1.0.0",
+    "type": "hybrid"
+  },
+  "timestamp": "2026-03-17T00:00:00.000Z",
+  "checks": [
+    { "id": "pkg-type-module", "description": "package.json has type: module", "status": "pass", "category": "package-structure" },
+    { "id": "pkg-pi-extensions", "description": "pi.extensions manifest declared", "status": "pass", "category": "package-structure" },
+    { "id": "pkg-pi-package-keyword", "description": "pi-package keyword present", "status": "pass", "category": "package-structure" },
+    { "id": "pkg-peer-pi-coding-agent", "description": "peerDependency: @mariozechner/pi-coding-agent", "status": "pass", "category": "package-structure" },
+    { "id": "pkg-peer-typebox", "description": "peerDependency: @sinclair/typebox", "status": "pass", "category": "package-structure" },
+    { "id": "pkg-no-dep-pi-coding-agent", "description": "@mariozechner/pi-coding-agent not in dependencies", "status": "pass", "category": "package-structure" },
+    { "id": "pkg-no-dep-pi-tui", "description": "@mariozechner/pi-tui not in dependencies", "status": "pass", "category": "package-structure" },
+    { "id": "pkg-no-dep-pi-ai", "description": "@mariozechner/pi-ai not in dependencies", "status": "pass", "category": "package-structure" },
+    { "id": "pkg-no-dep-typebox", "description": "@sinclair/typebox not in dependencies", "status": "pass", "category": "package-structure" },
+    { "id": "import-no-dynamic", "description": "No dynamic imports", "status": "pass", "category": "import-discipline" },
+    { "id": "import-typed-pi-coding-agent", "description": "Typed import from pi-coding-agent in entry", "status": "pass", "category": "import-discipline" },
+    { "id": "type-no-any", "description": "No explicit any types", "status": "pass", "category": "type-safety" },
+    { "id": "type-no-union-literal", "description": "No Type.Union+Type.Literal (StringEnum preferred)", "status": "pass", "category": "tool-registration" },
+    { "id": "doc-jsdoc-header", "description": "JSDoc header in index.ts", "status": "pass", "category": "conventions" }
+  ],
+  "findings": [
+    {
+      "id": "conventions-index-unused-param-description",
+      "severity": "warning",
+      "principle": "Convention Patterns",
+      "category": "conventions",
+      "description": "generateFindingId declares a 'description' parameter that is never used in the function body. Unused parameters should be prefixed with _ to signal intent.",
+      "locations": [
+        {
+          "file": "index.ts",
+          "lines": [742, 743],
+          "snippet": "export function generateFindingId(monitorName: string, description: string): string {\n\treturn `${monitorName}-${Date.now().toString(36)}`;\n}"
+        }
+      ],
+      "fix": {
+        "suggestion": "Rename 'description' to '_description' to indicate it is intentionally unused, or remove the parameter if no callers depend on the arity.",
+        "verify_method": "grep",
+        "verify_pattern": "generateFindingId.*monitorName.*[^_]description"
+      }
+    },
+    {
+      "id": "state-management-index-no-session-switch",
+      "severity": "warning",
+      "principle": "State Management",
+      "category": "state-management",
+      "description": "Extension maintains per-monitor runtime state (whileCount, dismissed, lastUserText, activationCount) and a global monitorsEnabled flag, but only handles session_start. No handlers for session_switch, session_fork, or session_tree events. If the user switches sessions, stale monitor state from the previous session persists — a dismissed monitor stays dismissed, whileCount is not reset, and lastUserText dedup may suppress classification in the new session context.",
+      "locations": [
+        {
+          "file": "index.ts",
+          "lines": [976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986],
+          "snippet": "pi.on(\"session_start\", async (_event: unknown, ctx: ExtensionContext) => {\n\tstatusCtx = ctx;\n\tif (seeded > 0 && ctx.hasUI) {\n\t\tconst dir = resolveProjectMonitorsDir();\n\t\tctx.ui.notify(\n\t\t\t`Seeded ${seeded} example monitor files into ${dir}\\nEdit or delete them to customize.`,\n\t\t\t\"info\",\n\t\t);\n\t}\n\tupdateStatus();\n});"
+        }
+      ],
+      "fix": {
+        "suggestion": "Add session_switch handler that resets per-monitor runtime state (whileCount, dismissed, lastUserText, activationCount) and re-sets monitorsEnabled to true. Pattern: pi.on(\"session_switch\", async (_ev, ctx) => { statusCtx = ctx; for (const m of monitors) { m.whileCount = 0; m.dismissed = false; m.lastUserText = \"\"; m.activationCount = 0; } monitorsEnabled = true; updateStatus(); });",
+        "verify_method": "grep",
+        "verify_pattern": "session_switch"
+      }
+    },
+    {
+      "id": "mode-awareness-index-escalate-no-hasui-fallthrough",
+      "severity": "info",
+      "principle": "Mode Awareness",
+      "category": "mode-awareness",
+      "description": "In escalate(), when ctx.hasUI is false and escalate mode is 'ask', the function falls through to resetting whileCount without ever being able to dismiss the monitor. The monitor will hit its ceiling every activation cycle and silently reset, never able to be dismissed. This is graceful degradation but may cause unexpected repeated classification cycles in headless/print mode.",
+      "locations": [
+        {
+          "file": "index.ts",
+          "lines": [915, 916, 917, 918, 919, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933],
+          "snippet": "async function escalate(monitor: Monitor, pi: ExtensionAPI, ctx: ExtensionContext): Promise<void> {\n\tif (monitor.escalate === \"dismiss\") {\n\t\tmonitor.dismissed = true;\n\t\tmonitor.whileCount = 0;\n\t\treturn;\n\t}\n\n\tif (ctx.hasUI) {\n\t\tconst choice = await ctx.ui.confirm(\n\t\t\t`[${monitor.name}] Steered ${monitor.ceiling} times`,\n\t\t\t\"Continue steering, or dismiss this monitor for the session?\",\n\t\t);\n\t\tif (!choice) {\n\t\t\tmonitor.dismissed = true;\n\t\t\tmonitor.whileCount = 0;\n\t\t\treturn;\n\t\t}\n\t}\n\tmonitor.whileCount = 0;\n}"
+        }
+      ],
+      "fix": {
+        "suggestion": "When !ctx.hasUI and escalate is 'ask', auto-dismiss the monitor (same as escalate: 'dismiss' behavior) since there is no way to prompt the user. Add: if (!ctx.hasUI) { monitor.dismissed = true; monitor.whileCount = 0; return; } after the escalate === 'dismiss' check.",
+        "verify_method": "grep",
+        "verify_pattern": "escalate.*!ctx.hasUI"
+      }
+    },
+    {
+      "id": "tool-registration-na",
+      "severity": "info",
+      "principle": "Tool Registration",
+      "category": "tool-registration",
+      "description": "N/A — this extension does not register any tools. It uses registerCommand and event handlers only.",
+      "locations": [{ "file": "index.ts", "lines": [940], "snippet": "export default function (pi: ExtensionAPI) {" }],
+      "fix": { "suggestion": "No action needed.", "verify_method": "inspect" }
+    },
+    {
+      "id": "error-signaling-na",
+      "severity": "info",
+      "principle": "Error Signaling",
+      "category": "error-signaling",
+      "description": "N/A — no tools registered. Classification errors are thrown (lines 698, 701) and caught in activate() with appropriate UI notification or console.error fallback.",
+      "locations": [
+        { "file": "index.ts", "lines": [698, 701], "snippet": "if (!model) throw new Error(`Model ${monitor.classify.model} not found`);\n...\nif (!apiKey) throw new Error(`No API key for ${monitor.classify.model}`);" }
+      ],
+      "fix": { "suggestion": "No action needed.", "verify_method": "inspect" }
+    },
+    {
+      "id": "output-truncation-na",
+      "severity": "info",
+      "principle": "Output Truncation",
+      "category": "output-truncation",
+      "description": "N/A — no tools registered. Classification prompt context is already truncated via trunc() helper (2000 char limit per tool result/call).",
+      "locations": [{ "file": "index.ts", "lines": [287, 299, 300], "snippet": "const TRUNCATE = 2000;\n...\nfunction trunc(text: string): string {\n\treturn text.length <= TRUNCATE ? text : `${text.slice(0, TRUNCATE)} [TRUNCATED]`;\n}" }],
+      "fix": { "suggestion": "No action needed.", "verify_method": "inspect" }
+    },
+    {
+      "id": "signal-handling-classification-abort",
+      "severity": "info",
+      "principle": "Signal Handling",
+      "category": "signal-handling",
+      "description": "Classification calls are properly wired to an AbortController that fires on the monitors:abort event (emitted at agent_end). The signal is passed through to the complete() API call. Aborted classifications produce no verdict.",
+      "locations": [
+        { "file": "index.ts", "lines": [841, 842, 843, 844, 848, 850], "snippet": "const abortController = new AbortController();\nconst onAbort = () => abortController.abort();\nconst unsubAbort = pi.events.on(\"monitors:abort\", onAbort);\n...\nresult = await classifyPrompt(ctx, monitor, prompt, abortController.signal);\n...\nif (abortController.signal.aborted) return;" }
+      ],
+      "fix": { "suggestion": "No action needed.", "verify_method": "inspect" }
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 2,
+    "infos": 5,
+    "pass_rate": "14/14"
+  }
+}

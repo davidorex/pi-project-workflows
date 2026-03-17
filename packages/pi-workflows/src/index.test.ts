@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { parseAgentYaml, createAgentLoader } from "./agent-spec.ts";
+import { parseAgentYaml, createAgentLoader } from "./agent-spec.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";

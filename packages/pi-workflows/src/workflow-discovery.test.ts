@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
+import { discoverWorkflows, findWorkflow } from "./workflow-discovery.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";

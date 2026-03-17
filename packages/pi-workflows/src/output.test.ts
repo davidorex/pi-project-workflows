@@ -3,7 +3,7 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { persistStepOutput } from "./output.ts";
+import { persistStepOutput } from "./output.js";
 
 describe("persistStepOutput", () => {
   it("writes structured output as JSON", (t) => {

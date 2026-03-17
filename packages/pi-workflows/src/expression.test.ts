@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { resolveExpressions, resolveExpression, evaluateCondition, ExpressionError } from "./expression.ts";
-import type { ExpressionScope, CompletionScope } from "./types.ts";
+import { resolveExpressions, resolveExpression, evaluateCondition, ExpressionError } from "./expression.js";
+import type { ExpressionScope, CompletionScope } from "./types.js";
 
 const scope: ExpressionScope = {
   input: {

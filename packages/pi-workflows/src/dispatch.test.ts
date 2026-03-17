@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { dispatch, buildArgs, extractText, extractToolArgsPreview } from "./dispatch.ts";
-import type { StepSpec, AgentSpec, StepResult } from "./types.ts";
+import { dispatch, buildArgs, extractText, extractToolArgsPreview } from "./dispatch.js";
+import type { StepSpec, AgentSpec, StepResult } from "./types.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";

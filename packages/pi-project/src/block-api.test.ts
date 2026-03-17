@@ -3,8 +3,8 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { readBlock, writeBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
-import { ValidationError } from "./schema-validator.ts";
+import { readBlock, writeBlock, appendToBlock, updateItemInBlock } from "./block-api.js";
+import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), `block-api-${prefix}-`));

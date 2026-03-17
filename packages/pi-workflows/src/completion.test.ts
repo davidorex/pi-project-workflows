@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { resolveCompletion } from "./completion.ts";
-import type { CompletionSpec, WorkflowResult, StepResult, StepUsage } from "./types.ts";
+import { resolveCompletion } from "./completion.js";
+import type { CompletionSpec, WorkflowResult, StepResult, StepUsage } from "./types.js";
 
 const usage: StepUsage = { input: 1000, output: 500, cacheRead: 0, cacheWrite: 0, cost: 0.03, turns: 2 };
 

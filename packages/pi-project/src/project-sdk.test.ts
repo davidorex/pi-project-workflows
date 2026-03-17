@@ -10,7 +10,7 @@ import os from "node:os";
 import { execSync } from "node:child_process";
 import {
   projectState, availableBlocks, availableSchemas, findAppendableBlocks,
-} from "./project-sdk.ts";
+} from "./project-sdk.js";
 
 function makeTmpDir(prefix: string): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));

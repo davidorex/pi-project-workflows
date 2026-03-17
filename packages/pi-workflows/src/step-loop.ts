@@ -3,12 +3,12 @@
  * max attempts is reached, or a step fails.
  */
 import path from "node:path";
-import type { LoopSpec, StepResult, StepUsage, ExecutionState, AgentSpec, StepSpec, WorkflowSpec, LoopAttempt } from "./types.ts";
-import { resolveExpressions, evaluateCondition } from "./expression.ts";
-import { executeGate } from "./step-gate.ts";
-import { executeTransform } from "./step-transform.ts";
-import { zeroUsage, addUsage, buildPrompt, DEFAULT_MAX_ATTEMPTS, compileAgentSpec } from "./step-shared.ts";
-import { persistStepOutput } from "./output.ts";
+import type { LoopSpec, StepResult, StepUsage, ExecutionState, AgentSpec, StepSpec, WorkflowSpec, LoopAttempt } from "./types.js";
+import { resolveExpressions, evaluateCondition } from "./expression.js";
+import { executeGate } from "./step-gate.js";
+import { executeTransform } from "./step-transform.js";
+import { zeroUsage, addUsage, buildPrompt, DEFAULT_MAX_ATTEMPTS, compileAgentSpec } from "./step-shared.js";
+import { persistStepOutput } from "./output.js";
 import type nunjucks from "nunjucks";
 
 /** Options for executeLoop, including callback-injected dispatch to avoid circular imports. */

@@ -4,9 +4,9 @@
  * Unlike gate (which judges pass/fail), command captures stdout as structured
  * or text output for downstream steps. Non-zero exit codes produce a failed result.
  */
-import type { StepResult } from "./types.ts";
-import { zeroUsage, SIGKILL_GRACE_MS } from "./step-shared.ts";
-import { persistStepOutput } from "./output.ts";
+import type { StepResult } from "./types.js";
+import { zeroUsage, SIGKILL_GRACE_MS } from "./step-shared.js";
+import { persistStepOutput } from "./output.js";
 
 /**
  * Execute a command step: runs a shell command, captures stdout as output.

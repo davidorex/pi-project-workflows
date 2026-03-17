@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert";
 import path from "node:path";
 import { readFileSync } from "node:fs";
-import { parseWorkflowSpec, WorkflowSpecError } from "./workflow-spec.ts";
+import { parseWorkflowSpec, WorkflowSpecError } from "./workflow-spec.js";
 
 describe("parseWorkflowSpec", () => {
   it("parses a minimal valid spec", () => {

@@ -6,9 +6,9 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { ExecutionState, WorkflowSpec } from "./types.ts";
-import { readState } from "./state.ts";
-import { WORKFLOWS_DIR } from "./workflows-dir.ts";
+import type { ExecutionState, WorkflowSpec } from "./types.js";
+import { readState } from "./state.js";
+import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
 export interface IncompleteRun {
   runId: string;

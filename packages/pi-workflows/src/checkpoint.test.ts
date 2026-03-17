@@ -3,10 +3,10 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { findIncompleteRun, validateResumeCompatibility, computeResumePoint, formatIncompleteRun } from "./checkpoint.ts";
-import { writeState } from "./state.ts";
-import type { ExecutionState } from "./types.ts";
-import { makeSpec } from "./test-helpers.ts";
+import { findIncompleteRun, validateResumeCompatibility, computeResumePoint, formatIncompleteRun } from "./checkpoint.js";
+import { writeState } from "./state.js";
+import type { ExecutionState } from "./types.js";
+import { makeSpec } from "./test-helpers.js";
 
 describe("findIncompleteRun", () => {
   it("returns null when no runs directory exists", () => {

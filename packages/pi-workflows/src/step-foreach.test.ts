@@ -3,10 +3,10 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { executeWorkflow } from "./workflow-executor.ts";
-import type { WorkflowSpec, StepResult, StepSpec, AgentSpec } from "./types.ts";
-import { mockCtx, mockPi, makeSpec } from "./test-helpers.ts";
-import { zeroUsage } from "./step-shared.ts";
+import { executeWorkflow } from "./workflow-executor.js";
+import type { WorkflowSpec, StepResult, StepSpec, AgentSpec } from "./types.js";
+import { mockCtx, mockPi, makeSpec } from "./test-helpers.js";
+import { zeroUsage } from "./step-shared.js";
 
 describe("forEach steps", () => {
   it("iterates over array with transform body", async () => {

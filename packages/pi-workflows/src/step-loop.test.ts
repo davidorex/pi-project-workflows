@@ -3,11 +3,11 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { executeLoop } from "./step-loop.ts";
-import type { LoopExecuteOptions } from "./step-loop.ts";
-import { zeroUsage, DEFAULT_MAX_ATTEMPTS } from "./step-shared.ts";
-import type { LoopSpec, StepResult, StepSpec, ExecutionState, AgentSpec } from "./types.ts";
-import { mockCtx, mockPi, makeSpec } from "./test-helpers.ts";
+import { executeLoop } from "./step-loop.js";
+import type { LoopExecuteOptions } from "./step-loop.js";
+import { zeroUsage, DEFAULT_MAX_ATTEMPTS } from "./step-shared.js";
+import type { LoopSpec, StepResult, StepSpec, ExecutionState, AgentSpec } from "./types.js";
+import { mockCtx, mockPi, makeSpec } from "./test-helpers.js";
 
 function makeState(overrides?: Partial<ExecutionState>): ExecutionState {
   return { input: {}, steps: {}, status: "running", ...overrides };

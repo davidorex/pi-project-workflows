@@ -3,7 +3,7 @@
  * Extracts `${{ steps.X }}` references, builds a dependency graph,
  * and produces layered execution plans for parallel dispatch.
  */
-import type { WorkflowSpec, StepSpec } from "./types.ts";
+import type { WorkflowSpec, StepSpec } from "./types.js";
 
 /**
  * A single layer in the execution plan.

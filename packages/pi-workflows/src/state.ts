@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import type { ExecutionState, WorkflowResult, WorkflowSpec, StepResult, StepUsage } from "./types.ts";
-import { formatDuration, formatCost } from "./format.ts";
-import { WORKFLOWS_DIR } from "./workflows-dir.ts";
+import type { ExecutionState, WorkflowResult, WorkflowSpec, StepResult, StepUsage } from "./types.js";
+import { formatDuration, formatCost } from "./format.js";
+import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
 /**
  * Generate a unique run ID.

@@ -5,8 +5,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { validateFromFile } from "./schema-validator.ts";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
+import { validateFromFile } from "./schema-validator.js";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 
 function blockFilePath(cwd: string, blockName: string): string {
   return path.join(cwd, PROJECT_DIR, `${blockName}.json`);

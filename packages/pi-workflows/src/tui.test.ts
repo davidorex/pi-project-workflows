@@ -2,8 +2,8 @@ import { describe, it } from "node:test";
 import assert from "node:assert";
 import type { Theme } from "@mariozechner/pi-coding-agent";
 import type { TUI } from "@mariozechner/pi-tui";
-import { createProgressWidget, type ProgressWidgetState } from "./tui.ts";
-import type { WorkflowSpec, StepUsage } from "./types.ts";
+import { createProgressWidget, type ProgressWidgetState } from "./tui.js";
+import type { WorkflowSpec, StepUsage } from "./types.js";
 
 /**
  * Minimal Theme mock — passes through text unchanged so we can assert on content

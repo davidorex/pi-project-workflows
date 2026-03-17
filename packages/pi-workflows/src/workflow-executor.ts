@@ -4,33 +4,33 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepSpec } from "./types.ts";
-import type { ProgressWidgetState, StepOutputSummary } from "./tui.ts";
-import { validate, validateFromFile } from "@davidorex/pi-project/src/schema-validator.ts";
-import { resolveExpressions, evaluateCondition } from "./expression.ts";
-import { dispatch } from "./dispatch.ts";
-import { generateRunId, initRunDir, getWorkflowDir, writeState, writeMetrics, buildResult, formatResult } from "./state.ts";
-import { resolveCompletion } from "./completion.ts";
-import { createProgressWidget } from "./tui.ts";
+import type { WorkflowSpec, WorkflowResult, AgentSpec, ExecutionState, ExpressionScope, StepSpec } from "./types.js";
+import type { ProgressWidgetState, StepOutputSummary } from "./tui.js";
+import { validate, validateFromFile } from "@davidorex/pi-project/src/schema-validator.js";
+import { resolveExpressions, evaluateCondition } from "./expression.js";
+import { dispatch } from "./dispatch.js";
+import { generateRunId, initRunDir, getWorkflowDir, writeState, writeMetrics, buildResult, formatResult } from "./state.js";
+import { resolveCompletion } from "./completion.js";
+import { createProgressWidget } from "./tui.js";
 import { truncateTail } from "@mariozechner/pi-coding-agent";
-import { extractDependencies, buildPlanFromDeps } from "./dag.ts";
-import type { ExecutionPlan } from "./dag.ts";
-import { zeroUsage, resolveSchemaPath, persistStep, WIDGET_ID, SIGKILL_GRACE_MS } from "./step-shared.ts";
-import { createTemplateEnv } from "./template.ts";
+import { extractDependencies, buildPlanFromDeps } from "./dag.js";
+import type { ExecutionPlan } from "./dag.js";
+import { zeroUsage, resolveSchemaPath, persistStep, WIDGET_ID, SIGKILL_GRACE_MS } from "./step-shared.js";
+import { createTemplateEnv } from "./template.js";
 import type nunjucks from "nunjucks";
-import { executeGate } from "./step-gate.ts";
-import { executeTransform } from "./step-transform.ts";
-import { executeLoop } from "./step-loop.ts";
-import { executeParallelLayer, executeParallelStep } from "./step-parallel.ts";
-import { executeAgentStep } from "./step-agent.ts";
-import { executePause } from "./step-pause.ts";
-import { executeCommand } from "./step-command.ts";
-import { executeForEach } from "./step-foreach.ts";
-import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "@davidorex/pi-project/src/block-validation.ts";
-import { readBlock, writeBlock } from "@davidorex/pi-project/src/block-api.ts";
-import { PROJECT_DIR } from "@davidorex/pi-project/src/project-dir.ts";
-import type { BlockSnapshot } from "@davidorex/pi-project/src/block-validation.ts";
-import type { RetryConfig } from "./types.ts";
+import { executeGate } from "./step-gate.js";
+import { executeTransform } from "./step-transform.js";
+import { executeLoop } from "./step-loop.js";
+import { executeParallelLayer, executeParallelStep } from "./step-parallel.js";
+import { executeAgentStep } from "./step-agent.js";
+import { executePause } from "./step-pause.js";
+import { executeCommand } from "./step-command.js";
+import { executeForEach } from "./step-foreach.js";
+import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "@davidorex/pi-project/src/block-validation.js";
+import { readBlock, writeBlock } from "@davidorex/pi-project/src/block-api.js";
+import { PROJECT_DIR } from "@davidorex/pi-project/src/project-dir.js";
+import type { BlockSnapshot } from "@davidorex/pi-project/src/block-validation.js";
+import type { RetryConfig } from "./types.js";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
@@ -64,7 +64,7 @@ export interface ExecuteOptions {
   /** Injectable dispatch function for testing; defaults to real dispatch. */
   dispatchFn?: typeof dispatch;
   /** Project-level model config; loaded from .project/model-config.json if not provided. */
-  modelConfig?: import("./dispatch.ts").ModelConfig;
+  modelConfig?: import("./dispatch.js").ModelConfig;
   /** Resume from an incomplete run instead of starting fresh. */
   resume?: {
     runId: string;
@@ -111,7 +111,7 @@ interface StepExecOptions {
   widgetState: ProgressWidgetState;
   templateEnv?: nunjucks.Environment;
   dispatchFn?: typeof dispatch;
-  modelConfig?: import("./dispatch.ts").ModelConfig;
+  modelConfig?: import("./dispatch.js").ModelConfig;
 }
 
 /**

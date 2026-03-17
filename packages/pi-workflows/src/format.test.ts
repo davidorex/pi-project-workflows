@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { formatDuration, formatCost, formatTokens } from "./format.ts";
+import { formatDuration, formatCost, formatTokens } from "./format.js";
 
 describe("formatDuration", () => {
   it("formats zero", () => {

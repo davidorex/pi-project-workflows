@@ -3,12 +3,12 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { executeParallelLayer, executeParallelStep } from "./step-parallel.ts";
-import type { ParallelOptions, SingleStepExecutor } from "./step-parallel.ts";
-import type { ExecutionLayer } from "./dag.ts";
-import { zeroUsage, WIDGET_ID } from "./step-shared.ts";
-import type { StepSpec, StepResult, ExecutionState, WorkflowSpec } from "./types.ts";
-import { mockCtx, mockPi, makeSpec } from "./test-helpers.ts";
+import { executeParallelLayer, executeParallelStep } from "./step-parallel.js";
+import type { ParallelOptions, SingleStepExecutor } from "./step-parallel.js";
+import type { ExecutionLayer } from "./dag.js";
+import { zeroUsage, WIDGET_ID } from "./step-shared.js";
+import type { StepSpec, StepResult, ExecutionState, WorkflowSpec } from "./types.js";
+import { mockCtx, mockPi, makeSpec } from "./test-helpers.js";
 
 function makeTmpDir(t: any): string {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));

@@ -2,10 +2,10 @@
  * Transform step executor — produces output by resolving expressions in a mapping.
  * No LLM call, no subprocess, no shell command — pure expression resolution.
  */
-import type { TransformSpec, StepResult } from "./types.ts";
-import { resolveExpressions } from "./expression.ts";
-import { zeroUsage } from "./step-shared.ts";
-import { persistStepOutput } from "./output.ts";
+import type { TransformSpec, StepResult } from "./types.js";
+import { resolveExpressions } from "./expression.js";
+import { zeroUsage } from "./step-shared.js";
+import { persistStepOutput } from "./output.js";
 
 /**
  * Execute a transform step: produces output by resolving expressions in the mapping.

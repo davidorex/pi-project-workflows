@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { validate, validateFromFile, ValidationError } from "./schema-validator.ts";
+import { validate, validateFromFile, ValidationError } from "./schema-validator.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";

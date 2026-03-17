@@ -3,8 +3,8 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { executeTransform } from "./step-transform.ts";
-import { zeroUsage } from "./step-shared.ts";
+import { executeTransform } from "./step-transform.js";
+import { zeroUsage } from "./step-shared.js";
 
 describe("executeTransform", () => {
   // Happy path

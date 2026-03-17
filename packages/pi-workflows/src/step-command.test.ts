@@ -3,9 +3,9 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { executeWorkflow } from "./workflow-executor.ts";
-import type { WorkflowSpec } from "./types.ts";
-import { mockCtx, mockPi, makeSpec } from "./test-helpers.ts";
+import { executeWorkflow } from "./workflow-executor.js";
+import type { WorkflowSpec } from "./types.js";
+import { mockCtx, mockPi, makeSpec } from "./test-helpers.js";
 
 describe("command steps", () => {
   it("captures stdout as text output on exit 0", async () => {

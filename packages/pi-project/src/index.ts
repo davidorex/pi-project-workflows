@@ -7,10 +7,10 @@ import path from "node:path";
 import { Type } from "@sinclair/typebox";
 import type { ExtensionAPI, ExtensionContext, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
 import type { AgentToolUpdateCallback, AgentToolResult } from "@mariozechner/pi-coding-agent";
-import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
-import { projectState, findAppendableBlocks } from "./project-sdk.ts";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
-import { checkForUpdates } from "./update-check.ts";
+import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.js";
+import { projectState, findAppendableBlocks } from "./project-sdk.js";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
 
@@ -305,4 +305,4 @@ const extension = (pi: ExtensionAPI) => {
 export default extension;
 
 // Re-export for consumers
-export { findAppendableBlocks } from "./project-sdk.ts";
+export { findAppendableBlocks } from "./project-sdk.js";

@@ -4,12 +4,12 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import nunjucks from "nunjucks";
-import { executeAgentStep } from "./step-agent.ts";
-import type { AgentStepOptions } from "./step-agent.ts";
-import { zeroUsage } from "./step-shared.ts";
-import { dispatch } from "./dispatch.ts";
-import type { StepSpec, StepResult, ExecutionState, AgentSpec } from "./types.ts";
-import { mockCtx } from "./test-helpers.ts";
+import { executeAgentStep } from "./step-agent.js";
+import type { AgentStepOptions } from "./step-agent.js";
+import { zeroUsage } from "./step-shared.js";
+import { dispatch } from "./dispatch.js";
+import type { StepSpec, StepResult, ExecutionState, AgentSpec } from "./types.js";
+import { mockCtx } from "./test-helpers.js";
 
 /**
  * Mock dispatch factory: returns a controlled StepResult.

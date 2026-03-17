@@ -1,5 +1,5 @@
 import { parse as parseYaml } from "yaml";
-import type { WorkflowSpec, StepSpec, StepOutputSpec, CompletionSpec, ArtifactSpec, LoopSpec, GateSpec, TransformSpec, RetryConfig } from "./types.ts";
+import type { WorkflowSpec, StepSpec, StepOutputSpec, CompletionSpec, ArtifactSpec, LoopSpec, GateSpec, TransformSpec, RetryConfig } from "./types.js";
 
 /** Descriptor for a workflow step type — used by SDK and spec validation. */
 export interface StepTypeDescriptor {

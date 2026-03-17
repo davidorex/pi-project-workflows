@@ -4,8 +4,8 @@
  */
 import type { Theme } from "@mariozechner/pi-coding-agent";
 import type { TUI, Component } from "@mariozechner/pi-tui";
-import type { WorkflowSpec, ExecutionState, StepResult } from "./types.ts";
-import { formatDuration, formatCost, formatTokens } from "./format.ts";
+import type { WorkflowSpec, ExecutionState, StepResult } from "./types.js";
+import { formatDuration, formatCost, formatTokens } from "./format.js";
 
 export interface StepActivity {
   tool: string;      // "read", "edit", "bash", etc.
@@ -24,7 +24,7 @@ export interface ProgressWidgetState {
   state: ExecutionState;
   currentStep?: string;          // name of the currently running step (comma-separated for parallel)
   startTime: number;             // Date.now() when workflow started
-  parallelSubSteps?: Record<string, import("./types.ts").StepResult>;  // live sub-step results for parallel step
+  parallelSubSteps?: Record<string, import("./types.js").StepResult>;  // live sub-step results for parallel step
   resumedSteps?: number;         // number of steps carried from a prior run (resume indicator)
   activities: Map<string, StepActivity[]>;  // stepName → recent tool calls (ring buffer, last 5)
   outputSummaries: Map<string, StepOutputSummary>; // stepName → parsed output after completion

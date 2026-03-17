@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import type { WorkflowSpec, StepSpec } from "./types.ts";
+import type { WorkflowSpec, StepSpec } from "./types.js";
 
 /**
  * Create a mock extension context for testing.

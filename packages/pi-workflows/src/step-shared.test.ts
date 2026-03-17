@@ -14,8 +14,8 @@ import {
   buildPrompt,
   persistStep,
   compileAgentSpec,
-} from "./step-shared.ts";
-import type { StepUsage, StepResult, ExecutionState, AgentSpec } from "./types.ts";
+} from "./step-shared.js";
+import type { StepUsage, StepResult, ExecutionState, AgentSpec } from "./types.js";
 
 describe("constants", () => {
   it("SIGKILL_GRACE_MS is 3000", () => {

@@ -1,1 +1,1 @@
-export { default } from "@davidorex/pi-workflows/src/index.ts";
+export { default } from "@davidorex/pi-workflows/src/index.js";

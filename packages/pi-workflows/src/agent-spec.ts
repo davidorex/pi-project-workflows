@@ -21,7 +21,7 @@ function isTemplatePath(value: string | undefined): boolean {
 }
 import os from "node:os";
 import { parse as parseYaml } from "yaml";
-import type { AgentSpec } from "./types.ts";
+import type { AgentSpec } from "./types.js";
 
 /**
  * Thrown when an agent spec file is not found in any search path.

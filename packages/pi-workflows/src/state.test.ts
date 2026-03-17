@@ -3,11 +3,11 @@ import assert from "node:assert";
 import {
   generateRunId, initRunDir, writeState, readState,
   writeStepOutput, writeMetrics, buildResult, formatResult, aggregateUsage,
-} from "./state.ts";
+} from "./state.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import type { ExecutionState, WorkflowSpec, StepResult, StepUsage } from "./types.ts";
+import type { ExecutionState, WorkflowSpec, StepResult, StepUsage } from "./types.js";
 
 describe("generateRunId", () => {
   it("includes workflow name", () => {

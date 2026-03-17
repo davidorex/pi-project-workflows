@@ -6,11 +6,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "@davidorex/pi-project/src/block-validation.ts";
-import type { BlockSnapshot } from "@davidorex/pi-project/src/block-validation.ts";
-import { parseWorkflowSpec } from "./workflow-spec.ts";
-import { executeWorkflow } from "./workflow-executor.ts";
-import type { StepResult, StepUsage } from "./types.ts";
+import { snapshotBlockFiles, validateChangedBlocks, rollbackBlockFiles } from "@davidorex/pi-project/src/block-validation.js";
+import type { BlockSnapshot } from "@davidorex/pi-project/src/block-validation.js";
+import { parseWorkflowSpec } from "./workflow-spec.js";
+import { executeWorkflow } from "./workflow-executor.js";
+import type { StepResult, StepUsage } from "./types.js";
 
 /** Create a temp directory for test fixtures. */
 function makeTmpDir(): string {

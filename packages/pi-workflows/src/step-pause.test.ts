@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { executePause } from "./step-pause.ts";
+import { executePause } from "./step-pause.js";
 
 describe("executePause", () => {
   it("returns completed result with message", () => {

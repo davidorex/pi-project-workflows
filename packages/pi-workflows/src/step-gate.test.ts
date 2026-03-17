@@ -3,8 +3,8 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { executeGate } from "./step-gate.ts";
-import { zeroUsage } from "./step-shared.ts";
+import { executeGate } from "./step-gate.js";
+import { zeroUsage } from "./step-shared.js";
 
 describe("executeGate", () => {
   // Happy path — command passes (exit 0)

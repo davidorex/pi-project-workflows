@@ -2,7 +2,7 @@
  * Pause step executor — halts workflow execution at a deliberate checkpoint.
  * The workflow can be resumed later via /workflow resume or Ctrl+J.
  */
-import type { StepResult, StepUsage } from "./types.ts";
+import type { StepResult, StepUsage } from "./types.js";
 
 /**
  * Execute a pause step.

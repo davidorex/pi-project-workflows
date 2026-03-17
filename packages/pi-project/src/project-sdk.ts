@@ -6,8 +6,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { readBlock } from "./block-api.ts";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.ts";
+import { readBlock } from "./block-api.js";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 
 // ── Block discovery ──────────────────────────────────────────────────────────
 

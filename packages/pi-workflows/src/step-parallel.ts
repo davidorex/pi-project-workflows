@@ -2,12 +2,12 @@
  * Parallel step executors — concurrent step execution within a layer
  * or within a single parallel step declaration.
  */
-import type { StepResult, StepSpec, ExecutionState, WorkflowSpec } from "./types.ts";
-import type { ProgressWidgetState } from "./tui.ts";
-import type { ExecutionLayer } from "./dag.ts";
-import { createProgressWidget } from "./tui.ts";
+import type { StepResult, StepSpec, ExecutionState, WorkflowSpec } from "./types.js";
+import type { ProgressWidgetState } from "./tui.js";
+import type { ExecutionLayer } from "./dag.js";
+import { createProgressWidget } from "./tui.js";
 import type nunjucks from "nunjucks";
-import { zeroUsage, addUsage, WIDGET_ID } from "./step-shared.ts";
+import { zeroUsage, addUsage, WIDGET_ID } from "./step-shared.js";
 
 /** Options shared by parallel execution helpers. */
 export interface ParallelOptions {

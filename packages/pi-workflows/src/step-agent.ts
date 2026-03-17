@@ -3,13 +3,13 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { StepSpec, AgentSpec, StepResult, ExecutionState, ExpressionScope } from "./types.ts";
-import type { ProgressWidgetState } from "./tui.ts";
-import { resolveExpressions } from "./expression.ts";
-import { dispatch } from "./dispatch.ts";
-import { validateFromFile } from "@davidorex/pi-project/src/schema-validator.ts";
-import { persistStepOutput } from "./output.ts";
-import { zeroUsage, resolveSchemaPath, buildPrompt, compileAgentSpec } from "./step-shared.ts";
+import type { StepSpec, AgentSpec, StepResult, ExecutionState, ExpressionScope } from "./types.js";
+import type { ProgressWidgetState } from "./tui.js";
+import { resolveExpressions } from "./expression.js";
+import { dispatch } from "./dispatch.js";
+import { validateFromFile } from "@davidorex/pi-project/src/schema-validator.js";
+import { persistStepOutput } from "./output.js";
+import { zeroUsage, resolveSchemaPath, buildPrompt, compileAgentSpec } from "./step-shared.js";
 import type nunjucks from "nunjucks";
 
 /** Retry context passed from the executor on retry attempts. */
@@ -28,7 +28,7 @@ export interface AgentStepOptions {
   widgetState: ProgressWidgetState;
   templateEnv?: nunjucks.Environment;
   dispatchFn?: typeof dispatch;   // injectable for testing; defaults to real dispatch
-  modelConfig?: import("./dispatch.ts").ModelConfig;
+  modelConfig?: import("./dispatch.js").ModelConfig;
   retryContext?: RetryContext;    // set on retry attempts (attempt > 1)
   onStepActivity?: (activity: { tool: string; preview: string; timestamp: number }) => void;
 }

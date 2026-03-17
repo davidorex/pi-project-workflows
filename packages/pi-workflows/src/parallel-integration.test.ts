@@ -1,9 +1,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { buildExecutionPlan } from "./dag.ts";
-import { parseWorkflowSpec } from "./workflow-spec.ts";
-import { executeWorkflow } from "./workflow-executor.ts";
-import type { WorkflowSpec } from "./types.ts";
+import { buildExecutionPlan } from "./dag.js";
+import { parseWorkflowSpec } from "./workflow-spec.js";
+import { executeWorkflow } from "./workflow-executor.js";
+import type { WorkflowSpec } from "./types.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";

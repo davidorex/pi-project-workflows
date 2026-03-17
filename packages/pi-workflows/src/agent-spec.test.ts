@@ -3,9 +3,9 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { parseAgentYaml, createAgentLoader, AgentNotFoundError, AgentParseError } from "./agent-spec.ts";
-import { compileAgentSpec } from "./step-shared.ts";
-import { createTemplateEnv } from "./template.ts";
+import { parseAgentYaml, createAgentLoader, AgentNotFoundError, AgentParseError } from "./agent-spec.js";
+import { compileAgentSpec } from "./step-shared.js";
+import { createTemplateEnv } from "./template.js";
 
 describe("parseAgentYaml", () => {
   it("parses YAML agent spec with all fields", (t) => {

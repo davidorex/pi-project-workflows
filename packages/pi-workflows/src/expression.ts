@@ -1,5 +1,5 @@
-import type { StepResult } from "./types.ts";
-import { formatDuration, formatCost } from "./format.ts";
+import type { StepResult } from "./types.js";
+import { formatDuration, formatCost } from "./format.js";
 
 const EXPR_PATTERN = /\$\{\{\s*(.*?)\s*\}\}/g;
 

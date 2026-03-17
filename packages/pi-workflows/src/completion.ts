@@ -1,5 +1,5 @@
-import type { CompletionSpec, CompletionScope, WorkflowResult } from "./types.ts";
-import { resolveExpression, resolveExpressions } from "./expression.ts";
+import type { CompletionSpec, CompletionScope, WorkflowResult } from "./types.js";
+import { resolveExpression, resolveExpressions } from "./expression.js";
 
 /**
  * Resolve a completion spec into the final message string injected into

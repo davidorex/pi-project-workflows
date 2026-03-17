@@ -2,10 +2,10 @@
  * ForEach step executor — iterates over an array, executing the step body
  * once per element with the element bound to a named variable in scope.
  */
-import type { StepSpec, StepResult, ExecutionState, ExpressionScope } from "./types.ts";
-import { resolveExpression, resolveExpressions } from "./expression.ts";
-import { zeroUsage, addUsage } from "./step-shared.ts";
-import { persistStepOutput } from "./output.ts";
+import type { StepSpec, StepResult, ExecutionState, ExpressionScope } from "./types.js";
+import { resolveExpression, resolveExpressions } from "./expression.js";
+import { zeroUsage, addUsage } from "./step-shared.js";
+import { persistStepOutput } from "./output.js";
 
 /** Options for forEach execution, matching the StepExecOptions pattern. */
 interface ForEachOptions {

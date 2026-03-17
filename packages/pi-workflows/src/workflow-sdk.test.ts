@@ -8,8 +8,8 @@ import {
   availableAgents, availableTemplates, availableSchemas,
   extractExpressions, declaredSteps, declaredAgentRefs, declaredSchemaRefs,
   FILTER_NAMES, STEP_TYPES,
-} from "./workflow-sdk.ts";
-import type { WorkflowSpec, StepSpec } from "./types.ts";
+} from "./workflow-sdk.js";
+import type { WorkflowSpec, StepSpec } from "./types.js";
 
 function makeTmpDir(prefix: string): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));

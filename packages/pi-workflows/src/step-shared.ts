@@ -3,11 +3,11 @@
  * prompt building, schema resolution, state persistence, and template resolution.
  */
 import path from "node:path";
-import type { StepUsage, StepResult, ExecutionState, AgentSpec } from "./types.ts";
-import type { ProgressWidgetState } from "./tui.ts";
-import { writeState } from "./state.ts";
-import { createProgressWidget } from "./tui.ts";
-import { renderTemplate, renderTemplateFile } from "./template.ts";
+import type { StepUsage, StepResult, ExecutionState, AgentSpec } from "./types.js";
+import type { ProgressWidgetState } from "./tui.js";
+import { writeState } from "./state.js";
+import { createProgressWidget } from "./tui.js";
+import { renderTemplate, renderTemplateFile } from "./template.js";
 import type nunjucks from "nunjucks";
 
 /** Grace period (ms) between SIGTERM and SIGKILL when killing subprocesses. */

@@ -4,8 +4,8 @@ import {
 	parseVerdict,
 	parseModelSpec,
 	generateFindingId,
-} from "./index.ts";
-import type { MonitorsCommand, ClassifyResult } from "./index.ts";
+} from "./index.js";
+import type { MonitorsCommand, ClassifyResult } from "./index.js";
 
 // =============================================================================
 // parseMonitorsArgs

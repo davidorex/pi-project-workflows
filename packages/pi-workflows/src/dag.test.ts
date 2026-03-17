@@ -1,8 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { extractDependencies, buildExecutionPlan, isSequential } from "./dag.ts";
-import type { StepSpec } from "./types.ts";
-import { makeSpec as makeSpecFull } from "./test-helpers.ts";
+import { extractDependencies, buildExecutionPlan, isSequential } from "./dag.js";
+import type { StepSpec } from "./types.js";
+import { makeSpec as makeSpecFull } from "./test-helpers.js";
 
 /**
  * Helper: build a minimal WorkflowSpec from a steps object.

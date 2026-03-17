@@ -7,12 +7,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { FILTER_NAMES, EXPRESSION_ROOTS } from "./expression.ts";
-import { STEP_TYPES } from "./workflow-spec.ts";
-import type { StepTypeDescriptor } from "./workflow-spec.ts";
-import { discoverWorkflows } from "./workflow-discovery.ts";
-import { parseAgentYaml } from "./agent-spec.ts";
-import type { AgentSpec, WorkflowSpec, StepSpec } from "./types.ts";
+import { FILTER_NAMES, EXPRESSION_ROOTS } from "./expression.js";
+import { STEP_TYPES } from "./workflow-spec.js";
+import type { StepTypeDescriptor } from "./workflow-spec.js";
+import { discoverWorkflows } from "./workflow-discovery.js";
+import { parseAgentYaml } from "./agent-spec.js";
+import type { AgentSpec, WorkflowSpec, StepSpec } from "./types.js";
 
 // Re-export for single-import convenience
 export { FILTER_NAMES, STEP_TYPES, EXPRESSION_ROOTS };

@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import type { WorkflowSpec } from "./types.ts";
-import { parseWorkflowSpec } from "./workflow-spec.ts";
-import { WORKFLOWS_DIR } from "./workflows-dir.ts";
+import type { WorkflowSpec } from "./types.js";
+import { parseWorkflowSpec } from "./workflow-spec.js";
+import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
 /**
  * Discover all workflow specs from project, user, and builtin directories.

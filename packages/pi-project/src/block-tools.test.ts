@@ -8,9 +8,9 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.ts";
-import { findAppendableBlocks } from "./project-sdk.ts";
-import { ValidationError } from "./schema-validator.ts";
+import { readBlock, appendToBlock, updateItemInBlock } from "./block-api.js";
+import { findAppendableBlocks } from "./project-sdk.js";
+import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "block-tools-"));

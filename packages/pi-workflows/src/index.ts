@@ -2,12 +2,12 @@
  * Extension entry point — registers the `workflow` tool and `/workflow` command
  * for discovering, executing, and managing multi-step workflow runs.
  */
-import { discoverWorkflows, findWorkflow } from "./workflow-discovery.ts";
-import { executeWorkflow, requestPause } from "./workflow-executor.ts";
-import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.ts";
-import { createAgentLoader } from "./agent-spec.ts";
-import type { WorkflowResult } from "./types.ts";
-import { WORKFLOWS_DIR } from "./workflows-dir.ts";
+import { discoverWorkflows, findWorkflow } from "./workflow-discovery.js";
+import { executeWorkflow, requestPause } from "./workflow-executor.js";
+import { findIncompleteRun, validateResumeCompatibility, formatIncompleteRun } from "./checkpoint.js";
+import { createAgentLoader } from "./agent-spec.js";
+import type { WorkflowResult } from "./types.js";
+import { WORKFLOWS_DIR } from "./workflows-dir.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -393,7 +393,7 @@ const extension = (pi: ExtensionAPI) => {
       }
 
       // Check for resumable run (unless explicitly requesting fresh)
-      let resumeOpts: { runId: string; runDir: string; state: import("./types.ts").ExecutionState } | undefined;
+      let resumeOpts: { runId: string; runDir: string; state: import("./types.js").ExecutionState } | undefined;
       if (params.fresh !== "true") {
         const incomplete = findIncompleteRun(ctx.cwd, spec.name);
         if (incomplete) {

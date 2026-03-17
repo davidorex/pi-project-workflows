@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.ts";
+import { createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";

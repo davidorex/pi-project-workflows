@@ -1,9 +1,9 @@
 /**
  * Gate step executor — runs a shell command and passes/fails based on exit code.
  */
-import type { GateSpec, StepResult } from "./types.ts";
-import { zeroUsage, SIGKILL_GRACE_MS } from "./step-shared.ts";
-import { persistStepOutput } from "./output.ts";
+import type { GateSpec, StepResult } from "./types.js";
+import { zeroUsage, SIGKILL_GRACE_MS } from "./step-shared.js";
+import { persistStepOutput } from "./output.js";
 
 /**
  * Execute a gate step: runs a shell command, passes/fails based on exit code.

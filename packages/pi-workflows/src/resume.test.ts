@@ -7,10 +7,10 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { executeWorkflow, requestPause } from "./workflow-executor.ts";
-import { readState } from "./state.ts";
-import { mockCtx, mockPi, makeSpec } from "./test-helpers.ts";
-import type { StepResult, StepUsage } from "./types.ts";
+import { executeWorkflow, requestPause } from "./workflow-executor.js";
+import { readState } from "./state.js";
+import { mockCtx, mockPi, makeSpec } from "./test-helpers.js";
+import type { StepResult, StepUsage } from "./types.js";
 
 const zeroUsage: StepUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 };
 

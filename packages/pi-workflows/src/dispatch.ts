@@ -6,8 +6,8 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import type { StepSpec, StepResult, StepUsage, AgentSpec } from "./types.ts";
-import { SIGKILL_GRACE_MS } from "./step-shared.ts";
+import type { StepSpec, StepResult, StepUsage, AgentSpec } from "./types.js";
+import { SIGKILL_GRACE_MS } from "./step-shared.js";
 
 export interface ModelConfig {
   default?: string;

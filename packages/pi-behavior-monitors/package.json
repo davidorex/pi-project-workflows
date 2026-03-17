@@ -1,50 +1,50 @@
 {
-  "name": "@davidorex/pi-behavior-monitors",
-  "version": "0.1.4",
-  "description": "Behavior monitors for pi that watch agent activity and steer corrections",
-  "type": "module",
-  "keywords": [
-    "pi-package"
-  ],
-  "license": "MIT",
-  "author": "David Ryan",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/davidorex/pi-behavior-monitors.git"
-  },
-  "homepage": "https://github.com/davidorex/pi-behavior-monitors",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/",
-    "examples",
-    "schemas",
-    "skills",
-    "README.md",
-    "CHANGELOG.md"
-  ],
-  "pi": {
-    "extensions": [
-      "./dist/index.js"
-    ],
-    "skills": [
-      "./skills"
-    ]
-  },
-  "scripts": {
-    "clean": "rm -rf dist",
-    "build": "tsc -p tsconfig.build.json",
-    "prepublishOnly": "npm run clean && npm run build",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "peerDependencies": {
-    "@mariozechner/pi-ai": "*",
-    "@mariozechner/pi-coding-agent": "*",
-    "@mariozechner/pi-tui": "*",
-    "@sinclair/typebox": "*"
-  },
-  "devDependencies": {
-    "vitest": "^3.2.4"
-  }
+	"name": "@davidorex/pi-behavior-monitors",
+	"version": "0.1.4",
+	"description": "Behavior monitors for pi that watch agent activity and steer corrections",
+	"type": "module",
+	"keywords": [
+		"pi-package"
+	],
+	"license": "MIT",
+	"author": "David Ryan",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/davidorex/pi-behavior-monitors.git"
+	},
+	"homepage": "https://github.com/davidorex/pi-behavior-monitors",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist/",
+		"examples",
+		"schemas",
+		"skills",
+		"README.md",
+		"CHANGELOG.md"
+	],
+	"pi": {
+		"extensions": [
+			"./dist/index.js"
+		],
+		"skills": [
+			"./skills"
+		]
+	},
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "tsc -p tsconfig.build.json",
+		"prepublishOnly": "npm run clean && npm run build",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"peerDependencies": {
+		"@mariozechner/pi-ai": "*",
+		"@mariozechner/pi-coding-agent": "*",
+		"@mariozechner/pi-tui": "*",
+		"@sinclair/typebox": "*"
+	},
+	"devDependencies": {
+		"vitest": "^3.2.4"
+	}
 }

@@ -1,60 +1,60 @@
 {
-  "status": "gaps_found",
-  "score": "6/12",
-  "results": [
-    {
-      "id": "p2-typebox-shim",
-      "status": "passed"
-    },
-    {
-      "id": "p3-error-content-not-found",
-      "status": "needs_inspect",
-      "reason": "inspect"
-    },
-    {
-      "id": "p3-error-content-catch",
-      "status": "needs_inspect",
-      "reason": "inspect"
-    },
-    {
-      "id": "p8-hasui-list-select",
-      "status": "passed"
-    },
-    {
-      "id": "p8-hasui-list-input",
-      "status": "passed"
-    },
-    {
-      "id": "p8-hasui-run-select",
-      "status": "failed",
-      "reason": "pattern still matches"
-    },
-    {
-      "id": "p8-hasui-resume-select",
-      "status": "failed",
-      "reason": "pattern still matches"
-    },
-    {
-      "id": "p1-type-any-typebox",
-      "status": "passed"
-    },
-    {
-      "id": "p1-type-any-params",
-      "status": "passed"
-    },
-    {
-      "id": "p4-unused-onupdate",
-      "status": "failed",
-      "reason": "pattern still matches"
-    },
-    {
-      "id": "p7-format-tool-result-unbounded",
-      "status": "needs_inspect",
-      "reason": "inspect"
-    },
-    {
-      "id": "p10-jsdoc-header",
-      "status": "passed"
-    }
-  ]
+	"status": "gaps_found",
+	"score": "6/12",
+	"results": [
+		{
+			"id": "p2-typebox-shim",
+			"status": "passed"
+		},
+		{
+			"id": "p3-error-content-not-found",
+			"status": "needs_inspect",
+			"reason": "inspect"
+		},
+		{
+			"id": "p3-error-content-catch",
+			"status": "needs_inspect",
+			"reason": "inspect"
+		},
+		{
+			"id": "p8-hasui-list-select",
+			"status": "passed"
+		},
+		{
+			"id": "p8-hasui-list-input",
+			"status": "passed"
+		},
+		{
+			"id": "p8-hasui-run-select",
+			"status": "failed",
+			"reason": "pattern still matches"
+		},
+		{
+			"id": "p8-hasui-resume-select",
+			"status": "failed",
+			"reason": "pattern still matches"
+		},
+		{
+			"id": "p1-type-any-typebox",
+			"status": "passed"
+		},
+		{
+			"id": "p1-type-any-params",
+			"status": "passed"
+		},
+		{
+			"id": "p4-unused-onupdate",
+			"status": "failed",
+			"reason": "pattern still matches"
+		},
+		{
+			"id": "p7-format-tool-result-unbounded",
+			"status": "needs_inspect",
+			"reason": "inspect"
+		},
+		{
+			"id": "p10-jsdoc-header",
+			"status": "passed"
+		}
+	]
 }

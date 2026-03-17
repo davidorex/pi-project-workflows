@@ -1,34 +1,34 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Project Identity",
-  "type": "object",
-  "required": ["name", "description", "core_value"],
-  "properties": {
-    "name": { "type": "string" },
-    "description": { "type": "string" },
-    "core_value": { "type": "string", "description": "One-sentence value proposition" },
-    "target_users": {
-      "type": "array",
-      "items": { "type": "string" }
-    },
-    "constraints": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["type", "description"],
-        "properties": {
-          "type": { "type": "string" },
-          "description": { "type": "string" }
-        }
-      }
-    },
-    "scope_boundaries": {
-      "type": "object",
-      "required": ["in", "out"],
-      "properties": {
-        "in": { "type": "array", "items": { "type": "string" } },
-        "out": { "type": "array", "items": { "type": "string" } }
-      }
-    }
-  }
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Project Identity",
+	"type": "object",
+	"required": ["name", "description", "core_value"],
+	"properties": {
+		"name": { "type": "string" },
+		"description": { "type": "string" },
+		"core_value": { "type": "string", "description": "One-sentence value proposition" },
+		"target_users": {
+			"type": "array",
+			"items": { "type": "string" }
+		},
+		"constraints": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["type", "description"],
+				"properties": {
+					"type": { "type": "string" },
+					"description": { "type": "string" }
+				}
+			}
+		},
+		"scope_boundaries": {
+			"type": "object",
+			"required": ["in", "out"],
+			"properties": {
+				"in": { "type": "array", "items": { "type": "string" } },
+				"out": { "type": "array", "items": { "type": "string" } }
+			}
+		}
+	}
 }

@@ -1,18 +1,21 @@
 {
-  "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
-  "scripts": {
-    "clean": "npm run clean --workspaces --if-present",
-    "build": "npm run build -w @davidorex/pi-project && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors",
-    "test": "npm test --workspaces --if-present",
-    "test:project": "npm test -w @davidorex/pi-project",
-    "test:workflows": "npm test -w @davidorex/pi-workflows",
-    "check": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
-  }
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"clean": "npm run clean --workspaces --if-present",
+		"build": "npm run build -w @davidorex/pi-project && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors",
+		"test": "npm test --workspaces --if-present",
+		"test:project": "npm test -w @davidorex/pi-project",
+		"test:workflows": "npm test -w @davidorex/pi-workflows",
+		"check": "npx @biomejs/biome check . && tsc --noEmit",
+		"lint": "npx @biomejs/biome check .",
+		"format": "npx @biomejs/biome check --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.7",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	}
 }

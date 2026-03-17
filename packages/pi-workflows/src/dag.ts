@@ -3,14 +3,14 @@
  * Extracts `${{ steps.X }}` references, builds a dependency graph,
  * and produces layered execution plans for parallel dispatch.
  */
-import type { WorkflowSpec, StepSpec } from "./types.js";
+import type { StepSpec, WorkflowSpec } from "./types.js";
 
 /**
  * A single layer in the execution plan.
  * All steps in a layer are independent and can run concurrently.
  */
 export interface ExecutionLayer {
-  steps: string[];  // step names in this layer
+	steps: string[]; // step names in this layer
 }
 
 /**
@@ -36,29 +36,30 @@ export type ExecutionPlan = ExecutionLayer[];
  * Returns a map: stepName → Set of step names it depends on.
  */
 export function extractDependencies(spec: WorkflowSpec): Map<string, Set<string>> {
-  const stepNames = new Set(Object.keys(spec.steps));
-  const deps = new Map<string, Set<string>>();
+	const stepNames = new Set(Object.keys(spec.steps));
+	const deps = new Map<string, Set<string>>();
 
-  for (const [name, step] of Object.entries(spec.steps)) {
-    const stepDeps = new Set<string>();
+	for (const [name, step] of Object.entries(spec.steps)) {
+		const stepDeps = new Set<string>();
 
-    // Collect all expression strings from this step
-    const expressions = collectExpressions(step);
+		// Collect all expression strings from this step
+		const expressions = collectExpressions(step);
 
-    // Parse each expression for `steps.<name>` references
-    for (const expr of expressions) {
-      const referenced = extractStepReferences(expr, stepNames);
-      for (const ref of referenced) {
-        if (ref !== name) {  // no self-dependencies
-          stepDeps.add(ref);
-        }
-      }
-    }
+		// Parse each expression for `steps.<name>` references
+		for (const expr of expressions) {
+			const referenced = extractStepReferences(expr, stepNames);
+			for (const ref of referenced) {
+				if (ref !== name) {
+					// no self-dependencies
+					stepDeps.add(ref);
+				}
+			}
+		}
 
-    deps.set(name, stepDeps);
-  }
+		deps.set(name, stepDeps);
+	}
 
-  return deps;
+	return deps;
 }
 
 /**
@@ -66,44 +67,44 @@ export function extractDependencies(spec: WorkflowSpec): Map<string, Set<string>
  * Walks `input`, `when`, `gate.check`, `transform.mapping`, `loop.attempts`.
  */
 function collectExpressions(step: StepSpec): string[] {
-  const exprs: string[] = [];
+	const exprs: string[] = [];
 
-  // input values (recursive)
-  if (step.input) {
-    collectExpressionsFromValue(step.input, exprs);
-  }
+	// input values (recursive)
+	if (step.input) {
+		collectExpressionsFromValue(step.input, exprs);
+	}
 
-  // when condition
-  if (step.when) {
-    exprs.push(step.when);
-  }
+	// when condition
+	if (step.when) {
+		exprs.push(step.when);
+	}
 
-  // gate check
-  if (step.gate) {
-    collectExpressionsFromValue(step.gate.check, exprs);
-  }
+	// gate check
+	if (step.gate) {
+		collectExpressionsFromValue(step.gate.check, exprs);
+	}
 
-  // transform mapping (recursive)
-  if (step.transform) {
-    collectExpressionsFromValue(step.transform.mapping, exprs);
-  }
+	// transform mapping (recursive)
+	if (step.transform) {
+		collectExpressionsFromValue(step.transform.mapping, exprs);
+	}
 
-  // loop attempts expression
-  if (step.loop?.attempts) {
-    exprs.push(step.loop.attempts);
-  }
+	// loop attempts expression
+	if (step.loop?.attempts) {
+		exprs.push(step.loop.attempts);
+	}
 
-  // forEach expression
-  if (step.forEach) {
-    collectExpressionsFromValue(step.forEach, exprs);
-  }
+	// forEach expression
+	if (step.forEach) {
+		collectExpressionsFromValue(step.forEach, exprs);
+	}
 
-  // command expression (may contain ${{ }} references)
-  if (step.command) {
-    collectExpressionsFromValue(step.command, exprs);
-  }
+	// command expression (may contain ${{ }} references)
+	if (step.command) {
+		collectExpressionsFromValue(step.command, exprs);
+	}
 
-  return exprs;
+	return exprs;
 }
 
 /**
@@ -111,26 +112,26 @@ function collectExpressions(step: StepSpec): string[] {
  * Walks objects, arrays, and strings looking for ${{ }} patterns.
  */
 function collectExpressionsFromValue(value: unknown, exprs: string[]): void {
-  if (typeof value === "string") {
-    // Extract all ${{ ... }} patterns from the string
-    const regex = /\$\{\{([^}]+)\}\}/g;
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(value)) !== null) {
-      exprs.push(match[1].trim());
-    }
-    // Also handle bare expressions (no ${{ }} wrapper, e.g. in `when`)
-    if (!value.includes("${{") && value.includes("steps.")) {
-      exprs.push(value);
-    }
-  } else if (Array.isArray(value)) {
-    for (const item of value) {
-      collectExpressionsFromValue(item, exprs);
-    }
-  } else if (value !== null && typeof value === "object") {
-    for (const v of Object.values(value)) {
-      collectExpressionsFromValue(v, exprs);
-    }
-  }
+	if (typeof value === "string") {
+		// Extract all ${{ ... }} patterns from the string
+		const regex = /\$\{\{([^}]+)\}\}/g;
+		let match: RegExpExecArray | null;
+		while ((match = regex.exec(value)) !== null) {
+			exprs.push(match[1].trim());
+		}
+		// Also handle bare expressions (no ${{ }} wrapper, e.g. in `when`)
+		if (!value.includes("${{") && value.includes("steps.")) {
+			exprs.push(value);
+		}
+	} else if (Array.isArray(value)) {
+		for (const item of value) {
+			collectExpressionsFromValue(item, exprs);
+		}
+	} else if (value !== null && typeof value === "object") {
+		for (const v of Object.values(value)) {
+			collectExpressionsFromValue(v, exprs);
+		}
+	}
 }
 
 /**
@@ -144,17 +145,17 @@ function collectExpressionsFromValue(value: unknown, exprs: string[]): void {
  * Returns the set of step names referenced.
  */
 function extractStepReferences(expr: string, validStepNames: Set<string>): Set<string> {
-  const refs = new Set<string>();
-  // Match `steps.<name>` — name is a word (alphanumeric + underscore + hyphen)
-  const regex = /steps\.([a-zA-Z_][\w-]*)/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(expr)) !== null) {
-    const name = match[1];
-    if (validStepNames.has(name)) {
-      refs.add(name);
-    }
-  }
-  return refs;
+	const refs = new Set<string>();
+	// Match `steps.<name>` — name is a word (alphanumeric + underscore + hyphen)
+	const regex = /steps\.([a-zA-Z_][\w-]*)/g;
+	let match: RegExpExecArray | null;
+	while ((match = regex.exec(expr)) !== null) {
+		const name = match[1];
+		if (validStepNames.has(name)) {
+			refs.add(name);
+		}
+	}
+	return refs;
 }
 
 /**
@@ -162,39 +163,34 @@ function extractStepReferences(expr: string, validStepNames: Set<string>): Set<s
  * Performs topological sort, grouping independent steps into layers.
  * Throws if the dependency graph contains a cycle.
  */
-export function buildPlanFromDeps(
-  allSteps: string[],
-  deps: Map<string, Set<string>>,
-): ExecutionPlan {
-  const plan: ExecutionPlan = [];
-  const placed = new Set<string>();
+export function buildPlanFromDeps(allSteps: string[], deps: Map<string, Set<string>>): ExecutionPlan {
+	const plan: ExecutionPlan = [];
+	const placed = new Set<string>();
 
-  while (placed.size < allSteps.length) {
-    const layer: string[] = [];
+	while (placed.size < allSteps.length) {
+		const layer: string[] = [];
 
-    for (const step of allSteps) {
-      if (placed.has(step)) continue;
+		for (const step of allSteps) {
+			if (placed.has(step)) continue;
 
-      const stepDeps = deps.get(step) ?? new Set();
-      if ([...stepDeps].every((d) => placed.has(d))) {
-        layer.push(step);
-      }
-    }
+			const stepDeps = deps.get(step) ?? new Set();
+			if ([...stepDeps].every((d) => placed.has(d))) {
+				layer.push(step);
+			}
+		}
 
-    if (layer.length === 0) {
-      const remaining = allSteps.filter((s) => !placed.has(s));
-      throw new Error(
-        `Dependency cycle detected among steps: ${remaining.join(", ")}`,
-      );
-    }
+		if (layer.length === 0) {
+			const remaining = allSteps.filter((s) => !placed.has(s));
+			throw new Error(`Dependency cycle detected among steps: ${remaining.join(", ")}`);
+		}
 
-    plan.push({ steps: layer });
-    for (const s of layer) {
-      placed.add(s);
-    }
-  }
+		plan.push({ steps: layer });
+		for (const s of layer) {
+			placed.add(s);
+		}
+	}
 
-  return plan;
+	return plan;
 }
 
 /**
@@ -206,8 +202,8 @@ export function buildPlanFromDeps(
  * Throws if the dependency graph contains a cycle.
  */
 export function buildExecutionPlan(spec: WorkflowSpec): ExecutionPlan {
-  const deps = extractDependencies(spec);
-  return buildPlanFromDeps(Object.keys(spec.steps), deps);
+	const deps = extractDependencies(spec);
+	return buildPlanFromDeps(Object.keys(spec.steps), deps);
 }
 
 /**
@@ -215,5 +211,5 @@ export function buildExecutionPlan(spec: WorkflowSpec): ExecutionPlan {
  * (every layer has exactly one step).
  */
 export function isSequential(plan: ExecutionPlan): boolean {
-  return plan.every((layer) => layer.steps.length === 1);
+	return plan.every((layer) => layer.steps.length === 1);
 }

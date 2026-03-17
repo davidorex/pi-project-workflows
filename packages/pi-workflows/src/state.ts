@@ -1,8 +1,8 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
-import type { ExecutionState, WorkflowResult, WorkflowSpec, StepResult, StepUsage } from "./types.js";
-import { formatDuration, formatCost } from "./format.js";
+import { formatCost, formatDuration } from "./format.js";
+import type { ExecutionState, StepResult, StepUsage, WorkflowResult, WorkflowSpec } from "./types.js";
 import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
 /**
@@ -11,15 +11,15 @@ import { WORKFLOWS_DIR } from "./workflows-dir.js";
  * Example: "bugfix-20260312-214041-a3f2"
  */
 export function generateRunId(workflowName: string): string {
-  const now = new Date();
-  const yyyy = now.getFullYear().toString();
-  const mm = (now.getMonth() + 1).toString().padStart(2, "0");
-  const dd = now.getDate().toString().padStart(2, "0");
-  const hh = now.getHours().toString().padStart(2, "0");
-  const min = now.getMinutes().toString().padStart(2, "0");
-  const ss = now.getSeconds().toString().padStart(2, "0");
-  const hex = crypto.randomBytes(2).toString("hex");
-  return `${workflowName}-${yyyy}${mm}${dd}-${hh}${min}${ss}-${hex}`;
+	const now = new Date();
+	const yyyy = now.getFullYear().toString();
+	const mm = (now.getMonth() + 1).toString().padStart(2, "0");
+	const dd = now.getDate().toString().padStart(2, "0");
+	const hh = now.getHours().toString().padStart(2, "0");
+	const min = now.getMinutes().toString().padStart(2, "0");
+	const ss = now.getSeconds().toString().padStart(2, "0");
+	const hex = crypto.randomBytes(2).toString("hex");
+	return `${workflowName}-${yyyy}${mm}${dd}-${hh}${min}${ss}-${hex}`;
 }
 
 /**
@@ -38,10 +38,10 @@ export function generateRunId(workflowName: string): string {
  * @returns absolute path to the run directory
  */
 export function initRunDir(cwd: string, workflowName: string, runId: string): string {
-  const runDir = path.join(cwd, WORKFLOWS_DIR, "runs", workflowName, "runs", runId);
-  fs.mkdirSync(path.join(runDir, "sessions"), { recursive: true });
-  fs.mkdirSync(path.join(runDir, "outputs"), { recursive: true });
-  return runDir;
+	const runDir = path.join(cwd, WORKFLOWS_DIR, "runs", workflowName, "runs", runId);
+	fs.mkdirSync(path.join(runDir, "sessions"), { recursive: true });
+	fs.mkdirSync(path.join(runDir, "outputs"), { recursive: true });
+	return runDir;
 }
 
 /**
@@ -53,7 +53,7 @@ export function initRunDir(cwd: string, workflowName: string, runId: string): st
  * @returns absolute path to .workflows/runs/<workflowName>/
  */
 export function getWorkflowDir(cwd: string, workflowName: string): string {
-  return path.join(cwd, WORKFLOWS_DIR, "runs", workflowName);
+	return path.join(cwd, WORKFLOWS_DIR, "runs", workflowName);
 }
 
 /**
@@ -62,20 +62,22 @@ export function getWorkflowDir(cwd: string, workflowName: string): string {
  * Uses atomic write: write to .state.json.tmp, then fs.renameSync to state.json.
  */
 export function writeState(runDir: string, state: ExecutionState): void {
-  state.updatedAt = new Date().toISOString();
-  const tmpPath = path.join(runDir, ".state.json.tmp");
-  const finalPath = path.join(runDir, "state.json");
-  try {
-    fs.writeFileSync(tmpPath, JSON.stringify(state, null, 2), "utf-8");
-    fs.renameSync(tmpPath, finalPath);
-  } catch (err) {
-    // Best-effort cleanup of partial tmp file
-    try { fs.unlinkSync(tmpPath); } catch { /* ignore cleanup failure */ }
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `Failed to write workflow state to ${finalPath} (status: ${state.status}): ${msg}`,
-    );
-  }
+	state.updatedAt = new Date().toISOString();
+	const tmpPath = path.join(runDir, ".state.json.tmp");
+	const finalPath = path.join(runDir, "state.json");
+	try {
+		fs.writeFileSync(tmpPath, JSON.stringify(state, null, 2), "utf-8");
+		fs.renameSync(tmpPath, finalPath);
+	} catch (err) {
+		// Best-effort cleanup of partial tmp file
+		try {
+			fs.unlinkSync(tmpPath);
+		} catch {
+			/* ignore cleanup failure */
+		}
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(`Failed to write workflow state to ${finalPath} (status: ${state.status}): ${msg}`);
+	}
 }
 
 /**
@@ -83,69 +85,67 @@ export function writeState(runDir: string, state: ExecutionState): void {
  * Returns null if file doesn't exist.
  */
 export function readState(runDir: string): ExecutionState | null {
-  const statePath = path.join(runDir, "state.json");
-  try {
-    const content = fs.readFileSync(statePath, "utf-8");
-    return JSON.parse(content) as ExecutionState;
-  } catch {
-    return null;
-  }
+	const statePath = path.join(runDir, "state.json");
+	try {
+		const content = fs.readFileSync(statePath, "utf-8");
+		return JSON.parse(content) as ExecutionState;
+	} catch {
+		return null;
+	}
 }
 
 /**
  * Write a step's structured output to outputs/<stepName>.json.
  */
 export function writeStepOutput(runDir: string, stepName: string, output: unknown): void {
-  const outputPath = path.join(runDir, "outputs", `${stepName}.json`);
-  fs.writeFileSync(outputPath, JSON.stringify(output, null, 2), "utf-8");
+	const outputPath = path.join(runDir, "outputs", `${stepName}.json`);
+	fs.writeFileSync(outputPath, JSON.stringify(output, null, 2), "utf-8");
 }
 
 /**
  * Write aggregated metrics to metrics.json.
  */
 export function writeMetrics(runDir: string, steps: Record<string, StepResult>): void {
-  const total = aggregateUsage(steps);
-  const totalDurationMs = Object.values(steps).reduce((sum, s) => sum + s.durationMs, 0);
-  const metrics = {
-    totalUsage: total,
-    totalDurationMs,
-    steps: Object.fromEntries(
-      Object.entries(steps).map(([name, s]) => [name, { usage: s.usage, durationMs: s.durationMs }]),
-    ),
-  };
-  try {
-    fs.writeFileSync(path.join(runDir, "metrics.json"), JSON.stringify(metrics, null, 2), "utf-8");
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    process.stderr.write(
-      `[pi-workflows] Warning: failed to write metrics to ${runDir}/metrics.json: ${msg}\n`,
-    );
-  }
+	const total = aggregateUsage(steps);
+	const totalDurationMs = Object.values(steps).reduce((sum, s) => sum + s.durationMs, 0);
+	const metrics = {
+		totalUsage: total,
+		totalDurationMs,
+		steps: Object.fromEntries(
+			Object.entries(steps).map(([name, s]) => [name, { usage: s.usage, durationMs: s.durationMs }]),
+		),
+	};
+	try {
+		fs.writeFileSync(path.join(runDir, "metrics.json"), JSON.stringify(metrics, null, 2), "utf-8");
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		process.stderr.write(`[pi-workflows] Warning: failed to write metrics to ${runDir}/metrics.json: ${msg}\n`);
+	}
 }
 
 /**
  * Aggregate usage across all steps.
  */
 export function aggregateUsage(steps: Record<string, StepResult>): StepUsage {
-  const total: StepUsage = {
-    input: 0,
-    output: 0,
-    cacheRead: 0,
-    cacheWrite: 0,
-    cost: 0,
-    turns: 0,
-  };
-  for (const step of Object.values(steps)) {
-    if (step.usage) {
-      total.input += step.usage.input;
-      total.output += step.usage.output;
-      total.cacheRead += step.usage.cacheRead;
-      total.cacheWrite += step.usage.cacheWrite;
-      total.cost += step.usage.cost;
-      total.turns += step.usage.turns;
-    }
-  }
-  return total;
+	const total: StepUsage = {
+		input: 0,
+		output: 0,
+		cacheRead: 0,
+		cacheWrite: 0,
+		cost: 0,
+		turns: 0,
+	};
+	for (const step of Object.values(steps)) {
+		if (step.usage) {
+			total.input += step.usage.input;
+			total.output += step.usage.output;
+			total.cacheRead += step.usage.cacheRead;
+			total.cacheWrite += step.usage.cacheWrite;
+			total.cost += step.usage.cost;
+			total.turns += step.usage.turns;
+		}
+	}
+	return total;
 }
 
 /**
@@ -154,101 +154,99 @@ export function aggregateUsage(steps: Record<string, StepResult>): StepUsage {
  * sets output to the last completed step's output (or explicit workflow output if defined).
  */
 export function buildResult(
-  spec: WorkflowSpec,
-  runId: string,
-  runDir: string,
-  state: ExecutionState,
-  status: "completed" | "failed" | "paused",
+	spec: WorkflowSpec,
+	runId: string,
+	runDir: string,
+	state: ExecutionState,
+	status: "completed" | "failed" | "paused",
 ): WorkflowResult {
-  const totalUsage = aggregateUsage(state.steps);
-  const totalDurationMs = Object.values(state.steps).reduce((sum, s) => sum + s.durationMs, 0);
+	const totalUsage = aggregateUsage(state.steps);
+	const totalDurationMs = Object.values(state.steps).reduce((sum, s) => sum + s.durationMs, 0);
 
-  // Determine output: last completed step's output
-  let output: unknown = undefined;
-  const stepNames = Object.keys(spec.steps);
-  for (let i = stepNames.length - 1; i >= 0; i--) {
-    const stepName = stepNames[i];
-    const stepResult = state.steps[stepName];
-    if (stepResult && stepResult.status === "completed") {
-      output = stepResult.output ?? stepResult.textOutput;
-      break;
-    }
-  }
+	// Determine output: last completed step's output
+	let output: unknown;
+	const stepNames = Object.keys(spec.steps);
+	for (let i = stepNames.length - 1; i >= 0; i--) {
+		const stepName = stepNames[i];
+		const stepResult = state.steps[stepName];
+		if (stepResult && stepResult.status === "completed") {
+			output = stepResult.output ?? stepResult.textOutput;
+			break;
+		}
+	}
 
-  return {
-    workflow: spec.name,
-    runId,
-    status,
-    steps: state.steps,
-    output,
-    totalUsage,
-    totalDurationMs,
-    runDir,
-  };
+	return {
+		workflow: spec.name,
+		runId,
+		status,
+		steps: state.steps,
+		output,
+		totalUsage,
+		totalDurationMs,
+		runDir,
+	};
 }
 
 /**
  * Format a WorkflowResult as human-readable text for injection into the conversation.
  */
 export function formatResult(result: WorkflowResult): string {
-  const stepEntries = Object.values(result.steps);
-  const totalSteps = stepEntries.length;
-  const completedSteps = stepEntries.filter((s) => s.status === "completed").length;
-  const duration = formatDuration(result.totalDurationMs);
-  const cost = formatCost(result.totalUsage.cost);
+	const stepEntries = Object.values(result.steps);
+	const totalSteps = stepEntries.length;
+	const completedSteps = stepEntries.filter((s) => s.status === "completed").length;
+	const duration = formatDuration(result.totalDurationMs);
+	const cost = formatCost(result.totalUsage.cost);
 
-  const lines: string[] = [];
+	const lines: string[] = [];
 
-  if (result.status === "completed") {
-    lines.push(`Workflow '${result.workflow}' completed (${totalSteps} steps, ${duration}, ${cost})`);
-  } else if (result.status === "paused") {
-    lines.push(
-      `Workflow '${result.workflow}' paused (${completedSteps}/${totalSteps} steps completed, ${duration}, ${cost})`,
-    );
-  } else {
-    // Find the failed step name
-    const failedStep = stepEntries.find((s) => s.status === "failed");
-    const failedName = failedStep ? failedStep.step : "unknown";
-    lines.push(
-      `Workflow '${result.workflow}' failed at step '${failedName}' (${completedSteps}/${totalSteps} steps, ${duration}, ${cost})`,
-    );
-  }
+	if (result.status === "completed") {
+		lines.push(`Workflow '${result.workflow}' completed (${totalSteps} steps, ${duration}, ${cost})`);
+	} else if (result.status === "paused") {
+		lines.push(
+			`Workflow '${result.workflow}' paused (${completedSteps}/${totalSteps} steps completed, ${duration}, ${cost})`,
+		);
+	} else {
+		// Find the failed step name
+		const failedStep = stepEntries.find((s) => s.status === "failed");
+		const failedName = failedStep ? failedStep.step : "unknown";
+		lines.push(
+			`Workflow '${result.workflow}' failed at step '${failedName}' (${completedSteps}/${totalSteps} steps, ${duration}, ${cost})`,
+		);
+	}
 
-  lines.push("");
-  lines.push("Steps:");
+	lines.push("");
+	lines.push("Steps:");
 
-  for (const step of stepEntries) {
-    const stepDuration = formatDuration(step.durationMs);
-    const stepCost = formatCost(step.usage.cost);
+	for (const step of stepEntries) {
+		const stepDuration = formatDuration(step.durationMs);
+		const stepCost = formatCost(step.usage.cost);
 
-    if (step.status === "completed") {
-      lines.push(`  \u2713 ${step.step}  ${stepDuration}  ${stepCost}  (${step.usage.turns} turns)`);
-    } else if (step.status === "failed") {
-      const errorPreview = step.error || "Unknown error";
-      lines.push(`  \u2717 ${step.step}  ${stepDuration}  ${stepCost}  ${errorPreview}`);
-    } else {
-      // skipped
-      lines.push(`  \u00b7 ${step.step}`);
-    }
-  }
+		if (step.status === "completed") {
+			lines.push(`  \u2713 ${step.step}  ${stepDuration}  ${stepCost}  (${step.usage.turns} turns)`);
+		} else if (step.status === "failed") {
+			const errorPreview = step.error || "Unknown error";
+			lines.push(`  \u2717 ${step.step}  ${stepDuration}  ${stepCost}  ${errorPreview}`);
+		} else {
+			// skipped
+			lines.push(`  \u00b7 ${step.step}`);
+		}
+	}
 
-  if (result.status === "completed") {
-    lines.push("");
-    lines.push(
-      `Total: ${result.totalUsage.input} input + ${result.totalUsage.output} output tokens, ${cost}`,
-    );
-  }
+	if (result.status === "completed") {
+		lines.push("");
+		lines.push(`Total: ${result.totalUsage.input} input + ${result.totalUsage.output} output tokens, ${cost}`);
+	}
 
-  if (result.artifacts && Object.keys(result.artifacts).length > 0) {
-    lines.push("");
-    lines.push("Artifacts:");
-    for (const [name, artifactPath] of Object.entries(result.artifacts)) {
-      lines.push(`  ${name} \u2192 ${artifactPath}`);
-    }
-  }
+	if (result.artifacts && Object.keys(result.artifacts).length > 0) {
+		lines.push("");
+		lines.push("Artifacts:");
+		for (const [name, artifactPath] of Object.entries(result.artifacts)) {
+			lines.push(`  ${name} \u2192 ${artifactPath}`);
+		}
+	}
 
-  lines.push("");
-  lines.push(`Session logs: ${result.runDir}/sessions/`);
+	lines.push("");
+	lines.push(`Session logs: ${result.runDir}/sessions/`);
 
-  return lines.join("\n");
+	return lines.join("\n");
 }

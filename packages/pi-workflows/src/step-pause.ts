@@ -15,13 +15,13 @@ import type { StepResult, StepUsage } from "./types.js";
  * @returns StepResult with status "completed"
  */
 export function executePause(stepName: string, message?: string): StepResult {
-  return {
-    step: stepName,
-    agent: "pause",
-    status: "completed",
-    output: message ? { message } : undefined,
-    textOutput: message || "Workflow paused",
-    usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 } as StepUsage,
-    durationMs: 0,
-  };
+	return {
+		step: stepName,
+		agent: "pause",
+		status: "completed",
+		output: message ? { message } : undefined,
+		textOutput: message || "Workflow paused",
+		usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 } as StepUsage,
+		durationMs: 0,
+	};
 }

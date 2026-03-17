@@ -1,43 +1,58 @@
 {
-  "name": "pi-workflows",
-  "description": "Workflow orchestration extension for Pi. Adds composable, typed, multi-step workflow execution via .workflow.yaml specs. YAML specs define steps, typed JSON flows between them via ${{ }} expressions, each step spawns a pi subprocess with its own context window.",
-  "core_value": "Composable, typed, multi-step workflow execution where the main conversation remains the control plane and workflows are subordinate work.",
-  "target_users": [
-    "Pi users who need multi-step automated pipelines",
-    "Workflow authors defining .workflow.yaml specs",
-    "Agent spec authors defining typed agent contracts",
-    "Extension developers building on the workflow runtime"
-  ],
-  "constraints": [
-    { "type": "architecture", "description": "Extension owns its own subprocess dispatch — independent of pi-subagents" },
-    { "type": "architecture", "description": "Main conversation is the control plane; workflows are subordinate work" },
-    { "type": "architecture", "description": "Each step runs as a spawned pi subprocess with its own context window" },
-    { "type": "runtime", "description": "ESM module, TypeScript loaded directly by pi via --experimental-strip-types (no build step)" },
-    { "type": "runtime", "description": "Peer dependencies: @mariozechner/pi-coding-agent, @mariozechner/pi-tui, @sinclair/typebox" },
-    { "type": "data", "description": "JSON is the intermediate representation between steps — file system is the data bus" },
-    { "type": "data", "description": "Three template syntaxes: {{ var }}/{% tag %} (Nunjucks), ${{ expr }} (workflow data flow)" },
-    { "type": "scope", "description": "Domain lives in YAML specs, templates, and schemas — never in the runtime" }
-  ],
-  "scope_boundaries": {
-    "in": [
-      "Workflow spec parsing and validation",
-      "Agent spec loading and prompt compilation",
-      "Sequential and parallel step execution via subprocess dispatch",
-      "Expression evaluation (${{ }} property access with pipe filters)",
-      "Nunjucks template rendering for prompt composition",
-      "State persistence and checkpoint/resume",
-      "TUI progress widgets and dashboard overlays",
-      "Artifact persistence to user-defined paths",
-      "Step types: agent, gate, transform, loop, parallel, pause",
-      "Tool and command registration in pi"
-    ],
-    "out": [
-      "In-process agent dispatch (pi-subagents pattern)",
-      "Domain-specific logic (belongs in YAML specs and templates)",
-      "Build step or transpilation (TypeScript stripped at runtime)",
-      "Custom TUI renderers (Phase 6)",
-      "Workflow inheritance and nesting (Phase 6)",
-      "Budget enforcement ceilings (accumulation works, no gate)"
-    ]
-  }
+	"name": "pi-workflows",
+	"description": "Workflow orchestration extension for Pi. Adds composable, typed, multi-step workflow execution via .workflow.yaml specs. YAML specs define steps, typed JSON flows between them via ${{ }} expressions, each step spawns a pi subprocess with its own context window.",
+	"core_value": "Composable, typed, multi-step workflow execution where the main conversation remains the control plane and workflows are subordinate work.",
+	"target_users": [
+		"Pi users who need multi-step automated pipelines",
+		"Workflow authors defining .workflow.yaml specs",
+		"Agent spec authors defining typed agent contracts",
+		"Extension developers building on the workflow runtime"
+	],
+	"constraints": [
+		{
+			"type": "architecture",
+			"description": "Extension owns its own subprocess dispatch — independent of pi-subagents"
+		},
+		{ "type": "architecture", "description": "Main conversation is the control plane; workflows are subordinate work" },
+		{ "type": "architecture", "description": "Each step runs as a spawned pi subprocess with its own context window" },
+		{
+			"type": "runtime",
+			"description": "ESM module, TypeScript loaded directly by pi via --experimental-strip-types (no build step)"
+		},
+		{
+			"type": "runtime",
+			"description": "Peer dependencies: @mariozechner/pi-coding-agent, @mariozechner/pi-tui, @sinclair/typebox"
+		},
+		{
+			"type": "data",
+			"description": "JSON is the intermediate representation between steps — file system is the data bus"
+		},
+		{
+			"type": "data",
+			"description": "Three template syntaxes: {{ var }}/{% tag %} (Nunjucks), ${{ expr }} (workflow data flow)"
+		},
+		{ "type": "scope", "description": "Domain lives in YAML specs, templates, and schemas — never in the runtime" }
+	],
+	"scope_boundaries": {
+		"in": [
+			"Workflow spec parsing and validation",
+			"Agent spec loading and prompt compilation",
+			"Sequential and parallel step execution via subprocess dispatch",
+			"Expression evaluation (${{ }} property access with pipe filters)",
+			"Nunjucks template rendering for prompt composition",
+			"State persistence and checkpoint/resume",
+			"TUI progress widgets and dashboard overlays",
+			"Artifact persistence to user-defined paths",
+			"Step types: agent, gate, transform, loop, parallel, pause",
+			"Tool and command registration in pi"
+		],
+		"out": [
+			"In-process agent dispatch (pi-subagents pattern)",
+			"Domain-specific logic (belongs in YAML specs and templates)",
+			"Build step or transpilation (TypeScript stripped at runtime)",
+			"Custom TUI renderers (Phase 6)",
+			"Workflow inheritance and nesting (Phase 6)",
+			"Budget enforcement ceilings (accumulation works, no gate)"
+		]
+	}
 }

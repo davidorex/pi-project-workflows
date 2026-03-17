@@ -10,8 +10,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { complete } from "@mariozechner/pi-ai";
 import type { Api, AssistantMessage, Model, TextContent, ToolCall } from "@mariozechner/pi-ai";
+import { complete } from "@mariozechner/pi-ai";
 import type {
 	AgentEndEvent,
 	ExtensionAPI,
@@ -171,21 +171,33 @@ function discoverMonitors(): Monitor[] {
 }
 
 function isDir(p: string): boolean {
-	try { return fs.statSync(p).isDirectory(); } catch { return false; }
+	try {
+		return fs.statSync(p).isDirectory();
+	} catch {
+		return false;
+	}
 }
 
 function listMonitorFiles(dir: string): string[] {
 	try {
 		return fs.readdirSync(dir).filter((f) => f.endsWith(".monitor.json"));
-	} catch { return []; }
+	} catch {
+		return [];
+	}
 }
 
 function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 	let raw: string;
-	try { raw = fs.readFileSync(filePath, "utf-8"); } catch { return null; }
+	try {
+		raw = fs.readFileSync(filePath, "utf-8");
+	} catch {
+		return null;
+	}
 
 	let spec: Record<string, unknown>;
-	try { spec = JSON.parse(raw); } catch {
+	try {
+		spec = JSON.parse(raw);
+	} catch {
 		console.error(`[monitors] Failed to parse ${filePath}`);
 		return null;
 	}
@@ -236,7 +248,7 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 		},
 		actions: actions ?? {},
 		ceiling: Number(spec.ceiling) || 5,
-		escalate: (spec.escalate === "dismiss" ? "dismiss" : "ask"),
+		escalate: spec.escalate === "dismiss" ? "dismiss" : "ask",
 		dir,
 		resolvedPatternsPath: path.resolve(dir, patternsSpec.path),
 		resolvedInstructionsPath: path.resolve(dir, instructions?.path ?? `${name}.instructions.json`),
@@ -292,13 +304,19 @@ function seedExamples(): number {
 const TRUNCATE = 2000;
 
 function extractText(parts: readonly { type: string }[]): string {
-	return parts.filter((b): b is TextContent => b.type === "text").map((b) => b.text).join("");
+	return parts
+		.filter((b): b is TextContent => b.type === "text")
+		.map((b) => b.text)
+		.join("");
 }
 
 function extractUserText(parts: string | (TextContent | { type: string })[]): string {
 	if (typeof parts === "string") return parts;
 	if (!Array.isArray(parts)) return "";
-	return parts.filter((b): b is TextContent => b.type === "text").map((b) => b.text).join("");
+	return parts
+		.filter((b): b is TextContent => b.type === "text")
+		.map((b) => b.text)
+		.join("");
 }
 
 function trunc(text: string): string {
@@ -339,7 +357,8 @@ function collectToolResults(branch: SessionEntry[], limit = 5): string {
 		const entry = branch[i];
 		if (!isMessageEntry(entry) || entry.message.role !== "toolResult") continue;
 		const text = extractUserText(entry.message.content);
-		if (text) results.push(`---\n[${entry.message.toolName}${entry.message.isError ? " ERROR" : ""}] ${trunc(text)}\n---`);
+		if (text)
+			results.push(`---\n[${entry.message.toolName}${entry.message.isError ? " ERROR" : ""}] ${trunc(text)}\n---`);
 	}
 	return results.reverse().join("\n");
 }
@@ -457,9 +476,7 @@ function loadPatterns(monitor: Monitor): MonitorPattern[] {
 }
 
 function formatPatternsForPrompt(patterns: MonitorPattern[]): string {
-	return patterns
-		.map((p, i) => `${i + 1}. [${p.severity ?? "warning"}] ${p.description}`)
-		.join("\n");
+	return patterns.map((p, i) => `${i + 1}. [${p.severity ?? "warning"}] ${p.description}`).join("\n");
 }
 
 function loadInstructions(monitor: Monitor): MonitorInstruction[] {
@@ -533,7 +550,8 @@ export function parseMonitorsArgs(args: string, knownNames: Set<string>): Monito
 		if (action === "replace") {
 			const n = parseInt(tokens[3]);
 			const text = tokens.slice(4).join(" ");
-			if (isNaN(n) || n < 1 || !text) return { type: "error", message: "Usage: /monitors <name> rules replace <number> <text>" };
+			if (isNaN(n) || n < 1 || !text)
+				return { type: "error", message: "Usage: /monitors <name> rules replace <number> <text>" };
 			return { type: "rules-replace", name, index: n, text };
 		}
 		return { type: "error", message: `Unknown rules action: ${action}\nAvailable: add, remove, replace` };
@@ -546,18 +564,10 @@ export function parseMonitorsArgs(args: string, knownNames: Set<string>): Monito
 	return { type: "error", message: `Unknown subcommand: ${verb}\nAvailable: rules, patterns, dismiss, reset` };
 }
 
-function handleList(
-	monitors: Monitor[],
-	ctx: ExtensionContext,
-	enabled: boolean,
-): void {
+function handleList(monitors: Monitor[], ctx: ExtensionContext, enabled: boolean): void {
 	const header = enabled ? "monitors: ON" : "monitors: OFF (all monitoring paused)";
 	const lines = monitors.map((m) => {
-		const state = m.dismissed
-			? "dismissed"
-			: m.whileCount > 0
-				? `engaged (${m.whileCount}/${m.ceiling})`
-				: "idle";
+		const state = m.dismissed ? "dismissed" : m.whileCount > 0 ? `engaged (${m.whileCount}/${m.ceiling})` : "idle";
 		const scope = m.scope.target !== "main" ? ` [scope:${m.scope.target}]` : "";
 		return `  ${m.name} [${m.event}${m.when !== "always" ? `, when: ${m.when}` : ""}]${scope} — ${state}`;
 	});
@@ -682,7 +692,8 @@ export function parseVerdict(raw: string): ClassifyResult {
 	if (text.startsWith("NEW:")) {
 		const rest = text.slice(4);
 		const pipe = rest.indexOf("|");
-		if (pipe !== -1) return { verdict: "new", newPattern: rest.slice(0, pipe).trim(), description: rest.slice(pipe + 1).trim() };
+		if (pipe !== -1)
+			return { verdict: "new", newPattern: rest.slice(0, pipe).trim(), description: rest.slice(pipe + 1).trim() };
 		return { verdict: "new", newPattern: rest.trim(), description: rest.trim() };
 	}
 	if (text.startsWith("FLAG:")) return { verdict: "flag", description: text.slice(5).trim() };
@@ -697,7 +708,12 @@ export function parseModelSpec(spec: string): { provider: string; modelId: strin
 	return { provider: "anthropic", modelId: spec };
 }
 
-async function classifyPrompt(ctx: ExtensionContext, monitor: Monitor, prompt: string, signal?: AbortSignal): Promise<ClassifyResult> {
+async function classifyPrompt(
+	ctx: ExtensionContext,
+	monitor: Monitor,
+	prompt: string,
+	signal?: AbortSignal,
+): Promise<ClassifyResult> {
 	const { provider, modelId } = parseModelSpec(monitor.classify.model);
 	const model = ctx.modelRegistry.find(provider, modelId);
 	if (!model) throw new Error(`Model ${monitor.classify.model} not found`);
@@ -720,7 +736,10 @@ async function classifyPrompt(ctx: ExtensionContext, monitor: Monitor, prompt: s
 
 function learnPattern(monitor: Monitor, description: string): void {
 	const patterns = loadPatterns(monitor);
-	const id = description.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 60);
+	const id = description
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.slice(0, 60);
 
 	// dedup by description
 	if (patterns.some((p) => p.description === description)) return;
@@ -748,17 +767,11 @@ export function generateFindingId(monitorName: string, _description: string): st
 	return `${monitorName}-${Date.now().toString(36)}`;
 }
 
-function executeWriteAction(
-	monitor: Monitor,
-	action: MonitorAction,
-	result: ClassifyResult,
-): void {
+function executeWriteAction(monitor: Monitor, action: MonitorAction, result: ClassifyResult): void {
 	if (!action.write) return;
 
 	const writeCfg = action.write;
-	const filePath = path.isAbsolute(writeCfg.path)
-		? writeCfg.path
-		: path.resolve(process.cwd(), writeCfg.path);
+	const filePath = path.isAbsolute(writeCfg.path) ? writeCfg.path : path.resolve(process.cwd(), writeCfg.path);
 
 	// Build the entry from template, substituting placeholders
 	const findingId = generateFindingId(monitor.name, result.description ?? "unknown");
@@ -997,10 +1010,7 @@ export default function (pi: ExtensionAPI) {
 		statusCtx = ctx;
 		if (seeded > 0 && ctx.hasUI) {
 			const dir = resolveProjectMonitorsDir();
-			ctx.ui.notify(
-				`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`,
-				"info",
-			);
+			ctx.ui.notify(`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`, "info");
 		}
 		updateStatus();
 	});
@@ -1076,7 +1086,9 @@ export default function (pi: ExtensionAPI) {
 
 	// --- per-turn exclusion tracking ---
 	let steeredThisTurn = new Set<string>();
-	pi.on("turn_start", () => { steeredThisTurn = new Set(); });
+	pi.on("turn_start", () => {
+		steeredThisTurn = new Set();
+	});
 
 	// group monitors by validated event
 	const byEvent = new Map<MonitorEvent, Monitor[]>();
@@ -1141,7 +1153,11 @@ export default function (pi: ExtensionAPI) {
 				const items = [
 					{ value: "on", label: "on", description: "Enable all monitoring" },
 					{ value: "off", label: "off", description: "Pause all monitoring" },
-					...Array.from(monitorNames).map((n) => ({ value: n, label: n, description: `${monitorsByName.get(n)?.description ?? ""} → rules|patterns|dismiss|reset` })),
+					...Array.from(monitorNames).map((n) => ({
+						value: n,
+						label: n,
+						description: `${monitorsByName.get(n)?.description ?? ""} → rules|patterns|dismiss|reset`,
+					})),
 				];
 				return items.filter((i) => i.value.startsWith(last));
 			}
@@ -1181,7 +1197,11 @@ export default function (pi: ExtensionAPI) {
 					`on — Enable all monitoring`,
 					`off — Pause all monitoring`,
 					...monitors.map((m) => {
-						const state = m.dismissed ? "dismissed" : m.whileCount > 0 ? `engaged (${m.whileCount}/${m.ceiling})` : "idle";
+						const state = m.dismissed
+							? "dismissed"
+							: m.whileCount > 0
+								? `engaged (${m.whileCount}/${m.ceiling})`
+								: "idle";
 						return `${m.name} — ${m.description} [${state}]`;
 					}),
 				];

@@ -1,23 +1,83 @@
 {
-  "rules": [
-    { "id": "esm", "description": "ESM modules only (\"type\": \"module\" in package.json)", "enforcement": "lint", "severity": "error" },
-    { "id": "no-build", "description": "TypeScript loaded directly by pi via --experimental-strip-types — no build step, no transpilation", "enforcement": "manual", "severity": "error" },
-    { "id": "no-pi-dir", "description": "Never create, copy, modify, or delete files in .pi/ — it is the user's runtime testing directory", "enforcement": "review", "severity": "error" },
-    { "id": "demo-source-of-truth", "description": "Source of truth for demo files is demo/, not .pi/", "enforcement": "review", "severity": "error" },
-    { "id": "types-central", "description": "All shared interfaces defined in types.ts — no type definitions elsewhere", "enforcement": "review", "severity": "warning" },
-    { "id": "expression-no-eval", "description": "Expression evaluator uses property access only — no eval(), no arithmetic/logic", "enforcement": "test", "severity": "error" },
-    { "id": "fail-fast", "description": "Fail-fast on step failure (phase 1 behavior)", "enforcement": "test", "severity": "error" },
-    { "id": "domain-in-specs", "description": "Domain logic lives in YAML specs, templates, and schemas — never in the runtime", "enforcement": "review", "severity": "error" },
-    { "id": "subprocess-independence", "description": "Extension owns its own subprocess dispatch — independent of pi-subagents, no shared state", "enforcement": "review", "severity": "error" },
-    { "id": "json-data-bus", "description": "JSON is the intermediate representation between steps — file system is the data bus", "enforcement": "test", "severity": "error" },
-    { "id": "atomic-state", "description": "State persisted after each step via atomic write (tmp + rename)", "enforcement": "test", "severity": "error" },
-    { "id": "three-template-syntaxes", "description": "{{ var }}/{% tag %} for Nunjucks prompt rendering, ${{ expr }} for workflow data flow — never mix contexts", "enforcement": "review", "severity": "warning" }
-  ],
-  "test_conventions": {
-    "runner_command": "node --experimental-strip-types --test src/*.test.ts",
-    "file_pattern": "src/*.test.ts",
-    "current_count": 300
-  },
-  "lint_command": "npx tsc --noEmit",
-  "lint_scope": "src/"
+	"rules": [
+		{
+			"id": "esm",
+			"description": "ESM modules only (\"type\": \"module\" in package.json)",
+			"enforcement": "lint",
+			"severity": "error"
+		},
+		{
+			"id": "no-build",
+			"description": "TypeScript loaded directly by pi via --experimental-strip-types — no build step, no transpilation",
+			"enforcement": "manual",
+			"severity": "error"
+		},
+		{
+			"id": "no-pi-dir",
+			"description": "Never create, copy, modify, or delete files in .pi/ — it is the user's runtime testing directory",
+			"enforcement": "review",
+			"severity": "error"
+		},
+		{
+			"id": "demo-source-of-truth",
+			"description": "Source of truth for demo files is demo/, not .pi/",
+			"enforcement": "review",
+			"severity": "error"
+		},
+		{
+			"id": "types-central",
+			"description": "All shared interfaces defined in types.ts — no type definitions elsewhere",
+			"enforcement": "review",
+			"severity": "warning"
+		},
+		{
+			"id": "expression-no-eval",
+			"description": "Expression evaluator uses property access only — no eval(), no arithmetic/logic",
+			"enforcement": "test",
+			"severity": "error"
+		},
+		{
+			"id": "fail-fast",
+			"description": "Fail-fast on step failure (phase 1 behavior)",
+			"enforcement": "test",
+			"severity": "error"
+		},
+		{
+			"id": "domain-in-specs",
+			"description": "Domain logic lives in YAML specs, templates, and schemas — never in the runtime",
+			"enforcement": "review",
+			"severity": "error"
+		},
+		{
+			"id": "subprocess-independence",
+			"description": "Extension owns its own subprocess dispatch — independent of pi-subagents, no shared state",
+			"enforcement": "review",
+			"severity": "error"
+		},
+		{
+			"id": "json-data-bus",
+			"description": "JSON is the intermediate representation between steps — file system is the data bus",
+			"enforcement": "test",
+			"severity": "error"
+		},
+		{
+			"id": "atomic-state",
+			"description": "State persisted after each step via atomic write (tmp + rename)",
+			"enforcement": "test",
+			"severity": "error"
+		},
+		{
+			"id": "three-template-syntaxes",
+			"description": "{{ var }}/{% tag %} for Nunjucks prompt rendering, ${{ expr }} for workflow data flow — never mix contexts",
+			"enforcement": "review",
+			"severity": "warning"
+		}
+	],
+	"test_conventions": {
+		"runner_command": "node --experimental-strip-types --test src/*.test.ts",
+		"file_pattern": "src/*.test.ts",
+		"current_count": 300
+	},
+	"lint_command": "npx tsc --noEmit",
+	"lint_scope": "src/"
 }

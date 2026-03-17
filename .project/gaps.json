@@ -1,461 +1,461 @@
 {
-  "gaps": [
-    {
-      "id": "dynamic-dispatch-loops",
-      "description": "Dynamic dispatch in loops — a loop that evaluates which step to run each iteration based on current state. Any state machine workflow needs this: legal review routing on document classification, data pipelines branching on quality scores. The general primitive: a loop with a dispatch table of steps guarded by when: conditions evaluated per iteration.",
-      "status": "open",
-      "category": "primitive",
-      "priority": "high",
-      "source": "human"
-    },
-    {
-      "id": "expression-functions",
-      "description": "Expression functions — ${{ }} expressions that call functions, not just access properties. ${{ loadFile(path) }} is the general case. The function system is domain-agnostic — specific functions are user-provided or workflow-provided. Needed for context loaders, file operations, data derivation.",
-      "status": "open",
-      "category": "primitive",
-      "priority": "high",
-      "source": "human"
-    },
-    {
-      "id": "timeout-actions",
-      "description": "Timeout actions — configurable responses beyond kill. Steering messages, idle detection, inspect-and-retry. Any long-running agent in any domain needs this.",
-      "status": "open",
-      "category": "primitive",
-      "priority": "medium",
-      "source": "human"
-    },
-    {
-      "id": "budget-enforcement",
-      "description": "Budget enforcement — cost ceiling with configurable action (pause, fail, warn). addUsage() accumulates but no gate. Any production workflow needs this.",
-      "status": "deferred",
-      "category": "primitive",
-      "priority": "medium",
-      "resolved_by": "budget-defer",
-      "details": "Accumulation via addUsage() works. No ceiling enforcement yet. Needs design for configurable actions.",
-      "source": "human"
-    },
-    {
-      "id": "command-steps",
-      "description": "Command steps — shell command execution with captured stdout as JSON or text.",
-      "status": "resolved",
-      "category": "primitive",
-      "priority": "high",
-      "resolved_by": "spec-27",
-      "source": "human"
-    },
-    {
-      "id": "post-step-artifact-verification",
-      "description": "A verify block on the step spec declares assertions the runtime checks after the step completes. Not a separate step — built into the step definition. Assertion types: file exists, file changed, output field non-empty, output field matches pattern, shell command exits 0. These are deterministic, no LLM.",
-      "status": "open",
-      "category": "primitive",
-      "priority": "medium",
-      "source": "human"
-    },
-    {
-      "id": "requirement-tracking",
-      "description": "Requirement tracking (must-haves) — the step's input declares requirements (via schema or explicit requires field). The verify block checks the output addresses them. Cross-references input requirements against output content using heuristic matching (keyword/token presence in output fields). Domain-agnostic: works for code tasks, compliance points, synthesis criteria.",
-      "status": "open",
-      "category": "primitive",
-      "priority": "medium",
-      "source": "human"
-    },
-    {
-      "id": "graduated-failure",
-      "description": "Graduated failure — not binary pass/fail. The failure cascade: soft timeout → steer the agent → hard timeout → inspect durability (what artifacts exist so far?) → retry with gap analysis injected → skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
-      "status": "resolved",
-      "category": "primitive",
-      "priority": "medium",
-      "source": "human",
-      "details": "GSD's recovery model is the reference: inspectExecuteTaskDurability() checks what the agent actually accomplished on disk before deciding action. Pattern: inspect what happened → rollback invalid state → steer with specific error context (agent steps only) → escalate on repeated failure → skip after max attempts. For block validation failures specifically: rollback file to pre-step snapshot, steer agent with schema error + rolled-back state, max N retries before fail-fast. Command steps can't be steered (no conversation), so they fail immediately with diagnostics. Two layers: orchestrator rollback (non-bypassable safety net) + monitor steering (in-flight correction for agent steps).",
-      "resolved_by": "commit-84c2947"
-    },
-    {
-      "id": "blocker-propagation",
-      "description": "Blocker propagation — when a step is skipped after exhausting retries, a blocker placeholder artifact is written. Downstream steps see the placeholder and can decide what to do. The pipeline doesn't silently drop work — it records what failed and why, in a structured artifact visible to subsequent steps and to the user.",
-      "status": "open",
-      "category": "primitive",
-      "priority": "medium",
-      "source": "human"
-    },
-    {
-      "id": "pre-step-validation",
-      "description": "Pre-step validation — gate checks on inputs before dispatch. Already supported as gate steps. The richer form: validate that the previous step's output has the content quality needed for this step to succeed. Not just 'does the file exist' but 'does the plan have a verification section, are scope estimates within thresholds.'",
-      "status": "open",
-      "category": "primitive",
-      "priority": "low",
-      "source": "human"
-    },
-    {
-      "id": "adjacent-expression-misparse",
-      "description": "Expression parser: adjacent ${{ }}${{ }} in a single string — whole-value regex can misparse them. Pre-existing limitation.",
-      "status": "open",
-      "category": "issue",
-      "priority": "low",
-      "source": "human"
-    },
-    {
-      "id": "delete-md-demo-agents",
-      "description": "Delete old .md demo agents — .agent.yaml versions are the source of truth, .md files are dead weight.",
-      "status": "resolved",
-      "category": "cleanup",
-      "priority": "low",
-      "source": "human",
-      "resolved_by": "do-gap-workflow"
-    },
-    {
-      "id": "remove-dead-writeStepOutput",
-      "description": "Remove dead writeStepOutput in state.ts — superseded by output.ts persistStepOutput().",
-      "status": "open",
-      "category": "cleanup",
-      "priority": "low",
-      "source": "human"
-    },
-    {
-      "id": "do-phase-workflow",
-      "description": "No 'do phase' workflow exists. Main agent saying 'do phase 8' requires: load phase spec by number, plan decomposition across all specs, forEach implement, route results to blocks, verify against phase success criteria, update phase status. self-implement.workflow.yaml is close but needs a load-phase command step at the front and phase-status-update at the end.",
-      "status": "open",
-      "category": "capability",
-      "priority": "high",
-      "details": "Blocked by: nested workflow invocation (Phase 6) for per-spec cycles. Workaround: flatten — one planning step reads full phase spec, produces flat plans array, forEach implements all, one verify pass. Add load-phase and update-phase-status command steps to self-implement.workflow.yaml.",
-      "source": "human"
-    },
-    {
-      "id": "nested-workflow-invocation",
-      "description": "forEach step body can only be a single step type (agent, transform, command, gate). Cannot invoke a sub-workflow per iteration. Needed for: per-spec plan-implement-verify cycles within a phase. This is the 'workflow' step type placeholder from Phase 6.",
-      "status": "open",
-      "category": "composition",
-      "priority": "high",
-      "details": "Phase 6 deliverable. Without it, phase execution must flatten all specs into one plan-implement-verify pass rather than modular per-spec cycles.",
-      "source": "human"
-    },
-    {
-      "id": "gap-recording-tool",
-      "description": "No tool or command exists for agents or main context to record gaps during execution. Gap recording is post-hoc and opt-in. Need a record-gap tool available mid-task that writes to gaps.json — as frictionless as git commit.",
-      "status": "resolved",
-      "category": "capability",
-      "priority": "high",
-      "details": "Monitor writes directly to gaps.json with source:'monitor'. No agent steering needed — monitor observes friction in execution trace, appends gap, done. Human/main-context reviews monitor-created gaps and marks actionable or deletes. Query by source: gaps.filter(g => g.source === 'monitor'). Three-layer design: (1) monitor writes gaps directly (non-bypassable), (2) execution-results.issues[] required in schema (agent-reported), (3) route-results routes agent-reported issues with source:'agent'.",
-      "source": "human",
-      "resolved_by": "record-gap-tool"
-    },
-    {
-      "id": "command-step-data-passing",
-      "description": "No safe mechanism to pass structured data to command steps. Shell argument quoting breaks on JSON with quotes. Current workaround: persist to known file path via output.path, next step reads from disk. Need: stdin piping, env var injection, or temp file abstraction in the command step runtime.",
-      "status": "open",
-      "category": "primitive",
-      "priority": "medium",
-      "source": "human",
-      "details": "Discovered when fix-audit workflow failed: ${{ expr | json }} in shell arguments breaks on JSON containing single quotes. All command steps rewritten to read files directly. The output.path → read-from-disk pattern works but is manual and requires coordinating paths between steps."
-    },
-    {
-      "id": "issue-finding-p1-type-any-typebox-was-already-resolved-s",
-      "description": "Finding p1-type-any-typebox was already resolved: src/index.ts correctly imports Type from @sinclair/typebox with no `let Type: any` present.",
-      "status": "resolved",
-      "category": "issue",
-      "priority": "low",
-      "source": "agent",
-      "resolved_by": "false-positive"
-    },
-    {
-      "id": "tui-step-visibility",
-      "description": "No live visibility into subprocess agent tool calls or step output summaries in TUI widget. Running steps show spinner but not what the agent is doing. Completed steps show status but not what they produced.",
-      "status": "resolved",
-      "category": "capability",
-      "priority": "medium",
-      "source": "human",
-      "details": "Design doc: docs/mar-15-workflow-visibility-details-for-tui.md. Three-file change: dispatch.ts (forward onEvent tool calls), step-agent.ts (capture tool activity via onStepActivity callback), tui.ts (StepActivity ring buffer per step, StepOutputSummary after completion), workflow-executor.ts (wire activity callback, parse output summary, refresh widget). New types: StepActivity { tool, preview, timestamp }, StepOutputSummary { tasks[], testCount, note }. Data flow: subprocess JSONL → dispatch onEvent → step-agent onStepActivity → widget state ring buffer (last 5) → TUI renders indented sub-lines under running step. On completion: activity cleared, output parsed for summary, summary rendered as indented sub-lines under completed step.",
-      "resolved_by": "do-gap-workflow"
-    },
-    {
-      "id": "dag-foreach-command-scanning",
-      "description": "DAG dependency extractor did not scan forEach or command fields for ${{ steps.X }} references. Steps using forEach with step references were scheduled in wrong layers.",
-      "status": "resolved",
-      "category": "issue",
-      "priority": "high",
-      "source": "human",
-      "resolved_by": "commit-0373d73"
-    },
-    {
-      "id": "foreach-as-binding-agent-scope",
-      "description": "executeAgentStep built its own expression scope with only { input, steps }, ignoring forEach as-bindings stored on iteration state. Other step types (transform, command, gate) got bindings via executeSingleStep.",
-      "status": "resolved",
-      "category": "issue",
-      "priority": "high",
-      "source": "human",
-      "resolved_by": "commit-299b280"
-    },
-    {
-      "id": "verify-retry-loop",
-      "description": "fix-audit workflow has no retry path for partial verification failures. Gate fails and pipeline stops. Failed findings could be re-clustered with verification failure context and sent back to implementing agents.",
-      "status": "open",
-      "category": "capability",
-      "priority": "medium",
-      "source": "human"
-    },
-    {
-      "id": "verify-human-review-path",
-      "description": "No workflow mechanism for findings with verify_method:inspect that need human review. They fall through as neither passed nor failed. Need pause step or separate output channel for human-review items.",
-      "status": "open",
-      "category": "capability",
-      "priority": "low",
-      "source": "human"
-    },
-    {
-      "id": "route-results-no-validation",
-      "description": "route-results step merges agent output into project blocks (.workflow/*.json) without validating against block schemas. Agents can write malformed entries that only surface when something else reads the block later.",
-      "status": "resolved",
-      "category": "issue",
-      "priority": "high",
-      "source": "human",
-      "details": "Discovered when add-work validated decisions.json and found 6 entries missing required 'phase' field — written by fix-audit implementing agents via route-results. Fix: route-results should validate each block after merging, before writing.",
-      "resolved_by": "block-api-module"
-    },
-    {
-      "id": "gap-to-phase-flow",
-      "description": "No mechanism to go from a gap ID to a phase spec. create-phase takes free-text intent, not a gap reference. Need: load gap by ID → enrich with details/doc path → pass to phase-author.",
-      "status": "resolved",
-      "category": "composition",
-      "priority": "high",
-      "source": "human",
-      "details": "Currently the human manually reads the gap, reads referenced docs, formulates intent, then runs create-phase. The gap entry already has description, details, and doc paths — that's the input the phase-author needs.",
-      "resolved_by": "gap-to-phase-workflow"
-    },
-    {
-      "id": "workflow-event-shapes",
-      "description": "No defined event shapes for workflow lifecycle events. Workflow extension needs to emit structured events (step-complete, step-failed, block-write, schema-validation-failed) that external monitors can observe via pi's event system.",
-      "status": "open",
-      "category": "composition",
-      "priority": "medium",
-      "source": "human",
-      "details": "Contract between workflow extension and pi-behavior-monitors. Events are the boundary — workflow emits, monitors consume. No hard dependency. If monitors aren't installed, events go nowhere. Shapes needed: workflow:step-complete, workflow:step-failed, workflow:block-write, workflow:schema-validation-failed, workflow:output-quality-signal."
-    },
-    {
-      "id": "block-write-validation",
-      "description": "No schema validation on writes to .workflow/ block files. route-results and any step writing to blocks should validate against the block's schema before writing. Deterministic check — AJV, not LLM.",
-      "status": "resolved",
-      "category": "issue",
-      "priority": "high",
-      "source": "human",
-      "details": "Distinct from monitor-based observation. This is the workflow extension's own responsibility at write time. Monitors observe behavioral patterns over time (agent repeatedly producing invalid output). Validation at write time prevents invalid data from being persisted in the first place.",
-      "resolved_by": "block-api-module"
-    },
-    {
-      "id": "monitor-programmatic-mode",
-      "description": "pi-behavior-monitors requires LLM classification (classify.prompt and patterns.path mandatory). No way to define a purely programmatic monitor via .monitor.json. Projects can't create deterministic check monitors without the extension being updated.",
-      "status": "open",
-      "category": "capability",
-      "priority": "medium",
-      "source": "human",
-      "details": "A project wanting a schema validation monitor can't express it in the current spec format. The split: deterministic checks belong in the producing extension (workflow validates its own writes). Behavioral observation (patterns over time, agent quality trends) belongs in monitors with LLM classification. Events from workflow extension are additive for monitors — richer signal without parsing conversation text."
-    },
-    {
-      "id": "project-extension-extraction",
-      "description": "Project infrastructure (.workflow/ blocks, schemas, validation, /add-work, model-config) is tangled inside the workflow extension. Should be a separate lightweight pi extension (pi-project) that workflow consumes as a peer. Currently blocked on use-case modeling to define the boundary.",
-      "status": "resolved",
-      "category": "composition",
-      "priority": "high",
-      "source": "human",
-      "details": "Resolved by monorepo restructure: pi-project owns .project/ directory, block CRUD, schema validation, derived state (projectState), /project status, /project add-work. pi-workflows owns YAML specs, step execution, DAG planning, subprocess dispatch, checkpoint/resume, TUI widget. pi-workflows declares pi-project as peer dependency. Two independent npm packages in packages/ workspace.",
-      "resolved_by": "monorepo-restructure-branch"
-    },
-    {
-      "id": "add-work-ownership",
-      "description": "/workflow add-work is a project command living in the workflow extension. When project becomes its own extension, add-work moves to /project add-work.",
-      "status": "resolved",
-      "category": "cleanup",
-      "priority": "low",
-      "source": "human",
-      "resolved_by": "monorepo-restructure-branch",
-      "details": "Resolved: /project add-work now lives in packages/pi-project/src/index.ts. /workflow no longer registers add-work or status subcommands."
-    },
-    {
-      "id": "route-results-coupling",
-      "description": "route-results workflow step writes directly to project blocks (.project/*.json). With project as a separate extension, this should go through project's write API (block-api) or events, not direct file manipulation.",
-      "status": "open",
-      "category": "composition",
-      "priority": "medium",
-      "source": "human",
-      "details": "Currently route-results is inline Node.js reading and writing block files. pi-project now exposes readBlock/writeBlock/appendToBlock/updateItemInBlock as its public API. Route-results should import from pi-project peer dependency rather than manipulating .project/*.json directly."
-    },
-    {
-      "id": "do-gap-workflow",
-      "description": "Fixed workflow: load gap → investigate + research (parallel) → decompose → implement (forEach) → verify → route. The standard path from 'work on X' to done.",
-      "status": "resolved",
-      "category": "composition",
-      "priority": "high",
-      "source": "human",
-      "details": "Investigate produces structured findings (affected files, current behavior, constraints). Research produces external/cross-project findings (patterns, prior art, heuristics). Both feed into decompose which produces specs with file targets, dependencies, acceptance criteria, parallelization decisions. Implement forEach over specs. Verify runs tests/lint/block validation. Route updates project blocks and gap status.",
-      "resolved_by": "do-gap-workflow-block-api"
-    },
-    {
-      "id": "investigation-findings-schema",
-      "description": "Output schema for investigation findings — affected files, current behavior, constraints, risks, related code. Distinct from a plan. Input to the decompose agent.",
-      "status": "resolved",
-      "category": "primitive",
-      "priority": "high",
-      "source": "human",
-      "resolved_by": "demo/schemas/investigation-findings.schema.json"
-    },
-    {
-      "id": "research-findings-schema",
-      "description": "Output schema for research findings — known solutions, heuristics, patterns, prior art, references. Parallel to investigation findings but looks outward (other projects, docs, pattern libraries) rather than inward (codebase).",
-      "status": "resolved",
-      "category": "primitive",
-      "priority": "high",
-      "source": "human",
-      "resolved_by": "demo/schemas/research-findings.schema.json"
-    },
-    {
-      "id": "decompose-agent",
-      "description": "Agent that takes investigation + research findings and produces specs — units of work with file targets, dependencies, acceptance criteria, parallelization decisions. Consumes heuristic/policy blocks via template composition.",
-      "status": "resolved",
-      "category": "capability",
-      "priority": "high",
-      "source": "human",
-      "details": "Key heuristics to compose in: file overlap analysis (specs touching same files must be sequential), interface dependency detection, test isolation boundaries, context window budgeting. These are known software engineering patterns, not novel invention. Composed into the agent's prompt as project-level policy blocks.",
-      "resolved_by": "demo/agents/decomposer.agent.yaml"
-    },
-    {
-      "id": "parallel-foreach",
-      "description": "forEach is sequential. If decompose produces parallel-safe specs (no file overlap, no mutual dependencies), we need a way to dispatch them in parallel. Either parallel:true flag on forEach, or decompose produces explicit parallel step structure.",
-      "status": "open",
-      "category": "primitive",
-      "priority": "medium",
-      "source": "human"
-    },
-    {
-      "id": "agent-prompt-quality",
-      "description": "Agent system prompts and task templates are loosely written — vague directives like 'read the relevant code' cause unbounded exploration. Prompts need to be best-practices templates: scoped, bounded, with explicit stop conditions, depth matched to task category/priority.",
-      "status": "open",
-      "category": "issue",
-      "priority": "high",
-      "source": "human",
-      "details": "3 of 13 agents rewritten with XML-structured prompts (investigator, researcher, decomposer — commit efe0215). author-agent-prompts skill provides the audit checklist and patterns. 10 agents still need the treatment: audit-fixer, code-explorer, pattern-analyzer, phase-author, plan-decomposer, quality-analyzer, spec-implementer, structure-analyzer, synthesizer, verifier. The skill + output_schema injection infrastructure is in place — this is now a mechanical apply-the-pattern task."
-    },
-    {
-      "id": "fragility-fragility-mmrjmlrs",
-      "description": "The agent identified a schema compliance issue where required fields are missing but chose to document the problem instead of immediately fixing the prompt template to include the required fields.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrk21gi",
-      "description": "The agent encountered a bash command error that was aborted but provided no response or explanation about what failed or how to address it.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrkbtra",
-      "description": "The agent saw warning messages about failed output persistence (EEXIST, ENOTDIR, EACCES errors) in the test output but chose not to investigate or address these filesystem-related failures.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrkila1",
-      "description": "Identified that block validation incorrectly attributes monitor-generated file changes to workflow steps, but chose to investigate further rather than fixing the attribution logic or preventing the false blame.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrkmhd5",
-      "description": "The agent encountered file system errors but provided no response or action to handle them, effectively ignoring the problems entirely.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrku75c",
-      "description": "The agent encountered clear file system errors (file not found and illegal directory operation) but provided no response or action to address these failures, leaving broken state unhandled.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrlavt0",
-      "description": "The agent encountered a file not found error for '/Users/david/Projects/workflowsPiExtension/schemas/execution-results.schema.json' but provided no response or action to address this missing file dependency.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrlem7g",
-      "description": "The agent encountered a clear file access error (ENOENT for execution-results.schema.json) but provided no response or action to address it, leaving the broken state unhandled.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrlip9q",
-      "description": "The agent identified that a completion template error is still happening due to cached/older workflow runs but chose to investigate further instead of immediately fixing the underlying caching or workflow issue.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "fragility-fragility-mmrlkbva",
-      "description": "The code shows a truncated diff with `[TRUNCATED]` in the middle of a ternary operator, leaving broken syntax that would cause compilation errors, but the agent didn't complete or fix the incomplete code.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    },
-    {
-      "id": "retire-demo-directory",
-      "description": "demo/ mixes agent specs, schemas, workflows, and templates in a flat structure. Migrate to canonical project directory layout: agents/ for .agent.yaml, schemas/ for output schemas, workflows/ for .workflow.yaml, templates/ for Nunjucks templates. Update discovery code and all references.",
-      "status": "resolved",
-      "category": "cleanup",
-      "priority": "high",
-      "source": "human",
-      "details": "Resolved by monorepo restructure: demo/agents/ → packages/pi-workflows/agents/, demo/schemas/ → packages/pi-workflows/schemas/, demo/*.workflow.yaml → packages/pi-workflows/workflows/, templates/ → packages/pi-workflows/templates/. Discovery code updated to resolve from package directory.",
-      "resolved_by": "monorepo-restructure-branch"
-    },
-    {
-      "id": "monitor-false-positives",
-      "description": "Fragility monitor generates false-positive gaps from observing workflow subprocess artifacts: truncated dispatch output mistaken for broken code, conversation-level observations mistaken for code issues. Monitor wrote 4 false-positive gaps during tui-step-visibility workflow run.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "agent",
-      "details": "Examples: monitor saw [TRUNCATED] in dispatch stdout display and flagged as broken syntax. Monitor saw conversation about length filter and flagged as unresolved caching issue. Monitor scope is 'main' but still fires during workflow orchestration. Needs either scope refinement or classification prompt improvement to distinguish display artifacts from real code issues."
-    },
-    {
-      "id": "workflow-cost-proportionality",
-      "description": "do-gap workflow spends disproportionate time/cost on simple gaps. delete-md-demo-agents took 20min/$1.22 for file deletions. tui-step-visibility took 14min/$1.74. Agents don't calibrate effort to gap complexity despite prompt instructions.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "human",
-      "details": "Investigator spent 54s/7 turns on a gap answerable with 'ls demo/agents/*.md'. Decomposer produced 2 specs for what is essentially 'rm'. Prompt says 'match depth to priority' but agents don't internalize it. Need concrete examples in prompts: 'cleanup/low: 1-2 tool calls, 1 spec, under 30s per step'."
-    },
-    {
-      "id": "source-based-input-select",
-      "description": "Workflow input schema supports source field for dynamic option loading from JSON files, but source field is not part of JSON Schema standard — it's a custom extension. Needs documentation and possibly schema-level declaration.",
-      "status": "open",
-      "category": "cleanup",
-      "priority": "low",
-      "source": "agent",
-      "details": "source: { file, array, filter, label, value } on input properties. Used by do-gap workflow to present selectable list of open gaps. Works but is undocumented custom extension to input schema handling."
-    },
-    {
-      "id": "fragility-fragility-mmrmv8ax",
-      "description": "The agent encountered Node.js experimental warnings for Type Stripping feature and stale data inconsistencies (test counts 509 vs actual 543, missing agent specs) but chose not to address them, leaving these known issues unfixed.",
-      "status": "open",
-      "category": "issue",
-      "priority": "medium",
-      "source": "monitor"
-    }
-  ]
+	"gaps": [
+		{
+			"id": "dynamic-dispatch-loops",
+			"description": "Dynamic dispatch in loops — a loop that evaluates which step to run each iteration based on current state. Any state machine workflow needs this: legal review routing on document classification, data pipelines branching on quality scores. The general primitive: a loop with a dispatch table of steps guarded by when: conditions evaluated per iteration.",
+			"status": "open",
+			"category": "primitive",
+			"priority": "high",
+			"source": "human"
+		},
+		{
+			"id": "expression-functions",
+			"description": "Expression functions — ${{ }} expressions that call functions, not just access properties. ${{ loadFile(path) }} is the general case. The function system is domain-agnostic — specific functions are user-provided or workflow-provided. Needed for context loaders, file operations, data derivation.",
+			"status": "open",
+			"category": "primitive",
+			"priority": "high",
+			"source": "human"
+		},
+		{
+			"id": "timeout-actions",
+			"description": "Timeout actions — configurable responses beyond kill. Steering messages, idle detection, inspect-and-retry. Any long-running agent in any domain needs this.",
+			"status": "open",
+			"category": "primitive",
+			"priority": "medium",
+			"source": "human"
+		},
+		{
+			"id": "budget-enforcement",
+			"description": "Budget enforcement — cost ceiling with configurable action (pause, fail, warn). addUsage() accumulates but no gate. Any production workflow needs this.",
+			"status": "deferred",
+			"category": "primitive",
+			"priority": "medium",
+			"resolved_by": "budget-defer",
+			"details": "Accumulation via addUsage() works. No ceiling enforcement yet. Needs design for configurable actions.",
+			"source": "human"
+		},
+		{
+			"id": "command-steps",
+			"description": "Command steps — shell command execution with captured stdout as JSON or text.",
+			"status": "resolved",
+			"category": "primitive",
+			"priority": "high",
+			"resolved_by": "spec-27",
+			"source": "human"
+		},
+		{
+			"id": "post-step-artifact-verification",
+			"description": "A verify block on the step spec declares assertions the runtime checks after the step completes. Not a separate step — built into the step definition. Assertion types: file exists, file changed, output field non-empty, output field matches pattern, shell command exits 0. These are deterministic, no LLM.",
+			"status": "open",
+			"category": "primitive",
+			"priority": "medium",
+			"source": "human"
+		},
+		{
+			"id": "requirement-tracking",
+			"description": "Requirement tracking (must-haves) — the step's input declares requirements (via schema or explicit requires field). The verify block checks the output addresses them. Cross-references input requirements against output content using heuristic matching (keyword/token presence in output fields). Domain-agnostic: works for code tasks, compliance points, synthesis criteria.",
+			"status": "open",
+			"category": "primitive",
+			"priority": "medium",
+			"source": "human"
+		},
+		{
+			"id": "graduated-failure",
+			"description": "Graduated failure — not binary pass/fail. The failure cascade: soft timeout → steer the agent → hard timeout → inspect durability (what artifacts exist so far?) → retry with gap analysis injected → skip with blocker placeholder so the pipeline advances. Configurable per step: how many retries, what steering message, whether to skip or halt.",
+			"status": "resolved",
+			"category": "primitive",
+			"priority": "medium",
+			"source": "human",
+			"details": "GSD's recovery model is the reference: inspectExecuteTaskDurability() checks what the agent actually accomplished on disk before deciding action. Pattern: inspect what happened → rollback invalid state → steer with specific error context (agent steps only) → escalate on repeated failure → skip after max attempts. For block validation failures specifically: rollback file to pre-step snapshot, steer agent with schema error + rolled-back state, max N retries before fail-fast. Command steps can't be steered (no conversation), so they fail immediately with diagnostics. Two layers: orchestrator rollback (non-bypassable safety net) + monitor steering (in-flight correction for agent steps).",
+			"resolved_by": "commit-84c2947"
+		},
+		{
+			"id": "blocker-propagation",
+			"description": "Blocker propagation — when a step is skipped after exhausting retries, a blocker placeholder artifact is written. Downstream steps see the placeholder and can decide what to do. The pipeline doesn't silently drop work — it records what failed and why, in a structured artifact visible to subsequent steps and to the user.",
+			"status": "open",
+			"category": "primitive",
+			"priority": "medium",
+			"source": "human"
+		},
+		{
+			"id": "pre-step-validation",
+			"description": "Pre-step validation — gate checks on inputs before dispatch. Already supported as gate steps. The richer form: validate that the previous step's output has the content quality needed for this step to succeed. Not just 'does the file exist' but 'does the plan have a verification section, are scope estimates within thresholds.'",
+			"status": "open",
+			"category": "primitive",
+			"priority": "low",
+			"source": "human"
+		},
+		{
+			"id": "adjacent-expression-misparse",
+			"description": "Expression parser: adjacent ${{ }}${{ }} in a single string — whole-value regex can misparse them. Pre-existing limitation.",
+			"status": "open",
+			"category": "issue",
+			"priority": "low",
+			"source": "human"
+		},
+		{
+			"id": "delete-md-demo-agents",
+			"description": "Delete old .md demo agents — .agent.yaml versions are the source of truth, .md files are dead weight.",
+			"status": "resolved",
+			"category": "cleanup",
+			"priority": "low",
+			"source": "human",
+			"resolved_by": "do-gap-workflow"
+		},
+		{
+			"id": "remove-dead-writeStepOutput",
+			"description": "Remove dead writeStepOutput in state.ts — superseded by output.ts persistStepOutput().",
+			"status": "open",
+			"category": "cleanup",
+			"priority": "low",
+			"source": "human"
+		},
+		{
+			"id": "do-phase-workflow",
+			"description": "No 'do phase' workflow exists. Main agent saying 'do phase 8' requires: load phase spec by number, plan decomposition across all specs, forEach implement, route results to blocks, verify against phase success criteria, update phase status. self-implement.workflow.yaml is close but needs a load-phase command step at the front and phase-status-update at the end.",
+			"status": "open",
+			"category": "capability",
+			"priority": "high",
+			"details": "Blocked by: nested workflow invocation (Phase 6) for per-spec cycles. Workaround: flatten — one planning step reads full phase spec, produces flat plans array, forEach implements all, one verify pass. Add load-phase and update-phase-status command steps to self-implement.workflow.yaml.",
+			"source": "human"
+		},
+		{
+			"id": "nested-workflow-invocation",
+			"description": "forEach step body can only be a single step type (agent, transform, command, gate). Cannot invoke a sub-workflow per iteration. Needed for: per-spec plan-implement-verify cycles within a phase. This is the 'workflow' step type placeholder from Phase 6.",
+			"status": "open",
+			"category": "composition",
+			"priority": "high",
+			"details": "Phase 6 deliverable. Without it, phase execution must flatten all specs into one plan-implement-verify pass rather than modular per-spec cycles.",
+			"source": "human"
+		},
+		{
+			"id": "gap-recording-tool",
+			"description": "No tool or command exists for agents or main context to record gaps during execution. Gap recording is post-hoc and opt-in. Need a record-gap tool available mid-task that writes to gaps.json — as frictionless as git commit.",
+			"status": "resolved",
+			"category": "capability",
+			"priority": "high",
+			"details": "Monitor writes directly to gaps.json with source:'monitor'. No agent steering needed — monitor observes friction in execution trace, appends gap, done. Human/main-context reviews monitor-created gaps and marks actionable or deletes. Query by source: gaps.filter(g => g.source === 'monitor'). Three-layer design: (1) monitor writes gaps directly (non-bypassable), (2) execution-results.issues[] required in schema (agent-reported), (3) route-results routes agent-reported issues with source:'agent'.",
+			"source": "human",
+			"resolved_by": "record-gap-tool"
+		},
+		{
+			"id": "command-step-data-passing",
+			"description": "No safe mechanism to pass structured data to command steps. Shell argument quoting breaks on JSON with quotes. Current workaround: persist to known file path via output.path, next step reads from disk. Need: stdin piping, env var injection, or temp file abstraction in the command step runtime.",
+			"status": "open",
+			"category": "primitive",
+			"priority": "medium",
+			"source": "human",
+			"details": "Discovered when fix-audit workflow failed: ${{ expr | json }} in shell arguments breaks on JSON containing single quotes. All command steps rewritten to read files directly. The output.path → read-from-disk pattern works but is manual and requires coordinating paths between steps."
+		},
+		{
+			"id": "issue-finding-p1-type-any-typebox-was-already-resolved-s",
+			"description": "Finding p1-type-any-typebox was already resolved: src/index.ts correctly imports Type from @sinclair/typebox with no `let Type: any` present.",
+			"status": "resolved",
+			"category": "issue",
+			"priority": "low",
+			"source": "agent",
+			"resolved_by": "false-positive"
+		},
+		{
+			"id": "tui-step-visibility",
+			"description": "No live visibility into subprocess agent tool calls or step output summaries in TUI widget. Running steps show spinner but not what the agent is doing. Completed steps show status but not what they produced.",
+			"status": "resolved",
+			"category": "capability",
+			"priority": "medium",
+			"source": "human",
+			"details": "Design doc: docs/mar-15-workflow-visibility-details-for-tui.md. Three-file change: dispatch.ts (forward onEvent tool calls), step-agent.ts (capture tool activity via onStepActivity callback), tui.ts (StepActivity ring buffer per step, StepOutputSummary after completion), workflow-executor.ts (wire activity callback, parse output summary, refresh widget). New types: StepActivity { tool, preview, timestamp }, StepOutputSummary { tasks[], testCount, note }. Data flow: subprocess JSONL → dispatch onEvent → step-agent onStepActivity → widget state ring buffer (last 5) → TUI renders indented sub-lines under running step. On completion: activity cleared, output parsed for summary, summary rendered as indented sub-lines under completed step.",
+			"resolved_by": "do-gap-workflow"
+		},
+		{
+			"id": "dag-foreach-command-scanning",
+			"description": "DAG dependency extractor did not scan forEach or command fields for ${{ steps.X }} references. Steps using forEach with step references were scheduled in wrong layers.",
+			"status": "resolved",
+			"category": "issue",
+			"priority": "high",
+			"source": "human",
+			"resolved_by": "commit-0373d73"
+		},
+		{
+			"id": "foreach-as-binding-agent-scope",
+			"description": "executeAgentStep built its own expression scope with only { input, steps }, ignoring forEach as-bindings stored on iteration state. Other step types (transform, command, gate) got bindings via executeSingleStep.",
+			"status": "resolved",
+			"category": "issue",
+			"priority": "high",
+			"source": "human",
+			"resolved_by": "commit-299b280"
+		},
+		{
+			"id": "verify-retry-loop",
+			"description": "fix-audit workflow has no retry path for partial verification failures. Gate fails and pipeline stops. Failed findings could be re-clustered with verification failure context and sent back to implementing agents.",
+			"status": "open",
+			"category": "capability",
+			"priority": "medium",
+			"source": "human"
+		},
+		{
+			"id": "verify-human-review-path",
+			"description": "No workflow mechanism for findings with verify_method:inspect that need human review. They fall through as neither passed nor failed. Need pause step or separate output channel for human-review items.",
+			"status": "open",
+			"category": "capability",
+			"priority": "low",
+			"source": "human"
+		},
+		{
+			"id": "route-results-no-validation",
+			"description": "route-results step merges agent output into project blocks (.workflow/*.json) without validating against block schemas. Agents can write malformed entries that only surface when something else reads the block later.",
+			"status": "resolved",
+			"category": "issue",
+			"priority": "high",
+			"source": "human",
+			"details": "Discovered when add-work validated decisions.json and found 6 entries missing required 'phase' field — written by fix-audit implementing agents via route-results. Fix: route-results should validate each block after merging, before writing.",
+			"resolved_by": "block-api-module"
+		},
+		{
+			"id": "gap-to-phase-flow",
+			"description": "No mechanism to go from a gap ID to a phase spec. create-phase takes free-text intent, not a gap reference. Need: load gap by ID → enrich with details/doc path → pass to phase-author.",
+			"status": "resolved",
+			"category": "composition",
+			"priority": "high",
+			"source": "human",
+			"details": "Currently the human manually reads the gap, reads referenced docs, formulates intent, then runs create-phase. The gap entry already has description, details, and doc paths — that's the input the phase-author needs.",
+			"resolved_by": "gap-to-phase-workflow"
+		},
+		{
+			"id": "workflow-event-shapes",
+			"description": "No defined event shapes for workflow lifecycle events. Workflow extension needs to emit structured events (step-complete, step-failed, block-write, schema-validation-failed) that external monitors can observe via pi's event system.",
+			"status": "open",
+			"category": "composition",
+			"priority": "medium",
+			"source": "human",
+			"details": "Contract between workflow extension and pi-behavior-monitors. Events are the boundary — workflow emits, monitors consume. No hard dependency. If monitors aren't installed, events go nowhere. Shapes needed: workflow:step-complete, workflow:step-failed, workflow:block-write, workflow:schema-validation-failed, workflow:output-quality-signal."
+		},
+		{
+			"id": "block-write-validation",
+			"description": "No schema validation on writes to .workflow/ block files. route-results and any step writing to blocks should validate against the block's schema before writing. Deterministic check — AJV, not LLM.",
+			"status": "resolved",
+			"category": "issue",
+			"priority": "high",
+			"source": "human",
+			"details": "Distinct from monitor-based observation. This is the workflow extension's own responsibility at write time. Monitors observe behavioral patterns over time (agent repeatedly producing invalid output). Validation at write time prevents invalid data from being persisted in the first place.",
+			"resolved_by": "block-api-module"
+		},
+		{
+			"id": "monitor-programmatic-mode",
+			"description": "pi-behavior-monitors requires LLM classification (classify.prompt and patterns.path mandatory). No way to define a purely programmatic monitor via .monitor.json. Projects can't create deterministic check monitors without the extension being updated.",
+			"status": "open",
+			"category": "capability",
+			"priority": "medium",
+			"source": "human",
+			"details": "A project wanting a schema validation monitor can't express it in the current spec format. The split: deterministic checks belong in the producing extension (workflow validates its own writes). Behavioral observation (patterns over time, agent quality trends) belongs in monitors with LLM classification. Events from workflow extension are additive for monitors — richer signal without parsing conversation text."
+		},
+		{
+			"id": "project-extension-extraction",
+			"description": "Project infrastructure (.workflow/ blocks, schemas, validation, /add-work, model-config) is tangled inside the workflow extension. Should be a separate lightweight pi extension (pi-project) that workflow consumes as a peer. Currently blocked on use-case modeling to define the boundary.",
+			"status": "resolved",
+			"category": "composition",
+			"priority": "high",
+			"source": "human",
+			"details": "Resolved by monorepo restructure: pi-project owns .project/ directory, block CRUD, schema validation, derived state (projectState), /project status, /project add-work. pi-workflows owns YAML specs, step execution, DAG planning, subprocess dispatch, checkpoint/resume, TUI widget. pi-workflows declares pi-project as peer dependency. Two independent npm packages in packages/ workspace.",
+			"resolved_by": "monorepo-restructure-branch"
+		},
+		{
+			"id": "add-work-ownership",
+			"description": "/workflow add-work is a project command living in the workflow extension. When project becomes its own extension, add-work moves to /project add-work.",
+			"status": "resolved",
+			"category": "cleanup",
+			"priority": "low",
+			"source": "human",
+			"resolved_by": "monorepo-restructure-branch",
+			"details": "Resolved: /project add-work now lives in packages/pi-project/src/index.ts. /workflow no longer registers add-work or status subcommands."
+		},
+		{
+			"id": "route-results-coupling",
+			"description": "route-results workflow step writes directly to project blocks (.project/*.json). With project as a separate extension, this should go through project's write API (block-api) or events, not direct file manipulation.",
+			"status": "open",
+			"category": "composition",
+			"priority": "medium",
+			"source": "human",
+			"details": "Currently route-results is inline Node.js reading and writing block files. pi-project now exposes readBlock/writeBlock/appendToBlock/updateItemInBlock as its public API. Route-results should import from pi-project peer dependency rather than manipulating .project/*.json directly."
+		},
+		{
+			"id": "do-gap-workflow",
+			"description": "Fixed workflow: load gap → investigate + research (parallel) → decompose → implement (forEach) → verify → route. The standard path from 'work on X' to done.",
+			"status": "resolved",
+			"category": "composition",
+			"priority": "high",
+			"source": "human",
+			"details": "Investigate produces structured findings (affected files, current behavior, constraints). Research produces external/cross-project findings (patterns, prior art, heuristics). Both feed into decompose which produces specs with file targets, dependencies, acceptance criteria, parallelization decisions. Implement forEach over specs. Verify runs tests/lint/block validation. Route updates project blocks and gap status.",
+			"resolved_by": "do-gap-workflow-block-api"
+		},
+		{
+			"id": "investigation-findings-schema",
+			"description": "Output schema for investigation findings — affected files, current behavior, constraints, risks, related code. Distinct from a plan. Input to the decompose agent.",
+			"status": "resolved",
+			"category": "primitive",
+			"priority": "high",
+			"source": "human",
+			"resolved_by": "demo/schemas/investigation-findings.schema.json"
+		},
+		{
+			"id": "research-findings-schema",
+			"description": "Output schema for research findings — known solutions, heuristics, patterns, prior art, references. Parallel to investigation findings but looks outward (other projects, docs, pattern libraries) rather than inward (codebase).",
+			"status": "resolved",
+			"category": "primitive",
+			"priority": "high",
+			"source": "human",
+			"resolved_by": "demo/schemas/research-findings.schema.json"
+		},
+		{
+			"id": "decompose-agent",
+			"description": "Agent that takes investigation + research findings and produces specs — units of work with file targets, dependencies, acceptance criteria, parallelization decisions. Consumes heuristic/policy blocks via template composition.",
+			"status": "resolved",
+			"category": "capability",
+			"priority": "high",
+			"source": "human",
+			"details": "Key heuristics to compose in: file overlap analysis (specs touching same files must be sequential), interface dependency detection, test isolation boundaries, context window budgeting. These are known software engineering patterns, not novel invention. Composed into the agent's prompt as project-level policy blocks.",
+			"resolved_by": "demo/agents/decomposer.agent.yaml"
+		},
+		{
+			"id": "parallel-foreach",
+			"description": "forEach is sequential. If decompose produces parallel-safe specs (no file overlap, no mutual dependencies), we need a way to dispatch them in parallel. Either parallel:true flag on forEach, or decompose produces explicit parallel step structure.",
+			"status": "open",
+			"category": "primitive",
+			"priority": "medium",
+			"source": "human"
+		},
+		{
+			"id": "agent-prompt-quality",
+			"description": "Agent system prompts and task templates are loosely written — vague directives like 'read the relevant code' cause unbounded exploration. Prompts need to be best-practices templates: scoped, bounded, with explicit stop conditions, depth matched to task category/priority.",
+			"status": "open",
+			"category": "issue",
+			"priority": "high",
+			"source": "human",
+			"details": "3 of 13 agents rewritten with XML-structured prompts (investigator, researcher, decomposer — commit efe0215). author-agent-prompts skill provides the audit checklist and patterns. 10 agents still need the treatment: audit-fixer, code-explorer, pattern-analyzer, phase-author, plan-decomposer, quality-analyzer, spec-implementer, structure-analyzer, synthesizer, verifier. The skill + output_schema injection infrastructure is in place — this is now a mechanical apply-the-pattern task."
+		},
+		{
+			"id": "fragility-fragility-mmrjmlrs",
+			"description": "The agent identified a schema compliance issue where required fields are missing but chose to document the problem instead of immediately fixing the prompt template to include the required fields.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrk21gi",
+			"description": "The agent encountered a bash command error that was aborted but provided no response or explanation about what failed or how to address it.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrkbtra",
+			"description": "The agent saw warning messages about failed output persistence (EEXIST, ENOTDIR, EACCES errors) in the test output but chose not to investigate or address these filesystem-related failures.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrkila1",
+			"description": "Identified that block validation incorrectly attributes monitor-generated file changes to workflow steps, but chose to investigate further rather than fixing the attribution logic or preventing the false blame.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrkmhd5",
+			"description": "The agent encountered file system errors but provided no response or action to handle them, effectively ignoring the problems entirely.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrku75c",
+			"description": "The agent encountered clear file system errors (file not found and illegal directory operation) but provided no response or action to address these failures, leaving broken state unhandled.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrlavt0",
+			"description": "The agent encountered a file not found error for '/Users/david/Projects/workflowsPiExtension/schemas/execution-results.schema.json' but provided no response or action to address this missing file dependency.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrlem7g",
+			"description": "The agent encountered a clear file access error (ENOENT for execution-results.schema.json) but provided no response or action to address it, leaving the broken state unhandled.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrlip9q",
+			"description": "The agent identified that a completion template error is still happening due to cached/older workflow runs but chose to investigate further instead of immediately fixing the underlying caching or workflow issue.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "fragility-fragility-mmrlkbva",
+			"description": "The code shows a truncated diff with `[TRUNCATED]` in the middle of a ternary operator, leaving broken syntax that would cause compilation errors, but the agent didn't complete or fix the incomplete code.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		},
+		{
+			"id": "retire-demo-directory",
+			"description": "demo/ mixes agent specs, schemas, workflows, and templates in a flat structure. Migrate to canonical project directory layout: agents/ for .agent.yaml, schemas/ for output schemas, workflows/ for .workflow.yaml, templates/ for Nunjucks templates. Update discovery code and all references.",
+			"status": "resolved",
+			"category": "cleanup",
+			"priority": "high",
+			"source": "human",
+			"details": "Resolved by monorepo restructure: demo/agents/ → packages/pi-workflows/agents/, demo/schemas/ → packages/pi-workflows/schemas/, demo/*.workflow.yaml → packages/pi-workflows/workflows/, templates/ → packages/pi-workflows/templates/. Discovery code updated to resolve from package directory.",
+			"resolved_by": "monorepo-restructure-branch"
+		},
+		{
+			"id": "monitor-false-positives",
+			"description": "Fragility monitor generates false-positive gaps from observing workflow subprocess artifacts: truncated dispatch output mistaken for broken code, conversation-level observations mistaken for code issues. Monitor wrote 4 false-positive gaps during tui-step-visibility workflow run.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "agent",
+			"details": "Examples: monitor saw [TRUNCATED] in dispatch stdout display and flagged as broken syntax. Monitor saw conversation about length filter and flagged as unresolved caching issue. Monitor scope is 'main' but still fires during workflow orchestration. Needs either scope refinement or classification prompt improvement to distinguish display artifacts from real code issues."
+		},
+		{
+			"id": "workflow-cost-proportionality",
+			"description": "do-gap workflow spends disproportionate time/cost on simple gaps. delete-md-demo-agents took 20min/$1.22 for file deletions. tui-step-visibility took 14min/$1.74. Agents don't calibrate effort to gap complexity despite prompt instructions.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "human",
+			"details": "Investigator spent 54s/7 turns on a gap answerable with 'ls demo/agents/*.md'. Decomposer produced 2 specs for what is essentially 'rm'. Prompt says 'match depth to priority' but agents don't internalize it. Need concrete examples in prompts: 'cleanup/low: 1-2 tool calls, 1 spec, under 30s per step'."
+		},
+		{
+			"id": "source-based-input-select",
+			"description": "Workflow input schema supports source field for dynamic option loading from JSON files, but source field is not part of JSON Schema standard — it's a custom extension. Needs documentation and possibly schema-level declaration.",
+			"status": "open",
+			"category": "cleanup",
+			"priority": "low",
+			"source": "agent",
+			"details": "source: { file, array, filter, label, value } on input properties. Used by do-gap workflow to present selectable list of open gaps. Works but is undocumented custom extension to input schema handling."
+		},
+		{
+			"id": "fragility-fragility-mmrmv8ax",
+			"description": "The agent encountered Node.js experimental warnings for Type Stripping feature and stale data inconsistencies (test counts 509 vs actual 543, missing agent specs) but chose not to address them, leaving these known issues unfixed.",
+			"status": "open",
+			"category": "issue",
+			"priority": "medium",
+			"source": "monitor"
+		}
+	]
 }

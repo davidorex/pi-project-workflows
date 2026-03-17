@@ -1,73 +1,73 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Inventory",
-  "type": "object",
-  "required": ["test_count", "step_types", "agent_specs", "schemas", "demo_workflows"],
-  "properties": {
-    "test_count": { "type": "integer" },
-    "step_types": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["name", "module"],
-        "properties": {
-          "name": { "type": "string" },
-          "module": { "type": "string" },
-          "description": { "type": "string" },
-          "phase_added": { "type": "integer" }
-        }
-      }
-    },
-    "agent_specs": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": { "type": "string" },
-          "role": { "type": "string" },
-          "description": { "type": "string" }
-        }
-      }
-    },
-    "schemas": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["name", "category"],
-        "properties": {
-          "name": { "type": "string" },
-          "file": { "type": "string" },
-          "category": { "type": "string", "enum": ["step-output", "project", "workflow"] },
-          "description": { "type": "string" }
-        }
-      }
-    },
-    "demo_workflows": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["name", "file"],
-        "properties": {
-          "name": { "type": "string" },
-          "file": { "type": "string" },
-          "description": { "type": "string" },
-          "proves": { "type": "string" }
-        }
-      }
-    },
-    "phases_completed": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["number", "name", "status"],
-        "properties": {
-          "number": { "type": "integer" },
-          "name": { "type": "string" },
-          "status": { "type": "string", "enum": ["planned", "in-progress", "completed"] },
-          "specs": { "type": "string" }
-        }
-      }
-    }
-  }
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Inventory",
+	"type": "object",
+	"required": ["test_count", "step_types", "agent_specs", "schemas", "demo_workflows"],
+	"properties": {
+		"test_count": { "type": "integer" },
+		"step_types": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name", "module"],
+				"properties": {
+					"name": { "type": "string" },
+					"module": { "type": "string" },
+					"description": { "type": "string" },
+					"phase_added": { "type": "integer" }
+				}
+			}
+		},
+		"agent_specs": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name"],
+				"properties": {
+					"name": { "type": "string" },
+					"role": { "type": "string" },
+					"description": { "type": "string" }
+				}
+			}
+		},
+		"schemas": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name", "category"],
+				"properties": {
+					"name": { "type": "string" },
+					"file": { "type": "string" },
+					"category": { "type": "string", "enum": ["step-output", "project", "workflow"] },
+					"description": { "type": "string" }
+				}
+			}
+		},
+		"demo_workflows": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name", "file"],
+				"properties": {
+					"name": { "type": "string" },
+					"file": { "type": "string" },
+					"description": { "type": "string" },
+					"proves": { "type": "string" }
+				}
+			}
+		},
+		"phases_completed": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["number", "name", "status"],
+				"properties": {
+					"number": { "type": "integer" },
+					"name": { "type": "string" },
+					"status": { "type": "string", "enum": ["planned", "in-progress", "completed"] },
+					"specs": { "type": "string" }
+				}
+			}
+		}
+	}
 }

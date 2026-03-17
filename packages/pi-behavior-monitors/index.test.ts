@@ -1,11 +1,6 @@
-import { describe, it, expect } from "vitest";
-import {
-	parseMonitorsArgs,
-	parseVerdict,
-	parseModelSpec,
-	generateFindingId,
-} from "./index.js";
-import type { MonitorsCommand, ClassifyResult } from "./index.js";
+import { describe, expect, it } from "vitest";
+import type { ClassifyResult, MonitorsCommand } from "./index.js";
+import { generateFindingId, parseModelSpec, parseMonitorsArgs, parseVerdict } from "./index.js";
 
 // =============================================================================
 // parseMonitorsArgs

@@ -19,10 +19,14 @@
 	"pi": {
 		"extensions": [
 			"./dist/index.js"
+		],
+		"skills": [
+			"./skills"
 		]
 	},
 	"files": [
 		"dist/",
+		"skills/",
 		"agents/",
 		"schemas/",
 		"workflows/",

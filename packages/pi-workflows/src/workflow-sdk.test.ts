@@ -9,6 +9,7 @@ import {
 	availableSchemas,
 	availableTemplates,
 	declaredAgentRefs,
+	declaredMonitorRefs,
 	declaredSchemaRefs,
 	declaredSteps,
 	expressionRoots,
@@ -232,6 +233,41 @@ describe("introspection", () => {
 		assert.ok(refs.includes("outer-agent"));
 		assert.ok(refs.includes("inner-agent"));
 		assert.ok(refs.includes("par-agent"));
+	});
+
+	it("declaredMonitorRefs extracts monitor names", () => {
+		const spec = makeSpec({
+			impl: { agent: "builder" },
+			check: { monitor: "work-quality" },
+			verify: { monitor: "fragility" },
+		});
+		const refs = declaredMonitorRefs(spec);
+		assert.ok(refs.includes("work-quality"));
+		assert.ok(refs.includes("fragility"));
+		assert.strictEqual(refs.length, 2);
+	});
+
+	it("declaredMonitorRefs finds monitors in nested loop/parallel", () => {
+		const spec = makeSpec({
+			outer: {
+				agent: "a",
+				loop: {
+					maxAttempts: 2,
+					steps: {
+						inner: { monitor: "nested-check" },
+					},
+				},
+			},
+			par: {
+				parallel: {
+					a: { monitor: "par-check" },
+					b: { agent: "b" },
+				},
+			},
+		});
+		const refs = declaredMonitorRefs(spec);
+		assert.ok(refs.includes("nested-check"));
+		assert.ok(refs.includes("par-check"));
 	});
 
 	it("declaredSchemaRefs extracts output.schema and artifact.schema paths", () => {

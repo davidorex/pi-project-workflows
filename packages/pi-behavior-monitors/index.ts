@@ -7,7 +7,9 @@
  * classify (LLM side-channel), patterns (JSON library), actions (steer + write).
  * Patterns and instructions are JSON arrays conforming to schemas.
  */
+import { execSync } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Api, AssistantMessage, Model, TextContent, ToolCall } from "@mariozechner/pi-ai";
@@ -25,6 +27,7 @@ import type {
 import { getAgentDir } from "@mariozechner/pi-coding-agent";
 import { Box, Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
+import nunjucks from "nunjucks";
 
 const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
 const EXAMPLES_DIR = path.join(EXTENSION_DIR, "examples");
@@ -65,6 +68,7 @@ export interface MonitorSpec {
 		context: string[];
 		excludes: string[];
 		prompt: string;
+		promptTemplate?: string;
 	};
 	patterns: {
 		path: string;
@@ -215,8 +219,8 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 	}
 
 	const classify = spec.classify as MonitorSpec["classify"] | undefined;
-	if (!classify?.prompt) {
-		console.error(`[${name}] Missing classify.prompt`);
+	if (!classify?.prompt && !classify?.promptTemplate) {
+		console.error(`[${name}] Missing classify.prompt or classify.promptTemplate`);
 		return null;
 	}
 
@@ -240,7 +244,8 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 			model: classify.model ?? "claude-sonnet-4-20250514",
 			context: Array.isArray(classify.context) ? classify.context : ["tool_results", "assistant_text"],
 			excludes: Array.isArray(classify.excludes) ? classify.excludes : [],
-			prompt: classify.prompt,
+			prompt: classify.prompt ?? "",
+			promptTemplate: typeof classify.promptTemplate === "string" ? classify.promptTemplate : undefined,
 		},
 		patterns: {
 			path: patternsSpec.path,
@@ -400,12 +405,50 @@ function collectCustomMessages(branch: SessionEntry[]): string {
 	return msgs.join("\n");
 }
 
+function collectProjectVision(_branch: SessionEntry[]): string {
+	try {
+		const projectPath = path.join(process.cwd(), ".project", "project.json");
+		const raw = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
+		const parts: string[] = [];
+		if (raw.vision) parts.push(`Vision: ${raw.vision}`);
+		if (raw.core_value) parts.push(`Core value: ${raw.core_value}`);
+		if (raw.name) parts.push(`Project: ${raw.name}`);
+		return parts.join("\n");
+	} catch {
+		return "";
+	}
+}
+
+function collectProjectConventions(_branch: SessionEntry[]): string {
+	try {
+		const confPath = path.join(process.cwd(), ".project", "conformance-reference.json");
+		const raw = JSON.parse(fs.readFileSync(confPath, "utf-8"));
+		if (Array.isArray(raw.items)) {
+			return raw.items.map((item: Record<string, unknown>) => `- ${item.name ?? item.id}`).join("\n");
+		}
+		return "";
+	} catch {
+		return "";
+	}
+}
+
+function collectGitStatus(_branch: SessionEntry[]): string {
+	try {
+		return execSync("git status --porcelain", { cwd: process.cwd(), encoding: "utf-8", timeout: 5000 }).trim();
+	} catch {
+		return "";
+	}
+}
+
 const collectors: Record<string, (branch: SessionEntry[]) => string> = {
 	user_text: collectUserText,
 	assistant_text: collectAssistantText,
 	tool_results: collectToolResults,
 	tool_calls: collectToolCalls,
 	custom_messages: collectCustomMessages,
+	project_vision: collectProjectVision,
+	project_conventions: collectProjectConventions,
+	git_status: collectGitStatus,
 };
 
 function hasToolResults(branch: SessionEntry[]): boolean {
@@ -672,7 +715,31 @@ function formatInstructionsForPrompt(instructions: MonitorInstruction[]): string
 	return `\nOperating instructions from the user (follow these strictly):\n${lines}\n`;
 }
 
-function renderTemplate(monitor: Monitor, branch: SessionEntry[]): string | null {
+/**
+ * Create a Nunjucks environment for monitor prompt templates.
+ * Three-tier search: project monitors dir > user monitors dir > package examples.
+ */
+function createMonitorTemplateEnv(): nunjucks.Environment {
+	const projectDir = resolveProjectMonitorsDir();
+	const userDir = path.join(os.homedir(), ".pi", "agent", "monitors");
+
+	const searchPaths: string[] = [];
+	if (isDir(projectDir)) searchPaths.push(projectDir);
+	if (isDir(userDir)) searchPaths.push(userDir);
+	if (isDir(EXAMPLES_DIR)) searchPaths.push(EXAMPLES_DIR);
+
+	const loader = searchPaths.length > 0 ? new nunjucks.FileSystemLoader(searchPaths) : undefined;
+
+	return new nunjucks.Environment(loader, {
+		autoescape: false,
+		throwOnUndefined: false,
+	});
+}
+
+/** Module-level template environment, initialized in extension entry point. */
+let monitorTemplateEnv: nunjucks.Environment | undefined;
+
+function renderClassifyPrompt(monitor: Monitor, branch: SessionEntry[]): string | null {
 	const patterns = loadPatterns(monitor);
 	if (patterns.length === 0) return null;
 
@@ -682,13 +749,32 @@ function renderTemplate(monitor: Monitor, branch: SessionEntry[]): string | null
 	for (const key of monitor.classify.context) {
 		const fn = collectors[key];
 		if (fn) collected[key] = fn(branch);
+		else collected[key] = ""; // unknown collectors produce empty string (graceful degradation)
 	}
 
+	const context: Record<string, unknown> = {
+		patterns: formatPatternsForPrompt(patterns),
+		instructions: formatInstructionsForPrompt(instructions),
+		iteration: monitor.whileCount,
+		...collected,
+	};
+
+	if (monitor.classify.promptTemplate && monitorTemplateEnv) {
+		// Nunjucks template file
+		try {
+			return monitorTemplateEnv.render(monitor.classify.promptTemplate, context);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.error(`[${monitor.name}] Template render failed (${monitor.classify.promptTemplate}): ${msg}`);
+			// Fall through to inline prompt if available
+			if (!monitor.classify.prompt) return null;
+		}
+	}
+
+	// Fallback: inline string with {placeholder} replacement
+	if (!monitor.classify.prompt) return null;
 	return monitor.classify.prompt.replace(/\{(\w+)\}/g, (match, key: string) => {
-		if (key === "patterns") return formatPatternsForPrompt(patterns);
-		if (key === "instructions") return formatInstructionsForPrompt(instructions);
-		if (key === "iteration") return String(monitor.whileCount);
-		return collected[key] ?? match;
+		return String(context[key] ?? match);
 	});
 }
 
@@ -878,7 +964,7 @@ async function activate(
 		return;
 	}
 
-	const prompt = renderTemplate(monitor, branch);
+	const prompt = renderClassifyPrompt(monitor, branch);
 	if (!prompt) return;
 
 	// create an abort controller so classification can be cancelled if the user aborts
@@ -999,6 +1085,9 @@ export default function (pi: ExtensionAPI) {
 
 	const monitors = discoverMonitors();
 	if (monitors.length === 0) return;
+
+	// Initialize Nunjucks template environment for monitor prompt templates
+	monitorTemplateEnv = createMonitorTemplateEnv();
 
 	let statusCtx: ExtensionContext | undefined;
 

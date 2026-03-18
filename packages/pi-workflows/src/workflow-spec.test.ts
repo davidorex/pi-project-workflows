@@ -542,6 +542,67 @@ steps:
 			(err: any) => err.message.includes("exactly one"),
 		);
 	});
+
+	it("parses monitor step", () => {
+		const yaml = `
+name: test
+steps:
+  check:
+    monitor: work-quality
+    input:
+      tool_calls: \${{ steps.implement.textOutput }}
+`;
+		const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+		assert.strictEqual(spec.steps.check.monitor, "work-quality");
+		assert.ok(spec.steps.check.input);
+		assert.strictEqual(
+			(spec.steps.check.input as Record<string, unknown>).tool_calls,
+			"${{ steps.implement.textOutput }}",
+		);
+	});
+
+	it("parses monitor step with output", () => {
+		const yaml = `
+name: test
+steps:
+  check:
+    monitor: fragility
+    input:
+      tool_calls: some text
+    output:
+      format: json
+`;
+		const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+		assert.strictEqual(spec.steps.check.monitor, "fragility");
+		assert.strictEqual(spec.steps.check.output?.format, "json");
+	});
+
+	it("rejects monitor with non-string value", () => {
+		const yaml = `
+name: test
+steps:
+  bad:
+    monitor: 42
+`;
+		assert.throws(
+			() => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+			(err: any) => err.message.includes("monitor must be a string"),
+		);
+	});
+
+	it("rejects monitor + agent together", () => {
+		const yaml = `
+name: test
+steps:
+  bad:
+    monitor: quality
+    agent: my-agent
+`;
+		assert.throws(
+			() => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+			(err: any) => err.message.includes("exactly one"),
+		);
+	});
 });
 
 describe("self-implement workflow spec", () => {

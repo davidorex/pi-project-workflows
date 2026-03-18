@@ -34,6 +34,7 @@ import { executeCommand } from "./step-command.js";
 import { executeForEach } from "./step-foreach.js";
 import { executeGate } from "./step-gate.js";
 import { executeLoop } from "./step-loop.js";
+import { executeMonitor } from "./step-monitor.js";
 import { executeParallelLayer, executeParallelStep } from "./step-parallel.js";
 import { executePause } from "./step-pause.js";
 import { persistStep, resolveSchemaPath, SIGKILL_GRACE_MS, WIDGET_ID, zeroUsage } from "./step-shared.js";
@@ -139,7 +140,7 @@ interface StepExecOptions {
  * Command, gate, and transform are deterministic and not retryable.
  */
 function isRetryableStepType(stepSpec: StepSpec): boolean {
-	if (stepSpec.command || stepSpec.gate || stepSpec.transform) return false;
+	if (stepSpec.command || stepSpec.gate || stepSpec.transform || stepSpec.monitor) return false;
 	return true;
 }
 
@@ -493,6 +494,28 @@ async function executeStepByType(
 		);
 		persistStep(state, stepName, commandResult, runDir, widgetState, ctx);
 		if (commandResult.status === "failed") {
+			state.status = "failed";
+			return false;
+		}
+		return true;
+	}
+
+	// ── Monitor step ──
+	if (stepSpec.monitor) {
+		const resolvedInput =
+			stepSpec.input ? (resolveExpressions(stepSpec.input, scope) as Record<string, unknown>) : {};
+		const resolvedMonitorOutputPath = stepSpec.output?.path
+			? String(resolveExpressions(stepSpec.output.path, scope))
+			: undefined;
+		const monitorResult = await executeMonitor(stepSpec.monitor, stepName, resolvedInput, {
+			cwd: ctx.cwd,
+			ctx,
+			signal,
+			runDir,
+			outputPath: resolvedMonitorOutputPath,
+		});
+		persistStep(state, stepName, monitorResult, runDir, widgetState, ctx);
+		if (monitorResult.status === "failed") {
 			state.status = "failed";
 			return false;
 		}

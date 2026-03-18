@@ -43,7 +43,7 @@
 		},
 		"classify": {
 			"type": "object",
-			"required": ["model", "context", "prompt"],
+			"required": ["model", "context"],
 			"properties": {
 				"model": {
 					"type": "string",
@@ -52,18 +52,22 @@
 				"context": {
 					"type": "array",
 					"items": {
-						"type": "string",
-						"enum": ["tool_results", "assistant_text", "user_text", "tool_calls", "custom_messages"]
-					}
+						"type": "string"
+					},
+					"description": "Context collector names. Built-in: tool_results, assistant_text, user_text, tool_calls, custom_messages, project_vision, project_conventions, git_status. Unknown collectors produce empty string."
 				},
 				"excludes": {
 					"type": "array",
 					"items": { "type": "string" },
 					"description": "Skip activation if these monitors already steered this turn"
 				},
+				"promptTemplate": {
+					"type": "string",
+					"description": "Path to .md Nunjucks template file for classification prompt. Searched in .pi/monitors/, ~/.pi/agent/monitors/, then package examples/. Takes precedence over inline prompt."
+				},
 				"prompt": {
 					"type": "string",
-					"description": "Classification prompt template with {tool_results}, {assistant_text}, {patterns}, {instructions} placeholders"
+					"description": "Inline classification prompt with {placeholder} substitution. Used when promptTemplate is absent."
 				}
 			}
 		},

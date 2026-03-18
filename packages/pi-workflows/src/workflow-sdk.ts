@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
+import { availableMonitors } from "./step-monitor.js";
 import { resolveSchemaPath } from "./step-shared.js";
 import type { AgentSpec, StepSpec, WorkflowSpec } from "./types.js";
 import { discoverWorkflows } from "./workflow-discovery.js";
@@ -235,6 +236,20 @@ function collectAgentRefs(steps: Record<string, StepSpec>, agents: string[]): vo
 	}
 }
 
+export function declaredMonitorRefs(spec: WorkflowSpec): string[] {
+	const monitors: string[] = [];
+	collectMonitorRefs(spec.steps, monitors);
+	return [...new Set(monitors)];
+}
+
+function collectMonitorRefs(steps: Record<string, StepSpec>, monitors: string[]): void {
+	for (const step of Object.values(steps)) {
+		if (step.monitor) monitors.push(step.monitor);
+		if (step.loop?.steps) collectMonitorRefs(step.loop.steps, monitors);
+		if (step.parallel) collectMonitorRefs(step.parallel, monitors);
+	}
+}
+
 export function declaredSchemaRefs(spec: WorkflowSpec): string[] {
 	const schemas: string[] = [];
 	collectSchemaRefs(spec.steps, schemas);
@@ -299,6 +314,24 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 						severity: "error",
 						message: `Agent '${agentName}' failed to load: ${err instanceof Error ? err.message : String(err)}`,
 						field: "agents",
+					});
+				}
+			}
+		}
+	}
+
+	// 1b. Monitor resolution — do all referenced monitors exist?
+	const monitorRefs = declaredMonitorRefs(spec);
+	if (monitorRefs.length > 0) {
+		const known = new Set(availableMonitors(cwd));
+		for (const monitorName of monitorRefs) {
+			if (!known.has(monitorName)) {
+				const fields = findMonitorFields(spec.steps, monitorName, "steps");
+				for (const field of fields) {
+					issues.push({
+						severity: "warning",
+						message: `Monitor '${monitorName}' not found in .pi/monitors/ or built-in examples`,
+						field,
 					});
 				}
 			}
@@ -377,6 +410,18 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		valid: issues.filter((i) => i.severity === "error").length === 0,
 		issues,
 	};
+}
+
+/** Find field paths where a specific monitor name is referenced. */
+function findMonitorFields(steps: Record<string, StepSpec>, monitorName: string, prefix: string): string[] {
+	const fields: string[] = [];
+	for (const [name, step] of Object.entries(steps)) {
+		if (step.monitor === monitorName) fields.push(`${prefix}.${name}.monitor`);
+		if (step.loop?.steps)
+			fields.push(...findMonitorFields(step.loop.steps, monitorName, `${prefix}.${name}.loop`));
+		if (step.parallel) fields.push(...findMonitorFields(step.parallel, monitorName, `${prefix}.${name}.parallel`));
+	}
+	return fields;
 }
 
 /** Find field paths where a specific agent name is referenced. */

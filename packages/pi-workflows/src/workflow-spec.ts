@@ -29,6 +29,7 @@ export const STEP_TYPES: StepTypeDescriptor[] = [
 	{ name: "parallel", field: "parallel", retryable: true, supportsInput: false, supportsOutput: false },
 	{ name: "pause", field: "pause", retryable: false, supportsInput: false, supportsOutput: false },
 	{ name: "command", field: "command", retryable: false, supportsInput: true, supportsOutput: true },
+	{ name: "monitor", field: "monitor", retryable: false, supportsInput: true, supportsOutput: true },
 ];
 
 /** Set of valid step type field names — derived from STEP_TYPES. */
@@ -238,6 +239,7 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 	const hasParallel = presentTypes[0].field === "parallel";
 	const hasPause = presentTypes[0].field === "pause";
 	const hasCommand = presentTypes[0].field === "command";
+	const hasMonitor = presentTypes[0].field === "monitor";
 
 	const step: StepSpec = {};
 
@@ -332,6 +334,43 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 				throw new WorkflowSpecError(filePath, `step '${stepName}' input must be an object`);
 			}
 			step.input = rawStep.input as Record<string, unknown>;
+		}
+
+		return step;
+	}
+
+	// Monitor step
+	if (hasMonitor) {
+		if (typeof rawStep.monitor !== "string") {
+			throw new WorkflowSpecError(filePath, `step '${stepName}' monitor must be a string`);
+		}
+		step.monitor = rawStep.monitor;
+
+		// input (optional — maps to context collector keys)
+		if ("input" in rawStep && rawStep.input !== undefined) {
+			if (typeof rawStep.input !== "object" || rawStep.input === null || Array.isArray(rawStep.input)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' input must be an object`);
+			}
+			step.input = rawStep.input as Record<string, unknown>;
+		}
+
+		// output spec (optional)
+		if ("output" in rawStep && rawStep.output !== undefined) {
+			if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' output must be an object`);
+			}
+			const rawOutput = rawStep.output as Record<string, unknown>;
+			const output: StepOutputSpec = {};
+			if ("format" in rawOutput) {
+				output.format = rawOutput.format as StepOutputSpec["format"];
+			}
+			if ("path" in rawOutput) {
+				if (typeof rawOutput.path !== "string") {
+					throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
+				}
+				output.path = rawOutput.path;
+			}
+			step.output = output;
 		}
 
 		return step;

@@ -39,6 +39,9 @@
 		"test": "vitest run",
 		"test:watch": "vitest"
 	},
+	"dependencies": {
+		"nunjucks": "^3.2.4"
+	},
 	"peerDependencies": {
 		"@mariozechner/pi-ai": "*",
 		"@mariozechner/pi-coding-agent": "*",
@@ -46,6 +49,7 @@
 		"@sinclair/typebox": "*"
 	},
 	"devDependencies": {
+		"@types/nunjucks": "^3.2.6",
 		"vitest": "^3.2.4"
 	}
 }

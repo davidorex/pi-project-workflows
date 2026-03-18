@@ -6,8 +6,9 @@
 	"scope": { "target": "main" },
 	"classify": {
 		"model": "claude-sonnet-4-20250514",
-		"context": ["tool_calls"],
+		"context": ["tool_calls", "assistant_text"],
 		"excludes": [],
+		"promptTemplate": "commit-hygiene/classify.md",
 		"prompt": "An agent made file changes (write/edit tool calls detected). Review the tool call history below.\n\n{tool_calls}\n\nKnown commit anti-patterns:\n{patterns}\n\n{instructions}\n\nDetermine:\n1. Did the agent run a git commit? Look for [call bash] with git commit in the arguments.\n2. If committed, was the commit message detailed and specific? Generic messages like 'update files', 'fix bug', 'changes' are violations.\n3. If committed, does the message avoid prohibited language (see patterns)?\n\nReply CLEAN if changes were committed with a proper message.\nReply FLAG:<description> if a known pattern was matched (no commit, generic message, prohibited language).\nReply NEW:<pattern>|<description> if an issue not covered by patterns was detected."
 	},
 	"patterns": {

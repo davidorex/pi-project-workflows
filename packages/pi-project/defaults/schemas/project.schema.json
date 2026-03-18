@@ -6,6 +6,7 @@
 	"properties": {
 		"name": { "type": "string" },
 		"description": { "type": "string" },
+		"vision": { "type": "string", "description": "What this project aims to achieve and why it matters" },
 		"core_value": { "type": "string", "description": "One-sentence value proposition" },
 		"target_users": {
 			"type": "array",

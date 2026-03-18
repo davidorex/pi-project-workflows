@@ -687,6 +687,33 @@ function generateMetaSkill(subPackageResults) {
 	const skillPath = join(skillDir, "SKILL.md");
 	writeFileSync(skillPath, lines.join("\n"));
 	console.log(`\nMeta-package skill: ${relative(ROOT, skillPath)}`);
+
+	// Copy sub-package skill directories into meta-package skills/ so pi discovers
+	// all skills from the single meta-package entry in settings.json.
+	// Pi reads pi.skills from the installed package but does not recurse into
+	// dependencies — without this copy, sub-package skills are invisible.
+	const metaSkillsDir = join(metaDir, "skills");
+	for (const result of subPackageResults) {
+		if (!result) continue;
+		const srcSkillDir = join(dirname(dirname(result.skillPath)), result.shortName);
+		const destSkillDir = join(metaSkillsDir, result.shortName);
+		if (srcSkillDir === destSkillDir) continue; // skip self (meta-package)
+		copyDirRecursive(srcSkillDir, destSkillDir);
+		console.log(`  Copied ${result.shortName} skill into meta-package`);
+	}
+}
+
+function copyDirRecursive(src, dest) {
+	mkdirSync(dest, { recursive: true });
+	for (const entry of readdirSync(src, { withFileTypes: true })) {
+		const srcPath = join(src, entry.name);
+		const destPath = join(dest, entry.name);
+		if (entry.isDirectory()) {
+			copyDirRecursive(srcPath, destPath);
+		} else {
+			writeFileSync(destPath, readFileSync(srcPath));
+		}
+	}
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────

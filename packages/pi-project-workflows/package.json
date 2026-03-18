@@ -15,13 +15,17 @@
 	"homepage": "https://github.com/davidorex/pi-project-workflows",
 	"files": [
 		"*.ts",
-		"*.md"
+		"*.md",
+		"skills/"
 	],
 	"pi": {
 		"extensions": [
 			"./project-extension.ts",
 			"./workflows-extension.ts",
 			"./monitors-extension.ts"
+		],
+		"skills": [
+			"./skills"
 		]
 	},
 	"dependencies": {

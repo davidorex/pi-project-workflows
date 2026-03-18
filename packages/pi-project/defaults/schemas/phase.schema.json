@@ -7,6 +7,7 @@
 		"number": { "type": "integer" },
 		"name": { "type": "string" },
 		"intent": { "type": "string" },
+		"goal": { "type": "string", "description": "What is true after this phase that was not true before" },
 		"status": { "type": "string", "enum": ["planned", "in-progress", "completed"] },
 		"success_criteria": {
 			"type": "array",
@@ -15,7 +16,7 @@
 				"required": ["criterion", "verify_method"],
 				"properties": {
 					"criterion": { "type": "string" },
-					"verify_method": { "type": "string", "enum": ["command", "inspect", "human"] }
+					"verify_method": { "type": "string", "enum": ["command", "inspect", "test"] }
 				}
 			}
 		},
@@ -38,7 +39,17 @@
 		},
 		"dependencies": {
 			"type": "array",
-			"items": { "type": "integer" }
+			"items": { "type": ["string", "integer"] }
+		},
+		"inputs": {
+			"type": "array",
+			"items": { "type": "string" },
+			"description": "What this phase needs from prior phases or external sources"
+		},
+		"outputs": {
+			"type": "array",
+			"items": { "type": "string" },
+			"description": "What this phase produces for later phases or users"
 		},
 		"artifacts_produced": {
 			"type": "array",

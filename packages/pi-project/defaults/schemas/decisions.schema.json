@@ -8,13 +8,14 @@
 			"type": "array",
 			"items": {
 				"type": "object",
-				"required": ["id", "decision", "rationale", "phase", "status"],
+				"required": ["id", "decision", "rationale", "status"],
 				"properties": {
 					"id": { "type": "string" },
 					"decision": { "type": "string" },
 					"rationale": { "type": "string" },
-					"phase": { "type": "integer" },
-					"status": { "type": "string", "enum": ["decided", "tentative", "revisit"] }
+					"phase": { "type": ["string", "integer"] },
+					"status": { "type": "string", "enum": ["decided", "tentative", "revisit", "superseded"] },
+					"context": { "type": "string", "description": "What prompted this decision" }
 				}
 			}
 		}

@@ -18,7 +18,8 @@
 						"items": { "type": "string" },
 						"description": "IDs linking to decisions.json"
 					},
-					"phase": { "type": "integer" }
+					"phase": { "type": ["string", "integer"] },
+					"context": { "type": "string", "description": "What prompted this rationale" }
 				}
 			}
 		}

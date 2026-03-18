@@ -29,6 +29,21 @@
 				"in": { "type": "array", "items": { "type": "string" } },
 				"out": { "type": "array", "items": { "type": "string" } }
 			}
-		}
+		},
+		"goals": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "description"],
+				"properties": {
+					"id": { "type": "string" },
+					"description": { "type": "string" },
+					"success_criteria": { "type": "array", "items": { "type": "string" } }
+				}
+			}
+		},
+		"status": { "type": "string", "enum": ["inception", "planning", "development", "maintenance", "complete"] },
+		"repository": { "type": "string" },
+		"stack": { "type": "array", "items": { "type": "string" } }
 	}
 }

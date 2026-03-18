@@ -23,7 +23,7 @@ See full skill: [pi-project/SKILL.md](../packages/pi-project/../skills/pi-projec
 
 Workflow orchestration extension for Pi
 
-**Tools:** `workflow`, `workflow-list`, `workflow-validate`, `workflow-status`, `workflow-init`
+**Tools:** `workflow`, `workflow-list`, `workflow-agents`, `workflow-validate`, `workflow-status`, `workflow-init`
 **Commands:** `/workflow`
 **Shortcuts:** ctrl+h (Pause running workflow), ctrl+j (Resume paused workflow)
 

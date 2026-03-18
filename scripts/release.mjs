@@ -16,7 +16,7 @@
  */
 
 import { execSync } from "child_process";
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const BUMP_TYPE = process.argv[2];

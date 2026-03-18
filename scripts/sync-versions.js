@@ -5,7 +5,7 @@
  * This ensures lockstep versioning across the monorepo.
  */
 
-import { readFileSync, writeFileSync, readdirSync } from "fs";
+import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const packagesDir = join(process.cwd(), "packages");

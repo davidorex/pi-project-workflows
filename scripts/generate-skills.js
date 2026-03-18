@@ -145,9 +145,82 @@ function listFilesRecursive(dir) {
 	return results;
 }
 
+// ── Project vocabulary extraction ────────────────────────────────────────────
+
+function extractProjectVocabulary(packageDir) {
+	const schemasDir = join(packageDir, "defaults", "schemas");
+	if (!existsSync(schemasDir)) return null;
+
+	const schemas = [];
+	for (const file of readdirSync(schemasDir).sort()) {
+		if (!file.endsWith(".schema.json")) continue;
+		const name = file.replace(".schema.json", "");
+		try {
+			const raw = JSON.parse(readFileSync(join(schemasDir, file), "utf-8"));
+			const title = raw.title || name;
+			const required = new Set(raw.required || []);
+			const properties = [];
+			const enums = [];
+
+			if (raw.properties) {
+				for (const [propName, propDef] of Object.entries(raw.properties)) {
+					const type = Array.isArray(propDef.type) ? propDef.type.join("|") : (propDef.type || "unknown");
+					properties.push({
+						name: propName,
+						type,
+						required: required.has(propName),
+						description: propDef.description || "",
+						enum: propDef.enum || null,
+					});
+
+					// Collect enums from array item properties too
+					if (type === "array" && propDef.items?.properties) {
+						for (const [itemProp, itemDef] of Object.entries(propDef.items.properties)) {
+							if (itemDef.enum) {
+								enums.push({ block: name, field: itemProp, values: itemDef.enum });
+							}
+						}
+					}
+
+					if (propDef.enum) {
+						enums.push({ block: name, field: propName, values: propDef.enum });
+					}
+				}
+			}
+
+			// Extract array key and item properties
+			let arrayKey = null;
+			let itemProps = [];
+			for (const prop of properties) {
+				if (prop.type === "array") {
+					arrayKey = prop.name;
+					const items = raw.properties[prop.name]?.items;
+					if (items?.properties) {
+						const itemRequired = new Set(items.required || []);
+						for (const [iName, iDef] of Object.entries(items.properties)) {
+							const iType = Array.isArray(iDef.type) ? iDef.type.join("|") : (iDef.type || "unknown");
+							const enumSuffix = iDef.enum ? ` (${iDef.enum.join("|")})` : "";
+							itemProps.push({
+								name: iName,
+								type: iType + enumSuffix,
+								required: itemRequired.has(iName),
+							});
+						}
+					}
+					break; // first array key only
+				}
+			}
+
+			schemas.push({ name, title, arrayKey, itemProps, enums });
+		} catch { /* skip malformed */ }
+	}
+
+	return schemas.length > 0 ? schemas : null;
+}
+
 // ── SKILL.md composition ────────────────────────────────────────────────────
 
-function composeSkill(packageName, description, registrations, resources, narrative) {
+function composeSkill(packageName, description, registrations, resources, narrative, vocabulary) {
 	const lines = [];
 
 	lines.push(`# ${packageName}`);
@@ -230,6 +303,50 @@ function composeSkill(packageName, description, registrations, resources, narrat
 		}
 	}
 
+	// Planning vocabulary (for pi-project — derived from default schemas)
+	if (vocabulary && vocabulary.length > 0) {
+		lines.push("## Planning Vocabulary");
+		lines.push("");
+
+		// Block types table
+		const arraySchemas = vocabulary.filter((s) => s.arrayKey);
+		if (arraySchemas.length > 0) {
+			lines.push("### Block Types");
+			lines.push("");
+			lines.push("| Block | Title | Array Key | Item Fields |");
+			lines.push("|-------|-------|-----------|-------------|");
+			for (const s of arraySchemas) {
+				const itemFields = s.itemProps.map((p) => `${p.name}${p.required ? "" : "?"}` + (p.type !== "string" ? ` (${p.type})` : "")).join(", ");
+				lines.push(`| \`${s.name}\` | ${s.title} | \`${s.arrayKey}\` | ${itemFields} |`);
+			}
+			lines.push("");
+		}
+
+		// Single-object schemas
+		const objectSchemas = vocabulary.filter((s) => !s.arrayKey);
+		if (objectSchemas.length > 0) {
+			lines.push("### Object Blocks");
+			lines.push("");
+			for (const s of objectSchemas) {
+				lines.push(`- **${s.name}** (${s.title})`);
+			}
+			lines.push("");
+		}
+
+		// Status enums
+		const allEnums = vocabulary.flatMap((s) => s.enums);
+		if (allEnums.length > 0) {
+			lines.push("### Status Enums");
+			lines.push("");
+			lines.push("| Block | Field | Values |");
+			lines.push("|-------|-------|--------|");
+			for (const e of allEnums) {
+				lines.push(`| \`${e.block}\` | \`${e.field}\` | ${e.values.join(", ")} |`);
+			}
+			lines.push("");
+		}
+	}
+
 	// Narrative (hand-authored behavioral documentation)
 	if (narrative) {
 		lines.push("---");
@@ -299,8 +416,14 @@ async function generateForPackage(packageDir) {
 		console.log(`  Narrative: ${narrativePath}`);
 	}
 
+	// Extract project vocabulary (for pi-project only — from defaults/schemas/)
+	const vocabulary = extractProjectVocabulary(packageDir);
+	if (vocabulary) {
+		console.log(`  Vocabulary: ${vocabulary.length} schemas`);
+	}
+
 	// Compose
-	const content = composeSkill(packageName, description, registrations, resources, narrative);
+	const content = composeSkill(packageName, description, registrations, resources, narrative, vocabulary);
 
 	// Write to skills/<package-short-name>/SKILL.md
 	const shortName = packageName.replace("@davidorex/", "");

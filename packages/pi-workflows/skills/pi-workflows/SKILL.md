@@ -22,7 +22,7 @@ Run a named workflow with typed input. Discovers workflows from .workflows/ and 
 
 List and run workflows
 
-Subcommands: `init`, `run`, `list`, `resume`, `validate`
+Subcommands: `init`, `run`, `list`, `resume`, `validate`, `status`
 
 ## Keyboard Shortcuts
 

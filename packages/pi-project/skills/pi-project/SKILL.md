@@ -72,6 +72,64 @@ Subcommands: `init`, `status`, `add-work`, `validate`
 - `defaults/schemas/tasks.schema.json`
 - `defaults/schemas/verification.schema.json`
 
+## Planning Vocabulary
+
+### Block Types
+
+| Block | Title | Array Key | Item Fields |
+|-------|-------|-----------|-------------|
+| `architecture` | Architecture | `modules` | name, file, responsibility, dependencies? (array), lines? (integer) |
+| `audit` | audit | `checks` | id, description, status (string (pass|fail|warn|skip)), category?, details? |
+| `conformance-reference` | conformance-reference | `principles` | id, name, description?, rules (array) |
+| `conventions` | Conventions | `rules` | id, description, enforcement (string (lint|test|review|manual)), severity (string (error|warning|info)) |
+| `decisions` | Decisions | `decisions` | id, decision, rationale, phase? (string|integer), status (string (decided|tentative|revisit|superseded)), context? |
+| `domain` | Domain Knowledge | `entries` | id, title, content, category (string (research|reference|domain-rule|prior-art|constraint)), source?, confidence? (string (high|medium|low)), related_requirements? (array), tags? (array) |
+| `gaps` | Gaps | `gaps` | id, description, status (string (open|resolved|deferred)), category (string (missing|incomplete|defect|improvement|technical-debt|question)), priority (string (low|medium|high|critical)), phase? (string|integer), resolved_by?, source? (string (human|agent|monitor|workflow)), details? |
+| `handoff` | Handoff | `current_tasks` |  |
+| `inventory` | Inventory | `step_types` | name, module, description?, phase_added? (integer) |
+| `phase` | Phase | `success_criteria` | criterion, verify_method (string (command|inspect|test)) |
+| `project` | Project Identity | `target_users` |  |
+| `rationale` | Design Rationale | `rationales` | id, title, narrative, related_decisions? (array), phase? (string|integer), context? |
+| `reference-contracts` | Reference Contracts | `contracts` | name, description, shape (array), maps_to? |
+| `requirements` | Requirements | `requirements` | id, description, type (string (functional|non-functional|constraint|integration)), status (string (proposed|accepted|deferred|implemented|verified)), priority (string (must|should|could|wont)), acceptance_criteria? (array), source? (string (human|agent|analysis)), traces_to? (array), depends_on? (array) |
+| `runtime-spec` | Runtime Spec | `step_types` | name, semantics, executor_module, fields? (array), output_behavior? |
+| `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), phase? (string|integer), files? (array), acceptance_criteria? (array), depends_on? (array), assigned_agent?, verification?, notes? |
+| `verification` | Verification | `verifications` | id, target, target_type (string (task|phase|requirement)), status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array) |
+
+### Object Blocks
+
+- **state** (Project State)
+
+### Status Enums
+
+| Block | Field | Values |
+|-------|-------|--------|
+| `audit` | `status` | pass, fail, warn, skip |
+| `audit` | `severity` | error, warning, info |
+| `conventions` | `enforcement` | lint, test, review, manual |
+| `conventions` | `severity` | error, warning, info |
+| `decisions` | `status` | decided, tentative, revisit, superseded |
+| `domain` | `category` | research, reference, domain-rule, prior-art, constraint |
+| `domain` | `confidence` | high, medium, low |
+| `gaps` | `status` | open, resolved, deferred |
+| `gaps` | `category` | missing, incomplete, defect, improvement, technical-debt, question |
+| `gaps` | `priority` | low, medium, high, critical |
+| `gaps` | `source` | human, agent, monitor, workflow |
+| `inventory` | `category` | step-output, project, workflow |
+| `inventory` | `status` | planned, in-progress, completed |
+| `phase` | `status` | planned, in-progress, completed |
+| `phase` | `verify_method` | command, inspect, test |
+| `phase` | `status` | planned, in-progress, completed |
+| `project` | `status` | inception, planning, development, maintenance, complete |
+| `requirements` | `type` | functional, non-functional, constraint, integration |
+| `requirements` | `status` | proposed, accepted, deferred, implemented, verified |
+| `requirements` | `priority` | must, should, could, wont |
+| `requirements` | `source` | human, agent, analysis |
+| `tasks` | `status` | planned, in-progress, completed, blocked, cancelled |
+| `verification` | `target_type` | task, phase, requirement |
+| `verification` | `status` | passed, failed, partial, skipped |
+| `verification` | `method` | command, inspect, test |
+
 ---
 
 ## How It Works

@@ -77,6 +77,161 @@ export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayK
 	return results;
 }
 
+// ── Vocabulary (derived from schemas) ─────────────────────────────────────────
+
+/** Default planning lifecycle block types shipped with /project init. */
+export const PROJECT_BLOCK_TYPES = [
+	"project",
+	"domain",
+	"requirements",
+	"architecture",
+	"tasks",
+	"decisions",
+	"gaps",
+	"rationale",
+	"verification",
+	"handoff",
+] as const;
+
+export interface SchemaProperty {
+	name: string;
+	type: string;
+	required: boolean;
+	description?: string;
+	enum?: string[];
+}
+
+export interface SchemaInfo {
+	name: string;
+	title: string;
+	properties: SchemaProperty[];
+	arrayKeys: string[];
+	itemProperties?: Record<string, SchemaProperty[]>;
+}
+
+/**
+ * Read and parse a schema, extracting property metadata.
+ * Returns null if the schema file doesn't exist or is unparseable.
+ */
+export function schemaInfo(cwd: string, schemaName: string): SchemaInfo | null {
+	const schemaPath = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR, `${schemaName}.schema.json`);
+	try {
+		const raw = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
+		const title = String(raw.title ?? schemaName);
+		const requiredSet = new Set(Array.isArray(raw.required) ? (raw.required as string[]) : []);
+		const properties: SchemaProperty[] = [];
+		const arrayKeys: string[] = [];
+		const itemProperties: Record<string, SchemaProperty[]> = {};
+
+		if (raw.properties && typeof raw.properties === "object") {
+			for (const [name, propRaw] of Object.entries(raw.properties as Record<string, Record<string, unknown>>)) {
+				const propType = extractType(propRaw);
+				const prop: SchemaProperty = {
+					name,
+					type: propType,
+					required: requiredSet.has(name),
+					description: propRaw.description ? String(propRaw.description) : undefined,
+					enum: Array.isArray(propRaw.enum) ? (propRaw.enum as string[]) : undefined,
+				};
+				properties.push(prop);
+
+				if (propType === "array") {
+					arrayKeys.push(name);
+					// Extract item properties (one level deep)
+					const items = propRaw.items as Record<string, unknown> | undefined;
+					if (items?.properties && typeof items.properties === "object") {
+						const itemRequiredSet = new Set(
+							Array.isArray(items.required) ? (items.required as string[]) : [],
+						);
+						const itemProps: SchemaProperty[] = [];
+						for (const [iName, iPropRaw] of Object.entries(
+							items.properties as Record<string, Record<string, unknown>>,
+						)) {
+							itemProps.push({
+								name: iName,
+								type: extractType(iPropRaw),
+								required: itemRequiredSet.has(iName),
+								description: iPropRaw.description ? String(iPropRaw.description) : undefined,
+								enum: Array.isArray(iPropRaw.enum) ? (iPropRaw.enum as string[]) : undefined,
+							});
+						}
+						itemProperties[name] = itemProps;
+					}
+				}
+			}
+		}
+
+		return {
+			name: schemaName,
+			title,
+			properties,
+			arrayKeys,
+			itemProperties: Object.keys(itemProperties).length > 0 ? itemProperties : undefined,
+		};
+	} catch {
+		return null;
+	}
+}
+
+/** Extract type string from a JSON Schema property. */
+function extractType(prop: Record<string, unknown>): string {
+	if (Array.isArray(prop.type)) return (prop.type as string[]).join("|");
+	if (typeof prop.type === "string") return prop.type;
+	return "unknown";
+}
+
+/**
+ * All schemas with their property metadata.
+ * Scans .project/schemas/ and parses each schema.
+ */
+export function schemaVocabulary(cwd: string): SchemaInfo[] {
+	const schemasDir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
+	if (!fs.existsSync(schemasDir)) return [];
+	const results: SchemaInfo[] = [];
+	for (const file of fs.readdirSync(schemasDir).sort()) {
+		if (!file.endsWith(".schema.json")) continue;
+		const name = file.replace(".schema.json", "");
+		const info = schemaInfo(cwd, name);
+		if (info) results.push(info);
+	}
+	return results;
+}
+
+export interface BlockStructure {
+	name: string;
+	exists: boolean;
+	hasSchema: boolean;
+	arrays: { key: string; itemCount: number }[];
+}
+
+/**
+ * What blocks exist and their structure — combines availableBlocks
+ * and block summaries into a single queryable function.
+ */
+export function blockStructure(cwd: string): BlockStructure[] {
+	const blockDir = path.join(cwd, PROJECT_DIR);
+	const blocks = availableBlocks(cwd);
+	return blocks.map((b) => {
+		const arrays: { key: string; itemCount: number }[] = [];
+		try {
+			const data = readBlock(cwd, b.name) as Record<string, unknown>;
+			for (const [key, val] of Object.entries(data)) {
+				if (Array.isArray(val)) {
+					arrays.push({ key, itemCount: val.length });
+				}
+			}
+		} catch {
+			/* block unreadable */
+		}
+		return {
+			name: b.name,
+			exists: fs.existsSync(path.join(blockDir, `${b.name}.json`)),
+			hasSchema: b.hasSchema,
+			arrays,
+		};
+	});
+}
+
 // ── Derived State ────────────────────────────────────────────────────────────
 
 export interface ArraySummary {

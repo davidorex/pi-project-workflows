@@ -19,7 +19,14 @@ import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } f
 import type { WorkflowResult } from "./types.js";
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.js";
 import { executeWorkflow, requestPause } from "./workflow-executor.js";
-import { validateWorkflow } from "./workflow-sdk.js";
+import {
+	availableAgents,
+	availableSchemas,
+	availableTemplates,
+	filterNames,
+	stepTypes,
+	validateWorkflow,
+} from "./workflow-sdk.js";
 import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
 // ── Helper functions ────────────────────────────────────────────────────────
@@ -473,7 +480,7 @@ const extension = (pi: ExtensionAPI) => {
 	pi.registerCommand("workflow", {
 		description: "List and run workflows",
 		getArgumentCompletions: (prefix: string) => {
-			const subcommands = ["init", "run", "list", "resume", "validate"];
+			const subcommands = ["init", "run", "list", "resume", "validate", "status"];
 			return subcommands.filter((s) => s.startsWith(prefix)).map((s) => ({ value: s, label: s }));
 		},
 
@@ -493,8 +500,23 @@ const extension = (pi: ExtensionAPI) => {
 				await handleResume(rest, ctx, pi);
 			} else if (subcommand === "validate") {
 				handleValidate(rest, ctx);
+			} else if (subcommand === "status") {
+				const workflows = discoverWorkflows(ctx.cwd);
+				const agents = availableAgents(ctx.cwd);
+				const schemas = availableSchemas(ctx.cwd);
+				const templates = availableTemplates(ctx.cwd);
+				const types = stepTypes();
+				const filters = filterNames();
+				const lines: string[] = [];
+				lines.push(`Step types: ${types.map((t) => t.name).join(", ")}`);
+				lines.push(`Filters: ${filters.join(", ")}`);
+				lines.push(`Workflows: ${workflows.length} (${workflows.map((w) => w.name).join(", ")})`);
+				lines.push(`Agents: ${agents.length} (${agents.map((a) => a.name).join(", ")})`);
+				lines.push(`Schemas: ${schemas.length}`);
+				lines.push(`Templates: ${templates.length}`);
+				ctx.ui.notify(lines.join("\n"), "info");
 			} else {
-				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, list, run, resume, validate`, "warning");
+				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, list, run, resume, validate, status`, "warning");
 			}
 		},
 	});

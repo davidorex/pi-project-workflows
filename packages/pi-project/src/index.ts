@@ -380,4 +380,4 @@ const extension = (pi: ExtensionAPI) => {
 export default extension;
 
 // Re-export for consumers
-export { findAppendableBlocks } from "./project-sdk.js";
+export { findAppendableBlocks, schemaVocabulary, schemaInfo, blockStructure, PROJECT_BLOCK_TYPES } from "./project-sdk.js";

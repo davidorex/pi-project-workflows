@@ -2,6 +2,58 @@
 
 > Behavior monitors for pi that watch agent activity and steer corrections
 
+## Tools
+
+### monitors-status
+
+List all behavior monitors with their current state.
+
+*List all behavior monitors with their current state*
+
+### monitors-inspect
+
+Inspect a monitor — config, state, pattern count, rule count.
+
+*Inspect a monitor — config, state, pattern count, rule count*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `monitor` | string | yes | Monitor name |
+
+### monitors-control
+
+Control monitors — enable, disable, dismiss, or reset.
+
+*Control monitors — enable, disable, dismiss, or reset*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | unknown | yes |  |
+| `monitor` | string | no | Monitor name (required for dismiss/reset) |
+
+### monitors-rules
+
+Manage monitor rules — list, add, remove, or replace calibration rules.
+
+*Manage monitor rules — list, add, remove, or replace calibration rules*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `monitor` | string | yes | Monitor name |
+| `action` | unknown | yes |  |
+| `text` | string | no | Rule text (for add/replace) |
+| `index` | number | no | Rule index, 1-based (for remove/replace) |
+
+### monitors-patterns
+
+List patterns for a behavior monitor.
+
+*List patterns for a behavior monitor*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `monitor` | string | yes | Monitor name |
+
 ## Commands
 
 ### /monitors

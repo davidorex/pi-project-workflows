@@ -29,6 +29,45 @@ Update fields on an item in a project block array. Finds by predicate field matc
 | `match` | object | yes | Fields to match (e.g., { id: 'gap-123' }) |
 | `updates` | object | yes | Fields to update (e.g., { status: 'resolved' }) |
 
+### read-block
+
+Read a project block file as structured JSON.
+
+*Read a project block as structured JSON*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'gaps', 'tasks', 'requirements') |
+
+### write-block
+
+Write or replace an entire project block with schema validation.
+
+*Write or replace a project block with schema validation*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'project', 'architecture') |
+| `data` | unknown | yes | Complete block data — must conform to block schema |
+
+### project-status
+
+Get derived project state — source metrics, block summaries, planning lifecycle status.
+
+*Get project state — source metrics, block summaries, planning lifecycle status*
+
+### project-validate
+
+Validate cross-block referential integrity — check that IDs referenced across blocks exist.
+
+*Validate cross-block referential integrity*
+
+### project-init
+
+Initialize .project/ directory with default schemas and empty block files.
+
+*Initialize .project/ directory with default schemas and blocks*
+
 ## Commands
 
 ### /project

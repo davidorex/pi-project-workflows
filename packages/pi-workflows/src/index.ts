@@ -1,5 +1,5 @@
 /**
- * Extension entry point — registers the `workflow` tool and `/workflow` command
+ * Extension entry point — registers workflow tools and the `/workflow` command
  * for discovering, executing, and managing multi-step workflow runs.
  */
 
@@ -136,6 +136,77 @@ function formatToolResult(result: WorkflowResult): string {
 		.map(([name, s]) => `${s.status === "completed" ? "\u2713" : "\u2717"} ${name}`)
 		.join(", ");
 	return `Workflow '${result.workflow}' ${status}: ${stepSummary}. Run dir: ${result.runDir}`;
+}
+
+// ── Shared logic (used by both tools and commands) ──────────────────────────
+
+/**
+ * Validate one or all workflow specs. Returns structured results suitable
+ * for both the /workflow validate command and the workflow-validate tool.
+ */
+function runValidation(
+	cwd: string,
+	name?: string,
+): {
+	found: boolean;
+	results: { name: string; valid: boolean; issues: import("./workflow-sdk.js").ValidationIssue[] }[];
+} {
+	const workflows = name
+		? ([findWorkflow(name, cwd)].filter(Boolean) as import("./types.js").WorkflowSpec[])
+		: discoverWorkflows(cwd);
+
+	if (workflows.length === 0) return { found: false, results: [] };
+
+	const results = workflows.map((spec) => {
+		const result = validateWorkflow(spec, cwd);
+		return { name: spec.name, valid: result.valid, issues: result.issues };
+	});
+
+	return { found: true, results };
+}
+
+/**
+ * Aggregate workflow vocabulary — step types, filters, available agents,
+ * workflows, schemas, templates. Shared between the /workflow status
+ * command and the workflow-status tool.
+ */
+function gatherWorkflowStatus(cwd: string): Record<string, unknown> {
+	const workflows = discoverWorkflows(cwd);
+	const agents = availableAgents(cwd);
+	const schemas = availableSchemas(cwd);
+	const templates = availableTemplates(cwd);
+	const types = stepTypes();
+	const filters = filterNames();
+
+	return {
+		stepTypes: types.map((t) => t.name),
+		filters,
+		workflows: workflows.map((w) => ({ name: w.name, description: w.description, source: w.source })),
+		agents: agents.map((a) => ({ name: a.name })),
+		schemas: schemas.length,
+		templates: templates.length,
+	};
+}
+
+/**
+ * Initialize .workflows/ directory structure. Returns list of created
+ * directory paths (relative to cwd). Shared between the /workflow init
+ * command and the workflow-init tool.
+ */
+function initWorkflowDirs(cwd: string): { created: string[] } {
+	const workflowsDir = path.join(cwd, WORKFLOWS_DIR);
+	const runsDir = path.join(workflowsDir, "runs");
+
+	const created: string[] = [];
+
+	for (const dir of [workflowsDir, runsDir]) {
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true });
+			created.push(path.relative(cwd, dir) + "/");
+		}
+	}
+
+	return { created };
 }
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -335,22 +406,16 @@ async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: E
 	}
 }
 
-/**
- * /workflow init — scaffold .workflows/ directory for user workflow specs
- * and run state. Idempotent.
- */
 function handleValidate(args: string, ctx: ExtensionCommandContext): void {
-	const name = args.trim();
-	const workflows = name
-		? [findWorkflow(name, ctx.cwd)].filter(Boolean) as import("./types.js").WorkflowSpec[]
-		: discoverWorkflows(ctx.cwd);
+	const name = args.trim() || undefined;
+	const { found, results } = runValidation(ctx.cwd, name);
 
-	if (name && workflows.length === 0) {
+	if (name && !found) {
 		ctx.ui.notify(`Workflow '${name}' not found.`, "warning");
 		return;
 	}
 
-	if (workflows.length === 0) {
+	if (!found) {
 		ctx.ui.notify("No workflows found.", "info");
 		return;
 	}
@@ -359,38 +424,27 @@ function handleValidate(args: string, ctx: ExtensionCommandContext): void {
 	let totalErrors = 0;
 	let totalWarnings = 0;
 
-	for (const spec of workflows) {
-		const result = validateWorkflow(spec, ctx.cwd);
-		const errors = result.issues.filter((i) => i.severity === "error").length;
-		const warnings = result.issues.filter((i) => i.severity === "warning").length;
+	for (const r of results) {
+		const errors = r.issues.filter((i) => i.severity === "error").length;
+		const warnings = r.issues.filter((i) => i.severity === "warning").length;
 		totalErrors += errors;
 		totalWarnings += warnings;
 
-		const icon = result.valid ? "\u2713" : "\u2717";
-		lines.push(`${icon} ${spec.name} (${errors} errors, ${warnings} warnings)`);
-		for (const issue of result.issues) {
+		const icon = r.valid ? "\u2713" : "\u2717";
+		lines.push(`${icon} ${r.name} (${errors} errors, ${warnings} warnings)`);
+		for (const issue of r.issues) {
 			lines.push(`  ${issue.severity === "error" ? "\u2717" : "\u26a0"} ${issue.field}: ${issue.message}`);
 		}
 	}
 
 	lines.push("");
-	lines.push(`${workflows.length} workflow(s), ${totalErrors} error(s), ${totalWarnings} warning(s)`);
+	lines.push(`${results.length} workflow(s), ${totalErrors} error(s), ${totalWarnings} warning(s)`);
 
 	ctx.ui.notify(lines.join("\n"), totalErrors > 0 ? "error" : "info");
 }
 
 function handleWorkflowInit(ctx: ExtensionCommandContext): void {
-	const workflowsDir = path.join(ctx.cwd, WORKFLOWS_DIR);
-	const runsDir = path.join(workflowsDir, "runs");
-
-	const created: string[] = [];
-
-	for (const dir of [workflowsDir, runsDir]) {
-		if (!fs.existsSync(dir)) {
-			fs.mkdirSync(dir, { recursive: true });
-			created.push(path.relative(ctx.cwd, dir) + "/");
-		}
-	}
+	const { created } = initWorkflowDirs(ctx.cwd);
 
 	if (created.length > 0) {
 		ctx.ui.notify(`Workflows initialized: created ${created.join(", ")}`, "info");
@@ -475,6 +529,117 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Tool: workflow-list ─────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "workflow-list",
+		label: "Workflow List",
+		description: "List available workflows with names, descriptions, and sources.",
+		promptSnippet: "List available workflows with names, descriptions, and sources",
+		parameters: Type.Object({}),
+
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal | undefined,
+			_onUpdate: AgentToolUpdateCallback | undefined,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const workflows = discoverWorkflows(ctx.cwd);
+			const items = workflows.map((w) => ({
+				name: w.name,
+				description: w.description,
+				source: w.source,
+			}));
+
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(items, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: workflow-validate ─────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "workflow-validate",
+		label: "Workflow Validate",
+		description: "Validate workflow specs — check agents, schemas, step references, and filters.",
+		promptSnippet: "Validate workflow specs — check agents, schemas, step references, filters",
+		parameters: Type.Object({
+			name: Type.Optional(Type.String({ description: "Workflow name to validate (omit to validate all)" })),
+		}),
+
+		async execute(
+			_toolCallId: string,
+			params: { name?: string },
+			_signal: AbortSignal | undefined,
+			_onUpdate: AgentToolUpdateCallback | undefined,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const { found, results } = runValidation(ctx.cwd, params.name);
+
+			if (params.name && !found) {
+				throw new Error(`Workflow '${params.name}' not found. Available workflows: ${listWorkflowNames(ctx.cwd)}`);
+			}
+
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: workflow-status ───────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "workflow-status",
+		label: "Workflow Status",
+		description: "Get workflow vocabulary — step types, filters, available agents, workflows, schemas, templates.",
+		promptSnippet: "Get workflow vocabulary — step types, filters, available agents, workflows, schemas",
+		parameters: Type.Object({}),
+
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal | undefined,
+			_onUpdate: AgentToolUpdateCallback | undefined,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const status = gatherWorkflowStatus(ctx.cwd);
+
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(status, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: workflow-init ─────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "workflow-init",
+		label: "Workflow Init",
+		description: "Initialize .workflows/ directory for workflow run state.",
+		promptSnippet: "Initialize .workflows/ directory for workflow run state",
+		parameters: Type.Object({}),
+
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal | undefined,
+			_onUpdate: AgentToolUpdateCallback | undefined,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = initWorkflowDirs(ctx.cwd);
+
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
 	// ── Command: /workflow ──────────────────────────────────────────────────
 
 	pi.registerCommand("workflow", {
@@ -501,19 +666,16 @@ const extension = (pi: ExtensionAPI) => {
 			} else if (subcommand === "validate") {
 				handleValidate(rest, ctx);
 			} else if (subcommand === "status") {
-				const workflows = discoverWorkflows(ctx.cwd);
-				const agents = availableAgents(ctx.cwd);
-				const schemas = availableSchemas(ctx.cwd);
-				const templates = availableTemplates(ctx.cwd);
-				const types = stepTypes();
-				const filters = filterNames();
+				const status = gatherWorkflowStatus(ctx.cwd);
 				const lines: string[] = [];
-				lines.push(`Step types: ${types.map((t) => t.name).join(", ")}`);
-				lines.push(`Filters: ${filters.join(", ")}`);
-				lines.push(`Workflows: ${workflows.length} (${workflows.map((w) => w.name).join(", ")})`);
-				lines.push(`Agents: ${agents.length} (${agents.map((a) => a.name).join(", ")})`);
-				lines.push(`Schemas: ${schemas.length}`);
-				lines.push(`Templates: ${templates.length}`);
+				lines.push(`Step types: ${(status.stepTypes as string[]).join(", ")}`);
+				lines.push(`Filters: ${(status.filters as string[]).join(", ")}`);
+				const wfs = status.workflows as { name: string }[];
+				lines.push(`Workflows: ${wfs.length} (${wfs.map((w) => w.name).join(", ")})`);
+				const ags = status.agents as { name: string }[];
+				lines.push(`Agents: ${ags.length} (${ags.map((a) => a.name).join(", ")})`);
+				lines.push(`Schemas: ${status.schemas}`);
+				lines.push(`Templates: ${status.templates}`);
 				ctx.ui.notify(lines.join("\n"), "info");
 			} else {
 				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, list, run, resume, validate, status`, "warning");

@@ -16,6 +16,34 @@ Run a named workflow with typed input. Discovers workflows from .workflows/ and 
 | `input` | unknown | no | Input data for the workflow (validated against workflow's input schema) |
 | `fresh` | string | no | Set to 'true' to start a fresh run, ignoring any incomplete prior runs |
 
+### workflow-list
+
+List available workflows with names, descriptions, and sources.
+
+*List available workflows with names, descriptions, and sources*
+
+### workflow-validate
+
+Validate workflow specs — check agents, schemas, step references, and filters.
+
+*Validate workflow specs — check agents, schemas, step references, filters*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | no | Workflow name to validate (omit to validate all) |
+
+### workflow-status
+
+Get workflow vocabulary — step types, filters, available agents, workflows, schemas, templates.
+
+*Get workflow vocabulary — step types, filters, available agents, workflows, schemas*
+
+### workflow-init
+
+Initialize .workflows/ directory for workflow run state.
+
+*Initialize .workflows/ directory for workflow run state*
+
 ## Commands
 
 ### /workflow

@@ -12,7 +12,7 @@ import type {
 	ExtensionContext,
 } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { appendToBlock, readBlock, updateItemInBlock } from "./block-api.js";
+import { appendToBlock, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import { findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";
 import { checkForUpdates } from "./update-check.js";
@@ -64,12 +64,16 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
 	// Planning lifecycle
 	if (state.requirements) {
 		const r = state.requirements;
-		const statusParts = Object.entries(r.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ");
+		const statusParts = Object.entries(r.byStatus)
+			.map(([s, n]) => `${s}: ${n}`)
+			.join(", ");
 		lines.push(`- **Requirements:** ${r.total} (${statusParts})`);
 	}
 	if (state.tasks) {
 		const t = state.tasks;
-		const statusParts = Object.entries(t.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ");
+		const statusParts = Object.entries(t.byStatus)
+			.map(([s, n]) => `${s}: ${n}`)
+			.join(", ");
 		lines.push(`- **Tasks:** ${t.total} (${statusParts})`);
 	}
 	if (state.domain) {
@@ -170,11 +174,12 @@ ${blockInfo.join("\n\n")}
 }
 
 /**
- * /project init — scaffold .project/ directory with default schemas and
- * empty block files. Idempotent: skips files that already exist.
+ * Initialize .project/ directory with default schemas and empty block files.
+ * Idempotent: skips files that already exist. Shared by the /project init
+ * command handler and the project-init tool.
  */
-function handleInit(ctx: ExtensionCommandContext): void {
-	const projectDir = path.join(ctx.cwd, PROJECT_DIR);
+function initProject(cwd: string): { created: string[]; skipped: string[] } {
+	const projectDir = path.join(cwd, PROJECT_DIR);
 	const schemasDir = path.join(projectDir, SCHEMAS_DIR);
 	const phasesDir = path.join(projectDir, "phases");
 
@@ -189,7 +194,7 @@ function handleInit(ctx: ExtensionCommandContext): void {
 	for (const dir of [projectDir, schemasDir, phasesDir]) {
 		if (!fs.existsSync(dir)) {
 			fs.mkdirSync(dir, { recursive: true });
-			created.push(path.relative(ctx.cwd, dir) + "/");
+			created.push(path.relative(cwd, dir) + "/");
 		}
 	}
 
@@ -218,6 +223,16 @@ function handleInit(ctx: ExtensionCommandContext): void {
 			}
 		}
 	}
+
+	return { created, skipped };
+}
+
+/**
+ * /project init — scaffold .project/ directory with default schemas and
+ * empty block files. Idempotent: skips files that already exist.
+ */
+function handleInit(ctx: ExtensionCommandContext): void {
+	const { created, skipped } = initProject(ctx.cwd);
 
 	const lines: string[] = [];
 	lines.push(`Project initialized`);
@@ -333,6 +348,127 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Tool: read-block ────────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "read-block",
+		label: "Read Block",
+		description: "Read a project block file as structured JSON.",
+		promptSnippet: "Read a project block as structured JSON",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'gaps', 'tasks', 'requirements')" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { block: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = readBlock(ctx.cwd, params.block);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: write-block ───────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "write-block",
+		label: "Write Block",
+		description: "Write or replace an entire project block with schema validation.",
+		promptSnippet: "Write or replace a project block with schema validation",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'project', 'architecture')" }),
+			data: Type.Unknown({ description: "Complete block data — must conform to block schema" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { block: string; data: unknown },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const data = typeof params.data === "string" ? JSON.parse(params.data) : params.data;
+			writeBlock(ctx.cwd, params.block, data);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: `Wrote block '${params.block}' successfully` }],
+			};
+		},
+	});
+
+	// ── Tool: project-status ────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-status",
+		label: "Project Status",
+		description: "Get derived project state — source metrics, block summaries, planning lifecycle status.",
+		promptSnippet: "Get project state — source metrics, block summaries, planning lifecycle status",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = projectState(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: project-validate ──────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-validate",
+		label: "Project Validate",
+		description: "Validate cross-block referential integrity — check that IDs referenced across blocks exist.",
+		promptSnippet: "Validate cross-block referential integrity",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = validateProject(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: project-init ──────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-init",
+		label: "Project Init",
+		description: "Initialize .project/ directory with default schemas and empty block files.",
+		promptSnippet: "Initialize .project/ directory with default schemas and blocks",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = initProject(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
 	// ── Command: /project ──────────────────────────────────────────────────
 
 	pi.registerCommand("project", {
@@ -380,4 +516,10 @@ const extension = (pi: ExtensionAPI) => {
 export default extension;
 
 // Re-export for consumers
-export { findAppendableBlocks, schemaVocabulary, schemaInfo, blockStructure, PROJECT_BLOCK_TYPES } from "./project-sdk.js";
+export {
+	blockStructure,
+	findAppendableBlocks,
+	PROJECT_BLOCK_TYPES,
+	schemaInfo,
+	schemaVocabulary,
+} from "./project-sdk.js";

@@ -14,7 +14,7 @@ pi install npm:@davidorex/pi-project-workflows
 
 Schema-driven project state management for Pi
 
-**Tools:** `append-block-item`, `update-block-item`
+**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init`
 **Commands:** `/project`
 
 See full skill: [pi-project/SKILL.md](../packages/pi-project/../skills/pi-project/SKILL.md)
@@ -23,7 +23,7 @@ See full skill: [pi-project/SKILL.md](../packages/pi-project/../skills/pi-projec
 
 Workflow orchestration extension for Pi
 
-**Tools:** `workflow`
+**Tools:** `workflow`, `workflow-list`, `workflow-validate`, `workflow-status`, `workflow-init`
 **Commands:** `/workflow`
 **Shortcuts:** ctrl+h (Pause running workflow), ctrl+j (Resume paused workflow)
 
@@ -33,6 +33,7 @@ See full skill: [pi-workflows/SKILL.md](../packages/pi-workflows/../skills/pi-wo
 
 Behavior monitors for pi that watch agent activity and steer corrections
 
+**Tools:** `monitors-status`, `monitors-inspect`, `monitors-control`, `monitors-rules`, `monitors-patterns`
 **Commands:** `/monitors`
 
 See full skill: [pi-behavior-monitors/SKILL.md](../packages/pi-behavior-monitors/../skills/pi-behavior-monitors/SKILL.md)

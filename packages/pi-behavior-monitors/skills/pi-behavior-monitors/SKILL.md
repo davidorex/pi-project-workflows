@@ -142,17 +142,24 @@ bundled monitor, delete its three files (`.monitor.json`, `.patterns.json`,
 </seeding>
 
 <file_structure>
-Each monitor is a triad of JSON files sharing a name prefix:
+Each monitor is a set of files sharing a name prefix:
 
 ```
 .pi/monitors/
 ├── fragility.monitor.json       # Monitor definition (classify + patterns + actions + scope)
 ├── fragility.patterns.json      # Known patterns (JSON array, grows automatically)
 ├── fragility.instructions.json  # User corrections (JSON array, optional)
+├── fragility/
+│   └── classify.md              # Nunjucks template for classification prompt (optional)
 ```
 
 The instructions file is optional. If omitted, the extension defaults the path to
 `${name}.instructions.json` and treats a missing file as an empty array.
+
+The classify template is optional. When `classify.promptTemplate` is set in the monitor
+definition, the template is resolved through a three-tier search: `.pi/monitors/` (project),
+`~/.pi/agent/monitors/` (user), then the package `examples/` directory. A user overrides a
+bundled template by placing a file at the same relative path in `.pi/monitors/`.
 </file_structure>
 
 <monitor_definition>
@@ -172,7 +179,8 @@ A `.monitor.json` file conforms to `schemas/monitor.schema.json`:
     "model": "claude-sonnet-4-20250514",
     "context": ["tool_results", "assistant_text"],
     "excludes": ["other-monitor"],
-    "prompt": "Classification prompt with {tool_results} {assistant_text} {patterns} {instructions} placeholders.\n\nReply CLEAN, FLAG:<desc>, or NEW:<pattern>|<desc>."
+    "promptTemplate": "my-monitor/classify.md",
+    "prompt": "Inline fallback if template not found. {tool_results} {assistant_text} {patterns} {instructions}\n\nReply CLEAN, FLAG:<desc>, or NEW:<pattern>|<desc>."
   },
   "patterns": {
     "path": "my-monitor.patterns.json",
@@ -240,9 +248,10 @@ Non-main scopes can still write findings to JSON files.
 | Field | Default | Description |
 |-------|---------|-------------|
 | `classify.model` | `claude-sonnet-4-20250514` | Model for classification. Plain model ID uses `anthropic` provider. Use `provider/model` for other providers. |
-| `classify.context` | `["tool_results", "assistant_text"]` | Conversation parts to collect. |
+| `classify.context` | `["tool_results", "assistant_text"]` | Context collector names. Any string accepted — unknown collectors produce empty string. |
 | `classify.excludes` | `[]` | Monitor names — skip activation if any of these already steered this turn. |
-| `classify.prompt` | (required) | Classification prompt template with `{placeholders}`. |
+| `classify.promptTemplate` | — | Path to `.md` Nunjucks template file. Searched in `.pi/monitors/`, `~/.pi/agent/monitors/`, then package `examples/`. Takes precedence over `prompt`. |
+| `classify.prompt` | — | Inline classification prompt with `{placeholder}` substitution. Used when `promptTemplate` is absent. One of `promptTemplate` or `prompt` is required. |
 
 **Actions block** — per verdict (`on_flag`, `on_new`, `on_clean`):
 
@@ -270,18 +279,24 @@ Non-main scopes can still write findings to JSON files.
 </when_conditions>
 
 <context_collectors>
-| Collector | Placeholder | What it collects | Limits |
-|-----------|-------------|------------------|--------|
-| `user_text` | `{user_text}` | Most recent user message text (walks back past assistant to find preceding user message) | — |
-| `assistant_text` | `{assistant_text}` | Most recent assistant message text | — |
-| `tool_results` | `{tool_results}` | Tool results with tool name and error status | Last 5, each truncated to 2000 chars |
-| `tool_calls` | `{tool_calls}` | Tool calls and their results interleaved | Last 20, each truncated to 2000 chars |
-| `custom_messages` | `{custom_messages}` | Custom extension messages since last user message | — |
+| Collector | Placeholder / Nunjucks var | What it collects | Limits |
+|-----------|---------------------------|------------------|--------|
+| `user_text` | `{user_text}` / `{{ user_text }}` | Most recent user message text (walks back past assistant to find preceding user message) | — |
+| `assistant_text` | `{assistant_text}` / `{{ assistant_text }}` | Most recent assistant message text | — |
+| `tool_results` | `{tool_results}` / `{{ tool_results }}` | Tool results with tool name and error status | Last 5, each truncated to 2000 chars |
+| `tool_calls` | `{tool_calls}` / `{{ tool_calls }}` | Tool calls and their results interleaved | Last 20, each truncated to 2000 chars |
+| `custom_messages` | `{custom_messages}` / `{{ custom_messages }}` | Custom extension messages since last user message | — |
+| `project_vision` | `{project_vision}` / `{{ project_vision }}` | `.project/project.json` vision, core_value, name | — |
+| `project_conventions` | `{project_conventions}` / `{{ project_conventions }}` | `.project/conformance-reference.json` principle names | — |
+| `git_status` | `{git_status}` / `{{ git_status }}` | Output of `git status --porcelain` | 5s timeout |
+
+The `context` array accepts any string. Unknown collector names produce empty string — this
+allows forward-compatible specs that reference collectors not yet registered.
 
 Built-in placeholders (always available, not listed in `classify.context`):
-- `{patterns}` — formatted from patterns JSON as numbered list: `1. [severity] description`
-- `{instructions}` — formatted from instructions JSON as bulleted list with preamble "Operating instructions from the user (follow these strictly):" — empty string if no instructions
-- `{iteration}` — current consecutive steer count (0-indexed)
+- `{patterns}` / `{{ patterns }}` — formatted from patterns JSON as numbered list: `1. [severity] description`
+- `{instructions}` / `{{ instructions }}` — formatted from instructions JSON as bulleted list with preamble "Operating instructions from the user (follow these strictly):" — empty string if no instructions
+- `{iteration}` / `{{ iteration }}` — current consecutive steer count (0-indexed)
 </context_collectors>
 
 <patterns_file>
@@ -342,6 +357,52 @@ Rules are injected into the classification prompt under a preamble
 "Operating instructions from the user (follow these strictly):" — only if the array is
 non-empty. An empty array or missing file produces no rules block in the prompt.
 </instructions_file>
+
+<prompt_templates>
+Monitors support two prompt rendering modes:
+
+**Inline prompts** (`classify.prompt`) — simple `{placeholder}` string replacement. Good for
+single-paragraph classifiers. All context collectors and built-in placeholders are available
+as `{name}`.
+
+**Nunjucks templates** (`classify.promptTemplate`) — `.md` files with full Nunjucks syntax:
+conditionals (`{% if %}`), loops (`{% for %}`), template inheritance, filters. Used when
+the classify prompt needs conditional sections (e.g., iteration-aware acknowledgment).
+
+Template variables use `{{ name }}` syntax. All context collectors and built-in placeholders
+are available: `{{ patterns }}`, `{{ instructions }}`, `{{ iteration }}`, plus any collectors
+listed in `classify.context`.
+
+When both `promptTemplate` and `prompt` are set, the template is tried first. If the template
+file is not found or fails to render, the inline prompt is used as fallback.
+
+**Iteration-aware acknowledgment pattern** — templates should include this block to support
+monitor-agent dialogue (the agent acknowledging a steer and stating a plan):
+
+```markdown
+{% if iteration > 0 %}
+NOTE: You have steered {{ iteration }} time(s) already this session.
+The agent's latest response is below. If the agent explicitly acknowledged
+the issue and stated a concrete plan to address it (not just "noted" but
+a specific action), reply CLEAN to allow the agent to follow through.
+Re-flag only if the agent ignored or deflected the steer.
+
+Agent response:
+{{ assistant_text }}
+{% endif %}
+```
+
+This requires `assistant_text` in the `classify.context` array. When the classifier sees
+genuine acknowledgment, it replies CLEAN, which resets `whileCount` to 0 and gives the agent
+a fresh turn without re-flagging.
+
+**Template search order** (first match wins):
+1. `.pi/monitors/<template-path>` — project-level override
+2. `~/.pi/agent/monitors/<template-path>` — user-level
+3. Package `examples/<template-path>` — builtin
+
+All four bundled monitors ship with Nunjucks templates in `examples/<name>/classify.md`.
+</prompt_templates>
 
 <verdict_format>
 The classification LLM must respond with one of:
@@ -410,7 +471,9 @@ for other extensions or workflows to invoke classification directly.
 </commands>
 
 <bundled_monitors>
-Three example monitors ship in `examples/` and are seeded on first run:
+Four example monitors ship in `examples/` and are seeded on first run. Each has a
+Nunjucks classify template in `examples/<name>/classify.md` with iteration-aware
+acknowledgment support:
 
 **fragility** (`message_end`, `when: has_tool_results`)
 Watches for unaddressed fragilities after tool use — errors, warnings, or broken state the
@@ -464,27 +527,75 @@ Monitors also auto-silence at their ceiling. With `escalate: "ask"`, the user is
 to continue or dismiss. With `escalate: "dismiss"`, the monitor silences automatically.
 </disabling_monitors>
 
-<example_creating>
-1. Create `.pi/monitors/naming.monitor.json`:
+<creating_monitors>
+When the user asks to create a monitor — either from a described behavior ("flag responses
+that end with questions") or from a discovered need during conversation ("that response
+did X wrong, make a monitor for it") — follow this workflow:
+
+**Step 1: Determine the detection target.** What specific behavior in the assistant's output
+should trigger a flag? Translate the user's description into concrete, observable patterns.
+
+**Step 2: Choose event and when.** Match the detection target to the right trigger:
+- Response content issues (trailing questions, lazy options, tone) → `turn_end`, `when: always`
+- Tool use issues (no commit, no test, bad edits) → `agent_end`, `when: has_file_writes` or `has_tool_results`
+- Post-action fragility (ignoring errors) → `message_end`, `when: has_tool_results`
+- On-demand analysis → `command`, `when: always`
+
+**Step 3: Choose context collectors.** What data does the classifier need to see?
+- Checking the assistant's final response text → `assistant_text`
+- Checking what the user asked (to compare against response) → `user_text`
+- Checking what tools were called → `tool_calls`
+- Checking tool outputs for errors/warnings → `tool_results`
+- Checking git state → `git_status`
+- Include `assistant_text` if you want iteration-aware acknowledgment (recommended).
+
+**Step 4: Write the patterns file.** Each pattern is a specific, observable anti-pattern.
+Write descriptions that a classifier LLM can match against the collected context. Start with
+3-8 seed patterns. Set `learn: true` so the monitor grows its pattern library from `NEW:`
+verdicts at runtime.
+
+**Step 5: Write the classify template.** Use a Nunjucks `.md` file for anything beyond
+trivial classification. The template must:
+- Present the collected context to the classifier
+- List the patterns to check against
+- Include the verdict format instructions (CLEAN/FLAG/NEW)
+- Include the iteration-aware acknowledgment block if `assistant_text` is collected
+
+**Step 6: Write the monitor definition.** Wire everything together in the `.monitor.json`.
+
+**Step 7: Create empty instructions file.** Write `[]` so the user can add calibration
+rules via `/monitors <name> rules add <text>`.
+
+**Step 8: Activate.** After creating the files, tell the user to run `/reload 3` to
+reload extensions and activate the new monitor without restarting the session.
+
+### Example: response-mandates monitor
+
+User says: "create a monitor that flags responses ending with questions and responses
+that present lazy deferral options."
+
+**Files to create:**
+
+1. `.pi/monitors/response-mandates.monitor.json`:
 
 ```json
 {
-  "name": "naming",
-  "description": "Detects poor naming choices in code changes",
+  "name": "response-mandates",
+  "description": "Flags responses that violate communication mandates: trailing questions, lazy deferral options, non-optimal solutions",
   "event": "turn_end",
-  "when": "has_file_writes",
+  "when": "always",
   "scope": { "target": "main" },
   "classify": {
     "model": "claude-sonnet-4-20250514",
-    "context": ["tool_calls"],
-    "excludes": [],
-    "prompt": "An agent made code changes. Check if any new identifiers have poor names.\n\nActions taken:\n{tool_calls}\n\n{instructions}\n\nNaming patterns to check:\n{patterns}\n\nReply CLEAN if all names are clear.\nReply FLAG:<description> if a known naming pattern matched.\nReply NEW:<pattern>|<description> if a naming issue not covered by existing patterns."
+    "context": ["assistant_text", "user_text"],
+    "excludes": ["fragility"],
+    "promptTemplate": "response-mandates/classify.md"
   },
-  "patterns": { "path": "naming.patterns.json", "learn": true },
-  "instructions": { "path": "naming.instructions.json" },
+  "patterns": { "path": "response-mandates.patterns.json", "learn": true },
+  "instructions": { "path": "response-mandates.instructions.json" },
   "actions": {
-    "on_flag": { "steer": "Rename the poorly named identifier." },
-    "on_new": { "steer": "Rename the poorly named identifier.", "learn_pattern": true },
+    "on_flag": { "steer": "Rewrite your response: report findings and state actions — do not end with a question or present options that defer proper work." },
+    "on_new": { "steer": "Rewrite your response: report findings and state actions — do not end with a question or present options that defer proper work.", "learn_pattern": true },
     "on_clean": null
   },
   "ceiling": 3,
@@ -492,32 +603,106 @@ to continue or dismiss. With `escalate: "dismiss"`, the monitor silences automat
 }
 ```
 
-2. Create `.pi/monitors/naming.patterns.json`:
+2. `.pi/monitors/response-mandates/classify.md`:
+
+```markdown
+The user said:
+"{{ user_text }}"
+
+The assistant's response:
+"{{ assistant_text }}"
+
+{{ instructions }}
+
+Check the assistant's response against these anti-patterns:
+{{ patterns }}
+
+Specifically check:
+1. Does the response end with a question to the user? The final sentence or paragraph
+   should not be a question unless the user explicitly asked to be consulted. Rhetorical
+   questions, permission-seeking ("shall I...?", "would you like...?"), and steering
+   questions ("what do you think?") are all violations.
+2. Does the response present options where one or more options leave known issues
+   unaddressed? If a problem has been identified, every option presented must address it.
+   Options that defer proper work to a vague future ("we could address this later",
+   "for now we can...") are violations.
+3. Does the response propose a non-durable solution when a durable one is known? Workarounds,
+   temporary fixes, and partial solutions when the root cause is understood are violations.
+
+{% if iteration > 0 %}
+NOTE: You have steered {{ iteration }} time(s) already this session.
+If the agent explicitly acknowledged the mandate violation and rewrote its response
+without the violation, reply CLEAN. Re-flag only if the violation persists.
+
+Agent response:
+{{ assistant_text }}
+{% endif %}
+
+Reply CLEAN if the response follows all mandates.
+Reply FLAG:<description> if a known pattern was matched.
+Reply NEW:<pattern>|<description> if a violation not covered by existing patterns was detected.
+```
+
+3. `.pi/monitors/response-mandates.patterns.json`:
 
 ```json
 [
-  { "id": "single-letter", "description": "Single-letter variable names outside of loop counters", "severity": "warning", "source": "bundled" },
-  { "id": "generic-names", "description": "Generic names like data, info, result, value, temp without context", "severity": "warning", "source": "bundled" },
-  { "id": "bool-not-question", "description": "Boolean variables not phrased as questions (is, has, can, should)", "severity": "info", "source": "bundled" }
+  { "id": "trailing-question", "description": "Response ends with a question to the user instead of reporting and acting", "severity": "error", "category": "communication", "source": "bundled" },
+  { "id": "permission-seeking", "description": "Asks permission before acting when the user has already given direction", "severity": "warning", "category": "communication", "source": "bundled" },
+  { "id": "steering-question", "description": "Ends with 'what do you think?', 'does that sound right?', or similar steering questions", "severity": "error", "category": "communication", "source": "bundled" },
+  { "id": "lazy-deferral", "description": "Presents options that defer known issues to a vague future ('we can address later', 'for now')", "severity": "error", "category": "anti-laziness", "source": "bundled" },
+  { "id": "fragility-tolerant-option", "description": "Offers an option that leaves identified fragility unaddressed", "severity": "error", "category": "anti-laziness", "source": "bundled" },
+  { "id": "workaround-over-fix", "description": "Proposes workaround when root cause is understood and fixable", "severity": "warning", "category": "anti-laziness", "source": "bundled" }
 ]
 ```
 
-3. Create `.pi/monitors/naming.instructions.json`:
+4. `.pi/monitors/response-mandates.instructions.json`:
 
 ```json
 []
 ```
-</example_creating>
+
+After creating all files, tell the user: "Monitor created. Run `/reload 3` to activate
+it in this session."
+</creating_monitors>
+
+<modifying_monitors>
+**Adding patterns** — When the user identifies a new anti-pattern during conversation
+("that kind of response should also be flagged"), add it to the patterns JSON file.
+Each pattern needs `id`, `description`, `severity`, and `source: "user"`.
+
+**Adding rules** — Use the `monitors-rules` tool or `/monitors <name> rules add <text>`
+to add calibration rules. Rules fine-tune the classifier without changing patterns.
+Example: "responses that end with 'let me know' are not questions."
+
+**Changing the classify prompt** — Edit the Nunjucks template file or the inline prompt.
+For template-based monitors, edit the `.md` file. For inline monitors, edit the `prompt`
+field in the `.monitor.json`.
+
+**Upgrading inline to template** — When a monitor needs conditionals (iteration-aware
+acknowledgment, optional context sections), create a `<name>/classify.md` template file
+in `.pi/monitors/` and add `"promptTemplate": "<name>/classify.md"` to the classify block.
+The inline `prompt` remains as fallback.
+
+**Adjusting sensitivity** — Lower the `ceiling` to escalate sooner if the monitor is
+over-firing. Raise it to give the agent more chances. Set `escalate: "dismiss"` to
+auto-silence without prompting.
+
+After any file changes, tell the user to run `/reload 3` to pick up the changes.
+</modifying_monitors>
 
 <success_criteria>
 - Monitor `.monitor.json` validates against `schemas/monitor.schema.json`
 - Patterns `.patterns.json` validates against `schemas/monitor-pattern.schema.json`
 - Patterns array is non-empty (empty patterns = monitor does nothing)
-- Classification prompt includes `{patterns}` placeholder and verdict format instructions (CLEAN/FLAG/NEW)
+- Classification prompt (template or inline) includes `{{ patterns }}` / `{patterns}` and verdict format instructions (CLEAN/FLAG/NEW)
+- If using `promptTemplate`, the `.md` file exists at the declared path relative to one of the template search directories
+- If using templates, `assistant_text` is in `classify.context` for iteration-aware acknowledgment
 - Actions specify `steer` for `scope.target: "main"` monitors, `write` for findings output
 - `write.path` is set relative to project cwd, not monitor directory
 - `excludes` lists monitors that should not double-steer in the same turn
 - Instructions file exists (even if empty `[]`) to enable `/monitors <name> rules add <text>` calibration
+- After creating or modifying monitor files, remind user to run `/reload 3`
 </success_criteria>
 
 ---

@@ -91,6 +91,8 @@ export const PROJECT_BLOCK_TYPES = [
 	"rationale",
 	"verification",
 	"handoff",
+	"conformance-reference",
+	"audit",
 ] as const;
 
 export interface SchemaProperty {
@@ -140,9 +142,7 @@ export function schemaInfo(cwd: string, schemaName: string): SchemaInfo | null {
 					// Extract item properties (one level deep)
 					const items = propRaw.items as Record<string, unknown> | undefined;
 					if (items?.properties && typeof items.properties === "object") {
-						const itemRequiredSet = new Set(
-							Array.isArray(items.required) ? (items.required as string[]) : [],
-						);
+						const itemRequiredSet = new Set(Array.isArray(items.required) ? (items.required as string[]) : []);
 						const itemProps: SchemaProperty[] = [];
 						for (const [iName, iPropRaw] of Object.entries(
 							items.properties as Record<string, Record<string, unknown>>,
@@ -437,7 +437,9 @@ export function projectState(cwd: string): ProjectState {
 			}
 			state.requirements = { total: items.length, byStatus, byPriority };
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Tasks summary
 	try {
@@ -451,7 +453,9 @@ export function projectState(cwd: string): ProjectState {
 			}
 			state.tasks = { total: items.length, byStatus };
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Domain summary
 	try {
@@ -459,7 +463,9 @@ export function projectState(cwd: string): ProjectState {
 		if (Array.isArray(domainData.entries)) {
 			state.domain = { total: domainData.entries.length };
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Verification summary
 	try {
@@ -474,13 +480,17 @@ export function projectState(cwd: string): ProjectState {
 			}
 			state.verifications = { total: items.length, passed, failed };
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Handoff presence
 	try {
 		const handoffPath = path.join(cwd, PROJECT_DIR, "handoff.json");
 		state.hasHandoff = fs.existsSync(handoffPath);
-	} catch { /* ignore */ }
+	} catch {
+		/* ignore */
+	}
 
 	return state;
 }
@@ -521,10 +531,14 @@ export function validateProject(cwd: string): ProjectValidationResult {
 					const data = JSON.parse(fs.readFileSync(path.join(phasesDir, file), "utf-8"));
 					if (data.number !== undefined) phaseIds.add(String(data.number));
 					if (data.name) phaseIds.add(data.name);
-				} catch { /* skip malformed */ }
+				} catch {
+					/* skip malformed */
+				}
 			}
 		}
-	} catch { /* no phases dir */ }
+	} catch {
+		/* no phases dir */
+	}
 
 	// Load tasks
 	try {
@@ -534,7 +548,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				if (t.id) taskIds.add(String(t.id));
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Load decisions
 	try {
@@ -544,7 +560,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				if (d.id) decisionIds.add(String(d.id));
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Load requirements
 	try {
@@ -554,7 +572,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				if (r.id) requirementIds.add(String(r.id));
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// All known IDs for generic resolution
 	const allIds = new Set([...phaseIds, ...taskIds, ...decisionIds, ...requirementIds]);
@@ -588,7 +608,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				}
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Validate decision references
 	try {
@@ -605,7 +627,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				}
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Validate gap references
 	try {
@@ -622,7 +646,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				}
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Validate requirement references
 	try {
@@ -655,7 +681,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				}
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Validate verification references
 	try {
@@ -672,7 +700,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				}
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	// Validate rationale references
 	try {
@@ -693,7 +723,9 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				}
 			}
 		}
-	} catch { /* block doesn't exist */ }
+	} catch {
+		/* block doesn't exist */
+	}
 
 	return {
 		valid: issues.filter((i) => i.severity === "error").length === 0,

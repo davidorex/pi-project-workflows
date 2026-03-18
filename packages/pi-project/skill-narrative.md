@@ -65,6 +65,8 @@ The default schemas support a full planning lifecycle:
 - **rationale.json** — design rationale with decision cross-references
 - **handoff.json** — session context snapshot (created on-demand, not by /project init)
 - **verification.json** — completion evidence per task/phase/requirement
+- **conformance-reference.json** — executable code conventions with principles, rules, check methods (grep/command/ast/inspect), and check patterns. Ships empty, populated per-project by agents or users.
+- **audit** (schema only, no default block) — structured audit results produced by running conformance checks. Findings with locations, severity, fix suggestions, and verify methods.
 
 All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add fields, change enums, or restructure blocks without modifying code.
 

@@ -31,16 +31,24 @@ Subcommands: `init`, `run`, `list`, `resume`, `validate`
 
 ## Bundled Resources
 
-### agents/ (13 files)
+### agents/ (21 files)
 
+- `agents/architecture-designer.agent.yaml`
+- `agents/architecture-inferrer.agent.yaml`
 - `agents/audit-fixer.agent.yaml`
 - `agents/code-explorer.agent.yaml`
 - `agents/decomposer.agent.yaml`
+- `agents/gap-identifier.agent.yaml`
+- `agents/handoff-writer.agent.yaml`
 - `agents/investigator.agent.yaml`
 - `agents/pattern-analyzer.agent.yaml`
 - `agents/phase-author.agent.yaml`
+- `agents/plan-creator.agent.yaml`
 - `agents/plan-decomposer.agent.yaml`
+- `agents/project-definer.agent.yaml`
+- `agents/project-inferrer.agent.yaml`
 - `agents/quality-analyzer.agent.yaml`
+- `agents/requirements-gatherer.agent.yaml`
 - `agents/researcher.agent.yaml`
 - `agents/spec-implementer.agent.yaml`
 - `agents/structure-analyzer.agent.yaml`
@@ -61,20 +69,24 @@ Subcommands: `init`, `run`, `list`, `resume`, `validate`
 - `schemas/synthesis.schema.json`
 - `schemas/verifier-output.schema.json`
 
-### workflows/ (10 files)
+### workflows/ (14 files)
 
+- `workflows/analyze-existing-project.workflow.yaml`
+- `workflows/create-handoff.workflow.yaml`
 - `workflows/create-phase.workflow.yaml`
 - `workflows/do-gap.workflow.yaml`
 - `workflows/fix-audit.workflow.yaml`
 - `workflows/gap-to-phase.workflow.yaml`
+- `workflows/init-new-project.workflow.yaml`
 - `workflows/parallel-analysis.workflow.yaml`
 - `workflows/parallel-explicit.workflow.yaml`
 - `workflows/pausable-analysis.workflow.yaml`
+- `workflows/plan-from-requirements.workflow.yaml`
 - `workflows/resumable-analysis.workflow.yaml`
 - `workflows/self-implement.workflow.yaml`
 - `workflows/typed-analysis.workflow.yaml`
 
-### templates/ (20 files)
+### templates/ (28 files)
 
 - `templates/analyzers/base-analyzer.md`
 - `templates/analyzers/macros.md`
@@ -84,13 +96,21 @@ Subcommands: `init`, `run`, `list`, `resume`, `validate`
 - `templates/analyzers/quality.md`
 - `templates/analyzers/structure-task.md`
 - `templates/analyzers/structure.md`
+- `templates/architecture-designer/task.md`
+- `templates/architecture-inferrer/task.md`
 - `templates/audit-fixer/task.md`
 - `templates/decomposer/task.md`
 - `templates/explorer/system.md`
 - `templates/explorer/task.md`
+- `templates/gap-identifier/task.md`
+- `templates/handoff-writer/task.md`
 - `templates/investigator/task.md`
 - `templates/phase-author/task.md`
+- `templates/plan-creator/task.md`
 - `templates/plan-decomposer/task.md`
+- `templates/project-definer/task.md`
+- `templates/project-inferrer/task.md`
+- `templates/requirements-gatherer/task.md`
 - `templates/researcher/task.md`
 - `templates/spec-implementer/task.md`
 - `templates/synthesizer/system.md`

@@ -53,6 +53,11 @@ steps:
     output:
       format: json
 
+artifacts:
+  handoff:
+    path: .project/handoff.json
+    from: steps.capture.output
+
 completion:
   message: |
     Handoff captured to .project/handoff.json. Resume context is available for the next session.

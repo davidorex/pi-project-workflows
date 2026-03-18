@@ -43,9 +43,14 @@ steps:
     output:
       format: json
 
+artifacts:
+  tasks:
+    path: .project/tasks.json
+    from: steps.create-plan.output
+
 completion:
   template: |
-    Plan created from requirements.
+    Plan created from requirements. Tasks written to .project/tasks.json.
 
     Use `/project status` to see the phase and task breakdown.
     Use `/project validate` to check cross-block references.

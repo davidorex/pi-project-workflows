@@ -43,9 +43,23 @@ steps:
     output:
       format: json
 
+artifacts:
+  project:
+    path: .project/project.json
+    from: steps.define-identity.output
+  requirements:
+    path: .project/requirements.json
+    from: steps.gather-requirements.output
+  architecture:
+    path: .project/architecture.json
+    from: steps.design-architecture.output
+  tasks:
+    path: .project/tasks.json
+    from: steps.create-plan.output
+
 completion:
   template: |
-    Project initialized from vision.
+    Project initialized from vision. Results written to .project/ blocks.
 
     **Identity:** ${{ steps.define-identity.output.name }} — ${{ steps.define-identity.output.core_value }}
     **Requirements:** ${{ steps.gather-requirements.output.requirements | length }} captured

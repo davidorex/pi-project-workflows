@@ -63,9 +63,20 @@ steps:
     output:
       format: json
 
+artifacts:
+  project:
+    path: .project/project.json
+    from: steps.infer-project.output
+  architecture:
+    path: .project/architecture.json
+    from: steps.infer-architecture.output
+  gaps:
+    path: .project/gaps.json
+    from: steps.identify-gaps.output
+
 completion:
   template: |
-    Existing project analyzed.
+    Existing project analyzed. Results written to .project/ blocks.
 
     **Project:** ${{ steps.infer-project.output.name }} — ${{ steps.infer-project.output.core_value }}
     **Architecture:** ${{ steps.infer-architecture.output.modules | length }} modules, ${{ steps.infer-architecture.output.patterns | length }} patterns

@@ -33,6 +33,45 @@ const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
 const EXAMPLES_DIR = path.join(EXTENSION_DIR, "examples");
 
 // =============================================================================
+// Vocabulary registries (exported for SDK and skill generation)
+// =============================================================================
+
+export interface CollectorDescriptor {
+	name: string;
+	description: string;
+	limits?: string;
+}
+
+export const COLLECTOR_DESCRIPTORS: CollectorDescriptor[] = [
+	{ name: "user_text", description: "Most recent user message text" },
+	{ name: "assistant_text", description: "Most recent assistant message text" },
+	{ name: "tool_results", description: "Tool results with tool name and error status", limits: "Last 5, truncated 2000 chars" },
+	{ name: "tool_calls", description: "Tool calls and results interleaved", limits: "Last 20, truncated 2000 chars" },
+	{ name: "custom_messages", description: "Custom extension messages since last user message" },
+	{ name: "project_vision", description: ".project/project.json vision, core_value, name" },
+	{ name: "project_conventions", description: ".project/conformance-reference.json principle names" },
+	{ name: "git_status", description: "Output of git status --porcelain", limits: "5s timeout" },
+];
+
+export interface WhenConditionDescriptor {
+	name: string;
+	description: string;
+	parameterized: boolean;
+}
+
+export const WHEN_CONDITIONS: WhenConditionDescriptor[] = [
+	{ name: "always", description: "Fire every time the event occurs", parameterized: false },
+	{ name: "has_tool_results", description: "Fire only if tool results present since last user message", parameterized: false },
+	{ name: "has_file_writes", description: "Fire only if write or edit tool called since last user message", parameterized: false },
+	{ name: "has_bash", description: "Fire only if bash tool called since last user message", parameterized: false },
+	{ name: "every(N)", description: "Fire every Nth activation (counter resets when user text changes)", parameterized: true },
+	{ name: "tool(name)", description: "Fire only if specific named tool called since last user message", parameterized: true },
+];
+
+export const VERDICT_TYPES = ["clean", "flag", "new"] as const;
+export const SCOPE_TARGETS = ["main", "subagent", "all", "workflow"] as const;
+
+// =============================================================================
 // Types
 // =============================================================================
 
@@ -135,7 +174,7 @@ interface BufferedSteer {
 
 type MonitorEvent = "message_end" | "turn_end" | "agent_end" | "command";
 
-const VALID_EVENTS = new Set<string>(["message_end", "turn_end", "agent_end", "command"]);
+export const VALID_EVENTS = new Set<string>(["message_end", "turn_end", "agent_end", "command"]);
 
 function isValidEvent(event: string): event is MonitorEvent {
 	return VALID_EVENTS.has(event);
@@ -450,6 +489,9 @@ const collectors: Record<string, (branch: SessionEntry[]) => string> = {
 	project_conventions: collectProjectConventions,
 	git_status: collectGitStatus,
 };
+
+/** Collector names derived from the runtime registry — used for consistency testing. */
+export const COLLECTOR_NAMES = Object.keys(collectors);
 
 function hasToolResults(branch: SessionEntry[]): boolean {
 	for (let i = branch.length - 1; i >= 0; i--) {

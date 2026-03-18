@@ -14,8 +14,8 @@
  * Run after build: npm run build && npm run skills
  */
 
-import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { join, resolve, dirname, basename, relative } from "path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { basename, dirname, join, relative, resolve } from "path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const PACKAGES_DIR = join(ROOT, "packages");
@@ -86,15 +86,24 @@ function typeboxToString(schema) {
 	if (!schema) return "unknown";
 	const kind = schema[Symbol.for("TypeBox.Kind")] || schema.type;
 	switch (kind) {
-		case "String": return "string";
-		case "Number": return "number";
-		case "Boolean": return "boolean";
-		case "Object": return "object";
-		case "Array": return "array";
-		case "Any": return "any";
-		case "Unknown": return "unknown";
-		case "Optional": return typeboxToString(schema.anyOf?.[0] || schema) + "?";
-		default: return schema.type || "unknown";
+		case "String":
+			return "string";
+		case "Number":
+			return "number";
+		case "Boolean":
+			return "boolean";
+		case "Object":
+			return "object";
+		case "Array":
+			return "array";
+		case "Any":
+			return "any";
+		case "Unknown":
+			return "unknown";
+		case "Optional":
+			return typeboxToString(schema.anyOf?.[0] || schema) + "?";
+		default:
+			return schema.type || "unknown";
 	}
 }
 
@@ -104,9 +113,11 @@ function extractSubcommands(config) {
 		try {
 			const completions = config.getArgumentCompletions("");
 			if (Array.isArray(completions)) {
-				return completions.map(c => typeof c === "string" ? c : c.value);
+				return completions.map((c) => (typeof c === "string" ? c : c.value));
 			}
-		} catch { /* dynamic completions */ }
+		} catch {
+			/* dynamic completions */
+		}
 	}
 	return [];
 }
@@ -125,7 +136,7 @@ function scanResources(packageDir) {
 		resources.push({
 			directory: dir,
 			count: files.length,
-			files: files.map(f => relative(packageDir, f)),
+			files: files.map((f) => relative(packageDir, f)),
 		});
 	}
 
@@ -164,7 +175,7 @@ function extractProjectVocabulary(packageDir) {
 
 			if (raw.properties) {
 				for (const [propName, propDef] of Object.entries(raw.properties)) {
-					const type = Array.isArray(propDef.type) ? propDef.type.join("|") : (propDef.type || "unknown");
+					const type = Array.isArray(propDef.type) ? propDef.type.join("|") : propDef.type || "unknown";
 					properties.push({
 						name: propName,
 						type,
@@ -190,7 +201,7 @@ function extractProjectVocabulary(packageDir) {
 
 			// Extract array key and item properties
 			let arrayKey = null;
-			let itemProps = [];
+			const itemProps = [];
 			for (const prop of properties) {
 				if (prop.type === "array") {
 					arrayKey = prop.name;
@@ -198,7 +209,7 @@ function extractProjectVocabulary(packageDir) {
 					if (items?.properties) {
 						const itemRequired = new Set(items.required || []);
 						for (const [iName, iDef] of Object.entries(items.properties)) {
-							const iType = Array.isArray(iDef.type) ? iDef.type.join("|") : (iDef.type || "unknown");
+							const iType = Array.isArray(iDef.type) ? iDef.type.join("|") : iDef.type || "unknown";
 							const enumSuffix = iDef.enum ? ` (${iDef.enum.join("|")})` : "";
 							itemProps.push({
 								name: iName,
@@ -212,15 +223,30 @@ function extractProjectVocabulary(packageDir) {
 			}
 
 			schemas.push({ name, title, arrayKey, itemProps, enums });
-		} catch { /* skip malformed */ }
+		} catch {
+			/* skip malformed */
+		}
 	}
 
 	return schemas.length > 0 ? schemas : null;
 }
 
+// ── Monitor vocabulary extraction ────────────────────────────────────────────
+
+function extractMonitorVocabulary(mod) {
+	if (!mod?.COLLECTOR_DESCRIPTORS) return null;
+	return {
+		collectors: mod.COLLECTOR_DESCRIPTORS,
+		whenConditions: mod.WHEN_CONDITIONS || [],
+		verdictTypes: mod.VERDICT_TYPES ? [...mod.VERDICT_TYPES] : [],
+		scopeTargets: mod.SCOPE_TARGETS ? [...mod.SCOPE_TARGETS] : [],
+		validEvents: mod.VALID_EVENTS ? [...mod.VALID_EVENTS] : [],
+	};
+}
+
 // ── SKILL.md composition ────────────────────────────────────────────────────
 
-function composeSkill(packageName, description, registrations, resources, narrative, vocabulary) {
+function composeSkill(packageName, description, registrations, resources, narrative, vocabulary, monitorVocab) {
 	const lines = [];
 
 	lines.push(`# ${packageName}`);
@@ -262,7 +288,7 @@ function composeSkill(packageName, description, registrations, resources, narrat
 			lines.push(cmd.description);
 			if (cmd.subcommands.length > 0) {
 				lines.push("");
-				lines.push(`Subcommands: ${cmd.subcommands.map(s => `\`${s}\``).join(", ")}`);
+				lines.push(`Subcommands: ${cmd.subcommands.map((s) => `\`${s}\``).join(", ")}`);
 			}
 			lines.push("");
 		}
@@ -282,7 +308,7 @@ function composeSkill(packageName, description, registrations, resources, narrat
 	if (registrations.events.length > 0) {
 		lines.push("## Events");
 		lines.push("");
-		const uniqueEvents = [...new Set(registrations.events.map(e => e.event))];
+		const uniqueEvents = [...new Set(registrations.events.map((e) => e.event))];
 		for (const event of uniqueEvents) {
 			lines.push(`- \`${event}\``);
 		}
@@ -316,7 +342,9 @@ function composeSkill(packageName, description, registrations, resources, narrat
 			lines.push("| Block | Title | Array Key | Item Fields |");
 			lines.push("|-------|-------|-----------|-------------|");
 			for (const s of arraySchemas) {
-				const itemFields = s.itemProps.map((p) => `${p.name}${p.required ? "" : "?"}` + (p.type !== "string" ? ` (${p.type})` : "")).join(", ");
+				const itemFields = s.itemProps
+					.map((p) => `${p.name}${p.required ? "" : "?"}` + (p.type !== "string" ? ` (${p.type})` : ""))
+					.join(", ");
 				lines.push(`| \`${s.name}\` | ${s.title} | \`${s.arrayKey}\` | ${itemFields} |`);
 			}
 			lines.push("");
@@ -344,6 +372,72 @@ function composeSkill(packageName, description, registrations, resources, narrat
 				lines.push(`| \`${e.block}\` | \`${e.field}\` | ${e.values.join(", ")} |`);
 			}
 			lines.push("");
+		}
+	}
+
+	// Monitor vocabulary (for pi-behavior-monitors — derived from exported registries)
+	if (monitorVocab) {
+		lines.push("## Monitor Vocabulary");
+		lines.push("");
+
+		// Context collectors table
+		if (monitorVocab.collectors.length > 0) {
+			lines.push("### Context Collectors");
+			lines.push("");
+			lines.push("| Collector | Placeholder | Description | Limits |");
+			lines.push("|-----------|-------------|-------------|--------|");
+			for (const c of monitorVocab.collectors) {
+				lines.push(
+					`| \`${c.name}\` | \`{${c.name}}\` / \`{{ ${c.name} }}\` | ${c.description} | ${c.limits || "—"} |`,
+				);
+			}
+			lines.push("");
+			lines.push(
+				"Any string is accepted in `classify.context`. Unknown collector names produce empty string (graceful degradation).",
+			);
+			lines.push("");
+			lines.push("Built-in placeholders (always available, not listed in `classify.context`):");
+			lines.push(
+				"- `{patterns}` / `{{ patterns }}` — formatted from patterns JSON as numbered list: `1. [severity] description`",
+			);
+			lines.push(
+				'- `{instructions}` / `{{ instructions }}` — formatted from instructions JSON as bulleted list with "Operating instructions from the user (follow these strictly):" preamble — empty string if no instructions',
+			);
+			lines.push(
+				"- `{iteration}` / `{{ iteration }}` — current consecutive steer count (0-indexed)",
+			);
+			lines.push("");
+		}
+
+		// When conditions
+		if (monitorVocab.whenConditions.length > 0) {
+			lines.push("### When Conditions");
+			lines.push("");
+			for (const w of monitorVocab.whenConditions) {
+				lines.push(`- \`${w.name}\` — ${w.description}`);
+			}
+			lines.push("");
+		}
+
+		// Events
+		if (monitorVocab.validEvents.length > 0) {
+			lines.push(
+				`### Events\n\n${monitorVocab.validEvents.map((e) => `\`${e}\``).join(", ")}\n`,
+			);
+		}
+
+		// Verdict types
+		if (monitorVocab.verdictTypes.length > 0) {
+			lines.push(
+				`### Verdict Types\n\n${monitorVocab.verdictTypes.map((v) => `\`${v}\``).join(", ")}\n`,
+			);
+		}
+
+		// Scope targets
+		if (monitorVocab.scopeTargets.length > 0) {
+			lines.push(
+				`### Scope Targets\n\n${monitorVocab.scopeTargets.map((s) => `\`${s}\``).join(", ")}\n`,
+			);
 		}
 	}
 
@@ -382,8 +476,9 @@ async function generateForPackage(packageDir) {
 		return null;
 	}
 
+	let mod;
 	try {
-		const mod = await import(entryPoint);
+		mod = await import(entryPoint);
 		const factory = mod.default || mod;
 		if (typeof factory === "function") {
 			factory(mockPi);
@@ -408,9 +503,7 @@ async function generateForPackage(packageDir) {
 
 	// Read optional narrative
 	const narrativePath = join(packageDir, "skill-narrative.md");
-	const narrative = existsSync(narrativePath)
-		? readFileSync(narrativePath, "utf-8")
-		: null;
+	const narrative = existsSync(narrativePath) ? readFileSync(narrativePath, "utf-8") : null;
 
 	if (narrative) {
 		console.log(`  Narrative: ${narrativePath}`);
@@ -422,8 +515,14 @@ async function generateForPackage(packageDir) {
 		console.log(`  Vocabulary: ${vocabulary.length} schemas`);
 	}
 
+	// Extract monitor vocabulary (for pi-behavior-monitors — from module exports)
+	const monitorVocab = extractMonitorVocabulary(mod);
+	if (monitorVocab) {
+		console.log(`  Monitor vocabulary: ${monitorVocab.collectors.length} collectors, ${monitorVocab.whenConditions.length} conditions`);
+	}
+
 	// Compose
-	const content = composeSkill(packageName, description, registrations, resources, narrative, vocabulary);
+	const content = composeSkill(packageName, description, registrations, resources, narrative, vocabulary, monitorVocab);
 
 	// Write to skills/<package-short-name>/SKILL.md
 	const shortName = packageName.replace("@davidorex/", "");
@@ -464,16 +563,20 @@ function generateMetaSkill(subPackageResults) {
 		lines.push("");
 
 		if (result.registrations.tools.length > 0) {
-			lines.push(`**Tools:** ${result.registrations.tools.map(t => `\`${t.name}\``).join(", ")}`);
+			lines.push(`**Tools:** ${result.registrations.tools.map((t) => `\`${t.name}\``).join(", ")}`);
 		}
 		if (result.registrations.commands.length > 0) {
-			lines.push(`**Commands:** ${result.registrations.commands.map(c => `\`/${c.name}\``).join(", ")}`);
+			lines.push(`**Commands:** ${result.registrations.commands.map((c) => `\`/${c.name}\``).join(", ")}`);
 		}
 		if (result.registrations.shortcuts.length > 0) {
-			lines.push(`**Shortcuts:** ${result.registrations.shortcuts.map(s => `${s.key} (${s.description})`).join(", ")}`);
+			lines.push(
+				`**Shortcuts:** ${result.registrations.shortcuts.map((s) => `${s.key} (${s.description})`).join(", ")}`,
+			);
 		}
 		lines.push("");
-		lines.push(`See full skill: [${result.shortName}/SKILL.md](../packages/${basename(dirname(result.skillPath))}/../skills/${result.shortName}/SKILL.md)`);
+		lines.push(
+			`See full skill: [${result.shortName}/SKILL.md](../packages/${basename(dirname(result.skillPath))}/../skills/${result.shortName}/SKILL.md)`,
+		);
 		lines.push("");
 	}
 

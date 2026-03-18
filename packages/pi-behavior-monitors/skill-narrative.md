@@ -169,35 +169,7 @@ Non-main scopes can still write findings to JSON files.
 `null` means no action on clean (the default behavior).
 </fields>
 
-<when_conditions>
-- `always` — fire every time the event occurs
-- `has_tool_results` — fire only if tool results are present since last user message
-- `has_file_writes` — fire only if `write` or `edit` tool was called since last user message
-- `has_bash` — fire only if `bash` tool was called since last user message
-- `tool(name)` — fire only if a specific named tool was called since last user message
-- `every(N)` — fire every Nth activation within the same user prompt (counter resets when user text changes)
-</when_conditions>
-
-<context_collectors>
-| Collector | Placeholder / Nunjucks var | What it collects | Limits |
-|-----------|---------------------------|------------------|--------|
-| `user_text` | `{user_text}` / `{{ user_text }}` | Most recent user message text (walks back past assistant to find preceding user message) | — |
-| `assistant_text` | `{assistant_text}` / `{{ assistant_text }}` | Most recent assistant message text | — |
-| `tool_results` | `{tool_results}` / `{{ tool_results }}` | Tool results with tool name and error status | Last 5, each truncated to 2000 chars |
-| `tool_calls` | `{tool_calls}` / `{{ tool_calls }}` | Tool calls and their results interleaved | Last 20, each truncated to 2000 chars |
-| `custom_messages` | `{custom_messages}` / `{{ custom_messages }}` | Custom extension messages since last user message | — |
-| `project_vision` | `{project_vision}` / `{{ project_vision }}` | `.project/project.json` vision, core_value, name | — |
-| `project_conventions` | `{project_conventions}` / `{{ project_conventions }}` | `.project/conformance-reference.json` principle names | — |
-| `git_status` | `{git_status}` / `{{ git_status }}` | Output of `git status --porcelain` | 5s timeout |
-
-The `context` array accepts any string. Unknown collector names produce empty string — this
-allows forward-compatible specs that reference collectors not yet registered.
-
-Built-in placeholders (always available, not listed in `classify.context`):
-- `{patterns}` / `{{ patterns }}` — formatted from patterns JSON as numbered list: `1. [severity] description`
-- `{instructions}` / `{{ instructions }}` — formatted from instructions JSON as bulleted list with preamble "Operating instructions from the user (follow these strictly):" — empty string if no instructions
-- `{iteration}` / `{{ iteration }}` — current consecutive steer count (0-indexed)
-</context_collectors>
+<!-- when_conditions and context_collectors tables are generated from code registries — see Monitor Vocabulary section in SKILL.md -->
 
 <patterns_file>
 JSON array conforming to `schemas/monitor-pattern.schema.json`:

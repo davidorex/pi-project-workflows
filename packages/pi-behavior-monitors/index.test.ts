@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { ClassifyResult, MonitorsCommand } from "./index.js";
-import { generateFindingId, parseModelSpec, parseMonitorsArgs, parseVerdict } from "./index.js";
+import {
+	COLLECTOR_DESCRIPTORS,
+	COLLECTOR_NAMES,
+	SCOPE_TARGETS,
+	VALID_EVENTS,
+	VERDICT_TYPES,
+	WHEN_CONDITIONS,
+	generateFindingId,
+	parseModelSpec,
+	parseMonitorsArgs,
+	parseVerdict,
+} from "./index.js";
 
 // =============================================================================
 // parseMonitorsArgs
@@ -359,5 +370,38 @@ describe("generateFindingId", () => {
 	it("returns a non-empty string", () => {
 		const id = generateFindingId("x", "y");
 		expect(id.length).toBeGreaterThan(0);
+	});
+});
+
+// =============================================================================
+// Vocabulary registry consistency
+// =============================================================================
+
+describe("vocabulary registries", () => {
+	it("COLLECTOR_DESCRIPTORS names match runtime COLLECTOR_NAMES", () => {
+		const descriptorNames = COLLECTOR_DESCRIPTORS.map((d) => d.name);
+		expect(descriptorNames).toEqual(COLLECTOR_NAMES);
+	});
+
+	it("COLLECTOR_DESCRIPTORS has no duplicate names", () => {
+		const names = COLLECTOR_DESCRIPTORS.map((d) => d.name);
+		expect(new Set(names).size).toBe(names.length);
+	});
+
+	it("WHEN_CONDITIONS has no duplicate names", () => {
+		const names = WHEN_CONDITIONS.map((w) => w.name);
+		expect(new Set(names).size).toBe(names.length);
+	});
+
+	it("VALID_EVENTS is non-empty", () => {
+		expect(VALID_EVENTS.size).toBeGreaterThan(0);
+	});
+
+	it("VERDICT_TYPES contains expected values", () => {
+		expect([...VERDICT_TYPES]).toEqual(["clean", "flag", "new"]);
+	});
+
+	it("SCOPE_TARGETS contains expected values", () => {
+		expect([...SCOPE_TARGETS]).toEqual(["main", "subagent", "all", "workflow"]);
 	});
 });

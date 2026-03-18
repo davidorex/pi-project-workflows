@@ -182,7 +182,14 @@ function gatherWorkflowStatus(cwd: string): Record<string, unknown> {
 		stepTypes: types.map((t) => t.name),
 		filters,
 		workflows: workflows.map((w) => ({ name: w.name, description: w.description, source: w.source })),
-		agents: agents.map((a) => ({ name: a.name })),
+		agents: agents.map((a) => ({
+			name: a.name,
+			role: a.role,
+			description: a.description,
+			model: a.model,
+			tools: a.tools,
+			outputFormat: a.outputFormat,
+		})),
 		schemas: schemas.length,
 		templates: templates.length,
 	};
@@ -550,6 +557,61 @@ const extension = (pi: ExtensionAPI) => {
 				name: w.name,
 				description: w.description,
 				source: w.source,
+			}));
+
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(items, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: workflow-agents ──────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "workflow-agents",
+		label: "Workflow Agents",
+		description:
+			"List available agents with full specs, or inspect a single agent by name. Returns role, description, model, tools, output format/schema, prompt template paths.",
+		promptSnippet: "List available agents with specs, or inspect a single agent by name",
+		parameters: Type.Object({
+			name: Type.Optional(Type.String({ description: "Agent name to inspect (omit to list all)" })),
+		}),
+
+		async execute(
+			_toolCallId: string,
+			params: { name?: string },
+			_signal: AbortSignal | undefined,
+			_onUpdate: AgentToolUpdateCallback | undefined,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const agents = availableAgents(ctx.cwd);
+
+			if (params.name) {
+				const agent = agents.find((a) => a.name === params.name);
+				if (!agent) {
+					throw new Error(
+						`Agent '${params.name}' not found. Available: ${agents.map((a) => a.name).join(", ")}`,
+					);
+				}
+				return {
+					details: undefined,
+					content: [{ type: "text", text: JSON.stringify(agent, null, 2) }],
+				};
+			}
+
+			const items = agents.map((a) => ({
+				name: a.name,
+				role: a.role,
+				description: a.description,
+				model: a.model,
+				tools: a.tools,
+				extensions: a.extensions,
+				skills: a.skills,
+				outputFormat: a.outputFormat,
+				outputSchema: a.outputSchema,
+				promptTemplate: a.promptTemplate,
+				taskTemplate: a.taskTemplate,
 			}));
 
 			return {

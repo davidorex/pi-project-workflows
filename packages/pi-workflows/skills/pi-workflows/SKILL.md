@@ -22,6 +22,16 @@ List available workflows with names, descriptions, and sources.
 
 *List available workflows with names, descriptions, and sources*
 
+### workflow-agents
+
+List available agents with full specs, or inspect a single agent by name. Returns role, description, model, tools, output format/schema, prompt template paths.
+
+*List available agents with specs, or inspect a single agent by name*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | no | Agent name to inspect (omit to list all) |
+
 ### workflow-validate
 
 Validate workflow specs — check agents, schemas, step references, and filters.

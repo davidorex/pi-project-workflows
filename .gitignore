@@ -3,6 +3,7 @@ docs/
 node_modules/
 .claude/
 .pi/
+.workflow/
 .workflows/
 CLAUDE.md
 # Project block data is runtime state — gitignored

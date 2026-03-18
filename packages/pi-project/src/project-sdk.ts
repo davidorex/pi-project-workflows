@@ -99,6 +99,12 @@ export interface ProjectState {
 	phases: { total: number; current: number };
 	blocks: number;
 	schemas: number;
+	// Planning lifecycle derived state (present when corresponding blocks exist)
+	requirements?: { total: number; byStatus: Record<string, number>; byPriority: Record<string, number> };
+	tasks?: { total: number; byStatus: Record<string, number> };
+	domain?: { total: number };
+	verifications?: { total: number; passed: number; failed: number };
+	hasHandoff?: boolean;
 }
 
 /**
@@ -247,7 +253,8 @@ export function projectState(cwd: string): ProjectState {
 		/* no phases dir */
 	}
 
-	return {
+	// Planning lifecycle derived state
+	const state: ProjectState = {
 		testCount,
 		sourceFiles,
 		sourceLines,
@@ -258,5 +265,283 @@ export function projectState(cwd: string): ProjectState {
 		phases: { total: phaseTotal, current: phaseCurrent },
 		blocks: availableBlocks(cwd).length,
 		schemas: availableSchemas(cwd).length,
+	};
+
+	// Requirements summary
+	try {
+		const reqData = readBlock(cwd, "requirements") as { requirements?: unknown[] };
+		if (Array.isArray(reqData.requirements)) {
+			const items = reqData.requirements as Record<string, unknown>[];
+			const byStatus: Record<string, number> = {};
+			const byPriority: Record<string, number> = {};
+			for (const item of items) {
+				const s = String(item.status ?? "unknown");
+				byStatus[s] = (byStatus[s] ?? 0) + 1;
+				const p = String(item.priority ?? "unknown");
+				byPriority[p] = (byPriority[p] ?? 0) + 1;
+			}
+			state.requirements = { total: items.length, byStatus, byPriority };
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Tasks summary
+	try {
+		const taskData = readBlock(cwd, "tasks") as { tasks?: unknown[] };
+		if (Array.isArray(taskData.tasks)) {
+			const items = taskData.tasks as Record<string, unknown>[];
+			const byStatus: Record<string, number> = {};
+			for (const item of items) {
+				const s = String(item.status ?? "unknown");
+				byStatus[s] = (byStatus[s] ?? 0) + 1;
+			}
+			state.tasks = { total: items.length, byStatus };
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Domain summary
+	try {
+		const domainData = readBlock(cwd, "domain") as { entries?: unknown[] };
+		if (Array.isArray(domainData.entries)) {
+			state.domain = { total: domainData.entries.length };
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Verification summary
+	try {
+		const verData = readBlock(cwd, "verification") as { verifications?: unknown[] };
+		if (Array.isArray(verData.verifications)) {
+			const items = verData.verifications as Record<string, unknown>[];
+			let passed = 0;
+			let failed = 0;
+			for (const item of items) {
+				if (item.status === "passed") passed++;
+				else if (item.status === "failed") failed++;
+			}
+			state.verifications = { total: items.length, passed, failed };
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Handoff presence
+	try {
+		const handoffPath = path.join(cwd, PROJECT_DIR, "handoff.json");
+		state.hasHandoff = fs.existsSync(handoffPath);
+	} catch { /* ignore */ }
+
+	return state;
+}
+
+// ── Project Validation (cross-block reference integrity) ─────────────────────
+
+export interface ProjectValidationIssue {
+	severity: "error" | "warning";
+	message: string;
+	block: string;
+	field: string;
+}
+
+export interface ProjectValidationResult {
+	valid: boolean;
+	issues: ProjectValidationIssue[];
+}
+
+/**
+ * Validate cross-block referential integrity: do IDs referenced across blocks
+ * actually exist? Returns structured issues rather than throwing.
+ */
+export function validateProject(cwd: string): ProjectValidationResult {
+	const issues: ProjectValidationIssue[] = [];
+
+	// Collect known IDs from each block
+	const phaseIds = new Set<string>();
+	const taskIds = new Set<string>();
+	const decisionIds = new Set<string>();
+	const requirementIds = new Set<string>();
+
+	// Load phases
+	try {
+		const phasesDir = path.join(cwd, PROJECT_DIR, "phases");
+		if (fs.existsSync(phasesDir)) {
+			for (const file of fs.readdirSync(phasesDir).filter((f) => f.endsWith(".json"))) {
+				try {
+					const data = JSON.parse(fs.readFileSync(path.join(phasesDir, file), "utf-8"));
+					if (data.number !== undefined) phaseIds.add(String(data.number));
+					if (data.name) phaseIds.add(data.name);
+				} catch { /* skip malformed */ }
+			}
+		}
+	} catch { /* no phases dir */ }
+
+	// Load tasks
+	try {
+		const taskData = readBlock(cwd, "tasks") as { tasks?: Record<string, unknown>[] };
+		if (Array.isArray(taskData.tasks)) {
+			for (const t of taskData.tasks) {
+				if (t.id) taskIds.add(String(t.id));
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Load decisions
+	try {
+		const decData = readBlock(cwd, "decisions") as { decisions?: Record<string, unknown>[] };
+		if (Array.isArray(decData.decisions)) {
+			for (const d of decData.decisions) {
+				if (d.id) decisionIds.add(String(d.id));
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Load requirements
+	try {
+		const reqData = readBlock(cwd, "requirements") as { requirements?: Record<string, unknown>[] };
+		if (Array.isArray(reqData.requirements)) {
+			for (const r of reqData.requirements) {
+				if (r.id) requirementIds.add(String(r.id));
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	// All known IDs for generic resolution
+	const allIds = new Set([...phaseIds, ...taskIds, ...decisionIds, ...requirementIds]);
+
+	// Validate task references
+	try {
+		const taskData = readBlock(cwd, "tasks") as { tasks?: Record<string, unknown>[] };
+		if (Array.isArray(taskData.tasks)) {
+			for (const task of taskData.tasks) {
+				// task.phase → valid phase
+				if (task.phase !== undefined && !phaseIds.has(String(task.phase))) {
+					issues.push({
+						severity: "warning",
+						message: `Task '${task.id}' references phase '${task.phase}' which does not exist`,
+						block: "tasks",
+						field: `tasks[${task.id}].phase`,
+					});
+				}
+				// task.depends_on → valid task IDs
+				if (Array.isArray(task.depends_on)) {
+					for (const dep of task.depends_on as string[]) {
+						if (!taskIds.has(dep)) {
+							issues.push({
+								severity: "error",
+								message: `Task '${task.id}' depends on task '${dep}' which does not exist`,
+								block: "tasks",
+								field: `tasks[${task.id}].depends_on`,
+							});
+						}
+					}
+				}
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Validate decision references
+	try {
+		const decData = readBlock(cwd, "decisions") as { decisions?: Record<string, unknown>[] };
+		if (Array.isArray(decData.decisions)) {
+			for (const dec of decData.decisions) {
+				if (dec.phase !== undefined && !phaseIds.has(String(dec.phase))) {
+					issues.push({
+						severity: "warning",
+						message: `Decision '${dec.id}' references phase '${dec.phase}' which does not exist`,
+						block: "decisions",
+						field: `decisions[${dec.id}].phase`,
+					});
+				}
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Validate gap references
+	try {
+		const gapData = readBlock(cwd, "gaps") as { gaps?: Record<string, unknown>[] };
+		if (Array.isArray(gapData.gaps)) {
+			for (const gap of gapData.gaps) {
+				if (gap.resolved_by && !allIds.has(String(gap.resolved_by))) {
+					issues.push({
+						severity: "warning",
+						message: `Gap '${gap.id}' references resolved_by '${gap.resolved_by}' which does not exist`,
+						block: "gaps",
+						field: `gaps[${gap.id}].resolved_by`,
+					});
+				}
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Validate requirement references
+	try {
+		const reqData = readBlock(cwd, "requirements") as { requirements?: Record<string, unknown>[] };
+		if (Array.isArray(reqData.requirements)) {
+			for (const req of reqData.requirements) {
+				if (Array.isArray(req.traces_to)) {
+					for (const ref of req.traces_to as string[]) {
+						if (!allIds.has(ref)) {
+							issues.push({
+								severity: "warning",
+								message: `Requirement '${req.id}' traces to '${ref}' which does not exist`,
+								block: "requirements",
+								field: `requirements[${req.id}].traces_to`,
+							});
+						}
+					}
+				}
+				if (Array.isArray(req.depends_on)) {
+					for (const dep of req.depends_on as string[]) {
+						if (!requirementIds.has(dep)) {
+							issues.push({
+								severity: "error",
+								message: `Requirement '${req.id}' depends on requirement '${dep}' which does not exist`,
+								block: "requirements",
+								field: `requirements[${req.id}].depends_on`,
+							});
+						}
+					}
+				}
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Validate verification references
+	try {
+		const verData = readBlock(cwd, "verification") as { verifications?: Record<string, unknown>[] };
+		if (Array.isArray(verData.verifications)) {
+			for (const ver of verData.verifications) {
+				if (ver.target && !allIds.has(String(ver.target))) {
+					issues.push({
+						severity: "warning",
+						message: `Verification '${ver.id}' targets '${ver.target}' which does not exist`,
+						block: "verification",
+						field: `verifications[${ver.id}].target`,
+					});
+				}
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	// Validate rationale references
+	try {
+		const ratData = readBlock(cwd, "rationale") as { rationales?: Record<string, unknown>[] };
+		if (Array.isArray(ratData.rationales)) {
+			for (const rat of ratData.rationales) {
+				if (Array.isArray(rat.related_decisions)) {
+					for (const decId of rat.related_decisions as string[]) {
+						if (!decisionIds.has(decId)) {
+							issues.push({
+								severity: "warning",
+								message: `Rationale '${rat.id}' references decision '${decId}' which does not exist`,
+								block: "rationale",
+								field: `rationales[${rat.id}].related_decisions`,
+							});
+						}
+					}
+				}
+			}
+		}
+	} catch { /* block doesn't exist */ }
+
+	return {
+		valid: issues.filter((i) => i.severity === "error").length === 0,
+		issues,
 	};
 }

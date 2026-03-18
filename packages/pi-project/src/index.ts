@@ -14,7 +14,7 @@ import type {
 import { Type } from "@sinclair/typebox";
 import { appendToBlock, readBlock, updateItemInBlock } from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
-import { findAppendableBlocks, projectState } from "./project-sdk.js";
+import { findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -59,6 +59,28 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
 				}
 			}
 		}
+	}
+
+	// Planning lifecycle
+	if (state.requirements) {
+		const r = state.requirements;
+		const statusParts = Object.entries(r.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ");
+		lines.push(`- **Requirements:** ${r.total} (${statusParts})`);
+	}
+	if (state.tasks) {
+		const t = state.tasks;
+		const statusParts = Object.entries(t.byStatus).map(([s, n]) => `${s}: ${n}`).join(", ");
+		lines.push(`- **Tasks:** ${t.total} (${statusParts})`);
+	}
+	if (state.domain) {
+		lines.push(`- **Domain:** ${state.domain.total} entries`);
+	}
+	if (state.verifications) {
+		const v = state.verifications;
+		lines.push(`- **Verifications:** ${v.total} (${v.passed} passed, ${v.failed} failed)`);
+	}
+	if (state.hasHandoff) {
+		lines.push(`- **Handoff:** active (.project/handoff.json)`);
 	}
 
 	if (state.recentCommits.length > 0) {
@@ -316,7 +338,7 @@ const extension = (pi: ExtensionAPI) => {
 	pi.registerCommand("project", {
 		description: "Project state management",
 		getArgumentCompletions: (prefix: string) => {
-			const subcommands = ["init", "status", "add-work"];
+			const subcommands = ["init", "status", "add-work", "validate"];
 			return subcommands.filter((s) => s.startsWith(prefix)).map((s) => ({ value: s, label: s }));
 		},
 
@@ -332,8 +354,24 @@ const extension = (pi: ExtensionAPI) => {
 				handleStatus(ctx, pi);
 			} else if (subcommand === "add-work") {
 				await handleAddWork(rest, ctx, pi);
+			} else if (subcommand === "validate") {
+				const result = validateProject(ctx.cwd);
+				const errors = result.issues.filter((i) => i.severity === "error").length;
+				const warnings = result.issues.filter((i) => i.severity === "warning").length;
+				const lines: string[] = [];
+				if (result.issues.length === 0) {
+					lines.push("Project validation passed — no cross-block reference issues.");
+				} else {
+					for (const issue of result.issues) {
+						const icon = issue.severity === "error" ? "\u2717" : "\u26a0";
+						lines.push(`${icon} [${issue.block}] ${issue.field}: ${issue.message}`);
+					}
+					lines.push("");
+					lines.push(`${errors} error(s), ${warnings} warning(s)`);
+				}
+				ctx.ui.notify(lines.join("\n"), errors > 0 ? "error" : "info");
 			} else {
-				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, status, add-work`, "warning");
+				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, status, add-work, validate`, "warning");
 			}
 		},
 	});

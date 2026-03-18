@@ -489,10 +489,13 @@ function loadInstructions(monitor: Monitor): MonitorInstruction[] {
 }
 
 function saveInstructions(monitor: Monitor, instructions: MonitorInstruction[]): string | null {
+	const tmpPath = `${monitor.resolvedInstructionsPath}.${process.pid}.tmp`;
 	try {
-		fs.writeFileSync(monitor.resolvedInstructionsPath, JSON.stringify(instructions, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, JSON.stringify(instructions, null, 2) + "\n");
+		fs.renameSync(tmpPath, monitor.resolvedInstructionsPath);
 		return null;
 	} catch (err) {
+		try { fs.unlinkSync(tmpPath); } catch { /* cleanup */ }
 		return err instanceof Error ? err.message : String(err);
 	}
 }
@@ -752,9 +755,12 @@ function learnPattern(monitor: Monitor, description: string): void {
 		learned_at: new Date().toISOString(),
 	});
 
+	const tmpPath = `${monitor.resolvedPatternsPath}.${process.pid}.tmp`;
 	try {
-		fs.writeFileSync(monitor.resolvedPatternsPath, JSON.stringify(patterns, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, JSON.stringify(patterns, null, 2) + "\n");
+		fs.renameSync(tmpPath, monitor.resolvedPatternsPath);
 	} catch (err) {
+		try { fs.unlinkSync(tmpPath); } catch { /* cleanup */ }
 		console.error(`[${monitor.name}] Failed to write pattern: ${err instanceof Error ? err.message : err}`);
 	}
 }
@@ -810,10 +816,13 @@ function executeWriteAction(monitor: Monitor, action: MonitorAction, result: Cla
 		arr.push(entry);
 	}
 
+	const tmpPath = `${filePath}.${process.pid}.tmp`;
 	try {
 		fs.mkdirSync(path.dirname(filePath), { recursive: true });
-		fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2) + "\n");
+		fs.renameSync(tmpPath, filePath);
 	} catch (err) {
+		try { fs.unlinkSync(tmpPath); } catch { /* cleanup */ }
 		console.error(`[${monitor.name}] Failed to write to ${filePath}: ${err instanceof Error ? err.message : err}`);
 	}
 }
@@ -1007,12 +1016,14 @@ export default function (pi: ExtensionAPI) {
 	}
 
 	pi.on("session_start", async (_event: unknown, ctx: ExtensionContext) => {
-		statusCtx = ctx;
-		if (seeded > 0 && ctx.hasUI) {
-			const dir = resolveProjectMonitorsDir();
-			ctx.ui.notify(`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`, "info");
-		}
-		updateStatus();
+		try {
+			statusCtx = ctx;
+			if (seeded > 0 && ctx.hasUI) {
+				const dir = resolveProjectMonitorsDir();
+				ctx.ui.notify(`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`, "info");
+			}
+			updateStatus();
+		} catch { /* startup errors should not block session */ }
 	});
 
 	pi.on("session_switch", async (_event: unknown, ctx: ExtensionContext) => {
@@ -1184,7 +1195,7 @@ export default function (pi: ExtensionAPI) {
 			const cmd = parseMonitorsArgs(args, monitorNames);
 
 			if (cmd.type === "error") {
-				ctx.ui.notify(cmd.message, "error");
+				ctx.ui.notify(cmd.message, "warning");
 				return;
 			}
 
@@ -1263,7 +1274,7 @@ export default function (pi: ExtensionAPI) {
 
 			const monitor = monitorsByName.get(cmd.name);
 			if (!monitor) {
-				ctx.ui.notify(`Unknown monitor: ${cmd.name}`, "error");
+				ctx.ui.notify(`Unknown monitor: ${cmd.name}`, "warning");
 				return;
 			}
 

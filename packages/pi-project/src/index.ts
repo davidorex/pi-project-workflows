@@ -109,8 +109,6 @@ async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: Ext
 		);
 	}
 
-	const validateCmd = `node --experimental-strip-types -e "import{validateFromFile}from'./src/schema-validator.ts';import fs from'fs';const s=process.argv[1],d=process.argv[2];validateFromFile(s,JSON.parse(fs.readFileSync(d,'utf8')),d);console.log('✓ valid')" SCHEMA_PATH DATA_PATH`;
-
 	const inputSection = args.trim() ? `**Input:**\n${args.trim()}\n\n` : "";
 
 	const blockNames = appendableBlocks.map((b) => b.block).join(", ");
@@ -129,8 +127,7 @@ ${blockInfo.join("\n\n")}
 1. Read the conversation for items that belong in the appendable blocks
 2. Read the current block files to check for duplicates
 3. Append new entries — do NOT replace existing content
-4. For each block modified, validate:
-   \`${validateCmd}\`
+4. Schema validation happens automatically when you use append-block-item
 
 **Rules:**
 - IDs must be kebab-case and unique within their block
@@ -201,13 +198,13 @@ function handleInit(ctx: ExtensionCommandContext): void {
 	}
 
 	const lines: string[] = [];
-	lines.push(`## Project Initialized`);
+	lines.push(`Project initialized`);
 	lines.push("");
 	if (created.length > 0) {
-		lines.push(`**Created (${created.length}):** ${created.join(", ")}`);
+		lines.push(`Created (${created.length}): ${created.join(", ")}`);
 	}
 	if (skipped.length > 0) {
-		lines.push(`**Skipped (${skipped.length}, already exist):** ${skipped.join(", ")}`);
+		lines.push(`Skipped (${skipped.length}, already exist): ${skipped.join(", ")}`);
 	}
 	if (created.length === 0 && skipped.length > 0) {
 		lines.push("Project already initialized — nothing to do.");
@@ -234,7 +231,7 @@ const extension = (pi: ExtensionAPI) => {
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
 			arrayKey: Type.String({ description: "Array key in the block (e.g., 'gaps', 'decisions')" }),
-			item: Type.Any({ description: "Item object to append — must conform to block schema" }),
+			item: Type.Unknown({ description: "Item object to append — must conform to block schema" }),
 		}),
 		async execute(
 			_toolCallId: string,
@@ -242,22 +239,18 @@ const extension = (pi: ExtensionAPI) => {
 			_signal: AbortSignal,
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
-		): Promise<AgentToolResult<any>> {
+		): Promise<AgentToolResult<undefined>> {
 			// Duplicate check if item has an id field
 			if (params.item && typeof params.item === "object" && "id" in params.item) {
 				try {
 					const data = readBlock(ctx.cwd, params.block) as Record<string, unknown>;
 					const arr = data[params.arrayKey];
 					if (Array.isArray(arr) && arr.some((i: Record<string, unknown>) => i.id === params.item.id)) {
-						return {
-							details: undefined,
-							content: [
-								{ type: "text", text: `Item '${params.item.id}' already exists in ${params.block}.${params.arrayKey}` },
-							],
-						};
+						throw new Error(`Item '${params.item.id}' already exists in ${params.block}.${params.arrayKey}`);
 					}
-				} catch {
-					/* block doesn't exist — appendToBlock will handle */
+				} catch (e) {
+					/* Re-throw duplicate errors; swallow block-not-found */
+					if (e instanceof Error && e.message.includes("already exists")) throw e;
 				}
 			}
 
@@ -280,8 +273,8 @@ const extension = (pi: ExtensionAPI) => {
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
 			arrayKey: Type.String({ description: "Array key in the block" }),
-			match: Type.Record(Type.String(), Type.Any(), { description: "Fields to match (e.g., { id: 'gap-123' })" }),
-			updates: Type.Record(Type.String(), Type.Any(), {
+			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'gap-123' })" }),
+			updates: Type.Record(Type.String(), Type.Unknown(), {
 				description: "Fields to update (e.g., { status: 'resolved' })",
 			}),
 		}),
@@ -291,9 +284,9 @@ const extension = (pi: ExtensionAPI) => {
 			_signal: AbortSignal,
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
-		): Promise<AgentToolResult<any>> {
+		): Promise<AgentToolResult<undefined>> {
 			if (Object.keys(params.updates).length === 0) {
-				return { details: undefined, content: [{ type: "text", text: "No fields to update" }] };
+				throw new Error("No fields to update — updates parameter is empty");
 			}
 
 			const matchEntries = Object.entries(params.match);

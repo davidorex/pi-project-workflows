@@ -14,7 +14,7 @@ Append an item to an array in a project block file. Schema validation is automat
 |-----------|------|----------|-------------|
 | `block` | string | yes | Block name (e.g., 'gaps', 'decisions') |
 | `arrayKey` | string | yes | Array key in the block (e.g., 'gaps', 'decisions') |
-| `item` | any | yes | Item object to append — must conform to block schema |
+| `item` | unknown | yes | Item object to append — must conform to block schema |
 
 ### update-block-item
 

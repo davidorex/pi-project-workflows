@@ -338,6 +338,14 @@ under `category: "work-quality"`. Ceiling: 3.
 11 bundled patterns across categories: methodology (trial-and-error, symptom-fix,
 double-edit, edit-without-read, insanity-retry, no-plan), verification (no-verify),
 scope (excessive-changes, wrong-problem), quality (copy-paste), cleanup (debug-artifacts).
+
+**commit-hygiene** (`agent_end`, `when: has_file_writes`)
+Fires when the agent finishes a turn that included file writes. Checks tool call history
+for git commit commands. If no commit occurred, steers to commit. If committed with a
+generic or certainty-language message, steers to improve. Does not write findings — commits
+are their own artifact. Ceiling: 3.
+6 bundled patterns across categories: missing-commit (no-commit), message-quality
+(generic-message, certainty-language, no-context), commit-safety (amend-not-new, force-push).
 </bundled_monitors>
 
 <disabling_monitors>

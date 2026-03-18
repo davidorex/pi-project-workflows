@@ -17,6 +17,7 @@ import {
 	filterNames,
 	STEP_TYPES,
 	stepTypes,
+	validateWorkflow,
 } from "./workflow-sdk.js";
 
 function makeTmpDir(prefix: string): string {
@@ -250,5 +251,103 @@ describe("introspection", () => {
 		assert.ok(refs.includes("schemas/results.schema.json"));
 		assert.ok(refs.includes("schemas/report.schema.json"));
 		assert.strictEqual(refs.length, 3);
+	});
+});
+
+// ── Validation ───────────────────────────────────────────────────────────────
+
+describe("validateWorkflow", () => {
+	it("valid workflow with no agent/schema refs passes", () => {
+		const spec = makeSpec({
+			greet: { command: "echo hello" },
+			process: { transform: { mapping: { result: "${{ steps.greet.output }}" } } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.valid, true);
+		assert.strictEqual(result.issues.length, 0);
+	});
+
+	it("reports error for non-existent agent", () => {
+		const spec = makeSpec({
+			investigate: { agent: "nonexistent-agent-xyz" },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.valid, false);
+		const agentIssues = result.issues.filter((i) => i.message.includes("nonexistent-agent-xyz"));
+		assert.ok(agentIssues.length > 0);
+		assert.strictEqual(agentIssues[0].severity, "error");
+		assert.ok(agentIssues[0].field.includes("agent"));
+	});
+
+	it("reports error for non-existent schema file", () => {
+		const spec = makeSpec({
+			analyze: {
+				agent: "investigator",
+				output: { schema: "schemas/does-not-exist.schema.json" },
+			},
+		});
+		// Use a cwd that has the bundled agents but not this schema
+		const result = validateWorkflow(spec, "/tmp");
+		const schemaIssues = result.issues.filter((i) => i.message.includes("Schema file not found"));
+		assert.ok(schemaIssues.length > 0);
+		assert.strictEqual(schemaIssues[0].severity, "error");
+	});
+
+	it("reports error for expression referencing undeclared step", () => {
+		const spec = makeSpec({
+			analyze: {
+				command: "echo hello",
+				input: { data: "${{ steps.nonexistent.output }}" },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.valid, false);
+		const stepIssues = result.issues.filter((i) => i.message.includes("undeclared step"));
+		assert.ok(stepIssues.length > 0);
+		assert.strictEqual(stepIssues[0].severity, "error");
+	});
+
+	it("reports error for forward step reference", () => {
+		const spec = makeSpec({
+			first: {
+				command: "echo",
+				input: { data: "${{ steps.second.output }}" },
+			},
+			second: { command: "echo hello" },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const orderIssues = result.issues.filter((i) => i.message.includes("declared at or after"));
+		assert.ok(orderIssues.length > 0);
+		assert.strictEqual(orderIssues[0].severity, "error");
+	});
+
+	it("reports warning for unknown filter name", () => {
+		const spec = makeSpec({
+			load: { command: "echo hello" },
+			show: {
+				transform: { mapping: { result: "${{ steps.load.output | bogusfilter }}" } },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const filterIssues = result.issues.filter((i) => i.message.includes("Unknown filter"));
+		assert.ok(filterIssues.length > 0);
+		assert.strictEqual(filterIssues[0].severity, "warning");
+		// Warnings don't make it invalid
+		assert.strictEqual(result.valid, true);
+	});
+
+	it("valid agents from bundled dir resolve correctly", (t) => {
+		// Use the actual package's agents dir
+		const cwd = makeTmpDir("validate-agents");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		const spec = makeSpec(
+			{ investigate: { agent: "investigator" } },
+			{ filePath: path.join(cwd, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, cwd);
+		// The bundled investigator agent should resolve
+		const agentErrors = result.issues.filter((i) => i.message.includes("Agent") && i.severity === "error");
+		assert.strictEqual(agentErrors.length, 0);
 	});
 });

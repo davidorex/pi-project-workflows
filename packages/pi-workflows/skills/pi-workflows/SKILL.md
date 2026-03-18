@@ -22,7 +22,7 @@ Run a named workflow with typed input. Discovers workflows from .workflows/ and 
 
 List and run workflows
 
-Subcommands: `init`, `run`, `list`, `resume`
+Subcommands: `init`, `run`, `list`, `resume`, `validate`
 
 ## Keyboard Shortcuts
 
@@ -171,6 +171,18 @@ After execution, the workflow result is injected into the main LLM conversation.
 ### Artifacts
 
 Workflows can write post-completion files via the `artifacts` field. Paths may contain `${{ }}` expressions. Artifacts targeting `.project/*.json` are validated against block schemas.
+
+### Validation
+
+`validateWorkflow(spec, cwd)` runs authoring-time checks without executing the workflow:
+
+1. **Agent resolution** — all referenced agents exist in the three-tier search
+2. **Schema resolution** — all output schema file paths resolve to existing files
+3. **Step reference validity** — `${{ steps.X }}` expressions reference declared steps
+4. **Step ordering** — referenced steps are declared before the referencing step
+5. **Filter name validity** — `${{ value | filter }}` uses known filter names
+
+Returns `{ valid: boolean, issues: ValidationIssue[] }` where each issue has severity, message, and field path. Use `/workflow validate` or `/workflow validate <name>` to run from the command line.
 
 ---
 

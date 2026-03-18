@@ -19,6 +19,7 @@ import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } f
 import type { WorkflowResult } from "./types.js";
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.js";
 import { executeWorkflow, requestPause } from "./workflow-executor.js";
+import { validateWorkflow } from "./workflow-sdk.js";
 import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
 // ── Helper functions ────────────────────────────────────────────────────────
@@ -331,6 +332,46 @@ async function handleResume(rawArgs: string, ctx: ExtensionCommandContext, pi: E
  * /workflow init — scaffold .workflows/ directory for user workflow specs
  * and run state. Idempotent.
  */
+function handleValidate(args: string, ctx: ExtensionCommandContext): void {
+	const name = args.trim();
+	const workflows = name
+		? [findWorkflow(name, ctx.cwd)].filter(Boolean) as import("./types.js").WorkflowSpec[]
+		: discoverWorkflows(ctx.cwd);
+
+	if (name && workflows.length === 0) {
+		ctx.ui.notify(`Workflow '${name}' not found.`, "warning");
+		return;
+	}
+
+	if (workflows.length === 0) {
+		ctx.ui.notify("No workflows found.", "info");
+		return;
+	}
+
+	const lines: string[] = [];
+	let totalErrors = 0;
+	let totalWarnings = 0;
+
+	for (const spec of workflows) {
+		const result = validateWorkflow(spec, ctx.cwd);
+		const errors = result.issues.filter((i) => i.severity === "error").length;
+		const warnings = result.issues.filter((i) => i.severity === "warning").length;
+		totalErrors += errors;
+		totalWarnings += warnings;
+
+		const icon = result.valid ? "\u2713" : "\u2717";
+		lines.push(`${icon} ${spec.name} (${errors} errors, ${warnings} warnings)`);
+		for (const issue of result.issues) {
+			lines.push(`  ${issue.severity === "error" ? "\u2717" : "\u26a0"} ${issue.field}: ${issue.message}`);
+		}
+	}
+
+	lines.push("");
+	lines.push(`${workflows.length} workflow(s), ${totalErrors} error(s), ${totalWarnings} warning(s)`);
+
+	ctx.ui.notify(lines.join("\n"), totalErrors > 0 ? "error" : "info");
+}
+
 function handleWorkflowInit(ctx: ExtensionCommandContext): void {
 	const workflowsDir = path.join(ctx.cwd, WORKFLOWS_DIR);
 	const runsDir = path.join(workflowsDir, "runs");
@@ -432,7 +473,7 @@ const extension = (pi: ExtensionAPI) => {
 	pi.registerCommand("workflow", {
 		description: "List and run workflows",
 		getArgumentCompletions: (prefix: string) => {
-			const subcommands = ["init", "run", "list", "resume"];
+			const subcommands = ["init", "run", "list", "resume", "validate"];
 			return subcommands.filter((s) => s.startsWith(prefix)).map((s) => ({ value: s, label: s }));
 		},
 
@@ -450,8 +491,10 @@ const extension = (pi: ExtensionAPI) => {
 				await handleRun(rest, ctx, pi);
 			} else if (subcommand === "resume") {
 				await handleResume(rest, ctx, pi);
+			} else if (subcommand === "validate") {
+				handleValidate(rest, ctx);
 			} else {
-				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, list, run, resume`, "warning");
+				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, list, run, resume, validate`, "warning");
 			}
 		},
 	});

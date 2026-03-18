@@ -37,6 +37,7 @@ Workflows consume project blocks as typed input via `readBlock()` — structured
 - `/workflow list` — discover and select a workflow to run
 - `/workflow run <name> [--input '<json>']` — execute a workflow
 - `/workflow resume <name>` — resume an incomplete run from checkpoint
+- `/workflow validate [name]` — validate workflow specs (agents, schemas, step references, filters)
 
 **Keybindings:**
 - `Ctrl+H` — pause running workflow after current step

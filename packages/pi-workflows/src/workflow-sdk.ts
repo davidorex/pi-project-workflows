@@ -7,8 +7,9 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { parseAgentYaml } from "./agent-spec.js";
+import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
+import { resolveSchemaPath } from "./step-shared.js";
 import type { AgentSpec, StepSpec, WorkflowSpec } from "./types.js";
 import { discoverWorkflows } from "./workflow-discovery.js";
 import type { StepTypeDescriptor } from "./workflow-spec.js";
@@ -152,7 +153,7 @@ export function extractExpressions(spec: WorkflowSpec): ExpressionRef[] {
 function extractFromStep(step: StepSpec, prefix: string, refs: ExpressionRef[]): void {
 	if (step.when) extractFromString(step.when, `${prefix}.when`, refs);
 	if (step.forEach) extractFromString(step.forEach, `${prefix}.forEach`, refs);
-	if (step.input) extractFromString(step.input as unknown as string, `${prefix}.input`, refs);
+	if (step.input) extractFromValue(step.input, `${prefix}.input`, refs);
 	if (step.command) extractFromString(step.command, `${prefix}.command`, refs);
 
 	// Gate check
@@ -202,8 +203,9 @@ function extractFromString(str: string, field: string, refs: ExpressionRef[]): v
 		const filterName = pipeIdx >= 0 ? raw.slice(pipeIdx + 1).trim() : undefined;
 
 		// Extract step references: steps.X.anything → step name is X
+		// Step names may contain hyphens (e.g., analyze-structure)
 		const stepRefs: string[] = [];
-		const stepRefPattern = /\bsteps\.(\w+)/g;
+		const stepRefPattern = /\bsteps\.([\w-]+)/g;
 		let stepMatch: RegExpExecArray | null;
 		while ((stepMatch = stepRefPattern.exec(exprPart)) !== null) {
 			if (!stepRefs.includes(stepMatch[1])) {
@@ -250,6 +252,165 @@ function collectSchemaRefs(steps: Record<string, StepSpec>, schemas: string[]): 
 		if (step.loop?.steps) collectSchemaRefs(step.loop.steps, schemas);
 		if (step.parallel) collectSchemaRefs(step.parallel, schemas);
 	}
+}
+
+// ── Validation (composed from introspection + discovery) ─────────────────────
+
+export interface ValidationIssue {
+	severity: "error" | "warning";
+	message: string;
+	field: string;
+}
+
+export interface ValidationResult {
+	valid: boolean;
+	issues: ValidationIssue[];
+}
+
+/**
+ * Validate a workflow spec against the filesystem: resolve agents, schemas,
+ * step references, and filter names. Returns structured issues rather than
+ * throwing — intended for authoring-time validation, not execution-time.
+ */
+export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationResult {
+	const issues: ValidationIssue[] = [];
+	const steps = declaredSteps(spec);
+
+	// 1. Agent resolution — do all referenced agents exist?
+	const agentRefs = declaredAgentRefs(spec);
+	if (agentRefs.length > 0) {
+		const loadAgent = createAgentLoader(cwd);
+		for (const agentName of agentRefs) {
+			try {
+				loadAgent(agentName);
+			} catch (err) {
+				if (err instanceof AgentNotFoundError) {
+					// Find which step(s) reference this agent for the field path
+					const fields = findAgentFields(spec.steps, agentName, "steps");
+					for (const field of fields) {
+						issues.push({
+							severity: "error",
+							message: `Agent '${agentName}' not found. Searched: ${err.searchPaths.join(", ")}`,
+							field,
+						});
+					}
+				} else {
+					issues.push({
+						severity: "error",
+						message: `Agent '${agentName}' failed to load: ${err instanceof Error ? err.message : String(err)}`,
+						field: "agents",
+					});
+				}
+			}
+		}
+	}
+
+	// 2. Schema resolution — do all referenced schema files exist?
+	const schemaRefs = declaredSchemaRefs(spec);
+	for (const schemaPath of schemaRefs) {
+		const resolved = resolveSchemaPath(schemaPath, spec.filePath);
+		if (!fs.existsSync(resolved)) {
+			issues.push({
+				severity: "error",
+				message: `Schema file not found: ${schemaPath} (resolved to ${resolved})`,
+				field: findSchemaField(spec, schemaPath),
+			});
+		}
+	}
+
+	// 3. Step reference validity — do ${{ steps.X }} references point to declared steps?
+	const expressions = extractExpressions(spec);
+	const stepSet = new Set(steps);
+
+	for (const expr of expressions) {
+		for (const stepRef of expr.stepRefs) {
+			if (!stepSet.has(stepRef)) {
+				issues.push({
+					severity: "error",
+					message: `Expression references undeclared step '${stepRef}'`,
+					field: expr.field,
+				});
+			}
+		}
+	}
+
+	// 4. Step ordering — does step B reference steps.A where A comes after B?
+	//    Skip this check for expressions inside loop and parallel contexts
+	//    (they have different execution semantics).
+	const stepOrder = new Map(steps.map((s, i) => [s, i]));
+	for (const expr of expressions) {
+		// Only check top-level step expressions (not inside .loop. or .parallel.)
+		if (expr.field.includes(".loop.") || expr.field.includes(".parallel.")) continue;
+
+		// Extract the step this expression belongs to
+		const fieldStepMatch = expr.field.match(/^steps\.(\w+)/);
+		if (!fieldStepMatch) continue;
+		const ownerStep = fieldStepMatch[1];
+		const ownerIdx = stepOrder.get(ownerStep);
+		if (ownerIdx === undefined) continue;
+
+		for (const stepRef of expr.stepRefs) {
+			const refIdx = stepOrder.get(stepRef);
+			if (refIdx !== undefined && refIdx >= ownerIdx) {
+				issues.push({
+					severity: "error",
+					message: `Step '${ownerStep}' references '${stepRef}' which is declared at or after it (index ${refIdx} >= ${ownerIdx})`,
+					field: expr.field,
+				});
+			}
+		}
+	}
+
+	// 5. Filter name validity — are all filter names known?
+	const validFilters = new Set(FILTER_NAMES);
+	for (const expr of expressions) {
+		if (expr.filterName && !validFilters.has(expr.filterName)) {
+			issues.push({
+				severity: "warning",
+				message: `Unknown filter '${expr.filterName}'. Available: ${FILTER_NAMES.join(", ")}`,
+				field: expr.field,
+			});
+		}
+	}
+
+	return {
+		valid: issues.filter((i) => i.severity === "error").length === 0,
+		issues,
+	};
+}
+
+/** Find field paths where a specific agent name is referenced. */
+function findAgentFields(steps: Record<string, StepSpec>, agentName: string, prefix: string): string[] {
+	const fields: string[] = [];
+	for (const [name, step] of Object.entries(steps)) {
+		if (step.agent === agentName) fields.push(`${prefix}.${name}.agent`);
+		if (step.loop?.steps) fields.push(...findAgentFields(step.loop.steps, agentName, `${prefix}.${name}.loop`));
+		if (step.parallel) fields.push(...findAgentFields(step.parallel, agentName, `${prefix}.${name}.parallel`));
+	}
+	return fields;
+}
+
+/** Find the field path where a schema is referenced. */
+function findSchemaField(spec: WorkflowSpec, schemaPath: string): string {
+	for (const [name, step] of Object.entries(spec.steps)) {
+		if (step.output?.schema === schemaPath) return `steps.${name}.output.schema`;
+		if (step.loop?.steps) {
+			for (const [sub, subStep] of Object.entries(step.loop.steps)) {
+				if (subStep.output?.schema === schemaPath) return `steps.${name}.loop.${sub}.output.schema`;
+			}
+		}
+		if (step.parallel) {
+			for (const [sub, subStep] of Object.entries(step.parallel)) {
+				if (subStep.output?.schema === schemaPath) return `steps.${name}.parallel.${sub}.output.schema`;
+			}
+		}
+	}
+	if (spec.artifacts) {
+		for (const [name, art] of Object.entries(spec.artifacts)) {
+			if (art.schema === schemaPath) return `artifacts.${name}.schema`;
+		}
+	}
+	return "unknown";
 }
 
 // ── Utility ──────────────────────────────────────────────────────────────────

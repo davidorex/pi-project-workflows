@@ -1,17 +1,22 @@
-# @davidorex/pi-behavior-monitors
+---
+name: pi-behavior-monitors
+description: >
+  Behavior monitors that watch agent activity and steer corrections when issues
+  are detected. Monitors are JSON files (.monitor.json) in .pi/monitors/ with
+  classify, patterns, actions, and scope blocks. Patterns and instructions are
+  JSON arrays. Use when creating, editing, debugging, or understanding behavior
+  monitors.
+---
 
-> Behavior monitors for pi that watch agent activity and steer corrections
-
-## Tools
-
-### monitors-status
-
+<tools_reference>
+<tool name="monitors-status">
 List all behavior monitors with their current state.
 
 *List all behavior monitors with their current state*
 
-### monitors-inspect
+</tool>
 
+<tool name="monitors-inspect">
 Inspect a monitor — config, state, pattern count, rule count.
 
 *Inspect a monitor — config, state, pattern count, rule count*
@@ -19,9 +24,9 @@ Inspect a monitor — config, state, pattern count, rule count.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `monitor` | string | yes | Monitor name |
+</tool>
 
-### monitors-control
-
+<tool name="monitors-control">
 Control monitors — enable, disable, dismiss, or reset.
 
 *Control monitors — enable, disable, dismiss, or reset*
@@ -30,9 +35,9 @@ Control monitors — enable, disable, dismiss, or reset.
 |-----------|------|----------|-------------|
 | `action` | unknown | yes |  |
 | `monitor` | string | no | Monitor name (required for dismiss/reset) |
+</tool>
 
-### monitors-rules
-
+<tool name="monitors-rules">
 Manage monitor rules — list, add, remove, or replace calibration rules.
 
 *Manage monitor rules — list, add, remove, or replace calibration rules*
@@ -43,9 +48,9 @@ Manage monitor rules — list, add, remove, or replace calibration rules.
 | `action` | unknown | yes |  |
 | `text` | string | no | Rule text (for add/replace) |
 | `index` | number | no | Rule index, 1-based (for remove/replace) |
+</tool>
 
-### monitors-patterns
-
+<tool name="monitors-patterns">
 List patterns for a behavior monitor.
 
 *List patterns for a behavior monitor*
@@ -53,52 +58,31 @@ List patterns for a behavior monitor.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `monitor` | string | yes | Monitor name |
+</tool>
 
-## Commands
+</tools_reference>
 
-### /monitors
-
+<commands_reference>
+<command name="/monitors">
 Manage behavior monitors
 
 Subcommands: `on`, `off`, `fragility`, `response-style`
+</command>
 
-## Events
+</commands_reference>
 
-- `session_start`
-- `session_switch`
-- `agent_end`
-- `turn_start`
-- `message_end`
+<events>
+`session_start`, `session_switch`, `agent_end`, `turn_start`, `message_end`
+</events>
 
-## Bundled Resources
+<bundled_resources>
+2 schemas, 16 examples bundled.
+See references/bundled-resources.md for full inventory.
+</bundled_resources>
 
-### schemas/ (2 files)
+<monitor_vocabulary>
 
-- `schemas/monitor-pattern.schema.json`
-- `schemas/monitor.schema.json`
-
-### examples/ (16 files)
-
-- `examples/commit-hygiene/classify.md`
-- `examples/commit-hygiene.instructions.json`
-- `examples/commit-hygiene.monitor.json`
-- `examples/commit-hygiene.patterns.json`
-- `examples/fragility/classify.md`
-- `examples/fragility.instructions.json`
-- `examples/fragility.monitor.json`
-- `examples/fragility.patterns.json`
-- `examples/hedge/classify.md`
-- `examples/hedge.instructions.json`
-- `examples/hedge.monitor.json`
-- `examples/hedge.patterns.json`
-- `examples/work-quality/classify.md`
-- `examples/work-quality.instructions.json`
-- `examples/work-quality.monitor.json`
-- `examples/work-quality.patterns.json`
-
-## Monitor Vocabulary
-
-### Context Collectors
+**Context Collectors:**
 
 | Collector | Placeholder | Description | Limits |
 |-----------|-------------|-------------|--------|
@@ -111,14 +95,14 @@ Subcommands: `on`, `off`, `fragility`, `response-style`
 | `project_conventions` | `{project_conventions}` / `{{ project_conventions }}` | .project/conformance-reference.json principle names | — |
 | `git_status` | `{git_status}` / `{{ git_status }}` | Output of git status --porcelain | 5s timeout |
 
-Any string is accepted in `classify.context`. Unknown collector names produce empty string (graceful degradation).
+Any string is accepted in `classify.context`. Unknown collector names produce empty string.
 
-Built-in placeholders (always available, not listed in `classify.context`):
-- `{patterns}` / `{{ patterns }}` — formatted from patterns JSON as numbered list: `1. [severity] description`
-- `{instructions}` / `{{ instructions }}` — formatted from instructions JSON as bulleted list with "Operating instructions from the user (follow these strictly):" preamble — empty string if no instructions
-- `{iteration}` / `{{ iteration }}` — current consecutive steer count (0-indexed)
+Built-in placeholders (always available, not in `classify.context`):
+- `{{ patterns }}` — patterns JSON as numbered list
+- `{{ instructions }}` — instructions JSON as bulleted list with "follow strictly" preamble
+- `{{ iteration }}` — consecutive steer count (0-indexed)
 
-### When Conditions
+**When Conditions:**
 
 - `always` — Fire every time the event occurs
 - `has_tool_results` — Fire only if tool results present since last user message
@@ -127,28 +111,13 @@ Built-in placeholders (always available, not listed in `classify.context`):
 - `every(N)` — Fire every Nth activation (counter resets when user text changes)
 - `tool(name)` — Fire only if specific named tool called since last user message
 
-### Events
+**Events:** `message_end`, `turn_end`, `agent_end`, `command`
 
-`message_end`, `turn_end`, `agent_end`, `command`
+**Verdict Types:** `clean`, `flag`, `new`
 
-### Verdict Types
+**Scope Targets:** `main`, `subagent`, `all`, `workflow`
 
-`clean`, `flag`, `new`
-
-### Scope Targets
-
-`main`, `subagent`, `all`, `workflow`
-
----
-
----
-name: pi-behavior-monitors
-description: >
-  Behavior monitors that watch agent activity and steer corrections when issues are detected.
-  Monitors are JSON files (.monitor.json) in .pi/monitors/ with classify, patterns, actions,
-  and scope blocks. Patterns and instructions are JSON arrays. Use when creating, editing,
-  debugging, or understanding behavior monitors.
----
+</monitor_vocabulary>
 
 <objective>
 Monitors are autonomous watchdogs that observe agent activity, classify it against a
@@ -719,7 +688,5 @@ After any file changes, tell the user to run `/reload 3` to pick up the changes.
 - Instructions file exists (even if empty `[]`) to enable `/monitors <name> rules add <text>` calibration
 - After creating or modifying monitor files, remind user to run `/reload 3`
 </success_criteria>
-
----
 
 *Generated from source by `scripts/generate-skills.js` — do not edit by hand.*

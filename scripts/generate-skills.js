@@ -4,12 +4,15 @@
  * Generate SKILL.md files for each package by introspecting the built
  * extensions and reading resource directories.
  *
+ * Output format: YAML frontmatter + XML-tagged sections per pi skill standard.
+ *
  * Architecture:
  * 1. Import each package's built extension (dist/index.js)
  * 2. Call the factory with a mock `pi` object that captures registrations
  * 3. Read resource directories (agents/, schemas/, workflows/, etc.)
- * 4. Read optional skill-narrative.md for hand-authored behavioral sections
- * 5. Compose SKILL.md from the captured metadata + narrative
+ * 4. Read optional skill-narrative.md (parse + strip YAML frontmatter)
+ * 5. Compose SKILL.md from captured metadata + narrative
+ * 6. Write full resource listings to references/bundled-resources.md
  *
  * Run after build: npm run build && npm run skills
  */
@@ -156,6 +159,62 @@ function listFilesRecursive(dir) {
 	return results;
 }
 
+// ── Narrative frontmatter parsing ───────────────────────────────────────────
+
+/**
+ * Parse skill-narrative.md: extract YAML frontmatter (if present) and body.
+ * Returns { frontmatter: { name, description, ... } | null, body: string }.
+ */
+function parseNarrative(content) {
+	if (!content.startsWith("---")) {
+		return { frontmatter: null, body: content };
+	}
+
+	const endIdx = content.indexOf("\n---", 3);
+	if (endIdx === -1) {
+		return { frontmatter: null, body: content };
+	}
+
+	const yamlBlock = content.slice(4, endIdx).trim();
+	const body = content.slice(endIdx + 4).trim();
+
+	// Simple YAML parsing for the fields we care about
+	const frontmatter = {};
+	let currentKey = null;
+	let currentValue = "";
+	let isMultiline = false;
+
+	for (const line of yamlBlock.split("\n")) {
+		const keyMatch = line.match(/^(\w[\w-]*):\s*(.*)/);
+		if (keyMatch && !isMultiline) {
+			if (currentKey) frontmatter[currentKey] = currentValue.trim();
+			currentKey = keyMatch[1];
+			const val = keyMatch[2].trim();
+			if (val === ">" || val === "|") {
+				isMultiline = true;
+				currentValue = "";
+			} else {
+				currentValue = val;
+				isMultiline = false;
+			}
+		} else if (isMultiline && line.match(/^\s/)) {
+			currentValue += (currentValue ? " " : "") + line.trim();
+		} else if (isMultiline && !line.match(/^\s/) && line.trim()) {
+			// End of multiline
+			if (currentKey) frontmatter[currentKey] = currentValue.trim();
+			const km = line.match(/^(\w[\w-]*):\s*(.*)/);
+			if (km) {
+				currentKey = km[1];
+				currentValue = km[2].trim();
+				isMultiline = false;
+			}
+		}
+	}
+	if (currentKey) frontmatter[currentKey] = currentValue.trim();
+
+	return { frontmatter, body };
+}
+
 // ── Project vocabulary extraction ────────────────────────────────────────────
 
 function extractProjectVocabulary(packageDir) {
@@ -184,7 +243,6 @@ function extractProjectVocabulary(packageDir) {
 						enum: propDef.enum || null,
 					});
 
-					// Collect enums from array item properties too
 					if (type === "array" && propDef.items?.properties) {
 						for (const [itemProp, itemDef] of Object.entries(propDef.items.properties)) {
 							if (itemDef.enum) {
@@ -199,7 +257,6 @@ function extractProjectVocabulary(packageDir) {
 				}
 			}
 
-			// Extract array key and item properties
 			let arrayKey = null;
 			const itemProps = [];
 			for (const prop of properties) {
@@ -218,7 +275,7 @@ function extractProjectVocabulary(packageDir) {
 							});
 						}
 					}
-					break; // first array key only
+					break;
 				}
 			}
 
@@ -246,21 +303,46 @@ function extractMonitorVocabulary(mod) {
 
 // ── SKILL.md composition ────────────────────────────────────────────────────
 
-function composeSkill(packageName, description, registrations, resources, narrative, vocabulary, monitorVocab) {
+function composeSkill(shortName, packageName, description, registrations, resources, narrativeRaw, vocabulary, monitorVocab) {
 	const lines = [];
 
-	lines.push(`# ${packageName}`);
-	lines.push("");
-	lines.push(`> ${description}`);
+	// Parse narrative frontmatter
+	const { frontmatter: narrativeFm, body: narrativeBody } = narrativeRaw
+		? parseNarrative(narrativeRaw)
+		: { frontmatter: null, body: null };
+
+	// Use narrative description if available, else package.json description
+	const skillDescription = narrativeFm?.description || description;
+
+	// ── YAML frontmatter ──
+	lines.push("---");
+	lines.push(`name: ${shortName}`);
+	// Use block scalar for multi-line descriptions
+	if (skillDescription.length > 80 || skillDescription.includes("\n")) {
+		lines.push("description: >");
+		// Wrap at ~80 chars with 2-space indent
+		const words = skillDescription.split(/\s+/);
+		let currentLine = "  ";
+		for (const word of words) {
+			if (currentLine.length + word.length + 1 > 82 && currentLine.trim()) {
+				lines.push(currentLine);
+				currentLine = "  " + word;
+			} else {
+				currentLine += (currentLine.trim() ? " " : "") + word;
+			}
+		}
+		if (currentLine.trim()) lines.push(currentLine);
+	} else {
+		lines.push(`description: "${skillDescription.replace(/"/g, '\\"')}"`);
+	}
+	lines.push("---");
 	lines.push("");
 
-	// Tools
+	// ── Tools reference ──
 	if (registrations.tools.length > 0) {
-		lines.push("## Tools");
-		lines.push("");
+		lines.push("<tools_reference>");
 		for (const tool of registrations.tools) {
-			lines.push(`### ${tool.name}`);
-			lines.push("");
+			lines.push(`<tool name="${tool.name}">`);
 			lines.push(tool.description);
 			if (tool.promptSnippet) {
 				lines.push("");
@@ -273,71 +355,68 @@ function composeSkill(packageName, description, registrations, resources, narrat
 				for (const p of tool.parameters) {
 					lines.push(`| \`${p.name}\` | ${p.type} | ${p.required ? "yes" : "no"} | ${p.description} |`);
 				}
-				lines.push("");
 			}
+			lines.push(`</tool>`);
+			lines.push("");
 		}
+		lines.push("</tools_reference>");
+		lines.push("");
 	}
 
-	// Commands
+	// ── Commands reference ──
 	if (registrations.commands.length > 0) {
-		lines.push("## Commands");
-		lines.push("");
+		lines.push("<commands_reference>");
 		for (const cmd of registrations.commands) {
-			lines.push(`### /${cmd.name}`);
-			lines.push("");
+			lines.push(`<command name="/${cmd.name}">`);
 			lines.push(cmd.description);
 			if (cmd.subcommands.length > 0) {
 				lines.push("");
 				lines.push(`Subcommands: ${cmd.subcommands.map((s) => `\`${s}\``).join(", ")}`);
 			}
+			lines.push(`</command>`);
 			lines.push("");
 		}
+		lines.push("</commands_reference>");
+		lines.push("");
 	}
 
-	// Shortcuts
+	// ── Keyboard shortcuts ──
 	if (registrations.shortcuts.length > 0) {
-		lines.push("## Keyboard Shortcuts");
-		lines.push("");
+		lines.push("<keyboard_shortcuts>");
 		for (const shortcut of registrations.shortcuts) {
 			lines.push(`- **${shortcut.key}** — ${shortcut.description}`);
 		}
+		lines.push("</keyboard_shortcuts>");
 		lines.push("");
 	}
 
-	// Events
+	// ── Events ──
 	if (registrations.events.length > 0) {
-		lines.push("## Events");
-		lines.push("");
 		const uniqueEvents = [...new Set(registrations.events.map((e) => e.event))];
-		for (const event of uniqueEvents) {
-			lines.push(`- \`${event}\``);
-		}
+		lines.push("<events>");
+		lines.push(uniqueEvents.map((e) => `\`${e}\``).join(", "));
+		lines.push("</events>");
 		lines.push("");
 	}
 
-	// Resources
+	// ── Bundled resources (summary only — full listing in reference file) ──
 	if (resources.length > 0) {
-		lines.push("## Bundled Resources");
+		lines.push("<bundled_resources>");
+		const summaryParts = resources.map((r) => `${r.count} ${r.directory}`);
+		lines.push(`${summaryParts.join(", ")} bundled.`);
+		lines.push("See references/bundled-resources.md for full inventory.");
+		lines.push("</bundled_resources>");
 		lines.push("");
-		for (const res of resources) {
-			lines.push(`### ${res.directory}/ (${res.count} files)`);
-			lines.push("");
-			for (const f of res.files) {
-				lines.push(`- \`${f}\``);
-			}
-			lines.push("");
-		}
 	}
 
-	// Planning vocabulary (for pi-project — derived from default schemas)
+	// ── Planning vocabulary (pi-project — from default schemas) ──
 	if (vocabulary && vocabulary.length > 0) {
-		lines.push("## Planning Vocabulary");
+		lines.push("<planning_vocabulary>");
 		lines.push("");
 
-		// Block types table
 		const arraySchemas = vocabulary.filter((s) => s.arrayKey);
 		if (arraySchemas.length > 0) {
-			lines.push("### Block Types");
+			lines.push("**Block Types:**");
 			lines.push("");
 			lines.push("| Block | Title | Array Key | Item Fields |");
 			lines.push("|-------|-------|-----------|-------------|");
@@ -350,21 +429,18 @@ function composeSkill(packageName, description, registrations, resources, narrat
 			lines.push("");
 		}
 
-		// Single-object schemas
 		const objectSchemas = vocabulary.filter((s) => !s.arrayKey);
 		if (objectSchemas.length > 0) {
-			lines.push("### Object Blocks");
-			lines.push("");
+			lines.push("**Object Blocks:**");
 			for (const s of objectSchemas) {
 				lines.push(`- **${s.name}** (${s.title})`);
 			}
 			lines.push("");
 		}
 
-		// Status enums
 		const allEnums = vocabulary.flatMap((s) => s.enums);
 		if (allEnums.length > 0) {
-			lines.push("### Status Enums");
+			lines.push("**Status Enums:**");
 			lines.push("");
 			lines.push("| Block | Field | Values |");
 			lines.push("|-------|-------|--------|");
@@ -373,16 +449,18 @@ function composeSkill(packageName, description, registrations, resources, narrat
 			}
 			lines.push("");
 		}
+
+		lines.push("</planning_vocabulary>");
+		lines.push("");
 	}
 
-	// Monitor vocabulary (for pi-behavior-monitors — derived from exported registries)
+	// ── Monitor vocabulary (pi-behavior-monitors — from exported registries) ──
 	if (monitorVocab) {
-		lines.push("## Monitor Vocabulary");
+		lines.push("<monitor_vocabulary>");
 		lines.push("");
 
-		// Context collectors table
 		if (monitorVocab.collectors.length > 0) {
-			lines.push("### Context Collectors");
+			lines.push("**Context Collectors:**");
 			lines.push("");
 			lines.push("| Collector | Placeholder | Description | Limits |");
 			lines.push("|-----------|-------------|-------------|--------|");
@@ -393,25 +471,20 @@ function composeSkill(packageName, description, registrations, resources, narrat
 			}
 			lines.push("");
 			lines.push(
-				"Any string is accepted in `classify.context`. Unknown collector names produce empty string (graceful degradation).",
+				"Any string is accepted in `classify.context`. Unknown collector names produce empty string.",
 			);
 			lines.push("");
-			lines.push("Built-in placeholders (always available, not listed in `classify.context`):");
+			lines.push("Built-in placeholders (always available, not in `classify.context`):");
+			lines.push("- `{{ patterns }}` — patterns JSON as numbered list");
 			lines.push(
-				"- `{patterns}` / `{{ patterns }}` — formatted from patterns JSON as numbered list: `1. [severity] description`",
+				'- `{{ instructions }}` — instructions JSON as bulleted list with "follow strictly" preamble',
 			);
-			lines.push(
-				'- `{instructions}` / `{{ instructions }}` — formatted from instructions JSON as bulleted list with "Operating instructions from the user (follow these strictly):" preamble — empty string if no instructions',
-			);
-			lines.push(
-				"- `{iteration}` / `{{ iteration }}` — current consecutive steer count (0-indexed)",
-			);
+			lines.push("- `{{ iteration }}` — consecutive steer count (0-indexed)");
 			lines.push("");
 		}
 
-		// When conditions
 		if (monitorVocab.whenConditions.length > 0) {
-			lines.push("### When Conditions");
+			lines.push("**When Conditions:**");
 			lines.push("");
 			for (const w of monitorVocab.whenConditions) {
 				lines.push(`- \`${w.name}\` — ${w.description}`);
@@ -419,42 +492,58 @@ function composeSkill(packageName, description, registrations, resources, narrat
 			lines.push("");
 		}
 
-		// Events
 		if (monitorVocab.validEvents.length > 0) {
-			lines.push(
-				`### Events\n\n${monitorVocab.validEvents.map((e) => `\`${e}\``).join(", ")}\n`,
-			);
+			lines.push(`**Events:** ${monitorVocab.validEvents.map((e) => `\`${e}\``).join(", ")}`);
+			lines.push("");
 		}
-
-		// Verdict types
 		if (monitorVocab.verdictTypes.length > 0) {
-			lines.push(
-				`### Verdict Types\n\n${monitorVocab.verdictTypes.map((v) => `\`${v}\``).join(", ")}\n`,
-			);
+			lines.push(`**Verdict Types:** ${monitorVocab.verdictTypes.map((v) => `\`${v}\``).join(", ")}`);
+			lines.push("");
 		}
-
-		// Scope targets
 		if (monitorVocab.scopeTargets.length > 0) {
-			lines.push(
-				`### Scope Targets\n\n${monitorVocab.scopeTargets.map((s) => `\`${s}\``).join(", ")}\n`,
-			);
+			lines.push(`**Scope Targets:** ${monitorVocab.scopeTargets.map((s) => `\`${s}\``).join(", ")}`);
+			lines.push("");
 		}
-	}
 
-	// Narrative (hand-authored behavioral documentation)
-	if (narrative) {
-		lines.push("---");
+		lines.push("</monitor_vocabulary>");
 		lines.push("");
-		lines.push(narrative);
 	}
 
-	// Footer
-	lines.push("---");
-	lines.push("");
+	// ── Narrative body (hand-authored, already XML-tagged) ──
+	if (narrativeBody) {
+		lines.push(narrativeBody);
+		lines.push("");
+	}
+
+	// ── Footer ──
 	lines.push("*Generated from source by `scripts/generate-skills.js` — do not edit by hand.*");
 	lines.push("");
 
 	return lines.join("\n");
+}
+
+// ── Resource reference file ─────────────────────────────────────────────────
+
+function writeResourceReference(skillDir, resources) {
+	if (resources.length === 0) return;
+
+	const refDir = join(skillDir, "references");
+	mkdirSync(refDir, { recursive: true });
+
+	const lines = [];
+	lines.push("# Bundled Resources");
+	lines.push("");
+
+	for (const res of resources) {
+		lines.push(`## ${res.directory}/ (${res.count} files)`);
+		lines.push("");
+		for (const f of res.files) {
+			lines.push(`- \`${f}\``);
+		}
+		lines.push("");
+	}
+
+	writeFileSync(join(refDir, "bundled-resources.md"), lines.join("\n"));
 }
 
 // ── Per-package generation ──────────────────────────────────────────────────
@@ -485,9 +574,6 @@ async function generateForPackage(packageDir) {
 		}
 	} catch (err) {
 		console.log(`  Warning: extension factory threw (expected for extensions needing runtime context): ${err.message}`);
-		// Registrations captured before the error are still valid —
-		// most extensions register tools/commands synchronously before
-		// any async operations
 	}
 
 	console.log(`  Tools: ${registrations.tools.length}`);
@@ -503,9 +589,9 @@ async function generateForPackage(packageDir) {
 
 	// Read optional narrative
 	const narrativePath = join(packageDir, "skill-narrative.md");
-	const narrative = existsSync(narrativePath) ? readFileSync(narrativePath, "utf-8") : null;
+	const narrativeRaw = existsSync(narrativePath) ? readFileSync(narrativePath, "utf-8") : null;
 
-	if (narrative) {
+	if (narrativeRaw) {
 		console.log(`  Narrative: ${narrativePath}`);
 	}
 
@@ -522,15 +608,21 @@ async function generateForPackage(packageDir) {
 	}
 
 	// Compose
-	const content = composeSkill(packageName, description, registrations, resources, narrative, vocabulary, monitorVocab);
-
-	// Write to skills/<package-short-name>/SKILL.md
 	const shortName = packageName.replace("@davidorex/", "");
+	const content = composeSkill(shortName, packageName, description, registrations, resources, narrativeRaw, vocabulary, monitorVocab);
+
+	// Write SKILL.md
 	const skillDir = join(packageDir, "skills", shortName);
 	mkdirSync(skillDir, { recursive: true });
 	const skillPath = join(skillDir, "SKILL.md");
 	writeFileSync(skillPath, content);
 	console.log(`  Wrote ${relative(ROOT, skillPath)}`);
+
+	// Write resource reference file
+	writeResourceReference(skillDir, resources);
+	if (resources.length > 0) {
+		console.log(`  Wrote ${relative(ROOT, join(skillDir, "references", "bundled-resources.md"))}`);
+	}
 
 	return { packageName, shortName, description, registrations, resources, skillPath };
 }
@@ -540,25 +632,33 @@ async function generateForPackage(packageDir) {
 function generateMetaSkill(subPackageResults) {
 	const metaDir = join(PACKAGES_DIR, "pi-project-workflows");
 	const metaPkg = JSON.parse(readFileSync(join(metaDir, "package.json"), "utf-8"));
+	const shortName = metaPkg.name.replace("@davidorex/", "");
 
 	const lines = [];
-	lines.push(`# ${metaPkg.name}`);
+
+	// Frontmatter
+	lines.push("---");
+	lines.push(`name: ${shortName}`);
+	lines.push("description: >");
+	lines.push("  Meta-package re-exporting pi-project (schema-driven project state),");
+	lines.push("  pi-workflows (workflow orchestration), and pi-behavior-monitors (autonomous");
+	lines.push("  behavior monitoring). Install once to get all three extensions.");
+	lines.push("---");
 	lines.push("");
-	lines.push(`> ${metaPkg.description}`);
-	lines.push("");
+
+	lines.push("<objective>");
 	lines.push("This meta-package re-exports all three extensions. Install once to get everything:");
 	lines.push("");
 	lines.push("```");
 	lines.push("pi install npm:@davidorex/pi-project-workflows");
 	lines.push("```");
-	lines.push("");
-	lines.push("## Included Extensions");
+	lines.push("</objective>");
 	lines.push("");
 
+	lines.push("<included_extensions>");
 	for (const result of subPackageResults) {
 		if (!result) continue;
-		lines.push(`### ${result.packageName}`);
-		lines.push("");
+		lines.push(`<extension name="${result.packageName}">`);
 		lines.push(result.description);
 		lines.push("");
 
@@ -573,19 +673,16 @@ function generateMetaSkill(subPackageResults) {
 				`**Shortcuts:** ${result.registrations.shortcuts.map((s) => `${s.key} (${s.description})`).join(", ")}`,
 			);
 		}
-		lines.push("");
-		lines.push(
-			`See full skill: [${result.shortName}/SKILL.md](../packages/${basename(dirname(result.skillPath))}/../skills/${result.shortName}/SKILL.md)`,
-		);
+		lines.push(`</extension>`);
 		lines.push("");
 	}
-
-	lines.push("---");
+	lines.push("</included_extensions>");
 	lines.push("");
+
 	lines.push("*Generated from source by `scripts/generate-skills.js` — do not edit by hand.*");
 	lines.push("");
 
-	const skillDir = join(metaDir, "skills", "pi-project-workflows");
+	const skillDir = join(metaDir, "skills", shortName);
 	mkdirSync(skillDir, { recursive: true });
 	const skillPath = join(skillDir, "SKILL.md");
 	writeFileSync(skillPath, lines.join("\n"));

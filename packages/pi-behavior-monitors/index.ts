@@ -1476,7 +1476,11 @@ export default function (pi: ExtensionAPI) {
 
 	// --- abort support + buffered steer drain ---
 	pi.on("agent_end", async () => {
-		pi.events.emit("monitors:abort", undefined);
+		// NOTE: do NOT emit monitors:abort here. The abort signal is for user-initiated
+		// cancellation only. Emitting it on agent_end kills agent_end monitor classifications
+		// (commit-hygiene, etc.) because this handler runs before the per-monitor agent_end
+		// handlers in the sequential event queue, and the abort signal is already set when
+		// those monitors try to classify.
 
 		// Drain buffered steers from message_end/turn_end monitors.
 		// The _agentEventQueue guarantees this runs AFTER all turn_end/message_end

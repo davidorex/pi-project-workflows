@@ -1038,6 +1038,13 @@ async function activate(
 		if (cleanAction) {
 			executeWriteAction(monitor, cleanAction, result);
 		}
+		// Command-invoked monitors always report their verdict — the user explicitly asked
+		if (monitor.event === "command") {
+			pi.sendMessage(
+				{ customType: "monitor-result", content: `[${monitor.name}] CLEAN — no issues detected.`, display: true },
+				{ triggerTurn: false },
+			);
+		}
 		monitor.whileCount = 0;
 		updateStatus();
 		return;

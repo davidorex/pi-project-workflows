@@ -76,7 +76,7 @@ Subcommands: `on`, `off`, `fragility`, `response-style`
 </events>
 
 <bundled_resources>
-2 schemas, 16 examples bundled.
+2 schemas, 20 examples bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 

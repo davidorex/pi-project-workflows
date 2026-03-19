@@ -773,23 +773,9 @@ export async function executeWorkflow(
 		}
 	}
 
-	// 5. Finalize
-	if (state.status === "running") {
-		state.status = "completed";
-	}
-	try {
-		writeState(runDir, state);
-	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
-		if (ctx.hasUI) {
-			ctx.ui.notify(`Warning: final state write failed — run history may be incomplete: ${msg}`, "error");
-		}
-	}
-	writeMetrics(runDir, state.steps);
-
-	// 6. Process artifacts
+	// 5. Process artifacts (before finalization — block write failures are fatal)
 	const writtenArtifacts: Record<string, string> = {};
-	if (spec.artifacts) {
+	if (spec.artifacts && state.status === "running") {
 		const workflowDir = getWorkflowDir(ctx.cwd, spec.name);
 		const artifactScope: Record<string, unknown> = {
 			input: state.input,
@@ -811,7 +797,7 @@ export async function executeWorkflow(
 
 				// Validate against schema if specified
 				if (artifactSpec.schema) {
-					const schemaPath = resolveSchemaPath(artifactSpec.schema, spec.filePath);
+					const schemaPath = resolveSchemaPath(artifactSpec.schema, spec.filePath, ctx.cwd);
 					validateFromFile(schemaPath, data, `artifact '${name}'`);
 				}
 
@@ -832,14 +818,41 @@ export async function executeWorkflow(
 					writtenArtifacts[name] = absolutePath;
 				}
 			} catch (err) {
-				// Artifact write failure is non-fatal — log warning, don't fail the workflow
 				const msg = err instanceof Error ? err.message : String(err);
+				// Block artifact failures are fatal — the typed-state contract requires it.
+				// Non-block artifact failures remain non-fatal.
+				const resolvedPath = String(resolveExpressions(artifactSpec.path, artifactScope));
+				const absolutePath = path.isAbsolute(resolvedPath) ? resolvedPath : path.resolve(workflowDir, resolvedPath);
+				const isBlockTarget =
+					absolutePath.startsWith(path.join(ctx.cwd, PROJECT_DIR) + path.sep) && absolutePath.endsWith(".json");
+				if (isBlockTarget) {
+					state.status = "failed";
+					if (ctx.hasUI) {
+						ctx.ui.notify(`Block artifact '${name}' failed: ${msg}`, "error");
+					}
+					break;
+				}
+				// Non-block: warn and continue
 				if (ctx.hasUI) {
 					ctx.ui.notify(`Artifact '${name}' failed: ${msg}`, "warning");
 				}
 			}
 		}
 	}
+
+	// 6. Finalize
+	if (state.status === "running") {
+		state.status = "completed";
+	}
+	try {
+		writeState(runDir, state);
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		if (ctx.hasUI) {
+			ctx.ui.notify(`Warning: final state write failed — run history may be incomplete: ${msg}`, "error");
+		}
+	}
+	writeMetrics(runDir, state.steps);
 
 	// 7. Clean up TUI
 	if (ctx.hasUI) {

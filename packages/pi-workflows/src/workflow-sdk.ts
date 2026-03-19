@@ -341,11 +341,16 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 	// 2. Schema resolution — do all referenced schema files exist?
 	const schemaRefs = declaredSchemaRefs(spec);
 	for (const schemaPath of schemaRefs) {
-		const resolved = resolveSchemaPath(schemaPath, spec.filePath);
+		const resolved = resolveSchemaPath(schemaPath, spec.filePath, cwd);
 		if (!fs.existsSync(resolved)) {
+			// block: references get a warning (project may not be initialized yet),
+			// relative/absolute references get an error (should always be resolvable)
+			const isBlock = schemaPath.startsWith("block:");
 			issues.push({
-				severity: "error",
-				message: `Schema file not found: ${schemaPath} (resolved to ${resolved})`,
+				severity: isBlock ? "warning" : "error",
+				message: isBlock
+					? `Block schema not found: ${schemaPath} (resolved to ${resolved}). Run /project init to scaffold schemas.`
+					: `Schema file not found: ${schemaPath} (resolved to ${resolved})`,
 				field: findSchemaField(spec, schemaPath),
 			});
 		}

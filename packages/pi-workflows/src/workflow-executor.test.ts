@@ -727,12 +727,12 @@ describe("artifacts", () => {
 			},
 		);
 
-		// Workflow completes (artifact failure is non-fatal)
-		assert.strictEqual(result.status, "completed");
+		// Block artifact failure is fatal — workflow fails
+		assert.strictEqual(result.status, "failed");
 		// Block file should NOT have been written (validation failed)
 		assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "test-block.json")));
-		// Warning about validation failure
-		assert.ok(notifications.some((n) => n.msg.includes("test-block") && n.level === "warning"));
+		// Error about validation failure
+		assert.ok(notifications.some((n) => n.msg.includes("test-block") && n.level === "error"));
 
 		fs.rmSync(tmpDir, { recursive: true });
 	});

@@ -42,6 +42,9 @@ steps:
       existing_phases: ${{ steps.load-context.output.existing_phases }}
     output:
       format: json
+      schema: block:tasks
+    retry:
+      maxAttempts: 2
 
 artifacts:
   tasks:

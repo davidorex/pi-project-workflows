@@ -17,6 +17,9 @@ steps:
       vision: ${{ input.vision }}
     output:
       format: json
+      schema: block:project
+    retry:
+      maxAttempts: 2
 
   gather-requirements:
     agent: requirements-gatherer
@@ -25,6 +28,9 @@ steps:
       vision: ${{ input.vision }}
     output:
       format: json
+      schema: block:requirements
+    retry:
+      maxAttempts: 2
 
   design-architecture:
     agent: architecture-designer
@@ -33,6 +39,9 @@ steps:
       requirements: ${{ steps.gather-requirements.output }}
     output:
       format: json
+      schema: block:architecture
+    retry:
+      maxAttempts: 2
 
   create-plan:
     agent: plan-creator
@@ -42,6 +51,9 @@ steps:
       architecture: ${{ steps.design-architecture.output }}
     output:
       format: json
+      schema: block:tasks
+    retry:
+      maxAttempts: 2
 
 artifacts:
   project:

@@ -41,6 +41,9 @@ steps:
       path: ${{ input.path }}
     output:
       format: json
+      schema: block:architecture
+    retry:
+      maxAttempts: 2
 
   infer-project:
     agent: project-inferrer
@@ -51,6 +54,9 @@ steps:
       path: ${{ input.path }}
     output:
       format: json
+      schema: block:project
+    retry:
+      maxAttempts: 2
 
   identify-gaps:
     agent: gap-identifier
@@ -62,6 +68,9 @@ steps:
       path: ${{ input.path }}
     output:
       format: json
+      schema: block:gaps
+    retry:
+      maxAttempts: 2
 
 artifacts:
   project:

@@ -39,12 +39,23 @@ export function addUsage(total: StepUsage, step: StepUsage): void {
 }
 
 /**
- * Resolve a schema path relative to the workflow spec file.
- * If the schema path is absolute, return as-is.
- * If relative, resolve against the directory containing the workflow spec.
+ * Resolve a schema path to an absolute filesystem path.
+ *
+ * Three resolution modes:
+ * - Absolute paths: returned as-is
+ * - `block:<name>` prefix: resolves to `.project/schemas/<name>.schema.json` from cwd.
+ *   This is the portable way to reference project block schemas from any workflow or
+ *   agent spec regardless of package install location. Uses the user's actual schemas
+ *   (which may be customized).
+ * - Relative paths: resolved against the directory containing the spec file
  */
-export function resolveSchemaPath(schemaPath: string, specFilePath: string): string {
+export function resolveSchemaPath(schemaPath: string, specFilePath: string, cwd?: string): string {
 	if (path.isAbsolute(schemaPath)) return schemaPath;
+	const blockMatch = schemaPath.match(/^block:(.+)$/);
+	if (blockMatch) {
+		const resolvedCwd = cwd || process.cwd();
+		return path.join(resolvedCwd, ".project", "schemas", `${blockMatch[1]}.schema.json`);
+	}
 	return path.resolve(path.dirname(specFilePath), schemaPath);
 }
 
@@ -61,6 +72,7 @@ export function buildPrompt(
 	resolvedInput: unknown,
 	runDir: string,
 	stepName: string,
+	cwd?: string,
 ): string {
 	const parts: string[] = [];
 
@@ -83,7 +95,7 @@ export function buildPrompt(
 		parts.push("\n---");
 		parts.push(`**Output:** Write your result as valid JSON to: ${outputPath}`);
 		if (step.output.schema) {
-			parts.push(`The output must conform to the JSON Schema at: ${resolveSchemaPath(step.output.schema, "")}`);
+			parts.push(`The output must conform to the JSON Schema at: ${resolveSchemaPath(step.output.schema, "", cwd)}`);
 		}
 	}
 

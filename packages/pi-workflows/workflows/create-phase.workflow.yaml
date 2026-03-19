@@ -42,7 +42,7 @@ steps:
       inventory: "${{ steps.load-context.output.inventory }}"
     output:
       format: json
-      schema: ../schemas/phase.schema.json
+      schema: block:phase
 
   write-phase:
     command: |

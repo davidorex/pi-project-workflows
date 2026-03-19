@@ -101,7 +101,7 @@ export async function executeAgentStep(
 	}
 	// Inject output schema into template context if available
 	if (stepSpec.output?.schema && typeof resolvedInput === "object" && resolvedInput !== null) {
-		const schemaPath = resolveSchemaPath(stepSpec.output.schema, options.specFilePath);
+		const schemaPath = resolveSchemaPath(stepSpec.output.schema, options.specFilePath, options.ctx.cwd);
 		try {
 			const schemaContent = fs.readFileSync(schemaPath, "utf8");
 			(resolvedInput as Record<string, unknown>).output_schema = schemaContent;
@@ -111,7 +111,7 @@ export async function executeAgentStep(
 	}
 	agentSpec = compileAgentSpec(agentSpec, resolvedInput, templateEnv);
 
-	let prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName);
+	let prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName, ctx.cwd);
 
 	// Inject retry context if this is a retry attempt
 	if (options.retryContext) {
@@ -159,7 +159,7 @@ export async function executeAgentStep(
 
 	// Validate output against schema (if defined)
 	if (stepSpec.output?.schema && result.status === "completed") {
-		const schemaPath = resolveSchemaPath(stepSpec.output.schema, specFilePath);
+		const schemaPath = resolveSchemaPath(stepSpec.output.schema, specFilePath, ctx.cwd);
 		try {
 			const outputFilePath = path.join(runDir, "outputs", `${stepName}.json`);
 			if (fs.existsSync(outputFilePath)) {

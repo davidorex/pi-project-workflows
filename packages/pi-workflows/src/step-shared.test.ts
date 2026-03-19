@@ -109,6 +109,26 @@ describe("resolveSchemaPath", () => {
 		const result = resolveSchemaPath("../schemas/out.json", "/project/specs/workflow.yaml");
 		assert.strictEqual(result, path.resolve("/project/specs", "../schemas/out.json"));
 	});
+
+	it("resolves block: prefix to .project/schemas/<name>.schema.json from cwd", () => {
+		const result = resolveSchemaPath("block:project", "/any/spec.yaml", "/my/project");
+		assert.strictEqual(result, path.join("/my/project", ".project", "schemas", "project.schema.json"));
+	});
+
+	it("resolves block: prefix with hyphenated name", () => {
+		const result = resolveSchemaPath("block:conformance-reference", "/any/spec.yaml", "/cwd");
+		assert.strictEqual(result, path.join("/cwd", ".project", "schemas", "conformance-reference.schema.json"));
+	});
+
+	it("block: prefix falls back to process.cwd when cwd not provided", () => {
+		const result = resolveSchemaPath("block:gaps", "/any/spec.yaml");
+		assert.strictEqual(result, path.join(process.cwd(), ".project", "schemas", "gaps.schema.json"));
+	});
+
+	it("non-block relative paths are unaffected by cwd parameter", () => {
+		const result = resolveSchemaPath("schemas/out.json", "/a/b/spec.yaml", "/some/cwd");
+		assert.strictEqual(result, path.resolve("/a/b", "schemas/out.json"));
+	});
 });
 
 describe("buildPrompt", () => {

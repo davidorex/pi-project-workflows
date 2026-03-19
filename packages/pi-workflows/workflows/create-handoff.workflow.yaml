@@ -52,6 +52,9 @@ steps:
       path: "."
     output:
       format: json
+      schema: block:handoff
+    retry:
+      maxAttempts: 2
 
 artifacts:
   handoff:

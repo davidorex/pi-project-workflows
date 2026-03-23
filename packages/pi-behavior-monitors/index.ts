@@ -975,6 +975,95 @@ function executeWriteAction(monitor: Monitor, action: MonitorAction, result: Cla
 // =============================================================================
 
 let monitorsEnabled = true;
+let loadedMonitors: Monitor[] = [];
+let invokeCtx: ExtensionContext | undefined;
+
+/**
+ * Programmatic monitor invocation — runs classification and write actions for
+ * a named monitor, returning the verdict. Unlike activate(), this skips dedup,
+ * ceiling, steering, and buffering. Designed for synchronous pre-dispatch
+ * gating where callers need the ClassifyResult before proceeding.
+ *
+ * The monitor must be loaded (discovered at extension init). If the monitor
+ * has no patterns, returns CLEAN (nothing to classify against).
+ *
+ * @param name - Monitor name (matches .monitor.json `name` field)
+ * @param context - Optional key-value pairs injected as additional template
+ *   variables alongside the standard collectors. Keys that collide with
+ *   collector names override the collector output for this invocation.
+ */
+export async function invokeMonitor(
+	name: string,
+	context?: Record<string, string>,
+): Promise<ClassifyResult> {
+	const monitor = loadedMonitors.find((m) => m.name === name);
+	if (!monitor) throw new Error(`Monitor "${name}" not found — check .pi/monitors/ or bundled examples`);
+	if (!invokeCtx) throw new Error("Monitor extension not initialized — invokeMonitor requires an active session");
+	if (!monitorsEnabled) return { verdict: "clean" };
+	if (monitor.dismissed) return { verdict: "clean" };
+
+	const patterns = loadPatterns(monitor);
+	if (patterns.length === 0) return { verdict: "clean" };
+
+	const instructions = loadInstructions(monitor);
+
+	// Build context: collectors + caller-supplied overrides
+	const collected: Record<string, string> = {};
+	const branch = invokeCtx.sessionManager.getBranch();
+	for (const key of monitor.classify.context) {
+		const fn = collectors[key];
+		if (fn) collected[key] = fn(branch);
+		else collected[key] = "";
+	}
+	if (context) {
+		for (const [key, value] of Object.entries(context)) {
+			collected[key] = value;
+		}
+	}
+
+	const templateContext: Record<string, unknown> = {
+		patterns: formatPatternsForPrompt(patterns),
+		instructions: formatInstructionsForPrompt(instructions),
+		iteration: 0,
+		...collected,
+	};
+
+	// Render prompt (same logic as renderClassifyPrompt but with injected context)
+	let prompt: string | null = null;
+	if (monitor.classify.promptTemplate && monitorTemplateEnv) {
+		try {
+			prompt = monitorTemplateEnv.render(monitor.classify.promptTemplate, templateContext);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.error(`[${monitor.name}] Template render failed (${monitor.classify.promptTemplate}): ${msg}`);
+			if (!monitor.classify.prompt) throw new Error(`Template render failed and no inline prompt fallback: ${msg}`);
+		}
+	}
+	if (!prompt && monitor.classify.prompt) {
+		prompt = monitor.classify.prompt.replace(/\{(\w+)\}/g, (match, key: string) => {
+			return String(templateContext[key] ?? match);
+		});
+	}
+	if (!prompt) return { verdict: "clean" };
+
+	const result = await classifyPrompt(invokeCtx, monitor, prompt);
+
+	// Execute write actions (findings files) based on verdict
+	if (result.verdict === "clean") {
+		const cleanAction = monitor.actions.on_clean;
+		if (cleanAction) executeWriteAction(monitor, cleanAction, result);
+	} else {
+		const action = result.verdict === "new" ? monitor.actions.on_new : monitor.actions.on_flag;
+		if (action) {
+			if (result.verdict === "new" && result.newPattern && action.learn_pattern) {
+				learnPattern(monitor, result.newPattern);
+			}
+			executeWriteAction(monitor, action, result);
+		}
+	}
+
+	return result;
+}
 
 async function activate(
 	monitor: Monitor,
@@ -1133,6 +1222,7 @@ export default function (pi: ExtensionAPI) {
 	const seeded = seedExamples();
 
 	const monitors = discoverMonitors();
+	loadedMonitors = monitors;
 	if (monitors.length === 0) return;
 
 	// Initialize Nunjucks template environment for monitor prompt templates
@@ -1171,6 +1261,7 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", async (_event: unknown, ctx: ExtensionContext) => {
 		try {
 			statusCtx = ctx;
+			invokeCtx = ctx;
 			if (seeded > 0 && ctx.hasUI) {
 				const dir = resolveProjectMonitorsDir();
 				ctx.ui.notify(`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`, "info");
@@ -1183,6 +1274,7 @@ export default function (pi: ExtensionAPI) {
 
 	pi.on("session_switch", async (_event: unknown, ctx: ExtensionContext) => {
 		statusCtx = ctx;
+		invokeCtx = ctx;
 		for (const m of monitors) {
 			m.whileCount = 0;
 			m.dismissed = false;

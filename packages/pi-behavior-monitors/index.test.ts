@@ -8,6 +8,7 @@ import {
 	VERDICT_TYPES,
 	WHEN_CONDITIONS,
 	generateFindingId,
+	invokeMonitor,
 	parseModelSpec,
 	parseMonitorsArgs,
 	parseVerdict,
@@ -403,5 +404,23 @@ describe("vocabulary registries", () => {
 
 	it("SCOPE_TARGETS contains expected values", () => {
 		expect([...SCOPE_TARGETS]).toEqual(["main", "subagent", "all", "workflow"]);
+	});
+});
+
+// =============================================================================
+// invokeMonitor
+// =============================================================================
+
+describe("invokeMonitor", () => {
+	it("is exported as a function", () => {
+		expect(typeof invokeMonitor).toBe("function");
+	});
+
+	it("throws when monitor name is not found (no monitors loaded)", async () => {
+		await expect(invokeMonitor("nonexistent")).rejects.toThrow('Monitor "nonexistent" not found');
+	});
+
+	it("throws with a helpful message mentioning .pi/monitors/", async () => {
+		await expect(invokeMonitor("no-such-monitor")).rejects.toThrow(".pi/monitors/");
 	});
 });

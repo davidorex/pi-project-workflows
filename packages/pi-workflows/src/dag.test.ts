@@ -177,6 +177,33 @@ describe("extractDependencies", () => {
 		assert.strictEqual(deps.get("a")!.size, 0);
 	});
 
+	it("extracts deps from context step names", () => {
+		const spec = makeSpec({
+			a: { agent: "foo" },
+			b: {
+				agent: "bar",
+				context: ["a"],
+			},
+		});
+		const deps = extractDependencies(spec);
+		assert.ok(deps.get("b")!.has("a"));
+	});
+
+	it("combines context deps with expression deps", () => {
+		const spec = makeSpec({
+			a: { agent: "foo" },
+			b: { agent: "bar" },
+			c: {
+				agent: "baz",
+				context: ["a"],
+				input: { data: "${{ steps.b.output }}" },
+			},
+		});
+		const deps = extractDependencies(spec);
+		assert.ok(deps.get("c")!.has("a"), "should depend on context step a");
+		assert.ok(deps.get("c")!.has("b"), "should depend on expression step b");
+	});
+
 	it("does not descend into loop sub-steps", () => {
 		const spec = makeSpec({
 			a: { agent: "foo" },

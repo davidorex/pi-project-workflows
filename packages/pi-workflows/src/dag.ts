@@ -104,6 +104,13 @@ function collectExpressions(step: StepSpec): string[] {
 		collectExpressionsFromValue(step.command, exprs);
 	}
 
+	// context step references (agent steps only — creates DAG dependency)
+	if (step.context) {
+		for (const ctxName of step.context) {
+			exprs.push(`steps.${ctxName}`);
+		}
+	}
+
 	return exprs;
 }
 

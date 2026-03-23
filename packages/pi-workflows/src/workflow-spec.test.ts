@@ -603,6 +603,51 @@ steps:
 			(err: any) => err.message.includes("exactly one"),
 		);
 	});
+
+	// context field
+	it("parses context field on agent step as string array", () => {
+		const yaml = `
+name: test
+steps:
+  scan:
+    agent: scanner
+  fix:
+    agent: fixer
+    context:
+      - scan
+`;
+		const spec = parseWorkflowSpec(yaml, "/t.yaml", "project");
+		assert.deepStrictEqual(spec.steps.fix.context, ["scan"]);
+	});
+
+	it("rejects non-array context value", () => {
+		const yaml = `
+name: test
+steps:
+  fix:
+    agent: fixer
+    context: scan
+`;
+		assert.throws(
+			() => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+			(err: any) => err.message.includes("context must be an array"),
+		);
+	});
+
+	it("rejects non-string elements in context array", () => {
+		const yaml = `
+name: test
+steps:
+  fix:
+    agent: fixer
+    context:
+      - 42
+`;
+		assert.throws(
+			() => parseWorkflowSpec(yaml, "/t.yaml", "project"),
+			(err: any) => err.message.includes("context must contain only strings"),
+		);
+	});
 });
 
 describe("self-implement workflow spec", () => {

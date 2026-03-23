@@ -342,6 +342,75 @@ describe("executeAgentStep", () => {
 		assert.strictEqual(result.status, "completed");
 	});
 
+	// Context injection
+	it("inlines prior step textOutput into prompt when context is set", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const stepSpec: StepSpec = { agent: "test-agent", context: ["diagnose"] };
+		const state: ExecutionState = {
+			input: {},
+			steps: {
+				diagnose: {
+					step: "diagnose",
+					agent: "diagnostician",
+					status: "completed",
+					usage: zeroUsage(),
+					durationMs: 100,
+					textOutput: "Root cause is a null pointer in module X",
+				},
+			},
+			status: "running",
+		};
+		const capture = { calls: [] as any[] };
+		await executeAgentStep("fix", stepSpec, state, makeOptions(tmpDir, { dispatchFn: mockDispatch({}, capture) }));
+		const prompt = capture.calls[0].prompt;
+		assert.ok(prompt.includes("Context from Prior Steps"), "prompt should contain context header");
+		assert.ok(prompt.includes("### diagnose"), "prompt should contain step name heading");
+		assert.ok(prompt.includes("Root cause is a null pointer in module X"), "prompt should contain textOutput");
+	});
+
+	it("inlines multiple context entries in order", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const stepSpec: StepSpec = { agent: "test-agent", context: ["scan", "analyze"] };
+		const state: ExecutionState = {
+			input: {},
+			steps: {
+				scan: { step: "scan", agent: "scanner", status: "completed", usage: zeroUsage(), durationMs: 50, textOutput: "Found 3 issues" },
+				analyze: { step: "analyze", agent: "analyst", status: "completed", usage: zeroUsage(), durationMs: 50, textOutput: "Priority: high" },
+			},
+			status: "running",
+		};
+		const capture = { calls: [] as any[] };
+		await executeAgentStep("fix", stepSpec, state, makeOptions(tmpDir, { dispatchFn: mockDispatch({}, capture) }));
+		const prompt = capture.calls[0].prompt;
+		const scanIdx = prompt.indexOf("### scan");
+		const analyzeIdx = prompt.indexOf("### analyze");
+		assert.ok(scanIdx < analyzeIdx, "scan should appear before analyze in prompt");
+	});
+
+	it("skips missing step names in context silently", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const stepSpec: StepSpec = { agent: "test-agent", context: ["nonexistent"] };
+		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
+		const result = await executeAgentStep("fix", stepSpec, state, makeOptions(tmpDir));
+		assert.strictEqual(result.status, "completed");
+	});
+
+	it("skips context steps with empty textOutput", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const stepSpec: StepSpec = { agent: "test-agent", context: ["transform1"] };
+		const state: ExecutionState = {
+			input: {},
+			steps: {
+				transform1: { step: "transform1", agent: "none", status: "completed", usage: zeroUsage(), durationMs: 1 },
+			},
+			status: "running",
+		};
+		const capture = { calls: [] as any[] };
+		await executeAgentStep("fix", stepSpec, state, makeOptions(tmpDir, { dispatchFn: mockDispatch({}, capture) }));
+		const prompt = capture.calls[0].prompt;
+		assert.ok(!prompt.includes("Context from Prior Steps"), "prompt should not contain context header when no text");
+	});
+
 	it("uses real dispatch when dispatchFn not provided (structural check)", async (t) => {
 		// This test verifies the fallback code path exists structurally
 		// without actually spawning a subprocess (which requires pi on PATH).

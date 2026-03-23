@@ -113,6 +113,21 @@ export async function executeAgentStep(
 
 	let prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName, ctx.cwd);
 
+	// Inject context from prior steps (narrative text inlining)
+	if (stepSpec.context && stepSpec.context.length > 0) {
+		const contextParts: string[] = [];
+		for (const ctxStepName of stepSpec.context) {
+			const ctxResult = state.steps[ctxStepName];
+			if (!ctxResult?.textOutput) continue;
+			contextParts.push(`### ${ctxStepName}\n`);
+			contextParts.push(ctxResult.textOutput);
+			contextParts.push("");
+		}
+		if (contextParts.length > 0) {
+			prompt = `## Context from Prior Steps\n\n${contextParts.join("\n")}\n---\n\n${prompt}`;
+		}
+	}
+
 	// Inject retry context if this is a retry attempt
 	if (options.retryContext) {
 		const rc = options.retryContext;

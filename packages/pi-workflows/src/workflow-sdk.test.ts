@@ -357,6 +357,34 @@ describe("validateWorkflow", () => {
 		assert.strictEqual(orderIssues[0].severity, "error");
 	});
 
+	it("reports error for context referencing undeclared step", () => {
+		const spec = makeSpec({
+			fix: {
+				agent: "fixer",
+				context: ["nonexistent"],
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.valid, false);
+		const ctxIssues = result.issues.filter((i) => i.message.includes("context") && i.message.includes("undeclared"));
+		assert.ok(ctxIssues.length > 0);
+		assert.strictEqual(ctxIssues[0].severity, "error");
+		assert.ok(ctxIssues[0].field.includes("context"));
+	});
+
+	it("passes for context referencing valid step", () => {
+		const spec = makeSpec({
+			scan: { command: "echo hello" },
+			fix: {
+				agent: "fixer",
+				context: ["scan"],
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const ctxIssues = result.issues.filter((i) => i.field?.includes("context"));
+		assert.strictEqual(ctxIssues.length, 0);
+	});
+
 	it("reports warning for unknown filter name", () => {
 		const spec = makeSpec({
 			load: { command: "echo hello" },

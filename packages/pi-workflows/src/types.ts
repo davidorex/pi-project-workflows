@@ -30,6 +30,7 @@ export interface RetryConfig {
 export interface StepSpec {
 	agent?: string; // optional — not needed for gate/transform steps
 	model?: string; // model override
+	context?: string[]; // step names whose textOutput to inline into dispatch prompt (agent steps only)
 	input?: Record<string, unknown>; // values may contain ${{ }} expressions
 	output?: StepOutputSpec;
 	when?: string; // ${{ }} expression, evaluated as truthy/falsy

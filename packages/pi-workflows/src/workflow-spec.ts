@@ -399,6 +399,19 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 			step.input = rawStep.input as Record<string, unknown>;
 		}
 
+		// context must be an array of strings if present (agent steps only)
+		if ("context" in rawStep && rawStep.context !== undefined) {
+			if (!Array.isArray(rawStep.context)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' context must be an array of step names`);
+			}
+			for (const ctxName of rawStep.context) {
+				if (typeof ctxName !== "string") {
+					throw new WorkflowSpecError(filePath, `step '${stepName}' context must contain only strings`);
+				}
+			}
+			step.context = rawStep.context as string[];
+		}
+
 		// output must be an object if present
 		if ("output" in rawStep && rawStep.output !== undefined) {
 			if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {

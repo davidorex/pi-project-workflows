@@ -399,7 +399,21 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		}
 	}
 
-	// 5. Filter name validity — are all filter names known?
+	// 5. Context step references — do all names in context[] point to declared steps?
+	for (const [stepName, step] of Object.entries(spec.steps)) {
+		if (!step.context) continue;
+		for (const ctxName of step.context) {
+			if (!stepSet.has(ctxName)) {
+				issues.push({
+					severity: "error",
+					message: `Step '${stepName}' context references undeclared step '${ctxName}'`,
+					field: `steps.${stepName}.context`,
+				});
+			}
+		}
+	}
+
+	// 6. Filter name validity — are all filter names known?
 	const validFilters = new Set(FILTER_NAMES);
 	for (const expr of expressions) {
 		if (expr.filterName && !validFilters.has(expr.filterName)) {

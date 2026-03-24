@@ -53,6 +53,15 @@ describe("parseMonitorsArgs", () => {
 		expect(parseMonitorsArgs("off", withOffName)).toEqual({ type: "inspect", name: "off" });
 	});
 
+	it("returns help when first token is 'help' and not a monitor name", () => {
+		expect(parseMonitorsArgs("help", names)).toEqual({ type: "help" });
+	});
+
+	it("treats 'help' as inspect when 'help' is a known monitor name", () => {
+		const withHelpName = new Set(["help", "security"]);
+		expect(parseMonitorsArgs("help", withHelpName)).toEqual({ type: "inspect", name: "help" });
+	});
+
 	// --- inspect (name only) ---
 
 	it("returns inspect for a known monitor name with no subcommand", () => {

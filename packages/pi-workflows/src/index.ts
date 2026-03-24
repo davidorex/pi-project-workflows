@@ -704,30 +704,46 @@ const extension = (pi: ExtensionAPI) => {
 
 	// ── Command: /workflow ──────────────────────────────────────────────────
 
-	pi.registerCommand("workflow", {
-		description: "List and run workflows",
-		getArgumentCompletions: (prefix: string) => {
-			const subcommands = ["init", "run", "list", "resume", "validate", "status"];
-			return subcommands.filter((s) => s.startsWith(prefix)).map((s) => ({ value: s, label: s }));
+	interface SubcommandEntry {
+		description: string;
+		handler: (args: string, ctx: ExtensionCommandContext) => Promise<void> | void;
+		getCompletions?: (argPrefix: string) => Array<{ value: string; label: string; description?: string }> | null;
+	}
+
+	const workflowNameCompletions = (argPrefix: string) => {
+		const workflows = discoverWorkflows(process.cwd());
+		return workflows
+			.filter((w) => w.name.startsWith(argPrefix))
+			.map((w) => ({ value: w.name, label: w.name, description: w.description || "" }));
+	};
+
+	const WORKFLOW_SUBCOMMANDS: Record<string, SubcommandEntry> = {
+		init: {
+			description: "Initialize .workflows/ directory",
+			handler: (_args, ctx) => handleWorkflowInit(ctx),
 		},
-
-		async handler(args: string, ctx: ExtensionCommandContext) {
-			const trimmed = args.trim();
-			const spaceIdx = trimmed.indexOf(" ");
-			const subcommand = spaceIdx === -1 ? trimmed || "list" : trimmed.slice(0, spaceIdx);
-			const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
-
-			if (subcommand === "init") {
-				handleWorkflowInit(ctx);
-			} else if (subcommand === "list") {
-				await handleList(ctx, pi);
-			} else if (subcommand === "run") {
-				await handleRun(rest, ctx, pi);
-			} else if (subcommand === "resume") {
-				await handleResume(rest, ctx, pi);
-			} else if (subcommand === "validate") {
-				handleValidate(rest, ctx);
-			} else if (subcommand === "status") {
+		list: {
+			description: "List and select a workflow to run",
+			handler: (_args, ctx) => handleList(ctx, pi),
+		},
+		run: {
+			description: "Run a workflow by name",
+			handler: (args, ctx) => handleRun(args, ctx, pi),
+			getCompletions: workflowNameCompletions,
+		},
+		resume: {
+			description: "Resume an incomplete workflow run",
+			handler: (args, ctx) => handleResume(args, ctx, pi),
+			getCompletions: workflowNameCompletions,
+		},
+		validate: {
+			description: "Validate workflow specs",
+			handler: (args, ctx) => handleValidate(args, ctx),
+			getCompletions: workflowNameCompletions,
+		},
+		status: {
+			description: "Show workflow vocabulary and discovery",
+			handler: (_args, ctx) => {
 				const status = gatherWorkflowStatus(ctx.cwd);
 				const lines: string[] = [];
 				lines.push(`Step types: ${(status.stepTypes as string[]).join(", ")}`);
@@ -739,9 +755,61 @@ const extension = (pi: ExtensionAPI) => {
 				lines.push(`Schemas: ${status.schemas}`);
 				lines.push(`Templates: ${status.templates}`);
 				ctx.ui.notify(lines.join("\n"), "info");
-			} else {
-				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, list, run, resume, validate, status`, "warning");
+			},
+		},
+		help: {
+			description: "Show available subcommands",
+			handler: (_args, ctx) => {
+				const lines = ["Usage: /workflow <subcommand> [args]", ""];
+				for (const [name, entry] of Object.entries(WORKFLOW_SUBCOMMANDS)) {
+					lines.push(`  ${name.padEnd(12)} ${entry.description}`);
+				}
+				ctx.ui.notify(lines.join("\n"), "info");
+			},
+		},
+	};
+
+	pi.registerCommand("workflow", {
+		description: "List and run workflows",
+		getArgumentCompletions: (prefix: string) => {
+			const tokens = prefix.split(/\s+/);
+			const partial = tokens[tokens.length - 1];
+
+			// Level 0: completing the subcommand name
+			if (tokens.length <= 1) {
+				return Object.entries(WORKFLOW_SUBCOMMANDS)
+					.filter(([name]) => name.startsWith(partial))
+					.map(([name, entry]) => ({ value: name, label: name, description: entry.description }));
 			}
+
+			// Level 1+: delegate to subcommand's getCompletions
+			const subName = tokens[0];
+			const sub = WORKFLOW_SUBCOMMANDS[subName];
+			if (sub?.getCompletions) {
+				const argPrefix = tokens.slice(1).join(" ");
+				const items = sub.getCompletions(argPrefix);
+				if (items) {
+					return items.map((item) => ({ ...item, value: `${subName} ${item.value}` }));
+				}
+			}
+
+			return null;
+		},
+
+		async handler(args: string, ctx: ExtensionCommandContext) {
+			const trimmed = args.trim();
+			const spaceIdx = trimmed.indexOf(" ");
+			const subcommand = spaceIdx === -1 ? trimmed || "list" : trimmed.slice(0, spaceIdx);
+			const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
+
+			const entry = WORKFLOW_SUBCOMMANDS[subcommand];
+			if (!entry) {
+				const names = Object.keys(WORKFLOW_SUBCOMMANDS).join(", ");
+				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Available: ${names}`, "warning");
+				return;
+			}
+
+			await entry.handler(rest, ctx);
 		},
 	});
 

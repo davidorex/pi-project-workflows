@@ -471,26 +471,34 @@ const extension = (pi: ExtensionAPI) => {
 
 	// ── Command: /project ──────────────────────────────────────────────────
 
-	pi.registerCommand("project", {
-		description: "Project state management",
-		getArgumentCompletions: (prefix: string) => {
-			const subcommands = ["init", "status", "add-work", "validate"];
-			return subcommands.filter((s) => s.startsWith(prefix)).map((s) => ({ value: s, label: s }));
+	interface SubcommandEntry {
+		description: string;
+		handler: (args: string, ctx: ExtensionCommandContext) => Promise<void> | void;
+		getCompletions?: (argPrefix: string) => Array<{ value: string; label: string; description?: string }> | null;
+	}
+
+	const PROJECT_SUBCOMMANDS: Record<string, SubcommandEntry> = {
+		init: {
+			description: "Initialize .project/ with schemas and default blocks",
+			handler: (_args, ctx) => handleInit(ctx),
 		},
-
-		async handler(args: string, ctx: ExtensionCommandContext) {
-			const trimmed = args.trim();
-			const spaceIdx = trimmed.indexOf(" ");
-			const subcommand = spaceIdx === -1 ? trimmed || "status" : trimmed.slice(0, spaceIdx);
-			const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
-
-			if (subcommand === "init") {
-				handleInit(ctx);
-			} else if (subcommand === "status") {
-				handleStatus(ctx, pi);
-			} else if (subcommand === "add-work") {
-				await handleAddWork(rest, ctx, pi);
-			} else if (subcommand === "validate") {
+		status: {
+			description: "Show derived project state",
+			handler: (_args, ctx) => handleStatus(ctx, pi),
+		},
+		"add-work": {
+			description: "Extract conversation items into project blocks",
+			handler: (args, ctx) => handleAddWork(args, ctx, pi),
+			getCompletions: (argPrefix) => {
+				const blocks = findAppendableBlocks(process.cwd());
+				return blocks
+					.filter((b) => b.block.startsWith(argPrefix))
+					.map((b) => ({ value: b.block, label: b.block, description: `array: ${b.arrayKey}` }));
+			},
+		},
+		validate: {
+			description: "Check cross-block referential integrity",
+			handler: (_args, ctx) => {
 				const result = validateProject(ctx.cwd);
 				const errors = result.issues.filter((i) => i.severity === "error").length;
 				const warnings = result.issues.filter((i) => i.severity === "warning").length;
@@ -506,9 +514,59 @@ const extension = (pi: ExtensionAPI) => {
 					lines.push(`${errors} error(s), ${warnings} warning(s)`);
 				}
 				ctx.ui.notify(lines.join("\n"), errors > 0 ? "error" : "info");
-			} else {
-				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Use: init, status, add-work, validate`, "warning");
+			},
+		},
+		help: {
+			description: "Show available subcommands",
+			handler: (_args, ctx) => {
+				const lines = ["Usage: /project <subcommand> [args]", ""];
+				for (const [name, entry] of Object.entries(PROJECT_SUBCOMMANDS)) {
+					lines.push(`  ${name.padEnd(12)} ${entry.description}`);
+				}
+				ctx.ui.notify(lines.join("\n"), "info");
+			},
+		},
+	};
+
+	pi.registerCommand("project", {
+		description: "Project state management",
+		getArgumentCompletions: (prefix: string) => {
+			const tokens = prefix.split(/\s+/);
+			const partial = tokens[tokens.length - 1];
+
+			if (tokens.length <= 1) {
+				return Object.entries(PROJECT_SUBCOMMANDS)
+					.filter(([name]) => name.startsWith(partial))
+					.map(([name, entry]) => ({ value: name, label: name, description: entry.description }));
 			}
+
+			const subName = tokens[0];
+			const sub = PROJECT_SUBCOMMANDS[subName];
+			if (sub?.getCompletions) {
+				const argPrefix = tokens.slice(1).join(" ");
+				const items = sub.getCompletions(argPrefix);
+				if (items) {
+					return items.map((item) => ({ ...item, value: `${subName} ${item.value}` }));
+				}
+			}
+
+			return null;
+		},
+
+		async handler(args: string, ctx: ExtensionCommandContext) {
+			const trimmed = args.trim();
+			const spaceIdx = trimmed.indexOf(" ");
+			const subcommand = spaceIdx === -1 ? trimmed || "status" : trimmed.slice(0, spaceIdx);
+			const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
+
+			const entry = PROJECT_SUBCOMMANDS[subcommand];
+			if (!entry) {
+				const names = Object.keys(PROJECT_SUBCOMMANDS).join(", ");
+				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Available: ${names}`, "warning");
+				return;
+			}
+
+			await entry.handler(rest, ctx);
 		},
 	});
 };

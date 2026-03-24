@@ -608,6 +608,7 @@ export type MonitorsCommand =
 	| { type: "patterns-list"; name: string }
 	| { type: "dismiss"; name: string }
 	| { type: "reset"; name: string }
+	| { type: "help" }
 	| { type: "error"; message: string };
 
 export function parseMonitorsArgs(args: string, knownNames: Set<string>): MonitorsCommand {
@@ -621,6 +622,7 @@ export function parseMonitorsArgs(args: string, knownNames: Set<string>): Monito
 	if (!knownNames.has(first)) {
 		if (first === "on") return { type: "on" };
 		if (first === "off") return { type: "off" };
+		if (first === "help") return { type: "help" };
 		return { type: "error", message: `Unknown monitor: ${first}\nAvailable: ${[...knownNames].join(", ")}` };
 	}
 
@@ -1671,6 +1673,7 @@ export default function (pi: ExtensionAPI) {
 				const items = [
 					{ value: "on", label: "on", description: "Enable all monitoring" },
 					{ value: "off", label: "off", description: "Pause all monitoring" },
+					{ value: "help", label: "help", description: "Show available commands" },
 					...Array.from(monitorNames).map((n) => ({
 						value: n,
 						label: n,
@@ -1703,6 +1706,24 @@ export default function (pi: ExtensionAPI) {
 
 			if (cmd.type === "error") {
 				ctx.ui.notify(cmd.message, "warning");
+				return;
+			}
+
+			if (cmd.type === "help") {
+				const lines = [
+					"Usage: /monitors <command>",
+					"",
+					"  on            Enable all monitoring",
+					"  off           Pause all monitoring",
+					"  <name>        Inspect a monitor",
+					"  <name> rules  Manage rules (add, remove, replace)",
+					"  <name> patterns  List known patterns",
+					"  <name> dismiss   Silence for this session",
+					"  <name> reset     Reset state and un-dismiss",
+					"",
+					`Active monitors: ${monitors.map((m) => m.name).join(", ") || "(none)"}`,
+				];
+				ctx.ui.notify(lines.join("\n"), "info");
 				return;
 			}
 

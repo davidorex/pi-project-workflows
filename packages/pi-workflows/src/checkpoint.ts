@@ -6,17 +6,17 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { ExecutionState, WorkflowSpec } from "./types.ts";
-import { readState } from "./state.ts";
-import { WORKFLOWS_DIR } from "./workflows-dir.ts";
+import { readState } from "./state.js";
+import type { ExecutionState, WorkflowSpec } from "./types.js";
+import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
 export interface IncompleteRun {
-  runId: string;
-  runDir: string;
-  state: ExecutionState;
-  completedSteps: string[];       // step names with status completed or skipped
-  failedStep?: string;            // name of the step that failed (if any)
-  updatedAt?: string;             // last update timestamp
+	runId: string;
+	runDir: string;
+	state: ExecutionState;
+	completedSteps: string[]; // step names with status completed or skipped
+	failedStep?: string; // name of the step that failed (if any)
+	updatedAt?: string; // last update timestamp
 }
 
 /**
@@ -29,43 +29,42 @@ export interface IncompleteRun {
  * Returns null if no incomplete runs exist.
  */
 export function findIncompleteRun(cwd: string, workflowName: string): IncompleteRun | null {
-  const runsDir = path.join(cwd, WORKFLOWS_DIR, "runs", workflowName, "runs");
-  if (!fs.existsSync(runsDir)) return null;
+	const runsDir = path.join(cwd, WORKFLOWS_DIR, "runs", workflowName, "runs");
+	if (!fs.existsSync(runsDir)) return null;
 
-  const entries = fs.readdirSync(runsDir)
-    .filter(e => {
-      const stat = fs.statSync(path.join(runsDir, e));
-      return stat.isDirectory();
-    })
-    .sort()          // lexicographic — timestamp-based IDs sort chronologically
-    .reverse();      // most recent first
+	const entries = fs
+		.readdirSync(runsDir)
+		.filter((e) => {
+			const stat = fs.statSync(path.join(runsDir, e));
+			return stat.isDirectory();
+		})
+		.sort() // lexicographic — timestamp-based IDs sort chronologically
+		.reverse(); // most recent first
 
-  for (const runId of entries) {
-    const runDir = path.join(runsDir, runId);
-    const state = readState(runDir);
-    if (!state) continue;
+	for (const runId of entries) {
+		const runDir = path.join(runsDir, runId);
+		const state = readState(runDir);
+		if (!state) continue;
 
-    if (state.status === "running" || state.status === "failed" || state.status === "paused") {
-      const completedSteps = Object.entries(state.steps)
-        .filter(([, r]) => r.status === "completed" || r.status === "skipped")
-        .map(([name]) => name);
+		if (state.status === "running" || state.status === "failed" || state.status === "paused") {
+			const completedSteps = Object.entries(state.steps)
+				.filter(([, r]) => r.status === "completed" || r.status === "skipped")
+				.map(([name]) => name);
 
-      const failedStep = Object.entries(state.steps)
-        .find(([, r]) => r.status === "failed")
-        ?.[0];
+			const failedStep = Object.entries(state.steps).find(([, r]) => r.status === "failed")?.[0];
 
-      return {
-        runId,
-        runDir,
-        state,
-        completedSteps,
-        failedStep,
-        updatedAt: state.updatedAt,
-      };
-    }
-  }
+			return {
+				runId,
+				runDir,
+				state,
+				completedSteps,
+				failedStep,
+				updatedAt: state.updatedAt,
+			};
+		}
+	}
 
-  return null;
+	return null;
 }
 
 /**
@@ -77,24 +76,21 @@ export function findIncompleteRun(cwd: string, workflowName: string): Incomplete
  *
  * Returns null if compatible, or a string describing the incompatibility.
  */
-export function validateResumeCompatibility(
-  state: ExecutionState,
-  spec: WorkflowSpec,
-): string | null {
-  // Check version match
-  if (state.specVersion && spec.version && state.specVersion !== spec.version) {
-    return `Spec version changed: run has '${state.specVersion}', current is '${spec.version}'`;
-  }
+export function validateResumeCompatibility(state: ExecutionState, spec: WorkflowSpec): string | null {
+	// Check version match
+	if (state.specVersion && spec.version && state.specVersion !== spec.version) {
+		return `Spec version changed: run has '${state.specVersion}', current is '${spec.version}'`;
+	}
 
-  // Check all completed steps still exist in spec
-  const specStepNames = new Set(Object.keys(spec.steps));
-  for (const stepName of Object.keys(state.steps)) {
-    if (!specStepNames.has(stepName)) {
-      return `Step '${stepName}' was completed in the saved run but no longer exists in the workflow spec`;
-    }
-  }
+	// Check all completed steps still exist in spec
+	const specStepNames = new Set(Object.keys(spec.steps));
+	for (const stepName of Object.keys(state.steps)) {
+		if (!specStepNames.has(stepName)) {
+			return `Step '${stepName}' was completed in the saved run but no longer exists in the workflow spec`;
+		}
+	}
 
-  return null; // compatible
+	return null; // compatible
 }
 
 /**
@@ -108,33 +104,31 @@ export function validateResumeCompatibility(
  * returns only the incomplete steps from that layer.
  */
 export function computeResumePoint(
-  plan: Array<{ steps: string[] }>,
-  completedSteps: Set<string>,
+	plan: Array<{ steps: string[] }>,
+	completedSteps: Set<string>,
 ): { resumeLayerIndex: number; pendingStepsInLayer: string[] } | null {
-  for (let i = 0; i < plan.length; i++) {
-    const layer = plan[i];
-    const pending = layer.steps.filter(s => !completedSteps.has(s));
+	for (let i = 0; i < plan.length; i++) {
+		const layer = plan[i];
+		const pending = layer.steps.filter((s) => !completedSteps.has(s));
 
-    if (pending.length > 0) {
-      return { resumeLayerIndex: i, pendingStepsInLayer: pending };
-    }
-  }
+		if (pending.length > 0) {
+			return { resumeLayerIndex: i, pendingStepsInLayer: pending };
+		}
+	}
 
-  // All steps completed — nothing to resume
-  return null;
+	// All steps completed — nothing to resume
+	return null;
 }
 
 /**
  * Format a human-readable summary of an incomplete run for display.
  */
 export function formatIncompleteRun(run: IncompleteRun, spec: WorkflowSpec): string {
-  const totalSteps = Object.keys(spec.steps).length;
-  const completed = run.completedSteps.length;
-  const status = run.state.status === "paused" ? "paused"
-    : run.state.status === "running" ? "interrupted"
-    : "failed";
-  const failedInfo = run.failedStep ? ` at step '${run.failedStep}'` : "";
-  const timeInfo = run.updatedAt ? ` (last updated: ${run.updatedAt})` : "";
+	const totalSteps = Object.keys(spec.steps).length;
+	const completed = run.completedSteps.length;
+	const status = run.state.status === "paused" ? "paused" : run.state.status === "running" ? "interrupted" : "failed";
+	const failedInfo = run.failedStep ? ` at step '${run.failedStep}'` : "";
+	const timeInfo = run.updatedAt ? ` (last updated: ${run.updatedAt})` : "";
 
-  return `Found ${status} run${failedInfo}: ${completed}/${totalSteps} steps completed${timeInfo}. Run ID: ${run.runId}`;
+	return `Found ${status} run${failedInfo}: ${completed}/${totalSteps} steps completed${timeInfo}. Run ID: ${run.runId}`;
 }

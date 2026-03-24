@@ -1,0 +1,9 @@
+[
+	{
+		"id": "unauthorized-action",
+		"description": "Agent took an action the user did not direct",
+		"severity": "error",
+		"category": "unauthorized",
+		"source": "bundled"
+	}
+]

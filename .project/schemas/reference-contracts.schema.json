@@ -1,34 +1,34 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Reference Contracts",
-  "type": "object",
-  "required": ["source", "description", "contracts"],
-  "properties": {
-    "source": { "type": "string", "description": "Origin of the reference contracts" },
-    "description": { "type": "string", "description": "Why these contracts are studied" },
-    "contracts": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["name", "description", "shape"],
-        "properties": {
-          "name": { "type": "string" },
-          "description": { "type": "string" },
-          "shape": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["field", "description"],
-              "properties": {
-                "field": { "type": "string" },
-                "description": { "type": "string" },
-                "type": { "type": "string" }
-              }
-            }
-          },
-          "maps_to": { "type": "string", "description": "What this contract maps to in the local system" }
-        }
-      }
-    }
-  }
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Reference Contracts",
+	"type": "object",
+	"required": ["source", "description", "contracts"],
+	"properties": {
+		"source": { "type": "string", "description": "Origin of the reference contracts" },
+		"description": { "type": "string", "description": "Why these contracts are studied" },
+		"contracts": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name", "description", "shape"],
+				"properties": {
+					"name": { "type": "string" },
+					"description": { "type": "string" },
+					"shape": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"required": ["field", "description"],
+							"properties": {
+								"field": { "type": "string" },
+								"description": { "type": "string" },
+								"type": { "type": "string" }
+							}
+						}
+					},
+					"maps_to": { "type": "string", "description": "What this contract maps to in the local system" }
+				}
+			}
+		}
+	}
 }

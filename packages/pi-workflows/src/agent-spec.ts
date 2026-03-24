@@ -16,107 +16,108 @@ import path from "node:path";
 
 /** Check if a prompt.system value looks like a template file path vs inline text. */
 function isTemplatePath(value: string | undefined): boolean {
-  if (!value) return false;
-  return value.endsWith(".md") || value.endsWith(".txt") || (value.includes("/") && !value.includes("\n"));
+	if (!value) return false;
+	return value.endsWith(".md") || value.endsWith(".txt") || (value.includes("/") && !value.includes("\n"));
 }
+
 import os from "node:os";
 import { parse as parseYaml } from "yaml";
-import type { AgentSpec } from "./types.ts";
+import type { AgentSpec } from "./types.js";
 
 /**
  * Thrown when an agent spec file is not found in any search path.
  */
 export class AgentNotFoundError extends Error {
-  public readonly agentName: string;
-  public readonly searchPaths: string[];
+	public readonly agentName: string;
+	public readonly searchPaths: string[];
 
-  constructor(agentName: string, searchPaths: string[]) {
-    const pathList = searchPaths.map(p => `  - ${p}`).join("\n");
-    super(`Agent '${agentName}' not found. Searched:\n${pathList}`);
-    this.name = "AgentNotFoundError";
-    this.agentName = agentName;
-    this.searchPaths = searchPaths;
-  }
+	constructor(agentName: string, searchPaths: string[]) {
+		const pathList = searchPaths.map((p) => `  - ${p}`).join("\n");
+		super(`Agent '${agentName}' not found. Searched:\n${pathList}`);
+		this.name = "AgentNotFoundError";
+		this.agentName = agentName;
+		this.searchPaths = searchPaths;
+	}
 }
 
 /**
  * Thrown when an agent spec file exists but cannot be read or parsed.
  */
 export class AgentParseError extends Error {
-  public readonly agentName: string;
-  public readonly filePath: string;
-  public readonly cause: Error;
+	public readonly agentName: string;
+	public readonly filePath: string;
+	public readonly cause: Error;
 
-  constructor(agentName: string, filePath: string, cause: Error) {
-    super(`Agent '${agentName}' at ${filePath}: ${cause.message}`);
-    this.name = "AgentParseError";
-    this.agentName = agentName;
-    this.filePath = filePath;
-    this.cause = cause;
-  }
+	constructor(agentName: string, filePath: string, cause: Error) {
+		super(`Agent '${agentName}' at ${filePath}: ${cause.message}`);
+		this.name = "AgentParseError";
+		this.agentName = agentName;
+		this.filePath = filePath;
+		this.cause = cause;
+	}
 }
 
 /**
  * Parse a YAML agent spec file into an AgentSpec.
  */
 export function parseAgentYaml(filePath: string): AgentSpec {
-  const name = path.basename(filePath, ".agent.yaml");
+	const name = path.basename(filePath, ".agent.yaml");
 
-  let content: string;
-  try {
-    content = fs.readFileSync(filePath, "utf-8");
-  } catch (err) {
-    throw new AgentParseError(name, filePath, err instanceof Error ? err : new Error(String(err)));
-  }
+	let content: string;
+	try {
+		content = fs.readFileSync(filePath, "utf-8");
+	} catch (err) {
+		throw new AgentParseError(name, filePath, err instanceof Error ? err : new Error(String(err)));
+	}
 
-  let spec: any;
-  try {
-    spec = parseYaml(content);
-  } catch (err) {
-    throw new AgentParseError(name, filePath, err instanceof Error ? err : new Error(String(err)));
-  }
+	let spec: any;
+	try {
+		spec = parseYaml(content);
+	} catch (err) {
+		throw new AgentParseError(name, filePath, err instanceof Error ? err : new Error(String(err)));
+	}
 
-  // Handle null/undefined from parsing empty file or non-mapping YAML
-  if (!spec || typeof spec !== "object") {
-    throw new AgentParseError(name, filePath, new Error("File is empty or does not contain a YAML mapping"));
-  }
+	// Handle null/undefined from parsing empty file or non-mapping YAML
+	if (!spec || typeof spec !== "object") {
+		throw new AgentParseError(name, filePath, new Error("File is empty or does not contain a YAML mapping"));
+	}
 
-  return {
-    name: spec.name || name,
-    description: spec.description,
-    role: spec.role,
-    model: spec.model,
-    thinking: spec.thinking,
-    tools: spec.tools,
-    extensions: spec.extensions,
-    skills: spec.skills,
-    output: spec.output?.file,
-    promptTemplate: isTemplatePath(spec.prompt?.system) ? spec.prompt?.system : undefined,
-    systemPrompt: isTemplatePath(spec.prompt?.system) ? undefined : spec.prompt?.system,
-    taskTemplate: spec.prompt?.task,
-    inputSchema: spec.input,
-    outputFormat: spec.output?.format,
-    outputSchema: spec.output?.schema,
-  };
+	return {
+		name: spec.name || name,
+		description: spec.description,
+		role: spec.role,
+		model: spec.model,
+		thinking: spec.thinking,
+		tools: spec.tools,
+		extensions: spec.extensions,
+		skills: spec.skills,
+		output: spec.output?.file,
+		promptTemplate: isTemplatePath(spec.prompt?.system) ? spec.prompt?.system : undefined,
+		systemPrompt: isTemplatePath(spec.prompt?.system) ? undefined : spec.prompt?.system,
+		taskTemplate: spec.prompt?.task,
+		inputSchema: spec.input,
+		outputFormat: spec.output?.format,
+		outputSchema: spec.output?.schema,
+	};
 }
 
 /**
  * Create an agent loader that finds .agent.yaml specs.
  */
 export function createAgentLoader(cwd: string, builtinDir?: string): (name: string) => AgentSpec {
-  const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "agents");
+	const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "agents");
 
-  return (name: string): AgentSpec => {
-    const searchPaths = [
-      path.join(cwd, ".pi", "agents", `${name}.agent.yaml`),
-      path.join(os.homedir(), ".pi", "agent", "agents", `${name}.agent.yaml`),
-      path.join(defaultBuiltinDir, `${name}.agent.yaml`),
-    ];
+	return (name: string): AgentSpec => {
+		const searchPaths = [
+			path.join(cwd, ".pi", "agents", `${name}.agent.yaml`),
+			path.join(os.homedir(), ".pi", "agent", "agents", `${name}.agent.yaml`),
+			path.join(defaultBuiltinDir, `${name}.agent.yaml`),
+		];
 
-    for (const p of searchPaths) {
-      if (fs.existsSync(p)) return parseAgentYaml(p);
-    }
+		for (const p of searchPaths) {
+			if (fs.existsSync(p)) return parseAgentYaml(p);
+		}
 
-    throw new AgentNotFoundError(name, searchPaths);
-  };
+		throw new AgentNotFoundError(name, searchPaths);
+	};
 }

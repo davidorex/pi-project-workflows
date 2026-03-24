@@ -1,0 +1,32 @@
+{
+	"name": "unauthorized-action",
+	"description": "Detects when agent takes an action the user did not direct and steers to undo it",
+	"event": "agent_end",
+	"when": "has_tool_results",
+	"scope": { "target": "main" },
+	"classify": {
+		"model": "claude-sonnet-4-20250514",
+		"context": ["user_text", "tool_calls", "assistant_text"],
+		"excludes": [],
+		"promptTemplate": "unauthorized-action/classify.md"
+	},
+	"patterns": {
+		"path": "unauthorized-action.patterns.json",
+		"learn": true
+	},
+	"instructions": {
+		"path": "unauthorized-action.instructions.json"
+	},
+	"actions": {
+		"on_flag": {
+			"steer": "You took an action the user did not direct. Undo it now."
+		},
+		"on_new": {
+			"steer": "You took an action the user did not direct. Undo it now.",
+			"learn_pattern": true
+		},
+		"on_clean": null
+	},
+	"ceiling": 3,
+	"escalate": "ask"
+}

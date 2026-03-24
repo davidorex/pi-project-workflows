@@ -7,25 +7,69 @@
  * classify (LLM side-channel), patterns (JSON library), actions (steer + write).
  * Patterns and instructions are JSON arrays conforming to schemas.
  */
+import { execSync } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { complete } from "@mariozechner/pi-ai";
 import type { Api, AssistantMessage, Model, TextContent, ToolCall } from "@mariozechner/pi-ai";
+import { complete } from "@mariozechner/pi-ai";
 import type {
 	AgentEndEvent,
+	AgentToolResult,
+	AgentToolUpdateCallback,
 	ExtensionAPI,
 	ExtensionContext,
-	MessageEndEvent,
 	SessionEntry,
 	SessionMessageEntry,
 	TurnEndEvent,
 } from "@mariozechner/pi-coding-agent";
 import { getAgentDir } from "@mariozechner/pi-coding-agent";
 import { Box, Text } from "@mariozechner/pi-tui";
+import { Type } from "@sinclair/typebox";
+import nunjucks from "nunjucks";
 
 const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
 const EXAMPLES_DIR = path.join(EXTENSION_DIR, "examples");
+
+// =============================================================================
+// Vocabulary registries (exported for SDK and skill generation)
+// =============================================================================
+
+export interface CollectorDescriptor {
+	name: string;
+	description: string;
+	limits?: string;
+}
+
+export const COLLECTOR_DESCRIPTORS: CollectorDescriptor[] = [
+	{ name: "user_text", description: "Most recent user message text" },
+	{ name: "assistant_text", description: "Most recent assistant message text" },
+	{ name: "tool_results", description: "Tool results with tool name and error status", limits: "Last 5, truncated 2000 chars" },
+	{ name: "tool_calls", description: "Tool calls and results interleaved", limits: "Last 20, truncated 2000 chars" },
+	{ name: "custom_messages", description: "Custom extension messages since last user message" },
+	{ name: "project_vision", description: ".project/project.json vision, core_value, name" },
+	{ name: "project_conventions", description: ".project/conformance-reference.json principle names" },
+	{ name: "git_status", description: "Output of git status --porcelain", limits: "5s timeout" },
+];
+
+export interface WhenConditionDescriptor {
+	name: string;
+	description: string;
+	parameterized: boolean;
+}
+
+export const WHEN_CONDITIONS: WhenConditionDescriptor[] = [
+	{ name: "always", description: "Fire every time the event occurs", parameterized: false },
+	{ name: "has_tool_results", description: "Fire only if tool results present since last user message", parameterized: false },
+	{ name: "has_file_writes", description: "Fire only if write or edit tool called since last user message", parameterized: false },
+	{ name: "has_bash", description: "Fire only if bash tool called since last user message", parameterized: false },
+	{ name: "every(N)", description: "Fire every Nth activation (counter resets when user text changes)", parameterized: true },
+	{ name: "tool(name)", description: "Fire only if specific named tool called since last user message", parameterized: true },
+];
+
+export const VERDICT_TYPES = ["clean", "flag", "new"] as const;
+export const SCOPE_TARGETS = ["main", "subagent", "all", "workflow"] as const;
 
 // =============================================================================
 // Types
@@ -63,6 +107,7 @@ export interface MonitorSpec {
 		context: string[];
 		excludes: string[];
 		prompt: string;
+		promptTemplate?: string;
 	};
 	patterns: {
 		path: string;
@@ -129,7 +174,7 @@ interface BufferedSteer {
 
 type MonitorEvent = "message_end" | "turn_end" | "agent_end" | "command";
 
-const VALID_EVENTS = new Set<string>(["message_end", "turn_end", "agent_end", "command"]);
+export const VALID_EVENTS = new Set<string>(["message_end", "turn_end", "agent_end", "command"]);
 
 function isValidEvent(event: string): event is MonitorEvent {
 	return VALID_EVENTS.has(event);
@@ -172,21 +217,33 @@ function discoverMonitors(): Monitor[] {
 }
 
 function isDir(p: string): boolean {
-	try { return fs.statSync(p).isDirectory(); } catch { return false; }
+	try {
+		return fs.statSync(p).isDirectory();
+	} catch {
+		return false;
+	}
 }
 
 function listMonitorFiles(dir: string): string[] {
 	try {
 		return fs.readdirSync(dir).filter((f) => f.endsWith(".monitor.json"));
-	} catch { return []; }
+	} catch {
+		return [];
+	}
 }
 
 function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 	let raw: string;
-	try { raw = fs.readFileSync(filePath, "utf-8"); } catch { return null; }
+	try {
+		raw = fs.readFileSync(filePath, "utf-8");
+	} catch {
+		return null;
+	}
 
 	let spec: Record<string, unknown>;
-	try { spec = JSON.parse(raw); } catch {
+	try {
+		spec = JSON.parse(raw);
+	} catch {
 		console.error(`[monitors] Failed to parse ${filePath}`);
 		return null;
 	}
@@ -201,8 +258,8 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 	}
 
 	const classify = spec.classify as MonitorSpec["classify"] | undefined;
-	if (!classify?.prompt) {
-		console.error(`[${name}] Missing classify.prompt`);
+	if (!classify?.prompt && !classify?.promptTemplate) {
+		console.error(`[${name}] Missing classify.prompt or classify.promptTemplate`);
 		return null;
 	}
 
@@ -226,7 +283,8 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 			model: classify.model ?? "claude-sonnet-4-20250514",
 			context: Array.isArray(classify.context) ? classify.context : ["tool_results", "assistant_text"],
 			excludes: Array.isArray(classify.excludes) ? classify.excludes : [],
-			prompt: classify.prompt,
+			prompt: classify.prompt ?? "",
+			promptTemplate: typeof classify.promptTemplate === "string" ? classify.promptTemplate : undefined,
 		},
 		patterns: {
 			path: patternsSpec.path,
@@ -237,7 +295,7 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 		},
 		actions: actions ?? {},
 		ceiling: Number(spec.ceiling) || 5,
-		escalate: (spec.escalate === "dismiss" ? "dismiss" : "ask"),
+		escalate: spec.escalate === "dismiss" ? "dismiss" : "ask",
 		dir,
 		resolvedPatternsPath: path.resolve(dir, patternsSpec.path),
 		resolvedInstructionsPath: path.resolve(dir, instructions?.path ?? `${name}.instructions.json`),
@@ -292,14 +350,20 @@ function seedExamples(): number {
 
 const TRUNCATE = 2000;
 
-function extractText(parts: (TextContent | ToolCall)[]): string {
-	return parts.filter((b): b is TextContent => b.type === "text").map((b) => b.text).join("");
+function extractText(parts: readonly { type: string }[]): string {
+	return parts
+		.filter((b): b is TextContent => b.type === "text")
+		.map((b) => b.text)
+		.join("");
 }
 
 function extractUserText(parts: string | (TextContent | { type: string })[]): string {
 	if (typeof parts === "string") return parts;
 	if (!Array.isArray(parts)) return "";
-	return parts.filter((b): b is TextContent => b.type === "text").map((b) => b.text).join("");
+	return parts
+		.filter((b): b is TextContent => b.type === "text")
+		.map((b) => b.text)
+		.join("");
 }
 
 function trunc(text: string): string {
@@ -340,7 +404,8 @@ function collectToolResults(branch: SessionEntry[], limit = 5): string {
 		const entry = branch[i];
 		if (!isMessageEntry(entry) || entry.message.role !== "toolResult") continue;
 		const text = extractUserText(entry.message.content);
-		if (text) results.push(`---\n[${entry.message.toolName}${entry.message.isError ? " ERROR" : ""}] ${trunc(text)}\n---`);
+		if (text)
+			results.push(`---\n[${entry.message.toolName}${entry.message.isError ? " ERROR" : ""}] ${trunc(text)}\n---`);
 	}
 	return results.reverse().join("\n");
 }
@@ -371,12 +436,47 @@ function collectCustomMessages(branch: SessionEntry[]): string {
 		const entry = branch[i];
 		if (!isMessageEntry(entry)) continue;
 		if (entry.message.role === "user") break;
-		const msg = entry.message as Record<string, unknown>;
+		const msg = entry.message as unknown as Record<string, unknown>;
 		if (msg.customType) {
 			msgs.unshift(`[${msg.customType}] ${msg.content ?? ""}`);
 		}
 	}
 	return msgs.join("\n");
+}
+
+function collectProjectVision(_branch: SessionEntry[]): string {
+	try {
+		const projectPath = path.join(process.cwd(), ".project", "project.json");
+		const raw = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
+		const parts: string[] = [];
+		if (raw.vision) parts.push(`Vision: ${raw.vision}`);
+		if (raw.core_value) parts.push(`Core value: ${raw.core_value}`);
+		if (raw.name) parts.push(`Project: ${raw.name}`);
+		return parts.join("\n");
+	} catch {
+		return "";
+	}
+}
+
+function collectProjectConventions(_branch: SessionEntry[]): string {
+	try {
+		const confPath = path.join(process.cwd(), ".project", "conformance-reference.json");
+		const raw = JSON.parse(fs.readFileSync(confPath, "utf-8"));
+		if (Array.isArray(raw.items)) {
+			return raw.items.map((item: Record<string, unknown>) => `- ${item.name ?? item.id}`).join("\n");
+		}
+		return "";
+	} catch {
+		return "";
+	}
+}
+
+function collectGitStatus(_branch: SessionEntry[]): string {
+	try {
+		return execSync("git status --porcelain", { cwd: process.cwd(), encoding: "utf-8", timeout: 5000 }).trim();
+	} catch {
+		return "";
+	}
 }
 
 const collectors: Record<string, (branch: SessionEntry[]) => string> = {
@@ -385,7 +485,13 @@ const collectors: Record<string, (branch: SessionEntry[]) => string> = {
 	tool_results: collectToolResults,
 	tool_calls: collectToolCalls,
 	custom_messages: collectCustomMessages,
+	project_vision: collectProjectVision,
+	project_conventions: collectProjectConventions,
+	git_status: collectGitStatus,
 };
+
+/** Collector names derived from the runtime registry — used for consistency testing. */
+export const COLLECTOR_NAMES = Object.keys(collectors);
 
 function hasToolResults(branch: SessionEntry[]): boolean {
 	for (let i = branch.length - 1; i >= 0; i--) {
@@ -458,9 +564,7 @@ function loadPatterns(monitor: Monitor): MonitorPattern[] {
 }
 
 function formatPatternsForPrompt(patterns: MonitorPattern[]): string {
-	return patterns
-		.map((p, i) => `${i + 1}. [${p.severity ?? "warning"}] ${p.description}`)
-		.join("\n");
+	return patterns.map((p, i) => `${i + 1}. [${p.severity ?? "warning"}] ${p.description}`).join("\n");
 }
 
 function loadInstructions(monitor: Monitor): MonitorInstruction[] {
@@ -473,10 +577,17 @@ function loadInstructions(monitor: Monitor): MonitorInstruction[] {
 }
 
 function saveInstructions(monitor: Monitor, instructions: MonitorInstruction[]): string | null {
+	const tmpPath = `${monitor.resolvedInstructionsPath}.${process.pid}.tmp`;
 	try {
-		fs.writeFileSync(monitor.resolvedInstructionsPath, JSON.stringify(instructions, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, JSON.stringify(instructions, null, 2) + "\n");
+		fs.renameSync(tmpPath, monitor.resolvedInstructionsPath);
 		return null;
 	} catch (err) {
+		try {
+			fs.unlinkSync(tmpPath);
+		} catch {
+			/* cleanup */
+		}
 		return err instanceof Error ? err.message : String(err);
 	}
 }
@@ -497,6 +608,7 @@ export type MonitorsCommand =
 	| { type: "patterns-list"; name: string }
 	| { type: "dismiss"; name: string }
 	| { type: "reset"; name: string }
+	| { type: "help" }
 	| { type: "error"; message: string };
 
 export function parseMonitorsArgs(args: string, knownNames: Set<string>): MonitorsCommand {
@@ -510,6 +622,7 @@ export function parseMonitorsArgs(args: string, knownNames: Set<string>): Monito
 	if (!knownNames.has(first)) {
 		if (first === "on") return { type: "on" };
 		if (first === "off") return { type: "off" };
+		if (first === "help") return { type: "help" };
 		return { type: "error", message: `Unknown monitor: ${first}\nAvailable: ${[...knownNames].join(", ")}` };
 	}
 
@@ -534,7 +647,8 @@ export function parseMonitorsArgs(args: string, knownNames: Set<string>): Monito
 		if (action === "replace") {
 			const n = parseInt(tokens[3]);
 			const text = tokens.slice(4).join(" ");
-			if (isNaN(n) || n < 1 || !text) return { type: "error", message: "Usage: /monitors <name> rules replace <number> <text>" };
+			if (isNaN(n) || n < 1 || !text)
+				return { type: "error", message: "Usage: /monitors <name> rules replace <number> <text>" };
 			return { type: "rules-replace", name, index: n, text };
 		}
 		return { type: "error", message: `Unknown rules action: ${action}\nAvailable: add, remove, replace` };
@@ -547,18 +661,10 @@ export function parseMonitorsArgs(args: string, knownNames: Set<string>): Monito
 	return { type: "error", message: `Unknown subcommand: ${verb}\nAvailable: rules, patterns, dismiss, reset` };
 }
 
-function handleList(
-	monitors: Monitor[],
-	ctx: ExtensionContext,
-	enabled: boolean,
-): void {
+function handleList(monitors: Monitor[], ctx: ExtensionContext, enabled: boolean): void {
 	const header = enabled ? "monitors: ON" : "monitors: OFF (all monitoring paused)";
 	const lines = monitors.map((m) => {
-		const state = m.dismissed
-			? "dismissed"
-			: m.whileCount > 0
-				? `engaged (${m.whileCount}/${m.ceiling})`
-				: "idle";
+		const state = m.dismissed ? "dismissed" : m.whileCount > 0 ? `engaged (${m.whileCount}/${m.ceiling})` : "idle";
 		const scope = m.scope.target !== "main" ? ` [scope:${m.scope.target}]` : "";
 		return `  ${m.name} [${m.event}${m.when !== "always" ? `, when: ${m.when}` : ""}]${scope} — ${state}`;
 	});
@@ -653,7 +759,31 @@ function formatInstructionsForPrompt(instructions: MonitorInstruction[]): string
 	return `\nOperating instructions from the user (follow these strictly):\n${lines}\n`;
 }
 
-function renderTemplate(monitor: Monitor, branch: SessionEntry[]): string | null {
+/**
+ * Create a Nunjucks environment for monitor prompt templates.
+ * Three-tier search: project monitors dir > user monitors dir > package examples.
+ */
+function createMonitorTemplateEnv(): nunjucks.Environment {
+	const projectDir = resolveProjectMonitorsDir();
+	const userDir = path.join(os.homedir(), ".pi", "agent", "monitors");
+
+	const searchPaths: string[] = [];
+	if (isDir(projectDir)) searchPaths.push(projectDir);
+	if (isDir(userDir)) searchPaths.push(userDir);
+	if (isDir(EXAMPLES_DIR)) searchPaths.push(EXAMPLES_DIR);
+
+	const loader = searchPaths.length > 0 ? new nunjucks.FileSystemLoader(searchPaths) : undefined;
+
+	return new nunjucks.Environment(loader, {
+		autoescape: false,
+		throwOnUndefined: false,
+	});
+}
+
+/** Module-level template environment, initialized in extension entry point. */
+let monitorTemplateEnv: nunjucks.Environment | undefined;
+
+function renderClassifyPrompt(monitor: Monitor, branch: SessionEntry[]): string | null {
 	const patterns = loadPatterns(monitor);
 	if (patterns.length === 0) return null;
 
@@ -663,13 +793,32 @@ function renderTemplate(monitor: Monitor, branch: SessionEntry[]): string | null
 	for (const key of monitor.classify.context) {
 		const fn = collectors[key];
 		if (fn) collected[key] = fn(branch);
+		else collected[key] = ""; // unknown collectors produce empty string (graceful degradation)
 	}
 
+	const context: Record<string, unknown> = {
+		patterns: formatPatternsForPrompt(patterns),
+		instructions: formatInstructionsForPrompt(instructions),
+		iteration: monitor.whileCount,
+		...collected,
+	};
+
+	if (monitor.classify.promptTemplate && monitorTemplateEnv) {
+		// Nunjucks template file
+		try {
+			return monitorTemplateEnv.render(monitor.classify.promptTemplate, context);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.error(`[${monitor.name}] Template render failed (${monitor.classify.promptTemplate}): ${msg}`);
+			// Fall through to inline prompt if available
+			if (!monitor.classify.prompt) return null;
+		}
+	}
+
+	// Fallback: inline string with {placeholder} replacement
+	if (!monitor.classify.prompt) return null;
 	return monitor.classify.prompt.replace(/\{(\w+)\}/g, (match, key: string) => {
-		if (key === "patterns") return formatPatternsForPrompt(patterns);
-		if (key === "instructions") return formatInstructionsForPrompt(instructions);
-		if (key === "iteration") return String(monitor.whileCount);
-		return collected[key] ?? match;
+		return String(context[key] ?? match);
 	});
 }
 
@@ -683,7 +832,8 @@ export function parseVerdict(raw: string): ClassifyResult {
 	if (text.startsWith("NEW:")) {
 		const rest = text.slice(4);
 		const pipe = rest.indexOf("|");
-		if (pipe !== -1) return { verdict: "new", newPattern: rest.slice(0, pipe).trim(), description: rest.slice(pipe + 1).trim() };
+		if (pipe !== -1)
+			return { verdict: "new", newPattern: rest.slice(0, pipe).trim(), description: rest.slice(pipe + 1).trim() };
 		return { verdict: "new", newPattern: rest.trim(), description: rest.trim() };
 	}
 	if (text.startsWith("FLAG:")) return { verdict: "flag", description: text.slice(5).trim() };
@@ -698,7 +848,12 @@ export function parseModelSpec(spec: string): { provider: string; modelId: strin
 	return { provider: "anthropic", modelId: spec };
 }
 
-async function classifyPrompt(ctx: ExtensionContext, monitor: Monitor, prompt: string, signal?: AbortSignal): Promise<ClassifyResult> {
+async function classifyPrompt(
+	ctx: ExtensionContext,
+	monitor: Monitor,
+	prompt: string,
+	signal?: AbortSignal,
+): Promise<ClassifyResult> {
 	const { provider, modelId } = parseModelSpec(monitor.classify.model);
 	const model = ctx.modelRegistry.find(provider, modelId);
 	if (!model) throw new Error(`Model ${monitor.classify.model} not found`);
@@ -721,7 +876,10 @@ async function classifyPrompt(ctx: ExtensionContext, monitor: Monitor, prompt: s
 
 function learnPattern(monitor: Monitor, description: string): void {
 	const patterns = loadPatterns(monitor);
-	const id = description.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 60);
+	const id = description
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.slice(0, 60);
 
 	// dedup by description
 	if (patterns.some((p) => p.description === description)) return;
@@ -734,9 +892,16 @@ function learnPattern(monitor: Monitor, description: string): void {
 		learned_at: new Date().toISOString(),
 	});
 
+	const tmpPath = `${monitor.resolvedPatternsPath}.${process.pid}.tmp`;
 	try {
-		fs.writeFileSync(monitor.resolvedPatternsPath, JSON.stringify(patterns, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, JSON.stringify(patterns, null, 2) + "\n");
+		fs.renameSync(tmpPath, monitor.resolvedPatternsPath);
 	} catch (err) {
+		try {
+			fs.unlinkSync(tmpPath);
+		} catch {
+			/* cleanup */
+		}
 		console.error(`[${monitor.name}] Failed to write pattern: ${err instanceof Error ? err.message : err}`);
 	}
 }
@@ -749,17 +914,11 @@ export function generateFindingId(monitorName: string, _description: string): st
 	return `${monitorName}-${Date.now().toString(36)}`;
 }
 
-function executeWriteAction(
-	monitor: Monitor,
-	action: MonitorAction,
-	result: ClassifyResult,
-): void {
+function executeWriteAction(monitor: Monitor, action: MonitorAction, result: ClassifyResult): void {
 	if (!action.write) return;
 
 	const writeCfg = action.write;
-	const filePath = path.isAbsolute(writeCfg.path)
-		? writeCfg.path
-		: path.resolve(process.cwd(), writeCfg.path);
+	const filePath = path.isAbsolute(writeCfg.path) ? writeCfg.path : path.resolve(process.cwd(), writeCfg.path);
 
 	// Build the entry from template, substituting placeholders
 	const findingId = generateFindingId(monitor.name, result.description ?? "unknown");
@@ -798,10 +957,17 @@ function executeWriteAction(
 		arr.push(entry);
 	}
 
+	const tmpPath = `${filePath}.${process.pid}.tmp`;
 	try {
 		fs.mkdirSync(path.dirname(filePath), { recursive: true });
-		fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2) + "\n");
+		fs.renameSync(tmpPath, filePath);
 	} catch (err) {
+		try {
+			fs.unlinkSync(tmpPath);
+		} catch {
+			/* cleanup */
+		}
 		console.error(`[${monitor.name}] Failed to write to ${filePath}: ${err instanceof Error ? err.message : err}`);
 	}
 }
@@ -811,6 +977,95 @@ function executeWriteAction(
 // =============================================================================
 
 let monitorsEnabled = true;
+let loadedMonitors: Monitor[] = [];
+let invokeCtx: ExtensionContext | undefined;
+
+/**
+ * Programmatic monitor invocation — runs classification and write actions for
+ * a named monitor, returning the verdict. Unlike activate(), this skips dedup,
+ * ceiling, steering, and buffering. Designed for synchronous pre-dispatch
+ * gating where callers need the ClassifyResult before proceeding.
+ *
+ * The monitor must be loaded (discovered at extension init). If the monitor
+ * has no patterns, returns CLEAN (nothing to classify against).
+ *
+ * @param name - Monitor name (matches .monitor.json `name` field)
+ * @param context - Optional key-value pairs injected as additional template
+ *   variables alongside the standard collectors. Keys that collide with
+ *   collector names override the collector output for this invocation.
+ */
+export async function invokeMonitor(
+	name: string,
+	context?: Record<string, string>,
+): Promise<ClassifyResult> {
+	const monitor = loadedMonitors.find((m) => m.name === name);
+	if (!monitor) throw new Error(`Monitor "${name}" not found — check .pi/monitors/ or bundled examples`);
+	if (!invokeCtx) throw new Error("Monitor extension not initialized — invokeMonitor requires an active session");
+	if (!monitorsEnabled) return { verdict: "clean" };
+	if (monitor.dismissed) return { verdict: "clean" };
+
+	const patterns = loadPatterns(monitor);
+	if (patterns.length === 0) return { verdict: "clean" };
+
+	const instructions = loadInstructions(monitor);
+
+	// Build context: collectors + caller-supplied overrides
+	const collected: Record<string, string> = {};
+	const branch = invokeCtx.sessionManager.getBranch();
+	for (const key of monitor.classify.context) {
+		const fn = collectors[key];
+		if (fn) collected[key] = fn(branch);
+		else collected[key] = "";
+	}
+	if (context) {
+		for (const [key, value] of Object.entries(context)) {
+			collected[key] = value;
+		}
+	}
+
+	const templateContext: Record<string, unknown> = {
+		patterns: formatPatternsForPrompt(patterns),
+		instructions: formatInstructionsForPrompt(instructions),
+		iteration: 0,
+		...collected,
+	};
+
+	// Render prompt (same logic as renderClassifyPrompt but with injected context)
+	let prompt: string | null = null;
+	if (monitor.classify.promptTemplate && monitorTemplateEnv) {
+		try {
+			prompt = monitorTemplateEnv.render(monitor.classify.promptTemplate, templateContext);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.error(`[${monitor.name}] Template render failed (${monitor.classify.promptTemplate}): ${msg}`);
+			if (!monitor.classify.prompt) throw new Error(`Template render failed and no inline prompt fallback: ${msg}`);
+		}
+	}
+	if (!prompt && monitor.classify.prompt) {
+		prompt = monitor.classify.prompt.replace(/\{(\w+)\}/g, (match, key: string) => {
+			return String(templateContext[key] ?? match);
+		});
+	}
+	if (!prompt) return { verdict: "clean" };
+
+	const result = await classifyPrompt(invokeCtx, monitor, prompt);
+
+	// Execute write actions (findings files) based on verdict
+	if (result.verdict === "clean") {
+		const cleanAction = monitor.actions.on_clean;
+		if (cleanAction) executeWriteAction(monitor, cleanAction, result);
+	} else {
+		const action = result.verdict === "new" ? monitor.actions.on_new : monitor.actions.on_flag;
+		if (action) {
+			if (result.verdict === "new" && result.newPattern && action.learn_pattern) {
+				learnPattern(monitor, result.newPattern);
+			}
+			executeWriteAction(monitor, action, result);
+		}
+	}
+
+	return result;
+}
 
 async function activate(
 	monitor: Monitor,
@@ -819,6 +1074,7 @@ async function activate(
 	branch: SessionEntry[],
 	steeredThisTurn: Set<string>,
 	updateStatus: () => void,
+	pendingAgentEndSteers: BufferedSteer[],
 ): Promise<void> {
 	if (!monitorsEnabled) return;
 	if (monitor.dismissed) return;
@@ -841,7 +1097,7 @@ async function activate(
 		return;
 	}
 
-	const prompt = renderTemplate(monitor, branch);
+	const prompt = renderClassifyPrompt(monitor, branch);
 	if (!prompt) return;
 
 	// create an abort controller so classification can be cancelled if the user aborts
@@ -872,6 +1128,13 @@ async function activate(
 		const cleanAction = monitor.actions.on_clean;
 		if (cleanAction) {
 			executeWriteAction(monitor, cleanAction, result);
+		}
+		// Command-invoked monitors always report their verdict — the user explicitly asked
+		if (monitor.event === "command") {
+			pi.sendMessage(
+				{ customType: "monitor-result", content: `[${monitor.name}] CLEAN — no issues detected.`, display: true },
+				{ triggerTurn: false },
+			);
 		}
 		monitor.whileCount = 0;
 		updateStatus();
@@ -961,7 +1224,11 @@ export default function (pi: ExtensionAPI) {
 	const seeded = seedExamples();
 
 	const monitors = discoverMonitors();
+	loadedMonitors = monitors;
 	if (monitors.length === 0) return;
+
+	// Initialize Nunjucks template environment for monitor prompt templates
+	monitorTemplateEnv = createMonitorTemplateEnv();
 
 	let statusCtx: ExtensionContext | undefined;
 
@@ -994,19 +1261,22 @@ export default function (pi: ExtensionAPI) {
 	}
 
 	pi.on("session_start", async (_event: unknown, ctx: ExtensionContext) => {
-		statusCtx = ctx;
-		if (seeded > 0 && ctx.hasUI) {
-			const dir = resolveProjectMonitorsDir();
-			ctx.ui.notify(
-				`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`,
-				"info",
-			);
+		try {
+			statusCtx = ctx;
+			invokeCtx = ctx;
+			if (seeded > 0 && ctx.hasUI) {
+				const dir = resolveProjectMonitorsDir();
+				ctx.ui.notify(`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`, "info");
+			}
+			updateStatus();
+		} catch {
+			/* startup errors should not block session */
 		}
-		updateStatus();
 	});
 
 	pi.on("session_switch", async (_event: unknown, ctx: ExtensionContext) => {
 		statusCtx = ctx;
+		invokeCtx = ctx;
 		for (const m of monitors) {
 			m.whileCount = 0;
 			m.dismissed = false;
@@ -1016,6 +1286,262 @@ export default function (pi: ExtensionAPI) {
 		monitorsEnabled = true;
 		pendingAgentEndSteers = [];
 		updateStatus();
+	});
+
+	// ── Tool: monitors-status ──────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "monitors-status",
+		label: "Monitors Status",
+		description: "List all behavior monitors with their current state.",
+		promptSnippet: "List all behavior monitors with their current state",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			_ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const status = monitors.map((m) => ({
+				name: m.name,
+				description: m.description,
+				event: m.event,
+				when: m.when,
+				enabled: monitorsEnabled,
+				dismissed: m.dismissed,
+				whileCount: m.whileCount,
+				ceiling: m.ceiling,
+			}));
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(status, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: monitors-inspect ─────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "monitors-inspect",
+		label: "Monitors Inspect",
+		description: "Inspect a monitor — config, state, pattern count, rule count.",
+		promptSnippet: "Inspect a monitor — config, state, pattern count, rule count",
+		parameters: Type.Object({
+			monitor: Type.String({ description: "Monitor name" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { monitor: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			_ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const monitor = monitors.find((m) => m.name === params.monitor);
+			if (!monitor) throw new Error(`Unknown monitor: ${params.monitor}`);
+
+			const patterns = loadPatterns(monitor);
+			const instructions = loadInstructions(monitor);
+			const state = monitor.dismissed
+				? "dismissed"
+				: monitor.whileCount > 0
+					? `engaged (${monitor.whileCount}/${monitor.ceiling})`
+					: "idle";
+
+			const info = {
+				name: monitor.name,
+				description: monitor.description,
+				event: monitor.event,
+				when: monitor.when,
+				scope: monitor.scope,
+				classify: {
+					model: monitor.classify.model,
+					context: monitor.classify.context,
+					excludes: monitor.classify.excludes,
+				},
+				patterns: { path: monitor.patterns.path, learn: monitor.patterns.learn, count: patterns.length },
+				instructions: { path: monitor.instructions.path, count: instructions.length },
+				actions: monitor.actions,
+				ceiling: monitor.ceiling,
+				escalate: monitor.escalate,
+				state,
+				enabled: monitorsEnabled,
+				dismissed: monitor.dismissed,
+				whileCount: monitor.whileCount,
+			};
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(info, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: monitors-control ─────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "monitors-control",
+		label: "Monitors Control",
+		description: "Control monitors — enable, disable, dismiss, or reset.",
+		promptSnippet: "Control monitors — enable, disable, dismiss, or reset",
+		parameters: Type.Object({
+			action: Type.Union([Type.Literal("on"), Type.Literal("off"), Type.Literal("dismiss"), Type.Literal("reset")]),
+			monitor: Type.Optional(Type.String({ description: "Monitor name (required for dismiss/reset)" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { action: "on" | "off" | "dismiss" | "reset"; monitor?: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			_ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			if (params.action === "on") {
+				monitorsEnabled = true;
+				updateStatus();
+				return {
+					details: undefined,
+					content: [{ type: "text", text: "Monitors enabled" }],
+				};
+			}
+			if (params.action === "off") {
+				monitorsEnabled = false;
+				updateStatus();
+				return {
+					details: undefined,
+					content: [{ type: "text", text: "All monitors paused for this session" }],
+				};
+			}
+			if (params.action === "dismiss") {
+				if (!params.monitor) throw new Error("Monitor name required for dismiss");
+				const monitor = monitors.find((m) => m.name === params.monitor);
+				if (!monitor) throw new Error(`Unknown monitor: ${params.monitor}`);
+				monitor.dismissed = true;
+				updateStatus();
+				return {
+					details: undefined,
+					content: [{ type: "text", text: `[${monitor.name}] Dismissed for this session` }],
+				};
+			}
+			// reset
+			if (!params.monitor) throw new Error("Monitor name required for reset");
+			const monitor = monitors.find((m) => m.name === params.monitor);
+			if (!monitor) throw new Error(`Unknown monitor: ${params.monitor}`);
+			monitor.dismissed = false;
+			monitor.whileCount = 0;
+			updateStatus();
+			return {
+				details: undefined,
+				content: [{ type: "text", text: `[${monitor.name}] Reset — dismissed=false, whileCount=0` }],
+			};
+		},
+	});
+
+	// ── Tool: monitors-rules ───────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "monitors-rules",
+		label: "Monitors Rules",
+		description: "Manage monitor rules — list, add, remove, or replace calibration rules.",
+		promptSnippet: "Manage monitor rules — list, add, remove, or replace calibration rules",
+		parameters: Type.Object({
+			monitor: Type.String({ description: "Monitor name" }),
+			action: Type.Union([Type.Literal("list"), Type.Literal("add"), Type.Literal("remove"), Type.Literal("replace")]),
+			text: Type.Optional(Type.String({ description: "Rule text (for add/replace)" })),
+			index: Type.Optional(Type.Number({ description: "Rule index, 1-based (for remove/replace)" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { monitor: string; action: "list" | "add" | "remove" | "replace"; text?: string; index?: number },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			_ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const monitor = monitors.find((m) => m.name === params.monitor);
+			if (!monitor) throw new Error(`Unknown monitor: ${params.monitor}`);
+
+			if (params.action === "list") {
+				const rules = loadInstructions(monitor);
+				return {
+					details: undefined,
+					content: [{ type: "text", text: JSON.stringify(rules, null, 2) }],
+				};
+			}
+
+			if (params.action === "add") {
+				if (!params.text) throw new Error("text parameter required for add");
+				const rules = loadInstructions(monitor);
+				rules.push({ text: params.text, added_at: new Date().toISOString() });
+				const err = saveInstructions(monitor, rules);
+				if (err) throw new Error(`Failed to save rules: ${err}`);
+				return {
+					details: undefined,
+					content: [{ type: "text", text: `Rule added to [${monitor.name}]: ${params.text}` }],
+				};
+			}
+
+			if (params.action === "remove") {
+				if (params.index === undefined) throw new Error("index parameter required for remove");
+				const rules = loadInstructions(monitor);
+				if (params.index < 1 || params.index > rules.length) {
+					throw new Error(`Invalid index ${params.index}. Have ${rules.length} rules.`);
+				}
+				const removed = rules.splice(params.index - 1, 1)[0];
+				const err = saveInstructions(monitor, rules);
+				if (err) throw new Error(`Failed to save rules: ${err}`);
+				return {
+					details: undefined,
+					content: [{ type: "text", text: `Removed rule ${params.index} from [${monitor.name}]: ${removed.text}` }],
+				};
+			}
+
+			// replace
+			if (params.index === undefined) throw new Error("index parameter required for replace");
+			if (!params.text) throw new Error("text parameter required for replace");
+			const rules = loadInstructions(monitor);
+			if (params.index < 1 || params.index > rules.length) {
+				throw new Error(`Invalid index ${params.index}. Have ${rules.length} rules.`);
+			}
+			const old = rules[params.index - 1].text;
+			rules[params.index - 1] = { text: params.text, added_at: new Date().toISOString() };
+			const err = saveInstructions(monitor, rules);
+			if (err) throw new Error(`Failed to save rules: ${err}`);
+			return {
+				details: undefined,
+				content: [
+					{
+						type: "text",
+						text: `Replaced rule ${params.index} in [${monitor.name}]:\n  was: ${old}\n  now: ${params.text}`,
+					},
+				],
+			};
+		},
+	});
+
+	// ── Tool: monitors-patterns ────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "monitors-patterns",
+		label: "Monitors Patterns",
+		description: "List patterns for a behavior monitor.",
+		promptSnippet: "List patterns for a behavior monitor",
+		parameters: Type.Object({
+			monitor: Type.String({ description: "Monitor name" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { monitor: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			_ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const monitor = monitors.find((m) => m.name === params.monitor);
+			if (!monitor) throw new Error(`Unknown monitor: ${params.monitor}`);
+
+			const patterns = loadPatterns(monitor);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(patterns, null, 2) }],
+			};
+		},
 	});
 
 	// --- message renderer ---
@@ -1051,7 +1577,11 @@ export default function (pi: ExtensionAPI) {
 
 	// --- abort support + buffered steer drain ---
 	pi.on("agent_end", async () => {
-		pi.events.emit("monitors:abort", undefined);
+		// NOTE: do NOT emit monitors:abort here. The abort signal is for user-initiated
+		// cancellation only. Emitting it on agent_end kills agent_end monitor classifications
+		// (commit-hygiene, etc.) because this handler runs before the per-monitor agent_end
+		// handlers in the sequential event queue, and the abort signal is already set when
+		// those monitors try to classify.
 
 		// Drain buffered steers from message_end/turn_end monitors.
 		// The _agentEventQueue guarantees this runs AFTER all turn_end/message_end
@@ -1076,7 +1606,9 @@ export default function (pi: ExtensionAPI) {
 
 	// --- per-turn exclusion tracking ---
 	let steeredThisTurn = new Set<string>();
-	pi.on("turn_start", () => { steeredThisTurn = new Set(); });
+	pi.on("turn_start", () => {
+		steeredThisTurn = new Set();
+	});
 
 	// group monitors by validated event
 	const byEvent = new Map<MonitorEvent, Monitor[]>();
@@ -1094,30 +1626,30 @@ export default function (pi: ExtensionAPI) {
 					description: m.description || `Run ${m.name} monitor`,
 					handler: async (_args: string, ctx: ExtensionContext) => {
 						const branch = ctx.sessionManager.getBranch();
-						await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus);
+						await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 					},
 				});
 			}
 		} else if (event === "message_end") {
-			pi.on("message_end", async (ev: MessageEndEvent, ctx: ExtensionContext) => {
+			pi.on("message_end", async (ev, ctx: ExtensionContext) => {
 				if (ev.message.role !== "assistant") return;
 				const branch = ctx.sessionManager.getBranch();
 				for (const m of group) {
-					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus);
+					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 				}
 			});
 		} else if (event === "turn_end") {
 			pi.on("turn_end", async (_ev: TurnEndEvent, ctx: ExtensionContext) => {
 				const branch = ctx.sessionManager.getBranch();
 				for (const m of group) {
-					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus);
+					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 				}
 			});
 		} else if (event === "agent_end") {
 			pi.on("agent_end", async (_ev: AgentEndEvent, ctx: ExtensionContext) => {
 				const branch = ctx.sessionManager.getBranch();
 				for (const m of group) {
-					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus);
+					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 				}
 			});
 		}
@@ -1141,7 +1673,12 @@ export default function (pi: ExtensionAPI) {
 				const items = [
 					{ value: "on", label: "on", description: "Enable all monitoring" },
 					{ value: "off", label: "off", description: "Pause all monitoring" },
-					...Array.from(monitorNames).map((n) => ({ value: n, label: n, description: `${monitorsByName.get(n)?.description ?? ""} → rules|patterns|dismiss|reset` })),
+					{ value: "help", label: "help", description: "Show available commands" },
+					...Array.from(monitorNames).map((n) => ({
+						value: n,
+						label: n,
+						description: `${monitorsByName.get(n)?.description ?? ""} → rules|patterns|dismiss|reset`,
+					})),
 				];
 				return items.filter((i) => i.value.startsWith(last));
 			}
@@ -1168,7 +1705,25 @@ export default function (pi: ExtensionAPI) {
 			const cmd = parseMonitorsArgs(args, monitorNames);
 
 			if (cmd.type === "error") {
-				ctx.ui.notify(cmd.message, "error");
+				ctx.ui.notify(cmd.message, "warning");
+				return;
+			}
+
+			if (cmd.type === "help") {
+				const lines = [
+					"Usage: /monitors <command>",
+					"",
+					"  on            Enable all monitoring",
+					"  off           Pause all monitoring",
+					"  <name>        Inspect a monitor",
+					"  <name> rules  Manage rules (add, remove, replace)",
+					"  <name> patterns  List known patterns",
+					"  <name> dismiss   Silence for this session",
+					"  <name> reset     Reset state and un-dismiss",
+					"",
+					`Active monitors: ${monitors.map((m) => m.name).join(", ") || "(none)"}`,
+				];
+				ctx.ui.notify(lines.join("\n"), "info");
 				return;
 			}
 
@@ -1181,7 +1736,11 @@ export default function (pi: ExtensionAPI) {
 					`on — Enable all monitoring`,
 					`off — Pause all monitoring`,
 					...monitors.map((m) => {
-						const state = m.dismissed ? "dismissed" : m.whileCount > 0 ? `engaged (${m.whileCount}/${m.ceiling})` : "idle";
+						const state = m.dismissed
+							? "dismissed"
+							: m.whileCount > 0
+								? `engaged (${m.whileCount}/${m.ceiling})`
+								: "idle";
 						return `${m.name} — ${m.description} [${state}]`;
 					}),
 				];
@@ -1243,7 +1802,7 @@ export default function (pi: ExtensionAPI) {
 
 			const monitor = monitorsByName.get(cmd.name);
 			if (!monitor) {
-				ctx.ui.notify(`Unknown monitor: ${cmd.name}`, "error");
+				ctx.ui.notify(`Unknown monitor: ${cmd.name}`, "warning");
 				return;
 			}
 

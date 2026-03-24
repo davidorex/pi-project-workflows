@@ -3,10 +3,11 @@
  * Provides three-tier template resolution (project > user > builtin)
  * and renders agent system prompts with step input as context.
  */
-import nunjucks from "nunjucks";
-import path from "node:path";
-import os from "node:os";
+
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import nunjucks from "nunjucks";
 
 /**
  * Create a Nunjucks environment with three-tier template resolution.
@@ -22,26 +23,24 @@ import fs from "node:fs";
  * @param builtinDir - optional path to builtin templates (defaults to templates/ relative to package root)
  */
 export function createTemplateEnv(cwd: string, builtinDir?: string): nunjucks.Environment {
-  const projectDir = path.join(cwd, ".pi", "templates");
-  const userDir = path.join(os.homedir(), ".pi", "agent", "templates");
-  const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "templates");
+	const projectDir = path.join(cwd, ".pi", "templates");
+	const userDir = path.join(os.homedir(), ".pi", "agent", "templates");
+	const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "templates");
 
-  // Nunjucks FileSystemLoader searches directories in order — first match wins.
-  // Only include directories that exist to avoid noisy warnings.
-  const searchPaths: string[] = [];
-  if (fs.existsSync(projectDir)) searchPaths.push(projectDir);
-  if (fs.existsSync(userDir)) searchPaths.push(userDir);
-  if (fs.existsSync(defaultBuiltinDir)) searchPaths.push(defaultBuiltinDir);
+	// Nunjucks FileSystemLoader searches directories in order — first match wins.
+	// Only include directories that exist to avoid noisy warnings.
+	const searchPaths: string[] = [];
+	if (fs.existsSync(projectDir)) searchPaths.push(projectDir);
+	if (fs.existsSync(userDir)) searchPaths.push(userDir);
+	if (fs.existsSync(defaultBuiltinDir)) searchPaths.push(defaultBuiltinDir);
 
-  // If no template directories exist, use a no-op loader — plain text passes through.
-  const loader = searchPaths.length > 0
-    ? new nunjucks.FileSystemLoader(searchPaths)
-    : undefined;
+	// If no template directories exist, use a no-op loader — plain text passes through.
+	const loader = searchPaths.length > 0 ? new nunjucks.FileSystemLoader(searchPaths) : undefined;
 
-  return new nunjucks.Environment(loader, {
-    autoescape: false,
-    throwOnUndefined: false,
-  });
+	return new nunjucks.Environment(loader, {
+		autoescape: false,
+		throwOnUndefined: false,
+	});
 }
 
 /** Sentinel used to protect ${{ }} workflow expressions from Nunjucks rendering. */
@@ -61,16 +60,20 @@ const WORKFLOW_EXPR_PLACEHOLDER = "\x00__PI_WORKFLOW_EXPR__";
  * @param context - variables available in the template
  * @returns rendered string
  */
-export function renderTemplate(env: nunjucks.Environment, templateStr: string, context: Record<string, unknown>): string {
-  // Protect ${{ }} workflow expressions from Nunjucks
-  const escaped = templateStr.replace(/\$\{\{/g, WORKFLOW_EXPR_PLACEHOLDER);
-  const rendered = env.renderString(escaped, context);
-  return rendered.replace(new RegExp(escapeRegExp(WORKFLOW_EXPR_PLACEHOLDER), "g"), "${{");
+export function renderTemplate(
+	env: nunjucks.Environment,
+	templateStr: string,
+	context: Record<string, unknown>,
+): string {
+	// Protect ${{ }} workflow expressions from Nunjucks
+	const escaped = templateStr.replace(/\$\{\{/g, WORKFLOW_EXPR_PLACEHOLDER);
+	const rendered = env.renderString(escaped, context);
+	return rendered.replace(new RegExp(escapeRegExp(WORKFLOW_EXPR_PLACEHOLDER), "g"), "${{");
 }
 
 /** Escape special regex characters in a string. */
 function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -87,6 +90,10 @@ function escapeRegExp(s: string): string {
  * @param context - variables available in the template
  * @returns rendered string
  */
-export function renderTemplateFile(env: nunjucks.Environment, templateName: string, context: Record<string, unknown>): string {
-  return env.render(templateName, context);
+export function renderTemplateFile(
+	env: nunjucks.Environment,
+	templateName: string,
+	context: Record<string, unknown>,
+): string {
+	return env.render(templateName, context);
 }

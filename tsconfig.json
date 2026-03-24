@@ -1,0 +1,15 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"paths": {
+			"@davidorex/pi-project": ["./packages/pi-project/src/index.ts"],
+			"@davidorex/pi-project/*": ["./packages/pi-project/*"],
+			"@davidorex/pi-workflows": ["./packages/pi-workflows/src/index.ts"],
+			"@davidorex/pi-workflows/*": ["./packages/pi-workflows/*"],
+			"@davidorex/pi-behavior-monitors": ["./packages/pi-behavior-monitors/index.ts"],
+			"@davidorex/pi-behavior-monitors/*": ["./packages/pi-behavior-monitors/*"]
+		}
+	},
+	"exclude": ["packages/*/dist", "node_modules", "**/*.test.ts", "packages/pi-workflows/run-tests.ts"]
+}

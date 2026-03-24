@@ -1,32 +1,32 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Conventions",
-  "type": "object",
-  "required": ["rules"],
-  "properties": {
-    "rules": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "description", "enforcement", "severity"],
-        "properties": {
-          "id": { "type": "string" },
-          "description": { "type": "string" },
-          "enforcement": { "type": "string", "enum": ["lint", "test", "review", "manual"] },
-          "severity": { "type": "string", "enum": ["error", "warning", "info"] }
-        }
-      }
-    },
-    "test_conventions": {
-      "type": "object",
-      "required": ["runner_command", "file_pattern", "current_count"],
-      "properties": {
-        "runner_command": { "type": "string" },
-        "file_pattern": { "type": "string" },
-        "current_count": { "type": "integer" }
-      }
-    },
-    "lint_command": { "type": "string" },
-    "lint_scope": { "type": "string" }
-  }
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Conventions",
+	"type": "object",
+	"required": ["rules"],
+	"properties": {
+		"rules": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "description", "enforcement", "severity"],
+				"properties": {
+					"id": { "type": "string" },
+					"description": { "type": "string" },
+					"enforcement": { "type": "string", "enum": ["lint", "test", "review", "manual"] },
+					"severity": { "type": "string", "enum": ["error", "warning", "info"] }
+				}
+			}
+		},
+		"test_conventions": {
+			"type": "object",
+			"required": ["runner_command", "file_pattern", "current_count"],
+			"properties": {
+				"runner_command": { "type": "string" },
+				"file_pattern": { "type": "string" },
+				"current_count": { "type": "integer" }
+			}
+		},
+		"lint_command": { "type": "string" },
+		"lint_scope": { "type": "string" }
+	}
 }

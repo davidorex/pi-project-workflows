@@ -1,5 +1,5 @@
-import type { StepResult } from "./types.ts";
-import { formatDuration, formatCost } from "./format.ts";
+import { formatCost, formatDuration } from "./format.js";
+import type { StepResult } from "./types.js";
 
 const EXPR_PATTERN = /\$\{\{\s*(.*?)\s*\}\}/g;
 
@@ -8,12 +8,12 @@ const EXPR_PATTERN = /\$\{\{\s*(.*?)\s*\}\}/g;
  * Applied via pipe syntax: ${{ totalDurationMs | duration }}
  */
 const FILTERS: Record<string, (value: unknown) => unknown> = {
-  duration: (v) => formatDuration(Number(v)),
-  currency: (v) => formatCost(Number(v)),
-  json: (v) => JSON.stringify(v, null, 2),
-  length: (v) => Array.isArray(v) ? v.length : typeof v === "string" ? v.length : 0,
-  keys: (v) => typeof v === "object" && v !== null ? Object.keys(v) : [],
-  filter: (v) => Array.isArray(v) ? v.filter(Boolean) : v,
+	duration: (v) => formatDuration(Number(v)),
+	currency: (v) => formatCost(Number(v)),
+	json: (v) => JSON.stringify(v, null, 2),
+	length: (v) => (Array.isArray(v) ? v.length : typeof v === "string" ? v.length : 0),
+	keys: (v) => (typeof v === "object" && v !== null ? Object.keys(v) : []),
+	filter: (v) => (Array.isArray(v) ? v.filter(Boolean) : v),
 };
 
 /** Filter names derived from the FILTERS registry — add a filter above, this updates automatically. */
@@ -27,15 +27,15 @@ export const EXPRESSION_ROOTS = ["input", "steps"] as const;
  * Contains the original expression and a diagnostic reason.
  */
 export class ExpressionError extends Error {
-  readonly expression: string;
-  readonly reason: string;
+	readonly expression: string;
+	readonly reason: string;
 
-  constructor(expression: string, reason: string) {
-    super(`Expression error in '\${{ ${expression} }}': ${reason}`);
-    this.name = "ExpressionError";
-    this.expression = expression;
-    this.reason = reason;
-  }
+	constructor(expression: string, reason: string) {
+		super(`Expression error in '\${{ ${expression} }}': ${reason}`);
+		this.name = "ExpressionError";
+		this.expression = expression;
+		this.reason = reason;
+	}
 }
 
 /**
@@ -50,60 +50,60 @@ export class ExpressionError extends Error {
  * or if a filter name is unknown.
  */
 export function resolveExpression(expr: string, scope: Record<string, unknown>): unknown {
-  // Parse optional filter: "path | filterName"
-  const pipeIdx = expr.indexOf("|");
-  let pathExpr: string;
-  let filterName: string | undefined;
-  if (pipeIdx !== -1) {
-    pathExpr = expr.slice(0, pipeIdx).trim();
-    filterName = expr.slice(pipeIdx + 1).trim();
-  } else {
-    pathExpr = expr;
-  }
+	// Parse optional filter: "path | filterName"
+	const pipeIdx = expr.indexOf("|");
+	let pathExpr: string;
+	let filterName: string | undefined;
+	if (pipeIdx !== -1) {
+		pathExpr = expr.slice(0, pipeIdx).trim();
+		filterName = expr.slice(pipeIdx + 1).trim();
+	} else {
+		pathExpr = expr;
+	}
 
-  const segments = pathExpr.split(".");
-  let current: unknown = scope;
-  const traversed: string[] = [];
+	const segments = pathExpr.split(".");
+	let current: unknown = scope;
+	const traversed: string[] = [];
 
-  for (const segment of segments) {
-    // Container is undefined/null — can't traverse further. This is a broken reference.
-    if (current === undefined || current === null) {
-      const reason = buildErrorReason(segments, traversed, scope);
-      throw new ExpressionError(expr, reason);
-    }
+	for (const segment of segments) {
+		// Container is undefined/null — can't traverse further. This is a broken reference.
+		if (current === undefined || current === null) {
+			const reason = buildErrorReason(segments, traversed, scope);
+			throw new ExpressionError(expr, reason);
+		}
 
-    current = (current as Record<string, unknown>)[segment];
-    traversed.push(segment);
+		current = (current as Record<string, unknown>)[segment];
+		traversed.push(segment);
 
-    // Property doesn't exist on the container — return undefined (optional field).
-    // But if this is the first segment (root lookup like "steps" or "input"),
-    // or if we're looking up a step name that hasn't executed, that's an error.
-    if (current === undefined) {
-      // Root-level miss (e.g. "typo.something") — always an error
-      if (traversed.length === 1) {
-        const reason = buildErrorReason(segments, traversed, scope);
-        throw new ExpressionError(expr, reason);
-      }
-      // Step reference that doesn't exist (e.g. "steps.nonexistent") — error
-      if (segments[0] === "steps" && traversed.length === 2) {
-        const reason = buildErrorReason(segments, traversed, scope);
-        throw new ExpressionError(expr, reason);
-      }
-      // Otherwise: optional field on an existing object — return undefined
-      return undefined;
-    }
-  }
+		// Property doesn't exist on the container — return undefined (optional field).
+		// But if this is the first segment (root lookup like "steps" or "input"),
+		// or if we're looking up a step name that hasn't executed, that's an error.
+		if (current === undefined) {
+			// Root-level miss (e.g. "typo.something") — always an error
+			if (traversed.length === 1) {
+				const reason = buildErrorReason(segments, traversed, scope);
+				throw new ExpressionError(expr, reason);
+			}
+			// Step reference that doesn't exist (e.g. "steps.nonexistent") — error
+			if (segments[0] === "steps" && traversed.length === 2) {
+				const reason = buildErrorReason(segments, traversed, scope);
+				throw new ExpressionError(expr, reason);
+			}
+			// Otherwise: optional field on an existing object — return undefined
+			return undefined;
+		}
+	}
 
-  // Apply filter if specified
-  if (filterName) {
-    const filterFn = FILTERS[filterName];
-    if (!filterFn) {
-      throw new ExpressionError(expr, `unknown filter '${filterName}'`);
-    }
-    current = filterFn(current);
-  }
+	// Apply filter if specified
+	if (filterName) {
+		const filterFn = FILTERS[filterName];
+		if (!filterFn) {
+			throw new ExpressionError(expr, `unknown filter '${filterName}'`);
+		}
+		current = filterFn(current);
+	}
 
-  return current;
+	return current;
 }
 
 /**
@@ -121,24 +121,24 @@ export function resolveExpression(expr: string, scope: Record<string, unknown>):
  * Throws ExpressionError if a property path doesn't resolve.
  */
 export function resolveExpressions(value: unknown, scope: Record<string, unknown>): unknown {
-  if (typeof value === "string") {
-    return resolveStringExpressions(value, scope);
-  }
+	if (typeof value === "string") {
+		return resolveStringExpressions(value, scope);
+	}
 
-  if (Array.isArray(value)) {
-    return value.map((element) => resolveExpressions(element, scope));
-  }
+	if (Array.isArray(value)) {
+		return value.map((element) => resolveExpressions(element, scope));
+	}
 
-  if (value !== null && typeof value === "object") {
-    const result: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      result[key] = resolveExpressions(val, scope);
-    }
-    return result;
-  }
+	if (value !== null && typeof value === "object") {
+		const result: Record<string, unknown> = {};
+		for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+			result[key] = resolveExpressions(val, scope);
+		}
+		return result;
+	}
 
-  // number, boolean, null, undefined — pass through
-  return value;
+	// number, boolean, null, undefined — pass through
+	return value;
 }
 
 /**
@@ -146,23 +146,23 @@ export function resolveExpressions(value: unknown, scope: Record<string, unknown
  * Handles whole-value expressions (type-preserving) and embedded expressions (string interpolation).
  */
 function resolveStringExpressions(value: string, scope: Record<string, unknown>): unknown {
-  // Check if the entire string is a single whole-value expression
-  const wholeMatch = value.match(/^\$\{\{\s*(.*?)\s*\}\}$/);
-  if (wholeMatch) {
-    return resolveExpression(wholeMatch[1], scope);
-  }
+	// Check if the entire string is a single whole-value expression
+	const wholeMatch = value.match(/^\$\{\{\s*(.*?)\s*\}\}$/);
+	if (wholeMatch) {
+		return resolveExpression(wholeMatch[1], scope);
+	}
 
-  // Check if there are any expressions at all
-  if (!value.includes("${{")) {
-    return value;
-  }
+	// Check if there are any expressions at all
+	if (!value.includes("${{")) {
+		return value;
+	}
 
-  // Embedded expressions: resolve each and interpolate as strings
-  return value.replace(EXPR_PATTERN, (_match, expr: string) => {
-    const resolved = resolveExpression(expr, scope);
-    if (resolved === undefined || resolved === null) return "";
-    return stringify(resolved);
-  });
+	// Embedded expressions: resolve each and interpolate as strings
+	return value.replace(EXPR_PATTERN, (_match, expr: string) => {
+		const resolved = resolveExpression(expr, scope);
+		if (resolved === undefined || resolved === null) return "";
+		return stringify(resolved);
+	});
 }
 
 /**
@@ -172,7 +172,7 @@ function resolveStringExpressions(value: string, scope: Record<string, unknown>)
  * the actual operator is "!==" (or "==" when "===" is intended).
  */
 const COMPARISON_OPS = ["!==", "===", "!=", "==", ">=", "<=", ">", "<"] as const;
-type ComparisonOp = typeof COMPARISON_OPS[number];
+type ComparisonOp = (typeof COMPARISON_OPS)[number];
 
 /**
  * Parse a right-hand operand string into a typed value.
@@ -180,25 +180,25 @@ type ComparisonOp = typeof COMPARISON_OPS[number];
  * null, undefined, or expression paths resolved against scope.
  */
 export function parseRightOperand(str: string, scope: Record<string, unknown>): unknown {
-  // String literals (single or double quoted)
-  if ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
-    return str.slice(1, -1);
-  }
+	// String literals (single or double quoted)
+	if ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+		return str.slice(1, -1);
+	}
 
-  // Boolean literals
-  if (str === "true") return true;
-  if (str === "false") return false;
+	// Boolean literals
+	if (str === "true") return true;
+	if (str === "false") return false;
 
-  // null / undefined
-  if (str === "null") return null;
-  if (str === "undefined") return undefined;
+	// null / undefined
+	if (str === "null") return null;
+	if (str === "undefined") return undefined;
 
-  // Number literals
-  const num = Number(str);
-  if (!Number.isNaN(num) && str !== "") return num;
+	// Number literals
+	const num = Number(str);
+	if (!Number.isNaN(num) && str !== "") return num;
 
-  // Otherwise treat as expression path
-  return resolveExpression(str, scope);
+	// Otherwise treat as expression path
+	return resolveExpression(str, scope);
 }
 
 /**
@@ -206,24 +206,24 @@ export function parseRightOperand(str: string, scope: Record<string, unknown>): 
  * == and === both use strict equality (===).
  */
 export function compare(left: unknown, right: unknown, op: string): boolean {
-  switch (op) {
-    case "==":
-    case "===":
-      return left === right;
-    case "!=":
-    case "!==":
-      return left !== right;
-    case ">":
-      return (left as number) > (right as number);
-    case "<":
-      return (left as number) < (right as number);
-    case ">=":
-      return (left as number) >= (right as number);
-    case "<=":
-      return (left as number) <= (right as number);
-    default:
-      throw new ExpressionError(op, `unknown comparison operator '${op}'`);
-  }
+	switch (op) {
+		case "==":
+		case "===":
+			return left === right;
+		case "!=":
+		case "!==":
+			return left !== right;
+		case ">":
+			return (left as number) > (right as number);
+		case "<":
+			return (left as number) < (right as number);
+		case ">=":
+			return (left as number) >= (right as number);
+		case "<=":
+			return (left as number) <= (right as number);
+		default:
+			throw new ExpressionError(op, `unknown comparison operator '${op}'`);
+	}
 }
 
 /**
@@ -238,37 +238,37 @@ export function compare(left: unknown, right: unknown, op: string): boolean {
  * JS truthiness rules: undefined, null, false, 0, "" are falsy; everything else is truthy.
  */
 export function evaluateCondition(expr: string, scope: Record<string, unknown>): boolean {
-  const trimmed = expr.trim();
+	const trimmed = expr.trim();
 
-  // Check for comparison operators (split on first occurrence)
-  for (const op of COMPARISON_OPS) {
-    const opIdx = trimmed.indexOf(op);
-    if (opIdx !== -1) {
-      const leftExpr = trimmed.slice(0, opIdx).trim();
-      const rightStr = trimmed.slice(opIdx + op.length).trim();
+	// Check for comparison operators (split on first occurrence)
+	for (const op of COMPARISON_OPS) {
+		const opIdx = trimmed.indexOf(op);
+		if (opIdx !== -1) {
+			const leftExpr = trimmed.slice(0, opIdx).trim();
+			const rightStr = trimmed.slice(opIdx + op.length).trim();
 
-      // Resolve left side
-      let leftValue: unknown;
-      if (leftExpr.startsWith("!")) {
-        leftValue = !resolveExpressionSafe(leftExpr.slice(1).trim(), scope);
-      } else {
-        leftValue = resolveExpressionSafe(leftExpr, scope);
-      }
+			// Resolve left side
+			let leftValue: unknown;
+			if (leftExpr.startsWith("!")) {
+				leftValue = !resolveExpressionSafe(leftExpr.slice(1).trim(), scope);
+			} else {
+				leftValue = resolveExpressionSafe(leftExpr, scope);
+			}
 
-      const rightValue = parseRightOperand(rightStr, scope);
-      return compare(leftValue, rightValue, op);
-    }
-  }
+			const rightValue = parseRightOperand(rightStr, scope);
+			return compare(leftValue, rightValue, op);
+		}
+	}
 
-  // No comparison operator — evaluate as truthy/falsy
-  if (trimmed.startsWith("!")) {
-    const innerExpr = trimmed.slice(1).trim();
-    const value = resolveExpressionSafe(innerExpr, scope);
-    return !value;
-  }
+	// No comparison operator — evaluate as truthy/falsy
+	if (trimmed.startsWith("!")) {
+		const innerExpr = trimmed.slice(1).trim();
+		const value = resolveExpressionSafe(innerExpr, scope);
+		return !value;
+	}
 
-  const value = resolveExpressionSafe(trimmed, scope);
-  return !!value;
+	const value = resolveExpressionSafe(trimmed, scope);
+	return !!value;
 }
 
 /**
@@ -276,7 +276,7 @@ export function evaluateCondition(expr: string, scope: Record<string, unknown>):
  * instead of throwing. Root-level misses and missing step references still throw.
  */
 function resolveExpressionSafe(expr: string, scope: Record<string, unknown>): unknown {
-  return resolveExpression(expr, scope);
+	return resolveExpression(expr, scope);
 }
 
 /**
@@ -284,49 +284,44 @@ function resolveExpressionSafe(expr: string, scope: Record<string, unknown>): un
  * Objects and arrays use JSON.stringify; primitives use String().
  */
 function stringify(value: unknown): string {
-  if (value !== null && typeof value === "object") {
-    return JSON.stringify(value);
-  }
-  return String(value);
+	if (value !== null && typeof value === "object") {
+		return JSON.stringify(value);
+	}
+	return String(value);
 }
 
 /**
  * Build a diagnostic error reason based on the path traversal state.
  * Provides context about step status when the path starts with "steps.".
  */
-function buildErrorReason(
-  segments: string[],
-  traversed: string[],
-  scope: Record<string, unknown>,
-): string {
-  const failedSegment = traversed[traversed.length - 1];
-  const parentPath = traversed.slice(0, -1).join(".");
+function buildErrorReason(segments: string[], traversed: string[], scope: Record<string, unknown>): string {
+	const failedSegment = traversed[traversed.length - 1];
+	const parentPath = traversed.slice(0, -1).join(".");
 
-  // Special case: referencing a step that doesn't exist in scope.steps
-  if (segments[0] === "steps" && traversed.length === 2) {
-    const stepName = segments[1];
-    const stepsObj = scope.steps as Record<string, StepResult | undefined> | undefined;
-    if (stepsObj && !(stepName in stepsObj)) {
-      return `step '${stepName}' has not been executed yet`;
-    }
-  }
+	// Special case: referencing a step that doesn't exist in scope.steps
+	if (segments[0] === "steps" && traversed.length === 2) {
+		const stepName = segments[1];
+		const stepsObj = scope.steps as Record<string, StepResult | undefined> | undefined;
+		if (stepsObj && !(stepName in stepsObj)) {
+			return `step '${stepName}' has not been executed yet`;
+		}
+	}
 
-  // When the path starts with "steps.", include step status context if available
-  if (segments[0] === "steps" && segments.length >= 2) {
-    const stepName = segments[1];
-    const stepsObj = scope.steps as Record<string, StepResult | undefined> | undefined;
-    if (stepsObj) {
-      const stepResult = stepsObj[stepName];
-      if (stepResult && parentPath) {
-        return `property '${failedSegment}' is undefined on ${parentPath} (step '${stepName}' status: ${stepResult.status})`;
-      }
-    }
-  }
+	// When the path starts with "steps.", include step status context if available
+	if (segments[0] === "steps" && segments.length >= 2) {
+		const stepName = segments[1];
+		const stepsObj = scope.steps as Record<string, StepResult | undefined> | undefined;
+		if (stepsObj) {
+			const stepResult = stepsObj[stepName];
+			if (stepResult && parentPath) {
+				return `property '${failedSegment}' is undefined on ${parentPath} (step '${stepName}' status: ${stepResult.status})`;
+			}
+		}
+	}
 
-  if (parentPath) {
-    return `property '${failedSegment}' is undefined on ${parentPath}`;
-  }
+	if (parentPath) {
+		return `property '${failedSegment}' is undefined on ${parentPath}`;
+	}
 
-  return `property '${failedSegment}' is undefined`;
+	return `property '${failedSegment}' is undefined`;
 }
-

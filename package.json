@@ -1,9 +1,29 @@
 {
-  "private": true,
-  "workspaces": ["packages/*"],
-  "scripts": {
-    "test": "npm test --workspaces",
-    "test:project": "npm test -w packages/pi-project",
-    "test:workflows": "npm test -w packages/pi-workflows"
-  }
+	"private": true,
+	"type": "module",
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"clean": "npm run clean --workspaces --if-present",
+		"build": "npm run build -w @davidorex/pi-project && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors",
+		"test": "npm test --workspaces --if-present",
+		"test:project": "npm test -w @davidorex/pi-project",
+		"test:workflows": "npm test -w @davidorex/pi-workflows",
+		"check": "npx @biomejs/biome check . && tsc --noEmit",
+		"lint": "npx @biomejs/biome check .",
+		"format": "npx @biomejs/biome check --write .",
+		"skills": "node scripts/generate-skills.js",
+		"version:patch": "node scripts/bump-versions.js patch",
+		"version:minor": "node scripts/bump-versions.js minor",
+		"version:major": "node scripts/bump-versions.js major",
+		"release:patch": "node scripts/release.mjs patch",
+		"release:minor": "node scripts/release.mjs minor",
+		"release:major": "node scripts/release.mjs major"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.7",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	}
 }

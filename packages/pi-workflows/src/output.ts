@@ -25,46 +25,46 @@ import path from "node:path";
  * @returns absolute path to the written JSON file, or undefined if nothing to write
  */
 export function persistStepOutput(
-  runDir: string,
-  stepName: string,
-  output: unknown,
-  textOutput?: string,
-  outputPath?: string,
+	runDir: string,
+	stepName: string,
+	output: unknown,
+	textOutput?: string,
+	outputPath?: string,
 ): string | undefined {
-  // Author-declared path takes priority; default to run dir
-  const filePath = outputPath ?? path.join(runDir, "outputs", `${stepName}.json`);
-  const dir = path.dirname(filePath);
+	// Author-declared path takes priority; default to run dir
+	const filePath = outputPath ?? path.join(runDir, "outputs", `${stepName}.json`);
+	const dir = path.dirname(filePath);
 
-  // Structured output — the primary case
-  if (output !== undefined && output !== null && typeof output === "object") {
-    try {
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(filePath, JSON.stringify(output, null, 2), "utf-8");
-      return filePath;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      process.stderr.write(
-        `[pi-workflows] Warning: failed to persist output for step '${stepName}' to ${filePath}: ${msg}\n`,
-      );
-      return undefined;
-    }
-  }
+	// Structured output — the primary case
+	if (output !== undefined && output !== null && typeof output === "object") {
+		try {
+			fs.mkdirSync(dir, { recursive: true });
+			fs.writeFileSync(filePath, JSON.stringify(output, null, 2), "utf-8");
+			return filePath;
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			process.stderr.write(
+				`[pi-workflows] Warning: failed to persist output for step '${stepName}' to ${filePath}: ${msg}\n`,
+			);
+			return undefined;
+		}
+	}
 
-  // String output — wrap in JSON to maintain uniform contract
-  const text = typeof output === "string" ? output : textOutput;
-  if (text) {
-    try {
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(filePath, JSON.stringify({ text }, null, 2), "utf-8");
-      return filePath;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      process.stderr.write(
-        `[pi-workflows] Warning: failed to persist output for step '${stepName}' to ${filePath}: ${msg}\n`,
-      );
-      return undefined;
-    }
-  }
+	// String output — wrap in JSON to maintain uniform contract
+	const text = typeof output === "string" ? output : textOutput;
+	if (text) {
+		try {
+			fs.mkdirSync(dir, { recursive: true });
+			fs.writeFileSync(filePath, JSON.stringify({ text }, null, 2), "utf-8");
+			return filePath;
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			process.stderr.write(
+				`[pi-workflows] Warning: failed to persist output for step '${stepName}' to ${filePath}: ${msg}\n`,
+			);
+			return undefined;
+		}
+	}
 
-  return undefined;
+	return undefined;
 }

@@ -54,6 +54,7 @@ The schema is the contract. When pi-workflows agents produce output that writes 
 | `src/block-validation.ts` | Post-step validation: `snapshotBlockFiles`, `validateChangedBlocks`, `rollbackBlockFiles` |
 | `src/project-sdk.ts` | Derived state: `projectState`, `availableBlocks`, `availableSchemas`, `findAppendableBlocks` |
 | `src/project-dir.ts` | Constants: `PROJECT_DIR` (`.project`), `SCHEMAS_DIR` (`schemas`) |
+| `src/update-check.ts` | Checks for updates to `@davidorex/pi-project-workflows` on session start |
 
 ## API
 
@@ -93,9 +94,9 @@ findAppendableBlocks(cwd: string): Array<{ block, arrayKey, schemaPath }>
 Used by workflow executors for post-step integrity checks:
 
 ```typescript
-snapshotBlockFiles(cwd: string): Map<string, Buffer>
-validateChangedBlocks(cwd: string, snapshot: Map<string, Buffer>): void
-rollbackBlockFiles(cwd: string, snapshot: Map<string, Buffer>): void
+snapshotBlockFiles(cwd: string): BlockSnapshot   // Map<string, BlockFileSnapshot>
+validateChangedBlocks(cwd: string, snapshot: BlockSnapshot): void
+rollbackBlockFiles(cwd: string, snapshot: BlockSnapshot): string[]
 ```
 
 ## For LLMs
@@ -116,4 +117,10 @@ When working with this extension:
 npm test
 ```
 
-Runs `node --experimental-strip-types --test src/*.test.ts`. Test files: `block-api.test.ts`, `block-tools.test.ts`, `schema-validator.test.ts`, `block-validation.test.ts`, `project-sdk.test.ts`.
+Runs `tsx --test src/*.test.ts`. Test files: `block-api.test.ts`, `block-tools.test.ts`, `schema-validator.test.ts`, `project-sdk.test.ts`.
+
+## Development
+
+Part of the [`pi-project-workflows`](../../README.md) monorepo. All three packages (pi-project, pi-workflows, pi-behavior-monitors) are versioned in lockstep at 0.2.0.
+
+`npm run build` compiles TypeScript to `dist/` via `tsc`. The package ships `dist/`, not `src/` — the `pi.extensions` entry point is `./dist/index.js`.

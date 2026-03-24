@@ -1,0 +1,42 @@
+---
+name: pi-project-workflows
+description: >
+  Meta-package re-exporting pi-project (schema-driven project state),
+  pi-workflows (workflow orchestration), and pi-behavior-monitors (autonomous
+  behavior monitoring). Install once to get all three extensions.
+---
+
+<objective>
+This meta-package re-exports all three extensions. Install once to get everything:
+
+```
+pi install npm:@davidorex/pi-project-workflows
+```
+</objective>
+
+<included_extensions>
+<extension name="@davidorex/pi-project">
+Schema-driven project state management for Pi
+
+**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init`
+**Commands:** `/project`
+</extension>
+
+<extension name="@davidorex/pi-workflows">
+Workflow orchestration extension for Pi
+
+**Tools:** `workflow`, `workflow-list`, `workflow-agents`, `workflow-validate`, `workflow-status`, `workflow-init`
+**Commands:** `/workflow`
+**Shortcuts:** ctrl+h (Pause running workflow), ctrl+j (Resume paused workflow)
+</extension>
+
+<extension name="@davidorex/pi-behavior-monitors">
+Behavior monitors for pi that watch agent activity and steer corrections
+
+**Tools:** `monitors-status`, `monitors-inspect`, `monitors-control`, `monitors-rules`, `monitors-patterns`
+**Commands:** `/monitors`
+</extension>
+
+</included_extensions>
+
+*Generated from source by `scripts/generate-skills.js` — do not edit by hand.*

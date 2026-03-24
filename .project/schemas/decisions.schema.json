@@ -1,22 +1,22 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Decisions",
-  "type": "object",
-  "required": ["decisions"],
-  "properties": {
-    "decisions": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "decision", "rationale", "phase", "status"],
-        "properties": {
-          "id": { "type": "string" },
-          "decision": { "type": "string" },
-          "rationale": { "type": "string" },
-          "phase": { "type": "integer" },
-          "status": { "type": "string", "enum": ["decided", "tentative", "revisit"] }
-        }
-      }
-    }
-  }
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Decisions",
+	"type": "object",
+	"required": ["decisions"],
+	"properties": {
+		"decisions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "decision", "rationale", "phase", "status"],
+				"properties": {
+					"id": { "type": "string" },
+					"decision": { "type": "string" },
+					"rationale": { "type": "string" },
+					"phase": { "type": "integer" },
+					"status": { "type": "string", "enum": ["decided", "tentative", "revisit"] }
+				}
+			}
+		}
+	}
 }

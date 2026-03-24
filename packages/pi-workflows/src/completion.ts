@@ -1,5 +1,5 @@
-import type { CompletionSpec, CompletionScope, WorkflowResult } from "./types.ts";
-import { resolveExpression, resolveExpressions } from "./expression.ts";
+import { resolveExpression, resolveExpressions } from "./expression.js";
+import type { CompletionScope, CompletionSpec, WorkflowResult } from "./types.js";
 
 /**
  * Resolve a completion spec into the final message string injected into
@@ -16,53 +16,49 @@ import { resolveExpression, resolveExpressions } from "./expression.ts";
  * @param executionInput - the original workflow input
  * @returns the resolved message string
  */
-export function resolveCompletion(
-  spec: CompletionSpec,
-  result: WorkflowResult,
-  executionInput: unknown,
-): string {
-  const scope: CompletionScope = {
-    input: executionInput,
-    steps: result.steps,
-    totalUsage: result.totalUsage,
-    totalDurationMs: result.totalDurationMs,
-    runDir: result.runDir,
-    runId: result.runId,
-    workflow: result.workflow,
-    status: result.status,
-    output: result.output,
-  };
+export function resolveCompletion(spec: CompletionSpec, result: WorkflowResult, executionInput: unknown): string {
+	const scope: CompletionScope = {
+		input: executionInput,
+		steps: result.steps,
+		totalUsage: result.totalUsage,
+		totalDurationMs: result.totalDurationMs,
+		runDir: result.runDir,
+		runId: result.runId,
+		workflow: result.workflow,
+		status: result.status as "completed" | "failed",
+		output: result.output,
+	};
 
-  if (spec.template) {
-    const resolved = resolveExpressions(spec.template, scope);
-    return String(resolved ?? "");
-  }
+	if (spec.template) {
+		const resolved = resolveExpressions(spec.template, scope);
+		return String(resolved ?? "");
+	}
 
-  // Message form
-  const parts: string[] = [];
+	// Message form
+	const parts: string[] = [];
 
-  if (spec.message) {
-    const resolvedMessage = resolveExpressions(spec.message, scope);
-    parts.push(String(resolvedMessage ?? ""));
-  }
+	if (spec.message) {
+		const resolvedMessage = resolveExpressions(spec.message, scope);
+		parts.push(String(resolvedMessage ?? ""));
+	}
 
-  if (spec.include && spec.include.length > 0) {
-    const included: Record<string, unknown> = {};
-    for (const path of spec.include) {
-      const value = resolveExpression(path, scope);
-      included[path] = value;
-    }
+	if (spec.include && spec.include.length > 0) {
+		const included: Record<string, unknown> = {};
+		for (const path of spec.include) {
+			const value = resolveExpression(path, scope);
+			included[path] = value;
+		}
 
-    parts.push("");
-    parts.push("---");
-    for (const [path, value] of Object.entries(included)) {
-      if (value !== null && typeof value === "object") {
-        parts.push(`\n### ${path}\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``);
-      } else {
-        parts.push(`\n### ${path}\n${String(value ?? "")}`);
-      }
-    }
-  }
+		parts.push("");
+		parts.push("---");
+		for (const [path, value] of Object.entries(included)) {
+			if (value !== null && typeof value === "object") {
+				parts.push(`\n### ${path}\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``);
+			} else {
+				parts.push(`\n### ${path}\n${String(value ?? "")}`);
+			}
+		}
+	}
 
-  return parts.join("\n");
+	return parts.join("\n");
 }

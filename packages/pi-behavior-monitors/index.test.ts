@@ -1,11 +1,18 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { ClassifyResult, MonitorsCommand } from "./index.js";
 import {
+	COLLECTOR_DESCRIPTORS,
+	COLLECTOR_NAMES,
+	SCOPE_TARGETS,
+	VALID_EVENTS,
+	VERDICT_TYPES,
+	WHEN_CONDITIONS,
+	generateFindingId,
+	invokeMonitor,
+	parseModelSpec,
 	parseMonitorsArgs,
 	parseVerdict,
-	parseModelSpec,
-	generateFindingId,
-} from "./index.ts";
-import type { MonitorsCommand, ClassifyResult } from "./index.ts";
+} from "./index.js";
 
 // =============================================================================
 // parseMonitorsArgs
@@ -44,6 +51,15 @@ describe("parseMonitorsArgs", () => {
 	it("treats 'off' as inspect when 'off' is a known monitor name", () => {
 		const withOffName = new Set(["off", "security"]);
 		expect(parseMonitorsArgs("off", withOffName)).toEqual({ type: "inspect", name: "off" });
+	});
+
+	it("returns help when first token is 'help' and not a monitor name", () => {
+		expect(parseMonitorsArgs("help", names)).toEqual({ type: "help" });
+	});
+
+	it("treats 'help' as inspect when 'help' is a known monitor name", () => {
+		const withHelpName = new Set(["help", "security"]);
+		expect(parseMonitorsArgs("help", withHelpName)).toEqual({ type: "inspect", name: "help" });
 	});
 
 	// --- inspect (name only) ---
@@ -364,5 +380,56 @@ describe("generateFindingId", () => {
 	it("returns a non-empty string", () => {
 		const id = generateFindingId("x", "y");
 		expect(id.length).toBeGreaterThan(0);
+	});
+});
+
+// =============================================================================
+// Vocabulary registry consistency
+// =============================================================================
+
+describe("vocabulary registries", () => {
+	it("COLLECTOR_DESCRIPTORS names match runtime COLLECTOR_NAMES", () => {
+		const descriptorNames = COLLECTOR_DESCRIPTORS.map((d) => d.name);
+		expect(descriptorNames).toEqual(COLLECTOR_NAMES);
+	});
+
+	it("COLLECTOR_DESCRIPTORS has no duplicate names", () => {
+		const names = COLLECTOR_DESCRIPTORS.map((d) => d.name);
+		expect(new Set(names).size).toBe(names.length);
+	});
+
+	it("WHEN_CONDITIONS has no duplicate names", () => {
+		const names = WHEN_CONDITIONS.map((w) => w.name);
+		expect(new Set(names).size).toBe(names.length);
+	});
+
+	it("VALID_EVENTS is non-empty", () => {
+		expect(VALID_EVENTS.size).toBeGreaterThan(0);
+	});
+
+	it("VERDICT_TYPES contains expected values", () => {
+		expect([...VERDICT_TYPES]).toEqual(["clean", "flag", "new"]);
+	});
+
+	it("SCOPE_TARGETS contains expected values", () => {
+		expect([...SCOPE_TARGETS]).toEqual(["main", "subagent", "all", "workflow"]);
+	});
+});
+
+// =============================================================================
+// invokeMonitor
+// =============================================================================
+
+describe("invokeMonitor", () => {
+	it("is exported as a function", () => {
+		expect(typeof invokeMonitor).toBe("function");
+	});
+
+	it("throws when monitor name is not found (no monitors loaded)", async () => {
+		await expect(invokeMonitor("nonexistent")).rejects.toThrow('Monitor "nonexistent" not found');
+	});
+
+	it("throws with a helpful message mentioning .pi/monitors/", async () => {
+		await expect(invokeMonitor("no-such-monitor")).rejects.toThrow(".pi/monitors/");
 	});
 });

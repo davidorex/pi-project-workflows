@@ -4,6 +4,16 @@ Three [Pi](https://github.com/badlogic/pi-mono) extensions: typed, multi-step wo
 
 Schemas are the contract layer. In pi-project, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. The three extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
 
+## Philosophy
+
+> 削斧柯，其则不远
+>
+> *When cutting wood to make an axe handle, the model is right there in your hand.*
+
+If pi-project-workflows is done right, users need not wait for developers to implement changes that they find through use that they need. The use of the tool shows you the shape of how to make the version of the tool that you want.
+
+Add a JSON Schema — get a new block type with tools, validation, and derived state. Write a `.workflow.yaml` — get a new multi-step pipeline with typed data flow and checkpoint/resume. Drop a `.monitor.json` with a Nunjucks template — get an autonomous watchdog that classifies, learns, and steers. Author an `.agent.yaml` — get a typed agent contract compiled to prompts at dispatch time. The runtime is generic; the domain lives in specs, schemas, and templates that users create without touching TypeScript.
+
 ## Packages
 
 | Package | npm | Description |

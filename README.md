@@ -47,28 +47,47 @@ After initialization, three directories coexist in a project:
 
 ### pi-project
 
-**Tools:** `append-block-item`, `update-block-item` — generic block CRUD with automatic schema validation
+**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init` — generic block CRUD with automatic schema validation
 
 **Commands:**
 - `/project init` — scaffold `.project/` with 13 default schemas and 4 starter blocks
 - `/project status` — derived project state (source metrics, test counts, block summaries, git state)
 - `/project add-work` — extract structured items from conversation into typed blocks
+- `/project validate` — cross-block referential integrity checks
+- `/project help` — show available subcommands
 
 **Key concept:** Users define block types by adding JSON Schemas to `.project/schemas/`. Any `.project/*.json` file with a matching schema gets automatic write-time validation. No code changes needed to add new block types.
 
 ### pi-workflows
 
-**Tool:** `workflow` — run a named workflow with typed input
+**Tools:** `workflow`, `workflow-list`, `workflow-agents`, `workflow-validate`, `workflow-status`, `workflow-init`
 
 **Commands:**
 - `/workflow init` — scaffold `.workflows/` directory
 - `/workflow list` — discover and select a workflow to run
-- `/workflow run <name>` — execute a workflow
+- `/workflow run <name>` — execute a workflow (tab-completes with discovered workflow names)
 - `/workflow resume <name>` — resume from checkpoint
+- `/workflow validate [name]` — validate workflow specs
+- `/workflow status` — show workflow vocabulary and discovery
+- `/workflow help` — show available subcommands
 
 **Keybindings:** `Ctrl+H` pause, `Ctrl+J` resume
 
-**Key concept:** Workflows are `.workflow.yaml` specs with typed data flow between steps. Each step runs as a subprocess with its own context window. The DAG planner infers parallelism from `${{ steps.X }}` expression references. Bundled agents, schemas, and templates ship with the package; users override by placing files in `.pi/agents/`, `.pi/templates/`.
+**Key concept:** Workflows are `.workflow.yaml` specs with typed data flow between steps. Each step runs as a subprocess with its own context window. The DAG planner infers parallelism from `${{ steps.X }}` expression references and `context` declarations. Agent steps support `context: [stepName]` to inline prior step narrative text into the dispatch prompt, complementing expression-based structured data flow. The `monitor` step type integrates behavior classification as a verification gate. Bundled agents, schemas, and templates ship with the package; users override by placing files in `.pi/agents/`, `.pi/templates/`.
+
+### pi-behavior-monitors
+
+**Tools:** `monitors-status`, `monitors-inspect`, `monitors-control`, `monitors-rules`, `monitors-patterns`
+
+**Commands:**
+- `/monitors on|off` — enable/disable all monitoring
+- `/monitors <name>` — inspect a monitor
+- `/monitors <name> rules|patterns|dismiss|reset` — manage monitor state
+- `/monitors help` — show available commands
+
+**Programmatic API:** `invokeMonitor(name, context?)` — exported function for synchronous classification without event-handler side effects. Returns `ClassifyResult` directly.
+
+**Key concept:** Monitors are `.monitor.json` specs with Nunjucks classify templates. They observe agent activity via Pi event handlers (`message_end`, `turn_end`, `agent_end`), classify against JSON pattern libraries using side-channel LLM calls, and steer corrections or write structured findings. Verdicts: CLEAN (no issue), FLAG (known pattern), NEW (unknown pattern, optionally learned).
 
 ## Development
 
@@ -109,7 +128,9 @@ npx tsx -e "
 
 - **Main conversation is the control plane; workflows are subordinate.** Each workflow step runs as a subprocess (`pi --mode json`) with its own context window. The main LLM orchestrates; step agents execute.
 - **Agent specs are `.agent.yaml` only** (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time.
-- **DAG planner infers parallelism** from `${{ steps.X }}` expression references. Steps without explicit dependencies run sequentially by declaration order.
+- **DAG planner infers parallelism** from `${{ steps.X }}` expression references and `context: [stepName]` declarations. Steps without explicit dependencies run sequentially by declaration order.
+- **Context injection** — agent steps with `context: [step1, step2]` get prior step `textOutput` inlined into their dispatch prompt as labeled markdown sections. Complements expression-based structured data flow with narrative text inlining.
+- **Monitor step type** — workflows can invoke monitors as verification gates via `monitor: <name>`. CLEAN → completed, FLAG/NEW → failed.
 - **Atomic writes** — all block and state persistence uses tmp file + rename for crash safety. State write failure is fatal.
 - **Checkpoint/resume** — incomplete runs can be resumed from last completed step. `completion` field controls post-workflow message to main LLM.
 - **Three-tier resource search** — project `.pi/` > user `~/.pi/agent/` > package builtin (agents, templates, workflows)
@@ -127,6 +148,7 @@ When working in this repository:
 - **`packages/pi-workflows/src/workflow-sdk.ts`** — vocabulary, discovery, introspection for workflows
 - **`packages/pi-workflows/src/workflow-spec.ts`** — YAML parsing and `STEP_TYPES` registry
 - **`packages/pi-workflows/src/expression.ts`** — expression evaluator and filter registry
+- **`packages/pi-behavior-monitors/index.ts`** — single-file extension: monitors, classification, steering, `invokeMonitor()` export
 - **`.project/`** contains this project's own block data (gaps, decisions, architecture, inventory) — useful for understanding the extension's development state
 - Use `/project status` to see derived metrics. Use `/workflow list` to see available workflows.
 

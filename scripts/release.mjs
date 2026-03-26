@@ -115,7 +115,7 @@ console.log();
 
 // 5. Publish
 console.log("Publishing to npm...");
-run("npm publish -ws --access public");
+run("npm publish --workspaces --access public");
 console.log();
 
 // 6. Add new [Unreleased] sections

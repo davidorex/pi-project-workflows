@@ -20,9 +20,9 @@ steps:
   load:
     command: |
       node --experimental-strip-types -e "
-        import { readBlock } from '@davidorex/pi-project/src/block-api.js';
+        import fs from 'fs';
         const gapId = process.argv[1];
-        const data = readBlock('.', 'gaps');
+        const data = JSON.parse(fs.readFileSync('.project/gaps.json', 'utf8'));
         const gap = data.gaps.find(g => g.id === gapId);
         if (!gap) { console.error('Gap not found: ' + gapId); process.exit(1); }
         if (gap.status === 'resolved') { console.error('Gap already resolved: ' + gapId); process.exit(1); }
@@ -77,6 +77,7 @@ steps:
   verify:
     command: |
       node --experimental-strip-types -e "
+        import fs from 'fs';
         import { execSync } from 'child_process';
         const errors = [];
 
@@ -101,18 +102,17 @@ steps:
           }
         } catch {}
 
-        // Validate blocks
+        // Validate blocks (JSON parsability)
         try {
-          const fs = await import('fs');
           const schemasDir = '.project/schemas';
-          const schemas = fs.readdirSync(schemasDir).filter(f => f.endsWith('.schema.json'));
-          for (const s of schemas) {
-            const blockName = s.replace('.schema.json', '');
-            const blockPath = '.project/' + blockName + '.json';
-            if (fs.existsSync(blockPath)) {
-              try {
-                execSync('node --experimental-strip-types -e \"import{validateFromFile}from' + String.fromCharCode(39) + '@davidorex/pi-project/src/schema-validator.js' + String.fromCharCode(39) + ';import fs from' + String.fromCharCode(39) + 'fs' + String.fromCharCode(39) + ';validateFromFile(' + String.fromCharCode(39) + schemasDir + '/' + s + String.fromCharCode(39) + ',JSON.parse(fs.readFileSync(' + String.fromCharCode(39) + blockPath + String.fromCharCode(39) + ',' + String.fromCharCode(39) + 'utf8' + String.fromCharCode(39) + ')),' + String.fromCharCode(39) + blockName + String.fromCharCode(39) + ')\"', { stdio: 'pipe' });
-              } catch { errors.push('Block validation failed: ' + blockPath); }
+          if (fs.existsSync(schemasDir)) {
+            for (const s of fs.readdirSync(schemasDir).filter(f => f.endsWith('.schema.json'))) {
+              const blockName = s.replace('.schema.json', '');
+              const blockPath = '.project/' + blockName + '.json';
+              if (fs.existsSync(blockPath)) {
+                try { JSON.parse(fs.readFileSync(blockPath, 'utf8')); }
+                catch { errors.push('Block file is invalid JSON: ' + blockPath); }
+              }
             }
           }
         } catch {}
@@ -127,12 +127,14 @@ steps:
     when: "${{ steps.verify.output.passed }}"
     command: |
       node --experimental-strip-types -e "
-        import { updateItemInBlock } from '@davidorex/pi-project/src/block-api.js';
+        import fs from 'fs';
         const gapId = process.argv[1];
-        updateItemInBlock('.', 'gaps', 'gaps',
-          (g) => g.id === gapId,
-          { status: 'resolved', resolved_by: 'do-gap-workflow' }
-        );
+        const gapsPath = '.project/gaps.json';
+        const data = JSON.parse(fs.readFileSync(gapsPath, 'utf8'));
+        const gap = data.gaps.find(g => g.id === gapId);
+        if (!gap) { console.error('Gap not found: ' + gapId); process.exit(1); }
+        Object.assign(gap, { status: 'resolved', resolved_by: 'do-gap-workflow' });
+        fs.writeFileSync(gapsPath, JSON.stringify(data, null, 2) + '\n');
         console.log(JSON.stringify({ routed: true, gap_id: gapId, status: 'resolved' }));
       " '${{ input.gap_id }}'
     output:

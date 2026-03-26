@@ -20,9 +20,9 @@ steps:
   load-gap:
     command: |
       node --experimental-strip-types -e "
-        import { readBlock } from '@davidorex/pi-project/src/block-api.js';
+        import fs from 'fs';
         const gapId = process.argv[1];
-        const data = readBlock('.', 'gaps');
+        const data = JSON.parse(fs.readFileSync('.project/gaps.json', 'utf8'));
         const gap = data.gaps.find(g => g.id === gapId);
         if (!gap) { console.error('Gap not found: ' + gapId); process.exit(1); }
         if (gap.status === 'resolved') { console.error('Gap already resolved: ' + gapId); process.exit(1); }
@@ -36,7 +36,6 @@ steps:
       node --experimental-strip-types -e "
         import fs from 'fs';
         import path from 'path';
-        import { readBlock } from '@davidorex/pi-project/src/block-api.js';
 
         const phases = [];
         const phasesDir = '.project/phases';
@@ -47,13 +46,13 @@ steps:
         }
 
         let architecture = {};
-        try { architecture = readBlock('.', 'architecture'); } catch {}
+        try { architecture = JSON.parse(fs.readFileSync('.project/architecture.json', 'utf8')); } catch {}
         let conventions = {};
-        try { conventions = readBlock('.', 'conventions'); } catch {}
+        try { conventions = JSON.parse(fs.readFileSync('.project/conventions.json', 'utf8')); } catch {}
         let gaps = { gaps: [] };
-        try { gaps = readBlock('.', 'gaps'); } catch {}
+        try { gaps = JSON.parse(fs.readFileSync('.project/gaps.json', 'utf8')); } catch {}
         let inventory = {};
-        try { inventory = readBlock('.', 'inventory'); } catch {}
+        try { inventory = JSON.parse(fs.readFileSync('.project/inventory.json', 'utf8')); } catch {}
 
         console.log(JSON.stringify({ phases, architecture, conventions, gaps: gaps.gaps.filter(g => g.status === 'open'), inventory }));
       "

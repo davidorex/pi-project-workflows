@@ -20,7 +20,7 @@ steps:
   load:
     command: |
       node --experimental-strip-types -e "
-        import { readBlock } from './src/block-api.ts';
+        import { readBlock } from '@davidorex/pi-project/src/block-api.js';
         const gapId = process.argv[1];
         const data = readBlock('.', 'gaps');
         const gap = data.gaps.find(g => g.id === gapId);
@@ -111,7 +111,7 @@ steps:
             const blockPath = '.project/' + blockName + '.json';
             if (fs.existsSync(blockPath)) {
               try {
-                execSync('node --experimental-strip-types -e \"import{validateFromFile}from' + String.fromCharCode(39) + './src/schema-validator.ts' + String.fromCharCode(39) + ';import fs from' + String.fromCharCode(39) + 'fs' + String.fromCharCode(39) + ';validateFromFile(' + String.fromCharCode(39) + schemasDir + '/' + s + String.fromCharCode(39) + ',JSON.parse(fs.readFileSync(' + String.fromCharCode(39) + blockPath + String.fromCharCode(39) + ',' + String.fromCharCode(39) + 'utf8' + String.fromCharCode(39) + ')),' + String.fromCharCode(39) + blockName + String.fromCharCode(39) + ')\"', { stdio: 'pipe' });
+                execSync('node --experimental-strip-types -e \"import{validateFromFile}from' + String.fromCharCode(39) + '@davidorex/pi-project/src/schema-validator.js' + String.fromCharCode(39) + ';import fs from' + String.fromCharCode(39) + 'fs' + String.fromCharCode(39) + ';validateFromFile(' + String.fromCharCode(39) + schemasDir + '/' + s + String.fromCharCode(39) + ',JSON.parse(fs.readFileSync(' + String.fromCharCode(39) + blockPath + String.fromCharCode(39) + ',' + String.fromCharCode(39) + 'utf8' + String.fromCharCode(39) + ')),' + String.fromCharCode(39) + blockName + String.fromCharCode(39) + ')\"', { stdio: 'pipe' });
               } catch { errors.push('Block validation failed: ' + blockPath); }
             }
           }
@@ -127,7 +127,7 @@ steps:
     when: "${{ steps.verify.output.passed }}"
     command: |
       node --experimental-strip-types -e "
-        import { updateItemInBlock } from './src/block-api.ts';
+        import { updateItemInBlock } from '@davidorex/pi-project/src/block-api.js';
         const gapId = process.argv[1];
         updateItemInBlock('.', 'gaps', 'gaps',
           (g) => g.id === gapId,

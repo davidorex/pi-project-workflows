@@ -15,8 +15,8 @@ steps:
     command: |
       node --experimental-strip-types -e "
         import fs from 'fs';
-        import { readBlock } from './src/block-api.ts';
-        import { PROJECT_DIR } from './src/project-dir.ts';
+        import { readBlock } from '@davidorex/pi-project/src/block-api.js';
+        import { PROJECT_DIR } from '@davidorex/pi-project/src/project-dir.js';
         import path from 'path';
         const phasesDir = path.join(PROJECT_DIR, 'phases');
         const phases = fs.readdirSync(phasesDir)
@@ -48,7 +48,7 @@ steps:
     command: |
       node --experimental-strip-types -e "
         import fs from 'fs';
-        import { validateFromFile } from './src/schema-validator.ts';
+        import { validateFromFile } from '@davidorex/pi-project/src/schema-validator.js';
         const phase = JSON.parse(process.argv[1]);
         validateFromFile('.project/schemas/phase.schema.json', phase, 'phase');
         const filename = '.project/phases/' + String(phase.number).padStart(2, '0') + '-' + phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '') + '.json';

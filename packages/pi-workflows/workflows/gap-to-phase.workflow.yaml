@@ -20,7 +20,7 @@ steps:
   load-gap:
     command: |
       node --experimental-strip-types -e "
-        import { readBlock } from './src/block-api.ts';
+        import { readBlock } from '@davidorex/pi-project/src/block-api.js';
         const gapId = process.argv[1];
         const data = readBlock('.', 'gaps');
         const gap = data.gaps.find(g => g.id === gapId);
@@ -36,7 +36,7 @@ steps:
       node --experimental-strip-types -e "
         import fs from 'fs';
         import path from 'path';
-        import { readBlock } from './src/block-api.ts';
+        import { readBlock } from '@davidorex/pi-project/src/block-api.js';
 
         const phases = [];
         const phasesDir = '.project/phases';

@@ -119,10 +119,10 @@ npm test -w packages/pi-behavior-monitors
 # Run integration tests (requires pi on PATH, spawns LLM subprocesses)
 RUN_INTEGRATION=1 npm test -w packages/pi-workflows
 
-# Lint and format (uses Biome)
+# Lint and format (Biome v2.4.9, scoped to packages/ + scripts/)
 npm run lint       # check for lint issues
 npm run format     # auto-fix formatting
-npm run check      # lint + typecheck (biome check + tsc --noEmit)
+npm run check      # peer freshness gate + lint + typecheck
 
 # Clean build artifacts
 npm run clean
@@ -146,6 +146,9 @@ npx tsx -e "
 - **Three-tier resource search** — project `.pi/` > user `~/.pi/agent/` > package builtin (agents, templates, workflows)
 - **Workflow SDK** (`packages/pi-workflows/src/workflow-sdk.ts`) — single queryable surface for the extension's capabilities. All functions derive dynamically from code registries and filesystem — add a filter, agent, template, or schema and it appears automatically.
 - **ESM, TypeScript** compiled via `tsc` to `dist/`. Pi loads compiled JS from each package's `dist/index.js`. Cross-package imports use `.js` extensions for Node16 module resolution.
+- **Skill self-install** — each extension copies its `skills/` directory to `~/.pi/agent/skills/` on activation, ensuring skills are discoverable regardless of install method.
+- **Peer freshness gate** — `npm run check` verifies local `node_modules/@mariozechner/pi-coding-agent` matches the globally installed pi version. Prevents compiling against stale types.
+- **Pre-commit hook** (husky) runs `npm run check` before every commit. **CI** (GitHub Actions) runs check + build + test on Node 22/23.
 - **pi-workflows depends on pi-project** as a peer dependency. pi-project has no knowledge of workflows. pi-behavior-monitors is independent of both.
 
 ## For LLMs

@@ -282,15 +282,15 @@ export async function executeMonitor(
 		};
 	}
 
-	const apiKey = await options.ctx.modelRegistry.getApiKey(model);
-	if (!apiKey) {
+	const auth = await options.ctx.modelRegistry.getApiKeyAndHeaders(model);
+	if (!auth.ok) {
 		return {
 			step: stepName,
 			agent: `monitor:${monitorName}`,
 			status: "failed",
 			usage: zeroUsage(),
 			durationMs: Date.now() - startTime,
-			error: `No API key for model '${spec.classify.model}'`,
+			error: auth.error,
 		};
 	}
 
@@ -300,7 +300,7 @@ export async function executeMonitor(
 		response = await complete(
 			model as Model<Api>,
 			{ messages: [{ role: "user", content: [{ type: "text", text: prompt }], timestamp: Date.now() }] },
-			{ apiKey, maxTokens: 150, signal: options.signal },
+			{ apiKey: auth.apiKey, headers: auth.headers, maxTokens: 150, signal: options.signal },
 		);
 	} catch (err) {
 		if (options.signal?.aborted) {

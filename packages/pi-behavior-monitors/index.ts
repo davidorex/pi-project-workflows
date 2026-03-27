@@ -888,13 +888,13 @@ async function classifyPrompt(
 	const model = ctx.modelRegistry.find(provider, modelId);
 	if (!model) throw new Error(`Model ${monitor.classify.model} not found`);
 
-	const apiKey = await ctx.modelRegistry.getApiKey(model);
-	if (!apiKey) throw new Error(`No API key for ${monitor.classify.model}`);
+	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+	if (!auth.ok) throw new Error(auth.error);
 
 	const response: AssistantMessage = await complete(
 		model as Model<Api>,
 		{ messages: [{ role: "user", content: [{ type: "text", text: prompt }], timestamp: Date.now() }] },
-		{ apiKey, maxTokens: 150, signal },
+		{ apiKey: auth.apiKey, headers: auth.headers, maxTokens: 150, signal },
 	);
 
 	return parseVerdict(extractText(response.content));

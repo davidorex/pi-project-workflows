@@ -13,7 +13,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Api, AssistantMessage, Model, TextContent } from "@mariozechner/pi-ai";
-import { complete } from "@mariozechner/pi-ai";
+import { complete, StringEnum } from "@mariozechner/pi-ai";
 import type {
 	AgentEndEvent,
 	AgentToolResult,
@@ -1384,7 +1384,7 @@ export default function (pi: ExtensionAPI) {
 		description: "Control monitors — enable, disable, dismiss, or reset.",
 		promptSnippet: "Control monitors — enable, disable, dismiss, or reset",
 		parameters: Type.Object({
-			action: Type.Union([Type.Literal("on"), Type.Literal("off"), Type.Literal("dismiss"), Type.Literal("reset")]),
+			action: StringEnum(["on", "off", "dismiss", "reset"] as const),
 			monitor: Type.Optional(Type.String({ description: "Monitor name (required for dismiss/reset)" })),
 		}),
 		async execute(
@@ -1444,7 +1444,7 @@ export default function (pi: ExtensionAPI) {
 		promptSnippet: "Manage monitor rules — list, add, remove, or replace calibration rules",
 		parameters: Type.Object({
 			monitor: Type.String({ description: "Monitor name" }),
-			action: Type.Union([Type.Literal("list"), Type.Literal("add"), Type.Literal("remove"), Type.Literal("replace")]),
+			action: StringEnum(["list", "add", "remove", "replace"] as const),
 			text: Type.Optional(Type.String({ description: "Rule text (for add/replace)" })),
 			index: Type.Optional(Type.Number({ description: "Rule index, 1-based (for remove/replace)" })),
 		}),

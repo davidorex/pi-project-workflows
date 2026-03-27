@@ -16,7 +16,8 @@ import { Key } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 import { createAgentLoader } from "./agent-spec.js";
 import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } from "./checkpoint.js";
-import type { WorkflowResult } from "./types.js";
+import type { IncompleteRun } from "./checkpoint.js";
+import type { WorkflowResult, WorkflowSpec } from "./types.js";
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.js";
 import { executeWorkflow, requestPause } from "./workflow-executor.js";
 import {
@@ -43,7 +44,7 @@ function listWorkflowNames(cwd: string): string {
  */
 function summarizeInputSchema(schema: Record<string, unknown> | undefined): string {
 	if (!schema) return "(any)";
-	const props = schema.properties as Record<string, any> | undefined;
+	const props = schema.properties as Record<string, Record<string, unknown>> | undefined;
 	if (!props) return JSON.stringify(schema);
 	const required = new Set(Array.isArray(schema.required) ? schema.required : []);
 	const fields = Object.entries(props).map(([key, val]) => {
@@ -152,7 +153,7 @@ function runValidation(
 	results: { name: string; valid: boolean; issues: import("./workflow-sdk.js").ValidationIssue[] }[];
 } {
 	const workflows = name
-		? ([findWorkflow(name, cwd)].filter(Boolean) as import("./types.js").WorkflowSpec[])
+		? ([findWorkflow(name, cwd)].filter(Boolean) as WorkflowSpec[])
 		: discoverWorkflows(cwd);
 
 	if (workflows.length === 0) return { found: false, results: [] };
@@ -828,7 +829,7 @@ const extension = (pi: ExtensionAPI) => {
 			description: "Resume paused workflow",
 			handler: async (ctx: ExtensionContext) => {
 				const workflows = discoverWorkflows(ctx.cwd);
-				let found: { spec: any; incomplete: any } | null = null;
+				let found: { spec: WorkflowSpec; incomplete: IncompleteRun } | null = null;
 
 				for (const wfSpec of workflows) {
 					const incomplete = findIncompleteRun(ctx.cwd, wfSpec.name);

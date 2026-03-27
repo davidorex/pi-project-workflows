@@ -67,7 +67,7 @@ Initialize .workflows/ directory for workflow run state.
 <command name="/workflow">
 List and run workflows
 
-Subcommands: `init`, `run`, `list`, `resume`, `validate`, `status`
+Subcommands: `init`, `list`, `run`, `resume`, `validate`, `status`, `help`
 </command>
 
 </commands_reference>

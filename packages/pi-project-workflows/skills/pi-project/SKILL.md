@@ -81,7 +81,7 @@ Initialize .project/ directory with default schemas and empty block files.
 <command name="/project">
 Project state management
 
-Subcommands: `init`, `status`, `add-work`, `validate`
+Subcommands: `init`, `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>

@@ -33,7 +33,7 @@ Control monitors — enable, disable, dismiss, or reset.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `action` | unknown | yes |  |
+| `action` | string | yes |  |
 | `monitor` | string | no | Monitor name (required for dismiss/reset) |
 </tool>
 
@@ -45,7 +45,7 @@ Manage monitor rules — list, add, remove, or replace calibration rules.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `monitor` | string | yes | Monitor name |
-| `action` | unknown | yes |  |
+| `action` | string | yes |  |
 | `text` | string | no | Rule text (for add/replace) |
 | `index` | number | no | Rule index, 1-based (for remove/replace) |
 </tool>
@@ -66,7 +66,7 @@ List patterns for a behavior monitor.
 <command name="/monitors">
 Manage behavior monitors
 
-Subcommands: `on`, `off`, `fragility`, `response-style`
+Subcommands: `on`, `off`, `help`, `fragility`, `response-style`
 </command>
 
 </commands_reference>

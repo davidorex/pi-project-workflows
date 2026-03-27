@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { zeroUsage } from "./step-shared.js";
-import { makeSpec, mockCtx, mockPi } from "./test-helpers.js";
+import { mockCtx, mockPi } from "./test-helpers.js";
 import type { AgentSpec, StepResult, StepSpec, WorkflowSpec } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
 

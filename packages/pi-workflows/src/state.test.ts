@@ -12,7 +12,6 @@ import {
 	readState,
 	writeMetrics,
 	writeState,
-	writeStepOutput,
 } from "./state.js";
 import type { ExecutionState, StepResult, StepUsage, WorkflowSpec } from "./types.js";
 

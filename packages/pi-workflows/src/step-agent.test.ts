@@ -9,7 +9,7 @@ import type { AgentStepOptions } from "./step-agent.js";
 import { executeAgentStep } from "./step-agent.js";
 import { zeroUsage } from "./step-shared.js";
 import { mockCtx } from "./test-helpers.js";
-import type { AgentSpec, ExecutionState, StepResult, StepSpec } from "./types.js";
+import type { ExecutionState, StepResult, StepSpec } from "./types.js";
 
 /**
  * Mock dispatch factory: returns a controlled StepResult.
@@ -374,8 +374,22 @@ describe("executeAgentStep", () => {
 		const state: ExecutionState = {
 			input: {},
 			steps: {
-				scan: { step: "scan", agent: "scanner", status: "completed", usage: zeroUsage(), durationMs: 50, textOutput: "Found 3 issues" },
-				analyze: { step: "analyze", agent: "analyst", status: "completed", usage: zeroUsage(), durationMs: 50, textOutput: "Priority: high" },
+				scan: {
+					step: "scan",
+					agent: "scanner",
+					status: "completed",
+					usage: zeroUsage(),
+					durationMs: 50,
+					textOutput: "Found 3 issues",
+				},
+				analyze: {
+					step: "analyze",
+					agent: "analyst",
+					status: "completed",
+					usage: zeroUsage(),
+					durationMs: 50,
+					textOutput: "Priority: high",
+				},
 			},
 			status: "running",
 		};

@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { syncSkillsToUser } from "@davidorex/pi-project/src/sync-skills.js";
 import type {
 	AgentToolResult,
 	AgentToolUpdateCallback,
@@ -14,10 +15,9 @@ import type {
 } from "@mariozechner/pi-coding-agent";
 import { Key } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
-import { syncSkillsToUser } from "@davidorex/pi-project/src/sync-skills.js";
 import { createAgentLoader } from "./agent-spec.js";
-import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } from "./checkpoint.js";
 import type { IncompleteRun } from "./checkpoint.js";
+import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } from "./checkpoint.js";
 import type { WorkflowResult, WorkflowSpec } from "./types.js";
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.js";
 import { executeWorkflow, requestPause } from "./workflow-executor.js";
@@ -43,7 +43,7 @@ function listWorkflowNames(cwd: string): string {
  * Summarize a JSON Schema's expected shape for error messages.
  * Produces something like: { path: string (required), question?: string }
  */
-function summarizeInputSchema(schema: Record<string, unknown> | undefined): string {
+function _summarizeInputSchema(schema: Record<string, unknown> | undefined): string {
 	if (!schema) return "(any)";
 	const props = schema.properties as Record<string, Record<string, unknown>> | undefined;
 	if (!props) return JSON.stringify(schema);
@@ -153,9 +153,7 @@ function runValidation(
 	found: boolean;
 	results: { name: string; valid: boolean; issues: import("./workflow-sdk.js").ValidationIssue[] }[];
 } {
-	const workflows = name
-		? ([findWorkflow(name, cwd)].filter(Boolean) as WorkflowSpec[])
-		: discoverWorkflows(cwd);
+	const workflows = name ? ([findWorkflow(name, cwd)].filter(Boolean) as WorkflowSpec[]) : discoverWorkflows(cwd);
 
 	if (workflows.length === 0) return { found: false, results: [] };
 
@@ -211,7 +209,7 @@ function initWorkflowDirs(cwd: string): { created: string[] } {
 	for (const dir of [workflowsDir, runsDir]) {
 		if (!fs.existsSync(dir)) {
 			fs.mkdirSync(dir, { recursive: true });
-			created.push(path.relative(cwd, dir) + "/");
+			created.push(`${path.relative(cwd, dir)}/`);
 		}
 	}
 
@@ -465,7 +463,11 @@ function handleWorkflowInit(ctx: ExtensionCommandContext): void {
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
-	try { syncSkillsToUser(import.meta.dirname); } catch { /* non-critical */ }
+	try {
+		syncSkillsToUser(import.meta.dirname);
+	} catch {
+		/* non-critical */
+	}
 
 	// ── Tool: workflow ──────────────────────────────────────────────────────
 
@@ -486,7 +488,7 @@ const extension = (pi: ExtensionAPI) => {
 		}),
 
 		async execute(
-			toolCallId: string,
+			_toolCallId: string,
 			params: { workflow: string; input?: unknown; fresh?: string },
 			signal: AbortSignal | undefined,
 			_onUpdate: AgentToolUpdateCallback | undefined,
@@ -594,9 +596,7 @@ const extension = (pi: ExtensionAPI) => {
 			if (params.name) {
 				const agent = agents.find((a) => a.name === params.name);
 				if (!agent) {
-					throw new Error(
-						`Agent '${params.name}' not found. Available: ${agents.map((a) => a.name).join(", ")}`,
-					);
+					throw new Error(`Agent '${params.name}' not found. Available: ${agents.map((a) => a.name).join(", ")}`);
 				}
 				return {
 					details: undefined,

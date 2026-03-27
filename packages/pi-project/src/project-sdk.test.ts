@@ -9,7 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { availableBlocks, availableSchemas, findAppendableBlocks, projectState } from "./project-sdk.js";
+import { availableBlocks, availableSchemas, projectState } from "./project-sdk.js";
 
 function makeTmpDir(prefix: string): string {
 	return fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));

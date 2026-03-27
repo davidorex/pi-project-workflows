@@ -84,7 +84,7 @@ export function availableTemplates(cwd: string, builtinDir?: string): string[] {
 	return Array.from(seen).sort();
 }
 
-export function availableSchemas(cwd: string, builtinDir?: string): string[] {
+export function availableSchemas(_cwd: string, builtinDir?: string): string[] {
 	const defaultBuiltinSchemas = builtinDir ?? path.resolve(import.meta.dirname, "..", "schemas");
 	const dirs = [defaultBuiltinSchemas];
 	const schemas: string[] = [];
@@ -436,8 +436,7 @@ function findMonitorFields(steps: Record<string, StepSpec>, monitorName: string,
 	const fields: string[] = [];
 	for (const [name, step] of Object.entries(steps)) {
 		if (step.monitor === monitorName) fields.push(`${prefix}.${name}.monitor`);
-		if (step.loop?.steps)
-			fields.push(...findMonitorFields(step.loop.steps, monitorName, `${prefix}.${name}.loop`));
+		if (step.loop?.steps) fields.push(...findMonitorFields(step.loop.steps, monitorName, `${prefix}.${name}.loop`));
 		if (step.parallel) fields.push(...findMonitorFields(step.parallel, monitorName, `${prefix}.${name}.parallel`));
 	}
 	return fields;

@@ -7,12 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import type { BlockSnapshot } from "@davidorex/pi-project/src/block-validation.js";
-import {
-	rollbackBlockFiles,
-	snapshotBlockFiles,
-	validateChangedBlocks,
-} from "@davidorex/pi-project/src/block-validation.js";
+import { rollbackBlockFiles, snapshotBlockFiles } from "@davidorex/pi-project/src/block-validation.js";
 import type { StepResult, StepUsage } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
 import { parseWorkflowSpec } from "./workflow-spec.js";
@@ -237,7 +232,7 @@ describe("graduated failure retry", () => {
 	/** Build a dispatch function that fails N times then succeeds */
 	function buildDispatchFn(failCount: number, errorMessage = "Agent failed") {
 		let callCount = 0;
-		return async (_stepSpec: any, _agentSpec: any, prompt: string, _opts: any): Promise<StepResult> => {
+		return async (_stepSpec: any, _agentSpec: any, _prompt: string, _opts: any): Promise<StepResult> => {
 			callCount++;
 			if (callCount <= failCount) {
 				return {
@@ -343,9 +338,9 @@ steps:
     agent: test-agent
 `;
 		const spec = parseWorkflowSpec(yaml, path.join(tmpDir, "test.project.yaml"), "project");
-		let callCount = 0;
+		let _callCount = 0;
 		const dispatchFn = async (_stepSpec: any, _agentSpec: any, _prompt: string, opts: any): Promise<StepResult> => {
-			callCount++;
+			_callCount++;
 			// analyze always fails, followup succeeds
 			if (opts.stepName === "analyze") {
 				return {

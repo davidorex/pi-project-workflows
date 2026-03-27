@@ -7,7 +7,7 @@ import type { LoopExecuteOptions } from "./step-loop.js";
 import { executeLoop } from "./step-loop.js";
 import { DEFAULT_MAX_ATTEMPTS, zeroUsage } from "./step-shared.js";
 import { makeSpec, mockCtx, mockPi } from "./test-helpers.js";
-import type { AgentSpec, ExecutionState, LoopSpec, StepResult, StepSpec } from "./types.js";
+import type { ExecutionState, LoopSpec } from "./types.js";
 
 function makeState(overrides?: Partial<ExecutionState>): ExecutionState {
 	return { input: {}, steps: {}, status: "running", ...overrides };
@@ -23,7 +23,7 @@ function makeLoopOptions(t: any, overrides?: Partial<LoopExecuteOptions>): LoopE
 		ctx: mockCtx(tmpDir),
 		pi: mockPi(),
 		loadAgent: () => ({ name: "default" }),
-		dispatchAgent: async (step, agent, prompt, opts) => ({
+		dispatchAgent: async (step, _agent, _prompt, opts) => ({
 			step: opts.stepName,
 			agent: step.agent ?? "default",
 			status: "completed" as const,
@@ -243,7 +243,7 @@ describe("executeLoop — direct unit tests", () => {
 			};
 			const state = makeState();
 			const opts = makeLoopOptions(t, {
-				dispatchAgent: async (step, agent, prompt, dispatchOpts) => {
+				dispatchAgent: async (step, _agent, _prompt, dispatchOpts) => {
 					dispatched = true;
 					return {
 						step: dispatchOpts.stepName,
@@ -280,7 +280,7 @@ describe("executeLoop — direct unit tests", () => {
 			};
 			const state = makeState();
 			const opts = makeLoopOptions(t, {
-				dispatchAgent: async (step, agent, prompt, dispatchOpts) => ({
+				dispatchAgent: async (step, _agent, _prompt, dispatchOpts) => ({
 					step: dispatchOpts.stepName,
 					agent: step.agent ?? "worker",
 					status: "failed",
@@ -312,7 +312,7 @@ describe("executeLoop — direct unit tests", () => {
 			};
 			const state = makeState();
 			const opts = makeLoopOptions(t, {
-				dispatchAgent: async (step, agent, prompt, dispatchOpts) => ({
+				dispatchAgent: async (step, _agent, _prompt, dispatchOpts) => ({
 					step: dispatchOpts.stepName,
 					agent: step.agent ?? "worker",
 					status: "completed",
@@ -460,7 +460,7 @@ describe("executeLoop — direct unit tests", () => {
 			};
 			const state = makeState();
 			const opts = makeLoopOptions(t, {
-				dispatchAgent: async (step, agent, prompt, dispatchOpts) => {
+				dispatchAgent: async (step, _agent, _prompt, dispatchOpts) => {
 					exhaustedDispatched = true;
 					return {
 						step: dispatchOpts.stepName,
@@ -498,7 +498,7 @@ describe("executeLoop — direct unit tests", () => {
 			};
 			const state = makeState();
 			const opts = makeLoopOptions(t, {
-				dispatchAgent: async (step, agent, prompt, dispatchOpts) => ({
+				dispatchAgent: async (step, _agent, _prompt, dispatchOpts) => ({
 					step: dispatchOpts.stepName,
 					agent: step.agent ?? "fallback",
 					status: "completed",
@@ -532,7 +532,7 @@ describe("executeLoop — direct unit tests", () => {
 			};
 			const state = makeState();
 			const opts = makeLoopOptions(t, {
-				dispatchAgent: async (step, agent, prompt, dispatchOpts) => {
+				dispatchAgent: async (step, _agent, _prompt, dispatchOpts) => {
 					exhaustedDispatched = true;
 					return {
 						step: dispatchOpts.stepName,

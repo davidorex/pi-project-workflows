@@ -761,7 +761,7 @@ describe("artifacts", () => {
 		};
 
 		const pi = mockPi();
-		const result = await executeWorkflow(
+		const _result = await executeWorkflow(
 			spec,
 			{},
 			{

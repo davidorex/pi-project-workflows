@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { AgentNotFoundError, AgentParseError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
+import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { compileAgentSpec } from "./step-shared.js";
 import { createTemplateEnv } from "./template.js";
 

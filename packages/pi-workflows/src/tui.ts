@@ -123,7 +123,7 @@ export function createProgressWidget(
 									if (summaryLines >= MAX_SUMMARY_LINES) break;
 									const files = task.files?.join(", ") || "";
 									const statusIcon = task.status === "done" ? "\u2713" : task.status === "failed" ? "\u2717" : "\u00b7";
-									const taskLine = `      ${theme.fg("dim", statusIcon)} ${theme.fg("dim", task.name)}${files ? "  " + theme.fg("dim", files) : ""}`;
+									const taskLine = `      ${theme.fg("dim", statusIcon)} ${theme.fg("dim", task.name)}${files ? `  ${theme.fg("dim", files)}` : ""}`;
 									lines.push(taskLine.length > width ? taskLine.slice(0, width) : taskLine);
 									summaryLines++;
 								}
@@ -151,7 +151,7 @@ export function createProgressWidget(
 						line = `  ${theme.fg("success", "\u2713")} ${stepName} [parallel]  ${theme.fg("dim", dur)}  ${theme.fg("dim", cost)}  ${theme.fg("dim", tok)}`;
 					} else if (currentSteps.includes(stepName)) {
 						const stepElapsed = formatDuration(Date.now() - widgetState.startTime);
-						line = `  ${theme.fg("accent", "\u25b8")} ${theme.fg("accent", stepName)}  ${theme.fg("dim", stepElapsed + "...")}`;
+						line = `  ${theme.fg("accent", "\u25b8")} ${theme.fg("accent", stepName)}  ${theme.fg("dim", `${stepElapsed}...`)}`;
 						lines.push(line.length > width ? line.slice(0, width) : line);
 
 						// Render most recent tool activity under running step

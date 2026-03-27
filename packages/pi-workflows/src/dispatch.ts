@@ -61,7 +61,7 @@ export function extractToolArgsPreview(args: unknown): string {
 	for (const key of ["command", "path", "pattern", "query", "task"]) {
 		if (typeof obj[key] === "string") {
 			const val = obj[key] as string;
-			return val.length > 60 ? val.slice(0, 57) + "..." : val;
+			return val.length > 60 ? `${val.slice(0, 57)}...` : val;
 		}
 	}
 	return "";
@@ -352,7 +352,7 @@ export async function dispatch(
 		sessionLog: options.sessionLogDir,
 		usage,
 		durationMs: Date.now() - startTime,
-		error: exitCode !== 0 ? stderrBuf.trim() || "Process exited with code " + exitCode : undefined,
+		error: exitCode !== 0 ? stderrBuf.trim() || `Process exited with code ${exitCode}` : undefined,
 		truncated: stdoutTruncated || undefined,
 		warnings: warnings.length > 0 ? warnings : undefined,
 	};

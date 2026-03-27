@@ -6,9 +6,9 @@ import { describe, it } from "node:test";
 import type { ExecutionLayer } from "./dag.js";
 import type { ParallelOptions, SingleStepExecutor } from "./step-parallel.js";
 import { executeParallelLayer, executeParallelStep } from "./step-parallel.js";
-import { WIDGET_ID, zeroUsage } from "./step-shared.js";
+import { zeroUsage } from "./step-shared.js";
 import { makeSpec, mockCtx, mockPi } from "./test-helpers.js";
-import type { ExecutionState, StepResult, StepSpec, WorkflowSpec } from "./types.js";
+import type { ExecutionState, StepSpec } from "./types.js";
 
 function makeTmpDir(t: any): string {
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));
@@ -289,7 +289,7 @@ describe("executeParallelLayer", () => {
 		const options = makeParallelOptions(tmpDir, { spec });
 
 		// Mock executor that throws an exception for step "b"
-		const executor: SingleStepExecutor = async (stepName, stepSpec, execState, opts) => {
+		const executor: SingleStepExecutor = async (stepName, _stepSpec, execState, _opts) => {
 			if (stepName === "b") throw new Error("unexpected crash");
 			execState.steps[stepName] = {
 				step: stepName,
@@ -563,7 +563,7 @@ describe("executeParallelStep", () => {
 		};
 		const options = makeParallelOptions(tmpDir);
 
-		const executor: SingleStepExecutor = async (stepName, stepSpec, execState, opts) => {
+		const executor: SingleStepExecutor = async (stepName, _stepSpec, execState, _opts) => {
 			if (stepName === "sub2") throw new Error("boom");
 			execState.steps[stepName] = {
 				step: stepName,

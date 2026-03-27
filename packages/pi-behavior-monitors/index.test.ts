@@ -1,17 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { ClassifyResult, MonitorsCommand } from "./index.js";
 import {
 	COLLECTOR_DESCRIPTORS,
 	COLLECTOR_NAMES,
-	SCOPE_TARGETS,
-	VALID_EVENTS,
-	VERDICT_TYPES,
-	WHEN_CONDITIONS,
 	generateFindingId,
 	invokeMonitor,
 	parseModelSpec,
 	parseMonitorsArgs,
 	parseVerdict,
+	SCOPE_TARGETS,
+	VALID_EVENTS,
+	VERDICT_TYPES,
+	WHEN_CONDITIONS,
 } from "./index.js";
 
 // =============================================================================

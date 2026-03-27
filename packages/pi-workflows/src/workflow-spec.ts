@@ -7,7 +7,6 @@ import type {
 	RetryConfig,
 	StepOutputSpec,
 	StepSpec,
-	TransformSpec,
 	WorkflowSpec,
 } from "./types.js";
 

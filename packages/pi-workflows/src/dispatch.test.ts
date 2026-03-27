@@ -105,7 +105,7 @@ describe("extractToolArgsPreview", () => {
 		const result = extractToolArgsPreview({ command: longVal });
 		assert.strictEqual(result.length, 60);
 		assert.ok(result.endsWith("..."));
-		assert.strictEqual(result, "a".repeat(57) + "...");
+		assert.strictEqual(result, `${"a".repeat(57)}...`);
 	});
 
 	it("does not truncate values at exactly 60 chars", () => {
@@ -353,7 +353,7 @@ describe("dispatch", { skip: !hasPi ? "pi not available" : undefined }, () => {
 
 			const events: string[] = [];
 
-			const result = await dispatch({ agent: "default" }, { name: "default" }, "Respond with exactly: TEST", {
+			const _result = await dispatch({ agent: "default" }, { name: "default" }, "Respond with exactly: TEST", {
 				cwd: process.cwd(),
 				sessionLogDir: sessDir,
 				stepName: "test",

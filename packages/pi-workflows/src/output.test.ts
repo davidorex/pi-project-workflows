@@ -146,7 +146,7 @@ describe("persistStepOutput error handling", () => {
 		assert.strictEqual(result, undefined);
 	});
 
-	it("returns undefined when write to author-declared path fails", (t) => {
+	it("returns undefined when write to author-declared path fails", (_t) => {
 		// Use /dev/null/impossible on unix — a known-bad path
 		const result = persistStepOutput(
 			"/tmp",

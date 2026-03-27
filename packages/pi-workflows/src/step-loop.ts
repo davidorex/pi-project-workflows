@@ -9,16 +9,7 @@ import { persistStepOutput } from "./output.js";
 import { executeGate } from "./step-gate.js";
 import { addUsage, buildPrompt, compileAgentSpec, DEFAULT_MAX_ATTEMPTS, zeroUsage } from "./step-shared.js";
 import { executeTransform } from "./step-transform.js";
-import type {
-	AgentSpec,
-	ExecutionState,
-	LoopAttempt,
-	LoopSpec,
-	StepResult,
-	StepSpec,
-	StepUsage,
-	WorkflowSpec,
-} from "./types.js";
+import type { AgentSpec, ExecutionState, LoopAttempt, LoopSpec, StepResult, StepSpec, WorkflowSpec } from "./types.js";
 
 /** Options for executeLoop, including callback-injected dispatch to avoid circular imports. */
 export interface LoopExecuteOptions {
@@ -64,7 +55,7 @@ export async function executeLoop(
 	if (loopSpec.attempts) {
 		const resolved = resolveExpressions(loopSpec.attempts, scope);
 		maxAttempts = Number(resolved);
-		if (isNaN(maxAttempts) || maxAttempts < 1) maxAttempts = loopSpec.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+		if (Number.isNaN(maxAttempts) || maxAttempts < 1) maxAttempts = loopSpec.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
 	} else {
 		maxAttempts = loopSpec.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
 	}
@@ -248,7 +239,7 @@ export async function executeLoop(
 			try {
 				agentSpec = loadAgent(loopSpec.onExhausted.agent);
 			} catch (err) {
-				lastIterationSteps["_exhausted"] = {
+				lastIterationSteps._exhausted = {
 					step: `${stepName}-exhausted`,
 					agent: loopSpec.onExhausted.agent,
 					status: "failed",
@@ -273,12 +264,12 @@ export async function executeLoop(
 					exhaustedResult.error = `Expression error in onExhausted input: ${exhaustedError}. Agent ran with empty input.`;
 				}
 				// Include exhausted result in the loop's output
-				lastIterationSteps["_exhausted"] = exhaustedResult;
+				lastIterationSteps._exhausted = exhaustedResult;
 			}
 		}
 
 		if (!loopSpec.onExhausted.agent && exhaustedError) {
-			lastIterationSteps["_exhausted"] = {
+			lastIterationSteps._exhausted = {
 				step: `${stepName}-exhausted`,
 				agent: "exhausted",
 				status: "failed",

@@ -345,6 +345,36 @@ function seedExamples(): number {
 }
 
 // =============================================================================
+// Skill syncing
+// =============================================================================
+
+function copyDirRecursive(src: string, dest: string): void {
+	fs.mkdirSync(dest, { recursive: true });
+	for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+		const srcPath = path.join(src, entry.name);
+		const destPath = path.join(dest, entry.name);
+		if (entry.isDirectory()) {
+			copyDirRecursive(srcPath, destPath);
+		} else if (entry.isFile()) {
+			fs.copyFileSync(srcPath, destPath);
+		}
+	}
+}
+
+function syncSkillsToUser(distDir: string): void {
+	const sourceSkillsDir = path.resolve(distDir, "..", "skills");
+	if (!fs.existsSync(sourceSkillsDir)) return;
+
+	const userSkillsDir = path.join(getAgentDir(), "skills");
+	fs.mkdirSync(userSkillsDir, { recursive: true });
+
+	for (const entry of fs.readdirSync(sourceSkillsDir, { withFileTypes: true })) {
+		if (!entry.isDirectory()) continue;
+		copyDirRecursive(path.join(sourceSkillsDir, entry.name), path.join(userSkillsDir, entry.name));
+	}
+}
+
+// =============================================================================
 // Context collection
 // =============================================================================
 
@@ -1221,6 +1251,7 @@ async function escalate(monitor: Monitor, pi: ExtensionAPI, ctx: ExtensionContex
 // =============================================================================
 
 export default function (pi: ExtensionAPI) {
+	try { syncSkillsToUser(EXTENSION_DIR); } catch { /* non-critical */ }
 	const seeded = seedExamples();
 
 	const monitors = discoverMonitors();

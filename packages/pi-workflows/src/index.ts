@@ -14,6 +14,7 @@ import type {
 } from "@mariozechner/pi-coding-agent";
 import { Key } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
+import { syncSkillsToUser } from "@davidorex/pi-project/src/sync-skills.js";
 import { createAgentLoader } from "./agent-spec.js";
 import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } from "./checkpoint.js";
 import type { IncompleteRun } from "./checkpoint.js";
@@ -464,6 +465,8 @@ function handleWorkflowInit(ctx: ExtensionCommandContext): void {
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
+	try { syncSkillsToUser(import.meta.dirname); } catch { /* non-critical */ }
+
 	// ── Tool: workflow ──────────────────────────────────────────────────────
 
 	pi.registerTool({

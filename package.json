@@ -10,7 +10,7 @@
 		"test": "npm test --workspaces --if-present",
 		"test:project": "npm test -w @davidorex/pi-project",
 		"test:workflows": "npm test -w @davidorex/pi-workflows",
-		"check": "npx @biomejs/biome check . && tsc --noEmit",
+		"check": "node scripts/check-peer-freshness.js && npx @biomejs/biome check . && tsc --noEmit",
 		"lint": "npx @biomejs/biome check .",
 		"format": "npx @biomejs/biome check --write .",
 		"skills": "node scripts/generate-skills.js",

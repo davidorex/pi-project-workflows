@@ -1,26 +1,26 @@
-## Plan: {{ plan.name }}
+## Plan: {{ spec.name }}
 
 ### Intent
-{{ plan.intent }}
+{{ spec.intent }}
 
 ### Tasks
-{% for task in plan.tasks %}
+{% for task in spec.tasks %}
 {{ loop.index }}. {{ task }}
 {% endfor %}
 
 ### Files to Change
-{% for f in plan.files_to_change %}
+{% for f in spec.files_to_change %}
 - `{{ f }}`
 {% endfor %}
 
 ### Acceptance Criteria
-{% for criterion in plan.acceptance_criteria %}
+{% for criterion in spec.acceptance_criteria %}
 - {{ criterion }}
 {% endfor %}
 
-{% if plan.context_needed %}
+{% if spec.context_needed %}
 ### Context to Read First
-{% for ctx in plan.context_needed %}
+{% for ctx in spec.context_needed %}
 - `{{ ctx }}`
 {% endfor %}
 {% endif %}
@@ -44,10 +44,8 @@ Implement this plan. Follow these steps:
 3. **Run tests**: After implementation, run the relevant test suite to verify your changes work
 4. **Validate acceptance criteria**: Confirm each acceptance criterion is met
 
-Produce a JSON result conforming to the execution-results schema with:
-- **status**: "complete", "partial", or "failed"
-- **tasks**: array of task results with name, status, files_modified
-- **decisions**: any design decisions made during implementation
-- **issues**: any problems encountered (with severity)
-- **test_count**: number of tests passing after your changes
-- **commit_hash**: empty string (commits are handled externally)
+Produce a JSON result conforming to this schema:
+
+```json
+{{ output_schema }}
+```

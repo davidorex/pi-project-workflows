@@ -172,7 +172,7 @@ function resolveStringExpressions(value: string, scope: Record<string, unknown>)
  * the actual operator is "!==" (or "==" when "===" is intended).
  */
 const COMPARISON_OPS = ["!==", "===", "!=", "==", ">=", "<=", ">", "<"] as const;
-type ComparisonOp = (typeof COMPARISON_OPS)[number];
+type _ComparisonOp = (typeof COMPARISON_OPS)[number];
 
 /**
  * Parse a right-hand operand string into a typed value.

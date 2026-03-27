@@ -40,9 +40,9 @@ try {
 if (localVersion !== runtimeVersion) {
 	console.error(
 		`FAIL: Peer dep drift detected\n` +
-		`  Local pi-coding-agent: ${localVersion} (what TypeScript compiles against)\n` +
-		`  Global pi-coding-agent: ${runtimeVersion} (what loads extensions at runtime)\n` +
-		`  Fix: npm update`
+			`  Local pi-coding-agent: ${localVersion} (what TypeScript compiles against)\n` +
+			`  Global pi-coding-agent: ${runtimeVersion} (what loads extensions at runtime)\n` +
+			`  Fix: npm update`,
 	);
 	process.exit(1);
 }

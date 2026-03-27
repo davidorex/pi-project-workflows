@@ -55,7 +55,7 @@ export function writeBlock(cwd: string, blockName: string, data: unknown): void 
 	fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
 	// Atomic write: tmp + rename
-	const tmpPath = filePath + `.block-api-${process.pid}.tmp`;
+	const tmpPath = `${filePath}.block-api-${process.pid}.tmp`;
 	try {
 		fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf-8");
 		fs.renameSync(tmpPath, filePath);

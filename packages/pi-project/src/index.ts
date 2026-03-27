@@ -196,7 +196,7 @@ function initProject(cwd: string): { created: string[]; skipped: string[] } {
 	for (const dir of [projectDir, schemasDir, phasesDir]) {
 		if (!fs.existsSync(dir)) {
 			fs.mkdirSync(dir, { recursive: true });
-			created.push(path.relative(cwd, dir) + "/");
+			created.push(`${path.relative(cwd, dir)}/`);
 		}
 	}
 
@@ -255,7 +255,11 @@ function handleInit(ctx: ExtensionCommandContext): void {
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
-	try { syncSkillsToUser(import.meta.dirname); } catch { /* non-critical */ }
+	try {
+		syncSkillsToUser(import.meta.dirname);
+	} catch {
+		/* non-critical */
+	}
 
 	// ── Update check on session start (non-blocking) ───────────────────
 	pi.on("session_start", async (_event, ctx) => {

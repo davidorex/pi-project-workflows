@@ -17,8 +17,8 @@
  * Run after build: npm run build && npm run skills
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
-import { basename, dirname, join, relative, resolve } from "path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const PACKAGES_DIR = join(ROOT, "packages");
@@ -71,7 +71,7 @@ function createMockPi() {
 // ── TypeBox parameter extraction ────────────────────────────────────────────
 
 function extractParameters(schema) {
-	if (!schema || !schema.properties) return [];
+	if (!schema?.properties) return [];
 	const params = [];
 	const required = new Set(schema.required || []);
 	for (const [name, prop] of Object.entries(schema.properties)) {
@@ -104,7 +104,7 @@ function typeboxToString(schema) {
 		case "Unknown":
 			return "unknown";
 		case "Optional":
-			return typeboxToString(schema.anyOf?.[0] || schema) + "?";
+			return `${typeboxToString(schema.anyOf?.[0] || schema)}?`;
 		default:
 			return schema.type || "unknown";
 	}
@@ -303,7 +303,16 @@ function extractMonitorVocabulary(mod) {
 
 // ── SKILL.md composition ────────────────────────────────────────────────────
 
-function composeSkill(shortName, packageName, description, registrations, resources, narrativeRaw, vocabulary, monitorVocab) {
+function composeSkill(
+	shortName,
+	_packageName,
+	description,
+	registrations,
+	resources,
+	narrativeRaw,
+	vocabulary,
+	monitorVocab,
+) {
 	const lines = [];
 
 	// Parse narrative frontmatter
@@ -326,7 +335,7 @@ function composeSkill(shortName, packageName, description, registrations, resour
 		for (const word of words) {
 			if (currentLine.length + word.length + 1 > 82 && currentLine.trim()) {
 				lines.push(currentLine);
-				currentLine = "  " + word;
+				currentLine = `  ${word}`;
 			} else {
 				currentLine += (currentLine.trim() ? " " : "") + word;
 			}
@@ -422,7 +431,7 @@ function composeSkill(shortName, packageName, description, registrations, resour
 			lines.push("|-------|-------|-----------|-------------|");
 			for (const s of arraySchemas) {
 				const itemFields = s.itemProps
-					.map((p) => `${p.name}${p.required ? "" : "?"}` + (p.type !== "string" ? ` (${p.type})` : ""))
+					.map((p) => `${p.name}${p.required ? "" : "?"}${p.type !== "string" ? ` (${p.type})` : ""}`)
 					.join(", ");
 				lines.push(`| \`${s.name}\` | ${s.title} | \`${s.arrayKey}\` | ${itemFields} |`);
 			}
@@ -465,20 +474,14 @@ function composeSkill(shortName, packageName, description, registrations, resour
 			lines.push("| Collector | Placeholder | Description | Limits |");
 			lines.push("|-----------|-------------|-------------|--------|");
 			for (const c of monitorVocab.collectors) {
-				lines.push(
-					`| \`${c.name}\` | \`{${c.name}}\` / \`{{ ${c.name} }}\` | ${c.description} | ${c.limits || "—"} |`,
-				);
+				lines.push(`| \`${c.name}\` | \`{${c.name}}\` / \`{{ ${c.name} }}\` | ${c.description} | ${c.limits || "—"} |`);
 			}
 			lines.push("");
-			lines.push(
-				"Any string is accepted in `classify.context`. Unknown collector names produce empty string.",
-			);
+			lines.push("Any string is accepted in `classify.context`. Unknown collector names produce empty string.");
 			lines.push("");
 			lines.push("Built-in placeholders (always available, not in `classify.context`):");
 			lines.push("- `{{ patterns }}` — patterns JSON as numbered list");
-			lines.push(
-				'- `{{ instructions }}` — instructions JSON as bulleted list with "follow strictly" preamble',
-			);
+			lines.push('- `{{ instructions }}` — instructions JSON as bulleted list with "follow strictly" preamble');
 			lines.push("- `{{ iteration }}` — consecutive steer count (0-indexed)");
 			lines.push("");
 		}
@@ -604,12 +607,23 @@ async function generateForPackage(packageDir) {
 	// Extract monitor vocabulary (for pi-behavior-monitors — from module exports)
 	const monitorVocab = extractMonitorVocabulary(mod);
 	if (monitorVocab) {
-		console.log(`  Monitor vocabulary: ${monitorVocab.collectors.length} collectors, ${monitorVocab.whenConditions.length} conditions`);
+		console.log(
+			`  Monitor vocabulary: ${monitorVocab.collectors.length} collectors, ${monitorVocab.whenConditions.length} conditions`,
+		);
 	}
 
 	// Compose
 	const shortName = packageName.replace("@davidorex/", "");
-	const content = composeSkill(shortName, packageName, description, registrations, resources, narrativeRaw, vocabulary, monitorVocab);
+	const content = composeSkill(
+		shortName,
+		packageName,
+		description,
+		registrations,
+		resources,
+		narrativeRaw,
+		vocabulary,
+		monitorVocab,
+	);
 
 	// Write SKILL.md
 	const skillDir = join(packageDir, "skills", shortName);

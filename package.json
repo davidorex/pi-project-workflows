@@ -19,10 +19,12 @@
 		"version:major": "node scripts/bump-versions.js major",
 		"release:patch": "node scripts/release.mjs patch",
 		"release:minor": "node scripts/release.mjs minor",
-		"release:major": "node scripts/release.mjs major"
+		"release:major": "node scripts/release.mjs major",
+		"prepare": "husky"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.7",
+		"husky": "^9.1.7",
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3"
 	}

@@ -61,10 +61,7 @@ interface MonitorVerdict {
  *   3. pi-behavior-monitors examples (if installed as peer)
  */
 export function findMonitorSpec(monitorName: string, cwd: string): { spec: MonitorSpec; dir: string } | null {
-	const searchDirs = [
-		path.join(cwd, ".pi", "monitors"),
-		path.join(os.homedir(), ".pi", "agent", "monitors"),
-	];
+	const searchDirs = [path.join(cwd, ".pi", "monitors"), path.join(os.homedir(), ".pi", "agent", "monitors")];
 
 	// Also check pi-behavior-monitors examples via node_modules
 	try {
@@ -86,8 +83,7 @@ export function findMonitorSpec(monitorName: string, cwd: string): { spec: Monit
 							model: raw.classify.model ?? "claude-sonnet-4-20250514",
 							context: Array.isArray(raw.classify.context) ? raw.classify.context : [],
 							prompt: raw.classify.prompt ?? "",
-							promptTemplate:
-								typeof raw.classify.promptTemplate === "string" ? raw.classify.promptTemplate : undefined,
+							promptTemplate: typeof raw.classify.promptTemplate === "string" ? raw.classify.promptTemplate : undefined,
 						},
 						patterns: { path: raw.patterns.path },
 						instructions: raw.instructions?.path ? { path: raw.instructions.path } : undefined,
@@ -371,10 +367,7 @@ function parseModelSpec(spec: string): { provider: string; modelId: string } {
  * List all discoverable monitor names for validation.
  */
 export function availableMonitors(cwd: string): string[] {
-	const searchDirs = [
-		path.join(cwd, ".pi", "monitors"),
-		path.join(os.homedir(), ".pi", "agent", "monitors"),
-	];
+	const searchDirs = [path.join(cwd, ".pi", "monitors"), path.join(os.homedir(), ".pi", "agent", "monitors")];
 
 	try {
 		const bmPath = require.resolve("@davidorex/pi-behavior-monitors/package.json", { paths: [cwd] });

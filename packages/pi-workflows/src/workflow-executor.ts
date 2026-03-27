@@ -5,7 +5,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock, writeBlock } from "@davidorex/pi-project/src/block-api.js";
-import type { BlockSnapshot } from "@davidorex/pi-project/src/block-validation.js";
 import {
 	rollbackBlockFiles,
 	snapshotBlockFiles,
@@ -42,15 +41,7 @@ import { executeTransform } from "./step-transform.js";
 import { createTemplateEnv } from "./template.js";
 import type { ProgressWidgetState, StepOutputSummary } from "./tui.js";
 import { createProgressWidget } from "./tui.js";
-import type {
-	AgentSpec,
-	ExecutionState,
-	ExpressionScope,
-	RetryConfig,
-	StepSpec,
-	WorkflowResult,
-	WorkflowSpec,
-} from "./types.js";
+import type { AgentSpec, ExecutionState, ExpressionScope, StepSpec, WorkflowResult, WorkflowSpec } from "./types.js";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
@@ -162,7 +153,7 @@ async function executeSingleStep(
 	state: ExecutionState,
 	options: StepExecOptions,
 ): Promise<boolean> {
-	const { ctx, signal, loadAgent, runDir, spec, widgetState } = options;
+	const { ctx, signal, runDir, widgetState } = options;
 
 	// Check cancellation
 	if (signal?.aborted) {
@@ -277,13 +268,13 @@ async function executeSingleStep(
 		const continueWorkflow = await executeStepByType(stepName, stepSpec, state, scope, options, retryContext);
 
 		// Post-step block validation: if the step succeeded, validate changed project block files
-		let blockValidationFailed = false;
+		let _blockValidationFailed = false;
 		if (continueWorkflow && state.steps[stepName]?.status === "completed") {
 			try {
 				validateChangedBlocks(ctx.cwd, blockSnapshot);
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
-				blockValidationFailed = true;
+				_blockValidationFailed = true;
 				priorErrors.push(msg);
 
 				// Always rollback — invalid data must not persist
@@ -502,8 +493,7 @@ async function executeStepByType(
 
 	// ── Monitor step ──
 	if (stepSpec.monitor) {
-		const resolvedInput =
-			stepSpec.input ? (resolveExpressions(stepSpec.input, scope) as Record<string, unknown>) : {};
+		const resolvedInput = stepSpec.input ? (resolveExpressions(stepSpec.input, scope) as Record<string, unknown>) : {};
 		const resolvedMonitorOutputPath = stepSpec.output?.path
 			? String(resolveExpressions(stepSpec.output.path, scope))
 			: undefined;
@@ -884,7 +874,7 @@ export async function executeWorkflow(
 				content = resolveCompletion(spec.completion, result, input);
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
-				content = formatResult(result) + `\n\nCompletion template error: ${msg}`;
+				content = `${formatResult(result)}\n\nCompletion template error: ${msg}`;
 			}
 		} else {
 			content = formatResult(result);

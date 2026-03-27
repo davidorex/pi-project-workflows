@@ -9,8 +9,8 @@
  * Usage: node scripts/bump-versions.js <major|minor|patch>
  */
 
-import { readdirSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 const BUMP_TYPE = process.argv[2];
 if (!["major", "minor", "patch"].includes(BUMP_TYPE)) {
@@ -42,7 +42,7 @@ for (const dir of packageDirs) {
 	const pkgPath = join(packagesDir, dir, "package.json");
 	const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
 	pkg.version = newVersion;
-	writeFileSync(pkgPath, JSON.stringify(pkg, null, "\t") + "\n");
+	writeFileSync(pkgPath, `${JSON.stringify(pkg, null, "\t")}\n`);
 	console.log(`  ${pkg.name}@${newVersion}`);
 }
 
@@ -74,7 +74,7 @@ for (const dir of packageDirs) {
 	}
 
 	if (updated) {
-		writeFileSync(pkgPath, JSON.stringify(pkg, null, "\t") + "\n");
+		writeFileSync(pkgPath, `${JSON.stringify(pkg, null, "\t")}\n`);
 	}
 }
 

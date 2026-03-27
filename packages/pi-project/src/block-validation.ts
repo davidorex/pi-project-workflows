@@ -147,7 +147,7 @@ export function rollbackBlockFiles(cwd: string, before: BlockSnapshot): string[]
 		} else if (stat.mtimeMs !== prev.mtime) {
 			// Changed file — restore content via atomic write
 			try {
-				const tmpPath = fullPath + `.rollback-${process.pid}.tmp`;
+				const tmpPath = `${fullPath}.rollback-${process.pid}.tmp`;
 				fs.writeFileSync(tmpPath, prev.content);
 				fs.renameSync(tmpPath, fullPath);
 				rolledBack.push(fullPath);

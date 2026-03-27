@@ -5,8 +5,8 @@
  * This ensures lockstep versioning across the monorepo.
  */
 
-import { readdirSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 const packagesDir = join(process.cwd(), "packages");
 const packageDirs = readdirSync(packagesDir, { withFileTypes: true })
@@ -48,7 +48,7 @@ console.log("\n✅ All packages at same version (lockstep)");
 
 // Update all inter-package dependencies (dependencies, peerDependencies, devDependencies)
 let totalUpdates = 0;
-for (const [dir, pkg] of Object.entries(packages)) {
+for (const [_dir, pkg] of Object.entries(packages)) {
 	let updated = false;
 
 	for (const depType of ["dependencies", "peerDependencies", "devDependencies"]) {
@@ -70,7 +70,7 @@ for (const [dir, pkg] of Object.entries(packages)) {
 
 	// Write if updated
 	if (updated) {
-		writeFileSync(pkg.path, JSON.stringify(pkg.data, null, "\t") + "\n");
+		writeFileSync(pkg.path, `${JSON.stringify(pkg.data, null, "\t")}\n`);
 	}
 }
 

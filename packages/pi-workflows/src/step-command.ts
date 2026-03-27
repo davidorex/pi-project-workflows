@@ -24,7 +24,7 @@ export async function executeCommand(
 	const startTime = Date.now();
 	try {
 		const { spawn } = await import("node:child_process");
-		const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+		const { stdout } = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
 			const proc = spawn("sh", ["-c", command], {
 				cwd: options.cwd,
 				stdio: ["ignore", "pipe", "pipe"],

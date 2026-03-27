@@ -45,7 +45,11 @@ export interface CollectorDescriptor {
 export const COLLECTOR_DESCRIPTORS: CollectorDescriptor[] = [
 	{ name: "user_text", description: "Most recent user message text" },
 	{ name: "assistant_text", description: "Most recent assistant message text" },
-	{ name: "tool_results", description: "Tool results with tool name and error status", limits: "Last 5, truncated 2000 chars" },
+	{
+		name: "tool_results",
+		description: "Tool results with tool name and error status",
+		limits: "Last 5, truncated 2000 chars",
+	},
 	{ name: "tool_calls", description: "Tool calls and results interleaved", limits: "Last 20, truncated 2000 chars" },
 	{ name: "custom_messages", description: "Custom extension messages since last user message" },
 	{ name: "project_vision", description: ".project/project.json vision, core_value, name" },
@@ -61,11 +65,27 @@ export interface WhenConditionDescriptor {
 
 export const WHEN_CONDITIONS: WhenConditionDescriptor[] = [
 	{ name: "always", description: "Fire every time the event occurs", parameterized: false },
-	{ name: "has_tool_results", description: "Fire only if tool results present since last user message", parameterized: false },
-	{ name: "has_file_writes", description: "Fire only if write or edit tool called since last user message", parameterized: false },
+	{
+		name: "has_tool_results",
+		description: "Fire only if tool results present since last user message",
+		parameterized: false,
+	},
+	{
+		name: "has_file_writes",
+		description: "Fire only if write or edit tool called since last user message",
+		parameterized: false,
+	},
 	{ name: "has_bash", description: "Fire only if bash tool called since last user message", parameterized: false },
-	{ name: "every(N)", description: "Fire every Nth activation (counter resets when user text changes)", parameterized: true },
-	{ name: "tool(name)", description: "Fire only if specific named tool called since last user message", parameterized: true },
+	{
+		name: "every(N)",
+		description: "Fire every Nth activation (counter resets when user text changes)",
+		parameterized: true,
+	},
+	{
+		name: "tool(name)",
+		description: "Fire only if specific named tool called since last user message",
+		parameterized: true,
+	},
 ];
 
 export const VERDICT_TYPES = ["clean", "flag", "new"] as const;
@@ -560,7 +580,7 @@ function evaluateWhen(monitor: Monitor, branch: SessionEntry[]): boolean {
 
 	const everyMatch = w.match(/^every\((\d+)\)$/);
 	if (everyMatch) {
-		const n = parseInt(everyMatch[1]);
+		const n = parseInt(everyMatch[1], 10);
 		const userText = collectUserText(branch);
 		if (userText !== monitor.lastUserText) {
 			monitor.activationCount = 0;
@@ -609,7 +629,7 @@ function loadInstructions(monitor: Monitor): MonitorInstruction[] {
 function saveInstructions(monitor: Monitor, instructions: MonitorInstruction[]): string | null {
 	const tmpPath = `${monitor.resolvedInstructionsPath}.${process.pid}.tmp`;
 	try {
-		fs.writeFileSync(tmpPath, JSON.stringify(instructions, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, `${JSON.stringify(instructions, null, 2)}\n`);
 		fs.renameSync(tmpPath, monitor.resolvedInstructionsPath);
 		return null;
 	} catch (err) {
@@ -670,14 +690,14 @@ export function parseMonitorsArgs(args: string, knownNames: Set<string>): Monito
 			return { type: "rules-add", name, text };
 		}
 		if (action === "remove") {
-			const n = parseInt(tokens[3]);
-			if (isNaN(n) || n < 1) return { type: "error", message: "Usage: /monitors <name> rules remove <number>" };
+			const n = parseInt(tokens[3], 10);
+			if (Number.isNaN(n) || n < 1) return { type: "error", message: "Usage: /monitors <name> rules remove <number>" };
 			return { type: "rules-remove", name, index: n };
 		}
 		if (action === "replace") {
-			const n = parseInt(tokens[3]);
+			const n = parseInt(tokens[3], 10);
 			const text = tokens.slice(4).join(" ");
-			if (isNaN(n) || n < 1 || !text)
+			if (Number.isNaN(n) || n < 1 || !text)
 				return { type: "error", message: "Usage: /monitors <name> rules replace <number> <text>" };
 			return { type: "rules-replace", name, index: n, text };
 		}
@@ -924,7 +944,7 @@ function learnPattern(monitor: Monitor, description: string): void {
 
 	const tmpPath = `${monitor.resolvedPatternsPath}.${process.pid}.tmp`;
 	try {
-		fs.writeFileSync(tmpPath, JSON.stringify(patterns, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, `${JSON.stringify(patterns, null, 2)}\n`);
 		fs.renameSync(tmpPath, monitor.resolvedPatternsPath);
 	} catch (err) {
 		try {
@@ -990,7 +1010,7 @@ function executeWriteAction(monitor: Monitor, action: MonitorAction, result: Cla
 	const tmpPath = `${filePath}.${process.pid}.tmp`;
 	try {
 		fs.mkdirSync(path.dirname(filePath), { recursive: true });
-		fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2) + "\n");
+		fs.writeFileSync(tmpPath, `${JSON.stringify(data, null, 2)}\n`);
 		fs.renameSync(tmpPath, filePath);
 	} catch (err) {
 		try {
@@ -1024,10 +1044,7 @@ let invokeCtx: ExtensionContext | undefined;
  *   variables alongside the standard collectors. Keys that collide with
  *   collector names override the collector output for this invocation.
  */
-export async function invokeMonitor(
-	name: string,
-	context?: Record<string, string>,
-): Promise<ClassifyResult> {
+export async function invokeMonitor(name: string, context?: Record<string, string>): Promise<ClassifyResult> {
 	const monitor = loadedMonitors.find((m) => m.name === name);
 	if (!monitor) throw new Error(`Monitor "${name}" not found — check .pi/monitors/ or bundled examples`);
 	if (!invokeCtx) throw new Error("Monitor extension not initialized — invokeMonitor requires an active session");
@@ -1217,7 +1234,7 @@ async function activate(
 	updateStatus();
 }
 
-async function escalate(monitor: Monitor, pi: ExtensionAPI, ctx: ExtensionContext): Promise<void> {
+async function escalate(monitor: Monitor, _pi: ExtensionAPI, ctx: ExtensionContext): Promise<void> {
 	if (monitor.escalate === "dismiss") {
 		monitor.dismissed = true;
 		monitor.whileCount = 0;
@@ -1251,7 +1268,11 @@ async function escalate(monitor: Monitor, pi: ExtensionAPI, ctx: ExtensionContex
 // =============================================================================
 
 export default function (pi: ExtensionAPI) {
-	try { syncSkillsToUser(EXTENSION_DIR); } catch { /* non-critical */ }
+	try {
+		syncSkillsToUser(EXTENSION_DIR);
+	} catch {
+		/* non-critical */
+	}
 	const seeded = seedExamples();
 
 	const monitors = discoverMonitors();

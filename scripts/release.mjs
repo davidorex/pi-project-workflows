@@ -15,9 +15,9 @@
  * 8. Push to remote
  */
 
-import { execSync } from "child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { execSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 const BUMP_TYPE = process.argv[2];
 
@@ -30,7 +30,7 @@ function run(cmd, options = {}) {
 	console.log(`$ ${cmd}`);
 	try {
 		return execSync(cmd, { encoding: "utf-8", stdio: options.silent ? "pipe" : "inherit", ...options });
-	} catch (e) {
+	} catch (_e) {
 		if (!options.ignoreError) {
 			console.error(`Command failed: ${cmd}`);
 			process.exit(1);
@@ -88,7 +88,7 @@ console.log("\n=== Release Script ===\n");
 // 1. Check for uncommitted changes
 console.log("Checking for uncommitted changes...");
 const status = run("git status --porcelain", { silent: true });
-if (status && status.trim()) {
+if (status?.trim()) {
 	console.error("Error: Uncommitted changes detected. Commit or stash first.");
 	console.error(status);
 	process.exit(1);

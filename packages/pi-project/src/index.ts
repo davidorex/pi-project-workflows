@@ -285,6 +285,14 @@ const extension = (pi: ExtensionAPI) => {
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
+			// Type.Unknown() params may arrive as JSON strings — parse if needed
+			if (typeof params.item === "string") {
+				try {
+					params.item = JSON.parse(params.item) as Record<string, unknown>;
+				} catch {
+					throw new Error(`item parameter must be a JSON object, got unparseable string`);
+				}
+			}
 			// Duplicate check if item has an id field
 			if (params.item && typeof params.item === "object" && "id" in params.item) {
 				try {

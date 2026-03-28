@@ -25,38 +25,38 @@ steps:
   analyze-structure:
     agent: structure-analyzer
     input:
-      exploration: ${{ steps.explore.textOutput }}
+      exploration: ${{ steps.explore.output }}
       path: ${{ input.path }}
 
   analyze-quality:
     agent: quality-analyzer
     input:
-      exploration: ${{ steps.explore.textOutput }}
+      exploration: ${{ steps.explore.output }}
       path: ${{ input.path }}
 
   analyze-patterns:
     agent: pattern-analyzer
     input:
-      exploration: ${{ steps.explore.textOutput }}
+      exploration: ${{ steps.explore.output }}
       path: ${{ input.path }}
 
   # This step depends on all three analyzers — it must wait for all to complete
   synthesize:
     agent: synthesizer
     input:
-      structure: ${{ steps.analyze-structure.textOutput }}
-      quality: ${{ steps.analyze-quality.textOutput }}
-      patterns: ${{ steps.analyze-patterns.textOutput }}
+      structure: ${{ steps.analyze-structure.output }}
+      quality: ${{ steps.analyze-quality.output }}
+      patterns: ${{ steps.analyze-patterns.output }}
       focus: ${{ input.focus }}
 
 artifacts:
   report:
     path: latest-analysis.md
-    from: steps.synthesize.textOutput
+    from: steps.synthesize.output
 
 completion:
   message: |
     Present this code analysis report to the user. Highlight the most important
     findings and any areas that need immediate attention.
   include:
-    - steps.synthesize.textOutput
+    - steps.synthesize.output

@@ -13,7 +13,7 @@ input:
         file: .project/gaps.json
         array: gaps
         filter: { status: open }
-        label: id
+        label: [id, description]
         value: id
 
 steps:

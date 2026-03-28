@@ -85,7 +85,7 @@ async function promptForInput(
 			// Source-based select: load options from a JSON file
 			const filePath = String(source.file);
 			const arrayField = String(source.array);
-			const labelField = String(source.label || "id");
+			const labelFields = Array.isArray(source.label) ? (source.label as string[]) : [String(source.label || "id")];
 			const valueField = String(source.value || "id");
 			const filter = source.filter as Record<string, unknown> | undefined;
 
@@ -99,12 +99,14 @@ async function promptForInput(
 					ctx.ui.notify(`No items found in ${filePath} matching filter.`, "warning");
 					return null;
 				}
-				const options = items.map((item) => String(item[labelField] ?? ""));
+				const formatLabel = (item: Record<string, unknown>) =>
+					labelFields.map((f) => String(item[f] ?? "")).join(" — ");
+				const options = items.map(formatLabel);
 				const desc = (val?.description as string) || key;
 				const selected = await ctx.ui.select(desc, options);
 				if (selected == null) return null;
 				// Map label back to value
-				const selectedItem = items.find((item) => String(item[labelField]) === selected);
+				const selectedItem = items.find((item) => formatLabel(item) === selected);
 				inputObj[key] = selectedItem ? String(selectedItem[valueField]) : selected;
 			} catch {
 				ctx.ui.notify(`Failed to load options from ${filePath}`, "warning");

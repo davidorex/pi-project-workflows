@@ -1,6 +1,19 @@
 {
 	"private": true,
 	"type": "module",
+	"keywords": [
+		"pi-package"
+	],
+	"pi": {
+		"extensions": [
+			"./packages/pi-project-workflows/project-extension.ts",
+			"./packages/pi-project-workflows/workflows-extension.ts",
+			"./packages/pi-project-workflows/monitors-extension.ts"
+		],
+		"skills": [
+			"./packages/pi-project-workflows/skills"
+		]
+	},
 	"workspaces": [
 		"packages/*"
 	],

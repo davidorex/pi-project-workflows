@@ -246,6 +246,32 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 	if (rawStep.when !== undefined) step.when = rawStep.when as string;
 	if (rawStep.timeout !== undefined) step.timeout = rawStep.timeout as { seconds: number };
 
+	// Display color (optional — must be a valid ThemeColor key)
+	if ("color" in rawStep && rawStep.color !== undefined) {
+		if (typeof rawStep.color !== "string") {
+			throw new WorkflowSpecError(filePath, `step '${stepName}' color must be a string`);
+		}
+		const ALLOWED_STEP_COLORS = [
+			"accent",
+			"success",
+			"error",
+			"warning",
+			"muted",
+			"dim",
+			"text",
+			"border",
+			"borderAccent",
+			"borderMuted",
+		];
+		if (!ALLOWED_STEP_COLORS.includes(rawStep.color)) {
+			throw new WorkflowSpecError(
+				filePath,
+				`step '${stepName}' color '${rawStep.color}' is not valid. Allowed: ${ALLOWED_STEP_COLORS.join(", ")}`,
+			);
+		}
+		step.color = rawStep.color;
+	}
+
 	// Retry config (optional)
 	if ("retry" in rawStep && rawStep.retry !== undefined) {
 		if (typeof rawStep.retry !== "object" || rawStep.retry === null || Array.isArray(rawStep.retry)) {

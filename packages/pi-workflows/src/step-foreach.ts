@@ -6,12 +6,12 @@
 import { resolveExpression, resolveExpressions } from "./expression.js";
 import { persistStepOutput } from "./output.js";
 import { addUsage, zeroUsage } from "./step-shared.js";
-import type { ExecutionState, StepResult, StepSpec } from "./types.js";
+import type { ExecutionState, StepResult, StepSpec, WorkflowContext, WorkflowPI } from "./types.js";
 
 /** Options for forEach execution, matching the StepExecOptions pattern. */
 interface ForEachOptions {
-	ctx: any;
-	pi: any;
+	ctx: WorkflowContext;
+	pi: WorkflowPI;
 	signal?: AbortSignal;
 	loadAgent: (name: string) => any;
 	runDir: string;

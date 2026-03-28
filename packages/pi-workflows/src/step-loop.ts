@@ -9,12 +9,22 @@ import { persistStepOutput } from "./output.js";
 import { executeGate } from "./step-gate.js";
 import { addUsage, buildPrompt, compileAgentSpec, DEFAULT_MAX_ATTEMPTS, zeroUsage } from "./step-shared.js";
 import { executeTransform } from "./step-transform.js";
-import type { AgentSpec, ExecutionState, LoopAttempt, LoopSpec, StepResult, StepSpec, WorkflowSpec } from "./types.js";
+import type {
+	AgentSpec,
+	ExecutionState,
+	LoopAttempt,
+	LoopSpec,
+	StepResult,
+	StepSpec,
+	WorkflowContext,
+	WorkflowPI,
+	WorkflowSpec,
+} from "./types.js";
 
 /** Options for executeLoop, including callback-injected dispatch to avoid circular imports. */
 export interface LoopExecuteOptions {
-	ctx: any;
-	pi: any;
+	ctx: WorkflowContext;
+	pi: WorkflowPI;
 	signal?: AbortSignal;
 	loadAgent: (name: string) => AgentSpec;
 	dispatchAgent: (

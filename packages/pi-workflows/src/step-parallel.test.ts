@@ -35,6 +35,10 @@ function makeParallelOptions(tmpDir: string, overrides?: Partial<ParallelOptions
 			spec: makeSpec({ steps: { a: { agent: "test" }, b: { agent: "test" }, c: { agent: "test" } } }),
 			state: { input: {}, steps: {}, status: "running" },
 			startTime: Date.now(),
+			stepStartTimes: new Map(),
+			activities: new Map(),
+			outputSummaries: new Map(),
+			liveUsage: new Map(),
 		},
 		...overrides,
 	};
@@ -204,6 +208,10 @@ describe("executeParallelLayer", () => {
 			state,
 			startTime: Date.now(),
 			currentStep: undefined as string | undefined,
+			stepStartTimes: new Map(),
+			activities: new Map(),
+			outputSummaries: new Map(),
+			liveUsage: new Map(),
 		};
 		const options = makeParallelOptions(tmpDir, { spec, widgetState });
 

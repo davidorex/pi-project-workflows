@@ -8,12 +8,12 @@ import type { ExecutionLayer } from "./dag.js";
 import { addUsage, WIDGET_ID, zeroUsage } from "./step-shared.js";
 import type { ProgressWidgetState } from "./tui.js";
 import { createProgressWidget } from "./tui.js";
-import type { ExecutionState, StepResult, StepSpec, WorkflowSpec } from "./types.js";
+import type { ExecutionState, StepResult, StepSpec, WorkflowContext, WorkflowPI, WorkflowSpec } from "./types.js";
 
 /** Options shared by parallel execution helpers. */
 export interface ParallelOptions {
-	ctx: any;
-	pi: any;
+	ctx: WorkflowContext;
+	pi: WorkflowPI;
 	signal?: AbortSignal;
 	loadAgent: (name: string) => any;
 	runDir: string;
@@ -62,6 +62,8 @@ export async function executeParallelLayer(
 
 	// Update widget to show all parallel steps as running
 	widgetState.currentStep = layer.steps.join(", ");
+	const now = Date.now();
+	for (const s of layer.steps) widgetState.stepStartTimes.set(s, now);
 	if (ctx.hasUI) {
 		ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
 	}

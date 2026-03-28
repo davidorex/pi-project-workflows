@@ -10,7 +10,7 @@ import { resolveExpressions } from "./expression.js";
 import { persistStepOutput } from "./output.js";
 import { buildPrompt, compileAgentSpec, resolveSchemaPath, zeroUsage } from "./step-shared.js";
 import type { ProgressWidgetState } from "./tui.js";
-import type { AgentSpec, ExecutionState, ExpressionScope, StepResult, StepSpec } from "./types.js";
+import type { AgentSpec, ExecutionState, ExpressionScope, StepResult, StepSpec, WorkflowContext } from "./types.js";
 
 /** Retry context passed from the executor on retry attempts. */
 export interface RetryContext {
@@ -20,7 +20,7 @@ export interface RetryContext {
 }
 
 export interface AgentStepOptions {
-	ctx: any;
+	ctx: WorkflowContext;
 	signal?: AbortSignal;
 	loadAgent: (name: string) => AgentSpec;
 	runDir: string;
@@ -31,6 +31,7 @@ export interface AgentStepOptions {
 	modelConfig?: import("./dispatch.js").ModelConfig;
 	retryContext?: RetryContext; // set on retry attempts (attempt > 1)
 	onStepActivity?: (activity: { tool: string; preview: string; timestamp: number }) => void;
+	onStepUsageUpdate?: (update: { input: number; output: number; cost: number; turns: number }) => void;
 }
 
 /**
@@ -161,6 +162,14 @@ export async function executeAgentStep(
 					tool: event.toolName,
 					preview: event.toolArgs || "",
 					timestamp: Date.now(),
+				});
+			}
+			if (event.type === "message_end" && event.usage && options.onStepUsageUpdate) {
+				options.onStepUsageUpdate({
+					input: event.usage.input ?? 0,
+					output: event.usage.output ?? 0,
+					cost: event.usage.cost ?? 0,
+					turns: 1,
 				});
 			}
 		},

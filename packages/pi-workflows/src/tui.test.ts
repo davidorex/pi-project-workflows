@@ -47,6 +47,10 @@ function makeWidgetState(overrides: Partial<ProgressWidgetState> = {}): Progress
 		spec,
 		state: { input: {}, steps: {}, status: "running" },
 		startTime: Date.now(),
+		stepStartTimes: new Map(),
+		activities: new Map(),
+		outputSummaries: new Map(),
+		liveUsage: new Map(),
 		...overrides,
 	};
 }
@@ -73,7 +77,7 @@ describe("createProgressWidget", () => {
 		component.dispose!();
 
 		assert.ok(lines[0].includes("test-workflow"), "header should include workflow name");
-		assert.ok(lines[0].includes("1/3"), "header should show step 1/3");
+		assert.ok(lines[0].includes("0/3"), "header should show 0/3 (no steps completed yet)");
 	});
 
 	it("renders pending steps with dot indicator", () => {

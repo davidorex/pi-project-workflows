@@ -215,6 +215,10 @@ describe("persistStep", () => {
 			spec: { name: "test", description: "", steps: {}, source: "project" as const, filePath: "" },
 			state,
 			startTime: Date.now(),
+			stepStartTimes: new Map(),
+			activities: new Map(),
+			outputSummaries: new Map(),
+			liveUsage: new Map(),
 		};
 		const ctx = { hasUI: false, ui: { setWidget: () => {}, notify: () => {} } };
 
@@ -238,6 +242,10 @@ describe("persistStep", () => {
 			spec: { name: "test", description: "", steps: {}, source: "project" as const, filePath: "" },
 			state,
 			startTime: Date.now(),
+			stepStartTimes: new Map(),
+			activities: new Map(),
+			outputSummaries: new Map(),
+			liveUsage: new Map(),
 		};
 		const ctx = { hasUI: false, ui: { setWidget: () => {}, notify: () => {} } };
 
@@ -264,6 +272,10 @@ describe("persistStep", () => {
 			spec: { name: "test", description: "", steps: {}, source: "project" as const, filePath: "" },
 			state,
 			startTime: Date.now(),
+			stepStartTimes: new Map(),
+			activities: new Map(),
+			outputSummaries: new Map(),
+			liveUsage: new Map(),
 		};
 		let widgetCalled = false;
 		const ctx = {
@@ -297,6 +309,10 @@ describe("persistStep", () => {
 			spec: { name: "test", description: "", steps: {}, source: "project" as const, filePath: "" },
 			state,
 			startTime: Date.now(),
+			stepStartTimes: new Map(),
+			activities: new Map(),
+			outputSummaries: new Map(),
+			liveUsage: new Map(),
 		};
 		let widgetCalled = false;
 		const ctx = {

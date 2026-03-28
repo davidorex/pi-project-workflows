@@ -13,6 +13,7 @@ import type {
 	ExtensionCommandContext,
 	ExtensionContext,
 } from "@mariozechner/pi-coding-agent";
+import { truncateHead } from "@mariozechner/pi-coding-agent";
 import { Key } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 import { createAgentLoader } from "./agent-spec.js";
@@ -567,7 +568,7 @@ const extension = (pi: ExtensionAPI) => {
 
 			return {
 				details: undefined,
-				content: [{ type: "text", text: JSON.stringify(items, null, 2) }],
+				content: [{ type: "text", text: truncateHead(JSON.stringify(items, null, 2)).content }],
 			};
 		},
 	});
@@ -600,7 +601,7 @@ const extension = (pi: ExtensionAPI) => {
 				}
 				return {
 					details: undefined,
-					content: [{ type: "text", text: JSON.stringify(agent, null, 2) }],
+					content: [{ type: "text", text: truncateHead(JSON.stringify(agent, null, 2)).content }],
 				};
 			}
 
@@ -620,7 +621,7 @@ const extension = (pi: ExtensionAPI) => {
 
 			return {
 				details: undefined,
-				content: [{ type: "text", text: JSON.stringify(items, null, 2) }],
+				content: [{ type: "text", text: truncateHead(JSON.stringify(items, null, 2)).content }],
 			};
 		},
 	});
@@ -651,7 +652,7 @@ const extension = (pi: ExtensionAPI) => {
 
 			return {
 				details: undefined,
-				content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
+				content: [{ type: "text", text: truncateHead(JSON.stringify(results, null, 2)).content }],
 			};
 		},
 	});
@@ -676,7 +677,7 @@ const extension = (pi: ExtensionAPI) => {
 
 			return {
 				details: undefined,
-				content: [{ type: "text", text: JSON.stringify(status, null, 2) }],
+				content: [{ type: "text", text: truncateHead(JSON.stringify(status, null, 2)).content }],
 			};
 		},
 	});
@@ -701,7 +702,7 @@ const extension = (pi: ExtensionAPI) => {
 
 			return {
 				details: undefined,
-				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+				content: [{ type: "text", text: truncateHead(JSON.stringify(result, null, 2)).content }],
 			};
 		},
 	});

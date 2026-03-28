@@ -8,7 +8,7 @@ import { writeState } from "./state.js";
 import { renderTemplate, renderTemplateFile } from "./template.js";
 import type { ProgressWidgetState } from "./tui.js";
 import { createProgressWidget } from "./tui.js";
-import type { AgentSpec, ExecutionState, StepResult, StepUsage } from "./types.js";
+import type { AgentSpec, ExecutionState, StepResult, StepUsage, WorkflowContext } from "./types.js";
 
 /** Grace period (ms) between SIGTERM and SIGKILL when killing subprocesses. */
 export const SIGKILL_GRACE_MS = 3000;
@@ -112,11 +112,12 @@ export function persistStep(
 	result: StepResult,
 	runDir: string,
 	widgetState: ProgressWidgetState,
-	ctx: { hasUI: boolean; ui: { setWidget(id: string, w: unknown): void; notify?(msg: string, level: string): void } },
+	ctx: WorkflowContext,
 ): void {
 	state.steps[stepName] = result;
-	// Clear activity buffer for completed step
+	// Clear activity and live usage buffers for completed step
 	widgetState.activities?.delete(stepName);
+	widgetState.liveUsage?.delete(stepName);
 	try {
 		writeState(runDir, state);
 	} catch (err) {

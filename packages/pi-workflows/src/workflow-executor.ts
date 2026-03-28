@@ -41,7 +41,16 @@ import { executeTransform } from "./step-transform.js";
 import { createTemplateEnv } from "./template.js";
 import type { ProgressWidgetState, StepOutputSummary } from "./tui.js";
 import { createProgressWidget } from "./tui.js";
-import type { AgentSpec, ExecutionState, ExpressionScope, StepSpec, WorkflowResult, WorkflowSpec } from "./types.js";
+import type {
+	AgentSpec,
+	ExecutionState,
+	ExpressionScope,
+	StepSpec,
+	WorkflowContext,
+	WorkflowPI,
+	WorkflowResult,
+	WorkflowSpec,
+} from "./types.js";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
@@ -61,9 +70,9 @@ function clearPauseRequest(): void {
 
 export interface ExecuteOptions {
 	/** pi extension context (for TUI, cwd, etc.) */
-	ctx: any;
+	ctx: WorkflowContext;
 	/** pi extension API (for sendMessage) */
-	pi: any;
+	pi: WorkflowPI;
 	/** AbortSignal for cancellation (e.g. user presses Ctrl+C) */
 	signal?: AbortSignal;
 	/**
@@ -113,8 +122,8 @@ function buildConservativePlan(spec: WorkflowSpec): ExecutionPlan {
 
 /** Options passed to single-step and parallel-layer execution helpers. */
 interface StepExecOptions {
-	ctx: any;
-	pi: any;
+	ctx: WorkflowContext;
+	pi: WorkflowPI;
 	signal?: AbortSignal;
 	loadAgent: (name: string) => AgentSpec;
 	runDir: string;
@@ -244,8 +253,10 @@ async function executeSingleStep(
 
 		// Update widget: mark this step as current
 		widgetState.currentStep = stepName;
+		widgetState.stepStartTimes.set(stepName, Date.now());
 		if (ctx.hasUI) {
 			ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
+			ctx.ui.setStatus("workflow", `${widgetState.spec.name} \u25b8 ${stepName}`);
 		}
 
 		// Build retry context for this attempt (if retrying)
@@ -430,6 +441,10 @@ async function executeStepByType(
 	// ── Gate step ──
 	if (stepSpec.gate) {
 		const resolvedCheck = String(resolveExpressions(stepSpec.gate.check, scope));
+		// Show gate check in widget while running
+		const gatePreview = resolvedCheck.length > 80 ? `${resolvedCheck.slice(0, 77)}...` : resolvedCheck;
+		widgetState.activities.set(stepName, [{ tool: "gate", preview: gatePreview, timestamp: Date.now() }]);
+		if (ctx.hasUI) ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
 		const resolvedGate = { ...stepSpec.gate, check: resolvedCheck };
 		const resolvedGateOutputPath = stepSpec.output?.path
 			? String(resolveExpressions(stepSpec.output.path, scope))
@@ -468,6 +483,10 @@ async function executeStepByType(
 	// ── Command step ──
 	if (stepSpec.command) {
 		const resolvedCommand = String(resolveExpressions(stepSpec.command, scope));
+		// Show command preview in widget while running
+		const cmdPreview = resolvedCommand.length > 80 ? `${resolvedCommand.slice(0, 77)}...` : resolvedCommand;
+		widgetState.activities.set(stepName, [{ tool: "command", preview: cmdPreview, timestamp: Date.now() }]);
+		if (ctx.hasUI) ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
 		const resolvedCommandOutputPath = stepSpec.output?.path
 			? String(resolveExpressions(stepSpec.output.path, scope))
 			: undefined;
@@ -493,13 +512,16 @@ async function executeStepByType(
 
 	// ── Monitor step ──
 	if (stepSpec.monitor) {
+		// Show monitor name in widget while running
+		widgetState.activities.set(stepName, [{ tool: "classify", preview: stepSpec.monitor, timestamp: Date.now() }]);
+		if (ctx.hasUI) ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
 		const resolvedInput = stepSpec.input ? (resolveExpressions(stepSpec.input, scope) as Record<string, unknown>) : {};
 		const resolvedMonitorOutputPath = stepSpec.output?.path
 			? String(resolveExpressions(stepSpec.output.path, scope))
 			: undefined;
 		const monitorResult = await executeMonitor(stepSpec.monitor, stepName, resolvedInput, {
 			cwd: ctx.cwd,
-			ctx,
+			ctx: ctx as import("@mariozechner/pi-coding-agent").ExtensionContext,
 			signal,
 			runDir,
 			outputPath: resolvedMonitorOutputPath,
@@ -592,6 +614,21 @@ async function executeStepByType(
 			if (existing.length >= 5) existing.shift();
 			existing.push(activity);
 			widgetState.activities.set(stepName, existing);
+			// Increment tool count in live usage
+			const liveEntry = widgetState.liveUsage.get(stepName) ?? { input: 0, output: 0, cost: 0, turns: 0, toolCount: 0 };
+			liveEntry.toolCount++;
+			widgetState.liveUsage.set(stepName, liveEntry);
+			if (ctx.hasUI) {
+				ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
+			}
+		},
+		onStepUsageUpdate: (update) => {
+			const existing = widgetState.liveUsage.get(stepName) ?? { input: 0, output: 0, cost: 0, turns: 0, toolCount: 0 };
+			existing.input += update.input;
+			existing.output += update.output;
+			existing.cost += update.cost;
+			existing.turns += update.turns;
+			widgetState.liveUsage.set(stepName, existing);
 			if (ctx.hasUI) {
 				ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
 			}
@@ -666,8 +703,10 @@ export async function executeWorkflow(
 		spec,
 		state,
 		startTime: Date.now(),
+		stepStartTimes: new Map(),
 		activities: new Map(),
 		outputSummaries: new Map(),
+		liveUsage: new Map(),
 	};
 	if (options.resume) {
 		widgetState.resumedSteps = Object.keys(state.steps).filter(
@@ -848,6 +887,7 @@ export async function executeWorkflow(
 	if (ctx.hasUI) {
 		ctx.ui.setWidget(WIDGET_ID, undefined);
 		ctx.ui.setWorkingMessage(undefined);
+		ctx.ui.setStatus("workflow", undefined);
 	}
 
 	// 8. Build and inject result

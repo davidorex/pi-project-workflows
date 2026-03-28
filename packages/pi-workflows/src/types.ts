@@ -45,6 +45,7 @@ export interface StepSpec {
 	command?: string; // shell command to run (captures stdout as output)
 	forEach?: string; // ${{ }} expression resolving to an array
 	as?: string; // variable name to bind each element (default: "item")
+	color?: string; // ThemeColor key for widget display (e.g. "accent", "warning", "success")
 	workflow?: string; // phase 6 — not yet supported
 }
 // Note: exactly one of agent, gate, transform, loop, parallel, monitor, or command must be set.
@@ -194,4 +195,23 @@ export interface CompletionScope {
 	status: "completed" | "failed";
 	output?: unknown;
 	[key: string]: unknown; // allows use as Record<string, unknown>
+}
+
+// ── Workflow execution context (replaces ctx: any / pi: any in internals) ──
+
+/** Minimal extension context surface used by workflow step executors. */
+export interface WorkflowContext {
+	cwd: string;
+	hasUI: boolean;
+	ui: {
+		setWidget(id: string, content: unknown): void;
+		notify(message: string, level: "info" | "warning" | "error"): void;
+		setStatus(key: string, text: string | undefined): void;
+		setWorkingMessage(message?: string): void;
+	};
+}
+
+/** Minimal extension API surface used by workflow internals. */
+export interface WorkflowPI {
+	sendMessage(message: unknown, options?: unknown): void;
 }

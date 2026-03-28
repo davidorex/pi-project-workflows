@@ -48,6 +48,10 @@ function makeOptions(tmpDir: string, overrides?: Partial<AgentStepOptions>): Age
 			spec: { name: "test", description: "", steps: {}, source: "project" as const, filePath: "" },
 			state: { input: {}, steps: {}, status: "running" },
 			startTime: Date.now(),
+			stepStartTimes: new Map(),
+			activities: new Map(),
+			outputSummaries: new Map(),
+			liveUsage: new Map(),
 		},
 		dispatchFn: mockDispatch(),
 		...overrides,
@@ -439,6 +443,10 @@ describe("executeAgentStep", () => {
 				spec: { name: "test", description: "", steps: {}, source: "project" as const, filePath: "" },
 				state: { input: {}, steps: {}, status: "running" },
 				startTime: Date.now(),
+				stepStartTimes: new Map(),
+				activities: new Map(),
+				outputSummaries: new Map(),
+				liveUsage: new Map(),
 			},
 			// dispatchFn intentionally omitted — defaults to real dispatch
 		};

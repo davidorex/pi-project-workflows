@@ -27,18 +27,27 @@ steps:
     input:
       exploration: ${{ steps.explore.output }}
       path: ${{ input.path }}
+    output:
+      format: json
+      schema: ../schemas/structure-analysis.schema.json
 
   analyze-quality:
     agent: quality-analyzer
     input:
       exploration: ${{ steps.explore.output }}
       path: ${{ input.path }}
+    output:
+      format: json
+      schema: ../schemas/quality-analysis.schema.json
 
   analyze-patterns:
     agent: pattern-analyzer
     input:
       exploration: ${{ steps.explore.output }}
       path: ${{ input.path }}
+    output:
+      format: json
+      schema: ../schemas/pattern-analysis.schema.json
 
   # This step depends on all three analyzers — it must wait for all to complete
   synthesize:
@@ -48,6 +57,9 @@ steps:
       quality: ${{ steps.analyze-quality.output }}
       patterns: ${{ steps.analyze-patterns.output }}
       focus: ${{ input.focus }}
+    output:
+      format: json
+      schema: ../schemas/synthesis.schema.json
 
 artifacts:
   report:

@@ -206,6 +206,17 @@ export async function executeAgentStep(
 			result.error = err instanceof Error ? err.message : String(err);
 		}
 	} else {
+		// Auto-parse JSON output when agent or step declares json format (even without schema).
+		// This populates result.output so downstream steps can access structured fields
+		// via ${{ steps.<name>.output.<field> }} instead of getting undefined.
+		const isJsonOutput = stepSpec.output?.format === "json" || agentSpec.outputFormat === "json";
+		if (isJsonOutput && result.status === "completed" && result.textOutput) {
+			try {
+				result.output = JSON.parse(result.textOutput);
+			} catch {
+				/* Not valid JSON — leave output undefined, textOutput still available */
+			}
+		}
 		result.outputPath = persistStepOutput(runDir, stepName, result.output, result.textOutput, resolvedOutputPath);
 	}
 

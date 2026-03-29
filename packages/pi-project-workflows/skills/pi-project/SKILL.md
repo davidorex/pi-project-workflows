@@ -102,8 +102,8 @@ See references/bundled-resources.md for full inventory.
 | Block | Title | Array Key | Item Fields |
 |-------|-------|-----------|-------------|
 | `architecture` | Architecture | `modules` | name, file, responsibility, dependencies? (array), lines? (integer) |
-| `audit` | audit | `checks` | id, description, status (string (pass|fail|warn|skip)), category?, details? |
-| `conformance-reference` | conformance-reference | `principles` | id, name, description?, rules (array) |
+| `audit` | Audit | `checks` | id, description, status (string (pass|fail|warn|skip)), category?, details? |
+| `conformance-reference` | Conformance Reference | `principles` | id, name, description?, rules (array) |
 | `decisions` | Decisions | `decisions` | id, decision, rationale, phase? (string|integer), status (string (decided|tentative|revisit|superseded)), context? |
 | `domain` | Domain Knowledge | `entries` | id, title, content, category (string (research|reference|domain-rule|prior-art|constraint)), source?, confidence? (string (high|medium|low)), related_requirements? (array), tags? (array) |
 | `gaps` | Gaps | `gaps` | id, description, status (string (open|resolved|deferred)), category (string (missing|incomplete|defect|improvement|technical-debt|question)), priority (string (low|medium|high|critical)), phase? (string|integer), resolved_by?, source? (string (human|agent|monitor|workflow)), details? |

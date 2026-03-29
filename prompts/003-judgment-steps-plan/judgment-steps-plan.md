@@ -14,17 +14,12 @@
     - The `context: string[]` field on agent steps inlines prior step `textOutput` as labeled markdown sections — useful for passing narrative context without expression wiring.
     - Existing tests cover the current behavior. Restructured steps must produce equivalent downstream data shapes to avoid breaking expression references in subsequent steps.
   </assumptions>
-  <open_questions>
-    <question id="1">
-      **Monitor vs agent for verification gates**: The plan uses agent steps (not monitor steps) for judgment operations because the judgments require reading code, examining diffs, and producing structured reasoning — not just classifying a text pattern. Monitor steps are binary classifiers optimized for pattern matching. An agent step with the `verifier` role and a targeted prompt is the better fit. If the user prefers monitor gates for any specific step, the plan can be adapted.
-    </question>
-    <question id="2">
-      **fix-audit route-results complexity**: The current `route-results` step performs 4 independent block routing operations in one command step. Restructuring this into validated operations means either: (a) 4 separate block steps with an agent pre-validation step, or (b) a new agent step that reasons about what to route, then block steps that execute the routing. The plan uses option (b) — one agent validates, then block steps write. This increases the step count but makes each step auditable.
-    </question>
-    <question id="3">
-      **Gap resolution description**: The current `do-gap` route step writes `resolved_by: 'do-gap-workflow'` — a static string. The restructured version should capture a substantive resolution description from the verification agent. The agent produces this as part of its judgment output. User should confirm whether the `resolved_by` field should accept freeform text or remain a short identifier.
-    </question>
-  </open_questions>
+  <resolved_constraints>
+    - Agent steps (not monitor steps) for judgment operations — judgments require reading code and producing structured reasoning, not binary pattern classification.
+    - fix-audit route-results: one agent validates the routing manifest, then block steps execute the writes. Agent-then-block pattern.
+    - Gap `resolved_by` field accepts freeform text — the agent's substantive resolution summary.
+    - fix-audit inventory/state updates with incorrect heuristics are removed, not replaced.
+  </resolved_constraints>
 </metadata>
 
 ---
@@ -476,7 +471,7 @@ author:
     inventory: "${{ steps.load-context.output.inventory }}"
 ```
 
-Note: `phases` now references `steps.load-phases.output` (the readDir output is an array). The `gaps` field passes the entire gaps block object (including both open and resolved gaps) — the phase-author template should filter to open gaps. Alternatively, a transform step could filter, but the agent can handle this.
+Note: `phases` now references `steps.load-phases.output` (the readDir output is an array). The `gaps` field passes the entire gaps block object (including both open and resolved gaps) — the phase-author template filters to open gaps.
 
 The `architecture`, `conventions`, and `inventory` fields may be `null` (if the blocks don't exist). The phase-author template already uses Nunjucks conditionals — the template should handle null values gracefully with `{% if architecture %}` guards (which are likely already present or should be added).
 
@@ -1276,24 +1271,9 @@ load-phases:
 
 **Note**: `load-requirements` has no `optional` — missing requirements.json fails the workflow. This is correct: you cannot plan from requirements that don't exist.
 
-The `load-phases` readDir will fail if the `phases` directory doesn't exist. For a first-time plan, this is problematic. Two options:
-
-1. The block step type could treat a missing directory as an empty result for readDir (the plan 2 design says "if the directory does not exist, the step fails"). This would need a design change to plan 2.
-2. Add a prerequisite command step that ensures the phases directory exists before readDir.
-
-**Recommended**: Option 1 — the block step type should be amended to allow readDir to accept an `optional` flag or simply return `[]` when the directory doesn't exist (as distinct from corrupt files in an existing directory). This is a plan 2 amendment, not a plan 3 concern. Until plan 2 is amended, option 2 (command step mkdir) works as a bridge:
+`readDir` returns `[]` for missing directories (Plan 2 design). No bridge step needed.
 
 ```yaml
-ensure-phases-dir:
-  command: |
-    node -e "
-      const fs = require('fs');
-      fs.mkdirSync('.project/phases', { recursive: true });
-      console.log(JSON.stringify({ ensured: true }));
-    "
-  output:
-    format: json
-
 load-phases:
   block:
     readDir: phases
@@ -1451,19 +1431,7 @@ assemble-state:
         git_files: "${{ steps.load-git.output.files_error == null }}"
 ```
 
-**Note on load-phases**: Same consideration as plan-from-requirements — readDir fails if directory doesn't exist. The `ensure-phases-dir` bridge pattern or plan 2 amendment applies here too. Alternatively, since all blocks are optional, a command step that creates the directory first would work:
-
-```yaml
-ensure-dirs:
-  command: |
-    node -e "
-      const fs = require('fs');
-      fs.mkdirSync('.project/phases', { recursive: true });
-      console.log(JSON.stringify({ ensured: true }));
-    "
-  output:
-    format: json
-```
+`readDir` returns `[]` for missing directories (Plan 2 design). No bridge step needed.
 
 #### Impact on downstream `capture` step
 
@@ -1574,7 +1542,7 @@ Net zero. Block steps and transform steps replace a command step with no LLM cos
 
 ## Implementation Ordering
 
-The workflows can be restructured independently — they share no agent specs or schemas. Recommended implementation order based on severity and complexity:
+The workflows can be restructured independently — they share no agent specs or schemas. Implementation order based on severity and complexity:
 
 1. **plan-from-requirements** — highest-severity silent-degradation, simplest fix (block steps only, no new agents)
 2. **create-handoff** — second-highest-severity silent-degradation, moderate complexity (block steps + transform + template update)
@@ -1603,6 +1571,4 @@ load-phases:
     format: json
 ```
 
-When `optional: true`, a missing directory returns `[]`. A directory with corrupt files still fails. This preserves the distinction between "doesn't exist" (possibly normal) and "exists but corrupt" (always an error).
-
-If this amendment is not adopted, the bridge pattern (command step `mkdir -p` before readDir) works for all three workflows.
+`readDir` returns `[]` for missing directories (Plan 2 design). Corrupt files in existing directories fail.

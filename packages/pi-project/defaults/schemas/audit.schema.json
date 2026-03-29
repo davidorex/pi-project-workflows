@@ -1,45 +1,96 @@
 {
 	"type": "object",
-	"required": ["subject", "auditor", "timestamp", "findings", "summary"],
+	"title": "Audit",
+	"description": "Structured results from running conformance checks. Evidence of compliance or violation against the conformance reference. Produced by audit workflows, consumed by fix-audit workflows.",
+	"required": [
+		"subject",
+		"auditor",
+		"timestamp",
+		"findings",
+		"summary"
+	],
 	"properties": {
 		"subject": {
 			"type": "object",
-			"required": ["project", "files"],
+			"required": [
+				"project",
+				"files"
+			],
 			"properties": {
-				"project": { "type": "string" },
+				"project": {
+					"type": "string"
+				},
 				"files": {
 					"type": "array",
-					"items": { "type": "string" }
+					"items": {
+						"type": "string"
+					}
 				},
-				"scope": { "type": "string", "description": "What was audited: 'full', 'entry-point', 'changed-files', etc." }
+				"scope": {
+					"type": "string",
+					"description": "What was audited: 'full', 'entry-point', 'changed-files', etc."
+				}
 			}
 		},
 		"auditor": {
 			"type": "object",
-			"required": ["name"],
+			"required": [
+				"name"
+			],
 			"properties": {
-				"name": { "type": "string" },
-				"version": { "type": "string" },
+				"name": {
+					"type": "string"
+				},
+				"version": {
+					"type": "string"
+				},
 				"type": {
 					"type": "string",
-					"enum": ["tool", "agent", "hybrid"],
+					"enum": [
+						"tool",
+						"agent",
+						"hybrid"
+					],
 					"description": "tool = deterministic linter, agent = LLM analysis, hybrid = both"
 				}
 			}
 		},
-		"timestamp": { "type": "string", "format": "date-time" },
+		"timestamp": {
+			"type": "string",
+			"format": "date-time"
+		},
 		"checks": {
 			"type": "array",
 			"description": "Automated pass/fail checks (deterministic, repeatable)",
 			"items": {
 				"type": "object",
-				"required": ["id", "description", "status"],
+				"required": [
+					"id",
+					"description",
+					"status"
+				],
 				"properties": {
-					"id": { "type": "string" },
-					"description": { "type": "string" },
-					"status": { "type": "string", "enum": ["pass", "fail", "warn", "skip"] },
-					"category": { "type": "string" },
-					"details": { "type": "string" }
+					"id": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"pass",
+							"fail",
+							"warn",
+							"skip"
+						]
+					},
+					"category": {
+						"type": "string"
+					},
+					"details": {
+						"type": "string"
+					}
 				}
 			}
 		},
@@ -47,7 +98,14 @@
 			"type": "array",
 			"items": {
 				"type": "object",
-				"required": ["id", "severity", "principle", "description", "locations", "fix"],
+				"required": [
+					"id",
+					"severity",
+					"principle",
+					"description",
+					"locations",
+					"fix"
+				],
 				"properties": {
 					"id": {
 						"type": "string",
@@ -55,7 +113,11 @@
 					},
 					"severity": {
 						"type": "string",
-						"enum": ["error", "warning", "info"]
+						"enum": [
+							"error",
+							"warning",
+							"info"
+						]
 					},
 					"principle": {
 						"type": "string",
@@ -65,17 +127,26 @@
 						"type": "string",
 						"description": "Grouping key: type-safety, error-signaling, mode-awareness, conventions, etc."
 					},
-					"description": { "type": "string" },
+					"description": {
+						"type": "string"
+					},
 					"locations": {
 						"type": "array",
 						"items": {
 							"type": "object",
-							"required": ["file", "snippet"],
+							"required": [
+								"file",
+								"snippet"
+							],
 							"properties": {
-								"file": { "type": "string" },
+								"file": {
+									"type": "string"
+								},
 								"lines": {
 									"type": "array",
-									"items": { "type": "integer" },
+									"items": {
+										"type": "integer"
+									},
 									"description": "Line numbers (single or range)"
 								},
 								"snippet": {
@@ -87,13 +158,22 @@
 					},
 					"fix": {
 						"type": "object",
-						"required": ["suggestion", "verify_method"],
+						"required": [
+							"suggestion",
+							"verify_method"
+						],
 						"description": "How to fix and how to verify the fix",
 						"properties": {
-							"suggestion": { "type": "string" },
+							"suggestion": {
+								"type": "string"
+							},
 							"verify_method": {
 								"type": "string",
-								"enum": ["command", "grep", "inspect"],
+								"enum": [
+									"command",
+									"grep",
+									"inspect"
+								],
 								"description": "How to verify the fix was applied correctly"
 							},
 							"verify_command": {
@@ -107,18 +187,40 @@
 						},
 						"allOf": [
 							{
-								"if": { "properties": { "verify_method": { "const": "command" } } },
-								"then": { "required": ["verify_command"] }
+								"if": {
+									"properties": {
+										"verify_method": {
+											"const": "command"
+										}
+									}
+								},
+								"then": {
+									"required": [
+										"verify_command"
+									]
+								}
 							},
 							{
-								"if": { "properties": { "verify_method": { "const": "grep" } } },
-								"then": { "required": ["verify_pattern"] }
+								"if": {
+									"properties": {
+										"verify_method": {
+											"const": "grep"
+										}
+									}
+								},
+								"then": {
+									"required": [
+										"verify_pattern"
+									]
+								}
 							}
 						]
 					},
 					"related": {
 						"type": "array",
-						"items": { "type": "string" },
+						"items": {
+							"type": "string"
+						},
 						"description": "IDs of related findings (same root cause, same fix)"
 					}
 				}
@@ -126,12 +228,25 @@
 		},
 		"summary": {
 			"type": "object",
-			"required": ["errors", "warnings", "infos"],
+			"required": [
+				"errors",
+				"warnings",
+				"infos"
+			],
 			"properties": {
-				"errors": { "type": "integer" },
-				"warnings": { "type": "integer" },
-				"infos": { "type": "integer" },
-				"pass_rate": { "type": "string", "description": "Checks pass rate: N/M format" }
+				"errors": {
+					"type": "integer"
+				},
+				"warnings": {
+					"type": "integer"
+				},
+				"infos": {
+					"type": "integer"
+				},
+				"pass_rate": {
+					"type": "string",
+					"description": "Checks pass rate: N/M format"
+				}
 			}
 		}
 	}

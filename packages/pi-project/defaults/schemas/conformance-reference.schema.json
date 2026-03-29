@@ -1,6 +1,12 @@
 {
 	"type": "object",
-	"required": ["name", "scope", "principles"],
+	"title": "Conformance Reference",
+	"description": "Executable code conventions with check methods and patterns. The standards that implementation must comply with. Used by audit workflows to verify conformance and by agents as constraints during code generation.",
+	"required": [
+		"name",
+		"scope",
+		"principles"
+	],
 	"properties": {
 		"name": {
 			"type": "string",
@@ -8,7 +14,9 @@
 		},
 		"scope": {
 			"type": "object",
-			"required": ["type"],
+			"required": [
+				"type"
+			],
 			"properties": {
 				"type": {
 					"type": "string",
@@ -20,7 +28,9 @@
 				},
 				"sources": {
 					"type": "array",
-					"items": { "type": "string" },
+					"items": {
+						"type": "string"
+					},
 					"description": "Where these principles come from: docs, style guides, SDK, examples"
 				}
 			}
@@ -29,20 +39,31 @@
 			"type": "array",
 			"items": {
 				"type": "object",
-				"required": ["id", "name", "rules"],
+				"required": [
+					"id",
+					"name",
+					"rules"
+				],
 				"properties": {
 					"id": {
 						"type": "string",
 						"description": "Stable identifier: P1, P2, type-safety, error-handling, etc."
 					},
-					"name": { "type": "string" },
-					"description": { "type": "string" },
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
 					"rules": {
 						"type": "array",
 						"description": "Concrete, checkable rules under this principle",
 						"items": {
 							"type": "object",
-							"required": ["id", "rule"],
+							"required": [
+								"id",
+								"rule"
+							],
 							"properties": {
 								"id": {
 									"type": "string",
@@ -54,7 +75,12 @@
 								},
 								"check_method": {
 									"type": "string",
-									"enum": ["grep", "command", "ast", "inspect"],
+									"enum": [
+										"grep",
+										"command",
+										"ast",
+										"inspect"
+									],
 									"description": "How to verify compliance: grep (pattern match), command (run tool), ast (parse tree), inspect (LLM judgment)"
 								},
 								"check_pattern": {
@@ -63,17 +89,25 @@
 								},
 								"examples": {
 									"type": "array",
-									"items": { "type": "string" },
+									"items": {
+										"type": "string"
+									},
 									"description": "Correct usage examples (code snippets or references)"
 								},
 								"anti_patterns": {
 									"type": "array",
-									"items": { "type": "string" },
+									"items": {
+										"type": "string"
+									},
 									"description": "What violates this rule"
 								},
 								"severity": {
 									"type": "string",
-									"enum": ["error", "warning", "info"],
+									"enum": [
+										"error",
+										"warning",
+										"info"
+									],
 									"description": "Default severity when this rule is violated"
 								}
 							}

@@ -1,68 +1,93 @@
 # Block Step Type — Plan Summary
 
-**One-liner**: An in-process step type that calls the block API directly for validated, atomic .project/ I/O — replacing raw fs operations with schema-checked, explicitly-failing block reads and writes.
+**One-liner:** In-process `block` step type that reads/writes `.project/` files through the block API, replacing command-step `node -e` subprocesses for mechanical block I/O.
 
-## YAML Syntax Overview
+## YAML Syntax Reference
 
 ```yaml
-# Read single block (fails if missing)
-load: { block: { read: gaps }, output: { format: json } }
+# Read one or more blocks
+step-name:
+  block:
+    read:
+      - gaps                              # required — fails if missing
+      - { name: architecture, optional: true }  # optional — null if missing
 
-# Read multiple blocks (optional ones produce null, required ones fail)
-load: { block: { read: [arch, gaps], optional: [arch] }, output: { format: json } }
+# Read all .json files from a .project/ subdirectory
+step-name:
+  block:
+    readDir: phases                        # returns [] for missing dir
 
-# Read directory (.project/phases/*.json → sorted array)
-load: { block: { readDir: phases }, output: { format: json } }
+# Write a top-level block (schema validated, atomic)
+step-name:
+  block:
+    write:
+      name: gaps
+      data: "${{ steps.transform.output }}"
 
-# Write with schema validation + atomic write
-save: { block: { write: { name: tasks, data: "${{ steps.plan.output }}" } } }
+# Write to a subdirectory (schema from name, path from path/filename)
+step-name:
+  block:
+    write:
+      name: phase
+      path: phases
+      filename: "${{ output.number | padStart(2, '0') }}-${{ output.name | slugify }}"
+      data: "${{ steps.author.output }}"
 
-# Write to subdirectory path
-save: { block: { write: { name: phase, data: "${{ ... }}", path: "phases/01-name" } } }
+# Append item to array within a block
+step-name:
+  block:
+    append:
+      name: gaps
+      arrayKey: gaps
+      item: "${{ steps.create.output }}"
 
-# Append to block array
-add: { block: { append: { name: gaps, key: gaps, item: "${{ ... }}" } } }
-
-# Update item in block array
-fix: { block: { update: { name: gaps, key: gaps, match: { id: g1 }, set: { status: resolved } } } }
+# Update item by predicate match
+step-name:
+  block:
+    update:
+      name: gaps
+      arrayKey: gaps
+      match: { id: "${{ input.gap_id }}" }
+      set: { status: resolved, resolved_by: do-gap-workflow }
 ```
 
-## Phase Breakdown
+## Phases
 
-| Phase | Scope | Effort |
-|-------|-------|--------|
-| 1. Type definitions + STEP_TYPES registration | types.ts, workflow-spec.ts | Small |
-| 2. Step executor implementation | New step-block.ts | Medium |
-| 3. Executor dispatch integration | workflow-executor.ts | Small |
-| 4. Tests | New step-block.test.ts | Medium |
-| 5. Workflow migrations (5 steps) | 3 workflow YAML files | Medium |
-| 6. SDK + validation integration | workflow-sdk.ts | Small |
-| 7. Skills regeneration + release | Build artifacts | Small |
+| # | Phase | Files | Tasks |
+|---|-------|-------|-------|
+| 1 | Types + Registry | `types.ts`, `workflow-spec.ts` | `BlockSpec` types, `STEP_TYPES` entry, `validateStep` parsing |
+| 2 | Step Executor | `step-block.ts` (new), `workflow-executor.ts` | Executor module, `executeStepByType` dispatch, `isRetryableStepType` |
+| 3 | Expression Filters | `expression.ts` | `find(key, value)`, `padStart(len, fill)`, `slugify`, filter argument syntax |
+| 4 | SDK + Validation | `workflow-sdk.ts` | Block operation validation in `validateWorkflow` |
+| 5 | Tests | `step-block.test.ts` (new), `workflow-spec.test.ts`, `expression.test.ts` | Read/write/append/update tests, parsing tests, filter tests |
+| 6 | Workflow Migrations | 3 workflow YAML files | 5 command steps → block steps |
+| 7 | Completion Updates | 3 workflow YAML files | Fix step output references broken by migrations |
+| 8 | Skills Regen | Generated files | `npm run skills` |
 
-## Migration Scope — 5 Mechanical Command Steps
+## Migrations
 
-| Workflow | Step | Current | After |
-|----------|------|---------|-------|
-| do-gap | `load` | fs.readFileSync + find/filter | `block: { read: gaps }` + transform |
-| gap-to-phase | `load-gap` | fs.readFileSync + find/filter | `block: { read: gaps }` + transform |
-| gap-to-phase | `load-context` | 5x readFileSync with catch {} | `block: { readDir: phases }` + `block: { read: [...] }` |
-| gap-to-phase | `write-phase` | mkdir + writeFileSync | `block: { write: { name: phase, path: "phases/..." } }` |
-| create-phase | `write-phase` | mkdir + writeFileSync | `block: { write: { name: phase, path: "phases/..." } }` |
+| Workflow | Step | Operation | Notes |
+|----------|------|-----------|-------|
+| `do-gap` | `load` | `block: { read: [gaps] }` + transform + gates | Expands to 4 steps (read, extract via `find`, validate existence, validate status) |
+| `gap-to-phase` | `load-gap` | `block: { read: [gaps] }` + transform + gates | Same pattern as do-gap load |
+| `gap-to-phase` | `load-context` | `block: { read: [..., optional] }` + `block: { readDir: phases }` + transform | Replaces silent-degradation try/catch pattern with optional reads |
+| `gap-to-phase` | `write-phase` | `block: { write: { name: phase, path: phases, filename: "...", data: "..." } }` | Gains schema validation + atomic write |
+| `create-phase` | `load-context` + `write-phase` | Same patterns as gap-to-phase | Identical migration shape |
 
-Additionally, `create-phase` `load-context` follows the same pattern as `gap-to-phase` `load-context` and migrates identically.
+## New Expression Filters
 
-## Decisions Embedded in Plan
+| Filter | Syntax | Purpose |
+|--------|--------|---------|
+| `find` | `${{ arr \| find('key', value) }}` | Find first array item matching field/value |
+| `padStart` | `${{ val \| padStart(2, '0') }}` | Pad string to length with fill character |
+| `slugify` | `${{ val \| slugify }}` | Lowercase kebab-case conversion |
 
-1. **readDir on missing directory returns `[]`** — on-demand subdirectories (.project/phases/) may not exist yet. Corrupt files within existing directories still fail explicitly.
-2. **`optional` field for multi-block read** — required blocks fail, optional ones produce `null`. The YAML makes the choice visible.
-3. **Subdirectory write via `path` override** — schema resolved from `name`, file written to `path`. Avoids modifying the block API for phase file patterns.
-4. **Synchronous execution** — like transform, no async needed. All block API operations are synchronous.
+Filter argument syntax `filterName(arg1, arg2)` is new — existing filters continue to work without arguments.
 
-## Decisions Needed
+## Blockers
 
-1. **Expression filters** (`find`, `filter`, `padStart`, `slugify`): Needed for concise migration YAML. Without them, transform steps serve as shims. Recommend implementing as a companion change — they benefit workflows beyond these 5 migrations.
-2. **load + filter split vs. hybrid command**: Migrations 1-2 (do-gap `load`, gap-to-phase `load-gap`) can split into block read + transform, or use block read + smaller command step (no disk I/O, just in-memory filter). The split is cleaner but requires the `find` expression filter. Plan shows both options.
+None. Plan 1 (dep alignment) is the prerequisite and is assumed complete.
 
 ## Next Step
 
-Plan 3: Judgment step restructuring — addresses the 6 `judgment-as-assumption` command steps (verify, route, cluster, route-results, update-audit) that require LLM evaluation rather than mechanical block I/O. The block step type handles data loading/writing portions; Plan 3 handles the semantic judgment portions.
+Execute this plan. Phase 1 (types + registry) and Phase 3 (expression filters) can run in parallel as neither depends on the other. All other phases have sequential dependencies as shown in the plan's execution order table.

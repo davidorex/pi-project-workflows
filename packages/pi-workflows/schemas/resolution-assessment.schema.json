@@ -1,0 +1,36 @@
+{
+	"type": "object",
+	"required": ["resolved", "verdict", "resolution_summary", "evidence"],
+	"properties": {
+		"resolved": {
+			"type": "boolean",
+			"description": "true if the implementation addresses the gap's described root cause"
+		},
+		"verdict": {
+			"type": "string",
+			"enum": ["resolved", "partially_resolved", "not_resolved", "checks_failed"],
+			"description": "Categorical verdict"
+		},
+		"resolution_summary": {
+			"type": "string",
+			"description": "What was done and why it addresses (or fails to address) the gap — references specific changes"
+		},
+		"evidence": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["claim", "source"],
+				"properties": {
+					"claim": { "type": "string" },
+					"source": { "type": "string", "description": "File path, diff, or test output supporting the claim" }
+				}
+			},
+			"description": "Observable evidence supporting the verdict"
+		},
+		"unresolved_aspects": {
+			"type": "array",
+			"items": { "type": "string" },
+			"description": "Specific aspects of the gap that remain unaddressed (empty if fully resolved)"
+		}
+	}
+}

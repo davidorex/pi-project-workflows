@@ -1,0 +1,38 @@
+{
+	"type": "object",
+	"required": ["decisions", "new_gaps", "summary"],
+	"properties": {
+		"decisions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "description", "rationale"],
+				"properties": {
+					"id": { "type": "string" },
+					"description": { "type": "string" },
+					"rationale": { "type": "string" },
+					"phase": { "type": "string" }
+				}
+			}
+		},
+		"new_gaps": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "description", "status", "priority"],
+				"properties": {
+					"id": { "type": "string" },
+					"description": { "type": "string" },
+					"status": { "type": "string", "enum": ["open"] },
+					"category": { "type": "string" },
+					"priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+					"source": { "type": "string" }
+				}
+			}
+		},
+		"summary": {
+			"type": "string",
+			"description": "Accurate summary of the audit fix results — what was completed, what failed, what needs inspection"
+		}
+	}
+}

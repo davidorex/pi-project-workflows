@@ -8,6 +8,7 @@
 - Phase {{ phase.number }}: {{ phase.name }} ({{ phase.status }})
 {% endfor %}
 
+{% if architecture and architecture.modules %}
 ## Current Architecture
 
 {% for module in architecture.modules %}
@@ -20,13 +21,17 @@
 {{ loop.index }}. **{{ stage.stage }}**: {{ stage.description }}
 {% endfor %}
 {% endif %}
+{% endif %}
 
+{% if conventions and conventions.rules %}
 ## Conventions
 
 {% for rule in conventions.rules %}
 - {{ rule.id }}: {{ rule.description }} ({{ rule.enforcement }})
 {% endfor %}
+{% endif %}
 
+{% if gaps %}
 ## Current Gaps
 
 {% for gap in gaps %}
@@ -34,13 +39,16 @@
 - [{{ gap.priority }}] {{ gap.id }}: {{ gap.description }}
 {% endif %}
 {% endfor %}
+{% endif %}
 
+{% if inventory %}
 ## Current Inventory
 
 - Step types: {{ inventory.step_types | length }}
 - Agent specs: {{ inventory.agent_specs | length }}
 - Schemas: {{ inventory.schemas | length }}
 - Tests: {{ inventory.test_count }}
+{% endif %}
 
 ## Instructions
 

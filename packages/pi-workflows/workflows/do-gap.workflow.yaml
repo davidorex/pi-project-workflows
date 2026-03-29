@@ -79,7 +79,7 @@ steps:
       format: json
       schema: ../schemas/execution-results.schema.json
 
-  verify:
+  run-checks:
     command: |
       node --experimental-strip-types -e "
         import fs from 'fs';
@@ -105,7 +105,9 @@ steps:
               if (stderr.includes('error')) errors.push('Lint errors in ' + f);
             }
           }
-        } catch {}
+        } catch (e) {
+          errors.push('Could not determine changed files: ' + (e.message || 'unknown'));
+        }
 
         // Validate blocks (JSON parsability)
         try {
@@ -120,7 +122,9 @@ steps:
               }
             }
           }
-        } catch {}
+        } catch (e) {
+          errors.push('Block validation error: ' + (e.message || 'unknown'));
+        }
 
         const passed = errors.length === 0;
         console.log(JSON.stringify({ status: passed ? 'passed' : 'failed', errors, passed }));
@@ -128,33 +132,44 @@ steps:
     output:
       format: json
 
+  assess-resolution:
+    when: "${{ steps.run-checks.output.passed }}"
+    agent: gap-resolution-assessor
+    input:
+      gap: "${{ steps.load.output.gap }}"
+      investigation: "${{ steps.investigate.output }}"
+      implementation_results: "${{ steps.implement.output }}"
+      check_results: "${{ steps.run-checks.output }}"
+    context: [implement]
+    output:
+      format: json
+      schema: ../schemas/resolution-assessment.schema.json
+
   route:
-    when: "${{ steps.verify.output.passed }}"
-    command: |
-      node --experimental-strip-types -e "
-        import fs from 'fs';
-        const gapId = process.argv[1];
-        const gapsPath = '.project/gaps.json';
-        const data = JSON.parse(fs.readFileSync(gapsPath, 'utf8'));
-        const gap = data.gaps.find(g => g.id === gapId);
-        if (!gap) { console.error('Gap not found: ' + gapId); process.exit(1); }
-        Object.assign(gap, { status: 'resolved', resolved_by: 'do-gap-workflow' });
-        fs.writeFileSync(gapsPath, JSON.stringify(data, null, 2) + '\n');
-        console.log(JSON.stringify({ routed: true, gap_id: gapId, status: 'resolved' }));
-      " '${{ input.gap_id }}'
+    when: "${{ steps.assess-resolution.output.resolved }}"
+    block:
+      update:
+        name: gaps
+        key: gaps
+        match:
+          id: "${{ input.gap_id }}"
+        set:
+          status: resolved
+          resolved_by: "${{ steps.assess-resolution.output.resolution_summary }}"
     output:
       format: json
 
   check:
-    when: "${{ steps.route.output.routed }}"
+    when: "${{ steps.route.output.updated }}"
     gate:
-      check: "test '${{ steps.verify.output.status }}' = 'passed'"
+      check: "test '${{ steps.assess-resolution.output.resolved }}' = 'true'"
       onFail: fail
 
 completion:
   message: |
-    Gap ${{ input.gap_id }} — ${{ steps.verify.output.status }}
+    Gap ${{ input.gap_id }} — ${{ steps.assess-resolution.output.verdict }}
     Investigation complexity: ${{ steps.investigate.output.complexity }}
     Specs implemented: ${{ steps.decompose.output.specs | length }}
+    Resolution: ${{ steps.assess-resolution.output.resolution_summary }}
   include:
-    - steps.verify.output
+    - steps.assess-resolution.output

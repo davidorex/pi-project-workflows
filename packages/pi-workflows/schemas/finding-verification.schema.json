@@ -1,0 +1,34 @@
+{
+	"type": "object",
+	"required": ["status", "score", "findings"],
+	"properties": {
+		"status": {
+			"type": "string",
+			"enum": ["passed", "passed_with_inspect", "gaps_found"],
+			"description": "Overall verification status"
+		},
+		"score": {
+			"type": "string",
+			"description": "Score in N/M format (passed/total)"
+		},
+		"findings": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "status"],
+				"properties": {
+					"id": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["passed", "failed", "needs_inspect"]
+					},
+					"evidence": { "type": "string", "description": "Specific code observation supporting the verdict" },
+					"reason": { "type": "string", "description": "Why the finding is or is not resolved" }
+				}
+			}
+		},
+		"passed": { "type": "integer" },
+		"failed": { "type": "integer" },
+		"needs_inspect": { "type": "integer" }
+	}
+}

@@ -2,27 +2,37 @@ Capture a handoff snapshot for the project at `{{ path }}`.
 
 ## Current Project State
 
-{% if project_state.project is defined %}
+{% if project_state.blocks_status %}
+### Block Availability
+
+| Block | Available |
+|-------|-----------|
+{% for name, available in project_state.blocks_status %}
+| {{ name }} | {{ "yes" if available else "NO — absent" }} |
+{% endfor %}
+{% endif %}
+
+{% if project_state.project %}
 ### Project
 **{{ project_state.project.name | default("unnamed") }}** — {{ project_state.project.description | default("no description") }}
 Status: {{ project_state.project.status | default("unknown") }}
 {% endif %}
 
-{% if project_state.phases is defined and project_state.phases | length > 0 %}
+{% if project_state.phases and project_state.phases | length > 0 %}
 ### Phases
 {% for phase in project_state.phases %}
 - Phase {{ phase.number | default(loop.index) }}: {{ phase.name | default("unnamed") }} ({{ phase.status | default("unknown") }})
 {% endfor %}
 {% endif %}
 
-{% if project_state.blockSummaries is defined %}
+{% if project_state.blockSummaries %}
 ### Block Summaries
 {% for block in project_state.blockSummaries %}
 - **{{ block.name }}**: {{ block.count | default("?") }} entries
 {% endfor %}
 {% endif %}
 
-{% if project_state.gaps is defined %}
+{% if project_state.gaps %}
 ### Open Gaps
 {% for gap in project_state.gaps %}
 {% if gap.status == "open" %}
@@ -31,14 +41,14 @@ Status: {{ project_state.project.status | default("unknown") }}
 {% endfor %}
 {% endif %}
 
-{% if project_state.decisions is defined %}
+{% if project_state.decisions %}
 ### Recent Decisions
 {% for decision in project_state.decisions %}
 - {{ decision.id | default("?") }}: {{ decision.description | default(decision.title | default("no description")) }}
 {% endfor %}
 {% endif %}
 
-{% if project_state.recentCommits is defined %}
+{% if project_state.recentCommits %}
 ### Recent Commits
 {% for commit in project_state.recentCommits %}
 - `{{ commit.sha | default("?") | truncate(7, true, "") }}` {{ commit.message | default("no message") }}

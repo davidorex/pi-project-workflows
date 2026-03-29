@@ -1,4 +1,6 @@
 {
+	"title": "Conformance Reference",
+	"description": "Executable code conventions with check methods and patterns. The standards that implementation must comply with. Used by audit workflows to verify conformance and by agents as constraints during code generation.",
 	"type": "object",
 	"required": ["name", "scope", "principles"],
 	"properties": {

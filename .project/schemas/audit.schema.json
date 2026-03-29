@@ -1,4 +1,6 @@
 {
+	"title": "Audit",
+	"description": "Structured results from running conformance checks. Evidence of compliance or violation against the conformance reference. Produced by audit workflows, consumed by fix-audit workflows.",
 	"type": "object",
 	"required": ["subject", "auditor", "timestamp", "findings", "summary"],
 	"properties": {

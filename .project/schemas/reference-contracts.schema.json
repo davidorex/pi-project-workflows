@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Reference Contracts",
+	"description": "External API contracts and interface specifications the project depends on or must conform to. Source documentation for types, methods, and protocols from upstream dependencies.",
 	"type": "object",
 	"required": ["source", "description", "contracts"],
 	"properties": {

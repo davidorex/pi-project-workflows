@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Project State",
+	"description": "Current execution state of the project lifecycle. Tracks which phase and spec are active, test count, and recent todos. Mutable checkpoint — updated as work progresses.",
 	"type": "object",
 	"required": ["current_phase", "current_spec", "test_count"],
 	"properties": {

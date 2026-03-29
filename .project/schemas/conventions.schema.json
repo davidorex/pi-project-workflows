@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Conventions",
+	"description": "Code and process conventions the project follows. Rules with enforcement methods (lint, review, test) that agents must comply with when writing code. Injected into agent prompts as constraints.",
 	"type": "object",
 	"required": ["rules"],
 	"properties": {

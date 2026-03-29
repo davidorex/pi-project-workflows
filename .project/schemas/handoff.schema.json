@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Handoff",
+	"description": "Session context snapshot. What was in progress, what the agent was thinking, what is next. Ephemeral by design — written on demand, consumed on resume. Enables continuity across agent sessions.",
 	"type": "object",
 	"required": ["context", "timestamp"],
 	"properties": {

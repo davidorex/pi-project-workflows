@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Decisions",
+	"description": "Choices made and why. Architectural, technical, and process choices with rationale and status (decided, tentative, revisit). The record of deliberate selection between alternatives. Decisions say what was chosen.",
 	"type": "object",
 	"required": ["decisions"],
 	"properties": {

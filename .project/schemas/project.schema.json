@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Project Identity",
+	"description": "Identity and scope. What this project is, what it aims to do, what is in and out of scope. The anchor all other blocks reference. Contains name, vision, core value proposition, goals with success criteria, constraints, and current status.",
 	"type": "object",
 	"required": ["name", "description", "core_value"],
 	"properties": {

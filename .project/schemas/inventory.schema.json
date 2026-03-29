@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Inventory",
+	"description": "Quantitative snapshot of the project's technical assets. Test counts, step types, agent specs, schemas, demo workflows. Used by planning agents to understand the scale and scope of what exists.",
 	"type": "object",
 	"required": ["test_count", "step_types", "agent_specs", "schemas", "demo_workflows"],
 	"properties": {

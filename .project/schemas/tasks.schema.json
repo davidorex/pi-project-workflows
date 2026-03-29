@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Tasks",
+	"description": "Discrete units of work with status lifecycle (planned, in-progress, completed, blocked, cancelled) and phase linkage. The operational layer between gaps/requirements and code changes.",
 	"type": "object",
 	"required": ["tasks"],
 	"properties": {

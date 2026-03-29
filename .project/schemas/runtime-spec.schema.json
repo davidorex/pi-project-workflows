@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Runtime Spec",
+	"description": "Specification of the runtime execution model. Step types, expression syntax, dispatch protocol, state management, TUI behavior, and completion semantics. The behavioral contract for how workflows execute.",
 	"type": "object",
 	"required": ["step_types", "expression_syntax", "dispatch_protocol", "state_management", "tui", "completion"],
 	"properties": {

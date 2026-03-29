@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Design Rationale",
+	"description": "The deeper reasoning behind decisions. Why this approach over others, what constraints drove the choice, what tradeoffs were accepted. Cross-references decisions. Decisions say we chose X. Rationale says because Y, given Z.",
 	"type": "object",
 	"required": ["rationales"],
 	"properties": {

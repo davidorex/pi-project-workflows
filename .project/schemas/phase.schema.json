@@ -1,6 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Phase",
+	"description": "A unit of planned implementation work. Contains intent, success criteria, specs (decomposed work items), status lifecycle (planned, in-progress, completed), and dependency tracking. Phases live in .project/phases/ as individual files.",
 	"type": "object",
 	"required": ["number", "name", "intent", "status"],
 	"properties": {

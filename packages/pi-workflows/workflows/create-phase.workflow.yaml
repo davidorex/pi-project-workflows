@@ -11,28 +11,16 @@ input:
       description: Unstructured intent from conversation — what needs to be built and why
 
 steps:
+  load-phases:
+    block:
+      readDir: phases
+    output:
+      format: json
+
   load-context:
-    command: |
-      node --experimental-strip-types -e "
-        import fs from 'fs';
-        import path from 'path';
-        const phasesDir = '.project/phases';
-        let phases = [];
-        try {
-          phases = fs.readdirSync(phasesDir)
-            .filter(f => f.endsWith('.json'))
-            .map(f => JSON.parse(fs.readFileSync(path.join(phasesDir, f), 'utf8')));
-        } catch {}
-        let arch = {};
-        try { arch = JSON.parse(fs.readFileSync('.project/architecture.json', 'utf8')); } catch {}
-        let conv = {};
-        try { conv = JSON.parse(fs.readFileSync('.project/conventions.json', 'utf8')); } catch {}
-        let gapsData = { gaps: [] };
-        try { gapsData = JSON.parse(fs.readFileSync('.project/gaps.json', 'utf8')); } catch {}
-        let inv = {};
-        try { inv = JSON.parse(fs.readFileSync('.project/inventory.json', 'utf8')); } catch {}
-        console.log(JSON.stringify({ phases, architecture: arch, conventions: conv, gaps: gapsData.gaps, inventory: inv }));
-      "
+    block:
+      read: [architecture, conventions, gaps, inventory]
+      optional: [architecture, conventions, gaps, inventory]
     output:
       format: json
 
@@ -40,32 +28,39 @@ steps:
     agent: phase-author
     input:
       intent: "${{ input.intent }}"
-      phases: "${{ steps.load-context.output.phases }}"
+      phases: "${{ steps.load-phases.output }}"
       architecture: "${{ steps.load-context.output.architecture }}"
       conventions: "${{ steps.load-context.output.conventions }}"
-      gaps: "${{ steps.load-context.output.gaps }}"
+      gaps: "${{ steps.load-context.output.gaps.gaps }}"
       inventory: "${{ steps.load-context.output.inventory }}"
     output:
       format: json
       schema: block:phase
 
-  write-phase:
+  compute-phase-path:
     command: |
-      node --experimental-strip-types -e "
-        import fs from 'fs';
+      node -e "
         const phase = JSON.parse(process.argv[1]);
-        const filename = '.project/phases/' + String(phase.number).padStart(2, '0') + '-' + phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '') + '.json';
-        fs.mkdirSync('.project/phases', { recursive: true });
-        fs.writeFileSync(filename, JSON.stringify(phase, null, 2) + '\n');
-        console.log(JSON.stringify({ path: filename, phase_number: phase.number, spec_count: phase.specs.length }));
+        const num = String(phase.number).padStart(2, '0');
+        const name = phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/g, '');
+        console.log(JSON.stringify({ path: 'phases/' + num + '-' + name }));
       " '${{ steps.author.output | json }}'
+    output:
+      format: json
+
+  write-phase:
+    block:
+      write:
+        name: phase
+        data: "${{ steps.author.output }}"
+        path: "${{ steps.compute-phase-path.output.path }}"
     output:
       format: json
 
 completion:
   message: |
-    Phase ${{ steps.write-phase.output.phase_number }} created at ${{ steps.write-phase.output.path }}
-    Contains ${{ steps.write-phase.output.spec_count }} specs.
+    Phase ${{ steps.author.output.number }} created at ${{ steps.write-phase.output.path }}
+    Contains ${{ steps.author.output.specs | length }} specs.
   include:
     - steps.author.output.success_criteria
     - steps.author.output.specs

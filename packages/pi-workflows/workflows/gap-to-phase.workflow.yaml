@@ -17,45 +17,45 @@ input:
         value: id
 
 steps:
+  load-gap-blocks:
+    block:
+      read: gaps
+    output:
+      format: json
+
   load-gap:
     command: |
-      node --experimental-strip-types -e "
-        import fs from 'fs';
-        const gapId = process.argv[1];
-        const data = JSON.parse(fs.readFileSync('.project/gaps.json', 'utf8'));
-        const gap = data.gaps.find(g => g.id === gapId);
+      node -e "
+        const gaps = JSON.parse(process.argv[1]);
+        const gapId = process.argv[2];
+        const gap = gaps.gaps.find(g => g.id === gapId);
         if (!gap) { console.error('Gap not found: ' + gapId); process.exit(1); }
-        if (gap.status === 'resolved') { console.error('Gap already resolved: ' + gapId); process.exit(1); }
+        if (gap.status === 'resolved') { console.error('Gap already resolved'); process.exit(1); }
         console.log(JSON.stringify({ gap }));
-      " '${{ input.gap_id }}'
+      " '${{ steps.load-gap-blocks.output | json }}' '${{ input.gap_id }}'
+    output:
+      format: json
+
+  load-phases:
+    block:
+      readDir: phases
     output:
       format: json
 
   load-context:
+    block:
+      read: [architecture, conventions, gaps, inventory]
+      optional: [architecture, conventions, inventory]
+    output:
+      format: json
+
+  filter-gaps:
     command: |
-      node --experimental-strip-types -e "
-        import fs from 'fs';
-        import path from 'path';
-
-        const phases = [];
-        const phasesDir = '.project/phases';
-        if (fs.existsSync(phasesDir)) {
-          for (const f of fs.readdirSync(phasesDir).filter(f => f.endsWith('.json')).sort()) {
-            phases.push(JSON.parse(fs.readFileSync(path.join(phasesDir, f), 'utf8')));
-          }
-        }
-
-        let architecture = {};
-        try { architecture = JSON.parse(fs.readFileSync('.project/architecture.json', 'utf8')); } catch {}
-        let conventions = {};
-        try { conventions = JSON.parse(fs.readFileSync('.project/conventions.json', 'utf8')); } catch {}
-        let gaps = { gaps: [] };
-        try { gaps = JSON.parse(fs.readFileSync('.project/gaps.json', 'utf8')); } catch {}
-        let inventory = {};
-        try { inventory = JSON.parse(fs.readFileSync('.project/inventory.json', 'utf8')); } catch {}
-
-        console.log(JSON.stringify({ phases, architecture, conventions, gaps: gaps.gaps.filter(g => g.status === 'open'), inventory }));
-      "
+      node -e "
+        const data = JSON.parse(process.argv[1]);
+        const open = (data.gaps || []).filter(g => g.status === 'open');
+        console.log(JSON.stringify(open));
+      " '${{ steps.load-context.output.gaps | json }}'
     output:
       format: json
 
@@ -64,34 +64,39 @@ steps:
     input:
       intent: "Implement gap ${{ steps.load-gap.output.gap.id }}: ${{ steps.load-gap.output.gap.description }}"
       gap: "${{ steps.load-gap.output.gap }}"
-      phases: "${{ steps.load-context.output.phases }}"
+      phases: "${{ steps.load-phases.output }}"
       architecture: "${{ steps.load-context.output.architecture }}"
       conventions: "${{ steps.load-context.output.conventions }}"
-      gaps: "${{ steps.load-context.output.gaps }}"
+      gaps: "${{ steps.filter-gaps.output }}"
       inventory: "${{ steps.load-context.output.inventory }}"
     output:
       format: json
       schema: block:phase
 
-  write-phase:
+  compute-phase-path:
     command: |
-      node --experimental-strip-types -e "
-        import fs from 'fs';
+      node -e "
         const phase = JSON.parse(process.argv[1]);
         const num = String(phase.number).padStart(2, '0');
-        const name = phase.name.toLowerCase().replace(/\s+/g, '-');
-        const filename = '.project/phases/' + num + '-' + name + '.json';
-        fs.mkdirSync('.project/phases', { recursive: true });
-        fs.writeFileSync(filename, JSON.stringify(phase, null, 2));
-        console.log(JSON.stringify({ path: filename, phase_number: phase.number, spec_count: (phase.specs || []).length }));
+        const name = phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/g, '');
+        console.log(JSON.stringify({ path: 'phases/' + num + '-' + name }));
       " '${{ steps.author.output | json }}'
+    output:
+      format: json
+
+  write-phase:
+    block:
+      write:
+        name: phase
+        data: "${{ steps.author.output }}"
+        path: "${{ steps.compute-phase-path.output.path }}"
     output:
       format: json
 
 completion:
   message: |
-    Phase ${{ steps.write-phase.output.phase_number }} created: ${{ steps.write-phase.output.path }}
-    Specs: ${{ steps.write-phase.output.spec_count }}
+    Phase ${{ steps.author.output.number }} created: ${{ steps.write-phase.output.path }}
+    Specs: ${{ steps.author.output.specs | length }}
     From gap: ${{ input.gap_id }}
   include:
     - steps.author.output

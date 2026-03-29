@@ -147,6 +147,44 @@ describe("resolveExpression filters", () => {
 		const result = resolveExpressions("${{ steps.diagnose.durationMs | duration }}", scope);
 		assert.strictEqual(result, "42s");
 	});
+
+	it("applies last filter to array", () => {
+		const result = resolveExpression("input.tags | last", scope);
+		assert.strictEqual(result, "critical");
+	});
+
+	it("applies last filter to non-array returns value", () => {
+		const result = resolveExpression("input.description | last", scope);
+		assert.strictEqual(result, "null pointer in login");
+	});
+
+	it("applies first filter to array", () => {
+		const result = resolveExpression("input.tags | first", scope);
+		assert.strictEqual(result, "auth");
+	});
+
+	it("applies first filter to non-array returns value", () => {
+		const result = resolveExpression("input.maxAttempts | first", scope);
+		assert.strictEqual(result, 3);
+	});
+
+	it("applies slugify filter", () => {
+		const scopeWithName = { ...scope, input: { ...scope.input, name: "Foundation Setup" } };
+		const result = resolveExpression("input.name | slugify", scopeWithName);
+		assert.strictEqual(result, "foundation-setup");
+	});
+
+	it("slugify strips trailing hyphens", () => {
+		const scopeWithName = { ...scope, input: { ...scope.input, name: "Hello World!!!" } };
+		const result = resolveExpression("input.name | slugify", scopeWithName);
+		assert.strictEqual(result, "hello-world");
+	});
+
+	it("slugify handles already-clean input", () => {
+		const scopeWithName = { ...scope, input: { ...scope.input, name: "simple" } };
+		const result = resolveExpression("input.name | slugify", scopeWithName);
+		assert.strictEqual(result, "simple");
+	});
 });
 
 // ── Wider scope (CompletionScope) tests ──

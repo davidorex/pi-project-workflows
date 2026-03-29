@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { rollbackBlockFiles, snapshotBlockFiles } from "@davidorex/pi-project/src/block-validation.js";
+import { rollbackBlockFiles, snapshotBlockFiles } from "@davidorex/pi-project/block-validation";
 import type { StepResult, StepUsage } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
 import { parseWorkflowSpec } from "./workflow-spec.js";

@@ -12,6 +12,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readBlock } from "@davidorex/pi-project/block-api";
 import type { Api, AssistantMessage, Model, TextContent } from "@mariozechner/pi-ai";
 import { complete, StringEnum } from "@mariozechner/pi-ai";
 import type {
@@ -496,8 +497,7 @@ function collectCustomMessages(branch: SessionEntry[]): string {
 
 function collectProjectVision(_branch: SessionEntry[]): string {
 	try {
-		const projectPath = path.join(process.cwd(), ".project", "project.json");
-		const raw = JSON.parse(fs.readFileSync(projectPath, "utf-8"));
+		const raw = readBlock(process.cwd(), "project") as Record<string, unknown>;
 		const parts: string[] = [];
 		if (raw.vision) parts.push(`Vision: ${raw.vision}`);
 		if (raw.core_value) parts.push(`Core value: ${raw.core_value}`);
@@ -510,8 +510,7 @@ function collectProjectVision(_branch: SessionEntry[]): string {
 
 function collectProjectConventions(_branch: SessionEntry[]): string {
 	try {
-		const confPath = path.join(process.cwd(), ".project", "conformance-reference.json");
-		const raw = JSON.parse(fs.readFileSync(confPath, "utf-8"));
+		const raw = readBlock(process.cwd(), "conformance-reference") as Record<string, unknown>;
 		if (Array.isArray(raw.items)) {
 			return raw.items.map((item: Record<string, unknown>) => `- ${item.name ?? item.id}`).join("\n");
 		}

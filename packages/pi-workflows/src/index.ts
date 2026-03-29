@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { syncSkillsToUser } from "@davidorex/pi-project/src/sync-skills.js";
+import { syncSkillsToUser } from "@davidorex/pi-project/sync-skills";
 import type {
 	AgentToolResult,
 	AgentToolUpdateCallback,

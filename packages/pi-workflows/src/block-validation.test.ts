@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-project/src/block-validation.js";
+import { snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-project/block-validation";
 import { mockCtx, mockPi } from "./test-helpers.js";
 import type { WorkflowSpec } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";

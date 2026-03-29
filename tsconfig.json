@@ -4,7 +4,12 @@
 		"noEmit": true,
 		"paths": {
 			"@davidorex/pi-project": ["./packages/pi-project/src/index.ts"],
-			"@davidorex/pi-project/*": ["./packages/pi-project/*"],
+			"@davidorex/pi-project/block-api": ["./packages/pi-project/src/block-api.ts"],
+			"@davidorex/pi-project/schema-validator": ["./packages/pi-project/src/schema-validator.ts"],
+			"@davidorex/pi-project/block-validation": ["./packages/pi-project/src/block-validation.ts"],
+			"@davidorex/pi-project/project-dir": ["./packages/pi-project/src/project-dir.ts"],
+			"@davidorex/pi-project/project-sdk": ["./packages/pi-project/src/project-sdk.ts"],
+			"@davidorex/pi-project/sync-skills": ["./packages/pi-project/src/sync-skills.ts"],
 			"@davidorex/pi-workflows": ["./packages/pi-workflows/src/index.ts"],
 			"@davidorex/pi-workflows/*": ["./packages/pi-workflows/*"],
 			"@davidorex/pi-behavior-monitors": ["./packages/pi-behavior-monitors/index.ts"],

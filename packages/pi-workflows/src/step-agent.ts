@@ -3,7 +3,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { validateFromFile } from "@davidorex/pi-project/src/schema-validator.js";
+import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import type nunjucks from "nunjucks";
 import { dispatch } from "./dispatch.js";
 import { resolveExpressions } from "./expression.js";

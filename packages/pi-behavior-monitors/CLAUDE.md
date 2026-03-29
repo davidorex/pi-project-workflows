@@ -45,4 +45,4 @@ The `files` field in package.json controls what's included: `dist/`, `examples/`
 
 ## Dependencies
 
-No runtime dependencies. Peer dependencies on pi's bundled packages (`@mariozechner/pi-ai`, `@mariozechner/pi-coding-agent`, `@mariozechner/pi-tui`, `@sinclair/typebox`).
+Runtime dependencies: nunjucks, @davidorex/pi-project, @mariozechner/pi-ai, @mariozechner/pi-coding-agent, @mariozechner/pi-tui, @sinclair/typebox.

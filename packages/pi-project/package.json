@@ -21,9 +21,29 @@
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
 		},
-		"./src/*.js": {
-			"types": "./dist/*.d.ts",
-			"default": "./dist/*.js"
+		"./block-api": {
+			"types": "./dist/block-api.d.ts",
+			"default": "./dist/block-api.js"
+		},
+		"./schema-validator": {
+			"types": "./dist/schema-validator.d.ts",
+			"default": "./dist/schema-validator.js"
+		},
+		"./block-validation": {
+			"types": "./dist/block-validation.d.ts",
+			"default": "./dist/block-validation.js"
+		},
+		"./project-dir": {
+			"types": "./dist/project-dir.d.ts",
+			"default": "./dist/project-dir.js"
+		},
+		"./project-sdk": {
+			"types": "./dist/project-sdk.d.ts",
+			"default": "./dist/project-sdk.js"
+		},
+		"./sync-skills": {
+			"types": "./dist/sync-skills.d.ts",
+			"default": "./dist/sync-skills.js"
 		}
 	},
 	"pi": {
@@ -47,10 +67,8 @@
 		"test": "tsx --test src/*.test.ts"
 	},
 	"dependencies": {
-		"ajv": "^8.17.1"
-	},
-	"peerDependencies": {
-		"@mariozechner/pi-coding-agent": "*",
-		"@sinclair/typebox": "*"
+		"ajv": "^8.17.1",
+		"@mariozechner/pi-coding-agent": "^0.63.1",
+		"@sinclair/typebox": "^0.34.48"
 	}
 }

@@ -11,7 +11,7 @@
   </assumptions>
   <open_questions>
     <question id="1">
-      **Dep version ranges for pi SDK packages**: Currently all pi SDK peer deps use `"*"`. If moved to `dependencies`, should they remain `"*"` or pin to a concrete range like `">=0.1.0"`? `"*"` in dependencies is semantically valid but unconventional — npm may warn. The alternative is a wide range that avoids resolution conflicts with whatever pi ships. User decision needed.
+      **RESOLVED**: Version ranges use concrete caret ranges following pi-mono pattern: `"^0.63.1"` for `@mariozechner/*` packages, `"^0.34.48"` for `@sinclair/typebox`, `"^0.8.0"` for `@davidorex/pi-project`. No `"*"` ranges in dependencies.
     </question>
     <question id="2">
       **Dual peer+dep for pi SDK packages**: Some package managers (pnpm, yarn berry) treat peer deps differently from deps. Should the pi SDK packages be listed in BOTH peerDependencies and dependencies to signal "I need this, and my host should also provide it"? The pi-mono pattern uses dependencies only. Recommend following pi-mono unless pnpm support is a concern.
@@ -251,8 +251,8 @@ After:
 ```json
 "dependencies": {
   "ajv": "^8.17.1",
-  "@mariozechner/pi-coding-agent": "*",
-  "@sinclair/typebox": "*"
+  "@mariozechner/pi-coding-agent": "^0.63.1",
+  "@sinclair/typebox": "^0.34.48"
 },
 "peerDependencies": {}
 ```
@@ -278,10 +278,10 @@ After:
   "nunjucks": "^3.2.4",
   "yaml": "^2.7.1",
   "@davidorex/pi-project": "^0.8.0",
-  "@mariozechner/pi-ai": "*",
-  "@mariozechner/pi-coding-agent": "*",
-  "@mariozechner/pi-tui": "*",
-  "@sinclair/typebox": "*"
+  "@mariozechner/pi-ai": "^0.63.1",
+  "@mariozechner/pi-coding-agent": "^0.63.1",
+  "@mariozechner/pi-tui": "^0.63.1",
+  "@sinclair/typebox": "^0.34.48"
 },
 "peerDependencies": {}
 ```
@@ -306,10 +306,10 @@ After:
 "dependencies": {
   "nunjucks": "^3.2.4",
   "@davidorex/pi-project": "^0.8.0",
-  "@mariozechner/pi-ai": "*",
-  "@mariozechner/pi-coding-agent": "*",
-  "@mariozechner/pi-tui": "*",
-  "@sinclair/typebox": "*"
+  "@mariozechner/pi-ai": "^0.63.1",
+  "@mariozechner/pi-coding-agent": "^0.63.1",
+  "@mariozechner/pi-tui": "^0.63.1",
+  "@sinclair/typebox": "^0.34.48"
 },
 "peerDependencies": {}
 ```

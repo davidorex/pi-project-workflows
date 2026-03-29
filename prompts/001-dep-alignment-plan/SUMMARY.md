@@ -15,7 +15,7 @@
 
 ## Decisions Needed from Human
 
-1. **Version ranges for pi SDK deps**: Keep `"*"` when moving to dependencies, or pin to a wider range like `">=0.1.0"`? `"*"` is valid but unconventional for dependencies.
+1. **RESOLVED — Version ranges**: Using concrete caret ranges per pi-mono pattern: `"^0.63.1"` for @mariozechner/*, `"^0.34.48"` for typebox, `"^0.8.0"` for inter-package.
 2. **Breaking change assessment**: The wildcard export removal may break unknown external consumers importing unlisted subpaths. If any exist, this should be a major bump instead of minor.
 3. **Scope confirmation**: The plan includes fixing the undeclared `@mariozechner/pi-ai` dependency in pi-workflows (a pre-existing bug where `step-monitor.ts` imports it without any package.json entry). Confirm this should be included.
 

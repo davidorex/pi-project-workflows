@@ -266,6 +266,9 @@ export function declaredSchemaRefs(spec: WorkflowSpec): string[] {
 function collectSchemaRefs(steps: Record<string, StepSpec>, schemas: string[]): void {
 	for (const step of Object.values(steps)) {
 		if (step.output?.schema) schemas.push(step.output.schema);
+		if (step.block && "write" in step.block) {
+			schemas.push(`block:${step.block.write.name}`);
+		}
 		if (step.loop?.steps) collectSchemaRefs(step.loop.steps, schemas);
 		if (step.parallel) collectSchemaRefs(step.parallel, schemas);
 	}

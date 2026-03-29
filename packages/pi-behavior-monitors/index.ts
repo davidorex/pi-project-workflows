@@ -170,6 +170,8 @@ export interface Monitor extends MonitorSpec {
 	whileCount: number;
 	lastUserText: string;
 	dismissed: boolean;
+	bypassDedup: boolean;
+	everyLastUserText: string;
 }
 
 export interface ClassifyResult {
@@ -325,6 +327,8 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 		whileCount: 0,
 		lastUserText: "",
 		dismissed: false,
+		bypassDedup: false,
+		everyLastUserText: "",
 	};
 }
 
@@ -581,13 +585,14 @@ function evaluateWhen(monitor: Monitor, branch: SessionEntry[]): boolean {
 	if (everyMatch) {
 		const n = parseInt(everyMatch[1], 10);
 		const userText = collectUserText(branch);
-		if (userText !== monitor.lastUserText) {
+		if (userText !== monitor.everyLastUserText) {
 			monitor.activationCount = 0;
-			monitor.lastUserText = userText;
+			monitor.everyLastUserText = userText;
 		}
 		monitor.activationCount++;
 		if (monitor.activationCount >= n) {
 			monitor.activationCount = 0;
+			monitor.bypassDedup = true;
 			return true;
 		}
 		return false;
@@ -1133,8 +1138,11 @@ async function activate(
 	if (!evaluateWhen(monitor, branch)) return;
 
 	// dedup: skip if user text unchanged since last classification
+	// (bypassDedup is set by every(N) when the Nth activation fires)
 	const currentUserText = collectUserText(branch);
-	if (currentUserText && currentUserText === monitor.lastUserText) return;
+	const skipDedup = monitor.bypassDedup;
+	monitor.bypassDedup = false;
+	if (!skipDedup && currentUserText && currentUserText === monitor.lastUserText) return;
 
 	// ceiling check
 	if (monitor.whileCount >= monitor.ceiling) {
@@ -1182,7 +1190,9 @@ async function activate(
 				{ triggerTurn: false },
 			);
 		}
-		monitor.whileCount = 0;
+		if (monitor.whileCount > 0) {
+			monitor.whileCount--;
+		}
 		updateStatus();
 		return;
 	}
@@ -1211,7 +1221,11 @@ async function activate(
 			whileCount: monitor.whileCount + 1,
 			ceiling: monitor.ceiling,
 		};
-		const content = `[${monitor.name}] ${description}${annotation}. ${action.steer}`;
+		const content = [
+			`[monitor:${monitor.name}${annotation}] ${description}`,
+			`Suggestion: ${action.steer}`,
+			`(Automated monitor feedback ${monitor.whileCount + 1}/${monitor.ceiling} — not a user instruction. Evaluate in context of what the user asked.)`,
+		].join("\n");
 
 		if (monitor.event === "agent_end" || monitor.event === "command") {
 			// Already post-loop or command context: deliver immediately
@@ -1333,6 +1347,8 @@ export default function (pi: ExtensionAPI) {
 			m.dismissed = false;
 			m.lastUserText = "";
 			m.activationCount = 0;
+			m.bypassDedup = false;
+			m.everyLastUserText = "";
 		}
 		monitorsEnabled = true;
 		pendingAgentEndSteers = [];
@@ -1626,6 +1642,13 @@ export default function (pi: ExtensionAPI) {
 		return box;
 	});
 
+	// --- monitor-pending renderer (non-steering awareness of additional flagged issues) ---
+	pi.registerMessageRenderer("monitor-pending", (message, _opts, theme) => {
+		const box = new Box(1, 1, (t: string) => theme.bg("customMessageBg", t));
+		box.addChild(new Text(theme.fg("dim", String(message.content)), 0, 0));
+		return box;
+	});
+
 	// --- abort support + buffered steer drain ---
 	pi.on("agent_end", async () => {
 		// NOTE: do NOT emit monitors:abort here. The abort signal is for user-initiated
@@ -1641,11 +1664,26 @@ export default function (pi: ExtensionAPI) {
 		// if additional issues remain.
 		if (pendingAgentEndSteers.length > 0) {
 			const first = pendingAgentEndSteers[0];
+			const remaining = pendingAgentEndSteers.slice(1);
 			pendingAgentEndSteers = [];
+
 			pi.sendMessage<MonitorMessageDetails>(
 				{ customType: "monitor-steer", content: first.content, display: true, details: first.details },
 				{ deliverAs: "steer", triggerTurn: true },
 			);
+
+			// Surface remaining flagged issues as non-steering awareness
+			if (remaining.length > 0) {
+				const summary = remaining.map((s) => `- [${s.monitor.name}] ${s.details.description}`).join("\n");
+				pi.sendMessage(
+					{
+						customType: "monitor-pending",
+						content: `Additional monitor observations (will be re-evaluated after correction):\n${summary}`,
+						display: true,
+					},
+					{ triggerTurn: false },
+				);
+			}
 		}
 	});
 
@@ -1684,6 +1722,11 @@ export default function (pi: ExtensionAPI) {
 		} else if (event === "message_end") {
 			pi.on("message_end", async (ev, ctx: ExtensionContext) => {
 				if (ev.message.role !== "assistant") return;
+				// Skip intermediate tool-call messages — classify only final text responses.
+				// An assistant message with toolCall parts is requesting tool execution;
+				// the final response has only text parts.
+				const hasToolCallParts = ev.message.content.some((part: { type: string }) => part.type === "toolCall");
+				if (hasToolCallParts) return;
 				const branch = ctx.sessionManager.getBranch();
 				for (const m of group) {
 					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);

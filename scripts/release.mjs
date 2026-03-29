@@ -9,10 +9,10 @@
  * 2. Bump version via npm run version:xxx
  * 3. Update CHANGELOG.md files: [Unreleased] -> [version] - date
  * 4. Commit and tag
- * 5. Publish to npm
- * 6. Add new [Unreleased] section to changelogs
- * 7. Commit
- * 8. Push to remote
+ *
+ * After this script completes, the human must:
+ *   npm publish --workspaces --access public   (requires npm login + OTP)
+ *   git push origin main && git push origin v<version>
  */
 
 import { execSync } from "node:child_process";
@@ -68,20 +68,6 @@ function updateChangelogsForRelease(version) {
 	}
 }
 
-function addUnreleasedSection() {
-	const changelogs = getChangelogs();
-	const unreleasedSection = "## [Unreleased]\n\n";
-
-	for (const changelog of changelogs) {
-		const content = readFileSync(changelog, "utf-8");
-
-		// Insert after "# Changelog\n\n"
-		const updated = content.replace(/^(# Changelog\n\n)/, `$1${unreleasedSection}`);
-		writeFileSync(changelog, updated);
-		console.log(`  Added [Unreleased] to ${changelog}`);
-	}
-}
-
 // Main flow
 console.log("\n=== Release Script ===\n");
 
@@ -113,26 +99,8 @@ run(`git commit -m "Release v${version}"`);
 run(`git tag v${version}`);
 console.log();
 
-// 5. Publish
-console.log("Publishing to npm...");
-run("npm publish --workspaces --access public");
+console.log(`=== Tagged v${version} ===`);
 console.log();
-
-// 6. Add new [Unreleased] sections
-console.log("Adding [Unreleased] sections for next cycle...");
-addUnreleasedSection();
-console.log();
-
-// 7. Commit
-console.log("Committing changelog updates...");
-run("git add .");
-run('git commit -m "Add [Unreleased] section for next cycle"');
-console.log();
-
-// 8. Push
-console.log("Pushing to remote...");
-run("git push origin main");
-run(`git push origin v${version}`);
-console.log();
-
-console.log(`=== Released v${version} ===`);
+console.log("Next steps (human):");
+console.log(`  npm publish --workspaces --access public`);
+console.log(`  git push origin main && git push origin v${version}`);

@@ -29,6 +29,7 @@ export const STEP_TYPES: StepTypeDescriptor[] = [
 	{ name: "pause", field: "pause", retryable: false, supportsInput: false, supportsOutput: false },
 	{ name: "command", field: "command", retryable: false, supportsInput: true, supportsOutput: true },
 	{ name: "monitor", field: "monitor", retryable: false, supportsInput: true, supportsOutput: true },
+	{ name: "block", field: "block", retryable: false, supportsInput: true, supportsOutput: true },
 ];
 
 /** Set of valid step type field names — derived from STEP_TYPES. */
@@ -239,6 +240,7 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 	const hasPause = presentTypes[0].field === "pause";
 	const hasCommand = presentTypes[0].field === "command";
 	const hasMonitor = presentTypes[0].field === "monitor";
+	const hasBlock = presentTypes[0].field === "block";
 
 	const step: StepSpec = {};
 
@@ -324,6 +326,124 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 			throw new WorkflowSpecError(filePath, `step '${stepName}' pause must be a string or true`);
 		}
 		step.pause = rawStep.pause as string | boolean;
+		return step;
+	}
+
+	// Block step
+	if (hasBlock) {
+		if (typeof rawStep.block !== "object" || rawStep.block === null || Array.isArray(rawStep.block)) {
+			throw new WorkflowSpecError(filePath, `step '${stepName}' block must be an object`);
+		}
+		const rawBlock = rawStep.block as Record<string, unknown>;
+
+		// Exactly one operation key
+		const ops = ["read", "readDir", "write", "append", "update"].filter((k) => k in rawBlock);
+		if (ops.length !== 1) {
+			throw new WorkflowSpecError(
+				filePath,
+				`step '${stepName}' block must have exactly one of: read, readDir, write, append, update`,
+			);
+		}
+
+		// Validate each operation shape
+		if ("read" in rawBlock) {
+			const read = rawBlock.read;
+			if (typeof read !== "string" && !Array.isArray(read)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.read must be a string or array of strings`);
+			}
+			if (Array.isArray(read) && !read.every((r) => typeof r === "string")) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.read array elements must be strings`);
+			}
+			if ("optional" in rawBlock && rawBlock.optional !== undefined) {
+				if (!Array.isArray(rawBlock.optional) || !rawBlock.optional.every((o) => typeof o === "string")) {
+					throw new WorkflowSpecError(filePath, `step '${stepName}' block.optional must be an array of strings`);
+				}
+			}
+		}
+
+		if ("readDir" in rawBlock) {
+			if (typeof rawBlock.readDir !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.readDir must be a string`);
+			}
+		}
+
+		if ("write" in rawBlock) {
+			if (typeof rawBlock.write !== "object" || rawBlock.write === null || Array.isArray(rawBlock.write)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.write must be an object`);
+			}
+			const w = rawBlock.write as Record<string, unknown>;
+			if (typeof w.name !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.write.name must be a string`);
+			}
+			if (!("data" in w)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.write must have a 'data' field`);
+			}
+		}
+
+		if ("append" in rawBlock) {
+			if (typeof rawBlock.append !== "object" || rawBlock.append === null || Array.isArray(rawBlock.append)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.append must be an object`);
+			}
+			const a = rawBlock.append as Record<string, unknown>;
+			if (typeof a.name !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.append.name must be a string`);
+			}
+			if (typeof a.key !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.append.key must be a string`);
+			}
+			if (!("item" in a)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.append must have an 'item' field`);
+			}
+		}
+
+		if ("update" in rawBlock) {
+			if (typeof rawBlock.update !== "object" || rawBlock.update === null || Array.isArray(rawBlock.update)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.update must be an object`);
+			}
+			const u = rawBlock.update as Record<string, unknown>;
+			if (typeof u.name !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.update.name must be a string`);
+			}
+			if (typeof u.key !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.update.key must be a string`);
+			}
+			if (typeof u.match !== "object" || u.match === null || Array.isArray(u.match)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.update.match must be an object`);
+			}
+			if (typeof u.set !== "object" || u.set === null || Array.isArray(u.set)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.update.set must be an object`);
+			}
+		}
+
+		step.block = rawBlock as unknown as import("./types.js").BlockSpec;
+
+		// output spec (optional, same as command)
+		if ("output" in rawStep && rawStep.output !== undefined) {
+			if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' output must be an object`);
+			}
+			const rawOutput = rawStep.output as Record<string, unknown>;
+			const output: StepOutputSpec = {};
+			if ("format" in rawOutput) {
+				output.format = rawOutput.format as StepOutputSpec["format"];
+			}
+			if ("path" in rawOutput) {
+				if (typeof rawOutput.path !== "string") {
+					throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
+				}
+				output.path = rawOutput.path;
+			}
+			step.output = output;
+		}
+
+		// input (optional, for expression resolution context)
+		if ("input" in rawStep && rawStep.input !== undefined) {
+			if (typeof rawStep.input !== "object" || rawStep.input === null || Array.isArray(rawStep.input)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' input must be an object`);
+			}
+			step.input = rawStep.input as Record<string, unknown>;
+		}
+
 		return step;
 	}
 

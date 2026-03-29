@@ -25,6 +25,7 @@ import {
 	writeState,
 } from "./state.js";
 import { executeAgentStep } from "./step-agent.js";
+import { executeBlock } from "./step-block.js";
 import { executeCommand } from "./step-command.js";
 import { executeForEach } from "./step-foreach.js";
 import { executeGate } from "./step-gate.js";
@@ -136,7 +137,7 @@ interface StepExecOptions {
  * Command, gate, and transform are deterministic and not retryable.
  */
 function isRetryableStepType(stepSpec: StepSpec): boolean {
-	if (stepSpec.command || stepSpec.gate || stepSpec.transform || stepSpec.monitor) return false;
+	if (stepSpec.command || stepSpec.gate || stepSpec.transform || stepSpec.monitor || stepSpec.block) return false;
 	return true;
 }
 
@@ -524,6 +525,33 @@ async function executeStepByType(
 		});
 		persistStep(state, stepName, monitorResult, runDir, widgetState, ctx);
 		if (monitorResult.status === "failed") {
+			state.status = "failed";
+			return false;
+		}
+		return true;
+	}
+
+	// ── Block step ──
+	if (stepSpec.block) {
+		const resolvedBlockOutputPath = stepSpec.output?.path
+			? String(resolveExpressions(stepSpec.output.path, scope))
+			: undefined;
+		const blockOp =
+			"read" in stepSpec.block
+				? "read"
+				: "readDir" in stepSpec.block
+					? "readDir"
+					: "write" in stepSpec.block
+						? "write"
+						: "append" in stepSpec.block
+							? "append"
+							: "update";
+		widgetState.activities.set(stepName, [{ tool: "block", preview: blockOp, timestamp: Date.now() }]);
+		if (ctx.hasUI) ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
+
+		const blockResult = executeBlock(stepSpec.block, stepName, scope, ctx.cwd, runDir, resolvedBlockOutputPath);
+		persistStep(state, stepName, blockResult, runDir, widgetState, ctx);
+		if (blockResult.status === "failed") {
 			state.status = "failed";
 			return false;
 		}

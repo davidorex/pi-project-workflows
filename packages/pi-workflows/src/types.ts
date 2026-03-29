@@ -43,12 +43,13 @@ export interface StepSpec {
 	pause?: string | boolean; // pause step — string is message to display, true = pause with no message
 	monitor?: string; // monitor name — runs classification as a verification gate
 	command?: string; // shell command to run (captures stdout as output)
+	block?: BlockSpec; // in-process block I/O (read/readDir/write/append/update)
 	forEach?: string; // ${{ }} expression resolving to an array
 	as?: string; // variable name to bind each element (default: "item")
 	color?: string; // ThemeColor key for widget display (e.g. "accent", "warning", "success")
 	workflow?: string; // phase 6 — not yet supported
 }
-// Note: exactly one of agent, gate, transform, loop, parallel, monitor, or command must be set.
+// Note: exactly one of agent, gate, transform, loop, parallel, monitor, command, or block must be set.
 // workflow is phase 6.
 
 export interface LoopSpec {
@@ -72,6 +73,42 @@ export interface TransformSpec {
 	 */
 	mapping: Record<string, unknown>;
 }
+
+export interface BlockReadSpec {
+	read: string | string[];
+	optional?: string[];
+}
+
+export interface BlockReadDirSpec {
+	readDir: string;
+}
+
+export interface BlockWriteSpec {
+	write: {
+		name: string;
+		data: unknown;
+		path?: string;
+	};
+}
+
+export interface BlockAppendSpec {
+	append: {
+		name: string;
+		key: string;
+		item: unknown;
+	};
+}
+
+export interface BlockUpdateSpec {
+	update: {
+		name: string;
+		key: string;
+		match: Record<string, unknown>;
+		set: Record<string, unknown>;
+	};
+}
+
+export type BlockSpec = BlockReadSpec | BlockReadDirSpec | BlockWriteSpec | BlockAppendSpec | BlockUpdateSpec;
 
 export interface StepOutputSpec {
 	format?: "json" | "text"; // default: "text"

@@ -14,6 +14,13 @@ const FILTERS: Record<string, (value: unknown) => unknown> = {
 	length: (v) => (Array.isArray(v) ? v.length : typeof v === "string" ? v.length : 0),
 	keys: (v) => (typeof v === "object" && v !== null ? Object.keys(v) : []),
 	filter: (v) => (Array.isArray(v) ? v.filter(Boolean) : v),
+	last: (v) => (Array.isArray(v) ? v[v.length - 1] : v),
+	first: (v) => (Array.isArray(v) ? v[0] : v),
+	slugify: (v) =>
+		String(v)
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/-+$/, ""),
 };
 
 /** Filter names derived from the FILTERS registry — add a filter above, this updates automatically. */

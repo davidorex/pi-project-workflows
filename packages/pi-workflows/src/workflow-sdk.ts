@@ -11,11 +11,13 @@ import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-s
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
 import { availableMonitors } from "./step-monitor.js";
 import { resolveSchemaPath } from "./step-shared.js";
+import { validateTemplateAlignment } from "./template-validation.js";
 import type { AgentSpec, StepSpec, WorkflowSpec } from "./types.js";
 import { discoverWorkflows } from "./workflow-discovery.js";
 import type { StepTypeDescriptor } from "./workflow-spec.js";
 import { STEP_TYPES } from "./workflow-spec.js";
 
+export { extractTemplateVariables, validateTemplateAlignment } from "./template-validation.js";
 export type { StepTypeDescriptor };
 // Re-export for single-import convenience
 export { EXPRESSION_ROOTS, FILTER_NAMES, STEP_TYPES };
@@ -424,6 +426,9 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 			});
 		}
 	}
+
+	// 8. Template-input alignment — do template field references match source schemas?
+	issues.push(...validateTemplateAlignment(spec, cwd));
 
 	return {
 		valid: issues.filter((i) => i.severity === "error").length === 0,

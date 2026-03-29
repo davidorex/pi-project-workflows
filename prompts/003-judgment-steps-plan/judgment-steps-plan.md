@@ -467,13 +467,21 @@ author:
     phases: "${{ steps.load-phases.output }}"
     architecture: "${{ steps.load-context.output.architecture }}"
     conventions: "${{ steps.load-context.output.conventions }}"
-    gaps: "${{ steps.load-context.output.gaps }}"
+    gaps: "${{ steps.load-context.output.gaps.gaps }}"
     inventory: "${{ steps.load-context.output.inventory }}"
 ```
 
-Note: `phases` now references `steps.load-phases.output` (the readDir output is an array). The `gaps` field passes the entire gaps block object (including both open and resolved gaps) — the phase-author template filters to open gaps.
+Note: `phases` now references `steps.load-phases.output` (the readDir output is an array). The `gaps` field passes the inner array `gaps.gaps` — the block read returns `{ "gaps": [...] }` but the phase-author template expects a flat array (`{% for gap in gaps %}`). The current workflow pre-filters to open gaps; this now passes all gaps and the template can filter if needed.
 
-The `architecture`, `conventions`, and `inventory` fields may be `null` (if the blocks don't exist). The phase-author template already uses Nunjucks conditionals — the template should handle null values gracefully with `{% if architecture %}` guards (which are likely already present or should be added).
+The `architecture`, `conventions`, and `inventory` fields may be `null` (if the blocks don't exist). The phase-author template needs `{% if architecture %}` null guards around sections that iterate these — currently the template directly accesses `architecture.modules`, `conventions.rules`, and `inventory.step_types` which would cause Nunjucks errors when null. Add guards:
+
+```markdown
+{% if architecture and architecture.modules %}
+{% for module in architecture.modules %}...{% endfor %}
+{% endif %}
+```
+
+Same pattern for conventions and inventory sections.
 
 ### New artifacts needed
 
@@ -573,9 +581,11 @@ author:
     phases: "${{ steps.load-phases.output }}"
     architecture: "${{ steps.load-context.output.architecture }}"
     conventions: "${{ steps.load-context.output.conventions }}"
-    gaps: "${{ steps.load-context.output.gaps }}"
+    gaps: "${{ steps.load-context.output.gaps.gaps }}"
     inventory: "${{ steps.load-context.output.inventory }}"
 ```
+
+Note: `gaps` passes the inner array via `.gaps` — same as gap-to-phase. All blocks are optional in create-phase, so gaps may be null. The phase-author template null guards (added in gap-to-phase section) handle this.
 
 ### New artifacts needed
 
@@ -652,10 +662,9 @@ select-audit:
     mapping:
       audit: "${{ steps.load-audits.output | last }}"
       conformance_reference: "${{ steps.load-conformance.output }}"
-      audit_index: "${{ steps.load-audits.output | length - 1 }}"
 ```
 
-The `readDir` returns all audits sorted alphabetically. The `last` filter picks the last one — same behavior as before, but now the readDir step fails explicitly if the directory is missing or contains corrupt JSON. The conformance reference is optional (returns null if absent) but corrupt JSON fails explicitly.
+The `readDir` returns all audits sorted alphabetically. The `last` filter (added in Plan 2) picks the last one — same behavior as before, but now the readDir step fails explicitly if the directory contains corrupt JSON, and returns `[]` if missing. The conformance reference is optional (returns null if absent) but corrupt JSON fails explicitly.
 
 **Note**: The "pick latest by sort" heuristic remains. A future enhancement could accept an `audit_name` input parameter to target a specific audit. This plan addresses silent degradation; the heuristic-selection issue is a separate concern.
 
@@ -1188,6 +1197,66 @@ Only include items that are well-formed and represent genuine project artifacts.
 }
 ```
 
+### Cross-reference updates for renamed steps
+
+The restructuring renames `load` → `load-audits`/`load-conformance`/`select-audit` and `verify` → `verify-findings`. All downstream references must be updated.
+
+#### `implement` step input
+
+```yaml
+# Before:
+implement:
+  ...
+  input:
+    task: "${{ task }}"
+    conformance_reference: "${{ steps.load.output.conformance_reference }}"
+
+# After:
+implement:
+  ...
+  input:
+    task: "${{ task }}"
+    conformance_reference: "${{ steps.select-audit.output.conformance_reference }}"
+```
+
+#### `check` step
+
+```yaml
+# Before:
+check:
+  when: "${{ steps.update-audit.output.updated }}"
+  gate:
+    check: "test '${{ steps.verify.output.failed }}' = '0'"
+    onFail: fail
+
+# After:
+check:
+  when: "${{ steps.update-audit.output.updated }}"
+  gate:
+    check: "test '${{ steps.verify-findings.output.status }}' != 'gaps_found'"
+    onFail: fail
+```
+
+#### `completion` section
+
+```yaml
+# Before:
+completion:
+  message: |
+    Audit fix workflow completed.
+    Verification: ${{ steps.verify.output.status }} (${{ steps.verify.output.score }})
+  include:
+    - steps.verify.output.results
+
+# After:
+completion:
+  message: |
+    Audit fix workflow completed.
+    Verification: ${{ steps.verify-findings.output.status }} (${{ steps.verify-findings.output.score }})
+  include:
+    - steps.verify-findings.output.findings
+```
+
 ### Expected behavior change
 
 **Before**: Findings filtered by grep exit code. Verification by grep absence. Routing unconditional with silent skip on missing blocks. Audit records stamped "passed" from grep heuristic. State written as "all tasks completed" regardless.
@@ -1412,24 +1481,35 @@ load-git:
     format: json
 
 assemble-state:
-  transform:
-    mapping:
-      project: "${{ steps.load-blocks.output.project }}"
-      phases: "${{ steps.load-phases.output }}"
-      gaps: "${{ steps.load-blocks.output.gaps }}"
-      decisions: "${{ steps.load-blocks.output.decisions }}"
-      tasks: "${{ steps.load-blocks.output.tasks }}"
-      recent_commits: "${{ steps.load-git.output.recent_commits }}"
-      changed_files: "${{ steps.load-git.output.changed_files }}"
-      blocks_status:
-        project: "${{ steps.load-blocks.output.project != null }}"
-        gaps: "${{ steps.load-blocks.output.gaps != null }}"
-        decisions: "${{ steps.load-blocks.output.decisions != null }}"
-        tasks: "${{ steps.load-blocks.output.tasks != null }}"
-        phases: "${{ steps.load-phases.output | length > 0 }}"
-        git_commits: "${{ steps.load-git.output.commits_error == null }}"
-        git_files: "${{ steps.load-git.output.files_error == null }}"
+  command: |
+    node -e "
+      const blocks = JSON.parse(process.argv[1]);
+      const phases = JSON.parse(process.argv[2]);
+      const git = JSON.parse(process.argv[3]);
+      console.log(JSON.stringify({
+        project: blocks.project,
+        phases: phases,
+        gaps: blocks.gaps,
+        decisions: blocks.decisions,
+        tasks: blocks.tasks,
+        recentCommits: git.recent_commits || [],
+        changedFiles: git.changed_files || [],
+        blocks_status: {
+          project: blocks.project != null,
+          gaps: blocks.gaps != null,
+          decisions: blocks.decisions != null,
+          tasks: blocks.tasks != null,
+          phases: phases.length > 0,
+          git_commits: !git.commits_error,
+          git_files: !git.files_error
+        }
+      }));
+    " '${{ steps.load-blocks.output | json }}' '${{ steps.load-phases.output | json }}' '${{ steps.load-git.output | json }}'
+  output:
+    format: json
 ```
+
+Note: The command step uses `recentCommits` and `changedFiles` (camelCase) to match the existing handoff-writer template field names (`project_state.recentCommits`, `project_state.changedFiles`). The `blocks_status` computation uses comparison operators (`!= null`, `> 0`) that the expression engine's `resolveExpression` does not support — hence the command step instead of a transform.
 
 `readDir` returns `[]` for missing directories (Plan 2 design). No bridge step needed.
 
@@ -1508,7 +1588,7 @@ Net zero. Block steps and transform steps replace a command step with no LLM cos
 
 ## New Artifacts Summary
 
-### Agent specs (2 new)
+### Agent specs (3 new)
 
 | Agent | File | Role | Used by |
 |-------|------|------|---------|
@@ -1545,30 +1625,11 @@ Net zero. Block steps and transform steps replace a command step with no LLM cos
 The workflows can be restructured independently — they share no agent specs or schemas. Implementation order based on severity and complexity:
 
 1. **plan-from-requirements** — highest-severity silent-degradation, simplest fix (block steps only, no new agents)
-2. **create-handoff** — second-highest-severity silent-degradation, moderate complexity (block steps + transform + template update)
+2. **create-handoff** — second-highest-severity silent-degradation, moderate complexity (block steps + command step assembly + template update)
 3. **gap-to-phase** + **create-phase** — identical pattern, can be done together (block steps only)
 4. **do-gap** — requires new agent spec + schema + template
 5. **fix-audit** — most complex, requires 3 new agent specs + schemas + templates + significant workflow restructuring
 
 Steps 1-3 have zero new LLM cost. Steps 4-5 add LLM cost but target the highest-value judgments.
 
----
-
-## Plan 2 Amendment: readDir optional directory
-
-The restructuring of `plan-from-requirements`, `create-handoff`, and `create-phase` all encounter the same issue: `readDir: phases` fails if the `.project/phases/` directory doesn't exist. For new projects, this is a normal state.
-
-The plan 2 design says readDir fails on missing directories. This is correct for directories that should exist (`.project/audits/` when running fix-audit — the audit must exist). But phases is legitimately absent in new projects.
-
-**Proposed amendment to plan 2**: Add an `optional` parameter to readDir that returns `[]` when the directory doesn't exist (same semantics as optional blocks returning null):
-
-```yaml
-load-phases:
-  block:
-    readDir: phases
-    optional: true
-  output:
-    format: json
-```
-
-`readDir` returns `[]` for missing directories (Plan 2 design). Corrupt files in existing directories fail.
+Note: `readDir` returns `[]` for missing directories (resolved in Plan 2). No amendment or `optional` flag needed for readDir.

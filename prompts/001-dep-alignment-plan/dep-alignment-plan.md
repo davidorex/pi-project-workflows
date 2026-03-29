@@ -5,7 +5,7 @@
   <assumptions>
     - npm workspace hoisting means packages in the same monorepo resolve each other from the workspace root node_modules, so `dependencies` entries for sibling packages work both in development (workspace link) and after publish (npm install resolves the version range).
     - pi's runtime loads extensions from node_modules — it does NOT re-resolve their peer dependencies separately. Moving peers to deps should not change runtime behavior.
-    - The pi SDK packages (@mariozechner/pi-coding-agent, pi-ai, pi-tui, @sinclair/typebox) are bundled with the global pi install and hoisted into node_modules when pi resolves extensions. Declaring them as `dependencies` instead of `peerDependencies` should not cause duplicate copies because npm deduplicates when the same version satisfies both the hoisted copy and the declared range. However, if pi ships a newer version than the pinned range, npm may install two copies. Using `"*"` ranges (as currently done for peer deps) should be preserved as dep ranges to avoid this — but `"*"` in `dependencies` is unusual. See open questions.
+    - The pi SDK packages (@mariozechner/pi-coding-agent, pi-ai, pi-tui, @sinclair/typebox) are bundled with the global pi install and hoisted into node_modules when pi resolves extensions. Declaring them as `dependencies` instead of `peerDependencies` should not cause duplicate copies because npm deduplicates when the same version satisfies both the hoisted copy and the declared range. However, if pi ships a newer version than the pinned range, npm may install two copies. Concrete caret ranges per pi-mono pattern are used — this constrains version drift to compatible ranges.
     - The wildcard subpath export `"./src/*.js"` currently maps to `"./dist/*.js"`. Replacing it with named exports means any consumer importing an unlisted subpath will break at resolution time. The plan must account for all import sites.
     - pi-behavior-monitors' tsconfig.build.json sets `rootDir: "."` with source at `index.ts` — it compiles to `dist/index.js`. Named export paths from pi-project will resolve correctly since pi-behavior-monitors imports will go through node_modules.
   </assumptions>
@@ -87,13 +87,13 @@
 
 ---
 
-## Phase 1: Named Subpath Exports for pi-project
+## Phase 1: Named Subpath Exports and Import Path Migration
 
-**Objective**: Replace the wildcard subpath export with named exports that define an explicit public API contract. This is prerequisite for all other phases — import paths must be stable before consumers update their references.
+**Objective**: Replace the wildcard subpath export with named exports and update all consumer import paths atomically. These are two sides of the same coin — the tsconfig paths and import paths must change together for `tsc --noEmit` to succeed.
 
-**Scope**: pi-project package.json, root tsconfig.json paths
+**Scope**: pi-project package.json, root tsconfig.json paths, pi-workflows source and test files (9 import sites)
 
-**Estimated effort**: Small (configuration only, no source changes)
+**Estimated effort**: Small (configuration + mechanical find-replace)
 
 ### Task 1.1: Replace wildcard exports with named exports in pi-project/package.json
 
@@ -172,27 +172,11 @@ Needs to become:
 
 Remove the wildcard `@davidorex/pi-project/*` path — enforces the named-export contract at the TypeScript level.
 
-### Task 1.3: Verify build still produces correct dist/ files
+### Task 1.3: Verify pi-project build produces correct dist/ files
 
 Run `npm run build -w @davidorex/pi-project` and verify that `dist/block-api.js`, `dist/schema-validator.js`, `dist/block-validation.js`, `dist/project-dir.js`, `dist/project-sdk.js`, `dist/sync-skills.js` all exist with their `.d.ts` counterparts. The tsconfig.build.json compiles `src/**/*.ts` to `dist/` — this should already produce these files. No tsconfig changes expected.
 
-### Verification
-
-- `npm run build -w @davidorex/pi-project` succeeds
-- `tsc --noEmit` succeeds (type checking with new paths)
-- No other package builds yet (import paths not yet updated)
-
----
-
-## Phase 2: Update Import Paths in pi-workflows
-
-**Objective**: Migrate all pi-project subpath imports from `@davidorex/pi-project/src/<module>.js` to `@davidorex/pi-project/<module>` (named exports).
-
-**Scope**: pi-workflows source files and test files (9 import sites)
-
-**Estimated effort**: Small (mechanical find-replace)
-
-### Task 2.1: Update source file imports
+### Task 1.4: Update source file imports in pi-workflows
 
 **Files and changes** (each line is a single import statement to update):
 
@@ -207,7 +191,7 @@ Run `npm run build -w @davidorex/pi-project` and verify that `dist/block-api.js`
 
 **Note on .js extension removal**: The current imports use `.js` extensions as required by Node16 module resolution for relative imports. However, subpath exports are resolved via the package's exports map, not the filesystem — the `.js` suffix is not needed and should not be included. `@davidorex/pi-project/block-api` resolves to the `"./block-api"` export entry which points to `./dist/block-api.js`.
 
-### Task 2.2: Update test file imports
+### Task 1.5: Update test file imports in pi-workflows
 
 | File | Line | From | To |
 |------|------|------|----|
@@ -218,13 +202,13 @@ Run `npm run build -w @davidorex/pi-project` and verify that `dist/block-api.js`
 ### Verification
 
 - `npm run build` (all packages)
-- `tsc --noEmit` (full typecheck)
+- `tsc --noEmit` (full typecheck — both export map and import paths updated atomically)
 - `npm test -w @davidorex/pi-workflows` (all workflow tests pass)
 - Biome lint passes (import ordering may change — run `npm run format` if needed)
 
 ---
 
-## Phase 3: Dependency Model Migration
+## Phase 2: Dependency Model Migration
 
 **Objective**: Move pi SDK packages from peerDependencies to dependencies across all three packages. Add pi-project as a dependency of pi-behavior-monitors. Fix the undeclared pi-ai dependency in pi-workflows.
 
@@ -232,7 +216,7 @@ Run `npm run build -w @davidorex/pi-project` and verify that `dist/block-api.js`
 
 **Estimated effort**: Small (JSON edits)
 
-### Task 3.1: Migrate pi-project dependencies
+### Task 2.1: Migrate pi-project dependencies
 
 **File**: `packages/pi-project/package.json`
 
@@ -252,7 +236,7 @@ After:
 
 Remove the empty `peerDependencies` field entirely after migration.
 
-### Task 3.2: Migrate pi-workflows dependencies
+### Task 2.2: Migrate pi-workflows dependencies
 
 **File**: `packages/pi-workflows/package.json`
 
@@ -281,7 +265,7 @@ After:
 
 Remove the empty `peerDependencies` field entirely.
 
-### Task 3.3: Migrate pi-behavior-monitors dependencies and add pi-project
+### Task 2.3: Migrate pi-behavior-monitors dependencies and add pi-project
 
 **File**: `packages/pi-behavior-monitors/package.json`
 
@@ -309,13 +293,13 @@ After:
 
 Remove the empty `peerDependencies` field entirely.
 
-### Task 3.4: Verify meta-package remains correct
+### Task 2.4: Verify meta-package remains correct
 
 **File**: `packages/pi-project-workflows/package.json`
 
 The meta-package currently declares all three packages as dependencies. This remains correct — no changes needed. The meta-package does not declare pi SDK packages because it delegates to the child packages. After this change, each child package brings its own pi SDK deps.
 
-### Task 3.5: Run npm install to update lockfile
+### Task 2.5: Run npm install to update lockfile
 
 After all package.json changes, run `npm install` to regenerate the lockfile and ensure workspace resolution works correctly.
 
@@ -328,7 +312,7 @@ After all package.json changes, run `npm install` to regenerate the lockfile and
 
 ---
 
-## Phase 4: Remove Peer Freshness Gate
+## Phase 3: Remove Peer Freshness Gate
 
 **Objective**: Delete the peer freshness gate script and remove all references to it. With direct dependencies, the version is locked by npm install — no drift possible.
 
@@ -336,11 +320,11 @@ After all package.json changes, run `npm install` to regenerate the lockfile and
 
 **Estimated effort**: Small (deletions)
 
-### Task 4.1: Delete the freshness gate script
+### Task 3.1: Delete the freshness gate script
 
 **File**: `scripts/check-peer-freshness.js` — delete entirely.
 
-### Task 4.2: Update root package.json check command
+### Task 3.2: Update root package.json check command
 
 **File**: `package.json` (line 26)
 
@@ -354,7 +338,7 @@ To:
 "check": "npx @biomejs/biome check . && tsc --noEmit"
 ```
 
-### Task 4.3: Update CLAUDE.md — remove freshness gate documentation
+### Task 3.3: Update CLAUDE.md — remove freshness gate documentation and fix import convention
 
 **File**: `CLAUDE.md`
 
@@ -398,7 +382,16 @@ Five locations to update:
    3. **Check**: `npm run check` (biome + tsc)
    ```
 
-### Task 4.4: Update pi-behavior-monitors CLAUDE.md
+6. **Conventions section** (around line 45): Change:
+   ```
+   - Cross-package imports use `.js` extensions (Node16 module resolution). pi-project has `exports` map remapping `src/` → `dist/` for subpath imports.
+   ```
+   to:
+   ```
+   - Cross-package imports use named subpath exports (e.g., `@davidorex/pi-project/block-api`). pi-project defines explicit exports in package.json — unlisted subpaths are not importable.
+   ```
+
+### Task 3.4: Update pi-behavior-monitors CLAUDE.md
 
 **File**: `packages/pi-behavior-monitors/CLAUDE.md`
 
@@ -412,7 +405,44 @@ Update to reflect new dependency model:
 Runtime dependencies: nunjucks, @davidorex/pi-project, @mariozechner/pi-ai, @mariozechner/pi-coding-agent, @mariozechner/pi-tui, @sinclair/typebox.
 ```
 
-### Task 4.5: Remove Key Files entry from memory
+### Task 3.5: Update README.md — remove stale peer dep references
+
+**File**: `README.md`
+
+Two locations:
+
+1. **Line 125**: Change:
+   ```
+   npm run check      # peer freshness gate + lint + typecheck
+   ```
+   to:
+   ```
+   npm run check      # lint + typecheck
+   ```
+
+2. **Line 152**: Change:
+   ```
+   pi-workflows depends on pi-project **as a peer dependency**. pi-project has no knowledge of workflows. pi-behavior-monitors is independent of both.
+   ```
+   to:
+   ```
+   All three packages use direct dependencies. pi-workflows and pi-behavior-monitors depend on pi-project. pi-project has no knowledge of workflows or monitors.
+   ```
+
+### Task 3.6: Update pi-workflows README.md
+
+**File**: `packages/pi-workflows/README.md` (line 12)
+
+Change:
+```
+pi install npm:@davidorex/pi-project    # peer dependency
+```
+to:
+```
+pi install npm:@davidorex/pi-project    # dependency
+```
+
+### Task 3.7: Remove Key Files entry from memory
 
 **File**: User's memory file references `scripts/check-peer-freshness.js` as a key file. The user should be informed so they can update memory if desired. (Agent should NOT modify memory files.)
 
@@ -425,7 +455,7 @@ Runtime dependencies: nunjucks, @davidorex/pi-project, @mariozechner/pi-ai, @mar
 
 ---
 
-## Phase 5: Migrate pi-behavior-monitors to Block API
+## Phase 4: Migrate pi-behavior-monitors to Block API
 
 **Objective**: Replace raw `fs.readFileSync` calls that read `.project/` files with `readBlock` from the now-available `@davidorex/pi-project/block-api` dependency.
 
@@ -433,7 +463,7 @@ Runtime dependencies: nunjucks, @davidorex/pi-project, @mariozechner/pi-ai, @mar
 
 **Estimated effort**: Small (2 function rewrites)
 
-### Task 5.1: Add readBlock import to index.ts
+### Task 4.1: Add readBlock import to index.ts
 
 **File**: `packages/pi-behavior-monitors/index.ts`
 
@@ -442,7 +472,7 @@ Add import (place with other package imports, around line 15-29):
 import { readBlock } from "@davidorex/pi-project/block-api";
 ```
 
-### Task 5.2: Rewrite collectProjectVision
+### Task 4.2: Rewrite collectProjectVision
 
 **File**: `packages/pi-behavior-monitors/index.ts` (lines 497-509)
 
@@ -481,7 +511,7 @@ function collectProjectVision(_branch: SessionEntry[]): string {
 
 **Note**: `readBlock` returns `unknown` (the parsed JSON content of the block file). The cast to `Record<string, unknown>` maintains the same type-safety level as the original code. `readBlock` throws if the file doesn't exist, which the `catch` already handles.
 
-### Task 5.3: Rewrite collectProjectConventions
+### Task 4.3: Rewrite collectProjectConventions
 
 **File**: `packages/pi-behavior-monitors/index.ts` (lines 511-522)
 
@@ -516,11 +546,11 @@ function collectProjectConventions(_branch: SessionEntry[]): string {
 }
 ```
 
-### Task 5.4: Update root tsconfig.json for pi-project paths used by pi-behavior-monitors
+### Task 4.4: Update root tsconfig.json for pi-project paths used by pi-behavior-monitors
 
 The root `tsconfig.json` paths must include the pi-project named export mappings (already done in Phase 1, Task 1.2). Verify that `tsc --noEmit` resolves the new import from pi-behavior-monitors correctly.
 
-### Task 5.5: Evaluate remaining fs.readFileSync calls
+### Task 4.5: Evaluate remaining fs.readFileSync calls
 
 The other `readFileSync` calls in pi-behavior-monitors (`index.ts` lines 258, 609, 622, 988) read:
 - **Line 258**: monitor JSON spec files (`.monitor.json`) — NOT project blocks, no change needed
@@ -534,17 +564,18 @@ These are correctly using `fs.readFileSync` because they read monitor infrastruc
 - `npm run build` succeeds (all packages)
 - `npm test` (all tests pass — pi-behavior-monitors tests use vitest with stubs for pi-ai/pi-tui/pi-coding-agent; need to verify whether readBlock import requires a new stub or whether the workspace resolution handles it)
 - `tsc --noEmit` succeeds
+- No vitest alias needed for `@davidorex/pi-project/block-api` — it resolves via the npm workspace symlink. The existing stubs are for @mariozechner packages that may not be installed in dev contexts.
 - Manual verification: activate the monitors extension in a project with `.project/project.json` and `.project/conformance-reference.json` — the `project_vision` and `project_conventions` collectors should produce the same output as before
 
 ---
 
-## Phase 6: Cleanup and Release
+## Phase 5: Cleanup and Release
 
 **Objective**: Final verification, version bump, and documentation sync.
 
 **Scope**: All packages, CLAUDE.md, SKILL.md generation
 
-### Task 6.1: Full verification pass
+### Task 5.1: Full verification pass
 
 ```bash
 npm run build
@@ -555,15 +586,15 @@ npm run skills
 
 All must pass with zero failures.
 
-### Task 6.2: Update bump-versions.js if needed
+### Task 5.2: Update bump-versions.js if needed
 
 **File**: `scripts/bump-versions.js` — currently iterates over `dependencies`, `peerDependencies`, `devDependencies` for sync. After removing all peerDependencies, the iteration over that key is harmless (it simply won't find any). No change needed.
 
-### Task 6.3: Update sync-versions.js if needed
+### Task 5.3: Update sync-versions.js if needed
 
 **File**: `scripts/sync-versions.js` — same as above, iterates over all dep types. No change needed.
 
-### Task 6.4: Commit with forensic message
+### Task 5.4: Commit with forensic message
 
 Commit all changes with a message that documents:
 - What was moved (peers → deps)
@@ -572,7 +603,7 @@ Commit all changes with a message that documents:
 - What was migrated (raw fs reads → readBlock)
 - Why (pi-mono pattern alignment, block API access, stable API contract)
 
-### Task 6.5: Release
+### Task 5.5: Release
 
 Run `npm run release:minor` — this is a minor release because:
 - New named exports are a new public API surface (feature)
@@ -581,7 +612,7 @@ Run `npm run release:minor` — this is a minor release because:
 
 Minor bump — no external consumers of unlisted subpaths. pi-workflows is the only consumer and all imports are covered by the named exports.
 
-### Task 6.6: Post-release CLAUDE.md update
+### Task 5.6: Post-release CLAUDE.md update
 
 After release, update the version references in CLAUDE.md if any are hardcoded (the `^0.8.0` references in the plan are illustrative — the actual version will be whatever the release produces).
 

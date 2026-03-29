@@ -6,12 +6,11 @@
 
 | Phase | Objective | Files touched |
 |-------|-----------|---------------|
-| 1. Named subpath exports | Replace `"./src/*.js"` wildcard with 6 named exports in pi-project | `packages/pi-project/package.json`, `tsconfig.json` |
-| 2. Import path migration | Update all 9 import sites in pi-workflows from `src/<mod>.js` to `<mod>` | 6 source + 3 test files in `packages/pi-workflows/src/` |
-| 3. Dependency model | Move pi SDK peers to deps in all packages; add pi-project dep to pi-behavior-monitors; add missing pi-ai dep to pi-workflows | 3 package.json files |
-| 4. Remove freshness gate | Delete `scripts/check-peer-freshness.js`, update `check` command and CLAUDE.md | `scripts/check-peer-freshness.js`, `package.json`, `CLAUDE.md`, `packages/pi-behavior-monitors/CLAUDE.md` |
-| 5. Block API migration | Replace 2 raw fs.readFileSync calls with readBlock in pi-behavior-monitors | `packages/pi-behavior-monitors/index.ts` |
-| 6. Cleanup and release | Full verification, commit, `npm run release:minor` | all |
+| 1. Named exports + import migration | Replace wildcard with 6 named exports AND update all 9 import sites atomically | `packages/pi-project/package.json`, `tsconfig.json`, 6 source + 3 test files in pi-workflows |
+| 2. Dependency model | Move pi SDK peers to deps in all packages; add pi-project dep to pi-behavior-monitors; add missing pi-ai dep to pi-workflows | 3 package.json files |
+| 3. Remove freshness gate + docs | Delete freshness gate, update check command, CLAUDE.md (6 locations incl import convention), README.md (3 locations) | scripts, package.json, CLAUDE.md, README.md, pi-behavior-monitors/CLAUDE.md, pi-workflows/README.md |
+| 4. Block API migration | Replace 2 raw fs.readFileSync calls with readBlock in pi-behavior-monitors | `packages/pi-behavior-monitors/index.ts` |
+| 5. Cleanup and release | Full verification, commit, `npm run release:minor` | all |
 
 ## Blockers
 

@@ -12,9 +12,9 @@
   </assumptions>
   <resolved_constraints>
     - Phase file writes use a `path` parameter that overrides the default .project/{name}.json destination while using atomic writes and block:phase schema validation.
-    - Directory enumeration via `readDir` lists and reads all JSON files in a .project/ subdirectory. Returns [] for missing directories. Corrupt files in existing directories fail.
-    - Expression filters (`find`, `filter`, `padStart`, `slugify`) are in scope — implement in expression.ts. Migrations use block read + expression filters directly. No transform step shims.
-    - Block read + expression filter for load+filter operations (not hybrid command steps).
+    - Directory enumeration via `readDir` lists and reads all JSON files in a .project/ subdirectory. Missing directories return `[]` (on-demand subdirectories). Corrupt files in existing directories fail.
+    - Zero-arg expression filters (`last`, `first`, `slugify`) are in scope — add to expression.ts FILTERS registry. Parametric filters (`find('key', value)`, `filter('key', value)`, `padStart(2, '0')`) are out of scope — the expression engine's filter architecture is `(value: unknown) => unknown` with no argument support. Migrations that need filtering use block read + small command step shims.
+    - Block read + command step shim for load+filter operations. The block API bypass for reads is eliminated — the command step receives data via expression, never touches the filesystem.
   </resolved_constraints>
 </metadata>
 
@@ -105,7 +105,7 @@ Reads all `.json` files in `.project/phases/`, sorted alphabetically. Output is 
 ]
 ```
 
-**Failure behavior**: If the directory does not exist, the step fails. If individual files contain invalid JSON, the step fails naming the corrupt file. No silent filtering.
+**Failure behavior**: If the directory does not exist, output is `[]` — the directory's absence is semantically "no items yet" for `.project/` subdirectories that are created on demand. If individual files in an existing directory contain invalid JSON, the step fails naming the corrupt file. This distinguishes "directory not yet created" (normal, empty result) from "file is corrupt" (error, explicit failure).
 
 **Empty directory**: If the directory exists but contains no `.json` files, output is `[]` — this is not an error (the directory was successfully enumerated).
 
@@ -562,7 +562,8 @@ function executeReadDir(subdir: string, cwd: string): unknown[] {
   try {
     entries = fs.readdirSync(dirPath).filter(f => f.endsWith(".json")).sort();
   } catch {
-    throw new Error(`Directory not found: ${PROJECT_DIR}/${subdir}/`);
+    // Missing directory = "no items yet" for on-demand .project/ subdirectories
+    return [];
   }
 
   const results: unknown[] = [];
@@ -615,9 +616,6 @@ function executeSubdirWrite(
 
   // Validate against schema if it exists
   if (fs.existsSync(schemaFile)) {
-    // Import validateFromFile dynamically to keep the import light
-    // Actually, since Plan 1 makes this available, import at top level
-    const { validateFromFile } = require("@davidorex/pi-project/schema-validator");
     validateFromFile(schemaFile, data, `block file '${subPath}.json'`);
   }
 
@@ -627,7 +625,7 @@ function executeSubdirWrite(
   // Atomic write
   const tmpPath = `${filePath}.block-step-${process.pid}.tmp`;
   try {
-    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2) + "\n", "utf-8");
+    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf-8");
     fs.renameSync(tmpPath, filePath);
   } catch (err) {
     try { fs.unlinkSync(tmpPath); } catch { /* cleanup best-effort */ }
@@ -677,16 +675,6 @@ function executeUpdate(
 4. **Subdirectory write**: The `executeSubdirWrite` function replicates writeBlock's atomic write pattern for paths outside .project/{name}.json. It uses the schema from `name` for validation — so `write.name: phase` validates against `.project/schemas/phase.schema.json` even when writing to `.project/phases/01-foundation.json`.
 
 5. **Import note**: The `require("@davidorex/pi-project/schema-validator")` in `executeSubdirWrite` should be replaced with a top-level import. The plan shows it as require for clarity, but implementation should use: `import { validateFromFile } from "@davidorex/pi-project/schema-validator";` at the top of the file.
-
-### Task 2.2: Add import to step-block.ts top-level
-
-Ensure the top-level imports include:
-
-```typescript
-import { validateFromFile } from "@davidorex/pi-project/schema-validator";
-```
-
-And replace the dynamic require in `executeSubdirWrite` with the imported function.
 
 ### Verification
 
@@ -752,7 +740,22 @@ if (stepSpec.block) {
 
 This follows the exact pattern of the transform step dispatch (synchronous call, persistStep, fail/continue check) with the addition of `ctx.cwd` as a parameter (which the block API requires for path resolution) and a widget activity preview showing the operation type.
 
-### Task 3.3: Update BlockSpec import in types re-export
+### Task 3.3: Add block to isRetryableStepType exclusion
+
+**File**: `packages/pi-workflows/src/workflow-executor.ts`, `isRetryableStepType` function (line 142)
+
+The current function uses a hardcoded exclusion list that does not consult STEP_TYPES. Add `stepSpec.block` to the exclusion:
+
+```typescript
+function isRetryableStepType(stepSpec: StepSpec): boolean {
+    if (stepSpec.command || stepSpec.gate || stepSpec.transform || stepSpec.monitor || stepSpec.block) return false;
+    return true;
+}
+```
+
+Block operations are deterministic — retrying the same read on the same filesystem state produces the same result.
+
+### Task 3.4: Update BlockSpec import in types re-export
 
 Ensure `BlockSpec` and its sub-types are exported from `types.ts` so that the executor can import the type if needed for type narrowing.
 
@@ -789,7 +792,7 @@ Test setup: create a temporary directory with `.project/` structure including sc
 | multi-read with optional missing block | `read: ["gaps", "nonexistent"], optional: ["nonexistent"]` | status: "completed", output.nonexistent is null |
 | single read fails on missing block | `read: "nonexistent"` | status: "failed", error: "Block file not found: ..." |
 | reads directory entries | `readDir: "phases"` | output is sorted array of phase contents |
-| readDir fails on missing directory | `readDir: "nonexistent"` | status: "failed", error names the directory |
+| readDir returns empty array for missing directory | `readDir: "nonexistent"` | status: "completed", output is `[]` |
 | readDir fails on corrupt JSON file | `readDir: "phases"` (with a corrupt file) | status: "failed", error names the corrupt file |
 | readDir returns empty array for empty directory | `readDir: "phases"` (empty dir) | output is `[]` |
 | writes a block with schema validation | `write: { name: "tasks", data: {...} }` | file written, schema-validated, output confirms |
@@ -861,47 +864,7 @@ load:
     format: json
 ```
 
-**After** (block read + transform for filtering):
-
-```yaml
-load-blocks:
-  block:
-    read: gaps
-  output:
-    format: json
-
-load:
-  transform:
-    mapping:
-      gap: "${{ steps.load-blocks.output.gaps | find('id', input.gap_id) }}"
-  when: "${{ steps.load-blocks.output.gaps | find('id', input.gap_id) }}"
-```
-
-**Data flow impact**: Downstream steps reference `steps.load.output.gap` — this is preserved. The `load` step still produces `{ gap: {...} }` via the transform mapping.
-
-**Status validation**: The original command step rejects resolved gaps. Add a gate step after the block read:
-
-```yaml
-load-blocks:
-  block:
-    read: gaps
-  output:
-    format: json
-
-load:
-  transform:
-    mapping:
-      gap: "${{ steps.load-blocks.output.gaps | find('id', input.gap_id) }}"
-
-validate-gap:
-  gate:
-    check: "test '${{ steps.load.output.gap.status }}' != 'resolved'"
-    onFail: fail
-```
-
-**Expression engine requirement**: The `find` filter is not currently in the expression engine's filter set. Two options: (a) add a `find(array, key, value)` filter, or (b) use a command step for the filter only (the read still goes through block API). The plan recommends option (a) — it's a small, general-purpose filter that benefits other workflows too. If deferred, option (b) keeps the migration viable with a smaller command step that receives the already-validated block data via expression rather than reading from disk.
-
-**Pragmatic alternative if find filter is deferred**:
+**After** (block read + command step shim for filtering):
 
 ```yaml
 load-blocks:
@@ -924,7 +887,9 @@ load:
     format: json
 ```
 
-This hybrid approach moves the fs.readFileSync to the block step (gaining explicit failure on missing file, PROJECT_DIR indirection) while keeping the in-memory filtering in a command step (no disk I/O, just argument parsing). The block API bypass for reads is eliminated.
+**Data flow impact**: Downstream steps reference `steps.load.output.gap` — this is preserved. The `load` step still produces `{ gap: {...} }`.
+
+The block step handles the filesystem read (explicit failure on missing file, PROJECT_DIR indirection). The command step shim receives the data via expression (no disk I/O) and performs in-memory filtering + status validation. The block API bypass for reads is eliminated.
 
 ### Migration 2: gap-to-phase `load-gap`
 
@@ -1000,20 +965,23 @@ phases: "${{ steps.load-phases.output }}"
 **Failure behavior change**: The original silently defaults all missing blocks to `{}`. The new version:
 - `gaps` is **required** — the workflow needs gap data to function. Missing gaps.json fails the step.
 - `architecture`, `conventions`, `inventory` are **optional** — these enrich context but their absence shouldn't block phase creation. They produce `null` instead of `{}`.
-- Phases directory: `readDir` fails if the directory doesn't exist. If phases/ may not exist yet (first phase creation), add a `when` condition or make this step optional. Looking at the workflow, `create-phase` creates the phases directory — so on first run, phases/ won't exist. The `readDir` step should handle this. Options: (a) make readDir return `[]` when the directory doesn't exist (weakens the explicit failure guarantee), or (b) split: check if directory exists first, skip readDir if not. Recommend (a) with a flag: `readDir: phases` with `allowEmpty: true` — or simply document that readDir on a nonexistent directory returns `[]` for the specific case of .project/ subdirectories that are created on demand. The plan uses the simpler approach: readDir on a missing directory returns `[]` (analogous to "no .json files found").
+- Phases directory: `readDir` returns `[]` for missing directories (on-demand subdirectories). Corrupt files in existing directories fail.
 
-**Revised readDir behavior**: If the directory does not exist, return `[]` rather than failing. The directory's absence is semantically "no items yet" for .project/ subdirectories that are created on demand. Individual file read/parse failures within an existing directory still fail explicitly. This distinguishes "directory not yet created" (normal, empty result) from "file is corrupt" (error, explicit failure).
-
-**Gaps filtering note**: The original step filters gaps to `status === 'open'`. This filter moves to either a transform step or the downstream agent input expression:
+**Gaps filtering note**: The original step filters gaps to `status === 'open'`. The downstream `author` step input must pass the inner array `gaps.gaps`, not the block wrapper object. The phase-author template expects a flat array. Use a command step shim to filter:
 
 ```yaml
-author:
-  agent: phase-author
-  input:
-    gaps: "${{ steps.load-context.output.gaps.gaps | filter('status', 'open') }}"
+filter-gaps:
+  command: |
+    node -e "
+      const data = JSON.parse(process.argv[1]);
+      const open = (data.gaps || []).filter(g => g.status === 'open');
+      console.log(JSON.stringify(open));
+    " '${{ steps.load-context.output.gaps | json }}'
+  output:
+    format: json
 ```
 
-If the `filter` expression filter doesn't exist yet, a transform step handles it.
+Then the downstream `author` step references `steps.filter-gaps.output` for gaps.
 
 ### Migration 4: gap-to-phase `write-phase`
 
@@ -1036,42 +1004,31 @@ write-phase:
     format: json
 ```
 
-**After** (block write with path override):
+**After** (command step for path computation + block write):
 
 ```yaml
+compute-phase-path:
+  command: |
+    node -e "
+      const phase = JSON.parse(process.argv[1]);
+      const num = String(phase.number).padStart(2, '0');
+      const name = phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/g, '');
+      console.log(JSON.stringify({ path: 'phases/' + num + '-' + name }));
+    " '${{ steps.author.output | json }}'
+  output:
+    format: json
+
 write-phase:
   block:
     write:
       name: phase
       data: "${{ steps.author.output }}"
-      path: "phases/${{ steps.author.output.number | padStart(2, '0') }}-${{ steps.author.output.name | slugify }}"
+      path: "${{ steps.compute-phase-path.output.path }}"
   output:
     format: json
 ```
 
-**Data flow impact**: Downstream references `steps.write-phase.output.path`, `steps.write-phase.output.phase_number`, `steps.write-phase.output.spec_count`. The block write output is `{ written: "phase", path: ".project/phases/01-name.json" }`. The `phase_number` and `spec_count` fields are not in the block write output. Options:
-
-(a) Add a transform step after the write to reshape:
-
-```yaml
-write-phase:
-  block:
-    write:
-      name: phase
-      data: "${{ steps.author.output }}"
-      path: "phases/${{ steps.author.output.number | padStart(2, '0') }}-${{ steps.author.output.name | slugify }}"
-  output:
-    format: json
-
-write-phase-summary:
-  transform:
-    mapping:
-      path: "${{ steps.write-phase.output.path }}"
-      phase_number: "${{ steps.author.output.number }}"
-      spec_count: "${{ steps.author.output.specs | length }}"
-```
-
-(b) Update downstream references (completion template) to pull from `steps.author.output` directly instead of `steps.write-phase.output`:
+**Data flow impact**: The block write output is `{ written: "phase", path: ".project/phases/01-name.json" }`. The original `phase_number` and `spec_count` fields are not in the block write output. Update downstream `completion` references to pull from `steps.author.output` directly:
 
 ```yaml
 completion:
@@ -1081,66 +1038,52 @@ completion:
     From gap: ${{ input.gap_id }}
 ```
 
-**Expression filters** `padStart` and `slugify` are implemented in this plan. `padStart(2, '0')` zero-pads numbers. `slugify` converts "Foundation Setup" to "foundation-setup".
+The `compute-phase-path` command step does the `padStart` and slugify formatting that the expression engine cannot handle (parametric filters are out of scope). The block step does the schema-validated atomic write.
 
-**Phase path computation**:
+### Migration 5: create-phase `load-context`
+
+Same pattern as Migration 3 — the `load-context` step has identical silent-degradation. Replace with block steps.
+
+**After**: Same two-step pattern as Migration 3 (`load-phases` readDir + `load-context` multi-block read with optional). Note: in `create-phase`, gaps is optional (the workflow converts unstructured intent, not necessarily from a gap). All context blocks are optional.
 
 ```yaml
-compute-phase-path:
-  transform:
-    mapping:
-      filename: "${{ 'phases/' + steps.author.output.number + '-' + steps.author.output.name }}"
-
-write-phase:
+load-phases:
   block:
-    write:
-      name: phase
-      data: "${{ steps.author.output }}"
-      path: "${{ steps.compute-phase-path.output.filename }}"
+    readDir: phases
+  output:
+    format: json
+
+load-context:
+  block:
+    read: [architecture, conventions, gaps, inventory]
+    optional: [architecture, conventions, gaps, inventory]
   output:
     format: json
 ```
 
-This uses a transform to compute the filename (where arbitrary JavaScript formatting can happen via expression) and passes the result to the block write.
+Update the downstream `author` step to reference `steps.load-phases.output` for phases.
 
-### Migration 5: create-phase `write-phase`
+### Migration 6: create-phase `write-phase`
 
-Identical pattern to migration 4. The only difference is the slugify regex (`/[^a-z0-9]+/g` vs `/\s+/g`) and the trailing newline. The block step's `executeSubdirWrite` always appends `\n`, so the trailing newline difference is absorbed.
+Identical pattern to migration 4 (`compute-phase-path` command step + block write). Same `compute-phase-path` command step, same block write with `path` override, same completion template update.
 
-**Before**:
-
-```yaml
-write-phase:
-  command: |
-    node --experimental-strip-types -e "
-      import fs from 'fs';
-      const phase = JSON.parse(process.argv[1]);
-      const filename = '.project/phases/' + String(phase.number).padStart(2, '0') + '-' + phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '') + '.json';
-      fs.mkdirSync('.project/phases', { recursive: true });
-      fs.writeFileSync(filename, JSON.stringify(phase, null, 2) + '\n');
-      console.log(JSON.stringify({ path: filename, phase_number: phase.number, spec_count: phase.specs.length }));
-    " '${{ steps.author.output | json }}'
-  output:
-    format: json
-```
+**Before**: Same filesystem-direct pattern as gap-to-phase `write-phase`.
 
 **After**: Same as migration 4.
 
-### Expression engine additions needed
+### Expression engine additions
 
-The migrations surface two categories of expression filter needs:
+Three zero-arg filters are added to `FILTERS` in `packages/pi-workflows/src/expression.ts`. These fit the existing filter architecture `(value: unknown) => unknown` — no parser changes needed.
 
-**Required for full migration** (without workaround steps):
-- `find(key, value)` — find item in array by key equality
-- `filter(key, value)` — filter array by key equality
-- `padStart(length, char)` — zero-pad numbers/strings
-- `slugify` — convert string to kebab-case
+```typescript
+last: (v) => (Array.isArray(v) ? v[v.length - 1] : v),
+first: (v) => (Array.isArray(v) ? v[0] : v),
+slugify: (v) => String(v).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, ""),
+```
 
-**Not required** (workarounds exist):
-- All of the above can be handled by transform steps or hybrid command steps
-- The migrations are viable without any expression engine changes by splitting into block + transform/command pairs
+Parametric filters (`find('key', value)`, `filter('key', value)`, `padStart(2, '0')`) are out of scope. The expression engine's `FILTERS` type is `Record<string, (value: unknown) => unknown>` — zero-argument. Adding parametric support requires a parser redesign that is not part of this plan.
 
-Expression filters (`find`, `filter`, `padStart`, `slugify`) are implemented in this plan as part of expression.ts.
+Where parametric filtering is needed, migrations use block read + small command step shims. The command step receives data via expression (no filesystem access) and performs the filtering/formatting in-process.
 
 ### Verification for each migration
 
@@ -1233,6 +1176,7 @@ Inform user to run `npm publish --workspaces --access public` and update pi inst
 | `packages/pi-workflows/src/step-block.ts` | 2 | New file — block step executor |
 | `packages/pi-workflows/src/workflow-executor.ts` | 3 | Add import + dispatch case for block step |
 | `packages/pi-workflows/src/step-block.test.ts` | 4 | New file — tests |
+| `packages/pi-workflows/src/expression.ts` | 2 | Add `last`, `first`, `slugify` zero-arg filters |
 | `packages/pi-workflows/workflows/do-gap.workflow.yaml` | 5 | Migrate `load` step |
 | `packages/pi-workflows/workflows/gap-to-phase.workflow.yaml` | 5 | Migrate `load-gap`, `load-context`, `write-phase` steps |
 | `packages/pi-workflows/workflows/create-phase.workflow.yaml` | 5 | Migrate `load-context`, `write-phase` steps |
@@ -1249,7 +1193,7 @@ The guarantee is provided at three levels:
 
 2. **executeRead** (step-block.ts): Propagates readBlock errors as step failures. Only blocks explicitly listed in `optional` get null instead of error.
 
-3. **executeReadDir** (step-block.ts): `throw new Error('Directory not found: ...')` — revised: returns `[]` for missing directories (on-demand subdirectories), throws on individual file corruption.
+3. **executeReadDir** (step-block.ts): Returns `[]` for missing directories (on-demand subdirectories), throws on individual file corruption within existing directories.
 
 The `optional` escape hatch is deliberate and visible in the YAML — a workflow author must explicitly list which blocks they expect might not exist. This is a design choice: "be explicit about what you're willing to tolerate" rather than "silently tolerate everything."
 
@@ -1257,4 +1201,4 @@ The `optional` escape hatch is deliberate and visible in the YAML — a workflow
 
 - **Plan 1 (dep alignment)**: Prerequisite. Provides the named exports that step-block.ts imports.
 - **Plan 3 (judgment step restructuring)**: The remaining non-mechanical command steps (verify, route, cluster, route-results) are addressed in Plan 3. They require LLM judgment, not just block I/O. The block step type handles the data loading and writing portions; Plan 3 handles the judgment portions.
-- **Expression engine filters**: The `find`, `filter`, `padStart`, `slugify` filters mentioned in the migrations are optional companions. They make the YAML more concise but aren't required — transform steps serve as shims.
+- **Expression engine filters**: Three zero-arg filters added (`last`, `first`, `slugify`). Parametric filters are out of scope — the engine's filter architecture takes zero arguments. Migrations use command step shims for filtering/formatting that requires arguments.

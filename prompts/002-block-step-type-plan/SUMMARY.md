@@ -32,24 +32,23 @@ fix: { block: { update: { name: gaps, key: gaps, match: { id: g1 }, set: { statu
 | Phase | Scope | Effort |
 |-------|-------|--------|
 | 1. Type definitions + STEP_TYPES registration | types.ts, workflow-spec.ts | Small |
-| 2. Step executor implementation | New step-block.ts | Medium |
-| 3. Executor dispatch integration | workflow-executor.ts | Small |
+| 2. Step executor implementation | New step-block.ts, expression.ts (3 zero-arg filters) | Medium |
+| 3. Executor dispatch integration | workflow-executor.ts (dispatch + isRetryableStepType) | Small |
 | 4. Tests | New step-block.test.ts | Medium |
-| 5. Workflow migrations (5 steps) | 3 workflow YAML files | Medium |
+| 5. Workflow migrations (6 steps) | 3 workflow YAML files | Medium |
 | 6. SDK + validation integration | workflow-sdk.ts | Small |
 | 7. Skills regeneration + release | Build artifacts | Small |
 
-## Migration Scope — 5 Mechanical Command Steps
+## Migration Scope — 6 Mechanical Command Steps
 
 | Workflow | Step | Current | After |
 |----------|------|---------|-------|
-| do-gap | `load` | fs.readFileSync + find/filter | `block: { read: gaps }` + `find` filter |
-| gap-to-phase | `load-gap` | fs.readFileSync + find/filter | `block: { read: gaps }` + `find` filter |
-| gap-to-phase | `load-context` | 5x readFileSync with catch {} | `block: { readDir: phases }` + `block: { read: [...] }` |
-| gap-to-phase | `write-phase` | mkdir + writeFileSync | `block: { write: { name: phase, path: "phases/..." } }` |
-| create-phase | `write-phase` | mkdir + writeFileSync | `block: { write: { name: phase, path: "phases/..." } }` |
-
-Additionally, `create-phase` `load-context` follows the same pattern as `gap-to-phase` `load-context` and migrates identically.
+| do-gap | `load` | fs.readFileSync + find/filter | `block: { read: gaps }` + command step shim for find/validate |
+| gap-to-phase | `load-gap` | fs.readFileSync + find/filter | `block: { read: gaps }` + command step shim for find/validate |
+| gap-to-phase | `load-context` | 5x readFileSync with catch {} | `block: { readDir: phases }` + `block: { read: [...] }` + command step shim for gaps filtering |
+| gap-to-phase | `write-phase` | mkdir + writeFileSync | command step for path computation + `block: { write: { name: phase, path: "..." } }` |
+| create-phase | `load-context` | 5x readFileSync with catch {} | Same pattern as gap-to-phase |
+| create-phase | `write-phase` | mkdir + writeFileSync | Same pattern as gap-to-phase |
 
 ## Design
 
@@ -57,7 +56,7 @@ Additionally, `create-phase` `load-context` follows the same pattern as `gap-to-
 - `optional` field for multi-block read — required blocks fail, optional ones produce `null`.
 - Subdirectory write via `path` override — schema resolved from `name`, file written to `path`.
 - Synchronous execution — like transform, no async.
-- Expression filters (`find`, `filter`, `padStart`, `slugify`) implemented in expression.ts. Migrations use them directly.
+- Three zero-arg filters added to expression.ts: `last`, `first`, `slugify`. Parametric filters out of scope — migrations use command step shims for find/filter/padStart.
 
 ## Next Step
 

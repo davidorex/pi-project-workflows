@@ -1,6 +1,6 @@
 {
 	"name": "@davidorex/pi-workflows",
-	"version": "0.6.2",
+	"version": "0.7.0",
 	"description": "Workflow orchestration extension for Pi",
 	"license": "MIT",
 	"author": "David Ryan",
@@ -47,7 +47,7 @@
 		"@mariozechner/pi-coding-agent": "*",
 		"@mariozechner/pi-tui": "*",
 		"@sinclair/typebox": "*",
-		"@davidorex/pi-project": "^0.6.2"
+		"@davidorex/pi-project": "^0.7.0"
 	},
 	"devDependencies": {
 		"@types/nunjucks": "^3.2.6"

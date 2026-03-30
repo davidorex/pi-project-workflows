@@ -327,9 +327,20 @@ export async function executeMonitor(
 	const verdict = parseVerdict(rawText);
 	const durationMs = Date.now() - startTime;
 
-	// Estimate usage from response
+	// Extract token usage from AssistantMessage.usage (pi-ai populates this)
 	const usage = zeroUsage();
-	// Token counts not directly available from complete() — leave as zero
+	if (response.usage) {
+		usage.input = response.usage.input ?? 0;
+		usage.output = response.usage.output ?? 0;
+		usage.cacheRead = response.usage.cacheRead ?? 0;
+		usage.cacheWrite = response.usage.cacheWrite ?? 0;
+		usage.cost =
+			(response.usage.cost?.input ?? 0) +
+			(response.usage.cost?.output ?? 0) +
+			(response.usage.cost?.cacheRead ?? 0) +
+			(response.usage.cost?.cacheWrite ?? 0);
+		usage.turns = 1;
+	}
 
 	const output = {
 		verdict: verdict.verdict,

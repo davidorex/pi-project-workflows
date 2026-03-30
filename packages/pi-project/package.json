@@ -1,6 +1,6 @@
 {
 	"name": "@davidorex/pi-project",
-	"version": "0.9.1",
+	"version": "0.9.2",
 	"description": "Schema-driven project state management for Pi",
 	"license": "MIT",
 	"author": "David Ryan",

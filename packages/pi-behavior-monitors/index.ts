@@ -1123,7 +1123,7 @@ export async function invokeMonitor(name: string, context?: Record<string, strin
 		const action = result.verdict === "new" ? monitor.actions.on_new : monitor.actions.on_flag;
 		if (action) {
 			if (result.verdict === "new" && result.newPattern && action.learn_pattern) {
-				learnPattern(monitor, result.newPattern);
+				learnPattern(monitor, result.newPattern, result.severity);
 			}
 			executeWriteAction(monitor, action, result);
 		}
@@ -1217,7 +1217,7 @@ async function activate(
 
 	// Learn new pattern
 	if (result.verdict === "new" && result.newPattern && action.learn_pattern) {
-		learnPattern(monitor, result.newPattern);
+		learnPattern(monitor, result.newPattern, result.severity);
 	}
 
 	// Execute write action (findings to JSON file)

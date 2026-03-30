@@ -54,6 +54,14 @@ function stepColor(spec: WorkflowSpec, stepName: string): ThemeColor {
 }
 
 /**
+ * Track the dispose function from the most recent widget so that
+ * creating a new widget clears the prior interval. This prevents
+ * leaked setInterval timers when the executor replaces widgets
+ * without the framework calling dispose on the previous one.
+ */
+let _previousDispose: (() => void) | undefined;
+
+/**
  * Create a widget factory for ctx.ui.setWidget().
  * Returns a function that pi calls to get the component.
  *
@@ -70,6 +78,12 @@ function stepColor(spec: WorkflowSpec, stepName: string): ThemeColor {
 export function createProgressWidget(
 	widgetState: ProgressWidgetState,
 ): (tui: TUI, theme: Theme) => Component & { dispose?(): void } {
+	// Dispose the previous widget's interval before creating a new one
+	if (_previousDispose) {
+		_previousDispose();
+		_previousDispose = undefined;
+	}
+
 	return (tui: TUI, theme: Theme) => {
 		const PULSE_INTERVAL_MS = 800;
 		let pulseOn = true;
@@ -77,6 +91,9 @@ export function createProgressWidget(
 			pulseOn = !pulseOn;
 			tui.requestRender();
 		}, PULSE_INTERVAL_MS);
+
+		// Track this widget's dispose for cleanup on replacement
+		_previousDispose = () => clearInterval(interval);
 
 		return {
 			render(width: number): string[] {

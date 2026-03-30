@@ -182,6 +182,10 @@ export interface Monitor extends MonitorSpec {
 	dismissed: boolean;
 	bypassDedup: boolean;
 	everyLastUserText: string;
+	/** Consecutive classification failure count for backoff. */
+	classifyFailures: number;
+	/** Number of events to skip before retrying after repeated failures. */
+	classifySkipRemaining: number;
 }
 
 export interface ClassifyResult {
@@ -340,6 +344,8 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 		dismissed: false,
 		bypassDedup: false,
 		everyLastUserText: "",
+		classifyFailures: 0,
+		classifySkipRemaining: 0,
 	};
 }
 
@@ -1193,18 +1199,34 @@ async function activate(
 	const prompt = renderClassifyPrompt(monitor, branch);
 	if (!prompt) return;
 
+	// Backoff: skip classification if this monitor has failed repeatedly
+	if (monitor.classifySkipRemaining > 0) {
+		monitor.classifySkipRemaining--;
+		return;
+	}
+
 	let result: ClassifyResult;
 	try {
 		result = await classifyPrompt(ctx, monitor, prompt);
 	} catch (e: unknown) {
 		const message = e instanceof Error ? e.message : String(e);
-		if (ctx.hasUI) {
+		monitor.classifyFailures++;
+		if (monitor.classifyFailures >= 3) {
+			// After 3 consecutive failures, skip the next 5 events before retrying
+			monitor.classifySkipRemaining = 5;
+			console.error(
+				`[${monitor.name}] Classification failed 3 times consecutively, backing off for 5 events: ${message}`,
+			);
+		} else if (ctx.hasUI) {
 			ctx.ui.notify(`[${monitor.name}] Classification failed: ${message}`, "error");
 		} else {
 			console.error(`[${monitor.name}] Classification failed: ${message}`);
 		}
 		return;
 	}
+
+	// Reset failure counter on successful classification
+	monitor.classifyFailures = 0;
 
 	// mark this user text as classified
 	monitor.lastUserText = currentUserText;
@@ -1380,6 +1402,8 @@ export default function (pi: ExtensionAPI) {
 			m.activationCount = 0;
 			m.bypassDedup = false;
 			m.everyLastUserText = "";
+			m.classifyFailures = 0;
+			m.classifySkipRemaining = 0;
 		}
 		monitorsEnabled = true;
 		pendingAgentEndSteers = [];

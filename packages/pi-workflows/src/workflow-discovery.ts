@@ -69,7 +69,8 @@ function scanDirectory(dirPath: string, source: "user" | "project"): WorkflowSpe
 	let entries: string[];
 	try {
 		entries = fs.readdirSync(dirPath);
-	} catch {
+	} catch (err) {
+		console.error(`[workflows] failed to scan directory ${dirPath}: ${err instanceof Error ? err.message : err}`);
 		return [];
 	}
 

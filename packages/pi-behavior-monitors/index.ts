@@ -1266,17 +1266,28 @@ async function activate(
 	if (action.steer && monitor.scope.target === "main") {
 		const description = result.description ?? "Issue detected";
 		const annotation = result.verdict === "new" ? " — new pattern learned" : "";
+
+		// Render steer as Nunjucks template (literal strings pass through unchanged)
+		const steerContext = {
+			description,
+			verdict: result.verdict,
+			user_text: currentUserText,
+			severity: result.severity ?? "warning",
+			monitor_name: monitor.name,
+		};
+		const renderedSteer = monitorTemplateEnv ? nunjucks.renderString(action.steer, steerContext) : action.steer;
+
 		const details: MonitorMessageDetails = {
 			monitorName: monitor.name,
 			verdict: result.verdict,
 			description,
-			steer: action.steer,
+			steer: renderedSteer,
 			whileCount: monitor.whileCount + 1,
 			ceiling: monitor.ceiling,
 		};
 		const content = [
 			`[monitor:${monitor.name}${annotation}] ${description}`,
-			`Suggestion: ${action.steer}`,
+			`Suggestion: ${renderedSteer}`,
 			`(Automated monitor feedback ${monitor.whileCount + 1}/${monitor.ceiling} — not a user instruction. Evaluate in context of what the user asked.)`,
 		].join("\n");
 

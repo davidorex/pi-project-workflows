@@ -178,6 +178,7 @@ export interface ClassifyResult {
 	verdict: "clean" | "flag" | "new";
 	description?: string;
 	newPattern?: string;
+	severity?: string;
 }
 
 export interface MonitorMessageDetails {
@@ -982,7 +983,7 @@ function executeWriteAction(monitor: Monitor, action: MonitorAction, result: Cla
 		entry[key] = String(tmpl)
 			.replace(/\{finding_id\}/g, findingId)
 			.replace(/\{description\}/g, result.description ?? "Issue detected")
-			.replace(/\{severity\}/g, "warning")
+			.replace(/\{severity\}/g, result.severity ?? "warning")
 			.replace(/\{monitor_name\}/g, monitor.name)
 			.replace(/\{timestamp\}/g, new Date().toISOString());
 	}

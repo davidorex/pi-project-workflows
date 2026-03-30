@@ -47,12 +47,17 @@ export function extractDependencies(spec: WorkflowSpec): Map<string, Set<string>
 
 		// Parse each expression for `steps.<name>` references
 		for (const expr of expressions) {
-			const referenced = extractStepReferences(expr, stepNames);
-			for (const ref of referenced) {
+			const { valid, invalid } = extractStepReferences(expr, stepNames);
+			for (const ref of valid) {
 				if (ref !== name) {
 					// no self-dependencies
 					stepDeps.add(ref);
 				}
+			}
+			for (const badRef of invalid) {
+				console.error(
+					`[dag] step reference "${badRef}" in step "${name}" does not match any declared step — will fail at runtime`,
+				);
 			}
 		}
 
@@ -142,6 +147,16 @@ function collectExpressionsFromValue(value: unknown, exprs: string[]): void {
 }
 
 /**
+ * Result of extracting step references from an expression.
+ * Separates valid references (matching declared step names) from
+ * invalid ones (no matching step) so callers can surface warnings.
+ */
+interface StepReferenceResult {
+	valid: Set<string>;
+	invalid: Set<string>;
+}
+
+/**
  * Extract step name references from an expression string.
  *
  * Looks for patterns like:
@@ -149,20 +164,24 @@ function collectExpressionsFromValue(value: unknown, exprs: string[]): void {
  * - `steps.diagnose.textOutput`
  * - `steps.diagnose.status`
  *
- * Returns the set of step names referenced.
+ * Returns both valid and invalid step name references. Invalid references
+ * are those that don't match any declared step name in the workflow spec.
  */
-function extractStepReferences(expr: string, validStepNames: Set<string>): Set<string> {
-	const refs = new Set<string>();
+function extractStepReferences(expr: string, validStepNames: Set<string>): StepReferenceResult {
+	const valid = new Set<string>();
+	const invalid = new Set<string>();
 	// Match `steps.<name>` — name is a word (alphanumeric + underscore + hyphen)
 	const regex = /steps\.([a-zA-Z_][\w-]*)/g;
 	let match: RegExpExecArray | null;
 	while ((match = regex.exec(expr)) !== null) {
 		const name = match[1];
 		if (validStepNames.has(name)) {
-			refs.add(name);
+			valid.add(name);
+		} else {
+			invalid.add(name);
 		}
 	}
-	return refs;
+	return { valid, invalid };
 }
 
 /**

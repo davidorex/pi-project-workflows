@@ -430,6 +430,9 @@ function syncSkillsToUser(distDir: string): void {
 
 const TRUNCATE = 2000;
 
+/** Module-level flag to log .project/ missing only once per session. */
+let projectDirMissingLogged = false;
+
 function extractText(parts: readonly { type: string }[]): string {
 	return parts
 		.filter((b): b is TextContent => b.type === "text")
@@ -533,6 +536,10 @@ function collectProjectVision(_branch: SessionEntry[]): string {
 		if (raw.name) parts.push(`Project: ${raw.name}`);
 		return parts.join("\n");
 	} catch {
+		if (!projectDirMissingLogged) {
+			console.error("[monitors] .project/ not found, collectProjectVision context will be empty");
+			projectDirMissingLogged = true;
+		}
 		return "";
 	}
 }
@@ -545,6 +552,10 @@ function collectProjectConventions(_branch: SessionEntry[]): string {
 		}
 		return "";
 	} catch {
+		if (!projectDirMissingLogged) {
+			console.error("[monitors] .project/ not found, collectProjectConventions context will be empty");
+			projectDirMissingLogged = true;
+		}
 		return "";
 	}
 }
@@ -1372,6 +1383,7 @@ export default function (pi: ExtensionAPI) {
 		}
 		monitorsEnabled = true;
 		pendingAgentEndSteers = [];
+		projectDirMissingLogged = false;
 		updateStatus();
 	});
 

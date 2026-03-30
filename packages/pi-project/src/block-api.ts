@@ -122,11 +122,25 @@ export function updateItemInBlock(
 	}
 
 	const arr = record[arrayKey] as Record<string, unknown>[];
-	const item = arr.find(predicate);
-	if (!item) {
+	const idx = arr.findIndex(predicate);
+	if (idx === -1) {
 		throw new Error(`No matching item in block '${blockName}' key '${arrayKey}'`);
 	}
 
-	Object.assign(item, updates);
+	// Count total matches to warn if predicate is ambiguous
+	let matchCount = 1;
+	for (let i = idx + 1; i < arr.length; i++) {
+		if (predicate(arr[i])) matchCount++;
+	}
+	if (matchCount > 1) {
+		console.error(`[block-api] updateItemInBlock: ${matchCount} items matched predicate, only first updated`);
+	}
+
+	// Clone the matched item with updates applied — avoid mutating in-memory
+	// before validation. If writeBlock fails, the original array is unmodified.
+	const updated = { ...arr[idx], ...updates };
+	const patched = [...arr];
+	patched[idx] = updated;
+	record[arrayKey] = patched;
 	writeBlock(cwd, blockName, record);
 }

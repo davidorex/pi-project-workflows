@@ -941,20 +941,21 @@ async function classifyPrompt(
 // Pattern learning (JSON)
 // =============================================================================
 
-function learnPattern(monitor: Monitor, description: string): void {
+function learnPattern(monitor: Monitor, description: string, severity = "warning"): void {
 	const patterns = loadPatterns(monitor);
 	const id = description
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, "-")
 		.slice(0, 60);
 
-	// dedup by description
-	if (patterns.some((p) => p.description === description)) return;
+	// dedup by ID — two different descriptions can slugify to the same ID,
+	// so check ID rather than raw description to avoid collisions
+	if (patterns.some((p) => p.id === id)) return;
 
 	patterns.push({
 		id,
 		description,
-		severity: "warning",
+		severity,
 		source: "learned",
 		learned_at: new Date().toISOString(),
 	});

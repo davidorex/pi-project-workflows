@@ -601,6 +601,7 @@ function evaluateWhen(monitor: Monitor, branch: SessionEntry[]): boolean {
 	const toolMatch = w.match(/^tool\((\w+)\)$/);
 	if (toolMatch) return hasToolNamed(branch, toolMatch[1]);
 
+	console.error(`[monitors] unknown when condition "${w}", treating as true`);
 	return true;
 }
 

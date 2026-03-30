@@ -204,6 +204,47 @@ export function parseWorkflowSpec(content: string, filePath: string, source: "us
 }
 
 /**
+ * Parse the output spec from a raw step. Shared across agent, command, monitor, and block branches.
+ * @param rawStep - the raw step object
+ * @param stepName - step name for error messages
+ * @param filePath - file path for error messages
+ * @param opts.allowSchema - if true, the `schema` field is permitted (agent steps only)
+ */
+function parseOutputSpec(
+	rawStep: Record<string, unknown>,
+	stepName: string,
+	filePath: string,
+	opts?: { allowSchema?: boolean },
+): StepOutputSpec | undefined {
+	if (!("output" in rawStep) || rawStep.output === undefined) return undefined;
+
+	if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {
+		throw new WorkflowSpecError(filePath, `step '${stepName}' output must be an object`);
+	}
+	const rawOutput = rawStep.output as Record<string, unknown>;
+	const output: StepOutputSpec = {};
+	if ("format" in rawOutput) {
+		output.format = rawOutput.format as StepOutputSpec["format"];
+	}
+	if ("schema" in rawOutput) {
+		if (!opts?.allowSchema) {
+			throw new WorkflowSpecError(filePath, `step '${stepName}' output.schema is only valid on agent steps`);
+		}
+		if (typeof rawOutput.schema !== "string") {
+			throw new WorkflowSpecError(filePath, `step '${stepName}' output.schema must be a string`);
+		}
+		output.schema = rawOutput.schema;
+	}
+	if ("path" in rawOutput) {
+		if (typeof rawOutput.path !== "string") {
+			throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
+		}
+		output.path = rawOutput.path;
+	}
+	return output;
+}
+
+/**
  * Validate and parse a single step from raw YAML data.
  * Enforces that exactly one of agent, gate, transform, or loop is set.
  * Rejects steps with `workflow` (not yet supported).
@@ -417,24 +458,9 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 
 		step.block = rawBlock as unknown as import("./types.js").BlockSpec;
 
-		// output spec (optional, same as command)
-		if ("output" in rawStep && rawStep.output !== undefined) {
-			if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {
-				throw new WorkflowSpecError(filePath, `step '${stepName}' output must be an object`);
-			}
-			const rawOutput = rawStep.output as Record<string, unknown>;
-			const output: StepOutputSpec = {};
-			if ("format" in rawOutput) {
-				output.format = rawOutput.format as StepOutputSpec["format"];
-			}
-			if ("path" in rawOutput) {
-				if (typeof rawOutput.path !== "string") {
-					throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
-				}
-				output.path = rawOutput.path;
-			}
-			step.output = output;
-		}
+		// output spec (optional)
+		const blockOutput = parseOutputSpec(rawStep, stepName, filePath);
+		if (blockOutput) step.output = blockOutput;
 
 		// input (optional, for expression resolution context)
 		if ("input" in rawStep && rawStep.input !== undefined) {
@@ -454,24 +480,9 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 		}
 		step.command = rawStep.command;
 
-		// output spec (optional, same as agent)
-		if ("output" in rawStep && rawStep.output !== undefined) {
-			if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {
-				throw new WorkflowSpecError(filePath, `step '${stepName}' output must be an object`);
-			}
-			const rawOutput = rawStep.output as Record<string, unknown>;
-			const output: StepOutputSpec = {};
-			if ("format" in rawOutput) {
-				output.format = rawOutput.format as StepOutputSpec["format"];
-			}
-			if ("path" in rawOutput) {
-				if (typeof rawOutput.path !== "string") {
-					throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
-				}
-				output.path = rawOutput.path;
-			}
-			step.output = output;
-		}
+		// output spec (optional)
+		const commandOutput = parseOutputSpec(rawStep, stepName, filePath);
+		if (commandOutput) step.output = commandOutput;
 
 		// input (optional, for expression resolution context)
 		if ("input" in rawStep && rawStep.input !== undefined) {
@@ -500,23 +511,8 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 		}
 
 		// output spec (optional)
-		if ("output" in rawStep && rawStep.output !== undefined) {
-			if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {
-				throw new WorkflowSpecError(filePath, `step '${stepName}' output must be an object`);
-			}
-			const rawOutput = rawStep.output as Record<string, unknown>;
-			const output: StepOutputSpec = {};
-			if ("format" in rawOutput) {
-				output.format = rawOutput.format as StepOutputSpec["format"];
-			}
-			if ("path" in rawOutput) {
-				if (typeof rawOutput.path !== "string") {
-					throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
-				}
-				output.path = rawOutput.path;
-			}
-			step.output = output;
-		}
+		const monitorOutput = parseOutputSpec(rawStep, stepName, filePath);
+		if (monitorOutput) step.output = monitorOutput;
 
 		return step;
 	}
@@ -557,30 +553,9 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 			step.context = rawStep.context as string[];
 		}
 
-		// output must be an object if present
-		if ("output" in rawStep && rawStep.output !== undefined) {
-			if (typeof rawStep.output !== "object" || rawStep.output === null || Array.isArray(rawStep.output)) {
-				throw new WorkflowSpecError(filePath, `step '${stepName}' output must be an object`);
-			}
-			const rawOutput = rawStep.output as Record<string, unknown>;
-			const output: StepOutputSpec = {};
-			if ("format" in rawOutput) {
-				output.format = rawOutput.format as StepOutputSpec["format"];
-			}
-			if ("schema" in rawOutput) {
-				if (typeof rawOutput.schema !== "string") {
-					throw new WorkflowSpecError(filePath, `step '${stepName}' output.schema must be a string`);
-				}
-				output.schema = rawOutput.schema;
-			}
-			if ("path" in rawOutput) {
-				if (typeof rawOutput.path !== "string") {
-					throw new WorkflowSpecError(filePath, `step '${stepName}' output.path must be a string`);
-				}
-				output.path = rawOutput.path;
-			}
-			step.output = output;
-		}
+		// output must be an object if present (agent steps allow schema field)
+		const agentOutput = parseOutputSpec(rawStep, stepName, filePath, { allowSchema: true });
+		if (agentOutput) step.output = agentOutput;
 	}
 
 	// Gate step

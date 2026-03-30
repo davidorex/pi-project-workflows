@@ -2,6 +2,16 @@ An agent made file changes (write/edit tool calls detected). Review the tool cal
 
 {{ tool_calls }}
 
+{% if user_text %}
+The user said:
+"{{ user_text }}"
+
+IMPORTANT: Consider the user's intent. If the user explicitly said not to
+commit yet, or if the work is exploratory (check, verify, audit, review,
+analyze, investigate), the agent may legitimately defer committing. Do not
+flag deferred commits when the user's request implies more work is coming.
+{% endif %}
+
 Known commit anti-patterns:
 {{ patterns }}
 
@@ -12,17 +22,7 @@ Determine:
 2. If committed, was the commit message detailed and specific? Generic messages like 'update files', 'fix bug', 'changes' are violations.
 3. If committed, does the message avoid prohibited language (see patterns)?
 
-{% if iteration > 0 %}
-NOTE: You have steered {{ iteration }} time(s) already this session.
-The agent's latest response is below. If the agent explicitly acknowledged
-the issue and stated a concrete plan to address it (not just "noted" but
-a specific action like "will commit after completing X"), reply CLEAN to
-allow the agent to follow through. Re-flag only if the agent ignored or
-deflected the steer.
-
-Agent response:
-{{ assistant_text }}
-{% endif %}
+{% if iteration > 0 %}{% include "_shared/iteration-grace.md" %}{% endif %}
 
 Reply CLEAN if changes were committed with a proper message.
 Reply FLAG:<description> if a known pattern was matched (no commit, generic message, prohibited language).

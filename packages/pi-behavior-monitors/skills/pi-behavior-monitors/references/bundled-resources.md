@@ -5,8 +5,9 @@
 - `schemas/monitor-pattern.schema.json`
 - `schemas/monitor.schema.json`
 
-## examples/ (20 files)
+## examples/ (21 files)
 
+- `examples/_shared/iteration-grace.md`
 - `examples/commit-hygiene/classify.md`
 - `examples/commit-hygiene.instructions.json`
 - `examples/commit-hygiene.monitor.json`

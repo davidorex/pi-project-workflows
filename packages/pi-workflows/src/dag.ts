@@ -229,10 +229,21 @@ export function buildPlanFromDeps(allSteps: string[], deps: Map<string, Set<stri
 }
 
 /**
- * Build an execution plan from a workflow spec.
+ * Build a **pure dependency** execution plan from a workflow spec.
  *
  * Performs topological sort, grouping independent steps into layers.
- * Steps within a layer can execute concurrently.
+ * Steps within a layer can execute concurrently. Only explicit `${{ steps.X }}`
+ * references and `context:` declarations create dependencies — steps with no
+ * such references are treated as fully independent.
+ *
+ * **Important:** The runtime executor does NOT use this function. It uses
+ * `buildConservativePlan` (exported from `workflow-executor.ts`), which adds
+ * implicit sequential ordering: steps with no explicit dependencies are chained
+ * to their predecessor in YAML declaration order. This preserves backward
+ * compatibility with workflows written for sequential execution. Use this
+ * function when you need the theoretical maximum parallelism from pure
+ * dependency analysis; use `buildConservativePlan` to see the actual runtime
+ * execution plan.
  *
  * Throws if the dependency graph contains a cycle.
  */

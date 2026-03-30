@@ -404,6 +404,12 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		}
 	}
 
+	// 4b. Runtime plan note — validation checks are based on pure dependency analysis
+	//      (buildExecutionPlan / extractDependencies). The runtime executor uses
+	//      buildConservativePlan which adds implicit sequential ordering for steps
+	//      without explicit ${{ steps.X }} dependencies. The runtime execution plan
+	//      may therefore differ from what pure DAG analysis would suggest.
+
 	// 5. Context step references — do all names in context[] point to declared steps?
 	for (const [stepName, step] of Object.entries(spec.steps)) {
 		if (!step.context) continue;

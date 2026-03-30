@@ -100,7 +100,7 @@ export interface ExecuteOptions {
  * DAG-inferred parallelism for steps that DO have explicit dependencies
  * (e.g., diamond patterns where two steps both depend on an earlier step).
  */
-function buildConservativePlan(spec: WorkflowSpec): ExecutionPlan {
+export function buildConservativePlan(spec: WorkflowSpec): ExecutionPlan {
 	const deps = extractDependencies(spec);
 	const allSteps = Object.keys(spec.steps);
 

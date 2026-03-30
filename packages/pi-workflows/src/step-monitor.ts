@@ -174,8 +174,10 @@ function renderPrompt(
 	if (spec.classify.promptTemplate) {
 		try {
 			return templateEnv.render(spec.classify.promptTemplate, context);
-		} catch {
-			// Fall through to inline prompt
+		} catch (err) {
+			console.error(
+				`[monitor] template "${spec.classify.promptTemplate}" render failed, falling back to inline prompt: ${err instanceof Error ? err.message : err}`,
+			);
 			if (!spec.classify.prompt) return null;
 		}
 	}

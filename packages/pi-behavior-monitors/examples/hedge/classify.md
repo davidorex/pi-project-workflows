@@ -19,16 +19,7 @@ assistant summarizing that completed work is not a deviation.
 Check against these patterns:
 {{ patterns }}
 
-{% if iteration > 0 %}
-NOTE: You have steered {{ iteration }} time(s) already this session.
-The agent's latest response is below. If the agent explicitly acknowledged
-the deviation and stated a concrete plan to address what the user actually
-said, reply CLEAN to allow the agent to follow through. Re-flag only if
-the agent ignored or deflected the steer.
-
-Agent response:
-{{ assistant_text }}
-{% endif %}
+{% if iteration > 0 %}{% include "_shared/iteration-grace.md" %}{% endif %}
 
 Reply CLEAN if the assistant stuck to what the user actually said.
 Reply FLAG:<one sentence, what was added or substituted> if a known

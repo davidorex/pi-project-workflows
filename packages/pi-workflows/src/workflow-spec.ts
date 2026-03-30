@@ -625,7 +625,21 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 		// Recursively validate sub-steps
 		const loopSteps: Record<string, StepSpec> = {};
 		for (const [subName, subValue] of Object.entries(rawLoopSteps)) {
-			loopSteps[subName] = validateStep(subValue, `${stepName}.loop.${subName}`, filePath);
+			const subStep = validateStep(subValue, `${stepName}.loop.${subName}`, filePath);
+			// Reject nested loop and parallel inside loops
+			if (subStep.loop) {
+				throw new WorkflowSpecError(
+					filePath,
+					`step '${subName}' in loop '${stepName}': nested loop steps are not supported inside loops`,
+				);
+			}
+			if (subStep.parallel) {
+				throw new WorkflowSpecError(
+					filePath,
+					`step '${subName}' in loop '${stepName}': nested parallel steps are not supported inside loops`,
+				);
+			}
+			loopSteps[subName] = subStep;
 		}
 
 		const loop: LoopSpec = {

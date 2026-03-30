@@ -99,9 +99,9 @@ function collectExpressions(step: StepSpec): string[] {
 		exprs.push(step.loop.attempts);
 	}
 
-	// forEach expression
+	// forEach expression (bare expression context — may lack ${{ }} wrapper)
 	if (step.forEach) {
-		collectExpressionsFromValue(step.forEach, exprs);
+		collectExpressionsFromValue(step.forEach, exprs, true);
 	}
 
 	// command expression (may contain ${{ }} references)
@@ -122,8 +122,15 @@ function collectExpressions(step: StepSpec): string[] {
 /**
  * Recursively collect expression strings from a value.
  * Walks objects, arrays, and strings looking for ${{ }} patterns.
+ *
+ * @param isBareExpression - when true, strings containing `steps.\w+` without
+ *   a `${{ }}` wrapper are treated as bare expressions (e.g., the `when` field).
+ *   When false, only properly wrapped `${{ }}` expressions are extracted.
+ *   This prevents arbitrary strings that happen to contain "steps." (e.g.,
+ *   documentation text, command arguments) from being misinterpreted as
+ *   step references.
  */
-function collectExpressionsFromValue(value: unknown, exprs: string[]): void {
+function collectExpressionsFromValue(value: unknown, exprs: string[], isBareExpression = false): void {
 	if (typeof value === "string") {
 		// Extract all ${{ ... }} patterns from the string
 		const regex = /\$\{\{([^}]+)\}\}/g;
@@ -131,17 +138,19 @@ function collectExpressionsFromValue(value: unknown, exprs: string[]): void {
 		while ((match = regex.exec(value)) !== null) {
 			exprs.push(match[1].trim());
 		}
-		// Also handle bare expressions (no ${{ }} wrapper, e.g. in `when`)
-		if (!value.includes("${{") && value.includes("steps.")) {
+		// Handle bare expressions (no ${{ }} wrapper) only when the caller
+		// indicates this value is a bare expression context (e.g. `when`).
+		// Uses word-boundary check to avoid matching "steps." inside longer strings.
+		if (isBareExpression && !value.includes("${{") && /\bsteps\.\w+/.test(value)) {
 			exprs.push(value);
 		}
 	} else if (Array.isArray(value)) {
 		for (const item of value) {
-			collectExpressionsFromValue(item, exprs);
+			collectExpressionsFromValue(item, exprs, isBareExpression);
 		}
 	} else if (value !== null && typeof value === "object") {
 		for (const v of Object.values(value)) {
-			collectExpressionsFromValue(v, exprs);
+			collectExpressionsFromValue(v, exprs, isBareExpression);
 		}
 	}
 }

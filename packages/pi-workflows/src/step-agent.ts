@@ -100,6 +100,9 @@ export async function executeAgentStep(
 			error: err instanceof Error ? err.message : String(err),
 		};
 	}
+	// Track non-fatal issues to attach to the StepResult
+	const warnings: string[] = [];
+
 	// Inject output schema into template context if available
 	if (stepSpec.output?.schema && typeof resolvedInput === "object" && resolvedInput !== null) {
 		const schemaPath = resolveSchemaPath(stepSpec.output.schema, options.specFilePath, options.ctx.cwd);
@@ -107,7 +110,7 @@ export async function executeAgentStep(
 			const schemaContent = fs.readFileSync(schemaPath, "utf8");
 			(resolvedInput as Record<string, unknown>).output_schema = schemaContent;
 		} catch {
-			/* schema file not found — template can still render without it */
+			warnings.push(`Output schema not found at ${schemaPath} — template will render without output_schema`);
 		}
 	}
 	agentSpec = compileAgentSpec(agentSpec, resolvedInput, templateEnv);
@@ -218,6 +221,10 @@ export async function executeAgentStep(
 			}
 		}
 		result.outputPath = persistStepOutput(runDir, stepName, result.output, result.textOutput, resolvedOutputPath);
+	}
+
+	if (warnings.length > 0) {
+		result.warnings = [...(result.warnings ?? []), ...warnings];
 	}
 
 	return result;

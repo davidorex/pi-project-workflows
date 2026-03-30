@@ -98,6 +98,16 @@ export const SCOPE_TARGETS = ["main", "subagent", "all", "workflow"] as const;
 
 export interface MonitorScope {
 	target: "main" | "subagent" | "all" | "workflow";
+	/**
+	 * Spec-only filter fields — defined in monitor JSON specs for documentation
+	 * and future use, but NOT enforced at runtime. The activate() path checks
+	 * scope.target for steer delivery gating but does not inspect these filter
+	 * fields.
+	 *
+	 * TODO: Implement runtime enforcement of scope.filter fields (agent_type,
+	 * step_name, workflow) so monitors can be scoped to specific subagent types,
+	 * workflow steps, or named workflows.
+	 */
 	filter?: {
 		agent_type?: string[];
 		step_name?: string;

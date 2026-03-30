@@ -47,7 +47,8 @@ export interface StepSpec {
 	forEach?: string; // ${{ }} expression resolving to an array
 	as?: string; // variable name to bind each element (default: "item")
 	color?: string; // ThemeColor key for widget display (e.g. "accent", "warning", "success")
-	workflow?: string; // phase 6 — not yet supported
+	/** @deprecated Phase 6 — nested workflow invocation. Not yet implemented. Parsed but rejected at validation time. */
+	workflow?: string;
 }
 // Note: exactly one of agent, gate, transform, loop, parallel, monitor, command, or block must be set.
 // workflow is phase 6.

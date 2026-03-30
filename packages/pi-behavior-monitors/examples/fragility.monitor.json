@@ -21,7 +21,7 @@
 	},
 	"actions": {
 		"on_flag": {
-			"steer": "Fix the issue you left behind.",
+			"steer": "{% if user_text %}{{ description }}{% else %}Fix the issue you left behind: {{ description }}{% endif %}",
 			"write": {
 				"path": ".workflow/gaps.json",
 				"schema": "schemas/gaps.schema.json",
@@ -38,7 +38,7 @@
 			}
 		},
 		"on_new": {
-			"steer": "Fix the issue you left behind.",
+			"steer": "{% if user_text %}{{ description }}{% else %}Fix the issue you left behind: {{ description }}{% endif %}",
 			"learn_pattern": true,
 			"write": {
 				"path": ".workflow/gaps.json",

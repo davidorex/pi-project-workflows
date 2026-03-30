@@ -21,7 +21,7 @@
 	},
 	"actions": {
 		"on_flag": {
-			"steer": "Fix the quality issue.",
+			"steer": "{{ description }}",
 			"write": {
 				"path": ".workflow/gaps.json",
 				"schema": "schemas/gaps.schema.json",
@@ -38,7 +38,7 @@
 			}
 		},
 		"on_new": {
-			"steer": "Fix the quality issue.",
+			"steer": "{{ description }}",
 			"learn_pattern": true,
 			"write": {
 				"path": ".workflow/gaps.json",

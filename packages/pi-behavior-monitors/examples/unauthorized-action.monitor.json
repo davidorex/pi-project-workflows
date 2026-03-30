@@ -19,10 +19,10 @@
 	},
 	"actions": {
 		"on_flag": {
-			"steer": "You took an action the user did not direct. Undo it now."
+			"steer": "You took an action the user did not direct: {{ description }}. Undo it now."
 		},
 		"on_new": {
-			"steer": "You took an action the user did not direct. Undo it now.",
+			"steer": "You took an action the user did not direct: {{ description }}. Undo it now.",
 			"learn_pattern": true
 		},
 		"on_clean": null

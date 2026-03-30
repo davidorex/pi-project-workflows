@@ -21,10 +21,10 @@
 	},
 	"actions": {
 		"on_flag": {
-			"steer": "Address what the user actually said."
+			"steer": "Address what the user actually said: {{ description }}"
 		},
 		"on_new": {
-			"steer": "Address what the user actually said.",
+			"steer": "Address what the user actually said: {{ description }}",
 			"learn_pattern": true
 		},
 		"on_clean": null

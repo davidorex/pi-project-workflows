@@ -1293,10 +1293,15 @@ async function activate(
 			// the window and the steer arrives one response late)
 			pendingAgentEndSteers.push({ monitor, details, content });
 		}
+
+		// Mark as steered only when a steer was actually delivered (or buffered),
+		// not merely on a non-clean verdict. The excludes mechanism checks
+		// steeredThisTurn to suppress co-firing monitors, so it should only
+		// fire when a steer reaches the conversation.
+		steeredThisTurn.add(monitor.name);
 	}
 
 	monitor.whileCount++;
-	steeredThisTurn.add(monitor.name);
 	updateStatus();
 }
 

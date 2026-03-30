@@ -169,12 +169,12 @@ When working in this repository:
 All packages use lockstep versioning — every release bumps all three packages to the same version. Run from the repo root:
 
 ```bash
-npm run release:patch    # bump all packages patch, update CHANGELOGs, commit, tag, publish, push
+npm run release:patch    # bump all packages patch, update CHANGELOGs, commit, tag
 npm run release:minor    # bump all packages minor
 npm run release:major    # bump all packages major
 ```
 
-This invokes `scripts/release.mjs`, which: bumps versions across all workspaces (via `scripts/sync-versions.js`), stamps `[Unreleased]` CHANGELOG sections with the new version and date, commits, tags `vX.Y.Z`, publishes all packages to npm, adds fresh `[Unreleased]` sections, commits again, and pushes.
+This invokes `scripts/release.mjs`, which: checks for uncommitted changes, bumps versions across all workspaces (via `scripts/bump-versions.js`), stamps `[Unreleased]` CHANGELOG sections with the new version and date, commits, and tags `vX.Y.Z`. The script does not publish or push — after it completes, the human must run `npm publish --workspaces --access public` (requires npm login + OTP) and `git push origin main && git push origin v<version>`.
 
 ## License
 

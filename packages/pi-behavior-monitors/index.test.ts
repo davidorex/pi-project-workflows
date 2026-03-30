@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+import nunjucks from "nunjucks";
 import { describe, expect, it } from "vitest";
 import {
 	COLLECTOR_DESCRIPTORS,
@@ -430,5 +433,76 @@ describe("invokeMonitor", () => {
 
 	it("throws with a helpful message mentioning .pi/monitors/", async () => {
 		await expect(invokeMonitor("no-such-monitor")).rejects.toThrow(".pi/monitors/");
+	});
+});
+
+// =============================================================================
+// Bundled monitor consistency
+// =============================================================================
+
+const EXAMPLES_DIR = path.resolve(import.meta.dirname ?? ".", "examples");
+
+function loadMonitorJson(name: string): Record<string, unknown> {
+	const filePath = path.join(EXAMPLES_DIR, `${name}.monitor.json`);
+	return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+}
+
+const MONITOR_NAMES = ["fragility", "commit-hygiene", "hedge", "unauthorized-action", "work-quality"];
+
+describe("bundled monitors: user_text in classify.context", () => {
+	for (const name of MONITOR_NAMES) {
+		it(`${name}.monitor.json includes user_text in classify.context`, () => {
+			const monitor = loadMonitorJson(name);
+			const classify = monitor.classify as { context: string[] };
+			expect(classify.context).toContain("user_text");
+		});
+	}
+});
+
+describe("bundled monitors: no inline prompt field", () => {
+	for (const name of MONITOR_NAMES) {
+		it(`${name}.monitor.json has no inline prompt field`, () => {
+			const monitor = loadMonitorJson(name);
+			const classify = monitor.classify as Record<string, unknown>;
+			expect(classify.prompt).toBeUndefined();
+		});
+	}
+});
+
+describe("bundled templates: shared iteration-grace partial", () => {
+	for (const name of MONITOR_NAMES) {
+		it(`${name}/classify.md uses shared iteration-grace include`, () => {
+			const templatePath = path.join(EXAMPLES_DIR, name, "classify.md");
+			const content = fs.readFileSync(templatePath, "utf-8");
+			expect(content).toContain('{% include "_shared/iteration-grace.md" %}');
+		});
+	}
+});
+
+describe("steer template rendering", () => {
+	it("literal steer string passes through nunjucks.renderString unchanged", () => {
+		const literal = "Commit your changes now.";
+		const rendered = nunjucks.renderString(literal, {});
+		expect(rendered).toBe(literal);
+	});
+
+	it("steer with {{ description }} renders the description value", () => {
+		const template = "{{ description }}";
+		const rendered = nunjucks.renderString(template, { description: "test finding" });
+		expect(rendered).toBe("test finding");
+	});
+
+	it("steer with {% if user_text %} conditional renders correctly with user_text", () => {
+		const template = "{% if user_text %}{{ description }}{% else %}Fix the issue: {{ description }}{% endif %}";
+		const withUser = nunjucks.renderString(template, { user_text: "check this", description: "broken test" });
+		expect(withUser).toBe("broken test");
+		const withoutUser = nunjucks.renderString(template, { user_text: "", description: "broken test" });
+		expect(withoutUser).toBe("Fix the issue: broken test");
+	});
+
+	it("steer with {{ description }} handles missing description gracefully", () => {
+		const env = new nunjucks.Environment(null, { autoescape: false, throwOnUndefined: false });
+		const rendered = env.renderString("Fix: {{ description }}", {});
+		expect(rendered).toBe("Fix: ");
 	});
 });

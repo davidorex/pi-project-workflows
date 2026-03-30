@@ -319,20 +319,37 @@ export function projectState(cwd: string): ProjectState {
 		if (fs.existsSync(single)) srcDirs.push(single);
 	}
 
-	// Source file count and line count (non-test .ts files)
+	// Source file count and line count (non-test .ts files, recursive)
 	let sourceFiles = 0;
 	let sourceLines = 0;
-	for (const srcDir of srcDirs) {
+	function walkTsFiles(dir: string, cb: (filePath: string) => void): void {
+		let entries: fs.Dirent[];
 		try {
-			for (const file of fs.readdirSync(srcDir)) {
-				if (!file.endsWith(".ts") || file.endsWith(".test.ts")) continue;
-				sourceFiles++;
-				const content = fs.readFileSync(path.join(srcDir, file), "utf-8");
-				sourceLines += content.split("\n").length;
-			}
+			entries = fs.readdirSync(dir, { withFileTypes: true });
 		} catch {
-			/* unreadable src dir */
+			return;
 		}
+		for (const entry of entries) {
+			const fullPath = path.join(dir, entry.name);
+			if (entry.isDirectory()) {
+				walkTsFiles(fullPath, cb);
+			} else if (entry.isFile()) {
+				cb(fullPath);
+			}
+		}
+	}
+	for (const srcDir of srcDirs) {
+		walkTsFiles(srcDir, (filePath) => {
+			const base = path.basename(filePath);
+			if (!base.endsWith(".ts") || base.endsWith(".test.ts")) return;
+			sourceFiles++;
+			try {
+				const content = fs.readFileSync(filePath, "utf-8");
+				sourceLines += content.split("\n").length;
+			} catch {
+				/* unreadable file */
+			}
+		});
 	}
 
 	// Test count derived from static scan of it() declarations in test files

@@ -21,13 +21,13 @@ export type BlockSnapshot = Map<string, BlockFileSnapshot>;
  */
 export function snapshotBlockFiles(cwd: string): BlockSnapshot {
 	const result: BlockSnapshot = new Map();
-	const workflowDir = path.join(cwd, PROJECT_DIR);
+	const projectDir = path.join(cwd, PROJECT_DIR);
 
 	try {
-		const entries = fs.readdirSync(workflowDir);
+		const entries = fs.readdirSync(projectDir);
 		for (const entry of entries) {
 			if (!entry.endsWith(".json")) continue;
-			const fullPath = path.join(workflowDir, entry);
+			const fullPath = path.join(projectDir, entry);
 			try {
 				const stat = fs.statSync(fullPath);
 				if (stat.isFile()) {
@@ -55,13 +55,13 @@ export function snapshotBlockFiles(cwd: string): BlockSnapshot {
  * @throws Error if any changed block file fails schema validation
  */
 export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void {
-	const workflowDir = path.join(cwd, PROJECT_DIR);
-	const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
+	const projectDir = path.join(cwd, PROJECT_DIR);
+	const schemasDir = path.join(projectDir, SCHEMAS_DIR);
 
 	// Gather current state
 	let currentEntries: string[];
 	try {
-		currentEntries = fs.readdirSync(workflowDir).filter((e) => e.endsWith(".json"));
+		currentEntries = fs.readdirSync(projectDir).filter((e) => e.endsWith(".json"));
 	} catch {
 		return; // .project/ doesn't exist
 	}
@@ -69,7 +69,7 @@ export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void 
 	const errors: string[] = [];
 
 	for (const entry of currentEntries) {
-		const fullPath = path.join(workflowDir, entry);
+		const fullPath = path.join(projectDir, entry);
 
 		let stat: fs.Stats;
 		try {
@@ -87,7 +87,10 @@ export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void 
 		const baseName = entry.replace(/\.json$/, "");
 		const schemaPath = path.join(schemasDir, `${baseName}.schema.json`);
 
-		if (!fs.existsSync(schemaPath)) continue; // no schema → skip silently
+		if (!fs.existsSync(schemaPath)) {
+			console.error(`[block-validation] skipping ${baseName}: no schema found`);
+			continue;
+		}
 
 		// Validate
 		try {
@@ -112,19 +115,19 @@ export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void 
  * Returns list of rolled-back file paths.
  */
 export function rollbackBlockFiles(cwd: string, before: BlockSnapshot): string[] {
-	const workflowDir = path.join(cwd, PROJECT_DIR);
+	const projectDir = path.join(cwd, PROJECT_DIR);
 	const rolledBack: string[] = [];
 
 	// Gather current files
 	let currentEntries: string[];
 	try {
-		currentEntries = fs.readdirSync(workflowDir).filter((e) => e.endsWith(".json"));
+		currentEntries = fs.readdirSync(projectDir).filter((e) => e.endsWith(".json"));
 	} catch {
 		return rolledBack;
 	}
 
 	for (const entry of currentEntries) {
-		const fullPath = path.join(workflowDir, entry);
+		const fullPath = path.join(projectDir, entry);
 
 		let stat: fs.Stats;
 		try {

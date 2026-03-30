@@ -97,6 +97,11 @@ export async function executeForEach(
 
 	for (let i = 0; i < array.length; i++) {
 		const element = array[i];
+		// Virtual step names like "implement[0]" are stored as literal keys in state.steps.
+		// These are accidentally referenceable via ${{ steps.implement[0].output }} because
+		// resolveExpression splits on dots only — "implement[0]" is treated as one segment.
+		// This works but is fragile: if resolveExpression ever parses bracket notation as
+		// array indexing, this breaks. Do not rely on this in workflow specs.
 		const iterStepName = `${stepName}[${i}]`;
 
 		// Create a scoped copy of state for this iteration

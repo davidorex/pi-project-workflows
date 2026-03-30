@@ -1203,7 +1203,7 @@ async function activate(
 			);
 		}
 		if (monitor.whileCount > 0) {
-			monitor.whileCount--;
+			monitor.whileCount = 0;
 		}
 		updateStatus();
 		return;

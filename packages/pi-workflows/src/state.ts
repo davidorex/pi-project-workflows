@@ -165,17 +165,30 @@ export function buildResult(
 
 	// Determine output: last completed step's output
 	let output: unknown;
+	let usedStep: string | undefined;
 	const stepNames = Object.keys(spec.steps);
 	for (let i = stepNames.length - 1; i >= 0; i--) {
 		const stepName = stepNames[i];
 		const stepResult = state.steps[stepName];
 		if (stepResult && stepResult.status === "completed") {
 			output = stepResult.output ?? stepResult.textOutput;
+			usedStep = stepName;
 			break;
 		}
 	}
 
-	return {
+	const warnings: string[] = [];
+	// Warn if the output comes from a step other than the declared last step
+	if (usedStep && stepNames.length > 0) {
+		const lastStep = stepNames[stepNames.length - 1];
+		if (usedStep !== lastStep) {
+			warnings.push(
+				`Workflow output is from step "${usedStep}" because last step "${lastStep}" ${state.steps[lastStep]?.status ?? "has no result"}`,
+			);
+		}
+	}
+
+	const result: WorkflowResult = {
 		workflow: spec.name,
 		runId,
 		status,
@@ -185,6 +198,8 @@ export function buildResult(
 		totalDurationMs,
 		runDir,
 	};
+	if (warnings.length > 0) result.warnings = warnings;
+	return result;
 }
 
 /**

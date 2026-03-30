@@ -201,6 +201,7 @@ export interface WorkflowResult {
 	totalDurationMs: number;
 	runDir: string; // absolute path to .workflows/runs/<name>/runs/<run-id>/
 	artifacts?: Record<string, string>; // name → absolute path of written artifact files
+	warnings?: string[]; // non-fatal issues (e.g. output sourced from non-last step)
 }
 
 // ── Completion Spec ──

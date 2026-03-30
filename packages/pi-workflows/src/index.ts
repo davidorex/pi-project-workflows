@@ -538,9 +538,16 @@ const extension = (pi: ExtensionAPI) => {
 				resume: resumeOpts,
 			});
 
+			// Signal to calling agent that this was a resume, not a fresh run
+			const resumed = resumeOpts !== undefined;
 			return {
-				content: [{ type: "text", text: formatToolResult(result) }],
-				details: result,
+				content: [
+					{
+						type: "text" as const,
+						text: formatToolResult(result) + (resumed ? "\n[resumed from prior incomplete run]" : ""),
+					},
+				],
+				details: { ...result, resumed },
 			};
 		},
 	});

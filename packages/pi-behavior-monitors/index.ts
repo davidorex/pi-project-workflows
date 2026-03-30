@@ -1182,16 +1182,10 @@ async function activate(
 	const prompt = renderClassifyPrompt(monitor, branch);
 	if (!prompt) return;
 
-	// create an abort controller so classification can be cancelled if the user aborts
-	const abortController = new AbortController();
-	const onAbort = () => abortController.abort();
-	const unsubAbort = pi.events.on("monitors:abort", onAbort);
-
 	let result: ClassifyResult;
 	try {
-		result = await classifyPrompt(ctx, monitor, prompt, abortController.signal);
+		result = await classifyPrompt(ctx, monitor, prompt);
 	} catch (e: unknown) {
-		if (abortController.signal.aborted) return;
 		const message = e instanceof Error ? e.message : String(e);
 		if (ctx.hasUI) {
 			ctx.ui.notify(`[${monitor.name}] Classification failed: ${message}`, "error");
@@ -1199,8 +1193,6 @@ async function activate(
 			console.error(`[${monitor.name}] Classification failed: ${message}`);
 		}
 		return;
-	} finally {
-		unsubAbort();
 	}
 
 	// mark this user text as classified
@@ -1677,14 +1669,8 @@ export default function (pi: ExtensionAPI) {
 		return box;
 	});
 
-	// --- abort support + buffered steer drain ---
+	// --- buffered steer drain ---
 	pi.on("agent_end", async () => {
-		// NOTE: do NOT emit monitors:abort here. The abort signal is for user-initiated
-		// cancellation only. Emitting it on agent_end kills agent_end monitor classifications
-		// (commit-hygiene, etc.) because this handler runs before the per-monitor agent_end
-		// handlers in the sequential event queue, and the abort signal is already set when
-		// those monitors try to classify.
-
 		// Drain buffered steers from message_end/turn_end monitors.
 		// The _agentEventQueue guarantees this runs AFTER all turn_end/message_end
 		// handlers complete (sequential promise chain), so the buffer is populated.

@@ -368,15 +368,29 @@ function seedExamples(): number {
 
 	if (listMonitorFiles(targetDir).length > 0) return 0;
 
-	const files = fs.readdirSync(EXAMPLES_DIR).filter((f) => f.endsWith(".json"));
+	const entries = fs.readdirSync(EXAMPLES_DIR, { withFileTypes: true });
+	const files = entries.filter((e) => e.isFile() && e.name.endsWith(".json"));
 	let copied = 0;
 	for (const file of files) {
-		const dest = path.join(targetDir, file);
+		const dest = path.join(targetDir, file.name);
 		if (!fs.existsSync(dest)) {
-			fs.copyFileSync(path.join(EXAMPLES_DIR, file), dest);
+			fs.copyFileSync(path.join(EXAMPLES_DIR, file.name), dest);
 			copied++;
 		}
 	}
+
+	// Also copy template subdirectories (e.g., commit-hygiene/classify.md)
+	// These contain Nunjucks .md prompt templates referenced by promptTemplate
+	// fields in the monitor JSON specs.
+	const dirs = entries.filter((e) => e.isDirectory());
+	for (const dir of dirs) {
+		const srcDir = path.join(EXAMPLES_DIR, dir.name);
+		const destDir = path.join(targetDir, dir.name);
+		if (!fs.existsSync(destDir)) {
+			copyDirRecursive(srcDir, destDir);
+		}
+	}
+
 	return copied;
 }
 

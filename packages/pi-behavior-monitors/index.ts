@@ -903,6 +903,7 @@ export function parseVerdict(raw: string): ClassifyResult {
 		return { verdict: "new", newPattern: rest.trim(), description: rest.trim() };
 	}
 	if (text.startsWith("FLAG:")) return { verdict: "flag", description: text.slice(5).trim() };
+	console.error(`[monitors] unrecognized verdict format, defaulting to CLEAN: "${text.slice(0, 80)}"`);
 	return { verdict: "clean" };
 }
 

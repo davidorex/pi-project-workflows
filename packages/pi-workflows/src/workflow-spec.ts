@@ -95,10 +95,21 @@ export function parseWorkflowSpec(content: string, filePath: string, source: "us
 		throw new WorkflowSpecError(filePath, "'steps' must be a non-empty object");
 	}
 
-	// Validate each step
+	// Accumulate non-fatal parse errors so users see all problems at once
+	const errors: string[] = [];
+
+	// Validate each step (per-step failures are accumulated, not thrown)
 	const steps: Record<string, StepSpec> = {};
 	for (const [stepName, stepValue] of Object.entries(rawSteps)) {
-		steps[stepName] = validateStep(stepValue, stepName, filePath);
+		try {
+			steps[stepName] = validateStep(stepValue, stepName, filePath);
+		} catch (err) {
+			if (err instanceof WorkflowSpecError) {
+				errors.push(err.reason);
+			} else {
+				throw err;
+			}
+		}
 	}
 
 	// Build the spec with defaults
@@ -121,83 +132,104 @@ export function parseWorkflowSpec(content: string, filePath: string, source: "us
 		spec.triggerTurn = true;
 	}
 
-	// completion (optional)
+	// completion (optional) — errors accumulated
 	if ("completion" in raw && raw.completion !== undefined) {
 		if (typeof raw.completion !== "object" || raw.completion === null || Array.isArray(raw.completion)) {
-			throw new WorkflowSpecError(filePath, "'completion' must be an object");
-		}
-		const rawComp = raw.completion as Record<string, unknown>;
+			errors.push("'completion' must be an object");
+		} else {
+			const rawComp = raw.completion as Record<string, unknown>;
+			let completionValid = true;
 
-		// Mutual exclusivity: template and message cannot coexist
-		if ("template" in rawComp && "message" in rawComp) {
-			throw new WorkflowSpecError(filePath, "'completion' cannot have both 'template' and 'message'");
-		}
-
-		// Must have at least one
-		if (!("template" in rawComp) && !("message" in rawComp)) {
-			throw new WorkflowSpecError(filePath, "'completion' must have either 'template' or 'message'");
-		}
-
-		const completion: CompletionSpec = {};
-
-		if (typeof rawComp.template === "string") {
-			completion.template = rawComp.template;
-		} else if ("template" in rawComp) {
-			throw new WorkflowSpecError(filePath, "'completion.template' must be a string");
-		}
-
-		if (typeof rawComp.message === "string") {
-			completion.message = rawComp.message;
-		} else if ("message" in rawComp) {
-			throw new WorkflowSpecError(filePath, "'completion.message' must be a string");
-		}
-
-		if ("include" in rawComp) {
-			if (!Array.isArray(rawComp.include)) {
-				throw new WorkflowSpecError(filePath, "'completion.include' must be an array of strings");
+			// Mutual exclusivity: template and message cannot coexist
+			if ("template" in rawComp && "message" in rawComp) {
+				errors.push("'completion' cannot have both 'template' and 'message'");
+				completionValid = false;
 			}
-			for (const item of rawComp.include) {
-				if (typeof item !== "string") {
-					throw new WorkflowSpecError(filePath, "'completion.include' must be an array of strings");
+
+			// Must have at least one
+			if (!("template" in rawComp) && !("message" in rawComp)) {
+				errors.push("'completion' must have either 'template' or 'message'");
+				completionValid = false;
+			}
+
+			if (completionValid) {
+				const completion: CompletionSpec = {};
+
+				if (typeof rawComp.template === "string") {
+					completion.template = rawComp.template;
+				} else if ("template" in rawComp) {
+					errors.push("'completion.template' must be a string");
 				}
-			}
-			completion.include = rawComp.include as string[];
-		}
 
-		spec.completion = completion;
+				if (typeof rawComp.message === "string") {
+					completion.message = rawComp.message;
+				} else if ("message" in rawComp) {
+					errors.push("'completion.message' must be a string");
+				}
+
+				if ("include" in rawComp) {
+					if (!Array.isArray(rawComp.include)) {
+						errors.push("'completion.include' must be an array of strings");
+					} else {
+						for (const item of rawComp.include) {
+							if (typeof item !== "string") {
+								errors.push("'completion.include' must be an array of strings");
+								break;
+							}
+						}
+						completion.include = rawComp.include as string[];
+					}
+				}
+
+				spec.completion = completion;
+			}
+		}
 	}
 
-	// artifacts (optional)
+	// artifacts (optional) — errors accumulated
 	if ("artifacts" in raw && raw.artifacts !== undefined) {
 		if (typeof raw.artifacts !== "object" || raw.artifacts === null || Array.isArray(raw.artifacts)) {
-			throw new WorkflowSpecError(filePath, "'artifacts' must be an object");
-		}
-		const rawArtifacts = raw.artifacts as Record<string, unknown>;
-		const artifacts: Record<string, ArtifactSpec> = {};
-		for (const [artName, artValue] of Object.entries(rawArtifacts)) {
-			if (typeof artValue !== "object" || artValue === null || Array.isArray(artValue)) {
-				throw new WorkflowSpecError(filePath, `artifact '${artName}' must be an object`);
-			}
-			const rawArt = artValue as Record<string, unknown>;
-			if (typeof rawArt.path !== "string") {
-				throw new WorkflowSpecError(filePath, `artifact '${artName}' must have a 'path' string`);
-			}
-			if (typeof rawArt.from !== "string") {
-				throw new WorkflowSpecError(filePath, `artifact '${artName}' must have a 'from' string`);
-			}
-			const artifact: ArtifactSpec = {
-				path: rawArt.path,
-				from: rawArt.from,
-			};
-			if (rawArt.schema !== undefined) {
-				if (typeof rawArt.schema !== "string") {
-					throw new WorkflowSpecError(filePath, `artifact '${artName}' schema must be a string`);
+			errors.push("'artifacts' must be an object");
+		} else {
+			const rawArtifacts = raw.artifacts as Record<string, unknown>;
+			const artifacts: Record<string, ArtifactSpec> = {};
+			for (const [artName, artValue] of Object.entries(rawArtifacts)) {
+				if (typeof artValue !== "object" || artValue === null || Array.isArray(artValue)) {
+					errors.push(`artifact '${artName}' must be an object`);
+					continue;
 				}
-				artifact.schema = rawArt.schema;
+				const rawArt = artValue as Record<string, unknown>;
+				const artErrors: string[] = [];
+				if (typeof rawArt.path !== "string") {
+					artErrors.push(`artifact '${artName}' must have a 'path' string`);
+				}
+				if (typeof rawArt.from !== "string") {
+					artErrors.push(`artifact '${artName}' must have a 'from' string`);
+				}
+				if (artErrors.length > 0) {
+					errors.push(...artErrors);
+					continue;
+				}
+				const artifact: ArtifactSpec = {
+					path: rawArt.path as string,
+					from: rawArt.from as string,
+				};
+				if (rawArt.schema !== undefined) {
+					if (typeof rawArt.schema !== "string") {
+						errors.push(`artifact '${artName}' schema must be a string`);
+					} else {
+						artifact.schema = rawArt.schema;
+					}
+				}
+				artifacts[artName] = artifact;
 			}
-			artifacts[artName] = artifact;
+			spec.artifacts = artifacts;
 		}
-		spec.artifacts = artifacts;
+	}
+
+	// Throw all accumulated errors as a single WorkflowSpecError
+	if (errors.length > 0) {
+		throw new WorkflowSpecError(filePath, errors.map((e) => `- ${e}`).join("\n"));
 	}
 
 	return spec;
@@ -269,7 +301,11 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 		throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: ${stepTypeList}`);
 	}
 	if (presentTypes.length > 1) {
-		throw new WorkflowSpecError(filePath, `step '${stepName}' must have exactly one of: ${stepTypeList}`);
+		const conflicting = presentTypes.map((t) => t.field).join(", ");
+		throw new WorkflowSpecError(
+			filePath,
+			`step '${stepName}' has multiple type fields: ${conflicting} — each step must have exactly one`,
+		);
 	}
 
 	// Individual flags for downstream parsing (derived from presentTypes check above)

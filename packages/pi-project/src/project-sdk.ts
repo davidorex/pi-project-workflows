@@ -352,19 +352,19 @@ export function projectState(cwd: string): ProjectState {
 		});
 	}
 
-	// Test count derived from static scan of it() declarations in test files
+	// Test count derived from static scan of it()/it.only()/test()/test.only() declarations in test files
 	let testCount = 0;
 	for (const srcDir of srcDirs) {
-		try {
-			for (const file of fs.readdirSync(srcDir)) {
-				if (!file.endsWith(".test.ts")) continue;
-				const content = fs.readFileSync(path.join(srcDir, file), "utf-8");
-				const matches = content.match(/^\s*it\s*\(/gm);
+		walkTsFiles(srcDir, (filePath) => {
+			if (!filePath.endsWith(".test.ts")) return;
+			try {
+				const content = fs.readFileSync(filePath, "utf-8");
+				const matches = content.match(/^\s*(?:it|test)(?:\.only)?\s*\(/gm);
 				if (matches) testCount += matches.length;
+			} catch {
+				/* unreadable file */
 			}
-		} catch {
-			/* unreadable src dir */
-		}
+		});
 	}
 
 	// Block summaries — scan all blocks, report item counts and status distribution

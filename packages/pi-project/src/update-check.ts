@@ -53,7 +53,7 @@ async function getLatestVersion(): Promise<string | null> {
  * Compare two semver strings. Returns true if latest > installed.
  */
 function isNewer(installed: string, latest: string): boolean {
-	const parse = (v: string) => v.split(".").map(Number);
+	const parse = (v: string) => v.replace(/-.*$/, "").split(".").map(Number);
 	const [iMaj, iMin, iPat] = parse(installed);
 	const [lMaj, lMin, lPat] = parse(latest);
 	if (lMaj !== iMaj) return lMaj > iMaj;

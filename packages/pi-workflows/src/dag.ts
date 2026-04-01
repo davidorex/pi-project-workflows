@@ -216,7 +216,31 @@ export function buildPlanFromDeps(allSteps: string[], deps: Map<string, Set<stri
 
 		if (layer.length === 0) {
 			const remaining = allSteps.filter((s) => !placed.has(s));
-			throw new Error(`Dependency cycle detected among steps: ${remaining.join(", ")}`);
+
+			// Trace the cycle path: pick a remaining step, follow deps until revisit
+			let cyclePath = "";
+			const remainingSet = new Set(remaining);
+			const start = remaining[0];
+			const visited: string[] = [start];
+			const visitedSet = new Set([start]);
+			let current = start;
+			while (true) {
+				const currentDeps = deps.get(current) ?? new Set();
+				const next = [...currentDeps].find((d) => remainingSet.has(d));
+				if (!next) break;
+				if (visitedSet.has(next)) {
+					// Found the cycle entry point — build path from that point
+					const cycleStart = visited.indexOf(next);
+					cyclePath = [...visited.slice(cycleStart), next].join(" → ");
+					break;
+				}
+				visited.push(next);
+				visitedSet.add(next);
+				current = next;
+			}
+
+			const detail = cyclePath ? ` (cycle: ${cyclePath})` : "";
+			throw new Error(`Dependency cycle detected among steps: ${remaining.join(", ")}${detail}`);
 		}
 
 		plan.push({ steps: layer });

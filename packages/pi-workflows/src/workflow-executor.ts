@@ -48,6 +48,7 @@ import type {
 	WorkflowResult,
 	WorkflowSpec,
 } from "./types.js";
+import { STEP_TYPES } from "./workflow-spec.js";
 
 // Re-export SIGKILL_GRACE_MS so tests that grep this file still find it
 export { SIGKILL_GRACE_MS };
@@ -133,12 +134,11 @@ interface StepExecOptions {
 
 /**
  * Determine if a step type supports retry.
- * Agent, forEach, and loop steps are retryable.
- * Command, gate, and transform are deterministic and not retryable.
+ * Delegates to the STEP_TYPES registry rather than maintaining a hardcoded exclusion list.
  */
 function isRetryableStepType(stepSpec: StepSpec): boolean {
-	if (stepSpec.command || stepSpec.gate || stepSpec.transform || stepSpec.monitor || stepSpec.block) return false;
-	return true;
+	const desc = STEP_TYPES.find((t) => (stepSpec as any)[t.field] !== undefined);
+	return desc?.retryable ?? true;
 }
 
 /**

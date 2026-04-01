@@ -14,7 +14,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** Check if a prompt.system value looks like a template file path vs inline text. */
+/**
+ * Check if a prompt.system value looks like a template file path vs inline text.
+ * Heuristic: treats strings ending in .md as template paths. A literal prompt
+ * string resembling a file path would be misclassified.
+ */
 function isTemplatePath(value: string | undefined): boolean {
 	if (!value) return false;
 	return value.endsWith(".md") || value.endsWith(".txt") || (value.includes("/") && !value.includes("\n"));

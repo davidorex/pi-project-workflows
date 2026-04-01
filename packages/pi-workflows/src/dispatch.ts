@@ -222,7 +222,7 @@ export async function dispatch(
 			options.onEvent({
 				type: evt.type || "unknown",
 				raw: evt,
-				toolName: evt.type === "tool_execution_start" ? evt.toolName : undefined,
+				toolName: evt.type === "tool_execution_start" || evt.type === "tool_execution_end" ? evt.toolName : undefined,
 				toolArgs: evt.type === "tool_execution_start" ? extractToolArgsPreview(evt.args) : undefined,
 				messageText:
 					evt.type === "message_end" && evt.message?.role === "assistant"

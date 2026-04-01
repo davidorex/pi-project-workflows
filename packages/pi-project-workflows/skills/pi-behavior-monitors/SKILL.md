@@ -115,7 +115,7 @@ Built-in placeholders (always available, not in `classify.context`):
 - `every(N)` — Fire every Nth activation (counter resets when user text changes)
 - `tool(name)` — Fire only if specific named tool called since last user message
 
-**Events:** `message_end`, `turn_end`, `agent_end`, `command`
+**Events:** `message_end`, `turn_end`, `agent_end`, `command`, `tool_call`
 
 **Verdict Types:** `clean`, `flag`, `new`
 
@@ -242,7 +242,7 @@ A `.monitor.json` file conforms to `schemas/monitor.schema.json`:
 |-------|---------|-------------|
 | `name` | (required) | Monitor identifier. Must be unique across project and global. |
 | `description` | `""` | Human-readable description. Also used as command description for `event: command` monitors. |
-| `event` | `message_end` | When to fire: `message_end`, `turn_end`, `agent_end`, or `command`. |
+| `event` | `message_end` | When to fire: `message_end`, `turn_end`, `agent_end`, `command`, or `tool_call`. `tool_call` fires pre-execution and can block the tool. |
 | `when` | `always` | Activation condition (see below). |
 | `ceiling` | `5` | Max consecutive steers before escalation. |
 | `escalate` | `ask` | At ceiling: `ask` (confirm with user) or `dismiss` (silence for session). |
@@ -429,6 +429,14 @@ corrected response re-triggers monitors naturally for any remaining issues. Moni
 **Abort**: Classification calls are aborted when the agent ends (via `agent_end` event).
 Aborted classifications produce no verdict and no action.
 
+**Pre-execution blocking (tool_call)**: Monitors with `event: "tool_call"` fire before a
+tool executes. The handler receives the pending tool name and arguments, classifies them,
+and can return `{ block: true, reason }` to prevent execution. This is fundamentally
+different from post-hoc steering — the tool never runs. Classification failure is fail-open:
+if the side-channel LLM call errors, the tool is allowed to proceed. The pending tool call
+context (name + arguments) is available as `{{ tool_call_context }}` in classify templates.
+Dedup is not applied to tool_call monitors since each tool call is a distinct event.
+
 **Write action**: Relative `write.path` values resolve from `process.cwd()`, not from the
 monitor directory. Parent directories are created automatically. If the target file doesn't
 exist or is unparseable, a fresh object is created. The `upsert` merge strategy matches on
@@ -459,7 +467,7 @@ for other extensions or workflows to invoke classification directly.
 </commands>
 
 <bundled_monitors>
-Four example monitors ship in `examples/` and are seeded on first run. Each has a
+Five example monitors ship in `examples/` and are seeded on first run. Each has a
 Nunjucks classify template in `examples/<name>/classify.md` with iteration-aware
 acknowledgment support:
 
@@ -497,6 +505,12 @@ generic or certainty-language message, steers to improve. Does not write finding
 are their own artifact. Ceiling: 3.
 6 bundled patterns across categories: missing-commit (no-commit), message-quality
 (generic-message, certainty-language, no-context), commit-safety (amend-not-new, force-push).
+
+**unauthorized-action** (`tool_call`, `when: has_tool_results`)
+Pre-execution blocker that classifies each pending tool call against user-directed scope.
+If the agent is about to execute a tool the user did not direct, the monitor blocks the
+tool call before execution rather than steering correction after the fact. Uses `tool_call`
+event with `{ block: true, reason }` return to prevent execution. Ceiling: 3.
 </bundled_monitors>
 
 <disabling_monitors>
@@ -527,6 +541,7 @@ should trigger a flag? Translate the user's description into concrete, observabl
 - Response content issues (trailing questions, lazy options, tone) → `turn_end`, `when: always`
 - Tool use issues (no commit, no test, bad edits) → `agent_end`, `when: has_file_writes` or `has_tool_results`
 - Post-action fragility (ignoring errors) → `message_end`, `when: has_tool_results`
+- Pre-execution blocking (unauthorized actions, dangerous commands) → `tool_call`, `when: has_tool_results` or `always`
 - On-demand analysis → `command`, `when: always`
 
 **Step 3: Choose context collectors.** What data does the classifier need to see?

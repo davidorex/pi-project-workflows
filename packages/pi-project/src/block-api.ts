@@ -42,8 +42,16 @@ function blockSchemaPath(cwd: string, blockName: string): string {
 /**
  * Read and parse a .project/{blockName}.json file.
  * Throws if the file does not exist or contains invalid JSON.
+ *
+ * Optional filter: when provided, returns a shallow copy of the block with only
+ * matching items in the specified array key. Non-array or missing keys return the
+ * block unchanged. The filter is applied after parsing, before returning.
  */
-export function readBlock(cwd: string, blockName: string): unknown {
+export function readBlock(
+	cwd: string,
+	blockName: string,
+	filter?: { arrayKey: string; predicate: (item: Record<string, unknown>) => boolean },
+): unknown {
 	const filePath = blockFilePath(cwd, blockName);
 	let content: string;
 	try {
@@ -52,12 +60,23 @@ export function readBlock(cwd: string, blockName: string): unknown {
 		throw new Error(`Block file not found: .project/${blockName}.json`);
 	}
 
+	let data: unknown;
 	try {
-		return JSON.parse(content);
+		data = JSON.parse(content);
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		throw new Error(`Invalid JSON in block file: .project/${blockName}.json: ${msg}`);
 	}
+
+	if (filter) {
+		const record = data as Record<string, unknown>;
+		const arr = record[filter.arrayKey];
+		if (Array.isArray(arr)) {
+			return { ...record, [filter.arrayKey]: arr.filter(filter.predicate) };
+		}
+	}
+
+	return data;
 }
 
 /**

@@ -1,4 +1,5 @@
 {
+	"_note": "Fires on agent_end (post-hoc). Pre-execution blocking via tool_call events is a future capability — requires monitor system changes to support blocking classification before tool execution.",
 	"name": "unauthorized-action",
 	"description": "Detects when agent takes an action the user did not direct and steers to undo it",
 	"event": "agent_end",

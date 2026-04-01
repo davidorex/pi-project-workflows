@@ -24,10 +24,10 @@ steps:
     output:
       format: json
 
-  load-gaps:
+  load-issues:
     block:
-      read: gaps
-      optional: [gaps]
+      read: issues
+      optional: [issues]
     output:
       format: json
 
@@ -38,7 +38,7 @@ steps:
       phases: "${{ steps.load-phases.output }}"
       architecture: "${{ steps.load-context.output.architecture }}"
       conventions: "${{ steps.load-context.output.conventions }}"
-      gaps: "${{ steps.load-gaps.output }}"
+      issues: "${{ steps.load-issues.output }}"
       inventory: "${{ steps.load-context.output.inventory }}"
     output:
       format: json

@@ -23,10 +23,10 @@
 		"on_flag": {
 			"steer": "{{ description }}",
 			"write": {
-				"path": ".project/gaps.json",
-				"schema": "schemas/gaps.schema.json",
+				"path": ".project/issues.json",
+				"schema": "schemas/issues.schema.json",
 				"merge": "append",
-				"array_field": "gaps",
+				"array_field": "issues",
 				"template": {
 					"id": "quality-{finding_id}",
 					"description": "{description}",
@@ -41,10 +41,10 @@
 			"steer": "{{ description }}",
 			"learn_pattern": true,
 			"write": {
-				"path": ".project/gaps.json",
-				"schema": "schemas/gaps.schema.json",
+				"path": ".project/issues.json",
+				"schema": "schemas/issues.schema.json",
 				"merge": "append",
-				"array_field": "gaps",
+				"array_field": "issues",
 				"template": {
 					"id": "quality-{finding_id}",
 					"description": "{description}",

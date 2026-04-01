@@ -20,10 +20,27 @@ beforeEach(() => {
 	fs.mkdirSync(schemasDir, { recursive: true });
 	fs.mkdirSync(phasesDir, { recursive: true });
 
-	// Write a gaps block
+	// Write an issues block
 	fs.writeFileSync(
-		path.join(projectDir, "gaps.json"),
-		JSON.stringify({ gaps: [{ id: "g1", status: "open", description: "test gap" }] }, null, 2),
+		path.join(projectDir, "issues.json"),
+		JSON.stringify(
+			{
+				issues: [
+					{
+						id: "g1",
+						status: "open",
+						title: "test issue",
+						body: "test issue body",
+						location: "test.ts:1",
+						category: "issue",
+						priority: "medium",
+						package: "test",
+					},
+				],
+			},
+			null,
+			2,
+		),
 	);
 
 	// Write an architecture block
@@ -36,13 +53,13 @@ beforeEach(() => {
 	);
 	fs.writeFileSync(path.join(phasesDir, "02-features.json"), JSON.stringify({ number: 2, name: "features" }, null, 2));
 
-	// Write a minimal schema for gaps
+	// Write a minimal schema for issues
 	fs.writeFileSync(
-		path.join(schemasDir, "gaps.schema.json"),
+		path.join(schemasDir, "issues.schema.json"),
 		JSON.stringify({
 			type: "object",
-			required: ["gaps"],
-			properties: { gaps: { type: "array" } },
+			required: ["issues"],
+			properties: { issues: { type: "array" } },
 		}),
 	);
 
@@ -65,37 +82,37 @@ const emptyScope: Record<string, unknown> = { input: {}, steps: {} };
 
 describe("block step: read", () => {
 	it("reads a single block", () => {
-		const result = executeBlock({ read: "gaps" }, "load", emptyScope, tmpDir);
+		const result = executeBlock({ read: "issues" }, "load", emptyScope, tmpDir);
 		assert.equal(result.status, "completed");
-		const output = result.output as { gaps: unknown[] };
-		assert.equal(output.gaps.length, 1);
-		assert.equal((output.gaps[0] as { id: string }).id, "g1");
+		const output = result.output as { issues: unknown[] };
+		assert.equal(output.issues.length, 1);
+		assert.equal((output.issues[0] as { id: string }).id, "g1");
 	});
 
 	it("reads multiple blocks", () => {
-		const result = executeBlock({ read: ["gaps", "architecture"] }, "load", emptyScope, tmpDir);
+		const result = executeBlock({ read: ["issues", "architecture"] }, "load", emptyScope, tmpDir);
 		assert.equal(result.status, "completed");
 		const output = result.output as Record<string, unknown>;
-		assert.ok(output.gaps);
+		assert.ok(output.issues);
 		assert.ok(output.architecture);
 	});
 
 	it("fails on missing required block", () => {
-		const result = executeBlock({ read: ["gaps", "nonexistent"] }, "load", emptyScope, tmpDir);
+		const result = executeBlock({ read: ["issues", "nonexistent"] }, "load", emptyScope, tmpDir);
 		assert.equal(result.status, "failed");
 		assert.ok(result.error?.includes("nonexistent"));
 	});
 
 	it("returns null for optional missing block", () => {
 		const result = executeBlock(
-			{ read: ["gaps", "nonexistent"], optional: ["nonexistent"] },
+			{ read: ["issues", "nonexistent"], optional: ["nonexistent"] },
 			"load",
 			emptyScope,
 			tmpDir,
 		);
 		assert.equal(result.status, "completed");
 		const output = result.output as Record<string, unknown>;
-		assert.ok(output.gaps);
+		assert.ok(output.issues);
 		assert.equal(output.nonexistent, null);
 	});
 
@@ -141,16 +158,29 @@ describe("block step: readDir", () => {
 
 describe("block step: write", () => {
 	it("writes a block with schema validation", () => {
-		const data = { gaps: [{ id: "g2", status: "open", description: "new" }] };
-		const result = executeBlock({ write: { name: "gaps", data } }, "save", emptyScope, tmpDir);
+		const data = {
+			issues: [
+				{
+					id: "g2",
+					status: "open",
+					title: "new",
+					body: "new body",
+					location: "test.ts:1",
+					category: "issue",
+					priority: "medium",
+					package: "test",
+				},
+			],
+		};
+		const result = executeBlock({ write: { name: "issues", data } }, "save", emptyScope, tmpDir);
 		assert.equal(result.status, "completed");
-		const written = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
-		assert.equal(written.gaps[0].id, "g2");
+		const written = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "issues.json"), "utf-8"));
+		assert.equal(written.issues[0].id, "g2");
 	});
 
 	it("fails on schema violation", () => {
-		const data = { not_gaps: "invalid" };
-		const result = executeBlock({ write: { name: "gaps", data } }, "save", emptyScope, tmpDir);
+		const data = { not_issues: "invalid" };
+		const result = executeBlock({ write: { name: "issues", data } }, "save", emptyScope, tmpDir);
 		assert.equal(result.status, "failed");
 		assert.ok(result.error);
 	});
@@ -171,12 +201,21 @@ describe("block step: write", () => {
 
 describe("block step: append", () => {
 	it("appends to block array", () => {
-		const item = { id: "g2", status: "open", description: "appended" };
-		const result = executeBlock({ append: { name: "gaps", key: "gaps", item } }, "add", emptyScope, tmpDir);
+		const item = {
+			id: "g2",
+			status: "open",
+			title: "appended",
+			body: "appended body",
+			location: "test.ts:2",
+			category: "issue",
+			priority: "medium",
+			package: "test",
+		};
+		const result = executeBlock({ append: { name: "issues", key: "issues", item } }, "add", emptyScope, tmpDir);
 		assert.equal(result.status, "completed");
-		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
-		assert.equal(data.gaps.length, 2);
-		assert.equal(data.gaps[1].id, "g2");
+		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "issues.json"), "utf-8"));
+		assert.equal(data.issues.length, 2);
+		assert.equal(data.issues[1].id, "g2");
 	});
 
 	it("fails on nonexistent block", () => {
@@ -188,19 +227,19 @@ describe("block step: append", () => {
 describe("block step: update", () => {
 	it("updates item in block array", () => {
 		const result = executeBlock(
-			{ update: { name: "gaps", key: "gaps", match: { id: "g1" }, set: { status: "resolved" } } },
+			{ update: { name: "issues", key: "issues", match: { id: "g1" }, set: { status: "resolved" } } },
 			"fix",
 			emptyScope,
 			tmpDir,
 		);
 		assert.equal(result.status, "completed");
-		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
-		assert.equal(data.gaps[0].status, "resolved");
+		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "issues.json"), "utf-8"));
+		assert.equal(data.issues[0].status, "resolved");
 	});
 
 	it("fails when no match", () => {
 		const result = executeBlock(
-			{ update: { name: "gaps", key: "gaps", match: { id: "nonexistent" }, set: { status: "resolved" } } },
+			{ update: { name: "issues", key: "issues", match: { id: "nonexistent" }, set: { status: "resolved" } } },
 			"fix",
 			emptyScope,
 			tmpDir,
@@ -211,7 +250,7 @@ describe("block step: update", () => {
 
 describe("block step: expression resolution", () => {
 	it("resolves expressions in read block name", () => {
-		const scope = { input: { blockName: "gaps" }, steps: {} };
+		const scope = { input: { blockName: "issues" }, steps: {} };
 		const result = executeBlock({ read: "${{ input.blockName }}" as unknown as string }, "load", scope, tmpDir);
 		assert.equal(result.status, "completed");
 		assert.ok(result.output);
@@ -220,10 +259,27 @@ describe("block step: expression resolution", () => {
 	it("resolves expressions in write data", () => {
 		const scope = {
 			input: {},
-			steps: { prev: { output: { gaps: [{ id: "new", status: "open", description: "from expr" }] } } },
+			steps: {
+				prev: {
+					output: {
+						issues: [
+							{
+								id: "new",
+								status: "open",
+								title: "from expr",
+								body: "expr body",
+								location: "test.ts:1",
+								category: "issue",
+								priority: "medium",
+								package: "test",
+							},
+						],
+					},
+				},
+			},
 		};
 		const result = executeBlock(
-			{ write: { name: "gaps", data: "${{ steps.prev.output }}" as unknown } },
+			{ write: { name: "issues", data: "${{ steps.prev.output }}" as unknown } },
 			"save",
 			scope,
 			tmpDir,

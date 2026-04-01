@@ -87,7 +87,7 @@ export const PROJECT_BLOCK_TYPES = [
 	"architecture",
 	"tasks",
 	"decisions",
-	"gaps",
+	"issues",
 	"rationale",
 	"verification",
 	"handoff",
@@ -648,17 +648,17 @@ export function validateProject(cwd: string): ProjectValidationResult {
 		/* block doesn't exist */
 	}
 
-	// Validate gap references
+	// Validate issue references
 	try {
-		const gapData = readBlock(cwd, "gaps") as { gaps?: Record<string, unknown>[] };
-		if (Array.isArray(gapData.gaps)) {
-			for (const gap of gapData.gaps) {
-				if (gap.resolved_by && !allIds.has(String(gap.resolved_by))) {
+		const issueData = readBlock(cwd, "issues") as { issues?: Record<string, unknown>[] };
+		if (Array.isArray(issueData.issues)) {
+			for (const issue of issueData.issues) {
+				if (issue.resolved_by && !allIds.has(String(issue.resolved_by))) {
 					issues.push({
 						severity: "warning",
-						message: `Gap '${gap.id}' references resolved_by '${gap.resolved_by}' which does not exist`,
-						block: "gaps",
-						field: `gaps[${gap.id}].resolved_by`,
+						message: `Issue '${issue.id}' references resolved_by '${issue.resolved_by}' which does not exist`,
+						block: "issues",
+						field: `issues[${issue.id}].resolved_by`,
 					});
 				}
 			}

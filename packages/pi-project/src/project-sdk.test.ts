@@ -34,15 +34,15 @@ describe("availableBlocks", () => {
 		const wfDir = path.join(tmpDir, ".project");
 		const schemasDir = path.join(wfDir, "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
-		fs.writeFileSync(path.join(wfDir, "gaps.json"), "{}");
-		fs.writeFileSync(path.join(schemasDir, "gaps.schema.json"), "{}");
+		fs.writeFileSync(path.join(wfDir, "issues.json"), "{}");
+		fs.writeFileSync(path.join(schemasDir, "issues.schema.json"), "{}");
 		fs.writeFileSync(path.join(wfDir, "model-config.json"), "{}"); // no schema
 
 		const blocks = availableBlocks(tmpDir);
-		const gaps = blocks.find((b) => b.name === "gaps");
+		const issuesBlock = blocks.find((b) => b.name === "issues");
 		const config = blocks.find((b) => b.name === "model-config");
-		assert.ok(gaps);
-		assert.strictEqual(gaps!.hasSchema, true);
+		assert.ok(issuesBlock);
+		assert.strictEqual(issuesBlock!.hasSchema, true);
 		assert.ok(config);
 		assert.strictEqual(config!.hasSchema, false);
 	});
@@ -63,10 +63,10 @@ describe("availableSchemas", () => {
 
 		const schemasDir = path.join(tmpDir, ".project", "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
-		fs.writeFileSync(path.join(schemasDir, "gaps.schema.json"), "{}");
+		fs.writeFileSync(path.join(schemasDir, "issues.schema.json"), "{}");
 
 		const schemas = availableSchemas(tmpDir);
-		assert.ok(schemas.some((s) => s.includes("gaps.schema.json")));
+		assert.ok(schemas.some((s) => s.includes("issues.schema.json")));
 	});
 
 	it("returns empty array when schemas dir does not exist", (t) => {
@@ -106,7 +106,7 @@ describe("projectState", () => {
 		const wfDir = path.join(tmpDir, ".project");
 		const schemasDir = path.join(wfDir, "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
-		fs.writeFileSync(path.join(schemasDir, "gaps.schema.json"), "{}");
+		fs.writeFileSync(path.join(schemasDir, "issues.schema.json"), "{}");
 
 		// Set up phases
 		const phasesDir = path.join(wfDir, "phases");
@@ -116,12 +116,39 @@ describe("projectState", () => {
 		fs.writeFileSync(path.join(phasesDir, "08-automation.json"), "{}");
 
 		fs.writeFileSync(
-			path.join(wfDir, "gaps.json"),
+			path.join(wfDir, "issues.json"),
 			JSON.stringify({
-				gaps: [
-					{ id: "g1", description: "open gap", status: "open", category: "issue", priority: "high" },
-					{ id: "g2", description: "resolved", status: "resolved", category: "cleanup", priority: "low" },
-					{ id: "g3", description: "another open", status: "open", category: "capability", priority: "medium" },
+				issues: [
+					{
+						id: "g1",
+						title: "open issue",
+						body: "open issue detail",
+						location: "src/mod.ts:10",
+						status: "open",
+						category: "issue",
+						priority: "high",
+						package: "pi-project",
+					},
+					{
+						id: "g2",
+						title: "resolved",
+						body: "resolved detail",
+						location: "src/mod.ts:20",
+						status: "resolved",
+						category: "cleanup",
+						priority: "low",
+						package: "pi-project",
+					},
+					{
+						id: "g3",
+						title: "another open",
+						body: "another open detail",
+						location: "src/mod.ts:30",
+						status: "open",
+						category: "capability",
+						priority: "medium",
+						package: "pi-project",
+					},
 				],
 			}),
 		);
@@ -144,13 +171,13 @@ describe("projectState", () => {
 		assert.strictEqual(state.lastCommitMessage, "init");
 		assert.ok(state.recentCommits.length > 0);
 		assert.ok(state.recentCommits[0].includes("init"));
-		// blockSummaries: gaps block has a "gaps" array with 3 items and status distribution
-		assert.ok(state.blockSummaries.gaps);
-		assert.ok(state.blockSummaries.gaps.arrays.gaps);
-		assert.strictEqual(state.blockSummaries.gaps.arrays.gaps.total, 3);
-		assert.ok(state.blockSummaries.gaps.arrays.gaps.byStatus);
-		assert.strictEqual(state.blockSummaries.gaps.arrays.gaps.byStatus!.open, 2);
-		assert.strictEqual(state.blockSummaries.gaps.arrays.gaps.byStatus!.resolved, 1);
+		// blockSummaries: issues block has an "issues" array with 3 items and status distribution
+		assert.ok(state.blockSummaries.issues);
+		assert.ok(state.blockSummaries.issues.arrays.issues);
+		assert.strictEqual(state.blockSummaries.issues.arrays.issues.total, 3);
+		assert.ok(state.blockSummaries.issues.arrays.issues.byStatus);
+		assert.strictEqual(state.blockSummaries.issues.arrays.issues.byStatus!.open, 2);
+		assert.strictEqual(state.blockSummaries.issues.arrays.issues.byStatus!.resolved, 1);
 
 		// blockSummaries: decisions block has a "decisions" array with 2 items and status distribution
 		assert.ok(state.blockSummaries.decisions);
@@ -162,7 +189,7 @@ describe("projectState", () => {
 
 		assert.strictEqual(state.phases.total, 3);
 		assert.strictEqual(state.phases.current, 8); // highest number from 08-automation.json
-		assert.ok(state.schemas >= 1); // at least gaps.schema.json
+		assert.ok(state.schemas >= 1); // at least issues.schema.json
 	});
 
 	it("handles missing blocks gracefully", (t) => {
@@ -267,23 +294,26 @@ describe("validateProject", () => {
 		assert.strictEqual(depIssue!.block, "tasks");
 	});
 
-	it("reports gap with broken resolved_by reference", (t) => {
-		const tmpDir = makeTmpDir("validate-gap-ref");
+	it("reports issue with broken resolved_by reference", (t) => {
+		const tmpDir = makeTmpDir("validate-issue-ref");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
 
 		fs.writeFileSync(
-			path.join(projectDir, "gaps.json"),
+			path.join(projectDir, "issues.json"),
 			JSON.stringify({
-				gaps: [
+				issues: [
 					{
 						id: "g1",
-						description: "resolved gap",
+						title: "resolved issue",
+						body: "resolved issue body",
+						location: "test.ts:1",
 						status: "resolved",
-						category: "defect",
+						category: "issue",
 						priority: "high",
+						package: "test",
 						resolved_by: "nonexistent-spec-42",
 					},
 				],
@@ -291,11 +321,11 @@ describe("validateProject", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		const gapIssue = result.issues.find(
+		const issueRef = result.issues.find(
 			(i) => i.message.includes("resolved_by") && i.message.includes("nonexistent-spec-42"),
 		);
-		assert.ok(gapIssue, "should report issue about broken resolved_by reference");
-		assert.strictEqual(gapIssue!.block, "gaps");
+		assert.ok(issueRef, "should report issue about broken resolved_by reference");
+		assert.strictEqual(issueRef!.block, "issues");
 	});
 
 	it("returns valid for an empty project directory", (t) => {

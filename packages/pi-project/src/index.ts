@@ -272,10 +272,10 @@ const extension = (pi: ExtensionAPI) => {
 		name: "append-block-item",
 		label: "Append Block Item",
 		description: "Append an item to an array in a project block file. Schema validation is automatic.",
-		promptSnippet: "Append items to project blocks (gaps, decisions, or any user-defined block)",
+		promptSnippet: "Append items to project blocks (issues, decisions, or any user-defined block)",
 		parameters: Type.Object({
-			block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
-			arrayKey: Type.String({ description: "Array key in the block (e.g., 'gaps', 'decisions')" }),
+			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
+			arrayKey: Type.String({ description: "Array key in the block (e.g., 'issues', 'decisions')" }),
 			item: Type.Unknown({ description: "Item object to append — must conform to block schema" }),
 		}),
 		async execute(
@@ -324,9 +324,9 @@ const extension = (pi: ExtensionAPI) => {
 		description: "Update fields on an item in a project block array. Finds by predicate field match.",
 		promptSnippet: "Update items in project blocks — change status, add details, mark resolved",
 		parameters: Type.Object({
-			block: Type.String({ description: "Block name (e.g., 'gaps', 'decisions')" }),
+			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
 			arrayKey: Type.String({ description: "Array key in the block" }),
-			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'gap-123' })" }),
+			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'issue-123' })" }),
 			updates: Type.Record(Type.String(), Type.Unknown(), {
 				description: "Fields to update (e.g., { status: 'resolved' })",
 			}),
@@ -372,7 +372,7 @@ const extension = (pi: ExtensionAPI) => {
 		description: "Read a project block file as structured JSON.",
 		promptSnippet: "Read a project block as structured JSON",
 		parameters: Type.Object({
-			block: Type.String({ description: "Block name (e.g., 'gaps', 'tasks', 'requirements')" }),
+			block: Type.String({ description: "Block name (e.g., 'issues', 'tasks', 'requirements')" }),
 		}),
 		async execute(
 			_toolCallId: string,

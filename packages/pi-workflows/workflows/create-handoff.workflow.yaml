@@ -5,8 +5,8 @@ version: "1"
 steps:
   load-blocks:
     block:
-      read: [project, gaps, decisions, tasks]
-      optional: [project, gaps, decisions, tasks]
+      read: [project, issues, decisions, tasks]
+      optional: [project, issues, decisions, tasks]
     output:
       format: json
 
@@ -51,14 +51,14 @@ steps:
         console.log(JSON.stringify({
           project: blocks.project,
           phases: phases,
-          gaps: blocks.gaps,
+          issues: blocks.issues,
           decisions: blocks.decisions,
           tasks: blocks.tasks,
           recentCommits: git.recent_commits || [],
           changedFiles: git.changed_files || [],
           blocks_status: {
             project: blocks.project != null,
-            gaps: blocks.gaps != null,
+            issues: blocks.issues != null,
             decisions: blocks.decisions != null,
             tasks: blocks.tasks != null,
             phases: phases.length > 0,

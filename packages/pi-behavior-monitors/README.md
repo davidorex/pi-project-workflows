@@ -16,9 +16,9 @@ On first run, if no monitors exist in your project, example monitors are seeded 
 
 ## Bundled Example Monitors
 
-- **fragility** — detects when the agent leaves broken state behind (errors it noticed but didn't fix, TODO comments instead of solutions, empty catch blocks). Writes findings to `.project/gaps.json`.
+- **fragility** — detects when the agent leaves broken state behind (errors it noticed but didn't fix, TODO comments instead of solutions, empty catch blocks). Writes findings to `.project/issues.json`.
 - **hedge** — detects when the agent deviates from what the user actually said (rephrasing questions, assuming intent, deflecting with counter-questions)
-- **work-quality** — on-demand audit of work quality (trial-and-error, not reading before editing, fixing symptoms instead of root causes). Invoked via `/work-quality`. Writes findings to `.project/gaps.json`.
+- **work-quality** — on-demand audit of work quality (trial-and-error, not reading before editing, fixing symptoms instead of root causes). Invoked via `/work-quality`. Writes findings to `.project/issues.json`.
 
 ## File Structure
 
@@ -53,7 +53,7 @@ Create a `.monitor.json` file in `.pi/monitors/` conforming to `schemas/monitor.
    - **steer**: inject a correction message into the conversation (main scope only)
    - **write**: append structured findings to a JSON file (any scope)
    - **learn**: add new patterns to the library automatically
-6. Downstream workflows can consume the JSON findings (e.g., gaps.json → verify step → gate)
+6. Downstream workflows can consume the JSON findings (e.g., issues.json → verify step → gate)
 
 ## Schemas
 

@@ -23,10 +23,10 @@
 		"on_flag": {
 			"steer": "{% if user_text %}{{ description }}{% else %}Fix the issue you left behind: {{ description }}{% endif %}",
 			"write": {
-				"path": ".project/gaps.json",
-				"schema": "schemas/gaps.schema.json",
+				"path": ".project/issues.json",
+				"schema": "schemas/issues.schema.json",
 				"merge": "append",
-				"array_field": "gaps",
+				"array_field": "issues",
 				"template": {
 					"id": "fragility-{finding_id}",
 					"description": "{description}",
@@ -41,10 +41,10 @@
 			"steer": "{% if user_text %}{{ description }}{% else %}Fix the issue you left behind: {{ description }}{% endif %}",
 			"learn_pattern": true,
 			"write": {
-				"path": ".project/gaps.json",
-				"schema": "schemas/gaps.schema.json",
+				"path": ".project/issues.json",
+				"schema": "schemas/issues.schema.json",
 				"merge": "append",
-				"array_field": "gaps",
+				"array_field": "issues",
 				"template": {
 					"id": "fragility-{finding_id}",
 					"description": "{description}",

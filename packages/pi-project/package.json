@@ -67,8 +67,12 @@
 		"test": "tsx --test src/*.test.ts"
 	},
 	"dependencies": {
-		"ajv": "^8.17.1",
 		"@mariozechner/pi-coding-agent": "^0.63.1",
-		"@sinclair/typebox": "^0.34.48"
+		"@sinclair/typebox": "^0.34.48",
+		"ajv": "^8.17.1",
+		"proper-lockfile": "^4.1.2"
+	},
+	"devDependencies": {
+		"@types/proper-lockfile": "^4.1.4"
 	}
 }

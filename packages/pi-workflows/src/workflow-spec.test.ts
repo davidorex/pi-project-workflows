@@ -287,7 +287,7 @@ steps:
 `;
 		assert.throws(
 			() => parseWorkflowSpec(yaml, "/t.yaml", "project"),
-			(err: unknown) => err instanceof WorkflowSpecError && err.message.includes("must have exactly one of"),
+			(err: unknown) => err instanceof WorkflowSpecError && err.message.includes("multiple type fields"),
 		);
 	});
 

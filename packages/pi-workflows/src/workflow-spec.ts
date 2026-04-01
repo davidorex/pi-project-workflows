@@ -171,13 +171,12 @@ export function parseWorkflowSpec(content: string, filePath: string, source: "us
 					if (!Array.isArray(rawComp.include)) {
 						errors.push("'completion.include' must be an array of strings");
 					} else {
-						for (const item of rawComp.include) {
-							if (typeof item !== "string") {
-								errors.push("'completion.include' must be an array of strings");
-								break;
-							}
+						const allStrings = rawComp.include.every((item) => typeof item === "string");
+						if (!allStrings) {
+							errors.push("'completion.include' must be an array of strings");
+						} else {
+							completion.include = rawComp.include as string[];
 						}
-						completion.include = rawComp.include as string[];
 					}
 				}
 

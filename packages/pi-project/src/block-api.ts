@@ -23,9 +23,7 @@ function withBlockLock<T>(filePath: string, fn: () => T): T {
 	if (!fs.existsSync(filePath)) {
 		return fn();
 	}
-	lockfile.lockSync(filePath, {
-		retries: { retries: 5, minTimeout: 50, maxTimeout: 500 },
-	});
+	lockfile.lockSync(filePath, { stale: 10000 });
 	try {
 		return fn();
 	} finally {

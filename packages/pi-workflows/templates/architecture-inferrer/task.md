@@ -2,30 +2,30 @@ Infer the architecture of the project at `{{ path }}`.
 
 ## Codebase Analysis
 
-{% if analysis.files is defined %}
+{% if exploration.files is defined %}
 ### Files
-{% for file in analysis.files %}
+{% for file in exploration.files %}
 - `{{ file.path }}` ({{ file.language | default("unknown") }}, {{ file.lines | default("?") }} lines){% if file.exports %} — {{ file.exports | length }} exports{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if analysis.types is defined %}
+{% if exploration.types is defined %}
 ### Types
-{% for t in analysis.types %}
+{% for t in exploration.types %}
 - `{{ t.name }}` ({{ t.kind }}) in `{{ t.file }}`
 {% endfor %}
 {% endif %}
 
-{% if analysis.dependencies is defined %}
+{% if exploration.dependencies is defined %}
 ### Dependencies
-{% for d in analysis.dependencies %}
+{% for d in exploration.dependencies %}
 - `{{ d.from }}` → `{{ d.to }}` ({{ d.type | default("import") }})
 {% endfor %}
 {% endif %}
 
-{% if analysis.entryPoints is defined %}
+{% if exploration.entryPoints is defined %}
 ### Entry Points
-{% for ep in analysis.entryPoints %}
+{% for ep in exploration.entryPoints %}
 - `{{ ep }}`
 {% endfor %}
 {% endif %}
@@ -50,7 +50,7 @@ From the analysis above and targeted code reads, produce an architecture block:
 
 4. **Overview** — one paragraph summarizing the architecture: what the system does, how it's organized, and what the key design decisions are
 
-Read entry points, config files, and module interfaces to confirm the analysis. Do not read every file.
+Read entry points, config files, and module interfaces to confirm the exploration. Do not read every file.
 
 ## Required Output Schema
 

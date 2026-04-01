@@ -22,7 +22,11 @@ steps:
         const { execSync } = require('child_process');
         const git = {};
         try {
-          git.recent_commits = execSync('git log --oneline -10', { encoding: 'utf-8' }).trim().split('\n');
+          const lines = execSync('git log --oneline -10', { encoding: 'utf-8' }).trim().split('\n').filter(Boolean);
+          git.recent_commits = lines.map(line => {
+            const spaceIdx = line.indexOf(' ');
+            return { sha: line.slice(0, spaceIdx), message: line.slice(spaceIdx + 1) };
+          });
         } catch (e) {
           git.recent_commits = [];
           git.commits_error = e.message || 'git log failed';

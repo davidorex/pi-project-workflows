@@ -1,15 +1,17 @@
 ## Plan: {{ spec.name }}
 
 ### Intent
-{{ spec.intent }}
+{{ spec.intent | default(spec.description, true) }}
 
+{% if spec.tasks %}
 ### Tasks
 {% for task in spec.tasks %}
 {{ loop.index }}. {{ task }}
 {% endfor %}
+{% endif %}
 
 ### Files to Change
-{% for f in spec.files_to_change %}
+{% for f in spec.files_to_change | default(spec.files, true) %}
 - `{{ f }}`
 {% endfor %}
 

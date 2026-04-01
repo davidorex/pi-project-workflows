@@ -671,7 +671,7 @@ describe("self-implement workflow spec", () => {
 		assert.strictEqual(spec.steps.plan.agent, "plan-decomposer");
 		assert.strictEqual(spec.steps.implement.agent, "spec-implementer");
 		assert.strictEqual(spec.steps.implement.forEach, "${{ steps.plan.output.plans }}");
-		assert.strictEqual(spec.steps.implement.as, "plan");
+		assert.strictEqual(spec.steps.implement.as, "spec");
 		assert.strictEqual(spec.steps.verify.agent, "verifier");
 		assert.ok(spec.steps.check.gate);
 		assert.strictEqual(spec.steps.check.gate!.onFail, "fail");

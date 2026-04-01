@@ -104,9 +104,14 @@ export interface MonitorScope {
 	 * scope.target for steer delivery gating but does not inspect these filter
 	 * fields.
 	 *
-	 * TODO: Implement runtime enforcement of scope.filter fields (agent_type,
-	 * step_name, workflow) so monitors can be scoped to specific subagent types,
-	 * workflow steps, or named workflows.
+	 * Cannot be enforced currently: ExtensionContext and event types
+	 * (AgentEndEvent, TurnEndEvent, MessageEndEvent, etc.) do not expose
+	 * the active agent name, workflow step name, or workflow name. The
+	 * pi extension API would need to surface this metadata — likely via
+	 * ExtensionContext fields (e.g. ctx.agentName, ctx.workflowName,
+	 * ctx.stepName) or as event payload fields — before activate() can
+	 * match against these filters. Until then, all monitors fire
+	 * regardless of filter values, gated only by scope.target.
 	 */
 	filter?: {
 		agent_type?: string[];
@@ -612,6 +617,36 @@ function hasToolNamed(branch: SessionEntry[], name: string): boolean {
 	return false;
 }
 
+/**
+ * Check whether a tool with the given name was called AND succeeded (no error)
+ * since the last user message. Scans backward for an assistant toolCall with
+ * the name, then looks for a corresponding toolResult that does NOT have
+ * isError: true. This avoids false positives from failed writes/edits.
+ */
+function hasSuccessfulToolNamed(branch: SessionEntry[], name: string): boolean {
+	let foundCall = false;
+	for (let i = branch.length - 1; i >= 0; i--) {
+		const entry = branch[i];
+		if (!isMessageEntry(entry)) continue;
+		if (entry.message.role === "user") break;
+		if (entry.message.role === "assistant") {
+			for (const part of entry.message.content) {
+				if (part.type === "toolCall" && part.name === name) {
+					foundCall = true;
+				}
+			}
+		}
+		if (entry.message.role === "toolResult" && entry.message.toolName === name) {
+			if (!entry.message.isError) return true;
+			// Found a result for this tool name but it was an error —
+			// keep scanning in case an earlier call succeeded
+		}
+	}
+	// If we found a call but no non-error result, treat as unsuccessful
+	if (foundCall) return false;
+	return false;
+}
+
 // =============================================================================
 // When evaluation
 // =============================================================================
@@ -620,7 +655,7 @@ function evaluateWhen(monitor: Monitor, branch: SessionEntry[]): boolean {
 	const w = monitor.when;
 	if (w === "always") return true;
 	if (w === "has_tool_results") return hasToolResults(branch);
-	if (w === "has_file_writes") return hasToolNamed(branch, "write") || hasToolNamed(branch, "edit");
+	if (w === "has_file_writes") return hasSuccessfulToolNamed(branch, "write") || hasSuccessfulToolNamed(branch, "edit");
 	if (w === "has_bash") return hasToolNamed(branch, "bash");
 
 	const everyMatch = w.match(/^every\((\d+)\)$/);
@@ -1402,29 +1437,27 @@ export default function (pi: ExtensionAPI) {
 				const dir = resolveProjectMonitorsDir();
 				ctx.ui.notify(`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`, "info");
 			}
+			// Reset per-monitor state for the new session. This covers both
+			// fresh sessions and what was previously handled by session_switch
+			// (which pi upstream is removing). Resetting here means every
+			// session_start gets a clean slate regardless of prior state.
+			for (const m of monitors) {
+				m.whileCount = 0;
+				m.dismissed = false;
+				m.lastUserText = "";
+				m.activationCount = 0;
+				m.bypassDedup = false;
+				m.everyLastUserText = "";
+				m.classifyFailures = 0;
+				m.classifySkipRemaining = 0;
+			}
+			monitorsEnabled = true;
+			pendingAgentEndSteers = [];
+			projectDirMissingLogged = false;
 			updateStatus();
 		} catch {
 			/* startup errors should not block session */
 		}
-	});
-
-	pi.on("session_switch", async (_event: unknown, ctx: ExtensionContext) => {
-		statusCtx = ctx;
-		invokeCtx = ctx;
-		for (const m of monitors) {
-			m.whileCount = 0;
-			m.dismissed = false;
-			m.lastUserText = "";
-			m.activationCount = 0;
-			m.bypassDedup = false;
-			m.everyLastUserText = "";
-			m.classifyFailures = 0;
-			m.classifySkipRemaining = 0;
-		}
-		monitorsEnabled = true;
-		pendingAgentEndSteers = [];
-		projectDirMissingLogged = false;
-		updateStatus();
 	});
 
 	// ── Tool: monitors-status ──────────────────────────────────────────────

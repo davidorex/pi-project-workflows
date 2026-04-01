@@ -2,19 +2,19 @@ Infer the project identity for the project at `{{ path }}`.
 
 ## Codebase Analysis
 
-{% if analysis.files is defined %}
-### Files ({{ analysis.files | length }} total)
-{% for file in analysis.files | batch(20) | first %}
+{% if exploration.files is defined %}
+### Files ({{ exploration.files | length }} total)
+{% for file in exploration.files | batch(20) | first %}
 - `{{ file.path }}` ({{ file.language | default("unknown") }})
 {% endfor %}
-{% if analysis.files | length > 20 %}
-... and {{ analysis.files | length - 20 }} more files
+{% if exploration.files | length > 20 %}
+... and {{ exploration.files | length - 20 }} more files
 {% endif %}
 {% endif %}
 
-{% if analysis.entryPoints is defined %}
+{% if exploration.entryPoints is defined %}
 ### Entry Points
-{% for ep in analysis.entryPoints %}
+{% for ep in exploration.entryPoints %}
 - `{{ ep }}`
 {% endfor %}
 {% endif %}

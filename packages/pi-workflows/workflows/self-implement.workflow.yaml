@@ -29,10 +29,10 @@ steps:
 
   implement:
     forEach: "${{ steps.plan.output.plans }}"
-    as: plan
+    as: spec
     agent: spec-implementer
     input:
-      plan: "${{ plan }}"
+      spec: "${{ spec }}"
       architecture: "${{ input.architecture }}"
       conventions: "${{ input.conventions }}"
     output:

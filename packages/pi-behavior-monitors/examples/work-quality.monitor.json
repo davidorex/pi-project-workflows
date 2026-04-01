@@ -23,7 +23,7 @@
 		"on_flag": {
 			"steer": "{{ description }}",
 			"write": {
-				"path": ".workflow/gaps.json",
+				"path": ".project/gaps.json",
 				"schema": "schemas/gaps.schema.json",
 				"merge": "append",
 				"array_field": "gaps",
@@ -41,7 +41,7 @@
 			"steer": "{{ description }}",
 			"learn_pattern": true,
 			"write": {
-				"path": ".workflow/gaps.json",
+				"path": ".project/gaps.json",
 				"schema": "schemas/gaps.schema.json",
 				"merge": "append",
 				"array_field": "gaps",

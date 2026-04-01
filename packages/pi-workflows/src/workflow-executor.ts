@@ -851,6 +851,12 @@ export async function executeWorkflow(
 				const resolvedPath = String(resolveExpressions(artifactSpec.path, artifactScope));
 				const absolutePath = path.isAbsolute(resolvedPath) ? resolvedPath : path.resolve(workflowDir, resolvedPath);
 
+				// Guard against path traversal — resolved path must stay within cwd
+				const cwdPrefix = path.resolve(ctx.cwd) + path.sep;
+				if (!absolutePath.startsWith(cwdPrefix) && absolutePath !== path.resolve(ctx.cwd)) {
+					throw new Error(`Artifact path '${resolvedPath}' resolves outside project directory`);
+				}
+
 				// Resolve the data source — wrap `from` as ${{ from }} for expression resolution
 				const fromExpr = artifactSpec.from.startsWith("${{") ? artifactSpec.from : `\${{ ${artifactSpec.from} }}`;
 				const data = resolveExpressions(fromExpr, artifactScope);

@@ -8,6 +8,9 @@ import { persistStepOutput } from "./output.js";
 import { addUsage, zeroUsage } from "./step-shared.js";
 import type { ExecutionState, StepResult, StepSpec, WorkflowContext, WorkflowPI } from "./types.js";
 
+/** Safety cap to prevent runaway iteration from malformed step output. */
+const MAX_FOREACH_ITERATIONS = 500;
+
 /** Options for forEach execution, matching the StepExecOptions pattern. */
 interface ForEachOptions {
 	ctx: WorkflowContext;
@@ -83,6 +86,18 @@ export async function executeForEach(
 			textOutput: "[]",
 			usage: zeroUsage(),
 			durationMs: Date.now() - startTime,
+		};
+	}
+
+	// Safety cap to prevent runaway iteration from malformed step output
+	if (array.length > MAX_FOREACH_ITERATIONS) {
+		return {
+			step: stepName,
+			agent: `forEach:${(stepSpec as any).agent || "unknown"}`,
+			status: "failed" as const,
+			usage: zeroUsage(),
+			durationMs: Date.now() - startTime,
+			error: `forEach array has ${array.length} elements, exceeding safety cap of ${MAX_FOREACH_ITERATIONS}`,
 		};
 	}
 

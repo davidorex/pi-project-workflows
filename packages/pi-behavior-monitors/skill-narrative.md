@@ -93,7 +93,7 @@ A `.monitor.json` file conforms to `schemas/monitor.schema.json`:
     "on_flag": {
       "steer": "Fix the issue.",
       "write": {
-        "path": ".workflow/gaps.json",
+        "path": ".project/gaps.json",
         "merge": "append",
         "array_field": "gaps",
         "template": {
@@ -350,7 +350,7 @@ acknowledgment support:
 **fragility** (`message_end`, `when: has_tool_results`)
 Watches for unaddressed fragilities after tool use — errors, warnings, or broken state the
 agent noticed but chose not to fix. Steers with "Fix the issue you left behind." Writes
-findings to `.workflow/gaps.json` under `category: "fragility"`. Excludes: none. Ceiling: 5.
+findings to `.project/gaps.json` under `category: "fragility"`. Excludes: none. Ceiling: 5.
 12 bundled patterns across categories: avoidance (dismiss-preexisting, not-my-change,
 blame-environment, workaround-over-root-cause, elaborate-workaround-for-fixable),
 error-handling (empty-catch, happy-path-only, early-return-on-unexpected,
@@ -368,7 +368,7 @@ deflection (ask-permission, qualify-yesno, counter-question).
 
 **work-quality** (`command`, `when: always`)
 On-demand work quality analysis invoked via `/work-quality`. Analyzes user request, tool
-calls, and assistant response for quality issues. Writes findings to `.workflow/gaps.json`
+calls, and assistant response for quality issues. Writes findings to `.project/gaps.json`
 under `category: "work-quality"`. Ceiling: 3.
 11 bundled patterns across categories: methodology (trial-and-error, symptom-fix,
 double-edit, edit-without-read, insanity-retry, no-plan), verification (no-verify),

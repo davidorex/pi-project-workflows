@@ -29,16 +29,16 @@ Identify gaps in the project at `{{ path }}`.
 
 ## Codebase Analysis
 
-{% if analysis.files is defined %}
-### Files ({{ analysis.files | length }} total)
-{% for file in analysis.files %}
+{% if exploration.files is defined %}
+### Files ({{ exploration.files | length }} total)
+{% for file in exploration.files %}
 - `{{ file.path }}` ({{ file.language | default("unknown") }}, {{ file.lines | default("?") }} lines){% if file.exports %} — {{ file.exports | length }} exports{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if analysis.types is defined %}
+{% if exploration.types is defined %}
 ### Types
-{% for t in analysis.types %}
+{% for t in exploration.types %}
 - `{{ t.name }}` ({{ t.kind }}) in `{{ t.file }}`
 {% endfor %}
 {% endif %}

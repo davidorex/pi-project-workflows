@@ -11,12 +11,12 @@ description: >
 <tool name="append-block-item">
 Append an item to an array in a project block file. Schema validation is automatic.
 
-*Append items to project blocks (gaps, decisions, or any user-defined block)*
+*Append items to project blocks (issues, decisions, or any user-defined block)*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `block` | string | yes | Block name (e.g., 'gaps', 'decisions') |
-| `arrayKey` | string | yes | Array key in the block (e.g., 'gaps', 'decisions') |
+| `block` | string | yes | Block name (e.g., 'issues', 'decisions') |
+| `arrayKey` | string | yes | Array key in the block (e.g., 'issues', 'decisions') |
 | `item` | unknown | yes | Item object to append — must conform to block schema |
 </tool>
 
@@ -27,9 +27,9 @@ Update fields on an item in a project block array. Finds by predicate field matc
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `block` | string | yes | Block name (e.g., 'gaps', 'decisions') |
+| `block` | string | yes | Block name (e.g., 'issues', 'decisions') |
 | `arrayKey` | string | yes | Array key in the block |
-| `match` | object | yes | Fields to match (e.g., { id: 'gap-123' }) |
+| `match` | object | yes | Fields to match (e.g., { id: 'issue-123' }) |
 | `updates` | object | yes | Fields to update (e.g., { status: 'resolved' }) |
 </tool>
 
@@ -40,7 +40,7 @@ Read a project block file as structured JSON.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `block` | string | yes | Block name (e.g., 'gaps', 'tasks', 'requirements') |
+| `block` | string | yes | Block name (e.g., 'issues', 'tasks', 'requirements') |
 </tool>
 
 <tool name="write-block">
@@ -106,8 +106,8 @@ See references/bundled-resources.md for full inventory.
 | `conformance-reference` | Conformance Reference | `principles` | id, name, description?, rules (array) |
 | `decisions` | Decisions | `decisions` | id, decision, rationale, phase? (string|integer), status (string (decided|tentative|revisit|superseded)), context? |
 | `domain` | Domain Knowledge | `entries` | id, title, content, category (string (research|reference|domain-rule|prior-art|constraint)), source?, confidence? (string (high|medium|low)), related_requirements? (array), tags? (array) |
-| `gaps` | Gaps | `gaps` | id, description, status (string (open|resolved|deferred)), category (string (missing|incomplete|defect|improvement|technical-debt|question)), priority (string (low|medium|high|critical)), phase? (string|integer), resolved_by?, source? (string (human|agent|monitor|workflow)), details? |
 | `handoff` | Handoff | `current_tasks` |  |
+| `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by? |
 | `phase` | Phase | `success_criteria` | criterion, verify_method (string (command|inspect|test)) |
 | `project` | Project Identity | `target_users` |  |
 | `rationale` | Design Rationale | `rationales` | id, title, narrative, related_decisions? (array), phase? (string|integer), context? |
@@ -124,10 +124,10 @@ See references/bundled-resources.md for full inventory.
 | `decisions` | `status` | decided, tentative, revisit, superseded |
 | `domain` | `category` | research, reference, domain-rule, prior-art, constraint |
 | `domain` | `confidence` | high, medium, low |
-| `gaps` | `status` | open, resolved, deferred |
-| `gaps` | `category` | missing, incomplete, defect, improvement, technical-debt, question |
-| `gaps` | `priority` | low, medium, high, critical |
-| `gaps` | `source` | human, agent, monitor, workflow |
+| `issues` | `status` | open, resolved, deferred |
+| `issues` | `category` | primitive, issue, cleanup, capability, composition |
+| `issues` | `priority` | low, medium, high, critical |
+| `issues` | `source` | human, agent, monitor, workflow |
 | `phase` | `status` | planned, in-progress, completed |
 | `phase` | `verify_method` | command, inspect, test |
 | `phase` | `status` | planned, in-progress, completed |

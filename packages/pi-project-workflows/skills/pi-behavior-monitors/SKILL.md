@@ -63,16 +63,20 @@ List patterns for a behavior monitor.
 </tools_reference>
 
 <commands_reference>
+<command name="/work-quality">
+On-demand work quality analysis
+</command>
+
 <command name="/monitors">
 Manage behavior monitors
 
-Subcommands: `on`, `off`, `help`, `fragility`, `response-style`
+Subcommands: `on`, `off`, `help`, `fragility`, `hedge`, `work-quality`
 </command>
 
 </commands_reference>
 
 <events>
-`session_start`, `session_switch`, `agent_end`, `turn_start`, `message_end`
+`session_start`, `agent_end`, `turn_start`, `message_end`, `turn_end`
 </events>
 
 <bundled_resources>
@@ -205,9 +209,9 @@ A `.monitor.json` file conforms to `schemas/monitor.schema.json`:
     "on_flag": {
       "steer": "Fix the issue.",
       "write": {
-        "path": ".workflow/gaps.json",
+        "path": ".project/issues.json",
         "merge": "append",
-        "array_field": "gaps",
+        "array_field": "issues",
         "template": {
           "id": "monitor-{finding_id}",
           "description": "{description}",
@@ -272,7 +276,7 @@ Non-main scopes can still write findings to JSON files.
 | `steer` | Message to inject into conversation. `null` = no steering. Only effective for `scope.target: "main"`. |
 | `write.path` | JSON file to write findings to. Relative paths resolve from `process.cwd()`, not from the monitor directory. |
 | `write.merge` | `append` (add to array) or `upsert` (update by matching `id` field). |
-| `write.array_field` | Which field in target JSON holds the array (e.g. `"gaps"`, `"findings"`). |
+| `write.array_field` | Which field in target JSON holds the array (e.g. `"issues"`, `"findings"`). |
 | `write.template` | Template mapping with `{finding_id}`, `{description}`, `{severity}`, `{monitor_name}`, `{timestamp}`. |
 | `write.schema` | Optional schema path for documentation. Not enforced at runtime. |
 | `learn_pattern` | If true, add new pattern to patterns file on `new` verdict. |
@@ -462,7 +466,7 @@ acknowledgment support:
 **fragility** (`message_end`, `when: has_tool_results`)
 Watches for unaddressed fragilities after tool use — errors, warnings, or broken state the
 agent noticed but chose not to fix. Steers with "Fix the issue you left behind." Writes
-findings to `.workflow/gaps.json` under `category: "fragility"`. Excludes: none. Ceiling: 5.
+findings to `.project/issues.json` under `category: "fragility"`. Excludes: none. Ceiling: 5.
 12 bundled patterns across categories: avoidance (dismiss-preexisting, not-my-change,
 blame-environment, workaround-over-root-cause, elaborate-workaround-for-fixable),
 error-handling (empty-catch, happy-path-only, early-return-on-unexpected,
@@ -480,7 +484,7 @@ deflection (ask-permission, qualify-yesno, counter-question).
 
 **work-quality** (`command`, `when: always`)
 On-demand work quality analysis invoked via `/work-quality`. Analyzes user request, tool
-calls, and assistant response for quality issues. Writes findings to `.workflow/gaps.json`
+calls, and assistant response for quality issues. Writes findings to `.project/issues.json`
 under `category: "work-quality"`. Ceiling: 3.
 11 bundled patterns across categories: methodology (trial-and-error, symptom-fix,
 double-edit, edit-without-read, insanity-retry, no-plan), verification (no-verify),

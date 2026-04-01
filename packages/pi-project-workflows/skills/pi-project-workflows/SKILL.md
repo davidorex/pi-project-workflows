@@ -34,7 +34,7 @@ Workflow orchestration extension for Pi
 Behavior monitors for pi that watch agent activity and steer corrections
 
 **Tools:** `monitors-status`, `monitors-inspect`, `monitors-control`, `monitors-rules`, `monitors-patterns`
-**Commands:** `/monitors`
+**Commands:** `/work-quality`, `/monitors`
 </extension>
 
 </included_extensions>

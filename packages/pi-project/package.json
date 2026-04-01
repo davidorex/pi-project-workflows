@@ -40,10 +40,6 @@
 		"./project-sdk": {
 			"types": "./dist/project-sdk.d.ts",
 			"default": "./dist/project-sdk.js"
-		},
-		"./sync-skills": {
-			"types": "./dist/sync-skills.d.ts",
-			"default": "./dist/sync-skills.js"
 		}
 	},
 	"pi": {

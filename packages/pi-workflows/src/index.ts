@@ -5,7 +5,6 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { syncSkillsToUser } from "@davidorex/pi-project/sync-skills";
 import type {
 	AgentToolResult,
 	AgentToolUpdateCallback,
@@ -466,12 +465,6 @@ function handleWorkflowInit(ctx: ExtensionCommandContext): void {
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
-	try {
-		syncSkillsToUser(import.meta.dirname);
-	} catch {
-		/* non-critical */
-	}
-
 	// ── Tool: workflow ──────────────────────────────────────────────────────
 
 	pi.registerTool({

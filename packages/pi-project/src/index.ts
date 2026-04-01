@@ -16,7 +16,6 @@ import { Type } from "@sinclair/typebox";
 import { appendToBlock, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import { findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";
-import { syncSkillsToUser } from "./sync-skills.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -255,12 +254,6 @@ function handleInit(ctx: ExtensionCommandContext): void {
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
-	try {
-		syncSkillsToUser(import.meta.dirname);
-	} catch {
-		/* non-critical */
-	}
-
 	// ── Update check on session start (non-blocking) ───────────────────
 	pi.on("session_start", async (_event, ctx) => {
 		checkForUpdates((msg, level) => ctx.ui.notify(msg, level)).catch(() => {});
@@ -603,4 +596,3 @@ export {
 	schemaInfo,
 	schemaVocabulary,
 } from "./project-sdk.js";
-export { syncSkillsToUser } from "./sync-skills.js";

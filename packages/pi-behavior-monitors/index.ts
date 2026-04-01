@@ -422,19 +422,6 @@ function copyDirRecursive(src: string, dest: string): void {
 	}
 }
 
-function syncSkillsToUser(distDir: string): void {
-	const sourceSkillsDir = path.resolve(distDir, "..", "skills");
-	if (!fs.existsSync(sourceSkillsDir)) return;
-
-	const userSkillsDir = path.join(getAgentDir(), "skills");
-	fs.mkdirSync(userSkillsDir, { recursive: true });
-
-	for (const entry of fs.readdirSync(sourceSkillsDir, { withFileTypes: true })) {
-		if (!entry.isDirectory()) continue;
-		copyDirRecursive(path.join(sourceSkillsDir, entry.name), path.join(userSkillsDir, entry.name));
-	}
-}
-
 // =============================================================================
 // Context collection
 // =============================================================================
@@ -1390,11 +1377,6 @@ async function escalate(monitor: Monitor, _pi: ExtensionAPI, ctx: ExtensionConte
 // =============================================================================
 
 export default function (pi: ExtensionAPI) {
-	try {
-		syncSkillsToUser(EXTENSION_DIR);
-	} catch {
-		/* non-critical */
-	}
 	const seeded = seedExamples();
 
 	const monitors = discoverMonitors();

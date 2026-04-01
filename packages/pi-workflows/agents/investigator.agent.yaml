@@ -43,7 +43,8 @@ prompt:
     - complexity rating matches actual scope
     - Summary is one paragraph, not a plan
     </success_criteria>
-  task: investigator/task.md
+  task:
+    template: investigator/task.md
 output:
   format: json
   schema: schemas/investigation-findings.schema.json

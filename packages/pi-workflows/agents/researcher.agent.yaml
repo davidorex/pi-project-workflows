@@ -32,7 +32,8 @@ prompt:
     - Confidence ratings are honest — low when uncertain
     - Recommendations are specific enough that an implementer can act on them without further research
     </success_criteria>
-  task: researcher/task.md
+  task:
+    template: researcher/task.md
 output:
   format: json
   schema: schemas/research-findings.schema.json

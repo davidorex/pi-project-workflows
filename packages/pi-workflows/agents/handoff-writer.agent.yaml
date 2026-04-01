@@ -61,4 +61,5 @@ prompt:
     - open_questions are genuine unknowns requiring input
     - timestamp is accurate
     </success_criteria>
-  task: handoff-writer/task.md
+  task:
+    template: handoff-writer/task.md

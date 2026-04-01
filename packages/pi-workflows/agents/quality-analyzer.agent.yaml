@@ -17,5 +17,7 @@ output:
   schema: schemas/quality-analysis.schema.json
 
 prompt:
-  system: analyzers/quality.md
-  task: analyzers/quality-task.md
+  system:
+    template: analyzers/quality.md
+  task:
+    template: analyzers/quality-task.md

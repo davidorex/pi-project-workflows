@@ -50,4 +50,5 @@ prompt:
     - Every goal has at least one success_criteria entry
     - Constraints reference specific concerns from the vision, not boilerplate
     </success_criteria>
-  task: project-definer/task.md
+  task:
+    template: project-definer/task.md

@@ -37,4 +37,5 @@ prompt:
     - Skipping findings that don't have grep verify patterns
     - Counting needs_inspect as passed in the overall status
     </anti_patterns>
-  task: audit-finding-verifier/task.md
+  task:
+    template: audit-finding-verifier/task.md

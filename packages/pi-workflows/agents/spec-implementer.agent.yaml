@@ -9,4 +9,5 @@ output:
   schema: schemas/execution-results.schema.json
 
 prompt:
-  task: spec-implementer/task.md
+  task:
+    template: spec-implementer/task.md

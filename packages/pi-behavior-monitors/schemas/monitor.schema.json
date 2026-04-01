@@ -6,7 +6,7 @@
 		"description": { "type": "string" },
 		"event": {
 			"type": "string",
-			"enum": ["message_end", "turn_end", "agent_end", "command"]
+			"enum": ["message_end", "turn_end", "agent_end", "command", "tool_call"]
 		},
 		"when": {
 			"type": "string",

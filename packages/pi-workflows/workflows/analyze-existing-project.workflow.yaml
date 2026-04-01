@@ -1,5 +1,5 @@
 name: analyze-existing-project
-description: Analyze an existing codebase, infer architecture and conventions, identify gaps, create planning state
+description: Analyze an existing codebase, infer architecture and conventions, identify issues, create planning state
 version: "1"
 
 input:
@@ -35,9 +35,7 @@ steps:
   infer-architecture:
     agent: architecture-inferrer
     input:
-      analysis:
-        structure: ${{ steps.analyze-structure.output }}
-        patterns: ${{ steps.analyze-patterns.output }}
+      exploration: "${{ steps.explore.output }}"
       path: ${{ input.path }}
     output:
       format: json
@@ -48,9 +46,7 @@ steps:
   infer-project:
     agent: project-inferrer
     input:
-      analysis:
-        structure: ${{ steps.analyze-structure.output }}
-        patterns: ${{ steps.analyze-patterns.output }}
+      exploration: "${{ steps.explore.output }}"
       path: ${{ input.path }}
     output:
       format: json
@@ -58,17 +54,15 @@ steps:
     retry:
       maxAttempts: 2
 
-  identify-gaps:
+  identify-issues:
     agent: gap-identifier
     input:
-      analysis:
-        structure: ${{ steps.analyze-structure.output }}
-        patterns: ${{ steps.analyze-patterns.output }}
+      exploration: "${{ steps.explore.output }}"
       architecture: ${{ steps.infer-architecture.output }}
       path: ${{ input.path }}
     output:
       format: json
-      schema: block:gaps
+      schema: block:issues
     retry:
       maxAttempts: 2
 
@@ -79,9 +73,9 @@ artifacts:
   architecture:
     path: .project/architecture.json
     from: steps.infer-architecture.output
-  gaps:
-    path: .project/gaps.json
-    from: steps.identify-gaps.output
+  issues:
+    path: .project/issues.json
+    from: steps.identify-issues.output
 
 completion:
   template: |
@@ -89,6 +83,6 @@ completion:
 
     **Project:** ${{ steps.infer-project.output.name }} — ${{ steps.infer-project.output.core_value }}
     **Architecture:** ${{ steps.infer-architecture.output.modules | length }} modules, ${{ steps.infer-architecture.output.patterns | length }} patterns
-    **Gaps:** ${{ steps.identify-gaps.output.gaps | length }} identified
+    **Gaps:** ${{ steps.identify-issues.output.issues | length }} identified
 
     Use `/project status` to see the full state. Use `/project validate` to check cross-block references.

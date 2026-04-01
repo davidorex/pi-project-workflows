@@ -17,5 +17,7 @@ output:
   schema: schemas/pattern-analysis.schema.json
 
 prompt:
-  system: analyzers/patterns.md
-  task: analyzers/patterns-task.md
+  system:
+    template: analyzers/patterns.md
+  task:
+    template: analyzers/patterns-task.md

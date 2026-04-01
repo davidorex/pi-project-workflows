@@ -55,4 +55,5 @@ prompt:
     - boundaries list captures real constraints from the project identity and requirements
     - Architecture is proportional to the project's scope — not over- or under-partitioned
     </success_criteria>
-  task: architecture-designer/task.md
+  task:
+    template: architecture-designer/task.md

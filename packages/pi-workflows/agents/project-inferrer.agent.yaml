@@ -60,4 +60,5 @@ prompt:
     - status reflects actual project maturity, not aspiration
     - stack lists the primary technologies, not exhaustive dependency lists
     </success_criteria>
-  task: project-inferrer/task.md
+  task:
+    template: project-inferrer/task.md

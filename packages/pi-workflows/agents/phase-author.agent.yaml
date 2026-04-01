@@ -13,4 +13,5 @@ output:
   schema: ../../.workflow/schemas/phase.schema.json
 
 prompt:
-  task: templates/phase-author/task.md
+  task:
+    template: templates/phase-author/task.md

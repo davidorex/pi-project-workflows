@@ -116,14 +116,14 @@ steps:
       format: json
 
   route-issues:
-    when: "${{ steps.prepare-routing.output.new_gaps | length }}"
-    forEach: "${{ steps.prepare-routing.output.new_gaps }}"
-    as: gap_item
+    when: "${{ steps.prepare-routing.output.new_issues | length }}"
+    forEach: "${{ steps.prepare-routing.output.new_issues }}"
+    as: issue_item
     block:
       append:
-        name: gaps
-        key: gaps
-        item: "${{ gap_item }}"
+        name: issues
+        key: issues
+        item: "${{ issue_item }}"
     output:
       format: json
 

@@ -31,7 +31,7 @@ Review the audit fix results and produce a routing manifest.
 Produce a routing manifest with:
 
 1. **decisions** — validated decisions from implementation results (with complete id, description, rationale fields)
-2. **new_gaps** — genuine issues that should be tracked (with stable id, description, status: "open", category, priority)
+2. **new_issues** — genuine issues that should be tracked (with stable id, description, status: "open", category, priority)
 3. **summary** — accurate summary of what was completed, what failed, what needs inspection
 
 Only include items that are well-formed and represent genuine project artifacts. Do not route items that are missing required fields or describe hypothetical concerns.

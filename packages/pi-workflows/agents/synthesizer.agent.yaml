@@ -19,5 +19,7 @@ output:
   schema: schemas/synthesis.schema.json
 
 prompt:
-  system: synthesizer/system.md
-  task: synthesizer/task.md
+  system:
+    template: synthesizer/system.md
+  task:
+    template: synthesizer/task.md

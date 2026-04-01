@@ -9,4 +9,5 @@ output:
   schema: schemas/plan-breakdown.schema.json
 
 prompt:
-  task: plan-decomposer/task.md
+  task:
+    template: plan-decomposer/task.md

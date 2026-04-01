@@ -27,4 +27,5 @@ prompt:
     - Do NOT invent decisions or issues not present in the implementation results
     - Output MUST conform to audit-routing-manifest schema
     </constraints>
-  task: audit-results-router/task.md
+  task:
+    template: audit-results-router/task.md

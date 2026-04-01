@@ -1,8 +1,7 @@
 {
-	"_note": "Fires on agent_end (post-hoc). Pre-execution blocking via tool_call events is a future capability — requires monitor system changes to support blocking classification before tool execution.",
 	"name": "unauthorized-action",
-	"description": "Detects when agent takes an action the user did not direct and steers to undo it",
-	"event": "agent_end",
+	"description": "Detects when agent is about to take an action the user did not direct and blocks it pre-execution",
+	"event": "tool_call",
 	"when": "has_tool_results",
 	"scope": { "target": "main" },
 	"classify": {
@@ -20,10 +19,10 @@
 	},
 	"actions": {
 		"on_flag": {
-			"steer": "You took an action the user did not direct: {{ description }}. Undo it now."
+			"steer": "Blocked: action not directed by user — {{ description }}"
 		},
 		"on_new": {
-			"steer": "You took an action the user did not direct: {{ description }}. Undo it now.",
+			"steer": "Blocked: action not directed by user — {{ description }}",
 			"learn_pattern": true
 		},
 		"on_clean": null

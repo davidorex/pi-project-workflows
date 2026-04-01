@@ -55,4 +55,5 @@ prompt:
     - depends_on references are valid (point to other requirement IDs in the set)
     - "wont" requirements cover key items from scope_boundaries.out
     </success_criteria>
-  task: requirements-gatherer/task.md
+  task:
+    template: requirements-gatherer/task.md

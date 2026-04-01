@@ -57,4 +57,5 @@ prompt:
     - Boundaries reflect actual interface points, not aspirational ones
     - Overview paragraph accurately summarizes the architecture
     </success_criteria>
-  task: architecture-inferrer/task.md
+  task:
+    template: architecture-inferrer/task.md

@@ -15,4 +15,5 @@ output:
   schema: schemas/execution-results.schema.json
 
 prompt:
-  task: audit-fixer/task.md
+  task:
+    template: audit-fixer/task.md

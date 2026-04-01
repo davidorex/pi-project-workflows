@@ -7,5 +7,7 @@ output:
   format: json
 
 prompt:
-  system: explorer/system.md
-  task: explorer/task.md
+  system:
+    template: explorer/system.md
+  task:
+    template: explorer/task.md

@@ -60,4 +60,5 @@ prompt:
     - Phase ordering respects architectural dependencies (foundations before features)
     - Total task count is proportional to project scope — neither too few nor exhaustive
     </success_criteria>
-  task: plan-creator/task.md
+  task:
+    template: plan-creator/task.md

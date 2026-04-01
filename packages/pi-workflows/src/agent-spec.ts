@@ -18,10 +18,31 @@ import path from "node:path";
  * Check if a prompt.system value looks like a template file path vs inline text.
  * Heuristic: treats strings ending in .md as template paths. A literal prompt
  * string resembling a file path would be misclassified.
+ *
+ * @deprecated Heuristic fallback for old-format specs. New specs should use { template: "path" } object syntax.
  */
 function isTemplatePath(value: string | undefined): boolean {
 	if (!value) return false;
 	return value.endsWith(".md") || value.endsWith(".txt") || (value.includes("/") && !value.includes("\n"));
+}
+
+/**
+ * Resolve a prompt field value that may be either:
+ * - An object `{ template: "path.md" }` — explicit template reference (preferred)
+ * - A plain string — falls back to `isTemplatePath()` heuristic for backward compat
+ *
+ * Returns `{ template }` for file-based prompts, `{ inline }` for literal text,
+ * or `{}` if the value is absent/unrecognized.
+ */
+function resolvePromptField(value: unknown): { template?: string; inline?: string } {
+	if (typeof value === "object" && value !== null && "template" in value) {
+		return { template: (value as { template: string }).template };
+	}
+	if (typeof value === "string") {
+		// Backward compat: heuristic for old-format string-only specs
+		return isTemplatePath(value) ? { template: value } : { inline: value };
+	}
+	return {};
 }
 
 import os from "node:os";
@@ -86,6 +107,9 @@ export function parseAgentYaml(filePath: string): AgentSpec {
 		throw new AgentParseError(name, filePath, new Error("File is empty or does not contain a YAML mapping"));
 	}
 
+	const system = resolvePromptField(spec.prompt?.system);
+	const task = resolvePromptField(spec.prompt?.task);
+
 	return {
 		name: spec.name || name,
 		description: spec.description,
@@ -96,9 +120,9 @@ export function parseAgentYaml(filePath: string): AgentSpec {
 		extensions: spec.extensions,
 		skills: spec.skills,
 		output: spec.output?.file,
-		promptTemplate: isTemplatePath(spec.prompt?.system) ? spec.prompt?.system : undefined,
-		systemPrompt: isTemplatePath(spec.prompt?.system) ? undefined : spec.prompt?.system,
-		taskTemplate: spec.prompt?.task,
+		promptTemplate: system.template,
+		systemPrompt: system.inline,
+		taskTemplate: task.template ?? task.inline,
 		inputSchema: spec.input,
 		outputFormat: spec.output?.format,
 		outputSchema: spec.output?.schema,

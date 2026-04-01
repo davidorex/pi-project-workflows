@@ -63,4 +63,5 @@ prompt:
     - Gap descriptions are specific enough to act on without re-investigation
     - No fabricated gaps — every entry traces to observable evidence
     </success_criteria>
-  task: gap-identifier/task.md
+  task:
+    template: gap-identifier/task.md

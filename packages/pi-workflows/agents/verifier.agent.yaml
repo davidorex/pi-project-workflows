@@ -9,4 +9,5 @@ output:
   schema: schemas/verifier-output.schema.json
 
 prompt:
-  task: verifier/task.md
+  task:
+    template: verifier/task.md

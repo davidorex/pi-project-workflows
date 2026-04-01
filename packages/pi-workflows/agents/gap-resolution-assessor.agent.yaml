@@ -37,4 +37,5 @@ prompt:
     - Flagging hypothetical issues that aren't evidenced in the code
     - Ignoring the gap description and only looking at test results
     </anti_patterns>
-  task: gap-resolution-assessor/task.md
+  task:
+    template: gap-resolution-assessor/task.md

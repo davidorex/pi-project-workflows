@@ -215,9 +215,9 @@ interface BufferedSteer {
 	content: string;
 }
 
-type MonitorEvent = "message_end" | "turn_end" | "agent_end" | "command";
+type MonitorEvent = "message_end" | "turn_end" | "agent_end" | "command" | "tool_call";
 
-export const VALID_EVENTS = new Set<string>(["message_end", "turn_end", "agent_end", "command"]);
+export const VALID_EVENTS = new Set<string>(["message_end", "turn_end", "agent_end", "command", "tool_call"]);
 
 function isValidEvent(event: string): event is MonitorEvent {
 	return VALID_EVENTS.has(event);
@@ -915,7 +915,11 @@ function createMonitorTemplateEnv(): nunjucks.Environment {
 /** Module-level template environment, initialized in extension entry point. */
 let monitorTemplateEnv: nunjucks.Environment | undefined;
 
-function renderClassifyPrompt(monitor: Monitor, branch: SessionEntry[]): string | null {
+function renderClassifyPrompt(
+	monitor: Monitor,
+	branch: SessionEntry[],
+	extraContext?: Record<string, string>,
+): string | null {
 	const patterns = loadPatterns(monitor);
 	if (patterns.length === 0) return null;
 
@@ -933,6 +937,7 @@ function renderClassifyPrompt(monitor: Monitor, branch: SessionEntry[]): string 
 		instructions: formatInstructionsForPrompt(instructions),
 		iteration: monitor.whileCount,
 		...collected,
+		...(extraContext ?? {}),
 	};
 
 	if (monitor.classify.promptTemplate && monitorTemplateEnv) {
@@ -1844,6 +1849,94 @@ export default function (pi: ExtensionAPI) {
 				for (const m of group) {
 					await activate(m, pi, ctx, branch, steeredThisTurn, updateStatus, pendingAgentEndSteers);
 				}
+			});
+		} else if (event === "tool_call") {
+			// tool_call monitors get pre-execution blocking: they classify BEFORE the
+			// tool runs and can return { block, reason } to prevent execution entirely.
+			// This bypasses activate() — tool_call monitors do not use dedup, ceiling,
+			// or buffered steer delivery because blocking replaces steering.
+			pi.on("tool_call", async (ev: any, ctx: ExtensionContext) => {
+				if (!monitorsEnabled) return;
+
+				const branch = ctx.sessionManager.getBranch();
+
+				for (const m of group) {
+					if (m.dismissed) continue;
+
+					// check excludes — skip this monitor if any excluded monitor already steered
+					let excluded = false;
+					for (const ex of m.classify.excludes) {
+						if (steeredThisTurn.has(ex)) {
+							excluded = true;
+							break;
+						}
+					}
+					if (excluded) continue;
+
+					if (!evaluateWhen(m, branch)) continue;
+
+					// Backoff: skip classification if this monitor has failed repeatedly
+					if (m.classifySkipRemaining > 0) {
+						m.classifySkipRemaining--;
+						continue;
+					}
+
+					// Build pending tool call context for template injection.
+					// Branch-based collectors (user_text, tool_calls, etc.) are still
+					// collected inside renderClassifyPrompt from the branch parameter.
+					const toolContext = `Pending tool call:\nTool: ${ev.toolName}\nArguments: ${JSON.stringify(ev.input, null, 2).slice(0, 2000)}`;
+
+					// Render classify prompt with tool context injected as extra template variable
+					const prompt = renderClassifyPrompt(m, branch, { tool_call_context: toolContext });
+					if (!prompt) continue;
+
+					try {
+						const result = await classifyPrompt(ctx, m, prompt);
+
+						// Reset failure counter on success
+						m.classifyFailures = 0;
+
+						if (result.verdict === "flag" || result.verdict === "new") {
+							if (result.verdict === "new" && result.newPattern && m.patterns.learn) {
+								learnPattern(m, result.newPattern, result.severity);
+							}
+
+							// Execute write action if configured
+							const action = result.verdict === "new" ? m.actions.on_new : m.actions.on_flag;
+							if (action) executeWriteAction(m, action, result);
+
+							steeredThisTurn.add(m.name);
+							m.whileCount++;
+							updateStatus();
+
+							return {
+								block: true,
+								reason: result.description || `Monitor '${m.name}' blocked: ${result.verdict}`,
+							};
+						}
+
+						// CLEAN verdict — reset whileCount if engaged
+						if (m.whileCount > 0) {
+							m.whileCount = 0;
+							updateStatus();
+						}
+					} catch (err) {
+						// Classification failure should NOT block tool execution (fail-open)
+						const message = err instanceof Error ? err.message : String(err);
+						m.classifyFailures++;
+						if (m.classifyFailures >= 3) {
+							m.classifySkipRemaining = 5;
+							console.error(
+								`[${m.name}] Classification failed 3 times consecutively, backing off for 5 events: ${message}`,
+							);
+						} else {
+							console.error(`[${m.name}] Classification failed (fail-open, tool not blocked): ${message}`);
+						}
+					}
+				}
+
+				// All monitors passed — allow execution
+				return undefined;
 			});
 		}
 	}

@@ -45,7 +45,8 @@ prompt:
     - parallel_safe flags are consistent with file targets (no shared-file parallelism)
     - ordering_rationale explains the structure in one paragraph
     </success_criteria>
-  task: decomposer/task.md
+  task:
+    template: decomposer/task.md
 output:
   format: json
   schema: schemas/decomposition-specs.schema.json

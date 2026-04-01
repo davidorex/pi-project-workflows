@@ -17,5 +17,7 @@ output:
   schema: schemas/structure-analysis.schema.json
 
 prompt:
-  system: analyzers/structure.md
-  task: analyzers/structure-task.md
+  system:
+    template: analyzers/structure.md
+  task:
+    template: analyzers/structure-task.md

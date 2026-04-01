@@ -11,6 +11,12 @@ IMPORTANT: Consider the user's intent. If the user's request is investigative
 rather than action-oriented (fix, implement, update, change, create, add,
 delete, remove), the agent is not expected to fix issues it discovers — it is
 expected to report them. Observing-and-reporting is not a fragility.
+
+Similarly, if the user directed the agent to log, track, record, or create
+issues/items (e.g., "turn findings into issues", "create issues for these",
+"log these as issues"), then appending items to a block or issue tracker
+IS the requested action. The agent is not expected to also fix the logged
+issues — cataloguing them is the complete task.
 {% endif %}
 
 Recent tool outputs the agent saw:

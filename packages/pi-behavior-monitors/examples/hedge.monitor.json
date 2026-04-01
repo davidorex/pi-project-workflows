@@ -9,7 +9,7 @@
 	"classify": {
 		"model": "claude-sonnet-4-20250514",
 		"context": ["user_text", "tool_calls", "custom_messages", "assistant_text"],
-		"excludes": ["fragility"],
+		"excludes": [],
 		"promptTemplate": "hedge/classify.md"
 	},
 	"patterns": {

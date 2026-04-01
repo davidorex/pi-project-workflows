@@ -722,6 +722,13 @@ export async function executeWorkflow(
 		};
 	}
 
+	// Persist workflow spec to runDir for resume auditing and debugging
+	try {
+		fs.writeFileSync(path.join(runDir, "spec.json"), JSON.stringify(spec, null, 2), "utf-8");
+	} catch {
+		// Non-fatal: spec persistence is for debugging/resume, not execution
+	}
+
 	// 3. Show TUI progress widget
 	const widgetState: ProgressWidgetState = {
 		spec,

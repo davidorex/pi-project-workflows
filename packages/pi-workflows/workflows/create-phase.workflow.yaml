@@ -19,8 +19,15 @@ steps:
 
   load-context:
     block:
-      read: [architecture, conventions, gaps, inventory]
-      optional: [architecture, conventions, gaps, inventory]
+      read: [architecture, conventions, inventory]
+      optional: [architecture, conventions, inventory]
+    output:
+      format: json
+
+  load-gaps:
+    block:
+      read: gaps
+      optional: [gaps]
     output:
       format: json
 
@@ -31,7 +38,7 @@ steps:
       phases: "${{ steps.load-phases.output }}"
       architecture: "${{ steps.load-context.output.architecture }}"
       conventions: "${{ steps.load-context.output.conventions }}"
-      gaps: "${{ steps.load-context.output.gaps.gaps }}"
+      gaps: "${{ steps.load-gaps.output }}"
       inventory: "${{ steps.load-context.output.inventory }}"
     output:
       format: json

@@ -31,10 +31,10 @@
 {% endfor %}
 {% endif %}
 
-{% if gaps %}
+{% if gaps and gaps.gaps %}
 ## Current Gaps
 
-{% for gap in gaps %}
+{% for gap in gaps.gaps %}
 {% if gap.status == "open" %}
 - [{{ gap.priority }}] {{ gap.id }}: {{ gap.description }}
 {% endif %}
@@ -44,11 +44,11 @@
 {% if inventory %}
 ## Current Inventory
 
-- Step types: {{ inventory.step_types | length }}
-- Agent specs: {{ inventory.agent_specs | length }}
-- Schemas: {{ inventory.schemas | length }}
-- Tests: {{ inventory.test_count }}
-{% endif %}
+{% if inventory.step_types %}- Step types: {{ inventory.step_types | length }}
+{% endif %}{% if inventory.agent_specs %}- Agent specs: {{ inventory.agent_specs | length }}
+{% endif %}{% if inventory.schemas %}- Schemas: {{ inventory.schemas | length }}
+{% endif %}{% if inventory.test_count is defined %}- Tests: {{ inventory.test_count }}
+{% endif %}{% endif %}
 
 ## Instructions
 

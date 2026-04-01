@@ -31,7 +31,7 @@ import { Type } from "@sinclair/typebox";
 import nunjucks from "nunjucks";
 
 const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
-const EXAMPLES_DIR = path.join(EXTENSION_DIR, "examples");
+const EXAMPLES_DIR = path.join(EXTENSION_DIR, "..", "examples");
 
 // =============================================================================
 // Vocabulary registries (exported for SDK and skill generation)

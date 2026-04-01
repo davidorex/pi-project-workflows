@@ -1,0 +1,33 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Issues",
+	"description": "Known bugs, missing capabilities, design debt, and open work items. Tracked with title/body (GitHub issue pattern), code location, package scope, priority, and resolution lifecycle.",
+	"type": "object",
+	"required": ["issues"],
+	"properties": {
+		"issues": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "title", "body", "location", "status", "category", "priority", "package"],
+				"additionalProperties": false,
+				"properties": {
+					"id": { "type": "string" },
+					"title": { "type": "string", "description": "Scannable one-liner (GitHub issue title pattern)" },
+					"body": { "type": "string", "description": "Full detail and context for downstream composition" },
+					"location": { "type": "string", "description": "File path + line number, e.g. packages/pi-workflows/src/dag.ts:219" },
+					"status": { "type": "string", "enum": ["open", "resolved", "deferred"] },
+					"category": { "type": "string", "enum": ["primitive", "issue", "cleanup", "capability", "composition"] },
+					"priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+					"package": { "type": "string", "description": "Which monorepo package this issue touches (e.g. pi-workflows, pi-project, pi-behavior-monitors)" },
+					"source": {
+						"type": "string",
+						"enum": ["human", "agent", "monitor", "workflow"],
+						"description": "How this issue was created"
+					},
+					"resolved_by": { "type": "string", "description": "Commit message or reference if resolved" }
+				}
+			}
+		}
+	}
+}

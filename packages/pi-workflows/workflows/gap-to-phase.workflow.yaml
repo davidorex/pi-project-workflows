@@ -32,7 +32,7 @@ steps:
         if (!gap) { console.error('Gap not found: ' + gapId); process.exit(1); }
         if (gap.status === 'resolved') { console.error('Gap already resolved'); process.exit(1); }
         console.log(JSON.stringify({ gap }));
-      " '${{ steps.load-gap-blocks.output | json }}' '${{ input.gap_id }}'
+      " '${{ steps.load-gap-blocks.output | shell }}' '${{ input.gap_id }}'
     output:
       format: json
 
@@ -55,7 +55,7 @@ steps:
         const data = JSON.parse(process.argv[1]);
         const open = (data.issues || []).filter(g => g.status === 'open');
         console.log(JSON.stringify(open));
-      " '${{ steps.load-context.output.issues | json }}'
+      " '${{ steps.load-context.output.issues | shell }}'
     output:
       format: json
 
@@ -80,7 +80,7 @@ steps:
         const num = String(phase.number).padStart(2, '0');
         const name = phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/g, '');
         console.log(JSON.stringify({ path: 'phases/' + num + '-' + name }));
-      " '${{ steps.author.output | json }}'
+      " '${{ steps.author.output | shell }}'
     output:
       format: json
 

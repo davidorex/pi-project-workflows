@@ -65,7 +65,7 @@ steps:
           });
         }
         console.log(JSON.stringify({ tasks }));
-      " '${{ steps.select-audit.output.audit | json }}'
+      " '${{ steps.select-audit.output.audit | shell }}'
     output:
       format: json
 

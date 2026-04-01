@@ -66,7 +66,7 @@ steps:
             git_files: !git.files_error
           }
         }));
-      " '${{ steps.load-blocks.output | json }}' '${{ steps.load-phases.output | json }}' '${{ steps.load-git.output | json }}'
+      " '${{ steps.load-blocks.output | shell }}' '${{ steps.load-phases.output | shell }}' '${{ steps.load-git.output | shell }}'
     output:
       format: json
 

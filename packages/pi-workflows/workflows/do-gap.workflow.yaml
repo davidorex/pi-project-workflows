@@ -32,7 +32,7 @@ steps:
         if (!gap) { console.error('Gap not found: ' + gapId); process.exit(1); }
         if (gap.status === 'resolved') { console.error('Gap already resolved'); process.exit(1); }
         console.log(JSON.stringify({ gap }));
-      " '${{ steps.load-blocks.output | json }}' '${{ input.gap_id }}'
+      " '${{ steps.load-blocks.output | shell }}' '${{ input.gap_id }}'
     output:
       format: json
 

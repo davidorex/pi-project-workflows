@@ -21,6 +21,11 @@ const FILTERS: Record<string, (value: unknown) => unknown> = {
 			.toLowerCase()
 			.replace(/[^a-z0-9]+/g, "-")
 			.replace(/-+$/, ""),
+	/** Compact JSON with single quotes escaped for sh single-quote context. */
+	shell: (v) => {
+		const json = JSON.stringify(v);
+		return json.replace(/'/g, "'\\''");
+	},
 };
 
 /** Filter names derived from the FILTERS registry — add a filter above, this updates automatically. */

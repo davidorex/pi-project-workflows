@@ -51,7 +51,7 @@ steps:
         const num = String(phase.number).padStart(2, '0');
         const name = phase.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/g, '');
         console.log(JSON.stringify({ path: 'phases/' + num + '-' + name }));
-      " '${{ steps.author.output | json }}'
+      " '${{ steps.author.output | shell }}'
     output:
       format: json
 

@@ -179,6 +179,17 @@
       "priority": "high",
       "package": "pi-behavior-monitors",
       "source": "human"
+    },
+    {
+      "id": "issue-017",
+      "title": "No state coherence monitor — project blocks drift from source as development proceeds",
+      "body": "Project block data (architecture line counts, domain entry counts, version references, conventions test counts) goes stale as code changes accumulate. No monitor watches commits and compares block assertions against source truth. The block API supports programmatic writes, the monitor system supports write actions on FLAG, and block-to-source mappings are deterministic — a state coherence monitor class could detect staleness on commit and write corrections directly without steering. Requires: project_blocks context collector, block-to-source mapping pattern library, classify template that reasons about state coherence rather than behavioral patterns, write action that updates stale fields.",
+      "location": "packages/pi-behavior-monitors/examples/",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human"
     }
   ]
 }

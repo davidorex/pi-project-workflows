@@ -213,6 +213,10 @@ export function agentContracts(cwd: string): AgentContract[] {
 	}));
 }
 
+export function agentsByBlock(cwd: string, blockName: string): AgentContract[] {
+	return agentContracts(cwd).filter((a) => a.contextBlocks?.includes(blockName));
+}
+
 // ── Introspection (derived from parsed spec) ─────────────────────────────────
 
 export interface ExpressionRef {

@@ -6,6 +6,7 @@ import { describe, it } from "node:test";
 import type { StepSpec, WorkflowSpec } from "./types.js";
 import {
 	agentContracts,
+	agentsByBlock,
 	availableAgents,
 	availableSchemas,
 	availableTemplates,
@@ -851,6 +852,53 @@ describe("agentContracts", () => {
 		const names = contracts.map((c) => c.name);
 		const sorted = [...names].sort((a, b) => a.localeCompare(b));
 		assert.deepStrictEqual(names, sorted, "contracts should be sorted by name");
+	});
+});
+
+// ── agentsByBlock ───────────────────────────────────────────────────────────
+
+describe("agentsByBlock", () => {
+	function setupAgentDir(tmpDir: string): void {
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "a-agent.agent.yaml"),
+			"name: a-agent\ntools: [read]\ncontextBlocks: [conventions, requirements]\n",
+		);
+		fs.writeFileSync(
+			path.join(agentDir, "b-agent.agent.yaml"),
+			"name: b-agent\ntools: [read]\ncontextBlocks: [conventions]\n",
+		);
+	}
+
+	it("returns agents that declare the given block", (t) => {
+		const tmpDir = makeTmpDir("byblock-both");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupAgentDir(tmpDir);
+
+		const result = agentsByBlock(tmpDir, "conventions");
+		assert.strictEqual(result.length, 2, "both agents declare conventions");
+		const names = result.map((a) => a.name).sort();
+		assert.deepStrictEqual(names, ["a-agent", "b-agent"]);
+	});
+
+	it("returns empty array for unknown block name", (t) => {
+		const tmpDir = makeTmpDir("byblock-unknown");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupAgentDir(tmpDir);
+
+		const result = agentsByBlock(tmpDir, "nonexistent");
+		assert.deepStrictEqual(result, []);
+	});
+
+	it("filters correctly for block only some agents declare", (t) => {
+		const tmpDir = makeTmpDir("byblock-partial");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupAgentDir(tmpDir);
+
+		const result = agentsByBlock(tmpDir, "requirements");
+		assert.strictEqual(result.length, 1, "only a-agent declares requirements");
+		assert.strictEqual(result[0].name, "a-agent");
 	});
 });
 

@@ -28,6 +28,7 @@ import {
 	filterNames,
 	stepTypes,
 	validateWorkflow,
+	validationChecks,
 } from "./workflow-sdk.js";
 import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
@@ -191,9 +192,23 @@ function gatherWorkflowStatus(cwd: string): Record<string, unknown> {
 			model: a.model,
 			tools: a.tools,
 			outputFormat: a.outputFormat,
+			inputSchema: a.inputSchema
+				? {
+						required: Array.isArray((a.inputSchema as Record<string, unknown>).required)
+							? (a.inputSchema as Record<string, unknown>).required
+							: [],
+						properties:
+							typeof (a.inputSchema as Record<string, unknown>).properties === "object"
+								? Object.keys((a.inputSchema as Record<string, unknown>).properties as Record<string, unknown>)
+								: [],
+					}
+				: undefined,
+			contextBlocks: a.contextBlocks,
+			outputSchema: a.outputSchema,
 		})),
 		schemas: schemas.length,
 		templates: templates.length,
+		validationChecks: validationChecks().length,
 	};
 }
 
@@ -761,6 +776,19 @@ const extension = (pi: ExtensionAPI) => {
 				lines.push(`Agents: ${ags.length} (${ags.map((a) => a.name).join(", ")})`);
 				lines.push(`Schemas: ${status.schemas}`);
 				lines.push(`Templates: ${status.templates}`);
+				const typedAgents = ags.filter((a: any) => a.inputSchema);
+				if (typedAgents.length > 0) {
+					lines.push(
+						`Typed agents (inputSchema): ${typedAgents.length} (${typedAgents.map((a: any) => a.name).join(", ")})`,
+					);
+				}
+				const ctxAgents = ags.filter((a: any) => a.contextBlocks?.length > 0);
+				if (ctxAgents.length > 0) {
+					lines.push(
+						`Context-aware agents (contextBlocks): ${ctxAgents.length} (${ctxAgents.map((a: any) => a.name).join(", ")})`,
+					);
+				}
+				lines.push(`Validation checks: ${status.validationChecks}`);
 				ctx.ui.notify(lines.join("\n"), "info");
 			},
 		},

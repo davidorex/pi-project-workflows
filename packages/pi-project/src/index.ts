@@ -15,7 +15,7 @@ import { truncateHead } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 import { appendToBlock, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
-import { findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";
+import { completeTask, findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -484,6 +484,39 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Tool: complete-task ────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "complete-task",
+		label: "Complete Task",
+		description: "Complete a task with verification gate — requires a passing verification entry targeting the task.",
+		promptSnippet: "Complete a task — gates on passing verification before updating status",
+		parameters: Type.Object({
+			taskId: Type.String({ description: "Task ID to complete" }),
+			verificationId: Type.String({
+				description: "Verification entry ID (must target this task with status 'passed')",
+			}),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { taskId: string; verificationId: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = completeTask(ctx.cwd, params.taskId, params.verificationId);
+			return {
+				details: undefined,
+				content: [
+					{
+						type: "text",
+						text: `Task '${result.taskId}' completed (was '${result.previousStatus}'). Verification: ${result.verificationId} (${result.verificationStatus})`,
+					},
+				],
+			};
+		},
+	});
+
 	// ── Command: /project ──────────────────────────────────────────────────
 
 	interface SubcommandEntry {
@@ -588,9 +621,11 @@ const extension = (pi: ExtensionAPI) => {
 
 export default extension;
 
+export type { CompleteTaskResult } from "./project-sdk.js";
 // Re-export for consumers
 export {
 	blockStructure,
+	completeTask,
 	findAppendableBlocks,
 	PROJECT_BLOCK_TYPES,
 	schemaInfo,

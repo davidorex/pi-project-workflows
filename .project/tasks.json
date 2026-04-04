@@ -1,0 +1,151 @@
+{
+  "tasks": [
+    {
+      "id": "task-001",
+      "description": "Enforce agent input schema validation in executeAgentStep() — validate resolved input against AgentSpec.inputSchema before dispatch, fail step on violation",
+      "status": "completed",
+      "phase": 1,
+      "files": [
+        "packages/pi-workflows/src/step-agent.ts",
+        "packages/pi-workflows/src/step-agent.test.ts"
+      ],
+      "acceptance_criteria": [
+        "executeAgentStep validates input against agent.inputSchema when both are present",
+        "Step fails with clear error message naming the agent and listing validation errors",
+        "Agents without inputSchema skip validation (backward compatible)",
+        "Steps providing no input to an agent with required schema fields fail",
+        "Test covers: valid input passes, missing required field fails, extra field passes (additionalProperties default)",
+        "resumable-analysis.workflow.yaml and pausable-analysis.workflow.yaml fixed to pass all 3 required synthesizer fields (or synthesizer schema relaxed)"
+      ],
+      "depends_on": [],
+      "verification": "ver-001",
+      "notes": "Fixes issue-001. Implemented by subagent (opus). 5 new tests covering all acceptance criteria. validate() from schema-validator called after resolvedInput, before compileAgentSpec. Agents without inputSchema skip validation (backward compat). 619/0 pass/fail across full suite."
+    },
+    {
+      "id": "task-002",
+      "description": "Audit and fix all workflow specs that pass incomplete input to schema'd agents — ensure every agent invocation satisfies the agent's input schema",
+      "status": "planned",
+      "phase": 1,
+      "files": [
+        "packages/pi-workflows/workflows/resumable-analysis.workflow.yaml",
+        "packages/pi-workflows/workflows/pausable-analysis.workflow.yaml",
+        "packages/pi-workflows/agents/synthesizer.agent.yaml"
+      ],
+      "acceptance_criteria": [
+        "Every workflow step that invokes an agent with an inputSchema passes all required fields",
+        "No workflow fails schema validation after task-001 enforcement is added",
+        "Decision recorded: for each spec, whether the fix is to add missing input or relax the schema"
+      ],
+      "depends_on": [
+        "task-001"
+      ],
+      "notes": "Companion to task-001. Must be done simultaneously — enforcement without fixing callers breaks existing workflows."
+    },
+    {
+      "id": "task-003",
+      "description": "Identify agent families that share structural patterns and refactor to use template inheritance (extends/blocks)",
+      "status": "planned",
+      "phase": 1,
+      "files": [
+        "packages/pi-workflows/templates/"
+      ],
+      "acceptance_criteria": [
+        "At least 2 new template families use extends/block composition (beyond existing analyzers/)",
+        "Candidate families: investigators (investigator, gap-identifier, gap-resolution-assessor share 'read code → structured findings → validate schema'), planners (plan-creator, plan-decomposer, decomposer share 'analyze input → produce ordered tasks')",
+        "Base templates extract common workflow/constraints/success_criteria structure",
+        "Specialized templates override only the domain-specific blocks",
+        "All existing tests pass — prompt output is semantically equivalent"
+      ],
+      "depends_on": [],
+      "notes": "Fixes issue-002. Proves that our template composition model works beyond the single analyzer family."
+    },
+    {
+      "id": "task-004",
+      "description": "Redesign reusable agents (explorer, structure-analyzer, synthesizer) to accept variable input shapes via optional fields and conditional template rendering",
+      "status": "planned",
+      "phase": 1,
+      "files": [
+        "packages/pi-workflows/agents/code-explorer.agent.yaml",
+        "packages/pi-workflows/agents/synthesizer.agent.yaml",
+        "packages/pi-workflows/templates/explorer/task.md",
+        "packages/pi-workflows/templates/synthesizer/task.md"
+      ],
+      "acceptance_criteria": [
+        "code-explorer accepts optional depth (quick/medium/thorough) and focus_areas fields — template adapts prompt accordingly",
+        "synthesizer accepts patterns as optional — template renders 2-channel or 3-channel synthesis based on what's provided",
+        "Input schemas updated with optional fields and proper defaults",
+        "Task templates use {% if %} conditionals to adapt to present/absent optional fields",
+        "Existing workflows continue to work (new fields are optional with sensible defaults)",
+        "At least one workflow demonstrates a genuinely different composition (e.g., quick explorer vs thorough explorer)"
+      ],
+      "depends_on": [
+        "task-001"
+      ],
+      "notes": "Fixes issue-003. Transforms structural repetition into parametric recombination."
+    },
+    {
+      "id": "task-005",
+      "description": "Implement ad-hoc single-agent invocation via /workflow run-agent command and tool parameter",
+      "status": "planned",
+      "phase": 2,
+      "files": [
+        "packages/pi-workflows/src/index.ts",
+        "packages/pi-workflows/src/workflow-executor.ts"
+      ],
+      "acceptance_criteria": [
+        "/workflow run-agent <name> dispatches a single agent step without a workflow spec",
+        "Input provided as JSON string or key=value pairs on the command line",
+        "Agent's input schema validates the provided input (if schema exists)",
+        "Agent's task template renders with the provided input",
+        "Agent's output schema validates the result (if schema exists)",
+        "Result displayed in conversation with the same formatting as workflow step results",
+        "Tool parameter variant: workflow tool accepts { agent: name, input: {...} } for LLM-driven ad-hoc invocation"
+      ],
+      "depends_on": [
+        "task-001"
+      ],
+      "notes": "Fixes issue-004. Bridges the gap pi-subagents fills naturally with /run."
+    },
+    {
+      "id": "task-006",
+      "description": "Implement worktree isolation option for parallel step execution",
+      "status": "planned",
+      "phase": 2,
+      "files": [
+        "packages/pi-workflows/src/step-parallel.ts",
+        "packages/pi-workflows/src/worktree.ts",
+        "packages/pi-workflows/src/types.ts"
+      ],
+      "acceptance_criteria": [
+        "parallel: steps accept optional worktree: true field in workflow YAML",
+        "When enabled: temp git worktrees created per parallel sub-step, node_modules symlinked",
+        "Each agent runs in its own worktree's cwd preserving subdirectory context",
+        "After execution: git diff captured per worktree, diffs included in step result",
+        "Worktrees cleaned up in finally block (even on failure)",
+        "Validation: requires clean git working tree, rejects if dirty",
+        "DAG-inferred parallelism also supports worktree flag (step-level config)"
+      ],
+      "depends_on": [],
+      "notes": "Fixes issue-005. Can adapt pi-subagents' worktree.ts (326 lines, well-structured) as reference implementation."
+    },
+    {
+      "id": "task-007",
+      "description": "Implement workflow recursion depth guard for Phase 6 nested workflow invocation",
+      "status": "planned",
+      "phase": 3,
+      "files": [
+        "packages/pi-workflows/src/dispatch.ts",
+        "packages/pi-workflows/src/workflow-executor.ts"
+      ],
+      "acceptance_criteria": [
+        "PI_WORKFLOW_MAX_DEPTH env var sets maximum nesting (default 2)",
+        "PI_WORKFLOW_DEPTH env var propagated to child processes, incremented per level",
+        "Exceeding depth fails the step with clear error message",
+        "Configurable via env var before starting pi",
+        "Tests cover: depth 0 blocks all, depth 1 allows one level, depth exceeded fails"
+      ],
+      "depends_on": [],
+      "notes": "Fixes issue-006. Prerequisite for unblocking workflow: step type in Phase 6."
+    }
+  ]
+}

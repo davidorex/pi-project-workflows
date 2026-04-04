@@ -1,0 +1,40 @@
+{
+  "name": "pi-project-workflows",
+  "description": "Typed multi-step workflow execution via .workflow.yaml specs. Schema-driven project state in .project/. Behavior monitors that classify agent activity and steer corrections.",
+  "core_value": "Agent-authored workflows with schema-validated data flow, autonomous behavioral monitoring, and typed project state",
+  "goals": [
+    {
+      "id": "workflow-orchestration",
+      "description": "Workflow orchestration with DAG-based parallelism"
+    },
+    {
+      "id": "schema-driven-blocks",
+      "description": "Schema-driven project blocks with cross-block validation"
+    },
+    {
+      "id": "behavior-monitors",
+      "description": "Autonomous behavior monitors with LLM classification"
+    }
+  ],
+  "constraints": [
+    {
+      "type": "runtime",
+      "description": "ESM TypeScript compiled via tsc"
+    },
+    {
+      "type": "versioning",
+      "description": "Lockstep versioning across 4 packages"
+    },
+    {
+      "type": "compatibility",
+      "description": "pi extension API compatibility"
+    }
+  ],
+  "scope_boundaries": {
+    "in": [
+      "Monorepo: @davidorex/pi-project, @davidorex/pi-workflows, @davidorex/pi-behavior-monitors, @davidorex/pi-project-workflows"
+    ],
+    "out": []
+  },
+  "status": "development"
+}

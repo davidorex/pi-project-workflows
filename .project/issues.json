@@ -1,0 +1,162 @@
+{
+  "issues": [
+    {
+      "id": "issue-001",
+      "title": "Agent input schemas are parsed but never validated at dispatch time",
+      "body": "AgentSpec.inputSchema is populated by agent-spec.ts:126 but step-agent.ts never validates the step's resolved input against it. The synthesizer agent requires [structure, quality, patterns] but resumable-analysis.workflow.yaml passes only structure and quality — this silently succeeds. Input schemas are decorative, creating false confidence in typed composition. Either add validation in executeAgentStep() before dispatch, or remove inputSchema from the type to stop pretending.",
+      "location": "packages/pi-workflows/src/step-agent.ts:52",
+      "status": "resolved",
+      "category": "primitive",
+      "priority": "critical",
+      "package": "pi-workflows",
+      "source": "agent",
+      "resolved_by": "v0.11.0 commit 92e5427 — inputSchema validation in executeAgentStep(), task-001/ver-001. Criterion 6 (audit all callers) deferred to task-002."
+    },
+    {
+      "id": "issue-002",
+      "title": "Template composition (extends/blocks/macros) used in only 1 of 22 template families",
+      "body": "The Nunjucks template system supports extends, block, macro, and include — powerful composition primitives. Only the analyzers/ family uses them (structure/quality/patterns extending base-analyzer.md). The other 21 template directories are flat files with no composition. This means the template machinery is over-engineered relative to actual usage, OR the agent library is under-exploiting available composition. Agents like investigator, researcher, gap-identifier, and gap-resolution-assessor share structural patterns (read code → produce structured findings → validate against schema) that could share a base template.",
+      "location": "packages/pi-workflows/templates/",
+      "status": "open",
+      "category": "composition",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-003",
+      "title": "Agent reuse across workflows is structural repetition, not parametric recombination",
+      "body": "code-explorer appears in 6 workflows but always with identical input (path: ${{ input.path }}). structure-analyzer appears in 6 workflows, always with (exploration + path). synthesizer appears in 4 workflows with minor variation. Agents are copy-pasted at the YAML level — the typed input system and Nunjucks templates could enable genuinely different compositions (e.g., explorer with depth parameter, synthesizer with optional analysis channels) but this isn't happening. The agents should be redesigned to accept variable input shapes and adapt their prompts accordingly.",
+      "location": "packages/pi-workflows/agents/",
+      "status": "open",
+      "category": "composition",
+      "priority": "medium",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-004",
+      "title": "No ad-hoc agent invocation path — every use requires a .workflow.yaml spec",
+      "body": "pi-subagents allows /run scout 'analyze auth' with zero files written. Our system requires a .workflow.yaml for every agent invocation. This makes the barrier to use much higher for exploration, debugging, and one-off tasks. A /workflow run-agent <name> command or equivalent tool call that dispatches a single agent step with inline input (JSON or key=value) would bridge this gap. The agent's input schema (once enforced) provides validation; the task template provides prompt rendering; the output schema provides structured results — all without a workflow spec.",
+      "location": "packages/pi-workflows/src/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-005",
+      "title": "Parallel agent steps share working tree — filesystem conflicts in concurrent file-writing workflows",
+      "body": "The parallel: step type and DAG-inferred parallelism run agents concurrently in the same working directory. If two parallel agents modify the same file (or even different files that trigger build/lint side effects), results are undefined. pi-subagents solves this with git worktree isolation: temp worktrees per agent, node_modules symlink, diff capture after completion, cleanup in finally block. Our parallel steps need an optional worktree: true flag with equivalent machinery.",
+      "location": "packages/pi-workflows/src/step-parallel.ts",
+      "status": "open",
+      "category": "issue",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-006",
+      "title": "No recursion depth guard for future nested workflow invocation (Phase 6)",
+      "body": "The workflow: field on StepSpec is parsed but rejected at validation time (Phase 6 — not yet implemented). When unblocked, nested workflow invocation will allow unbounded recursive spawning without a depth guard. pi-subagents' pattern: PI_SUBAGENT_MAX_DEPTH env var propagated via PI_SUBAGENT_DEPTH in child process env. Must be in place before workflow: steps are enabled.",
+      "location": "packages/pi-workflows/src/workflow-spec.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-007",
+      "title": "assigned_agent field on tasks is decorative — nothing routes work based on it",
+      "body": "The tasks schema has an assigned_agent field but no code reads it for dispatch routing. An agent could be assigned to a task and a different agent dispatched by the workflow. The execute-task workflow dispatches task-worker regardless of assigned_agent. Either the field should drive dispatch (workflow reads it and selects agent) or it should be removed to stop pretending.",
+      "location": "packages/pi-project/defaults/schemas/tasks.schema.json",
+      "status": "open",
+      "category": "primitive",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-008",
+      "title": "No automatic decision recording during agent execution — decisions block task field exists but nothing populates it",
+      "body": "The decisions schema has a task field (added v0.11.0) for backlink from decisions to the task during which the decision was made. But no agent, workflow step, or tool automatically records decisions during task execution. The execution-results schema has a decisions[] array in agent output but nothing routes those entries to the decisions block. Decisions made by agents during execute-task are lost.",
+      "location": "packages/pi-project/defaults/schemas/decisions.schema.json",
+      "status": "open",
+      "category": "primitive",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-009",
+      "title": "No phase-level verification rollup — individual task verification exists but nothing aggregates to phase success_criteria",
+      "body": "The verification schema supports target_type: phase but nothing produces phase-level verification entries. Phase specs have success_criteria with verify_method but no workflow connects individual task completion to phase-level verification. A phase could have all tasks completed and verified but no phase-level evidence that success_criteria were met.",
+      "location": "packages/pi-project/defaults/schemas/verification.schema.json",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-010",
+      "title": "Issue lifecycle not connected to task completion — resolved_by must be set manually",
+      "body": "When task-001 was completed, issue-001 status remained open. No workflow or tool automatically updates issue status when the task that fixes it completes. The issues schema has resolved_by but nothing populates it from task/verification data. Manual intervention required to keep issues block in sync with reality.",
+      "location": "packages/pi-project/src/project-sdk.ts",
+      "status": "open",
+      "category": "primitive",
+      "priority": "high",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-011",
+      "title": "Agent execution metadata (model, cost, duration) not persisted to project blocks",
+      "body": "Workflow step results contain agent name, model, token usage, cost, and duration in run state (.workflows/runs/). But this data is ephemeral — not persisted to any project block. No record of which agent executed a task at what model tier with what quality. The verification block has evidence text but not structured execution metadata.",
+      "location": "packages/pi-workflows/src/workflow-executor.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-012",
+      "title": "Completion message fires on workflow failure — misleading success message",
+      "body": "workflow-executor.ts else branch at line 947 handled completed and failed status identically. resolveCompletion() ran unconditionally when spec.completion existed. Static completion.message strings like \"Handoff captured to .project/handoff.json\" fired on failure even though nothing was written. All workflow specs with completion messages assumed success — none checked ${{ status }}. formatResult() already correctly renders failure but was bypassed when spec.completion was present.",
+      "location": "packages/pi-workflows/src/workflow-executor.ts:949",
+      "status": "resolved",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-workflows",
+      "source": "agent",
+      "resolved_by": "v0.11.3 commit b614be4 — added state.status === \"completed\" guard to completion condition"
+    },
+    {
+      "id": "issue-013",
+      "title": "Agent output instructions tell agents to write files they cannot write — fenced JSON rejected",
+      "body": "buildPrompt() in step-shared.ts told agents \"Write your result as valid JSON to: <path>\" but 14 of 16 JSON-producing agents have tools: [read] or similar — no write capability. Their only output channel is textOutput (last assistant message). No instruction prohibited markdown fences, so LLMs wrapped JSON in markdown code blocks which JSON.parse() rejected. The prompt instruction was mismatched with agent capabilities.",
+      "location": "packages/pi-workflows/src/step-shared.ts:95",
+      "status": "resolved",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-workflows",
+      "source": "agent",
+      "resolved_by": "v0.11.3 commit b614be4 — rewritten to \"raw JSON only, no markdown fences\" with file-write as secondary"
+    },
+    {
+      "id": "issue-014",
+      "title": "Format-json output path silently swallows JSON parse failures — step completes with output: undefined",
+      "body": "step-agent.ts lines 232-238: the format-json path (no schema) caught JSON.parse exceptions and silently left output undefined. Step completed successfully with no output. persistStepOutput then wrote { text: garbage } to the output file. Downstream steps accessing steps.X.output.field got undefined — cascading failures untraceable to the silent swallow. Block writes are fatal on validation failure; this path was not, violating the principle from dec-009 that ungated paths next to gated ones are not enforcement.",
+      "location": "packages/pi-workflows/src/step-agent.ts:236",
+      "status": "resolved",
+      "category": "primitive",
+      "priority": "critical",
+      "package": "pi-workflows",
+      "source": "agent",
+      "resolved_by": "v0.11.3 commit b614be4 — parse failure now marks step as failed, same contract as schema-bound path"
+    }
+  ]
+}

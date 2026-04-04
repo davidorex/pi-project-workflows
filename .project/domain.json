@@ -1,0 +1,383 @@
+{
+  "entries": [
+    {
+      "id": "workflow-spec",
+      "title": "Workflow Specification Format",
+      "content": "Workflows are defined as .workflow.yaml files with a name, description, optional version, input/output JSON Schema declarations, ordered steps map, optional artifacts map, and optional completion spec. Parsed by parseWorkflowSpec() which validates structure but defers agent resolution and schema validation to execution time. Specs carry source tag (user/project) and filePath for error context. 14 bundled workflows ship with the package.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/workflow-spec.ts, packages/pi-workflows/src/types.ts (WorkflowSpec)",
+      "confidence": "high",
+      "tags": [
+        "workflow",
+        "yaml",
+        "spec",
+        "parsing"
+      ]
+    },
+    {
+      "id": "agent-spec",
+      "title": "Agent Specification Format",
+      "content": "Agent specs are .agent.yaml files that define typed functions (InputSchema to OutputSchema) with template references for prompt composition. No .md fallback. Search order: project .pi/agents/ > user ~/.pi/agent/agents/ > package agents/. Parsed by parseAgentYaml() into AgentSpec with fields: name, description, role (sensor/reasoning/action/quality), model, thinking, tools, extensions, skills, systemPrompt or promptTemplate, taskTemplate, inputSchema, outputFormat, outputSchema. Compiled to prompts via Nunjucks at dispatch time. 21 bundled agents ship with the package.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/agent-spec.ts, packages/pi-workflows/src/types.ts (AgentSpec)",
+      "confidence": "high",
+      "tags": [
+        "agent",
+        "yaml",
+        "spec",
+        "prompt-compilation"
+      ]
+    },
+    {
+      "id": "step-type-agent",
+      "title": "Agent Step Type",
+      "content": "Agent steps dispatch an LLM subprocess via pi --mode json. Resolves input expressions, compiles agent spec (Nunjucks templates with input as context), builds dispatch prompt, spawns subprocess, collects JSON events, validates output against declared schema, persists results. Supports model override cascade, context inlining (textOutput from prior steps), retry with steering messages, output path control. Registry: retryable=true, supportsInput=true, supportsOutput=true.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-agent.ts, packages/pi-workflows/src/dispatch.ts",
+      "confidence": "high",
+      "tags": [
+        "step-type",
+        "agent",
+        "dispatch",
+        "subprocess"
+      ]
+    },
+    {
+      "id": "step-type-gate",
+      "title": "Gate Step Type",
+      "content": "Gate steps run a shell command and judge pass/fail based on exit code (0=pass, non-zero=fail). Check expression has ${{ }} resolved before execution. Gates support onPass (continue/break) and onFail (continue/break/fail) directives. Deterministic and not retryable. Output: { passed, exitCode, output }. Primary control-flow mechanism inside loops (onPass: break to exit on success). Registry: retryable=false, supportsInput=false, supportsOutput=false.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-gate.ts",
+      "confidence": "high",
+      "tags": [
+        "step-type",
+        "gate",
+        "control-flow",
+        "shell"
+      ]
+    },
+    {
+      "id": "step-type-transform",
+      "title": "Transform Step Type",
+      "content": "Transform steps produce output by resolving ${{ }} expressions in a mapping object. No LLM call, no subprocess, no shell command — pure data transformation. Mapping is Record of field names to expression values. Resolved object becomes step output. Not retryable. Intended for reshaping data between agent steps. Registry: retryable=false, supportsInput=false, supportsOutput=false.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-transform.ts",
+      "confidence": "high",
+      "tags": [
+        "step-type",
+        "transform",
+        "expression",
+        "data-flow"
+      ]
+    },
+    {
+      "id": "step-type-loop",
+      "title": "Loop Step Type",
+      "content": "Loop steps execute sub-steps repeatedly until a gate breaks, max attempts reached, or a sub-step fails. Provides scope with ${{ loop.iteration }}, ${{ loop.maxAttempts }}, ${{ loop.priorAttempts }}. maxAttempts can be number or expression. Supports onExhausted step. Sub-steps can be agent, gate, or transform. Retryable at step level. Distinguished from forEach by control-flow iteration vs data-parallel iteration. Registry: retryable=true, supportsInput=false, supportsOutput=false.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-loop.ts",
+      "confidence": "high",
+      "tags": [
+        "step-type",
+        "loop",
+        "iteration",
+        "control-flow"
+      ]
+    },
+    {
+      "id": "step-type-parallel",
+      "title": "Parallel Step Type",
+      "content": "Parallel steps declare named sub-steps to run concurrently. Uses shared AbortController — if any sub-step fails, remaining siblings are cancelled. Results collected before layer proceeds. Also used implicitly at DAG layer level when steps have no inter-dependencies. Safe in single-threaded Node.js (distinct state keys). Registry: retryable=true, supportsInput=false, supportsOutput=false.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-parallel.ts",
+      "confidence": "high",
+      "tags": [
+        "step-type",
+        "parallel",
+        "concurrency",
+        "abort"
+      ]
+    },
+    {
+      "id": "step-type-pause",
+      "title": "Pause Step Type",
+      "content": "Pause steps halt workflow execution at a deliberate checkpoint. Step returns immediately with status completed, but executor sets state.status=paused and stops execution loop. Resume via /workflow resume or Ctrl+J keybinding. Pause field: string (message) or true (no message). Interactive pause also available via Ctrl+H keybinding between steps. Not retryable.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-pause.ts, packages/pi-workflows/src/workflow-executor.ts (lines 59-69, 786-802)",
+      "confidence": "high",
+      "tags": [
+        "step-type",
+        "pause",
+        "checkpoint",
+        "resume"
+      ]
+    },
+    {
+      "id": "step-type-command",
+      "title": "Command Step Type",
+      "content": "Command steps run a shell command and capture stdout as structured or text output for downstream steps. Unlike gate (pass/fail judgment), command captures data. Non-zero exit produces failed result. Supports output format (json/text). When json, stdout parsed; when text, wrapped as { text: '...' }. Supports expression resolution in command string, timeout, signal cancellation. Not retryable. Registry: retryable=false, supportsInput=true, supportsOutput=true.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-command.ts",
+      "confidence": "high",
+      "tags": [
+        "step-type",
+        "command",
+        "shell",
+        "data-capture"
+      ]
+    },
+    {
+      "id": "step-type-monitor",
+      "title": "Monitor Step Type",
+      "content": "Monitor steps invoke a behavior monitor classification as a workflow verification gate. Discovers monitor spec, loads patterns, renders prompt (Nunjucks or inline), calls LLM via complete(), parses verdict (CLEAN/FLAG/NEW). CLEAN=completed, FLAG/NEW=failed. Input passed to prompt context. Reimplements subset of pi-behavior-monitors classification without runtime dependency. No event handling, steering, ceiling, or escalation. Registry: retryable=false, supportsInput=true, supportsOutput=true.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-monitor.ts",
+      "confidence": "high",
+      "tags": [
+        "step-type",
+        "monitor",
+        "classification",
+        "verification"
+      ]
+    },
+    {
+      "id": "expression-system",
+      "title": "Expression System (${{ }})",
+      "content": "The ${{ }} expression system provides data flow between workflow steps. Resolves against scope containing input (workflow input) and steps (completed results). Dot-notation path traversal. Pipe filters: duration, currency, json, length, keys, filter. Type-preserving whole-value; string-interpolating embedded. Comparison operators (==, !=, >, <, >=, <=) and negation (!) for when conditionals. forEach binds array elements to named variables. ExpressionError thrown for broken references with diagnostic context (step status, path traversal state).",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/expression.ts",
+      "confidence": "high",
+      "tags": [
+        "expression",
+        "data-flow",
+        "filter",
+        "conditional"
+      ]
+    },
+    {
+      "id": "block-system",
+      "title": "Project Block System (.project/)",
+      "content": "Project blocks are typed JSON files in .project/ with schemas in .project/schemas/. Block API (readBlock, writeBlock, appendToBlock, updateItemInBlock) provides CRUD with automatic schema validation on write and atomic persistence (tmp + rename). 12 default planning lifecycle block types: project, domain, requirements, architecture, tasks, decisions, gaps, rationale, verification, handoff, conformance-reference, audit. Schemas are user-customizable. block:<name> schema reference syntax resolves to .project/schemas/<name>.schema.json.",
+      "category": "reference",
+      "source": "packages/pi-project/src/block-api.ts, packages/pi-project/src/project-dir.ts, packages/pi-project/src/project-sdk.ts",
+      "confidence": "high",
+      "tags": [
+        "block",
+        "project-state",
+        "schema",
+        "atomic-write"
+      ]
+    },
+    {
+      "id": "monitor-system",
+      "title": "Behavior Monitor System",
+      "content": "Behavior monitors are autonomous watchdogs defined as .monitor.json files. Spec defines: event trigger, when condition, scope (main/subagent/all/workflow), classify block (model, context collectors, prompt/promptTemplate), patterns (JSON library), instructions (user directives), actions (on_flag/on_new/on_clean with steer/write/learn_pattern), ceiling, escalate strategy. Context collectors: user_text, assistant_text, tool_results, tool_calls, custom_messages, project_vision, project_conventions, git_status. Verdicts: CLEAN, FLAG, NEW. Five bundled monitors: commit-hygiene, fragility, hedge, unauthorized-action, work-quality.",
+      "category": "reference",
+      "source": "packages/pi-behavior-monitors/index.ts, packages/pi-behavior-monitors/examples/",
+      "confidence": "high",
+      "tags": [
+        "monitor",
+        "classification",
+        "steering",
+        "pattern-library"
+      ]
+    },
+    {
+      "id": "template-rendering",
+      "title": "Nunjucks Template Rendering",
+      "content": "Nunjucks renders agent prompts and monitor classification prompts. Agent templates use three-tier search: project .pi/templates/ > user ~/.pi/agent/templates/ > package templates/. Autoescape disabled (markdown, not HTML). Workflow ${{ }} expressions protected from Nunjucks by escaping before render and restoring after. Monitor templates use separate search: project .pi/monitors/ > user ~/.pi/agent/monitors/ > package examples. Templates receive step input as context variables.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/template.ts, packages/pi-workflows/src/step-monitor.ts (lines 134-187)",
+      "confidence": "high",
+      "tags": [
+        "template",
+        "nunjucks",
+        "prompt",
+        "three-tier-search"
+      ]
+    },
+    {
+      "id": "schema-validation",
+      "title": "JSON Schema Validation (AJV)",
+      "content": "AJV (Another JSON Validator) provides JSON Schema validation. Validator (validate, validateFromFile) throws ValidationError with formatted messages. Used in three contexts: (1) block writes validate against .project/schemas/<block>.schema.json; (2) agent step output validated against declared output.schema; (3) artifacts with schema field validated before writing. AJV configured with allErrors=true, strict=false (permissive unknown keywords).",
+      "category": "reference",
+      "source": "packages/pi-project/src/schema-validator.ts",
+      "confidence": "high",
+      "tags": [
+        "validation",
+        "ajv",
+        "json-schema",
+        "error-handling"
+      ]
+    },
+    {
+      "id": "dag-planning",
+      "title": "DAG Dependency Planning",
+      "content": "DAG planner extracts ${{ steps.X }} references from each step to build dependency graph, produces layered execution plan via topological sort. Steps within a layer are independent and can execute concurrently. Conservative plan (runtime default) adds implicit declaration-order dependencies for steps without explicit references — backward compatibility with sequential workflows while allowing parallelism for explicit diamond patterns. Detects and throws on cycles. context: [stepName] creates DAG dependencies.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/dag.ts",
+      "confidence": "high",
+      "tags": [
+        "dag",
+        "dependency",
+        "topological-sort",
+        "parallelism"
+      ]
+    },
+    {
+      "id": "checkpoint-resume",
+      "title": "Checkpoint and Resume",
+      "content": "Execution state persisted atomically after each step to .workflows/runs/<name>/runs/<runId>/state.json. On resume, executor reloads state, resets failed steps for re-run, filters DAG layers to only pending steps. Original input preserved. State tracks: input, steps results, status (running/completed/failed/paused), workflow name, spec version, timestamps. Resume via /workflow resume <name> or Ctrl+J. Pause via declared pause step or interactive Ctrl+H between steps. State write failure during execution propagates as fatal error.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/workflow-executor.ts (lines 676-698, 770-802), packages/pi-workflows/src/state.ts",
+      "confidence": "high",
+      "tags": [
+        "checkpoint",
+        "resume",
+        "state",
+        "atomic-write",
+        "pause"
+      ]
+    },
+    {
+      "id": "artifact-production",
+      "title": "Artifact Production",
+      "content": "Artifacts are persistent files written after workflow completion, declared in spec artifacts map. Each has path (may contain expressions), from (expression for data source), optional schema (validation before write). Block-targeting artifacts (.project/*.json) routed through writeBlock() for schema validation — failures are fatal. Non-block artifacts written directly — failures non-fatal. Step-level output also persisted: JSON to outputs/<stepName>.json in run directory or author-declared output.path. JSON is the intermediate representation between steps.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/workflow-executor.ts (lines 805-870), packages/pi-workflows/src/output.ts",
+      "confidence": "high",
+      "tags": [
+        "artifact",
+        "output",
+        "persistence",
+        "block-write"
+      ]
+    },
+    {
+      "id": "subprocess-dispatch",
+      "title": "Subprocess Dispatch Mechanism",
+      "content": "Agent steps execute as subprocesses via pi --mode json. Dispatch spawns process, streams stdout as newline-delimited JSON events, collects messages and usage metrics (input/output/cacheRead/cacheWrite/cost/turns). Supports: cancellation via AbortSignal (SIGTERM then SIGKILL after 5s grace), timeout enforcement, model selection cascade (step > agent > model-config by role > default), tool filtering, extension scoping, skill scoping, system prompt injection via --append-system-prompt, long-prompt via @file (above 8000 chars). Stdout buffer capped at 10MB.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/dispatch.ts",
+      "confidence": "high",
+      "tags": [
+        "dispatch",
+        "subprocess",
+        "pi-mode-json",
+        "cancellation"
+      ]
+    },
+    {
+      "id": "sdk-and-validation",
+      "title": "SDK Queryable Surfaces and Validation",
+      "content": "Workflow SDK (workflow-sdk.ts) provides vocabulary (step types, filter names, expression roots), discovery (agents, workflows, templates, schemas from filesystem), introspection (expressions, declared steps/agents/monitors/schemas from parsed spec), validation (agent resolution, monitor resolution, schema existence, step references, ordering, filter names, template-input alignment). Project SDK (project-sdk.ts) provides parallel capabilities: vocabulary (schema info, block types), discovery (blocks, schemas, appendable blocks), derived state (git, source, block metrics), cross-block referential integrity validation. Both compute dynamically from code registries and filesystem.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/workflow-sdk.ts, packages/pi-project/src/project-sdk.ts",
+      "confidence": "high",
+      "tags": [
+        "sdk",
+        "validation",
+        "discovery",
+        "introspection"
+      ]
+    },
+    {
+      "id": "block-validation-rollback",
+      "title": "Post-Step Block Validation and Rollback",
+      "content": "Post-step block validation snapshots .project/*.json mtimes and contents before each step, then validates changed files against schemas after execution. If block writes fail schema validation, files are rolled back to pre-step state. On retry-capable steps, triggers retry with validation error injected as context. On final attempt, step fails. Aims to maintain typed-state contract of .project/ blocks when autonomous agents modify block files.",
+      "category": "reference",
+      "source": "packages/pi-project/src/block-validation.ts, packages/pi-workflows/src/workflow-executor.ts (lines 251-320)",
+      "confidence": "high",
+      "tags": [
+        "validation",
+        "rollback",
+        "snapshot",
+        "block-integrity"
+      ]
+    },
+    {
+      "id": "foreach-iteration",
+      "title": "ForEach Iteration Modifier",
+      "content": "forEach modifier combines with any step type (agent, gate, transform, etc.). Resolves ${{ }} expression to array, executes step body once per element with element bound to named variable (as field, default 'item'). Combined result aggregates outputs from all iterations. Distinguished from loop: forEach operates over known collection (data-parallel), loop repeats until condition (control-flow iteration).",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/step-foreach.ts, packages/pi-workflows/src/workflow-spec.ts (lines 308-319)",
+      "confidence": "high",
+      "tags": [
+        "foreach",
+        "iteration",
+        "data-parallel",
+        "modifier"
+      ]
+    },
+    {
+      "id": "completion-system",
+      "title": "Workflow Completion System",
+      "content": "Completion spec controls post-workflow message injected into main LLM conversation. Two forms: (1) template with ${{ }} expressions resolved against CompletionScope (input, steps, totalUsage, totalDurationMs, runDir, runId, workflow, status, output); (2) message + include where include paths resolve and append as structured data. Template and message mutually exclusive. Optional — without it, executor formats default result summary. Output truncated to 50KB or 2000 lines to prevent context overflow.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/completion.ts, packages/pi-workflows/src/types.ts (CompletionSpec, CompletionScope)",
+      "confidence": "high",
+      "tags": [
+        "completion",
+        "post-workflow",
+        "message",
+        "truncation"
+      ]
+    },
+    {
+      "id": "retry-and-steering",
+      "title": "Retry and Steering Mechanism",
+      "content": "Per-step retry configured via retry field: maxAttempts (total attempts), onExhausted (fail/skip), steeringMessage (custom text injected into agent prompt on retry). Only agent, forEach, loop, and parallel are retryable; gate, transform, command, monitor are not. On failure (including block validation failure), block files rolled back and step re-executes with error context. Prior errors accumulated and attached to final result for diagnostic transparency.",
+      "category": "reference",
+      "source": "packages/pi-workflows/src/workflow-executor.ts (lines 142-398), packages/pi-workflows/src/types.ts (RetryConfig)",
+      "confidence": "high",
+      "tags": [
+        "retry",
+        "steering",
+        "rollback",
+        "error-context"
+      ]
+    },
+    {
+      "id": "template-families",
+      "title": "Agent Template Structural Families",
+      "content": "24 agent templates fall into identifiable structural families based on their prompt pattern. Currently identified families: (1) ANALYZERS — read code, produce typed findings against a schema. Members: structure-analyzer, quality-analyzer, pattern-analyzer. Has base template (base-analyzer.md). (2) INVESTIGATORS — receive a gap/task, read code, produce structured investigation findings. Members: investigator, researcher, gap-identifier, gap-resolution-assessor. No base template yet — all flat. Share: gap context rendering, instruction for scoped code reading, structured output with schema reference. (3) PLANNERS — receive analysis input, produce structured plans/decompositions. Members: plan-creator, plan-decomposer, decomposer, phase-author. No base template. Share: analysis context rendering, hierarchical output structure. (4) INFERRERS — read existing code/state, infer structure. Members: project-inferrer, architecture-inferrer. No base template. Share: codebase scanning instructions, inference output patterns. (5) EXECUTORS — receive a task spec, perform implementation/verification. Members: task-worker, spec-implementer, task-verifier, verifier. No base template. Share: task context, completion criteria, evidence gathering.",
+      "category": "reference",
+      "source": "analysis of packages/pi-workflows/templates/",
+      "confidence": "high",
+      "tags": [
+        "template",
+        "composition",
+        "families",
+        "nunjucks"
+      ]
+    },
+    {
+      "id": "base-template-design",
+      "title": "Base Template Design Pattern",
+      "content": "The analyzers family demonstrates the target pattern. base-analyzer.md defines: (1) shared preamble with role and context rendering, (2) {% block analysis_focus %} for specialization, (3) {% block output_instructions %} for schema-specific guidance, (4) shared output format requirements. Child templates (structure.md, quality.md, patterns.md) use {% extends 'analyzers/base-analyzer.md' %} and override only the blocks that differ. macros.md provides reusable {% macro %} definitions. This pattern must be replicated for investigators, planners, inferrers, and executors. The base template is the leverage point — when it exists, the LLM copies it (path of least resistance). When it doesn't exist, the LLM copies a flat template instead.",
+      "category": "reference",
+      "source": "packages/pi-workflows/templates/analyzers/",
+      "confidence": "high",
+      "tags": [
+        "template",
+        "inheritance",
+        "base-template",
+        "nunjucks"
+      ]
+    },
+    {
+      "id": "parametric-input-design",
+      "title": "Parametric Input Design for Agent Reuse",
+      "content": "Parametric input means an agent's behavior adapts based on input shape variation, not just value variation. Current state: 0 of 26 agents define inputSchema. code-explorer appears in 6 workflows always with identical { path } input. Target state: code-explorer accepts { path, depth?, focus?, exclude? } where optional fields change exploration behavior via Nunjucks conditionals in the template ({% if depth %}Limit to {{ depth }} levels{% endif %}). structure-analyzer accepts { exploration, path, focus_areas? } where focus_areas narrows analysis scope. synthesizer accepts { structure?, quality?, patterns?, channels? } where optional analysis channels determine which sections render. The input schema is the contract; the template conditionals are the adaptation mechanism; the workflow step input is the composition point.",
+      "category": "reference",
+      "source": "analysis of agent reuse patterns across 14 bundled workflows",
+      "confidence": "high",
+      "tags": [
+        "agent",
+        "input-schema",
+        "parametric",
+        "composition"
+      ]
+    }
+  ]
+}

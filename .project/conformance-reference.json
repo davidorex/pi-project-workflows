@@ -1,0 +1,129 @@
+{
+  "name": "Agent & Template Composition",
+  "scope": {
+    "type": "pi-extension",
+    "sources": [
+      "CLAUDE.md",
+      "dec-002",
+      "dec-008",
+      "RAT-003"
+    ]
+  },
+  "principles": [
+    {
+      "id": "template-inheritance",
+      "name": "Template Inheritance",
+      "description": "Agent templates in structural families must use Nunjucks extends/block composition, not flat duplication",
+      "rules": [
+        {
+          "id": "template-inheritance.1",
+          "rule": "Template directories where a base-*.md exists must have child templates that use {% extends %}",
+          "check_method": "grep",
+          "check_pattern": "grep -rL 'extends' packages/pi-workflows/templates/analyzers/*.md | grep -v base-",
+          "severity": "error",
+          "anti_patterns": [
+            "Flat task.md in a directory that has a base-*.md template",
+            "Copy-pasting base template content into a standalone file"
+          ]
+        },
+        {
+          "id": "template-inheritance.2",
+          "rule": "Agents in identified structural families (read→findings→schema) must inherit from the family base template, not define standalone flat templates",
+          "check_method": "inspect",
+          "check_pattern": "Compare template structure of investigator, researcher, gap-identifier, gap-resolution-assessor — flag flat templates that share >60% structural similarity",
+          "severity": "error",
+          "examples": [
+            "analyzers/structure.md extends analyzers/base-analyzer.md with block overrides"
+          ],
+          "anti_patterns": [
+            "investigator/task.md and researcher/task.md both define identical output schema sections independently"
+          ]
+        },
+        {
+          "id": "template-inheritance.3",
+          "rule": "New agent templates must check existing base templates before creating a flat file — if a matching family exists, use extends",
+          "check_method": "inspect",
+          "severity": "warning"
+        }
+      ]
+    },
+    {
+      "id": "input-schema",
+      "name": "Agent Input Schema Declaration",
+      "description": "Agents must declare their input contract explicitly — implicit input shapes are defects",
+      "rules": [
+        {
+          "id": "input-schema.1",
+          "rule": "Every .agent.yaml that receives structured input from workflow steps must define inputSchema",
+          "check_method": "command",
+          "check_pattern": "for f in packages/pi-workflows/agents/*.agent.yaml; do grep -qL 'inputSchema' \"$f\" && echo \"MISSING: $(basename $f)\"; done",
+          "severity": "error",
+          "anti_patterns": [
+            "Agent accepts {{ path }}, {{ exploration }}, {{ architecture }} in templates but declares no inputSchema"
+          ]
+        },
+        {
+          "id": "input-schema.2",
+          "rule": "inputSchema fields must match the Nunjucks template variable references — no undeclared template variables",
+          "check_method": "inspect",
+          "check_pattern": "Extract {{ var }} references from templates, compare against inputSchema properties",
+          "severity": "error",
+          "examples": [
+            "inputSchema declares path, exploration; template uses {{ path }}, {{ exploration }}"
+          ],
+          "anti_patterns": [
+            "Template uses {{ gap.details }} but inputSchema has no gap property"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parametric-reuse",
+      "name": "Parametric Agent Reuse",
+      "description": "Agents used across multiple workflows must accept variable input, not identical wiring",
+      "rules": [
+        {
+          "id": "parametric-reuse.1",
+          "rule": "An agent referenced by 2+ workflow specs must accept at least one input field that varies between those workflows",
+          "check_method": "command",
+          "check_pattern": "grep -r 'agent:' packages/pi-workflows/workflows/*.yaml | sort | uniq -c | sort -rn | head -10",
+          "severity": "warning",
+          "anti_patterns": [
+            "code-explorer in 6 workflows, always with path: ${{ input.path }} and nothing else",
+            "structure-analyzer in 6 workflows, always with identical exploration + path"
+          ]
+        },
+        {
+          "id": "parametric-reuse.2",
+          "rule": "Agent templates for reused agents must include Nunjucks conditionals that adapt behavior based on optional input fields",
+          "check_method": "grep",
+          "check_pattern": "grep -c '{%.*if' packages/pi-workflows/templates/explorer/task.md",
+          "severity": "warning",
+          "examples": [
+            "{% if depth %}Limit exploration to {{ depth }} levels{% endif %}"
+          ],
+          "anti_patterns": [
+            "Template has zero conditionals — same output regardless of input variation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "output-typing",
+      "name": "Agent Output Typing",
+      "description": "Agent steps must declare output format — untyped output is a composition defect",
+      "rules": [
+        {
+          "id": "output-typing.1",
+          "rule": "Every agent step in a workflow that feeds data to downstream steps via ${{ steps.X }} must declare output.format or output.schema",
+          "check_method": "inspect",
+          "check_pattern": "Parse workflow YAML, find agent steps referenced in ${{ steps.X }} expressions, verify output declaration",
+          "severity": "error",
+          "anti_patterns": [
+            "Agent step produces JSON but declares no output format — downstream steps get raw text"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "rules": [
+    {
+      "id": "esm",
+      "description": "ESM modules only (\"type\": \"module\" in package.json)",
+      "enforcement": "lint",
+      "severity": "error"
+    },
+    {
+      "id": "tsc-build",
+      "description": "TypeScript compiled via tsc to dist/ — each package has tsconfig.build.json, main field points to ./dist/index.js, pi loads extensions from dist/",
+      "enforcement": "manual",
+      "severity": "error"
+    },
+    {
+      "id": "no-pi-dir",
+      "description": "Never create, copy, modify, or delete files in .pi/ — it is the user's runtime testing directory",
+      "enforcement": "review",
+      "severity": "error"
+    },
+    {
+      "id": "bundled-specs-source-of-truth",
+      "description": "Bundled workflow/agent/monitor specs live in their package directories: packages/pi-workflows/workflows/ for workflows, packages/pi-workflows/agents/ for agents, packages/pi-behavior-monitors/examples/ for monitor specs and templates",
+      "enforcement": "review",
+      "severity": "error"
+    },
+    {
+      "id": "types-in-types-ts",
+      "description": "In pi-workflows, shared interfaces are defined in src/types.ts — other packages define types alongside their modules",
+      "enforcement": "review",
+      "severity": "warning"
+    },
+    {
+      "id": "expression-no-eval",
+      "description": "Expression evaluator uses property access only — no eval(), no arithmetic/logic",
+      "enforcement": "test",
+      "severity": "error"
+    },
+    {
+      "id": "fail-fast",
+      "description": "Fail-fast on step failure (phase 1 behavior)",
+      "enforcement": "test",
+      "severity": "error"
+    },
+    {
+      "id": "domain-in-specs",
+      "description": "Domain logic lives in YAML specs, templates, and schemas — never in the runtime",
+      "enforcement": "review",
+      "severity": "error"
+    },
+    {
+      "id": "subprocess-independence",
+      "description": "Extension owns its own subprocess dispatch — independent of pi-subagents, no shared state",
+      "enforcement": "review",
+      "severity": "error"
+    },
+    {
+      "id": "json-data-bus",
+      "description": "JSON is the intermediate representation between steps — file system is the data bus",
+      "enforcement": "test",
+      "severity": "error"
+    },
+    {
+      "id": "atomic-state",
+      "description": "State persisted after each step via atomic write (tmp + rename)",
+      "enforcement": "test",
+      "severity": "error"
+    },
+    {
+      "id": "three-template-syntaxes",
+      "description": "{{ var }}/{% tag %} for Nunjucks prompt rendering, ${{ expr }} for workflow data flow — never mix contexts",
+      "enforcement": "review",
+      "severity": "warning"
+    },
+    {
+      "id": "nunjucks-composition",
+      "description": "New agent templates MUST use Nunjucks extends/block when a base template exists for their structural pattern family. Flat templates in families with established bases are defects, not shortcuts.",
+      "enforcement": "review",
+      "severity": "error"
+    },
+    {
+      "id": "agent-input-schema",
+      "description": "Agents accepting structured input MUST define inputSchema in .agent.yaml. Template variable references ({{ field }}) without a corresponding inputSchema property are silent failures.",
+      "enforcement": "review",
+      "severity": "error"
+    },
+    {
+      "id": "parametric-reuse",
+      "description": "Agents appearing in 2+ workflows MUST accept variable input shapes — identical input wiring across workflows is copy-paste, not composition. Templates must include conditionals that adapt to input variation.",
+      "enforcement": "review",
+      "severity": "warning"
+    },
+    {
+      "id": "no-flat-duplication",
+      "description": "Template families sharing structural patterns (read → findings → schema) MUST extract shared structure into a base template with extends/block. Duplicating prompt structure across agent templates is a defect.",
+      "enforcement": "review",
+      "severity": "error"
+    }
+  ],
+  "test_conventions": {
+    "runner_command": "tsx --test src/*.test.ts (pi-project, pi-workflows); vitest run (pi-behavior-monitors)",
+    "file_pattern": "src/*.test.ts",
+    "current_count": 300
+  },
+  "lint_command": "npx @biomejs/biome check . && tsc --noEmit",
+  "lint_scope": "packages/*/src/** + scripts/**"
+}

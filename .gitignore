@@ -6,9 +6,7 @@ node_modules/
 .workflow/
 .workflows/
 CLAUDE.md
-# Project block data is runtime state — gitignored
-# Project schemas (.project/schemas/) are the type system — tracked in git
-.project/*.json
+# Project schemas (.project/schemas/) and block data (.project/*.json) are both tracked in git
 .project/phases/
 .project/audits/
 # Test artifacts — block-validation tests may create temp dirs in package dirs

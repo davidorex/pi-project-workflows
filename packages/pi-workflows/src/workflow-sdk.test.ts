@@ -649,6 +649,116 @@ describe("inputSchema validation", () => {
 	});
 });
 
+// ── contextBlocks Validation ─────────────────────────────────────────────────
+
+describe("contextBlocks validation", () => {
+	it("no issue when contextBlocks blocks exist in .project/", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-pass");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions]\n",
+		);
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.writeFileSync(path.join(projectDir, "conventions.json"), "{}");
+
+		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter(
+			(i) => i.message.includes("contextBlocks") || i.message.includes("Context block"),
+		);
+		assert.strictEqual(ctxIssues.length, 0);
+	});
+
+	it("warns when contextBlocks block file is missing", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-missing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions]\n",
+		);
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// No conventions.json created
+
+		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter((i) => i.message.includes("conventions") && i.message.includes("not found"));
+		assert.ok(ctxIssues.length > 0);
+		assert.strictEqual(ctxIssues[0].severity, "warning");
+	});
+
+	it("warns when no .project/ directory exists", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-noproject");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions]\n",
+		);
+		// No .project/ directory created
+
+		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter((i) => i.message.includes(".project"));
+		assert.ok(ctxIssues.length > 0);
+		assert.strictEqual(ctxIssues[0].severity, "warning");
+	});
+
+	it("no issue when agent has no contextBlocks", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-none");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(path.join(agentsDir, "plain-agent.agent.yaml"), "name: plain-agent\ntools: [read]\n");
+
+		const spec = makeSpec({ run: { agent: "plain-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter(
+			(i) => i.message.includes("contextBlocks") || i.message.includes("Context block"),
+		);
+		assert.strictEqual(ctxIssues.length, 0);
+	});
+
+	it("warns only for missing blocks when some exist", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-partial");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions, requirements]\n",
+		);
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.writeFileSync(path.join(projectDir, "conventions.json"), "{}");
+		// No requirements.json created
+
+		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter(
+			(i) => i.message.includes("Context block") && i.message.includes("not found"),
+		);
+		assert.strictEqual(ctxIssues.length, 1);
+		assert.ok(ctxIssues[0].message.includes("requirements"));
+		assert.strictEqual(ctxIssues[0].severity, "warning");
+	});
+});
+
 // ── Bundled Workflow Validation ─────────────────────────────────────────────
 
 describe("execute-task workflow validation", () => {

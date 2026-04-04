@@ -7,6 +7,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
 import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
 import { availableMonitors } from "./step-monitor.js";
@@ -495,6 +496,36 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 					severity: "error",
 					message: `Step '${stepName}' is missing required input '${key}' for agent '${step.agent}'`,
 					field: `${fieldPrefix}.input`,
+				});
+			}
+		}
+	}
+
+	// 7c. contextBlocks existence — do declared context blocks exist in .project/?
+	const projectDirPath = path.join(cwd, PROJECT_DIR);
+	const projectDirExists = fs.existsSync(projectDirPath);
+
+	for (const [_stepName, step, fieldPrefix] of walkAllSteps(spec.steps)) {
+		if (!step.agent) continue;
+		const agentSpec = resolvedAgents.get(step.agent);
+		if (!agentSpec?.contextBlocks || agentSpec.contextBlocks.length === 0) continue;
+
+		if (!projectDirExists) {
+			issues.push({
+				severity: "warning",
+				message: `Agent '${step.agent}' declares contextBlocks but no .project/ directory exists`,
+				field: `${fieldPrefix}.agent`,
+			});
+			continue;
+		}
+
+		for (const blockName of agentSpec.contextBlocks) {
+			const blockPath = path.join(projectDirPath, `${blockName}.json`);
+			if (!fs.existsSync(blockPath)) {
+				issues.push({
+					severity: "warning",
+					message: `Context block '${blockName}' not found in .project/ (referenced by agent '${step.agent}')`,
+					field: `${fieldPrefix}.agent`,
 				});
 			}
 		}

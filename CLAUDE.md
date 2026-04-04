@@ -89,6 +89,7 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 - `dispatch.ts` — subprocess spawn (`pi --mode json`)
 - `dag.ts` — dependency graph, execution plan
 - `step-*.ts` — step type executors (one per type, including `step-monitor.ts` for monitor verification gates)
+- `templates/shared/macros.md` — Nunjucks macros rendering block data as markdown (`render_conventions`, `render_requirements`, `render_conformance`, `render_architecture`, `render_project`, `render_domain`, `render_decisions`, `render_tasks`, `render_issues`, `render_exploration`, `render_exploration_full`, `render_gap`)
 
 **pi-behavior-monitors** (`packages/pi-behavior-monitors/`):
 - `index.ts` — single-file extension (monitors, classification, steering, Nunjucks template rendering)
@@ -141,7 +142,9 @@ All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add 
 - Each workflow step runs as a subprocess (`pi --mode json`) with its own context window
 - Main conversation is the control plane; workflows are subordinate
 - DAG planner infers parallelism from `${{ steps.X }}` references and `context: [stepName]` declarations
-- Agent specs are `.agent.yaml` only (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time.
+- Agent specs are `.agent.yaml` only (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time. Agents declare `inputSchema` (validated at dispatch before subprocess spawn — step fails immediately on mismatch), `contextBlocks` (block names to inject into template context), and `output.format`/`output.schema` (validated after subprocess completes).
+- `contextBlocks: [conventions, requirements, conformance-reference]` on an agent YAML causes `compileAgentSpec()` to read each named block from `.project/` and inject it into the Nunjucks template context as `_<name>` (hyphens become underscores). Templates access via `{{ _conventions.rules }}` or `{% from "shared/macros.md" import render_conventions %}{{ render_conventions(_conventions) }}`. Missing blocks are `null`; no `.project/` skips injection. This is how project state flows into agent prompts.
+- `templates/shared/macros.md` provides one rendering macro per block schema. Agents import them via `{% from "shared/macros.md" import render_conventions %}`. Resolved via three-tier template search — users override in `.pi/templates/`.
 - Monitor specs are `.monitor.json`. Classify prompts can be Nunjucks `.md` templates (`promptTemplate`) or inline strings (`prompt`). Template search: project `.pi/monitors/` > user `~/.pi/agent/monitors/` > package `examples/`.
 - Monitor step type: workflows can invoke monitors as verification gates via `monitor: <name>`. CLEAN → completed, FLAG/NEW → failed.
 - `block:<name>` schema references: `output.schema: block:project` resolves to `.project/schemas/project.schema.json` from cwd. Portable across install methods — use for any workflow step or artifact that targets a project block.

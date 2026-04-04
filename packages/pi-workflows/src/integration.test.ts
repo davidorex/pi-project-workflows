@@ -4,8 +4,13 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import nunjucks from "nunjucks";
-import { parseAgentYaml } from "./agent-spec.js";
+import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
+import { executeAgentStep } from "./step-agent.js";
 import { compileAgentSpec } from "./step-shared.js";
+import { createTemplateEnv } from "./template.js";
+import type { AgentSpec, StepResult } from "./types.js";
+import { executeWorkflow } from "./workflow-executor.js";
+import { parseWorkflowSpec } from "./workflow-spec.js";
 
 /**
  * Integration test: compilation pipeline proving contextBlocks + macros +
@@ -136,28 +141,79 @@ function scaffoldMockProject(tmpDir: string): { projectDir: string; templatesDir
 	fs.writeFileSync(path.join(dotProject, "requirements.json"), JSON.stringify(REQUIREMENTS_BLOCK, null, 2));
 	fs.writeFileSync(path.join(dotProject, "custom-standards.json"), JSON.stringify(CUSTOM_STANDARDS_BLOCK, null, 2));
 
-	// Templates directory
+	// Templates directory — placed at .pi/templates/ for three-tier resolution (project tier)
+	// AND as a standalone dir for unit tests that create their own Nunjucks env
 	const templatesDir = path.join(tmpDir, "templates");
+	const piTemplatesDir = path.join(tmpDir, ".pi", "templates");
 
-	// shared/macros.md — copy from package
-	const sharedDir = path.join(templatesDir, "shared");
-	fs.mkdirSync(sharedDir, { recursive: true });
-	fs.copyFileSync(MACROS_SRC, path.join(sharedDir, "macros.md"));
+	for (const tplDir of [templatesDir, piTemplatesDir]) {
+		// shared/macros.md — copy from package
+		const sharedDir = path.join(tplDir, "shared");
+		fs.mkdirSync(sharedDir, { recursive: true });
+		fs.copyFileSync(MACROS_SRC, path.join(sharedDir, "macros.md"));
 
-	// test-base/system.md — base template
-	const baseDir = path.join(templatesDir, "test-base");
-	fs.mkdirSync(baseDir, { recursive: true });
-	fs.writeFileSync(path.join(baseDir, "system.md"), BASE_TEMPLATE);
+		// test-base/system.md — base template
+		const baseDir = path.join(tplDir, "test-base");
+		fs.mkdirSync(baseDir, { recursive: true });
+		fs.writeFileSync(path.join(baseDir, "system.md"), BASE_TEMPLATE);
 
-	// test-child/system.md — child template (extends base)
-	const childDir = path.join(templatesDir, "test-child");
-	fs.mkdirSync(childDir, { recursive: true });
-	fs.writeFileSync(path.join(childDir, "system.md"), CHILD_TEMPLATE);
+		// test-child/system.md — child template (extends base)
+		const childDir = path.join(tplDir, "test-child");
+		fs.mkdirSync(childDir, { recursive: true });
+		fs.writeFileSync(path.join(childDir, "system.md"), CHILD_TEMPLATE);
+	}
 
 	return { projectDir, templatesDir };
 }
 
 describe("compilation pipeline integration", () => {
+	it("inputSchema rejects missing required field before dispatch", async (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-schema-"));
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const runDir = path.join(tmpDir, ".workflows", "runs", "test", "runs", "run-1");
+		fs.mkdirSync(runDir, { recursive: true });
+
+		const agentWithSchema: AgentSpec = {
+			name: "schema-test-agent",
+			inputSchema: {
+				type: "object",
+				required: ["path"],
+				properties: { path: { type: "string" } },
+			},
+		};
+
+		const dispatchFn = async (): Promise<StepResult> => {
+			throw new Error("dispatch should not be called when inputSchema rejects");
+		};
+
+		const result = await executeAgentStep(
+			"test-step",
+			{ agent: "schema-test-agent", input: {} },
+			{ input: {}, steps: {}, status: "running" },
+			{
+				ctx: { cwd: tmpDir, hasUI: false, ui: { setWidget: () => {}, notify: () => {} } } as any,
+				loadAgent: () => agentWithSchema,
+				runDir,
+				specFilePath: path.join(tmpDir, "test.yaml"),
+				widgetState: {
+					spec: { name: "test", description: "", steps: {}, source: "project" as const, filePath: "" },
+					state: { input: {}, steps: {}, status: "running" },
+					startTime: Date.now(),
+					stepStartTimes: new Map(),
+					activities: new Map(),
+					outputSummaries: new Map(),
+					liveUsage: new Map(),
+				},
+				dispatchFn,
+			},
+		);
+
+		assert.strictEqual(result.status, "failed", "step should fail when required input is missing");
+		assert.ok(result.error, "should have error message");
+		assert.ok(result.error!.includes("path"), "error should mention the missing required field");
+	});
+
 	it("full pipeline: parseAgentYaml → compileAgentSpec with contextBlocks + inheritance + macros", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-"));
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
@@ -367,4 +423,190 @@ describe("compilation pipeline integration", () => {
 		assert.ok(!prompt.includes("CONF:"), "should not contain conformance data when no .project/ exists");
 		assert.ok(!prompt.includes("REQ:"), "should not contain requirements data when no .project/ exists");
 	});
+});
+
+// ── End-to-end workflow execution (requires pi on PATH) ──
+
+let hasPi = false;
+if (process.env.RUN_INTEGRATION === "1") {
+	try {
+		const { execSync } = await import("node:child_process");
+		execSync("pi --version", { stdio: "ignore" });
+		hasPi = true;
+	} catch {}
+}
+
+describe("end-to-end workflow with contextBlocks", {
+	skip: !hasPi ? "RUN_INTEGRATION=1 and pi required" : undefined,
+}, () => {
+	it(
+		"dispatches agent with contextBlocks, macros, inheritance, inputSchema — validates full pipeline",
+		async (t) => {
+			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-e2e-"));
+			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+			const { templatesDir } = scaffoldMockProject(tmpDir);
+
+			// Create .workflows/ run state directory
+			fs.mkdirSync(path.join(tmpDir, ".workflows"), { recursive: true });
+
+			// Agent YAML — with inputSchema, contextBlocks, template inheritance
+			const agentsDir = path.join(tmpDir, "agents");
+			fs.mkdirSync(agentsDir, { recursive: true });
+			fs.writeFileSync(
+				path.join(agentsDir, "e2e-agent.agent.yaml"),
+				[
+					"name: e2e-agent",
+					"role: quality",
+					"tools: [read]",
+					"input:",
+					"  type: object",
+					"  required: [path]",
+					"  properties:",
+					"    path: { type: string }",
+					"    role: { type: string }",
+					"contextBlocks: [conformance-reference, requirements, custom-standards]",
+					"output:",
+					"  format: json",
+					"prompt:",
+					"  system:",
+					"    template: test-child/system.md",
+					"  task:",
+					'    inline: "Respond with a JSON object: {\\"status\\": \\"ok\\", \\"path\\": \\"{{ path }}\\"}. Raw JSON only, no markdown fences."',
+				].join("\n"),
+			);
+
+			// Workflow YAML
+			const workflowPath = path.join(tmpDir, "e2e-test.workflow.yaml");
+			fs.writeFileSync(
+				workflowPath,
+				[
+					"name: e2e-context-blocks",
+					"description: End-to-end test of contextBlocks framework",
+					"input:",
+					"  type: object",
+					"  required: [path]",
+					"  properties:",
+					"    path: { type: string }",
+					"steps:",
+					"  analyze:",
+					"    agent: e2e-agent",
+					"    input:",
+					"      path: ${{ input.path }}",
+					'      role: "quality analyst"',
+					"    output:",
+					"      format: json",
+				].join("\n"),
+			);
+
+			const spec = parseWorkflowSpec(fs.readFileSync(workflowPath, "utf-8"), workflowPath, "project");
+
+			const ctx = {
+				cwd: tmpDir,
+				hasUI: false,
+				ui: { setWidget: () => {}, notify: () => {}, setStatus: () => {} },
+			} as any;
+
+			const pi = {
+				sendMessage: () => {},
+			} as any;
+
+			const result = await executeWorkflow(
+				spec,
+				{ path: "." },
+				{
+					ctx,
+					pi,
+					loadAgent: createAgentLoader(tmpDir, agentsDir),
+					templateEnv: createTemplateEnv(tmpDir, templatesDir),
+				},
+			);
+
+			// Workflow completed
+			assert.strictEqual(result.status, "completed", `workflow should complete, got: ${result.steps?.analyze?.error}`);
+
+			// Step completed
+			const step = result.steps.analyze;
+			assert.ok(step, "analyze step should exist");
+			assert.strictEqual(step.status, "completed", `step should complete, error: ${step.error}`);
+
+			// Output validated as JSON
+			assert.ok(step.output, "step should have parsed output");
+			assert.strictEqual(typeof step.output, "object", "output should be an object");
+		},
+		{ timeout: 60_000 },
+	);
+
+	it(
+		"rejects workflow when inputSchema required field is missing",
+		async (t) => {
+			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-e2e-reject-"));
+			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+			fs.mkdirSync(path.join(tmpDir, ".workflows"), { recursive: true });
+			fs.mkdirSync(path.join(tmpDir, ".project"), { recursive: true });
+
+			const agentsDir = path.join(tmpDir, "agents");
+			fs.mkdirSync(agentsDir, { recursive: true });
+			fs.writeFileSync(
+				path.join(agentsDir, "strict-agent.agent.yaml"),
+				[
+					"name: strict-agent",
+					"role: quality",
+					"tools: [read]",
+					"input:",
+					"  type: object",
+					"  required: [path, depth]",
+					"  properties:",
+					"    path: { type: string }",
+					"    depth: { type: number }",
+					"output:",
+					"  format: json",
+				].join("\n"),
+			);
+
+			const workflowPath = path.join(tmpDir, "reject-test.workflow.yaml");
+			fs.writeFileSync(
+				workflowPath,
+				[
+					"name: reject-test",
+					"description: Test inputSchema rejection",
+					"steps:",
+					"  analyze:",
+					"    agent: strict-agent",
+					"    input:",
+					'      path: "/src"',
+					"    output:",
+					"      format: json",
+				].join("\n"),
+			);
+
+			const spec = parseWorkflowSpec(fs.readFileSync(workflowPath, "utf-8"), workflowPath, "project");
+
+			const ctx = {
+				cwd: tmpDir,
+				hasUI: false,
+				ui: { setWidget: () => {}, notify: () => {}, setStatus: () => {} },
+			} as any;
+
+			const pi = { sendMessage: () => {} } as any;
+
+			const result = await executeWorkflow(
+				spec,
+				{},
+				{
+					ctx,
+					pi,
+					loadAgent: createAgentLoader(tmpDir, agentsDir),
+				},
+			);
+
+			assert.strictEqual(result.status, "failed", "workflow should fail when required input missing");
+			const step = result.steps.analyze;
+			assert.strictEqual(step.status, "failed");
+			assert.ok(step.error, "should have error");
+			assert.ok(step.error!.includes("depth"), "error should mention missing required field 'depth'");
+		},
+		{ timeout: 30_000 },
+	);
 });

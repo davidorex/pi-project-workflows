@@ -1,0 +1,50 @@
+{
+	"type": "object",
+	"required": ["id", "target", "target_type", "status", "method", "evidence", "criteria_results"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"description": "Verification ID (e.g. V-T-001)"
+		},
+		"target": {
+			"type": "string",
+			"description": "Task ID being verified"
+		},
+		"target_type": {
+			"type": "string",
+			"enum": ["task"],
+			"description": "Always 'task' for task verification"
+		},
+		"status": {
+			"type": "string",
+			"enum": ["passed", "failed", "partial", "skipped"]
+		},
+		"method": {
+			"type": "string",
+			"enum": ["command", "inspect", "test"]
+		},
+		"evidence": {
+			"type": "string",
+			"description": "Summary of what was checked"
+		},
+		"timestamp": {
+			"type": "string",
+			"description": "ISO 8601 timestamp"
+		},
+		"criteria_results": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["criterion", "status"],
+				"properties": {
+					"criterion": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["passed", "failed", "skipped"]
+					},
+					"evidence": { "type": "string" }
+				}
+			}
+		}
+	}
+}

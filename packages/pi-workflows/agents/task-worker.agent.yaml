@@ -1,0 +1,24 @@
+name: task-worker
+role: action
+description: Implements a discrete task per its acceptance criteria, scoped to declared files
+
+tools: [read, write, edit, bash, grep, glob, ls]
+
+input:
+  type: object
+  required: [task]
+  properties:
+    task:
+      type: object
+      description: Task block entry with description, acceptance_criteria, files
+    context:
+      type: string
+      description: Narrative context from prior steps
+
+output:
+  format: json
+  schema: schemas/execution-results.schema.json
+
+prompt:
+  task:
+    template: task-worker/task.md

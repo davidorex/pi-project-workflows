@@ -298,3 +298,77 @@ describe("verifier agent spec", () => {
 		assert.ok(fs.existsSync(schemaPath), `Schema file not found at ${schemaPath}`);
 	});
 });
+
+describe("task-worker agent spec", () => {
+	const builtinDir = path.resolve(import.meta.dirname, "..", "agents");
+
+	it("parses task-worker.agent.yaml correctly", () => {
+		const specPath = path.join(builtinDir, "task-worker.agent.yaml");
+		const spec = parseAgentYaml(specPath);
+		assert.strictEqual(spec.name, "task-worker");
+		assert.strictEqual(spec.role, "action");
+		assert.strictEqual(
+			spec.description,
+			"Implements a discrete task per its acceptance criteria, scoped to declared files",
+		);
+		assert.strictEqual(spec.outputFormat, "json");
+		assert.strictEqual(spec.outputSchema, "schemas/execution-results.schema.json");
+		assert.strictEqual(spec.taskTemplate, "task-worker/task.md");
+	});
+
+	it("has implementation tools including write and edit", () => {
+		const specPath = path.join(builtinDir, "task-worker.agent.yaml");
+		const spec = parseAgentYaml(specPath);
+		assert.ok(spec.tools!.includes("write"), "task-worker should have write tool");
+		assert.ok(spec.tools!.includes("edit"), "task-worker should have edit tool");
+	});
+
+	it("output schema path resolves to a valid file", () => {
+		const specPath = path.join(builtinDir, "task-worker.agent.yaml");
+		const spec = parseAgentYaml(specPath);
+		const schemaPath = path.resolve(
+			path.dirname(specPath),
+			"..",
+			"schemas",
+			spec.outputSchema!.replace("schemas/", ""),
+		);
+		assert.ok(fs.existsSync(schemaPath), `Schema file not found at ${schemaPath}`);
+	});
+});
+
+describe("task-verifier agent spec", () => {
+	const builtinDir = path.resolve(import.meta.dirname, "..", "agents");
+
+	it("parses task-verifier.agent.yaml correctly", () => {
+		const specPath = path.join(builtinDir, "task-verifier.agent.yaml");
+		const spec = parseAgentYaml(specPath);
+		assert.strictEqual(spec.name, "task-verifier");
+		assert.strictEqual(spec.role, "quality");
+		assert.strictEqual(
+			spec.description,
+			"Verifies task implementation against acceptance criteria, produces per-criterion verdicts",
+		);
+		assert.strictEqual(spec.outputFormat, "json");
+		assert.strictEqual(spec.outputSchema, "schemas/task-verification.schema.json");
+		assert.strictEqual(spec.taskTemplate, "task-verifier/task.md");
+	});
+
+	it("has read-only tools — no write or edit", () => {
+		const specPath = path.join(builtinDir, "task-verifier.agent.yaml");
+		const spec = parseAgentYaml(specPath);
+		assert.ok(!spec.tools!.includes("write"), "task-verifier should not have write tool");
+		assert.ok(!spec.tools!.includes("edit"), "task-verifier should not have edit tool");
+	});
+
+	it("output schema path resolves to a valid file", () => {
+		const specPath = path.join(builtinDir, "task-verifier.agent.yaml");
+		const spec = parseAgentYaml(specPath);
+		const schemaPath = path.resolve(
+			path.dirname(specPath),
+			"..",
+			"schemas",
+			spec.outputSchema!.replace("schemas/", ""),
+		);
+		assert.ok(fs.existsSync(schemaPath), `Schema file not found at ${schemaPath}`);
+	});
+});

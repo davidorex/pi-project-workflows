@@ -417,6 +417,77 @@ describe("validateWorkflow", () => {
 	});
 });
 
+// ── StepType Metadata Validation ─────────────────────────────────────────────
+
+describe("StepType metadata validation", () => {
+	it("reports error for retry on non-retryable step type", () => {
+		const spec = makeSpec({
+			check: { gate: { check: "test -f /tmp/flag" }, retry: { maxAttempts: 3 } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const issues = result.issues.filter((i) => i.message.includes("not retryable"));
+		assert.ok(issues.length > 0);
+		assert.strictEqual(issues[0].severity, "error");
+	});
+
+	it("allows retry on retryable step type", () => {
+		const spec = makeSpec({
+			investigate: { agent: "investigator", retry: { maxAttempts: 3 } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const retryIssues = result.issues.filter((i) => i.message.includes("not retryable"));
+		assert.strictEqual(retryIssues.length, 0);
+	});
+
+	it("reports warning for input on step type that does not support it", () => {
+		const spec = makeSpec({
+			check: { gate: { check: "test -f /tmp/flag" }, input: { x: "y" } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const issues = result.issues.filter((i) => i.message.includes("does not support input"));
+		assert.ok(issues.length > 0);
+		assert.strictEqual(issues[0].severity, "warning");
+	});
+
+	it("reports warning for output on step type that does not support it", () => {
+		const spec = makeSpec({
+			wait: { pause: true, output: { format: "json" } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const issues = result.issues.filter((i) => i.message.includes("does not support output"));
+		assert.ok(issues.length > 0);
+		assert.strictEqual(issues[0].severity, "warning");
+	});
+
+	it("no type-metadata issues for agent step with input and output", () => {
+		const spec = makeSpec({
+			investigate: {
+				agent: "investigator",
+				input: { topic: "security" },
+				output: { format: "json" },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const metaIssues = result.issues.filter(
+			(i) => i.message.includes("not retryable") || i.message.includes("does not support"),
+		);
+		assert.strictEqual(metaIssues.length, 0);
+	});
+
+	it("reports warning for input on transform step", () => {
+		const spec = makeSpec({
+			process: {
+				transform: { mapping: { result: "${{ input.x }}" } },
+				input: { x: "z" },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const issues = result.issues.filter((i) => i.message.includes("does not support input"));
+		assert.ok(issues.length > 0);
+		assert.strictEqual(issues[0].severity, "warning");
+	});
+});
+
 // ── Bundled Workflow Validation ─────────────────────────────────────────────
 
 describe("execute-task workflow validation", () => {

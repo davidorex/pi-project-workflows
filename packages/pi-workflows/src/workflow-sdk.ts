@@ -274,6 +274,21 @@ function collectSchemaRefs(steps: Record<string, StepSpec>, schemas: string[]): 
 	}
 }
 
+/** Yields [stepName, stepSpec, fieldPrefix] for all steps including nested loop/parallel. */
+function* walkAllSteps(steps: Record<string, StepSpec>, prefix = "steps"): Generator<[string, StepSpec, string]> {
+	for (const [name, step] of Object.entries(steps)) {
+		const fieldPrefix = `${prefix}.${name}`;
+		yield [name, step, fieldPrefix];
+		if (step.loop?.steps) yield* walkAllSteps(step.loop.steps as Record<string, StepSpec>, `${fieldPrefix}.loop.steps`);
+		if (step.parallel) yield* walkAllSteps(step.parallel as Record<string, StepSpec>, `${fieldPrefix}.parallel`);
+	}
+}
+
+/** Returns the StepTypeDescriptor whose field key is present on the given step spec. */
+function findStepType(stepSpec: StepSpec): StepTypeDescriptor | undefined {
+	return STEP_TYPES.find((t) => (stepSpec as Record<string, unknown>)[t.field] !== undefined);
+}
+
 // ── Validation (composed from introspection + discovery) ─────────────────────
 
 export interface ValidationIssue {
@@ -432,6 +447,33 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 				severity: "warning",
 				message: `Unknown filter '${expr.filterName}'. Available: ${FILTER_NAMES.join(", ")}`,
 				field: expr.field,
+			});
+		}
+	}
+
+	// 7. StepType metadata — retry on non-retryable, input/output on unsupported types
+	for (const [stepName, step, fieldPrefix] of walkAllSteps(spec.steps)) {
+		const desc = findStepType(step);
+		if (!desc) continue;
+		if (step.retry && !desc.retryable) {
+			issues.push({
+				severity: "error",
+				message: `Step '${stepName}' has retry but type '${desc.name}' is not retryable`,
+				field: `${fieldPrefix}.retry`,
+			});
+		}
+		if (step.input && !desc.supportsInput) {
+			issues.push({
+				severity: "warning",
+				message: `Step '${stepName}' has input but type '${desc.name}' does not support input`,
+				field: `${fieldPrefix}.input`,
+			});
+		}
+		if (step.output && !desc.supportsOutput) {
+			issues.push({
+				severity: "warning",
+				message: `Step '${stepName}' has output but type '${desc.name}' does not support output`,
+				field: `${fieldPrefix}.output`,
 			});
 		}
 	}

@@ -10,6 +10,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { appendToBlock, updateItemInBlock } from "./block-api.js";
 import {
 	availableBlocks,
 	availableSchemas,
@@ -20,6 +21,7 @@ import {
 	schemaVocabulary,
 	validateProject,
 } from "./project-sdk.js";
+import { ValidationError, validate } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
 	return fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));
@@ -463,7 +465,7 @@ describe("validateProject", () => {
 		assert.deepStrictEqual(result.issues, []);
 	});
 
-	it("warns when completed task has no verification reference", (t) => {
+	it("reports error when completed task has no verification reference", (t) => {
 		const tmpDir = makeTmpDir("validate-task-no-ver");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
@@ -478,12 +480,13 @@ describe("validateProject", () => {
 		);
 
 		const result = validateProject(tmpDir);
+		assert.strictEqual(result.valid, false, "completed task without verification should make project invalid");
 		assert.ok(result.issues.length > 0);
 		const noVerIssue = result.issues.find(
 			(i) => i.message.includes("no verification reference") && i.message.includes("t1"),
 		);
-		assert.ok(noVerIssue, "should warn about completed task without verification reference");
-		assert.strictEqual(noVerIssue!.severity, "warning");
+		assert.ok(noVerIssue, "should report error about completed task without verification reference");
+		assert.strictEqual(noVerIssue!.severity, "error");
 		assert.strictEqual(noVerIssue!.block, "tasks");
 		assert.ok(noVerIssue!.field.includes("verification"));
 	});
@@ -948,5 +951,246 @@ describe("blockStructure", () => {
 
 		const structures = blockStructure(tmpDir);
 		assert.deepStrictEqual(structures, []);
+	});
+});
+
+// ── Schema-enforced verification gate (if/then) ───────────────────────────
+
+/** Path to the real tasks.schema.json shipped as a default */
+const REAL_TASKS_SCHEMA = path.join(
+	path.dirname(new URL(import.meta.url).pathname),
+	"..",
+	"defaults",
+	"schemas",
+	"tasks.schema.json",
+);
+
+/**
+ * Install the real tasks.schema.json into a test's .project/schemas/ directory.
+ * Every enforcement test MUST call this — testing against an empty schema would
+ * prove nothing about the if/then gate.
+ */
+function installTasksSchema(tmpDir: string): void {
+	const schemasDir = path.join(tmpDir, ".project", "schemas");
+	fs.mkdirSync(schemasDir, { recursive: true });
+	fs.copyFileSync(REAL_TASKS_SCHEMA, path.join(schemasDir, "tasks.schema.json"));
+}
+
+/** Write a tasks block file directly (bypassing schema validation). */
+function writeTasksRaw(tmpDir: string, tasks: Record<string, unknown>[]): void {
+	const projectDir = path.join(tmpDir, ".project");
+	fs.mkdirSync(projectDir, { recursive: true });
+	fs.writeFileSync(path.join(projectDir, "tasks.json"), JSON.stringify({ tasks }));
+}
+
+describe("verification gate — AJV if/then enforcement", () => {
+	it("(a) AJV if/then fires: validate() rejects closed-without-reason, accepts with-reason", () => {
+		const schema = {
+			type: "object",
+			properties: {
+				status: { type: "string", enum: ["open", "closed"] },
+				reason: { type: "string" },
+			},
+			if: {
+				properties: { status: { const: "closed" } },
+				required: ["status"],
+			},
+			// biome-ignore lint/suspicious/noThenProperty: JSON Schema if/then is not Promise.then
+			then: {
+				required: ["reason"],
+			},
+		};
+
+		// Should pass: open without reason
+		validate(schema, { status: "open" }, "test-open");
+
+		// Should fail: closed without reason
+		assert.throws(
+			() => validate(schema, { status: "closed" }, "test-closed-no-reason"),
+			(err: unknown) => err instanceof ValidationError,
+		);
+
+		// Should pass: closed with reason
+		validate(schema, { status: "closed", reason: "done" }, "test-closed-with-reason");
+	});
+
+	it("(b) updateItemInBlock rejects completed without verification", (t) => {
+		const tmpDir = makeTmpDir("gate-update-reject");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		installTasksSchema(tmpDir);
+		writeTasksRaw(tmpDir, [{ id: "t1", description: "a task", status: "in-progress" }]);
+
+		// Attempt to set status=completed without verification — should fail
+		assert.throws(
+			() =>
+				updateItemInBlock(tmpDir, "tasks", "tasks", (item) => item.id === "t1", {
+					status: "completed",
+				}),
+			(err: unknown) => err instanceof ValidationError,
+		);
+
+		// Verify the file was not modified (atomic write rolled back)
+		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "tasks.json"), "utf-8"));
+		assert.strictEqual(data.tasks[0].status, "in-progress", "task should remain in-progress after failed update");
+	});
+
+	it("(c) updateItemInBlock accepts completed WITH verification", (t) => {
+		const tmpDir = makeTmpDir("gate-update-accept");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		installTasksSchema(tmpDir);
+		writeTasksRaw(tmpDir, [{ id: "t1", description: "a task", status: "in-progress" }]);
+
+		updateItemInBlock(tmpDir, "tasks", "tasks", (item) => item.id === "t1", {
+			status: "completed",
+			verification: "v1",
+		});
+
+		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "tasks.json"), "utf-8"));
+		assert.strictEqual(data.tasks[0].status, "completed");
+		assert.strictEqual(data.tasks[0].verification, "v1");
+	});
+
+	it("(d) appendToBlock rejects completed item without verification", (t) => {
+		const tmpDir = makeTmpDir("gate-append-reject");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		installTasksSchema(tmpDir);
+		writeTasksRaw(tmpDir, []);
+
+		assert.throws(
+			() =>
+				appendToBlock(tmpDir, "tasks", "tasks", {
+					id: "t2",
+					description: "new task",
+					status: "completed",
+				}),
+			(err: unknown) => err instanceof ValidationError,
+		);
+
+		// Verify the file still has an empty array
+		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "tasks.json"), "utf-8"));
+		assert.strictEqual(data.tasks.length, 0, "no task should have been appended");
+	});
+
+	it("(e) appendToBlock accepts completed item WITH verification", (t) => {
+		const tmpDir = makeTmpDir("gate-append-accept");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		installTasksSchema(tmpDir);
+		writeTasksRaw(tmpDir, []);
+
+		appendToBlock(tmpDir, "tasks", "tasks", {
+			id: "t2",
+			description: "new task",
+			status: "completed",
+			verification: "v1",
+		});
+
+		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "tasks.json"), "utf-8"));
+		assert.strictEqual(data.tasks.length, 1);
+		assert.strictEqual(data.tasks[0].status, "completed");
+		assert.strictEqual(data.tasks[0].verification, "v1");
+	});
+
+	it("(f) non-completed statuses work without verification field", (t) => {
+		const tmpDir = makeTmpDir("gate-non-completed");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		installTasksSchema(tmpDir);
+		writeTasksRaw(tmpDir, [{ id: "t1", description: "a task", status: "planned" }]);
+
+		// Each non-completed status should succeed without verification
+		for (const status of ["in-progress", "blocked", "cancelled"]) {
+			updateItemInBlock(tmpDir, "tasks", "tasks", (item) => item.id === "t1", { status });
+			const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "tasks.json"), "utf-8"));
+			assert.strictEqual(data.tasks[0].status, status, `status '${status}' should be accepted without verification`);
+		}
+	});
+
+	it("(g) two-update sequence: first fails (no verification), second succeeds (with verification)", (t) => {
+		const tmpDir = makeTmpDir("gate-two-step");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		installTasksSchema(tmpDir);
+		writeTasksRaw(tmpDir, [{ id: "t1", description: "a task", status: "in-progress" }]);
+
+		// First attempt: no verification — fails
+		assert.throws(
+			() =>
+				updateItemInBlock(tmpDir, "tasks", "tasks", (item) => item.id === "t1", {
+					status: "completed",
+				}),
+			(err: unknown) => err instanceof ValidationError,
+		);
+
+		// Read back: still in-progress
+		const beforeData = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "tasks.json"), "utf-8"));
+		assert.strictEqual(beforeData.tasks[0].status, "in-progress", "should remain in-progress after rejection");
+
+		// Second attempt: with verification — succeeds
+		updateItemInBlock(tmpDir, "tasks", "tasks", (item) => item.id === "t1", {
+			status: "completed",
+			verification: "v1",
+		});
+
+		const afterData = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "tasks.json"), "utf-8"));
+		assert.strictEqual(afterData.tasks[0].status, "completed");
+		assert.strictEqual(afterData.tasks[0].verification, "v1");
+	});
+
+	it("(h) validateProject returns error severity for completed task without verification (bypassed via fs)", (t) => {
+		const tmpDir = makeTmpDir("gate-validate-severity");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		// Write directly via fs.writeFileSync — bypasses schema validation
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [{ id: "t1", description: "corrupted task", status: "completed" }],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.valid, false, "validateProject should report invalid for corrupted state");
+
+		const issue = result.issues.find(
+			(i) => i.message.includes("no verification reference") && i.message.includes("t1"),
+		);
+		assert.ok(issue, "should find the completed-without-verification issue");
+		assert.strictEqual(issue!.severity, "error", "severity should be error, not warning");
+	});
+
+	it("(i) completeTask happy path works with real schema installed", (t) => {
+		const tmpDir = makeTmpDir("gate-complete-task");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		installTasksSchema(tmpDir);
+		writeTasksRaw(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+
+		// Write verification block (completeTask reads this)
+		fs.writeFileSync(
+			path.join(projectDir, "verification.json"),
+			JSON.stringify({
+				verifications: [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }],
+			}),
+		);
+
+		// completeTask sets both status and verification atomically — the if/then gate is satisfied
+		const result = completeTask(tmpDir, "t1", "v1");
+		assert.strictEqual(result.taskId, "t1");
+		assert.strictEqual(result.previousStatus, "planned");
+
+		// Read back and verify
+		const data = JSON.parse(fs.readFileSync(path.join(projectDir, "tasks.json"), "utf-8"));
+		assert.strictEqual(data.tasks[0].status, "completed");
+		assert.strictEqual(data.tasks[0].verification, "v1");
 	});
 });

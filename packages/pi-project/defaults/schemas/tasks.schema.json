@@ -71,6 +71,15 @@
 					"notes": {
 						"type": "string"
 					}
+				},
+				"if": {
+					"properties": {
+						"status": { "const": "completed" }
+					},
+					"required": ["status"]
+				},
+				"then": {
+					"required": ["id", "description", "status", "verification"]
 				}
 			}
 		}

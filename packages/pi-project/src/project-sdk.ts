@@ -648,7 +648,7 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				// completed task without verification reference
 				if (task.status === "completed" && !task.verification) {
 					issues.push({
-						severity: "warning",
+						severity: "error",
 						message: `Task '${task.id}' is completed but has no verification reference`,
 						block: "tasks",
 						field: `tasks[${task.id}].verification`,

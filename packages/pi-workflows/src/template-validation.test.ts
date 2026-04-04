@@ -337,3 +337,145 @@ describe("validateTemplateAlignment", () => {
 		assert.strictEqual(fieldErrors.length, 0, `Should skip unverifiable sources: ${JSON.stringify(fieldErrors)}`);
 	});
 });
+
+// ── contextBlocks-injected variables ───────────────────────────────────────
+
+describe("contextBlocks-injected variables", () => {
+	it("recognizes contextBlocks variables as valid template roots", () => {
+		const tmpDir = makeTmpDir("ctx-blocks-valid");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions]\nprompt:\n  task: ctx-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "ctx-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ _conventions.rules }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "ctx-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const conventionIssues = issues.filter((i) => i.message.includes("_conventions"));
+		assert.strictEqual(
+			conventionIssues.length,
+			0,
+			`Should not flag _conventions when agent declares contextBlocks: [conventions]. Issues: ${JSON.stringify(conventionIssues)}`,
+		);
+	});
+
+	it("handles hyphen-to-underscore mapping for contextBlocks", () => {
+		const tmpDir = makeTmpDir("ctx-blocks-hyphen");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "hyphen-agent.agent.yaml"),
+			"name: hyphen-agent\ntools: [read]\ncontextBlocks: [conformance-reference]\nprompt:\n  task: hyphen-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "hyphen-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ _conformance_reference.rules }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "hyphen-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const refIssues = issues.filter((i) => i.message.includes("_conformance_reference"));
+		assert.strictEqual(
+			refIssues.length,
+			0,
+			`Should not flag _conformance_reference when agent declares contextBlocks: [conformance-reference]. Issues: ${JSON.stringify(refIssues)}`,
+		);
+	});
+
+	it("flags unknown variable when agent has no contextBlocks", () => {
+		const tmpDir = makeTmpDir("ctx-blocks-none");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "no-ctx-agent.agent.yaml"),
+			"name: no-ctx-agent\ntools: [read]\nprompt:\n  task: no-ctx-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "no-ctx-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ _conventions.rules }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "no-ctx-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const conventionIssues = issues.filter((i) => i.message.includes("_conventions"));
+		assert.ok(
+			conventionIssues.length > 0,
+			`Should flag _conventions when agent has no contextBlocks. Issues: ${JSON.stringify(issues)}`,
+		);
+	});
+
+	it("flags variable not in contextBlocks list", () => {
+		const tmpDir = makeTmpDir("ctx-blocks-partial");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "partial-agent.agent.yaml"),
+			"name: partial-agent\ntools: [read]\ncontextBlocks: [conventions]\nprompt:\n  task: partial-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "partial-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ _nonexistent.field }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "partial-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const nonexistentIssues = issues.filter((i) => i.message.includes("_nonexistent"));
+		assert.ok(
+			nonexistentIssues.length > 0,
+			`Should flag _nonexistent when it's not in contextBlocks. Issues: ${JSON.stringify(issues)}`,
+		);
+	});
+});

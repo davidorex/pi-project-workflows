@@ -437,6 +437,14 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			continue; // agent resolution check handles this
 		}
 
+		// Compute contextBlocks-injected variable names for this agent
+		const contextBlockVars = new Set<string>();
+		if (agentSpec.contextBlocks) {
+			for (const blockName of agentSpec.contextBlocks) {
+				contextBlockVars.add(`_${blockName.replace(/-/g, "_")}`);
+			}
+		}
+
 		if (!agentSpec.taskTemplate) continue;
 
 		// Resolve and read template file
@@ -464,7 +472,9 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			// The common bug: template uses `spec.*` but forEach says `as: plan`
 			if (!forEachRoots.has(stepSpec.as) && !inputKeys.has(stepSpec.as)) {
 				// forEach variable is never referenced — find what the template uses instead
-				const nonInputRoots = [...forEachRoots].filter((r) => !inputKeys.has(r) && !INJECTED_VARIABLES.has(r));
+				const nonInputRoots = [...forEachRoots].filter(
+					(r) => !inputKeys.has(r) && !INJECTED_VARIABLES.has(r) && !contextBlockVars.has(r),
+				);
 				if (nonInputRoots.length > 0) {
 					issues.push({
 						severity: "error",
@@ -479,6 +489,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 		const uniqueRoots = new Set(templateVars.map((v) => v.root));
 		for (const root of uniqueRoots) {
 			if (INJECTED_VARIABLES.has(root)) continue;
+			if (contextBlockVars.has(root)) continue;
 			if (inputKeys.has(root)) continue;
 			// forEach `as` variable counts as an input
 			if (stepSpec.forEach && stepSpec.as === root) continue;
@@ -495,6 +506,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 		// Check 3: Field-level alignment against source schemas
 		for (const tv of templateVars) {
 			if (INJECTED_VARIABLES.has(tv.root)) continue;
+			if (contextBlockVars.has(tv.root)) continue;
 			const fieldParts = tv.path.split(".");
 			if (fieldParts.length < 2) continue;
 			const field = fieldParts[1]; // first-level field access on the root variable
@@ -532,6 +544,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 		const textOutputWarned = new Set<string>();
 		for (const tv of templateVars) {
 			if (INJECTED_VARIABLES.has(tv.root)) continue;
+			if (contextBlockVars.has(tv.root)) continue;
 			if (textOutputWarned.has(tv.root)) continue;
 			const fieldParts = tv.path.split(".");
 			if (fieldParts.length < 2) continue;
@@ -556,6 +569,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			const templateLoops = extractTemplateLoops(templateContent);
 			for (const loop of templateLoops) {
 				if (INJECTED_VARIABLES.has(loop.sourceRoot)) continue;
+				if (contextBlockVars.has(loop.sourceRoot)) continue;
 
 				// Find the input expression for this loop source root
 				const inputExpr = stepSpec.input?.[loop.sourceRoot] as string | undefined;

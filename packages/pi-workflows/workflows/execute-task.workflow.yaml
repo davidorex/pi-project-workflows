@@ -1,0 +1,140 @@
+name: execute-task
+description: Execute a task from the registry — read, gate dependencies, implement, verify, persist
+version: "1"
+
+input:
+  type: object
+  required: [task_id]
+  properties:
+    task_id:
+      type: string
+      description: ID of the task to execute
+      source:
+        file: .project/tasks.json
+        array: tasks
+        filter: { status: planned }
+        label: [id, description]
+        value: id
+
+steps:
+  load-tasks:
+    block:
+      read: tasks
+    output:
+      format: json
+
+  extract-task:
+    command: |
+      node -e "
+        const data = JSON.parse(process.argv[1]);
+        const taskId = process.argv[2];
+        const task = data.tasks.find(t => t.id === taskId);
+        if (!task) { console.error('Task not found: ' + taskId); process.exit(1); }
+        if (task.status === 'completed') { console.error('Task already completed'); process.exit(1); }
+        if (task.status === 'cancelled') { console.error('Task is cancelled'); process.exit(1); }
+        console.log(JSON.stringify({ task }));
+      " '${{ steps.load-tasks.output | shell }}' '${{ input.task_id }}'
+    output:
+      format: json
+
+  check-dependencies:
+    command: |
+      node -e "
+        const data = JSON.parse(process.argv[1]);
+        const task = JSON.parse(process.argv[2]).task;
+        const deps = task.depends_on || [];
+        if (deps.length === 0) {
+          console.log(JSON.stringify({ ready: true, blocked_by: [] }));
+          process.exit(0);
+        }
+        const blocked = [];
+        for (const depId of deps) {
+          const dep = data.tasks.find(t => t.id === depId);
+          if (!dep) { blocked.push(depId + ' (not found)'); continue; }
+          if (dep.status !== 'completed') { blocked.push(depId + ' (' + dep.status + ')'); }
+        }
+        console.log(JSON.stringify({ ready: blocked.length === 0, blocked_by: blocked }));
+      " '${{ steps.load-tasks.output | shell }}' '${{ steps.extract-task.output | shell }}'
+    output:
+      format: json
+
+  dependency-gate:
+    gate:
+      check: "test '${{ steps.check-dependencies.output.ready }}' = 'true'"
+      onFail: fail
+
+  mark-in-progress:
+    block:
+      update:
+        name: tasks
+        key: tasks
+        match:
+          id: "${{ input.task_id }}"
+        set:
+          status: in-progress
+    output:
+      format: json
+
+  implement:
+    agent: task-worker
+    input:
+      task: "${{ steps.extract-task.output.task }}"
+    retry:
+      maxAttempts: 2
+      onExhausted: fail
+    output:
+      format: json
+      schema: ../schemas/execution-results.schema.json
+
+  verify:
+    agent: task-verifier
+    input:
+      task_id: "${{ input.task_id }}"
+      acceptance_criteria: "${{ steps.extract-task.output.task.acceptance_criteria }}"
+      changes: "${{ steps.implement.output }}"
+    context: [implement]
+    output:
+      format: json
+      schema: ../schemas/task-verification.schema.json
+
+  persist-verification:
+    block:
+      append:
+        name: verification
+        key: verifications
+        item: "${{ steps.verify.output }}"
+    output:
+      format: json
+
+  compute-final-status:
+    command: |
+      node -e "
+        const verifyStatus = process.argv[1];
+        let taskStatus;
+        if (verifyStatus === 'passed') taskStatus = 'completed';
+        else if (verifyStatus === 'partial') taskStatus = 'in-progress';
+        else taskStatus = 'blocked';
+        console.log(JSON.stringify({ task_status: taskStatus }));
+      " '${{ steps.verify.output.status }}'
+    output:
+      format: json
+
+  update-task-status:
+    block:
+      update:
+        name: tasks
+        key: tasks
+        match:
+          id: "${{ input.task_id }}"
+        set:
+          status: "${{ steps.compute-final-status.output.task_status }}"
+          verification: "${{ steps.verify.output.id }}"
+    output:
+      format: json
+
+completion:
+  message: |
+    Task ${{ input.task_id }} — verification: ${{ steps.verify.output.status }}
+    Criteria: ${{ steps.verify.output.criteria_results | length }} checked
+  include:
+    - steps.verify.output.criteria_results

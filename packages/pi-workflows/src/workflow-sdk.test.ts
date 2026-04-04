@@ -20,6 +20,7 @@ import {
 	stepTypes,
 	validateWorkflow,
 } from "./workflow-sdk.js";
+import { parseWorkflowSpec } from "./workflow-spec.js";
 
 function makeTmpDir(prefix: string): string {
 	return fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));
@@ -413,5 +414,34 @@ describe("validateWorkflow", () => {
 		// The bundled investigator agent should resolve
 		const agentErrors = result.issues.filter((i) => i.message.includes("Agent") && i.severity === "error");
 		assert.strictEqual(agentErrors.length, 0);
+	});
+});
+
+// ── Bundled Workflow Validation ─────────────────────────────────────────────
+
+describe("execute-task workflow validation", () => {
+	const workflowPath = path.resolve(import.meta.dirname, "..", "workflows", "execute-task.workflow.yaml");
+	const pkgDir = path.resolve(import.meta.dirname, "..");
+
+	it("parses and validates with no error-severity issues", () => {
+		const yaml = fs.readFileSync(workflowPath, "utf-8");
+		const spec = parseWorkflowSpec(yaml, workflowPath, "project");
+		const result = validateWorkflow(spec, pkgDir);
+		const errors = result.issues.filter((i) => i.severity === "error");
+		assert.strictEqual(errors.length, 0, `Unexpected validation errors: ${JSON.stringify(errors, null, 2)}`);
+		assert.strictEqual(result.valid, true);
+	});
+
+	it("references task-worker and task-verifier agents that resolve", () => {
+		const yaml = fs.readFileSync(workflowPath, "utf-8");
+		const spec = parseWorkflowSpec(yaml, workflowPath, "project");
+		const agentRefs = declaredAgentRefs(spec);
+		assert.ok(agentRefs.includes("task-worker"), "should reference task-worker agent");
+		assert.ok(agentRefs.includes("task-verifier"), "should reference task-verifier agent");
+
+		// Validate that both agents actually resolve (no agent-related errors)
+		const result = validateWorkflow(spec, pkgDir);
+		const agentErrors = result.issues.filter((i) => i.message.includes("Agent") && i.severity === "error");
+		assert.strictEqual(agentErrors.length, 0, `Agent resolution errors: ${JSON.stringify(agentErrors, null, 2)}`);
 	});
 });

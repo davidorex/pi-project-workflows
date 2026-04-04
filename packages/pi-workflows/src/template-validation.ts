@@ -52,6 +52,18 @@ export function extractTemplateVariables(content: string): TemplateVariable[] {
 	const ifStack: Array<{ root: string; depth: number }> = [];
 	let depth = 0;
 
+	// Collect template-level {% for x in ... %} loop variable names so we can
+	// exclude them from root-variable checking.  These are Nunjucks-scoped
+	// variables, not workflow step inputs.
+	const loopVarNames = new Set<string>();
+	const forVarPattern = /\{%[-\s]*for\s+(\w+)\s+in\s+[\w.]+\s*%\}/g;
+	let lvMatch: RegExpExecArray | null;
+	lvMatch = forVarPattern.exec(content);
+	while (lvMatch !== null) {
+		loopVarNames.add(lvMatch[1]);
+		lvMatch = forVarPattern.exec(content);
+	}
+
 	const lines = content.split("\n");
 	for (const line of lines) {
 		// Track {% if var.field %} blocks
@@ -78,7 +90,7 @@ export function extractTemplateVariables(content: string): TemplateVariable[] {
 		while (match !== null) {
 			const fullPath = match[1];
 			const root = fullPath.split(".")[0];
-			if (!INJECTED_VARIABLES.has(root) && fullPath.includes(".") && !seen.has(fullPath)) {
+			if (!INJECTED_VARIABLES.has(root) && !loopVarNames.has(root) && fullPath.includes(".") && !seen.has(fullPath)) {
 				seen.add(fullPath);
 				variables.push({
 					root,

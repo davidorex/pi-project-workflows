@@ -3,7 +3,7 @@
     {
       "id": "workflow-spec",
       "title": "Workflow Specification Format",
-      "content": "Workflows are defined as .workflow.yaml files with a name, description, optional version, input/output JSON Schema declarations, ordered steps map, optional artifacts map, and optional completion spec. Parsed by parseWorkflowSpec() which validates structure but defers agent resolution and schema validation to execution time. Specs carry source tag (user/project) and filePath for error context. 14 bundled workflows ship with the package.",
+      "content": "Workflows are defined as .workflow.yaml files with a name, description, optional version, input/output JSON Schema declarations, ordered steps map, optional artifacts map, and optional completion spec. Parsed by parseWorkflowSpec() which validates structure but defers agent resolution and schema validation to execution time. Specs carry source tag (user/project) and filePath for error context. 15 bundled workflows ship with the package.",
       "category": "reference",
       "source": "packages/pi-workflows/src/workflow-spec.ts, packages/pi-workflows/src/types.ts (WorkflowSpec)",
       "confidence": "high",
@@ -17,7 +17,7 @@
     {
       "id": "agent-spec",
       "title": "Agent Specification Format",
-      "content": "Agent specs are .agent.yaml files that define typed functions (InputSchema to OutputSchema) with template references for prompt composition. No .md fallback. Search order: project .pi/agents/ > user ~/.pi/agent/agents/ > package agents/. Parsed by parseAgentYaml() into AgentSpec with fields: name, description, role (sensor/reasoning/action/quality), model, thinking, tools, extensions, skills, systemPrompt or promptTemplate, taskTemplate, inputSchema, outputFormat, outputSchema. Compiled to prompts via Nunjucks at dispatch time. 21 bundled agents ship with the package.",
+      "content": "Agent specs are .agent.yaml files that define typed functions (InputSchema to OutputSchema) with template references for prompt composition. No .md fallback. Search order: project .pi/agents/ > user ~/.pi/agent/agents/ > package agents/. Parsed by parseAgentYaml() into AgentSpec with fields: name, description, role (sensor/reasoning/action/quality), model, thinking, tools, extensions, skills, systemPrompt or promptTemplate, taskTemplate, inputSchema, outputFormat, outputSchema. Compiled to prompts via Nunjucks at dispatch time. 26 bundled agents ship with the package.",
       "category": "reference",
       "source": "packages/pi-workflows/src/agent-spec.ts, packages/pi-workflows/src/types.ts (AgentSpec)",
       "confidence": "high",

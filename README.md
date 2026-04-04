@@ -19,7 +19,7 @@ Add a JSON Schema — get a new block type with tools, validation, and derived s
 | Package | npm | Description |
 |---------|-----|-------------|
 | [@davidorex/pi-project](packages/pi-project/) | `npm:@davidorex/pi-project` | Schema-driven project state — typed JSON blocks, write-time validation, generic CRUD tools, dynamically derived state. Add a schema, get a new block type with tooling. No code changes. |
-| [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, 8 step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
+| [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, 9 step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
 | [@davidorex/pi-behavior-monitors](packages/pi-behavior-monitors/) | `npm:@davidorex/pi-behavior-monitors` | Behavior monitors — autonomous watchdogs that classify agent activity against JSON pattern libraries, steer corrections, and write structured findings. |
 
 ## Quick Start

@@ -1,11 +1,11 @@
 {
   "name": "pi-project-workflows",
   "description": "Typed multi-step workflow execution via .workflow.yaml specs. Schema-driven project state in .project/. Behavior monitors that classify agent activity and steer corrections.",
-  "core_value": "Agent-authored workflows with schema-validated data flow, autonomous behavioral monitoring, and typed project state",
+  "core_value": "The runtime is generic; the domain lives in specs, schemas, and templates that users create without touching TypeScript. Add a JSON Schema — get a new block type. Write a .workflow.yaml — get a pipeline. Drop a .monitor.json — get a watchdog. Author an .agent.yaml — get a typed agent contract compiled to prompts at dispatch time.",
   "goals": [
     {
       "id": "workflow-orchestration",
-      "description": "Workflow orchestration with DAG-based parallelism"
+      "description": "Workflow orchestration with DAG-based parallelism forming a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering"
     },
     {
       "id": "schema-driven-blocks",
@@ -34,7 +34,11 @@
     "in": [
       "Monorepo: @davidorex/pi-project, @davidorex/pi-workflows, @davidorex/pi-behavior-monitors, @davidorex/pi-project-workflows"
     ],
-    "out": []
+    "out": [
+      "No in-process agent execution — all agent steps are subprocess-isolated",
+      "No pi-subagents dependency — extension owns its own dispatch",
+      "No runtime TypeScript — domain logic lives in YAML specs, JSON schemas, Nunjucks templates, and monitor JSON specs"
+    ]
   },
   "status": "development"
 }

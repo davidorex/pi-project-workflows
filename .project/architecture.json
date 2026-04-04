@@ -1,139 +1,181 @@
 {
-	"modules": [
-		{
-			"name": "@davidorex/pi-project",
-			"file": "packages/pi-project/src/index.ts",
-			"responsibility": "Schema-driven project state management. Block CRUD with write-time JSON Schema validation, project SDK for vocabulary/discovery/derived-state, cross-block referential integrity checks. Dependency root for all other packages.",
-			"dependencies": [
-				"@mariozechner/pi-coding-agent",
-				"@sinclair/typebox",
-				"ajv",
-				"proper-lockfile"
-			],
-			"lines": 1962
-		},
-		{
-			"name": "@davidorex/pi-workflows",
-			"file": "packages/pi-workflows/src/index.ts",
-			"responsibility": "Multi-step workflow orchestration from .workflow.yaml specs. DAG planner infers parallelism from expression references. Agent dispatch via subprocess (pi --mode json). Expression engine (${{ }}), checkpoint/resume, Nunjucks agent prompt compilation, template validation, graduated failure handling. Nine step types: agent, gate, transform, loop, parallel, pause, command, monitor, block.",
-			"dependencies": [
-				"@davidorex/pi-project",
-				"@mariozechner/pi-coding-agent",
-				"@mariozechner/pi-ai",
-				"@mariozechner/pi-tui",
-				"@sinclair/typebox",
-				"nunjucks",
-				"yaml"
-			],
-			"lines": 8506
-		},
-		{
-			"name": "@davidorex/pi-behavior-monitors",
-			"file": "packages/pi-behavior-monitors/index.ts",
-			"responsibility": "Autonomous behavior monitors that watch agent activity, classify against JSON pattern libraries via LLM side-channel, steer corrections, and write structured findings. Monitor specs are .monitor.json with three-tier resolution (project, user, bundled). Classify prompts rendered through Nunjucks templates. Supports programmatic invocation via invokeMonitor() for pre-dispatch gating.",
-			"dependencies": [
-				"@davidorex/pi-project",
-				"@mariozechner/pi-coding-agent",
-				"@mariozechner/pi-ai",
-				"@mariozechner/pi-tui",
-				"@sinclair/typebox",
-				"nunjucks"
-			],
-			"lines": 2036
-		},
-		{
-			"name": "@davidorex/pi-project-workflows",
-			"file": "packages/pi-project-workflows/project-extension.ts",
-			"responsibility": "Meta-package re-exporting all three extensions via thin .ts entry points (project-extension.ts, workflows-extension.ts, monitors-extension.ts). Single npm install provides the full typed loop. No source logic of its own.",
-			"dependencies": [
-				"@davidorex/pi-project",
-				"@davidorex/pi-workflows",
-				"@davidorex/pi-behavior-monitors"
-			],
-			"lines": 3
-		}
-	],
-	"patterns": [
-		{
-			"name": "Extension Plugin Pattern",
-			"description": "Each package exports a Pi extension via pi.extensions in package.json, registering tools, commands, and keybindings through the ExtensionContext activate() API.",
-			"used_in": ["pi-project", "pi-workflows", "pi-behavior-monitors", "pi-project-workflows"]
-		},
-		{
-			"name": "Schema-as-Contract",
-			"description": "JSON Schemas in .project/schemas/ define data contracts for project blocks and workflow step outputs. AJV validates at write time. block:<name> references resolve schemas portably across install methods.",
-			"used_in": ["pi-project", "pi-workflows"]
-		},
-		{
-			"name": "Nunjucks Templating",
-			"description": "Nunjucks template engine renders agent dispatch prompts from .agent.yaml specs and monitor classify/steer prompts from .md templates. Enables user customization without TypeScript changes.",
-			"used_in": ["pi-workflows", "pi-behavior-monitors"]
-		},
-		{
-			"name": "Subprocess Isolation",
-			"description": "Each workflow step runs as a subprocess (pi --mode json) with its own context window. The main conversation is the control plane; workflow agents are subordinate execution units.",
-			"used_in": ["pi-workflows"]
-		},
-		{
-			"name": "DAG-based Execution Planning",
-			"description": "The DAG planner infers step parallelism from ${{ steps.X }} expression references and explicit context declarations. Steps without data dependencies execute concurrently.",
-			"used_in": ["pi-workflows"]
-		},
-		{
-			"name": "Three-Tier Resource Resolution",
-			"description": "Monitors, agents, workflows, and templates resolve through a three-tier search: project-local (.pi/) > user-global (~/.pi/agent/) > package-bundled (examples/). Allows per-project overrides without modifying installed packages.",
-			"used_in": ["pi-workflows", "pi-behavior-monitors"]
-		},
-		{
-			"name": "Atomic State Persistence",
-			"description": "Workflow state is persisted atomically after each step via tmp-file + rename. State write failure is fatal, preventing partial-state corruption. Checkpoint/resume enables incomplete runs to restart from the last completed step.",
-			"used_in": ["pi-workflows"]
-		}
-	],
-	"boundaries": [
-		"pi-project is the dependency root — pi-workflows and pi-behavior-monitors both depend on it for block API and schema validation",
-		"pi-workflows and pi-behavior-monitors are peers with no direct inter-dependency, though workflows can invoke monitors via the monitor step type",
-		"pi-project-workflows is a pure aggregator with no source logic — it re-exports the other three packages",
-		"All four packages share lockstep versioning (currently 0.9.2) managed by scripts/bump-versions.js",
-		"Cross-package imports use named subpath exports defined in package.json (e.g., @davidorex/pi-project/block-api)",
-		"ESM-only — all packages use type: module with TypeScript compiled to dist/ via tsc"
-	],
-	"execution_model": {
-		"description": "Workflows are DAGs of typed steps parsed from .workflow.yaml specs. The executor plans step ordering, infers parallelism from data dependencies, and dispatches each step as an isolated subprocess. State persists atomically after each step. Failed runs can be resumed from the last checkpoint.",
-		"step_types": [
-			"agent — dispatch LLM agent subprocess with compiled Nunjucks prompt",
-			"gate — boolean guard that blocks or allows workflow continuation",
-			"transform — expression-based data transformation between steps",
-			"loop — repeated step execution with convergence conditions",
-			"parallel — concurrent execution of independent sub-steps",
-			"pause — suspend workflow for user intervention (keybinding resume)",
-			"command — shell command execution with structured output",
-			"monitor — behavior monitor verification gate (CLEAN passes, FLAG/NEW fails)",
-			"block — project block read/write/append operations"
-		],
-		"three_tier_resolution": {
-			"pattern": "Resource lookup searches three locations in priority order, allowing project-specific overrides without modifying installed packages",
-			"tiers": [
-				{ "level": "project", "path": ".pi/monitors/ | .pi/agents/ | .pi/workflows/", "priority": 1 },
-				{ "level": "user", "path": "~/.pi/agent/monitors/ | ~/.pi/agent/agents/", "priority": 2 },
-				{ "level": "bundled", "path": "package examples/ | package agents/", "priority": 3 }
-			],
-			"used_by": ["monitors", "agents", "workflows", "templates"]
-		},
-		"pause_resume": {
-			"mechanisms": [
-				"pause step type suspends workflow execution",
-				"Checkpoint persistence enables resume from last completed step",
-				"Keybindings for interactive pause/resume during execution"
-			],
-			"statuses": ["running", "paused", "completed", "failed"]
-		}
-	},
-	"dispatch_design": {
-		"method": "Subprocess via pi --mode json",
-		"rationale": "Each agent step runs in its own process with a fresh context window, preventing token accumulation and cross-step prompt pollution. The main conversation remains the control plane, receiving only structured results.",
-		"alternative_considered": "In-process tool calls",
-		"alternative_rationale": "Would share context window, causing token bloat and cross-contamination between steps. Subprocess isolation trades latency for reliability and clean separation.",
-		"parallelism_model": "DAG planner identifies independent steps (no ${{ steps.X }} or context references to each other) and dispatches them concurrently. Dependencies serialize naturally."
-	}
+  "modules": [
+    {
+      "name": "@davidorex/pi-project",
+      "file": "packages/pi-project/src/index.ts",
+      "responsibility": "Schema-driven project state management. Block CRUD with write-time JSON Schema validation, project SDK for vocabulary/discovery/derived-state, cross-block referential integrity checks. Dependency root for all other packages.",
+      "dependencies": [
+        "@mariozechner/pi-coding-agent",
+        "@sinclair/typebox",
+        "ajv",
+        "proper-lockfile"
+      ],
+      "lines": 4302
+    },
+    {
+      "name": "@davidorex/pi-workflows",
+      "file": "packages/pi-workflows/src/index.ts",
+      "responsibility": "Multi-step workflow orchestration from .workflow.yaml specs. DAG planner infers parallelism from expression references. Agent dispatch via subprocess (pi --mode json). Expression engine (${{ }}), checkpoint/resume, Nunjucks agent prompt compilation, template validation, graduated failure handling. Nine step types: agent, gate, transform, loop, parallel, pause, command, monitor, block.",
+      "dependencies": [
+        "@davidorex/pi-project",
+        "@mariozechner/pi-coding-agent",
+        "@mariozechner/pi-ai",
+        "@mariozechner/pi-tui",
+        "@sinclair/typebox",
+        "nunjucks",
+        "yaml"
+      ],
+      "lines": 21204
+    },
+    {
+      "name": "@davidorex/pi-behavior-monitors",
+      "file": "packages/pi-behavior-monitors/index.ts",
+      "responsibility": "Autonomous behavior monitors that watch agent activity, classify against JSON pattern libraries via LLM side-channel, steer corrections, and write structured findings. Monitor specs are .monitor.json with three-tier resolution (project, user, bundled). Classify prompts rendered through Nunjucks templates. Supports programmatic invocation via invokeMonitor() for pre-dispatch gating.",
+      "dependencies": [
+        "@davidorex/pi-project",
+        "@mariozechner/pi-coding-agent",
+        "@mariozechner/pi-ai",
+        "@mariozechner/pi-tui",
+        "@sinclair/typebox",
+        "nunjucks"
+      ],
+      "lines": 2111
+    },
+    {
+      "name": "@davidorex/pi-project-workflows",
+      "file": "packages/pi-project-workflows/project-extension.ts",
+      "responsibility": "Meta-package re-exporting all three extensions via thin .ts entry points (project-extension.ts, workflows-extension.ts, monitors-extension.ts). Single npm install provides the full typed loop. No source logic of its own.",
+      "dependencies": [
+        "@davidorex/pi-project",
+        "@davidorex/pi-workflows",
+        "@davidorex/pi-behavior-monitors"
+      ],
+      "lines": 3
+    }
+  ],
+  "patterns": [
+    {
+      "name": "Extension Plugin Pattern",
+      "description": "Each package exports a Pi extension via pi.extensions in package.json, registering tools, commands, and keybindings through the ExtensionContext activate() API.",
+      "used_in": [
+        "pi-project",
+        "pi-workflows",
+        "pi-behavior-monitors",
+        "pi-project-workflows"
+      ]
+    },
+    {
+      "name": "Schema-as-Contract",
+      "description": "JSON Schemas in .project/schemas/ define data contracts for project blocks and workflow step outputs. AJV validates at write time. block:<name> references resolve schemas portably across install methods.",
+      "used_in": [
+        "pi-project",
+        "pi-workflows"
+      ]
+    },
+    {
+      "name": "Nunjucks Templating",
+      "description": "Nunjucks template engine renders agent dispatch prompts from .agent.yaml specs and monitor classify/steer prompts from .md templates. Enables user customization without TypeScript changes.",
+      "used_in": [
+        "pi-workflows",
+        "pi-behavior-monitors"
+      ]
+    },
+    {
+      "name": "Subprocess Isolation",
+      "description": "Each workflow step runs as a subprocess (pi --mode json) with its own context window. The main conversation is the control plane; workflow agents are subordinate execution units.",
+      "used_in": [
+        "pi-workflows"
+      ]
+    },
+    {
+      "name": "DAG-based Execution Planning",
+      "description": "The DAG planner infers step parallelism from ${{ steps.X }} expression references and explicit context declarations. Steps without data dependencies execute concurrently.",
+      "used_in": [
+        "pi-workflows"
+      ]
+    },
+    {
+      "name": "Three-Tier Resource Resolution",
+      "description": "Monitors, agents, workflows, and templates resolve through a three-tier search: project-local (.pi/) > user-global (~/.pi/agent/) > package-bundled (examples/). Allows per-project overrides without modifying installed packages.",
+      "used_in": [
+        "pi-workflows",
+        "pi-behavior-monitors"
+      ]
+    },
+    {
+      "name": "Atomic State Persistence",
+      "description": "Workflow state is persisted atomically after each step via tmp-file + rename. State write failure is fatal, preventing partial-state corruption. Checkpoint/resume enables incomplete runs to restart from the last completed step.",
+      "used_in": [
+        "pi-workflows"
+      ]
+    }
+  ],
+  "boundaries": [
+    "pi-project is the dependency root — pi-workflows and pi-behavior-monitors both depend on it for block API and schema validation",
+    "pi-workflows and pi-behavior-monitors are peers with no direct inter-dependency, though workflows can invoke monitors via the monitor step type",
+    "pi-project-workflows is a pure aggregator with no source logic — it re-exports the other three packages",
+    "All four packages share lockstep versioning (currently 0.11.3) managed by scripts/bump-versions.js",
+    "Cross-package imports use named subpath exports defined in package.json (e.g., @davidorex/pi-project/block-api)",
+    "ESM-only — all packages use type: module with TypeScript compiled to dist/ via tsc"
+  ],
+  "execution_model": {
+    "description": "Workflows are DAGs of typed steps parsed from .workflow.yaml specs. The executor plans step ordering, infers parallelism from data dependencies, and dispatches each step as an isolated subprocess. State persists atomically after each step. Failed runs can be resumed from the last checkpoint.",
+    "step_types": [
+      "agent — dispatch LLM agent subprocess with compiled Nunjucks prompt",
+      "gate — boolean guard that blocks or allows workflow continuation",
+      "transform — expression-based data transformation between steps",
+      "loop — repeated step execution with convergence conditions",
+      "parallel — concurrent execution of independent sub-steps",
+      "pause — suspend workflow for user intervention (keybinding resume)",
+      "command — shell command execution with structured output",
+      "monitor — behavior monitor verification gate (CLEAN passes, FLAG/NEW fails)",
+      "block — project block read/write/append operations"
+    ],
+    "three_tier_resolution": {
+      "pattern": "Resource lookup searches three locations in priority order, allowing project-specific overrides without modifying installed packages",
+      "tiers": [
+        {
+          "level": "project",
+          "path": ".pi/monitors/ | .pi/agents/ | .pi/workflows/",
+          "priority": 1
+        },
+        {
+          "level": "user",
+          "path": "~/.pi/agent/monitors/ | ~/.pi/agent/agents/",
+          "priority": 2
+        },
+        {
+          "level": "bundled",
+          "path": "package examples/ | package agents/",
+          "priority": 3
+        }
+      ],
+      "used_by": [
+        "monitors",
+        "agents",
+        "workflows",
+        "templates"
+      ]
+    },
+    "pause_resume": {
+      "mechanisms": [
+        "pause step type suspends workflow execution",
+        "Checkpoint persistence enables resume from last completed step",
+        "Keybindings for interactive pause/resume during execution"
+      ],
+      "statuses": [
+        "running",
+        "paused",
+        "completed",
+        "failed"
+      ]
+    }
+  },
+  "dispatch_design": {
+    "method": "Subprocess via pi --mode json",
+    "rationale": "Each agent step runs in its own process with a fresh context window, preventing token accumulation and cross-step prompt pollution. The main conversation remains the control plane, receiving only structured results.",
+    "alternative_considered": "In-process tool calls",
+    "alternative_rationale": "Would share context window, causing token bloat and cross-contamination between steps. Subprocess isolation trades latency for reliability and clean separation.",
+    "parallelism_model": "DAG planner identifies independent steps (no ${{ steps.X }} or context references to each other) and dispatches them concurrently. Dependencies serialize naturally."
+  }
 }

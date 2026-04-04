@@ -2,7 +2,7 @@
 
 Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state in `.project/`. Behavior monitors that classify agent activity and steer corrections.
 
-Monorepo: four npm packages (`packages/*`) with lockstep versioning at 0.9.1.
+Monorepo: four npm packages (`packages/*`) with lockstep versioning at 0.11.3.
 
 | Package | Purpose |
 |---------|---------|
@@ -78,7 +78,8 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 - `schema-validator.ts` — AJV-based JSON Schema validation
 - `project-sdk.ts` — SDK: vocabulary, discovery, derived state, cross-block validation
 - `project-dir.ts` — `PROJECT_DIR` and `SCHEMAS_DIR` constants (single source for `.project/` path)
-- `sync-skills.ts` — `syncSkillsToUser(distDir)` copies package skills to `~/.pi/agent/skills/` on activation
+- `block-validation.ts` — post-step block validation: snapshot `.project/*.json` before step, validate changed files after, rollback on failure
+- `update-check.ts` — non-blocking npm registry check for newer package versions
 
 **pi-workflows** (`packages/pi-workflows/src/`):
 - `index.ts` — extension entry point (tool, command, keybindings)

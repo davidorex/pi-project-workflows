@@ -5,6 +5,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import type { StepSpec, WorkflowSpec } from "./types.js";
 import {
+	agentContracts,
 	availableAgents,
 	availableSchemas,
 	availableTemplates,
@@ -19,6 +20,7 @@ import {
 	STEP_TYPES,
 	stepTypes,
 	validateWorkflow,
+	validationChecks,
 } from "./workflow-sdk.js";
 import { parseWorkflowSpec } from "./workflow-spec.js";
 
@@ -67,6 +69,40 @@ describe("vocabulary", () => {
 		const roots = expressionRoots();
 		assert.ok(roots.includes("input"));
 		assert.ok(roots.includes("steps"));
+	});
+});
+
+describe("validationChecks", () => {
+	it("returns descriptors for all validation checks", () => {
+		const checks = validationChecks();
+		assert.strictEqual(checks.length, 11);
+	});
+
+	it("each descriptor has required fields", () => {
+		const checks = validationChecks();
+		for (const c of checks) {
+			assert.ok(typeof c.id === "string", `id should be string, got ${typeof c.id}`);
+			assert.ok(typeof c.name === "string", `name should be string, got ${typeof c.name}`);
+			assert.ok(
+				c.severity === "error" || c.severity === "warning",
+				`severity should be 'error' or 'warning', got '${c.severity}'`,
+			);
+			assert.ok(typeof c.description === "string", `description should be string, got ${typeof c.description}`);
+		}
+	});
+
+	it("IDs are unique", () => {
+		const checks = validationChecks();
+		assert.strictEqual(new Set(checks.map((c) => c.id)).size, checks.length);
+	});
+
+	it("includes the four new checks", () => {
+		const checks = validationChecks();
+		const ids = checks.map((c) => c.id);
+		assert.ok(ids.includes("steptype-metadata"), "should include steptype-metadata");
+		assert.ok(ids.includes("inputschema-required"), "should include inputschema-required");
+		assert.ok(ids.includes("contextblocks-existence"), "should include contextblocks-existence");
+		assert.ok(ids.includes("template-alignment"), "should include template-alignment");
 	});
 });
 
@@ -756,6 +792,65 @@ describe("contextBlocks validation", () => {
 		assert.strictEqual(ctxIssues.length, 1);
 		assert.ok(ctxIssues[0].message.includes("requirements"));
 		assert.strictEqual(ctxIssues[0].severity, "warning");
+	});
+});
+
+// ── agentContracts ──────────────────────────────────────────────────────────
+
+describe("agentContracts", () => {
+	const pkgDir = path.resolve(import.meta.dirname, "..");
+
+	it("returns contracts for bundled agents", () => {
+		const contracts = agentContracts(pkgDir);
+		assert.ok(contracts.length > 0, "should return at least one contract");
+		for (const c of contracts) {
+			assert.ok(typeof c.name === "string", "each contract should have a string name");
+		}
+	});
+
+	it("includes inputSchema with required and properties for typed agents", () => {
+		const contracts = agentContracts(pkgDir);
+		const taskWorker = contracts.find((c) => c.name === "task-worker");
+		assert.ok(taskWorker, "should find task-worker agent");
+		assert.ok(taskWorker.inputSchema, "task-worker should have inputSchema");
+		assert.ok(taskWorker.inputSchema!.required.includes("task"), "inputSchema.required should include 'task'");
+		assert.ok(taskWorker.inputSchema!.properties.includes("task"), "inputSchema.properties should include 'task'");
+		assert.ok(
+			taskWorker.inputSchema!.properties.includes("context"),
+			"inputSchema.properties should include 'context'",
+		);
+	});
+
+	it("returns undefined inputSchema for agents without it", () => {
+		const contracts = agentContracts(pkgDir);
+		// investigator is a bundled agent that has no input: field
+		const investigator = contracts.find((c) => c.name === "investigator");
+		assert.ok(investigator, "should find investigator agent");
+		assert.strictEqual(investigator.inputSchema, undefined, "investigator should have no inputSchema");
+	});
+
+	it("includes contextBlocks when declared", (t) => {
+		const tmpDir = makeTmpDir("contracts-ctx");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions, requirements]\n",
+		);
+
+		const contracts = agentContracts(tmpDir);
+		const ctxAgent = contracts.find((c) => c.name === "ctx-agent");
+		assert.ok(ctxAgent, "should find ctx-agent");
+		assert.deepStrictEqual(ctxAgent.contextBlocks, ["conventions", "requirements"]);
+	});
+
+	it("result is sorted by name", () => {
+		const contracts = agentContracts(pkgDir);
+		const names = contracts.map((c) => c.name);
+		const sorted = [...names].sort((a, b) => a.localeCompare(b));
+		assert.deepStrictEqual(names, sorted, "contracts should be sorted by name");
 	});
 });
 

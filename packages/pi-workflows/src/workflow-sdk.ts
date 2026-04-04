@@ -23,6 +23,77 @@ export type { StepTypeDescriptor };
 // Re-export for single-import convenience
 export { EXPRESSION_ROOTS, FILTER_NAMES, STEP_TYPES };
 
+export interface ValidationCheckDescriptor {
+	id: string;
+	name: string;
+	severity: "error" | "warning";
+	description: string;
+}
+
+const VALIDATION_CHECKS: ValidationCheckDescriptor[] = [
+	{
+		id: "agent-resolution",
+		name: "Agent resolution",
+		severity: "error",
+		description: "Referenced agents exist in search paths",
+	},
+	{
+		id: "monitor-resolution",
+		name: "Monitor resolution",
+		severity: "warning",
+		description: "Referenced monitors exist in search paths",
+	},
+	{
+		id: "schema-existence",
+		name: "Schema existence",
+		severity: "error",
+		description: "Referenced schema files exist on disk",
+	},
+	{
+		id: "step-references",
+		name: "Step references",
+		severity: "error",
+		description: "Expression step references point to declared steps",
+	},
+	{
+		id: "step-ordering",
+		name: "Step ordering",
+		severity: "error",
+		description: "Steps do not forward-reference later steps",
+	},
+	{
+		id: "context-references",
+		name: "Context references",
+		severity: "error",
+		description: "context[] entries point to declared steps",
+	},
+	{ id: "filter-names", name: "Filter names", severity: "warning", description: "Expression filters are recognized" },
+	{
+		id: "steptype-metadata",
+		name: "StepType metadata",
+		severity: "error",
+		description: "retry/input/output declarations match step type capabilities",
+	},
+	{
+		id: "inputschema-required",
+		name: "inputSchema required keys",
+		severity: "error",
+		description: "Agent required input keys are provided by step",
+	},
+	{
+		id: "contextblocks-existence",
+		name: "contextBlocks existence",
+		severity: "warning",
+		description: "Declared context blocks exist in .project/",
+	},
+	{
+		id: "template-alignment",
+		name: "Template-input alignment",
+		severity: "error",
+		description: "Template variables match step inputs and source schemas",
+	},
+];
+
 const EXPR_PATTERN = /\$\{\{\s*(.*?)\s*\}\}/g;
 
 // ── Vocabulary (derived from code registries) ────────────────────────────────
@@ -35,6 +106,9 @@ export function stepTypes(): StepTypeDescriptor[] {
 }
 export function expressionRoots(): readonly string[] {
 	return EXPRESSION_ROOTS;
+}
+export function validationChecks(): ValidationCheckDescriptor[] {
+	return VALIDATION_CHECKS;
 }
 
 // ── Discovery (derived from filesystem) ──────────────────────────────────────
@@ -105,6 +179,38 @@ export function availableSchemas(_cwd: string, builtinDir?: string): string[] {
 
 export function availableWorkflows(cwd: string): WorkflowSpec[] {
 	return discoverWorkflows(cwd);
+}
+
+// ── Agent Contracts (typed projection over availableAgents) ─────────────────
+
+export interface AgentContract {
+	name: string;
+	role?: string;
+	inputSchema?: { required: string[]; properties: string[] };
+	contextBlocks?: string[];
+	outputFormat?: "json" | "text";
+	outputSchema?: string;
+}
+
+export function agentContracts(cwd: string): AgentContract[] {
+	return availableAgents(cwd).map((a) => ({
+		name: a.name,
+		role: a.role,
+		inputSchema: a.inputSchema
+			? {
+					required: Array.isArray((a.inputSchema as Record<string, unknown>).required)
+						? ((a.inputSchema as Record<string, unknown>).required as string[])
+						: [],
+					properties:
+						typeof (a.inputSchema as Record<string, unknown>).properties === "object"
+							? Object.keys((a.inputSchema as Record<string, unknown>).properties as Record<string, unknown>)
+							: [],
+				}
+			: undefined,
+		contextBlocks: a.contextBlocks,
+		outputFormat: a.outputFormat,
+		outputSchema: a.outputSchema,
+	}));
 }
 
 // ── Introspection (derived from parsed spec) ─────────────────────────────────

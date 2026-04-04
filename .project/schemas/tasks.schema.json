@@ -29,6 +29,15 @@
 					"assigned_agent": { "type": "string", "description": "Agent name if assigned" },
 					"verification": { "type": "string", "description": "Verification ID if verified" },
 					"notes": { "type": "string" }
+				},
+				"if": {
+					"properties": {
+						"status": { "const": "completed" }
+					},
+					"required": ["status"]
+				},
+				"then": {
+					"required": ["id", "description", "status", "verification"]
 				}
 			}
 		}

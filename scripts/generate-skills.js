@@ -301,6 +301,61 @@ function extractMonitorVocabulary(mod) {
 	};
 }
 
+// ── Agent vocabulary extraction ─────────────────────────────────────────────
+
+async function extractAgentVocabulary(packageDir) {
+	const agentsDir = join(packageDir, "agents");
+	if (!existsSync(agentsDir)) return null;
+
+	// Import parseAgentYaml from the built module
+	let parseAgentYaml;
+	try {
+		const agentSpecMod = await import(join(packageDir, "dist", "agent-spec.js"));
+		parseAgentYaml = agentSpecMod.parseAgentYaml;
+	} catch {
+		return null;
+	}
+	if (!parseAgentYaml) return null;
+
+	const agents = [];
+	for (const file of readdirSync(agentsDir).sort()) {
+		if (!file.endsWith(".agent.yaml")) continue;
+		try {
+			const spec = parseAgentYaml(join(agentsDir, file));
+			const inputFields = [];
+			if (spec.inputSchema?.properties) {
+				const required = new Set(spec.inputSchema.required || []);
+				for (const [name, prop] of Object.entries(spec.inputSchema.properties)) {
+					inputFields.push({
+						name,
+						required: required.has(name),
+						type: prop.type || "",
+						description: prop.description || "",
+						enum: prop.enum || null,
+					});
+				}
+			}
+			agents.push({
+				name: spec.name,
+				role: spec.role || "",
+				tools: spec.tools || [],
+				inputFields,
+				inputRequired: spec.inputSchema?.required || [],
+				outputFormat: spec.outputFormat || "",
+				outputSchema: spec.outputSchema || "",
+				contextBlocks: spec.contextBlocks || [],
+				systemTemplate: spec.promptTemplate || "",
+				taskTemplate: spec.taskTemplate || "",
+				hasInlineSystem: !!spec.systemPrompt && !spec.promptTemplate,
+			});
+		} catch {
+			/* skip unparseable */
+		}
+	}
+
+	return agents.length > 0 ? agents : null;
+}
+
 // ── SKILL.md composition ────────────────────────────────────────────────────
 
 function composeSkill(
@@ -312,6 +367,7 @@ function composeSkill(
 	narrativeRaw,
 	vocabulary,
 	monitorVocab,
+	agentVocab,
 ) {
 	const lines = [];
 
@@ -512,6 +568,70 @@ function composeSkill(
 		lines.push("");
 	}
 
+	// ── Agent vocabulary (pi-workflows — from parsed agent YAML specs) ──
+	if (agentVocab && agentVocab.length > 0) {
+		lines.push("<agent_vocabulary>");
+		lines.push("");
+
+		// Summary table
+		lines.push("| Agent | Role | Tools | Input (required) | Output | Context Blocks |");
+		lines.push("|-------|------|-------|------------------|--------|----------------|");
+		for (const a of agentVocab) {
+			const tools = a.tools.length > 0 ? a.tools.join(", ") : "—";
+			const reqInputs = a.inputRequired.length > 0 ? a.inputRequired.join(", ") : "—";
+			const output = a.outputFormat || "—";
+			const ctxBlocks = a.contextBlocks.length > 0 ? a.contextBlocks.join(", ") : "—";
+			lines.push(`| \`${a.name}\` | ${a.role || "—"} | ${tools} | ${reqInputs} | ${output} | ${ctxBlocks} |`);
+		}
+		lines.push("");
+
+		// Detailed input schemas for agents with non-trivial inputs
+		const withInputs = agentVocab.filter((a) => a.inputFields.length > 0);
+		if (withInputs.length > 0) {
+			lines.push("**Agent Input Schemas:**");
+			lines.push("");
+			for (const a of withInputs) {
+				lines.push(`<agent_input name="${a.name}">`);
+				for (const f of a.inputFields) {
+					const req = f.required ? "required" : "optional";
+					const enumStr = f.enum ? ` (${f.enum.join("|")})` : "";
+					const typeStr = f.type ? ` ${f.type}${enumStr}` : enumStr;
+					lines.push(`- \`${f.name}\`${typeStr} [${req}]${f.description ? ` — ${f.description}` : ""}`);
+				}
+				lines.push(`</agent_input>`);
+				lines.push("");
+			}
+		}
+
+		// contextBlocks detail for agents that use them
+		const withContextBlocks = agentVocab.filter((a) => a.contextBlocks.length > 0);
+		if (withContextBlocks.length > 0) {
+			lines.push("**Agents with contextBlocks** (project block data auto-injected into template context):");
+			lines.push("");
+			for (const a of withContextBlocks) {
+				lines.push(`- \`${a.name}\`: ${a.contextBlocks.map((b) => `\`${b}\``).join(", ")}`);
+			}
+			lines.push("");
+		}
+
+		// Template references
+		const withTemplates = agentVocab.filter((a) => a.systemTemplate || a.taskTemplate);
+		if (withTemplates.length > 0) {
+			lines.push("**Template References:**");
+			lines.push("");
+			for (const a of withTemplates) {
+				const parts = [];
+				if (a.systemTemplate) parts.push(`system: \`${a.systemTemplate}\``);
+				if (a.taskTemplate) parts.push(`task: \`${a.taskTemplate}\``);
+				lines.push(`- \`${a.name}\`: ${parts.join(", ")}`);
+			}
+			lines.push("");
+		}
+
+		lines.push("</agent_vocabulary>");
+		lines.push("");
+	}
+
 	// ── Narrative body (hand-authored, already XML-tagged) ──
 	if (narrativeBody) {
 		lines.push(narrativeBody);
@@ -612,6 +732,15 @@ async function generateForPackage(packageDir) {
 		);
 	}
 
+	// Extract agent vocabulary (for pi-workflows — from parsed agent YAML specs)
+	const agentVocab = await extractAgentVocabulary(packageDir);
+	if (agentVocab) {
+		const withCtx = agentVocab.filter((a) => a.contextBlocks.length > 0).length;
+		console.log(
+			`  Agent vocabulary: ${agentVocab.length} agents${withCtx > 0 ? `, ${withCtx} with contextBlocks` : ""}`,
+		);
+	}
+
 	// Compose
 	const shortName = packageName.replace("@davidorex/", "");
 	const content = composeSkill(
@@ -623,6 +752,7 @@ async function generateForPackage(packageDir) {
 		narrativeRaw,
 		vocabulary,
 		monitorVocab,
+		agentVocab,
 	);
 
 	// Write SKILL.md

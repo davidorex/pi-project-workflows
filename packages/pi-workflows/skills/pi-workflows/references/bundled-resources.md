@@ -65,10 +65,9 @@
 - `workflows/self-implement.workflow.yaml`
 - `workflows/typed-analysis.workflow.yaml`
 
-## templates/ (34 files)
+## templates/ (33 files)
 
 - `templates/analyzers/base-analyzer.md`
-- `templates/analyzers/macros.md`
 - `templates/analyzers/patterns-task.md`
 - `templates/analyzers/patterns.md`
 - `templates/analyzers/quality-task.md`

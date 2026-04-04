@@ -1,6 +1,6 @@
 # Bundled Resources
 
-## agents/ (24 files)
+## agents/ (26 files)
 
 - `agents/architecture-designer.agent.yaml`
 - `agents/architecture-inferrer.agent.yaml`
@@ -25,9 +25,11 @@
 - `agents/spec-implementer.agent.yaml`
 - `agents/structure-analyzer.agent.yaml`
 - `agents/synthesizer.agent.yaml`
+- `agents/task-verifier.agent.yaml`
+- `agents/task-worker.agent.yaml`
 - `agents/verifier.agent.yaml`
 
-## schemas/ (14 files)
+## schemas/ (15 files)
 
 - `schemas/audit-routing-manifest.schema.json`
 - `schemas/decomposition-specs.schema.json`
@@ -42,14 +44,16 @@
 - `schemas/resolution-assessment.schema.json`
 - `schemas/structure-analysis.schema.json`
 - `schemas/synthesis.schema.json`
+- `schemas/task-verification.schema.json`
 - `schemas/verifier-output.schema.json`
 
-## workflows/ (14 files)
+## workflows/ (15 files)
 
 - `workflows/analyze-existing-project.workflow.yaml`
 - `workflows/create-handoff.workflow.yaml`
 - `workflows/create-phase.workflow.yaml`
 - `workflows/do-gap.workflow.yaml`
+- `workflows/execute-task.workflow.yaml`
 - `workflows/fix-audit.workflow.yaml`
 - `workflows/gap-to-phase.workflow.yaml`
 - `workflows/init-new-project.workflow.yaml`
@@ -61,7 +65,7 @@
 - `workflows/self-implement.workflow.yaml`
 - `workflows/typed-analysis.workflow.yaml`
 
-## templates/ (31 files)
+## templates/ (33 files)
 
 - `templates/analyzers/base-analyzer.md`
 - `templates/analyzers/macros.md`
@@ -93,4 +97,6 @@
 - `templates/spec-implementer/task.md`
 - `templates/synthesizer/system.md`
 - `templates/synthesizer/task.md`
+- `templates/task-verifier/task.md`
+- `templates/task-worker/task.md`
 - `templates/verifier/task.md`

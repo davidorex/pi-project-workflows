@@ -75,6 +75,17 @@ Initialize .project/ directory with default schemas and empty block files.
 
 </tool>
 
+<tool name="complete-task">
+Complete a task with verification gate — requires a passing verification entry targeting the task.
+
+*Complete a task — gates on passing verification before updating status*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `taskId` | string | yes | Task ID to complete |
+| `verificationId` | string | yes | Verification entry ID (must target this task with status 'passed') |
+</tool>
+
 </tools_reference>
 
 <commands_reference>
@@ -104,7 +115,7 @@ See references/bundled-resources.md for full inventory.
 | `architecture` | Architecture | `modules` | name, file, responsibility, dependencies? (array), lines? (integer) |
 | `audit` | Audit | `checks` | id, description, status (string (pass|fail|warn|skip)), category?, details? |
 | `conformance-reference` | Conformance Reference | `principles` | id, name, description?, rules (array) |
-| `decisions` | Decisions | `decisions` | id, decision, rationale, phase? (string|integer), status (string (decided|tentative|revisit|superseded)), context? |
+| `decisions` | Decisions | `decisions` | id, decision, rationale, phase? (string|integer), status (string (decided|tentative|revisit|superseded)), context?, task? |
 | `domain` | Domain Knowledge | `entries` | id, title, content, category (string (research|reference|domain-rule|prior-art|constraint)), source?, confidence? (string (high|medium|low)), related_requirements? (array), tags? (array) |
 | `handoff` | Handoff | `current_tasks` |  |
 | `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by? |

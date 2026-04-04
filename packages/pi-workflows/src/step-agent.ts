@@ -3,7 +3,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { validateFromFile } from "@davidorex/pi-project/schema-validator";
+import { validate, validateFromFile } from "@davidorex/pi-project/schema-validator";
 import type nunjucks from "nunjucks";
 import { dispatch } from "./dispatch.js";
 import { resolveExpressions } from "./expression.js";
@@ -100,6 +100,23 @@ export async function executeAgentStep(
 			error: err instanceof Error ? err.message : String(err),
 		};
 	}
+	// Validate resolved input against agent's inputSchema (if defined)
+	if (agentSpec.inputSchema) {
+		try {
+			const inputData = resolvedInput !== undefined && resolvedInput !== null ? resolvedInput : {};
+			validate(agentSpec.inputSchema, inputData, `input for agent '${agentName}'`);
+		} catch (err) {
+			return {
+				step: stepName,
+				agent: agentName,
+				status: "failed",
+				usage: zeroUsage(),
+				durationMs: 0,
+				error: err instanceof Error ? err.message : String(err),
+			};
+		}
+	}
+
 	// Track non-fatal issues to attach to the StepResult
 	const warnings: string[] = [];
 

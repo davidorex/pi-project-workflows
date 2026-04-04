@@ -14,6 +14,7 @@ import {
 	availableBlocks,
 	availableSchemas,
 	blockStructure,
+	completeTask,
 	projectState,
 	schemaInfo,
 	schemaVocabulary,
@@ -361,6 +362,380 @@ describe("validateProject", () => {
 		const result = validateProject(tmpDir);
 		assert.strictEqual(result.valid, true, "partial project with valid internal refs should be valid");
 		assert.deepStrictEqual(result.issues, []);
+	});
+
+	it("reports broken task.verification reference", (t) => {
+		const tmpDir = makeTmpDir("validate-task-ver-broken");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "t1", description: "task with bad verification", status: "completed", verification: "v-nonexistent" },
+				],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.ok(result.issues.length > 0);
+		const verIssue = result.issues.find(
+			(i) => i.message.includes("verification") && i.message.includes("v-nonexistent"),
+		);
+		assert.ok(verIssue, "should report issue about broken verification reference");
+		assert.strictEqual(verIssue!.severity, "warning");
+		assert.strictEqual(verIssue!.block, "tasks");
+		assert.ok(verIssue!.field!.includes("verification"));
+	});
+
+	it("accepts valid task.verification reference", (t) => {
+		const tmpDir = makeTmpDir("validate-task-ver-valid");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		fs.writeFileSync(
+			path.join(projectDir, "verification.json"),
+			JSON.stringify({
+				verifications: [{ id: "v-001", target: "t1", target_type: "task", status: "passed", method: "test" }],
+			}),
+		);
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [{ id: "t1", description: "task with valid verification", status: "completed", verification: "v-001" }],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.deepStrictEqual(result.issues, []);
+	});
+
+	it("reports broken decision.task reference", (t) => {
+		const tmpDir = makeTmpDir("validate-dec-task-broken");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({
+				decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided", task: "t-nonexistent" }],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.ok(result.issues.length > 0);
+		const taskIssue = result.issues.find((i) => i.message.includes("task") && i.message.includes("t-nonexistent"));
+		assert.ok(taskIssue, "should report issue about broken task reference in decision");
+		assert.strictEqual(taskIssue!.severity, "warning");
+		assert.strictEqual(taskIssue!.block, "decisions");
+	});
+
+	it("accepts valid decision.task reference", (t) => {
+		const tmpDir = makeTmpDir("validate-dec-task-valid");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [{ id: "t1", description: "a task", status: "planned" }],
+			}),
+		);
+
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({
+				decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided", task: "t1" }],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.deepStrictEqual(result.issues, []);
+	});
+
+	it("warns when completed task has no verification reference", (t) => {
+		const tmpDir = makeTmpDir("validate-task-no-ver");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [{ id: "t1", description: "done task", status: "completed" }],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.ok(result.issues.length > 0);
+		const noVerIssue = result.issues.find(
+			(i) => i.message.includes("no verification reference") && i.message.includes("t1"),
+		);
+		assert.ok(noVerIssue, "should warn about completed task without verification reference");
+		assert.strictEqual(noVerIssue!.severity, "warning");
+		assert.strictEqual(noVerIssue!.block, "tasks");
+		assert.ok(noVerIssue!.field.includes("verification"));
+	});
+});
+
+// ── completeTask ───────────────────────────────────────────────────────────
+
+describe("completeTask", () => {
+	/** Helper: write a minimal tasks block */
+	function writeTasks(dir: string, tasks: Record<string, unknown>[]) {
+		fs.writeFileSync(path.join(dir, ".project", "tasks.json"), JSON.stringify({ tasks }));
+	}
+
+	/** Helper: write a minimal verification block */
+	function writeVerifications(dir: string, verifications: Record<string, unknown>[]) {
+		fs.writeFileSync(path.join(dir, ".project", "verification.json"), JSON.stringify({ verifications }));
+	}
+
+	it("completes a task with passing verification (happy path)", (t) => {
+		const tmpDir = makeTmpDir("ct-happy");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
+
+		const result = completeTask(tmpDir, "t1", "v1");
+		assert.strictEqual(result.taskId, "t1");
+		assert.strictEqual(result.verificationId, "v1");
+		assert.strictEqual(result.verificationStatus, "passed");
+		assert.strictEqual(result.previousStatus, "planned");
+
+		// Read back and verify the task was updated
+		const data = JSON.parse(fs.readFileSync(path.join(projectDir, "tasks.json"), "utf-8"));
+		const task = data.tasks.find((t: Record<string, unknown>) => t.id === "t1");
+		assert.strictEqual(task.status, "completed");
+		assert.strictEqual(task.verification, "v1");
+	});
+
+	it("throws when verification entry does not exist", (t) => {
+		const tmpDir = makeTmpDir("ct-no-ver");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, []);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v-missing"),
+			(err: Error) => {
+				assert.ok(err.message.includes("not found"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when verification targets wrong task", (t) => {
+		const tmpDir = makeTmpDir("ct-wrong-target");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, [
+			{ id: "v1", target: "other-task", target_type: "task", status: "passed", method: "test" },
+		]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("targets"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when verification targets wrong type", (t) => {
+		const tmpDir = makeTmpDir("ct-wrong-type");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "phase", status: "passed", method: "test" }]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("targets"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when verification status is failed", (t) => {
+		const tmpDir = makeTmpDir("ct-ver-failed");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "failed", method: "test" }]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("not 'passed'"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when verification status is partial", (t) => {
+		const tmpDir = makeTmpDir("ct-ver-partial");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "partial", method: "test" }]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("not 'passed'"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when verification status is skipped", (t) => {
+		const tmpDir = makeTmpDir("ct-ver-skipped");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "skipped", method: "test" }]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("not 'passed'"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when task is already completed", (t) => {
+		const tmpDir = makeTmpDir("ct-already-done");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "completed", verification: "v-old" }]);
+		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("already completed"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when task is already cancelled", (t) => {
+		const tmpDir = makeTmpDir("ct-cancelled");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "cancelled" }]);
+		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("already cancelled"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when task is not found", (t) => {
+		const tmpDir = makeTmpDir("ct-no-task");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, [
+			{ id: "v1", target: "t-missing", target_type: "task", status: "passed", method: "test" },
+		]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t-missing", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("not found"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when verification block is missing", (t) => {
+		const tmpDir = makeTmpDir("ct-no-ver-block");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		// No verification.json
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("Verification block not found"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when tasks block is missing", (t) => {
+		const tmpDir = makeTmpDir("ct-no-task-block");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		// No tasks.json
+		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
+
+		assert.throws(
+			() => completeTask(tmpDir, "t1", "v1"),
+			(err: Error) => {
+				assert.ok(err.message.includes("Tasks block not found"));
+				return true;
+			},
+		);
 	});
 });
 

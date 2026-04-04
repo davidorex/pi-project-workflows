@@ -429,6 +429,119 @@ describe("executeAgentStep", () => {
 		assert.ok(!prompt.includes("Context from Prior Steps"), "prompt should not contain context header when no text");
 	});
 
+	// Input schema validation
+	it("validates input against agent.inputSchema when both are present", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const inputSchema = {
+			type: "object",
+			required: ["topic"],
+			properties: { topic: { type: "string" }, depth: { type: "number" } },
+		};
+		const stepSpec: StepSpec = {
+			agent: "test-agent",
+			input: { topic: "${{ input.topic }}", depth: "${{ input.depth }}" },
+		};
+		const state: ExecutionState = { input: { topic: "testing", depth: 3 }, steps: {}, status: "running" };
+
+		const result = await executeAgentStep(
+			"step1",
+			stepSpec,
+			state,
+			makeOptions(tmpDir, {
+				loadAgent: () => ({ name: "test-agent", inputSchema }),
+			}),
+		);
+		assert.strictEqual(result.status, "completed");
+	});
+
+	it("fails with clear error message naming the agent when input schema validation fails", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const inputSchema = {
+			type: "object",
+			required: ["topic", "format"],
+			properties: { topic: { type: "string" }, format: { type: "string" } },
+		};
+		const stepSpec: StepSpec = { agent: "my-agent", input: { topic: "${{ input.topic }}" } };
+		const state: ExecutionState = { input: { topic: "testing" }, steps: {}, status: "running" };
+
+		const result = await executeAgentStep(
+			"step1",
+			stepSpec,
+			state,
+			makeOptions(tmpDir, {
+				loadAgent: () => ({ name: "my-agent", inputSchema }),
+			}),
+		);
+		assert.strictEqual(result.status, "failed");
+		assert.ok(result.error, "should have error message");
+		assert.ok(result.error!.includes("my-agent"), `error should name the agent, got: ${result.error}`);
+		assert.ok(result.error!.includes("format"), `error should mention the missing field, got: ${result.error}`);
+	});
+
+	it("skips validation when agent has no inputSchema (backward compatible)", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const stepSpec: StepSpec = { agent: "test-agent", input: { anything: "goes" } };
+		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
+
+		const result = await executeAgentStep(
+			"step1",
+			stepSpec,
+			state,
+			makeOptions(tmpDir, {
+				loadAgent: () => ({ name: "test-agent" }), // no inputSchema
+			}),
+		);
+		assert.strictEqual(result.status, "completed");
+	});
+
+	it("fails when no input provided to agent with required schema fields", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const inputSchema = {
+			type: "object",
+			required: ["topic"],
+			properties: { topic: { type: "string" } },
+		};
+		const stepSpec: StepSpec = { agent: "strict-agent" }; // no input at all
+		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
+
+		const result = await executeAgentStep(
+			"step1",
+			stepSpec,
+			state,
+			makeOptions(tmpDir, {
+				loadAgent: () => ({ name: "strict-agent", inputSchema }),
+			}),
+		);
+		assert.strictEqual(result.status, "failed");
+		assert.ok(result.error, "should have error message");
+		assert.ok(result.error!.includes("strict-agent"), `error should name the agent, got: ${result.error}`);
+	});
+
+	it("allows extra fields when additionalProperties is not restricted", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const inputSchema = {
+			type: "object",
+			required: ["topic"],
+			properties: { topic: { type: "string" } },
+			// no additionalProperties: false — extras should be allowed
+		};
+		const stepSpec: StepSpec = {
+			agent: "test-agent",
+			input: { topic: "${{ input.topic }}", extra: "${{ input.extra }}" },
+		};
+		const state: ExecutionState = { input: { topic: "testing", extra: "bonus" }, steps: {}, status: "running" };
+
+		const result = await executeAgentStep(
+			"step1",
+			stepSpec,
+			state,
+			makeOptions(tmpDir, {
+				loadAgent: () => ({ name: "test-agent", inputSchema }),
+			}),
+		);
+		assert.strictEqual(result.status, "completed");
+	});
+
 	it("uses real dispatch when dispatchFn not provided (structural check)", async (t) => {
 		// This test verifies the fallback code path exists structurally
 		// without actually spawning a subprocess (which requires pi on PATH).

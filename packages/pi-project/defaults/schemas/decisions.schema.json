@@ -45,6 +45,10 @@
 					"context": {
 						"type": "string",
 						"description": "What prompted this decision"
+					},
+					"task": {
+						"type": "string",
+						"description": "Task ID during which this decision was made"
 					}
 				}
 			}

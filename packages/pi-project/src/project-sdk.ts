@@ -7,7 +7,7 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { readBlock } from "./block-api.js";
+import { readBlock, updateItemInBlock } from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 
 // ── Block discovery ──────────────────────────────────────────────────────────
@@ -593,8 +593,21 @@ export function validateProject(cwd: string): ProjectValidationResult {
 		/* block doesn't exist */
 	}
 
+	// Load verifications
+	const verificationIds = new Set<string>();
+	try {
+		const verData = readBlock(cwd, "verification") as { verifications?: Record<string, unknown>[] };
+		if (Array.isArray(verData.verifications)) {
+			for (const v of verData.verifications) {
+				if (v.id) verificationIds.add(String(v.id));
+			}
+		}
+	} catch {
+		/* block doesn't exist */
+	}
+
 	// All known IDs for generic resolution
-	const allIds = new Set([...phaseIds, ...taskIds, ...decisionIds, ...requirementIds]);
+	const allIds = new Set([...phaseIds, ...taskIds, ...decisionIds, ...requirementIds, ...verificationIds]);
 
 	// Validate task references
 	try {
@@ -623,6 +636,24 @@ export function validateProject(cwd: string): ProjectValidationResult {
 						}
 					}
 				}
+				// task.verification → valid verification ID
+				if (task.verification && !verificationIds.has(String(task.verification))) {
+					issues.push({
+						severity: "warning",
+						message: `Task '${task.id}' references verification '${task.verification}' which does not exist`,
+						block: "tasks",
+						field: `tasks[${task.id}].verification`,
+					});
+				}
+				// completed task without verification reference
+				if (task.status === "completed" && !task.verification) {
+					issues.push({
+						severity: "warning",
+						message: `Task '${task.id}' is completed but has no verification reference`,
+						block: "tasks",
+						field: `tasks[${task.id}].verification`,
+					});
+				}
 			}
 		}
 	} catch {
@@ -640,6 +671,15 @@ export function validateProject(cwd: string): ProjectValidationResult {
 						message: `Decision '${dec.id}' references phase '${dec.phase}' which does not exist`,
 						block: "decisions",
 						field: `decisions[${dec.id}].phase`,
+					});
+				}
+				// decision.task → valid task ID
+				if (dec.task && !taskIds.has(String(dec.task))) {
+					issues.push({
+						severity: "warning",
+						message: `Decision '${dec.id}' references task '${dec.task}' which does not exist`,
+						block: "decisions",
+						field: `decisions[${dec.id}].task`,
 					});
 				}
 			}
@@ -747,5 +787,82 @@ export function validateProject(cwd: string): ProjectValidationResult {
 	return {
 		valid: issues.filter((i) => i.severity === "error").length === 0,
 		issues,
+	};
+}
+
+// ── Verification-Gated Task Completion ─────────────────────────────────────
+
+export interface CompleteTaskResult {
+	taskId: string;
+	verificationId: string;
+	verificationStatus: string;
+	previousStatus: string;
+}
+
+/**
+ * Gate task completion on verification. Reads the verification block to confirm
+ * a passing verification entry exists targeting this task, then atomically
+ * updates the task status to "completed" with the verification cross-reference.
+ */
+export function completeTask(cwd: string, taskId: string, verificationId: string): CompleteTaskResult {
+	// 1. Read and validate verification entry
+	let verData: { verifications?: Record<string, unknown>[] };
+	try {
+		verData = readBlock(cwd, "verification") as typeof verData;
+	} catch {
+		throw new Error(`Verification block not found — cannot complete task '${taskId}' without verification`);
+	}
+
+	const verifications = Array.isArray(verData.verifications) ? verData.verifications : [];
+	const verification = verifications.find((v) => v.id === verificationId);
+	if (!verification) {
+		throw new Error(`Verification '${verificationId}' not found in verification block`);
+	}
+
+	if (verification.target !== taskId || verification.target_type !== "task") {
+		throw new Error(
+			`Verification '${verificationId}' targets '${verification.target}' (${verification.target_type}), not task '${taskId}'`,
+		);
+	}
+
+	if (verification.status !== "passed") {
+		throw new Error(
+			`Verification '${verificationId}' status is '${verification.status}', not 'passed' — cannot complete task`,
+		);
+	}
+
+	// 2. Read and validate task entry
+	let taskData: { tasks?: Record<string, unknown>[] };
+	try {
+		taskData = readBlock(cwd, "tasks") as typeof taskData;
+	} catch {
+		throw new Error(`Tasks block not found — cannot complete task '${taskId}'`);
+	}
+
+	const tasks = Array.isArray(taskData.tasks) ? taskData.tasks : [];
+	const task = tasks.find((t) => t.id === taskId);
+	if (!task) {
+		throw new Error(`Task '${taskId}' not found in tasks block`);
+	}
+
+	const currentStatus = String(task.status);
+	if (currentStatus === "completed") {
+		throw new Error(`Task '${taskId}' is already completed`);
+	}
+	if (currentStatus === "cancelled") {
+		throw new Error(`Task '${taskId}' is already cancelled`);
+	}
+
+	// 3. Update task status with verification cross-reference
+	updateItemInBlock(cwd, "tasks", "tasks", (t) => t.id === taskId, {
+		status: "completed",
+		verification: verificationId,
+	});
+
+	return {
+		taskId,
+		verificationId,
+		verificationStatus: String(verification.status),
+		previousStatus: currentStatus,
 	};
 }

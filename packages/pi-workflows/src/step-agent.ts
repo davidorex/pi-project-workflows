@@ -130,7 +130,7 @@ export async function executeAgentStep(
 			warnings.push(`Output schema not found at ${schemaPath} — template will render without output_schema`);
 		}
 	}
-	agentSpec = compileAgentSpec(agentSpec, resolvedInput, templateEnv);
+	agentSpec = compileAgentSpec(agentSpec, resolvedInput, templateEnv, ctx.cwd);
 
 	let prompt = buildPrompt(stepSpec, agentSpec, resolvedInput, runDir, stepName, ctx.cwd);
 

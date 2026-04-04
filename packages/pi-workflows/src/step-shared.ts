@@ -2,7 +2,9 @@
  * Shared helpers for step executors — constants, usage aggregation,
  * prompt building, schema resolution, state persistence, and template resolution.
  */
+import fs from "node:fs";
 import path from "node:path";
+import { readBlock } from "@davidorex/pi-project/block-api";
 import type nunjucks from "nunjucks";
 import { writeState } from "./state.js";
 import { renderTemplate, renderTemplateFile } from "./template.js";
@@ -140,16 +142,36 @@ export function persistStep(
  *
  * Every agent's prompts go through Nunjucks. Plain text without template
  * tags renders to itself. The .md that pi receives is compiled output.
+ *
+ * If the agent declares contextBlocks and a .project/ directory exists at cwd,
+ * block data is auto-injected into the template context as _<blockname>.
+ * Missing blocks are set to null — templates guard with {% if _blockname %}.
  */
 export function compileAgentSpec(
 	agentSpec: AgentSpec,
 	resolvedInput: unknown,
 	templateEnv?: nunjucks.Environment,
+	cwd?: string,
 ): AgentSpec {
 	if (!templateEnv) return agentSpec;
 
 	const ctx =
 		typeof resolvedInput === "object" && resolvedInput !== null ? (resolvedInput as Record<string, unknown>) : {};
+
+	// Inject block data into template context when contextBlocks is declared
+	if (agentSpec.contextBlocks && agentSpec.contextBlocks.length > 0 && cwd) {
+		const projectDir = path.join(cwd, ".project");
+		if (fs.existsSync(projectDir)) {
+			for (const name of agentSpec.contextBlocks) {
+				const ctxKey = `_${name.replace(/-/g, "_")}`;
+				try {
+					ctx[ctxKey] = readBlock(cwd, name);
+				} catch {
+					ctx[ctxKey] = null;
+				}
+			}
+		}
+	}
 
 	let result = agentSpec;
 

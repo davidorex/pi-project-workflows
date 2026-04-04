@@ -65,7 +65,7 @@
 - `workflows/self-implement.workflow.yaml`
 - `workflows/typed-analysis.workflow.yaml`
 
-## templates/ (33 files)
+## templates/ (34 files)
 
 - `templates/analyzers/base-analyzer.md`
 - `templates/analyzers/macros.md`
@@ -94,6 +94,7 @@
 - `templates/project-inferrer/task.md`
 - `templates/requirements-gatherer/task.md`
 - `templates/researcher/task.md`
+- `templates/shared/macros.md`
 - `templates/spec-implementer/task.md`
 - `templates/synthesizer/system.md`
 - `templates/synthesizer/task.md`

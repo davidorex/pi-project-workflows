@@ -372,3 +372,47 @@ describe("task-verifier agent spec", () => {
 		assert.ok(fs.existsSync(schemaPath), `Schema file not found at ${schemaPath}`);
 	});
 });
+
+describe("contextBlocks parsing", () => {
+	it("parses contextBlocks array from YAML", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const specPath = path.join(tmpDir, "ctx.agent.yaml");
+		fs.writeFileSync(
+			specPath,
+			`
+name: ctx-agent
+tools: [read]
+contextBlocks: [conformance-reference, project, requirements]
+prompt:
+  task: ctx/task.md
+`,
+		);
+
+		const spec = parseAgentYaml(specPath);
+		assert.deepStrictEqual(spec.contextBlocks, ["conformance-reference", "project", "requirements"]);
+	});
+
+	it("returns undefined when contextBlocks is absent", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const specPath = path.join(tmpDir, "no-ctx.agent.yaml");
+		fs.writeFileSync(specPath, "name: no-ctx\ntools: [read]\n");
+
+		const spec = parseAgentYaml(specPath);
+		assert.strictEqual(spec.contextBlocks, undefined);
+	});
+
+	it("returns undefined when contextBlocks is not an array", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const specPath = path.join(tmpDir, "bad-ctx.agent.yaml");
+		fs.writeFileSync(specPath, "name: bad-ctx\ntools: [read]\ncontextBlocks: not-an-array\n");
+
+		const spec = parseAgentYaml(specPath);
+		assert.strictEqual(spec.contextBlocks, undefined);
+	});
+});

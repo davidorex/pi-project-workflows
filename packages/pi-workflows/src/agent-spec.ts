@@ -126,6 +126,7 @@ export function parseAgentYaml(filePath: string): AgentSpec {
 		inputSchema: spec.input,
 		outputFormat: spec.output?.format,
 		outputSchema: spec.output?.schema,
+		contextBlocks: Array.isArray(spec.contextBlocks) ? spec.contextBlocks : undefined,
 	};
 }
 

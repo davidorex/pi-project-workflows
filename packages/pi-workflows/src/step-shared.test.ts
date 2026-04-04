@@ -391,4 +391,92 @@ describe("compileAgentSpec", () => {
 		const result = compileAgentSpec(agentSpec, null, env);
 		assert.strictEqual(result.systemPrompt, "Hello ");
 	});
+
+	it("injects contextBlocks data into template context", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ctx-"));
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		// Create .project/ with a block file
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(projectDir, "project.json"),
+			JSON.stringify({ name: "test-proj", description: "A test", core_value: "Testing" }),
+		);
+
+		const env = new nunjucks.Environment(undefined, { autoescape: false, throwOnUndefined: false });
+		const agentSpec: AgentSpec = {
+			name: "test",
+			systemPrompt: "Project: {{ _project.name }} — {{ _project.core_value }}",
+			contextBlocks: ["project"],
+		};
+		const result = compileAgentSpec(agentSpec, {}, env, tmpDir);
+		assert.ok(result.systemPrompt!.includes("test-proj"), "should contain injected project name");
+		assert.ok(result.systemPrompt!.includes("Testing"), "should contain injected core_value");
+	});
+
+	it("sets missing block to null — template renders without error", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ctx-"));
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// No block files — all blocks will be missing
+
+		const env = new nunjucks.Environment(undefined, { autoescape: false, throwOnUndefined: false });
+		const agentSpec: AgentSpec = {
+			name: "test",
+			systemPrompt: "{% if _conventions %}Has conventions{% else %}No conventions{% endif %}",
+			contextBlocks: ["conventions"],
+		};
+		const result = compileAgentSpec(agentSpec, {}, env, tmpDir);
+		assert.ok(result.systemPrompt!.includes("No conventions"), "should render else branch for null block");
+	});
+
+	it("skips block injection when .project/ does not exist", () => {
+		const tmpDir = `/tmp/nonexistent-pi-project-${Date.now()}`;
+		const env = new nunjucks.Environment(undefined, { autoescape: false, throwOnUndefined: false });
+		const agentSpec: AgentSpec = {
+			name: "test",
+			systemPrompt: "Value: {{ _project }}",
+			contextBlocks: ["project"],
+		};
+		const result = compileAgentSpec(agentSpec, {}, env, tmpDir);
+		assert.ok(!result.systemPrompt!.includes("test-proj"), "should not contain block data when .project/ missing");
+	});
+
+	it("hyphenated block names become underscore context keys", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ctx-"));
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(projectDir, "conformance-reference.json"),
+			JSON.stringify({ name: "Test Standards", principles: [] }),
+		);
+
+		const env = new nunjucks.Environment(undefined, { autoescape: false, throwOnUndefined: false });
+		const agentSpec: AgentSpec = {
+			name: "test",
+			systemPrompt: "Ref: {{ _conformance_reference.name }}",
+			contextBlocks: ["conformance-reference"],
+		};
+		const result = compileAgentSpec(agentSpec, {}, env, tmpDir);
+		assert.ok(
+			result.systemPrompt!.includes("Test Standards"),
+			"hyphenated block name should be accessible as underscore key",
+		);
+	});
+
+	it("does not inject when contextBlocks is empty", () => {
+		const env = new nunjucks.Environment(undefined, { autoescape: false, throwOnUndefined: false });
+		const agentSpec: AgentSpec = {
+			name: "test",
+			systemPrompt: "Hello",
+			contextBlocks: [],
+		};
+		const result = compileAgentSpec(agentSpec, {}, env, "/tmp");
+		assert.strictEqual(result.systemPrompt, "Hello");
+	});
 });

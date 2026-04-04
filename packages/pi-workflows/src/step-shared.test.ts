@@ -169,7 +169,8 @@ describe("buildPrompt", () => {
 		const step = { agent: "test", output: { format: "json" as const } };
 		const agentSpec: AgentSpec = { name: "test" };
 		const prompt = buildPrompt(step, agentSpec, {}, "/tmp/run", "step1");
-		assert.ok(prompt.includes("**Output:**"));
+		assert.ok(prompt.includes("raw JSON only"));
+		assert.ok(prompt.includes("no markdown fences"));
 		assert.ok(prompt.includes("step1.json"));
 	});
 
@@ -177,7 +178,7 @@ describe("buildPrompt", () => {
 		const step = { agent: "test", output: { schema: "schemas/out.json" } };
 		const agentSpec: AgentSpec = { name: "test" };
 		const prompt = buildPrompt(step, agentSpec, {}, "/tmp/run", "step1");
-		assert.ok(prompt.includes("**Output:**"));
+		assert.ok(prompt.includes("raw JSON only"));
 		assert.ok(prompt.includes("JSON Schema"));
 		assert.ok(prompt.includes("schemas/out.json"));
 	});
@@ -186,7 +187,7 @@ describe("buildPrompt", () => {
 		const step = { agent: "test" };
 		const agentSpec: AgentSpec = { name: "test" };
 		const prompt = buildPrompt(step, agentSpec, {}, "/tmp/run", "step1");
-		assert.ok(!prompt.includes("**Output:**"));
+		assert.ok(!prompt.includes("raw JSON only"));
 	});
 
 	it("combines task template with output instructions", () => {
@@ -194,7 +195,7 @@ describe("buildPrompt", () => {
 		const agentSpec: AgentSpec = { name: "test", taskTemplate: "Analyze this" };
 		const prompt = buildPrompt(step, agentSpec, {}, "/tmp/run", "step1");
 		assert.ok(prompt.includes("Analyze this"));
-		assert.ok(prompt.includes("**Output:**"));
+		assert.ok(prompt.includes("raw JSON only"));
 	});
 });
 

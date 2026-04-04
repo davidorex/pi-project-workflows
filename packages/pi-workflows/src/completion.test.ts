@@ -118,6 +118,23 @@ describe("resolveCompletion", () => {
 		});
 	});
 
+	describe("scope includes failure status", () => {
+		it("resolves status to 'failed' for failed workflow result", () => {
+			const failedResult: WorkflowResult = {
+				...result,
+				status: "failed",
+				steps: {
+					summarize: { ...stepResult, status: "failed", error: "Agent timed out" },
+				},
+			};
+			const spec: CompletionSpec = {
+				template: "Status: ${{ status }}",
+			};
+			const content = resolveCompletion(spec, failedResult, input);
+			assert.strictEqual(content, "Status: failed");
+		});
+	});
+
 	describe("error handling", () => {
 		it("throws on invalid expression in template", () => {
 			const spec: CompletionSpec = {

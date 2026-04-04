@@ -946,7 +946,7 @@ export async function executeWorkflow(
 		);
 	} else {
 		let content: string;
-		if (spec.completion) {
+		if (spec.completion && state.status === "completed") {
 			try {
 				content = resolveCompletion(spec.completion, result, input);
 			} catch (err) {

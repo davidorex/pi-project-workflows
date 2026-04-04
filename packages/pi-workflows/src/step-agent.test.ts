@@ -312,6 +312,63 @@ describe("executeAgentStep", () => {
 		assert.ok(result.error!.includes("no valid JSON output"));
 	});
 
+	it("fails when textOutput is valid JSON wrapped in markdown fences", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+
+		const schemaDir = path.join(tmpDir, "schemas");
+		fs.mkdirSync(schemaDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(schemaDir, "output.json"),
+			JSON.stringify({
+				type: "object",
+				properties: { summary: { type: "string" } },
+			}),
+		);
+
+		const stepSpec: StepSpec = {
+			agent: "test-agent",
+			output: { schema: path.join(schemaDir, "output.json") },
+		};
+		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
+
+		const result = await executeAgentStep(
+			"step1",
+			stepSpec,
+			state,
+			makeOptions(tmpDir, {
+				dispatchFn: mockDispatch({
+					textOutput: '```json\n{"summary": "from text"}\n```',
+				}),
+			}),
+		);
+		assert.strictEqual(result.status, "failed");
+		assert.ok(result.error);
+		assert.ok(result.error!.includes("no valid JSON output"));
+	});
+
+	it("fails when format-json step produces non-JSON textOutput", async (t) => {
+		const tmpDir = makeTmpRunDir(t);
+		const stepSpec: StepSpec = {
+			agent: "test-agent",
+			output: { format: "json" },
+		};
+		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
+
+		const result = await executeAgentStep(
+			"step1",
+			stepSpec,
+			state,
+			makeOptions(tmpDir, {
+				dispatchFn: mockDispatch({
+					textOutput: '```json\n{"key": "value"}\n```',
+				}),
+			}),
+		);
+		assert.strictEqual(result.status, "failed");
+		assert.ok(result.error);
+		assert.ok(result.error!.includes("not valid JSON"));
+	});
+
 	// Output persistence (non-schema path)
 	it("persists output via persistStepOutput when no schema", async (t) => {
 		const tmpDir = makeTmpRunDir(t);

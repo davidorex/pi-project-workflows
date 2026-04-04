@@ -234,7 +234,8 @@ export async function executeAgentStep(
 			try {
 				result.output = JSON.parse(result.textOutput);
 			} catch {
-				/* Not valid JSON — leave output undefined, textOutput still available */
+				result.status = "failed";
+				result.error = `Step '${stepName}' declares JSON output format but textOutput is not valid JSON`;
 			}
 		}
 		result.outputPath = persistStepOutput(runDir, stepName, result.output, result.textOutput, resolvedOutputPath);

@@ -93,10 +93,13 @@ export function buildPrompt(
 	if (step.output?.format === "json" || step.output?.schema) {
 		const outputPath = path.join(runDir, "outputs", `${stepName}.json`);
 		parts.push("\n---");
-		parts.push(`**Output:** Write your result as valid JSON to: ${outputPath}`);
+		parts.push(
+			"**Output:** Your final response MUST be raw JSON only — no markdown fences, no code blocks, no commentary before or after. Just the JSON object.",
+		);
 		if (step.output.schema) {
 			parts.push(`The output must conform to the JSON Schema at: ${resolveSchemaPath(step.output.schema, "", cwd)}`);
 		}
+		parts.push(`If you have write access, also write the JSON to: ${outputPath}`);
 	}
 
 	return parts.join("\n");

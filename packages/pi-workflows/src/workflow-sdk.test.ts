@@ -499,7 +499,7 @@ describe("inputSchema validation", () => {
 		fs.mkdirSync(agentDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(agentDir, "typed-agent.agent.yaml"),
-			[
+			`${[
 				"name: typed-agent",
 				"tools: [read]",
 				"input:",
@@ -511,7 +511,7 @@ describe("inputSchema validation", () => {
 				"      type: string",
 				"    depth:",
 				"      type: number",
-			].join("\n") + "\n",
+			].join("\n")}\n`,
 		);
 
 		const spec = makeSpec(
@@ -533,7 +533,7 @@ describe("inputSchema validation", () => {
 		fs.mkdirSync(agentDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(agentDir, "typed-agent.agent.yaml"),
-			[
+			`${[
 				"name: typed-agent",
 				"tools: [read]",
 				"input:",
@@ -546,7 +546,7 @@ describe("inputSchema validation", () => {
 				"      type: string",
 				"    format:",
 				"      type: string",
-			].join("\n") + "\n",
+			].join("\n")}\n`,
 		);
 
 		const spec = makeSpec(
@@ -570,7 +570,7 @@ describe("inputSchema validation", () => {
 		fs.mkdirSync(agentDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(agentDir, "typed-agent.agent.yaml"),
-			[
+			`${[
 				"name: typed-agent",
 				"tools: [read]",
 				"input:",
@@ -580,7 +580,7 @@ describe("inputSchema validation", () => {
 				"  properties:",
 				"    topic:",
 				"      type: string",
-			].join("\n") + "\n",
+			].join("\n")}\n`,
 		);
 
 		const spec = makeSpec(
@@ -604,7 +604,7 @@ describe("inputSchema validation", () => {
 		fs.mkdirSync(agentDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(agentDir, "untyped-agent.agent.yaml"),
-			["name: untyped-agent", "tools: [read]"].join("\n") + "\n",
+			`${["name: untyped-agent", "tools: [read]"].join("\n")}\n`,
 		);
 
 		const spec = makeSpec(
@@ -626,7 +626,7 @@ describe("inputSchema validation", () => {
 		fs.mkdirSync(agentDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(agentDir, "optional-agent.agent.yaml"),
-			[
+			`${[
 				"name: optional-agent",
 				"tools: [read]",
 				"input:",
@@ -634,7 +634,7 @@ describe("inputSchema validation", () => {
 				"  properties:",
 				"    x:",
 				"      type: string",
-			].join("\n") + "\n",
+			].join("\n")}\n`,
 		);
 
 		const spec = makeSpec(

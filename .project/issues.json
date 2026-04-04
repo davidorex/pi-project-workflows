@@ -201,6 +201,17 @@
       "priority": "critical",
       "package": "pi-behavior-monitors",
       "source": "human"
+    },
+    {
+      "id": "issue-019",
+      "title": "Skill generator cannot introspect validator phases or SDK query functions — new capabilities require narrative updates",
+      "body": "The skill generator introspects tools, commands, events, shortcuts, and resource directories. It cannot introspect internal function behavior — validator phases (inputSchema checking, contextBlocks resolution, StepType metadata enforcement) and SDK query functions are invisible. When new validation checks or SDK capabilities are added, they only surface in the skill if the narrative (skill-narrative.md) is manually updated. The agent vocabulary extractor (extractAgentVocabulary) proved the pattern: export a registry, generator reads it, produces a vocabulary section. The validator and SDK should export similar registries — validator check descriptors, SDK query surface — so the generator produces <validation_vocabulary> and <sdk_vocabulary> sections automatically. Each new check or query function would appear in the skill on the next npm run skills without narrative edits.",
+      "location": "scripts/generate-skills.js",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "human"
     }
   ]
 }

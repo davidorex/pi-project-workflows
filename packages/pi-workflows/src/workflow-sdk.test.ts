@@ -488,6 +488,167 @@ describe("StepType metadata validation", () => {
 	});
 });
 
+// ── inputSchema Validation ────────────────────────────────────────────────────
+
+describe("inputSchema validation", () => {
+	it("no error when step provides all required input keys", (t) => {
+		const tmpDir = makeTmpDir("inputschema-pass");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "typed-agent.agent.yaml"),
+			[
+				"name: typed-agent",
+				"tools: [read]",
+				"input:",
+				"  type: object",
+				"  required:",
+				"    - topic",
+				"  properties:",
+				"    topic:",
+				"      type: string",
+				"    depth:",
+				"      type: number",
+			].join("\n") + "\n",
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "typed-agent", input: { topic: "${{ input.topic }}" } },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.strictEqual(inputSchemaIssues.length, 0);
+	});
+
+	it("reports error when step is missing required input key", (t) => {
+		const tmpDir = makeTmpDir("inputschema-missing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "typed-agent.agent.yaml"),
+			[
+				"name: typed-agent",
+				"tools: [read]",
+				"input:",
+				"  type: object",
+				"  required:",
+				"    - topic",
+				"    - format",
+				"  properties:",
+				"    topic:",
+				"      type: string",
+				"    format:",
+				"      type: string",
+			].join("\n") + "\n",
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "typed-agent", input: { topic: "${{ input.topic }}" } },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.ok(inputSchemaIssues.length > 0);
+		assert.ok(inputSchemaIssues.some((i) => i.message.includes("format")));
+		assert.strictEqual(inputSchemaIssues[0].severity, "error");
+	});
+
+	it("reports error when step has no input but agent requires fields", (t) => {
+		const tmpDir = makeTmpDir("inputschema-noinput");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "typed-agent.agent.yaml"),
+			[
+				"name: typed-agent",
+				"tools: [read]",
+				"input:",
+				"  type: object",
+				"  required:",
+				"    - topic",
+				"  properties:",
+				"    topic:",
+				"      type: string",
+			].join("\n") + "\n",
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "typed-agent" },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.ok(inputSchemaIssues.length > 0);
+		assert.ok(inputSchemaIssues.some((i) => i.message.includes("topic")));
+		assert.strictEqual(inputSchemaIssues[0].severity, "error");
+	});
+
+	it("no error when agent has no inputSchema", (t) => {
+		const tmpDir = makeTmpDir("inputschema-untyped");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "untyped-agent.agent.yaml"),
+			["name: untyped-agent", "tools: [read]"].join("\n") + "\n",
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "untyped-agent", input: { anything: "goes" } },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.strictEqual(inputSchemaIssues.length, 0);
+	});
+
+	it("no error when inputSchema has no required array", (t) => {
+		const tmpDir = makeTmpDir("inputschema-norequired");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "optional-agent.agent.yaml"),
+			[
+				"name: optional-agent",
+				"tools: [read]",
+				"input:",
+				"  type: object",
+				"  properties:",
+				"    x:",
+				"      type: string",
+			].join("\n") + "\n",
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "optional-agent", input: {} },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.strictEqual(inputSchemaIssues.length, 0);
+	});
+});
+
 // ── Bundled Workflow Validation ─────────────────────────────────────────────
 
 describe("execute-task workflow validation", () => {

@@ -310,6 +310,8 @@ export interface ValidationResult {
 export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationResult {
 	const issues: ValidationIssue[] = [];
 	const steps = declaredSteps(spec);
+	// Cache for successfully loaded agent specs — populated in check 1, consumed in check 7b.
+	const resolvedAgents = new Map<string, AgentSpec>();
 
 	// 1. Agent resolution — do all referenced agents exist?
 	const agentRefs = declaredAgentRefs(spec);
@@ -317,7 +319,8 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		const loadAgent = createAgentLoader(cwd);
 		for (const agentName of agentRefs) {
 			try {
-				loadAgent(agentName);
+				const loaded = loadAgent(agentName);
+				resolvedAgents.set(agentName, loaded);
 			} catch (err) {
 				if (err instanceof AgentNotFoundError) {
 					// Find which step(s) reference this agent for the field path
@@ -475,6 +478,25 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 				message: `Step '${stepName}' has output but type '${desc.name}' does not support output`,
 				field: `${fieldPrefix}.output`,
 			});
+		}
+	}
+
+	// 7b. inputSchema required keys — do agent steps provide all required input keys?
+	for (const [stepName, step, fieldPrefix] of walkAllSteps(spec.steps)) {
+		if (!step.agent) continue;
+		const agentSpec = resolvedAgents.get(step.agent);
+		if (!agentSpec?.inputSchema) continue;
+		const required = (agentSpec.inputSchema as Record<string, unknown>).required;
+		if (!Array.isArray(required) || required.length === 0) continue;
+		const providedKeys = new Set(Object.keys(step.input ?? {}));
+		for (const key of required) {
+			if (!providedKeys.has(key as string)) {
+				issues.push({
+					severity: "error",
+					message: `Step '${stepName}' is missing required input '${key}' for agent '${step.agent}'`,
+					field: `${fieldPrefix}.input`,
+				});
+			}
 		}
 	}
 

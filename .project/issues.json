@@ -190,6 +190,17 @@
       "priority": "high",
       "package": "pi-behavior-monitors",
       "source": "human"
+    },
+    {
+      "id": "issue-018",
+      "title": "Hedge monitor classifies tool-call-heavy responses as empty — tool_results not in classify context",
+      "body": "The hedge monitor's classify context includes tool_calls (names of tools called) but not tool_results (what those tools produced). When the assistant's response is primarily tool work — edits, writes, commits, builds — the text portion is a brief summary. The classifier sees tool names and a terse text response, concludes 'the assistant provided no response', and flags incorrectly. Observed: 'The assistant provided no response at all' on a turn that edited files, ran builds, and committed. The work was in tool results the classifier never saw. Fix: add tool_results to the hedge monitor's classify.context array, or teach the classify prompt that tool_calls represent substantive work even when assistant_text is brief.",
+      "location": "packages/pi-behavior-monitors/examples/hedge/hedge.monitor.json",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-behavior-monitors",
+      "source": "human"
     }
   ]
 }

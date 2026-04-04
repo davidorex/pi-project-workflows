@@ -157,6 +157,28 @@
       "package": "pi-workflows",
       "source": "agent",
       "resolved_by": "v0.11.3 commit b614be4 — parse failure now marks step as failed, same contract as schema-bound path"
+    },
+    {
+      "id": "issue-015",
+      "title": "Classify prompt lacks conversation history — monitors produce false positives on multi-turn backreferences",
+      "body": "The classify prompt receives user_text and assistant_text from the current turn only. When a user message backreferences prior turns ('reoutput my original task', 'as I said earlier'), the classifier cannot verify whether the response addresses the referenced content. It sees a short user request and a long technical response, pattern-matches to 'deviation', and flags incorrectly. Observed: 3 false positives in a single session from the hedge monitor, all on responses that directly addressed what the user asked. Root cause: no conversation_history collector exists. The classifier reasons in a single-turn vacuum. Fix: add a conversation_history context collector that provides the last N turns, or expand user_text to include referenced prior messages.",
+      "location": "packages/pi-behavior-monitors/examples/hedge/classify.md",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-016",
+      "title": "No TUI visibility into monitor token usage and cost — side-channel LLM calls are invisible",
+      "body": "Every monitor classification is an LLM call (classify model, typically claude-sonnet). These calls consume tokens and incur cost but are completely invisible in the TUI. No running tally, no per-monitor breakdown, no session total. In a session with active monitors firing on every turn_end, the accumulated cost can be significant. Users have no way to see what monitors are costing them. Need: running tally in TUI showing monitor token usage (input/output) and cost, updated after each classification call.",
+      "location": "packages/pi-behavior-monitors/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human"
     }
   ]
 }

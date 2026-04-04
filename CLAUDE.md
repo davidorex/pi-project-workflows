@@ -2,7 +2,7 @@
 
 Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state in `.project/`. Behavior monitors that classify agent activity and steer corrections.
 
-Monorepo: four npm packages (`packages/*`) with lockstep versioning at 0.11.3.
+Monorepo: four npm packages (`packages/*`) with lockstep versioning.
 
 | Package | Purpose |
 |---------|---------|

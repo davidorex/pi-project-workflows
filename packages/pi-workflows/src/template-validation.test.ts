@@ -716,16 +716,93 @@ describe("template resolution warnings", () => {
 		const warnings = issues.filter(
 			(i) =>
 				i.severity === "warning" &&
-				i.message.includes("no output schema") &&
+				i.message.includes("no schema available") &&
 				i.message.includes("field-level validation skipped"),
 		);
 		assert.ok(
 			warnings.length > 0,
 			`Should warn when source step has no output schema. Issues: ${JSON.stringify(issues)}`,
 		);
+	});
+
+	it("warns on field access through workflow-level input expression", () => {
+		const tmpDir = makeTmpDir("input-no-schema");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ data.name }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				consume: {
+					agent: "test-agent",
+					input: {
+						data: "${{ input.data }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const warnings = issues.filter(
+			(i) =>
+				i.severity === "warning" &&
+				i.message.includes("no schema available") &&
+				i.message.includes("field-level validation skipped"),
+		);
 		assert.ok(
-			warnings[0].message.includes("source"),
-			`Warning should name the source step. Got: ${warnings[0].message}`,
+			warnings.length > 0,
+			`Should warn on field access through workflow-level input. Issues: ${JSON.stringify(issues)}`,
+		);
+	});
+
+	it("warns on field access through command step output", () => {
+		const tmpDir = makeTmpDir("cmd-no-schema");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ result.field }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				source: {
+					command: "echo hello",
+				},
+				consume: {
+					agent: "test-agent",
+					input: {
+						result: "${{ steps.source.output }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const warnings = issues.filter(
+			(i) =>
+				i.severity === "warning" &&
+				i.message.includes("no schema available") &&
+				i.message.includes("field-level validation skipped"),
+		);
+		assert.ok(
+			warnings.length > 0,
+			`Should warn on field access through command step output. Issues: ${JSON.stringify(issues)}`,
 		);
 	});
 });

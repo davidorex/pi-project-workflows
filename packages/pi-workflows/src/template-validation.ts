@@ -534,11 +534,9 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			// forEach `as` variable counts as an input
 			if (stepSpec.forEach && stepSpec.as === root) continue;
 
-			// Find if any template var with this root is guarded
-			const allGuarded = templateVars.filter((v) => v.root === root).every((v) => v.guarded);
 			issues.push({
-				severity: allGuarded ? "warning" : "error",
-				message: `Template '${agentSpec.taskTemplate}' references '${root}' but step '${stepName}' does not declare it in input.${allGuarded ? " (guarded with conditional)" : ""}`,
+				severity: "error",
+				message: `Template '${agentSpec.taskTemplate}' references '${root}' but step '${stepName}' does not declare it in input`,
 				field: `steps.${stepName}.input`,
 			});
 		}
@@ -573,7 +571,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 				const suggestion = closest ? ` Did you mean '${closest}'?` : "";
 				const available = Object.keys(schemaFields.properties).join(", ");
 				issues.push({
-					severity: tv.guarded ? "warning" : "error",
+					severity: "error",
 					message: `Template '${agentSpec.taskTemplate}' references '${tv.path}' but schema has no field '${field}'.${suggestion} Available: [${available}]`,
 					field: `steps.${stepName}.input.${tv.root}`,
 				});

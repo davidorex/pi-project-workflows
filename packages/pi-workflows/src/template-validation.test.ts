@@ -643,3 +643,82 @@ describe("block read schema tracing", () => {
 		);
 	});
 });
+
+// ── guarded-undefined variables ──────────────────────────────────────────────
+
+describe("guarded-undefined variables", () => {
+	it("errors on guarded-undefined variable", () => {
+		const tmpDir = makeTmpDir("guarded-undef");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "guard-agent.agent.yaml"),
+			"name: guard-agent\ntools: [read]\nprompt:\n  task: guard-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "guard-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		// gaps is guarded with {% if %} but NOT in step input — should be error
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{% if gaps %}\n{{ gaps.items }}\n{% endif %}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "guard-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const gapsIssue = issues.find((i) => i.message.includes("gaps") && i.message.includes("does not declare"));
+		assert.ok(gapsIssue, `Should report missing 'gaps' root. Issues: ${JSON.stringify(issues)}`);
+		assert.strictEqual(gapsIssue.severity, "error", "Guarded-undefined variable should be severity 'error'");
+	});
+
+	it("errors on guarded variable used only in conditional", () => {
+		const tmpDir = makeTmpDir("guarded-cond-only");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "cond-agent.agent.yaml"),
+			"name: cond-agent\ntools: [read]\nprompt:\n  task: cond-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "cond-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		// existing_files guarded with {% if %} and accessed with dotted field, not in step input — should be error
+		fs.writeFileSync(
+			path.join(templatesDir, "task.md"),
+			"{% if existing_files %}\n{{ existing_files.count }} files\n{% endif %}",
+		);
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				analyze: {
+					agent: "cond-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const existingFilesIssue = issues.find(
+			(i) => i.message.includes("existing_files") && i.message.includes("does not declare"),
+		);
+		assert.ok(existingFilesIssue, `Should report missing 'existing_files' root. Issues: ${JSON.stringify(issues)}`);
+		assert.strictEqual(
+			existingFilesIssue.severity,
+			"error",
+			"Guarded-undefined variable used only in conditional should be severity 'error'",
+		);
+	});
+});

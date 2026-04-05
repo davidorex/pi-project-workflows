@@ -207,11 +207,12 @@
       "title": "Skill generator cannot introspect validator phases or SDK query functions — new capabilities require narrative updates",
       "body": "The skill generator introspects tools, commands, events, shortcuts, and resource directories. It cannot introspect internal function behavior — validator phases and SDK query functions are invisible. When new validation checks or SDK capabilities are added, they only surface in the skill if the narrative (skill-narrative.md) is manually updated. The agent vocabulary extractor (extractAgentVocabulary) proved the pattern: export a registry, generator reads it, produces a vocabulary section. The validator now exports validationChecks() returning 11 check descriptors (commit 6fc1611), and the SDK exports agentContracts() and agentsByBlock(). The registries exist — what remains is generator integration: add extractValidationVocabulary() that calls validationChecks() and produces a <validation_vocabulary> section, parallel to <agent_vocabulary>, <planning_vocabulary>, and <monitor_vocabulary>.",
       "location": "scripts/generate-skills.js",
-      "status": "open",
+      "status": "resolved",
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human"
+      "source": "human",
+      "resolved_by": "commit 4dffeec — extractValidationVocabulary() added to generator, produces <validation_vocabulary> table from validationChecks() registry"
     }
   ]
 }

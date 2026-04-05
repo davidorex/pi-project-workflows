@@ -247,7 +247,7 @@ describe("validateProject", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, true);
+		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
 
@@ -290,7 +290,7 @@ describe("validateProject", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, false, "missing depends_on target should cause error-level issue");
+		assert.strictEqual(result.status, "invalid", "missing depends_on target should cause error-level issue");
 		const depIssue = result.issues.find((i) => i.message.includes("task-b") && i.message.includes("depends on"));
 		assert.ok(depIssue, "should report issue about missing task dependency");
 		assert.strictEqual(depIssue!.severity, "error");
@@ -339,7 +339,7 @@ describe("validateProject", () => {
 		fs.mkdirSync(projectDir, { recursive: true });
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, true);
+		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
 
@@ -362,7 +362,7 @@ describe("validateProject", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, true, "partial project with valid internal refs should be valid");
+		assert.strictEqual(result.status, "clean", "partial project with valid internal refs should be clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
 
@@ -480,7 +480,7 @@ describe("validateProject", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, false, "completed task without verification should make project invalid");
+		assert.strictEqual(result.status, "invalid", "completed task without verification should make project invalid");
 		assert.ok(result.issues.length > 0);
 		const noVerIssue = result.issues.find(
 			(i) => i.message.includes("no verification reference") && i.message.includes("t1"),
@@ -515,7 +515,6 @@ describe("validation result status field", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, true);
 		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
@@ -536,7 +535,6 @@ describe("validation result status field", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, false);
 		assert.strictEqual(result.status, "invalid");
 	});
 
@@ -556,7 +554,6 @@ describe("validation result status field", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, true, "warnings-only should still be valid");
 		assert.strictEqual(result.status, "warnings");
 		assert.ok(result.issues.length > 0, "should have at least one warning issue");
 		assert.ok(
@@ -1230,7 +1227,7 @@ describe("verification gate — AJV if/then enforcement", () => {
 		);
 
 		const result = validateProject(tmpDir);
-		assert.strictEqual(result.valid, false, "validateProject should report invalid for corrupted state");
+		assert.strictEqual(result.status, "invalid", "validateProject should report invalid for corrupted state");
 
 		const issue = result.issues.find(
 			(i) => i.message.includes("no verification reference") && i.message.includes("t1"),

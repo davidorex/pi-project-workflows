@@ -156,7 +156,6 @@ function runValidation(
 	found: boolean;
 	results: {
 		name: string;
-		valid: boolean;
 		status: "clean" | "warnings" | "invalid";
 		issues: import("./workflow-sdk.js").ValidationIssue[];
 	}[];
@@ -167,7 +166,7 @@ function runValidation(
 
 	const results = workflows.map((spec) => {
 		const result = validateWorkflow(spec, cwd);
-		return { name: spec.name, valid: result.valid, status: result.status, issues: result.issues };
+		return { name: spec.name, status: result.status, issues: result.issues };
 	});
 
 	return { found: true, results };

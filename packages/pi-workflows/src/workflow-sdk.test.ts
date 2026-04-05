@@ -337,7 +337,7 @@ describe("validateWorkflow", () => {
 			process: { transform: { mapping: { result: "${{ steps.greet.output }}" } } },
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, true);
+		assert.strictEqual(result.status, "clean");
 		assert.strictEqual(result.issues.length, 0);
 	});
 
@@ -346,7 +346,7 @@ describe("validateWorkflow", () => {
 			investigate: { agent: "nonexistent-agent-xyz" },
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, false);
+		assert.strictEqual(result.status, "invalid");
 		const agentIssues = result.issues.filter((i) => i.message.includes("nonexistent-agent-xyz"));
 		assert.ok(agentIssues.length > 0);
 		assert.strictEqual(agentIssues[0].severity, "error");
@@ -375,7 +375,7 @@ describe("validateWorkflow", () => {
 			},
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, false);
+		assert.strictEqual(result.status, "invalid");
 		const stepIssues = result.issues.filter((i) => i.message.includes("undeclared step"));
 		assert.ok(stepIssues.length > 0);
 		assert.strictEqual(stepIssues[0].severity, "error");
@@ -403,7 +403,7 @@ describe("validateWorkflow", () => {
 			},
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, false);
+		assert.strictEqual(result.status, "invalid");
 		const ctxIssues = result.issues.filter((i) => i.message.includes("context") && i.message.includes("undeclared"));
 		assert.ok(ctxIssues.length > 0);
 		assert.strictEqual(ctxIssues[0].severity, "error");
@@ -434,8 +434,8 @@ describe("validateWorkflow", () => {
 		const filterIssues = result.issues.filter((i) => i.message.includes("Unknown filter"));
 		assert.ok(filterIssues.length > 0);
 		assert.strictEqual(filterIssues[0].severity, "warning");
-		// Warnings don't make it invalid
-		assert.strictEqual(result.valid, true);
+		// Warnings don't make it invalid — but status reflects their presence
+		assert.strictEqual(result.status, "warnings");
 	});
 
 	it("valid agents from bundled dir resolve correctly", (t) => {
@@ -463,7 +463,6 @@ describe("validation result status field", () => {
 		});
 		const result = validateWorkflow(spec, "/tmp");
 		assert.strictEqual(result.status, "clean");
-		assert.strictEqual(result.valid, true);
 	});
 
 	it("status is 'warnings' when only warnings", () => {
@@ -475,7 +474,6 @@ describe("validation result status field", () => {
 		});
 		const result = validateWorkflow(spec, "/tmp");
 		assert.strictEqual(result.status, "warnings");
-		assert.strictEqual(result.valid, true);
 	});
 
 	it("status is 'invalid' when errors present", () => {
@@ -484,7 +482,6 @@ describe("validation result status field", () => {
 		});
 		const result = validateWorkflow(spec, "/tmp");
 		assert.strictEqual(result.status, "invalid");
-		assert.strictEqual(result.valid, false);
 	});
 
 	it("status is 'invalid' when both errors and warnings", () => {
@@ -499,7 +496,7 @@ describe("validation result status field", () => {
 		assert.strictEqual(result.status, "invalid");
 	});
 
-	it("existing unknown-filter test: valid true but status warnings", () => {
+	it("existing unknown-filter test: warnings status with filter issues", () => {
 		const spec = makeSpec({
 			load: { command: "echo hello" },
 			show: {
@@ -507,7 +504,6 @@ describe("validation result status field", () => {
 			},
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, true);
 		assert.strictEqual(result.status, "warnings");
 		const filterIssues = result.issues.filter((i) => i.message.includes("Unknown filter"));
 		assert.ok(filterIssues.length > 0);
@@ -974,7 +970,7 @@ describe("execute-task workflow validation", () => {
 		const result = validateWorkflow(spec, pkgDir);
 		const errors = result.issues.filter((i) => i.severity === "error");
 		assert.strictEqual(errors.length, 0, `Unexpected validation errors: ${JSON.stringify(errors, null, 2)}`);
-		assert.strictEqual(result.valid, true);
+		assert.notStrictEqual(result.status, "invalid");
 	});
 
 	it("references task-worker and task-verifier agents that resolve", () => {

@@ -644,6 +644,92 @@ describe("block read schema tracing", () => {
 	});
 });
 
+// ── template resolution warnings ────────────────────────────────────────────
+
+describe("template resolution warnings", () => {
+	it("warns when agent task template not found in search paths", () => {
+		const tmpDir = makeTmpDir("tmpl-not-found");
+
+		// Agent declares a task template that doesn't exist anywhere
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "bad-tmpl.agent.yaml"),
+			"name: bad-tmpl\ntools: [read]\nprompt:\n  task: nonexistent/task.md\n",
+		);
+
+		// No template file at nonexistent/task.md in any search path
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				do_thing: {
+					agent: "bad-tmpl",
+					input: { x: "y" },
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const warnings = issues.filter((i) => i.severity === "warning" && i.message.includes("not found in search paths"));
+		assert.ok(
+			warnings.length > 0,
+			`Should warn when agent task template is not found. Issues: ${JSON.stringify(issues)}`,
+		);
+		assert.ok(
+			warnings[0].message.includes("nonexistent/task.md"),
+			`Warning should name the missing template. Got: ${warnings[0].message}`,
+		);
+	});
+
+	it("warns when source step has no output schema for field-level validation", () => {
+		const tmpDir = makeTmpDir("no-output-schema");
+
+		// Agent with template accessing {{ data.name }}
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ data.name }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				source: {
+					command: "echo hello",
+				},
+				consume: {
+					agent: "test-agent",
+					input: {
+						data: "${{ steps.source.output }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const warnings = issues.filter(
+			(i) =>
+				i.severity === "warning" &&
+				i.message.includes("no output schema") &&
+				i.message.includes("field-level validation skipped"),
+		);
+		assert.ok(
+			warnings.length > 0,
+			`Should warn when source step has no output schema. Issues: ${JSON.stringify(issues)}`,
+		);
+		assert.ok(
+			warnings[0].message.includes("source"),
+			`Warning should name the source step. Got: ${warnings[0].message}`,
+		);
+	});
+});
+
 // ── guarded-undefined variables ──────────────────────────────────────────────
 
 describe("guarded-undefined variables", () => {

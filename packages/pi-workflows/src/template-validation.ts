@@ -498,7 +498,14 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 				// try next path
 			}
 		}
-		if (!templateContent) continue;
+		if (!templateContent) {
+			issues.push({
+				severity: "warning",
+				message: `Agent '${stepSpec.agent}' declares task template '${agentSpec.taskTemplate}' but file not found in search paths`,
+				field: `steps.${stepName}.agent`,
+			});
+			continue;
+		}
 
 		const templateVars = extractTemplateVariables(templateContent);
 		if (templateVars.length === 0) continue;
@@ -564,7 +571,22 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			if (!exprToTrace) continue;
 
 			const schemaFields = traceInputSchema(exprToTrace, stepSpec, spec, cwd);
-			if (!schemaFields) continue; // unverifiable
+			if (!schemaFields) {
+				// Warn if expression traces to a step (potentially verifiable) but schema is missing
+				const exprContent = exprToTrace?.match(/\$\{\{\s*steps\.([\w-]+)/);
+				if (exprContent) {
+					const sourceStepName = exprContent[1];
+					const sourceStep = spec.steps[sourceStepName];
+					if (sourceStep && !sourceStep.output?.schema && !sourceStep.block) {
+						issues.push({
+							severity: "warning",
+							message: `Template '${agentSpec.taskTemplate}' accesses '${tv.path}' but source step '${sourceStepName}' has no output schema — field-level validation skipped`,
+							field: `steps.${stepName}.input.${tv.root}`,
+						});
+					}
+				}
+				continue;
+			}
 
 			if (!(field in schemaFields.properties)) {
 				const closest = suggestClosest(field, Object.keys(schemaFields.properties));

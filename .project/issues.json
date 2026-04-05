@@ -213,6 +213,39 @@
       "package": "pi-workflows",
       "source": "human",
       "resolved_by": "commit 4dffeec — extractValidationVocabulary() added to generator, produces <validation_vocabulary> table from validationChecks() registry"
+    },
+    {
+      "id": "issue-020",
+      "title": "contextBlocks injection only reads static files — no support for computed blocks derived at dispatch time",
+      "body": "compileAgentSpec() reads .project/<name>.json for each contextBlocks entry. Blocks whose content is derivable from code (architecture, domain reference entries) go stale between writes. The injection path should support registered generator functions alongside static files — for derivable blocks, the generator runs at injection time, returning the same shape as the static block. Agent templates and shared macros are unaffected — they render whatever data they receive regardless of source.",
+      "location": "packages/pi-workflows/src/step-shared.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "human"
+    },
+    {
+      "id": "issue-021",
+      "title": "Architecture block is manually maintained — modules, dependencies, and patterns are derivable from package.json and source",
+      "body": "The architecture block restates what code inspection provides: module names from package.json, entry files, dependencies, responsibility from package descriptions. These go stale on every code change. A projectArchitecture(cwd) function could derive modules and dependencies from package.json files and entry points, producing the same schema shape as the static block. This would make the architecture block a computed block candidate for issue-020.",
+      "location": ".project/architecture.json",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "human"
+    },
+    {
+      "id": "issue-022",
+      "title": "Domain block reference entries duplicate SDK query results — agent counts, workflow counts, step types go stale",
+      "body": "Domain entries like agent-spec ('26 bundled agents'), workflow-spec ('15 bundled workflows'), and step type descriptions restate what availableAgents(), availableWorkflows(), and stepTypes() return dynamically. When agents or workflows are added, the domain entries are wrong. These reference entries should be computed from SDK functions at injection time rather than maintained as static JSON. Human-authored domain entries (design patterns, composition families) remain static.",
+      "location": ".project/domain.json",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "human"
     }
   ]
 }

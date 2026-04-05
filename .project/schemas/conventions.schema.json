@@ -20,11 +20,10 @@
 		},
 		"test_conventions": {
 			"type": "object",
-			"required": ["runner_command", "file_pattern", "current_count"],
+			"required": ["runner_command", "file_pattern"],
 			"properties": {
 				"runner_command": { "type": "string" },
-				"file_pattern": { "type": "string" },
-				"current_count": { "type": "integer" }
+				"file_pattern": { "type": "string" }
 			}
 		},
 		"lint_command": { "type": "string" },

@@ -9,13 +9,12 @@
         "@sinclair/typebox",
         "ajv",
         "proper-lockfile"
-      ],
-      "lines": 4302
+      ]
     },
     {
       "name": "@davidorex/pi-workflows",
       "file": "packages/pi-workflows/src/index.ts",
-      "responsibility": "Multi-step workflow orchestration from .workflow.yaml specs. DAG planner infers parallelism from expression references. Agent dispatch via subprocess (pi --mode json). Expression engine (${{ }}), checkpoint/resume, Nunjucks agent prompt compilation, template validation, graduated failure handling. Nine step types: agent, gate, transform, loop, parallel, pause, command, monitor, block.",
+      "responsibility": "Multi-step workflow orchestration from .workflow.yaml specs. DAG planner infers parallelism from expression references. Agent dispatch via subprocess (pi --mode json) with contextBlocks block injection and inputSchema validation at dispatch. Expression engine (${{ }}), checkpoint/resume, Nunjucks agent prompt compilation with shared macros, template validation with contextBlocks-awareness, graduated failure handling. Nine step types: agent, gate, transform, loop, parallel, pause, command, monitor, block. SDK exposes agent contracts, validation check registry, and block dependency queries.",
       "dependencies": [
         "@davidorex/pi-project",
         "@mariozechner/pi-coding-agent",
@@ -24,8 +23,7 @@
         "@sinclair/typebox",
         "nunjucks",
         "yaml"
-      ],
-      "lines": 21204
+      ]
     },
     {
       "name": "@davidorex/pi-behavior-monitors",
@@ -38,8 +36,7 @@
         "@mariozechner/pi-tui",
         "@sinclair/typebox",
         "nunjucks"
-      ],
-      "lines": 2111
+      ]
     },
     {
       "name": "@davidorex/pi-project-workflows",
@@ -49,8 +46,7 @@
         "@davidorex/pi-project",
         "@davidorex/pi-workflows",
         "@davidorex/pi-behavior-monitors"
-      ],
-      "lines": 3
+      ]
     }
   ],
   "patterns": [
@@ -74,7 +70,7 @@
     },
     {
       "name": "Nunjucks Templating",
-      "description": "Nunjucks template engine renders agent dispatch prompts from .agent.yaml specs and monitor classify/steer prompts from .md templates. Enables user customization without TypeScript changes.",
+      "description": "Nunjucks template engine renders agent dispatch prompts from .agent.yaml specs and monitor classify/steer prompts from .md templates. Shared macros (templates/shared/macros.md) provide per-block rendering. contextBlocks on agent YAML injects project block data into template context. Enables user customization without TypeScript changes.",
       "used_in": [
         "pi-workflows",
         "pi-behavior-monitors"
@@ -108,13 +104,22 @@
       "used_in": [
         "pi-workflows"
       ]
+    },
+    {
+      "name": "Code-Derived Skill Generation",
+      "description": "The skill generator (scripts/generate-skills.js) introspects built modules to produce SKILL.md vocabulary sections. Four extractors: planning vocabulary from default schemas, monitor vocabulary from exported registries, agent vocabulary from parsed YAML specs via parseAgentYaml(), validation vocabulary from validationChecks() registry. Each extractor runs at build time — new agents, schemas, monitors, or validator checks appear in skills automatically.",
+      "used_in": [
+        "pi-project",
+        "pi-workflows",
+        "pi-behavior-monitors"
+      ]
     }
   ],
   "boundaries": [
     "pi-project is the dependency root — pi-workflows and pi-behavior-monitors both depend on it for block API and schema validation",
     "pi-workflows and pi-behavior-monitors are peers with no direct inter-dependency, though workflows can invoke monitors via the monitor step type",
     "pi-project-workflows is a pure aggregator with no source logic — it re-exports the other three packages",
-    "All four packages share lockstep versioning (currently 0.11.3) managed by scripts/bump-versions.js",
+    "All four packages share lockstep versioning managed by scripts/bump-versions.js",
     "Cross-package imports use named subpath exports defined in package.json (e.g., @davidorex/pi-project/block-api)",
     "ESM-only — all packages use type: module with TypeScript compiled to dist/ via tsc"
   ],

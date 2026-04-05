@@ -723,6 +723,10 @@ describe("template resolution warnings", () => {
 			warnings.length > 0,
 			`Should warn when source step has no output schema. Issues: ${JSON.stringify(issues)}`,
 		);
+		assert.ok(
+			warnings.some((w) => w.message.includes("Consider adding output.schema to step")),
+			`Should suggest adding output.schema. Issues: ${JSON.stringify(warnings)}`,
+		);
 	});
 
 	it("warns on field access through workflow-level input expression", () => {
@@ -761,6 +765,10 @@ describe("template resolution warnings", () => {
 		assert.ok(
 			warnings.length > 0,
 			`Should warn on field access through workflow-level input. Issues: ${JSON.stringify(issues)}`,
+		);
+		assert.ok(
+			warnings.some((w) => w.message.includes("Consider adding a schema to the workflow")),
+			`Should suggest adding workflow input schema. Issues: ${JSON.stringify(warnings)}`,
 		);
 	});
 
@@ -803,6 +811,10 @@ describe("template resolution warnings", () => {
 		assert.ok(
 			warnings.length > 0,
 			`Should warn on field access through command step output. Issues: ${JSON.stringify(issues)}`,
+		);
+		assert.ok(
+			warnings.some((w) => w.message.includes("Consider adding output.schema to step")),
+			`Should suggest adding output.schema. Issues: ${JSON.stringify(warnings)}`,
 		);
 	});
 });

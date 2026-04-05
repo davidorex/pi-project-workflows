@@ -572,9 +572,24 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 
 			const schemaFields = traceInputSchema(exprToTrace, stepSpec, spec, cwd);
 			if (!schemaFields) {
+				let suggestion = "";
+				const exprContent = exprToTrace?.match(/\$\{\{\s*steps\.([\w-]+)/);
+				if (exprContent) {
+					const sourceStepName = exprContent[1];
+					const sourceStep = spec.steps[sourceStepName];
+					if (sourceStep?.block && "read" in sourceStep.block) {
+						const blockRead = (sourceStep.block as { read: string | string[] }).read;
+						const blockName = typeof blockRead === "string" ? blockRead : tv.root;
+						suggestion = `. Consider adding output.schema: block:${blockName} to step '${sourceStepName}', or verify .project/schemas/${blockName}.schema.json exists`;
+					} else if (sourceStep && !sourceStep.output?.schema) {
+						suggestion = `. Consider adding output.schema to step '${sourceStepName}' so field access can be verified`;
+					}
+				} else if (exprToTrace?.includes("input.")) {
+					suggestion = `. Consider adding a schema to the workflow's input definition`;
+				}
 				issues.push({
 					severity: "warning",
-					message: `Template '${agentSpec.taskTemplate}' accesses '${tv.path}' but no schema available to verify field — field-level validation skipped`,
+					message: `Template '${agentSpec.taskTemplate}' accesses '${tv.path}' but no schema available to verify field — field-level validation skipped${suggestion}`,
 					field: `steps.${stepName}.input.${tv.root}`,
 				});
 				continue;

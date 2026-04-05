@@ -205,8 +205,26 @@ function traceInputSchema(inputExpr: string, stepSpec: StepSpec, spec: WorkflowS
 	if (stepsMatch) {
 		const [, stepName, subField] = stepsMatch;
 		const sourceStep = spec.steps[stepName];
-		if (!sourceStep?.output?.schema) return null;
-		return loadSchemaFields(sourceStep.output.schema, spec.filePath, cwd, subField);
+
+		// Try output.schema first (existing behavior)
+		if (sourceStep?.output?.schema) {
+			return loadSchemaFields(sourceStep.output.schema, spec.filePath, cwd, subField);
+		}
+
+		// Case 3: block read steps have implicit schemas from .project/schemas/
+		if (sourceStep?.block && "read" in sourceStep.block) {
+			const blockRead = (sourceStep.block as { read: string | string[] }).read;
+			if (typeof blockRead === "string" && !subField) {
+				// Single block read: output is block content directly
+				return loadBlockSchema(blockRead, cwd);
+			}
+			if (Array.isArray(blockRead) && subField && blockRead.includes(subField)) {
+				// Multi-block read: output.subField → block named subField
+				return loadBlockSchema(subField, cwd);
+			}
+		}
+
+		return null;
 	}
 
 	return null;
@@ -279,6 +297,28 @@ function loadSchemaFields(
 		return {
 			properties,
 			required: (target.required as string[]) ?? [],
+		};
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Load a block schema from .project/schemas/<blockName>.schema.json and return its field definitions.
+ * Used for block read steps that carry no explicit output.schema annotation.
+ */
+function loadBlockSchema(blockName: string, cwd: string): SchemaFields | null {
+	const schemaPath = path.join(cwd, ".project", "schemas", `${blockName}.schema.json`);
+	try {
+		const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+		if (!schema.properties) return null;
+		const properties: Record<string, { type: string }> = {};
+		for (const [key, value] of Object.entries(schema.properties)) {
+			properties[key] = { type: (value as Record<string, unknown>).type as string };
+		}
+		return {
+			properties,
+			required: (schema.required as string[]) ?? [],
 		};
 	} catch {
 		return null;

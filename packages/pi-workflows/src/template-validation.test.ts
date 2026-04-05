@@ -479,3 +479,167 @@ describe("contextBlocks-injected variables", () => {
 		);
 	});
 });
+
+// ── block read schema tracing ─────────────────────────────────────────────
+
+describe("block read schema tracing", () => {
+	it("traces field access through multi-block read to block schema", () => {
+		const tmpDir = makeTmpDir("block-read-multi");
+
+		// Agent
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		// Template references architecture.overview (valid field)
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ architecture.overview }}");
+
+		// Block schema at .project/schemas/architecture.schema.json
+		const schemasDir = path.join(tmpDir, ".project", "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(schemasDir, "architecture.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					overview: { type: "string" },
+					modules: { type: "array" },
+				},
+			}),
+		);
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				load: {
+					block: { read: ["architecture"] },
+				},
+				use: {
+					agent: "test-agent",
+					input: {
+						architecture: "${{ steps.load.output.architecture }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const fieldErrors = issues.filter((i) => i.message.includes("schema has no field"));
+		assert.strictEqual(
+			fieldErrors.length,
+			0,
+			`Expected zero field errors for valid architecture.overview, got: ${JSON.stringify(fieldErrors)}`,
+		);
+	});
+
+	it("reports error for wrong field through block read", () => {
+		const tmpDir = makeTmpDir("block-read-wrong");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		// Template references architecture.nonexistent (invalid field)
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ architecture.nonexistent }}");
+
+		const schemasDir = path.join(tmpDir, ".project", "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(schemasDir, "architecture.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					overview: { type: "string" },
+					modules: { type: "array" },
+				},
+			}),
+		);
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				load: {
+					block: { read: ["architecture"] },
+				},
+				use: {
+					agent: "test-agent",
+					input: {
+						architecture: "${{ steps.load.output.architecture }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const fieldErrors = issues.filter((i) => i.message.includes("nonexistent"));
+		assert.ok(fieldErrors.length > 0, `Expected error about 'nonexistent' field, got: ${JSON.stringify(issues)}`);
+		// Should list available fields
+		const errorMsg = fieldErrors[0].message;
+		assert.ok(
+			errorMsg.includes("overview") || errorMsg.includes("modules"),
+			`Error should list available fields. Got: ${errorMsg}`,
+		);
+	});
+
+	it("traces single block read", () => {
+		const tmpDir = makeTmpDir("block-read-single");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		// Template references project.name (valid field)
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ project.name }}");
+
+		const schemasDir = path.join(tmpDir, ".project", "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(schemasDir, "project.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					name: { type: "string" },
+					description: { type: "string" },
+				},
+			}),
+		);
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				load: {
+					block: { read: "project" },
+				},
+				use: {
+					agent: "test-agent",
+					input: {
+						project: "${{ steps.load.output }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const fieldErrors = issues.filter((i) => i.message.includes("schema has no field"));
+		assert.strictEqual(
+			fieldErrors.length,
+			0,
+			`Expected zero field errors for valid project.name, got: ${JSON.stringify(fieldErrors)}`,
+		);
+	});
+});

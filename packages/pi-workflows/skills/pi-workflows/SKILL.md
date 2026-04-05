@@ -199,6 +199,24 @@ See references/bundled-resources.md for full inventory.
 
 </agent_vocabulary>
 
+<validation_vocabulary>
+
+| Check | Severity | Description |
+|-------|----------|-------------|
+| `agent-resolution` | error | Referenced agents exist in search paths |
+| `monitor-resolution` | warning | Referenced monitors exist in search paths |
+| `schema-existence` | error | Referenced schema files exist on disk |
+| `step-references` | error | Expression step references point to declared steps |
+| `step-ordering` | error | Steps do not forward-reference later steps |
+| `context-references` | error | context[] entries point to declared steps |
+| `filter-names` | warning | Expression filters are recognized |
+| `steptype-metadata` | error | retry/input/output declarations match step type capabilities |
+| `inputschema-required` | error | Agent required input keys are provided by step |
+| `contextblocks-existence` | warning | Declared context blocks exist in .project/ |
+| `template-alignment` | error | Template variables match step inputs and source schemas |
+
+</validation_vocabulary>
+
 <objective>
 pi-workflows orchestrates multi-step agent workflows defined in YAML. Workflows are DAGs of typed steps with data flow via `${{ }}` expressions.
 </objective>

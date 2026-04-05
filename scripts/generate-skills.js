@@ -356,6 +356,18 @@ async function extractAgentVocabulary(packageDir) {
 	return agents.length > 0 ? agents : null;
 }
 
+// ── Validation vocabulary extraction ────────────────────────────────────────
+
+async function extractValidationVocabulary(packageDir) {
+	try {
+		const mod = await import(join(packageDir, "dist", "workflow-sdk.js"));
+		if (!mod.validationChecks) return null;
+		return mod.validationChecks();
+	} catch {
+		return null;
+	}
+}
+
 // ── SKILL.md composition ────────────────────────────────────────────────────
 
 function composeSkill(
@@ -368,6 +380,7 @@ function composeSkill(
 	vocabulary,
 	monitorVocab,
 	agentVocab,
+	validationVocab,
 ) {
 	const lines = [];
 
@@ -632,6 +645,20 @@ function composeSkill(
 		lines.push("");
 	}
 
+	// ── Validation vocabulary (pi-workflows — from SDK registry) ──
+	if (validationVocab && validationVocab.length > 0) {
+		lines.push("<validation_vocabulary>");
+		lines.push("");
+		lines.push("| Check | Severity | Description |");
+		lines.push("|-------|----------|-------------|");
+		for (const c of validationVocab) {
+			lines.push(`| \`${c.id}\` | ${c.severity} | ${c.description} |`);
+		}
+		lines.push("");
+		lines.push("</validation_vocabulary>");
+		lines.push("");
+	}
+
 	// ── Narrative body (hand-authored, already XML-tagged) ──
 	if (narrativeBody) {
 		lines.push(narrativeBody);
@@ -741,6 +768,12 @@ async function generateForPackage(packageDir) {
 		);
 	}
 
+	// Extract validation vocabulary (for pi-workflows — from SDK exports)
+	const validationVocab = await extractValidationVocabulary(packageDir);
+	if (validationVocab) {
+		console.log(`  Validation vocabulary: ${validationVocab.length} checks`);
+	}
+
 	// Compose
 	const shortName = packageName.replace("@davidorex/", "");
 	const content = composeSkill(
@@ -753,6 +786,7 @@ async function generateForPackage(packageDir) {
 		vocabulary,
 		monitorVocab,
 		agentVocab,
+		validationVocab,
 	);
 
 	// Write SKILL.md

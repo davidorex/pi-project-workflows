@@ -100,12 +100,13 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 
 Single queryable surface for the workflow extension's capabilities. All functions derive dynamically from code registries and filesystem — add a filter, agent, template, or schema and it appears automatically.
 
-- **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`
+- **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`, `validationChecks()` — 11 check descriptors (id, name, severity, description) derived from the validator's code registry
 - **Discovery**: `availableAgents(cwd)`, `availableWorkflows(cwd)`, `availableTemplates(cwd)`, `availableSchemas(cwd)`
+- **Contracts**: `agentContracts(cwd)` — per-agent projection of inputSchema (required/optional fields), contextBlocks, outputFormat/Schema. `agentsByBlock(cwd, blockName)` — which agents declare a given block in contextBlocks.
 - **Introspection**: `extractExpressions(spec)`, `declaredSteps(spec)`, `declaredAgentRefs(spec)`, `declaredMonitorRefs(spec)`, `declaredSchemaRefs(spec)`
-- **Validation**: `validateWorkflow(spec, cwd)` — composes introspection + discovery to check agent resolution, monitor resolution, schema existence, step references, ordering, filter names. Returns `{ valid, issues[] }`. Also available as `/workflow validate [name]`.
+- **Validation**: `validateWorkflow(spec, cwd)` — composes introspection + discovery to check agent resolution, monitor resolution, schema existence, step references, ordering, filter names, StepType metadata (retry/input/output flag enforcement), inputSchema required-key matching, contextBlocks existence in `.project/`, and template-input alignment including contextBlocks-injected variables. Returns `{ valid, issues[] }`. Also available as `/workflow validate [name]`.
 
-Use `/workflow status` to see derived state in conversation.
+Use `/workflow status` to see derived state in conversation — includes typed agents (those with inputSchema), context-aware agents (those with contextBlocks), and validation check count.
 
 ## Project SDK (`packages/pi-project/src/project-sdk.ts`)
 

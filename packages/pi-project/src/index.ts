@@ -550,18 +550,20 @@ const extension = (pi: ExtensionAPI) => {
 				const result = validateProject(ctx.cwd);
 				const errors = result.issues.filter((i) => i.severity === "error").length;
 				const warnings = result.issues.filter((i) => i.severity === "warning").length;
+				const statusIcon = result.status === "clean" ? "\u2713" : result.status === "warnings" ? "\u26a0" : "\u2717";
 				const lines: string[] = [];
-				if (result.issues.length === 0) {
-					lines.push("Project validation passed — no cross-block reference issues.");
+				if (result.status === "clean") {
+					lines.push(`${statusIcon} Project validation passed — no cross-block reference issues.`);
 				} else {
 					for (const issue of result.issues) {
 						const icon = issue.severity === "error" ? "\u2717" : "\u26a0";
 						lines.push(`${icon} [${issue.block}] ${issue.field}: ${issue.message}`);
 					}
 					lines.push("");
-					lines.push(`${errors} error(s), ${warnings} warning(s)`);
+					lines.push(`${statusIcon} ${errors} error(s), ${warnings} warning(s)`);
 				}
-				ctx.ui.notify(lines.join("\n"), errors > 0 ? "error" : "info");
+				const level = result.status === "invalid" ? "error" : result.status === "warnings" ? "warning" : "info";
+				ctx.ui.notify(lines.join("\n"), level);
 			},
 		},
 		help: {

@@ -454,6 +454,66 @@ describe("validateWorkflow", () => {
 	});
 });
 
+// ── Validation result status field ──────────────────────────────────────────
+
+describe("validation result status field", () => {
+	it("status is 'clean' when zero issues", () => {
+		const spec = makeSpec({
+			greet: { command: "echo hello" },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "clean");
+		assert.strictEqual(result.valid, true);
+	});
+
+	it("status is 'warnings' when only warnings", () => {
+		const spec = makeSpec({
+			load: { command: "echo hello" },
+			show: {
+				transform: { mapping: { result: "${{ steps.load.output | bogusfilter }}" } },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "warnings");
+		assert.strictEqual(result.valid, true);
+	});
+
+	it("status is 'invalid' when errors present", () => {
+		const spec = makeSpec({
+			investigate: { agent: "nonexistent-xyz" },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "invalid");
+		assert.strictEqual(result.valid, false);
+	});
+
+	it("status is 'invalid' when both errors and warnings", () => {
+		const spec = makeSpec({
+			load: { command: "echo hello" },
+			show: {
+				transform: { mapping: { result: "${{ steps.load.output | bogusfilter }}" } },
+			},
+			investigate: { agent: "nonexistent-xyz" },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "invalid");
+	});
+
+	it("existing unknown-filter test: valid true but status warnings", () => {
+		const spec = makeSpec({
+			load: { command: "echo hello" },
+			show: {
+				transform: { mapping: { result: "${{ steps.load.output | bogusfilter }}" } },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.valid, true);
+		assert.strictEqual(result.status, "warnings");
+		const filterIssues = result.issues.filter((i) => i.message.includes("Unknown filter"));
+		assert.ok(filterIssues.length > 0);
+	});
+});
+
 // ── StepType Metadata Validation ─────────────────────────────────────────────
 
 describe("StepType metadata validation", () => {

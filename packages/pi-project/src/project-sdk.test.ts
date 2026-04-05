@@ -492,6 +492,80 @@ describe("validateProject", () => {
 	});
 });
 
+// ── Validation result status field ──────────────────────────────────────────
+
+describe("validation result status field", () => {
+	it("status is 'clean' when zero issues", (t) => {
+		const tmpDir = makeTmpDir("status-clean");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		const phasesDir = path.join(projectDir, "phases");
+		fs.mkdirSync(phasesDir, { recursive: true });
+
+		// Phase file
+		fs.writeFileSync(path.join(phasesDir, "01-foundation.json"), JSON.stringify({ number: 1, name: "foundation" }));
+
+		// Tasks with valid references
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [{ id: "t1", description: "task", status: "planned", phase: "foundation" }],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.valid, true);
+		assert.strictEqual(result.status, "clean");
+		assert.deepStrictEqual(result.issues, []);
+	});
+
+	it("status is 'invalid' when errors present", (t) => {
+		const tmpDir = makeTmpDir("status-invalid");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		// Task with broken depends_on — produces an error-severity issue
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [{ id: "t1", description: "bad dep", status: "planned", depends_on: ["t-nonexistent"] }],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.valid, false);
+		assert.strictEqual(result.status, "invalid");
+	});
+
+	it("status is 'warnings' when only warnings present", (t) => {
+		const tmpDir = makeTmpDir("status-warnings");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// No phases directory — phase reference from task will be a warning
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [{ id: "t1", description: "task with missing phase", status: "planned", phase: "phase-1" }],
+			}),
+		);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.valid, true, "warnings-only should still be valid");
+		assert.strictEqual(result.status, "warnings");
+		assert.ok(result.issues.length > 0, "should have at least one warning issue");
+		assert.ok(
+			result.issues.every((i) => i.severity === "warning"),
+			"all issues should be warnings",
+		);
+	});
+});
+
 // ── completeTask ───────────────────────────────────────────────────────────
 
 describe("completeTask", () => {

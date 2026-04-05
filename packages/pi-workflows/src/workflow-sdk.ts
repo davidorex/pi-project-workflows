@@ -410,6 +410,7 @@ export interface ValidationIssue {
 
 export interface ValidationResult {
 	valid: boolean;
+	status: "clean" | "warnings" | "invalid";
 	issues: ValidationIssue[];
 }
 
@@ -644,8 +645,11 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 	// 8. Template-input alignment — do template field references match source schemas?
 	issues.push(...validateTemplateAlignment(spec, cwd));
 
+	const errorCount = issues.filter((i) => i.severity === "error").length;
+	const warningCount = issues.filter((i) => i.severity === "warning").length;
 	return {
-		valid: issues.filter((i) => i.severity === "error").length === 0,
+		valid: errorCount === 0,
+		status: errorCount > 0 ? "invalid" : warningCount > 0 ? "warnings" : "clean",
 		issues,
 	};
 }

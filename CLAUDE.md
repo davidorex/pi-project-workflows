@@ -159,6 +159,10 @@ All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add 
 - `invokeMonitor(name, context?)` export from pi-behavior-monitors enables programmatic classification without activate() side effects — returns `ClassifyResult` directly for pre-dispatch gating
 - `completion` field controls post-workflow message to main LLM. Completion only fires when `state.status === "completed"` — failed workflows use `formatResult()` which renders "Workflow X failed at step Y" with error details.
 
+## CLI Access from Other Agents
+
+Pi tools are accessible from any LLM with shell access via `pi -p "prompt" --mode json`. The subprocess loads all extensions, executes tool calls, and returns newline-delimited JSON events. This is the same mechanism the workflow executor uses for step dispatch. Example: `pi -p "call the workflow-validate tool" --mode json --tools read --no-skills` returns full validation results with three-state status, actionable suggestions, and field-level diagnostics.
+
 ## Design Decisions & Gaps
 
 Read via `readBlock('.', 'decisions')` / `readBlock('.', 'issues')`, or `/workflow status` for a summary.

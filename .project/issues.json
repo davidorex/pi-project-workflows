@@ -163,11 +163,12 @@
       "title": "Classify prompt lacks conversation history — monitors produce false positives on multi-turn backreferences",
       "body": "The classify prompt receives user_text and assistant_text from the current turn only. When a user message backreferences prior turns ('reoutput my original task', 'as I said earlier'), the classifier cannot verify whether the response addresses the referenced content. It sees a short user request and a long technical response, pattern-matches to 'deviation', and flags incorrectly. Observed: 3 false positives in a single session from the hedge monitor, all on responses that directly addressed what the user asked. Root cause: no conversation_history collector exists. The classifier reasons in a single-turn vacuum. Fix: add a conversation_history context collector that provides the last N turns, or expand user_text to include referenced prior messages.",
       "location": "packages/pi-behavior-monitors/examples/hedge/classify.md",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "critical",
       "package": "pi-behavior-monitors",
-      "source": "human"
+      "source": "human",
+      "resolved_by": "conversation_history collector with adaptive window — regex-based referential detection, 1-3 turn summaries, 2000 char budget"
     },
     {
       "id": "issue-016",

@@ -1,3 +1,7 @@
+{% if conversation_history %}
+Prior conversation context:
+{{ conversation_history }}
+{% endif %}
 The user said:
 "{{ user_text }}"
 

@@ -5,8 +5,10 @@ import { describe, expect, it } from "vitest";
 import {
 	COLLECTOR_DESCRIPTORS,
 	COLLECTOR_NAMES,
+	collectConversationHistory,
 	generateFindingId,
 	invokeMonitor,
+	isReferentialMessage,
 	parseModelSpec,
 	parseMonitorsArgs,
 	parseVerdict,
@@ -512,5 +514,186 @@ describe("steer template rendering", () => {
 		const env = new nunjucks.Environment(null, { autoescape: false, throwOnUndefined: false });
 		const rendered = env.renderString("Fix: {{ description }}", {});
 		expect(rendered).toBe("Fix: ");
+	});
+});
+
+// =============================================================================
+// collectConversationHistory
+// =============================================================================
+
+/** Helper to build a SessionEntry-compatible user message */
+function makeUser(id: string, parentId: string | null, text: string) {
+	return {
+		type: "message" as const,
+		id,
+		parentId,
+		timestamp: new Date().toISOString(),
+		message: {
+			role: "user" as const,
+			content: [{ type: "text" as const, text }],
+			timestamp: Date.now(),
+		},
+	};
+}
+
+/** Helper to build a SessionEntry-compatible assistant message */
+function makeAssistant(id: string, parentId: string, text: string, toolCalls?: { name: string }[]) {
+	const content: { type: string; text?: string; name?: string; id?: string; arguments?: Record<string, unknown> }[] =
+		[];
+	if (text) content.push({ type: "text", text });
+	if (toolCalls) {
+		for (const tc of toolCalls) {
+			content.push({ type: "toolCall", name: tc.name, id: `call-${tc.name}-${id}`, arguments: {} });
+		}
+	}
+	return {
+		type: "message" as const,
+		id,
+		parentId,
+		timestamp: new Date().toISOString(),
+		message: {
+			role: "assistant" as const,
+			content,
+			api: "messages" as const,
+			provider: "anthropic",
+			model: "test",
+		},
+	};
+}
+
+/** Helper to build a SessionEntry-compatible toolResult message */
+function makeToolResult(id: string, parentId: string, toolName: string, text: string, isError = false) {
+	return {
+		type: "message" as const,
+		id,
+		parentId,
+		timestamp: new Date().toISOString(),
+		message: {
+			role: "toolResult" as const,
+			toolCallId: `call-${toolName}-${parentId}`,
+			toolName,
+			content: [{ type: "text" as const, text }],
+			isError,
+		},
+	};
+}
+
+describe("collectConversationHistory", () => {
+	it("returns empty for single-turn session", () => {
+		const branch = [makeUser("u1", null, "Create a function"), makeAssistant("a1", "u1", "Here is the function")];
+		expect(collectConversationHistory(branch as any)).toBe("");
+	});
+
+	it("includes 1 prior turn for self-contained message", () => {
+		const branch = [
+			makeUser("u1", null, "Create a CSV parser"),
+			makeAssistant("a1", "u1", "Done, created parser.ts"),
+			makeUser("u2", "a1", "Create a function that writes JSON output"),
+			makeAssistant("a2", "u2", "Here is the JSON writer"),
+		];
+		const result = collectConversationHistory(branch as any);
+		const turnBlocks = result.split("--- Prior turn ---").filter((s) => s.trim());
+		expect(turnBlocks).toHaveLength(1);
+		expect(result).toContain("Create a CSV parser");
+	});
+
+	it("includes 3 prior turns for referential message", () => {
+		const branch = [
+			makeUser("u1", null, "Create a CSV parser"),
+			makeAssistant("a1", "u1", "Done with CSV parser"),
+			makeUser("u2", "a1", "Add error handling"),
+			makeAssistant("a2", "u2", "Added error handling"),
+			makeUser("u3", "a2", "Write tests for it"),
+			makeAssistant("a3", "u3", "Tests written"),
+			makeUser("u4", "a3", "Build the Docker image"),
+			makeAssistant("a4", "u4", "Docker image built"),
+			makeUser("u5", "a4", "do that again"),
+			makeAssistant("a5", "u5", "Rebuilding Docker image"),
+		];
+		const result = collectConversationHistory(branch as any);
+		const turnBlocks = result.split("--- Prior turn ---").filter((s) => s.trim());
+		expect(turnBlocks).toHaveLength(3);
+	});
+
+	it("summarizes tool actions", () => {
+		const branch = [
+			makeUser("u1", null, "Edit the file"),
+			makeAssistant("a1", "u1", "", [{ name: "edit" }]),
+			makeToolResult("tr1", "a1", "edit", "File edited"),
+			makeUser("u2", "tr1", "Create a new component"),
+			makeAssistant("a2", "u2", "Component created"),
+		];
+		const result = collectConversationHistory(branch as any);
+		expect(result).toContain("edit(1)");
+	});
+
+	it("respects 2000 char budget", () => {
+		// Build a branch with many turns of long messages
+		const branch: ReturnType<typeof makeUser | typeof makeAssistant>[] = [];
+		const longText = "x".repeat(600);
+		let parentId: string | null = null;
+		for (let i = 0; i < 10; i++) {
+			const uid = `u${i}`;
+			const aid = `a${i}`;
+			branch.push(makeUser(uid, parentId, longText));
+			branch.push(makeAssistant(aid, uid, longText));
+			parentId = aid;
+		}
+		// Final user message is referential to get max window
+		branch.push(makeUser("u-final", parentId, "do that again"));
+		branch.push(makeAssistant("a-final", "u-final", "Done"));
+		const result = collectConversationHistory(branch as any);
+		expect(result.length).toBeLessThanOrEqual(2000);
+	});
+
+	it("detects backreference patterns", () => {
+		expect(isReferentialMessage("as I said earlier")).toBe(true);
+		expect(isReferentialMessage("do that again")).toBe(true);
+		expect(isReferentialMessage("continue")).toBe(true);
+		expect(isReferentialMessage("yes")).toBe(true);
+		expect(isReferentialMessage("go back to the original approach")).toBe(true);
+		expect(isReferentialMessage("same thing")).toBe(true);
+		expect(isReferentialMessage("like you did before")).toBe(true);
+		expect(isReferentialMessage("re-generate the output")).toBe(true);
+		expect(isReferentialMessage("proceed")).toBe(true);
+		expect(isReferentialMessage("ok")).toBe(true);
+		// Self-contained messages with action verbs should not be referential
+		expect(isReferentialMessage("Create a new React component that handles form validation")).toBe(false);
+		expect(isReferentialMessage("Implement the authentication middleware for the Express server")).toBe(false);
+	});
+
+	it("shows [no tools] when turn has no tool usage", () => {
+		const branch = [
+			makeUser("u1", null, "What is TypeScript?"),
+			makeAssistant("a1", "u1", "TypeScript is a typed superset of JavaScript"),
+			makeUser("u2", "a1", "Create a new REST API endpoint for user management"),
+			makeAssistant("a2", "u2", "Here is the endpoint"),
+		];
+		const result = collectConversationHistory(branch as any);
+		expect(result).toContain("[no tools]");
+	});
+
+	it("shows tool error counts", () => {
+		const branch = [
+			makeUser("u1", null, "Run the build"),
+			makeAssistant("a1", "u1", "", [{ name: "bash" }]),
+			makeToolResult("tr1", "a1", "bash", "Build failed", true),
+			makeUser("u2", "tr1", "Implement the database migration script with proper error handling"),
+			makeAssistant("a2", "u2", "Done"),
+		];
+		const result = collectConversationHistory(branch as any);
+		expect(result).toContain("bash(1, 1 error)");
+	});
+
+	it("shows [tool actions only] when assistant has no text", () => {
+		const branch = [
+			makeUser("u1", null, "Edit file.ts"),
+			makeAssistant("a1", "u1", "", [{ name: "edit" }]),
+			makeToolResult("tr1", "a1", "edit", "done"),
+			makeUser("u2", "tr1", "Write a comprehensive test suite for the payment processing module"),
+			makeAssistant("a2", "u2", "Tests written"),
+		];
+		const result = collectConversationHistory(branch as any);
+		expect(result).toContain("[tool actions only]");
 	});
 });

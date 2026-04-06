@@ -56,6 +56,11 @@ export const COLLECTOR_DESCRIPTORS: CollectorDescriptor[] = [
 	{ name: "project_vision", description: ".project/project.json vision, core_value, name" },
 	{ name: "project_conventions", description: ".project/conformance-reference.json principle names" },
 	{ name: "git_status", description: "Output of git status --porcelain", limits: "5s timeout" },
+	{
+		name: "conversation_history",
+		description: "Prior turn summaries (user request + actions + assistant response)",
+		limits: "1-3 turns adaptive, 2000 char max",
+	},
 ];
 
 export interface WhenConditionDescriptor {
@@ -526,6 +531,173 @@ function collectCustomMessages(branch: SessionEntry[]): string {
 	return msgs.join("\n");
 }
 
+// -- conversation_history collector ------------------------------------------
+
+const BACKREFERENCE_PATTERNS = [
+	/\bas\s+(i|we)\s+(said|mentioned|described|asked|requested|specified)/i,
+	/\b(earlier|previously|before|original|initial|first)\b/i,
+	/\bgo\s+back\s+to\b/i,
+	/\bsame\s+(thing|as|way)\b/i,
+	/\blike\s+(you|i)\s+(did|said|asked)\b/i,
+	/\b(continue|keep\s+going|proceed|carry\s+on)\b/i,
+	/\b(do|run|try)\s+(that|it|this)\s+(again|once\s+more)\b/i,
+	/\bre-?(output|generate|create|do|run|build|make)\b/i,
+];
+const AFFIRMATION_PATTERN =
+	/^\s*(yes|yeah|yep|correct|exactly|right|ok|okay|sure|please|go|do it|proceed)\s*[.!]?\s*$/i;
+const ACTION_VERBS =
+	/\b(create|write|build|implement|add|fix|update|delete|remove|refactor|test|deploy|install|configure|set up|generate)\b/i;
+
+/**
+ * Detect whether the current user message references prior conversation context
+ * via backreferences, affirmations, or short messages without action verbs.
+ * Exported for testing.
+ */
+export function isReferentialMessage(text: string): boolean {
+	const hasBackref = BACKREFERENCE_PATTERNS.some((re) => re.test(text));
+	const isAffirmation = AFFIRMATION_PATTERN.test(text);
+	const isShortNoAction = text.length < 80 && !ACTION_VERBS.test(text);
+	return hasBackref || isAffirmation || isShortNoAction;
+}
+
+function summarizeTurnTools(turnEntries: SessionEntry[]): string {
+	const toolMap = new Map<string, { count: number; errors: number }>();
+	for (const entry of turnEntries) {
+		if (!isMessageEntry(entry)) continue;
+		const msg = entry.message;
+		if (msg.role === "assistant") {
+			for (const part of msg.content) {
+				if (part.type === "toolCall") {
+					const existing = toolMap.get(part.name);
+					if (existing) {
+						existing.count++;
+					} else {
+						toolMap.set(part.name, { count: 1, errors: 0 });
+					}
+				}
+			}
+		}
+		if (msg.role === "toolResult" && msg.isError) {
+			const existing = toolMap.get(msg.toolName);
+			if (existing) {
+				existing.errors++;
+			}
+		}
+	}
+	if (toolMap.size === 0) return "[no tools]";
+	const parts: string[] = [];
+	for (const [name, stats] of toolMap) {
+		if (stats.errors > 0) {
+			parts.push(`${name}(${stats.count}, ${stats.errors} error${stats.errors > 1 ? "s" : ""})`);
+		} else {
+			parts.push(`${name}(${stats.count})`);
+		}
+	}
+	return parts.join(", ");
+}
+
+function truncShort(text: string, max: number): string {
+	return text.length <= max ? text : `${text.slice(0, max)}…`;
+}
+
+export function collectConversationHistory(branch: SessionEntry[]): string {
+	// Step A — Segment turns by finding user message indices
+	const userIndices: number[] = [];
+	for (let i = 0; i < branch.length; i++) {
+		const entry = branch[i];
+		if (isMessageEntry(entry) && entry.message.role === "user") {
+			userIndices.push(i);
+		}
+	}
+
+	// Need at least 2 user messages (current + 1 prior) for history
+	if (userIndices.length < 2) return "";
+
+	// Step B — Determine window size from current user text
+	const currentUserText = collectUserText(branch);
+	const referential = isReferentialMessage(currentUserText);
+	const maxTurns = referential ? 3 : 1;
+
+	// Prior turns are all user-message-initiated segments except the last one
+	const priorTurnCount = userIndices.length - 1;
+	const turnsToInclude = Math.min(maxTurns, priorTurnCount);
+	// Take the last N prior turns (skip current turn which is the last userIndex)
+	const startTurnIdx = priorTurnCount - turnsToInclude;
+
+	// Step C — Summarize prior turns
+	const turnSummaries: string[] = [];
+	for (let t = startTurnIdx; t < priorTurnCount; t++) {
+		const turnStart = userIndices[t];
+		const turnEnd = userIndices[t + 1]; // next user message starts the next turn
+		const turnEntries = branch.slice(turnStart, turnEnd);
+
+		// User text from the first entry of the turn
+		const firstEntry = turnEntries[0];
+		const userText =
+			isMessageEntry(firstEntry) && firstEntry.message.role === "user"
+				? extractUserText(firstEntry.message.content)
+				: "";
+
+		// Actions
+		const actions = summarizeTurnTools(turnEntries);
+
+		// Assistant conclusion: last assistant message in turn with text content
+		let assistantConclusion = "[tool actions only]";
+		for (let i = turnEntries.length - 1; i >= 0; i--) {
+			const e = turnEntries[i];
+			if (isMessageEntry(e) && e.message.role === "assistant") {
+				const text = extractText(e.message.content);
+				if (text.trim()) {
+					assistantConclusion = truncShort(text.trim(), 200);
+					break;
+				}
+			}
+		}
+
+		turnSummaries.push(
+			`--- Prior turn ---\nUser: "${truncShort(userText, 200)}"\nActions: ${actions}\nAssistant: "${assistantConclusion}"`,
+		);
+	}
+
+	if (turnSummaries.length === 0) return "";
+
+	// Step D & E — Format and enforce budget
+	let result = turnSummaries.join("\n\n");
+	while (result.length > TRUNCATE && turnSummaries.length > 1) {
+		turnSummaries.shift(); // drop oldest
+		result = turnSummaries.join("\n\n");
+	}
+
+	// If single turn still exceeds budget, truncate user and assistant text
+	if (result.length > TRUNCATE && turnSummaries.length === 1) {
+		const firstEntry = branch[userIndices[startTurnIdx]];
+		const userText =
+			isMessageEntry(firstEntry) && firstEntry.message.role === "user"
+				? extractUserText(firstEntry.message.content)
+				: "";
+		const turnStart = userIndices[startTurnIdx];
+		const turnEnd = userIndices[startTurnIdx + 1];
+		const turnEntries = branch.slice(turnStart, turnEnd);
+		const actions = summarizeTurnTools(turnEntries);
+
+		let assistantConclusion = "[tool actions only]";
+		for (let i = turnEntries.length - 1; i >= 0; i--) {
+			const e = turnEntries[i];
+			if (isMessageEntry(e) && e.message.role === "assistant") {
+				const text = extractText(e.message.content);
+				if (text.trim()) {
+					assistantConclusion = truncShort(text.trim(), 100);
+					break;
+				}
+			}
+		}
+
+		result = `--- Prior turn ---\nUser: "${truncShort(userText, 100)}"\nActions: ${actions}\nAssistant: "${assistantConclusion}"`;
+	}
+
+	return result;
+}
+
 function collectProjectVision(_branch: SessionEntry[]): string {
 	try {
 		const raw = readBlock(process.cwd(), "project") as Record<string, unknown>;
@@ -576,6 +748,7 @@ const collectors: Record<string, (branch: SessionEntry[]) => string> = {
 	project_vision: collectProjectVision,
 	project_conventions: collectProjectConventions,
 	git_status: collectGitStatus,
+	conversation_history: collectConversationHistory,
 };
 
 /** Collector names derived from the runtime registry — used for consistency testing. */

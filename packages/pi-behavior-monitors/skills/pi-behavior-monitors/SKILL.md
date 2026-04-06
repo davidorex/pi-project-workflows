@@ -98,6 +98,7 @@ See references/bundled-resources.md for full inventory.
 | `project_vision` | `{project_vision}` / `{{ project_vision }}` | .project/project.json vision, core_value, name | — |
 | `project_conventions` | `{project_conventions}` / `{{ project_conventions }}` | .project/conformance-reference.json principle names | — |
 | `git_status` | `{git_status}` / `{{ git_status }}` | Output of git status --porcelain | 5s timeout |
+| `conversation_history` | `{conversation_history}` / `{{ conversation_history }}` | Prior turn summaries (user request + actions + assistant response) | 1-3 turns adaptive, 2000 char max |
 
 Any string is accepted in `classify.context`. Unknown collector names produce empty string.
 

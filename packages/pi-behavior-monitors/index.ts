@@ -1240,7 +1240,7 @@ async function classifyViaAgent(
 		{
 			apiKey: auth.apiKey,
 			headers: auth.headers,
-			maxTokens: 300,
+			maxTokens: 1024,
 			signal,
 			thinkingEnabled,
 			effort: "low",
@@ -1250,7 +1250,11 @@ async function classifyViaAgent(
 
 	const toolCall = response.content.find((c): c is ToolCall => c.type === "toolCall");
 	if (!toolCall) {
-		return { verdict: "error", error: "Model did not produce a tool call response" };
+		const contentTypes = response.content.map((c) => c.type).join(", ");
+		return {
+			verdict: "error",
+			error: `No tool call in response (stopReason: ${response.stopReason}, content: [${contentTypes}])`,
+		};
 	}
 	const parsed = toolCall.arguments as Record<string, unknown>;
 

@@ -1097,7 +1097,7 @@ export function extractResponseText(parts: readonly { type: string }[]): string 
 		.join("");
 	if (text.trim()) return text;
 	for (const part of parts) {
-		if (part.type === "thinking" && "text" in part) return (part as { type: string; text: string }).text;
+		if (part.type === "thinking" && "thinking" in part) return (part as { type: string; thinking: string }).thinking;
 	}
 	return "";
 }

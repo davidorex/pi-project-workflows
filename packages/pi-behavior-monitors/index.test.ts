@@ -722,13 +722,13 @@ describe("extractResponseText", () => {
 	});
 
 	it("falls back to thinking block when no text parts", () => {
-		const parts = [{ type: "thinking", text: "CLEAN" }];
+		const parts = [{ type: "thinking", thinking: "CLEAN" }];
 		expect(extractResponseText(parts)).toBe("CLEAN");
 	});
 
 	it("prefers text over thinking when both present", () => {
 		const parts = [
-			{ type: "thinking", text: "Let me analyze..." },
+			{ type: "thinking", thinking: "Let me analyze..." },
 			{ type: "text", text: "CLEAN" },
 		];
 		expect(extractResponseText(parts)).toBe("CLEAN");
@@ -737,7 +737,7 @@ describe("extractResponseText", () => {
 	it("falls back to thinking when text is whitespace-only", () => {
 		const parts = [
 			{ type: "text", text: "   " },
-			{ type: "thinking", text: "FLAG:real verdict" },
+			{ type: "thinking", thinking: "FLAG:real verdict" },
 		];
 		expect(extractResponseText(parts)).toBe("FLAG:real verdict");
 	});
@@ -753,8 +753,8 @@ describe("extractResponseText", () => {
 
 	it("uses first thinking block when multiple thinking blocks present", () => {
 		const parts = [
-			{ type: "thinking", text: "first thinking" },
-			{ type: "thinking", text: "second thinking" },
+			{ type: "thinking", thinking: "first thinking" },
+			{ type: "thinking", thinking: "second thinking" },
 		];
 		expect(extractResponseText(parts)).toBe("first thinking");
 	});

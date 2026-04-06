@@ -351,6 +351,17 @@
       "priority": "medium",
       "package": "pi-workflows",
       "source": "human"
+    },
+    {
+      "id": "issue-032",
+      "title": "Tool-use structured output for workflow agent steps that declare output.schema — in-process dispatch for schema-bound non-tool-using agents",
+      "body": "Workflow agent steps with output.schema or output.format: json dispatch via subprocess (dispatch.ts:162, spawn('pi', ['--mode', 'json', ...])). The LLM call happens inside pi-coding-agent, not in our code. We can't pass tools + toolChoice to force structured output — the subprocess agent receives a prompt that says 'respond with JSON only' and the model may or may not comply. step-agent.ts:205-241 validates post-hoc via JSON.parse(), failing the step on malformed output. Two paths to fix: (1) Agent steps that produce structured output WITHOUT iterative tool use (analyzers, classifiers, planners — agents whose role is reasoning, not file manipulation) could dispatch in-process via complete() with tools + toolChoice, same as monitors do after issue-026. The agent spec has the model, compileAgentSpec() renders the prompt, the output.schema converts to a TypeBox tool definition. No subprocess needed. (2) Agent steps that need iterative tool use (implementers, task-workers calling read/write/bash across multiple turns) must stay subprocess. Structured output enforcement there requires pi-coding-agent to support toolChoice when the agent spec declares output.schema — that's an upstream change outside this repo. The agent spec could declare a dispatch mode: dispatch: 'in-process' for schema-bound reasoning agents, dispatch: 'subprocess' (default) for tool-using agents. Or infer it: if agent spec has no tools field, dispatch in-process; if it has tools, dispatch via subprocess.",
+      "location": "packages/pi-workflows/src/step-agent.ts, packages/pi-workflows/src/dispatch.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "human"
     }
   ]
 }

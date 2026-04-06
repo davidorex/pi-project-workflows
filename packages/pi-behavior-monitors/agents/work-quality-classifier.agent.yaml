@@ -1,7 +1,7 @@
 name: work-quality-classifier
 role: sensor
 description: Classifies work quality issues in agent output
-model: claude-sonnet-4-20250514
+model: claude-sonnet-4-6
 thinking: "on"
 output:
   format: json

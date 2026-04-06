@@ -1,7 +1,7 @@
 name: hedge-classifier
 role: sensor
 description: Classifies whether assistant deviated from user intent
-model: claude-sonnet-4-20250514
+model: claude-sonnet-4-6
 thinking: "on"
 output:
   format: json

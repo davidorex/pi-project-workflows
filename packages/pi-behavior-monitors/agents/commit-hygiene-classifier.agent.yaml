@@ -1,7 +1,7 @@
 name: commit-hygiene-classifier
 role: sensor
 description: Classifies whether agent committed changes with proper hygiene
-model: claude-sonnet-4-20250514
+model: claude-sonnet-4-6
 thinking: "on"
 output:
   format: json

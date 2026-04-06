@@ -1,7 +1,7 @@
 name: unauthorized-action-classifier
 role: sensor
 description: Classifies whether agent is about to take an unauthorized action
-model: claude-sonnet-4-20250514
+model: claude-sonnet-4-6
 thinking: "on"
 output:
   format: json

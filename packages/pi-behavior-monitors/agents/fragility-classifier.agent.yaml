@@ -1,7 +1,7 @@
 name: fragility-classifier
 role: sensor
 description: Classifies whether agent left unaddressed fragilities
-model: claude-sonnet-4-20250514
+model: claude-sonnet-4-6
 thinking: "on"
 output:
   format: json

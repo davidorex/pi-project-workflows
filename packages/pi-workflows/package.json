@@ -16,6 +16,28 @@
 	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-workflows",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./agent-spec": {
+			"types": "./dist/agent-spec.d.ts",
+			"default": "./dist/agent-spec.js"
+		},
+		"./template": {
+			"types": "./dist/template.d.ts",
+			"default": "./dist/template.js"
+		},
+		"./step-shared": {
+			"types": "./dist/step-shared.d.ts",
+			"default": "./dist/step-shared.js"
+		},
+		"./types": {
+			"types": "./dist/types.d.ts",
+			"default": "./dist/types.js"
+		}
+	},
 	"pi": {
 		"extensions": [
 			"./dist/index.js"

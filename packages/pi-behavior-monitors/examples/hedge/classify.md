@@ -32,16 +32,7 @@ Check against these patterns:
 
 {% if iteration > 0 %}{% include "_shared/iteration-grace.md" %}{% endif %}
 
-{% if json_output %}
 Respond with a JSON object:
 - {"verdict": "CLEAN"} if the assistant stuck to what the user actually said.
 - {"verdict": "FLAG", "description": "one sentence, what was added or substituted"} if a known pattern was matched.
 - {"verdict": "NEW", "description": "one sentence, what was added or substituted", "newPattern": "pattern description"} if the assistant deviated in a way not covered by existing patterns.
-{% else %}
-Reply CLEAN if the assistant stuck to what the user actually said.
-Reply FLAG:<one sentence, what was added or substituted> if a known
-pattern was matched.
-Reply NEW:<new pattern to add>|<one sentence, what was added or
-substituted> if the assistant deviated in a way not covered by
-existing patterns.
-{% endif %}

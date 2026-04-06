@@ -5,10 +5,7 @@
 	"when": "has_tool_results",
 	"scope": { "target": "main" },
 	"classify": {
-		"model": "claude-sonnet-4-20250514",
 		"context": ["user_text", "tool_calls", "assistant_text"],
-		"excludes": [],
-		"promptTemplate": "unauthorized-action/classify.md",
 		"agent": "unauthorized-action-classifier"
 	},
 	"patterns": {

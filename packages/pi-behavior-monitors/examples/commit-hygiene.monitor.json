@@ -5,10 +5,7 @@
 	"when": "has_file_writes",
 	"scope": { "target": "main" },
 	"classify": {
-		"model": "claude-sonnet-4-20250514",
 		"context": ["tool_calls", "assistant_text", "user_text"],
-		"excludes": [],
-		"promptTemplate": "commit-hygiene/classify.md",
 		"agent": "commit-hygiene-classifier"
 	},
 	"patterns": {

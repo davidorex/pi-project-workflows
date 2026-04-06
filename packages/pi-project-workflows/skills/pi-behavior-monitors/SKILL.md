@@ -70,13 +70,13 @@ On-demand work quality analysis
 <command name="/monitors">
 Manage behavior monitors
 
-Subcommands: `on`, `off`, `help`, `fragility`, `hedge`, `work-quality`
+Subcommands: `on`, `off`, `help`, `commit-hygiene`, `fragility`, `hedge`, `unauthorized-action`, `work-quality`
 </command>
 
 </commands_reference>
 
 <events>
-`session_start`, `agent_end`, `turn_start`, `message_end`, `turn_end`
+`session_start`, `agent_end`, `turn_start`, `message_end`, `turn_end`, `tool_call`
 </events>
 
 <bundled_resources>

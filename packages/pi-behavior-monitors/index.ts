@@ -13,8 +13,10 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readBlock } from "@davidorex/pi-project/block-api";
+import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import { createAgentLoader } from "@davidorex/pi-workflows/agent-spec";
 import { compileAgentSpec } from "@davidorex/pi-workflows/step-shared";
+import type { AgentSpec } from "@davidorex/pi-workflows/types";
 import type { Api, AssistantMessage, Model, TextContent } from "@mariozechner/pi-ai";
 import { complete, StringEnum } from "@mariozechner/pi-ai";
 import type {
@@ -147,12 +149,9 @@ export interface MonitorSpec {
 	when: string;
 	scope: MonitorScope;
 	classify: {
-		model: string;
 		context: string[];
 		excludes: string[];
-		prompt: string;
-		promptTemplate?: string;
-		agent?: string;
+		agent: string;
 	};
 	patterns: {
 		path: string;
@@ -237,7 +236,7 @@ function isValidEvent(event: string): event is MonitorEvent {
 // Discovery
 // =============================================================================
 
-function discoverMonitors(): Monitor[] {
+export function discoverMonitors(): Monitor[] {
 	const dirs: string[] = [];
 
 	// project-local
@@ -248,6 +247,8 @@ function discoverMonitors(): Monitor[] {
 			dirs.push(candidate);
 			break;
 		}
+		// Stop at project root (.git boundary) — don't traverse into user home config
+		if (isDir(path.join(cwd, ".git"))) break;
 		const parent = path.dirname(cwd);
 		if (parent === cwd) break;
 		cwd = parent;
@@ -310,9 +311,9 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 		return null;
 	}
 
-	const classify = spec.classify as MonitorSpec["classify"] | undefined;
-	if (!classify?.prompt && !classify?.promptTemplate) {
-		console.error(`[${name}] Missing classify.prompt or classify.promptTemplate`);
+	const classify = spec.classify as Record<string, unknown> | undefined;
+	if (!classify?.agent || typeof classify.agent !== "string") {
+		console.error(`[${name}] Missing classify.agent — all monitors require an agent spec`);
 		return null;
 	}
 
@@ -333,12 +334,9 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 		when: String(spec.when ?? "always"),
 		scope: scope ?? { target: "main" },
 		classify: {
-			model: classify.model ?? "claude-sonnet-4-20250514",
-			context: Array.isArray(classify.context) ? classify.context : ["tool_results", "assistant_text"],
-			excludes: Array.isArray(classify.excludes) ? classify.excludes : [],
-			prompt: classify.prompt ?? "",
-			promptTemplate: typeof classify.promptTemplate === "string" ? classify.promptTemplate : undefined,
-			agent: typeof classify.agent === "string" ? classify.agent : undefined,
+			context: Array.isArray(classify.context) ? (classify.context as string[]) : ["tool_results", "assistant_text"],
+			excludes: Array.isArray(classify.excludes) ? (classify.excludes as string[]) : [],
+			agent: classify.agent as string,
 		},
 		patterns: {
 			path: patternsSpec.path,
@@ -369,11 +367,13 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 // Example seeding
 // =============================================================================
 
-function resolveProjectMonitorsDir(): string {
+export function resolveProjectMonitorsDir(): string {
 	let cwd = process.cwd();
 	while (true) {
 		const piDir = path.join(cwd, ".pi");
 		if (isDir(piDir)) return path.join(piDir, "monitors");
+		// Stop at project root (.git boundary) — don't traverse into user home config
+		if (isDir(path.join(cwd, ".git"))) break;
 		const parent = path.dirname(cwd);
 		if (parent === cwd) break;
 		cwd = parent;
@@ -1057,74 +1057,6 @@ function formatInstructionsForPrompt(instructions: MonitorInstruction[]): string
 	return `\nOperating instructions from the user (follow these strictly):\n${lines}\n`;
 }
 
-/**
- * Create a Nunjucks environment for monitor prompt templates.
- * Three-tier search: project monitors dir > user monitors dir > package examples.
- */
-function createMonitorTemplateEnv(): nunjucks.Environment {
-	const projectDir = resolveProjectMonitorsDir();
-	const userDir = path.join(os.homedir(), ".pi", "agent", "monitors");
-
-	const searchPaths: string[] = [];
-	if (isDir(projectDir)) searchPaths.push(projectDir);
-	if (isDir(userDir)) searchPaths.push(userDir);
-	if (isDir(EXAMPLES_DIR)) searchPaths.push(EXAMPLES_DIR);
-
-	const loader = searchPaths.length > 0 ? new nunjucks.FileSystemLoader(searchPaths) : undefined;
-
-	return new nunjucks.Environment(loader, {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-}
-
-/** Module-level template environment, initialized in extension entry point. */
-let monitorTemplateEnv: nunjucks.Environment | undefined;
-
-function renderClassifyPrompt(
-	monitor: Monitor,
-	branch: SessionEntry[],
-	extraContext?: Record<string, string>,
-): string | null {
-	const patterns = loadPatterns(monitor);
-	if (patterns.length === 0) return null;
-
-	const instructions = loadInstructions(monitor);
-
-	const collected: Record<string, string> = {};
-	for (const key of monitor.classify.context) {
-		const fn = collectors[key];
-		if (fn) collected[key] = fn(branch);
-		else collected[key] = ""; // unknown collectors produce empty string (graceful degradation)
-	}
-
-	const context: Record<string, unknown> = {
-		patterns: formatPatternsForPrompt(patterns),
-		instructions: formatInstructionsForPrompt(instructions),
-		iteration: monitor.whileCount,
-		...collected,
-		...(extraContext ?? {}),
-	};
-
-	if (monitor.classify.promptTemplate && monitorTemplateEnv) {
-		// Nunjucks template file
-		try {
-			return monitorTemplateEnv.render(monitor.classify.promptTemplate, context);
-		} catch (err) {
-			const msg = err instanceof Error ? err.message : String(err);
-			console.error(`[${monitor.name}] Template render failed (${monitor.classify.promptTemplate}): ${msg}`);
-			// Fall through to inline prompt if available
-			if (!monitor.classify.prompt) return null;
-		}
-	}
-
-	// Fallback: inline string with {placeholder} replacement
-	if (!monitor.classify.prompt) return null;
-	return monitor.classify.prompt.replace(/\{(\w+)\}/g, (match, key: string) => {
-		return String(context[key] ?? match);
-	});
-}
-
 // =============================================================================
 // Classification
 // =============================================================================
@@ -1221,11 +1153,17 @@ function createMonitorAgentTemplateEnv(cwd: string): nunjucks.Environment {
 	});
 }
 
+/** Module-level cached agent loader, populated at session_start. */
+let cachedAgentLoader: ((name: string) => AgentSpec) | null = null;
+
+/** Module-level cached template environment for classify agent specs, populated at session_start. */
+let cachedMonitorAgentEnv: nunjucks.Environment | null = null;
+
 /**
- * Classify via agent spec — the unified classify path.
+ * Classify via agent spec — the sole classify path.
  * Loads the agent YAML, builds context from collectors, compiles via
- * compileAgentSpec, calls complete() in-process, parses JSON verdict,
- * falls back to parseVerdict() for robustness.
+ * compileAgentSpec, calls complete() in-process, validates JSON verdict
+ * against outputSchema, falls back to parseVerdict() for robustness.
  */
 async function classifyViaAgent(
 	ctx: ExtensionContext,
@@ -1234,10 +1172,10 @@ async function classifyViaAgent(
 	extraContext?: Record<string, string>,
 	signal?: AbortSignal,
 ): Promise<ClassifyResult> {
-	const agentName = monitor.classify.agent!;
+	const agentName = monitor.classify.agent;
 
-	// Load agent spec
-	const loadAgent = createAgentLoader(process.cwd(), AGENTS_DIR);
+	// Load agent spec (use session cache if available)
+	const loadAgent = cachedAgentLoader ?? createAgentLoader(process.cwd(), AGENTS_DIR);
 	const agentSpec = loadAgent(agentName);
 
 	// Build context: collectors + patterns + instructions + json_output
@@ -1260,16 +1198,17 @@ async function classifyViaAgent(
 		...(extraContext ?? {}),
 	};
 
-	// Create merged template environment and compile agent spec
-	const mergedEnv = createMonitorAgentTemplateEnv(process.cwd());
+	// Use session-cached template environment or create one
+	const mergedEnv = cachedMonitorAgentEnv ?? createMonitorAgentTemplateEnv(process.cwd());
 	const compiled = compileAgentSpec(agentSpec, templateContext, mergedEnv, process.cwd());
 
 	// The task template is the compiled classify prompt
 	const prompt = compiled.taskTemplate;
 	if (!prompt) throw new Error(`Agent ${agentName}: compiled task template is empty`);
 
-	// Resolve model — agent spec model, fall back to monitor.classify.model
-	const modelSpec = compiled.model ?? monitor.classify.model;
+	// Resolve model from agent spec
+	const modelSpec = compiled.model;
+	if (!modelSpec) throw new Error(`Agent ${agentName}: no model specified`);
 	const { provider, modelId } = parseModelSpec(modelSpec);
 	const model = ctx.modelRegistry.find(provider, modelId);
 	if (!model) throw new Error(`Model ${modelSpec} not found`);
@@ -1291,33 +1230,20 @@ async function classifyViaAgent(
 	// Try JSON parse first
 	try {
 		const parsed = JSON.parse(responseText.trim()) as Record<string, unknown>;
+		// Validate against verdict schema if the agent spec declares one
+		if (compiled.outputSchema) {
+			const schemaPath = path.isAbsolute(compiled.outputSchema)
+				? compiled.outputSchema
+				: path.resolve(AGENTS_DIR, compiled.outputSchema);
+			validateFromFile(schemaPath, parsed, `verdict for monitor '${monitor.name}'`);
+		}
 		return mapVerdictToClassifyResult(parsed);
-	} catch {
+	} catch (jsonErr) {
+		// If the error came from schema validation (not JSON.parse), re-throw
+		if (jsonErr instanceof Error && jsonErr.message.includes("verdict for monitor")) throw jsonErr;
 		// Fallback: try text-format parseVerdict for robustness
 		return parseVerdict(responseText);
 	}
-}
-
-async function classifyPrompt(
-	ctx: ExtensionContext,
-	monitor: Monitor,
-	prompt: string,
-	signal?: AbortSignal,
-): Promise<ClassifyResult> {
-	const { provider, modelId } = parseModelSpec(monitor.classify.model);
-	const model = ctx.modelRegistry.find(provider, modelId);
-	if (!model) throw new Error(`Model ${monitor.classify.model} not found`);
-
-	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
-	if (!auth.ok) throw new Error(auth.error);
-
-	const response: AssistantMessage = await complete(
-		model as Model<Api>,
-		{ messages: [{ role: "user", content: [{ type: "text", text: prompt }], timestamp: Date.now() }] },
-		{ apiKey: auth.apiKey, headers: auth.headers, maxTokens: 300, signal, thinkingEnabled: true, effort: "low" },
-	);
-
-	return parseVerdict(extractResponseText(response.content));
 }
 
 // =============================================================================
@@ -1457,55 +1383,7 @@ export async function invokeMonitor(name: string, context?: Record<string, strin
 
 	const branch = invokeCtx.sessionManager.getBranch();
 
-	let result: ClassifyResult;
-
-	if (monitor.classify.agent) {
-		// Unified agent spec path
-		result = await classifyViaAgent(invokeCtx, monitor, branch, context);
-	} else {
-		// Legacy text-format path
-		const instructions = loadInstructions(monitor);
-
-		// Build context: collectors + caller-supplied overrides
-		const collected: Record<string, string> = {};
-		for (const key of monitor.classify.context) {
-			const fn = collectors[key];
-			if (fn) collected[key] = fn(branch);
-			else collected[key] = "";
-		}
-		if (context) {
-			for (const [key, value] of Object.entries(context)) {
-				collected[key] = value;
-			}
-		}
-
-		const templateContext: Record<string, unknown> = {
-			patterns: formatPatternsForPrompt(patterns),
-			instructions: formatInstructionsForPrompt(instructions),
-			iteration: 0,
-			...collected,
-		};
-
-		// Render prompt (same logic as renderClassifyPrompt but with injected context)
-		let prompt: string | null = null;
-		if (monitor.classify.promptTemplate && monitorTemplateEnv) {
-			try {
-				prompt = monitorTemplateEnv.render(monitor.classify.promptTemplate, templateContext);
-			} catch (err) {
-				const msg = err instanceof Error ? err.message : String(err);
-				console.error(`[${monitor.name}] Template render failed (${monitor.classify.promptTemplate}): ${msg}`);
-				if (!monitor.classify.prompt) throw new Error(`Template render failed and no inline prompt fallback: ${msg}`);
-			}
-		}
-		if (!prompt && monitor.classify.prompt) {
-			prompt = monitor.classify.prompt.replace(/\{(\w+)\}/g, (match, key: string) => {
-				return String(templateContext[key] ?? match);
-			});
-		}
-		if (!prompt) return { verdict: "clean" };
-
-		result = await classifyPrompt(invokeCtx, monitor, prompt);
-	}
+	const result = await classifyViaAgent(invokeCtx, monitor, branch, context);
 
 	// Execute write actions (findings files) based on verdict
 	if (result.verdict === "clean") {
@@ -1565,15 +1443,7 @@ async function activate(
 
 	let result: ClassifyResult;
 	try {
-		if (monitor.classify.agent) {
-			// Unified agent spec path
-			result = await classifyViaAgent(ctx, monitor, branch, undefined, undefined);
-		} else {
-			// Legacy text-format path
-			const prompt = renderClassifyPrompt(monitor, branch);
-			if (!prompt) return;
-			result = await classifyPrompt(ctx, monitor, prompt);
-		}
+		result = await classifyViaAgent(ctx, monitor, branch, undefined, undefined);
 	} catch (e: unknown) {
 		const message = e instanceof Error ? e.message : String(e);
 		monitor.classifyFailures++;
@@ -1651,7 +1521,7 @@ async function activate(
 			severity: result.severity ?? "warning",
 			monitor_name: monitor.name,
 		};
-		const renderedSteer = monitorTemplateEnv ? nunjucks.renderString(action.steer, steerContext) : action.steer;
+		const renderedSteer = nunjucks.renderString(action.steer, steerContext);
 
 		const details: MonitorMessageDetails = {
 			monitorName: monitor.name,
@@ -1732,9 +1602,6 @@ export default function (pi: ExtensionAPI) {
 	loadedMonitors = monitors;
 	if (monitors.length === 0) return;
 
-	// Initialize Nunjucks template environment for monitor prompt templates
-	monitorTemplateEnv = createMonitorTemplateEnv();
-
 	let statusCtx: ExtensionContext | undefined;
 
 	function updateStatus(): void {
@@ -1790,6 +1657,9 @@ export default function (pi: ExtensionAPI) {
 			monitorsEnabled = true;
 			pendingAgentEndSteers = [];
 			projectDirMissingLogged = false;
+			// Cache agent loader and template environment for classify calls
+			cachedAgentLoader = createAgentLoader(process.cwd(), AGENTS_DIR);
+			cachedMonitorAgentEnv = createMonitorAgentTemplateEnv(process.cwd());
 			updateStatus();
 		} catch {
 			/* startup errors should not block session */
@@ -1863,7 +1733,7 @@ export default function (pi: ExtensionAPI) {
 				when: monitor.when,
 				scope: monitor.scope,
 				classify: {
-					model: monitor.classify.model,
+					agent: monitor.classify.agent,
 					context: monitor.classify.context,
 					excludes: monitor.classify.excludes,
 				},
@@ -2213,21 +2083,10 @@ export default function (pi: ExtensionAPI) {
 					}
 
 					// Build pending tool call context for template injection.
-					// Branch-based collectors (user_text, tool_calls, etc.) are still
-					// collected inside renderClassifyPrompt from the branch parameter.
 					const toolContext = `Pending tool call:\nTool: ${ev.toolName}\nArguments: ${JSON.stringify(ev.input, null, 2).slice(0, 2000)}`;
 
 					try {
-						let result: ClassifyResult;
-						if (m.classify.agent) {
-							// Unified agent spec path — tool_call_context passed as extra context
-							result = await classifyViaAgent(ctx, m, branch, { tool_call_context: toolContext });
-						} else {
-							// Legacy text-format path
-							const prompt = renderClassifyPrompt(m, branch, { tool_call_context: toolContext });
-							if (!prompt) continue;
-							result = await classifyPrompt(ctx, m, prompt);
-						}
+						const result = await classifyViaAgent(ctx, m, branch, { tool_call_context: toolContext });
 
 						// Reset failure counter on success
 						m.classifyFailures = 0;

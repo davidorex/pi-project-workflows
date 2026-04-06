@@ -1,11 +1,13 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import nunjucks from "nunjucks";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	COLLECTOR_DESCRIPTORS,
 	COLLECTOR_NAMES,
 	collectConversationHistory,
+	discoverMonitors,
 	extractResponseText,
 	generateFindingId,
 	invokeMonitor,
@@ -14,6 +16,7 @@ import {
 	parseModelSpec,
 	parseMonitorsArgs,
 	parseVerdict,
+	resolveProjectMonitorsDir,
 	SCOPE_TARGETS,
 	VALID_EVENTS,
 	VERDICT_TYPES,
@@ -829,31 +832,6 @@ describe("mapVerdictToClassifyResult", () => {
 });
 
 // =============================================================================
-// parseVerdict backward compatibility
-// =============================================================================
-
-describe("parseVerdict backward compat", () => {
-	it("still works for text-format CLEAN", () => {
-		expect(parseVerdict("CLEAN")).toEqual({ verdict: "clean" });
-	});
-
-	it("still works for text-format FLAG", () => {
-		expect(parseVerdict("FLAG:description here")).toEqual({
-			verdict: "flag",
-			description: "description here",
-		});
-	});
-
-	it("still works for text-format NEW", () => {
-		expect(parseVerdict("NEW:pattern|description")).toEqual({
-			verdict: "new",
-			newPattern: "pattern",
-			description: "description",
-		});
-	});
-});
-
-// =============================================================================
 // Bundled monitor agent specs
 // =============================================================================
 
@@ -881,14 +859,159 @@ describe("bundled monitors: agent YAML files exist", () => {
 	}
 });
 
-describe("bundled templates: json_output conditional", () => {
+describe("bundled templates: no legacy json_output conditional", () => {
 	for (const name of MONITOR_NAMES) {
-		it(`${name}/classify.md contains json_output conditional`, () => {
+		it(`${name}/classify.md uses unconditional JSON output instructions`, () => {
 			const templatePath = path.join(EXAMPLES_DIR, name, "classify.md");
 			const content = fs.readFileSync(templatePath, "utf-8");
-			expect(content).toContain("{% if json_output %}");
-			expect(content).toContain("{% else %}");
-			expect(content).toContain("{% endif %}");
+			expect(content).toContain("Respond with a JSON object");
+			expect(content).not.toContain("{% if json_output %}");
+			expect(content).not.toContain("{% else %}");
+		});
+	}
+});
+
+// =============================================================================
+// Discovery boundary tests (.git stops upward walk)
+// =============================================================================
+
+describe("discoverMonitors .git boundary", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("stops at .git boundary and does not traverse into parent .pi/monitors/", () => {
+		// Create a temp directory structure:
+		//   tmp/
+		//     .pi/monitors/  (parent — should NOT be found)
+		//       parent.monitor.json
+		//     project/
+		//       .git/  (boundary)
+		//       subdir/ (cwd)
+		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-boundary-"));
+		const parentMonitorsDir = path.join(tmpRoot, ".pi", "monitors");
+		const projectDir = path.join(tmpRoot, "project");
+		const gitDir = path.join(projectDir, ".git");
+		const subDir = path.join(projectDir, "subdir");
+
+		fs.mkdirSync(parentMonitorsDir, { recursive: true });
+		fs.mkdirSync(gitDir, { recursive: true });
+		fs.mkdirSync(subDir, { recursive: true });
+
+		// Write a valid monitor JSON in the parent (should NOT be discovered)
+		const parentMonitor = {
+			name: "parent-monitor",
+			event: "turn_end",
+			classify: { agent: "test-agent", context: ["user_text"] },
+			patterns: { path: "p.json" },
+			actions: {},
+		};
+		fs.writeFileSync(path.join(parentMonitorsDir, "parent.monitor.json"), JSON.stringify(parentMonitor));
+
+		// cwd is inside project, below .git
+		vi.spyOn(process, "cwd").mockReturnValue(subDir);
+
+		const monitors = discoverMonitors();
+		const names = monitors.map((m) => m.name);
+		expect(names).not.toContain("parent-monitor");
+
+		// Cleanup
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("finds project .pi/monitors/ below .git boundary", () => {
+		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-boundary-"));
+		const projectDir = path.join(tmpRoot, "project");
+		const gitDir = path.join(projectDir, ".git");
+		const piMonitorsDir = path.join(projectDir, ".pi", "monitors");
+		const subDir = path.join(projectDir, "subdir");
+
+		fs.mkdirSync(gitDir, { recursive: true });
+		fs.mkdirSync(piMonitorsDir, { recursive: true });
+		fs.mkdirSync(subDir, { recursive: true });
+
+		const projectMonitor = {
+			name: "project-monitor",
+			event: "turn_end",
+			classify: { agent: "test-agent", context: ["user_text"] },
+			patterns: { path: "p.json" },
+			actions: {},
+		};
+		fs.writeFileSync(path.join(piMonitorsDir, "project.monitor.json"), JSON.stringify(projectMonitor));
+
+		vi.spyOn(process, "cwd").mockReturnValue(subDir);
+
+		const monitors = discoverMonitors();
+		const names = monitors.map((m) => m.name);
+		expect(names).toContain("project-monitor");
+
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+});
+
+describe("resolveProjectMonitorsDir .git boundary", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("stops at .git boundary and returns cwd-based default", () => {
+		// Structure:
+		//   tmp/
+		//     .pi/  (parent — should NOT be found)
+		//     project/
+		//       .git/  (boundary)
+		//       subdir/ (cwd)
+		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-resolve-"));
+		const parentPiDir = path.join(tmpRoot, ".pi");
+		const projectDir = path.join(tmpRoot, "project");
+		const gitDir = path.join(projectDir, ".git");
+		const subDir = path.join(projectDir, "subdir");
+
+		fs.mkdirSync(parentPiDir, { recursive: true });
+		fs.mkdirSync(gitDir, { recursive: true });
+		fs.mkdirSync(subDir, { recursive: true });
+
+		vi.spyOn(process, "cwd").mockReturnValue(subDir);
+
+		const result = resolveProjectMonitorsDir();
+		// Should return cwd-based default, NOT the parent .pi/monitors
+		expect(result).toBe(path.join(subDir, ".pi", "monitors"));
+
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("finds .pi/ within .git boundary", () => {
+		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-resolve-"));
+		const projectDir = path.join(tmpRoot, "project");
+		const gitDir = path.join(projectDir, ".git");
+		const piDir = path.join(projectDir, ".pi");
+		const subDir = path.join(projectDir, "subdir");
+
+		fs.mkdirSync(gitDir, { recursive: true });
+		fs.mkdirSync(piDir, { recursive: true });
+		fs.mkdirSync(subDir, { recursive: true });
+
+		vi.spyOn(process, "cwd").mockReturnValue(subDir);
+
+		const result = resolveProjectMonitorsDir();
+		expect(result).toBe(path.join(projectDir, ".pi", "monitors"));
+
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+});
+
+// =============================================================================
+// Bundled monitors: classify fields cleaned
+// =============================================================================
+
+describe("bundled monitors: classify fields cleaned", () => {
+	for (const name of MONITOR_NAMES) {
+		it(`${name}.monitor.json has no legacy classify.model or classify.promptTemplate`, () => {
+			const monitor = loadMonitorJson(name);
+			const classify = monitor.classify as Record<string, unknown>;
+			expect(classify.model).toBeUndefined();
+			expect(classify.promptTemplate).toBeUndefined();
+			expect(classify.prompt).toBeUndefined();
 		});
 	}
 });

@@ -7,10 +7,7 @@
 		"target": "main"
 	},
 	"classify": {
-		"model": "claude-sonnet-4-20250514",
 		"context": ["tool_results", "assistant_text", "user_text"],
-		"excludes": [],
-		"promptTemplate": "fragility/classify.md",
 		"agent": "fragility-classifier"
 	},
 	"patterns": {

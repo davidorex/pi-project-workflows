@@ -43,12 +43,8 @@
 		},
 		"classify": {
 			"type": "object",
-			"required": ["model", "context"],
+			"required": ["agent", "context"],
 			"properties": {
-				"model": {
-					"type": "string",
-					"description": "Model ID or provider/model for classification calls"
-				},
 				"context": {
 					"type": "array",
 					"items": {
@@ -61,17 +57,9 @@
 					"items": { "type": "string" },
 					"description": "Skip activation if these monitors already steered this turn"
 				},
-				"promptTemplate": {
-					"type": "string",
-					"description": "Path to .md Nunjucks template file for classification prompt. Searched in .pi/monitors/, ~/.pi/agent/monitors/, then package examples/. Takes precedence over inline prompt."
-				},
-				"prompt": {
-					"type": "string",
-					"description": "Inline classification prompt with {placeholder} substitution. Used when promptTemplate is absent."
-				},
 				"agent": {
 					"type": "string",
-					"description": "Name of an .agent.yaml to use for classification. When set, template rendering, model resolution, and output parsing use the agent spec infrastructure instead of the legacy classify pipeline."
+					"description": "Name of an .agent.yaml to use for classification. Template rendering, model resolution, and output parsing use the agent spec infrastructure."
 				}
 			}
 		},

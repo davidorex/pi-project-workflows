@@ -385,5 +385,17 @@
       "package": "pi-project-workflows",
       "source": "human"
     }
+    },
+    {
+      "id": "issue-035",
+      "title": "Per-monitor configurable collector parameters — context window tunable from YAML without code changes",
+      "body": "Collector limits (conversation_history turns, tool_results count, tool_calls count, truncation char limits) are hardcoded in collector functions in index.ts. The monitor YAML declares which collectors to use (classify.context array) but not their parameters. Extension: classify.context becomes an object map with optional per-collector config — e.g., context: { conversation_history: { turns: 5 }, tool_results: { limit: 10, truncate: 3000 }, tool_calls: { limit: 30 } }. The collector functions already accept optional limit parameters (collectToolResults has limit=5, collectToolCalls has limit=20). The plumbing exists — the missing piece is reading per-collector config from the monitor spec and passing it through renderClassifyPrompt/classifyViaAgent to the collector calls. Falls back to current defaults when config is absent. Changes take effect on next monitor firing after /reload. This is a precursor to assessing whether forced toolChoice without thinking produces adequate verdicts — the amount of context determines whether the model needs explicit reasoning capacity.",
+      "location": "packages/pi-behavior-monitors/index.ts, packages/pi-behavior-monitors/schemas/monitor.schema.json",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    }
   ]
 }

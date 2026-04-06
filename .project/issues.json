@@ -307,6 +307,50 @@
       "package": "pi-behavior-monitors",
       "source": "human",
       "resolved_by": "fd02c15 — corrected property access from .text to .thinking, fixed test fixtures to use real ThinkingContent shape"
+    },
+    {
+      "id": "issue-028",
+      "title": "Agent steps should declare block write-back targets — memory accumulates as side effect of work, not separate task",
+      "body": "Currently an agent step produces output (StepOutputSpec in types.ts:114 — format, schema, path) but persisting results to project blocks requires a separate block step wired manually in the workflow YAML. This means memory accumulation is an authoring burden, not automatic. Extension: add an optional output.block field to StepOutputSpec (e.g., output.block: decisions) that tells the workflow executor to appendToBlock() or updateItemInBlock() after the agent returns. The block API (block-api.ts) handles validated writes. The schema comes from .project/schemas/<blockName>.schema.json. The agent doesn't know it's building memory — the step spec declares the write target, the executor persists it. Domain-agnostic: a sales agent writes to a leads block, a code agent writes to a decisions block, a review agent writes to a findings block. The write-back runs after output validation, using the same atomic write path as the block step type (step-block.ts).",
+      "location": "packages/pi-workflows/src/types.ts:114, packages/pi-workflows/src/step-agent.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "human"
+    },
+    {
+      "id": "issue-029",
+      "title": "Artifact format rendering — produce editable surfaces (markdown, CSV, HTML) from schema-validated block data",
+      "body": "Workflow artifacts (ArtifactSpec in types.ts:18 — path, from, schema) write JSON files to disk. Block data is structured and schema-validated but only machine-readable. Extension: add a format field to ArtifactSpec (markdown, csv, html, yaml alongside json). The executor calls a format renderer after schema validation: JSON data → rendered artifact in the declared format. The shared macros system (templates/shared/macros.md) already renders block data as markdown — render_project, render_architecture, render_tasks, render_conventions, etc. The same pattern extends to CSV (tabular blocks like tasks, issues) and HTML (dashboards, reports). The rendered artifact is a view of the block data, editable in the format's native tool (spreadsheet opens CSV, browser opens HTML, editor opens markdown). The block remains the source of truth; the artifact is a rendered surface.",
+      "location": "packages/pi-workflows/src/types.ts:18, packages/pi-workflows/templates/shared/macros.md",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-workflows",
+      "source": "human"
+    },
+    {
+      "id": "issue-030",
+      "title": "Writeback monitor — observe agent execution results and persist structured summaries to project blocks",
+      "body": "Monitors currently classify agent behavior (hedge, fragility, etc.) and write findings to the issues block via executeWriteAction() (index.ts:1312) with merge: append/upsert. Extension: a writeback monitor that fires on agent_end for any workflow step, reads the step's structured output, and determines what to record — decisions made, issues resolved, verification evidence, execution metadata. The classify call determines what category of result the agent produced. The write action persists it to the corresponding block (decisions, verification, issues, tasks). This closes the feedback loop: workflow reads blocks via contextBlocks → agent executes → writeback monitor observes output → monitor writes results back to blocks → next execution reads richer blocks. Each cycle compounds context. The monitor spec format, event system, classify.agent pipeline, and executeWriteAction with merge: upsert all exist. The new component is the writeback monitor spec, its classifier agent YAML, and the mapping from agent output categories to block write targets.",
+      "location": "packages/pi-behavior-monitors/index.ts:1312, packages/pi-behavior-monitors/examples/",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-031",
+      "title": "Scheduled workflow re-execution — time-based or event-based triggers for the compounding context loop",
+      "body": "Workflows execute once (or resume from checkpoint). The compounding context loop requires re-execution: run workflow → blocks updated by writeback monitor → re-run workflow with richer blocks. Currently the user must manually invoke /workflow run each time. Extension: a schedule field on WorkflowSpec (cron expression or interval) that triggers re-execution. The loop step type (LoopSpec in types.ts:56) already supports maxAttempts and iteration. A scheduled workflow is a loop at a higher level — the workflow itself iterates on a time basis, reading progressively richer blocks each cycle. Implementation could be a schedule step type, a workflow-level cron field, or an external trigger that calls the workflow tool. The executor already handles checkpoint/resume and state persistence to .workflows/runs/. The scheduling layer adds when to re-execute, not how.",
+      "location": "packages/pi-workflows/src/types.ts:3, packages/pi-workflows/src/workflow-executor.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-workflows",
+      "source": "human"
     }
   ]
 }

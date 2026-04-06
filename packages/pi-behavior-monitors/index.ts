@@ -1228,9 +1228,10 @@ async function classifyViaAgent(
 	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
 	if (!auth.ok) throw new Error(auth.error);
 
-	// Determine thinking from agent spec
-	const thinkingEnabled = compiled.thinking === "on" || compiled.thinking === "true";
-
+	// Thinking is disabled for classify calls — Anthropic API rejects
+	// thinking + forced toolChoice. The phantom tool enforces output shape;
+	// thinking support requires Structured Outputs (output_config.format)
+	// which pi-ai does not yet expose.
 	const response: AssistantMessage = await complete(
 		model as Model<Api>,
 		{
@@ -1242,8 +1243,6 @@ async function classifyViaAgent(
 			headers: auth.headers,
 			maxTokens: 1024,
 			signal,
-			thinkingEnabled,
-			effort: "low",
 			toolChoice: { type: "tool", name: "classify_verdict" },
 		},
 	);

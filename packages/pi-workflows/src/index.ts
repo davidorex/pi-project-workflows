@@ -28,6 +28,7 @@ import {
 	filterNames,
 	stepTypes,
 	validateWorkflow,
+	validationChecks,
 } from "./workflow-sdk.js";
 import { WORKFLOWS_DIR } from "./workflows-dir.js";
 
@@ -153,7 +154,11 @@ function runValidation(
 	name?: string,
 ): {
 	found: boolean;
-	results: { name: string; valid: boolean; issues: import("./workflow-sdk.js").ValidationIssue[] }[];
+	results: {
+		name: string;
+		status: "clean" | "warnings" | "invalid";
+		issues: import("./workflow-sdk.js").ValidationIssue[];
+	}[];
 } {
 	const workflows = name ? ([findWorkflow(name, cwd)].filter(Boolean) as WorkflowSpec[]) : discoverWorkflows(cwd);
 
@@ -161,7 +166,7 @@ function runValidation(
 
 	const results = workflows.map((spec) => {
 		const result = validateWorkflow(spec, cwd);
-		return { name: spec.name, valid: result.valid, issues: result.issues };
+		return { name: spec.name, status: result.status, issues: result.issues };
 	});
 
 	return { found: true, results };
@@ -191,9 +196,23 @@ function gatherWorkflowStatus(cwd: string): Record<string, unknown> {
 			model: a.model,
 			tools: a.tools,
 			outputFormat: a.outputFormat,
+			inputSchema: a.inputSchema
+				? {
+						required: Array.isArray((a.inputSchema as Record<string, unknown>).required)
+							? (a.inputSchema as Record<string, unknown>).required
+							: [],
+						properties:
+							typeof (a.inputSchema as Record<string, unknown>).properties === "object"
+								? Object.keys((a.inputSchema as Record<string, unknown>).properties as Record<string, unknown>)
+								: [],
+					}
+				: undefined,
+			contextBlocks: a.contextBlocks,
+			outputSchema: a.outputSchema,
 		})),
 		schemas: schemas.length,
 		templates: templates.length,
+		validationChecks: validationChecks().length,
 	};
 }
 
@@ -439,7 +458,7 @@ function handleValidate(args: string, ctx: ExtensionCommandContext): void {
 		totalErrors += errors;
 		totalWarnings += warnings;
 
-		const icon = r.valid ? "\u2713" : "\u2717";
+		const icon = r.status === "clean" ? "\u2713" : r.status === "warnings" ? "\u26a0" : "\u2717";
 		lines.push(`${icon} ${r.name} (${errors} errors, ${warnings} warnings)`);
 		for (const issue of r.issues) {
 			lines.push(`  ${issue.severity === "error" ? "\u2717" : "\u26a0"} ${issue.field}: ${issue.message}`);
@@ -449,7 +468,9 @@ function handleValidate(args: string, ctx: ExtensionCommandContext): void {
 	lines.push("");
 	lines.push(`${results.length} workflow(s), ${totalErrors} error(s), ${totalWarnings} warning(s)`);
 
-	ctx.ui.notify(lines.join("\n"), totalErrors > 0 ? "error" : "info");
+	const hasInvalid = results.some((r) => r.status === "invalid");
+	const hasWarnings = results.some((r) => r.status === "warnings");
+	ctx.ui.notify(lines.join("\n"), hasInvalid ? "error" : hasWarnings ? "warning" : "info");
 }
 
 function handleWorkflowInit(ctx: ExtensionCommandContext): void {
@@ -761,6 +782,19 @@ const extension = (pi: ExtensionAPI) => {
 				lines.push(`Agents: ${ags.length} (${ags.map((a) => a.name).join(", ")})`);
 				lines.push(`Schemas: ${status.schemas}`);
 				lines.push(`Templates: ${status.templates}`);
+				const typedAgents = ags.filter((a: any) => a.inputSchema);
+				if (typedAgents.length > 0) {
+					lines.push(
+						`Typed agents (inputSchema): ${typedAgents.length} (${typedAgents.map((a: any) => a.name).join(", ")})`,
+					);
+				}
+				const ctxAgents = ags.filter((a: any) => a.contextBlocks?.length > 0);
+				if (ctxAgents.length > 0) {
+					lines.push(
+						`Context-aware agents (contextBlocks): ${ctxAgents.length} (${ctxAgents.map((a: any) => a.name).join(", ")})`,
+					);
+				}
+				lines.push(`Validation checks: ${status.validationChecks}`);
 				ctx.ui.notify(lines.join("\n"), "info");
 			},
 		},

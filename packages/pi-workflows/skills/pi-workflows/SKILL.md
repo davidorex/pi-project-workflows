@@ -82,6 +82,141 @@ Subcommands: `init`, `list`, `run`, `resume`, `validate`, `status`, `help`
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 
+<agent_vocabulary>
+
+| Agent | Role | Tools | Input (required) | Output | Context Blocks |
+|-------|------|-------|------------------|--------|----------------|
+| `architecture-designer` | reasoning | read | — | json | — |
+| `architecture-inferrer` | sensor | read, bash, grep, find | analysis, path | json | — |
+| `audit-finding-verifier` | quality | read, bash, grep, find | — | json | — |
+| `audit-fixer` | action | read, write, edit, bash, grep, find | — | json | — |
+| `audit-results-router` | reasoning | read | — | json | — |
+| `code-explorer` | sensor | read, bash, ls | — | json | — |
+| `decomposer` | decomposer | — | — | json | — |
+| `gap-identifier` | sensor | read, bash, grep, find | analysis, architecture, path | json | — |
+| `gap-resolution-assessor` | quality | read, bash, grep, find | — | json | — |
+| `handoff-writer` | reasoning | read | project_state, path | json | — |
+| `investigator` | investigator | read, bash, grep, find | — | json | — |
+| `pattern-analyzer` | sensor | read, bash, ls | exploration, path | json | — |
+| `phase-author` | reasoning | read, bash, grep, find | — | json | — |
+| `plan-creator` | reasoning | read, bash, grep, find | — | json | — |
+| `plan-decomposer` | reasoning | read, bash, grep, find | — | json | — |
+| `project-definer` | reasoning | read | — | json | — |
+| `project-inferrer` | sensor | read, bash, grep, find | analysis, path | json | — |
+| `quality-analyzer` | sensor | read, bash, ls | exploration, path | json | — |
+| `requirements-gatherer` | reasoning | read | — | json | — |
+| `researcher` | researcher | — | — | json | — |
+| `spec-implementer` | action | read, write, edit, bash, grep, find | — | json | — |
+| `structure-analyzer` | sensor | read, bash, ls | exploration, path | json | — |
+| `synthesizer` | reasoning | read | structure, quality, patterns | json | — |
+| `task-verifier` | quality | read, bash, glob, grep | task_id, acceptance_criteria, changes | json | — |
+| `task-worker` | action | read, write, edit, bash, grep, glob, ls | task | json | — |
+| `verifier` | quality | read, bash, grep, find | — | json | — |
+
+**Agent Input Schemas:**
+
+<agent_input name="architecture-inferrer">
+- `analysis` [required] — Prior codebase analysis output (structure, patterns, dependencies)
+- `path` string [required] — Root path of the project being analyzed
+</agent_input>
+
+<agent_input name="gap-identifier">
+- `analysis` [required] — Prior codebase analysis output (structure, patterns, dependencies)
+- `architecture` [required] — Architecture block (modules, patterns, boundaries)
+- `path` string [required] — Root path of the project being analyzed
+</agent_input>
+
+<agent_input name="handoff-writer">
+- `project_state` [required] — Current project state (from projectState() or /project status — includes phases, blocks, gaps, decisions, recent commits)
+- `path` string [required] — Root path of the project
+</agent_input>
+
+<agent_input name="pattern-analyzer">
+- `exploration` [required] — Prior exploration output (typed JSON)
+- `path` string [required]
+</agent_input>
+
+<agent_input name="project-inferrer">
+- `analysis` [required] — Prior codebase analysis output (structure, patterns, dependencies)
+- `path` string [required] — Root path of the project being analyzed
+</agent_input>
+
+<agent_input name="quality-analyzer">
+- `exploration` [required] — Prior exploration output (typed JSON)
+- `path` string [required]
+</agent_input>
+
+<agent_input name="structure-analyzer">
+- `exploration` [required] — Prior exploration output (typed JSON)
+- `path` string [required]
+</agent_input>
+
+<agent_input name="synthesizer">
+- `structure` [required] — Structure analysis (typed JSON)
+- `quality` [required] — Quality analysis (typed JSON)
+- `patterns` [required] — Pattern analysis (typed JSON)
+</agent_input>
+
+<agent_input name="task-verifier">
+- `task_id` string [required] — ID of the task being verified
+- `acceptance_criteria` array [required] — Acceptance criteria from the task block
+- `changes` [required] — Implementation summary or diff from the worker agent
+</agent_input>
+
+<agent_input name="task-worker">
+- `task` object [required] — Task block entry with description, acceptance_criteria, files
+- `context` string [optional] — Narrative context from prior steps
+</agent_input>
+
+**Template References:**
+
+- `architecture-designer`: task: `architecture-designer/task.md`
+- `architecture-inferrer`: task: `architecture-inferrer/task.md`
+- `audit-finding-verifier`: task: `audit-finding-verifier/task.md`
+- `audit-fixer`: task: `audit-fixer/task.md`
+- `audit-results-router`: task: `audit-results-router/task.md`
+- `code-explorer`: system: `explorer/system.md`, task: `explorer/task.md`
+- `decomposer`: task: `decomposer/task.md`
+- `gap-identifier`: task: `gap-identifier/task.md`
+- `gap-resolution-assessor`: task: `gap-resolution-assessor/task.md`
+- `handoff-writer`: task: `handoff-writer/task.md`
+- `investigator`: task: `investigator/task.md`
+- `pattern-analyzer`: system: `analyzers/patterns.md`, task: `analyzers/patterns-task.md`
+- `phase-author`: task: `templates/phase-author/task.md`
+- `plan-creator`: task: `plan-creator/task.md`
+- `plan-decomposer`: task: `plan-decomposer/task.md`
+- `project-definer`: task: `project-definer/task.md`
+- `project-inferrer`: task: `project-inferrer/task.md`
+- `quality-analyzer`: system: `analyzers/quality.md`, task: `analyzers/quality-task.md`
+- `requirements-gatherer`: task: `requirements-gatherer/task.md`
+- `researcher`: task: `researcher/task.md`
+- `spec-implementer`: task: `spec-implementer/task.md`
+- `structure-analyzer`: system: `analyzers/structure.md`, task: `analyzers/structure-task.md`
+- `synthesizer`: system: `synthesizer/system.md`, task: `synthesizer/task.md`
+- `task-verifier`: task: `task-verifier/task.md`
+- `task-worker`: task: `task-worker/task.md`
+- `verifier`: task: `verifier/task.md`
+
+</agent_vocabulary>
+
+<validation_vocabulary>
+
+| Check | Severity | Description |
+|-------|----------|-------------|
+| `agent-resolution` | error | Referenced agents exist in search paths |
+| `monitor-resolution` | warning | Referenced monitors exist in search paths |
+| `schema-existence` | error | Referenced schema files exist on disk |
+| `step-references` | error | Expression step references point to declared steps |
+| `step-ordering` | error | Steps do not forward-reference later steps |
+| `context-references` | error | context[] entries point to declared steps |
+| `filter-names` | warning | Expression filters are recognized |
+| `steptype-metadata` | error | retry/input/output declarations match step type capabilities |
+| `inputschema-required` | error | Agent required input keys are provided by step |
+| `contextblocks-existence` | warning | Declared context blocks exist in .project/ |
+| `template-alignment` | error | Template variables match step inputs and source schemas |
+
+</validation_vocabulary>
+
 <objective>
 pi-workflows orchestrates multi-step agent workflows defined in YAML. Workflows are DAGs of typed steps with data flow via `${{ }}` expressions.
 </objective>

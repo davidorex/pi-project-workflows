@@ -2,7 +2,7 @@
 
 Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state in `.project/`. Behavior monitors that classify agent activity and steer corrections.
 
-Monorepo: four npm packages (`packages/*`) with lockstep versioning at 0.9.1.
+Monorepo: four npm packages (`packages/*`) with lockstep versioning.
 
 | Package | Purpose |
 |---------|---------|
@@ -78,7 +78,8 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 - `schema-validator.ts` — AJV-based JSON Schema validation
 - `project-sdk.ts` — SDK: vocabulary, discovery, derived state, cross-block validation
 - `project-dir.ts` — `PROJECT_DIR` and `SCHEMAS_DIR` constants (single source for `.project/` path)
-- `sync-skills.ts` — `syncSkillsToUser(distDir)` copies package skills to `~/.pi/agent/skills/` on activation
+- `block-validation.ts` — post-step block validation: snapshot `.project/*.json` before step, validate changed files after, rollback on failure
+- `update-check.ts` — non-blocking npm registry check for newer package versions
 
 **pi-workflows** (`packages/pi-workflows/src/`):
 - `index.ts` — extension entry point (tool, command, keybindings)
@@ -89,6 +90,7 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 - `dispatch.ts` — subprocess spawn (`pi --mode json`)
 - `dag.ts` — dependency graph, execution plan
 - `step-*.ts` — step type executors (one per type, including `step-monitor.ts` for monitor verification gates)
+- `templates/shared/macros.md` — Nunjucks macros rendering block data as markdown (`render_conventions`, `render_requirements`, `render_conformance`, `render_architecture`, `render_project`, `render_domain`, `render_decisions`, `render_tasks`, `render_issues`, `render_exploration`, `render_exploration_full`, `render_gap`)
 
 **pi-behavior-monitors** (`packages/pi-behavior-monitors/`):
 - `index.ts` — single-file extension (monitors, classification, steering, Nunjucks template rendering)
@@ -98,12 +100,13 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 
 Single queryable surface for the workflow extension's capabilities. All functions derive dynamically from code registries and filesystem — add a filter, agent, template, or schema and it appears automatically.
 
-- **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`
+- **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`, `validationChecks()` — 11 check descriptors (id, name, severity, description) derived from the validator's code registry
 - **Discovery**: `availableAgents(cwd)`, `availableWorkflows(cwd)`, `availableTemplates(cwd)`, `availableSchemas(cwd)`
+- **Contracts**: `agentContracts(cwd)` — per-agent projection of inputSchema (required/optional fields), contextBlocks, outputFormat/Schema. `agentsByBlock(cwd, blockName)` — which agents declare a given block in contextBlocks.
 - **Introspection**: `extractExpressions(spec)`, `declaredSteps(spec)`, `declaredAgentRefs(spec)`, `declaredMonitorRefs(spec)`, `declaredSchemaRefs(spec)`
-- **Validation**: `validateWorkflow(spec, cwd)` — composes introspection + discovery to check agent resolution, monitor resolution, schema existence, step references, ordering, filter names. Returns `{ valid, issues[] }`. Also available as `/workflow validate [name]`.
+- **Validation**: `validateWorkflow(spec, cwd)` — composes introspection + discovery to check agent resolution, monitor resolution, schema existence, step references, ordering, filter names, StepType metadata (retry/input/output flag enforcement), inputSchema required-key matching, contextBlocks existence in `.project/`, template-input alignment (including contextBlocks-injected variables, block-read schema tracing, guarded-undefined escalation, and actionable suggestions for untraceable field access). Returns `{ status, issues[] }` where status is `"clean" | "warnings" | "invalid"`. Also available as `/workflow validate [name]`.
 
-Use `/workflow status` to see derived state in conversation.
+Use `/workflow status` to see derived state in conversation — includes typed agents (those with inputSchema), context-aware agents (those with contextBlocks), and validation check count.
 
 ## Project SDK (`packages/pi-project/src/project-sdk.ts`)
 
@@ -112,7 +115,7 @@ Single queryable surface for project state, block discovery, schema vocabulary, 
 - **Vocabulary**: `schemaVocabulary(cwd)`, `schemaInfo(cwd, name)`, `PROJECT_BLOCK_TYPES`
 - **Discovery**: `availableBlocks(cwd)`, `availableSchemas(cwd)`, `findAppendableBlocks(cwd)`, `blockStructure(cwd)`
 - **Derived state**: `projectState(cwd)` — all project metrics computed at query time (source files/lines, tests, phases, blockSummaries, requirements, tasks, domain, verifications, hasHandoff, recent commits)
-- **Validation**: `validateProject(cwd)` — cross-block referential integrity (task→phase, decision→phase, gap→resolved_by, requirement→traces_to, verification→target, rationale→related_decisions). Returns `{ valid, issues[] }`. Also available as `/project validate`.
+- **Validation**: `validateProject(cwd)` — cross-block referential integrity (task→phase, decision→phase, gap→resolved_by, requirement→traces_to, verification→target, rationale→related_decisions). Returns `{ status, issues[] }` where status is `"clean" | "warnings" | "invalid"`. Also available as `/project validate`.
 
 Use `/project status` to see derived state in conversation.
 
@@ -127,7 +130,7 @@ Default planning lifecycle blocks (scaffolded by `/project init`):
 - **architecture** — modules, patterns, boundaries
 - **tasks** — standalone task registry with status lifecycle and phase linkage
 - **decisions** — choices with rationale and phase association
-- **gaps** — open items with priority, category, resolution tracking
+- **issues** — open items with priority, category, resolution tracking (GitHub issue pattern)
 - **rationale** — design rationale with decision cross-references
 - **verification** — completion evidence per task/phase/requirement
 - **handoff** — session context snapshot (schema only, created on-demand)
@@ -141,7 +144,9 @@ All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add 
 - Each workflow step runs as a subprocess (`pi --mode json`) with its own context window
 - Main conversation is the control plane; workflows are subordinate
 - DAG planner infers parallelism from `${{ steps.X }}` references and `context: [stepName]` declarations
-- Agent specs are `.agent.yaml` only (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time.
+- Agent specs are `.agent.yaml` only (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time. Agents declare `inputSchema` (validated at dispatch before subprocess spawn — step fails immediately on mismatch), `contextBlocks` (block names to inject into template context), and `output.format`/`output.schema` (validated after subprocess completes).
+- `contextBlocks: [conventions, requirements, conformance-reference]` on an agent YAML causes `compileAgentSpec()` to read each named block from `.project/` and inject it into the Nunjucks template context as `_<name>` (hyphens become underscores). Templates access via `{{ _conventions.rules }}` or `{% from "shared/macros.md" import render_conventions %}{{ render_conventions(_conventions) }}`. Missing blocks are `null`; no `.project/` skips injection. This is how project state flows into agent prompts.
+- `templates/shared/macros.md` provides one rendering macro per block schema. Agents import them via `{% from "shared/macros.md" import render_conventions %}`. Resolved via three-tier template search — users override in `.pi/templates/`.
 - Monitor specs are `.monitor.json`. Classify prompts can be Nunjucks `.md` templates (`promptTemplate`) or inline strings (`prompt`). Template search: project `.pi/monitors/` > user `~/.pi/agent/monitors/` > package `examples/`.
 - Monitor step type: workflows can invoke monitors as verification gates via `monitor: <name>`. CLEAN → completed, FLAG/NEW → failed.
 - `block:<name>` schema references: `output.schema: block:project` resolves to `.project/schemas/project.schema.json` from cwd. Portable across install methods — use for any workflow step or artifact that targets a project block.
@@ -156,4 +161,4 @@ All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add 
 
 ## Design Decisions & Gaps
 
-Read via `readBlock('.', 'decisions')` / `readBlock('.', 'gaps')`, or `/workflow status` for a summary.
+Read via `readBlock('.', 'decisions')` / `readBlock('.', 'issues')`, or `/workflow status` for a summary.

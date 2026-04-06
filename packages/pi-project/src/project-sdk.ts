@@ -522,7 +522,7 @@ export interface ProjectValidationIssue {
 }
 
 export interface ProjectValidationResult {
-	valid: boolean;
+	status: "clean" | "warnings" | "invalid";
 	issues: ProjectValidationIssue[];
 }
 
@@ -784,8 +784,10 @@ export function validateProject(cwd: string): ProjectValidationResult {
 		/* block doesn't exist */
 	}
 
+	const errorCount = issues.filter((i) => i.severity === "error").length;
+	const warningCount = issues.filter((i) => i.severity === "warning").length;
 	return {
-		valid: issues.filter((i) => i.severity === "error").length === 0,
+		status: errorCount > 0 ? "invalid" : warningCount > 0 ? "warnings" : "clean",
 		issues,
 	};
 }

@@ -157,6 +157,95 @@
       "package": "pi-workflows",
       "source": "agent",
       "resolved_by": "v0.11.3 commit b614be4 — parse failure now marks step as failed, same contract as schema-bound path"
+    },
+    {
+      "id": "issue-015",
+      "title": "Classify prompt lacks conversation history — monitors produce false positives on multi-turn backreferences",
+      "body": "The classify prompt receives user_text and assistant_text from the current turn only. When a user message backreferences prior turns ('reoutput my original task', 'as I said earlier'), the classifier cannot verify whether the response addresses the referenced content. It sees a short user request and a long technical response, pattern-matches to 'deviation', and flags incorrectly. Observed: 3 false positives in a single session from the hedge monitor, all on responses that directly addressed what the user asked. Root cause: no conversation_history collector exists. The classifier reasons in a single-turn vacuum. Fix: add a conversation_history context collector that provides the last N turns, or expand user_text to include referenced prior messages.",
+      "location": "packages/pi-behavior-monitors/examples/hedge/classify.md",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-016",
+      "title": "No TUI visibility into monitor token usage and cost — side-channel LLM calls are invisible",
+      "body": "Every monitor classification is an LLM call (classify model, typically claude-sonnet). These calls consume tokens and incur cost but are completely invisible in the TUI. No running tally, no per-monitor breakdown, no session total. In a session with active monitors firing on every turn_end, the accumulated cost can be significant. Users have no way to see what monitors are costing them. Need: running tally in TUI showing monitor token usage (input/output) and cost, updated after each classification call.",
+      "location": "packages/pi-behavior-monitors/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-017",
+      "title": "No state coherence monitor — project blocks drift from source as development proceeds",
+      "body": "Project block data (architecture line counts, domain entry counts, version references, conventions test counts) goes stale as code changes accumulate. No monitor watches commits and compares block assertions against source truth. The block API supports programmatic writes, the monitor system supports write actions on FLAG, and block-to-source mappings are deterministic — a state coherence monitor class could detect staleness on commit and write corrections directly without steering. Requires: project_blocks context collector, block-to-source mapping pattern library, classify template that reasons about state coherence rather than behavioral patterns, write action that updates stale fields.",
+      "location": "packages/pi-behavior-monitors/examples/",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-018",
+      "title": "Hedge monitor classifies tool-call-heavy responses as empty — tool_results not in classify context",
+      "body": "The hedge monitor's classify context includes tool_calls (names of tools called) but not tool_results (what those tools produced). When the assistant's response is primarily tool work — edits, writes, commits, builds — the text portion is a brief summary. The classifier sees tool names and a terse text response, concludes 'the assistant provided no response', and flags incorrectly. Observed: 'The assistant provided no response at all' on a turn that edited files, ran builds, and committed. The work was in tool results the classifier never saw. Fix: add tool_results to the hedge monitor's classify.context array, or teach the classify prompt that tool_calls represent substantive work even when assistant_text is brief.",
+      "location": "packages/pi-behavior-monitors/examples/hedge/hedge.monitor.json",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-019",
+      "title": "Skill generator cannot introspect validator phases or SDK query functions — new capabilities require narrative updates",
+      "body": "The skill generator introspects tools, commands, events, shortcuts, and resource directories. It cannot introspect internal function behavior — validator phases and SDK query functions are invisible. When new validation checks or SDK capabilities are added, they only surface in the skill if the narrative (skill-narrative.md) is manually updated. The agent vocabulary extractor (extractAgentVocabulary) proved the pattern: export a registry, generator reads it, produces a vocabulary section. The validator now exports validationChecks() returning 11 check descriptors (commit 6fc1611), and the SDK exports agentContracts() and agentsByBlock(). The registries exist — what remains is generator integration: add extractValidationVocabulary() that calls validationChecks() and produces a <validation_vocabulary> section, parallel to <agent_vocabulary>, <planning_vocabulary>, and <monitor_vocabulary>.",
+      "location": "scripts/generate-skills.js",
+      "status": "resolved",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "human",
+      "resolved_by": "commit 4dffeec — extractValidationVocabulary() added to generator, produces <validation_vocabulary> table from validationChecks() registry"
+    },
+    {
+      "id": "issue-020",
+      "title": "contextBlocks injection only reads static files — no support for computed blocks derived at dispatch time",
+      "body": "compileAgentSpec() reads .project/<name>.json for each contextBlocks entry. Blocks whose content is derivable from code (architecture, domain reference entries) go stale between writes. The injection path should support registered generator functions alongside static files — for derivable blocks, the generator runs at injection time, returning the same shape as the static block. Agent templates and shared macros are unaffected — they render whatever data they receive regardless of source.",
+      "location": "packages/pi-workflows/src/step-shared.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "human"
+    },
+    {
+      "id": "issue-021",
+      "title": "Architecture block is manually maintained — modules, dependencies, and patterns are derivable from package.json and source",
+      "body": "The architecture block restates what code inspection provides: module names from package.json, entry files, dependencies, responsibility from package descriptions. These go stale on every code change. A projectArchitecture(cwd) function could derive modules and dependencies from package.json files and entry points, producing the same schema shape as the static block. This would make the architecture block a computed block candidate for issue-020.",
+      "location": ".project/architecture.json",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "human"
+    },
+    {
+      "id": "issue-022",
+      "title": "Domain block reference entries duplicate SDK query results — agent counts, workflow counts, step types go stale",
+      "body": "Domain entries like agent-spec ('26 bundled agents'), workflow-spec ('15 bundled workflows'), and step type descriptions restate what availableAgents(), availableWorkflows(), and stepTypes() return dynamically. When agents or workflows are added, the domain entries are wrong. These reference entries should be computed from SDK functions at injection time rather than maintained as static JSON. Human-authored domain entries (design patterns, composition families) remain static.",
+      "location": ".project/domain.json",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "human"
     }
   ]
 }

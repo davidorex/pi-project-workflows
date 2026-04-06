@@ -46,7 +46,7 @@ After initialization, three directories coexist in a project:
 .project/       — pi-project (schemas, block data, phases). Created by /project init.
   schemas/      — JSON Schema files defining block types
   phases/       — phase specification files
-  *.json        — block data files (gaps, decisions, rationale, project, etc.)
+  *.json        — block data files (issues, decisions, rationale, project, etc.)
 .workflows/     — pi-workflows (run state). Created by /workflow init.
   runs/         — workflow execution state, session logs, outputs
 ```
@@ -137,14 +137,17 @@ npx tsx -e "
 ## Architecture
 
 - **Main conversation is the control plane; workflows are subordinate.** Each workflow step runs as a subprocess (`pi --mode json`) with its own context window. The main LLM orchestrates; step agents execute.
-- **Agent specs are `.agent.yaml` only** (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time.
+- **Agent specs are `.agent.yaml` only** (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time. Agents declare `inputSchema` for typed input validation at dispatch, `contextBlocks` to inject project block data into templates, and `output.format`/`output.schema` for output validation.
+- **`contextBlocks`** — an agent YAML field listing block names (e.g., `contextBlocks: [conventions, requirements, conformance-reference]`). At dispatch time, each named block is read from `.project/` and injected into the Nunjucks template context as `_<name>` (hyphens become underscores). Templates access block data via `{{ _conventions.rules }}` or render it with shared macros via `{% from "shared/macros.md" import render_conventions %}{{ render_conventions(_conventions) }}`. Missing blocks are `null`; templates guard with `{% if _conventions %}`. No `.project/` directory means injection is skipped entirely. This is how project state — conventions, requirements, architecture decisions — flows into agent prompts declaratively.
+- **`inputSchema`** — an agent YAML field defining a JSON Schema for the agent's input. Validated at dispatch time before the agent subprocess is spawned. If validation fails, the step fails immediately — no LLM call is made.
+- **Shared macros** (`templates/shared/macros.md`) — Nunjucks macros that render block data as markdown. One per block schema: `render_project`, `render_architecture`, `render_conventions`, `render_requirements`, `render_conformance`, `render_domain`, `render_decisions`, `render_tasks`, `render_issues`, plus `render_exploration`, `render_exploration_full`, `render_gap` for workflow step data. Each macro null-guards its input. Resolved via three-tier template search — users override by placing `shared/macros.md` in `.pi/templates/`.
 - **DAG planner infers parallelism** from `${{ steps.X }}` expression references and `context: [stepName]` declarations. Steps without explicit dependencies run sequentially by declaration order.
-- **Context injection** — agent steps with `context: [step1, step2]` get prior step `textOutput` inlined into their dispatch prompt as labeled markdown sections. Complements expression-based structured data flow with narrative text inlining.
+- **Step context injection** — agent steps with `context: [step1, step2]` get prior step `textOutput` inlined into their dispatch prompt as labeled markdown sections. Complements expression-based structured data flow with narrative text inlining.
 - **Monitor step type** — workflows can invoke monitors as verification gates via `monitor: <name>`. CLEAN → completed, FLAG/NEW → failed.
 - **Atomic writes** — all block and state persistence uses tmp file + rename for crash safety. State write failure is fatal.
 - **Checkpoint/resume** — incomplete runs can be resumed from last completed step. `completion` field controls post-workflow message to main LLM.
 - **Three-tier resource search** — project `.pi/` > user `~/.pi/agent/` > package builtin (agents, templates, workflows)
-- **Workflow SDK** (`packages/pi-workflows/src/workflow-sdk.ts`) — single queryable surface for the extension's capabilities. All functions derive dynamically from code registries and filesystem — add a filter, agent, template, or schema and it appears automatically.
+- **Workflow SDK** (`packages/pi-workflows/src/workflow-sdk.ts`) — single queryable surface for the extension's capabilities. All functions derive dynamically from code registries and filesystem. Vocabulary: `stepTypes()`, `filterNames()`, `validationChecks()`. Discovery: `availableAgents()`, `availableWorkflows()`. Contracts: `agentContracts(cwd)` projects each agent's inputSchema, contextBlocks, and output format; `agentsByBlock(cwd, blockName)` finds agents consuming a given block. Validation: `validateWorkflow()` checks 11 dimensions including inputSchema required-key matching, contextBlocks existence, StepType metadata enforcement, and template-input alignment with contextBlocks-injected variables.
 - **ESM, TypeScript** compiled via `tsc` to `dist/`. Pi loads compiled JS from each package's `dist/index.js`. Cross-package imports use `.js` extensions for Node16 module resolution.
 - **Skill self-install** — each extension copies its `skills/` directory to `~/.pi/agent/skills/` on activation, ensuring skills are discoverable regardless of install method.
 - **Pre-commit hook** (husky) runs `npm run check` before every commit. **CI** (GitHub Actions) runs check + build + test on Node 22/23.
@@ -161,7 +164,7 @@ When working in this repository:
 - **`packages/pi-workflows/src/workflow-spec.ts`** — YAML parsing and `STEP_TYPES` registry
 - **`packages/pi-workflows/src/expression.ts`** — expression evaluator and filter registry
 - **`packages/pi-behavior-monitors/index.ts`** — single-file extension: monitors, classification, steering, `invokeMonitor()` export
-- **`.project/`** contains this project's own block data (gaps, decisions, architecture, inventory) — useful for understanding the extension's development state
+- **`.project/`** contains this project's own block data (issues, decisions, architecture, inventory) — useful for understanding the extension's development state
 - Use `/project status` to see derived metrics. Use `/workflow list` to see available workflows.
 
 ## Release

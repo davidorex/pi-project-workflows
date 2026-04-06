@@ -7,6 +7,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
 import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
 import { availableMonitors } from "./step-monitor.js";
@@ -22,6 +23,77 @@ export type { StepTypeDescriptor };
 // Re-export for single-import convenience
 export { EXPRESSION_ROOTS, FILTER_NAMES, STEP_TYPES };
 
+export interface ValidationCheckDescriptor {
+	id: string;
+	name: string;
+	severity: "error" | "warning";
+	description: string;
+}
+
+const VALIDATION_CHECKS: ValidationCheckDescriptor[] = [
+	{
+		id: "agent-resolution",
+		name: "Agent resolution",
+		severity: "error",
+		description: "Referenced agents exist in search paths",
+	},
+	{
+		id: "monitor-resolution",
+		name: "Monitor resolution",
+		severity: "warning",
+		description: "Referenced monitors exist in search paths",
+	},
+	{
+		id: "schema-existence",
+		name: "Schema existence",
+		severity: "error",
+		description: "Referenced schema files exist on disk",
+	},
+	{
+		id: "step-references",
+		name: "Step references",
+		severity: "error",
+		description: "Expression step references point to declared steps",
+	},
+	{
+		id: "step-ordering",
+		name: "Step ordering",
+		severity: "error",
+		description: "Steps do not forward-reference later steps",
+	},
+	{
+		id: "context-references",
+		name: "Context references",
+		severity: "error",
+		description: "context[] entries point to declared steps",
+	},
+	{ id: "filter-names", name: "Filter names", severity: "warning", description: "Expression filters are recognized" },
+	{
+		id: "steptype-metadata",
+		name: "StepType metadata",
+		severity: "error",
+		description: "retry/input/output declarations match step type capabilities",
+	},
+	{
+		id: "inputschema-required",
+		name: "inputSchema required keys",
+		severity: "error",
+		description: "Agent required input keys are provided by step",
+	},
+	{
+		id: "contextblocks-existence",
+		name: "contextBlocks existence",
+		severity: "warning",
+		description: "Declared context blocks exist in .project/",
+	},
+	{
+		id: "template-alignment",
+		name: "Template-input alignment",
+		severity: "error",
+		description: "Template variables match step inputs and source schemas",
+	},
+];
+
 const EXPR_PATTERN = /\$\{\{\s*(.*?)\s*\}\}/g;
 
 // ── Vocabulary (derived from code registries) ────────────────────────────────
@@ -34,6 +106,9 @@ export function stepTypes(): StepTypeDescriptor[] {
 }
 export function expressionRoots(): readonly string[] {
 	return EXPRESSION_ROOTS;
+}
+export function validationChecks(): ValidationCheckDescriptor[] {
+	return VALIDATION_CHECKS;
 }
 
 // ── Discovery (derived from filesystem) ──────────────────────────────────────
@@ -104,6 +179,42 @@ export function availableSchemas(_cwd: string, builtinDir?: string): string[] {
 
 export function availableWorkflows(cwd: string): WorkflowSpec[] {
 	return discoverWorkflows(cwd);
+}
+
+// ── Agent Contracts (typed projection over availableAgents) ─────────────────
+
+export interface AgentContract {
+	name: string;
+	role?: string;
+	inputSchema?: { required: string[]; properties: string[] };
+	contextBlocks?: string[];
+	outputFormat?: "json" | "text";
+	outputSchema?: string;
+}
+
+export function agentContracts(cwd: string): AgentContract[] {
+	return availableAgents(cwd).map((a) => ({
+		name: a.name,
+		role: a.role,
+		inputSchema: a.inputSchema
+			? {
+					required: Array.isArray((a.inputSchema as Record<string, unknown>).required)
+						? ((a.inputSchema as Record<string, unknown>).required as string[])
+						: [],
+					properties:
+						typeof (a.inputSchema as Record<string, unknown>).properties === "object"
+							? Object.keys((a.inputSchema as Record<string, unknown>).properties as Record<string, unknown>)
+							: [],
+				}
+			: undefined,
+		contextBlocks: a.contextBlocks,
+		outputFormat: a.outputFormat,
+		outputSchema: a.outputSchema,
+	}));
+}
+
+export function agentsByBlock(cwd: string, blockName: string): AgentContract[] {
+	return agentContracts(cwd).filter((a) => a.contextBlocks?.includes(blockName));
 }
 
 // ── Introspection (derived from parsed spec) ─────────────────────────────────
@@ -274,6 +385,21 @@ function collectSchemaRefs(steps: Record<string, StepSpec>, schemas: string[]): 
 	}
 }
 
+/** Yields [stepName, stepSpec, fieldPrefix] for all steps including nested loop/parallel. */
+function* walkAllSteps(steps: Record<string, StepSpec>, prefix = "steps"): Generator<[string, StepSpec, string]> {
+	for (const [name, step] of Object.entries(steps)) {
+		const fieldPrefix = `${prefix}.${name}`;
+		yield [name, step, fieldPrefix];
+		if (step.loop?.steps) yield* walkAllSteps(step.loop.steps as Record<string, StepSpec>, `${fieldPrefix}.loop.steps`);
+		if (step.parallel) yield* walkAllSteps(step.parallel as Record<string, StepSpec>, `${fieldPrefix}.parallel`);
+	}
+}
+
+/** Returns the StepTypeDescriptor whose field key is present on the given step spec. */
+function findStepType(stepSpec: StepSpec): StepTypeDescriptor | undefined {
+	return STEP_TYPES.find((t) => (stepSpec as Record<string, unknown>)[t.field] !== undefined);
+}
+
 // ── Validation (composed from introspection + discovery) ─────────────────────
 
 export interface ValidationIssue {
@@ -283,7 +409,7 @@ export interface ValidationIssue {
 }
 
 export interface ValidationResult {
-	valid: boolean;
+	status: "clean" | "warnings" | "invalid";
 	issues: ValidationIssue[];
 }
 
@@ -295,6 +421,8 @@ export interface ValidationResult {
 export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationResult {
 	const issues: ValidationIssue[] = [];
 	const steps = declaredSteps(spec);
+	// Cache for successfully loaded agent specs — populated in check 1, consumed in check 7b.
+	const resolvedAgents = new Map<string, AgentSpec>();
 
 	// 1. Agent resolution — do all referenced agents exist?
 	const agentRefs = declaredAgentRefs(spec);
@@ -302,7 +430,8 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		const loadAgent = createAgentLoader(cwd);
 		for (const agentName of agentRefs) {
 			try {
-				loadAgent(agentName);
+				const loaded = loadAgent(agentName);
+				resolvedAgents.set(agentName, loaded);
 			} catch (err) {
 				if (err instanceof AgentNotFoundError) {
 					// Find which step(s) reference this agent for the field path
@@ -436,11 +565,89 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		}
 	}
 
+	// 7. StepType metadata — retry on non-retryable, input/output on unsupported types
+	for (const [stepName, step, fieldPrefix] of walkAllSteps(spec.steps)) {
+		const desc = findStepType(step);
+		if (!desc) continue;
+		if (step.retry && !desc.retryable) {
+			issues.push({
+				severity: "error",
+				message: `Step '${stepName}' has retry but type '${desc.name}' is not retryable`,
+				field: `${fieldPrefix}.retry`,
+			});
+		}
+		if (step.input && !desc.supportsInput) {
+			issues.push({
+				severity: "warning",
+				message: `Step '${stepName}' has input but type '${desc.name}' does not support input`,
+				field: `${fieldPrefix}.input`,
+			});
+		}
+		if (step.output && !desc.supportsOutput) {
+			issues.push({
+				severity: "warning",
+				message: `Step '${stepName}' has output but type '${desc.name}' does not support output`,
+				field: `${fieldPrefix}.output`,
+			});
+		}
+	}
+
+	// 7b. inputSchema required keys — do agent steps provide all required input keys?
+	for (const [stepName, step, fieldPrefix] of walkAllSteps(spec.steps)) {
+		if (!step.agent) continue;
+		const agentSpec = resolvedAgents.get(step.agent);
+		if (!agentSpec?.inputSchema) continue;
+		const required = (agentSpec.inputSchema as Record<string, unknown>).required;
+		if (!Array.isArray(required) || required.length === 0) continue;
+		const providedKeys = new Set(Object.keys(step.input ?? {}));
+		for (const key of required) {
+			if (!providedKeys.has(key as string)) {
+				issues.push({
+					severity: "error",
+					message: `Step '${stepName}' is missing required input '${key}' for agent '${step.agent}'`,
+					field: `${fieldPrefix}.input`,
+				});
+			}
+		}
+	}
+
+	// 7c. contextBlocks existence — do declared context blocks exist in .project/?
+	const projectDirPath = path.join(cwd, PROJECT_DIR);
+	const projectDirExists = fs.existsSync(projectDirPath);
+
+	for (const [_stepName, step, fieldPrefix] of walkAllSteps(spec.steps)) {
+		if (!step.agent) continue;
+		const agentSpec = resolvedAgents.get(step.agent);
+		if (!agentSpec?.contextBlocks || agentSpec.contextBlocks.length === 0) continue;
+
+		if (!projectDirExists) {
+			issues.push({
+				severity: "warning",
+				message: `Agent '${step.agent}' declares contextBlocks but no .project/ directory exists`,
+				field: `${fieldPrefix}.agent`,
+			});
+			continue;
+		}
+
+		for (const blockName of agentSpec.contextBlocks) {
+			const blockPath = path.join(projectDirPath, `${blockName}.json`);
+			if (!fs.existsSync(blockPath)) {
+				issues.push({
+					severity: "warning",
+					message: `Context block '${blockName}' not found in .project/ (referenced by agent '${step.agent}')`,
+					field: `${fieldPrefix}.agent`,
+				});
+			}
+		}
+	}
+
 	// 8. Template-input alignment — do template field references match source schemas?
 	issues.push(...validateTemplateAlignment(spec, cwd));
 
+	const errorCount = issues.filter((i) => i.severity === "error").length;
+	const warningCount = issues.filter((i) => i.severity === "warning").length;
 	return {
-		valid: issues.filter((i) => i.severity === "error").length === 0,
+		status: errorCount > 0 ? "invalid" : warningCount > 0 ? "warnings" : "clean",
 		issues,
 	};
 }

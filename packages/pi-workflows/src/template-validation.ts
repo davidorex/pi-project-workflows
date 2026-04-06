@@ -205,8 +205,26 @@ function traceInputSchema(inputExpr: string, stepSpec: StepSpec, spec: WorkflowS
 	if (stepsMatch) {
 		const [, stepName, subField] = stepsMatch;
 		const sourceStep = spec.steps[stepName];
-		if (!sourceStep?.output?.schema) return null;
-		return loadSchemaFields(sourceStep.output.schema, spec.filePath, cwd, subField);
+
+		// Try output.schema first (existing behavior)
+		if (sourceStep?.output?.schema) {
+			return loadSchemaFields(sourceStep.output.schema, spec.filePath, cwd, subField);
+		}
+
+		// Case 3: block read steps have implicit schemas from .project/schemas/
+		if (sourceStep?.block && "read" in sourceStep.block) {
+			const blockRead = (sourceStep.block as { read: string | string[] }).read;
+			if (typeof blockRead === "string" && !subField) {
+				// Single block read: output is block content directly
+				return loadBlockSchema(blockRead, cwd);
+			}
+			if (Array.isArray(blockRead) && subField && blockRead.includes(subField)) {
+				// Multi-block read: output.subField → block named subField
+				return loadBlockSchema(subField, cwd);
+			}
+		}
+
+		return null;
 	}
 
 	return null;
@@ -279,6 +297,28 @@ function loadSchemaFields(
 		return {
 			properties,
 			required: (target.required as string[]) ?? [],
+		};
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Load a block schema from .project/schemas/<blockName>.schema.json and return its field definitions.
+ * Used for block read steps that carry no explicit output.schema annotation.
+ */
+function loadBlockSchema(blockName: string, cwd: string): SchemaFields | null {
+	const schemaPath = path.join(cwd, ".project", "schemas", `${blockName}.schema.json`);
+	try {
+		const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+		if (!schema.properties) return null;
+		const properties: Record<string, { type: string }> = {};
+		for (const [key, value] of Object.entries(schema.properties)) {
+			properties[key] = { type: (value as Record<string, unknown>).type as string };
+		}
+		return {
+			properties,
+			required: (schema.required as string[]) ?? [],
 		};
 	} catch {
 		return null;
@@ -437,6 +477,14 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			continue; // agent resolution check handles this
 		}
 
+		// Compute contextBlocks-injected variable names for this agent
+		const contextBlockVars = new Set<string>();
+		if (agentSpec.contextBlocks) {
+			for (const blockName of agentSpec.contextBlocks) {
+				contextBlockVars.add(`_${blockName.replace(/-/g, "_")}`);
+			}
+		}
+
 		if (!agentSpec.taskTemplate) continue;
 
 		// Resolve and read template file
@@ -450,7 +498,14 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 				// try next path
 			}
 		}
-		if (!templateContent) continue;
+		if (!templateContent) {
+			issues.push({
+				severity: "warning",
+				message: `Agent '${stepSpec.agent}' declares task template '${agentSpec.taskTemplate}' but file not found in search paths`,
+				field: `steps.${stepName}.agent`,
+			});
+			continue;
+		}
 
 		const templateVars = extractTemplateVariables(templateContent);
 		if (templateVars.length === 0) continue;
@@ -464,7 +519,9 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			// The common bug: template uses `spec.*` but forEach says `as: plan`
 			if (!forEachRoots.has(stepSpec.as) && !inputKeys.has(stepSpec.as)) {
 				// forEach variable is never referenced — find what the template uses instead
-				const nonInputRoots = [...forEachRoots].filter((r) => !inputKeys.has(r) && !INJECTED_VARIABLES.has(r));
+				const nonInputRoots = [...forEachRoots].filter(
+					(r) => !inputKeys.has(r) && !INJECTED_VARIABLES.has(r) && !contextBlockVars.has(r),
+				);
 				if (nonInputRoots.length > 0) {
 					issues.push({
 						severity: "error",
@@ -479,15 +536,14 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 		const uniqueRoots = new Set(templateVars.map((v) => v.root));
 		for (const root of uniqueRoots) {
 			if (INJECTED_VARIABLES.has(root)) continue;
+			if (contextBlockVars.has(root)) continue;
 			if (inputKeys.has(root)) continue;
 			// forEach `as` variable counts as an input
 			if (stepSpec.forEach && stepSpec.as === root) continue;
 
-			// Find if any template var with this root is guarded
-			const allGuarded = templateVars.filter((v) => v.root === root).every((v) => v.guarded);
 			issues.push({
-				severity: allGuarded ? "warning" : "error",
-				message: `Template '${agentSpec.taskTemplate}' references '${root}' but step '${stepName}' does not declare it in input.${allGuarded ? " (guarded with conditional)" : ""}`,
+				severity: "error",
+				message: `Template '${agentSpec.taskTemplate}' references '${root}' but step '${stepName}' does not declare it in input`,
 				field: `steps.${stepName}.input`,
 			});
 		}
@@ -495,6 +551,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 		// Check 3: Field-level alignment against source schemas
 		for (const tv of templateVars) {
 			if (INJECTED_VARIABLES.has(tv.root)) continue;
+			if (contextBlockVars.has(tv.root)) continue;
 			const fieldParts = tv.path.split(".");
 			if (fieldParts.length < 2) continue;
 			const field = fieldParts[1]; // first-level field access on the root variable
@@ -514,14 +571,36 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			if (!exprToTrace) continue;
 
 			const schemaFields = traceInputSchema(exprToTrace, stepSpec, spec, cwd);
-			if (!schemaFields) continue; // unverifiable
+			if (!schemaFields) {
+				let suggestion = "";
+				const exprContent = exprToTrace?.match(/\$\{\{\s*steps\.([\w-]+)/);
+				if (exprContent) {
+					const sourceStepName = exprContent[1];
+					const sourceStep = spec.steps[sourceStepName];
+					if (sourceStep?.block && "read" in sourceStep.block) {
+						const blockRead = (sourceStep.block as { read: string | string[] }).read;
+						const blockName = typeof blockRead === "string" ? blockRead : tv.root;
+						suggestion = `. Consider adding output.schema: block:${blockName} to step '${sourceStepName}', or verify .project/schemas/${blockName}.schema.json exists`;
+					} else if (sourceStep && !sourceStep.output?.schema) {
+						suggestion = `. Consider adding output.schema to step '${sourceStepName}' so field access can be verified`;
+					}
+				} else if (exprToTrace?.includes("input.")) {
+					suggestion = `. Consider adding a schema to the workflow's input definition`;
+				}
+				issues.push({
+					severity: "warning",
+					message: `Template '${agentSpec.taskTemplate}' accesses '${tv.path}' but no schema available to verify field — field-level validation skipped${suggestion}`,
+					field: `steps.${stepName}.input.${tv.root}`,
+				});
+				continue;
+			}
 
 			if (!(field in schemaFields.properties)) {
 				const closest = suggestClosest(field, Object.keys(schemaFields.properties));
 				const suggestion = closest ? ` Did you mean '${closest}'?` : "";
 				const available = Object.keys(schemaFields.properties).join(", ");
 				issues.push({
-					severity: tv.guarded ? "warning" : "error",
+					severity: "error",
 					message: `Template '${agentSpec.taskTemplate}' references '${tv.path}' but schema has no field '${field}'.${suggestion} Available: [${available}]`,
 					field: `steps.${stepName}.input.${tv.root}`,
 				});
@@ -532,6 +611,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 		const textOutputWarned = new Set<string>();
 		for (const tv of templateVars) {
 			if (INJECTED_VARIABLES.has(tv.root)) continue;
+			if (contextBlockVars.has(tv.root)) continue;
 			if (textOutputWarned.has(tv.root)) continue;
 			const fieldParts = tv.path.split(".");
 			if (fieldParts.length < 2) continue;
@@ -556,6 +636,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 			const templateLoops = extractTemplateLoops(templateContent);
 			for (const loop of templateLoops) {
 				if (INJECTED_VARIABLES.has(loop.sourceRoot)) continue;
+				if (contextBlockVars.has(loop.sourceRoot)) continue;
 
 				// Find the input expression for this loop source root
 				const inputExpr = stepSpec.input?.[loop.sourceRoot] as string | undefined;

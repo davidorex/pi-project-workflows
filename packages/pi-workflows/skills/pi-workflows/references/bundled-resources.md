@@ -68,7 +68,6 @@
 ## templates/ (33 files)
 
 - `templates/analyzers/base-analyzer.md`
-- `templates/analyzers/macros.md`
 - `templates/analyzers/patterns-task.md`
 - `templates/analyzers/patterns.md`
 - `templates/analyzers/quality-task.md`
@@ -94,6 +93,7 @@
 - `templates/project-inferrer/task.md`
 - `templates/requirements-gatherer/task.md`
 - `templates/researcher/task.md`
+- `templates/shared/macros.md`
 - `templates/spec-implementer/task.md`
 - `templates/synthesizer/system.md`
 - `templates/synthesizer/task.md`

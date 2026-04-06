@@ -5,6 +5,8 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import type { StepSpec, WorkflowSpec } from "./types.js";
 import {
+	agentContracts,
+	agentsByBlock,
 	availableAgents,
 	availableSchemas,
 	availableTemplates,
@@ -19,6 +21,7 @@ import {
 	STEP_TYPES,
 	stepTypes,
 	validateWorkflow,
+	validationChecks,
 } from "./workflow-sdk.js";
 import { parseWorkflowSpec } from "./workflow-spec.js";
 
@@ -67,6 +70,40 @@ describe("vocabulary", () => {
 		const roots = expressionRoots();
 		assert.ok(roots.includes("input"));
 		assert.ok(roots.includes("steps"));
+	});
+});
+
+describe("validationChecks", () => {
+	it("returns descriptors for all validation checks", () => {
+		const checks = validationChecks();
+		assert.strictEqual(checks.length, 11);
+	});
+
+	it("each descriptor has required fields", () => {
+		const checks = validationChecks();
+		for (const c of checks) {
+			assert.ok(typeof c.id === "string", `id should be string, got ${typeof c.id}`);
+			assert.ok(typeof c.name === "string", `name should be string, got ${typeof c.name}`);
+			assert.ok(
+				c.severity === "error" || c.severity === "warning",
+				`severity should be 'error' or 'warning', got '${c.severity}'`,
+			);
+			assert.ok(typeof c.description === "string", `description should be string, got ${typeof c.description}`);
+		}
+	});
+
+	it("IDs are unique", () => {
+		const checks = validationChecks();
+		assert.strictEqual(new Set(checks.map((c) => c.id)).size, checks.length);
+	});
+
+	it("includes the four new checks", () => {
+		const checks = validationChecks();
+		const ids = checks.map((c) => c.id);
+		assert.ok(ids.includes("steptype-metadata"), "should include steptype-metadata");
+		assert.ok(ids.includes("inputschema-required"), "should include inputschema-required");
+		assert.ok(ids.includes("contextblocks-existence"), "should include contextblocks-existence");
+		assert.ok(ids.includes("template-alignment"), "should include template-alignment");
 	});
 });
 
@@ -300,7 +337,7 @@ describe("validateWorkflow", () => {
 			process: { transform: { mapping: { result: "${{ steps.greet.output }}" } } },
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, true);
+		assert.strictEqual(result.status, "clean");
 		assert.strictEqual(result.issues.length, 0);
 	});
 
@@ -309,7 +346,7 @@ describe("validateWorkflow", () => {
 			investigate: { agent: "nonexistent-agent-xyz" },
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, false);
+		assert.strictEqual(result.status, "invalid");
 		const agentIssues = result.issues.filter((i) => i.message.includes("nonexistent-agent-xyz"));
 		assert.ok(agentIssues.length > 0);
 		assert.strictEqual(agentIssues[0].severity, "error");
@@ -338,7 +375,7 @@ describe("validateWorkflow", () => {
 			},
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, false);
+		assert.strictEqual(result.status, "invalid");
 		const stepIssues = result.issues.filter((i) => i.message.includes("undeclared step"));
 		assert.ok(stepIssues.length > 0);
 		assert.strictEqual(stepIssues[0].severity, "error");
@@ -366,7 +403,7 @@ describe("validateWorkflow", () => {
 			},
 		});
 		const result = validateWorkflow(spec, "/tmp");
-		assert.strictEqual(result.valid, false);
+		assert.strictEqual(result.status, "invalid");
 		const ctxIssues = result.issues.filter((i) => i.message.includes("context") && i.message.includes("undeclared"));
 		assert.ok(ctxIssues.length > 0);
 		assert.strictEqual(ctxIssues[0].severity, "error");
@@ -397,8 +434,8 @@ describe("validateWorkflow", () => {
 		const filterIssues = result.issues.filter((i) => i.message.includes("Unknown filter"));
 		assert.ok(filterIssues.length > 0);
 		assert.strictEqual(filterIssues[0].severity, "warning");
-		// Warnings don't make it invalid
-		assert.strictEqual(result.valid, true);
+		// Warnings don't make it invalid — but status reflects their presence
+		assert.strictEqual(result.status, "warnings");
 	});
 
 	it("valid agents from bundled dir resolve correctly", (t) => {
@@ -417,6 +454,510 @@ describe("validateWorkflow", () => {
 	});
 });
 
+// ── Validation result status field ──────────────────────────────────────────
+
+describe("validation result status field", () => {
+	it("status is 'clean' when zero issues", () => {
+		const spec = makeSpec({
+			greet: { command: "echo hello" },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "clean");
+	});
+
+	it("status is 'warnings' when only warnings", () => {
+		const spec = makeSpec({
+			load: { command: "echo hello" },
+			show: {
+				transform: { mapping: { result: "${{ steps.load.output | bogusfilter }}" } },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "warnings");
+	});
+
+	it("status is 'invalid' when errors present", () => {
+		const spec = makeSpec({
+			investigate: { agent: "nonexistent-xyz" },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "invalid");
+	});
+
+	it("status is 'invalid' when both errors and warnings", () => {
+		const spec = makeSpec({
+			load: { command: "echo hello" },
+			show: {
+				transform: { mapping: { result: "${{ steps.load.output | bogusfilter }}" } },
+			},
+			investigate: { agent: "nonexistent-xyz" },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "invalid");
+	});
+
+	it("existing unknown-filter test: warnings status with filter issues", () => {
+		const spec = makeSpec({
+			load: { command: "echo hello" },
+			show: {
+				transform: { mapping: { result: "${{ steps.load.output | bogusfilter }}" } },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		assert.strictEqual(result.status, "warnings");
+		const filterIssues = result.issues.filter((i) => i.message.includes("Unknown filter"));
+		assert.ok(filterIssues.length > 0);
+	});
+});
+
+// ── StepType Metadata Validation ─────────────────────────────────────────────
+
+describe("StepType metadata validation", () => {
+	it("reports error for retry on non-retryable step type", () => {
+		const spec = makeSpec({
+			check: { gate: { check: "test -f /tmp/flag" }, retry: { maxAttempts: 3 } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const issues = result.issues.filter((i) => i.message.includes("not retryable"));
+		assert.ok(issues.length > 0);
+		assert.strictEqual(issues[0].severity, "error");
+	});
+
+	it("allows retry on retryable step type", () => {
+		const spec = makeSpec({
+			investigate: { agent: "investigator", retry: { maxAttempts: 3 } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const retryIssues = result.issues.filter((i) => i.message.includes("not retryable"));
+		assert.strictEqual(retryIssues.length, 0);
+	});
+
+	it("reports warning for input on step type that does not support it", () => {
+		const spec = makeSpec({
+			check: { gate: { check: "test -f /tmp/flag" }, input: { x: "y" } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const issues = result.issues.filter((i) => i.message.includes("does not support input"));
+		assert.ok(issues.length > 0);
+		assert.strictEqual(issues[0].severity, "warning");
+	});
+
+	it("reports warning for output on step type that does not support it", () => {
+		const spec = makeSpec({
+			wait: { pause: true, output: { format: "json" } },
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const issues = result.issues.filter((i) => i.message.includes("does not support output"));
+		assert.ok(issues.length > 0);
+		assert.strictEqual(issues[0].severity, "warning");
+	});
+
+	it("no type-metadata issues for agent step with input and output", () => {
+		const spec = makeSpec({
+			investigate: {
+				agent: "investigator",
+				input: { topic: "security" },
+				output: { format: "json" },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const metaIssues = result.issues.filter(
+			(i) => i.message.includes("not retryable") || i.message.includes("does not support"),
+		);
+		assert.strictEqual(metaIssues.length, 0);
+	});
+
+	it("reports warning for input on transform step", () => {
+		const spec = makeSpec({
+			process: {
+				transform: { mapping: { result: "${{ input.x }}" } },
+				input: { x: "z" },
+			},
+		});
+		const result = validateWorkflow(spec, "/tmp");
+		const issues = result.issues.filter((i) => i.message.includes("does not support input"));
+		assert.ok(issues.length > 0);
+		assert.strictEqual(issues[0].severity, "warning");
+	});
+});
+
+// ── inputSchema Validation ────────────────────────────────────────────────────
+
+describe("inputSchema validation", () => {
+	it("no error when step provides all required input keys", (t) => {
+		const tmpDir = makeTmpDir("inputschema-pass");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "typed-agent.agent.yaml"),
+			`${[
+				"name: typed-agent",
+				"tools: [read]",
+				"input:",
+				"  type: object",
+				"  required:",
+				"    - topic",
+				"  properties:",
+				"    topic:",
+				"      type: string",
+				"    depth:",
+				"      type: number",
+			].join("\n")}\n`,
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "typed-agent", input: { topic: "${{ input.topic }}" } },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.strictEqual(inputSchemaIssues.length, 0);
+	});
+
+	it("reports error when step is missing required input key", (t) => {
+		const tmpDir = makeTmpDir("inputschema-missing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "typed-agent.agent.yaml"),
+			`${[
+				"name: typed-agent",
+				"tools: [read]",
+				"input:",
+				"  type: object",
+				"  required:",
+				"    - topic",
+				"    - format",
+				"  properties:",
+				"    topic:",
+				"      type: string",
+				"    format:",
+				"      type: string",
+			].join("\n")}\n`,
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "typed-agent", input: { topic: "${{ input.topic }}" } },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.ok(inputSchemaIssues.length > 0);
+		assert.ok(inputSchemaIssues.some((i) => i.message.includes("format")));
+		assert.strictEqual(inputSchemaIssues[0].severity, "error");
+	});
+
+	it("reports error when step has no input but agent requires fields", (t) => {
+		const tmpDir = makeTmpDir("inputschema-noinput");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "typed-agent.agent.yaml"),
+			`${[
+				"name: typed-agent",
+				"tools: [read]",
+				"input:",
+				"  type: object",
+				"  required:",
+				"    - topic",
+				"  properties:",
+				"    topic:",
+				"      type: string",
+			].join("\n")}\n`,
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "typed-agent" },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.ok(inputSchemaIssues.length > 0);
+		assert.ok(inputSchemaIssues.some((i) => i.message.includes("topic")));
+		assert.strictEqual(inputSchemaIssues[0].severity, "error");
+	});
+
+	it("no error when agent has no inputSchema", (t) => {
+		const tmpDir = makeTmpDir("inputschema-untyped");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "untyped-agent.agent.yaml"),
+			`${["name: untyped-agent", "tools: [read]"].join("\n")}\n`,
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "untyped-agent", input: { anything: "goes" } },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.strictEqual(inputSchemaIssues.length, 0);
+	});
+
+	it("no error when inputSchema has no required array", (t) => {
+		const tmpDir = makeTmpDir("inputschema-norequired");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "optional-agent.agent.yaml"),
+			`${[
+				"name: optional-agent",
+				"tools: [read]",
+				"input:",
+				"  type: object",
+				"  properties:",
+				"    x:",
+				"      type: string",
+			].join("\n")}\n`,
+		);
+
+		const spec = makeSpec(
+			{
+				run: { agent: "optional-agent", input: {} },
+			},
+			{ filePath: path.join(tmpDir, "test.workflow.yaml") },
+		);
+		const result = validateWorkflow(spec, tmpDir);
+		const inputSchemaIssues = result.issues.filter((i) => i.message.includes("missing required input"));
+		assert.strictEqual(inputSchemaIssues.length, 0);
+	});
+});
+
+// ── contextBlocks Validation ─────────────────────────────────────────────────
+
+describe("contextBlocks validation", () => {
+	it("no issue when contextBlocks blocks exist in .project/", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-pass");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions]\n",
+		);
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.writeFileSync(path.join(projectDir, "conventions.json"), "{}");
+
+		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter(
+			(i) => i.message.includes("contextBlocks") || i.message.includes("Context block"),
+		);
+		assert.strictEqual(ctxIssues.length, 0);
+	});
+
+	it("warns when contextBlocks block file is missing", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-missing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions]\n",
+		);
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// No conventions.json created
+
+		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter((i) => i.message.includes("conventions") && i.message.includes("not found"));
+		assert.ok(ctxIssues.length > 0);
+		assert.strictEqual(ctxIssues[0].severity, "warning");
+	});
+
+	it("warns when no .project/ directory exists", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-noproject");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions]\n",
+		);
+		// No .project/ directory created
+
+		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter((i) => i.message.includes(".project"));
+		assert.ok(ctxIssues.length > 0);
+		assert.strictEqual(ctxIssues[0].severity, "warning");
+	});
+
+	it("no issue when agent has no contextBlocks", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-none");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(path.join(agentsDir, "plain-agent.agent.yaml"), "name: plain-agent\ntools: [read]\n");
+
+		const spec = makeSpec({ run: { agent: "plain-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter(
+			(i) => i.message.includes("contextBlocks") || i.message.includes("Context block"),
+		);
+		assert.strictEqual(ctxIssues.length, 0);
+	});
+
+	it("warns only for missing blocks when some exist", (t) => {
+		const tmpDir = makeTmpDir("ctx-blocks-partial");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions, requirements]\n",
+		);
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.writeFileSync(path.join(projectDir, "conventions.json"), "{}");
+		// No requirements.json created
+
+		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
+		const result = validateWorkflow(spec, tmpDir);
+		const ctxIssues = result.issues.filter(
+			(i) => i.message.includes("Context block") && i.message.includes("not found"),
+		);
+		assert.strictEqual(ctxIssues.length, 1);
+		assert.ok(ctxIssues[0].message.includes("requirements"));
+		assert.strictEqual(ctxIssues[0].severity, "warning");
+	});
+});
+
+// ── agentContracts ──────────────────────────────────────────────────────────
+
+describe("agentContracts", () => {
+	const pkgDir = path.resolve(import.meta.dirname, "..");
+
+	it("returns contracts for bundled agents", () => {
+		const contracts = agentContracts(pkgDir);
+		assert.ok(contracts.length > 0, "should return at least one contract");
+		for (const c of contracts) {
+			assert.ok(typeof c.name === "string", "each contract should have a string name");
+		}
+	});
+
+	it("includes inputSchema with required and properties for typed agents", () => {
+		const contracts = agentContracts(pkgDir);
+		const taskWorker = contracts.find((c) => c.name === "task-worker");
+		assert.ok(taskWorker, "should find task-worker agent");
+		assert.ok(taskWorker.inputSchema, "task-worker should have inputSchema");
+		assert.ok(taskWorker.inputSchema!.required.includes("task"), "inputSchema.required should include 'task'");
+		assert.ok(taskWorker.inputSchema!.properties.includes("task"), "inputSchema.properties should include 'task'");
+		assert.ok(
+			taskWorker.inputSchema!.properties.includes("context"),
+			"inputSchema.properties should include 'context'",
+		);
+	});
+
+	it("returns undefined inputSchema for agents without it", () => {
+		const contracts = agentContracts(pkgDir);
+		// investigator is a bundled agent that has no input: field
+		const investigator = contracts.find((c) => c.name === "investigator");
+		assert.ok(investigator, "should find investigator agent");
+		assert.strictEqual(investigator.inputSchema, undefined, "investigator should have no inputSchema");
+	});
+
+	it("includes contextBlocks when declared", (t) => {
+		const tmpDir = makeTmpDir("contracts-ctx");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions, requirements]\n",
+		);
+
+		const contracts = agentContracts(tmpDir);
+		const ctxAgent = contracts.find((c) => c.name === "ctx-agent");
+		assert.ok(ctxAgent, "should find ctx-agent");
+		assert.deepStrictEqual(ctxAgent.contextBlocks, ["conventions", "requirements"]);
+	});
+
+	it("result is sorted by name", () => {
+		const contracts = agentContracts(pkgDir);
+		const names = contracts.map((c) => c.name);
+		const sorted = [...names].sort((a, b) => a.localeCompare(b));
+		assert.deepStrictEqual(names, sorted, "contracts should be sorted by name");
+	});
+});
+
+// ── agentsByBlock ───────────────────────────────────────────────────────────
+
+describe("agentsByBlock", () => {
+	function setupAgentDir(tmpDir: string): void {
+		const agentDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentDir, "a-agent.agent.yaml"),
+			"name: a-agent\ntools: [read]\ncontextBlocks: [conventions, requirements]\n",
+		);
+		fs.writeFileSync(
+			path.join(agentDir, "b-agent.agent.yaml"),
+			"name: b-agent\ntools: [read]\ncontextBlocks: [conventions]\n",
+		);
+	}
+
+	it("returns agents that declare the given block", (t) => {
+		const tmpDir = makeTmpDir("byblock-both");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupAgentDir(tmpDir);
+
+		const result = agentsByBlock(tmpDir, "conventions");
+		assert.strictEqual(result.length, 2, "both agents declare conventions");
+		const names = result.map((a) => a.name).sort();
+		assert.deepStrictEqual(names, ["a-agent", "b-agent"]);
+	});
+
+	it("returns empty array for unknown block name", (t) => {
+		const tmpDir = makeTmpDir("byblock-unknown");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupAgentDir(tmpDir);
+
+		const result = agentsByBlock(tmpDir, "nonexistent");
+		assert.deepStrictEqual(result, []);
+	});
+
+	it("filters correctly for block only some agents declare", (t) => {
+		const tmpDir = makeTmpDir("byblock-partial");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupAgentDir(tmpDir);
+
+		const result = agentsByBlock(tmpDir, "requirements");
+		assert.strictEqual(result.length, 1, "only a-agent declares requirements");
+		assert.strictEqual(result[0].name, "a-agent");
+	});
+});
+
 // ── Bundled Workflow Validation ─────────────────────────────────────────────
 
 describe("execute-task workflow validation", () => {
@@ -429,7 +970,7 @@ describe("execute-task workflow validation", () => {
 		const result = validateWorkflow(spec, pkgDir);
 		const errors = result.issues.filter((i) => i.severity === "error");
 		assert.strictEqual(errors.length, 0, `Unexpected validation errors: ${JSON.stringify(errors, null, 2)}`);
-		assert.strictEqual(result.valid, true);
+		assert.notStrictEqual(result.status, "invalid");
 	});
 
 	it("references task-worker and task-verifier agents that resolve", () => {

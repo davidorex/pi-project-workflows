@@ -135,6 +135,7 @@ export interface AgentSpec {
 	inputSchema?: Record<string, unknown>; // JSON Schema for input
 	outputFormat?: "json" | "text"; // what the agent produces
 	outputSchema?: string; // path to output JSON Schema
+	contextBlocks?: string[]; // block names to auto-inject into template context as _<name>
 }
 
 // ── Execution State ──

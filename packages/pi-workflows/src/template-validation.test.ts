@@ -337,3 +337,563 @@ describe("validateTemplateAlignment", () => {
 		assert.strictEqual(fieldErrors.length, 0, `Should skip unverifiable sources: ${JSON.stringify(fieldErrors)}`);
 	});
 });
+
+// ── contextBlocks-injected variables ───────────────────────────────────────
+
+describe("contextBlocks-injected variables", () => {
+	it("recognizes contextBlocks variables as valid template roots", () => {
+		const tmpDir = makeTmpDir("ctx-blocks-valid");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "ctx-agent.agent.yaml"),
+			"name: ctx-agent\ntools: [read]\ncontextBlocks: [conventions]\nprompt:\n  task: ctx-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "ctx-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ _conventions.rules }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "ctx-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const conventionIssues = issues.filter((i) => i.message.includes("_conventions"));
+		assert.strictEqual(
+			conventionIssues.length,
+			0,
+			`Should not flag _conventions when agent declares contextBlocks: [conventions]. Issues: ${JSON.stringify(conventionIssues)}`,
+		);
+	});
+
+	it("handles hyphen-to-underscore mapping for contextBlocks", () => {
+		const tmpDir = makeTmpDir("ctx-blocks-hyphen");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "hyphen-agent.agent.yaml"),
+			"name: hyphen-agent\ntools: [read]\ncontextBlocks: [conformance-reference]\nprompt:\n  task: hyphen-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "hyphen-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ _conformance_reference.rules }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "hyphen-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const refIssues = issues.filter((i) => i.message.includes("_conformance_reference"));
+		assert.strictEqual(
+			refIssues.length,
+			0,
+			`Should not flag _conformance_reference when agent declares contextBlocks: [conformance-reference]. Issues: ${JSON.stringify(refIssues)}`,
+		);
+	});
+
+	it("flags unknown variable when agent has no contextBlocks", () => {
+		const tmpDir = makeTmpDir("ctx-blocks-none");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "no-ctx-agent.agent.yaml"),
+			"name: no-ctx-agent\ntools: [read]\nprompt:\n  task: no-ctx-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "no-ctx-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ _conventions.rules }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "no-ctx-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const conventionIssues = issues.filter((i) => i.message.includes("_conventions"));
+		assert.ok(
+			conventionIssues.length > 0,
+			`Should flag _conventions when agent has no contextBlocks. Issues: ${JSON.stringify(issues)}`,
+		);
+	});
+
+	it("flags variable not in contextBlocks list", () => {
+		const tmpDir = makeTmpDir("ctx-blocks-partial");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "partial-agent.agent.yaml"),
+			"name: partial-agent\ntools: [read]\ncontextBlocks: [conventions]\nprompt:\n  task: partial-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "partial-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ _nonexistent.field }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "partial-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const nonexistentIssues = issues.filter((i) => i.message.includes("_nonexistent"));
+		assert.ok(
+			nonexistentIssues.length > 0,
+			`Should flag _nonexistent when it's not in contextBlocks. Issues: ${JSON.stringify(issues)}`,
+		);
+	});
+});
+
+// ── block read schema tracing ─────────────────────────────────────────────
+
+describe("block read schema tracing", () => {
+	it("traces field access through multi-block read to block schema", () => {
+		const tmpDir = makeTmpDir("block-read-multi");
+
+		// Agent
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		// Template references architecture.overview (valid field)
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ architecture.overview }}");
+
+		// Block schema at .project/schemas/architecture.schema.json
+		const schemasDir = path.join(tmpDir, ".project", "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(schemasDir, "architecture.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					overview: { type: "string" },
+					modules: { type: "array" },
+				},
+			}),
+		);
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				load: {
+					block: { read: ["architecture"] },
+				},
+				use: {
+					agent: "test-agent",
+					input: {
+						architecture: "${{ steps.load.output.architecture }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const fieldErrors = issues.filter((i) => i.message.includes("schema has no field"));
+		assert.strictEqual(
+			fieldErrors.length,
+			0,
+			`Expected zero field errors for valid architecture.overview, got: ${JSON.stringify(fieldErrors)}`,
+		);
+	});
+
+	it("reports error for wrong field through block read", () => {
+		const tmpDir = makeTmpDir("block-read-wrong");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		// Template references architecture.nonexistent (invalid field)
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ architecture.nonexistent }}");
+
+		const schemasDir = path.join(tmpDir, ".project", "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(schemasDir, "architecture.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					overview: { type: "string" },
+					modules: { type: "array" },
+				},
+			}),
+		);
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				load: {
+					block: { read: ["architecture"] },
+				},
+				use: {
+					agent: "test-agent",
+					input: {
+						architecture: "${{ steps.load.output.architecture }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const fieldErrors = issues.filter((i) => i.message.includes("nonexistent"));
+		assert.ok(fieldErrors.length > 0, `Expected error about 'nonexistent' field, got: ${JSON.stringify(issues)}`);
+		// Should list available fields
+		const errorMsg = fieldErrors[0].message;
+		assert.ok(
+			errorMsg.includes("overview") || errorMsg.includes("modules"),
+			`Error should list available fields. Got: ${errorMsg}`,
+		);
+	});
+
+	it("traces single block read", () => {
+		const tmpDir = makeTmpDir("block-read-single");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		// Template references project.name (valid field)
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ project.name }}");
+
+		const schemasDir = path.join(tmpDir, ".project", "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(schemasDir, "project.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					name: { type: "string" },
+					description: { type: "string" },
+				},
+			}),
+		);
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				load: {
+					block: { read: "project" },
+				},
+				use: {
+					agent: "test-agent",
+					input: {
+						project: "${{ steps.load.output }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const fieldErrors = issues.filter((i) => i.message.includes("schema has no field"));
+		assert.strictEqual(
+			fieldErrors.length,
+			0,
+			`Expected zero field errors for valid project.name, got: ${JSON.stringify(fieldErrors)}`,
+		);
+	});
+});
+
+// ── template resolution warnings ────────────────────────────────────────────
+
+describe("template resolution warnings", () => {
+	it("warns when agent task template not found in search paths", () => {
+		const tmpDir = makeTmpDir("tmpl-not-found");
+
+		// Agent declares a task template that doesn't exist anywhere
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "bad-tmpl.agent.yaml"),
+			"name: bad-tmpl\ntools: [read]\nprompt:\n  task: nonexistent/task.md\n",
+		);
+
+		// No template file at nonexistent/task.md in any search path
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				do_thing: {
+					agent: "bad-tmpl",
+					input: { x: "y" },
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const warnings = issues.filter((i) => i.severity === "warning" && i.message.includes("not found in search paths"));
+		assert.ok(
+			warnings.length > 0,
+			`Should warn when agent task template is not found. Issues: ${JSON.stringify(issues)}`,
+		);
+		assert.ok(
+			warnings[0].message.includes("nonexistent/task.md"),
+			`Warning should name the missing template. Got: ${warnings[0].message}`,
+		);
+	});
+
+	it("warns when source step has no output schema for field-level validation", () => {
+		const tmpDir = makeTmpDir("no-output-schema");
+
+		// Agent with template accessing {{ data.name }}
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ data.name }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				source: {
+					command: "echo hello",
+				},
+				consume: {
+					agent: "test-agent",
+					input: {
+						data: "${{ steps.source.output }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const warnings = issues.filter(
+			(i) =>
+				i.severity === "warning" &&
+				i.message.includes("no schema available") &&
+				i.message.includes("field-level validation skipped"),
+		);
+		assert.ok(
+			warnings.length > 0,
+			`Should warn when source step has no output schema. Issues: ${JSON.stringify(issues)}`,
+		);
+		assert.ok(
+			warnings.some((w) => w.message.includes("Consider adding output.schema to step")),
+			`Should suggest adding output.schema. Issues: ${JSON.stringify(warnings)}`,
+		);
+	});
+
+	it("warns on field access through workflow-level input expression", () => {
+		const tmpDir = makeTmpDir("input-no-schema");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ data.name }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				consume: {
+					agent: "test-agent",
+					input: {
+						data: "${{ input.data }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const warnings = issues.filter(
+			(i) =>
+				i.severity === "warning" &&
+				i.message.includes("no schema available") &&
+				i.message.includes("field-level validation skipped"),
+		);
+		assert.ok(
+			warnings.length > 0,
+			`Should warn on field access through workflow-level input. Issues: ${JSON.stringify(issues)}`,
+		);
+		assert.ok(
+			warnings.some((w) => w.message.includes("Consider adding a schema to the workflow")),
+			`Should suggest adding workflow input schema. Issues: ${JSON.stringify(warnings)}`,
+		);
+	});
+
+	it("warns on field access through command step output", () => {
+		const tmpDir = makeTmpDir("cmd-no-schema");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "test-agent.agent.yaml"),
+			"name: test-agent\ntools: [read]\nprompt:\n  task: test-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "test-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{{ result.field }}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				source: {
+					command: "echo hello",
+				},
+				consume: {
+					agent: "test-agent",
+					input: {
+						result: "${{ steps.source.output }}",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const warnings = issues.filter(
+			(i) =>
+				i.severity === "warning" &&
+				i.message.includes("no schema available") &&
+				i.message.includes("field-level validation skipped"),
+		);
+		assert.ok(
+			warnings.length > 0,
+			`Should warn on field access through command step output. Issues: ${JSON.stringify(issues)}`,
+		);
+		assert.ok(
+			warnings.some((w) => w.message.includes("Consider adding output.schema to step")),
+			`Should suggest adding output.schema. Issues: ${JSON.stringify(warnings)}`,
+		);
+	});
+});
+
+// ── guarded-undefined variables ──────────────────────────────────────────────
+
+describe("guarded-undefined variables", () => {
+	it("errors on guarded-undefined variable", () => {
+		const tmpDir = makeTmpDir("guarded-undef");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "guard-agent.agent.yaml"),
+			"name: guard-agent\ntools: [read]\nprompt:\n  task: guard-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "guard-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		// gaps is guarded with {% if %} but NOT in step input — should be error
+		fs.writeFileSync(path.join(templatesDir, "task.md"), "{% if gaps %}\n{{ gaps.items }}\n{% endif %}");
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				review: {
+					agent: "guard-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const gapsIssue = issues.find((i) => i.message.includes("gaps") && i.message.includes("does not declare"));
+		assert.ok(gapsIssue, `Should report missing 'gaps' root. Issues: ${JSON.stringify(issues)}`);
+		assert.strictEqual(gapsIssue.severity, "error", "Guarded-undefined variable should be severity 'error'");
+	});
+
+	it("errors on guarded variable used only in conditional", () => {
+		const tmpDir = makeTmpDir("guarded-cond-only");
+
+		const agentsDir = path.join(tmpDir, ".pi", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(agentsDir, "cond-agent.agent.yaml"),
+			"name: cond-agent\ntools: [read]\nprompt:\n  task: cond-agent/task.md\n",
+		);
+
+		const templatesDir = path.join(tmpDir, ".pi", "templates", "cond-agent");
+		fs.mkdirSync(templatesDir, { recursive: true });
+		// existing_files guarded with {% if %} and accessed with dotted field, not in step input — should be error
+		fs.writeFileSync(
+			path.join(templatesDir, "task.md"),
+			"{% if existing_files %}\n{{ existing_files.count }} files\n{% endif %}",
+		);
+
+		const spec = makeSpec({
+			filePath: path.join(tmpDir, "test.workflow.yaml"),
+			steps: {
+				analyze: {
+					agent: "cond-agent",
+					input: {
+						topic: "test",
+					},
+				},
+			},
+		});
+
+		const issues = validateTemplateAlignment(spec, tmpDir);
+		const existingFilesIssue = issues.find(
+			(i) => i.message.includes("existing_files") && i.message.includes("does not declare"),
+		);
+		assert.ok(existingFilesIssue, `Should report missing 'existing_files' root. Issues: ${JSON.stringify(issues)}`);
+		assert.strictEqual(
+			existingFilesIssue.severity,
+			"error",
+			"Guarded-undefined variable used only in conditional should be severity 'error'",
+		);
+	});
+});

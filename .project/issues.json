@@ -362,6 +362,28 @@
       "priority": "high",
       "package": "pi-workflows",
       "source": "human"
+    },
+    {
+      "id": "issue-033",
+      "title": "Expression-level field validation against source schemas in workflow step input blocks",
+      "body": "The template-input alignment validator (template-validation.ts) traces field access in Nunjucks templates against source schemas — e.g., {{ architecture.overview }} checked against the architecture block schema. But the same field access happens in workflow step input blocks via ${{ }} expressions: input: { overview: '${{ steps.load.output.architecture.overview }}' }. The validator checks that steps.load exists and that the expression is well-formed (extractExpressions in workflow-sdk.ts), but does not check that .architecture.overview is a valid field path against the source step's output schema. If the source step declares output.schema or is a block read (with traceable block schema), the validator should verify each dotted field path in ${{ }} expressions against the resolved schema — same tracing logic that template-validation already implements for Nunjucks variables.",
+      "location": "packages/pi-workflows/src/workflow-sdk.ts, packages/pi-workflows/src/template-validation.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "human"
+    },
+    {
+      "id": "issue-034",
+      "title": "Agent templates with tool-use output enforcement should drop output format instructions — template focuses on reasoning, tool definition handles output contract",
+      "body": "When tool-use structured output is active (issue-026 for monitors, issue-032 for workflow agents), the template's output instructions ('Respond with a JSON object: {...}' or 'Reply CLEAN/FLAG/NEW') become redundant — the toolChoice forces the schema shape regardless of what the template says. The template should focus purely on the classification/analysis task and reasoning guidance. Output format instructions in templates are a holdover from the prompt-based enforcement era. With tool-use, they add noise and can conflict with the tool definition (e.g., template says 'respond with JSON' but tool forces a different field set). The classify templates already have {% if json_output %} conditionals from the issue-025 migration. The fix: when tool-use enforcement is active, templates should not include output format instructions at all. The template rendering context should signal this (e.g., tool_enforced: true) so templates can omit the instructions block entirely. For workflow agent templates, the same principle applies: buildPrompt() in step-shared.ts:95-106 appends output instructions ('Your final response MUST be raw JSON only'). When tool-use dispatch is active, these instructions should be omitted.",
+      "location": "packages/pi-behavior-monitors/examples/*/classify.md, packages/pi-workflows/src/step-shared.ts:95",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project-workflows",
+      "source": "human"
     }
   ]
 }

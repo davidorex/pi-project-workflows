@@ -117,7 +117,7 @@ Built-in placeholders (always available, not in `classify.context`):
 
 **Events:** `message_end`, `turn_end`, `agent_end`, `command`, `tool_call`
 
-**Verdict Types:** `clean`, `flag`, `new`
+**Verdict Types:** `clean`, `flag`, `new`, `error`
 
 **Scope Targets:** `main`, `subagent`, `all`, `workflow`
 

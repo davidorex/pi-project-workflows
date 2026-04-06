@@ -89,7 +89,7 @@ export const WHEN_CONDITIONS: WhenConditionDescriptor[] = [
 	},
 ];
 
-export const VERDICT_TYPES = ["clean", "flag", "new"] as const;
+export const VERDICT_TYPES = ["clean", "flag", "new", "error"] as const;
 export const SCOPE_TARGETS = ["main", "subagent", "all", "workflow"] as const;
 
 // =============================================================================
@@ -194,10 +194,11 @@ export interface Monitor extends MonitorSpec {
 }
 
 export interface ClassifyResult {
-	verdict: "clean" | "flag" | "new";
+	verdict: "clean" | "flag" | "new" | "error";
 	description?: string;
 	newPattern?: string;
 	severity?: string;
+	error?: string;
 }
 
 export interface MonitorMessageDetails {
@@ -961,8 +962,8 @@ export function parseVerdict(raw: string): ClassifyResult {
 		return { verdict: "new", newPattern: rest.trim(), description: rest.trim() };
 	}
 	if (text.startsWith("FLAG:")) return { verdict: "flag", description: text.slice(5).trim() };
-	console.error(`[monitors] unrecognized verdict format, defaulting to CLEAN: "${text.slice(0, 80)}"`);
-	return { verdict: "clean" };
+	console.error(`[monitors] unrecognized verdict format: "${text.slice(0, 80)}"`);
+	return { verdict: "error", error: `Unrecognized verdict format: "${text.slice(0, 80)}"` };
 }
 
 export function parseModelSpec(spec: string): { provider: string; modelId: string } {
@@ -989,7 +990,7 @@ async function classifyPrompt(
 	const response: AssistantMessage = await complete(
 		model as Model<Api>,
 		{ messages: [{ role: "user", content: [{ type: "text", text: prompt }], timestamp: Date.now() }] },
-		{ apiKey: auth.apiKey, headers: auth.headers, maxTokens: 150, signal },
+		{ apiKey: auth.apiKey, headers: auth.headers, maxTokens: 300, signal, thinkingEnabled: true, effort: "low" },
 	);
 
 	return parseVerdict(extractText(response.content));
@@ -1272,6 +1273,16 @@ async function activate(
 		}
 		if (monitor.whileCount > 0) {
 			monitor.whileCount = 0;
+		}
+		updateStatus();
+		return;
+	}
+
+	if (result.verdict === "error") {
+		if (ctx.hasUI) {
+			ctx.ui.notify(`[${monitor.name}] classify failed: ${result.error}`, "warning");
+		} else {
+			console.error(`[${monitor.name}] classify failed: ${result.error}`);
 		}
 		updateStatus();
 		return;

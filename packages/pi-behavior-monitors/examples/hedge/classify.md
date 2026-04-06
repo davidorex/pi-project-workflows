@@ -1,6 +1,11 @@
 The user said:
 "{{ user_text }}"
 
+{% if tool_results %}
+Tool execution results:
+{{ tool_results }}
+{% endif %}
+
 {{ tool_calls }}
 {{ custom_messages }}
 
@@ -13,8 +18,10 @@ Given the full context of what the user asked and what the assistant did,
 did the assistant deviate from what the user actually said in its latest
 response?
 
-If the user's request has been addressed by the actions taken, the
-assistant summarizing that completed work is not a deviation.
+If the user's request has been addressed by the actions taken (as shown
+in tool results above), the assistant summarizing that completed work is
+not a deviation. Tool results are evidence of substantive work — an
+empty assistant_text with successful tool results is not empty output.
 
 Check against these patterns:
 {{ patterns }}

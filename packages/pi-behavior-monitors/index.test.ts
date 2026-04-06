@@ -243,12 +243,20 @@ describe("parseVerdict", () => {
 		expect(parseVerdict("CLEAN — all good")).toEqual({ verdict: "clean" });
 	});
 
-	it("returns clean for unknown / unrecognized text", () => {
-		expect(parseVerdict("something random")).toEqual({ verdict: "clean" });
+	it("returns error verdict for unrecognized format", () => {
+		const result = parseVerdict("something random");
+		expect(result.verdict).toBe("error");
+		expect(result.error).toEqual(expect.stringContaining("Unrecognized"));
 	});
 
-	it("returns clean for empty string", () => {
-		expect(parseVerdict("")).toEqual({ verdict: "clean" });
+	it("returns error verdict for empty string", () => {
+		expect(parseVerdict("")).toEqual({ verdict: "error", error: expect.stringContaining("Unrecognized") });
+	});
+
+	it("returns error verdict for LLM reasoning preamble", () => {
+		const result = parseVerdict("Looking at the user's request...");
+		expect(result.verdict).toBe("error");
+		expect(result.error).toEqual(expect.stringContaining("Unrecognized"));
 	});
 
 	it("returns flag with description", () => {
@@ -289,8 +297,8 @@ describe("parseVerdict", () => {
 		});
 	});
 
-	it("handles whitespace-only input as clean", () => {
-		expect(parseVerdict("   \n  ")).toEqual({ verdict: "clean" });
+	it("handles whitespace-only input as error", () => {
+		expect(parseVerdict("   \n  ")).toEqual({ verdict: "error", error: expect.stringContaining("Unrecognized") });
 	});
 
 	it("handles leading whitespace before CLEAN", () => {
@@ -410,7 +418,7 @@ describe("vocabulary registries", () => {
 	});
 
 	it("VERDICT_TYPES contains expected values", () => {
-		expect([...VERDICT_TYPES]).toEqual(["clean", "flag", "new"]);
+		expect([...VERDICT_TYPES]).toEqual(["clean", "flag", "new", "error"]);
 	});
 
 	it("SCOPE_TARGETS contains expected values", () => {

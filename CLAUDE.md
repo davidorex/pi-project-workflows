@@ -161,7 +161,21 @@ All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add 
 
 ## CLI Access from Other Agents
 
-Pi tools are accessible from any LLM with shell access via `pi -p "prompt" --mode json`. The subprocess loads all extensions, executes tool calls, and returns newline-delimited JSON events. This is the same mechanism the workflow executor uses for step dispatch. Example: `pi -p "call the workflow-validate tool" --mode json --tools read --no-skills` returns full validation results with three-state status, actionable suggestions, and field-level diagnostics.
+Pi tools are accessible from any LLM with shell access via `pi -p "prompt" --mode json`. The subprocess loads all extensions, executes tool calls, and returns newline-delimited JSON events. This is the same mechanism the workflow executor uses for step dispatch.
+
+Read-only queries (safe, no state changes):
+- `pi -p "call the project-status tool" --mode json --tools read --no-skills` — derived project state
+- `pi -p "call the project-validate tool" --mode json --tools read --no-skills` — cross-block integrity
+- `pi -p "call the workflow-validate tool" --mode json --tools read --no-skills` — workflow validation (three-state status, actionable suggestions)
+- `pi -p "call the workflow-status tool" --mode json --tools read --no-skills` — vocabulary, agents, contracts
+- `pi -p "call the workflow-agents tool" --mode json --tools read --no-skills` — agent discovery
+- `pi -p "call the read-block tool with name requirements" --mode json --tools read --no-skills` — read any block
+- `pi -p "call the monitors-status tool" --mode json --tools read --no-skills` — monitor state
+
+Write operations (modify `.project/` or `.workflows/`):
+- `pi -p "call the append-block-item tool with name tasks and key tasks and item {json}" --mode json --no-skills` — add items to blocks
+- `pi -p "call the project-init tool" --mode json --no-skills` — scaffold `.project/`
+- `pi -p "call the workflow-init tool" --mode json --no-skills` — scaffold `.workflows/`
 
 ## Design Decisions & Gaps
 

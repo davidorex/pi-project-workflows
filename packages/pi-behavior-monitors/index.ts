@@ -17,7 +17,7 @@ import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import { createAgentLoader } from "@davidorex/pi-workflows/agent-spec";
 import { compileAgentSpec } from "@davidorex/pi-workflows/step-shared";
 import type { AgentSpec } from "@davidorex/pi-workflows/types";
-import type { Api, AssistantMessage, Model, TextContent } from "@mariozechner/pi-ai";
+import type { Api, AssistantMessage, Model, TextContent, Tool, ToolCall } from "@mariozechner/pi-ai";
 import { complete, StringEnum } from "@mariozechner/pi-ai";
 import type {
 	AgentEndEvent,
@@ -37,6 +37,18 @@ import nunjucks from "nunjucks";
 const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
 const EXAMPLES_DIR = path.join(EXTENSION_DIR, "..", "examples");
 const AGENTS_DIR = path.join(EXTENSION_DIR, "..", "agents");
+
+/** Tool definition for forcing structured verdict output from the classify LLM call. */
+const VERDICT_TOOL: Tool = {
+	name: "classify_verdict",
+	description: "Output the monitor classification verdict",
+	parameters: Type.Object({
+		verdict: Type.String({ description: "Classification result: CLEAN, FLAG, or NEW" }),
+		description: Type.Optional(Type.String({ description: "One-sentence explanation (required for FLAG/NEW)" })),
+		newPattern: Type.Optional(Type.String({ description: "Pattern to learn (required for NEW)" })),
+		severity: Type.Optional(Type.String({ description: "Issue severity: info, warning, or critical" })),
+	}),
+};
 
 // =============================================================================
 // Vocabulary registries (exported for SDK and skill generation)
@@ -1221,29 +1233,35 @@ async function classifyViaAgent(
 
 	const response: AssistantMessage = await complete(
 		model as Model<Api>,
-		{ messages: [{ role: "user", content: [{ type: "text", text: prompt }], timestamp: Date.now() }] },
-		{ apiKey: auth.apiKey, headers: auth.headers, maxTokens: 300, signal, thinkingEnabled, effort: "low" },
+		{
+			messages: [{ role: "user", content: [{ type: "text", text: prompt }], timestamp: Date.now() }],
+			tools: [VERDICT_TOOL],
+		},
+		{
+			apiKey: auth.apiKey,
+			headers: auth.headers,
+			maxTokens: 300,
+			signal,
+			thinkingEnabled,
+			effort: "low",
+			toolChoice: { type: "tool", name: "classify_verdict" },
+		},
 	);
 
-	const responseText = extractResponseText(response.content);
-
-	// Try JSON parse first
-	try {
-		const parsed = JSON.parse(responseText.trim()) as Record<string, unknown>;
-		// Validate against verdict schema if the agent spec declares one
-		if (compiled.outputSchema) {
-			const schemaPath = path.isAbsolute(compiled.outputSchema)
-				? compiled.outputSchema
-				: path.resolve(AGENTS_DIR, compiled.outputSchema);
-			validateFromFile(schemaPath, parsed, `verdict for monitor '${monitor.name}'`);
-		}
-		return mapVerdictToClassifyResult(parsed);
-	} catch (jsonErr) {
-		// If the error came from schema validation (not JSON.parse), re-throw
-		if (jsonErr instanceof Error && jsonErr.message.includes("verdict for monitor")) throw jsonErr;
-		// Fallback: try text-format parseVerdict for robustness
-		return parseVerdict(responseText);
+	const toolCall = response.content.find((c): c is ToolCall => c.type === "toolCall");
+	if (!toolCall) {
+		return { verdict: "error", error: "Model did not produce a tool call response" };
 	}
+	const parsed = toolCall.arguments as Record<string, unknown>;
+
+	// Validate against verdict schema if the agent spec declares one
+	if (compiled.outputSchema) {
+		const schemaPath = path.isAbsolute(compiled.outputSchema)
+			? compiled.outputSchema
+			: path.resolve(AGENTS_DIR, compiled.outputSchema);
+		validateFromFile(schemaPath, parsed, `verdict for monitor '${monitor.name}'`);
+	}
+	return mapVerdictToClassifyResult(parsed);
 }
 
 // =============================================================================

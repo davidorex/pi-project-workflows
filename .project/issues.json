@@ -286,14 +286,15 @@
     },
     {
       "id": "issue-026",
-      "title": "Structured output via tool-use enforcement — eliminate prompt-based JSON parsing across monitors and workflow agents",
-      "body": "Both monitor classify calls and workflow agent steps that declare output.schema or output.format: json rely on prompt instructions ('respond with JSON only') and text parsing (JSON.parse on free-form LLM response). The model frequently ignores the instruction and produces prose preambles, reasoning text, or malformed output — causing classify failures and step failures. The pi-ai complete() function already supports tools (Context.tools: Tool[]) and toolChoice ({ type: 'tool', name: '...' }) via the Anthropic provider. When toolChoice forces a named tool, the response is a ToolCall with pre-parsed arguments matching the tool's TypeBox parameter schema. The model cannot produce prose — it must return the schema shape. Fix: when an agent spec or classify call declares output.schema, convert the schema to a Tool definition, pass it in Context.tools, set toolChoice to force it, extract ToolCall.arguments from the response. One shared function at the complete() call layer — both classifyViaAgent() in monitors and the dispatch/step-agent path in workflows use it. Eliminates extractResponseText(), parseVerdict() fallback, JSON.parse of free-form text, and the entire class of 'model ignored JSON instruction' failures.",
-      "location": "packages/pi-behavior-monitors/index.ts, packages/pi-workflows/src/dispatch.ts",
-      "status": "open",
+      "title": "Structured output via tool-use enforcement for monitor classify",
+      "body": "Monitor classify calls relied on prompt instructions ('respond with JSON only') and text parsing (JSON.parse on free-form LLM response). The model could ignore the instruction and produce prose preambles, reasoning text, or malformed output — causing classify failures. Fixed in classifyViaAgent() by defining VERDICT_TOOL with TypeBox parameters, passing it in Context.tools, and setting toolChoice to force the tool call. The model produces ToolCall.arguments matching the schema — no free-form text, no JSON.parse() of LLM output. Scoped to monitors (direct complete() calls). Workflow agent steps use subprocess dispatch via pi --mode json where tool-use enforcement would require pi-coding-agent core changes — that remains a separate concern.",
+      "location": "packages/pi-behavior-monitors/index.ts",
+      "status": "resolved",
       "category": "issue",
       "priority": "critical",
-      "package": "pi-project-workflows",
-      "source": "human"
+      "package": "pi-behavior-monitors",
+      "source": "human",
+      "resolved_by": "VERDICT_TOOL + toolChoice enforcement in classifyViaAgent(), ToolCall extraction replaces extractResponseText() + JSON.parse() + parseVerdict() fallback"
     },
     {
       "id": "issue-027",

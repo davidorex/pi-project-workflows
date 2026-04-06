@@ -832,6 +832,50 @@ describe("mapVerdictToClassifyResult", () => {
 });
 
 // =============================================================================
+// ToolCall verdict extraction (classifyViaAgent data shape)
+// =============================================================================
+
+describe("ToolCall verdict extraction", () => {
+	it("extracts verdict from ToolCall arguments shape", () => {
+		// ToolCall.arguments is Record<string, any> — same shape mapVerdictToClassifyResult expects
+		const args: Record<string, unknown> = { verdict: "CLEAN" };
+		expect(mapVerdictToClassifyResult(args)).toEqual({ verdict: "clean" });
+	});
+
+	it("extracts FLAG with description from ToolCall arguments", () => {
+		const args: Record<string, unknown> = { verdict: "FLAG", description: "agent deviated from task" };
+		const result = mapVerdictToClassifyResult(args);
+		expect(result.verdict).toBe("flag");
+		expect(result.description).toBe("agent deviated from task");
+	});
+
+	it("extracts NEW with pattern from ToolCall arguments", () => {
+		const args: Record<string, unknown> = { verdict: "NEW", description: "novel issue", newPattern: "pattern-x" };
+		const result = mapVerdictToClassifyResult(args);
+		expect(result.verdict).toBe("new");
+		expect(result.newPattern).toBe("pattern-x");
+	});
+
+	it("extracts FLAG with severity from ToolCall arguments", () => {
+		const args: Record<string, unknown> = {
+			verdict: "FLAG",
+			description: "critical deviation",
+			severity: "critical",
+		};
+		const result = mapVerdictToClassifyResult(args);
+		expect(result.verdict).toBe("flag");
+		expect(result.severity).toBe("critical");
+	});
+
+	it("handles ToolCall arguments with only verdict field (no optional fields)", () => {
+		const args: Record<string, unknown> = { verdict: "FLAG" };
+		const result = mapVerdictToClassifyResult(args);
+		expect(result.verdict).toBe("flag");
+		expect(result.description).toBe("");
+	});
+});
+
+// =============================================================================
 // Bundled monitor agent specs
 // =============================================================================
 

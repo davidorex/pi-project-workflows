@@ -1251,9 +1251,10 @@ async function classifyViaAgent(
 	const toolCall = response.content.find((c): c is ToolCall => c.type === "toolCall");
 	if (!toolCall) {
 		const contentTypes = response.content.map((c) => c.type).join(", ");
+		const errMsg = response.errorMessage ? ` error: ${response.errorMessage}` : "";
 		return {
 			verdict: "error",
-			error: `No tool call in response (stopReason: ${response.stopReason}, content: [${contentTypes}])`,
+			error: `No tool call in response (stopReason: ${response.stopReason}, content: [${contentTypes}]${errMsg})`,
 		};
 	}
 	const parsed = toolCall.arguments as Record<string, unknown>;

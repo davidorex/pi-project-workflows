@@ -197,11 +197,12 @@
       "title": "Hedge monitor classifies tool-call-heavy responses as empty — tool_results not in classify context",
       "body": "The hedge monitor's classify context includes tool_calls (names of tools called) but not tool_results (what those tools produced). When the assistant's response is primarily tool work — edits, writes, commits, builds — the text portion is a brief summary. The classifier sees tool names and a terse text response, concludes 'the assistant provided no response', and flags incorrectly. Observed: 'The assistant provided no response at all' on a turn that edited files, ran builds, and committed. The work was in tool results the classifier never saw. Fix: add tool_results to the hedge monitor's classify.context array, or teach the classify prompt that tool_calls represent substantive work even when assistant_text is brief.",
       "location": "packages/pi-behavior-monitors/examples/hedge/hedge.monitor.json",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "critical",
       "package": "pi-behavior-monitors",
-      "source": "human"
+      "source": "human",
+      "resolved_by": "commit 2745cf9 — tool_results added to hedge classify context, classify template updated to treat tool results as evidence of substantive work"
     },
     {
       "id": "issue-019",
@@ -247,6 +248,41 @@
       "priority": "medium",
       "package": "pi-project",
       "source": "human"
+    },
+    {
+      "id": "issue-023",
+      "title": "Monitor classify calls produce no debug output — misfires are uninspectable",
+      "body": "classifyPrompt() calls complete(), parses the response via parseVerdict(), and discards all intermediate state. When a monitor misfires, there is no way to see: (1) the rendered classify prompt sent to the LLM, (2) the raw LLM response before parsing, (3) the collected context values each collector resolved to, (4) the verdict parsing decision. Subagent workflow steps write full session logs to .workflows/runs/. Monitors write nothing. Debugging requires adding temporary console.error() calls, reproducing, and reading stderr. Need: a session-scoped debug log per monitor that persists the rendered prompt, raw response, and parsed verdict for each classify call. Location could be .pi/monitor-logs/<session-id>/<monitor-name>.jsonl or similar.",
+      "location": "packages/pi-behavior-monitors/index.ts:1150",
+      "status": "open",
+      "category": "capability",
+      "priority": "critical",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-024",
+      "title": "Classify calls with thinking enabled return empty text — model puts verdict in thinking block",
+      "body": "classifyPrompt() passes thinkingEnabled: true to complete(). With thinking enabled, the model can place its entire response (including the CLEAN/FLAG/NEW verdict) inside the thinking block and return no text content. extractText() filters for type === 'text' only, so thinking content is invisible. parseVerdict('') hits the unrecognized format path and returns verdict: 'error'. Observed on fragility monitor: 'classify failed: Unrecognized verdict format: \"\"'. Immediate fix: extractText() should fall back to thinking block content when no text blocks are present. This issue is also a symptom of issue-025 — unifying the classify path with agent specs eliminates this bug class entirely since the agent output pipeline already handles thinking extraction.",
+      "location": "packages/pi-behavior-monitors/index.ts:1169",
+      "status": "resolved",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-behavior-monitors",
+      "source": "human",
+      "resolved_by": "extractResponseText() replaces extractText() in classifyPrompt() — falls back to thinking block content when no text parts present. Agent path uses extractResponseText() natively. Both paths now handle thinking-only responses."
+    },
+    {
+      "id": "issue-025",
+      "title": "Monitor classify calls reinvent agent infrastructure — should use agent specs for LLM call contracts",
+      "body": "Monitor classify calls hand-roll template rendering, context injection, model resolution, and output parsing that the agent spec system already provides declaratively. Monitors have their own createMonitorTemplateEnv(), collectors parallel contextBlocks, parseVerdict() hand-parses what output.schema validates, and parseModelSpec() reimplements model registry resolution. A monitor's classify call IS an agent call — structured input, prompt template, model, structured output. Direction: monitors declare classify.agent referencing a .agent.yaml that defines the LLM call contract, executed in-process via direct complete() rather than subprocess dispatch. One spec format for all LLM calls, monitor-specific concerns (collectors, patterns, actions, ceiling) stay in .monitor.json, verdict format becomes output.schema with enum validation. Eliminates issue-024 (thinking block extraction) as a side effect since agent output pipeline already handles it. The agent spec parser and template compiler are the only pieces needed from pi-workflows — they could live in pi-project or a small shared package without moving the entire workflow engine. Rejected alternative: extracting shared infrastructure from pi-workflows into pi-project is unbounded refactoring that defers the design question behind a prerequisite wall.",
+      "location": "packages/pi-behavior-monitors/index.ts:1150",
+      "status": "resolved",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human",
+      "resolved_by": "classifyViaAgent() uses createAgentLoader + compileAgentSpec + in-process complete(). Per-monitor .agent.yaml specs define model, thinking, output schema, task template. Classify templates gain {% if json_output %} conditional. mapVerdictToClassifyResult() replaces text parsing. Legacy path preserved for monitors without classify.agent."
     }
   ]
 }

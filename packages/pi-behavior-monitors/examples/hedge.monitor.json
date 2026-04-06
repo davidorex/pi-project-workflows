@@ -10,7 +10,8 @@
 		"model": "claude-sonnet-4-20250514",
 		"context": ["user_text", "tool_results", "tool_calls", "custom_messages", "assistant_text", "conversation_history"],
 		"excludes": [],
-		"promptTemplate": "hedge/classify.md"
+		"promptTemplate": "hedge/classify.md",
+		"agent": "hedge-classifier"
 	},
 	"patterns": {
 		"path": "hedge.patterns.json",

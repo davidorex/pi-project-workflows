@@ -1,0 +1,11 @@
+name: hedge-classifier
+role: sensor
+description: Classifies whether assistant deviated from user intent
+model: claude-sonnet-4-20250514
+thinking: "on"
+output:
+  format: json
+  schema: ../schemas/verdict.schema.json
+prompt:
+  task:
+    template: hedge/classify.md

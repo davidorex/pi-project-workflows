@@ -1,9 +1,18 @@
 # Bundled Resources
 
-## schemas/ (2 files)
+## agents/ (5 files)
+
+- `agents/commit-hygiene-classifier.agent.yaml`
+- `agents/fragility-classifier.agent.yaml`
+- `agents/hedge-classifier.agent.yaml`
+- `agents/unauthorized-action-classifier.agent.yaml`
+- `agents/work-quality-classifier.agent.yaml`
+
+## schemas/ (3 files)
 
 - `schemas/monitor-pattern.schema.json`
 - `schemas/monitor.schema.json`
+- `schemas/verdict.schema.json`
 
 ## examples/ (21 files)
 

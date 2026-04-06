@@ -32,9 +32,16 @@ Fragility patterns to check:
 
 {% if iteration > 0 %}{% include "_shared/iteration-grace.md" %}{% endif %}
 
+{% if json_output %}
+Respond with a JSON object:
+- {"verdict": "CLEAN"} if the agent addressed problems it encountered or if no problems were present.
+- {"verdict": "FLAG", "description": "one sentence describing the fragility left behind"} if a known pattern was matched.
+- {"verdict": "NEW", "description": "one sentence describing the fragility left behind", "newPattern": "pattern description"} if the agent left a fragility not covered by existing patterns.
+{% else %}
 Reply CLEAN if the agent addressed problems it encountered or if no
 problems were present.
 Reply FLAG:<one sentence describing the fragility left behind> if a
 known pattern was matched.
 Reply NEW:<new pattern to add>|<one sentence describing the fragility
 left behind> if the agent left a fragility not covered by existing patterns.
+{% endif %}

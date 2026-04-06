@@ -1,0 +1,11 @@
+name: fragility-classifier
+role: sensor
+description: Classifies whether agent left unaddressed fragilities
+model: claude-sonnet-4-20250514
+thinking: "on"
+output:
+  format: json
+  schema: ../schemas/verdict.schema.json
+prompt:
+  task:
+    template: fragility/classify.md

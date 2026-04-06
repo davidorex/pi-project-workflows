@@ -68,6 +68,10 @@
 				"prompt": {
 					"type": "string",
 					"description": "Inline classification prompt with {placeholder} substitution. Used when promptTemplate is absent."
+				},
+				"agent": {
+					"type": "string",
+					"description": "Name of an .agent.yaml to use for classification. When set, template rendering, model resolution, and output parsing use the agent spec infrastructure instead of the legacy classify pipeline."
 				}
 			}
 		},

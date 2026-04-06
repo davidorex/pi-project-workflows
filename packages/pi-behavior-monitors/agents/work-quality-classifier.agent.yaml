@@ -1,0 +1,11 @@
+name: work-quality-classifier
+role: sensor
+description: Classifies work quality issues in agent output
+model: claude-sonnet-4-20250514
+thinking: "on"
+output:
+  format: json
+  schema: ../schemas/verdict.schema.json
+prompt:
+  task:
+    template: work-quality/classify.md

@@ -8,7 +8,8 @@
 		"model": "claude-sonnet-4-20250514",
 		"context": ["tool_calls", "assistant_text", "user_text"],
 		"excludes": [],
-		"promptTemplate": "commit-hygiene/classify.md"
+		"promptTemplate": "commit-hygiene/classify.md",
+		"agent": "commit-hygiene-classifier"
 	},
 	"patterns": {
 		"path": "commit-hygiene.patterns.json",

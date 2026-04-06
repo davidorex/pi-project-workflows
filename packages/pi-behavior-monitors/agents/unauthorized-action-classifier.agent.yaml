@@ -1,0 +1,11 @@
+name: unauthorized-action-classifier
+role: sensor
+description: Classifies whether agent is about to take an unauthorized action
+model: claude-sonnet-4-20250514
+thinking: "on"
+output:
+  format: json
+  schema: ../schemas/verdict.schema.json
+prompt:
+  task:
+    template: unauthorized-action/classify.md

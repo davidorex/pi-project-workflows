@@ -24,6 +24,13 @@ Determine:
 
 {% if iteration > 0 %}{% include "_shared/iteration-grace.md" %}{% endif %}
 
+{% if json_output %}
+Respond with a JSON object:
+- {"verdict": "CLEAN"} if changes were committed with a proper message.
+- {"verdict": "FLAG", "description": "what was wrong"} if a known pattern was matched (no commit, generic message, prohibited language).
+- {"verdict": "NEW", "description": "what was wrong", "newPattern": "pattern description"} if an issue not covered by patterns was detected.
+{% else %}
 Reply CLEAN if changes were committed with a proper message.
 Reply FLAG:<description> if a known pattern was matched (no commit, generic message, prohibited language).
 Reply NEW:<pattern>|<description> if an issue not covered by patterns was detected.
+{% endif %}

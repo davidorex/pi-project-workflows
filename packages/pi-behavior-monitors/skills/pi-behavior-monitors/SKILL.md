@@ -80,7 +80,7 @@ Subcommands: `on`, `off`, `help`, `fragility`, `hedge`, `work-quality`
 </events>
 
 <bundled_resources>
-2 schemas, 21 examples bundled.
+5 agents, 3 schemas, 21 examples bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 

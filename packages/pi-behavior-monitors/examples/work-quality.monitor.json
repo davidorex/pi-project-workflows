@@ -10,7 +10,8 @@
 		"model": "claude-sonnet-4-20250514",
 		"context": ["user_text", "tool_calls", "assistant_text"],
 		"excludes": [],
-		"promptTemplate": "work-quality/classify.md"
+		"promptTemplate": "work-quality/classify.md",
+		"agent": "work-quality-classifier"
 	},
 	"patterns": {
 		"path": "work-quality.patterns.json",

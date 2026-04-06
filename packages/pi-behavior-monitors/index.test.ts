@@ -6,9 +6,11 @@ import {
 	COLLECTOR_DESCRIPTORS,
 	COLLECTOR_NAMES,
 	collectConversationHistory,
+	extractResponseText,
 	generateFindingId,
 	invokeMonitor,
 	isReferentialMessage,
+	mapVerdictToClassifyResult,
 	parseModelSpec,
 	parseMonitorsArgs,
 	parseVerdict,
@@ -696,4 +698,197 @@ describe("collectConversationHistory", () => {
 		const result = collectConversationHistory(branch as any);
 		expect(result).toContain("[tool actions only]");
 	});
+});
+
+// =============================================================================
+// extractResponseText
+// =============================================================================
+
+describe("extractResponseText", () => {
+	it("returns text content when text parts are present", () => {
+		const parts = [{ type: "text", text: "CLEAN" }];
+		expect(extractResponseText(parts)).toBe("CLEAN");
+	});
+
+	it("concatenates multiple text parts", () => {
+		const parts = [
+			{ type: "text", text: "FLAG:" },
+			{ type: "text", text: "issue detected" },
+		];
+		expect(extractResponseText(parts)).toBe("FLAG:issue detected");
+	});
+
+	it("falls back to thinking block when no text parts", () => {
+		const parts = [{ type: "thinking", text: "CLEAN" }];
+		expect(extractResponseText(parts)).toBe("CLEAN");
+	});
+
+	it("prefers text over thinking when both present", () => {
+		const parts = [
+			{ type: "thinking", text: "Let me analyze..." },
+			{ type: "text", text: "CLEAN" },
+		];
+		expect(extractResponseText(parts)).toBe("CLEAN");
+	});
+
+	it("falls back to thinking when text is whitespace-only", () => {
+		const parts = [
+			{ type: "text", text: "   " },
+			{ type: "thinking", text: "FLAG:real verdict" },
+		];
+		expect(extractResponseText(parts)).toBe("FLAG:real verdict");
+	});
+
+	it("returns empty string when no parts at all", () => {
+		expect(extractResponseText([])).toBe("");
+	});
+
+	it("returns empty string when parts have neither text nor thinking", () => {
+		const parts = [{ type: "toolCall", name: "bash" }];
+		expect(extractResponseText(parts)).toBe("");
+	});
+
+	it("uses first thinking block when multiple thinking blocks present", () => {
+		const parts = [
+			{ type: "thinking", text: "first thinking" },
+			{ type: "thinking", text: "second thinking" },
+		];
+		expect(extractResponseText(parts)).toBe("first thinking");
+	});
+});
+
+// =============================================================================
+// mapVerdictToClassifyResult
+// =============================================================================
+
+describe("mapVerdictToClassifyResult", () => {
+	it("maps CLEAN verdict", () => {
+		expect(mapVerdictToClassifyResult({ verdict: "CLEAN" })).toEqual({ verdict: "clean" });
+	});
+
+	it("maps clean verdict (case insensitive)", () => {
+		expect(mapVerdictToClassifyResult({ verdict: "clean" })).toEqual({ verdict: "clean" });
+	});
+
+	it("maps Clean verdict (mixed case)", () => {
+		expect(mapVerdictToClassifyResult({ verdict: "Clean" })).toEqual({ verdict: "clean" });
+	});
+
+	it("maps FLAG verdict with description", () => {
+		expect(mapVerdictToClassifyResult({ verdict: "FLAG", description: "issue found" })).toEqual({
+			verdict: "flag",
+			description: "issue found",
+			severity: undefined,
+		});
+	});
+
+	it("maps FLAG verdict with severity", () => {
+		expect(
+			mapVerdictToClassifyResult({ verdict: "FLAG", description: "critical issue", severity: "critical" }),
+		).toEqual({
+			verdict: "flag",
+			description: "critical issue",
+			severity: "critical",
+		});
+	});
+
+	it("maps FLAG verdict with missing description", () => {
+		const result = mapVerdictToClassifyResult({ verdict: "FLAG" });
+		expect(result.verdict).toBe("flag");
+		expect(result.description).toBe("");
+	});
+
+	it("maps NEW verdict with description and newPattern", () => {
+		expect(
+			mapVerdictToClassifyResult({ verdict: "NEW", description: "new issue", newPattern: "pattern-name" }),
+		).toEqual({
+			verdict: "new",
+			description: "new issue",
+			newPattern: "pattern-name",
+			severity: undefined,
+		});
+	});
+
+	it("maps NEW verdict — falls back newPattern to description when newPattern absent", () => {
+		const result = mapVerdictToClassifyResult({ verdict: "NEW", description: "the issue" });
+		expect(result.verdict).toBe("new");
+		expect(result.newPattern).toBe("the issue");
+		expect(result.description).toBe("the issue");
+	});
+
+	it("returns error for unknown verdict", () => {
+		const result = mapVerdictToClassifyResult({ verdict: "UNKNOWN" });
+		expect(result.verdict).toBe("error");
+		expect(result.error).toContain("Unknown verdict: UNKNOWN");
+	});
+
+	it("returns error for empty verdict string", () => {
+		const result = mapVerdictToClassifyResult({ verdict: "" });
+		expect(result.verdict).toBe("error");
+	});
+});
+
+// =============================================================================
+// parseVerdict backward compatibility
+// =============================================================================
+
+describe("parseVerdict backward compat", () => {
+	it("still works for text-format CLEAN", () => {
+		expect(parseVerdict("CLEAN")).toEqual({ verdict: "clean" });
+	});
+
+	it("still works for text-format FLAG", () => {
+		expect(parseVerdict("FLAG:description here")).toEqual({
+			verdict: "flag",
+			description: "description here",
+		});
+	});
+
+	it("still works for text-format NEW", () => {
+		expect(parseVerdict("NEW:pattern|description")).toEqual({
+			verdict: "new",
+			newPattern: "pattern",
+			description: "description",
+		});
+	});
+});
+
+// =============================================================================
+// Bundled monitor agent specs
+// =============================================================================
+
+describe("bundled monitors: agent field", () => {
+	for (const name of MONITOR_NAMES) {
+		it(`${name}.monitor.json has classify.agent set`, () => {
+			const monitor = loadMonitorJson(name);
+			const classify = monitor.classify as Record<string, unknown>;
+			expect(typeof classify.agent).toBe("string");
+			expect((classify.agent as string).length).toBeGreaterThan(0);
+		});
+	}
+});
+
+describe("bundled monitors: agent YAML files exist", () => {
+	const AGENTS_DIR = path.resolve(import.meta.dirname ?? ".", "agents");
+	for (const name of MONITOR_NAMES) {
+		it(`${name} has a corresponding .agent.yaml`, () => {
+			const monitor = loadMonitorJson(name);
+			const classify = monitor.classify as Record<string, unknown>;
+			const agentName = classify.agent as string;
+			const agentPath = path.join(AGENTS_DIR, `${agentName}.agent.yaml`);
+			expect(fs.existsSync(agentPath)).toBe(true);
+		});
+	}
+});
+
+describe("bundled templates: json_output conditional", () => {
+	for (const name of MONITOR_NAMES) {
+		it(`${name}/classify.md contains json_output conditional`, () => {
+			const templatePath = path.join(EXAMPLES_DIR, name, "classify.md");
+			const content = fs.readFileSync(templatePath, "utf-8");
+			expect(content).toContain("{% if json_output %}");
+			expect(content).toContain("{% else %}");
+			expect(content).toContain("{% endif %}");
+		});
+	}
 });

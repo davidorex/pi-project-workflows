@@ -46,7 +46,7 @@ After initialization, three directories coexist in a project:
 .project/       — pi-project (schemas, block data, phases). Created by /project init.
   schemas/      — JSON Schema files defining block types
   phases/       — phase specification files
-  *.json        — block data files (gaps, decisions, rationale, project, etc.)
+  *.json        — block data files (issues, decisions, rationale, project, etc.)
 .workflows/     — pi-workflows (run state). Created by /workflow init.
   runs/         — workflow execution state, session logs, outputs
 ```
@@ -164,7 +164,7 @@ When working in this repository:
 - **`packages/pi-workflows/src/workflow-spec.ts`** — YAML parsing and `STEP_TYPES` registry
 - **`packages/pi-workflows/src/expression.ts`** — expression evaluator and filter registry
 - **`packages/pi-behavior-monitors/index.ts`** — single-file extension: monitors, classification, steering, `invokeMonitor()` export
-- **`.project/`** contains this project's own block data (gaps, decisions, architecture, inventory) — useful for understanding the extension's development state
+- **`.project/`** contains this project's own block data (issues, decisions, architecture, inventory) — useful for understanding the extension's development state
 - Use `/project status` to see derived metrics. Use `/workflow list` to see available workflows.
 
 ## Release

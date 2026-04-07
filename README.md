@@ -14,6 +14,8 @@ If pi-project-workflows is done right, users need not wait for developers to imp
 
 Add a JSON Schema — get a new block type with tools, validation, and derived state. Write a `.workflow.yaml` — get a new multi-step pipeline with typed data flow and checkpoint/resume. Drop a `.monitor.json` with a Nunjucks template — get an autonomous watchdog that classifies, learns, and steers. Author an `.agent.yaml` — get a typed agent contract compiled to prompts at dispatch time. The runtime is generic; the domain lives in specs, schemas, and templates that users create without touching TypeScript.
 
+The framework is outcome-agnostic — not a coding agent extension. Blocks can track sales pipelines, lesson plans, research findings, compliance audits. Workflows can orchestrate document review, data analysis, meeting preparation. Monitors can classify any agent behavior against any pattern library. Artifacts are any verifiable output: updated spreadsheets, reports, specifications, not just code.
+
 ## Packages
 
 | Package | npm | Description |

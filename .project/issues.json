@@ -252,7 +252,7 @@
     {
       "id": "issue-023",
       "title": "Monitor classify calls produce no debug output — misfires are uninspectable",
-      "body": "classifyPrompt() calls complete(), parses the response via parseVerdict(), and discards all intermediate state. When a monitor misfires, there is no way to see: (1) the rendered classify prompt sent to the LLM, (2) the raw LLM response before parsing, (3) the collected context values each collector resolved to, (4) the verdict parsing decision. Subagent workflow steps write full session logs to .workflows/runs/. Monitors write nothing. Debugging requires adding temporary console.error() calls, reproducing, and reading stderr. Need: a session-scoped debug log per monitor that persists the rendered prompt, raw response, and parsed verdict for each classify call. Location could be .pi/monitor-logs/<session-id>/<monitor-name>.jsonl or similar.",
+      "body": "classifyViaAgent() calls complete() via the phantom tool pattern, extracts ToolCall.arguments, and discards all intermediate state. When a monitor misfires, there is no way to see: (1) the rendered classify prompt sent to the LLM, (2) the raw LLM response (content array, stopReason, errorMessage, usage), (3) the collected context values each collector resolved to, (4) the verdict mapping decision. The diagnostic string added in v0.14.3 (stopReason + content types + errorMessage) helps for API-level failures but not for classification quality issues (wrong verdict, false positive). Part of the broader debugger layer (issue-036): monitor session capture is the monitor-specific instantiation of execution tracing. Side-car JSONL is the correct pattern — monitor logs are a parallel audit trail, not conversation entries. Location: .workflows/monitors/<monitor-name>/ or similar project-owned path (not .pi/ which is pi's territory). Extensions get ReadonlySessionManager — cannot write to main session, which is correct since classify calls are side-channel. The completeAgent() refactor (monitors-as-agents design) should build session capture into the shared execution function so both workflow steps and monitors get it from the same path.",
       "location": "packages/pi-behavior-monitors/index.ts:1150",
       "status": "open",
       "category": "capability",
@@ -322,7 +322,7 @@
     {
       "id": "issue-029",
       "title": "Artifact format rendering — produce editable surfaces (markdown, CSV, HTML) from schema-validated block data",
-      "body": "Workflow artifacts (ArtifactSpec in types.ts:18 — path, from, schema) write JSON files to disk. Block data is structured and schema-validated but only machine-readable. Extension: add a format field to ArtifactSpec (markdown, csv, html, yaml alongside json). The executor calls a format renderer after schema validation: JSON data → rendered artifact in the declared format. The shared macros system (templates/shared/macros.md) already renders block data as markdown — render_project, render_architecture, render_tasks, render_conventions, etc. The same pattern extends to CSV (tabular blocks like tasks, issues) and HTML (dashboards, reports). The rendered artifact is a view of the block data, editable in the format's native tool (spreadsheet opens CSV, browser opens HTML, editor opens markdown). The block remains the source of truth; the artifact is a rendered surface.",
+      "body": "Workflow artifacts (ArtifactSpec in types.ts:18 — path, from, schema) write JSON files to disk. Block data is structured and schema-validated but only machine-readable. Extension: add a format field to ArtifactSpec (markdown, csv, html, yaml alongside json). The executor calls a format renderer after schema validation: JSON data → rendered artifact in the declared format. The shared macros system (templates/shared/macros.md) already renders block data as markdown — render_project, render_architecture, render_tasks, render_conventions, etc. The same pattern extends to CSV (tabular blocks like tasks, issues) and HTML (dashboards, reports). The rendered artifact is a view of the block data, editable in the format's native tool (spreadsheet opens CSV, browser opens HTML, editor opens markdown). The block remains the source of truth; the artifact is a rendered surface. This is the 'editable artifacts' rubric item from agent theory: outcomes require surfaces you can edit. The system is domain-agnostic — a tasks block rendered as CSV is a project management spreadsheet; an issues block rendered as HTML is a bug tracker dashboard; a verification block rendered as markdown is a progress report. The block schema defines the data contract; the format renderer defines the presentation. Users work on the surface; the block persists the truth.",
       "location": "packages/pi-workflows/src/types.ts:18, packages/pi-workflows/templates/shared/macros.md",
       "status": "open",
       "category": "capability",
@@ -388,12 +388,75 @@
     {
       "id": "issue-035",
       "title": "Per-monitor configurable collector parameters — context window tunable from YAML without code changes",
-      "body": "Collector limits (conversation_history turns, tool_results count, tool_calls count, truncation char limits) are hardcoded in collector functions in index.ts. The monitor YAML declares which collectors to use (classify.context array) but not their parameters. Extension: classify.context becomes an object map with optional per-collector config — e.g., context: { conversation_history: { turns: 5 }, tool_results: { limit: 10, truncate: 3000 }, tool_calls: { limit: 30 } }. The collector functions already accept optional limit parameters (collectToolResults has limit=5, collectToolCalls has limit=20). The plumbing exists — the missing piece is reading per-collector config from the monitor spec and passing it through renderClassifyPrompt/classifyViaAgent to the collector calls. Falls back to current defaults when config is absent. Changes take effect on next monitor firing after /reload. This is a precursor to assessing whether forced toolChoice without thinking produces adequate verdicts — the amount of context determines whether the model needs explicit reasoning capacity.",
+      "body": "Collector limits (conversation_history turns, tool_results count, tool_calls count, truncation char limits) are hardcoded in collector functions in index.ts. The monitor YAML declares which collectors to use (classify.context array) but not their parameters. Extension: classify.context becomes an object map with optional per-collector config — e.g., context: { conversation_history: { turns: 5 }, tool_results: { limit: 10, truncate: 3000 }, tool_calls: { limit: 30 } }. The collector functions already accept optional limit parameters (collectToolResults has limit=5, collectToolCalls has limit=20). The plumbing exists — the missing piece is reading per-collector config from the monitor spec and passing it through classifyViaAgent to the collector calls. Falls back to current defaults when config is absent. Changes take effect on next monitor firing after /reload. This is part of the live tuning loop: monitor fires → produces verdict → user/LLM evaluates quality → adjusts parameters from within the session → next firing reflects the adjustment. The README principle applies: 'the use of the tool shows you the shape of how to make the version of the tool that you want.' Collector parameters are the primary tuning surface for classification quality — they determine how much context the model sees, which determines verdict accuracy. Issue-038 adds the command-mediated interface for changing these parameters; this issue adds the spec-level support.",
       "location": "packages/pi-behavior-monitors/index.ts, packages/pi-behavior-monitors/schemas/monitor.schema.json",
       "status": "open",
       "category": "capability",
       "priority": "high",
       "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "fragility-fragility-mnnut4nc",
+      "description": "The agent acknowledged it had not read the 3 skills and promised to do so, but its response ends there without actually reading them or acting on that stated intent — leaving the task incomplete.",
+      "status": "open",
+      "category": "fragility",
+      "priority": "warning",
+      "source": "monitor"
+    },
+    {
+      "id": "issue-036",
+      "title": "Execution trace debugger — capture full input→template→LLM→parse→result chain for workflow steps and monitor classify calls",
+      "body": "When a workflow step fails, a monitor misclassifies, or a block write is rejected, nothing captures the full execution chain: what input arrived, what the template rendered to, what the LLM received as prompt, what it produced, how the response was parsed, where it diverged from the expected schema. Issue-023 covers monitor session capture specifically. This issue is broader: a debugger layer that captures execution traces for all agent invocations — workflow steps (via dispatch subprocess session logs, already partially captured in .workflows/runs/sessions/), monitor classify calls (no capture currently), and block validation failures (error message only, no input context). The debugger surface should be queryable via SDK functions (e.g., stepTrace(runId, stepName), classifyTrace(monitorName, timestamp)) and inspectable via tools so the LLM can self-diagnose failures without the user needing to read raw log files. This is the missing fractal element: SDK describes capability, validator describes correctness, monitors describe behavior, debugger describes execution.",
+      "location": "packages/pi-workflows/src/workflow-executor.ts, packages/pi-behavior-monitors/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "critical",
+      "package": "pi-project-workflows",
+      "source": "human"
+    },
+    {
+      "id": "issue-037",
+      "title": "SDK query surface for execution history — lastRunResult, stepTrace, executionHistory functions",
+      "body": "projectState() shows current state. validateWorkflow() shows spec correctness. Nothing shows what happened in past executions. Run state lives in .workflows/runs/ as JSON files (state.json per run, session JSONL per step) but there's no SDK function to query it. An LLM can't inspect what went wrong without reading raw JSON files and knowing the directory structure. Needed: executionHistory(cwd, workflowName?) → list of runs with status/timing/usage summaries. lastRunResult(cwd, workflowName) → most recent run's state. stepTrace(cwd, runId, stepName) → full step result including session log path. These derive from existing .workflows/runs/ data — no new persistence needed, just query functions over what's already written. Follows the SDK pattern: derive dynamically from filesystem, add to workflow-sdk.ts exports, surface via /workflow status and the skill generator.",
+      "location": "packages/pi-workflows/src/workflow-sdk.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "human"
+    },
+    {
+      "id": "issue-038",
+      "title": "Monitor tuning tools — command-mediated parameter changes for collector config, classify template, agent YAML",
+      "body": "Patterns and instructions are tunable via /<monitor-name> <text> commands. But collector parameters (issue-035), classify template prose, and agent YAML fields are not tunable via commands — the LLM must use raw file edits and know Nunjucks syntax and YAML format. For the system to be self-tuning from live enactment, every parameter that affects classification quality should be adjustable via tool or command. Examples: /monitors hedge context conversation_history.turns=5 (adjust collector window), /monitors hedge template (show current classify template for inspection), /monitors hedge model claude-sonnet-4-6 (change classify model). The /monitors command infrastructure exists (monitors-control, monitors-rules tools). Extension: add parameter-setting subcommands that write to the monitor spec JSON and agent YAML, taking effect on next /reload or next firing. The skill should document these commands so the LLM knows they exist.",
+      "location": "packages/pi-behavior-monitors/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-039",
+      "title": "Monitor spec validator — validateMonitor() checking spec + agent YAML + classify template against schemas and available collectors",
+      "body": "validateWorkflow() checks workflow YAML specs at authoring time — agent resolution, schema existence, template-input alignment, step references, etc. No equivalent exists for monitor specs. An LLM authoring a monitor gets no feedback until runtime. validateMonitor(spec, cwd) would check: classify.agent resolves to an existing .agent.yaml, the agent YAML's prompt.task.template resolves in the template search paths, classify.context entries are valid collector names (from COLLECTOR_DESCRIPTORS), the verdict.schema.json exists at the agent's output.schema path, pattern and instruction files exist. Returns { status, issues[] } matching ValidationResult. Exposed via /monitors validate [name] command and monitors-validate tool. Added to the VALIDATION_CHECKS registry. The skill generator surfaces it in the validation vocabulary table.",
+      "location": "packages/pi-behavior-monitors/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-040",
+      "title": "Skill generator coverage — surface classify template variables, collector output shapes, tuning commands, debug query paths",
+      "body": "The generated SKILL.md surfaces tools, commands, vocabulary tables (collectors, when conditions, verdicts), agent contracts (inputSchema, contextBlocks, outputFormat). It does not surface: what Nunjucks variables each classify template expects (patterns, instructions, iteration, plus each collector name), what each collector returns and in what format (e.g., tool_results returns '---\\n[toolName] result\\n---' blocks), what tuning commands are available per monitor (issue-038), how to inspect execution traces and debug failures (issue-036/037). Without these in the skill, the LLM can use monitors but can't tune them or debug them — it hits a wall where self-correction requires knowledge the skill doesn't provide. Extension: the skill generator should extract template variable references from classify.md files (same Nunjucks variable extraction the workflow validator uses), document collector output formats from COLLECTOR_DESCRIPTORS (add a format field), and list available tuning/debug commands.",
+      "location": "scripts/generate-skills.js",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-project-workflows",
       "source": "human"
     }
   ]

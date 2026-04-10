@@ -94,15 +94,15 @@ gsd-2 builds project intelligence through a **four-layer pipeline** that runs se
 | Slice research (parallel) | A `forEach` workflow step over slices, dispatching one research agent per slice in parallel. The DAG planner handles parallelism automatically. Forward intelligence = prior slice's verification/summary block data injected via `contextBlocks`. |
 | Research template (`templates/research.md`) | A Nunjucks template in `packages/pi-workflows/templates/research/` with the same section structure. The agent renders into this template; the rendered output becomes the block write-back. |
 | `gsd_summary_save` tool | Native to pi-project: `append-block-item` or `write-block` with schema validation. The path computation is done by `block-api.ts`; the agent does not construct it. |
-| Skill discovery | Out of scope for pi-project-workflows. This is Pi platform / user-tooling territory — pi-workflows does not (and should not) detect or register skills. |
+| Skill discovery | Expressible as a **directory-watching monitor** that observes a skills directory, writes detected skills to a `.project/skills.json` block, and the block is injected into agent prompts via `contextBlocks`. The monitor pattern is general — it generalizes to any filesystem observation (dependency changes, config drift, external artifact arrival). The specific hosting (Pi's extension loader invoking before_agent_start hooks) is Pi platform territory, but the detection-and-injection pipeline is derivable from our framework primitives. |
 | Inlined context preloading | This IS `contextBlocks` injection. The mechanism already exists. What gsd-2 calls "inlined context" is exactly what our framework does when it reads declared `contextBlocks` from `.project/` and renders them into the template environment. |
 | Forward intelligence between slices | A specific `contextBlocks` pattern where slice N+1's agent declares `contextBlocks: [verification, decisions]` filtered to completed upstream slices. Our current `contextBlocks` mechanism reads whole blocks; gsd-2's forward intelligence requires **filtered/scoped reads** — a capability we don't yet articulate. |
 | Dependency slice summaries | Same as above: filtered reads of a `verification` or `summary` block scoped to `depends_on` slice IDs. |
 | Decisions register auto-regeneration | `decisions` block (already exists) + render macro to produce DECISIONS.md view. `append-block-item` with schema validation handles ID assignment. |
 | Requirements coverage tracking | Cross-block validation: for each Active requirement, trace `traces_to` field into slices/tasks. Produce a coverage report. This IS `validateProject()` — cross-block referential integrity. The framework already does this for task → phase, decision → phase, etc. Requirements → slices is the same mechanism. |
-| Mandatory investigation pass before questioning | An agent prompt-level behavior, not a framework concern. The agent template encodes "investigate before asking." Nothing to build. |
-| Web search budget | An agent-level budget articulated in the prompt. Nothing to build at the framework level. |
-| Depth calibration (deep/targeted/light) | An agent-level decision articulated in the prompt. Nothing to build. |
+| Mandatory investigation pass before questioning | The policy is in the agent's prompt template. But the framework CAN enforce it: a **pre-execution monitor** that gates on required tool calls (e.g., "this agent must have called grep or read at least N files before submitting final output"). The prompt encodes the intent; the monitor enforces it. |
+| Web search budget | The per-turn budget is articulated in the prompt, but **tracking** tool-call budgets across agent invocations is a framework concern. Who counts calls, where is the count stored, how is over-budget handled? This is a per-agent tool-call budget primitive, counterpart to issue-042's token budgeting across DAG edges. |
+| Depth calibration (deep/targeted/light) | The decision is in the agent prompt. The INPUTS to the decision are framework concerns: how complex is this work, what has been done before, what constraints exist — delivered via `contextBlocks` and SDK queries. Without that context, depth calibration cannot work. The prompt provides the policy; the framework provides the facts the policy needs. |
 
 ### What this mapping reveals
 
@@ -132,6 +132,12 @@ gsd-2's foundational intelligence pipeline is a four-stage process:
 3. **Research in tiers** (milestone → slices, parallel) → write findings into research blocks, with scoped contextBlocks reads of upstream work
 4. **Plan** → decompose into slices/tasks with requirements coverage validation
 
-All four stages map to workflows + agents + blocks + render macros in our platonic form, with **one missing primitive**: scoped/filtered contextBlocks reads. That is the single concrete capability gap this investigation surfaces that is not already in our open issues list.
+All four stages map to workflows + agents + blocks + render macros in our platonic form. The gaps this investigation surfaces — now filed as issues — include:
 
-Every other piece — codebase walking, discussion flow, research templates, parallel dispatch, coverage tracking, decision registers, forward intelligence, inlined context — is either already in our framework or already in our open issues list waiting to be built.
+- **Scoped/filtered contextBlocks reads** (issue-041) — the direct primitive needed for gsd-2's Forward Intelligence and dependency-scoped context injection
+- **Directory-watching monitor** (issue-051) — general filesystem observation primitive enabling skill discovery, dependency drift detection, and external artifact arrival as monitor-driven events
+- **Dynamic model selection** (issue-052) — agent spec `model` field resolved via expression at dispatch time rather than hardcoded
+- **Pre-execution monitors gating on required tool calls** (issue-053) — enforcement primitive for "mandatory investigation pass" and similar protocols
+- **Per-agent tool-call budget tracking** (issue-054) — framework-level counting and enforcement of tool-call budgets across agent invocations
+
+Every piece of gsd-2's intelligence pipeline — codebase walking, discussion flow, research templates, parallel dispatch, coverage tracking, decision registers, forward intelligence, inlined context, skill discovery, depth calibration, investigation enforcement — is either already in our framework, already in our open issues list, or filed as an issue during this analysis.

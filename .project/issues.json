@@ -568,6 +568,50 @@
       "priority": "critical",
       "package": "pi-workflows",
       "source": "agent"
+    },
+    {
+      "id": "issue-051",
+      "title": "Directory-watching monitor — general filesystem observation primitive for skill discovery, dependency drift, external artifact arrival",
+      "body": "gsd-2's skill discovery (skill-discovery.ts) snapshots a directory at session start, detects new files by comparing against the snapshot, and injects newly discovered content into agent prompts. This pattern generalizes: any directory that may gain new files during execution (skills, dependencies, external artifacts, config changes) should be observable via a monitor. In our framework this is a directory-watching monitor that periodically scans a configured path, detects additions/changes, writes findings to a .project/ block, and triggers contextBlocks injection into subsequent agents. The general primitive enables: skill discovery (watch ~/.claude/skills/), dependency drift detection (watch node_modules/ or lock files), external artifact arrival (watch a drop directory), config change propagation. Currently no monitor collector observes filesystem state outside .project/.",
+      "location": "packages/pi-behavior-monitors/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-052",
+      "title": "Dynamic model selection via expressions in agent spec model field",
+      "body": "Agent spec model field is currently a hardcoded string (e.g., model: claude-sonnet-4-6). gsd-2 has auto-model-selection.ts and capability-aware model routing (ADR-004) that select models at dispatch time based on task complexity, cost budget, and capability requirements. In our framework the agent spec model field should support expression resolution (e.g., model: ${{ registry.best(capability: 'thinking', budget: 'standard') }}) evaluated at dispatch time against the model registry. The model registry lives in pi-ai/pi-coding-agent; the dispatch decision is orchestration that belongs in the agent compilation pipeline. Without this, every agent locks to a specific model at authoring time, preventing runtime cost/quality optimization and provider failover.",
+      "location": "packages/pi-workflows/src/agent-spec.ts, packages/pi-workflows/src/step-shared.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-jit-agents",
+      "source": "human"
+    },
+    {
+      "id": "issue-053",
+      "title": "Pre-execution monitors — gate agent completion on required tool calls before final output",
+      "body": "gsd-2's discuss.md prompt has a 'mandatory investigation pass' — the agent MUST scout the codebase, check library docs, and web search before asking its first question. This is articulated in the prompt but not enforced by the framework. In our framework, a pre-execution monitor could gate agent completion by checking whether required tool calls have been made (e.g., 'this agent must have called grep or read at least N files before submitting final output'). The prompt encodes the intent; the monitor enforces it. This is a specific application of the monitor classify pattern: the collector observes tool_results during the agent's execution, the classifier checks whether required investigation tools were called, FLAG verdict prevents premature completion. Generalizes to any agent quality gate based on observable execution behavior before output submission.",
+      "location": "packages/pi-behavior-monitors/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-behavior-monitors",
+      "source": "human"
+    },
+    {
+      "id": "issue-054",
+      "title": "Per-agent tool-call budget tracking — framework-level counting and enforcement of tool-call budgets",
+      "body": "gsd-2's prompts articulate web search budgets ('max ~15 per session', 'Target 3-5 total web searches for a typical research unit') but leave enforcement to the LLM's self-discipline. The framework has no mechanism to count tool calls by type across agent invocations or enforce limits. This is the tool-call counterpart to issue-042 (token budgeting across DAG edges): who counts calls, where is the count stored, how is over-budget handled. In our framework this is either a monitor collector that tracks tool_results counts by tool name and classifies over-budget as FLAG, or a first-class budget field on the agent spec (e.g., budget: { web_search: 5, grep: unlimited }) enforced by the dispatch runtime. Without this, agents either self-regulate (unreliable) or have no budget at all (wasteful).",
+      "location": "packages/pi-behavior-monitors/index.ts, packages/pi-workflows/src/step-agent.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-behavior-monitors",
+      "source": "human"
     }
   ]
 }

@@ -89,18 +89,25 @@ gsd-2 has implemented each of these as imperative TypeScript. The platonic form 
 
 Every one of these is in our open issues list. gsd-2 has built each capability directly in TypeScript because our framework does not yet provide it as a spec-driven primitive.
 
-### Derivability test: what does NOT map
+### Derivability test: layers adjacent to the framework
 
-Some parts of gsd-2 are outside the pi-project-workflows scope and should not be derivable from it:
+Nothing in gsd-2's orchestration layer is out of scope for pi-project-workflows. What varies is the *relationship* to the framework — content that runs on it, tools it consumes, or applications that consume it:
 
-- **Daemon + discord-bot + launchd + scheduled orchestration** — process-management infrastructure that runs the agent in the background. Not orchestration logic.
-- **MCP server package** — exposes gsd state to external tools via MCP. A delivery mechanism, not a planning concern.
-- **Studio + vscode-extension + web** — UI surfaces. Not our business.
-- **Native performance package** — clipboard, diff, grep, glob, ast, gsd-parser. Perf primitives consumed by pi-coding-agent.
-- **Multi-provider model routing, provider-specific error recovery** — properties of pi-ai/pi-coding-agent, not of the orchestration layer.
-- **CI/CD workflows, Dockerfile, pipeline.yml** — delivery infrastructure.
+**Content that runs ON the framework** (derivable as schemas + workflows + agents + monitors):
+- **Daemon orchestration logic** — the scheduled workflow execution, polling, and re-dispatch logic that the daemon hosts is derivable as scheduled workflows (issue-031). The daemon PROCESS (launchd plist, systemd unit, Docker entrypoint) is platform-specific hosting — it starts our workflow runner, not replaces it.
+- **Discord bot** — a notification channel. Expressible as a monitor action (post to Discord on FLAG) or a `step-command` that calls a Discord webhook. The notification logic is content; the bot hosting is platform delivery.
+- **Multi-provider model routing** — gsd-2's `auto-model-selection.ts` and capability-aware routing are derivable as dynamic model selection in agent specs. An agent spec's `model` field could resolve via expression (`model: ${{ registry.best(capability: "thinking", budget: "standard") }}`). The model registry lives in pi-ai; the dispatch decision is orchestration.
+- **Provider-specific error recovery** — `provider-error-resume.ts` classifies errors into recoverable/not-recoverable. Expressible as a monitor that classifies errors combined with workflow executor retry policy.
+- **CI/CD release workflows** — the release logic (version bump, build, test, publish, tag) IS a workflow. `scripts/release.mjs` in our own repo should itself be expressible as a `.workflow.yaml`. The GitHub Actions YAML is a platform-specific invocation wrapper.
 
-These are the pi-coding-agent level and below, and the product-packaging level above. pi-project-workflows sits strictly at the orchestration layer between them.
+**Tools that the framework CONSUMES** (available to workflow steps, not replaced by them):
+- **Native performance package** — clipboard, diff, grep, glob, ast, gsd-parser. Workflow steps invoke these via `step-command` or subprocess dispatch. They are a tool layer workflows use.
+
+**Applications that CONSUME the framework** (read `.project/`, `.workflows/`, call SDK):
+- **Studio + vscode-extension + web** — UI surfaces that display and manipulate what the framework produces. The framework provides ALL the data they display via SDK queries and block reads. The hosting (VSCode extension API, browser runtime, Electron) is a separate application layer.
+
+**User-rejected approaches** (not "out of scope" but decided against):
+- **MCP server** — per `feedback_no_mcp.md`, the user has directed never to propose MCP as architecture or integration approach. The framework could express MCP integration but we do not build it because the user has decided against it.
 
 ### The honest assessment
 

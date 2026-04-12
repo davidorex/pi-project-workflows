@@ -1,0 +1,6 @@
+name: minimal
+description: Smoke-test agent for compile pipeline
+model: anthropic/claude-test-model
+prompt:
+  task:
+    template: ../templates/minimal-task.md

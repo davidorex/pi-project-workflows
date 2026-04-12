@@ -1,0 +1,9 @@
+name: classifier
+description: Smoke-test agent for executeAgent with schema-bound output
+model: anthropic/claude-test-model
+prompt:
+  task:
+    template: ../templates/minimal-task.md
+output:
+  format: json
+  schema: ../schemas/result.schema.json

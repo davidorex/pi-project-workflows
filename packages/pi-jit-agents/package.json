@@ -1,0 +1,70 @@
+{
+	"name": "@davidorex/pi-jit-agents",
+	"version": "0.14.4",
+	"description": "Agent spec compilation and in-process dispatch runtime — the package that owns everything between 'I have a spec' and 'I have a typed result'",
+	"license": "MIT",
+	"author": "David Ryan",
+	"type": "module",
+	"keywords": [
+		"pi-package"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/davidorex/pi-project-workflows.git",
+		"directory": "packages/pi-jit-agents"
+	},
+	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-jit-agents",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./types": {
+			"types": "./dist/types.d.ts",
+			"default": "./dist/types.js"
+		},
+		"./agent-spec": {
+			"types": "./dist/agent-spec.d.ts",
+			"default": "./dist/agent-spec.js"
+		},
+		"./template": {
+			"types": "./dist/template.d.ts",
+			"default": "./dist/template.js"
+		},
+		"./compile": {
+			"types": "./dist/compile.d.ts",
+			"default": "./dist/compile.js"
+		},
+		"./runtime": {
+			"types": "./dist/jit-runtime.d.ts",
+			"default": "./dist/jit-runtime.js"
+		},
+		"./introspect": {
+			"types": "./dist/introspect.d.ts",
+			"default": "./dist/introspect.js"
+		}
+	},
+	"files": [
+		"dist/",
+		"schemas/",
+		"*.md"
+	],
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "tsc -p tsconfig.build.json",
+		"prepublishOnly": "npm run clean && npm run build",
+		"test": "tsx --test src/*.test.ts"
+	},
+	"dependencies": {
+		"@davidorex/pi-project": "^0.14.4",
+		"@mariozechner/pi-ai": "^0.63.1",
+		"@sinclair/typebox": "^0.34.48",
+		"nunjucks": "^3.2.4",
+		"yaml": "^2.7.1"
+	},
+	"devDependencies": {
+		"@types/nunjucks": "^3.2.6"
+	}
+}

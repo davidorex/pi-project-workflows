@@ -19,7 +19,7 @@
 	],
 	"scripts": {
 		"clean": "npm run clean --workspaces --if-present",
-		"build": "npm run build -w @davidorex/pi-project && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors",
+		"build": "npm run build -w @davidorex/pi-project && npm run build -w @davidorex/pi-jit-agents && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors",
 		"test": "npm test --workspaces --if-present",
 		"test:project": "npm test -w @davidorex/pi-project",
 		"test:workflows": "npm test -w @davidorex/pi-workflows",

@@ -1,0 +1,14 @@
+{
+	"type": "object",
+	"required": ["verdict"],
+	"properties": {
+		"verdict": { "type": "string", "enum": ["CLEAN", "FLAG", "NEW"] },
+		"description": { "type": "string" },
+		"newPattern": { "type": "string" },
+		"severity": { "type": "string", "enum": ["info", "warning", "critical"] }
+	},
+	"allOf": [
+		{ "if": { "properties": { "verdict": { "const": "FLAG" } } }, "then": { "required": ["verdict", "description"] } },
+		{ "if": { "properties": { "verdict": { "const": "NEW" } } }, "then": { "required": ["verdict", "description", "newPattern"] } }
+	]
+}

@@ -98,7 +98,7 @@
     }
   ],
   "test_conventions": {
-    "runner_command": "tsx --test src/*.test.ts (pi-project, pi-workflows); vitest run (pi-behavior-monitors)",
+    "runner_command": "tsx --test src/*.test.ts (pi-project, pi-jit-agents, pi-workflows); vitest run (pi-behavior-monitors)",
     "file_pattern": "src/*.test.ts"
   },
   "lint_command": "npx @biomejs/biome check . && tsc --noEmit",

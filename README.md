@@ -1,8 +1,8 @@
 # pi-project-workflows
 
-Three [Pi](https://github.com/badlogic/pi-mono) extensions: typed, multi-step workflow execution via `.workflow.yaml` specs; schema-driven project state in `.project/`; and behavior monitors that classify agent activity and steer corrections.
+Three [Pi](https://github.com/badlogic/pi-mono) extensions plus a shared agent-runtime library: typed, multi-step workflow execution via `.workflow.yaml` specs; schema-driven project state in `.project/`; behavior monitors that classify agent activity and steer corrections; and a library package that owns everything between "I have a spec" and "I have a typed result."
 
-Schemas are the contract layer. In pi-project, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. The three extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
+Schemas are the contract layer. In pi-project, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. In pi-jit-agents, agent specs are compiled to typed results with phantom-tool structured output enforcement. The three extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
 
 ## Philosophy
 
@@ -21,6 +21,7 @@ The framework is outcome-agnostic — not a coding agent extension. Blocks can t
 | Package | npm | Description |
 |---------|-----|-------------|
 | [@davidorex/pi-project](packages/pi-project/) | `npm:@davidorex/pi-project` | Schema-driven project state — typed JSON blocks, write-time validation, generic CRUD tools, dynamically derived state. Add a schema, get a new block type with tooling. No code changes. |
+| [@davidorex/pi-jit-agents](packages/pi-jit-agents/) | `npm:@davidorex/pi-jit-agents` | Agent spec compilation and in-process dispatch runtime. Library package (not a Pi extension) that owns loading, compilation, and execution of `.agent.yaml` specs with phantom-tool structured output enforcement. Consumed by pi-workflows and pi-behavior-monitors. |
 | [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, 9 step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
 | [@davidorex/pi-behavior-monitors](packages/pi-behavior-monitors/) | `npm:@davidorex/pi-behavior-monitors` | Behavior monitors — autonomous watchdogs that classify agent activity against JSON pattern libraries, steer corrections, and write structured findings. |
 
@@ -153,7 +154,7 @@ npx tsx -e "
 - **ESM, TypeScript** compiled via `tsc` to `dist/`. Pi loads compiled JS from each package's `dist/index.js`. Cross-package imports use `.js` extensions for Node16 module resolution.
 - **Skill self-install** — each extension copies its `skills/` directory to `~/.pi/agent/skills/` on activation, ensuring skills are discoverable regardless of install method.
 - **Pre-commit hook** (husky) runs `npm run check` before every commit. **CI** (GitHub Actions) runs check + build + test on Node 22/23.
-- All three packages use **direct dependencies**. pi-workflows and pi-behavior-monitors depend on pi-project. pi-project has no knowledge of workflows or monitors.
+- All four packages use **direct dependencies**. pi-jit-agents depends on pi-project for block-api reads during contextBlocks injection. pi-workflows and pi-behavior-monitors depend on pi-project for block state; consumer migration to adopt pi-jit-agents as their agent runtime is tracked in `docs/planning/jit-agents-spec.md`. pi-project has no knowledge of workflows, monitors, or jit-agents.
 
 ## For LLMs
 
@@ -171,7 +172,7 @@ When working in this repository:
 
 ## Release
 
-All packages use lockstep versioning — every release bumps all three packages to the same version. Run from the repo root:
+All packages use lockstep versioning — every release bumps all packages to the same version. Run from the repo root:
 
 ```bash
 npm run release:patch    # bump all packages patch, update CHANGELOGs, commit, tag

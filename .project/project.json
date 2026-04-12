@@ -23,7 +23,7 @@
     },
     {
       "type": "versioning",
-      "description": "Lockstep versioning across 4 packages"
+      "description": "Lockstep versioning across all packages"
     },
     {
       "type": "compatibility",
@@ -32,12 +32,11 @@
   ],
   "scope_boundaries": {
     "in": [
-      "Monorepo: @davidorex/pi-project, @davidorex/pi-workflows, @davidorex/pi-behavior-monitors, @davidorex/pi-project-workflows"
+      "Monorepo: @davidorex/pi-project, @davidorex/pi-jit-agents, @davidorex/pi-workflows, @davidorex/pi-behavior-monitors, @davidorex/pi-project-workflows"
     ],
     "out": [
-      "No in-process agent execution — all agent steps are subprocess-isolated",
-      "No pi-subagents dependency — extension owns its own dispatch",
-      "No runtime TypeScript — domain logic lives in YAML specs, JSON schemas, Nunjucks templates, and monitor JSON specs"
+      "No pi-subagents dependency — extensions own their own dispatch",
+      "No runtime TypeScript for domain logic — domain lives in YAML specs, JSON schemas, Nunjucks templates, and monitor JSON specs"
     ]
   },
   "status": "development"

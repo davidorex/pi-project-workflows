@@ -2,14 +2,15 @@
 
 Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state in `.project/`. Behavior monitors that classify agent activity and steer corrections.
 
-Monorepo: four npm packages (`packages/*`) with lockstep versioning.
+Monorepo: five npm packages (`packages/*`) with lockstep versioning.
 
 | Package | Purpose |
 |---------|---------|
 | `@davidorex/pi-project` | Block CRUD, schema validation, `/project` command |
+| `@davidorex/pi-jit-agents` | Agent spec compilation + in-process dispatch runtime (library, not an extension) |
 | `@davidorex/pi-workflows` | Workflow orchestration, agent dispatch, `/workflow` command |
 | `@davidorex/pi-behavior-monitors` | Autonomous monitors, classification, steering |
-| `@davidorex/pi-project-workflows` | Meta-package re-exporting all three |
+| `@davidorex/pi-project-workflows` | Meta-package re-exporting the three Pi extensions |
 
 ## Commands
 
@@ -80,6 +81,18 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 - `project-dir.ts` — `PROJECT_DIR` and `SCHEMAS_DIR` constants (single source for `.project/` path)
 - `block-validation.ts` — post-step block validation: snapshot `.project/*.json` before step, validate changed files after, rollback on failure
 - `update-check.ts` — non-blocking npm registry check for newer package versions
+
+**pi-jit-agents** (`packages/pi-jit-agents/src/`) — library package, not a Pi extension. Owns the four boundary surfaces (load, compile, execute, introspect) per `docs/planning/jit-agents-spec.md`:
+- `index.ts` — barrel re-exports for all public API
+- `types.ts` — `AgentSpec` (with `loadedFrom`), `CompileContext`, `DispatchContext`, `JitAgentResult`, `AgentContract`
+- `errors.ts` — `AgentNotFoundError`, `AgentParseError`, `AgentCompileError`, `AgentDispatchError`
+- `agent-spec.ts` — `parseAgentYaml` (fully resolves relative paths per D1), `createAgentLoader` (three-tier discovery per D7: `.project/agents/` → `~/.pi/agent/agents/` → consumer builtin; does NOT search `.pi/agents/` per D3)
+- `template.ts` — `createTemplateEnv`, `renderTemplate`, `renderTemplateFile` (three-tier search, workflow `${{ }}` expression protection, no `.pi/` reads per D3)
+- `compile.ts` — `compileAgent` (renders system + task templates, injects `contextBlocks` from `.project/` via pi-project `readBlock`, wraps injected block content in framework-level anti-injection delimiters)
+- `jit-runtime.ts` — `executeAgent` (unified in-process dispatch per D4, phantom-tool enforcement via forced `toolChoice`, `completeFn` injection for testing), `buildPhantomTool` (JSON Schema → TypeBox converter for the common shape)
+- `introspect.ts` — `agentContract` (projection for SDK queries, hides internal `loadedFrom`)
+- `test-fixtures/` (outside `src/`) — minimal fixtures for unit tests, not bundled in `dist/`
+- `schemas/verdict.schema.json` — framework-contract schema for the phantom-tool classification pattern. Consumer packages (pi-workflows and pi-behavior-monitors) will migrate to import agent infrastructure from this package in a subsequent work arc; today they still use their own copies.
 
 **pi-workflows** (`packages/pi-workflows/src/`):
 - `index.ts` — extension entry point (tool, command, keybindings)

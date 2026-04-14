@@ -612,6 +612,116 @@
       "priority": "medium",
       "package": "pi-behavior-monitors",
       "source": "human"
+    },
+    {
+      "id": "issue-055",
+      "title": "Framework gap FGAP-001 — pi-project does not support hierarchical/nested block storage",
+      "body": "block-api.ts assumes one flat JSON file per block. There is no way to express a nested decomposition like roadmap → milestone → epic → story → task as a directory tree; work decomposition must be smuggled into a single flat array with denormalized parent references, losing scope ownership and forcing the global tasks.json to conflate work across all levels. The L3 Work layer of the Muni five-layer model (see .project/layer-plans.json PLAN-001) cannot be natively represented until readBlock / writeBlock / appendToBlock gain subpath support and availableBlocks gains nested-directory discovery. Hand-enacted today via flat features.json with stories and tasks embedded as arrays — features/{id}.json per feature is the target once this gap closes. Canonical owner: .project/framework-gaps.json FGAP-001. Related artifact: FEAT-001 STORY-004/005 (consumer migration) which operates on the flat-block substrate until this lands. Canonical vocabulary: hierarchical work breakdown structure (WBS); nested aggregate storage.",
+      "location": "packages/pi-project/src/block-api.ts, packages/pi-project/src/project-dir.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-056",
+      "title": "Framework gap FGAP-002 — no per-scope finding registries on block kinds",
+      "body": "There is no convention for a block to carry its own embedded findings array distinct from global issues.json. A design issue discovered during review of jit-agents-spec.md has nowhere to live except the global issue tracker, where it is indistinguishable from task-level defects and feature-level scope conflicts. Result: issues.json (this file, currently 65+ entries) conflates L2 architectural contradictions with L4 implementation bugs with L5 incident-derived rules. The hand-enacted .project/spec-reviews.json and .project/features.json already embed scoped findings arrays as a preview of the target shape — block-api needs to standardize the convention and provide appendFinding(blockName, parentItemId, finding). Global issues.json becomes a derived view (see issue-057 / FGAP-003). Canonical owner: .project/framework-gaps.json FGAP-002. Canonical vocabulary: scoped issues; per-artifact defect list; embedded finding registries.",
+      "location": "packages/pi-project/src/block-api.ts, .project/schemas/",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-057",
+      "title": "Framework gap FGAP-003 — no materialized views over scoped blocks",
+      "body": "projectState() in project-sdk.ts does in-memory aggregation but it is not a persisted, addressable, schema-validated block. There is no way to declare 'global issues_view.json is a derived index over per-scope finding registries' or 'open_work_view.json aggregates all non-terminal stories across features'. Consumers wanting a flat queryable view (the current issues.json shape) cannot have it alongside scope-owned registries without manual sync. Proposed resolution: add a view-block kind with a definition file naming source blocks, a projection function, and refresh triggers; block-api exposes readView(name) but disallows direct writes; refresh fires on underlying block writes. Canonical owner: .project/framework-gaps.json FGAP-003. Canonical vocabulary: materialized view (database canon). Depends on FGAP-002 (issue-056) landing first to have scope-owned registries to project from.",
+      "location": "packages/pi-project/src/project-sdk.ts, packages/pi-project/src/block-api.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-058",
+      "title": "Framework gap FGAP-004 — no authorship attestation at block write time",
+      "body": "Only issues.schema.json (this block) has a source enum (human | agent | monitor | workflow); tasks.schema.json has assigned_agent which is a different concept (assignment, not authorship). No block records created_by / modified_by / created_at / modified_at consistently. block-api.ts does not stamp authorship on writes. The authorship-matrix principle — 'only the user can advance a finding from proposed to decided' — cannot be enforced because the writer identity is not recorded. State-machine validation of user-gated transitions (ADR decided, finding decided, feature approved) is structurally impossible without this. Proposed resolution: block-api.ts stamps created_by / modified_by / created_at / modified_at on every write, reading writer identity from a DispatchContext parameter; every block schema adds these as required fields; cross-block validation enforces authority-matrix rules per-transition. Hand-enacted today in .project/adrs.json, features.json, framework-gaps.json, spec-reviews.json, layer-plans.json — every item carries explicit created_by and created_at fields populated manually. Canonical owner: .project/framework-gaps.json FGAP-004. Canonical vocabulary: authorship attestation; written_by attribution; audit trail.",
+      "location": "packages/pi-project/src/block-api.ts, .project/schemas/",
+      "status": "open",
+      "category": "primitive",
+      "priority": "high",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-059",
+      "title": "Framework gap FGAP-005 — no state-machine validation on enum-field transitions",
+      "body": "AJV draft-07 validates current-value membership on enum fields but cannot express allowed transitions. Every block schema today permits any enum value on any write. 'Issue status can only go from open to in-progress, not back to open' is not expressible. 'Finding decided-state transitions require user authority' is not expressible. The whole class of lifecycle-gated workflows (design review clean-gate, ADR user-decided gate, feature approval gate) cannot be enforced by schema. Current workaround is discipline — which fails silently when agents run unattended. The five new block schemas landed this session (.project/schemas/adrs.schema.json, spec-reviews.schema.json, features.schema.json, framework-gaps.schema.json, layer-plans.schema.json) all carry x-lifecycle metadata at root declaring allowed transitions with required_authority annotations — this metadata is load-bearing for the framework-level implementation that will eventually honor it. Proposed resolution: add a custom AJV keyword that the schema-validator reads; block-api.ts passes both prior-value and new-value to the validator at update time; validator checks allowed transitions and required-authority; fails write if transition is invalid or authority is insufficient. Depends on FGAP-004 (issue-058) for the authorship data. Canonical owner: .project/framework-gaps.json FGAP-005. Canonical vocabulary: state-machine validation; lifecycle invariant; transition guard.",
+      "location": "packages/pi-project/src/schema-validator.ts, packages/pi-project/src/block-api.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-060",
+      "title": "Framework gap FGAP-006 — no schema versioning or evolution protocol",
+      "body": "Schemas have no version field, no $id, no migration story, no $ref composition, no shared-fragment reuse. Schemas drift silently across projects and across time. A schema rename or field rename has no backward-compatibility path. decisions.schema.json and rationale.schema.json duplicate fields with no shared fragment — a rename in one does not propagate. CLAUDE.md says 'All schemas are user-customizable' with no mention of migration or version compatibility. Long-term schema evolution is undefined. Proposed resolution: add a required $id (URI) and version field on every schema; schema-validator reads version and can apply migration functions; introduce a schema-migrations registry; $ref fragment composition becomes the standard way to express shared fields (e.g. a common 'authorship-fragment.schema.json' imported by every block schema). Canonical owner: .project/framework-gaps.json FGAP-006. Canonical vocabulary: schema evolution; JSON Schema $id; schema registry; schema versioning.",
+      "location": ".project/schemas/, packages/pi-project/src/schema-validator.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-061",
+      "title": "Framework gap FGAP-007 — no staleness engine for research blocks",
+      "body": "Research entries (per the design in analysis/research-blocks-design.md) must carry grounding metadata (version-pinned dependencies, retrieved revisions, dated external refs) and stale_conditions (e.g. 'pi-ai upgrades past 0.63.x'). Staleness must currently be checked by hand. The framework cannot automatically fire stale_conditions against the current state of installed dependencies, git revisions, or external-URL content hashes — and cannot propagate invalidation downstream through 'informs' edges to flag affected ADRs as needing re-grounding. Proposed resolution: add a staleness-engine runtime that reads every research entry's stale_conditions and compares them against the current state on a schedule or on-demand; transitions stale entries to status=stale; walks informs edges to emit structured diagnostics for any decided ADR whose supporting research has gone stale. Depends on the research block kind itself existing (research.json + research.schema.json), which is currently specified in analysis/research-blocks-design.md but not yet enacted. Canonical owner: to be added to .project/framework-gaps.json when the research block kind lands. Canonical vocabulary: grounding decay; citation rot; evidence expiry.",
+      "location": "packages/pi-project/src/ (new staleness-engine module needed), .project/schemas/research.schema.json (pending)",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-062",
+      "title": "Monitor provider-pin — parseModelSpec defaults bare model ids to provider='anthropic'",
+      "body": "packages/pi-behavior-monitors/index.ts:1091-1097 implements parseModelSpec such that bare model ids (e.g. 'claude-sonnet-4-6') default to provider='anthropic'. This structural pin means monitor classify calls attempt Anthropic-direct authentication regardless of the main session's configured provider. Under OpenRouter-only auth (the user's current configuration), every monitor's classify call fails with 'Expected either apiKey or authToken to be set' because the Anthropic SDK receives undefined credentials. All five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) declare bare model ids and are all affected. This issue is gated on three proposed ADRs in .project/adrs.json: ADR-0001 (agent spec model-field semantics), ADR-0002 (thinking-seam enforcement), ADR-0003 (parseModelSpec ownership at the execute boundary). Per mandate-004, the fix is NOT to set ANTHROPIC_API_KEY alongside — that leaves the coupling in place. The fix lives in .project/features.json FEAT-001 as STORY-001/003 of the consumer migration arc: remove the anthropic default, move parseModelSpec into pi-jit-agents, resolve bare ids via ExtensionContext lookup. Canonical owner: FEAT-001 + ADR-0001 + ADR-0003. Operational incident: analysis/openrouter-pi-mono-setup.md.",
+      "location": "packages/pi-behavior-monitors/index.ts:1091-1097",
+      "status": "open",
+      "category": "issue",
+      "priority": "high",
+      "package": "pi-behavior-monitors",
+      "source": "agent"
+    },
+    {
+      "id": "issue-063",
+      "title": "Dead 'thinking: on' config in five bundled classifier agent YAMLs — silently dropped by classify path",
+      "body": "All five bundled classifier agent YAMLs in packages/pi-behavior-monitors/agents/ (hedge-classifier, commit-hygiene-classifier, fragility-classifier, work-quality-classifier, unauthorized-action-classifier) declare 'thinking: on' in their spec. The classify path at packages/pi-behavior-monitors/index.ts:1235-1248 does NOT forward thinking to the complete() call — the parameter object passed to complete() omits the thinking field entirely. The comment at index.ts:1231 acknowledges that the Anthropic API rejects thinking + forced toolChoice, so thinking must stay off when the dispatch uses a phantom-tool verdict shape. Net effect: YAML config is dead — agents authors writing new classifier YAMLs will repeat the mistake. Gated on ADR-0002 (.project/adrs.json) which proposes that executeAgent in pi-jit-agents enforce thinking=off when toolChoice.type === 'tool' is present and emit a structured diagnostic warning. Bundled YAML updates are STORY-006 of FEAT-001 in .project/features.json. Canonical owner: FEAT-001 + ADR-0002.",
+      "location": "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml, packages/pi-behavior-monitors/agents/commit-hygiene-classifier.agent.yaml, packages/pi-behavior-monitors/agents/fragility-classifier.agent.yaml, packages/pi-behavior-monitors/agents/work-quality-classifier.agent.yaml, packages/pi-behavior-monitors/agents/unauthorized-action-classifier.agent.yaml, packages/pi-behavior-monitors/index.ts:1231-1248",
+      "status": "open",
+      "category": "cleanup",
+      "priority": "medium",
+      "package": "pi-behavior-monitors",
+      "source": "agent"
+    },
+    {
+      "id": "issue-064",
+      "title": "pi-workflows dispatch.ts lacks per-step provider/model override",
+      "body": "packages/pi-workflows/src/dispatch.ts spawns 'pi --mode json' subprocesses without passing --provider or --model flags. Workflow agent steps inherit the parent session's configured model — there is no way to route one step to OpenRouter while the rest of the workflow runs on Anthropic direct, or to pin a specific reasoning step to a higher-capability model. This parallels the monitor-level issue-062 (provider-pin in pi-behavior-monitors) but for workflow steps. The underlying question is the same: agent spec 'model:' field semantics, resolved by ADR-0001. STORY-003 TASK-003-03 in FEAT-001 includes an audit of pi-workflows/src/ for equivalent parseModelSpec implementations so any consolidation happens alongside the monitor-side fix. Beyond consolidation, enabling per-step provider choice requires either: (a) workflow step type carries provider/model fields that dispatch.ts plumbs through to pi invocation flags, or (b) workflow steps declare their ideal provider/model via the agent spec's 'model:' field and inherit ExtensionContext-resolved semantics per ADR-0001. Canonical owner: FEAT-001 STORY-003 + follow-up capability work once ADR-0001 decides.",
+      "location": "packages/pi-workflows/src/dispatch.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-workflows",
+      "source": "agent"
     }
   ]
 }

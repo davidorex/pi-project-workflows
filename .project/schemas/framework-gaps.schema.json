@@ -1,0 +1,65 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Framework Gaps",
+	"description": "Capability gaps in the pi-project-workflows framework — pieces that must exist natively for the target artifact-ownership model to be expressible as configuration rather than hand-enactment. Each gap carries evidence (file + line references), impact, canonical engineering vocabulary for the missing capability, proposed resolution, and lifecycle state. Framework gaps are distinct from feature-level defects: they describe what the framework cannot yet express at all, not bugs in expressible functionality.",
+	"type": "object",
+	"required": ["gaps"],
+	"properties": {
+		"gaps": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["id", "title", "status", "package", "description", "evidence", "impact", "proposed_resolution", "created_by", "created_at"],
+				"properties": {
+					"id": { "type": "string", "pattern": "^FGAP-\\d{3}$" },
+					"title": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["identified", "accepted", "in-progress", "closed", "wontfix"]
+					},
+					"priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+					"package": { "type": "string" },
+					"layer": { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] },
+					"description": { "type": "string" },
+					"evidence": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"required": ["file", "reference"],
+							"properties": {
+								"file": { "type": "string" },
+								"lines": { "type": "string" },
+								"reference": { "type": "string", "description": "What specifically at this location demonstrates the gap" }
+							}
+						}
+					},
+					"impact": { "type": "string" },
+					"canonical_vocabulary": {
+						"type": "string",
+						"description": "The established engineering term for the capability that is missing"
+					},
+					"proposed_resolution": { "type": "string" },
+					"related_features": { "type": "array", "items": { "type": "string" } },
+					"related_adrs": { "type": "array", "items": { "type": "string" } },
+					"related_issues": { "type": "array", "items": { "type": "string" } },
+					"created_by": { "type": "string" },
+					"created_at": { "type": "string" },
+					"closed_by": { "type": "string" },
+					"closed_at": { "type": "string" }
+				}
+			}
+		}
+	},
+	"x-lifecycle": {
+		"field": "status",
+		"states": ["identified", "accepted", "in-progress", "closed", "wontfix"],
+		"transitions": [
+			{ "from": "identified", "to": "accepted", "required_authority": "user" },
+			{ "from": "identified", "to": "wontfix", "required_authority": "user" },
+			{ "from": "accepted", "to": "in-progress", "required_authority": "any" },
+			{ "from": "in-progress", "to": "closed", "required_authority": "any" }
+		]
+	}
+}

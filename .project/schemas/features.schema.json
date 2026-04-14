@@ -1,0 +1,140 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Features",
+	"description": "L3 Work layer. Epic-level features with their own scope, acceptance criteria, story decomposition, task list, and scoped finding registry. Each feature owns its own execution state — findings discovered while working on it live in the feature, not in the global issue tracker. A feature is atomically composable into prompt context: passing one feature entry to an agent gives it everything needed to reason about that unit of work without pulling in unrelated state.",
+	"type": "object",
+	"required": ["features"],
+	"properties": {
+		"features": {
+			"type": "array",
+			"items": { "$ref": "#/definitions/feature" }
+		}
+	},
+	"definitions": {
+		"feature": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "title", "status", "layer", "description", "acceptance_criteria", "stories", "findings", "created_by", "created_at"],
+			"properties": {
+				"id": { "type": "string" },
+				"title": { "type": "string" },
+				"status": {
+					"type": "string",
+					"enum": ["proposed", "approved", "in-progress", "in-review", "complete", "blocked", "cancelled"]
+				},
+				"layer": { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] },
+				"description": { "type": "string" },
+				"motivation": { "type": "string" },
+				"acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+				"dependencies": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "IDs of other features, ADRs, gaps, or reviews this depends on"
+				},
+				"gates": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "IDs that must reach terminal state before this feature can advance from proposed to approved"
+				},
+				"blocks_resolved": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "Existing issue IDs this feature closes"
+				},
+				"adrs": { "type": "array", "items": { "type": "string" } },
+				"stories": {
+					"type": "array",
+					"items": { "$ref": "#/definitions/story" }
+				},
+				"findings": {
+					"type": "array",
+					"items": { "$ref": "#/definitions/scoped-finding" }
+				},
+				"created_by": { "type": "string" },
+				"created_at": { "type": "string" },
+				"modified_by": { "type": "string" },
+				"modified_at": { "type": "string" },
+				"approved_by": { "type": "string" },
+				"approved_at": { "type": "string" }
+			}
+		},
+		"story": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "title", "status", "tasks"],
+			"properties": {
+				"id": { "type": "string" },
+				"title": { "type": "string" },
+				"status": {
+					"type": "string",
+					"enum": ["proposed", "ready", "in-progress", "in-review", "complete", "blocked"]
+				},
+				"description": { "type": "string" },
+				"acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+				"depends_on": { "type": "array", "items": { "type": "string" } },
+				"gates": { "type": "array", "items": { "type": "string" } },
+				"tasks": { "type": "array", "items": { "$ref": "#/definitions/task" } }
+			}
+		},
+		"task": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "title", "status"],
+			"properties": {
+				"id": { "type": "string" },
+				"title": { "type": "string" },
+				"status": { "type": "string", "enum": ["todo", "in-progress", "in-review", "done", "blocked"] },
+				"description": { "type": "string" },
+				"files": { "type": "array", "items": { "type": "string" } },
+				"acceptance": { "type": "string" },
+				"depends_on": { "type": "array", "items": { "type": "string" } },
+				"assigned_to": { "type": "string" }
+			}
+		},
+		"scoped-finding": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "description", "severity", "state", "reporter", "created_at"],
+			"properties": {
+				"id": { "type": "string" },
+				"description": { "type": "string" },
+				"evidence": { "type": "string" },
+				"severity": { "type": "string", "enum": ["critical", "major", "minor", "trivial"] },
+				"category": { "type": "string", "enum": ["defect", "ambiguity", "contradiction", "omission", "scope-creep", "disclarity", "other"] },
+				"state": {
+					"type": "string",
+					"enum": ["open", "triaged", "researching", "proposed", "decided", "implementing", "resolved", "wontfix", "duplicate"]
+				},
+				"reporter": { "type": "string" },
+				"created_at": { "type": "string" },
+				"resolution": { "type": "string" },
+				"resolved_by": { "type": "string" },
+				"resolved_at": { "type": "string" }
+			}
+		}
+	},
+	"x-lifecycle": {
+		"feature": {
+			"field": "status",
+			"states": ["proposed", "approved", "in-progress", "in-review", "complete", "blocked", "cancelled"],
+			"transitions": [
+				{ "from": "proposed", "to": "approved", "required_authority": "user", "precondition": "all gates in terminal state" },
+				{ "from": "approved", "to": "in-progress", "required_authority": "any" },
+				{ "from": "in-progress", "to": "in-review", "required_authority": "any" },
+				{ "from": "in-review", "to": "complete", "required_authority": "any" },
+				{ "from": "in-progress", "to": "blocked", "required_authority": "any" },
+				{ "from": "blocked", "to": "in-progress", "required_authority": "any" },
+				{ "from": "proposed", "to": "cancelled", "required_authority": "user" }
+			]
+		},
+		"story": {
+			"field": "stories[].status",
+			"states": ["proposed", "ready", "in-progress", "in-review", "complete", "blocked"]
+		},
+		"task": {
+			"field": "stories[].tasks[].status",
+			"states": ["todo", "in-progress", "in-review", "done", "blocked"]
+		},
+		"note": "AJV draft-07 cannot enforce transition validity; this block is metadata for future framework-level state-machine validation (FGAP-005)."
+	}
+}

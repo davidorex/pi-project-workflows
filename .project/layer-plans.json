@@ -1,0 +1,187 @@
+{
+	"plans": [
+		{
+			"id": "PLAN-001",
+			"title": "Muni five-layer enactment for .project/",
+			"status": "draft",
+			"model": "Muni five-layer artifact ownership",
+			"description": "Restructure .project/ from flat-block storage into a layered model where each layer owns its own findings, decisions, and lifecycle. Enacted by hand initially as the test case for what pi-project must eventually generate natively. The hand-enactment itself reveals the framework gaps (captured in framework-gaps.json) that the consumer migration arc must address for the layered structure to become expressible as configuration rather than manual scaffolding.",
+			"layers": [
+				{
+					"id": "L1",
+					"name": "Identity",
+					"purpose": "What this project is, who it is for, what cannot change. Stable across the project lifetime. Foundational and rarely revised.",
+					"canonical_vocabulary": "Project Charter + README + Glossary + Coding Standards",
+					"lifetime": "project-lifetime",
+					"ownership_principle": "Changes require user authority and affect every downstream layer",
+					"current_blocks": ["project.json", "domain.json", "conventions.json"],
+					"target_blocks": [
+						{ "name": "project.json", "shape": "flat", "notes": "charter; unchanged" },
+						{ "name": "domain.json", "shape": "flat", "notes": "glossary + domain rules; unchanged" },
+						{ "name": "conventions.json", "shape": "flat", "notes": "coding standards; should subsume conformance-reference.json" }
+					]
+				},
+				{
+					"id": "L2",
+					"name": "Specification",
+					"purpose": "What the system must do and how it is structured. Evolves with design decisions. Architectural contradictions and missing requirements are owned here.",
+					"canonical_vocabulary": "Specification + ADRs + RFCs + Requirements + Architecture",
+					"lifetime": "per-design-cycle",
+					"ownership_principle": "Findings discovered during design review of a spec live attached to that spec, not in global issues. ADRs record each design decision with a lifecycle gate for user-authored transitions to 'decided'.",
+					"current_blocks": ["requirements.json", "architecture.json", "decisions.json", "rationale.json"],
+					"target_blocks": [
+						{ "name": "requirements.json", "shape": "flat", "notes": "unchanged in shape; may embed findings later" },
+						{ "name": "architecture.json", "shape": "flat", "notes": "unchanged in shape; may embed findings later" },
+						{ "name": "adrs.json", "shape": "flat", "notes": "replaces decisions.json as the canonical ADR log; decisions.json folds in via a migration" },
+						{ "name": "spec-reviews.json", "shape": "flat", "notes": "per-target design reviews with embedded findings arrays — new for this plan" },
+						{ "name": "framework-gaps.json", "shape": "flat", "notes": "L2 capability gaps in the framework itself — new for this plan" },
+						{ "name": "layer-plans.json", "shape": "flat", "notes": "this file; L2 restructure plans — new for this plan" }
+					]
+				},
+				{
+					"id": "L3",
+					"name": "Work",
+					"purpose": "What is planned and in what order. Hierarchical decomposition — roadmap → milestone → epic → story → task. Each feature/epic owns its own scope, acceptance criteria, and scoped finding registry.",
+					"canonical_vocabulary": "Roadmap + Epics + Stories + Tasks (Agile/Jira/GitHub canon)",
+					"lifetime": "per-iteration",
+					"ownership_principle": "A task belongs to a story, a story to an epic, an epic to a milestone. Findings discovered while working on a story live in that story's feature node, not in the global tracker. Global task lists are materialized views, not the authoritative store.",
+					"current_blocks": ["tasks.json"],
+					"target_blocks": [
+						{ "name": "features.json", "shape": "flat", "notes": "seed: one feature per epic, with embedded stories and tasks; hand-enactment of the nested structure until FGAP-001 lands" },
+						{ "name": "features/", "shape": "nested", "notes": "target: once FGAP-001 lands, each feature becomes features/{id}.json and stories/tasks become subfiles" }
+					]
+				},
+				{
+					"id": "L4",
+					"name": "Execution",
+					"purpose": "What is currently true. Changes per session. Done, broken, in-progress, verified. Implementation defects and regressions are owned here.",
+					"canonical_vocabulary": "Iteration state + V&V records + session notes",
+					"lifetime": "per-session",
+					"ownership_principle": "Per-task verification records live attached to the task. Session handoff records live attached to the active feature. Defects discovered during execution are owned by the story or task that was in-flight.",
+					"current_blocks": ["verification.json", "handoff.json", "issues.json"],
+					"target_blocks": [
+						{ "name": "verification.json", "shape": "flat", "notes": "V&V records; unchanged shape" },
+						{ "name": "handoff.json", "shape": "flat", "notes": "session notes; schema exists, created on demand" },
+						{ "name": "issues_view.json", "shape": "materialized-view", "notes": "target: derived index over scope-owned finding registries once FGAP-002/003 land; current issues.json migrates into scope-owned arrays" }
+					]
+				},
+				{
+					"id": "L5",
+					"name": "Memory",
+					"purpose": "What has been learned through incidents. Accumulates, never shrinks. Rules derived from past failures.",
+					"canonical_vocabulary": "Runbook + Postmortem archive + Lessons learned + Knowledge base",
+					"lifetime": "ever-accumulating",
+					"ownership_principle": "Each entry is tied to an originating incident. No speculative rules. Entries cross-reference the features/tasks/findings they derived from.",
+					"current_blocks": [],
+					"target_blocks": [
+						{ "name": "feedback-memory.json", "shape": "flat", "notes": "target: canonicalize the ~/.claude/.../memory/feedback_*.md corpus as a queryable block with incident cross-references" },
+						{ "name": "postmortems.json", "shape": "flat", "notes": "target: structured postmortem records with cross-references to the incidents they analyze" }
+					]
+				}
+			],
+			"migration_phases": [
+				{
+					"id": "PHASE-1",
+					"name": "New L2 schemas in place",
+					"description": "Create the five new schemas (adrs, spec-reviews, features, framework-gaps, layer-plans) in .project/schemas/. Existing schemas untouched.",
+					"depends_on": [],
+					"exit_criteria": [
+						".project/schemas/adrs.schema.json exists and is valid draft-07",
+						".project/schemas/spec-reviews.schema.json exists and is valid draft-07",
+						".project/schemas/features.schema.json exists and is valid draft-07",
+						".project/schemas/framework-gaps.schema.json exists and is valid draft-07",
+						".project/schemas/layer-plans.schema.json exists and is valid draft-07"
+					],
+					"produces": [".project/schemas/adrs.schema.json", ".project/schemas/spec-reviews.schema.json", ".project/schemas/features.schema.json", ".project/schemas/framework-gaps.schema.json", ".project/schemas/layer-plans.schema.json"],
+					"status": "complete"
+				},
+				{
+					"id": "PHASE-2",
+					"name": "Seed initial L2/L3 artifacts",
+					"description": "Populate each new block with seed data representing the current state of the consumer migration arc — three proposed ADRs, one spec-review target, one feature with story decomposition, six framework gaps, one layer plan.",
+					"depends_on": ["PHASE-1"],
+					"exit_criteria": [
+						"adrs.json contains ADR-0001 through ADR-0003 in proposed state",
+						"spec-reviews.json contains REVIEW-001 in not-started state",
+						"features.json contains FEAT-001 (consumer migration epic) in proposed state",
+						"framework-gaps.json contains FGAP-001 through FGAP-006 in identified state",
+						"layer-plans.json contains PLAN-001 in draft state",
+						"every data file validates against its schema via AJV"
+					],
+					"produces": [".project/adrs.json", ".project/spec-reviews.json", ".project/features.json", ".project/framework-gaps.json", ".project/layer-plans.json"],
+					"status": "in-progress"
+				},
+				{
+					"id": "PHASE-3",
+					"name": "Run design review of jit-agents-spec.md",
+					"description": "Spawn a fresh-context independent reviewer subagent against docs/planning/jit-agents-spec.md with the scope declared in REVIEW-001. Findings populate REVIEW-001.findings and drive ADR-0001/0002/0003 state from proposed toward decided where evidence supports it.",
+					"depends_on": ["PHASE-2"],
+					"exit_criteria": [
+						"REVIEW-001 advances to complete",
+						"Every finding in REVIEW-001.findings reaches a terminal state (resolved/wontfix/duplicate)",
+						"Findings that generate new ADRs are linked via produces_adr",
+						"REVIEW-001.clean is true"
+					],
+					"produces": ["populated spec-reviews.json", "possibly new ADRs beyond ADR-0001/0002/0003"],
+					"status": "pending"
+				},
+				{
+					"id": "PHASE-4",
+					"name": "User-authored transitions on gating ADRs",
+					"description": "User reviews ADR-0001/0002/0003 in light of the design-review findings and advances each to decided or requests revision. All decided-state transitions require user authority per the lifecycle metadata. Until each gating ADR is decided, FEAT-001 cannot advance from proposed to approved.",
+					"depends_on": ["PHASE-3"],
+					"exit_criteria": [
+						"ADR-0001 in decided state with decided_by=user",
+						"ADR-0002 in decided state with decided_by=user",
+						"ADR-0003 in decided state with decided_by=user"
+					],
+					"produces": ["decided ADR-0001", "decided ADR-0002", "decided ADR-0003"],
+					"status": "pending"
+				},
+				{
+					"id": "PHASE-5",
+					"name": "FEAT-001 story execution",
+					"description": "User advances FEAT-001 to approved. Each story within FEAT-001 executes in dependency order, starting with the ADR-resolved boundary changes (STORY-001/002/003 for model-pin, thinking-seam, parseModelSpec move) and proceeding to the consumer call-site migration (STORY-004/005), bundled YAML updates (STORY-006), duplicate removal (STORY-007), empirical verification (STORY-008), and issue closeout (STORY-009).",
+					"depends_on": ["PHASE-4"],
+					"exit_criteria": [
+						"FEAT-001 in complete state",
+						"All nine stories in FEAT-001.stories in complete state",
+						"The five existing issues named in blocks_resolved are closed in issues.json or migrated to their scope-owned registries",
+						"pi-workflows and pi-behavior-monitors import agent infrastructure from pi-jit-agents"
+					],
+					"produces": ["completed consumer migration", "resolved issues 043, 045, 048, 049, 050"],
+					"status": "pending"
+				},
+				{
+					"id": "PHASE-6",
+					"name": "Retroactive issue migration",
+					"description": "Migrate existing issues.json entries into scope-owned finding registries. Each issue gets a layer tag (L2/L3/L4) and is moved to the appropriate owner — spec-reviews for L2 design issues, features for L3 scope conflicts, features[].findings for L4 implementation defects. Global issues.json becomes a derived view. Depends on FGAP-002 and FGAP-003 landing for proper enforcement, but can be hand-enacted in the interim.",
+					"depends_on": ["PHASE-5"],
+					"exit_criteria": [
+						"Every issue in issues.json has a layer tag or has been moved to a scope-owned registry",
+						"issues.json is either empty or contains only entries not yet classified"
+					],
+					"produces": ["scoped finding distribution"],
+					"status": "pending"
+				},
+				{
+					"id": "PHASE-7",
+					"name": "Framework gap closure",
+					"description": "Address the six framework gaps (FGAP-001 through FGAP-006) so the hand-enacted L1–L5 structure becomes natively expressible. Each gap becomes a feature of its own with stories and tasks. Order is informed by priority (P1 first) and by what the remaining phases need.",
+					"depends_on": ["PHASE-5"],
+					"exit_criteria": [
+						"FGAP-001 through FGAP-006 all in closed or wontfix state",
+						"pi-project natively supports nested blocks, scoped findings, materialized views, authorship attestation, state-machine validation, and schema versioning"
+					],
+					"produces": ["framework substrate for the layered model"],
+					"status": "pending"
+				}
+			],
+			"related_gaps": ["FGAP-001", "FGAP-002", "FGAP-003", "FGAP-004", "FGAP-005", "FGAP-006"],
+			"related_features": ["FEAT-001"],
+			"related_adrs": ["ADR-0001", "ADR-0002", "ADR-0003"],
+			"created_by": "agent/claude-opus-4-6",
+			"created_at": "2026-04-15T00:00:00Z"
+		}
+	]
+}

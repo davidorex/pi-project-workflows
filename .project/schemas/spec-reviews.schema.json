@@ -1,0 +1,112 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Spec Reviews",
+	"description": "Design reviews of specification documents. Each review targets one spec, runs a pre-implementation review pass (ideally via independent fresh-context reviewer), and carries its own findings registry scoped to that spec. Findings cluster into resolution tasks that update the spec or produce ADRs. A spec-review blocks implementation-spec drafting until 'clean' — every finding has a disposition and all decided-state transitions have user authority.",
+	"type": "object",
+	"required": ["reviews"],
+	"properties": {
+		"reviews": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["id", "target", "status", "findings", "created_by", "created_at"],
+				"properties": {
+					"id": { "type": "string" },
+					"target": {
+						"type": "string",
+						"description": "Path to the spec doc being reviewed"
+					},
+					"target_revision": { "type": "string", "description": "Git SHA or version at which the review was conducted" },
+					"reviewer": { "type": "string", "description": "Agent name or role performing the review" },
+					"status": {
+						"type": "string",
+						"enum": ["not-started", "in-progress", "complete", "abandoned"]
+					},
+					"scope": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "Sections or concerns of the target in scope for this review"
+					},
+					"method": {
+						"type": "string",
+						"description": "How the review is conducted — e.g. 'fresh-context independent reviewer', 'adversarial pre-mortem', 'self-review'"
+					},
+					"findings": {
+						"type": "array",
+						"items": { "$ref": "#/definitions/finding" }
+					},
+					"clean": {
+						"type": "boolean",
+						"description": "True when every finding has a terminal state (resolved/wontfix/duplicate)"
+					},
+					"created_by": { "type": "string" },
+					"created_at": { "type": "string" },
+					"completed_at": { "type": "string" }
+				}
+			}
+		}
+	},
+	"definitions": {
+		"finding": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "description", "severity", "category", "state", "reporter", "created_at"],
+			"properties": {
+				"id": { "type": "string" },
+				"description": { "type": "string" },
+				"evidence": {
+					"type": "string",
+					"description": "Direct quote or passage from the target spec that triggered the finding"
+				},
+				"location": {
+					"type": "string",
+					"description": "Line number or section reference within the target"
+				},
+				"severity": { "type": "string", "enum": ["critical", "major", "minor", "trivial"] },
+				"category": {
+					"type": "string",
+					"enum": ["ambiguity", "contradiction", "omission", "undefined-term", "unresolved-question", "scope-creep", "disclarity", "other"]
+				},
+				"state": {
+					"type": "string",
+					"enum": ["open", "triaged", "researching", "proposed", "decided", "implementing", "resolved", "wontfix", "duplicate"]
+				},
+				"reporter": { "type": "string" },
+				"created_at": { "type": "string" },
+				"resolution": { "type": "string" },
+				"resolved_by": { "type": "string" },
+				"resolved_at": { "type": "string" },
+				"produces_adr": { "type": "string", "description": "ID of an ADR this finding generates" },
+				"related_findings": { "type": "array", "items": { "type": "string" } }
+			}
+		}
+	},
+	"x-lifecycle": {
+		"review": {
+			"field": "status",
+			"states": ["not-started", "in-progress", "complete", "abandoned"],
+			"transitions": [
+				{ "from": "not-started", "to": "in-progress", "required_authority": "any" },
+				{ "from": "in-progress", "to": "complete", "required_authority": "any" },
+				{ "from": "in-progress", "to": "abandoned", "required_authority": "user" },
+				{ "from": "complete", "to": "in-progress", "required_authority": "user", "note": "reopen for follow-up review" }
+			]
+		},
+		"finding": {
+			"field": "findings[].state",
+			"states": ["open", "triaged", "researching", "proposed", "decided", "implementing", "resolved", "wontfix", "duplicate"],
+			"transitions": [
+				{ "from": "open", "to": "triaged", "required_authority": "any" },
+				{ "from": "triaged", "to": "researching", "required_authority": "any" },
+				{ "from": "triaged", "to": "wontfix", "required_authority": "user" },
+				{ "from": "triaged", "to": "duplicate", "required_authority": "any" },
+				{ "from": "researching", "to": "proposed", "required_authority": "any" },
+				{ "from": "proposed", "to": "decided", "required_authority": "user" },
+				{ "from": "decided", "to": "implementing", "required_authority": "any" },
+				{ "from": "implementing", "to": "resolved", "required_authority": "any" }
+			]
+		},
+		"note": "AJV draft-07 cannot enforce transition validity; this block is metadata for future framework-level state-machine validation (FGAP-005)."
+	}
+}

@@ -157,6 +157,87 @@
 			],
 			"created_by": "agent/claude-opus-4-6",
 			"created_at": "2026-04-15T00:00:00Z"
+		},
+		{
+			"id": "ADR-0004",
+			"title": "Expression language — keep minimal custom evaluator or adopt CEL",
+			"status": "proposed",
+			"context": "pi-workflows ships a 339-line bespoke expression evaluator at packages/pi-workflows/src/expression.ts implementing ${{ path.field | filter }} property access with nine built-in filters (duration, currency, json, length, keys, filter, first, last, slugify, shell). The minimalism is deliberate per docs/planning/workflow-extension.md:537-554: 'No arithmetic, no string concatenation, no function calls, no ternary operators. If a workflow needs to transform data between steps, it uses a transform step with explicit logic, not expressions embedded in YAML values.' Comparative analysis against systeminit/swamp (research entry at analysis/2026-04-15-expression-language-comparison.md, grounded against swamp main branch and @marcbachmann/cel-js@7.5.1) surfaces CEL adoption as the industry-standard alternative. CEL provides arithmetic, comparisons, logical operators, ternary, string operations, list/map manipulation, and caller-registered functions with bounded deterministic evaluation. CEL is the expression engine Kubernetes chose for admission-controller policies and is widely adopted across gRPC, Firebase Security Rules, and Envoy filter config. Our evaluator has one documented limitation (workflow-extension.md:253 — adjacent ${{ }}${{ }} misparse) and one compensating complexity (the transform step type exists solely because expressions cannot do arithmetic or logic inline). At v0.14.4 with workflow use still early, either direction remains available.",
+			"decision": "Option (iii) — hybrid adoption: keep ${{ }} delimiters and the ExpressionError diagnostic wrapping, replace the property-access evaluator body with CEL (via @marcbachmann/cel-js or equivalent Deno/Node-compatible CEL implementation), retain current filters as CEL-registered functions with type declarations. Retire the transform step type's reason-for-being (inline arithmetic and logic eliminate the class of step that existed only because expressions could not do it). Gate timing on observed frequency of transform steps that exist solely as expression workarounds — the longer transforms accumulate as expression compensation, the more expensive CEL adoption becomes.",
+			"options_considered": [
+				{
+					"label": "(i) Keep current minimal evaluator indefinitely",
+					"description": "Ship the existing 339-line evaluator unchanged. Transform step type remains the primary vehicle for any logic beyond property access.",
+					"tradeoffs": "Zero disruption, zero new dependency, preserved security posture. But every workflow needing arithmetic, comparison, or inline list/map manipulation spawns a transform subprocess. Workflow authors and LLM agents must learn our custom grammar instead of CEL's training-distribution syntax. Documented parse limitation at workflow-extension.md:253 remains unresolved.",
+					"rejected_reason": "Locks in compensating complexity (transform steps as expression workarounds) and project-specific grammar that agents do not already know; rejects the external validation signal that the correct answer already exists as an industry standard"
+				},
+				{
+					"label": "(ii) Adopt CEL wholesale, break backward compatibility",
+					"description": "Replace the expression evaluator entirely and migrate all existing workflow YAMLs to pure CEL syntax. Change delimiters if the CEL community convention warrants it.",
+					"tradeoffs": "Fastest path to full CEL. But breaks all existing YAMLs, loses the ExpressionError diagnostic shape, and forces a delimiter discussion that would be disruptive with no structural benefit.",
+					"rejected_reason": "Disruption is avoidable; ${{ }} delimiter and error-wrapping have zero cost to preserve and their preservation keeps existing workflow YAMLs source-compatible with the hybrid path"
+				},
+				{
+					"label": "(iii) Hybrid: keep ${{ }} delimiters and error wrapping, swap evaluator body to CEL",
+					"description": "Preserve the outer syntax (${{ … }}) and the ExpressionError diagnostic class. Replace the internal split-on-dot property-walker with a cel-js call. Register current filters as CEL functions with appropriate type declarations. Existing workflows remain source-compatible because simple property-access CEL produces the same results as our current evaluator.",
+					"tradeoffs": "One new dependency on cel-js (supply-chain audit required). Shell filter security boundary must be re-verified against CEL's broader string-operation surface — CEL supports string concatenation which may bypass the single-quote-only escape strategy. Minor migration risk for workflows that exploit specific null-propagation semantics our current evaluator has (our evaluator errors on missing intermediate segments; CEL has different null-propagation rules). But: lifts the arithmetic/logic constraint, retires transform-step-as-expression-workaround, fixes the ${{ }}${{ }} parse limitation, lands in agent training distribution, inherits CEL sandboxing and bounded-evaluation guarantees."
+				}
+			],
+			"consequences": [
+				"packages/pi-workflows/src/expression.ts changes substantially — property-walker at lines 78-107 is replaced by a cel-js call, filters at lines 12-31 become CEL function registrations, ExpressionError wrapping at lines 40-53 is preserved",
+				"New direct npm/jsr dependency on a CEL implementation; supply-chain audit required before adoption including evaluation-bound guarantees, sandboxing properties, and ongoing maintenance cadence",
+				"Shell filter security boundary at expression.ts:24 must be re-reviewed against CEL's string-operation surface — CEL supports string concatenation and method calls which may bypass the current single-quote-only escape strategy for command-step shell contexts",
+				"workflow-extension.md:537-554 passage documenting the minimalism rationale becomes historical context; a new section describes the CEL adoption rationale and post-adoption expression capabilities",
+				"Transform step type at packages/pi-workflows/src/step-transform.ts remains for genuine cross-step data shaping (format conversion, expensive computation worth a subprocess) but no longer exists solely as an expression workaround",
+				"FILTER_NAMES export at expression.ts:33 and expressionRoots/filterNames SDK queries in workflow-sdk.ts continue to work — they describe the registered filters and scope roots regardless of the internal evaluator implementation",
+				"Workflow authors gain arithmetic, comparisons, logical operators, ternary, string operations, list/map manipulation, and CEL-registered function calls inline in expressions",
+				"Documented limitation at workflow-extension.md:253 (adjacent ${{ }}${{ }} misparse) is resolved by CEL's substring-aware parser",
+				"Agent-authored workflow YAMLs benefit from LLM training-distribution familiarity with CEL, reducing the prompt-engineering cost of teaching the grammar"
+			],
+			"supersedes": [],
+			"related_findings": [],
+			"related_features": [],
+			"related_gaps": [],
+			"references": [
+				{
+					"label": "current evaluator implementation",
+					"path": "packages/pi-workflows/src/expression.ts"
+				},
+				{
+					"label": "minimalism rationale in workflow-extension spec",
+					"path": "docs/planning/workflow-extension.md",
+					"lines": "537-554"
+				},
+				{
+					"label": "phase-2 hedge on adding == / != / > / <",
+					"path": "docs/planning/workflow-extension.md",
+					"lines": "554"
+				},
+				{
+					"label": "adjacent ${{ }}${{ }} parse limitation",
+					"path": "docs/planning/workflow-extension.md",
+					"lines": "253"
+				},
+				{
+					"label": "parallel-analysis review confirming no-eval constraint",
+					"path": "docs/planning/2026-03-14-parallel-analysis-review.md",
+					"lines": "30"
+				},
+				{
+					"label": "comparative research grounding this ADR",
+					"path": "analysis/2026-04-15-expression-language-comparison.md"
+				},
+				{
+					"label": "swamp design doc on expressions (source)",
+					"path": "/tmp/swamp-analysis/swamp/design/expressions.md"
+				},
+				{
+					"label": "swamp deno.json declaring @marcbachmann/cel-js@7.5.1",
+					"path": "/tmp/swamp-analysis/swamp/deno.json"
+				}
+			],
+			"created_by": "agent/claude-opus-4-6",
+			"created_at": "2026-04-15T00:00:00Z"
 		}
 	]
 }

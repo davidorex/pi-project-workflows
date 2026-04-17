@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Decisions",
-	"description": "Choices made and why. Architectural, technical, and process choices with rationale and status (decided, tentative, revisit). The record of deliberate selection between alternatives. Decisions say what was chosen.",
+	"description": "Live decision log. Each entry is a decision either open (needs to be made and gates work) or enacted (ratified by user authority, with the new constraint reflected in forward-looking constraint blocks and in code). Entries persist through the lifecycle — enacted entries are NOT removed, so the lineage remains readable. Every decision must cite its forcing artifact (issue, gap, or feature) via related_findings, related_features, or related_gaps — decisions without forcing artifacts do not belong here and are research instead. Supporting references (code paths with lines, research documents, commit SHAs, external specs) live in the references array. Options are enumerated only when multiple mandate-compliant candidates genuinely compete; mandate-violating candidates never appear.",
 	"type": "object",
 	"required": ["decisions"],
 	"properties": {
@@ -9,15 +9,108 @@
 			"type": "array",
 			"items": {
 				"type": "object",
-				"required": ["id", "decision", "rationale", "phase", "status"],
+				"additionalProperties": false,
+				"required": ["id", "title", "status", "context", "decision", "consequences", "created_by", "created_at"],
+				"allOf": [
+					{
+						"description": "A decision must cite its forcing artifact via at least one of related_findings, related_features, or related_gaps. Decisions without a forcing artifact are research, not decisions.",
+						"anyOf": [
+							{ "properties": { "related_findings": { "type": "array", "minItems": 1 } }, "required": ["related_findings"] },
+							{ "properties": { "related_features": { "type": "array", "minItems": 1 } }, "required": ["related_features"] },
+							{ "properties": { "related_gaps": { "type": "array", "minItems": 1 } }, "required": ["related_gaps"] }
+						]
+					}
+				],
 				"properties": {
-					"id": { "type": "string" },
-					"decision": { "type": "string" },
-					"rationale": { "type": "string" },
-					"phase": { "type": "integer" },
-					"status": { "type": "string", "enum": ["decided", "tentative", "revisit"] }
+					"id": { "type": "string", "pattern": "^DEC-\\d{4}$" },
+					"title": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["open", "enacted"],
+						"description": "open = decision needs to be made; gates work. enacted = ratified by user authority; new constraint is in code and forward-looking constraint blocks."
+					},
+					"context": {
+						"type": "string",
+						"description": "Forces at play; what must be resolved and why. Grounded in citations to the forcing artifact and supporting research."
+					},
+					"decision": {
+						"type": "string",
+						"description": "The chosen direction. Populated at creation as the proposed direction and edited if needed at the moment of enactment. Only mandate-compliant, structurally-correct candidates appear here."
+					},
+					"options_considered": {
+						"type": "array",
+						"description": "Populated only when multiple mandate-compliant candidates genuinely compete for user choice. Mandate-violating or structurally-wrong candidates are never listed.",
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"required": ["label", "description"],
+							"properties": {
+								"label": { "type": "string" },
+								"description": { "type": "string" },
+								"tradeoffs": { "type": "string" },
+								"rejected_reason": { "type": "string", "description": "Populated only post-enactment for the non-chosen options." }
+							}
+						}
+					},
+					"consequences": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "What follows from the decision if enacted — what becomes easier, harder, or impossible; which constraint blocks or code files change."
+					},
+					"supersedes": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "IDs of prior enacted decisions this one replaces. The superseded decision's status stays enacted but its superseded_by pointer populates."
+					},
+					"superseded_by": {
+						"type": "string",
+						"description": "ID of a later decision that replaces this one. Populated when a successor decision is created."
+					},
+					"related_findings": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "Issue or finding IDs that force this decision (from .project/issues.json today or scope-owned finding registries once they land)."
+					},
+					"related_features": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "Feature IDs this decision gates or advances."
+					},
+					"related_gaps": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "Framework-gap IDs this decision addresses."
+					},
+					"references": {
+						"type": "array",
+						"description": "Supporting references: code paths (file + lines), research documents, commit SHAs that enacted the decision, external specs. Each reference is a labeled pointer.",
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"required": ["label"],
+							"properties": {
+								"label": { "type": "string" },
+								"path": { "type": "string" },
+								"lines": { "type": "string" },
+								"commit": { "type": "string" }
+							}
+						}
+					},
+					"created_by": { "type": "string" },
+					"created_at": { "type": "string" },
+					"enacted_by": { "type": "string", "description": "User identifier; populated on status transition to enacted. Requires user authority." },
+					"enacted_at": { "type": "string" }
 				}
 			}
 		}
+	},
+	"x-lifecycle": {
+		"field": "status",
+		"states": ["open", "enacted"],
+		"transitions": [
+			{ "from": "open", "to": "enacted", "required_authority": "user", "note": "Enactment updates forward-looking constraint blocks and lands code change; entry is NOT removed on enactment." },
+			{ "from": "enacted", "to": "open", "required_authority": "user", "note": "Reopening for revision; creates a new open state on the existing entry rather than a new entry. Alternative pattern: create a new decision entry with supersedes referencing this one." }
+		],
+		"note": "Two-state lifecycle. AJV draft-07 cannot enforce transition validity or required_authority; this block is metadata for future framework-level state-machine validation (FGAP-005) and authorship attestation (FGAP-004)."
 	}
 }

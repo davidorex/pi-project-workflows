@@ -2,7 +2,7 @@
 
 Date: 2026-04-15
 Type: comparative research
-Status: complete (grounds ADR-0004)
+Status: complete; standalone research. No decision entry exists because no forcing issue or gap currently requires resolving the CEL-adoption question. Per the convention that decisions (`.project/decisions.json`) must cite a forcing artifact (issue / gap / feature), this question stays as research until a forcing function emerges.
 Grounding:
   - `packages/pi-workflows/src/expression.ts` at commit 8b184c6
   - `systeminit/swamp` main branch cloned to `/tmp/swamp-analysis/swamp/` 2026-04-15
@@ -12,7 +12,7 @@ Stale conditions:
   - swamp switches expression engines
   - cel-js is deprecated or replaced
 
-This research grounds the ADR-0004 decision on whether to keep the current bespoke property-access evaluator, adopt CEL wholesale, or adopt CEL hybrid.
+This research surfaces CEL adoption as a possibility worth noting. Whether our expression language should remain the current bespoke property-access evaluator, adopt CEL wholesale, or adopt CEL hybrid is an open question that has not been promoted to a decision. Promotion requires either a forcing issue/gap or explicit user authorization to treat the question as a decision needing resolution.
 
 ---
 
@@ -150,4 +150,4 @@ Not a wholesale replacement. The cleanest adoption:
 
 Our expression language is a deliberate, minimal, security-audited, project-specific primitive sitting at 339 lines. Swamp's choice of CEL trades that bespoke minimalism for industry-standard syntax, much broader operator coverage, strong sandboxing guarantees, training-distribution familiarity, and the elimination of compensating complexity (the `transform` step type). The rationale against CEL adoption at project start (`workflow-extension.md:537-554`) remains philosophically coherent; the rationale for it emerges once cross-step arithmetic, comparisons, logical operators, or inline list/map manipulation become frequent enough that `transform` steps proliferate. At v0.14.4 with the workflow extension still early in real-world use, either direction remains available; the longer transforms accumulate the more expensive CEL adoption becomes.
 
-Decision lives in ADR-0004 in `.project/adrs.json`.
+No decision exists in `.project/decisions.json` for this question. The research stands on its own as grounding material; promotion to a live decision requires a forcing artifact or explicit user authorization.

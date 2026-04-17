@@ -25,14 +25,14 @@
 					"id": "L2",
 					"name": "Specification",
 					"purpose": "What the system must do and how it is structured. Evolves with design decisions. Architectural contradictions and missing requirements are owned here.",
-					"canonical_vocabulary": "Specification + ADRs + RFCs + Requirements + Architecture",
+					"canonical_vocabulary": "Specification + decisions + RFCs + Requirements + Architecture",
 					"lifetime": "per-design-cycle",
-					"ownership_principle": "Findings discovered during design review of a spec live attached to that spec, not in global issues. ADRs record each design decision with a lifecycle gate for user-authored transitions to 'decided'.",
+					"ownership_principle": "Findings discovered during design review of a spec live attached to that spec, not in global issues. decisions record each design decision with a lifecycle gate for user-authored transitions to 'enacted'.",
 					"current_blocks": ["requirements.json", "architecture.json", "decisions.json", "rationale.json"],
 					"target_blocks": [
 						{ "name": "requirements.json", "shape": "flat", "notes": "unchanged in shape; may embed findings later" },
 						{ "name": "architecture.json", "shape": "flat", "notes": "unchanged in shape; may embed findings later" },
-						{ "name": "adrs.json", "shape": "flat", "notes": "replaces decisions.json as the canonical ADR log; decisions.json folds in via a migration" },
+						{ "name": "decisions.json", "shape": "flat", "notes": "live-decision block with open/enacted lifecycle; entries persist through enactment; each decision must cite its forcing issue/gap/feature" },
 						{ "name": "spec-reviews.json", "shape": "flat", "notes": "per-target design reviews with embedded findings arrays — new for this plan" },
 						{ "name": "framework-gaps.json", "shape": "flat", "notes": "L2 capability gaps in the framework itself — new for this plan" },
 						{ "name": "layer-plans.json", "shape": "flat", "notes": "this file; L2 restructure plans — new for this plan" }
@@ -86,62 +86,62 @@
 					"description": "Create the five new schemas (adrs, spec-reviews, features, framework-gaps, layer-plans) in .project/schemas/. Existing schemas untouched.",
 					"depends_on": [],
 					"exit_criteria": [
-						".project/schemas/adrs.schema.json exists and is valid draft-07",
+						".project/schemas/decisions.schema.json exists and is valid draft-07",
 						".project/schemas/spec-reviews.schema.json exists and is valid draft-07",
 						".project/schemas/features.schema.json exists and is valid draft-07",
 						".project/schemas/framework-gaps.schema.json exists and is valid draft-07",
 						".project/schemas/layer-plans.schema.json exists and is valid draft-07"
 					],
-					"produces": [".project/schemas/adrs.schema.json", ".project/schemas/spec-reviews.schema.json", ".project/schemas/features.schema.json", ".project/schemas/framework-gaps.schema.json", ".project/schemas/layer-plans.schema.json"],
+					"produces": [".project/schemas/decisions.schema.json", ".project/schemas/spec-reviews.schema.json", ".project/schemas/features.schema.json", ".project/schemas/framework-gaps.schema.json", ".project/schemas/layer-plans.schema.json"],
 					"status": "complete"
 				},
 				{
 					"id": "PHASE-2",
 					"name": "Seed initial L2/L3 artifacts",
-					"description": "Populate each new block with seed data representing the current state of the consumer migration arc — three proposed ADRs, one spec-review target, one feature with story decomposition, six framework gaps, one layer plan.",
+					"description": "Populate each new block with seed data representing the current state of the consumer migration arc — three open decisions, one spec-review target, one feature with story decomposition, six framework gaps, one layer plan.",
 					"depends_on": ["PHASE-1"],
 					"exit_criteria": [
-						"adrs.json contains ADR-0001 through ADR-0003 in proposed state",
+						"decisions.json contains DEC-0001 through DEC-0003 in proposed state",
 						"spec-reviews.json contains REVIEW-001 in not-started state",
 						"features.json contains FEAT-001 (consumer migration epic) in proposed state",
 						"framework-gaps.json contains FGAP-001 through FGAP-006 in identified state",
 						"layer-plans.json contains PLAN-001 in draft state",
 						"every data file validates against its schema via AJV"
 					],
-					"produces": [".project/adrs.json", ".project/spec-reviews.json", ".project/features.json", ".project/framework-gaps.json", ".project/layer-plans.json"],
+					"produces": [".project/decisions.json", ".project/spec-reviews.json", ".project/features.json", ".project/framework-gaps.json", ".project/layer-plans.json"],
 					"status": "in-progress"
 				},
 				{
 					"id": "PHASE-3",
 					"name": "Run design review of jit-agents-spec.md",
-					"description": "Spawn a fresh-context independent reviewer subagent against docs/planning/jit-agents-spec.md with the scope declared in REVIEW-001. Findings populate REVIEW-001.findings and drive ADR-0001/0002/0003 state from proposed toward decided where evidence supports it.",
+					"description": "Spawn a fresh-context independent reviewer subagent against docs/planning/jit-agents-spec.md with the scope declared in REVIEW-001. Findings populate REVIEW-001.findings and drive DEC-0001/0002/0003 state from proposed toward decided where evidence supports it.",
 					"depends_on": ["PHASE-2"],
 					"exit_criteria": [
 						"REVIEW-001 advances to complete",
 						"Every finding in REVIEW-001.findings reaches a terminal state (resolved/wontfix/duplicate)",
-						"Findings that generate new ADRs are linked via produces_adr",
+						"Findings that generate new decisions are linked via produces_decision",
 						"REVIEW-001.clean is true"
 					],
-					"produces": ["populated spec-reviews.json", "possibly new ADRs beyond ADR-0001/0002/0003"],
+					"produces": ["populated spec-reviews.json", "possibly new decisions beyond DEC-0001/0002/0003"],
 					"status": "pending"
 				},
 				{
 					"id": "PHASE-4",
-					"name": "User-authored transitions on gating ADRs",
-					"description": "User reviews ADR-0001/0002/0003 in light of the design-review findings and advances each to decided or requests revision. All decided-state transitions require user authority per the lifecycle metadata. Until each gating ADR is decided, FEAT-001 cannot advance from proposed to approved.",
+					"name": "User-authored transitions on gating decisions",
+					"description": "User reviews DEC-0001/0002/0003 in light of the design-review findings and advances each to enacted or requests revision. All open-to-enacted transitions require user authority per the lifecycle metadata. Until each gating decision is enacted, FEAT-001 cannot advance from proposed to approved.",
 					"depends_on": ["PHASE-3"],
 					"exit_criteria": [
-						"ADR-0001 in decided state with decided_by=user",
-						"ADR-0002 in decided state with decided_by=user",
-						"ADR-0003 in decided state with decided_by=user"
+						"DEC-0001 in enacted state with enacted_by=user",
+						"DEC-0002 in enacted state with enacted_by=user",
+						"DEC-0003 in enacted state with enacted_by=user"
 					],
-					"produces": ["decided ADR-0001", "decided ADR-0002", "decided ADR-0003"],
+					"produces": ["enacted DEC-0001", "enacted DEC-0002", "enacted DEC-0003"],
 					"status": "pending"
 				},
 				{
 					"id": "PHASE-5",
 					"name": "FEAT-001 story execution",
-					"description": "User advances FEAT-001 to approved. Each story within FEAT-001 executes in dependency order, starting with the ADR-resolved boundary changes (STORY-001/002/003 for model-pin, thinking-seam, parseModelSpec move) and proceeding to the consumer call-site migration (STORY-004/005), bundled YAML updates (STORY-006), duplicate removal (STORY-007), empirical verification (STORY-008), and issue closeout (STORY-009).",
+					"description": "User advances FEAT-001 to approved. Each story within FEAT-001 executes in dependency order, starting with the decision-enacted boundary changes (STORY-001/002/003 for model-pin, thinking-seam, parseModelSpec move) and proceeding to the consumer call-site migration (STORY-004/005), bundled YAML updates (STORY-006), duplicate removal (STORY-007), empirical verification (STORY-008), and issue closeout (STORY-009).",
 					"depends_on": ["PHASE-4"],
 					"exit_criteria": [
 						"FEAT-001 in complete state",
@@ -179,7 +179,7 @@
 			],
 			"related_gaps": ["FGAP-001", "FGAP-002", "FGAP-003", "FGAP-004", "FGAP-005", "FGAP-006"],
 			"related_features": ["FEAT-001"],
-			"related_adrs": ["ADR-0001", "ADR-0002", "ADR-0003"],
+			"related_decisions": ["DEC-0001", "DEC-0002", "DEC-0003"],
 			"created_by": "agent/claude-opus-4-6",
 			"created_at": "2026-04-15T00:00:00Z"
 		}

@@ -8,28 +8,28 @@
 			"description": "Migrate pi-workflows and pi-behavior-monitors to import agent infrastructure from @davidorex/pi-jit-agents. Resolve the provider-pin, thinking-seam, and cross-consumer duplication at the correct boundary (pi-jit-agents executeAgent). Close the cluster of open issues that are blocked on this migration: 043 (duplicate agent infrastructure), 045 (framework-level anti-injection), 048 (agent discovery contradiction), 049 (step-loop cwd bug), 050 (monitor classify wiring).",
 			"motivation": "The platonic first enactment of pi-jit-agents landed in commit 239f718 but consumers still carry their own copies of agent infrastructure. This duplication is load-bearing: the model-pin that breaks monitors under OpenRouter-only auth lives inside a consumer copy of parseModelSpec, not at the framework boundary. Fixing it in the consumer creates throwaway work since the code is about to move. Fixing it at the correct boundary (executeAgent in pi-jit-agents) resolves the pin and the duplication in one arc. The arc is also the operational-pattern test case for the Muni five-layer model enacted against PLAN-001 — how it plays out here informs what pi-project must eventually generate natively per the framework gaps in FGAP-001 through FGAP-006.",
 			"acceptance_criteria": [
-				"ADR-0001, ADR-0002, ADR-0003 all advance to decided state via user-authored transitions",
+				"DEC-0001, DEC-0002, DEC-0003 all advance to decided state via user-authored transitions",
 				"parseModelSpec lives in pi-jit-agents at the execute boundary; pi-behavior-monitors' copy is removed",
-				"executeAgent enforces the thinking-seam policy per ADR-0002 with explicit warning",
+				"executeAgent enforces the thinking-seam policy per DEC-0002 with explicit warning",
 				"pi-behavior-monitors' classifyViaAgent delegates to pi-jit-agents executeAgent, carrying no duplicate agent-spec or template code",
 				"pi-workflows' agent-step dispatch delegates to pi-jit-agents executeAgent, removing step-shared.ts and local agent-spec/template helpers",
-				"All five bundled classifier YAMLs in pi-behavior-monitors/agents/ align with the decided ADR-0001 and ADR-0002 policies",
+				"All five bundled classifier YAMLs in pi-behavior-monitors/agents/ align with the decided DEC-0001 and DEC-0002 policies",
 				"Issues 043, 045, 048, 049, 050 close or migrate to scope-owned registries",
 				"Empirical verification: hedge monitor runs successfully against an OpenRouter-routed Claude model",
 				"Empirical verification: hedge monitor runs successfully against at least one Kimi model (via openrouter or via kimi-coding direct)",
 				"All tests in npm test remain at 0 failures",
 				"CI passes on Node 22/23"
 			],
-			"dependencies": ["PLAN-001", "REVIEW-001", "ADR-0001", "ADR-0002", "ADR-0003"],
-			"gates": ["REVIEW-001", "ADR-0001", "ADR-0002", "ADR-0003"],
+			"dependencies": ["PLAN-001", "REVIEW-001", "DEC-0001", "DEC-0002", "DEC-0003"],
+			"gates": ["REVIEW-001", "DEC-0001", "DEC-0002", "DEC-0003"],
 			"blocks_resolved": ["issue-043", "issue-045", "issue-048", "issue-049", "issue-050"],
-			"adrs": ["ADR-0001", "ADR-0002", "ADR-0003"],
+			"decisions": ["DEC-0001", "DEC-0002", "DEC-0003"],
 			"stories": [
 				{
 					"id": "STORY-001",
 					"title": "Resolve model-pin policy and apply at pi-jit-agents",
 					"status": "proposed",
-					"description": "Apply the ADR-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary. Remove the anthropic-default pin from the current parseModelSpec implementation in pi-behavior-monitors.",
+					"description": "Apply the DEC-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary. Remove the anthropic-default pin from the current parseModelSpec implementation in pi-behavior-monitors.",
 					"acceptance_criteria": [
 						"A bare model id in an agent spec resolves against the current session's provider via ExtensionContext lookup, not a hardcoded default",
 						"If ExtensionContext cannot supply currentModel, dispatch errors with a clear message naming the missing binding",
@@ -37,7 +37,7 @@
 						"Unit tests cover: bare-id + session-with-model, bare-id + session-without-model (error), fully-qualified-id (pinned)"
 					],
 					"depends_on": [],
-					"gates": ["ADR-0001"],
+					"gates": ["DEC-0001"],
 					"tasks": [
 						{
 							"id": "TASK-001-01",
@@ -45,7 +45,7 @@
 							"status": "todo",
 							"description": "Inspect pi-agent-core's ExtensionContext type to confirm whether currentModel (or equivalent) is available to extensions at dispatch time. If not, the task widens into a prerequisite against pi-agent-core — escalate to user for scope decision.",
 							"files": ["node_modules/@mariozechner/pi-coding-agent/dist/types.d.ts"],
-							"acceptance": "Written confirmation in the task record of what ExtensionContext currently exposes and whether ADR-0001's chosen option is implementable today or depends on upstream changes"
+							"acceptance": "Written confirmation in the task record of what ExtensionContext currently exposes and whether DEC-0001's chosen option is implementable today or depends on upstream changes"
 						},
 						{
 							"id": "TASK-001-02",
@@ -68,7 +68,7 @@
 					"id": "STORY-002",
 					"title": "Apply thinking-seam enforcement in pi-jit-agents",
 					"status": "proposed",
-					"description": "Apply the ADR-0002 decision: executeAgent enforces thinking=off when forced toolChoice is present, emits a warning naming the agent and the incompatibility.",
+					"description": "Apply the DEC-0002 decision: executeAgent enforces thinking=off when forced toolChoice is present, emits a warning naming the agent and the incompatibility.",
 					"acceptance_criteria": [
 						"executeAgent inspects dispatch options for forced toolChoice",
 						"When forced toolChoice is present and compiled spec declares thinking: on, thinking is disabled and a warning is emitted via a structured diagnostic channel",
@@ -76,7 +76,7 @@
 						"Unit test covers: forced-toolChoice + thinking:on (warning + thinking off), forced-toolChoice + thinking:off (no warning), free-form + thinking:on (thinking forwarded)"
 					],
 					"depends_on": ["STORY-001"],
-					"gates": ["ADR-0002"],
+					"gates": ["DEC-0002"],
 					"tasks": [
 						{
 							"id": "TASK-002-01",
@@ -105,7 +105,7 @@
 					"id": "STORY-003",
 					"title": "Move parseModelSpec to pi-jit-agents",
 					"status": "proposed",
-					"description": "Execute the ADR-0003 decision: move parseModelSpec (or its renamed successor) from pi-behavior-monitors/index.ts into pi-jit-agents at the execute boundary. Remove the duplicate from the consumer. Update the classifyViaAgent call site to use the new location.",
+					"description": "Execute the DEC-0003 decision: move parseModelSpec (or its renamed successor) from pi-behavior-monitors/index.ts into pi-jit-agents at the execute boundary. Remove the duplicate from the consumer. Update the classifyViaAgent call site to use the new location.",
 					"acceptance_criteria": [
 						"parseModelSpec exported from pi-jit-agents at a named subpath (e.g. @davidorex/pi-jit-agents/runtime)",
 						"packages/pi-behavior-monitors/index.ts:1091-1097 removed",
@@ -114,7 +114,7 @@
 						"Unit tests from STORY-001 continue to pass"
 					],
 					"depends_on": ["STORY-001"],
-					"gates": ["ADR-0003"],
+					"gates": ["DEC-0003"],
 					"tasks": [
 						{
 							"id": "TASK-003-01",
@@ -233,14 +233,14 @@
 					"id": "STORY-006",
 					"title": "Align bundled classifier YAMLs with decided policies",
 					"status": "proposed",
-					"description": "Update all five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) to conform to the ADR-0001 model-field semantics and ADR-0002 thinking-seam policy.",
+					"description": "Update all five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) to conform to the DEC-0001 model-field semantics and DEC-0002 thinking-seam policy.",
 					"acceptance_criteria": [
-						"Every bundled classifier YAML's model field is consistent with ADR-0001 — either a bare id that resolves via ExtensionContext, or a fully-qualified provider/model, depending on the final decision",
-						"Every bundled classifier YAML's thinking field is set to off (or removed if the default is off) per ADR-0002",
+						"Every bundled classifier YAML's model field is consistent with DEC-0001 — either a bare id that resolves via ExtensionContext, or a fully-qualified provider/model, depending on the final decision",
+						"Every bundled classifier YAML's thinking field is set to off (or removed if the default is off) per DEC-0002",
 						"No YAML contains dead config that the classify path silently ignores"
 					],
 					"depends_on": ["STORY-001", "STORY-002"],
-					"gates": ["ADR-0001", "ADR-0002"],
+					"gates": ["DEC-0001", "DEC-0002"],
 					"tasks": [
 						{
 							"id": "TASK-006-01",

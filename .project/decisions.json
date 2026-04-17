@@ -1,3 +1,105 @@
 {
-	"decisions": []
+	"decisions": [
+		{
+			"id": "DEC-0001",
+			"title": "Agent spec 'model:' field semantics",
+			"status": "open",
+			"context": "Agent spec YAMLs may declare a model field with or without a provider prefix. packages/pi-behavior-monitors/index.ts:1091-1097 implements parseModelSpec such that bare model ids (e.g. 'claude-sonnet-4-6') default to provider='anthropic'. This structural pin means monitor classify calls attempt Anthropic-direct authentication regardless of the main session's configured provider. Under OpenRouter-only auth (the user's current configuration), every monitor's classify call fails with 'Expected either apiKey or authToken'. Issue-062 tracks this as the forcing artifact. All five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) use bare model ids and are all affected. The decision is what 'model:' means in an agent spec at the framework level.",
+			"decision": "Bare model ids in an agent spec resolve against the current session's configured provider via ExtensionContext. If ExtensionContext cannot supply a current-provider/current-model binding, the dispatch errors with a clear message naming the missing context. Fully-qualified model specs (provider/model) continue to pin the provider regardless of session. Pinning is explicit, not a default. Implementation prerequisite: research on ExtensionContext currentModel availability in pi-agent-core must complete first.",
+			"consequences": [
+				"pi-behavior-monitors' classifyViaAgent must read the current session model from ExtensionContext at dispatch time, not from the agent YAML",
+				"parseModelSpec semantics change — bare specs route through ExtensionContext lookup instead of returning provider='anthropic' as a default",
+				"The five bundled classifier YAMLs can remain with bare model ids and will now follow whatever provider the user has configured",
+				"If ExtensionContext does not currently expose currentModel, that becomes a prerequisite unblocker — opens a scope question into pi-agent-core that must be verified before implementation",
+				"Workflow per-step provider override (issue-064) becomes the symmetric problem for workflow agents; same resolution applies"
+			],
+			"supersedes": [],
+			"related_findings": ["issue-062"],
+			"related_features": ["FEAT-001"],
+			"related_gaps": [],
+			"references": [
+				{
+					"label": "parseModelSpec pin",
+					"path": "packages/pi-behavior-monitors/index.ts",
+					"lines": "1091-1097"
+				},
+				{
+					"label": "classify call site",
+					"path": "packages/pi-behavior-monitors/index.ts",
+					"lines": "1224-1248"
+				},
+				{
+					"label": "bundled agent YAMLs",
+					"path": "packages/pi-behavior-monitors/agents/"
+				},
+				{
+					"label": "operational incident research",
+					"path": "analysis/openrouter-pi-mono-setup.md"
+				}
+			],
+			"created_by": "agent/claude-opus-4-6",
+			"created_at": "2026-04-15T00:00:00Z"
+		},
+		{
+			"id": "DEC-0002",
+			"title": "Thinking-seam enforcement for forced-toolChoice dispatch",
+			"status": "open",
+			"context": "Agent spec YAMLs can declare thinking: on, but packages/pi-behavior-monitors/index.ts:1235-1248 does not forward thinking to the complete() call. The comment at line 1231 acknowledges that the Anthropic API rejects thinking + forced toolChoice, so thinking must stay off when the dispatch uses a phantom-tool verdict shape. All five bundled classifier YAMLs declare thinking: on despite the silent drop. Issue-063 tracks this dead config as the forcing artifact. The framework does not currently enforce consistency between spec-declared thinking and dispatch-time behavior.",
+			"decision": "executeAgent in pi-jit-agents (once parseModelSpec and classify dispatch move there per DEC-0003) enforces thinking=off whenever toolChoice.type === 'tool' is present in the dispatch options. If the agent spec declares thinking: on in combination with forced toolChoice, the framework emits a warning naming the agent and the incompatibility, and proceeds with thinking disabled. Free-form (non-forced) dispatches continue to forward thinking per the spec. The forced-toolChoice path never silently drops thinking without notification.",
+			"consequences": [
+				"executeAgent gains a pre-dispatch check that inspects toolChoice and the compiled spec's thinking field",
+				"The five bundled classifier YAMLs should be corrected to thinking: off for cleanliness, separately from the enforcement change",
+				"Any future agent that combines forced toolChoice with thinking: on will be flagged loudly rather than silently mis-executing",
+				"Warning channel must exist at the framework boundary — requires either a logger injected via DispatchContext or a structured diagnostic emitted alongside JitAgentResult"
+			],
+			"supersedes": [],
+			"related_findings": ["issue-063"],
+			"related_features": ["FEAT-001"],
+			"related_gaps": [],
+			"references": [
+				{
+					"label": "classify call site silent drop",
+					"path": "packages/pi-behavior-monitors/index.ts",
+					"lines": "1231-1248"
+				},
+				{
+					"label": "dead-config YAML",
+					"path": "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml"
+				}
+			],
+			"created_by": "agent/claude-opus-4-6",
+			"created_at": "2026-04-15T00:00:00Z"
+		},
+		{
+			"id": "DEC-0003",
+			"title": "parseModelSpec ownership at the execute boundary",
+			"status": "open",
+			"context": "parseModelSpec lives in packages/pi-behavior-monitors/index.ts today. It defaults bare model ids to provider='anthropic', pinning the monitor classify path to Anthropic regardless of session configuration. The same function logic (model-id parsing and provider selection) belongs at the execute boundary, which pi-jit-agents now owns per docs/planning/jit-agents-spec.md §2. Keeping it in pi-behavior-monitors creates duplication (issue-043, the forcing artifact) and embeds policy in the wrong layer. pi-workflows has the same structural question for its agent-step dispatch but with different currently-hidden behavior.",
+			"decision": "Move parseModelSpec into pi-jit-agents as part of the executeAgent boundary. Remove the duplicate from pi-behavior-monitors. Update the consumer's classifyViaAgent to call the pi-jit-agents API. Audit pi-workflows for any implicit model-spec parsing in step dispatch; if found, consolidate there too. The function's new location must accommodate DEC-0001 (ExtensionContext lookup for bare specs) and DEC-0002 (thinking-seam enforcement).",
+			"consequences": [
+				"pi-jit-agents gains a model-resolution surface at executeAgent — either as a helper function or inlined into the dispatch path",
+				"pi-behavior-monitors' classifyViaAgent shrinks — it calls executeAgent with a compiled spec and an ExtensionContext, no longer doing its own provider resolution",
+				"pi-workflows' agent-step dispatch audits for equivalent implicit parsing and consolidates there too",
+				"Requires DEC-0001 resolved before implementation, because the bare-spec semantics determine what parseModelSpec's new contract is"
+			],
+			"supersedes": [],
+			"related_findings": ["issue-043"],
+			"related_features": ["FEAT-001"],
+			"related_gaps": [],
+			"references": [
+				{
+					"label": "current location",
+					"path": "packages/pi-behavior-monitors/index.ts",
+					"lines": "1091-1097"
+				},
+				{
+					"label": "jit-agents-spec §2 boundary contract",
+					"path": "docs/planning/jit-agents-spec.md",
+					"lines": "66-83"
+				}
+			],
+			"created_by": "agent/claude-opus-4-6",
+			"created_at": "2026-04-15T00:00:00Z"
+		}
+	]
 }

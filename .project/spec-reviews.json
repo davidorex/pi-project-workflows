@@ -13,8 +13,8 @@
 				"§4 Decisions D1–D7 — each decision's rationale, consequences, and unresolved edges",
 				"Open Questions Q1–Q4 — whether each still has the same meaning after the operational synthesis with Muni's five-layer model and the canonical-vocabulary shift",
 				"Unstated disclarities — ambiguities, undefined terms, contradictions, missing decision criteria that the authors did not know to surface",
-				"Integration with ADR-0001/0002/0003 — whether the proposed decisions are compatible with the spec's existing boundary contract",
-				"ExtensionContext currentModel availability — does the pi-agent-core surface expose what ADR-0001 needs, and if not what is the prerequisite chain"
+				"Integration with DEC-0001/0002/0003 — whether the proposed decisions are compatible with the spec's existing boundary contract",
+				"ExtensionContext currentModel availability — does the pi-agent-core surface expose what DEC-0001 needs, and if not what is the prerequisite chain"
 			],
 			"method": "fresh-context independent reviewer — the reviewer agent must receive only the spec document and the canonical engineering vocabulary map, with no prior conversation context, and must produce findings against the target without knowing the authors' assumptions or the synthesis work that informs this repo today",
 			"findings": [],

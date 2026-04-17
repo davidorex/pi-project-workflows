@@ -42,7 +42,7 @@ The current library has twelve macros: `render_conventions`, `render_requirement
 | conformance-reference.json | `render_conformance` | missing | yes | whole-only |
 | exploration | `render_exploration`, `render_exploration_full` | missing | yes | whole-only |
 | gap (legacy cross-block validation concept) | `render_gap` | missing | yes | whole-only |
-| **adrs.json (new)** | missing | missing | yes | **no** |
+| **decisions.json (new)** | missing | missing | yes | **no** |
 | **spec-reviews.json (new)** | missing | missing | yes | **no** |
 | **features.json (new)** | missing | missing | yes | **no** |
 | **framework-gaps.json (new)** | missing | missing | yes | **no** |
@@ -113,13 +113,13 @@ Block schemas serve three roles simultaneously and the single-source-of-truth fr
 2. **Write-shape**: when a workflow step or monitor produces output that targets a block
 3. **Validate-shape**: at rest, block contents conform to the schema
 
-Every schema IS all three contracts. Capturing this as a decision record commits the framework to schema-as-central-pivot. Proposed as ADR-0005 (or DEC-0005 under the pending rename).
+Every schema IS all three contracts. Capturing this as a decision record commits the framework to schema-as-central-pivot. Proposed as a future decision entry once a forcing issue or gap warrants promotion; stands as research-level articulation until then.
 
 ---
 
 ## REVIEW-001 is blocked on decision-record macro existence
 
-The fresh-context independent reviewer subagent for `docs/planning/jit-agents-spec.md` is an agent. Its `contextBlocks` must inject the three proposed decision records (ADR-0001/0002/0003) for the reviewer to evaluate them. Without a per-item decision macro, the reviewer agent cannot read the decisions from its prompt. The design review cannot run until at least `render_decision(dec)` exists.
+The fresh-context independent reviewer subagent for `docs/planning/jit-agents-spec.md` is an agent. Its `contextBlocks` must inject the three proposed decision records (DEC-0001/0002/0003) for the reviewer to evaluate them. Without a per-item decision macro, the reviewer agent cannot read the decisions from its prompt. The design review cannot run until at least `render_decision(dec)` exists.
 
 **Path D ordering consequence**: macros extension for `render_decision` precedes REVIEW-001 execution. This is not a preference — it is a compile-chain dependency.
 
@@ -157,7 +157,7 @@ The fresh-context independent reviewer subagent for `docs/planning/jit-agents-sp
 
 ## Principle — every schema lands with its per-item macro
 
-A schema without its per-item macro is structurally unreachable from agent contexts. A block kind is not "shipped" until an agent can read one of its items from a `contextBlocks` injection. Future enactment of any new block kind must land schema + seed data + per-item macro as a single unit of work. This principle is proposed for ratification as a decision record (DEC-0005 or its rename equivalent).
+A schema without its per-item macro is structurally unreachable from agent contexts. A block kind is not "shipped" until an agent can read one of its items from a `contextBlocks` injection. Future enactment of any new block kind must land schema + seed data + per-item macro as a single unit of work. This principle is proposed for ratification once a forcing artifact promotes it to a live decision.
 
 ---
 

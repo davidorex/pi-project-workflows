@@ -1,6 +1,6 @@
 # Research blocks — shape, functionality, and placement
 
-Design document for a new `.project/research.json` block kind that captures the factual and analytical substrate under decisions. Produced during the consumer migration arc planning work, as the next structured-artifact kind after ADRs, spec-reviews, features, framework-gaps, and layer-plans.
+Design document for a new `.project/research.json` block kind that captures the factual and analytical substrate under decisions. Produced during the consumer migration arc planning work, as the next structured-artifact kind after decisions, spec-reviews, features, framework-gaps, and layer-plans.
 
 Status: design proposed, not yet enacted. Enactment requires a new schema + seed data + additive `research_sources` back-edges on the existing five block schemas.
 
@@ -13,12 +13,12 @@ Research is the factual and analytical substrate under decisions. It is distinct
 | Kind | Role |
 |---|---|
 | **Research** | What is true about the problem / the environment / the options |
-| **Specification (ADR, spec)** | What we chose, given the research |
+| **Specification (decision, spec)** | What we chose, given the research |
 | **Findings (review findings, feature defects)** | Problems discovered against a target |
 | **Feedback memory (L5)** | Distilled rules from past incidents |
 | **Domain (L1)** | Stable domain knowledge and glossary |
 
-Research is the material an ADR's `context` paragraph draws from. Without research, ADRs become assertions. With research, they become traceable to ground truth.
+Research is the material a decision's `context` paragraph draws from. Without research, decisions become assertions. With research, they become traceable to ground truth.
 
 ---
 
@@ -59,7 +59,7 @@ Each type has different reliability characteristics and different staleness beha
 - `.project/domain.json` schema description says "research findings, reference material, domain rules" — partial L1 coverage, schema exists but currently empty
 - Individual findings cite sources inline (the existing `evidence` arrays on `spec-reviews.schema.json` and `framework-gaps.schema.json` act as micro-citations) — but there is no central block where the research itself lives
 
-The gap: the `analysis/` markdowns have no structured index, no lifecycle state, no cross-references to the ADRs/features/reviews they feed, and no staleness signaling.
+The gap: the `analysis/` markdowns have no structured index, no lifecycle state, no cross-references to the decisions/features/reviews they feed, and no staleness signaling.
 
 ---
 
@@ -98,7 +98,7 @@ The gap: the `analysis/` markdowns have no structured index, no lifecycle state,
     { "label": "openai-completions provider", "path": "node_modules/@mariozechner/pi-ai/dist/providers/openai-completions.js", "lines": "240-400" },
     { "label": "models.generated.js openrouter bucket", "path": "node_modules/@mariozechner/pi-ai/dist/models.generated.js", "lines": "6517+" }
   ],
-  "informs": ["ADR-0001", "ADR-0003", "STORY-008"],
+  "informs": ["DEC-0001", "DEC-0003", "STORY-008"],
   "informed_by": ["R-0000"],
   "related_research": [],
   "produces_findings": [],
@@ -114,22 +114,22 @@ The gap: the `analysis/` markdowns have no structured index, no lifecycle state,
 - **`citations`** — array of source references with file+line or URL+retrieval-time. Every factual claim in the summary traces back to a citation.
 - **`grounding`** — what's load-bearing. Version-pinned deps, retrieved revisions, dated external refs. This is what staleness tracks.
 - **`stale_conditions`** — explicit list of "if these change, this research is no longer authoritative." Enables a query: "our pi-ai upgraded past 0.63.x — which research is now stale?"
-- **`informs` / `informed_by`** — edges to other artifacts (ADRs, features, reviews, gaps, plans, other research entries). Enables the traceability walk "why is this ADR stated this way" back to ground truth.
+- **`informs` / `informed_by`** — edges to other artifacts (decisions, features, reviews, gaps, plans, other research entries). Enables the traceability walk "why is this decision stated this way" back to ground truth.
 
 ---
 
 ## Placement — flat collection with cross-references
 
-**Decision**: one flat `.project/research.json` block with a layer-tag per entry, NOT research embedded inside ADRs or features.
+**Decision**: one flat `.project/research.json` block with a layer-tag per entry, NOT research embedded inside decisions or features.
 
 Rationale:
 
-- Some research informs multiple artifacts (openrouter-pi-mono-setup informs ADR-0001 AND ADR-0003 AND STORY-008). Embedding it inside one would force duplication.
-- Research has its own lifecycle orthogonal to what it informs. A research entry can go stale while the ADR it fed stays decided. A new research entry can supersede an older one without touching the ADRs.
+- Some research informs multiple artifacts (openrouter-pi-mono-setup informs DEC-0001 AND DEC-0003 AND STORY-008). Embedding it inside one would force duplication.
+- Research has its own lifecycle orthogonal to what it informs. A research entry can go stale while the decision it fed stays enacted. A new research entry can supersede an older one without touching the decisions.
 - Research needs to be queryable across layers ("show me all L2 research conducted in the last 30 days") — embedding breaks that.
 - Global view of research-to-ground-truth is load-bearing for understanding project state.
 
-**Back-reference on existing schemas**: every artifact that cites research carries a `research_sources: [R-NNNN]` array so the bidirectional walk works without scanning the whole research collection. That is an additive edit to `adrs.schema.json`, `features.schema.json`, `spec-reviews.schema.json`, `framework-gaps.schema.json`, and `layer-plans.schema.json`.
+**Back-reference on existing schemas**: every artifact that cites research carries a `research_sources: [R-NNNN]` array so the bidirectional walk works without scanning the whole research collection. That is an additive edit to `decisions.schema.json`, `features.schema.json`, `spec-reviews.schema.json`, `framework-gaps.schema.json`, and `layer-plans.schema.json`.
 
 ---
 
@@ -154,7 +154,7 @@ User-authored transition gates:
 - `in-progress → complete` needs no user authority — agents can mark their own research complete
 - `complete → stale` — any party can mark stale when a condition fires
 - `complete → superseded` — requires the superseding entry to exist
-- `stale → in-progress` (revise) — requires user authority if the research is currently cited by a `decided` ADR, because revising it may invalidate the decision's grounding
+- `stale → in-progress` (revise) — requires user authority if the research is currently cited by an `enacted` decision, because revising it may invalidate the decision's grounding
 
 ---
 
@@ -190,7 +190,7 @@ FEAT-001 → research_sources → R-0001 → citations → file paths + line num
 And backward:
 
 ```
-file change in pi-ai 0.64 → stale_conditions match → R-0001 goes stale → informs: ADR-0001 → ADR-0001 grounding lost → user decision required
+file change in pi-ai 0.64 → stale_conditions match → R-0001 goes stale → informs: DEC-0001 → DEC-0001 grounding lost → user decision required
 ```
 
 This traceability is the entire point. Without it, research becomes write-once archives that nobody rereads. With it, research becomes an active substrate that self-invalidates when the world changes.
@@ -201,7 +201,7 @@ This traceability is the entire point. Without it, research becomes write-once a
 
 **Current state**: staleness must be checked by hand. The framework cannot automatically fire `stale_conditions`.
 
-**New framework gap FGAP-007 — staleness engine**: a runtime that reads every research entry's `stale_conditions` and compares them against the current state (installed dep versions, git revisions, external-URL content hashes) and transitions research entries to `stale` automatically. Downstream effect propagates via `informs` edges to flag affected ADRs as needing re-grounding.
+**New framework gap FGAP-007 — staleness engine**: a runtime that reads every research entry's `stale_conditions` and compares them against the current state (installed dep versions, git revisions, external-URL content hashes) and transitions research entries to `stale` automatically. Downstream effect propagates via `informs` edges to flag affected decisions as needing re-grounding.
 
 This is a substantive addition to the framework-gaps roster. It should be captured in `.project/framework-gaps.json` as a seventh gap, related to the research block. Priority P2 (not blocking the consumer migration arc but materially affects long-term trust in cited research).
 
@@ -212,7 +212,7 @@ This is a substantive addition to the framework-gaps roster. It should be captur
 1. **New schema**: `.project/schemas/research.schema.json` — defines the item shape, the method enum, the layer enum, the type enum, the lifecycle metadata (`x-lifecycle`).
 2. **New data block**: `.project/research.json` — seeded with structured entries for each existing markdown in `analysis/` plus planned research entries for the consumer migration arc.
 3. **Back-edge additions**: add `research_sources: string[]` field to the existing five schemas (`adrs`, `features`, `spec-reviews`, `framework-gaps`, `layer-plans`). Additive; does not break existing data.
-4. **Cross-link the seed ADRs**: ADR-0001 and ADR-0003 should cite R-0001 (openrouter research) and a new R-0008 for pi-agent-core ExtensionContext inspection (which does not yet exist — so it lands as `status: planned`). ADR-0002 should cite an empirical-test research entry for the Anthropic thinking + toolChoice rejection.
+4. **Cross-link the seed decisions**: DEC-0001 and DEC-0003 should cite R-0001 (openrouter research) and a new R-0008 for pi-agent-core ExtensionContext inspection (which does not yet exist — so it lands as `status: planned`). DEC-0002 should cite an empirical-test research entry for the Anthropic thinking + toolChoice rejection.
 5. **Add FGAP-007** to `framework-gaps.json`: staleness engine gap.
 
 ---
@@ -235,7 +235,7 @@ Candidate `planned` entries for what the consumer migration arc needs but has no
 
 | ID | Title | Layer | Type | Status |
 |---|---|---|---|---|
-| R-0008 | ExtensionContext currentModel availability | L2 | investigative | planned (prerequisite for ADR-0001) |
+| R-0008 | ExtensionContext currentModel availability | L2 | investigative | planned (prerequisite for DEC-0001) |
 | R-0009 | Forced toolChoice + Claude via OpenRouter | L2 | empirical | planned (STORY-008) |
 | R-0010 | Forced toolChoice + Kimi (any route) | L2 | empirical | planned (STORY-008) |
 | R-0011 | Anthropic thinking + toolChoice constraint | L2 | empirical | complete (already-known; grounded in pi-behavior-monitors/index.ts:1231 comment and observed API rejection) |
@@ -249,7 +249,7 @@ An agent handed `FEAT-001.stories[0]` (STORY-001 — model-pin resolution) can b
 ```
 contextBlocks: [
   FEAT-001.stories[0],                    // the story and its tasks
-  ADR-0001,                               // the gating decision
+  DEC-0001,                               // the gating decision
   R-0001.findings_summary,                // why OpenRouter matters
   R-0008.findings_summary || R-0008.question,  // ExtensionContext investigation (pending)
   R-0011.findings_summary                 // thinking + toolChoice constraint

@@ -5,7 +5,7 @@ Status: working articulation, current thinking focus
 
 This document captures the process the `.project/` block substrate supports — the full lifecycle for any unit of work, from intention through verified completion, mapped to the blocks that own each phase. It emerged from the session's synthesis work (Muni five-layer model × canonical engineering vocabulary × consumer migration arc planning) and is the current anchor for decisions about which gaps to close next.
 
-Vocabulary note: this document uses the current filenames (`adrs.json`, `FGAP-NNN`) since the rename proposed earlier in the session is still pending user authorization. The process is invariant under the vocabulary decision — only the terms change.
+Vocabulary note: this document uses the current filenames (`decisions.json`, `FGAP-NNN`) since the rename proposed earlier in the session is still pending user authorization. The process is invariant under the vocabulary decision — only the terms change.
 
 ---
 
@@ -53,7 +53,7 @@ Vocabulary note: this document uses the current filenames (`adrs.json`, `FGAP-NN
 
 **What it produces**: the decision-ready articulation of what will be built and how. Options considered, chosen direction, rationale, consequences.
 
-**Owning block**: `.project/adrs.json` (pending rename to `decisions.json`). Each entry:
+**Owning block**: `.project/decisions.json` (pending rename to `decisions.json`). Each entry:
 
 - `context` — forces at play
 - `options_considered` — each with tradeoffs and rejected_reason
@@ -179,7 +179,7 @@ goals (gap — not yet blocked)
 milestones (gap — rolled into phase.json today)
   ↕
 features.json[i]
-  ├─ gates → adrs.json[DEC-NNNN] (decision records)
+  ├─ gates → decisions.json[DEC-NNNN] (decision records)
   │           ├─ options_considered
   │           ├─ consequences
   │           ├─ research_sources → research.json[R-NNNN] (pending)
@@ -207,7 +207,7 @@ features.json[i]
 
 framework-gaps.json[GAP-NNN]
   ├─ related_features → features.json (which features are blocked by or address)
-  ├─ related_adrs / related_decisions → decisions that gate
+  ├─ related_decisions / related_decisions → decisions that gate
   └─ proposed_resolution
 
 layer-plans.json[PLAN-NNN]
@@ -289,27 +289,27 @@ Using the current live substrate and the vocabulary still pending rename:
 
 **Intention** — `features.json[0].stories[0]`:
 
-- `.description` "Apply the ADR-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary"
+- `.description` "Apply the DEC-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary"
 - `.acceptance_criteria[0]` "A bare model id in an agent spec resolves against the current session's provider via ExtensionContext lookup"
-- `.gates[0]` ADR-0001 (proposed, pending user decision)
+- `.gates[0]` DEC-0001 (proposed, pending user decision)
 
 **Research phase**:
 
 - R-0001 (openrouter-pi-mono-setup, pending enactment as research.json) — complete, grounds the operational incident
 - R-0008 (ExtensionContext currentModel availability, pending enactment, status: planned) — prerequisite research that has not yet run
-- ADR-0001 cannot advance to `decided` until R-0008 is complete because the decision depends on whether option (iii) is mechanically implementable
+- DEC-0001 cannot advance to `decided` until R-0008 is complete because the decision depends on whether option (iii) is mechanically implementable
 
 **Spec phase**:
 
-- ADR-0001 in `.project/adrs.json` — currently `status: proposed`
+- DEC-0001 in `.project/decisions.json` — currently `status: proposed`
 - Three options considered, option (iii) recommended, awaiting user ratification
 - `related_features: ["FEAT-001"]`
 
 **Spec review phase**:
 
 - REVIEW-001 in `spec-reviews.json` — targets `docs/planning/jit-agents-spec.md`, currently `status: not-started`
-- Until the design review runs and finds ADR-0001 compatible with the jit-agents-spec boundary contract, the decision cannot advance
-- The review's `clean` flag gates ADR-0001's transition from `under-review` to `decided`
+- Until the design review runs and finds DEC-0001 compatible with the jit-agents-spec boundary contract, the decision cannot advance
+- The review's `clean` flag gates DEC-0001's transition from `under-review` to `decided`
 
 **Plan phase**:
 
@@ -320,7 +320,7 @@ Using the current live substrate and the vocabulary still pending rename:
 
 **Plan review phase**:
 
-- A new review (REV-0002 or similar) targeting `features.json[0].stories[0]` would run after ADR-0001 is decided but before implementation starts
+- A new review (REV-0002 or similar) targeting `features.json[0].stories[0]` would run after DEC-0001 is decided but before implementation starts
 - Findings might surface: is TASK-001-01 the right first step? Does TASK-001-03 cover all edge cases?
 - Revision loop runs until clean
 
@@ -334,7 +334,7 @@ Using the current live substrate and the vocabulary still pending rename:
 **Implementation review phase**:
 
 - A new review targeting the commit range runs after all tasks are `done` and before the story advances to `complete`
-- Independent reviewer checks: do the commits match ADR-0001? Do they match the story's acceptance criteria? Are there quality defects?
+- Independent reviewer checks: do the commits match DEC-0001? Do they match the story's acceptance criteria? Are there quality defects?
 
 **Fix loop or verification pass**:
 
@@ -357,7 +357,7 @@ Using the current live substrate and the vocabulary still pending rename:
 - GAP-001 (nested blocks) — means the feature/story/task hierarchy is flat-smuggled today, with parents storing children as embedded arrays rather than as subdirectories. Works but does not scale.
 - GAP-002 (scoped findings) — means the story/feature finding registries exist in schema but have no block-api helpers today. Adding a finding to `features.json[0].findings[]` is a whole-file read-modify-write dance.
 - GAP-003 (materialized views) — means there is no derived "all open findings across all features" query surface. Cross-scope queries are manual scans.
-- GAP-004 (authorship attestation) — means user-gated transitions are enforced by discipline, not by the framework. An agent could advance ADR-0001 to `decided` today and nothing structural would stop it.
+- GAP-004 (authorship attestation) — means user-gated transitions are enforced by discipline, not by the framework. An agent could advance DEC-0001 to `decided` today and nothing structural would stop it.
 - GAP-005 (state-machine validation) — same story. The `x-lifecycle` metadata in the schemas declares allowed transitions but nothing validates them at write time.
 - GAP-006 (schema versioning) — means any schema refinement (e.g. adding `target_kind` to spec-reviews) propagates through every existing entry with no migration path.
 - GAP-007 (staleness engine) — means the research block's whole value proposition — automatic staleness detection when dependencies or revisions change — does not fire. The pi-ai 0.63.1 → 0.67.3 delta that occurred today is a live staleness event that cannot propagate to the decisions it informs without manual action.

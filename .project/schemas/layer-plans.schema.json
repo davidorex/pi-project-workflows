@@ -72,7 +72,7 @@
 					},
 					"related_gaps": { "type": "array", "items": { "type": "string" } },
 					"related_features": { "type": "array", "items": { "type": "string" } },
-					"related_adrs": { "type": "array", "items": { "type": "string" } },
+					"related_decisions": { "type": "array", "items": { "type": "string" } },
 					"created_by": { "type": "string" },
 					"created_at": { "type": "string" }
 				}

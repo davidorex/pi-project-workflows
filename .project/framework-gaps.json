@@ -26,7 +26,7 @@
 			"canonical_vocabulary": "hierarchical work breakdown structure (WBS); nested aggregate storage",
 			"proposed_resolution": "Extend block-api to support subpath block names (e.g. readBlock('features/consumer-migration')). Add nested-directory discovery in availableBlocks. Schemas at the subdirectory root apply to all files underneath. Authority for partial-tree invalidation belongs to block-validation.ts.",
 			"related_features": ["FEAT-001"],
-			"related_adrs": [],
+			"related_decisions": [],
 			"related_issues": [],
 			"created_by": "agent/claude-opus-4-6",
 			"created_at": "2026-04-15T00:00:00Z"
@@ -53,7 +53,7 @@
 			"canonical_vocabulary": "scoped issues; per-artifact defect list; embedded finding registries",
 			"proposed_resolution": "Standardize a 'findings' sub-array on every L2/L3/L4 block schema kind (specs, features, tasks). Each finding carries scope metadata (layer, parent_artifact). Provide a block-api helper appendFinding(blockName, parentItemId, finding). Global issues.json becomes a derived view (see FGAP-003).",
 			"related_features": ["FEAT-001"],
-			"related_adrs": [],
+			"related_decisions": [],
 			"related_issues": [],
 			"created_by": "agent/claude-opus-4-6",
 			"created_at": "2026-04-15T00:00:00Z"
@@ -80,7 +80,7 @@
 			"canonical_vocabulary": "materialized view (database canon)",
 			"proposed_resolution": "Add a view-block kind with a definition file that names source blocks, a projection function, and refresh triggers. block-api exposes readView(name) but disallows direct writes. Refresh fires on underlying block writes. Schemas describe the view shape.",
 			"related_features": ["FEAT-001"],
-			"related_adrs": [],
+			"related_decisions": [],
 			"related_issues": [],
 			"created_by": "agent/claude-opus-4-6",
 			"created_at": "2026-04-15T00:00:00Z"
@@ -107,11 +107,11 @@
 					"reference": "assigned_agent field is assignment semantics, not authorship — a task can be assigned to agent X but written by user Y"
 				}
 			],
-			"impact": "State-machine validation of user-gated transitions (ADR decided, finding decided, feature approved) is structurally impossible. The framework cannot distinguish 'user advanced this' from 'agent advanced this' and so cannot enforce authority matrices. The spec-loop invariant M4 is unenforceable.",
+			"impact": "State-machine validation of user-gated transitions (decision enacted, finding decided, feature approved) is structurally impossible. The framework cannot distinguish 'user advanced this' from 'agent advanced this' and so cannot enforce authority matrices. The spec-loop invariant M4 is unenforceable.",
 			"canonical_vocabulary": "authorship attestation; written_by attribution; audit trail",
 			"proposed_resolution": "block-api.ts stamps created_by / modified_by / created_at / modified_at on every write, reading writer identity from a DispatchContext parameter. Every block schema adds these as required fields. Cross-block validation can then enforce authority-matrix rules per-transition.",
 			"related_features": ["FEAT-001"],
-			"related_adrs": [],
+			"related_decisions": [],
 			"related_issues": [],
 			"created_by": "agent/claude-opus-4-6",
 			"created_at": "2026-04-15T00:00:00Z"
@@ -138,11 +138,11 @@
 					"reference": "updateItemInBlock does not pass the prior value to validation, so transition rules cannot be applied even if expressible"
 				}
 			],
-			"impact": "The whole class of lifecycle-gated workflows (design review clean-gate, ADR user-decided gate, feature approval gate) cannot be enforced by schema. Current workaround is discipline. Discipline fails silently when agents run unattended.",
+			"impact": "The whole class of lifecycle-gated workflows (design review clean-gate, decision enacted gate, feature approval gate) cannot be enforced by schema. Current workaround is discipline. Discipline fails silently when agents run unattended.",
 			"canonical_vocabulary": "state-machine validation; lifecycle invariant; transition guard",
 			"proposed_resolution": "Add a custom AJV keyword (x-lifecycle) that the schema-validator reads. block-api.ts passes both prior-value and new-value to the validator at update time. Validator checks allowed transitions and required-authority. Fails write if transition is invalid or authority is insufficient.",
 			"related_features": ["FEAT-001"],
-			"related_adrs": [],
+			"related_decisions": [],
 			"related_issues": [],
 			"created_by": "agent/claude-opus-4-6",
 			"created_at": "2026-04-15T00:00:00Z"
@@ -173,7 +173,7 @@
 			"canonical_vocabulary": "schema evolution; JSON Schema $id; schema registry; schema versioning",
 			"proposed_resolution": "Add a required $id (URI) and version field on every schema. schema-validator reads version and can apply migration functions. Introduce a schema-migrations registry. $ref fragment composition becomes the standard way to express shared fields (e.g. a common 'authorship-fragment.schema.json' imported by every block schema).",
 			"related_features": ["FEAT-001"],
-			"related_adrs": [],
+			"related_decisions": [],
 			"related_issues": [],
 			"created_by": "agent/claude-opus-4-6",
 			"created_at": "2026-04-15T00:00:00Z"

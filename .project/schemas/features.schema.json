@@ -29,7 +29,7 @@
 				"dependencies": {
 					"type": "array",
 					"items": { "type": "string" },
-					"description": "IDs of other features, ADRs, gaps, or reviews this depends on"
+					"description": "IDs of other features, decisions, gaps, or reviews this depends on"
 				},
 				"gates": {
 					"type": "array",
@@ -41,7 +41,7 @@
 					"items": { "type": "string" },
 					"description": "Existing issue IDs this feature closes"
 				},
-				"adrs": { "type": "array", "items": { "type": "string" } },
+				"decisions": { "type": "array", "items": { "type": "string" } },
 				"stories": {
 					"type": "array",
 					"items": { "$ref": "#/definitions/story" }

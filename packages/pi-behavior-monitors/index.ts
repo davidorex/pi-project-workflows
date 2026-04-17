@@ -1171,6 +1171,29 @@ let cachedAgentLoader: ((name: string) => AgentSpec) | null = null;
 /** Module-level cached template environment for classify agent specs, populated at session_start. */
 let cachedMonitorAgentEnv: nunjucks.Environment | null = null;
 
+type AuthResult = { ok: true; apiKey: string; headers?: Record<string, string> } | { ok: false; error: string };
+
+/**
+ * Resolve model auth across pi-coding-agent API versions.
+ *
+ * Newer upstream (`@mariozechner/pi-coding-agent` ≥ 0.67.x) exposes
+ * `ModelRegistry.getApiKeyAndHeaders(model)` returning `{ ok, apiKey, headers }`.
+ * The OMP fork (`@oh-my-pi/pi-coding-agent`) and older releases only expose
+ * `getApiKey(model)` which returns the key string directly. Feature-detect
+ * and fall back so monitors work on both hosts.
+ */
+async function resolveModelAuth(registry: any, model: Model<Api>): Promise<AuthResult> {
+	if (typeof registry.getApiKeyAndHeaders === "function") {
+		return await registry.getApiKeyAndHeaders(model);
+	}
+	if (typeof registry.getApiKey === "function") {
+		const apiKey = await registry.getApiKey(model);
+		if (apiKey) return { ok: true, apiKey, headers: {} };
+		return { ok: false, error: `No API key for ${model.provider}/${model.id}` };
+	}
+	return { ok: false, error: "modelRegistry exposes neither getApiKeyAndHeaders nor getApiKey" };
+}
+
 /**
  * Classify via agent spec — the sole classify path.
  * Loads the agent YAML, builds context from collectors, compiles via
@@ -1225,7 +1248,7 @@ async function classifyViaAgent(
 	const model = ctx.modelRegistry.find(provider, modelId);
 	if (!model) throw new Error(`Model ${modelSpec} not found`);
 
-	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+	const auth = await resolveModelAuth(ctx.modelRegistry, model);
 	if (!auth.ok) throw new Error(auth.error);
 
 	// Thinking is disabled for classify calls — Anthropic API rejects

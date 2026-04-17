@@ -18,6 +18,25 @@ import { persistStepOutput } from "./output.js";
 import { zeroUsage } from "./step-shared.js";
 import type { StepResult } from "./types.js";
 
+type AuthResult = { ok: true; apiKey: string; headers?: Record<string, string> } | { ok: false; error: string };
+
+/**
+ * Resolve model auth across pi-coding-agent API versions.
+ * Newer upstream exposes `getApiKeyAndHeaders`; older/forked hosts only
+ * expose `getApiKey`. Feature-detect so monitors work on both.
+ */
+async function resolveModelAuth(registry: any, model: Model<Api>): Promise<AuthResult> {
+	if (typeof registry.getApiKeyAndHeaders === "function") {
+		return await registry.getApiKeyAndHeaders(model);
+	}
+	if (typeof registry.getApiKey === "function") {
+		const apiKey = await registry.getApiKey(model);
+		if (apiKey) return { ok: true, apiKey, headers: {} };
+		return { ok: false, error: `No API key for ${model.provider}/${model.id}` };
+	}
+	return { ok: false, error: "modelRegistry exposes neither getApiKeyAndHeaders nor getApiKey" };
+}
+
 // ── Monitor spec types (subset of pi-behavior-monitors) ──────────────────────
 
 interface MonitorSpec {
@@ -280,7 +299,7 @@ export async function executeMonitor(
 		};
 	}
 
-	const auth = await options.ctx.modelRegistry.getApiKeyAndHeaders(model);
+	const auth = await resolveModelAuth(options.ctx.modelRegistry, model);
 	if (!auth.ok) {
 		return {
 			step: stepName,

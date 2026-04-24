@@ -1,0 +1,158 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Research",
+	"description": "Factual and analytical substrate under decisions. Each entry captures what was investigated, how, what was found, what grounds the findings, and what stale conditions invalidate them. Research is distinct from decisions — it does not require a forcing artifact and may terminate at research without ever graduating to a decision. Research is the material a decision's context field draws from; without research, decisions become assertions; with research, they become traceable to ground truth. Each entry is atomically composable into agent prompts via its findings_summary field plus the render_research per-item macro.",
+	"type": "object",
+	"required": ["research"],
+	"properties": {
+		"research": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["id", "title", "status", "layer", "type", "question", "method", "findings_summary", "created_by", "created_at"],
+				"properties": {
+					"id": { "type": "string", "pattern": "^R-\\d{4}$" },
+					"title": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["planned", "in-progress", "complete", "stale", "superseded", "revised"],
+						"description": "planned = question framed, method chosen, no work started. in-progress = investigation underway. complete = findings_summary and citations finalized. stale = a stale_condition fired; findings may still be correct but grounding is no longer authoritative. superseded = a newer research entry replaces this one. revised = transient state during re-investigation against updated grounding."
+					},
+					"layer": {
+						"type": "string",
+						"enum": ["L1", "L2", "L3", "L4", "L5"],
+						"description": "Which Muni layer the research informs. L1 identity/domain; L2 specification; L3 work; L4 execution; L5 memory."
+					},
+					"type": {
+						"type": "string",
+						"enum": ["investigative", "comparative", "empirical", "historical", "audit", "landscape", "feasibility", "curation"],
+						"description": "Kind of research, per the research:* skill taxonomy. Affects reliability characteristics and staleness behavior."
+					},
+					"question": {
+						"type": "string",
+						"description": "The question being investigated."
+					},
+					"method": {
+						"type": "string",
+						"description": "How the investigation was conducted — e.g. 'code-inspection', 'empirical-test', 'web-fetch', 'curation of external document', or a combination."
+					},
+					"scope": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "What was in scope — versions, branches, revisions, URLs, documents examined."
+					},
+					"findings_summary": {
+						"type": "string",
+						"description": "Self-contained, prompt-injectable summary of what was found. Target ~300-800 words. Must stand alone without the full findings_document."
+					},
+					"findings_document": {
+						"type": "string",
+						"description": "Path to the full rich document (typically in analysis/) for deep reads. May be null for research entries whose summary is sufficient or whose investigation has not yet produced a document."
+					},
+					"grounding": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"dependencies": {
+								"type": "array",
+								"items": { "type": "string" },
+								"description": "Version-pinned dependency strings (e.g. '@mariozechner/pi-ai@0.63.1') whose behavior is load-bearing for the findings."
+							},
+							"revisions": {
+								"type": "array",
+								"items": { "type": "string" },
+								"description": "Git SHAs, branch snapshots, or repo-at-date references."
+							},
+							"external_refs": {
+								"type": "array",
+								"items": { "type": "string" },
+								"description": "Dated external references — URLs with retrieval timestamps, academic papers, external spec documents."
+							}
+						}
+					},
+					"grounded_at": {
+						"type": "string",
+						"description": "Timestamp at which the grounding was current."
+					},
+					"stale_conditions": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "Explicit list of conditions under which the research is no longer authoritative. The future staleness engine (FGAP-007) will read this to transition status from complete to stale automatically."
+					},
+					"citations": {
+						"type": "array",
+						"description": "Labeled source pointers grounding specific claims in the findings. Every factual claim in findings_summary should trace to a citation.",
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"required": ["label"],
+							"properties": {
+								"label": { "type": "string" },
+								"path": { "type": "string" },
+								"lines": { "type": "string" },
+								"url": { "type": "string" },
+								"retrieved_at": { "type": "string" }
+							}
+						}
+					},
+					"informs": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "IDs of decisions, features, stories, reviews, or gaps that this research grounds."
+					},
+					"informed_by": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "IDs of prior research entries this one builds upon."
+					},
+					"related_research": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "IDs of other research entries that touch adjacent questions without a direct grounds/builds-on relationship."
+					},
+					"produces_findings": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "IDs of spec-review or scoped findings that this research generated."
+					},
+					"supersedes": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "IDs of prior research entries this one replaces with updated findings."
+					},
+					"superseded_by": {
+						"type": "string",
+						"description": "ID of a later research entry that replaces this one."
+					},
+					"conducted_by": {
+						"type": "string",
+						"description": "Alias for created_by; retained for research-specific provenance where 'conducted' reads more naturally than 'created'."
+					},
+					"conducted_at": {
+						"type": "string",
+						"description": "Alias for created_at."
+					},
+					"created_by": { "type": "string" },
+					"created_at": { "type": "string" },
+					"modified_by": { "type": "string" },
+					"modified_at": { "type": "string" }
+				}
+			}
+		}
+	},
+	"x-lifecycle": {
+		"field": "status",
+		"states": ["planned", "in-progress", "complete", "stale", "superseded", "revised"],
+		"transitions": [
+			{ "from": "planned", "to": "in-progress", "required_authority": "any" },
+			{ "from": "in-progress", "to": "complete", "required_authority": "any", "note": "Agent may mark own research complete when findings_summary and citations are finalized." },
+			{ "from": "complete", "to": "stale", "required_authority": "any", "note": "Any party marks stale when a stale_condition fires. Future staleness engine (FGAP-007) fires this automatically." },
+			{ "from": "stale", "to": "in-progress", "required_authority": "user", "note": "Reopening for revision; requires user authority if the research is currently cited by an enacted decision because revising may invalidate the decision's grounding." },
+			{ "from": "complete", "to": "superseded", "required_authority": "any", "precondition": "superseding entry exists and points to this one via its supersedes array" },
+			{ "from": "in-progress", "to": "revised", "required_authority": "any" },
+			{ "from": "revised", "to": "complete", "required_authority": "any" }
+		],
+		"note": "AJV draft-07 cannot enforce transition validity or required_authority; this block is metadata for future framework-level state-machine validation (FGAP-005) and authorship attestation (FGAP-004). The staleness engine (FGAP-007) reads stale_conditions and fires the complete→stale transition automatically when conditions are met."
+	}
+}

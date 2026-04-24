@@ -1,0 +1,768 @@
+{
+  "research": [
+    {
+      "id": "R-0001",
+      "title": "OpenRouter API configuration and model selection in pi-mono/pi-ai",
+      "status": "stale",
+      "layer": "L2",
+      "type": "investigative",
+      "question": "How to add an OpenRouter API key to a Pi coding agent installation alongside an existing Anthropic key, and how to select OpenRouter-hosted models?",
+      "method": "code-inspection",
+      "scope": [
+        "@mariozechner/pi-ai@0.63.1 installed at /Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/",
+        "badlogic/pi-mono main branch as of 2026-04-10"
+      ],
+      "findings_summary": "OpenRouter is a first-class built-in provider in both pi-ai and the pi coding agent, requiring no extension wiring. Configuration requires either setting the OPENROUTER_API_KEY environment variable or adding an openrouter entry to ~/.pi/agent/auth.json (file permissions 0600) with key types supporting literal values, environment variable references, or shell commands. The credential resolution order is (1) CLI --api-key flag, (2) auth.json entry, (3) environment variable, (4) custom provider apiKey from models.json.\n\nOpenRouter models are accessed via their native vendor/model namespace (e.g., anthropic/claude-sonnet-4.6) with no pi-invented prefix. Model selection occurs through CLI flags --provider openrouter --model <id>, the shorthand --model openrouter/<id>, or the interactive /model picker which displays only providers with resolvable credentials. The transport layer uses openai-completions via the openai npm SDK, with baseUrl https://openrouter.ai/api/v1 and Authorization: Bearer header set automatically.\n\nFor Claude-via-OpenRouter, pi-ai automatically injects cache_control: {type: ephemeral} on the last text block and uses reasoning: {effort} format instead of reasoning_effort. The model catalog in dist/models.generated.js is a static build-time snapshot; models released after pi-ai publish may be added via ~/.pi/agent/models.json using either Option A (override the built-in openrouter provider) or Option B (register a distinct provider namespace). Tool-forced output with Claude-via-OpenRouter is not explicitly documented as working or failing; empirical testing is required before relying on forced-tool-use behavior such as that used by pi-behavior-monitors. HTTP-Referer and X-Title headers are not sent by default but can be added via models.json header override. Extended cache retention (PI_CACHE_RETENTION=long) does not apply to OpenRouter routes, only to direct Anthropic and OpenAI calls.",
+      "findings_document": "analysis/openrouter-pi-mono-setup.md",
+      "grounding": {
+        "dependencies": [
+          "@mariozechner/pi-ai@0.63.1"
+        ],
+        "revisions": [
+          "badlogic/pi-mono main branch fetched 2026-04-10"
+        ],
+        "external_refs": [
+          "https://openrouter.ai/keys"
+        ]
+      },
+      "grounded_at": "2026-04-10T00:00:00Z",
+      "stale_conditions": [
+        "@mariozechner/pi-ai version bumped past 0.63.1 (model catalog may change)",
+        "badlogic/pi-mono main branch updated with breaking changes to auth.json or provider resolution order",
+        "OpenRouter API endpoint URL or auth header format changes",
+        "Issue #2921 or #2955 status changes regarding custom model merging behavior"
+      ],
+      "citations": [
+        {
+          "label": "OpenRouter first-class provider support",
+          "path": "/Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/README.md",
+          "lines": "60"
+        },
+        {
+          "label": "OPENROUTER_API_KEY environment mapping",
+          "path": "/Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/dist/env-api-keys.js",
+          "lines": "93"
+        },
+        {
+          "label": "OpenRouter model catalog and baseUrl",
+          "path": "/Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/dist/models.generated.js",
+          "lines": "6517"
+        },
+        {
+          "label": "OpenRouter-specific code paths cache-control and reasoning format",
+          "path": "/Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/dist/providers/openai-completions.js",
+          "lines": "240-400, 709-711"
+        },
+        {
+          "label": "pi-mono coding-agent providers documentation",
+          "url": "https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/providers.md"
+        },
+        {
+          "label": "pi-mono coding-agent models.json schema",
+          "url": "https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/models.md"
+        },
+        {
+          "label": "pi-mono coding-agent README CLI reference",
+          "url": "https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/README.md"
+        }
+      ],
+      "informs": [
+        "DEC-0001",
+        "DEC-0003",
+        "FEAT-001"
+      ],
+      "informed_by": [],
+      "related_research": [],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-10T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-10T00:00:00Z"
+    },
+    {
+      "id": "R-0002",
+      "title": "pi-project schema and naming conventions — current state audit",
+      "status": "complete",
+      "layer": "L2",
+      "type": "audit",
+      "question": "What conventions does pi-project actually use for schemas, naming, lifecycle enums, cross-references, authorship, and hierarchy — and where do those conventions fall short of canonical engineering vocabulary and the L1–L5 artifact-ownership model?",
+      "method": "code-inspection",
+      "scope": [
+        ".project/schemas/ (18 schema files) as of 2026-04-14",
+        "packages/pi-project/src/ (block-api.ts, schema-validator.ts, project-sdk.ts, block-validation.ts)",
+        "CLAUDE.md project conventions"
+      ],
+      "findings_summary": "pi-project uses JSON Schema draft-07 with AJV validation, kebab-case file naming, and validate-on-write at the API boundary — all canonical. Every block is a JSON object with one required wrapper property whose value is an array (except architecture.schema.json which has multiple arrays). Items have required string id fields, free-form (no format constraint). State enums are per-block with no global lifecycle vocabulary. Cross-references are enforced by validateProject() in code (11 dimensional checks), not by $ref in schemas. 18 schemas exist as of snapshot date.\n\nSix framework gaps surfaced: (1) No hierarchical/nested blocks — flat arrays only, no tasks/{id}.json or epic→story→task tree. (2) No per-scope finding registries — all findings land in global issues.json regardless of scope. (3) No materialized views — projectState() aggregates in-memory but produces no persisted, addressable, schema-validated derived block. (4) No authorship attestation at write time — only issues.schema.json has a source enum; block-api.ts does not stamp writes. (5) No state-machine validation on enum transitions — AJV validates current value membership but cannot express allowed transition paths. (6) No schema versioning or evolution — no version field, no $id, no $ref composition, no migration story. These six gaps became FGAP-001 through FGAP-006 and issues 055–060.",
+      "findings_document": "analysis/pi-project-schema-conventions-audit.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "pi-project-workflows repo state as of 2026-04-14"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-14T00:00:00Z",
+      "stale_conditions": [
+        ".project/schemas/ contents change (schema count, field shapes, naming conventions)",
+        "packages/pi-project/src/block-api.ts adds authorship stamping or transition validation",
+        "packages/pi-project/src/project-sdk.ts validateProject() check count changes from 11"
+      ],
+      "citations": [
+        {
+          "label": "18 schema files in .project/schemas/",
+          "path": ".project/schemas/"
+        },
+        {
+          "label": "block-api.ts validate-on-write",
+          "path": "packages/pi-project/src/block-api.ts"
+        },
+        {
+          "label": "schema-validator.ts AJV wrapper",
+          "path": "packages/pi-project/src/schema-validator.ts"
+        },
+        {
+          "label": "project-sdk.ts validateProject() cross-ref checks",
+          "path": "packages/pi-project/src/project-sdk.ts"
+        },
+        {
+          "label": "block-validation.ts snapshot and rollback",
+          "path": "packages/pi-project/src/block-validation.ts"
+        }
+      ],
+      "informs": [],
+      "informed_by": [],
+      "related_research": [
+        "R-0003",
+        "R-0005"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-14T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-14T00:00:00Z"
+    },
+    {
+      "id": "R-0003",
+      "title": "Research blocks — shape, functionality, and placement design",
+      "status": "complete",
+      "layer": "L2",
+      "type": "investigative",
+      "question": "What shape should a .project/research.json block take to capture the factual and analytical substrate under decisions — covering lifecycle, grounding, staleness, citations, cross-layer traceability, and prompt composability?",
+      "method": "code-inspection",
+      "scope": [
+        "analysis/ directory (7 existing markdown research artifacts)",
+        ".project/domain.json schema (partial L1 coverage)",
+        "spec-reviews.schema.json evidence arrays (micro-citations)",
+        "framework-gaps.schema.json evidence arrays",
+        "Muni five-layer model as reference frame"
+      ],
+      "findings_summary": "Research is the factual and analytical substrate under decisions — distinct from specification (what we chose), findings (problems discovered), feedback memory (distilled rules), and domain knowledge (stable glossary). Research runs across all five Muni layers with different cadence per layer: L1 (project-lifetime, stable), L2 (per-design-cycle), L3 (per-feature), L4 (per-task, ephemeral), L5 (post-incident, accumulator).\n\nDesigned shape: flat .project/research.json collection with per-entry layer tag and type tag (investigative, comparative, empirical, historical, audit, landscape, feasibility, curation). Each entry carries: question, method, scope, findings_summary (300–800 words, self-contained, prompt-injectable), findings_document (path to full markdown), grounding (version-pinned dependencies, git revisions, dated external refs), stale_conditions (explicit invalidation triggers), citations (labeled source pointers with file+line or URL+retrieval-time), and informs/informed_by edges for cross-artifact traceability.\n\nPlacement decision: one flat collection with cross-references, NOT research embedded inside decisions or features. Rationale: some research informs multiple artifacts (R-0001 informs DEC-0001 AND DEC-0003); research has its own lifecycle orthogonal to what it informs; research must be queryable across layers. Back-reference convention: every artifact that cites research carries a research_sources array.\n\nLifecycle: planned → in-progress → complete → (stale | superseded), with revised as transient re-investigation state. User-gated: stale → in-progress requires user authority when cited by an enacted decision. Surfaced new framework gap FGAP-007 (staleness engine): no runtime to automatically fire stale_conditions against current state.",
+      "findings_document": "analysis/research-blocks-design.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "pi-project-workflows repo state including analysis/ directory as of 2026-04-15"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-15T00:00:00Z",
+      "stale_conditions": [
+        "research.schema.json enacted with different shape than proposed here",
+        "Muni five-layer model revised or abandoned as reference frame",
+        "Block placement decision reversed (embedded research instead of flat collection)"
+      ],
+      "citations": [
+        {
+          "label": "analysis/ directory — 7 existing unstructured markdown research artifacts",
+          "path": "analysis/"
+        },
+        {
+          "label": "domain.json schema description mentioning research findings",
+          "path": ".project/schemas/domain.schema.json"
+        },
+        {
+          "label": "spec-reviews.schema.json evidence arrays as micro-citations",
+          "path": ".project/schemas/spec-reviews.schema.json"
+        }
+      ],
+      "informs": [
+        "issue-061"
+      ],
+      "informed_by": [
+        "R-0002"
+      ],
+      "related_research": [
+        "R-0005",
+        "R-0006"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "R-0004",
+      "title": "Expression language comparison — custom minimal evaluator vs CEL adoption",
+      "status": "complete",
+      "layer": "L2",
+      "type": "comparative",
+      "question": "Should the workflow expression language remain the current bespoke 339-line property-access evaluator, adopt Google's Common Expression Language (CEL) wholesale, or adopt a CEL hybrid — and what are the tradeoffs?",
+      "method": "code-inspection",
+      "scope": [
+        "packages/pi-workflows/src/expression.ts at commit 8b184c6 (339 lines)",
+        "docs/planning/workflow-extension.md:537-554 (minimalism rationale)",
+        "systeminit/swamp main branch cloned 2026-04-15 (CEL adoption reference)",
+        "@marcbachmann/cel-js@7.5.1 as declared in swamp's deno.json"
+      ],
+      "findings_summary": "Our expression language is a deliberate, minimal, security-audited, 339-line bespoke evaluator supporting ${{ path.to.value | filter }} syntax with nine built-in filters (duration, currency, json, length, keys, filter, first, last, slugify, shell). It deliberately excludes arithmetic, comparisons, logical operators, ternary, string concatenation, and function calls — pushing logic into transform steps per documented design rationale.\n\nCEL (Common Expression Language) is Google's non-Turing-complete, bounded-evaluation, sandboxed expression engine used in Kubernetes validation rules, gRPC, Firebase Security Rules, and Envoy. The swamp project (systeminit/swamp) adopts cel-js with the same ${{ }} delimiter convention. CEL supports arithmetic, comparisons, logical operators, ternary, typed string/list/map operations, and caller-registered functions with deterministic evaluation guarantees.\n\nCost of staying: every workflow needing boolean logic or arithmetic requires a transform step; contributors and LLMs must learn project-specific grammar (CEL is in training distributions via K8s/Firebase docs); each extension (==, !=, >, <) is custom code.\n\nBenefits of staying: smaller attack surface (339 lines, zero supply-chain risk); security-audited shell filter for command-step single-quote context; explicit ExpressionError diagnostics scoped to our domain.\n\nCleanest adoption path: keep ${{ }} delimiters, replace property-access-split implementation with CEL evaluator, retain scope shape (input, steps, runId, etc.), register nine filters as CEL functions, retire transform step's reason-for-being. Adjacent ${{ }}${{ }} parse limitation (workflow-extension.md:253) would resolve. Most existing expressions are valid CEL (field-selection operations). Risk: CEL has different null-propagation semantics; shell filter security must be re-audited.\n\nNo decision entry exists — no forcing issue currently requires resolving the CEL question. Research stands alone until a forcing function emerges.",
+      "findings_document": "analysis/2026-04-15-expression-language-comparison.md",
+      "grounding": {
+        "dependencies": [
+          "@marcbachmann/cel-js@7.5.1"
+        ],
+        "revisions": [
+          "packages/pi-workflows/src/expression.ts at commit 8b184c6",
+          "systeminit/swamp main branch cloned 2026-04-15"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-15T00:00:00Z",
+      "stale_conditions": [
+        "packages/pi-workflows/src/expression.ts materially changes shape",
+        "swamp switches expression engines",
+        "@marcbachmann/cel-js deprecated or replaced"
+      ],
+      "citations": [
+        {
+          "label": "Current evaluator source",
+          "path": "packages/pi-workflows/src/expression.ts"
+        },
+        {
+          "label": "Minimalism rationale",
+          "path": "docs/planning/workflow-extension.md",
+          "lines": "537-554"
+        },
+        {
+          "label": "Adjacent expression parse limitation",
+          "path": "docs/planning/workflow-extension.md",
+          "lines": "253"
+        },
+        {
+          "label": "No eval, deliberate constraints, excellent diagnostics",
+          "path": "docs/planning/2026-03-14-parallel-analysis-review.md",
+          "lines": "30"
+        },
+        {
+          "label": "Swamp expression design",
+          "path": "/tmp/swamp-analysis/swamp/design/expressions.md"
+        },
+        {
+          "label": "Swamp cel-js dependency declaration",
+          "path": "/tmp/swamp-analysis/swamp/deno.json"
+        }
+      ],
+      "informs": [],
+      "informed_by": [],
+      "related_research": [],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "R-0005",
+      "title": "Process articulation — the ten-phase lifecycle .project/ blocks support",
+      "status": "complete",
+      "layer": "L2",
+      "type": "investigative",
+      "question": "What is the full process lifecycle that the .project/ block substrate supports — from intention through verified completion — and where are the gaps that prevent the process from running unattended with integrity?",
+      "method": "code-inspection",
+      "scope": [
+        ".project/ block schemas (all 18 as of 2026-04-15)",
+        "packages/pi-project/src/ (block-api.ts, project-sdk.ts)",
+        "Muni five-layer model × canonical engineering vocabulary",
+        "Consumer migration arc planning context"
+      ],
+      "findings_summary": "The .project/ block substrate supports a ten-phase lifecycle for any unit of work at any scale (project, feature, story, task, gap closure, research investigation): (1) Intention/goal/articulation of done, (2) Research, (3) Initial spec, (4) Adversarial audit of spec + revision loop, (5) Implementation plan, (6) Adversarial audit of plan + revision loop, (7) Task implementation, (8) Adversarial audit of implementation, (9) Fix loop or verification pass, (10) Learning capture.\n\nThe lifecycle is fractal — the same ten phases apply whether the unit is a project, feature, story, or task. Blocks support nested application because every artifact kind has a finding registry, state machine, and cross-references. The traceability graph enables forward walk (project → feature → story → task → commit → file → decision → research → citation → ground truth), backward walk (commit → task → story → feature → project), and cross walk (decision → supersedes chain, research → informs → decision).\n\nThe process is operationally correct for a single human running the pipeline by hand with discipline. It is not yet mechanically enforceable against an unattended agent. The seven existing framework gaps (FGAP-001 through FGAP-007) plus ten new shortcomings surfaced in this articulation block mechanical enforcement: (1) goals block, (2) milestones block, (3) roadmap block, (4) verification criteria taxonomy on acceptance_criteria, (5) review target-kind ambiguity, (6) review iteration chain linking, (7) task git provenance (implemented_by commit SHAs), (8) verification.json schema depth, (9) lessons/feedback memory block, (10) postmortem block.",
+      "findings_document": "analysis/2026-04-15-process-articulation.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "pi-project-workflows repo state as of 2026-04-15"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-15T00:00:00Z",
+      "stale_conditions": [
+        ".project/schemas/ set changes materially (new blocks added, lifecycle enums revised)",
+        "Any of FGAP-001 through FGAP-007 closed (changes what the substrate supports)",
+        "packages/pi-project/src/block-api.ts gains authorship stamping or transition validation"
+      ],
+      "citations": [
+        {
+          "label": "18 schema files defining block shapes",
+          "path": ".project/schemas/"
+        },
+        {
+          "label": "block-api.ts write-time validation",
+          "path": "packages/pi-project/src/block-api.ts"
+        },
+        {
+          "label": "project-sdk.ts cross-block validation (11 checks)",
+          "path": "packages/pi-project/src/project-sdk.ts"
+        },
+        {
+          "label": "FGAP-001 through FGAP-007 in issues block",
+          "path": ".project/issues.json"
+        }
+      ],
+      "informs": [
+        "issue-055",
+        "issue-056",
+        "issue-057",
+        "issue-058",
+        "issue-059",
+        "issue-060",
+        "issue-061"
+      ],
+      "informed_by": [
+        "R-0002",
+        "R-0003"
+      ],
+      "related_research": [
+        "R-0006",
+        "R-0007"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "R-0006",
+      "title": "Blocks as prompt substrate — rendering infrastructure gaps for pi-jit-agents contextBlocks injection",
+      "status": "complete",
+      "layer": "L2",
+      "type": "investigative",
+      "question": "Given that .project/ blocks are composable prompt fragments injected via contextBlocks, what rendering infrastructure is missing to support per-item injection, depth control, token budgeting, and cross-block traversal?",
+      "method": "code-inspection",
+      "scope": [
+        "packages/pi-workflows/templates/shared/macros.md (12 existing macros)",
+        "packages/pi-jit-agents/src/compile.ts (contextBlocks injection)",
+        "packages/pi-jit-agents/src/types.ts (AgentSpec shape)",
+        ".project/schemas/ (18 schemas, 6 new block kinds prompt-unreachable)"
+      ],
+      "findings_summary": "The .project/ blocks are not state storage separate from agent work — they are composable prompt fragments that pi-jit-agents injects into agent contexts via contextBlocks. The current macro library has 12 whole-block macros (render_conventions, render_requirements, render_conformance, render_architecture, render_project, render_domain, render_decisions, render_tasks, render_issues, render_exploration, render_exploration_full, render_gap). Every macro takes the entire block as input and renders every item.\n\nAtomic composability requires per-item rendering. An agent working on STORY-001 needs FEAT-001 and its specific story, not every feature. Six new block kinds (decisions, spec-reviews, features, framework-gaps, layer-plans, research) have zero macros — they are prompt-unreachable. The contextBlocks agent-spec schema needs item-level selectivity: { name, item, focus, depth } instead of bare block names.\n\nNine shortcomings surfaced: (1) Per-item rendering missing across every existing macro. (2) Six per-item macros missing for new block kinds (render_decision, render_spec_review, render_feature, render_framework_gap, render_layer_plan, render_research). (3) contextBlocks schema needs item-level selectivity. (4) Rendering depth as first-class parameter. (5) Per-field token budget annotations (x-prompt-budget metadata). (6) Rendering-chain traversal subsystem (registry, cross-block query, depth-aware recursion, cycle detection). (7) Bidirectional schema contract not captured as principle. (8) render_gap name occupied by legacy concept. (9) REVIEW-001 blocked on render_decision existence — compile-chain dependency.",
+      "findings_document": "analysis/2026-04-15-blocks-as-prompt-substrate.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "pi-project-workflows repo state as of 2026-04-15"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-15T00:00:00Z",
+      "stale_conditions": [
+        "packages/pi-workflows/templates/shared/macros.md gains per-item macros",
+        "packages/pi-jit-agents/src/types.ts AgentSpec contextBlocks shape changes from string[] to structured",
+        "New block kinds gain rendering macros"
+      ],
+      "citations": [
+        {
+          "label": "12 existing whole-block macros",
+          "path": "packages/pi-workflows/templates/shared/macros.md"
+        },
+        {
+          "label": "contextBlocks injection in compileAgent",
+          "path": "packages/pi-jit-agents/src/compile.ts"
+        },
+        {
+          "label": "AgentSpec type definition",
+          "path": "packages/pi-jit-agents/src/types.ts"
+        }
+      ],
+      "informs": [
+        "issue-041"
+      ],
+      "informed_by": [
+        "R-0002",
+        "R-0005"
+      ],
+      "related_research": [
+        "R-0003",
+        "R-0007"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "R-0007",
+      "title": "Per-step prompt composition — minimal-context agent role specifications for 17 agent kinds",
+      "status": "complete",
+      "layer": "L2",
+      "type": "investigative",
+      "question": "For each agent role in the ten-phase lifecycle and monitor/query subsystem, what is the exact context each step needs and what must be explicitly excluded to prevent prompt pollution?",
+      "method": "code-inspection",
+      "scope": [
+        "packages/pi-jit-agents/src/ (agent spec compilation, dispatch)",
+        "packages/pi-workflows/src/ (step executors, dispatch)",
+        "packages/pi-behavior-monitors/ (monitor classify agents, collectors)",
+        "Ten-phase lifecycle from R-0005 process articulation"
+      ],
+      "findings_summary": "Articulates minimal-context specifications for 17 distinct agent roles across four categories: ten process agents (intention-capture, research, spec-drafting, spec-review, plan-drafting, plan-review, implementation, impl-review, verification, learning-capture), five monitor classify agents (hedge, fragility, work-quality, commit-hygiene, unauthorized-action), and two query/introspection agents (status summarizer, triage).\n\nFive context classes identified: ambient (mandates, framework delimiters, output format), block-item injected (one entry from a block at specified depth), block-whole injected (entire block), collector-populated (session data from monitor collectors), and tool-access granted (dispatch context tools field). Each agent role uses a specific subset.\n\nThe minimal-context principle repeated across all 17 roles: work-scoped context (the specific item being worked on) always present at depth=0, role-scoped context always present at depth=0, ambient context always present, everything else excluded. The summary table maps each of 17 agent kinds against 13 context columns (project, conventions, architecture, domain, decisions, features, reviews, research, findings, gaps, patterns, session, tools).\n\nFive new process refinements surfaced: (1) Agent spec must declare contextBlocks with item-level selectivity, depth, and focus. (2) Collectors must be first-class in pi-jit-agents, not monitor-only. (3) Exclusion must be explicit in agent spec (context_excludes field). (4) Ambient context composition must be declarative (L5 block injected via ambient contextBlocks). (5) Per-agent-role token budgets should be pre-computed before dispatch.",
+      "findings_document": "analysis/2026-04-15-runtime-step-context.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "pi-project-workflows repo state as of 2026-04-15"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-15T00:00:00Z",
+      "stale_conditions": [
+        "Agent spec schema (AgentSpec type in pi-jit-agents) gains contextBlocks item-level selectivity",
+        "Monitor collectors move from pi-behavior-monitors to pi-jit-agents",
+        "New agent roles added beyond the 17 articulated here"
+      ],
+      "citations": [
+        {
+          "label": "Agent spec compilation pipeline",
+          "path": "packages/pi-jit-agents/src/compile.ts"
+        },
+        {
+          "label": "AgentSpec type with contextBlocks",
+          "path": "packages/pi-jit-agents/src/types.ts"
+        },
+        {
+          "label": "Monitor classify dispatch with collectors",
+          "path": "packages/pi-behavior-monitors/index.ts"
+        },
+        {
+          "label": "Workflow step executors",
+          "path": "packages/pi-workflows/src/"
+        },
+        {
+          "label": "Process articulation ten-phase lifecycle",
+          "path": "analysis/2026-04-15-process-articulation.md"
+        }
+      ],
+      "informs": [
+        "issue-041",
+        "issue-042"
+      ],
+      "informed_by": [
+        "R-0005",
+        "R-0006"
+      ],
+      "related_research": [
+        "R-0002",
+        "R-0003"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "R-0008",
+      "title": "The Fully-Instrumented Specification Loop — curation and derivability assessment",
+      "status": "complete",
+      "layer": "L2",
+      "type": "curation",
+      "question": "Does the SYNTH-originated Fully-Instrumented Specification Loop pattern (31 artifact types, ~40 transitions, 10 verifier boundaries, 18 invariants) derive from pi-project-workflows primitives, and what framework gaps does the mapping expose?",
+      "method": "curation of external document",
+      "scope": [
+        "The Fully-Instrumented Specification Loop document (recovered from SYNTH project via Claude History Browser)",
+        "pi-project-workflows framework as of 2026-04-14",
+        ".project/ block schemas and workflow primitives"
+      ],
+      "findings_summary": "The Fully-Instrumented Specification Loop describes a specification-conformance verification loop with 31 artifact types across 9 categories (pre-flight, specification, decomposition, pre-implementation verification, planning, execution, verification, triage, historical), ~40 named transitions, 10 verifier boundaries (V1–V10), 18 invariants, ~15 agent stances, and 11 meta-infrastructure elements. Built incrementally in SYNTH in response to specific verification failures, not designed upfront.\n\nEvery element maps to pi-project-workflows primitives: artifacts → schema-driven blocks, transitions → workflow.yaml steps, verifier boundaries → monitor specs, findings state machine → block with status enum + cross-block validation, cross-audit schema alignment → .project/schemas/ registry, orchestrator-subagent boundary → subprocess-isolated step dispatch, fresh-context verifiers → pi-jit-agents executeAgent.\n\nFour framework capabilities the document requires that our framework lacks: (1) Schema-enforced authority matrix — 'only user can advance finding to decided' not expressible via schemas alone. (2) found_by authorship attestation as write-time convention. (3) Finding state machine with transition gates — AJV validates state membership but not transition validity. (4) Clustering and resolution-task artifacts as canonical bundled schemas.\n\nFive concrete work items surfaced: cross-block state machine validation, authorship attestation convention, bundled canonical schemas for audit pattern, incident cross-reference in feedback-memory block, verifier grid as validator category. The document validates our framework direction: every open issue (028, 030, 031, 036, 041, 045, 050) is something SYNTH built by hand.",
+      "findings_document": "analysis/The Fully-Instrumented Specification Loop.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "SYNTH project Claude History Browser recovery as of 2026-04-14"
+        ],
+        "external_refs": [
+          "~/.claude/cache/chb/ClaudeHistory.sqlite (source of SYNTH evidence)",
+          "~/.claude/projects/-Users-david-Projects-MUSE-SYNTH/memory/ (SYNTH feedback memory files)"
+        ]
+      },
+      "grounded_at": "2026-04-14T00:00:00Z",
+      "stale_conditions": [
+        "Framework closes issues 028, 030, 031, 036, 041, 045, 050 (changes derivability assessment)",
+        "SYNTH project updated with new verification loop layers",
+        "pi-project gains state-machine validation (FGAP-005) or authorship attestation (FGAP-004)"
+      ],
+      "citations": [
+        {
+          "label": "SYNTH specification loop source document",
+          "path": "analysis/The Fully-Instrumented Specification Loop.md"
+        },
+        {
+          "label": "SYNTH feedback memory files",
+          "url": "~/.claude/projects/-Users-david-Projects-MUSE-SYNTH/memory/"
+        },
+        {
+          "label": "Claude History Browser cache",
+          "url": "~/.claude/cache/chb/ClaudeHistory.sqlite"
+        }
+      ],
+      "informs": [
+        "issue-058",
+        "issue-059"
+      ],
+      "informed_by": [],
+      "related_research": [
+        "R-0009"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-14T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-14T00:00:00Z"
+    },
+    {
+      "id": "R-0009",
+      "title": "Spec-loop derivability — mapping the Fully-Instrumented Specification Loop against pi-project-workflows",
+      "status": "complete",
+      "layer": "L2",
+      "type": "comparative",
+      "question": "Can every element of the SYNTH specification loop (artifacts, transitions, verifiers, invariants, meta-infrastructure) be expressed using pi-project-workflows primitives, and what gaps remain?",
+      "method": "code-inspection",
+      "scope": [
+        "analysis/The Fully-Instrumented Specification Loop.md (source pattern)",
+        "pi-project-workflows framework as of 2026-04-13",
+        ".project/ block schemas, workflow executor, pi-jit-agents, pi-behavior-monitors"
+      ],
+      "findings_summary": "Systematic element-by-element mapping of the SYNTH specification loop against pi-project-workflows. All 31 artifact types map to schema-driven blocks under .project/ or workflow run artifacts under .workflows/. All ~40 transitions map to .workflow.yaml steps with agent specs. All 10 verifier boundaries (V1–V10) map to monitor specs with .agent.yaml classify agents. All 18 invariants are expressible as combinations of schema validation, cross-block validation, and monitor enforcement.\n\nZero artifacts require TypeScript — each is a JSON Schema authored by the user, with pi-project's generic block-CRUD tools handling read/write/validate. The methodology is content that runs ON the framework; the framework is outcome-agnostic.\n\nFour capability gaps confirmed: (1) Schema-enforced authority matrix (M4) — who-can-write-what not expressible. (2) Authorship attestation (found_by) as write-time convention. (3) Finding state machine transition validity (not just membership). (4) Canonical bundled schemas for audit pattern (18-field findings, 15-field resolution tasks). Five concrete work items identified for closing the derivability gap. Assessment: the loop is derivable from our platonic ideal; the gap is exactly the open issues we already track.",
+      "findings_document": "analysis/2026-04-13-spec-loop-derivability.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "pi-project-workflows repo state as of 2026-04-13"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-13T00:00:00Z",
+      "stale_conditions": [
+        "Framework closes the four capability gaps identified (authority matrix, authorship, transition validation, bundled schemas)",
+        "The Fully-Instrumented Specification Loop document is revised with new elements",
+        "pi-project-workflows issue set changes materially (issues 028–065)"
+      ],
+      "citations": [
+        {
+          "label": "Spec loop source document",
+          "path": "analysis/The Fully-Instrumented Specification Loop.md"
+        },
+        {
+          "label": "pi-project block-api",
+          "path": "packages/pi-project/src/block-api.ts"
+        },
+        {
+          "label": "pi-workflows workflow executor",
+          "path": "packages/pi-workflows/src/workflow-executor.ts"
+        },
+        {
+          "label": "pi-jit-agents dispatch runtime",
+          "path": "packages/pi-jit-agents/src/jit-runtime.ts"
+        },
+        {
+          "label": "pi-behavior-monitors classify pipeline",
+          "path": "packages/pi-behavior-monitors/index.ts"
+        }
+      ],
+      "informs": [
+        "issue-058",
+        "issue-059"
+      ],
+      "informed_by": [
+        "R-0008"
+      ],
+      "related_research": [
+        "R-0010",
+        "R-0011"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-13T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-13T00:00:00Z"
+    },
+    {
+      "id": "R-0010",
+      "title": "gsd-2 derivability — planning methodology and autonomous mode against pi-project-workflows primitives",
+      "status": "complete",
+      "layer": "L1",
+      "type": "comparative",
+      "question": "Is gsd-2's planning methodology (Milestone→Slice→Task hierarchy, context files, decisions register, codebase map, parallel execution, verification gates, 20+ auto-*.ts autonomous behaviors) derivable from pi-project-workflows primitives, and what framework gaps does the mapping expose?",
+      "method": "code-inspection",
+      "scope": [
+        "gsd-2 monorepo (~2581 files) as observed 2026-04",
+        "gsd extension source: src/resources/extensions/gsd/ (~60+ TypeScript files)",
+        "pi-project-workflows framework open issues (001–065)"
+      ],
+      "findings_summary": "gsd-2 is a fork-and-absorb of the pi ecosystem containing pi-ai, pi-coding-agent, pi-tui, and pi-agent-core as packages alongside gsd-specific infrastructure (daemon, mcp-server, native, studio, vscode-extension, web). Its planning uses strict Milestone→Slice→Task hierarchy with markdown state files in .gsd/, checkbox parsing, and inline metadata tags.\n\ngsd-2's planning methodology IS derivable: milestone/slice/task schemas map to .project/ blocks, context files map to contextBlocks injection, DECISIONS.md maps to decisions.json, STATE.md maps to projectState() SDK, CODEBASE.md maps to architecture.json, parallel slice execution maps to DAG parallelism, verification gates map to monitor: step type. All methodology is expressible as schemas + YAML + agent specs.\n\ngsd-2's autonomous mode (20+ auto-*.ts files) is ALSO derivable but exposes every gap we know about: auto-detect-stuck → stuck-detection monitor, auto-budget → token-budget monitor, auto-recovery → recovery workflows from monitor FLAG verdicts, auto-verification → monitor: step type (issue-050 blocks this), auto-worktree → workflow step type, auto-dashboard → projectState() rendering, auto-observability → execution trace debugger (issue-036).\n\nNine specific framework issues required: working monitor verification gates (042/050), execution trace debugger (036), block write-back (028), writeback monitor (030), scheduled re-execution (031), token budgeting (042), per-monitor collectors (035), monitor tuning (038), SDK execution history (037). gsd-2 has two workflow engines (custom-workflow-engine.ts and dev-workflow-engine.ts) because they tried to build the framework inside their application. Our platonic form is what that framework should have been.",
+      "findings_document": "analysis/gsd-2-derivability.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "gsd-2 monorepo as observed 2026-04 (external, not version-pinned)"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-10T00:00:00Z",
+      "stale_conditions": [
+        "gsd-2 restructures its planning methodology or workflow engines",
+        "pi-project-workflows closes the nine blocking issues (028, 030, 031, 035, 036, 037, 038, 042, 050)",
+        "gsd-2 adopts pi-project-workflows as its planning substrate"
+      ],
+      "citations": [
+        {
+          "label": "gsd-2 custom workflow engine",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/custom-workflow-engine.ts"
+        },
+        {
+          "label": "gsd-2 dev workflow engine",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/dev-workflow-engine.ts"
+        },
+        {
+          "label": "gsd-2 parallel orchestrator",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/parallel-orchestrator.ts"
+        },
+        {
+          "label": "gsd-2 auto-mode files (20+)",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/auto-*.ts"
+        }
+      ],
+      "informs": [
+        "issue-028",
+        "issue-030",
+        "issue-031",
+        "issue-035",
+        "issue-036",
+        "issue-037",
+        "issue-038",
+        "issue-050"
+      ],
+      "informed_by": [],
+      "related_research": [
+        "R-0011",
+        "R-0009"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-10T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-10T00:00:00Z"
+    },
+    {
+      "id": "R-0011",
+      "title": "gsd-2 foundational intelligence pipeline — four-layer project onboarding and context engineering",
+      "status": "complete",
+      "layer": "L1",
+      "type": "comparative",
+      "question": "How does gsd-2 establish foundational intelligence about a project (codebase mapping, vision capture, staged research, skill discovery), and does each layer map to pi-project-workflows primitives?",
+      "method": "code-inspection",
+      "scope": [
+        "gsd-2 monorepo: src/resources/extensions/gsd/codebase-generator.ts",
+        "gsd-2 prompts: discuss.md, research-milestone.md, research-slice.md, parallel-research-slices.md",
+        "gsd-2 templates: research.md",
+        "gsd-2: src/resources/extensions/gsd/skill-discovery.ts",
+        "pi-project-workflows framework primitives"
+      ],
+      "findings_summary": "gsd-2 builds project intelligence through a four-layer sequential pipeline: (1) Codebase map generation — walks git ls-files, groups by directory, produces .gsd/CODEBASE.md with fingerprint + TTL staleness. (2) Vision capture — human-in-the-loop structured interview with mandatory pre-investigation pass (rg, find, web search before first question), anti-reduction rule, produces REQUIREMENTS.md. (3) Staged research — two tiers: milestone research (strategic, broad, shaped for roadmap planner) and slice research (tactical, per-slice, shaped for planner agent), with parallel dispatch of one subagent per slice. Research depth calibrated (deep/targeted/light) based on uncertainty. (4) Skill discovery — directory-watching for new skills, injection into system prompt via before_agent_start hook.\n\nAll four layers map to pi-project-workflows: codebase map → workflow writing to architecture.json block with render macro, vision capture → discussion workflow outputting to requirements.json, staged research → forEach workflow step with parallel research agents writing to research block, skill discovery → directory-watching monitor (issue-051). Cross-cutting patterns: inlined context preloading IS contextBlocks, forward intelligence between slices IS filtered contextBlocks reads (issue-041), research templates ARE agent specs without the framework to hold them.\n\nNew gaps surfaced: scoped/filtered contextBlocks reads (issue-041 — gsd-2's forward intelligence requires filtering verification/summary blocks to depends_on slice IDs), directory-watching monitor (issue-051), dynamic model selection (issue-052), pre-execution monitor gating on required tool calls (issue-053), per-agent tool-call budget tracking (issue-054). Every piece of gsd-2's intelligence pipeline is either already in our framework, in our open issues, or filed during this analysis.",
+      "findings_document": "analysis/gsd-2-foundational-intelligence.md",
+      "grounding": {
+        "dependencies": [],
+        "revisions": [
+          "gsd-2 monorepo as observed 2026-04 (external, not version-pinned)"
+        ],
+        "external_refs": []
+      },
+      "grounded_at": "2026-04-10T00:00:00Z",
+      "stale_conditions": [
+        "gsd-2 restructures its intelligence pipeline",
+        "pi-project-workflows closes issues 041, 051, 052, 053, 054",
+        "gsd-2's codebase-generator.ts or research templates materially change"
+      ],
+      "citations": [
+        {
+          "label": "gsd-2 codebase generator",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/codebase-generator.ts"
+        },
+        {
+          "label": "gsd-2 discussion prompt (vision capture)",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/prompts/discuss.md"
+        },
+        {
+          "label": "gsd-2 milestone research prompt",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/prompts/research-milestone.md"
+        },
+        {
+          "label": "gsd-2 slice research prompt",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/prompts/research-slice.md"
+        },
+        {
+          "label": "gsd-2 parallel research dispatch",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/prompts/parallel-research-slices.md"
+        },
+        {
+          "label": "gsd-2 research output template",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/templates/research.md"
+        },
+        {
+          "label": "gsd-2 skill discovery",
+          "url": "gsd-2 monorepo: src/resources/extensions/gsd/skill-discovery.ts"
+        }
+      ],
+      "informs": [
+        "issue-041",
+        "issue-051",
+        "issue-052",
+        "issue-053",
+        "issue-054"
+      ],
+      "informed_by": [
+        "R-0010"
+      ],
+      "related_research": [
+        "R-0009"
+      ],
+      "produces_findings": [],
+      "supersedes": [],
+      "superseded_by": "",
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-10T00:00:00Z",
+      "conducted_by": "agent/claude-opus-4-6",
+      "conducted_at": "2026-04-10T00:00:00Z"
+    }
+  ]
+}

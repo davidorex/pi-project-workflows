@@ -13,3 +13,5 @@ CLAUDE.md
 packages/*/.workflow/
 packages/*/.project/
 packages/*/.workflows/
+# Interim working files — prompts, helper scripts, candidates, dispatch outputs
+tmp/

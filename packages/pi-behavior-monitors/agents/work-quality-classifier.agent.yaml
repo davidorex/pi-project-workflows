@@ -1,7 +1,8 @@
 name: work-quality-classifier
 role: sensor
 description: Classifies work quality issues in agent output
-model: claude-sonnet-4-6
+# Route through openrouter (only credential in ~/.pi/agent/auth.json). Use dot form per openrouter registry; dash form (claude-sonnet-4-6) is the anthropic-direct id.
+model: openrouter/anthropic/claude-sonnet-4.6
 thinking: "on"
 output:
   format: json

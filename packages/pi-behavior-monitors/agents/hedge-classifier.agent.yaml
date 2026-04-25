@@ -1,7 +1,8 @@
 name: hedge-classifier
 role: sensor
 description: Classifies whether assistant deviated from user intent
-model: claude-sonnet-4-6
+# Route through openrouter (only credential in ~/.pi/agent/auth.json). Use dot form per openrouter registry; dash form (claude-sonnet-4-6) is the anthropic-direct id.
+model: openrouter/anthropic/claude-sonnet-4.6
 thinking: "on"
 output:
   format: json

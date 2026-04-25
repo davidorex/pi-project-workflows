@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import type { AssistantMessage, Model } from "@mariozechner/pi-ai";
 import { AgentDispatchError } from "./errors.js";
-import { buildPhantomTool, executeAgent } from "./jit-runtime.js";
+import { buildPhantomTool, executeAgent, normalizeToolChoice } from "./jit-runtime.js";
 import type { CompiledAgent } from "./types.js";
 
 const FIXTURES_DIR = path.resolve(import.meta.dirname, "..", "test-fixtures");
@@ -40,6 +40,88 @@ describe("buildPhantomTool", () => {
 		assert.deepStrictEqual(verdictValues, ["CLEAN", "FLAG", "NEW"].slice().sort());
 		assert.ok(Array.isArray(params.required), "parameters must declare required array");
 		assert.ok((params.required as string[]).includes("verdict"), "required array must include 'verdict'");
+	});
+});
+
+describe("normalizeToolChoice", () => {
+	it("emits Anthropic-format object for anthropic-messages", () => {
+		assert.deepStrictEqual(normalizeToolChoice("anthropic-messages", "classify_verdict"), {
+			type: "tool",
+			name: "classify_verdict",
+		});
+	});
+
+	it("emits Anthropic-format object for bedrock-converse-stream (driver translates internally)", () => {
+		assert.deepStrictEqual(normalizeToolChoice("bedrock-converse-stream", "classify_verdict"), {
+			type: "tool",
+			name: "classify_verdict",
+		});
+	});
+
+	it("emits OpenAI function-form for openai-completions (the post-7edf3a2 OpenRouter route)", () => {
+		assert.deepStrictEqual(normalizeToolChoice("openai-completions", "classify_verdict"), {
+			type: "function",
+			function: { name: "classify_verdict" },
+		});
+	});
+
+	it("emits OpenAI function-form for mistral-conversations (driver mapToolChoice reads choice.function.name)", () => {
+		assert.deepStrictEqual(normalizeToolChoice("mistral-conversations", "classify_verdict"), {
+			type: "function",
+			function: { name: "classify_verdict" },
+		});
+	});
+
+	it("emits OpenAI function-form for openai-responses (canonical shape; pi-ai 0.70.2 driver does not honor toolChoice)", () => {
+		assert.deepStrictEqual(normalizeToolChoice("openai-responses", "classify_verdict"), {
+			type: "function",
+			function: { name: "classify_verdict" },
+		});
+	});
+
+	it("emits OpenAI function-form for openai-codex-responses (canonical shape; pi-ai 0.70.2 driver hardcodes tool_choice: 'auto')", () => {
+		assert.deepStrictEqual(normalizeToolChoice("openai-codex-responses", "classify_verdict"), {
+			type: "function",
+			function: { name: "classify_verdict" },
+		});
+	});
+
+	it("emits OpenAI function-form for azure-openai-responses (canonical shape; pi-ai 0.70.2 driver does not honor toolChoice)", () => {
+		assert.deepStrictEqual(normalizeToolChoice("azure-openai-responses", "classify_verdict"), {
+			type: "function",
+			function: { name: "classify_verdict" },
+		});
+	});
+
+	it("emits string 'any' for google-generative-ai (drivers accept only string mode)", () => {
+		assert.strictEqual(normalizeToolChoice("google-generative-ai", "classify_verdict"), "any");
+	});
+
+	it("emits string 'any' for google-gemini-cli (drivers accept only string mode)", () => {
+		assert.strictEqual(normalizeToolChoice("google-gemini-cli", "classify_verdict"), "any");
+	});
+
+	it("emits string 'any' for google-vertex (drivers accept only string mode)", () => {
+		assert.strictEqual(normalizeToolChoice("google-vertex", "classify_verdict"), "any");
+	});
+
+	it("falls back to Anthropic-format for unknown api strings (matches pre-fix executeAgent behavior)", () => {
+		assert.deepStrictEqual(normalizeToolChoice("custom-experimental-api", "classify_verdict"), {
+			type: "tool",
+			name: "classify_verdict",
+		});
+	});
+
+	it("threads the toolName parameter through every branch unchanged", () => {
+		assert.deepStrictEqual(normalizeToolChoice("anthropic-messages", "jit_result"), {
+			type: "tool",
+			name: "jit_result",
+		});
+		assert.deepStrictEqual(normalizeToolChoice("openai-completions", "jit_result"), {
+			type: "function",
+			function: { name: "jit_result" },
+		});
+		assert.strictEqual(normalizeToolChoice("google-vertex", "jit_result"), "any");
 	});
 });
 

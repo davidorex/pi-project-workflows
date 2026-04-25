@@ -42,6 +42,7 @@
 	},
 	"dependencies": {
 		"nunjucks": "^3.2.4",
+		"@davidorex/pi-jit-agents": "^0.14.4",
 		"@davidorex/pi-project": "^0.14.4",
 		"@davidorex/pi-workflows": "^0.14.4",
 		"@mariozechner/pi-ai": "^0.70.2",

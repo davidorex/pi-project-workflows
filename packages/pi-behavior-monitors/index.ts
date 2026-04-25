@@ -12,6 +12,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizeToolChoice } from "@davidorex/pi-jit-agents";
 import { readBlock } from "@davidorex/pi-project/block-api";
 import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import { createAgentLoader } from "@davidorex/pi-workflows/agent-spec";
@@ -1242,7 +1243,7 @@ async function classifyViaAgent(
 			headers: auth.headers,
 			maxTokens: 1024,
 			signal,
-			toolChoice: { type: "tool", name: "classify_verdict" },
+			toolChoice: normalizeToolChoice(model.api, "classify_verdict"),
 		},
 	);
 

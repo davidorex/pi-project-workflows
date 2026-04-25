@@ -58,6 +58,90 @@ export function buildPhantomTool(
 }
 
 /**
+ * Provider-aware shape returned by `normalizeToolChoice`. The type union
+ * covers every shape that any pi-ai 0.70.2 driver currently honors for
+ * forced structured output:
+ *
+ *   - Anthropic-native object form (anthropic-messages, bedrock-converse-stream)
+ *   - OpenAI-compatible function form (openai-completions, mistral-conversations,
+ *     and the canonical shape for openai-responses / openai-codex-responses /
+ *     azure-openai-responses if/when those drivers begin honoring toolChoice)
+ *   - Google string-mode form (google-generative-ai, google-gemini-cli,
+ *     google-vertex) — only `"any"` is emitted; specific-tool pinning is
+ *     not exposed by the Google providers in pi-ai 0.70.2
+ *
+ * pi-ai itself accepts any `unknown` here (toolChoice rides on the
+ * `Record<string, unknown>` half of `ProviderStreamOptions`); the explicit
+ * union exists for callers that want compile-time discrimination of the
+ * normalization output.
+ */
+export type NormalizedToolChoice =
+	| { type: "tool"; name: string }
+	| { type: "function"; function: { name: string } }
+	| "any";
+
+/**
+ * Map a pi-ai `Api` kind plus a phantom tool name to the `toolChoice` shape
+ * the corresponding driver expects.
+ *
+ * This is the architectural normalization point referenced by ADR-0003: the
+ * forced-toolChoice protocol divergence across Anthropic / OpenAI-compatible
+ * / Google providers is collapsed here, not at each consumer call site.
+ *
+ * Coverage map (pi-ai 0.70.2 — verified against
+ * `node_modules/@mariozechner/pi-ai/dist/providers/*`):
+ *
+ *   - `anthropic-messages` — passes object through unchanged. Anthropic
+ *     Messages API expects `{type:"tool", name}`.
+ *   - `bedrock-converse-stream` — accepts `{type:"tool", name}` and translates
+ *     internally to Bedrock Converse's `{tool:{name}}` shape (driver line
+ *     611-612 of amazon-bedrock.js).
+ *   - `openai-completions` — passthrough. OpenAI / OpenRouter / OpenAI-
+ *     compatible gateways expect `{type:"function", function:{name}}` or
+ *     string `"required"`. Mismatch here is the proximate cause of the
+ *     "Tool '' not found in provided tools" 400 surfaced post-7edf3a2.
+ *   - `mistral-conversations` — driver passes the object through its own
+ *     `mapToolChoice` which reads `choice.function.name`, so the OpenAI-
+ *     compatible function form is required.
+ *   - `openai-responses`, `openai-codex-responses`, `azure-openai-responses`
+ *     — pi-ai 0.70.2 drivers do NOT honor `options.toolChoice` (codex hard-
+ *     codes `tool_choice: "auto"`; the other two drop it entirely). The
+ *     OpenAI-compatible function form is emitted here as the canonical
+ *     shape for the day pi-ai begins forwarding it; today the value is
+ *     ignored and forced toolChoice is unenforceable on these drivers.
+ *     Tracked as a pi-ai upstream gap; do not paper over here.
+ *   - `google-generative-ai`, `google-gemini-cli`, `google-vertex` — drivers
+ *     accept only string `"any" | "auto" | "none"` (mapped to FunctionCalling-
+ *     ConfigMode). Specific-tool pinning is not exposed. `"any"` forces
+ *     tool use; adequate for the phantom-tool single-tool pattern (the model
+ *     has only one tool to call) but fails to pin a specific tool when
+ *     multiple tools are present.
+ *   - Unknown / custom api strings — Anthropic-format default. Matches the
+ *     pre-fix behavior that worked end-to-end for `anthropic-messages` and
+ *     preserves backward compatibility for any consumer that registered a
+ *     custom api provider expecting that shape.
+ */
+export function normalizeToolChoice(api: Api, toolName: string): NormalizedToolChoice {
+	switch (api) {
+		case "anthropic-messages":
+		case "bedrock-converse-stream":
+			return { type: "tool", name: toolName };
+		case "openai-completions":
+		case "mistral-conversations":
+		case "openai-responses":
+		case "openai-codex-responses":
+		case "azure-openai-responses":
+			return { type: "function", function: { name: toolName } };
+		case "google-generative-ai":
+		case "google-gemini-cli":
+		case "google-vertex":
+			return "any";
+		default:
+			return { type: "tool", name: toolName };
+	}
+}
+
+/**
  * Convert a JSON Schema object to a TypeBox schema.
  *
  * Handles the shape used by verdict.schema.json and the initial test fixtures.
@@ -192,7 +276,7 @@ export async function executeAgent(
 		if (compiled.outputSchema) {
 			const phantomTool = buildPhantomTool(compiled.outputSchema);
 			context.tools = [phantomTool];
-			options.toolChoice = { type: "tool", name: phantomTool.name };
+			options.toolChoice = normalizeToolChoice(dispatch.model.api, phantomTool.name);
 		}
 
 		response = await completeFn(dispatch.model as Model<Api>, context, options);

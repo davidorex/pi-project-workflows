@@ -113,6 +113,42 @@
 
 ---
 
+## F-011 — Forced-toolChoice protocol divergence: Anthropic-format hardcoded at two dispatch sites; fails on openai-completions providers (OpenRouter)
+
+- **Target block:** issues.json (category `bug`, priority `P0` while monitors are routed through openrouter; package `pi-jit-agents` and `pi-behavior-monitors`) and decisions.json (DEC-0001..0003 already track the deeper migration). Resolved on this branch by `normalizeToolChoice`; this entry is the post-mortem record.
+- **Source:** post-7edf3a2 monitor-classify runtime failures observed by the user; root-cause investigation against pi-ai 0.70.2 driver source.
+- **Symptom:** after F-002 fix routed the five classifier YAMLs through `openrouter/anthropic/claude-sonnet-4.6`, classify dispatch began failing with `"Tool '' not found in provided tools"` 400 from the OpenRouter validator. The error message has no obvious reference to tool_choice format. `stopReason: "error"`, no tool call in response.
+- **Established root cause:**
+  - `pi-jit-agents/src/jit-runtime.ts:195` set `options.toolChoice = { type: "tool", name: phantomTool.name }` — Anthropic-native format — for every dispatch regardless of resolved api.
+  - `pi-behavior-monitors/index.ts:1245` set the same Anthropic-native format for its independent classify dispatch path.
+  - pi-ai 0.70.2's `openai-completions` driver passes `tool_choice` through unchanged (line 396-397 of dist) — no provider-aware normalization at the pi-ai layer.
+  - OpenRouter (registered with `api: "openai-completions"`) validates as OpenAI-compatible: looks for `tool_choice.function.name`, finds nothing, rejects with the empty-tool-name error. F-002's "translated upstream" assumption did not hold for the `claude-sonnet-4.6` route.
+- **Architecturally correct fix:** per ADR-0003, normalize at the pi-jit-agents execute boundary, not at consumer call sites. Landed as `normalizeToolChoice(api, toolName)` exported from `@davidorex/pi-jit-agents`. Adopted at executeAgent line 195 and at classifyViaAgent line 1245. Coverage map per pi-ai 0.70.2: anthropic-messages and bedrock-converse-stream → `{type:"tool", name}`; openai-completions and mistral-conversations → `{type:"function", function:{name}}`; google-* → string `"any"`; unknown api strings → Anthropic-format default.
+- **Independence from FEAT-001 STORY-005 / decision arc:** the helper requires only `model.api` (already on the resolved `Model<Api>` object), not parseModelSpec semantics or the thinking-seam ownership decisions. The full classifyViaAgent → executeAgent migration remains gated on DEC-0001/DEC-0002/DEC-0003 / REVIEW-001; this work establishes the architectural normalization point without enacting full migration.
+- **Verification:** 12 unit tests in `jit-runtime.test.ts` cover every `KnownApi` value plus unknown-string fallback; smoke test `jit-runtime.smoke.test.ts` round-trips a real classify dispatch through openrouter (api `openai-completions`) and produces a valid CLEAN/FLAG/NEW verdict; pi end-to-end run in this worktree shows clean stderr (no `[fragility] classify failed` or `Tool '' not found` noise).
+
+---
+
+## F-012 — pi-ai 0.70.2 drivers `openai-responses`, `openai-codex-responses`, and `azure-openai-responses` do not honor `options.toolChoice`; forced-tool-use is unenforceable on these routes
+
+- **Target block:** issues.json (category `cleanup`, priority `medium`, package — repo-level since pi-ai is upstream; the issue is "track until pi-ai upstream addresses it"). Surfaced while implementing F-011 fix.
+- **Source:** driver inventory grep against `node_modules/@mariozechner/pi-ai/dist/providers/*.js` during F-011 work.
+- **Symptom:** `openai-responses.js` does not reference `options.toolChoice` at all; `openai-codex-responses.js` hardcodes `tool_choice: "auto"` at line 219 and ignores caller input; `azure-openai-responses.js` likewise drops the option. Compare with `openai-completions.js:396-397` which forwards toolChoice to `params.tool_choice` for the request, and `anthropic.js:712-717` which forwards to `params.tool_choice` after string-wrapping.
+- **Impact:** any agent or monitor that depends on forced-tool-use for structured output (the phantom-tool pattern) cannot rely on it when dispatched through these three drivers. The model is free to ignore the tool. `normalizeToolChoice` emits the canonical OpenAI-compatible function form for these api kinds — the value is correct shape, but the drivers do not currently forward it.
+- **Candidate paths:** file an upstream issue against `@mariozechner/pi-ai` for `tool_choice` forwarding parity across openai-* drivers; in the meantime, the framework should warn at dispatch time when a phantom-tool agent resolves to one of these api kinds (visible degradation rather than silent failure). Explicit warning seam not yet implemented; tracked here so it is not lost.
+
+---
+
+## F-013 — Smoke test `jit-runtime.smoke.test.ts` constructed `Model<Api>` inline without `api` field; pre-existing latent failure exposed by F-011 fix
+
+- **Target block:** issues.json (category `bug`, priority `P1`, package `pi-jit-agents`). Resolved on this branch as part of the F-011 work.
+- **Source:** uncovered when running the smoke test against `OPENROUTER_API_KEY` after the F-011 fix landed; the dispatcher rejected with `No API provider registered for api: undefined`.
+- **Symptom:** the smoke test (added in commit `11a4069`) constructed `const model = { provider, id: modelId } as unknown as Model<Api>` per a comment claiming `getModel` was not exported from pi-ai. The cast was a lie — the resulting object lacked the `api` field that pi-ai's `resolveApiProvider` requires to dispatch to a driver. The test would have failed with `OPENROUTER_API_KEY` set at any time post-11a4069.
+- **Impact:** the test exists as the canonical verification of the phantom-tool round-trip but was non-functional. Whoever ran it locally with credentials would see an unrelated `undefined` error rather than a real classify result.
+- **Resolution:** rewritten to use pi-ai's exported `getModel(provider, modelId)` (verified present in pi-ai 0.70.2 `dist/models.d.ts:6`). The returned Model<Api> carries the correct `api` value (`"openai-completions"` for openrouter), unblocking both the dispatcher and `normalizeToolChoice`. The earlier comment in the test file has been updated to record the corrected understanding.
+
+---
+
 ## Reification plan when the write surface is restored
 
 Each fragility above should land in its target block via:

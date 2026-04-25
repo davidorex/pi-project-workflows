@@ -17,16 +17,18 @@
  * Default model: openrouter / anthropic/claude-3.5-haiku (cheap, tool_use capable).
  * Override with TEST_MODEL_PROVIDER + TEST_MODEL_ID env vars.
  *
- * Note: pi-ai does not export `getModel`; we construct the model object inline
- * as a `Model<Api>` cast (mirrors the MOCK_MODEL pattern in jit-runtime.test.ts
- * but uses a real provider/id pair).
+ * Note: pi-ai 0.70.2 exports `getModel` for typed registry lookups. The earlier
+ * comment ("getModel is not exported from pi-ai") was correct against an older
+ * pi-ai release; the current package surfaces it via models.d.ts. We use
+ * getModel so the resolved Model<Api> object carries the correct `api` field
+ * (load-bearing — pi-ai's stream dispatcher uses it to select the provider
+ * driver, and `normalizeToolChoice` uses it to select the toolChoice shape).
  */
 import assert from "node:assert";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import type { Api, Model } from "@mariozechner/pi-ai";
-import { complete as piAiComplete } from "@mariozechner/pi-ai";
+import { getModel, complete as piAiComplete } from "@mariozechner/pi-ai";
 import { compileAgent } from "./compile.js";
 import { executeAgent } from "./jit-runtime.js";
 import { createTemplateEnv } from "./template.js";
@@ -45,9 +47,12 @@ describe("smoke: forced-tool-use round-trip via real LLM dispatch", () => {
 		const provider = process.env.TEST_MODEL_PROVIDER ?? "openrouter";
 		const modelId = process.env.TEST_MODEL_ID ?? "anthropic/claude-3.5-haiku";
 
-		// Refinement A fallback: getModel is not exported from pi-ai. Construct
-		// the model object inline as a Model<Api> cast through unknown.
-		const model = { provider, id: modelId } as unknown as Model<Api>;
+		// pi-ai's typed registry-lookup. The returned Model<Api> object carries
+		// `api` (e.g. "openai-completions" for openrouter), which the stream
+		// dispatcher and normalizeToolChoice both depend on. Use double-cast
+		// through unknown because TEST_MODEL_PROVIDER / TEST_MODEL_ID are
+		// runtime strings; getModel is generic over KnownProvider literal types.
+		const model = getModel(provider as Parameters<typeof getModel>[0], modelId as Parameters<typeof getModel>[1]);
 
 		// Inline compiled agent — no template files, no .project/ dependency.
 		const compiled = compileAgent(

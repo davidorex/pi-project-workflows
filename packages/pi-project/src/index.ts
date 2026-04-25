@@ -12,7 +12,7 @@ import type {
 	ExtensionContext,
 } from "@mariozechner/pi-coding-agent";
 import { truncateHead } from "@mariozechner/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
+import { Type } from "typebox";
 import { appendToBlock, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";

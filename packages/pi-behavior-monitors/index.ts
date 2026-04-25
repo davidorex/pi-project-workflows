@@ -18,7 +18,7 @@ import { createAgentLoader } from "@davidorex/pi-workflows/agent-spec";
 import { compileAgentSpec } from "@davidorex/pi-workflows/step-shared";
 import type { AgentSpec } from "@davidorex/pi-workflows/types";
 import type { Api, AssistantMessage, Model, TextContent, Tool, ToolCall } from "@mariozechner/pi-ai";
-import { complete, StringEnum } from "@mariozechner/pi-ai";
+import { complete, StringEnum, Type } from "@mariozechner/pi-ai";
 import type {
 	AgentEndEvent,
 	AgentToolResult,
@@ -31,7 +31,6 @@ import type {
 } from "@mariozechner/pi-coding-agent";
 import { getAgentDir } from "@mariozechner/pi-coding-agent";
 import { Box, Text } from "@mariozechner/pi-tui";
-import { Type } from "@sinclair/typebox";
 import nunjucks from "nunjucks";
 
 const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));

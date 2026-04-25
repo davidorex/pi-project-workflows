@@ -19,8 +19,7 @@
 import fs from "node:fs";
 import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import type { Api, AssistantMessage, Model, ProviderStreamOptions, Tool, ToolCall } from "@mariozechner/pi-ai";
-import { complete as piAiComplete } from "@mariozechner/pi-ai";
-import { Type } from "@sinclair/typebox";
+import { complete as piAiComplete, Type } from "@mariozechner/pi-ai";
 import { AgentDispatchError } from "./errors.js";
 import type { CompiledAgent, DispatchContext, JitAgentResult } from "./types.js";
 

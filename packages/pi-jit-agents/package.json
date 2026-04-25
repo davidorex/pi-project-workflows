@@ -59,8 +59,7 @@
 	},
 	"dependencies": {
 		"@davidorex/pi-project": "^0.14.4",
-		"@mariozechner/pi-ai": "^0.63.1",
-		"@sinclair/typebox": "^0.34.48",
+		"@mariozechner/pi-ai": "^0.70.2",
 		"nunjucks": "^3.2.4",
 		"yaml": "^2.7.1"
 	},

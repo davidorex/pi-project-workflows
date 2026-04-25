@@ -23,9 +23,23 @@ describe("buildPhantomTool", () => {
 	it("builds a tool from the framework verdict.schema.json", () => {
 		const tool = buildPhantomTool(path.join(PACKAGE_SCHEMAS_DIR, "verdict.schema.json"), "classify_verdict");
 		assert.strictEqual(tool.name, "classify_verdict");
-		const params = tool.parameters as Record<string, any>;
+		const params = tool.parameters as Record<string, unknown>;
 		assert.strictEqual(params.type, "object");
-		assert.ok(params.properties?.verdict);
+		const properties = params.properties as Record<string, unknown> | undefined;
+		assert.ok(properties?.verdict, "phantom tool must expose verdict property");
+		const verdictProp = properties.verdict as Record<string, unknown>;
+		function extractEnum(schema: Record<string, unknown>): string[] {
+			if (Array.isArray(schema.enum)) return schema.enum as string[];
+			if (Array.isArray(schema.anyOf))
+				return (schema.anyOf as Array<Record<string, unknown>>).map((e) => e.const as string);
+			if (Array.isArray(schema.oneOf))
+				return (schema.oneOf as Array<Record<string, unknown>>).map((e) => e.const as string);
+			throw new Error(`verdict schema lacks enum/anyOf/oneOf: ${JSON.stringify(schema)}`);
+		}
+		const verdictValues = extractEnum(verdictProp).slice().sort();
+		assert.deepStrictEqual(verdictValues, ["CLEAN", "FLAG", "NEW"].slice().sort());
+		assert.ok(Array.isArray(params.required), "parameters must declare required array");
+		assert.ok((params.required as string[]).includes("verdict"), "required array must include 'verdict'");
 	});
 });
 

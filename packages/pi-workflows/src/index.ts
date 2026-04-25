@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { Type } from "@mariozechner/pi-ai";
 import type {
 	AgentToolResult,
 	AgentToolUpdateCallback,
@@ -14,7 +15,6 @@ import type {
 } from "@mariozechner/pi-coding-agent";
 import { truncateHead } from "@mariozechner/pi-coding-agent";
 import { Key } from "@mariozechner/pi-tui";
-import { Type } from "@sinclair/typebox";
 import { createAgentLoader } from "./agent-spec.js";
 import type { IncompleteRun } from "./checkpoint.js";
 import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } from "./checkpoint.js";

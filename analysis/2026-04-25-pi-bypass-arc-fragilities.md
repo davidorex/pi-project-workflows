@@ -151,6 +151,57 @@
 
 ---
 
+## F-014 — `collectAssistantText` backward-walk + `extractText` text-only filter can return empty under realistic message shapes
+
+- **Target block:** issues.json (category `issue`, priority `high`, package `pi-behavior-monitors`).
+- **Source:** Surface-mapping subagent A on 2026-04-26, after the F-002+F-011 chain landed and live monitor turns produced false-positive verdicts. Cross-references the user's hypothesis-side perspective synthesized the same day: H1 "branch data — collectAssistantText returns empty/stale" — note that issue-018 added a prompt-level workaround for a related symptom but the data-layer mechanism was never investigated.
+- **Symptom:** `pi-behavior-monitors/index.ts:495-503` `collectAssistantText` walks the branch backward and returns text from the FIRST assistant message it encounters. `pi-behavior-monitors/index.ts:457-462` `extractText` filters content blocks to `b.type === "text"` only, dropping `ThinkingContent` and `ToolCall` blocks per pi-ai's `AssistantMessage.content: (TextContent | ThinkingContent | ToolCall)[]`. The combination produces empty `assistant_text` whenever the most-recent assistant message is tool-call-only or thinking-only — the classifier's prompt then literally renders "the assistant's response: ''" and the LLM reasonably concludes "no response."
+- **Distinct from issue-018:** issue-018 was a prompt-level fix ("empty assistant_text with successful tool results is not empty output" guard). The data-layer question — whether `assistant_text` is structurally guaranteed to carry the user-visible response text — was never investigated. F-014 names that data-layer question.
+- **Impact:** every classifier that consumes `assistant_text` (hedge, fragility, work-quality, commit-hygiene, unauthorized-action) is exposed. False positives on `[hedge] classify failed: ... no visible response text` and the equivalent fragility flag observed live on 2026-04-26. The F-002+F-011 chain restored auth and shape correctness; the data-layer empty-string surface remains.
+- **Candidate paths:** (a) `extractText` falls back to thinking content / tool-result content / serialized tool-call shape when no text blocks present (parallel to the `extractResponseText` fix in the verdict-extract path; resolved-by note on the verdict-side issue cited a similar fallback as the canonical pattern); (b) `collectAssistantText` aggregates text across the latest contiguous run of assistant messages rather than returning the first match; (c) prompt template gains an explicit empty-guard that surfaces the empty case to the LLM as "no text was captured by the collector — judge based on tool work alone" instead of rendering an empty quote. Resolution priority depends on F-018 multi-message semantics decision.
+
+---
+
+## F-015 — Prompt-level guards (issue-018 pattern) are advisory; LLM may reason past them and flag anyway
+
+- **Target block:** issues.json (category `issue`, priority `medium`, package `pi-behavior-monitors`).
+- **Source:** User-side synthesis on 2026-04-26 (H2 "semantic — model reasons past guard"). Net new — not previously filed.
+- **Symptom:** issue-018 added text guards to classifier prompts of the shape "empty `assistant_text` with successful tool results is not empty output." The guard is a sentence the LLM reads and weighs against the rest of the prompt; it is not a structural constraint on the verdict. When the rendered prompt strongly emphasizes the empty `assistant_text` quote and the guard is one sentence among many, the LLM may flag anyway and the verdict carries through to side-effects.
+- **Impact:** prompt-level workarounds for data-layer bugs (per F-014) carry residual false-positive risk. The guard reduces but does not eliminate misclassification. Combined with the auto-write path under issue-065, false positives still mutate `.project/issues.json`.
+- **Candidate paths:** (a) move the constraint from advisory text to structured prompt — explicit "if `assistant_text` is empty AND `tool_results` is non-empty, the verdict MUST be CLEAN" with the LLM forced to acknowledge the conditional via a sub-tool or a chain-of-thought field; (b) shift the empty-detection to deterministic code BEFORE the LLM call — short-circuit to CLEAN if collectors signal substantive tool work and no semantic claim to evaluate; (c) treat F-015 as fully blocked on F-014 — fix the data layer, the prompt-level guard becomes unnecessary.
+
+---
+
+## F-016 — Branch state at session resume / mid-session restart unspecified for monitor classify
+
+- **Target block:** issues.json (category `issue`, priority `medium`, package `pi-behavior-monitors`).
+- **Source:** User-side synthesis on 2026-04-26 (H4 "restart state"). Net new — not previously filed.
+- **Symptom:** `getBranch()` returns the current session branch from leaf to root, but the contents of that branch when pi resumes from a checkpoint, restarts mid-conversation, or is invoked fresh against an existing session are not specified in the monitor classify contract. `turn_end` and `message_end` events fire on certain session-state transitions; whether they fire on resume-replay is undocumented. A misfire pattern would be: monitor fires at resume, sees a partially-rehydrated branch, classifier reasons about a stale or missing turn.
+- **Impact:** unobserved by the surface-mapping pass. Hypothesis-only at this point; the classify-debug instrumentation under issue-023 would expose whether resume-replay produces malformed branches in classifier inputs.
+- **Candidate paths:** investigation gated on issue-023 (no diagnostic visibility into classify-time branch state today). Mitigation pre-investigation: explicit branch-state assertion at classify-call entry — refuse to dispatch if the branch is empty or malformed, surface as a non-fatal warning instead of running the classifier on degenerate input.
+
+---
+
+## F-017 — Classifier prompt templates inject `{{ assistant_text }}` with no empty-guard and no positional emphasis
+
+- **Target block:** issues.json (category `cleanup`, priority `medium`, package `pi-behavior-monitors`).
+- **Source:** Surface-mapping subagent A on 2026-04-26 (prompt-template surface). Cross-references the user's H5 "prompt weight — assistant_text buried."
+- **Symptom:** `examples/hedge/classify.md:16-17` renders `The assistant's latest response: "{{ assistant_text }}"`; `examples/fragility/classify.md:25-26` renders `The agent then said: "{{ assistant_text }}"`. Neither template guards against the empty-string case. When the collector returns `""` (per F-014 mechanism), the rendered prompt is literally `The assistant's latest response: ""` — semantically identical to "the assistant said nothing."
+- **Impact:** even after F-014 fixes the data layer, the prompt templates remain fragile against any future collector regression that reintroduces empty strings. No defensive coding at the prompt-render boundary.
+- **Candidate paths:** (a) Nunjucks-conditional rendering — `{% if assistant_text %}The assistant's latest response: "{{ assistant_text }}"{% else %}The collector did not capture any assistant text — judge based on tool_calls and tool_results.{% endif %}`; (b) the empty-detection happens in code before render (per F-015 candidate b); (c) hold pending DEC entry on prompt-template authoring conventions across all classifiers.
+
+---
+
+## F-018 — Multi-message turn "latest response" semantics undefined for tool→text→tool→text patterns
+
+- **Target block:** framework-gaps.json (priority `P2`, package `pi-behavior-monitors`) — this is a structural ambiguity in the classify-input contract, not a single-line bug.
+- **Source:** Surface-mapping subagent A on 2026-04-26. Net new — not previously filed.
+- **Symptom:** A turn that the user perceives as one assistant action may comprise multiple `SessionMessageEntry` records: tool-call message → tool-result → text response → second tool-call → second text response. `collectAssistantText` returns the FIRST assistant message's text walking backward; if the literal final assistant message is tool-call-only, it falls through to the prior text message, which may be the wrong "latest response" semantically. There is no canonical specification of which message constitutes "the response the classifier should evaluate" for multi-message turns.
+- **Impact:** structural — even with F-014's data-layer fixes (e.g., extractText fallback to thinking blocks), the question of WHICH message to extract from in a multi-message turn remains undecided. Classifier verdicts are sensitive to this choice and currently arbitrary.
+- **Candidate paths:** (a) define "the response" as the union of all assistant messages from the most recent user message to the current turn boundary (concatenated) — captures the full agent reasoning chain; (b) define "the response" as the final assistant message only — narrow scope but may miss substantive earlier work; (c) add a per-classifier configuration knob — hedge wants the full chain to verify intent-following, fragility wants only the final claim. Decision should be recorded as a DEC entry in `.project/decisions.json` because it touches the classify-input contract that all monitors share.
+
+---
+
 ## Reification plan when the write surface is restored
 
 Each fragility above should land in its target block via:
@@ -161,6 +212,6 @@ pi -p "call the append-block-item tool with name issues and key issues and item 
 
 (Note the `--model` pin and `--tools read` restriction — both pulled forward from F-002 / F-006 candidate paths so the reification itself does not re-trigger F-006.)
 
-For framework-gaps targets (F-004, F-010), use `name framework-gaps key gaps`. Each entry will need an `id` field — `FGAP-008` and `FGAP-009` are the next two free IDs (FGAP-007 is staleness engine, awaiting registration).
+For framework-gaps targets (F-004, F-010, F-018), use `name framework-gaps key gaps`. Each entry will need an `id` field — `FGAP-008`, `FGAP-009`, `FGAP-010` are the next free IDs (FGAP-007 is staleness engine, awaiting registration).
 
 Authorship attestation gap (FGAP-004 in framework-gaps.json) means the entries will not be authorship-stamped at write time. The `created_by` and `created_at` fields are not currently on the issues.schema.json or framework-gaps.schema.json required lists — the schemas accept items without provenance. This is a known gap, not a regression.

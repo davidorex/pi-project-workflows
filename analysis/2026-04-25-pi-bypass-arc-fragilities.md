@@ -153,6 +153,7 @@
 
 ## F-014 — `collectAssistantText` backward-walk + `extractText` text-only filter can return empty under realistic message shapes
 
+- **Status:** Resolved on `main` by commit `0b50241`; multi-message walk now aggregates assistant text from the most recent user-message boundary.
 - **Target block:** issues.json (category `issue`, priority `high`, package `pi-behavior-monitors`).
 - **Source:** Surface-mapping subagent A on 2026-04-26, after the F-002+F-011 chain landed and live monitor turns produced false-positive verdicts. Cross-references the user's hypothesis-side perspective synthesized the same day: H1 "branch data — collectAssistantText returns empty/stale" — note that issue-018 added a prompt-level workaround for a related symptom but the data-layer mechanism was never investigated.
 - **Symptom:** `pi-behavior-monitors/index.ts:495-503` `collectAssistantText` walks the branch backward and returns text from the FIRST assistant message it encounters. `pi-behavior-monitors/index.ts:457-462` `extractText` filters content blocks to `b.type === "text"` only, dropping `ThinkingContent` and `ToolCall` blocks per pi-ai's `AssistantMessage.content: (TextContent | ThinkingContent | ToolCall)[]`. The combination produces empty `assistant_text` whenever the most-recent assistant message is tool-call-only or thinking-only — the classifier's prompt then literally renders "the assistant's response: ''" and the LLM reasonably concludes "no response."
@@ -194,6 +195,7 @@
 
 ## F-018 — Multi-message turn "latest response" semantics undefined for tool→text→tool→text patterns
 
+- **Status:** Decided by the F-014 fix — "the assistant's response" is defined as all assistant text from the most recent user message to the current turn, joined with double-newline separator. Encoded in `collectAssistantText`.
 - **Target block:** framework-gaps.json (priority `P2`, package `pi-behavior-monitors`) — this is a structural ambiguity in the classify-input contract, not a single-line bug.
 - **Source:** Surface-mapping subagent A on 2026-04-26. Net new — not previously filed.
 - **Symptom:** A turn that the user perceives as one assistant action may comprise multiple `SessionMessageEntry` records: tool-call message → tool-result → text response → second tool-call → second text response. `collectAssistantText` returns the FIRST assistant message's text walking backward; if the literal final assistant message is tool-call-only, it falls through to the prior text message, which may be the wrong "latest response" semantically. There is no canonical specification of which message constitutes "the response the classifier should evaluate" for multi-message turns.

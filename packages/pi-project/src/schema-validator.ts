@@ -1,10 +1,13 @@
 import fs from "node:fs";
 import type { ErrorObject } from "ajv";
 import _Ajv from "ajv";
+import _addFormats from "ajv-formats";
 
 // Node16 module resolution + CJS interop: default import is the module namespace
 const Ajv = (_Ajv as any).default ?? _Ajv;
+const addFormats = (_addFormats as any).default ?? _addFormats;
 const ajv = new Ajv({ allErrors: true, strict: false });
+addFormats(ajv);
 
 /**
  * Error class for validation failures.

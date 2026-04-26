@@ -66,6 +66,7 @@
 		"@mariozechner/pi-coding-agent": "^0.70.2",
 		"typebox": "^1.1.24",
 		"ajv": "^8.17.1",
+		"ajv-formats": "^3.0.1",
 		"proper-lockfile": "^4.1.2"
 	},
 	"devDependencies": {

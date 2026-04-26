@@ -153,6 +153,7 @@
 
 ## F-014 — `collectAssistantText` backward-walk + `extractText` text-only filter can return empty under realistic message shapes
 
+- **Resolution (2026-04-26):** the F-014 walk fix was correct but the symptom persisted because of a separate timing-window bug at `pi-coding-agent/dist/core/agent-session.js:296-310` (extension `_emitExtensionEvent` is awaited at line 296 before `appendMessage` runs at line 310). Fully resolved by routing fragility through `agent_end` instead of `message_end` (commit `affe992`). Walk-semantics fix from commit `0b50241` remains correct and continues to apply for any future agent_end-bound classifier.
 - **Status:** Resolved on `main` by commit `0b50241`; multi-message walk now aggregates assistant text from the most recent user-message boundary.
 - **Target block:** issues.json (category `issue`, priority `high`, package `pi-behavior-monitors`).
 - **Source:** Surface-mapping subagent A on 2026-04-26, after the F-002+F-011 chain landed and live monitor turns produced false-positive verdicts. Cross-references the user's hypothesis-side perspective synthesized the same day: H1 "branch data — collectAssistantText returns empty/stale" — note that issue-018 added a prompt-level workaround for a related symptom but the data-layer mechanism was never investigated.
@@ -165,6 +166,7 @@
 
 ## F-015 — Prompt-level guards (issue-018 pattern) are advisory; LLM may reason past them and flag anyway
 
+- **Status:** Resolved by commit `affe992` via agent_end routing. The advisory-guard mechanism is not exercised when the data layer is correct; routing classifiers through agent_end gives them a fully-persisted branch so the prompt's empty-text guard is no longer the load-bearing mechanism.
 - **Target block:** issues.json (category `issue`, priority `medium`, package `pi-behavior-monitors`).
 - **Source:** User-side synthesis on 2026-04-26 (H2 "semantic — model reasons past guard"). Net new — not previously filed.
 - **Symptom:** issue-018 added text guards to classifier prompts of the shape "empty `assistant_text` with successful tool results is not empty output." The guard is a sentence the LLM reads and weighs against the rest of the prompt; it is not a structural constraint on the verdict. When the rendered prompt strongly emphasizes the empty `assistant_text` quote and the guard is one sentence among many, the LLM may flag anyway and the verdict carries through to side-effects.
@@ -196,6 +198,7 @@
 ## F-018 — Multi-message turn "latest response" semantics undefined for tool→text→tool→text patterns
 
 - **Status:** Decided by the F-014 fix — "the assistant's response" is defined as all assistant text from the most recent user message to the current turn, joined with double-newline separator. Encoded in `collectAssistantText`.
+- **Resolution (2026-04-26):** the F-014 fix encoded the union-of-assistant-text semantics correctly. Routing classifiers through `agent_end` (commit `affe992`) ensures the branch is fully persisted at walk time, so the multi-message walk operates on the complete chronological message chain since the user's input.
 - **Target block:** framework-gaps.json (priority `P2`, package `pi-behavior-monitors`) — this is a structural ambiguity in the classify-input contract, not a single-line bug.
 - **Source:** Surface-mapping subagent A on 2026-04-26. Net new — not previously filed.
 - **Symptom:** A turn that the user perceives as one assistant action may comprise multiple `SessionMessageEntry` records: tool-call message → tool-result → text response → second tool-call → second text response. `collectAssistantText` returns the FIRST assistant message's text walking backward; if the literal final assistant message is tool-call-only, it falls through to the prior text message, which may be the wrong "latest response" semantically. There is no canonical specification of which message constitutes "the response the classifier should evaluate" for multi-message turns.

@@ -1,7 +1,7 @@
 {
 	"name": "fragility",
 	"description": "Detects unaddressed fragilities after tool use",
-	"event": "message_end",
+	"event": "agent_end",
 	"when": "has_tool_results",
 	"scope": {
 		"target": "main"

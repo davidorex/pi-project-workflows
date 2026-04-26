@@ -1,7 +1,7 @@
 {
 	"name": "hedge",
 	"description": "Detects when assistant deviates from what the user said",
-	"event": "turn_end",
+	"event": "agent_end",
 	"when": "always",
 	"scope": {
 		"target": "main"

@@ -1,0 +1,58 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Trace Config",
+	"description": "Per-monitor trace-redaction configuration loaded by TraceRedactor (T2) from .workflows/monitors/<name>/trace-config.json. Declares (a) regex patterns whose matches should be redacted before write, and (b) named domains that group patterns by data class. The TraceWriter (T4) consults this config before emitting each TraceEntry; collectedValue, renderedPrompt, inputText, and content fields are scanned and substituted per the patterns array. Domain entries carry data_class metadata for downstream policy enforcement and audit reporting.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["version", "patterns", "domains"],
+	"properties": {
+		"version": {
+			"type": "string",
+			"const": "1.0",
+			"description": "Trace-config schema version. Currently fixed at 1.0; bumped when the patterns/domains structure changes incompatibly."
+		},
+		"patterns": {
+			"type": "array",
+			"description": "Ordered list of regex patterns evaluated against trace fields. First-match-wins is not implied at this layer — the TraceRedactor decides composition policy.",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["name", "regex", "domain"],
+				"properties": {
+					"name": {
+						"type": "string",
+						"description": "Human-readable identifier for the pattern, e.g., aws_access_key, email_address."
+					},
+					"regex": {
+						"type": "string",
+						"description": "Regex source string. Compiled by TraceRedactor at config load time; invalid regex fails fast before any trace is written."
+					},
+					"domain": {
+						"type": "string",
+						"description": "Name of a domain entry under domains. The pattern's match is associated with that domain's data_class for policy and reporting."
+					}
+				}
+			}
+		},
+		"domains": {
+			"type": "object",
+			"description": "Map of domain name → metadata. Keys are referenced by patterns[].domain. Additional domain entries are user-extensible.",
+			"additionalProperties": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["description", "data_class"],
+				"properties": {
+					"description": {
+						"type": "string",
+						"description": "Free-form description of what this domain represents (e.g., 'Cloud provider credentials')."
+					},
+					"data_class": {
+						"type": "string",
+						"enum": ["public", "internal", "confidential", "restricted"],
+						"description": "Sensitivity classification. Drives downstream policy — restricted domains may block trace persistence entirely; confidential triggers stronger redaction; internal/public are informational."
+					}
+				}
+			}
+		}
+	}
+}

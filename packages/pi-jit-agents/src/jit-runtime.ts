@@ -21,7 +21,165 @@ import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import type { Api, AssistantMessage, Model, ProviderStreamOptions, Tool, ToolCall } from "@mariozechner/pi-ai";
 import { complete as piAiComplete, Type } from "@mariozechner/pi-ai";
 import { AgentDispatchError } from "./errors.js";
+import {
+	loadProjectRedactionConfig,
+	type RedactionConfig,
+	type RedactionPattern,
+	redactLlmResponse,
+	redactSensitiveData,
+} from "./trace-redactor.js";
+import { writeAgentTrace } from "./trace-writer.js";
 import type { CompiledAgent, DispatchContext, JitAgentResult } from "./types.js";
+
+/**
+ * Minimal ULID generator (Crockford base32, 26 chars: 10 timestamp + 16 random).
+ *
+ * Inline rather than a dependency: ulid is not in this workspace, the algorithm
+ * fits in a few lines, and the requirement is simply that ids be lexicographically
+ * sortable across concurrent executeAgent calls (the agent-trace.schema.json
+ * `traceId` pattern enforces 26-char Crockford base32).
+ *
+ * Monotonic-within-millisecond is approximated by the random-suffix component;
+ * we do not implement the strict ULID monotonic-tiebreaker because the trace
+ * pipeline tolerates rare same-ms collisions (entries are sorted by id, but
+ * same-ms ties resolve consistently within a single-process run via the random
+ * lower bits, and cross-process traces interleave at directory listing level).
+ */
+const CROCKFORD_BASE32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+function newUlid(now: number = Date.now()): string {
+	// 48-bit timestamp → 10 base32 chars.
+	let ts = now;
+	const tsChars = new Array<string>(10);
+	for (let i = 9; i >= 0; i--) {
+		tsChars[i] = CROCKFORD_BASE32[ts % 32] ?? "0";
+		ts = Math.floor(ts / 32);
+	}
+	// 80 random bits → 16 base32 chars. Math.random suffices (collision risk
+	// is non-zero but the trace use-case does not require crypto-grade ids).
+	const randChars = new Array<string>(16);
+	for (let i = 0; i < 16; i++) {
+		randChars[i] = CROCKFORD_BASE32[Math.floor(Math.random() * 32)] ?? "0";
+	}
+	return tsChars.join("") + randChars.join("");
+}
+
+/**
+ * Recursively redact string leaves of an arbitrary value. Numbers, booleans,
+ * null, and undefined pass through unchanged. Strings run through
+ * redactSensitiveData. Arrays and plain objects are walked depth-first.
+ *
+ * Used for the `collectedValue` field of context_collection trace entries —
+ * collectors may return strings, arrays, or objects, so a single string-only
+ * redactor is insufficient.
+ */
+function deepRedact(value: unknown, config?: RedactionConfig): unknown {
+	if (typeof value === "string") return redactSensitiveData(value, config);
+	if (value === null || value === undefined) return value;
+	if (Array.isArray(value)) return value.map((v) => deepRedact(v, config));
+	if (typeof value === "object") {
+		const out: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+			out[k] = deepRedact(v, config);
+		}
+		return out;
+	}
+	return value;
+}
+
+/**
+ * Map an executeAgent return value to the `verdictResult` shape required by
+ * agent-trace.schema.json (`{ verdict, description?, severity?, newPattern? }`).
+ *
+ * The schema's `verdict` enum is `clean | flag | new | error`. Phantom-tool
+ * outputs from monitor classifiers produce `CLEAN | FLAG | NEW` (uppercase) per
+ * verdict.schema.json — we lowercase here. Non-classifier agents produce
+ * arbitrary structured output or text; in that case we synthesize a `clean`
+ * verdict and attach a description so the trace remains schema-valid.
+ *
+ * `error` is reserved for the failure path (set in the catch handler).
+ */
+function normalizeVerdict(output: unknown): {
+	verdict: "clean" | "flag" | "new" | "error";
+	description?: string;
+	severity?: string;
+	newPattern?: string;
+} {
+	if (output && typeof output === "object" && !Array.isArray(output)) {
+		const obj = output as Record<string, unknown>;
+		const rawVerdict = typeof obj.verdict === "string" ? obj.verdict.toLowerCase() : undefined;
+		if (rawVerdict === "clean" || rawVerdict === "flag" || rawVerdict === "new" || rawVerdict === "error") {
+			const result: ReturnType<typeof normalizeVerdict> = { verdict: rawVerdict };
+			if (typeof obj.description === "string") result.description = obj.description;
+			if (typeof obj.severity === "string") result.severity = obj.severity;
+			if (typeof obj.newPattern === "string") result.newPattern = obj.newPattern;
+			return result;
+		}
+	}
+	// Non-verdict output (e.g. workflow agent step structured result, free text):
+	// stamp as `clean` and stringify-describe for trace fidelity.
+	const description =
+		typeof output === "string" ? output : output === undefined ? "" : JSON.stringify(output).slice(0, 2_000);
+	return { verdict: "clean", description };
+}
+
+/**
+ * Extract token usage from an AssistantMessage in the shape required by the
+ * trace schema's `usage` definition (camelCase, totalTokens summed).
+ */
+function traceUsageFromMessage(msg: AssistantMessage): {
+	inputTokens: number;
+	outputTokens: number;
+	cacheRead?: number;
+	cacheWrite?: number;
+	totalTokens: number;
+} {
+	const u = msg.usage;
+	const input = u?.input ?? 0;
+	const output = u?.output ?? 0;
+	const cacheRead = u?.cacheRead ?? 0;
+	const cacheWrite = u?.cacheWrite ?? 0;
+	return {
+		inputTokens: input,
+		outputTokens: output,
+		cacheRead,
+		cacheWrite,
+		totalTokens: input + output,
+	};
+}
+
+/**
+ * Best-effort string identifier for a pi-ai Model<Api> instance. The Model
+ * shape carries `id` (model id) and `provider` (provider id); the trace schema
+ * wants a single string. Falls back to JSON.stringify for unrecognized shapes.
+ */
+function modelToString(model: unknown): string {
+	if (model && typeof model === "object") {
+		const m = model as { id?: unknown; provider?: unknown; api?: unknown };
+		const provider = typeof m.provider === "string" ? m.provider : undefined;
+		const id = typeof m.id === "string" ? m.id : undefined;
+		if (provider && id) return `${provider}/${id}`;
+		if (id) return id;
+		if (provider) return provider;
+	}
+	return typeof model === "string" ? model : JSON.stringify(model);
+}
+
+/**
+ * Wrap a writeAgentTrace call with a try/catch so trace failures cannot abort
+ * dispatch (per DEC-0005's intentional independence of trace from classify).
+ * Failures emit a stderr diagnostic prefixed with the pi-jit-agents tag and
+ * are otherwise swallowed.
+ */
+function safeWriteTrace(entry: unknown, tracePath: string): void {
+	try {
+		writeAgentTrace(entry, { tracePath });
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		// eslint-disable-next-line no-console -- non-fatal diagnostic channel.
+		console.error(`[pi-jit-agents] trace write failed (${tracePath}): ${msg}`);
+	}
+}
 
 /**
  * Injection point for the pi-ai `complete` function. Defaults to the real
@@ -246,6 +404,53 @@ export async function executeAgent(
 	dispatch: DispatchContext,
 	completeFn: CompleteFn = piAiComplete,
 ): Promise<JitAgentResult> {
+	// --- Trace bootstrap -----------------------------------------------------
+	// Trace capture is gated on dispatch.tracePath being a non-empty string.
+	// `undefined` and `null` both disable tracing. When disabled, every trace
+	// emission below short-circuits via the `tracePath !== null` guard at the
+	// safeWriteTrace call sites, leaving the pre-existing dispatch behavior
+	// observably unchanged.
+	const tracePath: string | null = typeof dispatch.tracePath === "string" ? dispatch.tracePath : null;
+	const tracingEnabled = tracePath !== null;
+
+	// Resolve the redaction config once per executeAgent call. Failure here
+	// must not abort dispatch — a malformed config falls back to the builtin
+	// pattern set with a stderr diagnostic.
+	let redactionConfig: RedactionConfig | undefined;
+	if (tracingEnabled && typeof dispatch.redactionConfigPath === "string") {
+		try {
+			const patterns: RedactionPattern[] = loadProjectRedactionConfig(dispatch.redactionConfigPath);
+			redactionConfig = { patterns };
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			// eslint-disable-next-line no-console -- non-fatal diagnostic channel.
+			console.error(`[pi-jit-agents] redaction config load failed (${dispatch.redactionConfigPath}): ${msg}`);
+		}
+	}
+
+	const sessionStartMs = Date.now();
+	const sessionStartId = newUlid(sessionStartMs);
+	let classifyCallId: string | null = null;
+	let classifyResponseId: string | null = null;
+
+	if (tracingEnabled && tracePath !== null) {
+		safeWriteTrace(
+			{
+				type: "session_start",
+				id: sessionStartId,
+				parentId: null,
+				timestamp: new Date(sessionStartMs).toISOString(),
+				sessionId: sessionStartId,
+				monitorName: typeof dispatch.monitorName === "string" ? dispatch.monitorName : null,
+				agentName: compiled.spec.name,
+				model: modelToString(dispatch.model),
+				cwd: process.cwd(),
+			},
+			tracePath,
+		);
+	}
+
+	// --- Existing dispatch logic --------------------------------------------
 	const messages = [
 		{
 			role: "user" as const,
@@ -256,6 +461,51 @@ export async function executeAgent(
 
 	const systemPrompt = compiled.systemPrompt;
 	const maxTokens = dispatch.maxTokens ?? 1024;
+
+	// classify_call is emitted just before the LLM call: at this point the
+	// rendered prompts (system + task) are fully available. Per the schema,
+	// `renderedPrompt` is a single string — we concatenate system and task
+	// with a delimiter so trace consumers see exactly what dispatch sent.
+	if (tracingEnabled && tracePath !== null) {
+		const renderedPromptRaw = systemPrompt
+			? `[SYSTEM]\n${systemPrompt}\n[TASK]\n${compiled.taskPrompt}`
+			: compiled.taskPrompt;
+		classifyCallId = newUlid();
+		safeWriteTrace(
+			{
+				type: "classify_call",
+				id: classifyCallId,
+				parentId: sessionStartId,
+				timestamp: new Date().toISOString(),
+				renderedPrompt: redactSensitiveData(renderedPromptRaw, redactionConfig),
+				inputText: redactSensitiveData(compiled.taskPrompt, redactionConfig),
+			},
+			tracePath,
+		);
+
+		// One context_collection entry per resolved collector. Path A: the
+		// CompiledAgent now carries `contextValues` populated by compileAgent.
+		// We deep-redact each collected value and emit immediately after
+		// classify_call so the parent chain is intact even when downstream
+		// dispatch fails.
+		const ts = new Date().toISOString();
+		for (const [collectorId, collectedValue] of Object.entries(compiled.contextValues)) {
+			safeWriteTrace(
+				{
+					type: "context_collection",
+					id: newUlid(),
+					parentId: classifyCallId,
+					timestamp: ts,
+					collectorId,
+					collectedValue: deepRedact(collectedValue, redactionConfig),
+					// Collection time is not yet measured at the compileAgent boundary;
+					// reserved for a future instrumentation pass.
+					collectionTimeMs: 0,
+				},
+				tracePath,
+			);
+		}
+	}
 
 	let response: AssistantMessage;
 	try {
@@ -281,6 +531,42 @@ export async function executeAgent(
 
 		response = await completeFn(dispatch.model as Model<Api>, context, options);
 	} catch (err) {
+		// Dispatch itself failed — emit a synthetic verdict_decision + trace_end
+		// with verdict=error so the trace remains parent-chain complete, then
+		// rethrow per the original contract.
+		if (tracingEnabled && tracePath !== null) {
+			const errorMsg = err instanceof Error ? err.message : String(err);
+			const verdictId = newUlid();
+			const errVerdict = {
+				verdict: "error" as const,
+				description: redactSensitiveData(errorMsg.slice(0, 2_000), redactionConfig),
+			};
+			safeWriteTrace(
+				{
+					type: "verdict_decision",
+					id: verdictId,
+					// classify_response did not happen — chain off classify_call when
+					// available, otherwise off session_start.
+					parentId: classifyCallId ?? sessionStartId,
+					timestamp: new Date().toISOString(),
+					finalResult: errVerdict,
+					mappingDecisionRationale: redactSensitiveData("dispatch failed before LLM response", redactionConfig),
+				},
+				tracePath,
+			);
+			safeWriteTrace(
+				{
+					type: "trace_end",
+					id: newUlid(),
+					parentId: sessionStartId,
+					timestamp: new Date().toISOString(),
+					totalDurationMs: Date.now() - sessionStartMs,
+					verdict: errVerdict,
+				},
+				tracePath,
+			);
+		}
+
 		if (dispatch.signal?.aborted) {
 			throw new AgentDispatchError(compiled.spec.name, "cancelled", {
 				cause: err instanceof Error ? err : new Error(String(err)),
@@ -290,23 +576,123 @@ export async function executeAgent(
 		throw new AgentDispatchError(compiled.spec.name, cause.message, { cause });
 	}
 
-	const usage = usageFromMessage(response);
-
-	if (compiled.outputSchema) {
-		const toolCall = response.content.find((c): c is ToolCall => c.type === "toolCall");
-		if (!toolCall) {
-			const contentTypes = response.content.map((c) => c.type).join(", ");
-			const errMsg = response.errorMessage ? ` error: ${response.errorMessage}` : "";
-			throw new AgentDispatchError(
-				compiled.spec.name,
-				`no tool call in response (content types: [${contentTypes}]${errMsg})`,
-				{ stopReason: response.stopReason },
-			);
+	// classify_response: emitted after the AssistantMessage is in hand. The
+	// content array runs through redactLlmResponse to strip credentials echoed
+	// in the model output; usage / stopReason are passthrough numerics/enums.
+	if (tracingEnabled && tracePath !== null) {
+		const redactedResponse = redactLlmResponse({ content: response.content }, redactionConfig);
+		classifyResponseId = newUlid();
+		const responseEntry: Record<string, unknown> = {
+			type: "classify_response",
+			id: classifyResponseId,
+			parentId: classifyCallId ?? sessionStartId,
+			timestamp: new Date().toISOString(),
+			stopReason: response.stopReason ?? "unknown",
+			usage: traceUsageFromMessage(response),
+			content: redactedResponse.content,
+		};
+		if (typeof response.errorMessage === "string") {
+			responseEntry.errorMessage = redactSensitiveData(response.errorMessage, redactionConfig);
 		}
-		const args = toolCall.arguments as Record<string, unknown>;
-		validateFromFile(compiled.outputSchema, args, `output for agent '${compiled.spec.name}'`);
-		return { output: args, raw: response, usage };
+		safeWriteTrace(responseEntry, tracePath);
 	}
 
-	return { output: extractText(response), raw: response, usage };
+	const usage = usageFromMessage(response);
+
+	let result: JitAgentResult;
+	try {
+		if (compiled.outputSchema) {
+			const toolCall = response.content.find((c): c is ToolCall => c.type === "toolCall");
+			if (!toolCall) {
+				const contentTypes = response.content.map((c) => c.type).join(", ");
+				const errMsg = response.errorMessage ? ` error: ${response.errorMessage}` : "";
+				throw new AgentDispatchError(
+					compiled.spec.name,
+					`no tool call in response (content types: [${contentTypes}]${errMsg})`,
+					{ stopReason: response.stopReason },
+				);
+			}
+			const args = toolCall.arguments as Record<string, unknown>;
+			validateFromFile(compiled.outputSchema, args, `output for agent '${compiled.spec.name}'`);
+			result = { output: args, raw: response, usage };
+		} else {
+			result = { output: extractText(response), raw: response, usage };
+		}
+	} catch (err) {
+		// Output validation / tool-call extraction failed. Mirror the dispatch-
+		// failure trace pattern so the parent chain remains complete, then
+		// rethrow so callers see the original error.
+		if (tracingEnabled && tracePath !== null) {
+			const errorMsg = err instanceof Error ? err.message : String(err);
+			const errVerdict = {
+				verdict: "error" as const,
+				description: redactSensitiveData(errorMsg.slice(0, 2_000), redactionConfig),
+			};
+			safeWriteTrace(
+				{
+					type: "verdict_decision",
+					id: newUlid(),
+					parentId: classifyResponseId ?? classifyCallId ?? sessionStartId,
+					timestamp: new Date().toISOString(),
+					finalResult: errVerdict,
+					mappingDecisionRationale: redactSensitiveData("output extraction or validation failed", redactionConfig),
+				},
+				tracePath,
+			);
+			safeWriteTrace(
+				{
+					type: "trace_end",
+					id: newUlid(),
+					parentId: sessionStartId,
+					timestamp: new Date().toISOString(),
+					totalDurationMs: Date.now() - sessionStartMs,
+					verdict: errVerdict,
+				},
+				tracePath,
+			);
+		}
+		throw err;
+	}
+
+	// Success path: verdict_decision + trace_end. The verdict normalizer maps
+	// classifier output (CLEAN/FLAG/NEW) to the schema enum (clean/flag/new)
+	// and synthesizes a `clean` verdict for non-classifier agents so the trace
+	// remains schema-valid for both surfaces.
+	if (tracingEnabled && tracePath !== null) {
+		const finalResultRaw = normalizeVerdict(result.output);
+		const finalResult: typeof finalResultRaw = { verdict: finalResultRaw.verdict };
+		if (finalResultRaw.description !== undefined) {
+			finalResult.description = redactSensitiveData(finalResultRaw.description, redactionConfig);
+		}
+		if (finalResultRaw.severity !== undefined) {
+			finalResult.severity = finalResultRaw.severity;
+		}
+		if (finalResultRaw.newPattern !== undefined) {
+			finalResult.newPattern = redactSensitiveData(finalResultRaw.newPattern, redactionConfig);
+		}
+		safeWriteTrace(
+			{
+				type: "verdict_decision",
+				id: newUlid(),
+				parentId: classifyResponseId ?? classifyCallId ?? sessionStartId,
+				timestamp: new Date().toISOString(),
+				finalResult,
+				mappingDecisionRationale: redactSensitiveData("executeAgent returned", redactionConfig),
+			},
+			tracePath,
+		);
+		safeWriteTrace(
+			{
+				type: "trace_end",
+				id: newUlid(),
+				parentId: sessionStartId,
+				timestamp: new Date().toISOString(),
+				totalDurationMs: Date.now() - sessionStartMs,
+				verdict: finalResult,
+			},
+			tracePath,
+		);
+	}
+
+	return result;
 }

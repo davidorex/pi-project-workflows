@@ -64,6 +64,15 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	const templateContext: Record<string, unknown> =
 		typeof ctx.input === "object" && ctx.input !== null ? { ...(ctx.input as Record<string, unknown>) } : {};
 
+	// Per-collector resolved values, surfaced on the CompiledAgent so the trace
+	// pipeline (issue-023 T5/T6) can emit one `context_collection` entry per
+	// resolved block. Keyed by the contextBlock name as declared in the spec
+	// (no `_` prefix, no hyphen→underscore rewrite — that's only the template
+	// variable convention). The stored value is the raw block payload (or null
+	// when the block is missing / the .project dir absent), distinct from the
+	// anti-injection-wrapped string the templates see.
+	const contextValues: Record<string, unknown> = {};
+
 	if (spec.contextBlocks && spec.contextBlocks.length > 0) {
 		const projectDir = path.join(ctx.cwd, ".project");
 		if (fs.existsSync(projectDir)) {
@@ -71,14 +80,17 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 				const key = `_${name.replace(/-/g, "_")}`;
 				try {
 					const blockData = readBlock(ctx.cwd, name);
+					contextValues[name] = blockData;
 					templateContext[key] = blockData !== null ? wrapBlockContent(name, blockData) : null;
 				} catch {
+					contextValues[name] = null;
 					templateContext[key] = null;
 				}
 			}
 		} else {
 			for (const name of spec.contextBlocks) {
 				const key = `_${name.replace(/-/g, "_")}`;
+				contextValues[name] = null;
 				templateContext[key] = null;
 			}
 		}
@@ -111,5 +123,6 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		taskPrompt: taskPrompt ?? "",
 		model: spec.model,
 		outputSchema: resolveOutputSchemaForCompile(spec.outputSchema, ctx.cwd),
+		contextValues,
 	};
 }

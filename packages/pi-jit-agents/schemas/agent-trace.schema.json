@@ -1,0 +1,191 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Agent Trace Entry",
+	"description": "Discriminated union of trace events emitted during pi-jit-agents executeAgent invocations for monitor-classify pipelines. Each entry validates a single JSONL line; the .jsonl file as a whole is not a single JSON document. Per DEC-0004 the structural shape ({ type, id, parentId, timestamp, ...extra }) mirrors pi-coding-agent's SessionEntry but is deliberately a separate schema namespace — there is no literal inheritance. Per DEC-0005 these entries are produced by a push-write trace stream divergent from pi-mono's pull/replay model, so each variant is fired at the moment of occurrence inside executeAgent rather than reconstructed after the fact. The six variants form a parent-chained tree: session_start (root) → classify_call → { classify_response, context_collection } → verdict_decision; trace_end closes the session at the executeAgent exit boundary.",
+	"oneOf": [
+		{ "$ref": "#/definitions/session_start" },
+		{ "$ref": "#/definitions/classify_call" },
+		{ "$ref": "#/definitions/classify_response" },
+		{ "$ref": "#/definitions/context_collection" },
+		{ "$ref": "#/definitions/verdict_decision" },
+		{ "$ref": "#/definitions/trace_end" }
+	],
+	"definitions": {
+		"traceId": {
+			"type": "string",
+			"pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+			"description": "ULID — 26-character Crockford base32, lexicographically sortable, monotonic-by-timestamp. Chosen over UUIDv4 because trace lines are append-ordered and parent/child pairs benefit from sortable IDs; chosen over a monotonic counter because ULIDs do not require shared-state coordination across concurrent executeAgent calls."
+		},
+		"isoTimestamp": {
+			"type": "string",
+			"format": "date-time",
+			"description": "ISO 8601 timestamp captured at event emission."
+		},
+		"verdictResult": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["verdict"],
+			"properties": {
+				"verdict": {
+					"type": "string",
+					"enum": ["clean", "flag", "new", "error"],
+					"description": "Final classification verdict. clean/flag/new mirror the verdict.schema.json contract; error indicates the dispatch itself failed before a verdict could be produced."
+				},
+				"description": { "type": "string" },
+				"severity": { "type": "string" },
+				"newPattern": { "type": "string" }
+			}
+		},
+		"usage": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["inputTokens", "outputTokens", "totalTokens"],
+			"properties": {
+				"inputTokens": { "type": "number" },
+				"outputTokens": { "type": "number" },
+				"cacheRead": { "type": "number" },
+				"cacheWrite": { "type": "number" },
+				"totalTokens": { "type": "number" }
+			}
+		},
+		"contentBlock": {
+			"type": "object",
+			"required": ["type"],
+			"properties": {
+				"type": {
+					"type": "string",
+					"enum": ["text", "thinking", "toolCall"]
+				}
+			},
+			"description": "Permissive content-block shape. pi-ai's content payload schema evolves (text, thinking blocks, tool calls with arbitrary arguments); we pin the discriminator field but leave the rest open so trace capture does not break on upstream additions."
+		},
+		"session_start": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["type", "id", "parentId", "timestamp", "sessionId", "agentName", "model", "cwd"],
+			"properties": {
+				"type": { "const": "session_start" },
+				"id": { "$ref": "#/definitions/traceId" },
+				"parentId": {
+					"type": "null",
+					"description": "session_start is the trace root; parentId is always null."
+				},
+				"timestamp": { "$ref": "#/definitions/isoTimestamp" },
+				"sessionId": {
+					"type": "string",
+					"description": "Identifier for the trace session — typically the same ULID as id, used as a foreign key from downstream variants for filesystem-level grouping."
+				},
+				"monitorName": {
+					"type": ["string", "null"],
+					"description": "Monitor name when the agent is dispatched as a monitor classifier; null or absent for non-monitor traces."
+				},
+				"agentName": { "type": "string" },
+				"model": {
+					"type": "string",
+					"description": "Provider-qualified model identifier, e.g., openrouter/anthropic/claude-sonnet-4.6."
+				},
+				"cwd": { "type": "string" }
+			}
+		},
+		"classify_call": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["type", "id", "parentId", "timestamp", "renderedPrompt", "inputText"],
+			"properties": {
+				"type": { "const": "classify_call" },
+				"id": { "$ref": "#/definitions/traceId" },
+				"parentId": {
+					"$ref": "#/definitions/traceId",
+					"description": "References the parent session_start.id."
+				},
+				"timestamp": { "$ref": "#/definitions/isoTimestamp" },
+				"renderedPrompt": {
+					"type": "string",
+					"description": "Post-Nunjucks-render prompt as actually sent to the model."
+				},
+				"inputText": {
+					"type": "string",
+					"description": "Primary input under classification — typically the assistant_text collector payload."
+				}
+			}
+		},
+		"classify_response": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["type", "id", "parentId", "timestamp", "stopReason", "usage", "content"],
+			"properties": {
+				"type": { "const": "classify_response" },
+				"id": { "$ref": "#/definitions/traceId" },
+				"parentId": {
+					"$ref": "#/definitions/traceId",
+					"description": "References the parent classify_call.id."
+				},
+				"timestamp": { "$ref": "#/definitions/isoTimestamp" },
+				"stopReason": { "type": "string" },
+				"errorMessage": { "type": "string" },
+				"usage": { "$ref": "#/definitions/usage" },
+				"content": {
+					"type": "array",
+					"items": { "$ref": "#/definitions/contentBlock" }
+				}
+			}
+		},
+		"context_collection": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["type", "id", "parentId", "timestamp", "collectorId", "collectedValue", "collectionTimeMs"],
+			"properties": {
+				"type": { "const": "context_collection" },
+				"id": { "$ref": "#/definitions/traceId" },
+				"parentId": {
+					"$ref": "#/definitions/traceId",
+					"description": "References the parent classify_call.id; one context_collection entry is fired per resolved collector."
+				},
+				"timestamp": { "$ref": "#/definitions/isoTimestamp" },
+				"collectorId": {
+					"type": "string",
+					"description": "Collector identifier, e.g., assistant_text, recent_files, conversation_window."
+				},
+				"collectedValue": {
+					"description": "Permissive — collectors return strings, arrays, or objects depending on collector kind. No constraint imposed at the trace layer; redaction occurs at TraceRedactor (T2) before this field is written."
+				},
+				"collectionTimeMs": { "type": "number" }
+			}
+		},
+		"verdict_decision": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["type", "id", "parentId", "timestamp", "finalResult", "mappingDecisionRationale"],
+			"properties": {
+				"type": { "const": "verdict_decision" },
+				"id": { "$ref": "#/definitions/traceId" },
+				"parentId": {
+					"$ref": "#/definitions/traceId",
+					"description": "References the parent classify_response.id."
+				},
+				"timestamp": { "$ref": "#/definitions/isoTimestamp" },
+				"finalResult": { "$ref": "#/definitions/verdictResult" },
+				"mappingDecisionRationale": {
+					"type": "string",
+					"description": "Brief description of the verdict-mapping path — which tool-call argument or fallback rule produced the verdict."
+				}
+			}
+		},
+		"trace_end": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["type", "id", "parentId", "timestamp", "totalDurationMs", "verdict"],
+			"properties": {
+				"type": { "const": "trace_end" },
+				"id": { "$ref": "#/definitions/traceId" },
+				"parentId": {
+					"$ref": "#/definitions/traceId",
+					"description": "References the parent session_start.id; trace_end closes the session at executeAgent exit."
+				},
+				"timestamp": { "$ref": "#/definitions/isoTimestamp" },
+				"totalDurationMs": { "type": "number" },
+				"verdict": { "$ref": "#/definitions/verdictResult" }
+			}
+		}
+	}
+}

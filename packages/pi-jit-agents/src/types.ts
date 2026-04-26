@@ -93,6 +93,19 @@ export interface CompiledAgent {
 	model?: string;
 	/** Absolute output schema path (copied from spec — already resolved). */
 	outputSchema?: string;
+	/**
+	 * Resolved per-collector context values, keyed by the contextBlock name
+	 * (e.g. "conventions"), populated when contextBlocks are read from `.project/`
+	 * during compilation. Surfaced for trace capture (issue-023 T5/T6) so the
+	 * push-write trace stream can emit one `context_collection` entry per
+	 * resolved block. Empty object when the spec declares no contextBlocks.
+	 *
+	 * The values stored here are the raw (unwrapped) block payloads — distinct
+	 * from the anti-injection-wrapped strings that the templates see under the
+	 * `_<name>` key. Trace consumers want the structured value for downstream
+	 * inspection, not the rendered string.
+	 */
+	contextValues: Record<string, unknown>;
 }
 
 /**
@@ -107,6 +120,34 @@ export interface DispatchContext {
 	maxTokens?: number;
 	/** Abort signal for cancellation. */
 	signal?: AbortSignal;
+	/**
+	 * Trace destination for the monitor-classify trace capture pipeline (issue-023).
+	 * - `undefined` → use the default resolution (env var or null fallback).
+	 * - `null` → tracing explicitly disabled; no JSONL is written.
+	 * - `string` → absolute path to the JSONL trace file the writer should append to.
+	 *
+	 * Per DEC-0005 the trace stream is push-write (emitted at the moment of occurrence
+	 * inside executeAgent), divergent from pi-mono's pull/replay session model.
+	 */
+	tracePath?: string | null;
+	/**
+	 * Optional path to a project-extension trace redaction config
+	 * (`.workflows/monitors/<name>/trace-config.json` shape). When set,
+	 * `loadProjectRedactionConfig` is invoked once per executeAgent call and
+	 * the resulting custom patterns are layered atop `BUILTIN_PATTERNS` for
+	 * every redacted field. When unset / null, only the builtin pattern set
+	 * applies. Independent of `tracePath` — config loading is a no-op when
+	 * tracing itself is disabled.
+	 */
+	redactionConfigPath?: string | null;
+	/**
+	 * Optional monitor name for stamping `session_start.monitorName`. The
+	 * `executeAgent` boundary itself does not know whether its caller is a
+	 * monitor classify path or a workflow agent step — the monitor wrapper
+	 * (T6's `classifyViaAgent`) sets this when dispatching as a classifier.
+	 * `null` / absent for non-monitor traces.
+	 */
+	monitorName?: string | null;
 }
 
 /**

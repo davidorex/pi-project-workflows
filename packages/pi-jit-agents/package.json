@@ -61,9 +61,11 @@
 		"@davidorex/pi-project": "^0.14.5",
 		"@mariozechner/pi-ai": "^0.70.2",
 		"nunjucks": "^3.2.4",
+		"proper-lockfile": "^4.1.2",
 		"yaml": "^2.7.1"
 	},
 	"devDependencies": {
-		"@types/nunjucks": "^3.2.6"
+		"@types/nunjucks": "^3.2.6",
+		"@types/proper-lockfile": "^4.1.4"
 	}
 }

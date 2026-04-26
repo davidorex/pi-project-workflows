@@ -12,14 +12,14 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { normalizeToolChoice } from "@davidorex/pi-jit-agents";
+import { type CompiledAgent, type DispatchContext, dateRotatedPath, executeAgent } from "@davidorex/pi-jit-agents";
 import { readBlock } from "@davidorex/pi-project/block-api";
 import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import { createAgentLoader } from "@davidorex/pi-workflows/agent-spec";
 import { compileAgentSpec } from "@davidorex/pi-workflows/step-shared";
 import type { AgentSpec } from "@davidorex/pi-workflows/types";
-import type { Api, AssistantMessage, Model, TextContent, Tool, ToolCall } from "@mariozechner/pi-ai";
-import { complete, StringEnum, Type } from "@mariozechner/pi-ai";
+import type { Api, Model, TextContent, Tool } from "@mariozechner/pi-ai";
+import { StringEnum, Type } from "@mariozechner/pi-ai";
 import type {
 	AgentEndEvent,
 	AgentToolResult,
@@ -38,8 +38,17 @@ const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
 const EXAMPLES_DIR = path.join(EXTENSION_DIR, "..", "examples");
 const AGENTS_DIR = path.join(EXTENSION_DIR, "..", "agents");
 
-/** Tool definition for forcing structured verdict output from the classify LLM call. */
-const VERDICT_TOOL: Tool = {
+/**
+ * Tool definition for forcing structured verdict output from the classify LLM call.
+ *
+ * Retained as a documentation reference; the live phantom-tool used at dispatch
+ * time is now built by `buildPhantomTool(outputSchema)` inside pi-jit-agents'
+ * `executeAgent`, fed by the agent spec's `outputSchema` (canonical:
+ * `verdict.schema.json`). The shape below mirrors that schema. Underscore
+ * prefix suppresses the unused-symbol lint while preserving the on-file
+ * trace of the contract that the phantom-tool path now enforces.
+ */
+const _VERDICT_TOOL: Tool = {
 	name: "classify_verdict",
 	description: "Output the monitor classification verdict",
 	parameters: Type.Object({
@@ -1172,6 +1181,90 @@ let cachedAgentLoader: ((name: string) => AgentSpec) | null = null;
 let cachedMonitorAgentEnv: nunjucks.Environment | null = null;
 
 /**
+ * Module-level reference to the ExtensionAPI for CLI flag lookup at classify time.
+ * Set by the default export (activate function) so classifyViaAgent can read
+ * --trace, --no-trace, --trace-dir, and --trace-filter via pi.getFlag().
+ *
+ * Held as an opaque `getFlag` callable rather than the full ExtensionAPI to keep
+ * the surface narrow and to allow future-replacement by direct argv parsing
+ * without a wider refactor.
+ */
+let getCliFlag: ((name: string) => boolean | string | undefined) | null = null;
+
+/**
+ * Resolve effective trace settings for a monitor classify call.
+ *
+ * Trace-path resolution precedence (highest to lowest):
+ *   1. `--no-trace` CLI flag → null (explicit disable)
+ *   2. `--trace-dir <dir>` CLI flag → dateRotatedPath(<dir>) — single shared dir,
+ *      no per-monitor subdir (caller chose the path explicitly)
+ *   3. `PI_AGENT_TRACE_DIR` env var → dateRotatedPath(<env>/<monitor.name>) —
+ *      env var is the global base; per-monitor subdir appends
+ *   4. `--trace` CLI flag → default per-monitor path (explicit enable)
+ *   5. Default ON when no flags / env unset → default per-monitor path
+ *
+ * Default per-monitor path:
+ *   .workflows/monitors/<monitor.name>/<YYYY-MM-DD>.jsonl
+ *
+ * Redaction-config path resolution (highest to lowest):
+ *   1. `--trace-filter <file>` CLI flag
+ *   2. `PI_AGENT_TRACE_FILTER` env var
+ *   3. .workflows/monitors/<monitor.name>/trace-config.json (if exists)
+ *   4. null (builtin patterns only)
+ *
+ * Per DEC-0005 the trace stream is push-write inside executeAgent and is
+ * intentionally divergent from pi-mono's pull/replay session model — this
+ * resolver feeds DispatchContext fields the runtime consumes; trace-write
+ * failures are non-fatal and never abort classify.
+ */
+function resolveTraceSettings(monitorName: string): {
+	tracePath: string | null;
+	redactionConfigPath: string | null;
+} {
+	const flagNoTrace = getCliFlag?.("no-trace") === true;
+	const flagTrace = getCliFlag?.("trace") === true;
+	const flagTraceDirRaw = getCliFlag?.("trace-dir");
+	const flagTraceDir = typeof flagTraceDirRaw === "string" && flagTraceDirRaw.length > 0 ? flagTraceDirRaw : null;
+	const flagTraceFilterRaw = getCliFlag?.("trace-filter");
+	const flagTraceFilter =
+		typeof flagTraceFilterRaw === "string" && flagTraceFilterRaw.length > 0 ? flagTraceFilterRaw : null;
+
+	const envTraceDir = process.env.PI_AGENT_TRACE_DIR;
+	const envTraceFilter = process.env.PI_AGENT_TRACE_FILTER;
+
+	const defaultTraceBaseDir = path.join(process.cwd(), ".workflows", "monitors", monitorName);
+	const defaultTracePath = dateRotatedPath(defaultTraceBaseDir);
+
+	let tracePath: string | null;
+	if (flagNoTrace) {
+		tracePath = null;
+	} else if (flagTraceDir) {
+		tracePath = dateRotatedPath(flagTraceDir);
+	} else if (envTraceDir && envTraceDir.length > 0) {
+		tracePath = dateRotatedPath(path.join(envTraceDir, monitorName));
+	} else if (flagTrace) {
+		tracePath = defaultTracePath;
+	} else {
+		// Default: trace ON to per-monitor path. Disable explicitly via --no-trace.
+		tracePath = defaultTracePath;
+	}
+
+	const monitorTraceConfigPath = path.join(process.cwd(), ".workflows", "monitors", monitorName, "trace-config.json");
+	let redactionConfigPath: string | null;
+	if (flagTraceFilter) {
+		redactionConfigPath = flagTraceFilter;
+	} else if (envTraceFilter && envTraceFilter.length > 0) {
+		redactionConfigPath = envTraceFilter;
+	} else if (fs.existsSync(monitorTraceConfigPath)) {
+		redactionConfigPath = monitorTraceConfigPath;
+	} else {
+		redactionConfigPath = null;
+	}
+
+	return { tracePath, redactionConfigPath };
+}
+
+/**
  * Classify via agent spec — the sole classify path.
  * Loads the agent YAML, builds context from collectors, compiles via
  * compileAgentSpec, calls complete() in-process, validates JSON verdict
@@ -1228,44 +1321,94 @@ async function classifyViaAgent(
 	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
 	if (!auth.ok) throw new Error(auth.error);
 
+	// --- Trace-capture wiring (issue-023 T6) -------------------------------
+	// Resolve effective tracePath / redactionConfigPath / monitorName for this
+	// classify call. See resolveTraceSettings() for precedence rules. The
+	// dispatch surface is pi-jit-agents' executeAgent (DEC-0005 push-write
+	// trace pipeline); failures inside the trace path are non-fatal and never
+	// abort the classify call.
+	const { tracePath, redactionConfigPath } = resolveTraceSettings(monitor.name);
+
+	// Resolve absolute outputSchema path. The pi-workflows compileAgentSpec
+	// preserves the relative path that the agent YAML declared; executeAgent
+	// requires an absolute filesystem path for validateFromFile / phantom-tool
+	// construction. AGENTS_DIR is the canonical fallback resolution base.
+	let resolvedOutputSchema: string | undefined;
+	if (compiled.outputSchema) {
+		resolvedOutputSchema = path.isAbsolute(compiled.outputSchema)
+			? compiled.outputSchema
+			: path.resolve(AGENTS_DIR, compiled.outputSchema);
+	}
+
+	// Build a synthetic CompiledAgent from the pi-workflows compileAgentSpec
+	// output. The two AgentSpec shapes are not identical — pi-jit-agents only
+	// reads `name` off `spec` for trace stamping; we stub `loadedFrom` so the
+	// type-check passes. `contextValues` carries the resolved collector output
+	// keyed by collector name so executeAgent can emit one context_collection
+	// entry per resolved key.
+	const synthCompiled: CompiledAgent = {
+		spec: {
+			name: agentSpec.name,
+			loadedFrom: "<monitor-classify>",
+		} as CompiledAgent["spec"],
+		systemPrompt: compiled.systemPrompt,
+		taskPrompt: prompt,
+		model: modelSpec,
+		outputSchema: resolvedOutputSchema,
+		contextValues: { ...collected, ...(extraContext ?? {}) },
+	};
+
+	const dispatch: DispatchContext = {
+		model: model as Model<Api>,
+		// JitAgentAuth requires non-optional apiKey/headers; the
+		// ResolvedRequestAuth ok-branch leaves both optional. Default empty
+		// values match the legacy behavior where pi-ai's `complete` accepted
+		// undefined values transparently.
+		auth: { apiKey: auth.apiKey ?? "", headers: auth.headers ?? {} },
+		maxTokens: 1024,
+		signal,
+		tracePath,
+		redactionConfigPath,
+		monitorName: monitor.name,
+	};
+
 	// Thinking is disabled for classify calls — Anthropic API rejects
 	// thinking + forced toolChoice. The phantom tool enforces output shape;
 	// thinking support requires Structured Outputs (output_config.format)
-	// which pi-ai does not yet expose.
-	const response: AssistantMessage = await complete(
-		model as Model<Api>,
-		{
-			messages: [{ role: "user", content: [{ type: "text", text: prompt }], timestamp: Date.now() }],
-			tools: [VERDICT_TOOL],
-		},
-		{
-			apiKey: auth.apiKey,
-			headers: auth.headers,
-			maxTokens: 1024,
-			signal,
-			toolChoice: normalizeToolChoice(model.api, "classify_verdict"),
-		},
-	);
-
-	const toolCall = response.content.find((c): c is ToolCall => c.type === "toolCall");
-	if (!toolCall) {
-		const contentTypes = response.content.map((c) => c.type).join(", ");
-		const errMsg = response.errorMessage ? ` error: ${response.errorMessage}` : "";
+	// which pi-ai does not yet expose. executeAgent enforces the same
+	// constraint internally.
+	let result: Awaited<ReturnType<typeof executeAgent>>;
+	try {
+		result = await executeAgent(synthCompiled, dispatch);
+	} catch (err) {
+		const errMsg = err instanceof Error ? err.message : String(err);
 		return {
 			verdict: "error",
-			error: `No tool call in response (stopReason: ${response.stopReason}, content: [${contentTypes}]${errMsg})`,
+			error: errMsg,
 		};
 	}
-	const parsed = toolCall.arguments as Record<string, unknown>;
 
-	// Validate against verdict schema if the agent spec declares one
-	if (compiled.outputSchema) {
-		const schemaPath = path.isAbsolute(compiled.outputSchema)
-			? compiled.outputSchema
-			: path.resolve(AGENTS_DIR, compiled.outputSchema);
-		validateFromFile(schemaPath, parsed, `verdict for monitor '${monitor.name}'`);
+	// executeAgent returns the validated tool-call arguments as `output` when
+	// outputSchema is set (verdict schema). Otherwise `output` is the extracted
+	// text — fall back to parseVerdict for unstructured responses to preserve
+	// the legacy free-text classify path used by some agent specs.
+	if (resolvedOutputSchema && result.output && typeof result.output === "object") {
+		const parsed = result.output as Record<string, unknown>;
+		// Re-validate at the call site for parity with the prior implementation
+		// (executeAgent already validated; the duplicate call is a no-op on the
+		// happy path and preserves the existing error-surfacing label).
+		validateFromFile(resolvedOutputSchema, parsed, `verdict for monitor '${monitor.name}'`);
+		return mapVerdictToClassifyResult(parsed);
 	}
-	return mapVerdictToClassifyResult(parsed);
+
+	if (!resolvedOutputSchema && typeof result.output === "string") {
+		return parseVerdict(result.output);
+	}
+
+	return {
+		verdict: "error",
+		error: `Unexpected executeAgent output shape (type=${typeof result.output})`,
+	};
 }
 
 // =============================================================================
@@ -1618,6 +1761,34 @@ async function escalate(monitor: Monitor, _pi: ExtensionAPI, ctx: ExtensionConte
 // =============================================================================
 
 export default function (pi: ExtensionAPI) {
+	// Cache pi for classify-time CLI flag lookup. classifyViaAgent reads
+	// --trace / --no-trace / --trace-dir / --trace-filter via getCliFlag()
+	// to resolve the trace destination passed through DispatchContext.
+	getCliFlag = (name: string): boolean | string | undefined => pi.getFlag(name);
+
+	// CLI flag registration for the agent-trace pipeline (issue-023 T6).
+	// pi-coding-agent's convention is `--no-<name>` for boolean disable, plain
+	// `--<name>` for boolean enable, and `--<name> <value>` for value flags.
+	pi.registerFlag("trace", {
+		type: "boolean",
+		default: false,
+		description:
+			"Enable agent-trace JSONL emission for monitor classify calls (default location: .workflows/monitors/<name>/<YYYY-MM-DD>.jsonl).",
+	});
+	pi.registerFlag("no-trace", {
+		type: "boolean",
+		default: false,
+		description: "Disable agent-trace JSONL emission for monitor classify calls.",
+	});
+	pi.registerFlag("trace-dir", {
+		type: "string",
+		description: "Override the base directory for agent-trace JSONL files. Date-rotated filename appended.",
+	});
+	pi.registerFlag("trace-filter", {
+		type: "string",
+		description: "Path to a trace-config.json with custom redaction patterns layered atop the builtin set.",
+	});
+
 	const seeded = seedExamples();
 
 	const monitors = discoverMonitors();

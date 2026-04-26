@@ -116,7 +116,7 @@
     {
       "id": "DEC-0004",
       "title": "TraceEntry schema independence from SessionEntry",
-      "status": "open",
+      "status": "enacted",
       "context": "Issue-023 requires side-car trace capture for monitor classify calls. Pi-mono's SessionManager.SessionEntry (node_modules/@mariozechner/pi-coding-agent/dist/core/session-manager.d.ts) carries the canonical tree structure (type discriminator, id, parentId, timestamp, extension fields). The architectural question: should TraceEntry inherit SessionEntry literally, or adopt its structural contract without tight coupling? Inherit-literally couples our trace evolution to pi-mono's session schema, so any upstream change auto-breaks traces. Adopt-structurally preserves pi-mono's tree-traversal patterns while keeping trace concerns scoped to the trace subsystem. The 2026-04-26 mandate-bound canonical-compliance audit established that the structural contract is canonical pi-mono and the inheritance is not — pi-coding-agent does not export SessionEntry as a base type for extension reuse, so structural adoption is the only path that does not invent a new pi-mono surface.",
       "decision": "Trace entries adopt the SessionEntry conceptual shape (type discriminator, id, parentId, timestamp, extension fields per kind) but live in a separate schema namespace. No literal inheritance, no shared base type. The trace subsystem owns its own discriminated union: session_start, classify_call, classify_response, context_collection, verdict_decision, trace_end. Both subsystems use identical timestamp semantics (ISO 8601 via new Date().toISOString()). If session schema evolves, traces continue independently.",
       "consequences": [
@@ -148,6 +148,10 @@
         {
           "label": "Forcing finding issue-023",
           "path": ".project/issues.json"
+        },
+        {
+          "label": "Enacting commit — issue-023 implementation",
+          "commit": "1bc36ba"
         }
       ],
       "created_by": "agent/claude-opus-4-7",
@@ -156,7 +160,7 @@
     {
       "id": "DEC-0005",
       "title": "Monitor observability via push-write trace stream (intentional divergence from pi-mono pull model)",
-      "status": "open",
+      "status": "enacted",
       "context": "Pi-mono SessionManager is pull-only: agents and extensions read session state via getBranch / getEntry / getEntries / getChildren but cannot write directly. SessionManager enforces readonly via the ReadonlySessionManager interface delivered to extensions (node_modules/@mariozechner/pi-coding-agent/dist/core/session-manager.d.ts). Monitors are side-channel executors — classify calls fire on turn_end and message_end events outside the main agent loop — and require independent write capability to record execution traces. Issue-023 names the capture requirement. The architectural question is whether to align with pi-mono's pull/replay observability model (structurally impossible given ReadonlySessionManager) or to diverge to a push-observability surface scoped to monitors. The 2026-04-26 mandate-bound canonical-compliance audit verified that pi-mono provides zero push-observability primitives (no Tracer, no Telemetry, no Logger framework, only event subscription) and that the divergence is the only path that satisfies the capture requirement without violating ReadonlySessionManager.",
       "decision": "Monitors implement a separate push-observable trace subsystem (TraceWriter at the pi-jit-agents executeAgent boundary) that does NOT attempt to write to the session. This is an intentional divergence from pi-mono's pull-observable architecture. The divergence is justified by three forces: monitors are not agents; classify events should not pollute session history; ReadonlySessionManager structurally prevents the pull-aligned alternative. The trace subsystem is scoped to pi-behavior-monitors and pi-jit-agents and does not generalize to other extensions. Future upstream pi-mono push-observable surfaces (if added) do not force refactor — the separation is intentional and stable.",
       "consequences": [
@@ -194,6 +198,10 @@
         {
           "label": "Forcing finding issue-023",
           "path": ".project/issues.json"
+        },
+        {
+          "label": "Enacting commit — issue-023 implementation",
+          "commit": "1bc36ba"
         }
       ],
       "created_by": "agent/claude-opus-4-7",

@@ -2,7 +2,7 @@
 
 Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state in `.project/`. Behavior monitors that classify agent activity and steer corrections.
 
-Monorepo: five npm packages (`packages/*`) with lockstep versioning.
+Monorepo: npm packages under `packages/*` with lockstep versioning. Inspect `packages/` for the current set; count and names are derivable.
 
 | Package | Purpose |
 |---------|---------|
@@ -42,7 +42,7 @@ npx tsx -e "import * as sdk from'./packages/pi-workflows/src/workflow-sdk.js';co
 - ESM, TypeScript compiled via `tsc` to `dist/`. Pi loads `dist/index.js` from each package.
 - Cross-package imports use named subpath exports (e.g., `@davidorex/pi-project/block-api`). pi-project defines explicit exports in package.json — unlisted subpaths are not importable.
 - Tests: `tsx --test` for pi-project and pi-workflows, `vitest` for pi-behavior-monitors
-- Biome linting (v2.4.9): tab indent, 120-char lines, scoped to `packages/*/src/**` + `scripts/**`. `npm run lint` / `npm run format`
+- Biome linting: tab indent, 120-char lines, scoped per `biome.json` (`packages/*/src/**` + `scripts/**`); version pinned in root `package.json` devDependencies. `npm run lint` / `npm run format`. `biome.json` declares `vcs.useIgnoreFile: true` so nested `.claude/worktrees/*` configs do not trigger nested-root errors
 - Husky pre-commit hook runs `npm run check` (biome + tsc --noEmit) before every commit
 - GitHub Actions CI runs check + build + test on Node 22/23 for push/PR to main
 - SKILL.md files are generated build artifacts (`npm run skills`) — do not edit by hand. Edit `skill-narrative.md` for behavioral documentation. Narratives must use YAML frontmatter (`name`, `description` with trigger conditions) and XML tags for sections (no markdown headings). See pi-behavior-monitors/skill-narrative.md as the canonical reference. The generator emits YAML frontmatter, XML-tagged tool/command/resource sections, vocabulary tables, then appends the narrative body. Resource listings go to `references/bundled-resources.md` (progressive disclosure).
@@ -60,9 +60,10 @@ Work is not complete until the runtime can load it. Pi loads extensions from `no
 6. **Commit**: forensic commit message per global CLAUDE.md guidelines
 7. **Merge to main**: if on a feature branch
 8. **Release**: `npm run release:patch|minor|major` based on commit type (`fix:` → patch, `feat:` → minor, `feat!:` → major). This bumps versions, commits, and tags.
-9. **Publish**: requires interactive `npm login` + OTP — inform user to run `npm publish --workspaces --access public`
+9. **Credentialed smoke gate (pre-publish)**: with `OPENROUTER_API_KEY` set, run `OPENROUTER_API_KEY=$KEY npm test -w @davidorex/pi-jit-agents` and verify `jit-runtime.smoke.test.ts` actually executes (does NOT skip) and reports 0 failures. Tests gated on credentials but never run credentialed detect no fragility — F-011 shipped to runtime because this gate did not exist. If the orchestrator does not have credentials, the gate is the user's responsibility before step 10.
+10. **Publish**: requires interactive `npm login` + OTP — inform user to run `npm publish --workspaces --access public`
 
-Steps 1-8 are the agent's responsibility. Step 9 requires user action. Declaring work "done" before step 8 is a failure — the changes are unreachable at runtime.
+Steps 1-8 are the agent's responsibility. Step 9 requires credentials (orchestrator if available, otherwise user). Step 10 requires user action. Declaring work "done" before step 8 is a failure — the changes are unreachable at runtime; before step 9 is a failure — credentialed paths are unverified.
 
 ## Do Not Touch
 
@@ -89,10 +90,12 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 - `agent-spec.ts` — `parseAgentYaml` (fully resolves relative paths per D1), `createAgentLoader` (three-tier discovery per D7: `.project/agents/` → `~/.pi/agent/agents/` → consumer builtin; does NOT search `.pi/agents/` per D3)
 - `template.ts` — `createTemplateEnv`, `renderTemplate`, `renderTemplateFile` (three-tier search, workflow `${{ }}` expression protection, no `.pi/` reads per D3)
 - `compile.ts` — `compileAgent` (renders system + task templates, injects `contextBlocks` from `.project/` via pi-project `readBlock`, wraps injected block content in framework-level anti-injection delimiters)
-- `jit-runtime.ts` — `executeAgent` (unified in-process dispatch per D4, phantom-tool enforcement via forced `toolChoice`, `completeFn` injection for testing), `buildPhantomTool` (JSON Schema → TypeBox converter for the common shape)
+- `jit-runtime.ts` — `executeAgent` (unified in-process dispatch, phantom-tool enforcement via forced `toolChoice`, `completeFn` injection for testing), `buildPhantomTool` (JSON Schema → TypeBox converter for the common shape), `normalizeToolChoice(api, toolName)` (provider-aware shape normalizer at the dispatch boundary — emits OpenAI shape for `openai-completions`, Anthropic shape for `anthropic`, Bedrock shape for `bedrock-converse-stream`, throws on unsupported drivers; canonical surface for forced-tool-use, no parallel hardcoded shapes anywhere)
 - `introspect.ts` — `agentContract` (projection for SDK queries, hides internal `loadedFrom`)
 - `test-fixtures/` (outside `src/`) — minimal fixtures for unit tests, not bundled in `dist/`
-- `schemas/verdict.schema.json` — framework-contract schema for the phantom-tool classification pattern. Consumer packages (pi-workflows and pi-behavior-monitors) will migrate to import agent infrastructure from this package in a subsequent work arc; today they still use their own copies.
+- `schemas/verdict.schema.json` — framework-contract schema for the phantom-tool classification pattern.
+
+Consumer migration arc (FEAT-001) is in progress: `pi-behavior-monitors` already imports `normalizeToolChoice` from this package's barrel; full `classifyViaAgent` → `executeAgent` consolidation is still ahead. Wholesale agent-infrastructure consolidation across pi-workflows and pi-behavior-monitors continues incrementally.
 
 **pi-workflows** (`packages/pi-workflows/src/`):
 - `index.ts` — extension entry point (tool, command, keybindings)
@@ -103,17 +106,18 @@ Each package lives in `packages/<name>/` with source in `src/` (or root for pi-b
 - `dispatch.ts` — subprocess spawn (`pi --mode json`)
 - `dag.ts` — dependency graph, execution plan
 - `step-*.ts` — step type executors (one per type, including `step-monitor.ts` for monitor verification gates)
-- `templates/shared/macros.md` — Nunjucks macros rendering block data as markdown (`render_conventions`, `render_requirements`, `render_conformance`, `render_architecture`, `render_project`, `render_domain`, `render_decisions`, `render_tasks`, `render_issues`, `render_exploration`, `render_exploration_full`, `render_gap`)
+- `templates/shared/macros.md` — Nunjucks macros rendering block data as markdown (one macro per supported block kind; current set is derivable from the file). Per-item macros for newer block kinds (decisions, spec-reviews, features, framework-gaps, layer-plans, research) are pending — REVIEW-001 is gated on `render_decision`
 
 **pi-behavior-monitors** (`packages/pi-behavior-monitors/`):
-- `index.ts` — single-file extension (monitors, classification, steering, Nunjucks template rendering)
+- `index.ts` — single-file extension (monitors, classification, steering, Nunjucks template rendering). `classifyViaAgent` consumes `normalizeToolChoice` from `@davidorex/pi-jit-agents` for forced-tool-use shape — no hardcoded toolChoice literals
+- `agents/*-classifier.agent.yaml` — bundled classifier agents; current set routes through openrouter (`model: openrouter/anthropic/claude-sonnet-4.6`) because `~/.pi/agent/auth.json` carries only an openrouter key in the canonical setup. Provider routing is encoded in the YAML's `model:` field per DEC-0003's execute-boundary principle
 - `examples/` — bundled monitor JSON specs + Nunjucks `.md` prompt templates (subdirectories per monitor)
 
 ## Workflow SDK (`packages/pi-workflows/src/workflow-sdk.ts`)
 
 Single queryable surface for the workflow extension's capabilities. All functions derive dynamically from code registries and filesystem — add a filter, agent, template, or schema and it appears automatically.
 
-- **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`, `validationChecks()` — 11 check descriptors (id, name, severity, description) derived from the validator's code registry
+- **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`, `validationChecks()` — check descriptors (id, name, severity, description) derived from the validator's code registry; current count is derivable
 - **Discovery**: `availableAgents(cwd)`, `availableWorkflows(cwd)`, `availableTemplates(cwd)`, `availableSchemas(cwd)`
 - **Contracts**: `agentContracts(cwd)` — per-agent projection of inputSchema (required/optional fields), contextBlocks, outputFormat/Schema. `agentsByBlock(cwd, blockName)` — which agents declare a given block in contextBlocks.
 - **Introspection**: `extractExpressions(spec)`, `declaredSteps(spec)`, `declaredAgentRefs(spec)`, `declaredMonitorRefs(spec)`, `declaredSchemaRefs(spec)`
@@ -160,7 +164,7 @@ All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add 
 - Agent specs are `.agent.yaml` only (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time. Agents declare `inputSchema` (validated at dispatch before subprocess spawn — step fails immediately on mismatch), `contextBlocks` (block names to inject into template context), and `output.format`/`output.schema` (validated after subprocess completes).
 - `contextBlocks: [conventions, requirements, conformance-reference]` on an agent YAML causes `compileAgentSpec()` to read each named block from `.project/` and inject it into the Nunjucks template context as `_<name>` (hyphens become underscores). Templates access via `{{ _conventions.rules }}` or `{% from "shared/macros.md" import render_conventions %}{{ render_conventions(_conventions) }}`. Missing blocks are `null`; no `.project/` skips injection. This is how project state flows into agent prompts.
 - `templates/shared/macros.md` provides one rendering macro per block schema. Agents import them via `{% from "shared/macros.md" import render_conventions %}`. Resolved via three-tier template search — users override in `.pi/templates/`.
-- Monitor specs are `.monitor.json` with required `classify.agent` referencing a `.agent.yaml` spec. The classify call uses the agent spec compilation pipeline (`compileAgentSpec()`, `createAgentLoader()`) and enforces structured output via the Anthropic API's phantom tool pattern: a `VERDICT_TOOL` with TypeBox parameters is passed in `Context.tools` with `toolChoice` forcing the tool — the LLM produces `ToolCall.arguments` matching `verdict.schema.json` (CLEAN/FLAG/NEW enum). No text parsing, no JSON.parse of free-form output. Collectors populate the template context (same role as `contextBlocks` for workflow agents). Agent YAMLs use `claude-sonnet-4-6` for adaptive thinking compatibility with forced tool-use. Template search: project `.pi/monitors/` > user `~/.pi/agent/monitors/` > package `examples/`.
+- Monitor specs are `.monitor.json` with required `classify.agent` referencing a `.agent.yaml` spec. The classify call uses the agent spec compilation pipeline (`compileAgentSpec()`, `createAgentLoader()`) and enforces structured output via the phantom tool pattern: a `VERDICT_TOOL` with TypeBox parameters is passed in `Context.tools` with forced `toolChoice` — the LLM produces `ToolCall.arguments` matching `verdict.schema.json` (CLEAN/FLAG/NEW enum). No text parsing, no JSON.parse of free-form output. The forced-toolChoice shape is provider-specific; both `executeAgent` and `classifyViaAgent` route through `normalizeToolChoice(api, toolName)` from `@davidorex/pi-jit-agents` so the right shape reaches each driver (OpenAI for `openai-completions`, Anthropic for `anthropic`, Bedrock for `bedrock-converse-stream`; throws on `openai-responses` family and google providers because forced tool-use is unenforceable on those routes). Collectors populate the template context (same role as `contextBlocks` for workflow agents). The agent's `model:` field selects the dispatch route — bundled classifiers route through openrouter; thinking is force-disabled at classify regardless of YAML setting. The TypeBox `Type` constructor is re-exported by `@mariozechner/pi-ai`; no direct `@sinclair/typebox` import in three of our packages (pi-project imports `typebox` directly). Template search: project `.pi/monitors/` > user `~/.pi/agent/monitors/` > package `examples/`.
 - Monitor step type: workflows can invoke monitors as verification gates via `monitor: <name>`. CLEAN → completed, FLAG/NEW → failed.
 - `block:<name>` schema references: `output.schema: block:project` resolves to `.project/schemas/project.schema.json` from cwd. Portable across install methods — use for any workflow step or artifact that targets a project block.
 - State persisted atomically after each step (tmp + rename). State write failure is fatal.
@@ -176,7 +180,15 @@ All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add 
 
 Pi tools are accessible from any LLM with shell access via `pi -p "prompt" --mode json`. The subprocess loads all extensions, executes tool calls, and returns newline-delimited JSON events. This is the same mechanism the workflow executor uses for step dispatch.
 
-Read-only queries (safe, no state changes):
+**Cost-control discipline (F-006 mitigation, mandatory for write tools).** The default openrouter model in pi config is agentic; an unrestricted `pi -p "..." --no-skills` invocation gives the model access to all default tools (`read`, `bash`, `edit`, `write`) and produces tool-call loops that compound prompt size into runaway runtime — observed as a 15+ minute silent "hang" on a 6KB prompt. Always pin a fast non-agentic model and restrict the tool surface unless write capability is explicitly required:
+
+```
+pi -p "..." --mode json --tools read --no-skills --model openrouter/anthropic/claude-haiku-4.5
+```
+
+For write tools, restrict to the minimum required: `--tools read,write` or omit `--tools` if the prompt's tool call needs broader access, but always retain the `--model` pin. Wrap long-running invocations with `gtimeout 120 pi -p ...` so silent loops surface as exit codes.
+
+Read-only queries (safe, no state changes — append `--model openrouter/anthropic/claude-haiku-4.5` for fast deterministic dispatch):
 - `pi -p "call the project-status tool" --mode json --tools read --no-skills` — derived project state
 - `pi -p "call the project-validate tool" --mode json --tools read --no-skills` — cross-block integrity
 - `pi -p "call the workflow-validate tool" --mode json --tools read --no-skills` — workflow validation (three-state status, actionable suggestions)
@@ -185,10 +197,10 @@ Read-only queries (safe, no state changes):
 - `pi -p "call the read-block tool with name requirements" --mode json --tools read --no-skills` — read any block
 - `pi -p "call the monitors-status tool" --mode json --tools read --no-skills` — monitor state
 
-Write operations (modify `.project/` or `.workflows/`):
-- `pi -p "call the append-block-item tool with name tasks and key tasks and item {json}" --mode json --no-skills` — add items to blocks
-- `pi -p "call the project-init tool" --mode json --no-skills` — scaffold `.project/`
-- `pi -p "call the workflow-init tool" --mode json --no-skills` — scaffold `.workflows/`
+Write operations (modify `.project/` or `.workflows/` — `--model` pin is mandatory; the agentic-loop trap was observed specifically on write-tool invocations):
+- `pi -p "call the append-block-item tool with name tasks and key tasks and item {json}" --mode json --no-skills --model openrouter/anthropic/claude-haiku-4.5` — add items to blocks
+- `pi -p "call the project-init tool" --mode json --no-skills --model openrouter/anthropic/claude-haiku-4.5` — scaffold `.project/`
+- `pi -p "call the workflow-init tool" --mode json --no-skills --model openrouter/anthropic/claude-haiku-4.5` — scaffold `.workflows/`
 
 ## Design Decisions & Gaps
 

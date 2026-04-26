@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	COLLECTOR_DESCRIPTORS,
 	COLLECTOR_NAMES,
+	collectAssistantText,
 	collectConversationHistory,
 	discoverMonitors,
 	extractResponseText,
@@ -1058,4 +1059,105 @@ describe("bundled monitors: classify fields cleaned", () => {
 			expect(classify.prompt).toBeUndefined();
 		});
 	}
+});
+
+// =============================================================================
+// collectAssistantText (F-014 / F-018)
+// =============================================================================
+// F-014: walk previously returned from the FIRST assistant message, so a
+// tool-call-only tail message produced an empty result even when prior
+// assistant messages in the same turn carried text.
+// F-018: "the assistant's response" is defined as all assistant text from
+// the most recent user message to the present, joined with "\n\n".
+
+/** Build an assistant entry with explicit content blocks (for thinking-block tests). */
+function makeAssistantWithContent(id: string, parentId: string | null, content: { type: string; text?: string }[]) {
+	return {
+		type: "message" as const,
+		id,
+		parentId,
+		timestamp: new Date().toISOString(),
+		message: {
+			role: "assistant" as const,
+			content,
+			api: "messages" as const,
+			provider: "anthropic",
+			model: "test",
+		},
+	};
+}
+
+describe("collectAssistantText", () => {
+	it("returns text when latest assistant message is text-only", () => {
+		const branch = [makeUser("u1", null, "hi"), makeAssistant("a1", "u1", "hello")];
+		expect(collectAssistantText(branch as any)).toBe("hello");
+	});
+
+	it("returns prior text when latest assistant message is tool-call-only (F-014 case)", () => {
+		const branch = [
+			makeUser("u1", null, "do work"),
+			makeAssistant("a1", "u1", "working on it"),
+			makeAssistant("a2", "a1", "", [{ name: "Bash" }]),
+		];
+		expect(collectAssistantText(branch as any)).toBe("working on it");
+	});
+
+	it("aggregates multiple assistant text messages with double-newline separator", () => {
+		const branch = [
+			makeUser("u1", null, "go"),
+			makeAssistant("a1", "u1", "step 1"),
+			makeAssistant("a2", "a1", "step 2"),
+		];
+		expect(collectAssistantText(branch as any)).toBe("step 1\n\nstep 2");
+	});
+
+	it("aggregates text across mixed text + tool-call interleaved messages", () => {
+		const branch = [
+			makeUser("u1", null, "go"),
+			makeAssistant("a1", "u1", "A"),
+			makeAssistant("a2", "a1", "", [{ name: "Bash" }]),
+			makeAssistant("a3", "a2", "B"),
+			makeAssistant("a4", "a3", "", [{ name: "Read" }]),
+		];
+		expect(collectAssistantText(branch as any)).toBe("A\n\nB");
+	});
+
+	it("returns all assistant text when no user message in branch (system-init turn)", () => {
+		const branch = [makeAssistant("a1", null as any, "hello")];
+		expect(collectAssistantText(branch as any)).toBe("hello");
+	});
+
+	it("returns empty string for empty branch", () => {
+		expect(collectAssistantText([])).toBe("");
+	});
+
+	it("returns empty string when all assistant messages are tool-call-only", () => {
+		const branch = [
+			makeUser("u1", null, "do work"),
+			makeAssistant("a1", "u1", "", [{ name: "Bash" }]),
+			makeAssistant("a2", "a1", "", [{ name: "Read" }]),
+		];
+		expect(collectAssistantText(branch as any)).toBe("");
+	});
+
+	it("stops at the most recent user message and excludes earlier turns", () => {
+		const branch = [
+			makeUser("u1", null, "first request"),
+			makeAssistant("a1", "u1", "old"),
+			makeUser("u2", "a1", "second request"),
+			makeAssistant("a2", "u2", "current"),
+		];
+		expect(collectAssistantText(branch as any)).toBe("current");
+	});
+
+	it("drops thinking blocks and preserves text blocks", () => {
+		const branch = [
+			makeUser("u1", null, "go"),
+			makeAssistantWithContent("a1", "u1", [
+				{ type: "thinking", text: "internal reasoning" },
+				{ type: "text", text: "visible" },
+			]),
+		];
+		expect(collectAssistantText(branch as any)).toBe("visible");
+	});
 });

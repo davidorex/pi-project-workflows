@@ -501,14 +501,57 @@ function collectUserText(branch: SessionEntry[]): string {
 	return "";
 }
 
-function collectAssistantText(branch: SessionEntry[]): string {
+/**
+ * Collect the assistant's response text for the current turn.
+ *
+ * Walks the branch backward from the tail and aggregates text from every
+ * assistant `MessageEntry` until it reaches the most recent user message
+ * (turn boundary), at which point the walk stops. Collected segments are
+ * reversed back to chronological order and joined with `\n\n`. Empty
+ * segments (from tool-call-only assistant messages with no text content)
+ * are dropped before joining.
+ *
+ * Encoded design decisions:
+ *
+ * - F-014 root-cause fix: previously the function returned from the FIRST
+ *   assistant message it hit walking backward; when that latest assistant
+ *   message was tool-call-only, the result was empty even though earlier
+ *   assistant messages in the same turn carried the user-visible text.
+ *   The walk now aggregates across all assistant messages in the turn so
+ *   tool-call-only tail messages no longer mask prior text.
+ *
+ * - F-018 multi-message-turn semantics: "the assistant's response" is
+ *   defined as all assistant text emitted from the most recent user
+ *   message up to the present, joined with double-newline separator.
+ *   Non-message entries (model_change, label, custom_message,
+ *   branch_summary, etc.) are skipped — they are not part of the
+ *   assistant's response.
+ *
+ * - `extractText` (text-only filter) is intentionally not modified here:
+ *   tool-call blocks have no user-visible text, and thinking blocks are
+ *   model-internal reasoning that should not leak into classifier prompts.
+ *
+ * Edge cases:
+ *   - Empty branch: returns "".
+ *   - No user message in branch (e.g., system-init turn): walks to start
+ *     and returns all collected assistant text.
+ *   - All assistant messages tool-call-only: returns "" (true empty
+ *     response, distinct from the F-014 false-positive case).
+ */
+export function collectAssistantText(branch: SessionEntry[]): string {
+	const segments: string[] = [];
 	for (let i = branch.length - 1; i >= 0; i--) {
 		const entry = branch[i];
-		if (isMessageEntry(entry) && entry.message.role === "assistant") {
-			return extractText(entry.message.content);
+		if (!isMessageEntry(entry)) continue;
+		if (entry.message.role === "user") break;
+		if (entry.message.role === "assistant") {
+			segments.push(extractText(entry.message.content));
 		}
 	}
-	return "";
+	return segments
+		.reverse()
+		.filter((s) => s.length > 0)
+		.join("\n\n");
 }
 
 function collectToolResults(branch: SessionEntry[], limit = 5): string {

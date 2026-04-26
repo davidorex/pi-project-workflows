@@ -20,6 +20,7 @@
 
 ## F-002 — Five monitor classifier YAMLs use `model: claude-sonnet-4-6` with no provider field; default-to-anthropic logic requires auth that single-openrouter setups lack
 
+- **Status:** Resolved on `main` by commit `7edf3a2` (2026-04-25), which routed all five YAMLs to `model: openrouter/anthropic/claude-sonnet-4.6` with the dash/dot-form rationale comment from F-009. The auth-resolution failure pattern is gone; the downstream provider-translation failure surfaced after this fix is captured separately as F-011 (also resolved, by `ce37772`).
 - **Target block:** issues.json (category `issue`, priority `high`, package `pi-behavior-monitors`) — this is the active failure on every pi turn in this repo.
 - **Source:** subagent `a3a99a192857a61fa` investigation of `[hedge]/[fragility] classify failed: ... Could not resolve authentication method` errors.
 - **Affected files:**
@@ -84,6 +85,7 @@
 
 ## F-008 — pi-ai and pi-coding-agent installed at 0.63.1; latest npm is 0.70.2 (~7 minor versions, ~1 month behind)
 
+- **Status:** Resolved on `main` by commit `11a4069` (2026-04-25). All four workspace packages now declare `^0.70.2`. TypeBox v0.34 → v1.x migrated via hybrid import strategy (Path β for three packages importing Type from pi-ai's re-export; Path α for pi-project declaring `typebox: ^1.1.24` directly because pi-coding-agent does not re-export Type). Zero source changes needed beyond the four import statements; 28 consumed pi-mono symbols verified stable across 0.63.1 → 0.70.2. R-0001 grounding (cited 0.63.1) is now stale.
 - **Target block:** issues.json (category `cleanup`, priority `medium`, package — repo-level, no single package fit; affects all extensions because pi-ai is the dispatch substrate)
 - **Source:** upstream-comparison subagent task.
 - **Symptom:** `package-lock.json` pins `@mariozechner/pi-ai` and `@mariozechner/pi-coding-agent` at `0.63.1` (released 2026-03-20/27). npm latest is `0.70.2` (released 2026-04-24). Upstream HEAD `0b271a2`.

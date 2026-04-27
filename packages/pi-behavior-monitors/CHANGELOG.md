@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.14.6] - 2026-04-27
 
 ### Changed
 - Monitor discovery uses a three-tier multi-location loader (project `.pi/monitors/` > global `~/.pi/agent/monitors/` > bundled `<package>/examples/`) instead of the prior copy-on-first-run `seedExamples()` pattern. Bundled monitor changes (e.g., the `agent_end` routing fix in commit affe992) now propagate to all installations automatically because the bundled tier reads the package examples directly. First match by `monitor.name` wins; same-name shadowing across tiers logs a one-line warning at session_start so drift is visible.

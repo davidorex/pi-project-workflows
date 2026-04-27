@@ -1,6 +1,6 @@
 {
 	"name": "@davidorex/pi-jit-agents",
-	"version": "0.14.5",
+	"version": "0.14.6",
 	"description": "Agent spec compilation and in-process dispatch runtime — the package that owns everything between 'I have a spec' and 'I have a typed result'",
 	"license": "MIT",
 	"author": "David Ryan",
@@ -58,7 +58,7 @@
 		"test": "tsx --test src/*.test.ts"
 	},
 	"dependencies": {
-		"@davidorex/pi-project": "^0.14.5",
+		"@davidorex/pi-project": "^0.14.6",
 		"@mariozechner/pi-ai": "^0.70.2",
 		"nunjucks": "^3.2.4",
 		"proper-lockfile": "^4.1.2",

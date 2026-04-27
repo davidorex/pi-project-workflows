@@ -7,7 +7,7 @@ Pi extension that adds behavior monitors — autonomous watchdogs that classify 
 ## Structure
 
 - `src/index.ts` — extension entry point; compiled to `dist/` for publishing
-- `examples/` — bundled monitor JSON files (seeded into `.pi/monitors/` on first run)
+- `examples/` — bundled monitor JSON files (loaded as the third discovery tier; user files in `.pi/monitors/` and `~/.pi/agent/monitors/` override by name)
 - `schemas/` — JSON schemas for monitor definitions and patterns
 - `skills/` — SKILL.md for LLM-assisted monitor creation
 - `CHANGELOG.md` — maintained via changelogen

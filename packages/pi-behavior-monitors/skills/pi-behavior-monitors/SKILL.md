@@ -131,32 +131,31 @@ write structured findings to JSON files for downstream consumption.
 </objective>
 
 <monitor_locations>
-Monitors are discovered from two locations, checked in order:
+Monitors are discovered from three tiers, checked in precedence order; the first match
+by `monitor.name` wins:
 
-1. **Project**: `.pi/monitors/*.monitor.json` (walks up from cwd to find `.pi/`)
+1. **Project**: `.pi/monitors/*.monitor.json` (walks up from cwd to find `.pi/`, stops at the `.git` boundary)
 2. **Global**: `~/.pi/agent/monitors/*.monitor.json` (via `getAgentDir()`)
+3. **Bundled**: `<package>/examples/*.monitor.json` (the five built-in defaults that ship with the extension)
 
-Project monitors take precedence — if a project monitor has the same `name` as a global
-one, the global monitor is ignored. The extension silently exits if zero monitors are
-discovered after checking both locations.
+When a higher-precedence tier shadows a same-name monitor in a lower tier, the override
+is logged once at session_start so drift is visible. The extension silently exits if
+zero monitors are discovered across all three tiers.
 </monitor_locations>
 
-<seeding>
-On first run in a project, the extension seeds bundled example monitors into
-`.pi/monitors/` if ALL of the following are true:
+<overrides>
+To customize a bundled monitor, create `.pi/monitors/<name>.monitor.json` (and its
+`.patterns.json` and `.instructions.json` sidecars) in your project. The override fully
+replaces the bundled version by name. Per-monitor template subdirectories (e.g.,
+`fragility/classify.md`) follow the same multi-tier search via
+`createMonitorAgentTemplateEnv`, so an override directory tree mirrors the bundled
+layout.
 
-- `discoverMonitors()` finds zero monitors (neither project nor global)
-- The `examples/` directory exists in the extension package
-- The target `.pi/monitors/` directory contains no `.monitor.json` files
-
-Seeding copies all `.json` files from `examples/` (monitor definitions, patterns, and
-instructions files) into `.pi/monitors/`. It skips files that already exist at the
-destination. The user is notified: "Edit or delete them to customize."
-
-To customize seeded monitors, edit the copies in `.pi/monitors/` directly. To remove a
-bundled monitor, delete its three files (`.monitor.json`, `.patterns.json`,
-`.instructions.json`). Seeding never re-runs once any monitors exist.
-</seeding>
+Delete the override to revert to bundled behavior — bundled updates are picked up
+automatically on the next session because tier 3 reads the package examples directly,
+not a copied snapshot. This replaces the prior copy-on-first-run pattern that left
+seeded `.pi/monitors/` files frozen at the package version they were seeded from.
+</overrides>
 
 <file_structure>
 Each monitor is a set of files sharing a name prefix:
@@ -468,7 +467,8 @@ for other extensions or workflows to invoke classification directly.
 </commands>
 
 <bundled_monitors>
-Five example monitors ship in `examples/` and are seeded on first run. Each has a
+Five example monitors ship in `examples/` and load directly from the package as the
+third discovery tier. Each has a
 Nunjucks classify template in `examples/<name>/classify.md` with iteration-aware
 acknowledgment support:
 

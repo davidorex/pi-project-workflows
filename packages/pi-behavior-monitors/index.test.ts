@@ -13,11 +13,11 @@ import {
 	generateFindingId,
 	invokeMonitor,
 	isReferentialMessage,
+	type MonitorOverride,
 	mapVerdictToClassifyResult,
 	parseModelSpec,
 	parseMonitorsArgs,
 	parseVerdict,
-	resolveProjectMonitorsDir,
 	SCOPE_TARGETS,
 	VALID_EVENTS,
 	VERDICT_TYPES,
@@ -956,7 +956,7 @@ describe("discoverMonitors .git boundary", () => {
 		// cwd is inside project, below .git
 		vi.spyOn(process, "cwd").mockReturnValue(subDir);
 
-		const monitors = discoverMonitors();
+		const { monitors } = discoverMonitors();
 		const names = monitors.map((m) => m.name);
 		expect(names).not.toContain("parent-monitor");
 
@@ -986,7 +986,7 @@ describe("discoverMonitors .git boundary", () => {
 
 		vi.spyOn(process, "cwd").mockReturnValue(subDir);
 
-		const monitors = discoverMonitors();
+		const { monitors } = discoverMonitors();
 		const names = monitors.map((m) => m.name);
 		expect(names).toContain("project-monitor");
 
@@ -994,52 +994,148 @@ describe("discoverMonitors .git boundary", () => {
 	});
 });
 
-describe("resolveProjectMonitorsDir .git boundary", () => {
+// =============================================================================
+// Three-tier resolution: project > global > bundled examples (first-wins by name)
+//
+// These tests pin the canonical pi-mono multi-location loader contract that
+// replaces the prior `seedExamples()` copy-on-first-run pattern. The project
+// tier is isolated by mocking process.cwd() to a tmp .git-rooted directory.
+// The global tier is redirected via PI_CODING_AGENT_DIR (pi-coding-agent's
+// getAgentDir() honors that env var before falling back to homedir(); spying
+// on os.homedir() is not viable under ESM — vitest cannot redefine module
+// namespace exports). Tier 3 is always reachable because EXAMPLES_DIR is
+// bundled with the package.
+// =============================================================================
+
+describe("discoverMonitors three-tier resolution", () => {
+	const ENV_KEY = "PI_CODING_AGENT_DIR";
+
 	afterEach(() => {
 		vi.restoreAllMocks();
+		vi.unstubAllEnvs();
 	});
 
-	it("stops at .git boundary and returns cwd-based default", () => {
-		// Structure:
-		//   tmp/
-		//     .pi/  (parent — should NOT be found)
-		//     project/
-		//       .git/  (boundary)
-		//       subdir/ (cwd)
-		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-resolve-"));
-		const parentPiDir = path.join(tmpRoot, ".pi");
+	const BUNDLED_NAMES = new Set(["fragility", "hedge", "commit-hygiene", "unauthorized-action", "work-quality"]);
+	const PACKAGE_EXAMPLES_DIR = path.resolve(import.meta.dirname ?? ".", "examples");
+
+	// vitest's vi.stubEnv is the recommended way to override process.env so that
+	// per-worker isolation and afterEach unstubAllEnvs() restoration both work.
+	// pi-coding-agent's getAgentDir() reads ENV_KEY on every call (verified via
+	// inline tsx debug), so setting it before discoverMonitors() invocations
+	// redirects the global tier into the tmp tree.
+	function setIsolatedGlobalDir(tmpRoot: string): string {
+		const fakeAgentDir = path.join(tmpRoot, "pi-agent");
+		fs.mkdirSync(fakeAgentDir, { recursive: true });
+		vi.stubEnv(ENV_KEY, fakeAgentDir);
+		return fakeAgentDir;
+	}
+
+	it("falls back to bundled examples when project and global tiers are empty", () => {
+		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-tier3-"));
 		const projectDir = path.join(tmpRoot, "project");
-		const gitDir = path.join(projectDir, ".git");
-		const subDir = path.join(projectDir, "subdir");
+		fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
+		setIsolatedGlobalDir(tmpRoot);
+		vi.spyOn(process, "cwd").mockReturnValue(projectDir);
 
-		fs.mkdirSync(parentPiDir, { recursive: true });
-		fs.mkdirSync(gitDir, { recursive: true });
-		fs.mkdirSync(subDir, { recursive: true });
-
-		vi.spyOn(process, "cwd").mockReturnValue(subDir);
-
-		const result = resolveProjectMonitorsDir();
-		// Should return cwd-based default, NOT the parent .pi/monitors
-		expect(result).toBe(path.join(subDir, ".pi", "monitors"));
+		const { monitors, overrides } = discoverMonitors();
+		const names = new Set(monitors.map((m) => m.name));
+		for (const expected of BUNDLED_NAMES) {
+			expect(names).toContain(expected);
+		}
+		for (const m of monitors) {
+			expect(m.dir).toBe(PACKAGE_EXAMPLES_DIR);
+		}
+		expect(overrides).toEqual([]);
 
 		fs.rmSync(tmpRoot, { recursive: true, force: true });
 	});
 
-	it("finds .pi/ within .git boundary", () => {
-		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-resolve-"));
+	it("resolves bundled-tier sidecars relative to the bundled monitor's dir", () => {
+		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-sidecar-"));
 		const projectDir = path.join(tmpRoot, "project");
-		const gitDir = path.join(projectDir, ".git");
-		const piDir = path.join(projectDir, ".pi");
-		const subDir = path.join(projectDir, "subdir");
+		fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
+		setIsolatedGlobalDir(tmpRoot);
+		vi.spyOn(process, "cwd").mockReturnValue(projectDir);
 
-		fs.mkdirSync(gitDir, { recursive: true });
-		fs.mkdirSync(piDir, { recursive: true });
-		fs.mkdirSync(subDir, { recursive: true });
+		const { monitors } = discoverMonitors();
+		const fragility = monitors.find((m) => m.name === "fragility");
+		expect(fragility).toBeDefined();
+		expect(fragility?.resolvedPatternsPath).toBe(path.join(PACKAGE_EXAMPLES_DIR, "fragility.patterns.json"));
+		expect(fs.existsSync(fragility?.resolvedPatternsPath ?? "")).toBe(true);
 
-		vi.spyOn(process, "cwd").mockReturnValue(subDir);
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
 
-		const result = resolveProjectMonitorsDir();
-		expect(result).toBe(path.join(projectDir, ".pi", "monitors"));
+	it("project tier wins over bundled tier and emits an override entry", () => {
+		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-tier1-override-"));
+		const projectDir = path.join(tmpRoot, "project");
+		const projectMonitorsDir = path.join(projectDir, ".pi", "monitors");
+		fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
+		fs.mkdirSync(projectMonitorsDir, { recursive: true });
+		setIsolatedGlobalDir(tmpRoot);
+		vi.spyOn(process, "cwd").mockReturnValue(projectDir);
+
+		// Tier-1 stub overrides bundled `fragility` by name. Patterns/instructions
+		// files are placed alongside so parseMonitorJson succeeds.
+		fs.writeFileSync(path.join(projectMonitorsDir, "fragility.patterns.json"), JSON.stringify([]));
+		fs.writeFileSync(path.join(projectMonitorsDir, "fragility.instructions.json"), JSON.stringify([]));
+		fs.writeFileSync(
+			path.join(projectMonitorsDir, "fragility.monitor.json"),
+			JSON.stringify({
+				name: "fragility",
+				event: "agent_end",
+				classify: { agent: "test-agent", context: ["user_text"] },
+				patterns: { path: "fragility.patterns.json" },
+				instructions: { path: "fragility.instructions.json" },
+				actions: {},
+			}),
+		);
+
+		const { monitors, overrides } = discoverMonitors();
+		const fragilities = monitors.filter((m) => m.name === "fragility");
+		expect(fragilities).toHaveLength(1);
+		expect(fragilities[0]?.dir).toBe(projectMonitorsDir);
+
+		const fragilityOverride = overrides.find((o) => o.name === "fragility");
+		expect(fragilityOverride).toBeDefined();
+		expect(fragilityOverride?.winnerDir).toBe(projectMonitorsDir);
+		expect(fragilityOverride?.losingDir).toBe(PACKAGE_EXAMPLES_DIR);
+
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("global tier wins over bundled tier when project tier is absent", () => {
+		const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "monitors-tier2-override-"));
+		const projectDir = path.join(tmpRoot, "project");
+		fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
+		const fakeAgentDir = setIsolatedGlobalDir(tmpRoot);
+		const globalMonitorsDir = path.join(fakeAgentDir, "monitors");
+		fs.mkdirSync(globalMonitorsDir, { recursive: true });
+		vi.spyOn(process, "cwd").mockReturnValue(projectDir);
+
+		fs.writeFileSync(path.join(globalMonitorsDir, "hedge.patterns.json"), JSON.stringify([]));
+		fs.writeFileSync(path.join(globalMonitorsDir, "hedge.instructions.json"), JSON.stringify([]));
+		fs.writeFileSync(
+			path.join(globalMonitorsDir, "hedge.monitor.json"),
+			JSON.stringify({
+				name: "hedge",
+				event: "agent_end",
+				classify: { agent: "test-agent", context: ["user_text"] },
+				patterns: { path: "hedge.patterns.json" },
+				instructions: { path: "hedge.instructions.json" },
+				actions: {},
+			}),
+		);
+
+		const { monitors, overrides } = discoverMonitors();
+		const hedges = monitors.filter((m) => m.name === "hedge");
+		expect(hedges).toHaveLength(1);
+		expect(hedges[0]?.dir).toBe(globalMonitorsDir);
+
+		const hedgeOverride = overrides.find((o: MonitorOverride) => o.name === "hedge");
+		expect(hedgeOverride).toBeDefined();
+		expect(hedgeOverride?.winnerDir).toBe(globalMonitorsDir);
+		expect(hedgeOverride?.losingDir).toBe(PACKAGE_EXAMPLES_DIR);
 
 		fs.rmSync(tmpRoot, { recursive: true, force: true });
 	});

@@ -12,7 +12,12 @@ pi install npm:@davidorex/pi-behavior-monitors
 
 Or install all three extensions at once: `pi install npm:@davidorex/pi-project-workflows`
 
-On first run, if no monitors exist in your project, example monitors are seeded into `.pi/monitors/`. Edit or delete them to customize.
+Five example monitors ship bundled with the package and load by default from a
+three-tier search (project `.pi/monitors/` > global `~/.pi/agent/monitors/` >
+bundled `examples/`); first match by name wins. To customize one, create
+`.pi/monitors/<name>.monitor.json` in your project — the override fully replaces
+the bundled version by name. Delete the override to revert and pick up bundled
+updates automatically.
 
 ## Bundled Example Monitors
 

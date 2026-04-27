@@ -35,8 +35,16 @@ import { Box, Text } from "@mariozechner/pi-tui";
 import nunjucks from "nunjucks";
 
 const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
-const EXAMPLES_DIR = path.join(EXTENSION_DIR, "..", "examples");
-const AGENTS_DIR = path.join(EXTENSION_DIR, "..", "agents");
+/**
+ * Package root is one level up from `dist/` at runtime (compiled `dist/index.js`),
+ * or equal to `EXTENSION_DIR` when running from source (e.g. vitest). Detecting
+ * which case we're in by inspecting the basename keeps the bundled-content paths
+ * (`examples/`, `agents/`) reachable from both contexts without separate test
+ * fixtures.
+ */
+const PACKAGE_ROOT = path.basename(EXTENSION_DIR) === "dist" ? path.dirname(EXTENSION_DIR) : EXTENSION_DIR;
+const EXAMPLES_DIR = path.join(PACKAGE_ROOT, "examples");
+const AGENTS_DIR = path.join(PACKAGE_ROOT, "agents");
 
 /**
  * Tool definition for forcing structured verdict output from the classify LLM call.
@@ -257,38 +265,89 @@ function isValidEvent(event: string): event is MonitorEvent {
 // Discovery
 // =============================================================================
 
-export function discoverMonitors(): Monitor[] {
-	const dirs: string[] = [];
+/**
+ * Tracks a monitor in a lower-precedence tier whose `name` was shadowed by an
+ * earlier (higher-precedence) tier. Surfaced at session_start so users see when
+ * a project- or user-level override is hiding a (potentially newer) bundled
+ * version. The drift signal is the substitute for copy-on-first-run seeding:
+ * package examples now load directly as the third tier, and any project file
+ * keeping its older shape is reported here rather than silently winning forever.
+ */
+export interface MonitorOverride {
+	name: string;
+	winnerDir: string;
+	losingDir: string;
+}
 
-	// project-local
+/** Return value of `discoverMonitors`. `monitors` is the deduplicated set used
+ * by the runtime; `overrides` is the audit trail of shadowed lower-tier files. */
+export interface MonitorDiscovery {
+	monitors: Monitor[];
+	overrides: MonitorOverride[];
+}
+
+/**
+ * Walk up from `process.cwd()` looking for a `.pi/monitors/` directory, stopping
+ * at the first `.git` boundary so we never escape into the user's home config.
+ * Returns the resolved path or `null` when no project-tier monitors directory
+ * exists. Single source for the project-tier walk used by both `discoverMonitors`
+ * and `createMonitorAgentTemplateEnv` (the previous `resolveProjectMonitorsDir`
+ * also returned a synthesized cwd-rooted fallback path even when no directory
+ * existed, which conflated "exists" with "would be created on seed"; that
+ * conflation is no longer needed and is removed here).
+ */
+function findProjectMonitorsDir(): string | null {
 	let cwd = process.cwd();
 	while (true) {
 		const candidate = path.join(cwd, ".pi", "monitors");
-		if (isDir(candidate)) {
-			dirs.push(candidate);
-			break;
-		}
-		// Stop at project root (.git boundary) — don't traverse into user home config
-		if (isDir(path.join(cwd, ".git"))) break;
+		if (isDir(candidate)) return candidate;
+		if (isDir(path.join(cwd, ".git"))) return null;
 		const parent = path.dirname(cwd);
-		if (parent === cwd) break;
+		if (parent === cwd) return null;
 		cwd = parent;
 	}
+}
 
-	// global
+/**
+ * Discover monitors across three tiers; first match by `name` wins.
+ *
+ * Precedence (highest first):
+ *   1. project   `.pi/monitors/`            (walk-up to .git boundary)
+ *   2. global    `~/.pi/agent/monitors/`    (via `getAgentDir()`)
+ *   3. bundled   `<package>/examples/`      (built-in defaults shipped with this extension)
+ *
+ * Any monitor file in a lower tier whose `name` matches an already-seen
+ * higher-tier monitor is recorded in `overrides` (not loaded). This replaces
+ * the prior `seedExamples()` copy-on-first-run pattern: bundled fixes (e.g.
+ * commit affe992 routing fragility/hedge classifiers through `agent_end`) now
+ * propagate to users automatically because tier 3 is read live, not copied.
+ */
+export function discoverMonitors(): MonitorDiscovery {
+	const dirs: string[] = [];
+
+	const projectDir = findProjectMonitorsDir();
+	if (projectDir) dirs.push(projectDir);
+
 	const globalDir = path.join(getAgentDir(), "monitors");
 	if (isDir(globalDir)) dirs.push(globalDir);
 
+	if (isDir(EXAMPLES_DIR)) dirs.push(EXAMPLES_DIR);
+
 	const seen = new Map<string, Monitor>();
+	const overrides: MonitorOverride[] = [];
 	for (const dir of dirs) {
 		for (const file of listMonitorFiles(dir)) {
 			const monitor = parseMonitorJson(path.join(dir, file), dir);
-			if (monitor && !seen.has(monitor.name)) {
+			if (!monitor) continue;
+			const winner = seen.get(monitor.name);
+			if (!winner) {
 				seen.set(monitor.name, monitor);
+			} else {
+				overrides.push({ name: monitor.name, winnerDir: winner.dir, losingDir: dir });
 			}
 		}
 	}
-	return Array.from(seen.values());
+	return { monitors: Array.from(seen.values()), overrides };
 }
 
 function isDir(p: string): boolean {
@@ -382,76 +441,6 @@ function parseMonitorJson(filePath: string, dir: string): Monitor | null {
 		classifyFailures: 0,
 		classifySkipRemaining: 0,
 	};
-}
-
-// =============================================================================
-// Example seeding
-// =============================================================================
-
-export function resolveProjectMonitorsDir(): string {
-	let cwd = process.cwd();
-	while (true) {
-		const piDir = path.join(cwd, ".pi");
-		if (isDir(piDir)) return path.join(piDir, "monitors");
-		// Stop at project root (.git boundary) — don't traverse into user home config
-		if (isDir(path.join(cwd, ".git"))) break;
-		const parent = path.dirname(cwd);
-		if (parent === cwd) break;
-		cwd = parent;
-	}
-	return path.join(process.cwd(), ".pi", "monitors");
-}
-
-function seedExamples(): number {
-	if (discoverMonitors().length > 0) return 0;
-	if (!isDir(EXAMPLES_DIR)) return 0;
-
-	const targetDir = resolveProjectMonitorsDir();
-	fs.mkdirSync(targetDir, { recursive: true });
-
-	if (listMonitorFiles(targetDir).length > 0) return 0;
-
-	const entries = fs.readdirSync(EXAMPLES_DIR, { withFileTypes: true });
-	const files = entries.filter((e) => e.isFile() && e.name.endsWith(".json"));
-	let copied = 0;
-	for (const file of files) {
-		const dest = path.join(targetDir, file.name);
-		if (!fs.existsSync(dest)) {
-			fs.copyFileSync(path.join(EXAMPLES_DIR, file.name), dest);
-			copied++;
-		}
-	}
-
-	// Also copy template subdirectories (e.g., commit-hygiene/classify.md)
-	// These contain Nunjucks .md prompt templates referenced by promptTemplate
-	// fields in the monitor JSON specs.
-	const dirs = entries.filter((e) => e.isDirectory());
-	for (const dir of dirs) {
-		const srcDir = path.join(EXAMPLES_DIR, dir.name);
-		const destDir = path.join(targetDir, dir.name);
-		if (!fs.existsSync(destDir)) {
-			copyDirRecursive(srcDir, destDir);
-		}
-	}
-
-	return copied;
-}
-
-// =============================================================================
-// Skill syncing
-// =============================================================================
-
-function copyDirRecursive(src: string, dest: string): void {
-	fs.mkdirSync(dest, { recursive: true });
-	for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-		const srcPath = path.join(src, entry.name);
-		const destPath = path.join(dest, entry.name);
-		if (entry.isDirectory()) {
-			copyDirRecursive(srcPath, destPath);
-		} else if (entry.isFile()) {
-			fs.copyFileSync(srcPath, destPath);
-		}
-	}
 }
 
 // =============================================================================
@@ -1195,14 +1184,14 @@ export function mapVerdictToClassifyResult(parsed: Record<string, unknown>): Cla
  * Monitor paths take precedence.
  */
 function createMonitorAgentTemplateEnv(cwd: string): nunjucks.Environment {
-	const projectMonitorsDir = resolveProjectMonitorsDir();
+	const projectMonitorsDir = findProjectMonitorsDir();
 	const userMonitorsDir = path.join(os.homedir(), ".pi", "agent", "monitors");
 	const projectTemplatesDir = path.join(cwd, ".pi", "templates");
 	const userTemplatesDir = path.join(os.homedir(), ".pi", "agent", "templates");
 
 	const searchPaths: string[] = [];
 	// Monitor paths first — monitor templates take precedence
-	if (isDir(projectMonitorsDir)) searchPaths.push(projectMonitorsDir);
+	if (projectMonitorsDir) searchPaths.push(projectMonitorsDir);
 	if (isDir(userMonitorsDir)) searchPaths.push(userMonitorsDir);
 	if (isDir(EXAMPLES_DIR)) searchPaths.push(EXAMPLES_DIR);
 	// Agent template paths — for shared macros and fallback
@@ -1832,9 +1821,7 @@ export default function (pi: ExtensionAPI) {
 		description: "Path to a trace-config.json with custom redaction patterns layered atop the builtin set.",
 	});
 
-	const seeded = seedExamples();
-
-	const monitors = discoverMonitors();
+	const { monitors, overrides } = discoverMonitors();
 	loadedMonitors = monitors;
 	if (monitors.length === 0) return;
 
@@ -1872,9 +1859,17 @@ export default function (pi: ExtensionAPI) {
 		try {
 			statusCtx = ctx;
 			invokeCtx = ctx;
-			if (seeded > 0 && ctx.hasUI) {
-				const dir = resolveProjectMonitorsDir();
-				ctx.ui.notify(`Seeded ${seeded} example monitor files into ${dir}\nEdit or delete them to customize.`, "info");
+			// Surface drift between project/user overrides and bundled defaults.
+			// One notification per shadowed lower-tier monitor; users decide
+			// whether to delete the override (and pick up bundled updates) or
+			// keep it (preserving local customisations).
+			if (ctx.hasUI && overrides.length > 0) {
+				for (const o of overrides) {
+					ctx.ui.notify(
+						`[monitors] override active for '${o.name}' — using ${o.winnerDir}/${o.name}.monitor.json; bundled version at ${o.losingDir} may be newer (delete the override to receive updates)`,
+						"warning",
+					);
+				}
 			}
 			// Reset per-monitor state for the new session. This covers both
 			// fresh sessions and what was previously handled by session_switch

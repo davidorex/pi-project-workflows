@@ -725,6 +725,46 @@
       "priority": "high",
       "package": "pi-behavior-monitors",
       "source": "agent"
+    },
+    {
+      "id": "fragility-fragility-mof7ptyb",
+      "description": "The agent ran investigative tool calls (git log, git show, git branch) to evaluate recent commits as requested, but returned a completely empty response — providing no summary, confirmation, or interpretation of findings to the user who explicitly asked for a concise report.",
+      "status": "open",
+      "category": "fragility",
+      "priority": "warning",
+      "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mof98q48",
+      "description": "The agent encountered multiple aborted commands and produced no output, yet rather than acknowledging the failures or reporting partial findings, it continued narrating intent (\"Let me explore the codebase…\") as if no errors had occurred — effectively ignoring broken tool state and returning nothing useful to the user.",
+      "status": "open",
+      "category": "fragility",
+      "priority": "warning",
+      "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mof9cmhy",
+      "description": "The agent ran multiple investigative tool calls to explore the pi-mono codebase but returned a completely empty response, providing no confirmation, summary, or interpretation of findings to the user who explicitly requested an investigation.",
+      "status": "open",
+      "category": "fragility",
+      "priority": "warning",
+      "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mofaeo6x",
+      "description": "The agent ends with \"Want me to prototype `generate-sig.js`? Building it now.\" — it asks for confirmation and simultaneously claims it is already building, without actually producing any code, leaving the promised implementation unstarted and the user in an ambiguous state.",
+      "status": "open",
+      "category": "fragility",
+      "priority": "warning",
+      "source": "monitor"
+    },
+    {
+      "id": "fragility-fragility-mofavfrm",
+      "description": "The agent completed a proof-of-concept task (generating signatures, editing a script, running bash commands) and saw results, but returned a completely empty response — providing no confirmation, summary, or interpretation of the findings to the user who explicitly requested a proof of concept.",
+      "status": "open",
+      "category": "fragility",
+      "priority": "warning",
+      "source": "monitor"
     }
   ]
 }

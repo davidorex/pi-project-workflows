@@ -50,34 +50,31 @@ describe("availableBlocks", () => {
 		assert.strictEqual(config!.hasSchema, false);
 	});
 
-	it("returns empty array when .project/ does not exist", (t) => {
+	it("returns the bundled-tier blocks when .project/ does not exist", (t) => {
 		const tmpDir = makeTmpDir("blocks-empty");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
+		// Post tier-2 migration: a fresh project without `.project/` falls
+		// through to the bundled tier and reports the package's default
+		// blocks (decisions, tasks, requirements, etc.).
 		const blocks = availableBlocks(tmpDir);
-		assert.deepStrictEqual(blocks, []);
+		const names = blocks.map((b) => b.name);
+		assert.ok(names.includes("decisions"));
+		assert.ok(names.includes("tasks"));
+		assert.ok(names.includes("requirements"));
 	});
 });
 
 describe("availableSchemas", () => {
-	it("finds .project/schemas/*.schema.json", (t) => {
+	it("returns the bundled tier-2 schemas regardless of project state", (t) => {
 		const tmpDir = makeTmpDir("schemas");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-		const schemasDir = path.join(tmpDir, ".project", "schemas");
-		fs.mkdirSync(schemasDir, { recursive: true });
-		fs.writeFileSync(path.join(schemasDir, "issues.schema.json"), "{}");
-
+		// Schemas resolve from `<package>/defaults/schemas/` only. Whether
+		// or not `.project/schemas/` exists is irrelevant to the result.
 		const schemas = availableSchemas(tmpDir);
 		assert.ok(schemas.some((s) => s.includes("issues.schema.json")));
-	});
-
-	it("returns empty array when schemas dir does not exist", (t) => {
-		const tmpDir = makeTmpDir("schemas-empty");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const schemas = availableSchemas(tmpDir);
-		assert.deepStrictEqual(schemas, []);
+		assert.ok(schemas.some((s) => s.includes("decisions.schema.json")));
 	});
 });
 
@@ -774,7 +771,7 @@ describe("completeTask", () => {
 		);
 	});
 
-	it("throws when verification block is missing", (t) => {
+	it("throws when verification block has no matching entry", (t) => {
 		const tmpDir = makeTmpDir("ct-no-ver-block");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
@@ -782,31 +779,35 @@ describe("completeTask", () => {
 		fs.mkdirSync(projectDir, { recursive: true });
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		// No verification.json
+		// No local verification.json — readBlock falls through to bundled tier
+		// (empty verifications array). completeTask then surfaces the
+		// "verification not found" path with the requested id.
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
 			(err: Error) => {
-				assert.ok(err.message.includes("Verification block not found"));
+				assert.ok(err.message.includes("Verification 'v1' not found"));
 				return true;
 			},
 		);
 	});
 
-	it("throws when tasks block is missing", (t) => {
+	it("throws when tasks block has no matching task", (t) => {
 		const tmpDir = makeTmpDir("ct-no-task-block");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
 
-		// No tasks.json
+		// No local tasks.json — readBlock falls through to bundled tier which
+		// ships an empty tasks array. completeTask still surfaces "task not
+		// found" since no matching id exists in the empty bundled tier.
 		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
 			(err: Error) => {
-				assert.ok(err.message.includes("Tasks block not found"));
+				assert.ok(err.message.includes("Task 't1' not found"));
 				return true;
 			},
 		);
@@ -816,61 +817,23 @@ describe("completeTask", () => {
 // ── schemaInfo ──────────────────────────────────────────────────────────────
 
 describe("schemaInfo", () => {
-	it("extracts property metadata from a valid schema", (t) => {
+	it("extracts property metadata from a bundled schema", (t) => {
 		const tmpDir = makeTmpDir("schema-info");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-		const schemasDir = path.join(tmpDir, ".project", "schemas");
-		fs.mkdirSync(schemasDir, { recursive: true });
+		// schemaInfo reads from `<package>/defaults/schemas/` post tier-2
+		// migration; verify against the bundled `tasks` schema (Tasks title,
+		// tasks array property with id/description/status item required fields).
+		const info = schemaInfo(tmpDir, "tasks");
+		assert.ok(info, "should return SchemaInfo for bundled schema");
+		assert.strictEqual(info!.name, "tasks");
+		assert.strictEqual(info!.title, "Tasks");
 
-		fs.writeFileSync(
-			path.join(schemasDir, "widget.schema.json"),
-			JSON.stringify({
-				title: "Widget",
-				type: "object",
-				required: ["name", "parts"],
-				properties: {
-					name: { type: "string", description: "Widget name" },
-					count: { type: "integer" },
-					parts: {
-						type: "array",
-						items: {
-							type: "object",
-							required: ["id"],
-							properties: {
-								id: { type: "string" },
-								label: { type: "string" },
-							},
-						},
-					},
-				},
-			}),
-		);
+		assert.deepStrictEqual(info!.arrayKeys, ["tasks"]);
 
-		const info = schemaInfo(tmpDir, "widget");
-		assert.ok(info, "should return SchemaInfo for existing schema");
-		assert.strictEqual(info!.name, "widget");
-		assert.strictEqual(info!.title, "Widget");
-
-		// Check properties
-		const nameProp = info!.properties.find((p) => p.name === "name");
-		assert.ok(nameProp);
-		assert.strictEqual(nameProp!.type, "string");
-		assert.strictEqual(nameProp!.required, true);
-		assert.strictEqual(nameProp!.description, "Widget name");
-
-		const countProp = info!.properties.find((p) => p.name === "count");
-		assert.ok(countProp);
-		assert.strictEqual(countProp!.type, "integer");
-		assert.strictEqual(countProp!.required, false);
-
-		// Check array keys
-		assert.deepStrictEqual(info!.arrayKeys, ["parts"]);
-
-		// Check item properties for the array
 		assert.ok(info!.itemProperties);
-		assert.ok(info!.itemProperties!.parts);
-		const idItemProp = info!.itemProperties!.parts.find((p) => p.name === "id");
+		assert.ok(info!.itemProperties!.tasks);
+		const idItemProp = info!.itemProperties!.tasks.find((p) => p.name === "id");
 		assert.ok(idItemProp);
 		assert.strictEqual(idItemProp!.required, true);
 	});
@@ -883,81 +846,51 @@ describe("schemaInfo", () => {
 		assert.strictEqual(result, null);
 	});
 
-	it("extracts enum values from schema properties", (t) => {
+	it("extracts enum values from bundled schema properties", (t) => {
 		const tmpDir = makeTmpDir("schema-info-enum");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-		const schemasDir = path.join(tmpDir, ".project", "schemas");
-		fs.mkdirSync(schemasDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(schemasDir, "status-block.schema.json"),
-			JSON.stringify({
-				title: "Status Block",
-				type: "object",
-				required: ["status"],
-				properties: {
-					status: {
-						type: "string",
-						enum: ["open", "closed", "deferred"],
-					},
-					priority: {
-						type: "string",
-						enum: ["low", "medium", "high"],
-					},
-				},
-			}),
-		);
-
-		const info = schemaInfo(tmpDir, "status-block");
+		// Bundled `tasks` schema has status enum on its array items.
+		const info = schemaInfo(tmpDir, "tasks");
 		assert.ok(info);
-		const statusProp = info!.properties.find((p) => p.name === "status");
-		assert.ok(statusProp);
-		assert.deepStrictEqual(statusProp!.enum, ["open", "closed", "deferred"]);
-
-		const priorityProp = info!.properties.find((p) => p.name === "priority");
-		assert.ok(priorityProp);
-		assert.deepStrictEqual(priorityProp!.enum, ["low", "medium", "high"]);
+		const tasksItemProps = info!.itemProperties?.tasks ?? [];
+		const statusItemProp = tasksItemProps.find((p) => p.name === "status");
+		assert.ok(statusItemProp);
+		assert.ok(statusItemProp!.enum);
+		assert.ok(statusItemProp!.enum!.includes("planned"));
+		assert.ok(statusItemProp!.enum!.includes("completed"));
 	});
 });
 
 // ── schemaVocabulary ────────────────────────────────────────────────────────
 
 describe("schemaVocabulary", () => {
-	it("returns all schemas sorted by name", (t) => {
+	it("returns bundled tier-2 schemas sorted by name", (t) => {
 		const tmpDir = makeTmpDir("schema-vocab");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-		const schemasDir = path.join(tmpDir, ".project", "schemas");
-		fs.mkdirSync(schemasDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(schemasDir, "zebra.schema.json"),
-			JSON.stringify({ title: "Zebra", type: "object", properties: { name: { type: "string" } } }),
-		);
-		fs.writeFileSync(
-			path.join(schemasDir, "alpha.schema.json"),
-			JSON.stringify({ title: "Alpha", type: "object", properties: { id: { type: "string" } } }),
-		);
-		fs.writeFileSync(
-			path.join(schemasDir, "middle.schema.json"),
-			JSON.stringify({ title: "Middle", type: "object", properties: { value: { type: "integer" } } }),
-		);
-
+		// Schemas resolve only from `<package>/defaults/schemas/` post tier-2
+		// migration. The bundled set is fixed and sorted; verify ordering and
+		// expected membership without depending on count (the bundled set
+		// evolves with the package).
 		const vocab = schemaVocabulary(tmpDir);
-		assert.strictEqual(vocab.length, 3);
-		// Sorted by name (derived from filename)
-		assert.strictEqual(vocab[0].name, "alpha");
-		assert.strictEqual(vocab[1].name, "middle");
-		assert.strictEqual(vocab[2].name, "zebra");
+		const names = vocab.map((s) => s.name);
+		assert.ok(names.includes("decisions"));
+		assert.ok(names.includes("tasks"));
+		// Sorted lexicographically
+		const sorted = [...names].sort((a, b) => a.localeCompare(b));
+		assert.deepStrictEqual(names, sorted);
 	});
 
-	it("returns empty array when schemas directory does not exist", (t) => {
+	it("returns the bundled tier-2 schemas regardless of project state", (t) => {
 		const tmpDir = makeTmpDir("schema-vocab-none");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
+		// `.project/schemas/` does not exist; schemaVocabulary still returns
+		// the bundled tier (the only schema source post-migration).
 		const vocab = schemaVocabulary(tmpDir);
-		assert.deepStrictEqual(vocab, []);
+		assert.ok(vocab.length > 0);
+		assert.ok(vocab.some((s) => s.name === "decisions"));
 	});
 });
 
@@ -985,8 +918,8 @@ describe("blockStructure", () => {
 		fs.writeFileSync(path.join(schemasDir, "tasks.schema.json"), "{}");
 
 		const structures = blockStructure(tmpDir);
-		assert.strictEqual(structures.length, 1);
-
+		// Union enumeration includes all bundled blocks plus user-only ones;
+		// assert the user-written tasks block reflects materialized state.
 		const tasksBlock = structures.find((s) => s.name === "tasks");
 		assert.ok(tasksBlock);
 		assert.strictEqual(tasksBlock!.exists, true);
@@ -1006,8 +939,7 @@ describe("blockStructure", () => {
 		fs.writeFileSync(path.join(projectDir, "items.json"), JSON.stringify({ items: [] }));
 
 		const structures = blockStructure(tmpDir);
-		assert.strictEqual(structures.length, 1);
-
+		// Find the user-written `items` block alongside the bundled tier.
 		const itemsBlock = structures.find((s) => s.name === "items");
 		assert.ok(itemsBlock);
 		assert.strictEqual(itemsBlock!.exists, true);
@@ -1016,12 +948,18 @@ describe("blockStructure", () => {
 		assert.strictEqual(itemsArray!.itemCount, 0);
 	});
 
-	it("returns empty array when no blocks exist", (t) => {
+	it("reports bundled tier blocks as exists:false when .project/ is empty", (t) => {
 		const tmpDir = makeTmpDir("block-struct-none");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
+		// Post tier-2 migration: blockStructure enumerates the union via
+		// availableBlocks; bundled blocks appear with exists:false until
+		// the user materializes them in `.project/`.
 		const structures = blockStructure(tmpDir);
-		assert.deepStrictEqual(structures, []);
+		const decisions = structures.find((s) => s.name === "decisions");
+		assert.ok(decisions);
+		assert.strictEqual(decisions!.exists, false);
+		assert.strictEqual(decisions!.hasSchema, true);
 	});
 });
 

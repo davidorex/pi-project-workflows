@@ -14,7 +14,7 @@ import type {
 import { truncateHead } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
 import { appendToBlock, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+import { PROJECT_DIR } from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";
 import { checkForUpdates } from "./update-check.js";
 
@@ -108,12 +108,6 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
 	const workflowDir = path.join(ctx.cwd, PROJECT_DIR);
-	const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
-
-	if (!fs.existsSync(schemasDir)) {
-		ctx.ui.notify(`No ${PROJECT_DIR}/${SCHEMAS_DIR}/ directory found.`, "warning");
-		return;
-	}
 
 	const appendableBlocks = findAppendableBlocks(ctx.cwd);
 	const blockInfo: string[] = [];
@@ -172,83 +166,6 @@ ${blockInfo.join("\n\n")}
 			deliverAs: "followUp",
 		},
 	);
-}
-
-/**
- * Initialize .project/ directory with default schemas and empty block files.
- * Idempotent: skips files that already exist. Shared by the /project init
- * command handler and the project-init tool.
- */
-function initProject(cwd: string): { created: string[]; skipped: string[] } {
-	const projectDir = path.join(cwd, PROJECT_DIR);
-	const schemasDir = path.join(projectDir, SCHEMAS_DIR);
-	const phasesDir = path.join(projectDir, "phases");
-
-	const defaultsDir = path.resolve(import.meta.dirname, "..", "defaults");
-	const defaultSchemasDir = path.join(defaultsDir, "schemas");
-	const defaultBlocksDir = path.join(defaultsDir, "blocks");
-
-	const created: string[] = [];
-	const skipped: string[] = [];
-
-	// Create directories
-	for (const dir of [projectDir, schemasDir, phasesDir]) {
-		if (!fs.existsSync(dir)) {
-			fs.mkdirSync(dir, { recursive: true });
-			created.push(`${path.relative(cwd, dir)}/`);
-		}
-	}
-
-	// Copy default schemas
-	if (fs.existsSync(defaultSchemasDir)) {
-		for (const file of fs.readdirSync(defaultSchemasDir)) {
-			const dest = path.join(schemasDir, file);
-			if (fs.existsSync(dest)) {
-				skipped.push(`${SCHEMAS_DIR}/${file}`);
-			} else {
-				fs.copyFileSync(path.join(defaultSchemasDir, file), dest);
-				created.push(`${SCHEMAS_DIR}/${file}`);
-			}
-		}
-	}
-
-	// Create default block files
-	if (fs.existsSync(defaultBlocksDir)) {
-		for (const file of fs.readdirSync(defaultBlocksDir)) {
-			const dest = path.join(projectDir, file);
-			if (fs.existsSync(dest)) {
-				skipped.push(file);
-			} else {
-				fs.copyFileSync(path.join(defaultBlocksDir, file), dest);
-				created.push(file);
-			}
-		}
-	}
-
-	return { created, skipped };
-}
-
-/**
- * /project init — scaffold .project/ directory with default schemas and
- * empty block files. Idempotent: skips files that already exist.
- */
-function handleInit(ctx: ExtensionCommandContext): void {
-	const { created, skipped } = initProject(ctx.cwd);
-
-	const lines: string[] = [];
-	lines.push(`Project initialized`);
-	lines.push("");
-	if (created.length > 0) {
-		lines.push(`Created (${created.length}): ${created.join(", ")}`);
-	}
-	if (skipped.length > 0) {
-		lines.push(`Skipped (${skipped.length}, already exist): ${skipped.join(", ")}`);
-	}
-	if (created.length === 0 && skipped.length > 0) {
-		lines.push("Project already initialized — nothing to do.");
-	}
-
-	ctx.ui.notify(lines.join("\n"), "info");
 }
 
 // ── Extension factory ───────────────────────────────────────────────────────
@@ -461,29 +378,6 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Tool: project-init ──────────────────────────────────────────────────
-
-	pi.registerTool({
-		name: "project-init",
-		label: "Project Init",
-		description: "Initialize .project/ directory with default schemas and empty block files.",
-		promptSnippet: "Initialize .project/ directory with default schemas and blocks",
-		parameters: Type.Object({}),
-		async execute(
-			_toolCallId: string,
-			_params: Record<string, never>,
-			_signal: AbortSignal,
-			_onUpdate: AgentToolUpdateCallback,
-			ctx: ExtensionContext,
-		): Promise<AgentToolResult<undefined>> {
-			const result = initProject(ctx.cwd);
-			return {
-				details: undefined,
-				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-			};
-		},
-	});
-
 	// ── Tool: complete-task ────────────────────────────────────────────────
 
 	pi.registerTool({
@@ -526,10 +420,6 @@ const extension = (pi: ExtensionAPI) => {
 	}
 
 	const PROJECT_SUBCOMMANDS: Record<string, SubcommandEntry> = {
-		init: {
-			description: "Initialize .project/ with schemas and default blocks",
-			handler: (_args, ctx) => handleInit(ctx),
-		},
 		status: {
 			description: "Show derived project state",
 			handler: (_args, ctx) => handleStatus(ctx, pi),

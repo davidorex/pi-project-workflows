@@ -12,35 +12,38 @@ pi install npm:@davidorex/pi-project
 
 ## Getting Started
 
-```
-/project init
-```
-
-Creates `.project/` with 13 default schemas and 4 starter blocks (gaps, decisions, rationale, project). Idempotent — safe to run again.
+No init step required. Bundled defaults (schemas and empty block scaffolds) are read directly from the package on first access; `.project/` is created lazily when a write happens. Existing projects work unchanged — any files already in `.project/` continue to act as the project tier and shadow the bundled defaults by name.
 
 ## How It Works
 
-Project data lives in `.project/` as typed JSON block files. Each block has a corresponding JSON Schema that defines its shape. All writes — whether from tools, workflows, or agents — are validated against the schema before data hits disk. Invalid data is never persisted.
+Project data lives in two tiers. The **project tier** (`.project/*.json`) holds the user's evolving state — decisions, tasks, requirements written over months of work. The **bundled tier** (`<package>/defaults/blocks/`) ships empty scaffolds that fill in when a project tier file doesn't exist yet. Schemas resolve from the bundled tier only — they are contract definitions, not user data.
+
+Reads fall through tier-1 then tier-2 and throw only when neither has the block. Writes always land in tier-1; on first write to a never-materialized block, `appendToBlock` and `updateItemInBlock` lazy-materialize the bundled scaffold (preserving sibling fields) before applying the change. All writes are validated against the bundled schema and atomic (tmp + rename).
 
 ```
-.project/
-  schemas/          — JSON Schema files define block types
-    gaps.schema.json
-    decisions.schema.json
-    features.schema.json     ← user-defined, works immediately
-  phases/           — phase specification files
-  gaps.json         — block data, validated against gaps.schema.json
-  decisions.json    — block data, validated against decisions.schema.json
+<package>/defaults/                ← bundled tier (read-only)
+  blocks/
+    decisions.json                 — empty scaffold {decisions: []}
+    tasks.json
+    ...
+  schemas/
+    decisions.schema.json          — validation contract
+    tasks.schema.json
+    ...
+
+<your-project>/.project/           ← project tier (writes land here)
+  decisions.json                   — materialized when you first append
+  tasks.json
+  phases/                          — created lazily on first phase write
 ```
 
-The schema is the contract. When pi-workflows agents produce output that writes to project blocks, the schema enforces the shape. When `/project add-work` extracts items from conversation, the schema constrains what gets written. When `projectState()` derives block summaries, it reads the typed data the schemas guarantee.
+The schema is the contract. When pi-workflows agents produce output that writes to project blocks, the bundled schema enforces the shape. When `/project add-work` extracts items from conversation, the schema constrains what gets written. When `projectState()` derives block summaries, it reads the typed data via the two-tier resolver.
 
 **Tools registered:**
 - `append-block-item` — append an item to any block array (schema validation automatic)
 - `update-block-item` — update fields on a block item by predicate match
 
 **Commands registered:**
-- `/project init` — scaffold `.project/` with default schemas and empty blocks
 - `/project status` — derived project state (source metrics, test counts, block summaries, git state)
 - `/project add-work` — extract structured items from conversation into typed blocks
 

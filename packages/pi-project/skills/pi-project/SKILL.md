@@ -68,13 +68,6 @@ Validate cross-block referential integrity — check that IDs referenced across 
 
 </tool>
 
-<tool name="project-init">
-Initialize .project/ directory with default schemas and empty block files.
-
-*Initialize .project/ directory with default schemas and blocks*
-
-</tool>
-
 <tool name="complete-task">
 Complete a task with verification gate — requires a passing verification entry targeting the task.
 
@@ -92,7 +85,7 @@ Complete a task with verification gate — requires a passing verification entry
 <command name="/project">
 Project state management
 
-Subcommands: `init`, `status`, `add-work`, `validate`, `help`
+Subcommands: `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>
@@ -163,12 +156,16 @@ Blocks are JSON files in `.project/` (e.g., `gaps.json`, `decisions.json`). Each
 </block_files>
 
 <schema_validation>
-Every block write validates against `.project/schemas/<blockname>.schema.json`. If the schema file doesn't exist, writes proceed without validation. Validation errors include the specific JSON Schema violations.
+Every block write validates against the bundled schema at `<package>/defaults/schemas/<blockname>.schema.json`. If no bundled schema matches the block name, writes proceed without validation. Validation errors include the specific JSON Schema violations. Schemas are not user-editable from the project directory — `.project/schemas/` (if present from a prior version) is silently ignored.
 </schema_validation>
 
-<project_init>
-`/project init` scaffolds the `.project/` directory with default schemas and empty block files from the package's `defaults/` directory. Idempotent — skips files that already exist.
-</project_init>
+<two_tier_discovery>
+Block files resolve from two tiers, project tier first. The project tier (`<projectRoot>/.project/<name>.json`) is found by walking up from cwd to the first `.git` boundary; the bundled tier (`<package>/defaults/blocks/<name>.json`) ships empty scaffolds for the lifecycle blocks. Reads fall through: project tier wins when present, bundled tier fills in when absent. Throw only when neither tier has the block.
+
+Writes always land in the project tier. On first write to a never-materialized block, `appendToBlock` and `updateItemInBlock` lazy-materialize the bundled scaffold (preserving non-array sibling fields) before applying the change. `writeBlock` writes directly to the project tier and never touches the bundled tier.
+
+There is no init step. A fresh project gets bundled defaults transparently on first read; `.project/` is created lazily when a write happens.
+</two_tier_discovery>
 
 <project_status>
 `/project status` derives project state dynamically from the filesystem:
@@ -218,12 +215,12 @@ The default schemas support a full planning lifecycle:
 - **decisions.json** — choices with rationale and phase association
 - **gaps.json** — open items with priority, category, and resolution tracking
 - **rationale.json** — design rationale with decision cross-references
-- **handoff.json** — session context snapshot (created on-demand, not by /project init)
+- **handoff.json** — session context snapshot (no bundled scaffold; created on-demand)
 - **verification.json** — completion evidence per task/phase/requirement
 - **conformance-reference.json** — executable code conventions with principles, rules, check methods (grep/command/ast/inspect), and check patterns. Ships empty, populated per-project by agents or users.
 - **audit** (schema only, no default block) — structured audit results produced by running conformance checks.
 
-All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add fields, change enums, or restructure blocks without modifying code.
+Schemas resolve from the bundled tier only. To customize the substrate, fork the package or contribute a PR — `.project/schemas/` hand-edits are silently ignored after the two-tier migration.
 </planning_lifecycle>
 
 <update_check>
@@ -231,7 +228,7 @@ On `session_start`, checks npm registry for newer versions of `@davidorex/pi-pro
 </update_check>
 
 <success_criteria>
-- `.project/` directory exists with schemas and block files after `/project init`
+- Bundled defaults serve transparently from `<package>/defaults/` on first read; `.project/` is created lazily on first write
 - Block writes validate against schemas — invalid data rejected with specific error
 - `/project status` returns current derived state without errors
 - `/project validate` returns no errors for well-formed cross-block references

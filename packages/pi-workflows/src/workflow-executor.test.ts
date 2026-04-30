@@ -670,19 +670,13 @@ describe("artifacts", () => {
 
 	it("validates artifact targeting .project/ against block schema", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+		// `.git` boundary keeps findProjectDir local to tmpDir; without it the
+		// resolver could escape upward into the surrounding repo.
+		fs.mkdirSync(path.join(tmpDir, ".git"), { recursive: true });
 
-		// Create .project/schemas/ with a schema that requires { items: array }
-		const schemasDir = path.join(tmpDir, ".project", "schemas");
-		fs.mkdirSync(schemasDir, { recursive: true });
-		fs.writeFileSync(
-			path.join(schemasDir, "test-block.schema.json"),
-			JSON.stringify({
-				type: "object",
-				required: ["items"],
-				properties: { items: { type: "array" } },
-			}),
-		);
-
+		// Use the bundled `decisions` schema (requires a `decisions` array).
+		// Schemas now resolve from <package>/defaults/schemas/ only — the
+		// previously-needed local `.project/schemas/` write is obsolete.
 		const spec: WorkflowSpec = {
 			name: "test-artifact-block",
 			description: "test block-api routing for .project/ artifacts",
@@ -690,13 +684,13 @@ describe("artifacts", () => {
 				produce: {
 					agent: "transform",
 					transform: {
-						mapping: { bad: "data" }, // does NOT match schema (missing items)
+						mapping: { bad: "data" }, // does NOT match decisions schema (missing decisions array)
 					},
 				},
 			},
 			artifacts: {
 				block: {
-					path: path.join(tmpDir, ".project", "test-block.json"),
+					path: path.join(tmpDir, ".project", "decisions.json"),
 					from: "steps.produce.output",
 				},
 			},
@@ -730,9 +724,9 @@ describe("artifacts", () => {
 		// Block artifact failure is fatal — workflow fails
 		assert.strictEqual(result.status, "failed");
 		// Block file should NOT have been written (validation failed)
-		assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "test-block.json")));
+		assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "decisions.json")));
 		// Error about validation failure
-		assert.ok(notifications.some((n) => n.msg.includes("test-block") && n.level === "error"));
+		assert.ok(notifications.some((n) => n.msg.includes("decisions") && n.level === "error"));
 
 		fs.rmSync(tmpDir, { recursive: true });
 	});

@@ -16,30 +16,17 @@ function setupWorkflowDir(tmpDir: string): string {
 	return wfDir;
 }
 
-function setupSchema(tmpDir: string, blockName: string, schema: Record<string, unknown>): void {
-	const schemasDir = path.join(tmpDir, ".project", "schemas");
-	fs.mkdirSync(schemasDir, { recursive: true });
-	fs.writeFileSync(path.join(schemasDir, `${blockName}.schema.json`), JSON.stringify(schema, null, 2));
+/**
+ * Schemas resolve from the bundled `<package>/defaults/schemas/` tier only
+ * (post tier-2 migration). Validation-checking tests below use the bundled
+ * `decisions` schema (requires id/decision/rationale/status with enum
+ * decided|tentative|revisit|superseded). Tests that exercise I/O without
+ * validation use arbitrary block names with no bundled schema (validation
+ * skipped, write succeeds).
+ */
+function validDecision(id: string, status = "decided"): Record<string, unknown> {
+	return { id, decision: `decision-${id}`, rationale: `because-${id}`, status };
 }
-
-const gapsSchema = {
-	type: "object",
-	required: ["gaps"],
-	properties: {
-		gaps: {
-			type: "array",
-			items: {
-				type: "object",
-				required: ["id", "description", "status"],
-				properties: {
-					id: { type: "string" },
-					description: { type: "string" },
-					status: { type: "string", enum: ["open", "resolved", "deferred"] },
-				},
-			},
-		},
-	},
-};
 
 describe("readBlock", () => {
 	it("reads and parses valid JSON block", (t) => {
@@ -130,12 +117,11 @@ describe("writeBlock", () => {
 		const tmpDir = makeTmpDir("write-valid");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
-		const data = { gaps: [{ id: "g1", description: "test", status: "open" }] };
-		writeBlock(tmpDir, "gaps", data);
+		const data = { decisions: [validDecision("d1")] };
+		writeBlock(tmpDir, "decisions", data);
 
-		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "decisions.json"), "utf-8"));
 		assert.deepStrictEqual(onDisk, data);
 	});
 
@@ -143,19 +129,19 @@ describe("writeBlock", () => {
 		const tmpDir = makeTmpDir("write-invalid");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
-		const badData = { gaps: [{ id: 123, description: "test" }] }; // id should be string, missing status
+		// id wrong type (number not string), missing required decision/rationale/status fields
+		const badData = { decisions: [{ id: 123 }] };
 
 		assert.throws(
-			() => writeBlock(tmpDir, "gaps", badData),
+			() => writeBlock(tmpDir, "decisions", badData),
 			(err: unknown) => {
 				assert.ok(err instanceof ValidationError);
 				return true;
 			},
 		);
 
-		assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "gaps.json")));
+		assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "decisions.json")));
 	});
 
 	it("writes without validation when no schema exists", (t) => {
@@ -197,17 +183,16 @@ describe("writeBlock", () => {
 		const tmpDir = makeTmpDir("write-cleanfail");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
 		try {
-			writeBlock(tmpDir, "gaps", { gaps: "not an array" });
+			writeBlock(tmpDir, "decisions", { decisions: "not an array" });
 		} catch {
 			/* expected */
 		}
 
 		const wfDir = path.join(tmpDir, ".project");
 		const files = fs.readdirSync(wfDir);
-		assert.ok(!files.includes("gaps.json"));
+		assert.ok(!files.includes("decisions.json"));
 		const tmpFiles = files.filter((f) => f.includes(".tmp"));
 		assert.strictEqual(tmpFiles.length, 0);
 	});
@@ -241,7 +226,6 @@ describe("appendToBlock", () => {
 		const tmpDir = makeTmpDir("append-existing");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
 		const initial = { gaps: [{ id: "g1", description: "first", status: "open" }] };
 		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify(initial));
@@ -257,7 +241,6 @@ describe("appendToBlock", () => {
 		const tmpDir = makeTmpDir("append-empty");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
 		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [] }));
 
@@ -271,21 +254,20 @@ describe("appendToBlock", () => {
 		const tmpDir = makeTmpDir("append-invalid");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
-		const original = { gaps: [{ id: "g1", description: "valid", status: "open" }] };
+		const original = { decisions: [validDecision("d1")] };
 		const originalStr = JSON.stringify(original);
-		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), originalStr);
+		fs.writeFileSync(path.join(tmpDir, ".project", "decisions.json"), originalStr);
 
 		assert.throws(
-			() => appendToBlock(tmpDir, "gaps", "gaps", { id: 999, description: "bad" }), // missing status, bad id type
+			() => appendToBlock(tmpDir, "decisions", "decisions", { id: 999 }), // bad id type, missing required fields
 			(err: unknown) => {
 				assert.ok(err instanceof ValidationError);
 				return true;
 			},
 		);
 
-		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8");
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "decisions.json"), "utf-8");
 		assert.strictEqual(afterStr, originalStr);
 	});
 
@@ -342,20 +324,19 @@ describe("appendToBlock", () => {
 		const tmpDir = makeTmpDir("append-nomutate");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
-		const original = { gaps: [{ id: "g1", description: "safe", status: "open" }] };
-		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify(original, null, 2));
+		const original = { decisions: [validDecision("d1")] };
+		fs.writeFileSync(path.join(tmpDir, ".project", "decisions.json"), JSON.stringify(original, null, 2));
 
 		try {
-			appendToBlock(tmpDir, "gaps", "gaps", { broken: true });
+			appendToBlock(tmpDir, "decisions", "decisions", { broken: true });
 		} catch {
 			/* expected */
 		}
 
-		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
-		assert.strictEqual(onDisk.gaps.length, 1);
-		assert.strictEqual(onDisk.gaps[0].id, "g1");
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "decisions.json"), "utf-8"));
+		assert.strictEqual(onDisk.decisions.length, 1);
+		assert.strictEqual(onDisk.decisions[0].id, "d1");
 	});
 
 	it("appends to block without schema", (t) => {
@@ -391,7 +372,6 @@ describe("updateItemInBlock", () => {
 		const tmpDir = makeTmpDir("update-match");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
 		const initial = { gaps: [{ id: "g1", description: "test", status: "open" }] };
 		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify(initial));
@@ -425,14 +405,13 @@ describe("updateItemInBlock", () => {
 		const tmpDir = makeTmpDir("update-invalid");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupWorkflowDir(tmpDir);
-		setupSchema(tmpDir, "gaps", gapsSchema);
 
-		const original = { gaps: [{ id: "g1", description: "test", status: "open" }] };
+		const original = { decisions: [validDecision("d1")] };
 		const originalStr = JSON.stringify(original);
-		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), originalStr);
+		fs.writeFileSync(path.join(tmpDir, ".project", "decisions.json"), originalStr);
 
 		assert.throws(
-			() => updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "invalid-status" }),
+			() => updateItemInBlock(tmpDir, "decisions", "decisions", (d) => d.id === "d1", { status: "invalid-status" }),
 			(err: unknown) => {
 				assert.ok(err instanceof ValidationError);
 				return true;
@@ -440,7 +419,7 @@ describe("updateItemInBlock", () => {
 		);
 
 		// Original file unchanged
-		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8");
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "decisions.json"), "utf-8");
 		assert.strictEqual(afterStr, originalStr);
 	});
 
@@ -497,5 +476,125 @@ describe("updateItemInBlock", () => {
 
 		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "custom.json"), "utf-8"));
 		assert.strictEqual(onDisk.items[0].v, 2);
+	});
+});
+
+// ── Two-tier resolution: project (.project/) > bundled (defaults/blocks/) ────
+//
+// These tests pin the post-migration loader contract. The project tier wins
+// when present; the bundled tier fills in when project-tier files are absent.
+// Schemas always resolve from the bundled tier — `.project/schemas/` has no
+// influence after the migration.
+
+describe("two-tier read fall-through", () => {
+	it("falls through to bundled tier when .project/ has no file", (t) => {
+		const tmpDir = makeTmpDir("tier2-read");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		// `.git` boundary keeps findProjectDir local to tmpDir; without it
+		// the resolver could escape into the surrounding repo's .project/.
+		fs.mkdirSync(path.join(tmpDir, ".git"), { recursive: true });
+
+		// No `.project/` exists; readBlock should serve the bundled empty
+		// decisions scaffold without throwing.
+		const data = readBlock(tmpDir, "decisions") as { decisions: unknown[] };
+		assert.ok(Array.isArray(data.decisions));
+		assert.strictEqual(data.decisions.length, 0);
+	});
+
+	it("project tier wins when both tiers contain the same block", (t) => {
+		const tmpDir = makeTmpDir("tier1-wins");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmpDir, ".git"), { recursive: true });
+		setupWorkflowDir(tmpDir);
+
+		const projectDecision = validDecision("project-only");
+		fs.writeFileSync(path.join(tmpDir, ".project", "decisions.json"), JSON.stringify({ decisions: [projectDecision] }));
+
+		const data = readBlock(tmpDir, "decisions") as { decisions: Record<string, unknown>[] };
+		assert.strictEqual(data.decisions.length, 1);
+		assert.strictEqual(data.decisions[0].id, "project-only");
+	});
+
+	it("throws when neither tier has the block, naming both paths", (t) => {
+		const tmpDir = makeTmpDir("no-tier");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmpDir, ".git"), { recursive: true });
+
+		assert.throws(
+			() => readBlock(tmpDir, "definitely-not-a-bundled-name"),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not found"));
+				// Error message names both attempted paths
+				assert.ok(err.message.includes("defaults/blocks") || err.message.includes(".project"));
+				return true;
+			},
+		);
+	});
+});
+
+describe("two-tier write semantics", () => {
+	it("appendToBlock lazy-materializes from bundled tier on first write", (t) => {
+		const tmpDir = makeTmpDir("lazy-mat");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmpDir, ".git"), { recursive: true });
+
+		// No `.project/decisions.json` exists; appendToBlock reads bundled
+		// scaffold, appends, writes to project tier.
+		const decision = validDecision("first");
+		appendToBlock(tmpDir, "decisions", "decisions", decision);
+
+		const tier1Path = path.join(tmpDir, ".project", "decisions.json");
+		assert.ok(fs.existsSync(tier1Path), "project-tier file materialized");
+
+		const onDisk = JSON.parse(fs.readFileSync(tier1Path, "utf-8")) as { decisions: Record<string, unknown>[] };
+		assert.strictEqual(onDisk.decisions.length, 1);
+		assert.strictEqual(onDisk.decisions[0].id, "first");
+	});
+
+	it("writeBlock writes to project tier without touching bundled tier", (t) => {
+		const tmpDir = makeTmpDir("write-tier1");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmpDir, ".git"), { recursive: true });
+
+		writeBlock(tmpDir, "decisions", { decisions: [validDecision("d1")] });
+
+		assert.ok(fs.existsSync(path.join(tmpDir, ".project", "decisions.json")));
+		// Bundled-tier file at <package>/defaults/blocks/decisions.json must
+		// be unchanged. We assert by reading it and ensuring the array is
+		// still the empty scaffold (post-migration the bundled tier is
+		// strictly read-only from this code path).
+		const bundled = readBlock(path.join(os.tmpdir(), `nonexistent-${Date.now()}`), "decisions") as {
+			decisions: unknown[];
+		};
+		assert.strictEqual(bundled.decisions.length, 0);
+	});
+});
+
+describe("withBlockLock concurrency on first append", () => {
+	it("serializes concurrent first-appends so all items land", async (t) => {
+		const tmpDir = makeTmpDir("concurrent-first");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmpDir, ".git"), { recursive: true });
+
+		// N concurrent appends against a never-materialized project-tier
+		// file. Pre-migration this would race because withBlockLock skipped
+		// locking when the file didn't exist; post-migration the parent
+		// directory is created and the lock is acquired with realpath:false,
+		// serializing the read-modify-write sequence.
+		const N = 10;
+		const tasks = Array.from({ length: N }, (_, i) =>
+			Promise.resolve().then(() => {
+				appendToBlock(tmpDir, "decisions", "decisions", validDecision(`d${i}`));
+			}),
+		);
+		await Promise.all(tasks);
+
+		const data = readBlock(tmpDir, "decisions") as { decisions: Record<string, unknown>[] };
+		assert.strictEqual(data.decisions.length, N, `expected ${N} items, got ${data.decisions.length}`);
+		const ids = new Set(data.decisions.map((d) => d.id as string));
+		for (let i = 0; i < N; i++) {
+			assert.ok(ids.has(`d${i}`), `item d${i} missing after concurrent appends`);
+		}
 	});
 });

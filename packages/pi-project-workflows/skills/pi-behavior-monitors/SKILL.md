@@ -76,7 +76,7 @@ Subcommands: `on`, `off`, `help`, `commit-hygiene`, `fragility`, `hedge`, `unaut
 </commands_reference>
 
 <events>
-`session_start`, `agent_end`, `turn_start`, `message_end`, `turn_end`, `tool_call`
+`session_start`, `agent_end`, `turn_start`, `tool_call`
 </events>
 
 <bundled_resources>

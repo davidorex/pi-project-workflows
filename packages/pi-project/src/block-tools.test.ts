@@ -140,19 +140,21 @@ describe("append-block-item", () => {
 	it("validates against block schema", (t) => {
 		const tmpDir = makeTmpDir();
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-		setupBlock(tmpDir, "gaps", "gaps", gapsSchema);
+		// Bundled `decisions` schema is the active validator post tier-2
+		// migration. Initialize the project tier with a valid empty array
+		// so the append target exists.
+		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema);
 
+		// Bad: status is not in bundled enum (decided|tentative|revisit|superseded)
 		const badEntry = {
-			id: "bad-gap",
-			description: "Bad category",
-			status: "open",
-			category: "nonexistent-category",
-			priority: "high",
-			source: "agent",
+			id: "bad-decision",
+			decision: "X",
+			rationale: "Y",
+			status: "nonexistent-status",
 		};
 
 		assert.throws(
-			() => appendToBlock(tmpDir, "gaps", "gaps", badEntry),
+			() => appendToBlock(tmpDir, "decisions", "decisions", badEntry),
 			(err: unknown) => {
 				assert.ok(err instanceof ValidationError);
 				return true;
@@ -202,16 +204,19 @@ describe("append-block-item", () => {
 		assert.strictEqual(data.gaps[0].details, "Extra context about the gap");
 	});
 
-	it("appends to decisions block (non-gap block)", (t) => {
+	it("appends to decisions block (bundled schema)", (t) => {
 		const tmpDir = makeTmpDir();
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema, [{ id: "d1", decision: "First", status: "decided" }]);
+		// Bundled decisions schema requires id/decision/rationale/status.
+		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema, [
+			{ id: "d1", decision: "First", rationale: "Initial", status: "decided" },
+		]);
 
 		appendToBlock(tmpDir, "decisions", "decisions", {
 			id: "d2",
 			decision: "Second",
-			status: "tentative",
 			rationale: "Needs review",
+			status: "tentative",
 		});
 
 		const data = readBlock(tmpDir, "decisions") as { decisions: unknown[] };
@@ -243,8 +248,8 @@ describe("update-block-item", () => {
 		const tmpDir = makeTmpDir();
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema, [
-			{ id: "d1", decision: "First", status: "decided" },
-			{ id: "d2", decision: "Second", status: "tentative" },
+			{ id: "d1", decision: "First", rationale: "Initial", status: "decided" },
+			{ id: "d2", decision: "Second", rationale: "Pending review", status: "tentative" },
 		]);
 
 		// Match by status + id (as update-block-item would with multi-field match)
@@ -279,12 +284,12 @@ describe("update-block-item", () => {
 	it("validates after update", (t) => {
 		const tmpDir = makeTmpDir();
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-		setupBlock(tmpDir, "gaps", "gaps", gapsSchema, [
-			{ id: "g1", description: "test", status: "open", category: "issue", priority: "low", source: "human" },
+		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema, [
+			{ id: "d1", decision: "X", rationale: "Y", status: "tentative" },
 		]);
 
 		assert.throws(
-			() => updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "invalid-status" }),
+			() => updateItemInBlock(tmpDir, "decisions", "decisions", (d) => d.id === "d1", { status: "invalid-status" }),
 			(err: unknown) => {
 				assert.ok(err instanceof ValidationError);
 				return true;
@@ -292,8 +297,8 @@ describe("update-block-item", () => {
 		);
 
 		// Original file unchanged after validation failure
-		const data = readBlock(tmpDir, "gaps") as { gaps: Array<Record<string, unknown>> };
-		assert.strictEqual(data.gaps[0].status, "open");
+		const data = readBlock(tmpDir, "decisions") as { decisions: Array<Record<string, unknown>> };
+		assert.strictEqual(data.decisions[0].status, "tentative");
 	});
 
 	it("no-op when updates object is empty", (t) => {
@@ -314,7 +319,7 @@ describe("update-block-item", () => {
 		const tmpDir = makeTmpDir();
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema, [
-			{ id: "d1", decision: "Original", status: "tentative" },
+			{ id: "d1", decision: "Original", rationale: "Initial choice", status: "tentative" },
 		]);
 
 		updateItemInBlock(tmpDir, "decisions", "decisions", (d) => d.id === "d1", { status: "decided" });
@@ -327,85 +332,49 @@ describe("update-block-item", () => {
 // ── findAppendableBlocks ──────────────────────────────────────────────────
 
 describe("findAppendableBlocks", () => {
-	it("discovers blocks from schema array properties", (t) => {
+	it("discovers bundled blocks from schema array properties", (t) => {
 		const tmpDir = makeTmpDir();
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-		const schemasDir = path.join(tmpDir, ".project", "schemas");
-		fs.mkdirSync(schemasDir, { recursive: true });
-
-		// Schema with array property
-		fs.writeFileSync(
-			path.join(schemasDir, "gaps.schema.json"),
-			JSON.stringify({
-				type: "object",
-				properties: { gaps: { type: "array", items: { type: "object" } } },
-			}),
-		);
-
-		// Schema with array property
-		fs.writeFileSync(
-			path.join(schemasDir, "decisions.schema.json"),
-			JSON.stringify({
-				type: "object",
-				properties: { decisions: { type: "array", items: { type: "object" } } },
-			}),
-		);
-
-		// Schema without array property (should not appear)
-		fs.writeFileSync(
-			path.join(schemasDir, "model-config.schema.json"),
-			JSON.stringify({
-				type: "object",
-				properties: { default: { type: "string" } },
-			}),
-		);
-
+		// findAppendableBlocks reads from `<package>/defaults/schemas/` only
+		// post tier-2 migration; the bundled set is the discovery target.
 		const results = findAppendableBlocks(tmpDir);
-		assert.ok(results.length >= 2, `expected >= 2 appendable blocks, got ${results.length}`);
-
-		const gaps = results.find((r) => r.block === "gaps");
-		assert.ok(gaps, "should find gaps block");
-		assert.strictEqual(gaps!.arrayKey, "gaps");
-		assert.ok(gaps!.schemaPath.includes("gaps.schema.json"));
 
 		const decisions = results.find((r) => r.block === "decisions");
-		assert.ok(decisions, "should find decisions block");
+		assert.ok(decisions, "should find bundled decisions block");
 		assert.strictEqual(decisions!.arrayKey, "decisions");
+		assert.ok(decisions!.schemaPath.includes("decisions.schema.json"));
 
-		const config = results.find((r) => r.block === "model-config");
-		assert.ok(!config, "should not include model-config (no array property)");
+		const tasks = results.find((r) => r.block === "tasks");
+		assert.ok(tasks, "should find bundled tasks block");
+		assert.strictEqual(tasks!.arrayKey, "tasks");
 	});
 
-	it("returns empty array when schemas dir does not exist", (t) => {
+	it("returns bundled tier-2 appendable blocks regardless of project state", (t) => {
 		const tmpDir = makeTmpDir();
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
+		// Post tier-2 migration, findAppendableBlocks reads only from
+		// `<package>/defaults/schemas/`. The project tier's existence is
+		// irrelevant to its output.
 		const results = findAppendableBlocks(tmpDir);
-		assert.deepStrictEqual(results, []);
+		assert.ok(results.length > 0);
+		assert.ok(results.some((r) => r.block === "decisions"));
 	});
 
-	it("skips malformed schema files", (t) => {
+	it("returns bundled appendable blocks", (t) => {
 		const tmpDir = makeTmpDir();
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-		const schemasDir = path.join(tmpDir, ".project", "schemas");
-		fs.mkdirSync(schemasDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(schemasDir, "good.schema.json"),
-			JSON.stringify({
-				type: "object",
-				properties: { items: { type: "array" } },
-			}),
-		);
-		fs.writeFileSync(path.join(schemasDir, "bad.schema.json"), "not json{{{");
-
+		// findAppendableBlocks reads from `<package>/defaults/schemas/` post
+		// tier-2 migration. Verify it discovers known appendable bundled blocks
+		// (decisions, tasks, etc.) and identifies their array key.
 		const results = findAppendableBlocks(tmpDir);
-		assert.ok(
-			results.some((r) => r.block === "good"),
-			"should find good block",
-		);
-		assert.ok(!results.some((r) => r.block === "bad"), "should skip bad block");
+		const decisions = results.find((r) => r.block === "decisions");
+		assert.ok(decisions, "should find bundled decisions block");
+		assert.strictEqual(decisions!.arrayKey, "decisions");
+		const tasks = results.find((r) => r.block === "tasks");
+		assert.ok(tasks, "should find bundled tasks block");
+		assert.strictEqual(tasks!.arrayKey, "tasks");
 	});
 });

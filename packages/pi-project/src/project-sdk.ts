@@ -7,8 +7,8 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { readBlock, updateItemInBlock } from "./block-api.js";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+import { DEFAULT_BLOCKS_DIR, DEFAULT_SCHEMAS_DIR, readBlock, updateItemInBlock } from "./block-api.js";
+import { PROJECT_DIR } from "./project-dir.js";
 
 // ── Block discovery ──────────────────────────────────────────────────────────
 
@@ -17,55 +17,108 @@ export interface BlockInfo {
 	hasSchema: boolean;
 }
 
-export function availableBlocks(cwd: string): BlockInfo[] {
-	const workflowDir = path.join(cwd, PROJECT_DIR);
-	const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
-	if (!fs.existsSync(workflowDir)) return [];
+/**
+ * A bundled block whose name is shadowed by a project-tier file. Mirrors
+ * `MonitorOverride` in pi-behavior-monitors. Same-name shadowing is the
+ * expected steady state for project blocks (users edit `.project/decisions.json`
+ * over months of work) — overrides are an audit signal, not a drift warning.
+ */
+export interface BlockOverride {
+	name: string;
+	winnerDir: string;
+	losingDir: string;
+}
 
-	const blocks: BlockInfo[] = [];
-	for (const file of fs.readdirSync(workflowDir)) {
-		if (!file.endsWith(".json")) continue;
-		const name = file.replace(".json", "");
-		const hasSchema = fs.existsSync(path.join(schemasDir, `${name}.schema.json`));
-		blocks.push({ name, hasSchema });
-	}
-	return blocks.sort((a, b) => a.name.localeCompare(b.name));
+export interface BlockDiscovery {
+	blocks: BlockInfo[];
+	overrides: BlockOverride[];
 }
 
 /**
- * Discover schemas in PROJECT_DIR/SCHEMAS_DIR.
- * Returns sorted list of absolute paths to .schema.json files.
+ * Discover blocks across both tiers; first-wins by name, mirroring
+ * `discoverMonitors` in pi-behavior-monitors. Project tier (.project/) wins
+ * over bundled tier (`<package>/defaults/blocks/`). The returned `overrides`
+ * list audits same-name shadowing without proposing cleanup — for project
+ * blocks, shadowing is normal user state, not stale seeded artifacts.
  */
-export function availableSchemas(cwd: string): string[] {
-	const dir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
-	if (!fs.existsSync(dir)) return [];
+export function discoverBlocks(cwd: string): BlockDiscovery {
+	const seen = new Map<string, { dir: string; tier: 1 | 2 }>();
+	const overrides: BlockOverride[] = [];
+
+	const projectBlocksDir = path.join(cwd, PROJECT_DIR);
+	if (fs.existsSync(projectBlocksDir) && fs.statSync(projectBlocksDir).isDirectory()) {
+		for (const file of fs.readdirSync(projectBlocksDir)) {
+			if (!file.endsWith(".json")) continue;
+			const name = file.replace(".json", "");
+			seen.set(name, { dir: projectBlocksDir, tier: 1 });
+		}
+	}
+
+	if (fs.existsSync(DEFAULT_BLOCKS_DIR) && fs.statSync(DEFAULT_BLOCKS_DIR).isDirectory()) {
+		for (const file of fs.readdirSync(DEFAULT_BLOCKS_DIR)) {
+			if (!file.endsWith(".json")) continue;
+			const name = file.replace(".json", "");
+			const winner = seen.get(name);
+			if (!winner) {
+				seen.set(name, { dir: DEFAULT_BLOCKS_DIR, tier: 2 });
+			} else {
+				overrides.push({ name, winnerDir: winner.dir, losingDir: DEFAULT_BLOCKS_DIR });
+			}
+		}
+	}
+
+	const blocks: BlockInfo[] = [];
+	for (const name of [...seen.keys()].sort((a, b) => a.localeCompare(b))) {
+		const hasSchema = fs.existsSync(path.join(DEFAULT_SCHEMAS_DIR, `${name}.schema.json`));
+		blocks.push({ name, hasSchema });
+	}
+	return { blocks, overrides };
+}
+
+/**
+ * Union of project tier and bundled tier, deduped by name. Implementation
+ * delegates to `discoverBlocks().blocks`; callers wanting the override
+ * audit trail use `discoverBlocks` directly.
+ */
+export function availableBlocks(cwd: string): BlockInfo[] {
+	return discoverBlocks(cwd).blocks;
+}
+
+/**
+ * Discover schemas from the bundled tier only. Schemas are contract
+ * definitions, not user data; the duplicate `.project/schemas/` directory
+ * that prior versions copied via `initProject` is vestigial after the
+ * post-v0.14.6 alignment migration. Returns sorted absolute paths to
+ * `.schema.json` files in the package's `defaults/schemas/`.
+ */
+export function availableSchemas(_cwd: string): string[] {
+	if (!fs.existsSync(DEFAULT_SCHEMAS_DIR)) return [];
 	const schemas: string[] = [];
-	for (const file of fs.readdirSync(dir)) {
+	for (const file of fs.readdirSync(DEFAULT_SCHEMAS_DIR)) {
 		if (file.endsWith(".schema.json")) {
-			schemas.push(path.join(dir, file));
+			schemas.push(path.join(DEFAULT_SCHEMAS_DIR, file));
 		}
 	}
 	return schemas.sort();
 }
 
 /**
- * Discover blocks with array properties by scanning PROJECT_DIR/SCHEMAS_DIR
- * for schemas whose root type has at least one array property.
+ * Discover blocks with array properties by scanning the bundled schemas
+ * directory for schemas whose root type has at least one array property.
  * Returns block name, first array key, and schema path for each.
  */
-export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayKey: string; schemaPath: string }> {
-	const schemasDir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
-	if (!fs.existsSync(schemasDir)) return [];
+export function findAppendableBlocks(_cwd: string): Array<{ block: string; arrayKey: string; schemaPath: string }> {
+	if (!fs.existsSync(DEFAULT_SCHEMAS_DIR)) return [];
 	const results: Array<{ block: string; arrayKey: string; schemaPath: string }> = [];
-	for (const file of fs.readdirSync(schemasDir)) {
+	for (const file of fs.readdirSync(DEFAULT_SCHEMAS_DIR)) {
 		if (!file.endsWith(".schema.json")) continue;
 		const blockName = file.replace(".schema.json", "");
 		try {
-			const schema = JSON.parse(fs.readFileSync(path.join(schemasDir, file), "utf-8"));
+			const schema = JSON.parse(fs.readFileSync(path.join(DEFAULT_SCHEMAS_DIR, file), "utf-8"));
 			if (schema.properties) {
 				for (const [key, prop] of Object.entries(schema.properties)) {
 					if ((prop as Record<string, unknown>).type === "array") {
-						results.push({ block: blockName, arrayKey: key, schemaPath: path.join(schemasDir, file) });
+						results.push({ block: blockName, arrayKey: key, schemaPath: path.join(DEFAULT_SCHEMAS_DIR, file) });
 						break; // first array property
 					}
 				}
@@ -115,8 +168,8 @@ export interface SchemaInfo {
  * Read and parse a schema, extracting property metadata.
  * Returns null if the schema file doesn't exist or is unparseable.
  */
-export function schemaInfo(cwd: string, schemaName: string): SchemaInfo | null {
-	const schemaPath = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR, `${schemaName}.schema.json`);
+export function schemaInfo(_cwd: string, schemaName: string): SchemaInfo | null {
+	const schemaPath = path.join(DEFAULT_SCHEMAS_DIR, `${schemaName}.schema.json`);
 	try {
 		const raw = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
 		const title = String(raw.title ?? schemaName);
@@ -185,10 +238,9 @@ function extractType(prop: Record<string, unknown>): string {
  * Scans .project/schemas/ and parses each schema.
  */
 export function schemaVocabulary(cwd: string): SchemaInfo[] {
-	const schemasDir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
-	if (!fs.existsSync(schemasDir)) return [];
+	if (!fs.existsSync(DEFAULT_SCHEMAS_DIR)) return [];
 	const results: SchemaInfo[] = [];
-	for (const file of fs.readdirSync(schemasDir).sort()) {
+	for (const file of fs.readdirSync(DEFAULT_SCHEMAS_DIR).sort()) {
 		if (!file.endsWith(".schema.json")) continue;
 		const name = file.replace(".schema.json", "");
 		const info = schemaInfo(cwd, name);

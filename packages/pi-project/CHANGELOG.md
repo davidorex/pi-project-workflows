@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.0] - 2026-04-30
 
 ### Changed (BREAKING)
 - Replaced `initProject` copy-seeder with a two-tier discovery loader, mirroring the post-v0.14.6 monitor loader pattern in pi-behavior-monitors. Bundled schemas and block scaffolds now load directly from `<package>/defaults/` on demand; `.project/*.json` files act as the project-tier override and lazy-materialize on first write. Aligns pi-project with pi-mono's canonical "discovery, not duplication" architecture.

@@ -4,8 +4,10 @@
  * Implements the jit-agents-spec.md §2 boundary contract: four public surfaces
  * (load, compile, execute, introspect) with typed inputs and outputs.
  */
+import type { ItemLocation } from "@davidorex/pi-project";
 import type { Api, AssistantMessage, Model } from "@mariozechner/pi-ai";
 import type nunjucks from "nunjucks";
+import type { RendererRegistry } from "./renderer-registry.js";
 
 /**
  * A loaded agent specification.
@@ -107,6 +109,10 @@ export interface LoadContext {
 
 /**
  * Options for compileAgent.
+ *
+ * Plan 4 (Wave 2) extends this with two optional fields supporting object-form
+ * `contextBlocks` resolution. Both default to internal lazy construction when
+ * absent so existing callers (string-only `contextBlocks`) require no changes.
  */
 export interface CompileContext {
 	/** Nunjucks environment from createTemplateEnv — used to render template references. */
@@ -115,6 +121,22 @@ export interface CompileContext {
 	input: unknown;
 	/** Project root. Used for `.project/` block reads during contextBlocks injection. */
 	cwd: string;
+	/**
+	 * Optional renderer registry for per-item macro resolution. When absent,
+	 * object-form `contextBlocks` entries still inject the resolved item under
+	 * `_<name>_item`, but the `render_recursive` Nunjucks global cannot
+	 * dispatch — recursive rendering returns a `[unrendered: <kind>/<id>]`
+	 * fallback marker rather than throwing.
+	 */
+	rendererRegistry?: RendererRegistry;
+	/**
+	 * Optional pre-built ID index. When absent and any object-form
+	 * `contextBlocks` entry needs item resolution (or the `resolve`/
+	 * `render_recursive` Nunjucks globals are invoked), `compileAgent` builds
+	 * one on demand via `buildIdIndex(cwd)`. Callers performing many compiles
+	 * in one pass should build once and pass it in for reuse.
+	 */
+	idIndex?: Map<string, ItemLocation>;
 }
 
 /**

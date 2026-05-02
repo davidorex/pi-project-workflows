@@ -65,7 +65,7 @@
 - `workflows/self-implement.workflow.yaml`
 - `workflows/typed-analysis.workflow.yaml`
 
-## templates/ (33 files)
+## templates/ (34 files)
 
 - `templates/analyzers/base-analyzer.md`
 - `templates/analyzers/patterns-task.md`
@@ -86,6 +86,7 @@
 - `templates/gap-resolution-assessor/task.md`
 - `templates/handoff-writer/task.md`
 - `templates/investigator/task.md`
+- `templates/items/decisions.md`
 - `templates/phase-author/task.md`
 - `templates/plan-creator/task.md`
 - `templates/plan-decomposer/task.md`

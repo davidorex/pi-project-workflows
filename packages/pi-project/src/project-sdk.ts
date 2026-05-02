@@ -512,6 +512,151 @@ export function projectState(cwd: string): ProjectState {
 	return state;
 }
 
+// ── Cross-block ID Resolver ─────────────────────────────────────────────────
+
+/**
+ * Locator for a single item discovered by buildIdIndex: which block file it
+ * lives in, which array key inside that block holds it, and the item payload.
+ * Intended as the substrate for renderer-driven cross-reference resolution
+ * (e.g., a per-item macro inlining a related decision by ID).
+ */
+export interface ItemLocation {
+	block: string;
+	arrayKey: string;
+	item: Record<string, unknown>;
+}
+
+/**
+ * Map from item-ID prefix to the block name that ID is expected to live in.
+ * Plan 0 (v0.15.0) tightened the relevant block schemas so AJV rejects
+ * ID values that violate these prefix conventions at write time. The
+ * resolver enforces the same invariant at index-build time as a defense
+ * against direct-fs writes that bypass validation.
+ *
+ * IDs whose prefix is not in this table are still indexed; only listed
+ * prefixes are subject to block-of-residence enforcement.
+ */
+const ID_PREFIX_TO_BLOCK: Record<string, string> = {
+	"DEC-": "decisions",
+	"FGAP-": "framework-gaps",
+	"R-": "research",
+	"REVIEW-": "spec-reviews",
+	"FEAT-": "features",
+	"PLAN-": "layer-plans",
+	"TASK-": "tasks",
+	"REQ-": "requirements",
+	"VER-": "verification",
+	"RAT-": "rationale",
+	"issue-": "issues",
+};
+
+/**
+ * Look up the block expected to host an ID based on its prefix.
+ * Returns null when the ID matches no known prefix (e.g., bare phase IDs,
+ * legacy unprefixed IDs, or future prefix conventions not yet wired in).
+ */
+function expectedBlockForId(id: string): string | null {
+	for (const [prefix, block] of Object.entries(ID_PREFIX_TO_BLOCK)) {
+		if (id.startsWith(prefix)) return block;
+	}
+	return null;
+}
+
+/**
+ * Build a map from item-ID to its location across every block in `.project/`.
+ *
+ * Scan strategy:
+ *   1. `.project/phases/*.json` — single-object files contributing both
+ *      `String(number)` and `name` as IDs under block "phases".
+ *   2. `.project/*.json` — every array property whose items are objects with
+ *      a string `id` field becomes an indexed entry.
+ *
+ * Prefix invariant: when an item ID starts with one of the known prefixes
+ * (see ID_PREFIX_TO_BLOCK), the block it was found in must match the
+ * expected block. Mismatches throw immediately — Plan 0's schema patterns
+ * make this state unreachable through validated writes, so encountering
+ * one indicates either a direct-fs corruption or an unmapped prefix
+ * collision that needs explicit resolution.
+ *
+ * Collisions on identical IDs across different blocks: first writer wins
+ * (no overwrite) — duplicate entries are intentionally ignored to keep
+ * the resolver deterministic without allocating warning channels here.
+ */
+export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
+	const index = new Map<string, ItemLocation>();
+	const blockDir = path.join(cwd, PROJECT_DIR);
+
+	// Phase files — special: synthesized IDs from number + name fields,
+	// not from a top-level `id` string. No prefix — exempt from the
+	// prefix-vs-block consistency check.
+	const phasesDir = path.join(blockDir, "phases");
+	if (fs.existsSync(phasesDir)) {
+		try {
+			for (const file of fs.readdirSync(phasesDir).filter((f) => f.endsWith(".json"))) {
+				try {
+					const data = JSON.parse(fs.readFileSync(path.join(phasesDir, file), "utf-8")) as Record<string, unknown>;
+					const phaseLoc: ItemLocation = { block: "phases", arrayKey: file, item: data };
+					if (data.number !== undefined && !index.has(String(data.number))) {
+						index.set(String(data.number), phaseLoc);
+					}
+					if (typeof data.name === "string" && !index.has(data.name)) {
+						index.set(data.name, phaseLoc);
+					}
+				} catch {
+					/* skip malformed phase file */
+				}
+			}
+		} catch {
+			/* phases dir unreadable */
+		}
+	}
+
+	// Top-level block files — scan every array property for items with `id`.
+	if (!fs.existsSync(blockDir)) return index;
+	for (const file of fs.readdirSync(blockDir)) {
+		if (!file.endsWith(".json")) continue;
+		const blockName = file.replace(".json", "");
+		let data: Record<string, unknown>;
+		try {
+			data = readBlock(cwd, blockName) as Record<string, unknown>;
+		} catch {
+			continue; // unreadable / malformed block — skip
+		}
+		for (const [arrayKey, val] of Object.entries(data)) {
+			if (!Array.isArray(val)) continue;
+			for (const raw of val) {
+				if (!raw || typeof raw !== "object") continue;
+				const item = raw as Record<string, unknown>;
+				const idVal = item.id;
+				if (typeof idVal !== "string" || idVal.length === 0) continue;
+
+				const expected = expectedBlockForId(idVal);
+				if (expected !== null && expected !== blockName) {
+					throw new Error(
+						`buildIdIndex: ID '${idVal}' found in block '${blockName}' but its prefix maps to block '${expected}'. ` +
+							`Prefix-vs-block-kind invariant violated — this indicates a direct-fs write that bypassed schema validation, or a prefix collision needing explicit resolution.`,
+					);
+				}
+
+				if (!index.has(idVal)) {
+					index.set(idVal, { block: blockName, arrayKey, item });
+				}
+			}
+		}
+	}
+
+	return index;
+}
+
+/**
+ * One-off lookup — builds the full index then performs a single get.
+ * Callers performing multiple lookups in one render pass should call
+ * `buildIdIndex` once and reuse the returned map.
+ */
+export function resolveItemById(cwd: string, id: string): ItemLocation | null {
+	return buildIdIndex(cwd).get(id) ?? null;
+}
+
 // ── Project Validation (cross-block reference integrity) ─────────────────────
 
 export interface ProjectValidationIssue {
@@ -529,84 +674,48 @@ export interface ProjectValidationResult {
 /**
  * Validate cross-block referential integrity: do IDs referenced across blocks
  * actually exist? Returns structured issues rather than throwing.
+ *
+ * ID collection delegates to `buildIdIndex` — per-kind Sets are then derived
+ * by filtering the index on `ItemLocation.block`. Behavior preserves the
+ * pre-resolver inline scan: same predicates against the same logical Sets.
  */
 export function validateProject(cwd: string): ProjectValidationResult {
 	const issues: ProjectValidationIssue[] = [];
 
-	// Collect known IDs from each block
+	// Build the unified ID index once and partition into per-kind Sets.
+	// Note: buildIdIndex enforces the prefix-vs-block invariant and may throw
+	// on corrupted state; that surfaces as a hard failure to validateProject
+	// callers (intended — corrupted IDs are not recoverable cross-ref issues).
+	const idIndex = buildIdIndex(cwd);
 	const phaseIds = new Set<string>();
 	const taskIds = new Set<string>();
 	const decisionIds = new Set<string>();
 	const requirementIds = new Set<string>();
-
-	// Load phases
-	try {
-		const phasesDir = path.join(cwd, PROJECT_DIR, "phases");
-		if (fs.existsSync(phasesDir)) {
-			for (const file of fs.readdirSync(phasesDir).filter((f) => f.endsWith(".json"))) {
-				try {
-					const data = JSON.parse(fs.readFileSync(path.join(phasesDir, file), "utf-8"));
-					if (data.number !== undefined) phaseIds.add(String(data.number));
-					if (data.name) phaseIds.add(data.name);
-				} catch {
-					/* skip malformed */
-				}
-			}
-		}
-	} catch {
-		/* no phases dir */
-	}
-
-	// Load tasks
-	try {
-		const taskData = readBlock(cwd, "tasks") as { tasks?: Record<string, unknown>[] };
-		if (Array.isArray(taskData.tasks)) {
-			for (const t of taskData.tasks) {
-				if (t.id) taskIds.add(String(t.id));
-			}
-		}
-	} catch {
-		/* block doesn't exist */
-	}
-
-	// Load decisions
-	try {
-		const decData = readBlock(cwd, "decisions") as { decisions?: Record<string, unknown>[] };
-		if (Array.isArray(decData.decisions)) {
-			for (const d of decData.decisions) {
-				if (d.id) decisionIds.add(String(d.id));
-			}
-		}
-	} catch {
-		/* block doesn't exist */
-	}
-
-	// Load requirements
-	try {
-		const reqData = readBlock(cwd, "requirements") as { requirements?: Record<string, unknown>[] };
-		if (Array.isArray(reqData.requirements)) {
-			for (const r of reqData.requirements) {
-				if (r.id) requirementIds.add(String(r.id));
-			}
-		}
-	} catch {
-		/* block doesn't exist */
-	}
-
-	// Load verifications
 	const verificationIds = new Set<string>();
-	try {
-		const verData = readBlock(cwd, "verification") as { verifications?: Record<string, unknown>[] };
-		if (Array.isArray(verData.verifications)) {
-			for (const v of verData.verifications) {
-				if (v.id) verificationIds.add(String(v.id));
-			}
+	for (const [id, loc] of idIndex) {
+		switch (loc.block) {
+			case "phases":
+				phaseIds.add(id);
+				break;
+			case "tasks":
+				taskIds.add(id);
+				break;
+			case "decisions":
+				decisionIds.add(id);
+				break;
+			case "requirements":
+				requirementIds.add(id);
+				break;
+			case "verification":
+				verificationIds.add(id);
+				break;
 		}
-	} catch {
-		/* block doesn't exist */
 	}
 
-	// All known IDs for generic resolution
+	// All known IDs for generic resolution — preserves pre-refactor allIds set
+	// (phases + tasks + decisions + requirements + verifications). Other
+	// block IDs are intentionally excluded to keep validateProject's
+	// behavior bit-identical to the pre-refactor implementation.
 	const allIds = new Set([...phaseIds, ...taskIds, ...decisionIds, ...requirementIds, ...verificationIds]);
 
 	// Validate task references

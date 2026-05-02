@@ -623,13 +623,15 @@ const extension = (pi: ExtensionAPI) => {
 
 export default extension;
 
-export type { CompleteTaskResult } from "./project-sdk.js";
+export type { CompleteTaskResult, ItemLocation } from "./project-sdk.js";
 // Re-export for consumers
 export {
 	blockStructure,
+	buildIdIndex,
 	completeTask,
 	findAppendableBlocks,
 	PROJECT_BLOCK_TYPES,
+	resolveItemById,
 	schemaInfo,
 	schemaVocabulary,
 } from "./project-sdk.js";

@@ -19,7 +19,7 @@
 						"enum": ["draft", "proposed", "decided", "in-progress", "complete", "abandoned"]
 					},
 					"model": { "type": "string", "description": "Conceptual source — e.g. 'Muni five-layer'" },
-					"description": { "type": "string" },
+					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"layers": {
 						"type": "array",
 						"items": {
@@ -29,13 +29,13 @@
 							"properties": {
 								"id": { "type": "string" },
 								"name": { "type": "string" },
-								"purpose": { "type": "string" },
+								"purpose": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 								"canonical_vocabulary": { "type": "string" },
 								"lifetime": {
 									"type": "string",
 									"description": "Cadence at which this layer changes — project-lifetime, per-design-cycle, per-iteration, per-session, ever-accumulating"
 								},
-								"ownership_principle": { "type": "string" },
+								"ownership_principle": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 								"current_blocks": { "type": "array", "items": { "type": "string" } },
 								"target_blocks": {
 									"type": "array",
@@ -62,9 +62,9 @@
 							"properties": {
 								"id": { "type": "string" },
 								"name": { "type": "string" },
-								"description": { "type": "string" },
+								"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 								"depends_on": { "type": "array", "items": { "type": "string" } },
-								"exit_criteria": { "type": "array", "items": { "type": "string" } },
+								"exit_criteria": { "type": "array", "items": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } } },
 								"produces": { "type": "array", "items": { "type": "string" } },
 								"status": { "type": "string", "enum": ["pending", "in-progress", "complete", "blocked"] }
 							}

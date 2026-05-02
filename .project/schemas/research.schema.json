@@ -31,11 +31,13 @@
 					},
 					"question": {
 						"type": "string",
-						"description": "The question being investigated."
+						"description": "The question being investigated.",
+						"x-prompt-budget": { "tokens": 1000, "words": 800 }
 					},
 					"method": {
 						"type": "string",
-						"description": "How the investigation was conducted — e.g. 'code-inspection', 'empirical-test', 'web-fetch', 'curation of external document', or a combination."
+						"description": "How the investigation was conducted — e.g. 'code-inspection', 'empirical-test', 'web-fetch', 'curation of external document', or a combination.",
+						"x-prompt-budget": { "tokens": 1000, "words": 800 }
 					},
 					"scope": {
 						"type": "array",
@@ -44,7 +46,8 @@
 					},
 					"findings_summary": {
 						"type": "string",
-						"description": "Self-contained, prompt-injectable summary of what was found. Target ~300-800 words. Must stand alone without the full findings_document."
+						"description": "Self-contained, prompt-injectable summary of what was found. Target ~300-800 words. Must stand alone without the full findings_document.",
+						"x-prompt-budget": { "tokens": 1000, "words": 800 }
 					},
 					"findings_document": {
 						"type": "string",

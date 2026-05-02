@@ -23,8 +23,8 @@
 					"enum": ["proposed", "approved", "in-progress", "in-review", "complete", "blocked", "cancelled"]
 				},
 				"layer": { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] },
-				"description": { "type": "string" },
-				"motivation": { "type": "string" },
+				"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
+				"motivation": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 				"acceptance_criteria": { "type": "array", "items": { "type": "string" } },
 				"dependencies": {
 					"type": "array",
@@ -69,7 +69,7 @@
 					"type": "string",
 					"enum": ["proposed", "ready", "in-progress", "in-review", "complete", "blocked"]
 				},
-				"description": { "type": "string" },
+				"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 				"acceptance_criteria": { "type": "array", "items": { "type": "string" } },
 				"depends_on": { "type": "array", "items": { "type": "string" } },
 				"gates": { "type": "array", "items": { "type": "string" } },
@@ -97,7 +97,7 @@
 			"required": ["id", "description", "severity", "state", "reporter", "created_at"],
 			"properties": {
 				"id": { "type": "string" },
-				"description": { "type": "string" },
+				"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 				"evidence": { "type": "string" },
 				"severity": { "type": "string", "enum": ["critical", "major", "minor", "trivial"] },
 				"category": { "type": "string", "enum": ["defect", "ambiguity", "contradiction", "omission", "scope-creep", "disclarity", "other"] },

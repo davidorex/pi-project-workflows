@@ -30,7 +30,8 @@
 					},
 					"method": {
 						"type": "string",
-						"description": "How the review is conducted — e.g. 'fresh-context independent reviewer', 'adversarial pre-mortem', 'self-review'"
+						"description": "How the review is conducted — e.g. 'fresh-context independent reviewer', 'adversarial pre-mortem', 'self-review'",
+						"x-prompt-budget": { "tokens": 1000, "words": 800 }
 					},
 					"findings": {
 						"type": "array",
@@ -54,7 +55,7 @@
 			"required": ["id", "description", "severity", "category", "state", "reporter", "created_at"],
 			"properties": {
 				"id": { "type": "string" },
-				"description": { "type": "string" },
+				"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 				"evidence": {
 					"type": "string",
 					"description": "Direct quote or passage from the target spec that triggered the finding"

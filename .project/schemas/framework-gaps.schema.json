@@ -21,7 +21,7 @@
 					"priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
 					"package": { "type": "string" },
 					"layer": { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] },
-					"description": { "type": "string" },
+					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"evidence": {
 						"type": "array",
 						"items": {
@@ -31,16 +31,16 @@
 							"properties": {
 								"file": { "type": "string" },
 								"lines": { "type": "string" },
-								"reference": { "type": "string", "description": "What specifically at this location demonstrates the gap" }
+								"reference": { "type": "string", "description": "What specifically at this location demonstrates the gap", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
 							}
 						}
 					},
-					"impact": { "type": "string" },
+					"impact": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"canonical_vocabulary": {
 						"type": "string",
 						"description": "The established engineering term for the capability that is missing"
 					},
-					"proposed_resolution": { "type": "string" },
+					"proposed_resolution": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"related_features": { "type": "array", "items": { "type": "string" } },
 					"related_decisions": { "type": "array", "items": { "type": "string" } },
 					"related_issues": { "type": "array", "items": { "type": "string" } },

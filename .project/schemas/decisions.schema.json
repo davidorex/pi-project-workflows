@@ -31,11 +31,13 @@
 					},
 					"context": {
 						"type": "string",
-						"description": "Forces at play; what must be resolved and why. Grounded in citations to the forcing artifact and supporting research."
+						"description": "Forces at play; what must be resolved and why. Grounded in citations to the forcing artifact and supporting research.",
+						"x-prompt-budget": { "tokens": 1000, "words": 800 }
 					},
 					"decision": {
 						"type": "string",
-						"description": "The chosen direction. Populated at creation as the proposed direction and edited if needed at the moment of enactment. Only mandate-compliant, structurally-correct candidates appear here."
+						"description": "The chosen direction. Populated at creation as the proposed direction and edited if needed at the moment of enactment. Only mandate-compliant, structurally-correct candidates appear here.",
+						"x-prompt-budget": { "tokens": 1000, "words": 800 }
 					},
 					"options_considered": {
 						"type": "array",
@@ -54,7 +56,7 @@
 					},
 					"consequences": {
 						"type": "array",
-						"items": { "type": "string" },
+						"items": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 						"description": "What follows from the decision if enacted — what becomes easier, harder, or impossible; which constraint blocks or code files change."
 					},
 					"supersedes": {

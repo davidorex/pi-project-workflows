@@ -190,3 +190,70 @@ export function updateItemInBlock(
 		writeBlock(cwd, blockName, record);
 	});
 }
+
+/**
+ * Atomically append an item to a nested array inside a parent-array item.
+ *
+ * Read current file, locate parent-array item by predicate, push `item` onto
+ * `data[parentArrayKey][matchedIndex][nestedArrayKey]`, validate whole file
+ * against schema, write atomically. Throws if file doesn't exist; if
+ * parentArrayKey is missing or not an array; if no parent item matches the
+ * predicate; if the matched parent item has no `nestedArrayKey` or it is not
+ * an array; or if validation fails. Mirrors updateItemInBlock's structure:
+ * file lock, predicate findIndex, multi-match warning, clone-before-write so
+ * the original array remains unmodified if writeBlock throws.
+ */
+export function appendToNestedArray(
+	cwd: string,
+	blockName: string,
+	parentArrayKey: string,
+	predicate: (item: Record<string, unknown>) => boolean,
+	nestedArrayKey: string,
+	item: unknown,
+): void {
+	withBlockLock(blockFilePath(cwd, blockName), () => {
+		const data = readBlock(cwd, blockName);
+		if (!data || typeof data !== "object") {
+			throw new Error(`Block '${blockName}' is not an object`);
+		}
+		const record = data as Record<string, unknown>;
+		if (!(parentArrayKey in record)) {
+			throw new Error(`Block '${blockName}' has no key '${parentArrayKey}'`);
+		}
+		if (!Array.isArray(record[parentArrayKey])) {
+			throw new Error(`Block '${blockName}' key '${parentArrayKey}' is not an array`);
+		}
+		const arr = record[parentArrayKey] as Record<string, unknown>[];
+		const idx = arr.findIndex(predicate);
+		if (idx === -1) {
+			throw new Error(`No matching item in block '${blockName}' key '${parentArrayKey}'`);
+		}
+		let matchCount = 1;
+		for (let i = idx + 1; i < arr.length; i++) {
+			if (predicate(arr[i])) matchCount++;
+		}
+		if (matchCount > 1) {
+			console.error(`[block-api] appendToNestedArray: ${matchCount} items matched predicate, only first updated`);
+		}
+		const parent = arr[idx];
+		if (!(nestedArrayKey in parent)) {
+			throw new Error(`Matched item in '${blockName}.${parentArrayKey}' has no nested key '${nestedArrayKey}'`);
+		}
+		if (!Array.isArray(parent[nestedArrayKey])) {
+			throw new Error(
+				`Matched item in '${blockName}.${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
+			);
+		}
+		// Clone parent (and replace its nested array) before validation to keep
+		// the original array unmodified if writeBlock fails — mirrors
+		// updateItemInBlock's clone-then-write pattern.
+		const updatedParent = {
+			...parent,
+			[nestedArrayKey]: [...(parent[nestedArrayKey] as unknown[]), item],
+		};
+		const patched = [...arr];
+		patched[idx] = updatedParent;
+		record[parentArrayKey] = patched;
+		writeBlock(cwd, blockName, record);
+	});
+}

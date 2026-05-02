@@ -8,11 +8,18 @@
  * - write: validated write via writeBlock()
  * - append: array append via appendToBlock()
  * - update: item update via updateItemInBlock()
+ * - nestedAppend: append to a nested array inside a parent-array item via appendToNestedArray()
  */
 
 import fs from "node:fs";
 import path from "node:path";
-import { appendToBlock, readBlock, updateItemInBlock, writeBlock } from "@davidorex/pi-project/block-api";
+import {
+	appendToBlock,
+	appendToNestedArray,
+	readBlock,
+	updateItemInBlock,
+	writeBlock,
+} from "@davidorex/pi-project/block-api";
 import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
 import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import { resolveExpressions } from "./expression.js";
@@ -49,8 +56,10 @@ export function executeBlock(
 			output = executeAppend(resolved.append, cwd);
 		} else if ("update" in resolved) {
 			output = executeUpdate(resolved.update, cwd);
+		} else if ("nestedAppend" in resolved) {
+			output = executeNestedAppend(resolved.nestedAppend, cwd);
 		} else {
-			throw new Error("Block spec must have one of: read, readDir, write, append, update");
+			throw new Error("Block spec must have one of: read, readDir, write, append, update, nestedAppend");
 		}
 
 		const result: StepResult = {
@@ -217,4 +226,18 @@ function executeUpdate(
 
 	updateItemInBlock(cwd, spec.name, spec.key, predicate, spec.set);
 	return { updated: spec.name, key: spec.key, matched: spec.match };
+}
+
+/**
+ * Append an item to a nested array inside a parent-array item via
+ * appendToNestedArray. The `match` object is converted to a predicate that
+ * matches against parent-array items.
+ */
+function executeNestedAppend(
+	spec: { name: string; key: string; match: Record<string, unknown>; nestedKey: string; item: unknown },
+	cwd: string,
+): Record<string, unknown> {
+	const predicate = (item: Record<string, unknown>) => Object.entries(spec.match).every(([k, v]) => item[k] === v);
+	appendToNestedArray(cwd, spec.name, spec.key, predicate, spec.nestedKey, spec.item);
+	return { nestedAppended: spec.name, key: spec.key, matched: spec.match, nestedKey: spec.nestedKey };
 }

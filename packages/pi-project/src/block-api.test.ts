@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { appendToBlock, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
+import { appendToBlock, appendToNestedArray, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
@@ -497,5 +497,308 @@ describe("updateItemInBlock", () => {
 
 		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "custom.json"), "utf-8"));
 		assert.strictEqual(onDisk.items[0].v, 2);
+	});
+});
+
+// Schema modeling spec-reviews shape: parent items keyed by `id`, each with a
+// `findings` array. Used to exercise appendToNestedArray's parent-find +
+// nested-array-grow path. Matches REVIEW-001's structural use case.
+const reviewsSchema = {
+	type: "object",
+	required: ["reviews"],
+	properties: {
+		reviews: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "findings"],
+				properties: {
+					id: { type: "string" },
+					findings: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "description", "severity"],
+							properties: {
+								id: { type: "string" },
+								description: { type: "string" },
+								severity: { type: "string", enum: ["info", "warning", "error"] },
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+};
+
+describe("appendToNestedArray", () => {
+	it("happy path — appends to nested findings array on matched parent", (t) => {
+		const tmpDir = makeTmpDir("nested-happy");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", reviewsSchema);
+
+		const initial = {
+			reviews: [{ id: "REVIEW-001", findings: [] }],
+		};
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), JSON.stringify(initial));
+
+		appendToNestedArray(tmpDir, "spec-reviews", "reviews", (item) => item.id === "REVIEW-001", "findings", {
+			id: "F-001",
+			description: "first finding",
+			severity: "info",
+		});
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		assert.strictEqual(onDisk.reviews[0].findings.length, 1);
+		assert.strictEqual(onDisk.reviews[0].findings[0].id, "F-001");
+	});
+
+	it("throws when block file does not exist", (t) => {
+		const tmpDir = makeTmpDir("nested-nofile");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		assert.throws(
+			() =>
+				appendToNestedArray(tmpDir, "missing", "reviews", (i) => i.id === "x", "findings", {
+					id: "f",
+					description: "d",
+					severity: "info",
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not found"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when parent array key is missing", (t) => {
+		const tmpDir = makeTmpDir("nested-nokey");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), JSON.stringify({ other: [] }));
+
+		assert.throws(
+			() =>
+				appendToNestedArray(tmpDir, "spec-reviews", "reviews", (i) => i.id === "x", "findings", {
+					id: "f",
+					description: "d",
+					severity: "info",
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("has no key"));
+				assert.ok(err.message.includes("reviews"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when parent array key is not an array", (t) => {
+		const tmpDir = makeTmpDir("nested-notarray");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), JSON.stringify({ reviews: "not-an-array" }));
+
+		assert.throws(
+			() =>
+				appendToNestedArray(tmpDir, "spec-reviews", "reviews", (i) => i.id === "x", "findings", {
+					id: "f",
+					description: "d",
+					severity: "info",
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not an array"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when no parent item matches predicate", (t) => {
+		const tmpDir = makeTmpDir("nested-nomatch");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "OTHER", findings: [] }] }),
+		);
+
+		assert.throws(
+			() =>
+				appendToNestedArray(tmpDir, "spec-reviews", "reviews", (i) => i.id === "REVIEW-001", "findings", {
+					id: "f",
+					description: "d",
+					severity: "info",
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("No matching item"));
+				assert.ok(err.message.includes("spec-reviews"));
+				assert.ok(err.message.includes("reviews"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when matched parent has no nested key", (t) => {
+		const tmpDir = makeTmpDir("nested-no-nested-key");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001" }] }),
+		);
+
+		assert.throws(
+			() =>
+				appendToNestedArray(tmpDir, "spec-reviews", "reviews", (i) => i.id === "REVIEW-001", "findings", {
+					id: "f",
+					description: "d",
+					severity: "info",
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("no nested key"));
+				assert.ok(err.message.includes("findings"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when matched parent's nested key is not an array", (t) => {
+		const tmpDir = makeTmpDir("nested-nested-notarray");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001", findings: "wrong" }] }),
+		);
+
+		assert.throws(
+			() =>
+				appendToNestedArray(tmpDir, "spec-reviews", "reviews", (i) => i.id === "REVIEW-001", "findings", {
+					id: "f",
+					description: "d",
+					severity: "info",
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("nested key"));
+				assert.ok(err.message.includes("not an array"));
+				return true;
+			},
+		);
+	});
+
+	it("throws ValidationError on schema-violating finding — original file unchanged", (t) => {
+		const tmpDir = makeTmpDir("nested-invalid-item");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", reviewsSchema);
+
+		const original = { reviews: [{ id: "REVIEW-001", findings: [] }] };
+		const originalStr = JSON.stringify(original);
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), originalStr);
+
+		assert.throws(
+			() =>
+				appendToNestedArray(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(i) => i.id === "REVIEW-001",
+					"findings",
+					// Missing `severity`, wrong types — must fail AJV validation
+					{ id: 999, description: "missing-severity" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof ValidationError);
+				return true;
+			},
+		);
+
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8");
+		assert.strictEqual(afterStr, originalStr);
+	});
+
+	it("atomic semantics — writeBlock failure leaves file byte-identical", (t) => {
+		// Force-failure mechanism: stub fs.renameSync (used by writeBlock's
+		// atomic tmp-rename step) to throw. Restored in t.after. This avoids
+		// chmod tricks that are unreliable on macOS/CI tmpdirs.
+		const tmpDir = makeTmpDir("nested-atomic");
+		const origRenameSync = fs.renameSync;
+		t.after(() => {
+			fs.renameSync = origRenameSync;
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		});
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", reviewsSchema);
+
+		const original = { reviews: [{ id: "REVIEW-001", findings: [] }] };
+		const originalStr = JSON.stringify(original, null, 2);
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), originalStr);
+
+		fs.renameSync = ((..._args: unknown[]) => {
+			throw new Error("simulated rename failure");
+		}) as typeof fs.renameSync;
+
+		assert.throws(
+			() =>
+				appendToNestedArray(tmpDir, "spec-reviews", "reviews", (i) => i.id === "REVIEW-001", "findings", {
+					id: "F-001",
+					description: "ok",
+					severity: "info",
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("Failed to write"));
+				return true;
+			},
+		);
+
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8");
+		assert.strictEqual(afterStr, originalStr);
+	});
+
+	it("multi-match — warns via console.error and updates only first parent", (t) => {
+		const tmpDir = makeTmpDir("nested-multi");
+		const origConsoleError = console.error;
+		const errs: string[] = [];
+		console.error = (...args: unknown[]) => {
+			errs.push(args.map(String).join(" "));
+		};
+		t.after(() => {
+			console.error = origConsoleError;
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		});
+		setupWorkflowDir(tmpDir);
+
+		// Two parents both satisfy predicate (no schema — exercise warning path
+		// without imposing schema constraints on duplicate ids).
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "dups.json"),
+			JSON.stringify({
+				reviews: [
+					{ id: "DUP", findings: [] },
+					{ id: "DUP", findings: [] },
+				],
+			}),
+		);
+
+		appendToNestedArray(tmpDir, "dups", "reviews", (i) => i.id === "DUP", "findings", { id: "F-only-first" });
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "dups.json"), "utf-8"));
+		assert.strictEqual(onDisk.reviews[0].findings.length, 1);
+		assert.strictEqual(onDisk.reviews[1].findings.length, 0);
+		assert.ok(errs.some((s) => s.includes("appendToNestedArray") && s.includes("2 items matched")));
 	});
 });

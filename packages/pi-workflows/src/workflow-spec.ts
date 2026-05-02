@@ -491,6 +491,32 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 			}
 		}
 
+		if ("nestedAppend" in rawBlock) {
+			if (
+				typeof rawBlock.nestedAppend !== "object" ||
+				rawBlock.nestedAppend === null ||
+				Array.isArray(rawBlock.nestedAppend)
+			) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.nestedAppend must be an object`);
+			}
+			const n = rawBlock.nestedAppend as Record<string, unknown>;
+			if (typeof n.name !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.nestedAppend.name must be a string`);
+			}
+			if (typeof n.key !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.nestedAppend.key must be a string`);
+			}
+			if (typeof n.match !== "object" || n.match === null || Array.isArray(n.match)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.nestedAppend.match must be an object`);
+			}
+			if (typeof n.nestedKey !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.nestedAppend.nestedKey must be a string`);
+			}
+			if (!("item" in n)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.nestedAppend must have an 'item' field`);
+			}
+		}
+
 		step.block = rawBlock as unknown as import("./types.js").BlockSpec;
 
 		// output spec (optional)

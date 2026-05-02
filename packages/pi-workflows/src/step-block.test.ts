@@ -248,6 +248,141 @@ describe("block step: update", () => {
 	});
 });
 
+describe("block step: nestedAppend", () => {
+	function setupReviews(): void {
+		// Schema with nested findings — modeled on spec-reviews.
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "schemas", "spec-reviews.schema.json"),
+			JSON.stringify({
+				type: "object",
+				required: ["reviews"],
+				properties: {
+					reviews: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "findings"],
+							properties: {
+								id: { type: "string" },
+								findings: {
+									type: "array",
+									items: {
+										type: "object",
+										required: ["id", "description", "severity"],
+										properties: {
+											id: { type: "string" },
+											description: { type: "string" },
+											severity: { type: "string", enum: ["info", "warning", "error"] },
+											category: { type: "string" },
+											state: { type: "string" },
+											reporter: { type: "string" },
+											created_at: { type: "string" },
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+		);
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001", findings: [] }] }),
+		);
+	}
+
+	it("appends item to nested array on matched parent", () => {
+		setupReviews();
+		const finding = {
+			id: "REV-001-F001",
+			description: "first finding",
+			severity: "info",
+			category: "spec-loop",
+			state: "open",
+			reporter: "agent/test",
+			created_at: "2026-05-02T00:00:00Z",
+		};
+		const result = executeBlock(
+			{
+				nestedAppend: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "REVIEW-001" },
+					nestedKey: "findings",
+					item: finding,
+				},
+			},
+			"add-finding",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed");
+		const out = result.output as Record<string, unknown>;
+		assert.equal(out.nestedAppended, "spec-reviews");
+		assert.equal(out.nestedKey, "findings");
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		assert.equal(onDisk.reviews[0].findings.length, 1);
+		assert.equal(onDisk.reviews[0].findings[0].id, "REV-001-F001");
+	});
+
+	it("fails with predicate-miss error when no parent matches", () => {
+		setupReviews();
+		const result = executeBlock(
+			{
+				nestedAppend: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "REVIEW-999" },
+					nestedKey: "findings",
+					item: { id: "x", description: "d", severity: "info" },
+				},
+			},
+			"add-finding",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "failed");
+		assert.ok(result.error?.includes("No matching item"));
+		assert.ok(result.error?.includes("spec-reviews"));
+	});
+
+	it("resolves expressions in match and item before block-api call", () => {
+		setupReviews();
+		const scope = {
+			input: { targetId: "REVIEW-001" },
+			steps: {
+				prev: {
+					output: {
+						id: "REV-001-EXPR",
+						description: "from expr",
+						severity: "warning",
+					},
+				},
+			},
+		};
+		const result = executeBlock(
+			{
+				nestedAppend: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "${{ input.targetId }}" as unknown as string },
+					nestedKey: "findings",
+					item: "${{ steps.prev.output }}" as unknown,
+				},
+			},
+			"add-finding",
+			scope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed", result.error);
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		assert.equal(onDisk.reviews[0].findings.length, 1);
+		assert.equal(onDisk.reviews[0].findings[0].id, "REV-001-EXPR");
+		assert.equal(onDisk.reviews[0].findings[0].severity, "warning");
+	});
+});
+
 describe("block step: expression resolution", () => {
 	it("resolves expressions in read block name", () => {
 		const scope = { input: { blockName: "issues" }, steps: {} };

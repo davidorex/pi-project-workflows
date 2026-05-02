@@ -109,7 +109,23 @@ export interface BlockUpdateSpec {
 	};
 }
 
-export type BlockSpec = BlockReadSpec | BlockReadDirSpec | BlockWriteSpec | BlockAppendSpec | BlockUpdateSpec;
+export interface BlockNestedAppendSpec {
+	nestedAppend: {
+		name: string;
+		key: string; // parent array key
+		match: Record<string, unknown>; // predicate fields against parent items
+		nestedKey: string; // nested array key on the matched parent item
+		item: unknown;
+	};
+}
+
+export type BlockSpec =
+	| BlockReadSpec
+	| BlockReadDirSpec
+	| BlockWriteSpec
+	| BlockAppendSpec
+	| BlockUpdateSpec
+	| BlockNestedAppendSpec;
 
 export interface StepOutputSpec {
 	format?: "json" | "text"; // default: "text"

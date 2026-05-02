@@ -545,7 +545,9 @@ async function executeStepByType(
 						? "write"
 						: "append" in stepSpec.block
 							? "append"
-							: "update";
+							: "update" in stepSpec.block
+								? "update"
+								: "nestedAppend";
 		widgetState.activities.set(stepName, [{ tool: "block", preview: blockOp, timestamp: Date.now() }]);
 		if (ctx.hasUI) ctx.ui.setWidget(WIDGET_ID, createProgressWidget(widgetState));
 

@@ -107,96 +107,234 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		const projectDir = path.join(ctx.cwd, ".project");
 		const projectDirExists = fs.existsSync(projectDir);
 
-		// Iterate the full union shape — Plan 3's tsc-keep-green `.filter` to
-		// strings was a deferred narrowing; Plan 4 takes the per-item path for
-		// object entries instead of dropping them.
+		// Plan 4.1 contract — multi-entry-same-name disambiguation.
+		//
+		// Pre-Plan-4.1 (Plan 4) used a single-pass forEach loop that wrote
+		// singular keys (`_<name>_item`, `_<name>_depth`, `_<name>_focus`) on
+		// every object-with-item entry. Three entries sharing `name: decisions`
+		// all wrote to the same three slots and only the LAST entry's values
+		// survived — silent collision. Plan 4.1 patches the injection so
+		// multi-entry-same-name configurations populate an array slot instead
+		// (`_<name>_items`, parallel `contextValues[<name>_items]`) while
+		// holding the single-entry case byte-identical to today.
+		//
+		// Resolution rules per group (a "group" is all entries sharing a name):
+		//
+		//   String entry "foo"               → `_foo` (whole-block string),
+		//                                      `contextValues.foo` (raw block).
+		//
+		//   Single object entry  with item   → singular keys populated as the
+		//   (no string sibling for that name) historical Plan 4 contract:
+		//                                       `_<name>_item` (wrapped string),
+		//                                       `_<name>_depth`, `_<name>_focus`,
+		//                                       `contextValues[<name>_item]`.
+		//                                       Additionally, `_<name>_items`
+		//                                       array of length 1 is populated
+		//                                       so multi-aware templates can
+		//                                       use a single shape unconditionally.
+		//
+		//   Multiple object entries          → ONLY array form is populated:
+		//   sharing a name (with item)         `_<name>_items` (array of entry
+		//                                      objects in spec authoring order)
+		//                                      and `contextValues[<name>_items]`
+		//                                      (parallel raw-item array). The
+		//                                      singular `_<name>_item` /
+		//                                      `_<name>_depth` / `_<name>_focus`
+		//                                      keys are intentionally NOT set,
+		//                                      so any template still using the
+		//                                      legacy singular shape against a
+		//                                      multi-entry config Nunjucks-errors
+		//                                      loudly rather than silently
+		//                                      collapsing to the last entry.
+		//
+		//   Whole-block-with-hints object    → unchanged: populates `_<name>`
+		//   entry (no `ref.item`)              and `contextValues[<name>]`, plus
+		//                                      `_<name>_depth` and (when set)
+		//                                      `_<name>_focus`. NOT added to
+		//                                      `_<name>_items` — the array slot
+		//                                      is per-item only by definition.
+		//
+		//   Mixed string + object same name  → string takes the `_<name>` slot;
+		//                                      object-with-item entries populate
+		//                                      `_<name>_items`; the singular
+		//                                      `_<name>_item` is NOT populated
+		//                                      even with a single object entry,
+		//                                      because the string sibling makes
+		//                                      the singular ambiguous about
+		//                                      which surface a template means.
+		//
+		// Per-array-element shape in `_<name>_items`:
+		//   {
+		//     item:  <wrapped item content string — drop directly into prompt>,
+		//     raw:   <raw item object — for programmatic access in macros>,
+		//     depth: <ref.depth ?? 0>,
+		//     focus: <ref.focus ?? null>,
+		//     id:    <ref.item ?? null>,
+		//     name:  <ref.name>,
+		//   }
+		// Both `item` and `raw` are exposed so the macro author chooses the
+		// surface (textual drop-in vs structural traversal) rather than the
+		// framework deciding for them.
+		//
+		// `contextValues[<name>_items]` mirrors with raw-item-only entries
+		// (the trace pipeline wants structured payloads, not wrapped strings).
+		//
+		// Implementation is a two-pass walk: pass 1 classifies and groups
+		// entries by name preserving spec authoring order; pass 2 emits keys
+		// per the rules above. Two passes are required because the singular-
+		// vs-array decision needs the full group size before any key is
+		// emitted.
+
+		interface ItemEntry {
+			ref: ContextBlockRef;
+			index: number;
+		}
+
+		interface BlockGroup {
+			name: string;
+			stringEntry: boolean;
+			wholeBlockEntry: ContextBlockRef | null;
+			itemEntries: ItemEntry[];
+			/** First spec-authoring index any entry for this name appeared at. */
+			firstIndex: number;
+		}
+
+		const groups = new Map<string, BlockGroup>();
+		const ensureGroup = (name: string, index: number): BlockGroup => {
+			let g = groups.get(name);
+			if (!g) {
+				g = { name, stringEntry: false, wholeBlockEntry: null, itemEntries: [], firstIndex: index };
+				groups.set(name, g);
+			}
+			return g;
+		};
+
+		// Pass 1 — classify each entry, preserving spec authoring order
+		// inside `itemEntries` (push order = spec order).
 		spec.contextBlocks.forEach((entry, index) => {
 			if (typeof entry === "string") {
-				// String form (legacy whole-block injection). Behaviour is held
-				// byte-identical to the prior implementation: stored payload key
-				// is the block name (no `_` prefix); template variable key is
-				// `_<name_with_hyphens_to_underscores>`; missing block / missing
-				// `.project` dir collapses both to null.
-				const name = entry;
-				const key = `_${name.replace(/-/g, "_")}`;
-				if (!projectDirExists) {
-					contextValues[name] = null;
-					templateContext[key] = null;
-					return;
-				}
-				try {
-					const blockData = readBlock(ctx.cwd, name);
-					contextValues[name] = blockData;
-					templateContext[key] = blockData !== null ? wrapBlockContent(name, blockData) : null;
-				} catch {
-					contextValues[name] = null;
-					templateContext[key] = null;
-				}
+				const g = ensureGroup(entry, index);
+				g.stringEntry = true;
 				return;
 			}
-
-			// Object form (ContextBlockRef). Resolution semantics:
-			//   - `ref.item` set      → per-item path: resolve via idIndex,
-			//                            inject under `_<name>_item`,
-			//                            store payload under `<name>_item`.
-			//                            Unresolved IDs throw AgentCompileError.
-			//   - `ref.item` absent   → whole-block path with hints: behaves
-			//                            like the string form for `_<name>` /
-			//                            `contextValues[name]`, but additionally
-			//                            exposes `_<name>_depth` and (when set)
-			//                            `_<name>_focus` so macros can branch.
-			//   - `_<name>_depth`     → always set from `ref.depth ?? 0` for both
-			//                            paths so per-item macros have a budget.
-			//   - `_<name>_focus`     → set verbatim (plain object) when present.
 			const ref = entry as ContextBlockRef;
-			const baseKey = `_${ref.name.replace(/-/g, "_")}`;
-			templateContext[`${baseKey}_depth`] = ref.depth ?? 0;
-			if (ref.focus) {
-				templateContext[`${baseKey}_focus`] = ref.focus;
+			const g = ensureGroup(ref.name, index);
+			if (ref.item) {
+				g.itemEntries.push({ ref, index });
+			} else {
+				// Last whole-block-with-hints entry wins for the singular
+				// `_<name>` slot; keeping last is the simplest deterministic
+				// rule and matches the pre-Plan-4.1 forEach-overwrite behavior
+				// for the (rare) case where someone declares two whole-block
+				// hints for the same name.
+				g.wholeBlockEntry = ref;
+			}
+		});
+
+		// Pass 2 — emit keys per the contract documented above.
+		for (const g of groups.values()) {
+			const baseKey = `_${g.name.replace(/-/g, "_")}`;
+
+			// Whole-block surface (string form OR object whole-block-with-hints
+			// form). String entry takes precedence for `_<name>` /
+			// `contextValues[<name>]`; if no string but a whole-block object
+			// entry exists, the object entry fills the same slot.
+			if (g.stringEntry || g.wholeBlockEntry) {
+				if (!projectDirExists) {
+					contextValues[g.name] = null;
+					templateContext[baseKey] = null;
+				} else {
+					try {
+						const blockData = readBlock(ctx.cwd, g.name);
+						contextValues[g.name] = blockData;
+						templateContext[baseKey] = blockData !== null ? wrapBlockContent(g.name, blockData) : null;
+					} catch {
+						contextValues[g.name] = null;
+						templateContext[baseKey] = null;
+					}
+				}
 			}
 
-			if (ref.item) {
+			// Hint variables for the whole-block-with-hints object form. These
+			// are independent of the per-item path — they belong to the
+			// whole-block-with-hints entry only. Per-item depth/focus live
+			// inside the `_<name>_items` array elements (see below).
+			if (g.wholeBlockEntry) {
+				templateContext[`${baseKey}_depth`] = g.wholeBlockEntry.depth ?? 0;
+				if (g.wholeBlockEntry.focus) {
+					templateContext[`${baseKey}_focus`] = g.wholeBlockEntry.focus;
+				}
+			}
+
+			// Per-item path — populates the array slot for any group with at
+			// least one object-with-item entry. Resolution is eager: the first
+			// unresolvable id throws and aborts the compile, naming the
+			// original spec.contextBlocks index of the offending entry.
+			if (g.itemEntries.length > 0) {
 				if (!projectDirExists) {
+					const first = g.itemEntries[0];
+					if (!first) continue;
 					throw new AgentCompileError(
 						spec.name,
-						`contextBlocks[${index}]: cannot resolve item '${ref.item}' in block '${ref.name}' — '.project/' directory does not exist at ${ctx.cwd}`,
+						`contextBlocks[${first.index}]: cannot resolve item '${first.ref.item}' in block '${first.ref.name}' — '.project/' directory does not exist at ${ctx.cwd}`,
 					);
 				}
 				const idIndex = getIdIndex();
-				const loc = idIndex.get(ref.item);
-				if (!loc) {
-					throw new AgentCompileError(
-						spec.name,
-						`contextBlocks[${index}]: item id '${ref.item}' not found (declared block '${ref.name}'). Verify the id exists in '.project/${ref.name}.json' and that buildIdIndex covers its host block.`,
-					);
-				}
-				// Storage convention: per-item value is keyed `<name>_item`
-				// (suffix on the raw block name) to disambiguate from the
-				// whole-block storage key. Template variable key parallels
-				// this with `_<name>_item`.
-				const itemKey = `${ref.name}_item`;
-				contextValues[itemKey] = loc.item;
-				templateContext[`${baseKey}_item`] = wrapItemContent(ref.name, ref.item, loc.item);
-				return;
-			}
+				const arrayElems: Array<{
+					item: string;
+					raw: unknown;
+					depth: number;
+					focus: Record<string, string> | null;
+					id: string | null;
+					name: string;
+				}> = [];
+				const rawArrayElems: unknown[] = [];
 
-			// Whole-block path with hints — same surface as string form for
-			// `_<name>` and `contextValues[name]`; the hint variables were
-			// already set above.
-			if (!projectDirExists) {
-				contextValues[ref.name] = null;
-				templateContext[baseKey] = null;
-				return;
+				for (const { ref, index } of g.itemEntries) {
+					const itemId = ref.item;
+					if (!itemId) continue;
+					const loc = idIndex.get(itemId);
+					if (!loc) {
+						throw new AgentCompileError(
+							spec.name,
+							`contextBlocks[${index}]: item id '${itemId}' not found (declared block '${ref.name}'). Verify the id exists in '.project/${ref.name}.json' and that buildIdIndex covers its host block.`,
+						);
+					}
+					const wrapped = wrapItemContent(ref.name, itemId, loc.item);
+					arrayElems.push({
+						item: wrapped,
+						raw: loc.item,
+						depth: ref.depth ?? 0,
+						focus: ref.focus ?? null,
+						id: itemId,
+						name: ref.name,
+					});
+					rawArrayElems.push(loc.item);
+				}
+
+				templateContext[`${baseKey}_items`] = arrayElems;
+				contextValues[`${g.name}_items`] = rawArrayElems;
+
+				// Singular-key backward-compat: only when there is exactly one
+				// object-with-item entry AND no string sibling for the same
+				// name. The string-sibling exclusion is the mixed-shape
+				// precedence rule — `_<name>` already names the whole-block
+				// surface, so `_<name>_item` would be ambiguous about which
+				// surface it refers to.
+				if (g.itemEntries.length === 1 && !g.stringEntry) {
+					const only = g.itemEntries[0];
+					const elem = arrayElems[0];
+					if (only && elem) {
+						templateContext[`${baseKey}_item`] = elem.item;
+						templateContext[`${baseKey}_depth`] = elem.depth;
+						if (only.ref.focus) {
+							templateContext[`${baseKey}_focus`] = only.ref.focus;
+						}
+						contextValues[`${g.name}_item`] = elem.raw;
+					}
+				}
 			}
-			try {
-				const blockData = readBlock(ctx.cwd, ref.name);
-				contextValues[ref.name] = blockData;
-				templateContext[baseKey] = blockData !== null ? wrapBlockContent(ref.name, blockData) : null;
-			} catch {
-				contextValues[ref.name] = null;
-				templateContext[baseKey] = null;
-			}
-		});
+		}
 	}
 
 	// Nunjucks globals for per-item macro composition (Plans 6/7/8 consumers).

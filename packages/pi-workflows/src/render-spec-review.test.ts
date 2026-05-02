@@ -1,104 +1,35 @@
 /**
  * Per-item macro tests: render_spec_review (Plan 7, Wave 4).
  *
- * Mirrors render-decision.test.ts's six-case shape and direct-Nunjucks env
- * approach. Pi-workflows does not depend on pi-jit-agents; the test wires
- * `resolve` and `render_recursive` globals manually to mirror the bindings
- * compileAgent registers on the production Environment.
- *
  * Plan 8 may not yet ship sibling per-item macros; tests must NOT depend on
  * them. Cross-macro inline assertions reference Plan 6's render_decision
  * (which definitely exists) so that the inline path is exercised; absent
  * sibling kinds exercise the `[unrendered: …]` fallback.
+ *
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  */
 import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import {
+	buildFixtureIdIndex,
+	type FixtureItemLocation,
+	itemMacroPath,
+	makeRendererTestEnv,
+	renderItemMacro,
+} from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-const SPEC_REVIEWS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "spec-reviews.md");
-const DECISIONS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "decisions.md");
+const SPEC_REVIEWS_MACRO_PATH = itemMacroPath("spec-reviews");
+const DECISIONS_MACRO_PATH = itemMacroPath("decisions");
 
-interface ItemLocation {
-	block: string;
-	arrayKey: string;
-	item: Record<string, unknown>;
-}
-
-function buildFixtureIdIndex(blocks: Record<string, Array<Record<string, unknown>>>): Map<string, ItemLocation> {
-	const index = new Map<string, ItemLocation>();
-	for (const [block, items] of Object.entries(blocks)) {
-		for (const item of items) {
-			const id = item.id;
-			if (typeof id === "string") {
-				index.set(id, { block, arrayKey: block, item });
-			}
-		}
-	}
-	return index;
-}
-
-function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<string, string>): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-
-	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
-		if (typeof id !== "string" || id.length === 0) return null;
-		return idIndex.get(id) ?? null;
-	});
-
-	const visited = new Set<string>();
-	env.addGlobal("render_recursive", (loc: unknown, depth: unknown): string => {
-		if (!loc || typeof loc !== "object") return "";
-		const location = loc as ItemLocation;
-		const itemId = (location.item as { id?: unknown })?.id;
-		const idStr = typeof itemId === "string" ? itemId : "";
-		const blockName = typeof location.block === "string" ? location.block : "?";
-
-		if (idStr.length > 0 && visited.has(idStr)) {
-			return `[cycle: ${idStr}]`;
-		}
-
-		const macroPath = availableMacros[blockName];
-		if (!macroPath) {
-			return `[unrendered: ${blockName}/${idStr}]`;
-		}
-
-		// Mirror @davidorex/pi-jit-agents' renderer-registry canonical-name
-		// lookup. Only the kinds this test exercises are listed.
-		const canonical: Record<string, string> = {
-			"spec-reviews": "render_spec_review",
-			decisions: "render_decision",
-		};
-		const macroName = canonical[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
-		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
-		if (idStr.length > 0) visited.add(idStr);
-		try {
-			const macroSource = fs.readFileSync(macroPath, "utf-8");
-			const inline = `${macroSource}\n{{ ${macroName}(item, depth) }}`;
-			return env.renderString(inline, { item: location.item, depth: depthNum });
-		} catch (err) {
-			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
-		} finally {
-			if (idStr.length > 0) visited.delete(idStr);
-		}
-	});
-
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-
-	return env;
-}
-
-function renderSpecReview(env: nunjucks.Environment, item: Record<string, unknown>, depth: number): string {
-	const macroSource = fs.readFileSync(SPEC_REVIEWS_MACRO_PATH, "utf-8");
-	const inline = `${macroSource}\n{{ render_spec_review(item, depth) }}`;
-	return env.renderString(inline, { item, depth });
+function renderSpecReview(
+	idIndex: Map<string, FixtureItemLocation>,
+	availableMacros: Record<string, string>,
+	item: Record<string, unknown>,
+	depth: number,
+): string {
+	return renderItemMacro(makeRendererTestEnv(idIndex, availableMacros), "spec-reviews", item, depth);
 }
 
 function makeFullReview(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
@@ -131,12 +62,16 @@ describe("render_spec_review macro", () => {
 			"spec-reviews": [rev],
 			decisions: [{ id: "DEC-0001", title: "should not appear", status: "enacted" }],
 		});
-		const env = makeEnv(idIndex, {
-			"spec-reviews": SPEC_REVIEWS_MACRO_PATH,
-			decisions: DECISIONS_MACRO_PATH,
-		});
 
-		const out = renderSpecReview(env, rev, 0);
+		const out = renderSpecReview(
+			idIndex,
+			{
+				"spec-reviews": SPEC_REVIEWS_MACRO_PATH,
+				decisions: DECISIONS_MACRO_PATH,
+			},
+			rev,
+			0,
+		);
 
 		assert.match(out, /\bDEC-0001\b/, "expected bare DEC-0001 reference for produces_decision");
 		assert.doesNotMatch(out, /should not appear/, "depth=0 must not render referenced item bodies");
@@ -187,13 +122,16 @@ describe("render_spec_review macro", () => {
 			decisions: [decTarget],
 			issues: [{ id: "ISSUE-XXX", title: "should not leak" }],
 		});
-		// decisions macro registered; issues intentionally absent.
-		const env = makeEnv(idIndex, {
-			"spec-reviews": SPEC_REVIEWS_MACRO_PATH,
-			decisions: DECISIONS_MACRO_PATH,
-		});
 
-		const out = renderSpecReview(env, rev, 1);
+		const out = renderSpecReview(
+			idIndex,
+			{
+				"spec-reviews": SPEC_REVIEWS_MACRO_PATH,
+				decisions: DECISIONS_MACRO_PATH,
+			},
+			rev,
+			1,
+		);
 
 		assert.match(out, /Title: Decision body title text/, "DEC-0001 body must be inlined via render_decision");
 		assert.match(out, /decision body text/, "DEC-0001 decision content must appear");
@@ -235,12 +173,16 @@ describe("render_spec_review macro", () => {
 			"spec-reviews": [rev],
 			decisions: [decOuter, decInner],
 		});
-		const env = makeEnv(idIndex, {
-			"spec-reviews": SPEC_REVIEWS_MACRO_PATH,
-			decisions: DECISIONS_MACRO_PATH,
-		});
 
-		const out = renderSpecReview(env, rev, 2);
+		const out = renderSpecReview(
+			idIndex,
+			{
+				"spec-reviews": SPEC_REVIEWS_MACRO_PATH,
+				decisions: DECISIONS_MACRO_PATH,
+			},
+			rev,
+			2,
+		);
 
 		assert.match(out, /Title: Outer decision title/, "DEC-0001 must be inlined at depth=2");
 		assert.match(
@@ -282,12 +224,16 @@ describe("render_spec_review macro", () => {
 			"spec-reviews": [rev],
 			decisions: [decA, decB],
 		});
-		const env = makeEnv(idIndex, {
-			"spec-reviews": SPEC_REVIEWS_MACRO_PATH,
-			decisions: DECISIONS_MACRO_PATH,
-		});
 
-		const out = renderSpecReview(env, rev, 5);
+		const out = renderSpecReview(
+			idIndex,
+			{
+				"spec-reviews": SPEC_REVIEWS_MACRO_PATH,
+				decisions: DECISIONS_MACRO_PATH,
+			},
+			rev,
+			5,
+		);
 
 		assert.match(out, /Title: A/, "DEC-0001 body must appear");
 		assert.match(out, /Title: B/, "DEC-0002 body must appear via supersedes");
@@ -304,9 +250,8 @@ describe("render_spec_review macro", () => {
 			created_at: "2026-05-02T00:00:00Z",
 		};
 		const idIndex = buildFixtureIdIndex({ "spec-reviews": [minimal] });
-		const env = makeEnv(idIndex, { "spec-reviews": SPEC_REVIEWS_MACRO_PATH });
 
-		const out = renderSpecReview(env, minimal, 0);
+		const out = renderSpecReview(idIndex, { "spec-reviews": SPEC_REVIEWS_MACRO_PATH }, minimal, 0);
 
 		assert.match(out, /ID: REVIEW-099/);
 		assert.match(out, /Target: docs\/planning\/whatever.md/);
@@ -331,9 +276,8 @@ describe("render_spec_review macro", () => {
 			created_at: "2026-05-02T00:00:00Z",
 		};
 		const idIndex = buildFixtureIdIndex({ "spec-reviews": [rev] });
-		const env = makeEnv(idIndex, { "spec-reviews": SPEC_REVIEWS_MACRO_PATH });
 
-		const out = renderSpecReview(env, rev, 0);
+		const out = renderSpecReview(idIndex, { "spec-reviews": SPEC_REVIEWS_MACRO_PATH }, rev, 0);
 
 		assert.match(out, /Scope:[\s\S]*?\(none\)/, "empty scope must render '(none)'");
 		assert.match(out, /Findings:[\s\S]*?\(none\)/, "empty findings must render '(none)'");

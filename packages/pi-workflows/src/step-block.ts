@@ -27,7 +27,7 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "@davidorex/pi-project/block-api";
-import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
+import { PROJECT_DIR, schemaPath } from "@davidorex/pi-project/project-dir";
 import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import { resolveExpressions } from "./expression.js";
 import { persistStepOutput } from "./output.js";
@@ -168,7 +168,7 @@ function executeWrite(spec: { name: string; data: unknown; path?: string }, cwd:
  */
 function executeSubdirWrite(schemaName: string, data: unknown, subPath: string, cwd: string): Record<string, string> {
 	const filePath = path.join(cwd, PROJECT_DIR, `${subPath}.json`);
-	const schemaFile = path.join(cwd, PROJECT_DIR, "schemas", `${schemaName}.schema.json`);
+	const schemaFile = schemaPath(cwd, schemaName);
 
 	// Validate against schema if it exists
 	if (fs.existsSync(schemaFile)) {

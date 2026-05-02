@@ -1,19 +1,15 @@
 /**
  * Per-item macro tests: render_decision (Plan 6, Wave 3).
  *
- * Test approach: direct Nunjucks environment with the same `resolve` and
- * `render_recursive` globals that @davidorex/pi-jit-agents' compileAgent
- * registers (compile.ts §"Nunjucks globals for per-item macro composition").
- * Pi-workflows does not depend on pi-jit-agents, and adding a workspace dep
- * solely for this test would be invasive — the macro logic is what's under
- * test here, not the compileAgent pipeline (which has its own coverage).
- * The brief explicitly authorises this simpler path.
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  *
- * The mirror is intentionally faithful: same kind→macro lookup convention
- * (block kind name as filename, default macro name `render_<kind>`), same
- * inline-by-source dispatch (read macro file + append call expression),
- * same per-call visited Set for cycle detection, same fallback markers
- * (`[unrendered: <kind>/<id>]`, `[cycle: <id>]`).
+ * The mirror in test-helpers is intentionally faithful to compileAgent's
+ * registerCompositionGlobals: same kind→macro lookup convention via
+ * CANONICAL_MACRO_NAMES, same inline-by-source dispatch (read macro file +
+ * append call expression), same per-call visited Set for cycle detection,
+ * same fallback markers (`[unrendered: <kind>/<id>]`, `[cycle: <id>]`).
  *
  * Required test cases per Plan 6 brief:
  *   1. depth=0 emits bare IDs (no recursion)
@@ -25,103 +21,23 @@
  *   6. empty-array convention: present-but-empty arrays render "(none)"
  */
 import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import {
+	buildFixtureIdIndex,
+	type FixtureItemLocation,
+	itemMacroPath,
+	makeRendererTestEnv,
+	renderItemMacro,
+} from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-const DECISIONS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "decisions.md");
+const DECISIONS_MACRO_PATH = itemMacroPath("decisions");
 
-interface ItemLocation {
-	block: string;
-	arrayKey: string;
-	item: Record<string, unknown>;
-}
-
-/**
- * Build an in-memory id index from a fixture map of block name → items array.
- * Mirrors the buildIdIndex output shape used by pi-project.
- */
-function buildFixtureIdIndex(blocks: Record<string, Array<Record<string, unknown>>>): Map<string, ItemLocation> {
-	const index = new Map<string, ItemLocation>();
-	for (const [block, items] of Object.entries(blocks)) {
-		for (const item of items) {
-			const id = item.id;
-			if (typeof id === "string") {
-				index.set(id, { block, arrayKey: block, item });
-			}
-		}
-	}
-	return index;
-}
-
-/**
- * Construct a Nunjucks env mirroring compileAgent's globals registration.
- * `availableMacros`: kind → absolute path of the macro file. Defaults to
- * decisions only (the file Plan 6 ships); other kinds intentionally absent
- * to exercise the `[unrendered: …]` fallback path.
- */
-function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<string, string>): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-
-	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
-		if (typeof id !== "string" || id.length === 0) return null;
-		return idIndex.get(id) ?? null;
-	});
-
-	const visited = new Set<string>();
-	env.addGlobal("render_recursive", (loc: unknown, depth: unknown): string => {
-		if (!loc || typeof loc !== "object") return "";
-		const location = loc as ItemLocation;
-		const itemId = (location.item as { id?: unknown })?.id;
-		const idStr = typeof itemId === "string" ? itemId : "";
-		const blockName = typeof location.block === "string" ? location.block : "?";
-
-		if (idStr.length > 0 && visited.has(idStr)) {
-			return `[cycle: ${idStr}]`;
-		}
-
-		const macroPath = availableMacros[blockName];
-		if (!macroPath) {
-			return `[unrendered: ${blockName}/${idStr}]`;
-		}
-
-		// Mirror @davidorex/pi-jit-agents' renderer-registry canonical-name
-		// lookup. Only the kinds this test exercises are listed.
-		const canonical: Record<string, string> = { decisions: "render_decision" };
-		const macroName = canonical[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
-		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
-		if (idStr.length > 0) visited.add(idStr);
-		try {
-			const macroSource = fs.readFileSync(macroPath, "utf-8");
-			const inline = `${macroSource}\n{{ ${macroName}(item, depth) }}`;
-			return env.renderString(inline, { item: location.item, depth: depthNum });
-		} catch (err) {
-			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
-		} finally {
-			if (idStr.length > 0) visited.delete(idStr);
-		}
-	});
-
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-
-	return env;
-}
-
-/**
- * Render the decisions macro for `item` at `depth` using the wired-up env.
- * Returns the rendered string for assertions.
- */
-function renderDecision(env: nunjucks.Environment, item: Record<string, unknown>, depth: number): string {
-	const macroSource = fs.readFileSync(DECISIONS_MACRO_PATH, "utf-8");
-	const inline = `${macroSource}\n{{ render_decision(item, depth) }}`;
-	return env.renderString(inline, { item, depth });
+function renderDecision(
+	idIndex: Map<string, FixtureItemLocation>,
+	item: Record<string, unknown>,
+	depth: number,
+): string {
+	return renderItemMacro(makeRendererTestEnv(idIndex, { decisions: DECISIONS_MACRO_PATH }), "decisions", item, depth);
 }
 
 /** Fully-populated DEC-0001 with all required fields. */
@@ -154,9 +70,7 @@ describe("render_decision macro", () => {
 		});
 		// At depth 0 the macro must NOT call resolve/render_recursive at all.
 		// Provide the decisions macro so a stray recursion would be visible if it happened.
-		const env = makeEnv(idIndex, { decisions: DECISIONS_MACRO_PATH });
-
-		const out = renderDecision(env, dec, 0);
+		const out = renderDecision(idIndex, dec, 0);
 
 		assert.match(out, /\bissue-001\b/, "expected bare issue-001 reference");
 		assert.match(out, /\bFEAT-001\b/, "expected bare FEAT-001 reference");
@@ -190,9 +104,7 @@ describe("render_decision macro", () => {
 			features: [{ id: "FEAT-001", title: "feature body text" }],
 		});
 		// Plan 7/8 macros not yet shipped — only decisions has an item-macro.
-		const env = makeEnv(idIndex, { decisions: DECISIONS_MACRO_PATH });
-
-		const out = renderDecision(env, dec1, 1);
+		const out = renderDecision(idIndex, dec1, 1);
 
 		// related_findings → issues: render_issue does not exist → fallback.
 		assert.match(
@@ -270,13 +182,8 @@ describe("render_decision macro", () => {
 			issues: [{ id: "issue-001", title: "irrelevant" }],
 			features: [{ id: "DEEP-FEAT", title: "feature-body-text-must-not-leak" }],
 		});
-		// Only decisions has an item-macro; features intentionally absent so a
-		// render at depth>0 for DEEP-FEAT would emit [unrendered: features/...]
-		// rather than bare-ID text. Bare-ID presence is therefore a positive
-		// signal that the macro's own depth guard refused the descent.
-		const env = makeEnv(idIndex, { decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderDecision(env, dec1, 2);
+		const out = renderDecision(idIndex, dec1, 2);
 
 		// DEC-0001 body present (depth=2, root).
 		assert.match(out, /ID: DEC-0001/, "DEC-0001 own body must be rendered");
@@ -342,10 +249,9 @@ describe("render_decision macro", () => {
 			decisions: [dec1, dec2],
 			issues: [{ id: "issue-001", title: "irrelevant" }],
 		});
-		const env = makeEnv(idIndex, { decisions: DECISIONS_MACRO_PATH });
 
 		// High depth — relies on cycle detector, not depth budget, to terminate.
-		const out = renderDecision(env, dec1, 5);
+		const out = renderDecision(idIndex, dec1, 5);
 
 		// Outer DEC-0001 body present.
 		assert.match(out, /ID: DEC-0001/);
@@ -377,9 +283,7 @@ describe("render_decision macro", () => {
 			decisions: [minimal],
 			issues: [{ id: "issue-001", title: "irrelevant" }],
 		});
-		const env = makeEnv(idIndex, { decisions: DECISIONS_MACRO_PATH });
-
-		const out = renderDecision(env, minimal, 0);
+		const out = renderDecision(idIndex, minimal, 0);
 
 		// Required fields rendered.
 		assert.match(out, /ID: DEC-0099/);
@@ -413,9 +317,7 @@ describe("render_decision macro", () => {
 			decisions: [dec],
 			issues: [{ id: "issue-001", title: "irrelevant" }],
 		});
-		const env = makeEnv(idIndex, { decisions: DECISIONS_MACRO_PATH });
-
-		const out = renderDecision(env, dec, 0);
+		const out = renderDecision(idIndex, dec, 0);
 
 		// Each present-but-empty array surfaces its label with the (none) sentinel.
 		assert.match(out, /Related features:[\s\S]*?\(none\)/, "empty related_features must render '(none)'");

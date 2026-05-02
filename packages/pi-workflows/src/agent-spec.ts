@@ -12,7 +12,11 @@
  *   3. <package>/agents/<name>.agent.yaml (builtin)
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
+import { bundledDir } from "./bundled-dirs.js";
+import type { AgentSpec } from "./types.js";
 
 /**
  * Check if a prompt.system value looks like a template file path vs inline text.
@@ -44,10 +48,6 @@ function resolvePromptField(value: unknown): { template?: string; inline?: strin
 	}
 	return {};
 }
-
-import os from "node:os";
-import { parse as parseYaml } from "yaml";
-import type { AgentSpec } from "./types.js";
 
 /**
  * Thrown when an agent spec file is not found in any search path.
@@ -134,7 +134,7 @@ export function parseAgentYaml(filePath: string): AgentSpec {
  * Create an agent loader that finds .agent.yaml specs.
  */
 export function createAgentLoader(cwd: string, builtinDir?: string): (name: string) => AgentSpec {
-	const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "agents");
+	const defaultBuiltinDir = builtinDir ?? bundledDir("agents");
 
 	return (name: string): AgentSpec => {
 		const searchPaths = [

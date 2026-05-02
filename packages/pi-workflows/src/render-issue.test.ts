@@ -4,35 +4,21 @@
  * The issues schema has no cross-block reference fields (resolved_by is
  * free-form text — commit SHA or message reference, not a project-block
  * ID). Cycle and recursion cases do not apply.
+ *
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  */
 import assert from "node:assert";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import { buildFixtureIdIndex, makeRendererTestEnv, renderItemMacro, renderWholeBlockMacro } from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-
-function makeEnv(): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-	env.addGlobal("resolve", () => null);
-	env.addGlobal("render_recursive", () => "");
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-	return env;
+function renderItem(i: Record<string, unknown>, depth = 0): string {
+	return renderItemMacro(makeRendererTestEnv(buildFixtureIdIndex({}), {}), "issues", i, depth);
 }
 
-function renderItem(env: nunjucks.Environment, i: Record<string, unknown>, depth = 0): string {
-	const tpl = `{% from "items/issues.md" import render_issue %}{{ render_issue(i, depth) }}`;
-	return env.renderString(tpl, { i, depth });
-}
-
-function renderWhole(env: nunjucks.Environment, data: unknown): string {
-	const tpl = `{% from "shared/macros.md" import render_issues %}{{ render_issues(data) }}`;
-	return env.renderString(tpl, { data });
+function renderWhole(data: unknown): string {
+	return renderWholeBlockMacro(makeRendererTestEnv(buildFixtureIdIndex({}), {}), "render_issues", data);
 }
 
 describe("render_issue macro", () => {
@@ -47,8 +33,7 @@ describe("render_issue macro", () => {
 			priority: "high",
 			package: "pi-workflows",
 		};
-		const env = makeEnv();
-		const out = renderItem(env, i, 0);
+		const out = renderItem(i, 0);
 		assert.match(out, /\*\*issue-001\*\*/);
 		assert.match(out, /\[high, open\]/);
 		assert.match(out, /Template underuse/);
@@ -71,8 +56,7 @@ describe("render_issue macro", () => {
 			source: "monitor",
 			resolved_by: "abc1234",
 		};
-		const env = makeEnv();
-		const out = renderItem(env, i, 0);
+		const out = renderItem(i, 0);
 		assert.match(out, /Source: monitor/);
 		assert.match(out, /Resolved by: abc1234/);
 	});
@@ -102,15 +86,14 @@ describe("render_issue macro", () => {
 				},
 			],
 		};
-		const env = makeEnv();
-		const wholeOut = renderWhole(env, data);
+		const wholeOut = renderWhole(data);
 		assert.match(wholeOut, /## Issues/);
 		assert.match(wholeOut, /\*\*issue-001\*\*/);
 		assert.match(wholeOut, /\*\*issue-002\*\*/);
 
-		const item1Out = renderItem(env, data.issues[0]!, 0).trim();
+		const item1Out = renderItem(data.issues[0]!, 0).trim();
 		assert.ok(wholeOut.includes(item1Out.split("\n")[0] ?? ""));
 
-		assert.strictEqual(renderWhole(env, null).trim(), "");
+		assert.strictEqual(renderWhole(null).trim(), "");
 	});
 });

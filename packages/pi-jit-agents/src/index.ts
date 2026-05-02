@@ -11,12 +11,15 @@ export { agentTrace, agentTraceChildren, agentTraceEntry } from "./agent-trace-s
 export type { BudgetResult, BudgetWarning, PromptBudget } from "./budget-enforcer.js";
 export { enforceBudget } from "./budget-enforcer.js";
 export { compileAgent, registerCompositionGlobals } from "./compile.js";
+export { dispatchInlineMacro } from "./dispatch-inline.js";
 export * from "./errors.js";
+export { expandFieldPathShorthand } from "./field-path.js";
 export { agentContract } from "./introspect.js";
 export type { CompleteFn, NormalizedToolChoice } from "./jit-runtime.js";
 export { buildPhantomTool, executeAgent, normalizeToolChoice } from "./jit-runtime.js";
+export { cycleMarker, notFoundMarker, renderErrorMarker, unrenderedMarker } from "./markers.js";
 export type { ItemMacroRef, RendererRegistry } from "./renderer-registry.js";
-export { createRendererRegistry } from "./renderer-registry.js";
+export { CANONICAL_MACRO_NAMES, createRendererRegistry } from "./renderer-registry.js";
 export type { TemplateEnvContext } from "./template.js";
 export { createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.js";
 export type { RedactionConfig, RedactionPattern } from "./trace-redactor.js";

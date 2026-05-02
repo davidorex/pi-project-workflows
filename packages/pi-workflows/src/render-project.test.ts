@@ -1,16 +1,13 @@
 /**
  * Per-item macro tests: render_project_item (Plan 8, Wave 4).
  *
- * Mirrors the wiring approach of render-decision.test.ts: direct Nunjucks
- * environment with the same `resolve` and `render_recursive` globals that
- * compileAgent registers in @davidorex/pi-jit-agents. Pi-workflows does not
- * depend on pi-jit-agents; adding a workspace dep solely for these tests
- * would be invasive — the macro logic is what's under test, not the
- * compileAgent pipeline (covered separately).
+ * Singleton kind: project holds one record per repository (no items[] array).
+ * Cycle and cross-block-reference cases are not applicable because the schema
+ * defines no fields that point to other project blocks.
  *
- * Singleton kind: project holds one record per repository (no items[]
- * array). Cycle and cross-block-reference cases are not applicable
- * because the schema defines no fields that point to other project blocks.
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  *
  * Test cases (adapted to singleton-with-no-cross-refs shape):
  *   1. Required-fields-only render
@@ -21,38 +18,15 @@
  *      per-item content.
  */
 import assert from "node:assert";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import { buildFixtureIdIndex, makeRendererTestEnv, renderItemMacro, renderWholeBlockMacro } from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-
-function makeEnv(): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-	// Per-item macros for project don't invoke resolve/render_recursive (no
-	// cross-block reference fields), but registering them mirrors the
-	// compileAgent wiring contract and protects against accidental future
-	// schema additions emitting reference fields without the globals being
-	// available at test time.
-	env.addGlobal("resolve", () => null);
-	env.addGlobal("render_recursive", () => "");
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-	return env;
+function renderItem(p: Record<string, unknown>, depth = 0): string {
+	return renderItemMacro(makeRendererTestEnv(buildFixtureIdIndex({}), {}), "project", p, depth);
 }
 
-function renderItem(env: nunjucks.Environment, p: Record<string, unknown>, depth = 0): string {
-	const tpl = `{% from "items/project.md" import render_project_item %}{{ render_project_item(p, depth) }}`;
-	return env.renderString(tpl, { p, depth });
-}
-
-function renderWhole(env: nunjucks.Environment, data: unknown): string {
-	const tpl = `{% from "shared/macros.md" import render_project %}{{ render_project(data) }}`;
-	return env.renderString(tpl, { data });
+function renderWhole(data: unknown): string {
+	return renderWholeBlockMacro(makeRendererTestEnv(buildFixtureIdIndex({}), {}), "render_project", data);
 }
 
 describe("render_project_item macro", () => {
@@ -62,8 +36,7 @@ describe("render_project_item macro", () => {
 			description: "Bare project record",
 			core_value: "Doing one thing",
 		};
-		const env = makeEnv();
-		const out = renderItem(env, minimal, 0);
+		const out = renderItem(minimal, 0);
 		assert.match(out, /minimal-project/);
 		assert.match(out, /Bare project record/);
 		assert.match(out, /Core value: Doing one thing/);
@@ -91,8 +64,7 @@ describe("render_project_item macro", () => {
 			repository: "github.com/example/full",
 			stack: ["typescript", "nunjucks"],
 		};
-		const env = makeEnv();
-		const out = renderItem(env, full, 0);
+		const out = renderItem(full, 0);
 		assert.match(out, /Vision: A complete vision statement/);
 		assert.match(out, /Status: development/);
 		assert.match(out, /Target users: agents, humans/);
@@ -112,8 +84,7 @@ describe("render_project_item macro", () => {
 			core_value: "v",
 			target_users: [],
 		};
-		const env = makeEnv();
-		const out = renderItem(env, data, 0);
+		const out = renderItem(data, 0);
 		// target_users gates on truthy (non-empty); empty array is falsy in Nunjucks's
 		// existence-style guard via `{% if p.target_users %}`. Either no label, or
 		// label with empty join — both are acceptable as long as no `undefined` leaks.
@@ -126,9 +97,8 @@ describe("render_project_item macro", () => {
 			description: "wrapped record",
 			core_value: "wrapped value",
 		};
-		const env = makeEnv();
-		const itemOut = renderItem(env, data, 0).trim();
-		const wholeOut = renderWhole(env, data).trim();
+		const itemOut = renderItem(data, 0).trim();
+		const wholeOut = renderWhole(data).trim();
 		// Derived view delegates to the per-item macro; the substantive content
 		// (name, description, core value) must appear in both outputs. Outer
 		// whitespace may differ because the whole-block macro wraps the call
@@ -138,6 +108,6 @@ describe("render_project_item macro", () => {
 		assert.ok(wholeOut.includes("wrapped value"));
 		assert.ok(itemOut.includes("wrapped"));
 		// Null/undefined data → empty output.
-		assert.strictEqual(renderWhole(env, null).trim(), "", "render_project(null) must emit nothing");
+		assert.strictEqual(renderWhole(null).trim(), "", "render_project(null) must emit nothing");
 	});
 });

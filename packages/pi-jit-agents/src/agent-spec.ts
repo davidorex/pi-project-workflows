@@ -7,6 +7,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { agentsDir } from "@davidorex/pi-project/project-dir";
 import { parse as parseYaml } from "yaml";
 import { AgentNotFoundError, AgentParseError } from "./errors.js";
 import type { AgentSpec, ContextBlockRef, LoadContext } from "./types.js";
@@ -220,7 +221,7 @@ export function createAgentLoader(ctx: LoadContext): (name: string) => AgentSpec
 
 	return (name: string): AgentSpec => {
 		const searchPaths: string[] = [
-			path.join(ctx.cwd, ".project", "agents", `${name}.agent.yaml`),
+			path.join(agentsDir(ctx.cwd), `${name}.agent.yaml`),
 			path.join(userTier, `${name}.agent.yaml`),
 		];
 		if (ctx.builtinDir) {

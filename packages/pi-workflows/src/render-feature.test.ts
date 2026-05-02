@@ -1,102 +1,38 @@
 /**
  * Per-item macro tests: render_feature (Plan 7, Wave 4).
  *
- * Mirrors render-decision.test.ts. Stories and tasks are nested sub-shapes
- * on the feature schema (not separate block kinds), so they are rendered
- * inline and never recursed via render_recursive — Plan 7 deliberately does
- * NOT author render_story / render_task.
+ * Stories and tasks are nested sub-shapes on the feature schema (not
+ * separate block kinds), so they are rendered inline and never recursed
+ * via render_recursive — Plan 7 deliberately does NOT author render_story
+ * / render_task.
  *
  * Cross-block reference fields recursing on depth: dependencies, gates,
  * blocks_resolved, decisions.
+ *
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  */
 import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import {
+	buildFixtureIdIndex,
+	type FixtureItemLocation,
+	itemMacroPath,
+	makeRendererTestEnv,
+	renderItemMacro,
+} from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-const FEATURES_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "features.md");
-const DECISIONS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "decisions.md");
+const FEATURES_MACRO_PATH = itemMacroPath("features");
+const DECISIONS_MACRO_PATH = itemMacroPath("decisions");
 
-interface ItemLocation {
-	block: string;
-	arrayKey: string;
-	item: Record<string, unknown>;
-}
-
-function buildFixtureIdIndex(blocks: Record<string, Array<Record<string, unknown>>>): Map<string, ItemLocation> {
-	const index = new Map<string, ItemLocation>();
-	for (const [block, items] of Object.entries(blocks)) {
-		for (const item of items) {
-			const id = item.id;
-			if (typeof id === "string") {
-				index.set(id, { block, arrayKey: block, item });
-			}
-		}
-	}
-	return index;
-}
-
-function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<string, string>): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-
-	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
-		if (typeof id !== "string" || id.length === 0) return null;
-		return idIndex.get(id) ?? null;
-	});
-
-	const visited = new Set<string>();
-	env.addGlobal("render_recursive", (loc: unknown, depth: unknown): string => {
-		if (!loc || typeof loc !== "object") return "";
-		const location = loc as ItemLocation;
-		const itemId = (location.item as { id?: unknown })?.id;
-		const idStr = typeof itemId === "string" ? itemId : "";
-		const blockName = typeof location.block === "string" ? location.block : "?";
-
-		if (idStr.length > 0 && visited.has(idStr)) {
-			return `[cycle: ${idStr}]`;
-		}
-
-		const macroPath = availableMacros[blockName];
-		if (!macroPath) {
-			return `[unrendered: ${blockName}/${idStr}]`;
-		}
-
-		// Mirror @davidorex/pi-jit-agents' renderer-registry canonical-name
-		// lookup. Only the kinds this test exercises are listed.
-		const canonical: Record<string, string> = {
-			features: "render_feature",
-			decisions: "render_decision",
-		};
-		const macroName = canonical[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
-		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
-		if (idStr.length > 0) visited.add(idStr);
-		try {
-			const macroSource = fs.readFileSync(macroPath, "utf-8");
-			const inline = `${macroSource}\n{{ ${macroName}(item, depth) }}`;
-			return env.renderString(inline, { item: location.item, depth: depthNum });
-		} catch (err) {
-			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
-		} finally {
-			if (idStr.length > 0) visited.delete(idStr);
-		}
-	});
-
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-
-	return env;
-}
-
-function renderFeature(env: nunjucks.Environment, item: Record<string, unknown>, depth: number): string {
-	const macroSource = fs.readFileSync(FEATURES_MACRO_PATH, "utf-8");
-	const inline = `${macroSource}\n{{ render_feature(item, depth) }}`;
-	return env.renderString(inline, { item, depth });
+function renderFeature(
+	idIndex: Map<string, FixtureItemLocation>,
+	availableMacros: Record<string, string>,
+	item: Record<string, unknown>,
+	depth: number,
+): string {
+	return renderItemMacro(makeRendererTestEnv(idIndex, availableMacros), "features", item, depth);
 }
 
 function makeFullFeature(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
@@ -140,9 +76,8 @@ describe("render_feature macro", () => {
 			"framework-gaps": [{ id: "FGAP-001", title: "gap should not appear" }],
 			issues: [{ id: "ISSUE-001", title: "issue should not appear" }],
 		});
-		const env = makeEnv(idIndex, { features: FEATURES_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderFeature(env, feat, 0);
+		const out = renderFeature(idIndex, { features: FEATURES_MACRO_PATH, decisions: DECISIONS_MACRO_PATH }, feat, 0);
 
 		assert.match(out, /\bDEC-0001\b/, "expected bare DEC-0001");
 		assert.match(out, /\bFGAP-001\b/, "expected bare FGAP-001");
@@ -172,9 +107,8 @@ describe("render_feature macro", () => {
 			decisions: [dec],
 			"framework-gaps": [{ id: "FGAP-001", title: "should not leak" }],
 		});
-		const env = makeEnv(idIndex, { features: FEATURES_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderFeature(env, feat, 1);
+		const out = renderFeature(idIndex, { features: FEATURES_MACRO_PATH, decisions: DECISIONS_MACRO_PATH }, feat, 1);
 
 		assert.match(out, /Title: Dependency decision title/, "DEC-0001 body inlined via render_decision");
 		assert.match(out, /decision body text/, "DEC-0001 decision body inlined");
@@ -211,9 +145,8 @@ describe("render_feature macro", () => {
 			features: [feat],
 			decisions: [decOuter, decInner],
 		});
-		const env = makeEnv(idIndex, { features: FEATURES_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderFeature(env, feat, 2);
+		const out = renderFeature(idIndex, { features: FEATURES_MACRO_PATH, decisions: DECISIONS_MACRO_PATH }, feat, 2);
 
 		assert.match(out, /Title: Outer decision/, "outer decision body inlined");
 		assert.match(out, /Title: Inner decision/, "inner decision inlined via supersedes (chain length 2)");
@@ -250,9 +183,8 @@ describe("render_feature macro", () => {
 			features: [feat],
 			decisions: [decA, decB],
 		});
-		const env = makeEnv(idIndex, { features: FEATURES_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderFeature(env, feat, 5);
+		const out = renderFeature(idIndex, { features: FEATURES_MACRO_PATH, decisions: DECISIONS_MACRO_PATH }, feat, 5);
 
 		assert.match(out, /Title: A/);
 		assert.match(out, /Title: B/);
@@ -273,9 +205,8 @@ describe("render_feature macro", () => {
 			created_at: "2026-05-02T00:00:00Z",
 		};
 		const idIndex = buildFixtureIdIndex({ features: [minimal] });
-		const env = makeEnv(idIndex, { features: FEATURES_MACRO_PATH });
 
-		const out = renderFeature(env, minimal, 0);
+		const out = renderFeature(idIndex, { features: FEATURES_MACRO_PATH }, minimal, 0);
 
 		assert.match(out, /ID: FEAT-099/);
 		assert.match(out, /Title: minimal/);
@@ -304,9 +235,8 @@ describe("render_feature macro", () => {
 			findings: [],
 		});
 		const idIndex = buildFixtureIdIndex({ features: [feat] });
-		const env = makeEnv(idIndex, { features: FEATURES_MACRO_PATH });
 
-		const out = renderFeature(env, feat, 0);
+		const out = renderFeature(idIndex, { features: FEATURES_MACRO_PATH }, feat, 0);
 
 		assert.match(out, /Acceptance criteria:[\s\S]*?\(none\)/, "empty acceptance_criteria must render '(none)'");
 		assert.match(out, /Dependencies:[\s\S]*?\(none\)/, "empty dependencies must render '(none)'");

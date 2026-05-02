@@ -12,49 +12,18 @@
  * from instructions.
  */
 import fs from "node:fs";
-import path from "node:path";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-project";
 import { readBlock } from "@davidorex/pi-project/block-api";
+import { projectDir, schemaPath } from "@davidorex/pi-project/project-dir";
 import type nunjucks from "nunjucks";
 import { type BudgetWarning, enforceBudget } from "./budget-enforcer.js";
+import { dispatchInlineMacro } from "./dispatch-inline.js";
 import { AgentCompileError } from "./errors.js";
+import { expandFieldPathShorthand } from "./field-path.js";
+import { cycleMarker, unrenderedMarker } from "./markers.js";
 import type { RendererRegistry } from "./renderer-registry.js";
 import { renderTemplate, renderTemplateFile } from "./template.js";
 import type { AgentSpec, CompileContext, CompiledAgent, ContextBlockRef } from "./types.js";
-
-/**
- * Translate a dotted shorthand schema-field reference into a JSON-pointer path.
- *
- * Accepts either:
- *   - JSON pointer (`/properties/decisions/items/properties/context`) — passes through.
- *   - Dotted shorthand (`decisions.items.context`) — expands each segment as a
- *     `properties/<segment>` pair, with `items` translated literally to the
- *     `items` keyword (the standard JSON-Schema array-element key). The
- *     shorthand expansion is idempotent for inputs that already begin with
- *     `/`, so callers can pass either form without ceremony.
- *
- * Examples:
- *   "decisions.items.context"
- *     → "/properties/decisions/items/properties/context"
- *   "decisions.items.consequences.items"
- *     → "/properties/decisions/items/properties/consequences/items"
- *   "/properties/foo/properties/bar"
- *     → "/properties/foo/properties/bar"           (unchanged)
- */
-function expandFieldPathShorthand(fieldPathOrShorthand: string): string {
-	if (fieldPathOrShorthand.startsWith("/")) return fieldPathOrShorthand;
-	if (fieldPathOrShorthand === "") return "";
-	const segments = fieldPathOrShorthand.split(".");
-	const out: string[] = [];
-	for (const seg of segments) {
-		if (seg === "items") {
-			out.push("items");
-		} else {
-			out.push("properties", seg);
-		}
-	}
-	return `/${out.join("/")}`;
-}
 
 /**
  * Register the composition-time Nunjucks globals on a template environment.
@@ -111,29 +80,25 @@ export function registerCompositionGlobals(opts: {
 		const blockName = typeof location.block === "string" ? location.block : "?";
 
 		if (idStr.length > 0 && visitedThisPass.has(idStr)) {
-			return `[cycle: ${idStr}]`;
+			return cycleMarker(idStr);
 		}
 
 		const macroRef = rendererRegistry?.lookup(blockName) ?? null;
 		if (!macroRef) {
-			return `[unrendered: ${blockName}/${idStr}]`;
+			return unrenderedMarker(blockName, idStr);
 		}
 
 		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
 		if (idStr.length > 0) visitedThisPass.add(idStr);
 		try {
-			let macroSource: string;
-			try {
-				macroSource = fs.readFileSync(macroRef.templatePath, "utf-8");
-			} catch (err) {
-				return `[render_error: ${blockName}/${idStr}: macro file unreadable at ${macroRef.templatePath}: ${
-					err instanceof Error ? err.message : String(err)
-				}]`;
-			}
-			const inline = `${macroSource}\n{{ ${macroRef.macroName}(item, depth) }}`;
-			return env.renderString(inline, { item: location.item, depth: depthNum });
-		} catch (err) {
-			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
+			return dispatchInlineMacro({
+				env,
+				templatePath: macroRef.templatePath,
+				macroName: macroRef.macroName,
+				item: location.item,
+				depth: depthNum,
+				errorContext: `${blockName}/${idStr}`,
+			});
 		} finally {
 			if (idStr.length > 0) visitedThisPass.delete(idStr);
 		}
@@ -148,12 +113,12 @@ export function registerCompositionGlobals(opts: {
 		if (typeof blockName !== "string" || blockName.length === 0) return renderedStr;
 		if (typeof fieldPathOrShorthand !== "string" || fieldPathOrShorthand.length === 0) return renderedStr;
 
-		const schemaPath = path.join(cwd, ".project", "schemas", `${blockName}.schema.json`);
-		if (!fs.existsSync(schemaPath)) return renderedStr; // no schema → pass-through
+		const schemaFile = schemaPath(cwd, blockName);
+		if (!fs.existsSync(schemaFile)) return renderedStr; // no schema → pass-through
 
 		let schema: object;
 		try {
-			schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+			schema = JSON.parse(fs.readFileSync(schemaFile, "utf-8"));
 		} catch {
 			return renderedStr; // unreadable / unparseable schema → pass-through
 		}
@@ -215,7 +180,7 @@ function resolveOutputSchemaForCompile(outputSchema: string | undefined, cwd: st
 	if (!outputSchema) return undefined;
 	if (outputSchema.startsWith("block:")) {
 		const blockName = outputSchema.slice("block:".length);
-		return path.join(cwd, ".project", "schemas", `${blockName}.schema.json`);
+		return schemaPath(cwd, blockName);
 	}
 	return outputSchema;
 }
@@ -260,8 +225,8 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	};
 
 	if (spec.contextBlocks && spec.contextBlocks.length > 0) {
-		const projectDir = path.join(ctx.cwd, ".project");
-		const projectDirExists = fs.existsSync(projectDir);
+		const projectDirPath = projectDir(ctx.cwd);
+		const projectDirExists = fs.existsSync(projectDirPath);
 
 		// Plan 4.1 contract — multi-entry-same-name disambiguation.
 		//

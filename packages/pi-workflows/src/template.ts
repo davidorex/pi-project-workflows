@@ -8,6 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import nunjucks from "nunjucks";
+import { bundledDir } from "./bundled-dirs.js";
 
 /**
  * Create a Nunjucks environment with three-tier template resolution.
@@ -25,7 +26,7 @@ import nunjucks from "nunjucks";
 export function createTemplateEnv(cwd: string, builtinDir?: string): nunjucks.Environment {
 	const projectDir = path.join(cwd, ".pi", "templates");
 	const userDir = path.join(os.homedir(), ".pi", "agent", "templates");
-	const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "templates");
+	const defaultBuiltinDir = builtinDir ?? bundledDir("templates");
 
 	// Nunjucks FileSystemLoader searches directories in order — first match wins.
 	// Only include directories that exist to avoid noisy warnings.

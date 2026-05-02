@@ -18,19 +18,17 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { schemaPath, schemasDir } from "@davidorex/pi-project/project-dir";
 import nunjucks from "nunjucks";
-import { registerEnforceBudgetReal } from "./test-helpers.js";
-
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
+import { registerEnforceBudgetReal, TEMPLATES_DIR } from "./test-helpers.js";
 
 function tmpDir(): string {
 	return fs.mkdtempSync(path.join(os.tmpdir(), "macro-budget-test-"));
 }
 
 function seedSchema(cwd: string, name: string, schema: object): void {
-	const dir = path.join(cwd, ".project", "schemas");
-	fs.mkdirSync(dir, { recursive: true });
-	fs.writeFileSync(path.join(dir, `${name}.schema.json`), JSON.stringify(schema));
+	fs.mkdirSync(schemasDir(cwd), { recursive: true });
+	fs.writeFileSync(schemaPath(cwd, name), JSON.stringify(schema));
 }
 
 function makeEnv(cwd: string): nunjucks.Environment {

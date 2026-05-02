@@ -9,6 +9,8 @@
  *   - `registerCompositionGlobals` — pi-jit-agents, installs the same
  *                                  resolve / render_recursive / enforceBudget
  *                                  globals that compileAgent installs
+ *   - `dispatchInlineMacro`      — pi-jit-agents, single inline-by-source
+ *                                  macro dispatch shared with `render_recursive`
  *
  * The single source of truth for the composition-globals contract is
  * `registerCompositionGlobals` in pi-jit-agents — both compileAgent and this
@@ -32,23 +34,17 @@
  * tier in the registry's project / user / builtin search.
  */
 
-import fs from "node:fs";
-import path from "node:path";
 import type { BudgetWarning } from "@davidorex/pi-jit-agents";
-import { createRendererRegistry, createTemplateEnv, registerCompositionGlobals } from "@davidorex/pi-jit-agents";
+import {
+	createRendererRegistry,
+	createTemplateEnv,
+	dispatchInlineMacro,
+	notFoundMarker,
+	registerCompositionGlobals,
+	unrenderedMarker,
+} from "@davidorex/pi-jit-agents";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-project";
-
-/**
- * Absolute path to the bundled per-item macros directory inside this package.
- *
- * Resolution: `dist/render-by-id.js` is at runtime location, two levels up
- * lands at the package root, then `templates/` for the macros. The renderer
- * registry expects `<builtinDir>/items/<kind>.md` so this path is the
- * `<builtinDir>` value, not the full items path.
- */
-function bundledTemplatesDir(): string {
-	return path.resolve(import.meta.dirname, "..", "templates");
-}
+import { bundledDir } from "./bundled-dirs.js";
 
 /**
  * Render the item identified by `id` via its registered per-item macro.
@@ -77,14 +73,14 @@ export function renderItemById(cwd: string, id: string, depth: number = 0): stri
 	const idIndex = buildIdIndex(cwd);
 	const loc = idIndex.get(id);
 	if (!loc) {
-		return `[not-found: ${id}]`;
+		return notFoundMarker(id);
 	}
 
-	const builtinDir = bundledTemplatesDir();
+	const builtinDir = bundledDir("templates");
 	const registry = createRendererRegistry({ cwd, builtinDir });
 	const macroRef = registry.lookup(loc.block);
 	if (!macroRef) {
-		return `[unrendered: ${loc.block}/${id}]`;
+		return unrenderedMarker(loc.block, id);
 	}
 
 	const env = createTemplateEnv({ cwd, builtinDir });
@@ -101,26 +97,21 @@ export function renderItemById(cwd: string, id: string, depth: number = 0): stri
 		warningsCollector: warnings,
 	});
 
-	// Inline-by-source dispatch — the same approach `render_recursive` uses.
-	// Read the macro file content and append a call expression so absolute
-	// macro paths from the registry are dispatched directly without going
-	// through the env's FileSystemLoader (the loader is anchored to the
-	// three-tier search dirs configured at createTemplateEnv time, which may
-	// not contain the absolute macro paths the registry returns).
-	let macroSource: string;
-	try {
-		macroSource = fs.readFileSync(macroRef.templatePath, "utf-8");
-	} catch (err) {
-		return `[render_error: ${loc.block}/${id}: macro file unreadable at ${macroRef.templatePath}: ${
-			err instanceof Error ? err.message : String(err)
-		}]`;
-	}
-	const inline = `${macroSource}\n{{ ${macroRef.macroName}(item, depth) }}`;
-	try {
-		return env.renderString(inline, { item: loc.item, depth });
-	} catch (err) {
-		return `[render_error: ${loc.block}/${id}: ${err instanceof Error ? err.message : String(err)}]`;
-	}
+	// Inline-by-source dispatch via the shared dispatchInlineMacro helper —
+	// the same approach `render_recursive` uses. Reads the macro file content
+	// and appends a call expression so absolute macro paths from the registry
+	// dispatch directly without going through the env's FileSystemLoader (the
+	// loader is anchored to the three-tier search dirs configured at
+	// createTemplateEnv time, which may not contain the absolute macro paths
+	// the registry returns).
+	return dispatchInlineMacro({
+		env,
+		templatePath: macroRef.templatePath,
+		macroName: macroRef.macroName,
+		item: loc.item,
+		depth,
+		errorContext: `${loc.block}/${id}`,
+	});
 }
 
 export type { ItemLocation };

@@ -3,35 +3,21 @@
  *
  * Singleton kind: architecture holds one record per repository.
  * Cross-block-reference and cycle cases do not apply.
+ *
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  */
 import assert from "node:assert";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import { buildFixtureIdIndex, makeRendererTestEnv, renderItemMacro, renderWholeBlockMacro } from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-
-function makeEnv(): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-	env.addGlobal("resolve", () => null);
-	env.addGlobal("render_recursive", () => "");
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-	return env;
+function renderItem(a: Record<string, unknown>, depth = 0): string {
+	return renderItemMacro(makeRendererTestEnv(buildFixtureIdIndex({}), {}), "architecture", a, depth);
 }
 
-function renderItem(env: nunjucks.Environment, a: Record<string, unknown>, depth = 0): string {
-	const tpl = `{% from "items/architecture.md" import render_architecture_item %}{{ render_architecture_item(a, depth) }}`;
-	return env.renderString(tpl, { a, depth });
-}
-
-function renderWhole(env: nunjucks.Environment, data: unknown): string {
-	const tpl = `{% from "shared/macros.md" import render_architecture %}{{ render_architecture(data) }}`;
-	return env.renderString(tpl, { data });
+function renderWhole(data: unknown): string {
+	return renderWholeBlockMacro(makeRendererTestEnv(buildFixtureIdIndex({}), {}), "render_architecture", data);
 }
 
 describe("render_architecture_item macro", () => {
@@ -39,8 +25,7 @@ describe("render_architecture_item macro", () => {
 		const minimal = {
 			modules: [{ name: "core", file: "src/core.ts", responsibility: "Core logic" }],
 		};
-		const env = makeEnv();
-		const out = renderItem(env, minimal, 0);
+		const out = renderItem(minimal, 0);
 		assert.match(out, /## Architecture/);
 		assert.match(out, /\*\*core\*\*/);
 		assert.match(out, /`src\/core\.ts`/);
@@ -60,8 +45,7 @@ describe("render_architecture_item macro", () => {
 			patterns: [{ name: "registry", description: "Central registry", used_in: ["core", "agents"] }],
 			boundaries: ["No direct DB access from UI", "Agents communicate via events only"],
 		};
-		const env = makeEnv();
-		const out = renderItem(env, full, 0);
+		const out = renderItem(full, 0);
 		assert.match(out, /Monorepo architecture/);
 		assert.match(out, /200 lines/);
 		assert.match(out, /deps: utils, io/);
@@ -75,8 +59,7 @@ describe("render_architecture_item macro", () => {
 
 	it("case 5: empty modules array still emits architecture heading; no orphan section labels", () => {
 		const data = { modules: [] };
-		const env = makeEnv();
-		const out = renderItem(env, data, 0);
+		const out = renderItem(data, 0);
 		// modules is required but if author passes [], we render the heading
 		// because data is truthy; per-module loop produces nothing. No
 		// "undefined" leakage and no spurious sub-section labels.
@@ -89,12 +72,11 @@ describe("render_architecture_item macro", () => {
 		const data = {
 			modules: [{ name: "alpha", file: "a.ts", responsibility: "alpha role" }],
 		};
-		const env = makeEnv();
-		const itemOut = renderItem(env, data, 0);
-		const wholeOut = renderWhole(env, data);
+		const itemOut = renderItem(data, 0);
+		const wholeOut = renderWhole(data);
 		assert.ok(wholeOut.includes("**alpha**"), "whole-block must contain delegated content");
 		assert.ok(wholeOut.includes("alpha role"));
 		assert.ok(itemOut.includes("**alpha**"));
-		assert.strictEqual(renderWhole(env, null).trim(), "", "render_architecture(null) must emit nothing");
+		assert.strictEqual(renderWhole(null).trim(), "", "render_architecture(null) must emit nothing");
 	});
 });

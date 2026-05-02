@@ -3,35 +3,31 @@
  *
  * Conformance principles have no cross-block reference fields; cycle and
  * recursion cases do not apply.
+ *
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
+ *
+ * Note: the registry kind is `conformance-reference`; the template basename
+ * is `conformance` (the on-disk file is `templates/items/conformance.md`).
+ * `renderItemMacro` accepts a `templateBase` override for this divergence.
  */
 import assert from "node:assert";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import { buildFixtureIdIndex, makeRendererTestEnv, renderItemMacro, renderWholeBlockMacro } from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-
-function makeEnv(): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-	env.addGlobal("resolve", () => null);
-	env.addGlobal("render_recursive", () => "");
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
+function renderItem(p: Record<string, unknown>, depth = 0): string {
+	return renderItemMacro(
+		makeRendererTestEnv(buildFixtureIdIndex({}), {}),
+		"conformance-reference",
+		p,
+		depth,
+		"conformance",
 	);
-	return env;
 }
 
-function renderItem(env: nunjucks.Environment, p: Record<string, unknown>, depth = 0): string {
-	const tpl = `{% from "items/conformance.md" import render_conformance_principle %}{{ render_conformance_principle(p, depth) }}`;
-	return env.renderString(tpl, { p, depth });
-}
-
-function renderWhole(env: nunjucks.Environment, data: unknown): string {
-	const tpl = `{% from "shared/macros.md" import render_conformance %}{{ render_conformance(data) }}`;
-	return env.renderString(tpl, { data });
+function renderWhole(data: unknown): string {
+	return renderWholeBlockMacro(makeRendererTestEnv(buildFixtureIdIndex({}), {}), "render_conformance", data);
 }
 
 describe("render_conformance_principle macro", () => {
@@ -41,8 +37,7 @@ describe("render_conformance_principle macro", () => {
 			name: "Type Safety",
 			rules: [{ id: "P1.1", rule: "No any types" }],
 		};
-		const env = makeEnv();
-		const out = renderItem(env, principle, 0);
+		const out = renderItem(principle, 0);
 		assert.match(out, /### P1: Type Safety/);
 		assert.match(out, /\*\*P1\.1\*\*/);
 		assert.match(out, /No any types/);
@@ -65,8 +60,7 @@ describe("render_conformance_principle macro", () => {
 				{ id: "P2.2", rule: "Catch and re-throw with context" },
 			],
 		};
-		const env = makeEnv();
-		const out = renderItem(env, principle, 0);
+		const out = renderItem(principle, 0);
 		assert.match(out, /All errors must be typed exceptions/);
 		assert.match(out, /\[error\]/);
 		assert.match(out, /check: grep/);
@@ -76,8 +70,7 @@ describe("render_conformance_principle macro", () => {
 
 	it("case 5: empty rules array — heading rendered, no rule entries leak undefined", () => {
 		const principle = { id: "P3", name: "Empty", rules: [] };
-		const env = makeEnv();
-		const out = renderItem(env, principle, 0);
+		const out = renderItem(principle, 0);
 		assert.match(out, /### P3: Empty/);
 		assert.doesNotMatch(out, /\bundefined\b/);
 	});
@@ -90,8 +83,7 @@ describe("render_conformance_principle macro", () => {
 				{ id: "P2", name: "Boundaries", rules: [{ id: "P2.1", rule: "No layer skipping" }] },
 			],
 		};
-		const env = makeEnv();
-		const out = renderWhole(env, data);
+		const out = renderWhole(data);
 		assert.match(out, /## Conformance Reference/);
 		assert.match(out, /\*\*Pi Extension Standards\*\*/);
 		assert.match(out, /### P1: Type Safety/);
@@ -100,11 +92,11 @@ describe("render_conformance_principle macro", () => {
 		assert.match(out, /No layer skipping/);
 
 		// Equivalence: per-principle output appears in whole-block.
-		const item1Out = renderItem(env, data.principles[0]!, 0);
+		const item1Out = renderItem(data.principles[0]!, 0);
 		const principle1Heading = item1Out.match(/### .+/)?.[0];
 		assert.ok(principle1Heading);
 		assert.ok(out.includes(principle1Heading));
 
-		assert.strictEqual(renderWhole(env, null).trim(), "");
+		assert.strictEqual(renderWhole(null).trim(), "");
 	});
 });

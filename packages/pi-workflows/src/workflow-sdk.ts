@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
 import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
+import { bundledDir } from "./bundled-dirs.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
 import { availableMonitors } from "./step-monitor.js";
 import { resolveSchemaPath } from "./step-shared.js";
@@ -114,7 +115,7 @@ export function validationChecks(): ValidationCheckDescriptor[] {
 // ── Discovery (derived from filesystem) ──────────────────────────────────────
 
 export function availableAgents(cwd: string, builtinDir?: string): AgentSpec[] {
-	const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "agents");
+	const defaultBuiltinDir = builtinDir ?? bundledDir("agents");
 	const searchDirs = [
 		path.join(cwd, ".pi", "agents"),
 		path.join(os.homedir(), ".pi", "agent", "agents"),
@@ -141,7 +142,7 @@ export function availableAgents(cwd: string, builtinDir?: string): AgentSpec[] {
 }
 
 export function availableTemplates(cwd: string, builtinDir?: string): string[] {
-	const defaultBuiltinDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "templates");
+	const defaultBuiltinDir = builtinDir ?? bundledDir("templates");
 	const searchDirs = [
 		path.join(cwd, ".pi", "templates"),
 		path.join(os.homedir(), ".pi", "agent", "templates"),
@@ -162,7 +163,7 @@ export function availableTemplates(cwd: string, builtinDir?: string): string[] {
 }
 
 export function availableSchemas(_cwd: string, builtinDir?: string): string[] {
-	const defaultBuiltinSchemas = builtinDir ?? path.resolve(import.meta.dirname, "..", "schemas");
+	const defaultBuiltinSchemas = builtinDir ?? bundledDir("schemas");
 	const dirs = [defaultBuiltinSchemas];
 	const schemas: string[] = [];
 

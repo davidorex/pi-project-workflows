@@ -2,91 +2,32 @@
  * Per-item macro tests: render_domain_entry (Plan 8, Wave 4).
  *
  * Cross-block reference field: related_requirements (REQ- IDs).
+ *
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  */
 import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import {
+	buildFixtureIdIndex,
+	type FixtureItemLocation,
+	itemMacroPath,
+	makeRendererTestEnv,
+	renderItemMacro,
+	renderWholeBlockMacro,
+} from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-const REQUIREMENTS_MACRO_PATH = path.resolve(TEMPLATES_DIR, "items", "requirements.md");
+const REQUIREMENTS_MACRO_PATH = itemMacroPath("requirements");
+const DOMAIN_MACRO_PATH = itemMacroPath("domain");
 
-interface ItemLocation {
-	block: string;
-	arrayKey: string;
-	item: Record<string, unknown>;
-}
-
-function buildFixtureIdIndex(blocks: Record<string, Array<Record<string, unknown>>>): Map<string, ItemLocation> {
-	const index = new Map<string, ItemLocation>();
-	for (const [block, items] of Object.entries(blocks)) {
-		for (const item of items) {
-			const id = item.id;
-			if (typeof id === "string") {
-				index.set(id, { block, arrayKey: block, item });
-			}
-		}
-	}
-	return index;
-}
-
-function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<string, string>): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-
-	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
-		if (typeof id !== "string" || id.length === 0) return null;
-		return idIndex.get(id) ?? null;
-	});
-
-	const visited = new Set<string>();
-	env.addGlobal("render_recursive", (loc: unknown, depth: unknown): string => {
-		if (!loc || typeof loc !== "object") return "";
-		const location = loc as ItemLocation;
-		const itemId = (location.item as { id?: unknown })?.id;
-		const idStr = typeof itemId === "string" ? itemId : "";
-		const blockName = typeof location.block === "string" ? location.block : "?";
-
-		if (idStr.length > 0 && visited.has(idStr)) {
-			return `[cycle: ${idStr}]`;
-		}
-
-		const macroPath = availableMacros[blockName];
-		if (!macroPath) {
-			return `[unrendered: ${blockName}/${idStr}]`;
-		}
-
-		const macroNameMap: Record<string, string> = {
-			requirements: "render_requirement",
-			domain: "render_domain_entry",
-		};
-		const macroName = macroNameMap[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
-		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
-		if (idStr.length > 0) visited.add(idStr);
-		try {
-			const macroSource = fs.readFileSync(macroPath, "utf-8");
-			const inline = `${macroSource}\n{{ ${macroName}(item, depth) }}`;
-			return env.renderString(inline, { item: location.item, depth: depthNum });
-		} catch (err) {
-			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
-		} finally {
-			if (idStr.length > 0) visited.delete(idStr);
-		}
-	});
-
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-
-	return env;
-}
-
-function renderItem(env: nunjucks.Environment, e: Record<string, unknown>, depth = 0): string {
-	const tpl = `{% from "items/domain.md" import render_domain_entry %}{{ render_domain_entry(e, depth) }}`;
-	return env.renderString(tpl, { e, depth });
+function renderItem(
+	idIndex: Map<string, FixtureItemLocation>,
+	availableMacros: Record<string, string>,
+	e: Record<string, unknown>,
+	depth = 0,
+): string {
+	return renderItemMacro(makeRendererTestEnv(idIndex, availableMacros), "domain", e, depth);
 }
 
 describe("render_domain_entry macro", () => {
@@ -97,8 +38,7 @@ describe("render_domain_entry macro", () => {
 			content: "Use PATCH for partial updates",
 			category: "reference",
 		};
-		const env = makeEnv(new Map(), {});
-		const out = renderItem(env, entry, 0);
+		const out = renderItem(new Map(), {}, entry, 0);
 		assert.match(out, /\*\*D-001\*\*/);
 		assert.match(out, /\[reference\]/);
 		assert.match(out, /REST conventions/);
@@ -116,8 +56,7 @@ describe("render_domain_entry macro", () => {
 			confidence: "high",
 			tags: ["auth", "security"],
 		};
-		const env = makeEnv(new Map(), {});
-		const out = renderItem(env, entry, 0);
+		const out = renderItem(new Map(), {}, entry, 0);
 		assert.match(out, /tags: auth, security/);
 		assert.match(out, /Source: ietf-rfc/);
 		assert.match(out, /Confidence: high/);
@@ -134,8 +73,7 @@ describe("render_domain_entry macro", () => {
 		const idIndex = buildFixtureIdIndex({
 			requirements: [{ id: "REQ-001", description: "must not leak" }],
 		});
-		const env = makeEnv(idIndex, { requirements: REQUIREMENTS_MACRO_PATH });
-		const out = renderItem(env, entry, 0);
+		const out = renderItem(idIndex, { requirements: REQUIREMENTS_MACRO_PATH }, entry, 0);
 		assert.match(out, /Related requirements:.*REQ-001/);
 		assert.doesNotMatch(out, /must not leak/);
 	});
@@ -159,8 +97,7 @@ describe("render_domain_entry macro", () => {
 				},
 			],
 		});
-		const env = makeEnv(idIndex, { requirements: REQUIREMENTS_MACRO_PATH });
-		const out = renderItem(env, entry, 1);
+		const out = renderItem(idIndex, { requirements: REQUIREMENTS_MACRO_PATH }, entry, 1);
 		assert.match(out, /INLINE-BODY/, "REQ-001 body must be inlined at depth=1");
 	});
 
@@ -180,14 +117,11 @@ describe("render_domain_entry macro", () => {
 			related_requirements: ["D-005"],
 		};
 		const idIndex = buildFixtureIdIndex({ domain: [entry] });
-		const env = makeEnv(idIndex, {
-			domain: path.resolve(TEMPLATES_DIR, "items", "domain.md"),
-		});
 		// Expectation: at depth=2, descent into D-005 will hit the visited
 		// Set on the back-edge. The render_recursive global seeds visited
 		// only on first descent (the direct call from this test does not
 		// seed it). So D-005 enters once, then back-edge triggers cycle.
-		const out = renderItem(env, entry, 3);
+		const out = renderItem(idIndex, { domain: DOMAIN_MACRO_PATH }, entry, 3);
 		// Either the cycle marker fires or the depth budget exhausts cleanly.
 		// Both are acceptable termination signals.
 		const terminatedCleanly = /\[cycle: D-005\]/.test(out) || /D-005/.test(out);
@@ -202,8 +136,7 @@ describe("render_domain_entry macro", () => {
 			category: "domain-rule",
 			related_requirements: [],
 		};
-		const env = makeEnv(new Map(), {});
-		const out = renderItem(env, entry, 0);
+		const out = renderItem(new Map(), {}, entry, 0);
 		assert.match(out, /Related requirements:.*\(none\)/);
 	});
 
@@ -214,15 +147,14 @@ describe("render_domain_entry macro", () => {
 				{ id: "D-002", title: "second", content: "body 2", category: "research" },
 			],
 		};
-		const env = makeEnv(new Map(), {});
-		const wholeTpl = `{% from "shared/macros.md" import render_domain %}{{ render_domain(data) }}`;
-		const wholeOut = env.renderString(wholeTpl, { data });
+		const env = makeRendererTestEnv(new Map(), {});
+		const wholeOut = renderWholeBlockMacro(env, "render_domain", data);
 		assert.match(wholeOut, /## Domain Knowledge/);
 		assert.match(wholeOut, /\*\*D-001\*\*/);
 		assert.match(wholeOut, /\*\*D-002\*\*/);
 		assert.match(wholeOut, /first/);
 		assert.match(wholeOut, /second/);
-		const item1Out = renderItem(env, data.entries[0]!, 0).trim();
+		const item1Out = renderItem(new Map(), {}, data.entries[0]!, 0).trim();
 		// First-line equivalence: the per-item output's first line appears in the whole-block output.
 		assert.ok(wholeOut.includes(item1Out.split("\n")[0] ?? ""));
 	});

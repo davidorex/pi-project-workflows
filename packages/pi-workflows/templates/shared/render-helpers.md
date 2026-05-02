@@ -67,3 +67,40 @@
 
 {% macro render_optional_scalar(label, value) %}{% if value %}{{ label }}: {{ value }}
 {% endif %}{% endmacro %}
+
+{#-
+  Whole-block list scaffold (Plan 8 follow-up).
+
+  Centralises the truthy-guard + heading + per-item iteration shape that
+  previously repeated across the whole-block delegators in shared/macros.md
+  for `render_domain`, `render_tasks`, and `render_issues`. Each delegator
+  now reduces to one `{% call %}` block that supplies the per-item macro as
+  its body — the heading-and-loop chassis lives here once.
+
+  Two variants encode the two empty-handling regimes the legacy delegators
+  shipped, kept distinct so output stays byte-identical to the originals:
+
+    `render_whole_block_truthy(heading, items)`
+        Heading-and-loop fire whenever `items` is truthy (matches the
+        legacy `{% if data and data.<key> %}` guard used by tasks, issues,
+        domain). Empty arrays still emit the heading because `[]` is truthy
+        in Nunjucks — that surface is preserved deliberately.
+
+    `render_whole_block_nonempty(heading, items)`
+        Heading-and-loop fire only when `items | length > 0` (matches the
+        legacy `{% if data and data.requirements and data.requirements |
+        length > 0 %}` guard used by requirements). Empty arrays produce
+        nothing.
+
+  In both, the caller body (`{{ caller(item) }}`) is invoked once per item
+  with the item bound to the call-block parameter.
+-#}
+{% macro render_whole_block_truthy(heading, items) %}{% if items %}
+## {{ heading }}
+{% for item in items %}{{ caller(item) }}{% endfor %}
+{% endif %}{% endmacro %}
+
+{% macro render_whole_block_nonempty(heading, items) %}{% if items and items | length > 0 %}
+## {{ heading }}
+{% for item in items %}{{ caller(item) }}{% endfor %}
+{% endif %}{% endmacro %}

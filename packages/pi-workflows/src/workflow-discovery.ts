@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { bundledDir } from "./bundled-dirs.js";
 import type { WorkflowSpec } from "./types.js";
 import { parseWorkflowSpec } from "./workflow-spec.js";
 import { WORKFLOWS_DIR } from "./workflows-dir.js";
@@ -23,7 +24,7 @@ import { WORKFLOWS_DIR } from "./workflows-dir.js";
 export function discoverWorkflows(cwd: string, builtinDir?: string): WorkflowSpec[] {
 	const projectDir = path.join(cwd, WORKFLOWS_DIR);
 	const userDir = path.join(os.homedir(), ".pi", "agent", "workflows");
-	const demoDir = builtinDir ?? path.resolve(import.meta.dirname, "..", "workflows");
+	const demoDir = builtinDir ?? bundledDir("workflows");
 
 	const projectSpecs = scanDirectory(projectDir, "project");
 	const userSpecs = scanDirectory(userDir, "user");

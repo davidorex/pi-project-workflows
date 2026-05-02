@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { enforceBudget } from "@davidorex/pi-jit-agents";
+import { schemaPath } from "@davidorex/pi-project/project-dir";
 import { Type } from "@mariozechner/pi-ai";
 import type {
 	AgentToolResult,
@@ -791,11 +792,11 @@ const extension = (pi: ExtensionAPI) => {
 			_onUpdate: AgentToolUpdateCallback | undefined,
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
-			const schemaPath = path.join(ctx.cwd, ".project", "schemas", `${params.blockName}.schema.json`);
-			if (!fs.existsSync(schemaPath)) {
-				throw new Error(`enforce-budget: schema file not found at ${schemaPath} for block '${params.blockName}'.`);
+			const schemaFile = schemaPath(ctx.cwd, params.blockName);
+			if (!fs.existsSync(schemaFile)) {
+				throw new Error(`enforce-budget: schema file not found at ${schemaFile} for block '${params.blockName}'.`);
 			}
-			const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+			const schema = JSON.parse(fs.readFileSync(schemaFile, "utf-8"));
 			const result = enforceBudget(params.rendered, schema, params.fieldPath);
 			return {
 				details: undefined,

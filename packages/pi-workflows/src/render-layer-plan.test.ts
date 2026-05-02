@@ -1,99 +1,34 @@
 /**
  * Per-item macro tests: render_layer_plan (Plan 7, Wave 4).
  *
- * Mirrors render-decision.test.ts. Cross-block reference fields:
- * related_gaps, related_decisions, related_features. Layers and migration
- * phases are nested sub-shapes on the plan schema; rendered inline, never
- * recursed.
+ * Cross-block reference fields: related_gaps, related_decisions,
+ * related_features. Layers and migration phases are nested sub-shapes on the
+ * plan schema; rendered inline, never recursed.
+ *
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  */
 import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import {
+	buildFixtureIdIndex,
+	type FixtureItemLocation,
+	itemMacroPath,
+	makeRendererTestEnv,
+	renderItemMacro,
+} from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-const LAYER_PLANS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "layer-plans.md");
-const DECISIONS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "decisions.md");
+const LAYER_PLANS_MACRO_PATH = itemMacroPath("layer-plans");
+const DECISIONS_MACRO_PATH = itemMacroPath("decisions");
 
-interface ItemLocation {
-	block: string;
-	arrayKey: string;
-	item: Record<string, unknown>;
-}
-
-function buildFixtureIdIndex(blocks: Record<string, Array<Record<string, unknown>>>): Map<string, ItemLocation> {
-	const index = new Map<string, ItemLocation>();
-	for (const [block, items] of Object.entries(blocks)) {
-		for (const item of items) {
-			const id = item.id;
-			if (typeof id === "string") {
-				index.set(id, { block, arrayKey: block, item });
-			}
-		}
-	}
-	return index;
-}
-
-function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<string, string>): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-
-	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
-		if (typeof id !== "string" || id.length === 0) return null;
-		return idIndex.get(id) ?? null;
-	});
-
-	const visited = new Set<string>();
-	env.addGlobal("render_recursive", (loc: unknown, depth: unknown): string => {
-		if (!loc || typeof loc !== "object") return "";
-		const location = loc as ItemLocation;
-		const itemId = (location.item as { id?: unknown })?.id;
-		const idStr = typeof itemId === "string" ? itemId : "";
-		const blockName = typeof location.block === "string" ? location.block : "?";
-
-		if (idStr.length > 0 && visited.has(idStr)) {
-			return `[cycle: ${idStr}]`;
-		}
-
-		const macroPath = availableMacros[blockName];
-		if (!macroPath) {
-			return `[unrendered: ${blockName}/${idStr}]`;
-		}
-
-		// Mirror @davidorex/pi-jit-agents' renderer-registry canonical-name
-		// lookup. Only the kinds this test exercises are listed.
-		const canonical: Record<string, string> = {
-			"layer-plans": "render_layer_plan",
-			decisions: "render_decision",
-		};
-		const macroName = canonical[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
-		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
-		if (idStr.length > 0) visited.add(idStr);
-		try {
-			const macroSource = fs.readFileSync(macroPath, "utf-8");
-			const inline = `${macroSource}\n{{ ${macroName}(item, depth) }}`;
-			return env.renderString(inline, { item: location.item, depth: depthNum });
-		} catch (err) {
-			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
-		} finally {
-			if (idStr.length > 0) visited.delete(idStr);
-		}
-	});
-
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-
-	return env;
-}
-
-function renderLayerPlan(env: nunjucks.Environment, item: Record<string, unknown>, depth: number): string {
-	const macroSource = fs.readFileSync(LAYER_PLANS_MACRO_PATH, "utf-8");
-	const inline = `${macroSource}\n{{ render_layer_plan(item, depth) }}`;
-	return env.renderString(inline, { item, depth });
+function renderLayerPlan(
+	idIndex: Map<string, FixtureItemLocation>,
+	availableMacros: Record<string, string>,
+	item: Record<string, unknown>,
+	depth: number,
+): string {
+	return renderItemMacro(makeRendererTestEnv(idIndex, availableMacros), "layer-plans", item, depth);
 }
 
 function makeFullPlan(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
@@ -139,9 +74,13 @@ describe("render_layer_plan macro", () => {
 			features: [{ id: "FEAT-001", title: "should not appear" }],
 			decisions: [{ id: "DEC-0001", title: "should not appear", status: "enacted" }],
 		});
-		const env = makeEnv(idIndex, { "layer-plans": LAYER_PLANS_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderLayerPlan(env, plan, 0);
+		const out = renderLayerPlan(
+			idIndex,
+			{ "layer-plans": LAYER_PLANS_MACRO_PATH, decisions: DECISIONS_MACRO_PATH },
+			plan,
+			0,
+		);
 
 		assert.match(out, /\bFGAP-001\b/);
 		assert.match(out, /\bFEAT-001\b/);
@@ -170,9 +109,13 @@ describe("render_layer_plan macro", () => {
 			decisions: [dec],
 			"framework-gaps": [{ id: "FGAP-001", title: "should not leak" }],
 		});
-		const env = makeEnv(idIndex, { "layer-plans": LAYER_PLANS_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderLayerPlan(env, plan, 1);
+		const out = renderLayerPlan(
+			idIndex,
+			{ "layer-plans": LAYER_PLANS_MACRO_PATH, decisions: DECISIONS_MACRO_PATH },
+			plan,
+			1,
+		);
 
 		assert.match(out, /Title: Related decision title/);
 		assert.match(out, /decision body text/);
@@ -209,9 +152,13 @@ describe("render_layer_plan macro", () => {
 			"layer-plans": [plan],
 			decisions: [decOuter, decInner],
 		});
-		const env = makeEnv(idIndex, { "layer-plans": LAYER_PLANS_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderLayerPlan(env, plan, 2);
+		const out = renderLayerPlan(
+			idIndex,
+			{ "layer-plans": LAYER_PLANS_MACRO_PATH, decisions: DECISIONS_MACRO_PATH },
+			plan,
+			2,
+		);
 
 		assert.match(out, /Title: Outer decision/);
 		assert.match(out, /Title: Inner decision/);
@@ -248,9 +195,13 @@ describe("render_layer_plan macro", () => {
 			"layer-plans": [plan],
 			decisions: [decA, decB],
 		});
-		const env = makeEnv(idIndex, { "layer-plans": LAYER_PLANS_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderLayerPlan(env, plan, 5);
+		const out = renderLayerPlan(
+			idIndex,
+			{ "layer-plans": LAYER_PLANS_MACRO_PATH, decisions: DECISIONS_MACRO_PATH },
+			plan,
+			5,
+		);
 
 		assert.match(out, /Title: A/);
 		assert.match(out, /Title: B/);
@@ -285,9 +236,8 @@ describe("render_layer_plan macro", () => {
 			created_at: "2026-05-02T00:00:00Z",
 		};
 		const idIndex = buildFixtureIdIndex({ "layer-plans": [minimal] });
-		const env = makeEnv(idIndex, { "layer-plans": LAYER_PLANS_MACRO_PATH });
 
-		const out = renderLayerPlan(env, minimal, 0);
+		const out = renderLayerPlan(idIndex, { "layer-plans": LAYER_PLANS_MACRO_PATH }, minimal, 0);
 
 		assert.match(out, /ID: PLAN-099/);
 		assert.match(out, /Title: minimal/);
@@ -308,9 +258,8 @@ describe("render_layer_plan macro", () => {
 			related_decisions: [],
 		});
 		const idIndex = buildFixtureIdIndex({ "layer-plans": [plan] });
-		const env = makeEnv(idIndex, { "layer-plans": LAYER_PLANS_MACRO_PATH });
 
-		const out = renderLayerPlan(env, plan, 0);
+		const out = renderLayerPlan(idIndex, { "layer-plans": LAYER_PLANS_MACRO_PATH }, plan, 0);
 
 		assert.match(out, /Layers:[\s\S]*?\(none\)/);
 		assert.match(out, /Migration phases:[\s\S]*?\(none\)/);

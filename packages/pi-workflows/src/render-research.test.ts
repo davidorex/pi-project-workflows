@@ -1,102 +1,37 @@
 /**
  * Per-item macro tests: render_research (Plan 7, Wave 4).
  *
- * Mirrors render-decision.test.ts. Cross-block reference fields:
- * related_research, informed_by, informs, produces_findings, supersedes,
- * superseded_by — all recurse on depth.
+ * Cross-block reference fields: related_research, informed_by, informs,
+ * produces_findings, supersedes, superseded_by — all recurse on depth.
  *
  * x-prompt-budget integration: per the Plan 7 brief, the macro emits content
  * directly (matching Plan 6's choice). enforceBudget is exported but not
  * wired into per-item macros at this time.
+ *
+ * Setup wiring (Nunjucks env, fixture id-index, per-item / whole-block render
+ * helpers) lives in `./test-helpers.js` — every render-*.test.ts shares the
+ * same harness so the per-file body holds only the kind-specific assertions.
  */
 import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import nunjucks from "nunjucks";
+import {
+	buildFixtureIdIndex,
+	type FixtureItemLocation,
+	itemMacroPath,
+	makeRendererTestEnv,
+	renderItemMacro,
+} from "./test-helpers.js";
 
-const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
-const RESEARCH_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "research.md");
-const DECISIONS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "decisions.md");
+const RESEARCH_MACRO_PATH = itemMacroPath("research");
+const DECISIONS_MACRO_PATH = itemMacroPath("decisions");
 
-interface ItemLocation {
-	block: string;
-	arrayKey: string;
-	item: Record<string, unknown>;
-}
-
-function buildFixtureIdIndex(blocks: Record<string, Array<Record<string, unknown>>>): Map<string, ItemLocation> {
-	const index = new Map<string, ItemLocation>();
-	for (const [block, items] of Object.entries(blocks)) {
-		for (const item of items) {
-			const id = item.id;
-			if (typeof id === "string") {
-				index.set(id, { block, arrayKey: block, item });
-			}
-		}
-	}
-	return index;
-}
-
-function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<string, string>): nunjucks.Environment {
-	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
-		autoescape: false,
-		throwOnUndefined: false,
-	});
-
-	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
-		if (typeof id !== "string" || id.length === 0) return null;
-		return idIndex.get(id) ?? null;
-	});
-
-	const visited = new Set<string>();
-	env.addGlobal("render_recursive", (loc: unknown, depth: unknown): string => {
-		if (!loc || typeof loc !== "object") return "";
-		const location = loc as ItemLocation;
-		const itemId = (location.item as { id?: unknown })?.id;
-		const idStr = typeof itemId === "string" ? itemId : "";
-		const blockName = typeof location.block === "string" ? location.block : "?";
-
-		if (idStr.length > 0 && visited.has(idStr)) {
-			return `[cycle: ${idStr}]`;
-		}
-
-		const macroPath = availableMacros[blockName];
-		if (!macroPath) {
-			return `[unrendered: ${blockName}/${idStr}]`;
-		}
-
-		// Mirror @davidorex/pi-jit-agents' renderer-registry canonical-name
-		// lookup. Only the kinds this test exercises are listed.
-		const canonical: Record<string, string> = {
-			research: "render_research",
-			decisions: "render_decision",
-		};
-		const macroName = canonical[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
-		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
-		if (idStr.length > 0) visited.add(idStr);
-		try {
-			const macroSource = fs.readFileSync(macroPath, "utf-8");
-			const inline = `${macroSource}\n{{ ${macroName}(item, depth) }}`;
-			return env.renderString(inline, { item: location.item, depth: depthNum });
-		} catch (err) {
-			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
-		} finally {
-			if (idStr.length > 0) visited.delete(idStr);
-		}
-	});
-
-	env.addGlobal("enforceBudget", (rendered: unknown): string =>
-		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
-	);
-
-	return env;
-}
-
-function renderResearch(env: nunjucks.Environment, item: Record<string, unknown>, depth: number): string {
-	const macroSource = fs.readFileSync(RESEARCH_MACRO_PATH, "utf-8");
-	const inline = `${macroSource}\n{{ render_research(item, depth) }}`;
-	return env.renderString(inline, { item, depth });
+function renderResearch(
+	idIndex: Map<string, FixtureItemLocation>,
+	availableMacros: Record<string, string>,
+	item: Record<string, unknown>,
+	depth: number,
+): string {
+	return renderItemMacro(makeRendererTestEnv(idIndex, availableMacros), "research", item, depth);
 }
 
 function makeFullResearch(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
@@ -135,9 +70,8 @@ describe("render_research macro", () => {
 			],
 			decisions: [{ id: "DEC-0001", title: "should not appear", status: "enacted" }],
 		});
-		const env = makeEnv(idIndex, { research: RESEARCH_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderResearch(env, r, 0);
+		const out = renderResearch(idIndex, { research: RESEARCH_MACRO_PATH, decisions: DECISIONS_MACRO_PATH }, r, 0);
 
 		assert.match(out, /\bR-0002\b/);
 		assert.match(out, /\bDEC-0001\b/);
@@ -168,9 +102,8 @@ describe("render_research macro", () => {
 			decisions: [dec],
 			"spec-reviews": [{ id: "finding-x", title: "should not leak" }],
 		});
-		const env = makeEnv(idIndex, { research: RESEARCH_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderResearch(env, r, 1);
+		const out = renderResearch(idIndex, { research: RESEARCH_MACRO_PATH, decisions: DECISIONS_MACRO_PATH }, r, 1);
 
 		assert.match(out, /Title: Informed decision/);
 		assert.match(out, /decision body text/);
@@ -207,9 +140,8 @@ describe("render_research macro", () => {
 			research: [r],
 			decisions: [decOuter, decInner],
 		});
-		const env = makeEnv(idIndex, { research: RESEARCH_MACRO_PATH, decisions: DECISIONS_MACRO_PATH });
 
-		const out = renderResearch(env, r, 2);
+		const out = renderResearch(idIndex, { research: RESEARCH_MACRO_PATH, decisions: DECISIONS_MACRO_PATH }, r, 2);
 
 		assert.match(out, /Title: Outer decision/);
 		assert.match(out, /Title: Inner decision/);
@@ -231,9 +163,8 @@ describe("render_research macro", () => {
 		const idIndex = buildFixtureIdIndex({
 			research: [rA, rB],
 		});
-		const env = makeEnv(idIndex, { research: RESEARCH_MACRO_PATH });
 
-		const out = renderResearch(env, rA, 5);
+		const out = renderResearch(idIndex, { research: RESEARCH_MACRO_PATH }, rA, 5);
 
 		assert.match(out, /Title: A/);
 		assert.match(out, /Title: B/);
@@ -254,9 +185,8 @@ describe("render_research macro", () => {
 			created_at: "2026-05-02T00:00:00Z",
 		};
 		const idIndex = buildFixtureIdIndex({ research: [minimal] });
-		const env = makeEnv(idIndex, { research: RESEARCH_MACRO_PATH });
 
-		const out = renderResearch(env, minimal, 0);
+		const out = renderResearch(idIndex, { research: RESEARCH_MACRO_PATH }, minimal, 0);
 
 		assert.match(out, /ID: R-0099/);
 		assert.match(out, /Title: minimal/);
@@ -292,9 +222,8 @@ describe("render_research macro", () => {
 			grounding: { dependencies: [], revisions: [], external_refs: [] },
 		});
 		const idIndex = buildFixtureIdIndex({ research: [r] });
-		const env = makeEnv(idIndex, { research: RESEARCH_MACRO_PATH });
 
-		const out = renderResearch(env, r, 0);
+		const out = renderResearch(idIndex, { research: RESEARCH_MACRO_PATH }, r, 0);
 
 		assert.match(out, /Scope:[\s\S]*?\(none\)/);
 		assert.match(out, /Stale conditions:[\s\S]*?\(none\)/);

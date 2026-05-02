@@ -7,7 +7,9 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { schemaPath } from "@davidorex/pi-project/project-dir";
 import { createAgentLoader } from "./agent-spec.js";
+import { bundledDir } from "./bundled-dirs.js";
 import { resolveSchemaPath } from "./step-shared.js";
 import type { StepSpec, WorkflowSpec } from "./types.js";
 import type { ValidationIssue } from "./workflow-sdk.js";
@@ -308,9 +310,9 @@ function loadSchemaFields(
  * Used for block read steps that carry no explicit output.schema annotation.
  */
 function loadBlockSchema(blockName: string, cwd: string): SchemaFields | null {
-	const schemaPath = path.join(cwd, ".project", "schemas", `${blockName}.schema.json`);
+	const schemaFile = schemaPath(cwd, blockName);
 	try {
-		const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+		const schema = JSON.parse(fs.readFileSync(schemaFile, "utf-8"));
 		if (!schema.properties) return null;
 		const properties: Record<string, { type: string }> = {};
 		for (const [key, value] of Object.entries(schema.properties)) {
@@ -457,9 +459,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 	}
 
 	// Template search mirrors createTemplateEnv() — project, user, builtin
-	const builtinTemplateDir = builtinDir
-		? path.resolve(builtinDir, "..", "templates")
-		: path.resolve(import.meta.dirname, "..", "templates");
+	const builtinTemplateDir = builtinDir ? path.resolve(builtinDir, "..", "templates") : bundledDir("templates");
 	const templateSearchPaths = [
 		path.join(cwd, ".pi", "templates"),
 		path.join(process.env.HOME ?? "", ".pi", "agent", "templates"),

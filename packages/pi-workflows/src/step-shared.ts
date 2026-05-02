@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock } from "@davidorex/pi-project/block-api";
+import { projectDir, schemaPath } from "@davidorex/pi-project/project-dir";
 import type nunjucks from "nunjucks";
 import { writeState } from "./state.js";
 import { renderTemplate, renderTemplateFile } from "./template.js";
@@ -51,14 +52,14 @@ export function addUsage(total: StepUsage, step: StepUsage): void {
  *   (which may be customized).
  * - Relative paths: resolved against the directory containing the spec file
  */
-export function resolveSchemaPath(schemaPath: string, specFilePath: string, cwd?: string): string {
-	if (path.isAbsolute(schemaPath)) return schemaPath;
-	const blockMatch = schemaPath.match(/^block:(.+)$/);
+export function resolveSchemaPath(schemaPathSpec: string, specFilePath: string, cwd?: string): string {
+	if (path.isAbsolute(schemaPathSpec)) return schemaPathSpec;
+	const blockMatch = schemaPathSpec.match(/^block:(.+)$/);
 	if (blockMatch) {
 		const resolvedCwd = cwd || process.cwd();
-		return path.join(resolvedCwd, ".project", "schemas", `${blockMatch[1]}.schema.json`);
+		return schemaPath(resolvedCwd, blockMatch[1]!);
 	}
-	return path.resolve(path.dirname(specFilePath), schemaPath);
+	return path.resolve(path.dirname(specFilePath), schemaPathSpec);
 }
 
 /**
@@ -160,8 +161,8 @@ export function compileAgentSpec(
 
 	// Inject block data into template context when contextBlocks is declared
 	if (agentSpec.contextBlocks && agentSpec.contextBlocks.length > 0 && cwd) {
-		const projectDir = path.join(cwd, ".project");
-		if (fs.existsSync(projectDir)) {
+		const projectDirPath = projectDir(cwd);
+		if (fs.existsSync(projectDirPath)) {
 			for (const name of agentSpec.contextBlocks) {
 				const ctxKey = `_${name.replace(/-/g, "_")}`;
 				try {

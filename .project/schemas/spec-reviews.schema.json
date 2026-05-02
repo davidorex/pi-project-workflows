@@ -12,7 +12,7 @@
 				"additionalProperties": false,
 				"required": ["id", "target", "status", "findings", "created_by", "created_at"],
 				"properties": {
-					"id": { "type": "string" },
+					"id": { "type": "string", "pattern": "^REVIEW-\\d{3}$" },
 					"target": {
 						"type": "string",
 						"description": "Path to the spec doc being reviewed"

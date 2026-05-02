@@ -11,7 +11,7 @@
 				"type": "object",
 				"required": ["id", "description", "status"],
 				"properties": {
-					"id": { "type": "string" },
+					"id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
 					"description": { "type": "string" },
 					"status": { "type": "string", "enum": ["planned", "in-progress", "completed", "blocked", "cancelled"] },
 					"phase": { "type": ["string", "integer"], "description": "Phase ID or number this task belongs to" },

@@ -725,14 +725,6 @@
       "priority": "high",
       "package": "pi-behavior-monitors",
       "source": "agent"
-    },
-    {
-      "id": "fragility-fragility-mohud6vz",
-      "description": "The agent explicitly observed a broken JSON parse error from a tool run (JSONDecodeError on empty line) and silently skipped it, continuing to build recommendations without addressing or noting that the session-reading approach is brittle — it also proposed a `console.error` fallback in the CustomMessage routing as a deliberate \"not removed yet\" deferral, noting the diagnostic channel migration is incomplete but leaving the broken path in place for future someone to finish.",
-      "status": "open",
-      "category": "fragility",
-      "priority": "warning",
-      "source": "monitor"
     }
   ]
 }

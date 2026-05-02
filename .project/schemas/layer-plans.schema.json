@@ -12,7 +12,7 @@
 				"additionalProperties": false,
 				"required": ["id", "title", "status", "model", "layers", "migration_phases", "created_by", "created_at"],
 				"properties": {
-					"id": { "type": "string" },
+					"id": { "type": "string", "pattern": "^PLAN-\\d{3}$" },
 					"title": { "type": "string" },
 					"status": {
 						"type": "string",

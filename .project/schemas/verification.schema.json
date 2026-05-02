@@ -11,7 +11,7 @@
 				"type": "object",
 				"required": ["id", "target", "target_type", "status", "method"],
 				"properties": {
-					"id": { "type": "string" },
+					"id": { "type": "string", "pattern": "^VER-\\d{3,}$" },
 					"target": { "type": "string", "description": "ID of what was verified (task, phase, requirement)" },
 					"target_type": { "type": "string", "enum": ["task", "phase", "requirement"] },
 					"status": { "type": "string", "enum": ["passed", "failed", "partial", "skipped"] },

@@ -11,7 +11,7 @@
 				"type": "object",
 				"required": ["id", "description", "type", "status", "priority"],
 				"properties": {
-					"id": { "type": "string" },
+					"id": { "type": "string", "pattern": "^REQ-\\d{3,}$" },
 					"description": { "type": "string" },
 					"type": { "type": "string", "enum": ["functional", "non-functional", "constraint", "integration"] },
 					"status": { "type": "string", "enum": ["proposed", "accepted", "deferred", "implemented", "verified"] },

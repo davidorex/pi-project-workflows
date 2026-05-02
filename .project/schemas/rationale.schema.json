@@ -11,7 +11,7 @@
 				"type": "object",
 				"required": ["id", "title", "narrative"],
 				"properties": {
-					"id": { "type": "string" },
+					"id": { "type": "string", "pattern": "^RAT-\\d{3}$" },
 					"title": { "type": "string" },
 					"narrative": { "type": "string" },
 					"related_decisions": {

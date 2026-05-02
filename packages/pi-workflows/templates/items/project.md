@@ -6,24 +6,15 @@
   whole block payload as a single record. The whole-block delegator in
   shared/macros.md passes its data argument straight through.
 
-  Macro signature:
-    render_project_item(p, depth=0)
-      p     — the project record matching project.schema.json
-      depth — recursion budget; unused at present (no cross-block reference
-              fields exist in the schema). Accepted for shape-uniformity with
-              other per-item macros so the renderer-registry can invoke every
-              kind through the same calling convention.
+  No cross-block references — depth parameter accepted for shape-uniformity
+  with other per-item macros; no helpers from shared/render-helpers.md are
+  needed at present.
 
   Empty-array convention:
     Optional list/object fields render their label only when populated. The
     project schema makes `name`, `description`, and `core_value` required and
     the rest optional; bare-required output is the predictable shape for
     minimal records.
-
-  No cross-block references:
-    The schema has no fields that reference other blocks; resolve and
-    render_recursive are not invoked. The depth parameter is reserved for
-    future schema additions without breaking the registry call shape.
 -#}
 
 {% macro render_project_item(p, depth=0) %}
@@ -55,7 +46,3 @@ Target users: {{ p.target_users | join(", ") }}{% endif %}
 {% endif %}
 {% endif %}
 {% endmacro %}
-
-{#- Registry alias: derives `render_project` from the `project` kind, bridges
-    to canonical `render_project_item` for per-item dispatch. -#}
-{% macro render_project(p, depth=0) %}{{ render_project_item(p, depth) }}{% endmacro %}

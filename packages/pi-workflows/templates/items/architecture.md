@@ -7,17 +7,9 @@
   the whole block payload as a single record; the whole-block delegator in
   shared/macros.md passes its data argument straight through.
 
-  Macro signature:
-    render_architecture_item(a, depth=0)
-      a     — architecture record matching architecture.schema.json
-      depth — recursion budget; unused (no cross-block reference fields).
-              Accepted for shape-uniformity with the renderer-registry call
-              convention.
-
-  No cross-block references:
-    Architecture fields point to internal sub-objects (modules, patterns,
-    boundaries) and string descriptors, never to IDs in other project
-    blocks. resolve / render_recursive are not invoked.
+  No cross-block references — depth parameter accepted for shape-uniformity
+  with the renderer-registry call convention; no helpers from
+  shared/render-helpers.md are needed.
 -#}
 
 {% macro render_architecture_item(a, depth=0) %}
@@ -39,8 +31,3 @@
 {% endfor %}{% endif %}
 {% endif %}
 {% endmacro %}
-
-{#- Registry alias: derives `render_architecture` from the `architecture`
-    kind, bridges to canonical `render_architecture_item` for per-item
-    dispatch via renderItemById / render_recursive. -#}
-{% macro render_architecture(a, depth=0) %}{{ render_architecture_item(a, depth) }}{% endmacro %}

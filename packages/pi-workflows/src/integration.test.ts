@@ -42,6 +42,7 @@ const REQUIREMENTS_SCHEMA_SRC = path.resolve(
 );
 
 const MACROS_SRC = path.resolve(import.meta.dirname, "..", "templates", "shared", "macros.md");
+const RENDER_HELPERS_SRC = path.resolve(import.meta.dirname, "..", "templates", "shared", "render-helpers.md");
 const ITEMS_DIR_SRC = path.resolve(import.meta.dirname, "..", "templates", "items");
 
 /** Conformance-reference block data. */
@@ -148,10 +149,15 @@ function scaffoldMockProject(tmpDir: string): { projectDir: string; templatesDir
 	const piTemplatesDir = path.join(tmpDir, ".pi", "templates");
 
 	for (const tplDir of [templatesDir, piTemplatesDir]) {
-		// shared/macros.md — copy from package
+		// shared/macros.md and shared/render-helpers.md — copy from package.
+		// render-helpers.md hosts the cross-block-recursion / optional-scalar /
+		// id-list macros that per-item macros under items/ now {% from %}-import.
+		// Without it, item macros raise "template not found: shared/render-helpers.md"
+		// at first render.
 		const sharedDir = path.join(tplDir, "shared");
 		fs.mkdirSync(sharedDir, { recursive: true });
 		fs.copyFileSync(MACROS_SRC, path.join(sharedDir, "macros.md"));
+		fs.copyFileSync(RENDER_HELPERS_SRC, path.join(sharedDir, "render-helpers.md"));
 
 		// items/*.md — Plan 8 (Wave 4) restructured macros.md to delegate to
 		// per-item macros under items/. The whole-block macros render_conformance

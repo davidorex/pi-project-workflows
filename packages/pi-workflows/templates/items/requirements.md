@@ -6,34 +6,15 @@
   description, type, status, priority. Optional: acceptance_criteria,
   source, traces_to (phase/task IDs), depends_on (other requirement IDs).
 
-  Macro signature:
-    render_requirement(req, depth=0)
-      req   — single requirement object
-      depth — recursion budget for cross-block reference inlining.
-              depth <= 0 — emit bare ID strings for traces_to and depends_on.
-              depth >  0 — call resolve(id) on each ID; render_recursive(loc,
-                           depth - 1) inlines the resolved item via the
-                           registered per-item macro for that kind.
-
-  Depth contract (mirrors render_decision pattern from Plan 6):
-    On miss (resolve returns null), fall back to bare ID text. resolve and
-    render_recursive are ambient Nunjucks globals registered by compileAgent
-    in @davidorex/pi-jit-agents (compile.ts).
-
-  Empty-array convention:
-    Optional reference arrays present-but-empty render the field label with
-    `(none)`. Absent (undefined) fields render nothing.
+  Cross-block reference recursion (traces_to, depends_on) is delegated to
+  shared/render-helpers.md — see that file for the depth contract, ambient
+  globals, and empty-array convention shared across all per-item macros.
 -#}
+{% from "shared/render-helpers.md" import render_id_list_inline %}
 
 {% macro render_requirement(req, depth=0) %}
 {% if req %}- **{{ req.id }}** [{{ req.priority }}] ({{ req.type }}, {{ req.status }}): {{ enforceBudget(req.description, "requirements", "requirements.items.description") }}{% if req.acceptance_criteria %}
   Criteria: {% for ac in req.acceptance_criteria %}{{ enforceBudget(ac, "requirements", "requirements.items.acceptance_criteria.items") }}{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}
 {% if req.source %}  Source: {{ req.source }}
-{% endif %}{% if req.traces_to is defined %}  Traces to: {% if req.traces_to | length > 0 %}{% for tid in req.traces_to %}{% if depth > 0 %}{% set loc = resolve(tid) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}{% else %}{{ tid }}{% endif %}{% else %}{{ tid }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
-{% endif %}{% if req.depends_on is defined %}  Depends on: {% if req.depends_on | length > 0 %}{% for did in req.depends_on %}{% if depth > 0 %}{% set loc = resolve(did) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}{% else %}{{ did }}{% endif %}{% else %}{{ did }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
-{% endif %}{% endif %}
+{% endif %}{{ render_id_list_inline("Traces to", req.traces_to, depth) }}{{ render_id_list_inline("Depends on", req.depends_on, depth) }}{% endif %}
 {% endmacro %}
-
-{#- Registry alias: derives `render_requirements` from the `requirements`
-    kind, bridges to canonical singular `render_requirement`. -#}
-{% macro render_requirements(req, depth=0) %}{{ render_requirement(req, depth) }}{% endmacro %}

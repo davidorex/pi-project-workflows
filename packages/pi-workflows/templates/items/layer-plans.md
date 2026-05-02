@@ -3,16 +3,9 @@
 
   Block schema: .project/schemas/layer-plans.schema.json (Plan 7 / per-item-macros wave 4).
 
-  Macro signature:
-    render_layer_plan(plan, depth=0)
-      plan  — single plan object matching .plans[*] in the schema
-      depth — integer recursion budget for cross-block reference inlining
-
-  Depth contract:
-    depth <= 0 — emit bare ID strings for cross-block references
-                 (related_gaps, related_features, related_decisions).
-    depth >  0 — resolve(id) → render_recursive(loc, depth - 1); fall back to
-                 bare ID on miss.
+  Cross-block reference recursion (related_gaps, related_features,
+  related_decisions) is delegated to shared/render-helpers.md — see that
+  file for the depth contract, ambient globals, and empty-array convention.
 
   Nested embedded structures:
     Each plan carries `layers[]` (each with current_blocks/target_blocks
@@ -20,15 +13,8 @@
     — they are sub-shapes on the plan schema and rendered inline. Phase
     `depends_on` references are scoped to phase IDs within the same plan and
     rendered as bare-ID lists (no recursion).
-
-  Empty-array convention:
-    Present-but-empty arrays render `(none)`. Absent fields render nothing.
-
-  Registry alias:
-    Renderer-registry derives `render_layer_plans` from `layer-plans` (hyphens
-    → underscores). Canonical Plan-7 name is singular `render_layer_plan`.
-    Alias at the bottom bridges the two.
 -#}
+{% from "shared/render-helpers.md" import render_id_list_block %}
 
 {% macro render_layer_plan(plan, depth=0) %}
 ID: {{ plan.id }}
@@ -61,25 +47,4 @@ Description:
 {% endfor %}{% else %}      (none)
 {% endif %}{% if p.produces is defined %}    Produces: {% if p.produces | length > 0 %}{% for pr in p.produces %}{{ pr }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
 {% endif %}{% endfor %}{% else %}  (none)
-{% endif %}{% if plan.related_gaps is defined %}Related gaps:
-{% if plan.related_gaps | length > 0 %}{% for gid in plan.related_gaps %}{% if depth > 0 %}{% set loc = resolve(gid) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}
-{% else %}  - {{ gid }}
-{% endif %}{% else %}  - {{ gid }}
-{% endif %}{% endfor %}{% else %}  (none)
-{% endif %}{% endif %}{% if plan.related_features is defined %}Related features:
-{% if plan.related_features | length > 0 %}{% for fid in plan.related_features %}{% if depth > 0 %}{% set loc = resolve(fid) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}
-{% else %}  - {{ fid }}
-{% endif %}{% else %}  - {{ fid }}
-{% endif %}{% endfor %}{% else %}  (none)
-{% endif %}{% endif %}{% if plan.related_decisions is defined %}Related decisions:
-{% if plan.related_decisions | length > 0 %}{% for did in plan.related_decisions %}{% if depth > 0 %}{% set loc = resolve(did) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}
-{% else %}  - {{ did }}
-{% endif %}{% else %}  - {{ did }}
-{% endif %}{% endfor %}{% else %}  (none)
-{% endif %}{% endif %}{% endmacro %}
-
-{#- Registry alias: bridges registry-default `render_layer_plans` (from
-    `layer-plans` with hyphens→underscores) to the canonical singular
-    `render_layer_plan`. Keeps render_recursive working when
-    loc.block === "layer-plans". -#}
-{% macro render_layer_plans(plan, depth=0) %}{{ render_layer_plan(plan, depth) }}{% endmacro %}
+{% endif %}{{ render_id_list_block("Related gaps", plan.related_gaps, depth) }}{{ render_id_list_block("Related features", plan.related_features, depth) }}{{ render_id_list_block("Related decisions", plan.related_decisions, depth) }}{% endmacro %}

@@ -3,46 +3,25 @@
 
   Block schema: .project/schemas/spec-reviews.schema.json (Plan 7 / per-item-macros wave 4).
 
-  Macro signature:
-    render_spec_review(rev, depth=0)
-      rev   — single review object matching .reviews[*] in the schema
-      depth — integer recursion budget for cross-block reference inlining
-
-  Depth contract (mirrors render_decision):
-    depth <= 0 — emit bare ID strings for cross-block references
-                 (each finding's `produces_decision` is the only ID-bearing
-                 cross-reference field on this block); the `target` field is
-                 a doc path, NOT an ID, so it is always rendered as text.
-    depth >  0 — call resolve(id) to look up the referenced item; on hit,
-                 render_recursive(loc, depth - 1) inlines via the registry;
-                 on miss, fall back to bare ID text.
-
-  resolve(id) and render_recursive(loc, depth) are Nunjucks globals registered
-  by compileAgent in @davidorex/pi-jit-agents. NOT imported here — ambient on
-  the Environment. Cycles → `[cycle: <id>]`; missing kind macros →
-  `[unrendered: <kind>/<id>]`. Documented fallbacks, not failures.
-
-  Empty-array convention:
-    Optional arrays render the field label with `(none)` rather than omitting
-    the line, when present-but-empty. Absent fields (undefined) render nothing.
-
   Findings:
-    Each review carries an embedded findings registry (definitions/finding in
-    the schema). Findings are rendered inline as a sub-list under the review
-    body — they are not block items in their own right and have no per-item
-    macro of their own. Each finding's `produces_decision` (when present and
-    depth > 0) does recurse into the decisions block via resolve/render_recursive.
-    `related_findings` on a finding refer to sibling findings within the same
-    review by their string ids; they are emitted as bare IDs (no recursion —
-    finding IDs are scoped to the review and not in the global ID index).
+    Each review carries an embedded findings registry (definitions/finding
+    in the schema). Findings are rendered inline as a sub-list under the
+    review body — they are not block items in their own right and have no
+    per-item macro of their own. Each finding's `produces_decision` (when
+    present and depth > 0) recurses into the decisions block via
+    resolve/render_recursive — that pattern stays inline because it has a
+    deeper indent (4 spaces) than the helper convention assumes and is
+    embedded in a finding-iteration loop rather than a top-level field.
+    `related_findings` on a finding refer to sibling findings within the
+    same review by their string ids; they are emitted as bare IDs (no
+    recursion — finding IDs are scoped to the review and not in the global
+    ID index).
 
-  Registry alias:
-    The renderer-registry derives macro names by prefixing the block kind with
-    `render_` (so `spec-reviews` → `render_spec_reviews` after hyphen→underscore).
-    The canonical Plan-7 name is `render_spec_review` (singular). The alias
-    `render_spec_reviews(rev, depth=0)` at the bottom bridges the two so that
-    `render_recursive(loc, depth)` works when loc.block === "spec-reviews".
+  Optional review-level scalars (target_revision, reviewer, completed_at,
+  clean) and the method body delegate to shared/render-helpers.md
+  render_optional_scalar where the shape matches.
 -#}
+{% from "shared/render-helpers.md" import render_optional_scalar %}
 
 {% macro render_spec_review(rev, depth=0) %}
 ID: {{ rev.id }}
@@ -50,10 +29,7 @@ Target: {{ rev.target }}
 Status: {{ rev.status }}
 Created by: {{ rev.created_by }}
 Created at: {{ rev.created_at }}
-{% if rev.target_revision %}Target revision: {{ rev.target_revision }}
-{% endif %}{% if rev.reviewer %}Reviewer: {{ rev.reviewer }}
-{% endif %}{% if rev.completed_at %}Completed at: {{ rev.completed_at }}
-{% endif %}{% if rev.clean is defined %}Clean: {{ rev.clean }}
+{{ render_optional_scalar("Target revision", rev.target_revision) }}{{ render_optional_scalar("Reviewer", rev.reviewer) }}{{ render_optional_scalar("Completed at", rev.completed_at) }}{% if rev.clean is defined %}Clean: {{ rev.clean }}
 {% endif %}{% if rev.method %}Method:
 {{ enforceBudget(rev.method, "spec-reviews", "reviews.items.method") }}
 
@@ -73,9 +49,3 @@ Created at: {{ rev.created_at }}
 {% endif %}{% if f.related_findings is defined %}    Related findings: {% if f.related_findings | length > 0 %}{% for rf in f.related_findings %}{{ rf }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
 {% endif %}{% endfor %}{% else %}  (none)
 {% endif %}{% endmacro %}
-
-{#- Registry alias: bridges registry default name (`render_spec_reviews`,
-    derived from `spec-reviews` with hyphens→underscores) to the canonical
-    Plan-7 macro name `render_spec_review` (singular). Keeps render_recursive
-    working when loc.block === "spec-reviews". -#}
-{% macro render_spec_reviews(rev, depth=0) %}{{ render_spec_review(rev, depth) }}{% endmacro %}

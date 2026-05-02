@@ -12,8 +12,9 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import nunjucks from "nunjucks";
 
-const LAYER_PLANS_MACRO_PATH = path.resolve(import.meta.dirname, "..", "templates", "items", "layer-plans.md");
-const DECISIONS_MACRO_PATH = path.resolve(import.meta.dirname, "..", "templates", "items", "decisions.md");
+const TEMPLATES_DIR = path.resolve(import.meta.dirname, "..", "templates");
+const LAYER_PLANS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "layer-plans.md");
+const DECISIONS_MACRO_PATH = path.join(TEMPLATES_DIR, "items", "decisions.md");
 
 interface ItemLocation {
 	block: string;
@@ -35,7 +36,10 @@ function buildFixtureIdIndex(blocks: Record<string, Array<Record<string, unknown
 }
 
 function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<string, string>): nunjucks.Environment {
-	const env = new nunjucks.Environment(undefined, { autoescape: false, throwOnUndefined: false });
+	const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(TEMPLATES_DIR), {
+		autoescape: false,
+		throwOnUndefined: false,
+	});
 
 	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
 		if (typeof id !== "string" || id.length === 0) return null;
@@ -59,7 +63,13 @@ function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<str
 			return `[unrendered: ${blockName}/${idStr}]`;
 		}
 
-		const macroName = `render_${blockName.replace(/-/g, "_")}`;
+		// Mirror @davidorex/pi-jit-agents' renderer-registry canonical-name
+		// lookup. Only the kinds this test exercises are listed.
+		const canonical: Record<string, string> = {
+			"layer-plans": "render_layer_plan",
+			decisions: "render_decision",
+		};
+		const macroName = canonical[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
 		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
 		if (idStr.length > 0) visited.add(idStr);
 		try {

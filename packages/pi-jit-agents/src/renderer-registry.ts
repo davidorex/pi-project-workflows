@@ -16,10 +16,22 @@
  * Plans 6, 7, 8 deliver do not yet exist on disk — the registry must be
  * tolerant of this state).
  *
- * Default macro name is `render_<kind_underscored>` — hyphens in the kind
- * name are translated to underscores so `framework-gaps` resolves to
- * `render_framework_gaps`. Callers can override per-kind via `register`,
- * which is in-memory only and never writes to disk.
+ * Macro-name derivation:
+ *   The canonical Plan-6/7/8 macro name for each shipped block kind is held
+ *   in CANONICAL_MACRO_NAMES below. These names are not algorithmically
+ *   derivable from kind names — they encode the per-block semantic
+ *   granularity (e.g. `architecture` → `render_architecture_item`,
+ *   `conformance-reference` → `render_conformance_principle`,
+ *   `decisions` → `render_decision`). For kinds NOT in the map, the
+ *   fallback derivation `render_<kind_underscored>` (hyphens → underscores)
+ *   applies — preserving compatibility for any consumer-supplied kind not
+ *   shipped here.
+ *
+ *   Holding the map in the registry means the per-item macro files no
+ *   longer need to ship alias bridge macros to reconcile a registry-default
+ *   plural name (e.g. `render_decisions`) against the canonical singular
+ *   (`render_decision`). The registry directly looks up the canonical
+ *   name and `render_recursive` dispatches to it.
  *
  * Resolution is performed lazily on each `lookup` call. There is no caching:
  * users may add `.pi/templates/items/*.md` overrides between calls and the
@@ -64,9 +76,40 @@ export interface CreateRendererRegistryOptions {
 	userDir?: string;
 }
 
-/** Default macro-name derivation: hyphens become underscores, prefix with `render_`. */
-function defaultMacroName(blockKind: string): string {
-	return `render_${blockKind.replace(/-/g, "_")}`;
+/**
+ * Canonical per-item macro names for the block kinds shipped by
+ * pi-workflows' templates/items/. Encodes the semantic granularity each
+ * macro renders (one architecture record, one principle inside a
+ * conformance-reference, one decision, etc.). Exposed read-only so consumers
+ * (and tests) can mirror the registry's name-resolution rules without
+ * re-deriving them. Adding a new shipped block kind requires adding its
+ * entry here in the same change.
+ */
+export const CANONICAL_MACRO_NAMES: Readonly<Record<string, string>> = Object.freeze({
+	architecture: "render_architecture_item",
+	"conformance-reference": "render_conformance_principle",
+	conventions: "render_convention",
+	decisions: "render_decision",
+	domain: "render_domain_entry",
+	features: "render_feature",
+	"framework-gaps": "render_framework_gap",
+	issues: "render_issue",
+	"layer-plans": "render_layer_plan",
+	project: "render_project_item",
+	requirements: "render_requirement",
+	research: "render_research",
+	"spec-reviews": "render_spec_review",
+	tasks: "render_task",
+});
+
+/**
+ * Resolve the macro name for a block kind. Returns the canonical name from
+ * CANONICAL_MACRO_NAMES when present; otherwise falls back to the
+ * algorithmic derivation `render_<kind>` (hyphens → underscores) so kinds
+ * not shipped by this package still resolve to a predictable name.
+ */
+function resolveMacroName(blockKind: string): string {
+	return CANONICAL_MACRO_NAMES[blockKind] ?? `render_${blockKind.replace(/-/g, "_")}`;
 }
 
 /**
@@ -107,7 +150,7 @@ export function createRendererRegistry(opts: CreateRendererRegistryOptions): Ren
 
 		for (const candidate of tiers) {
 			if (fs.existsSync(candidate)) {
-				return { templatePath: candidate, macroName: defaultMacroName(blockKind) };
+				return { templatePath: candidate, macroName: resolveMacroName(blockKind) };
 			}
 		}
 		return null;

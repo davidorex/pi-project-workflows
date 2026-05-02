@@ -13,7 +13,17 @@ import type {
 } from "@mariozechner/pi-coding-agent";
 import { truncateHead } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
-import { appendToBlock, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
+import {
+	appendToBlock,
+	appendToNestedArray,
+	readBlock,
+	readBlockDir,
+	removeFromBlock,
+	removeFromNestedArray,
+	updateItemInBlock,
+	updateNestedArrayItem,
+	writeBlock,
+} from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";
 import { checkForUpdates } from "./update-check.js";
@@ -353,6 +363,252 @@ const extension = (pi: ExtensionAPI) => {
 						text: `Updated item (${matchDesc}) in ${params.block}.${params.arrayKey}: ${Object.keys(params.updates).join(", ")}`,
 					},
 				],
+			};
+		},
+	});
+
+	// ── Tool: append-block-nested-item ────────────────────────────────────
+
+	pi.registerTool({
+		name: "append-block-nested-item",
+		label: "Append Block Nested Item",
+		description:
+			"Append an item to a nested array on a parent-array item in a project block. Schema validation is automatic.",
+		promptSnippet: "Append items to nested arrays inside parent items (e.g., findings inside a review)",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
+			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
+			match: Type.Record(Type.String(), Type.Unknown(), {
+				description: "Fields to match the parent item (e.g., { id: 'REVIEW-001' })",
+			}),
+			nestedKey: Type.String({ description: "Nested array key on the matched parent (e.g., 'findings')" }),
+			item: Type.Unknown({ description: "Item object to append to the nested array — must conform to schema" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: {
+				block: string;
+				arrayKey: string;
+				match: Record<string, unknown>;
+				nestedKey: string;
+				item: Record<string, unknown>;
+			},
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			if (typeof params.item === "string") {
+				try {
+					params.item = JSON.parse(params.item) as Record<string, unknown>;
+				} catch {
+					throw new Error(`item parameter must be a JSON object, got unparseable string`);
+				}
+			}
+			const matchEntries = Object.entries(params.match);
+			const predicate = (i: Record<string, unknown>) => matchEntries.every(([k, v]) => i[k] === v);
+			appendToNestedArray(ctx.cwd, params.block, params.arrayKey, predicate, params.nestedKey, params.item);
+			const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+			const id = params.item?.id ? ` '${params.item.id}'` : "";
+			return {
+				details: undefined,
+				content: [
+					{
+						type: "text",
+						text: `Appended item${id} to ${params.block}.${params.arrayKey}[${matchDesc}].${params.nestedKey}`,
+					},
+				],
+			};
+		},
+	});
+
+	// ── Tool: update-block-nested-item ────────────────────────────────────
+
+	pi.registerTool({
+		name: "update-block-nested-item",
+		label: "Update Block Nested Item",
+		description:
+			"Update fields on a nested-array item inside a parent-array item in a project block. Finds parent and nested by predicate field match. Throws on parent or nested miss (mirrors update-block-item semantics).",
+		promptSnippet: "Update items inside nested arrays — change finding state, mark resolved",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
+			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
+			match: Type.Record(Type.String(), Type.Unknown(), {
+				description: "Fields to match the parent item (e.g., { id: 'REVIEW-001' })",
+			}),
+			nestedKey: Type.String({ description: "Nested array key on the matched parent (e.g., 'findings')" }),
+			nestedMatch: Type.Record(Type.String(), Type.Unknown(), {
+				description: "Fields to match the nested item (e.g., { id: 'F-001' })",
+			}),
+			updates: Type.Record(Type.String(), Type.Unknown(), {
+				description: "Fields to update on the nested item (e.g., { state: 'resolved' })",
+			}),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: {
+				block: string;
+				arrayKey: string;
+				match: Record<string, unknown>;
+				nestedKey: string;
+				nestedMatch: Record<string, unknown>;
+				updates: Record<string, unknown>;
+			},
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			if (Object.keys(params.updates).length === 0) {
+				throw new Error("No fields to update — updates parameter is empty");
+			}
+			const parentEntries = Object.entries(params.match);
+			const nestedEntries = Object.entries(params.nestedMatch);
+			const parentPred = (i: Record<string, unknown>) => parentEntries.every(([k, v]) => i[k] === v);
+			const nestedPred = (i: Record<string, unknown>) => nestedEntries.every(([k, v]) => i[k] === v);
+			updateNestedArrayItem(
+				ctx.cwd,
+				params.block,
+				params.arrayKey,
+				parentPred,
+				params.nestedKey,
+				nestedPred,
+				params.updates,
+			);
+			const parentDesc = parentEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+			const nestedDesc = nestedEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+			return {
+				details: undefined,
+				content: [
+					{
+						type: "text",
+						text: `Updated nested item (${nestedDesc}) in ${params.block}.${params.arrayKey}[${parentDesc}].${params.nestedKey}: ${Object.keys(params.updates).join(", ")}`,
+					},
+				],
+			};
+		},
+	});
+
+	// ── Tool: remove-block-item ───────────────────────────────────────────
+
+	pi.registerTool({
+		name: "remove-block-item",
+		label: "Remove Block Item",
+		description:
+			"Remove items matching a predicate from a top-level array in a project block. Idempotent — returns { removed: 0 } on no match without throwing. Schema validation runs after removal.",
+		promptSnippet: "Remove items from project blocks — prune retracted issues, dedupe entries",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'issues')" }),
+			arrayKey: Type.String({ description: "Top-level array key (e.g., 'issues')" }),
+			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'issue-123' })" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { block: string; arrayKey: string; match: Record<string, unknown> },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const matchEntries = Object.entries(params.match);
+			const predicate = (i: Record<string, unknown>) => matchEntries.every(([k, v]) => i[k] === v);
+			const result = removeFromBlock(ctx.cwd, params.block, params.arrayKey, predicate);
+			const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+			return {
+				details: undefined,
+				content: [
+					{
+						type: "text",
+						text: `Removed ${result.removed} item(s) matching (${matchDesc}) from ${params.block}.${params.arrayKey}`,
+					},
+				],
+			};
+		},
+	});
+
+	// ── Tool: remove-block-nested-item ────────────────────────────────────
+
+	pi.registerTool({
+		name: "remove-block-nested-item",
+		label: "Remove Block Nested Item",
+		description:
+			"Remove items matching a predicate from a nested array on a parent-array item in a project block. Throws on parent miss; returns { removed: 0 } on nested miss without throwing.",
+		promptSnippet: "Remove nested items — drop rejected findings, retract nested references",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
+			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
+			match: Type.Record(Type.String(), Type.Unknown(), {
+				description: "Fields to match the parent item (e.g., { id: 'REVIEW-001' })",
+			}),
+			nestedKey: Type.String({ description: "Nested array key on the matched parent (e.g., 'findings')" }),
+			nestedMatch: Type.Record(Type.String(), Type.Unknown(), {
+				description: "Fields to match the nested items to remove (e.g., { id: 'F-001' })",
+			}),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: {
+				block: string;
+				arrayKey: string;
+				match: Record<string, unknown>;
+				nestedKey: string;
+				nestedMatch: Record<string, unknown>;
+			},
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const parentEntries = Object.entries(params.match);
+			const nestedEntries = Object.entries(params.nestedMatch);
+			const parentPred = (i: Record<string, unknown>) => parentEntries.every(([k, v]) => i[k] === v);
+			const nestedPred = (i: Record<string, unknown>) => nestedEntries.every(([k, v]) => i[k] === v);
+			const result = removeFromNestedArray(
+				ctx.cwd,
+				params.block,
+				params.arrayKey,
+				parentPred,
+				params.nestedKey,
+				nestedPred,
+			);
+			const parentDesc = parentEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+			const nestedDesc = nestedEntries.map(([k, v]) => `${k}=${v}`).join(", ");
+			return {
+				details: undefined,
+				content: [
+					{
+						type: "text",
+						text: `Removed ${result.removed} nested item(s) matching (${nestedDesc}) from ${params.block}.${params.arrayKey}[${parentDesc}].${params.nestedKey}`,
+					},
+				],
+			};
+		},
+	});
+
+	// ── Tool: read-block-dir ──────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "read-block-dir",
+		label: "Read Block Dir",
+		description:
+			"Enumerate and parse all .json files in a .project/<subdir>/ directory, returned as a sorted array. Missing directories return [].",
+		promptSnippet: "Enumerate project block subdirectories (phases, schemas, etc.) as parsed JSON",
+		parameters: Type.Object({
+			subdir: Type.String({ description: "Subdirectory under .project/ (e.g., 'phases', 'schemas')" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { subdir: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = readBlockDir(ctx.cwd, params.subdir);
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit. Full content: .project/${params.subdir}/]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
 			};
 		},
 	});

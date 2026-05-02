@@ -18,7 +18,7 @@ pi install npm:@davidorex/pi-project-workflows
 <extension name="@davidorex/pi-project">
 Schema-driven project state management for Pi
 
-**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init`, `complete-task`
+**Tools:** `append-block-item`, `update-block-item`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init`, `complete-task`
 **Commands:** `/project`
 </extension>
 

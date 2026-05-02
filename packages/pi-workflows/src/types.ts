@@ -119,13 +119,45 @@ export interface BlockNestedAppendSpec {
 	};
 }
 
+export interface BlockUpdateNestedItemSpec {
+	updateNested: {
+		name: string;
+		key: string; // parent array key
+		match: Record<string, unknown>; // predicate fields against parent items
+		nestedKey: string; // nested array key on the matched parent item
+		nestedMatch: Record<string, unknown>; // predicate fields against nested items
+		set: Record<string, unknown>; // shallow-merged onto the matched nested item
+	};
+}
+
+export interface BlockRemoveSpec {
+	remove: {
+		name: string;
+		key: string; // top-level array key
+		match: Record<string, unknown>; // predicate fields; idempotent on no-match
+	};
+}
+
+export interface BlockRemoveNestedSpec {
+	removeNested: {
+		name: string;
+		key: string; // parent array key
+		match: Record<string, unknown>; // predicate fields against parent items
+		nestedKey: string; // nested array key on the matched parent item
+		nestedMatch: Record<string, unknown>; // predicate fields against nested items; idempotent on no-match
+	};
+}
+
 export type BlockSpec =
 	| BlockReadSpec
 	| BlockReadDirSpec
 	| BlockWriteSpec
 	| BlockAppendSpec
 	| BlockUpdateSpec
-	| BlockNestedAppendSpec;
+	| BlockNestedAppendSpec
+	| BlockUpdateNestedItemSpec
+	| BlockRemoveSpec
+	| BlockRemoveNestedSpec;
 
 export interface StepOutputSpec {
 	format?: "json" | "text"; // default: "text"

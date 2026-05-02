@@ -409,3 +409,236 @@ describe("findAppendableBlocks", () => {
 		assert.ok(!results.some((r) => r.block === "bad"), "should skip bad block");
 	});
 });
+
+// ── append-block-nested-item / update-block-nested-item / remove-block-item /
+//    remove-block-nested-item / read-block-dir ──────────────────────────────
+//
+// These tests exercise the block-api primitives that the registered tools
+// call. The tool execute wrappers themselves are thin (parameter-shape
+// adapters that build predicates from `match` objects); these tests cover the
+// predicate-building pattern + idempotent-remove + readBlockDir surfaces that
+// the new tool registrations rely on.
+
+import {
+	appendToNestedArray,
+	readBlockDir,
+	removeFromBlock,
+	removeFromNestedArray,
+	updateNestedArrayItem,
+} from "./block-api.js";
+
+const reviewsToolSchema = {
+	type: "object",
+	required: ["reviews"],
+	properties: {
+		reviews: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "findings"],
+				properties: {
+					id: { type: "string" },
+					findings: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "state"],
+							properties: {
+								id: { type: "string" },
+								state: { type: "string", enum: ["open", "triaged", "resolved"] },
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+};
+
+describe("append-block-nested-item (tool surface)", () => {
+	it("appends nested item via match-object predicate", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "spec-reviews", "reviews", reviewsToolSchema, [{ id: "REVIEW-001", findings: [] }]);
+
+		// Mirror what the tool does: build predicate from match entries
+		const match = { id: "REVIEW-001" };
+		const matchEntries = Object.entries(match);
+		const predicate = (i: Record<string, unknown>) => matchEntries.every(([k, v]) => i[k] === v);
+		appendToNestedArray(tmpDir, "spec-reviews", "reviews", predicate, "findings", { id: "F-001", state: "open" });
+
+		const data = readBlock(tmpDir, "spec-reviews") as { reviews: Array<{ findings: unknown[] }> };
+		assert.strictEqual(data.reviews[0].findings.length, 1);
+	});
+});
+
+describe("update-block-nested-item (tool surface)", () => {
+	it("updates nested item via parent + nested match predicates", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "spec-reviews", "reviews", reviewsToolSchema, [
+			{ id: "REVIEW-001", findings: [{ id: "F-001", state: "open" }] },
+		]);
+
+		const parentMatch = { id: "REVIEW-001" };
+		const nestedMatch = { id: "F-001" };
+		const parentEntries = Object.entries(parentMatch);
+		const nestedEntries = Object.entries(nestedMatch);
+		const parentPred = (i: Record<string, unknown>) => parentEntries.every(([k, v]) => i[k] === v);
+		const nestedPred = (i: Record<string, unknown>) => nestedEntries.every(([k, v]) => i[k] === v);
+		updateNestedArrayItem(tmpDir, "spec-reviews", "reviews", parentPred, "findings", nestedPred, { state: "resolved" });
+
+		const data = readBlock(tmpDir, "spec-reviews") as {
+			reviews: Array<{ findings: Array<Record<string, unknown>> }>;
+		};
+		assert.strictEqual(data.reviews[0].findings[0].state, "resolved");
+	});
+
+	it("surfaces clear error when parent missing", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "spec-reviews", "reviews", reviewsToolSchema, [
+			{ id: "REVIEW-001", findings: [{ id: "F-001", state: "open" }] },
+		]);
+
+		const pPred = (i: Record<string, unknown>) => i.id === "REVIEW-999";
+		const nPred = (i: Record<string, unknown>) => i.id === "F-001";
+		assert.throws(
+			() => updateNestedArrayItem(tmpDir, "spec-reviews", "reviews", pPred, "findings", nPred, { state: "resolved" }),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("No matching item"));
+				return true;
+			},
+		);
+	});
+});
+
+describe("remove-block-item (tool surface)", () => {
+	it("removes via predicate; returns count", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema, [
+			{ id: "d1", decision: "first", status: "decided" },
+			{ id: "d2", decision: "second", status: "tentative" },
+		]);
+
+		const result = removeFromBlock(tmpDir, "decisions", "decisions", (d) => d.id === "d1");
+		assert.deepStrictEqual(result, { removed: 1 });
+
+		const data = readBlock(tmpDir, "decisions") as { decisions: Array<Record<string, unknown>> };
+		assert.strictEqual(data.decisions.length, 1);
+		assert.strictEqual(data.decisions[0].id, "d2");
+	});
+
+	it("idempotent — { removed: 0 } on no match without throw", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema, [{ id: "d1", decision: "first", status: "decided" }]);
+
+		const result = removeFromBlock(tmpDir, "decisions", "decisions", (d) => d.id === "nonexistent");
+		assert.deepStrictEqual(result, { removed: 0 });
+	});
+
+	it("clear error on missing block file", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		assert.throws(
+			() => removeFromBlock(tmpDir, "missing", "items", () => true),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not found"));
+				return true;
+			},
+		);
+	});
+});
+
+describe("remove-block-nested-item (tool surface)", () => {
+	it("removes nested via parent + nested predicates", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "spec-reviews", "reviews", reviewsToolSchema, [
+			{
+				id: "REVIEW-001",
+				findings: [
+					{ id: "F-001", state: "open" },
+					{ id: "F-002", state: "open" },
+				],
+			},
+		]);
+
+		const result = removeFromNestedArray(
+			tmpDir,
+			"spec-reviews",
+			"reviews",
+			(p) => p.id === "REVIEW-001",
+			"findings",
+			(f) => f.id === "F-001",
+		);
+		assert.deepStrictEqual(result, { removed: 1 });
+
+		const data = readBlock(tmpDir, "spec-reviews") as { reviews: Array<{ findings: Array<Record<string, unknown>> }> };
+		assert.strictEqual(data.reviews[0].findings.length, 1);
+		assert.strictEqual(data.reviews[0].findings[0].id, "F-002");
+	});
+
+	it("idempotent on nested miss; throws on parent miss", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "spec-reviews", "reviews", reviewsToolSchema, [
+			{ id: "REVIEW-001", findings: [{ id: "F-001", state: "open" }] },
+		]);
+
+		// Nested miss — idempotent
+		const r1 = removeFromNestedArray(
+			tmpDir,
+			"spec-reviews",
+			"reviews",
+			(p) => p.id === "REVIEW-001",
+			"findings",
+			(f) => f.id === "F-999",
+		);
+		assert.deepStrictEqual(r1, { removed: 0 });
+
+		// Parent miss — throws
+		assert.throws(
+			() =>
+				removeFromNestedArray(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-999",
+					"findings",
+					() => true,
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("No matching item"));
+				return true;
+			},
+		);
+	});
+});
+
+describe("read-block-dir (tool surface)", () => {
+	it("enumerates schemas/ subdirectory", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const schemasDir = path.join(tmpDir, ".project", "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(path.join(schemasDir, "a.schema.json"), JSON.stringify({ name: "a" }));
+		fs.writeFileSync(path.join(schemasDir, "b.schema.json"), JSON.stringify({ name: "b" }));
+
+		const result = readBlockDir(tmpDir, "schemas") as Array<{ name: string }>;
+		assert.strictEqual(result.length, 2);
+		assert.deepStrictEqual(result.map((r) => r.name).sort(), ["a", "b"]);
+	});
+
+	it("returns [] when subdir missing", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const result = readBlockDir(tmpDir, "nonexistent");
+		assert.deepStrictEqual(result, []);
+	});
+});

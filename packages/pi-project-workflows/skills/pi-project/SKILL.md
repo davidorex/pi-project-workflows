@@ -33,6 +33,71 @@ Update fields on an item in a project block array. Finds by predicate field matc
 | `updates` | object | yes | Fields to update (e.g., { status: 'resolved' }) |
 </tool>
 
+<tool name="append-block-nested-item">
+Append an item to a nested array on a parent-array item in a project block. Schema validation is automatic.
+
+*Append items to nested arrays inside parent items (e.g., findings inside a review)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'spec-reviews') |
+| `arrayKey` | string | yes | Parent array key (e.g., 'reviews') |
+| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-001' }) |
+| `nestedKey` | string | yes | Nested array key on the matched parent (e.g., 'findings') |
+| `item` | unknown | yes | Item object to append to the nested array — must conform to schema |
+</tool>
+
+<tool name="update-block-nested-item">
+Update fields on a nested-array item inside a parent-array item in a project block. Finds parent and nested by predicate field match. Throws on parent or nested miss (mirrors update-block-item semantics).
+
+*Update items inside nested arrays — change finding state, mark resolved*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'spec-reviews') |
+| `arrayKey` | string | yes | Parent array key (e.g., 'reviews') |
+| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-001' }) |
+| `nestedKey` | string | yes | Nested array key on the matched parent (e.g., 'findings') |
+| `nestedMatch` | object | yes | Fields to match the nested item (e.g., { id: 'F-001' }) |
+| `updates` | object | yes | Fields to update on the nested item (e.g., { state: 'resolved' }) |
+</tool>
+
+<tool name="remove-block-item">
+Remove items matching a predicate from a top-level array in a project block. Idempotent — returns { removed: 0 } on no match without throwing. Schema validation runs after removal.
+
+*Remove items from project blocks — prune retracted issues, dedupe entries*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'issues') |
+| `arrayKey` | string | yes | Top-level array key (e.g., 'issues') |
+| `match` | object | yes | Fields to match (e.g., { id: 'issue-123' }) |
+</tool>
+
+<tool name="remove-block-nested-item">
+Remove items matching a predicate from a nested array on a parent-array item in a project block. Throws on parent miss; returns { removed: 0 } on nested miss without throwing.
+
+*Remove nested items — drop rejected findings, retract nested references*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'spec-reviews') |
+| `arrayKey` | string | yes | Parent array key (e.g., 'reviews') |
+| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-001' }) |
+| `nestedKey` | string | yes | Nested array key on the matched parent (e.g., 'findings') |
+| `nestedMatch` | object | yes | Fields to match the nested items to remove (e.g., { id: 'F-001' }) |
+</tool>
+
+<tool name="read-block-dir">
+Enumerate and parse all .json files in a .project/<subdir>/ directory, returned as a sorted array. Missing directories return [].
+
+*Enumerate project block subdirectories (phases, schemas, etc.) as parsed JSON*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `subdir` | string | yes | Subdirectory under .project/ (e.g., 'phases', 'schemas') |
+</tool>
+
 <tool name="read-block">
 Read a project block file as structured JSON.
 

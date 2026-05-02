@@ -413,11 +413,21 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 		const rawBlock = rawStep.block as Record<string, unknown>;
 
 		// Exactly one operation key
-		const ops = ["read", "readDir", "write", "append", "update"].filter((k) => k in rawBlock);
+		const ops = [
+			"read",
+			"readDir",
+			"write",
+			"append",
+			"update",
+			"nestedAppend",
+			"updateNested",
+			"remove",
+			"removeNested",
+		].filter((k) => k in rawBlock);
 		if (ops.length !== 1) {
 			throw new WorkflowSpecError(
 				filePath,
-				`step '${stepName}' block must have exactly one of: read, readDir, write, append, update`,
+				`step '${stepName}' block must have exactly one of: read, readDir, write, append, update, nestedAppend, updateNested, remove, removeNested`,
 			);
 		}
 
@@ -514,6 +524,77 @@ function validateStep(stepValue: unknown, stepName: string, filePath: string): S
 			}
 			if (!("item" in n)) {
 				throw new WorkflowSpecError(filePath, `step '${stepName}' block.nestedAppend must have an 'item' field`);
+			}
+		}
+
+		if ("updateNested" in rawBlock) {
+			if (
+				typeof rawBlock.updateNested !== "object" ||
+				rawBlock.updateNested === null ||
+				Array.isArray(rawBlock.updateNested)
+			) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.updateNested must be an object`);
+			}
+			const un = rawBlock.updateNested as Record<string, unknown>;
+			if (typeof un.name !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.updateNested.name must be a string`);
+			}
+			if (typeof un.key !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.updateNested.key must be a string`);
+			}
+			if (typeof un.match !== "object" || un.match === null || Array.isArray(un.match)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.updateNested.match must be an object`);
+			}
+			if (typeof un.nestedKey !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.updateNested.nestedKey must be a string`);
+			}
+			if (typeof un.nestedMatch !== "object" || un.nestedMatch === null || Array.isArray(un.nestedMatch)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.updateNested.nestedMatch must be an object`);
+			}
+			if (typeof un.set !== "object" || un.set === null || Array.isArray(un.set)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.updateNested.set must be an object`);
+			}
+		}
+
+		if ("remove" in rawBlock) {
+			if (typeof rawBlock.remove !== "object" || rawBlock.remove === null || Array.isArray(rawBlock.remove)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.remove must be an object`);
+			}
+			const r = rawBlock.remove as Record<string, unknown>;
+			if (typeof r.name !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.remove.name must be a string`);
+			}
+			if (typeof r.key !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.remove.key must be a string`);
+			}
+			if (typeof r.match !== "object" || r.match === null || Array.isArray(r.match)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.remove.match must be an object`);
+			}
+		}
+
+		if ("removeNested" in rawBlock) {
+			if (
+				typeof rawBlock.removeNested !== "object" ||
+				rawBlock.removeNested === null ||
+				Array.isArray(rawBlock.removeNested)
+			) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.removeNested must be an object`);
+			}
+			const rn = rawBlock.removeNested as Record<string, unknown>;
+			if (typeof rn.name !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.removeNested.name must be a string`);
+			}
+			if (typeof rn.key !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.removeNested.key must be a string`);
+			}
+			if (typeof rn.match !== "object" || rn.match === null || Array.isArray(rn.match)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.removeNested.match must be an object`);
+			}
+			if (typeof rn.nestedKey !== "string") {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.removeNested.nestedKey must be a string`);
+			}
+			if (typeof rn.nestedMatch !== "object" || rn.nestedMatch === null || Array.isArray(rn.nestedMatch)) {
+				throw new WorkflowSpecError(filePath, `step '${stepName}' block.removeNested.nestedMatch must be an object`);
 			}
 		}
 

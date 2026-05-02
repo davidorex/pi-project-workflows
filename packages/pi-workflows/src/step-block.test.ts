@@ -422,3 +422,287 @@ describe("block step: expression resolution", () => {
 		assert.equal(result.status, "completed");
 	});
 });
+
+describe("block step: updateNested", () => {
+	function setupReviewsWithFinding(): void {
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "schemas", "spec-reviews.schema.json"),
+			JSON.stringify({
+				type: "object",
+				required: ["reviews"],
+				properties: {
+					reviews: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "findings"],
+							properties: {
+								id: { type: "string" },
+								findings: {
+									type: "array",
+									items: {
+										type: "object",
+										required: ["id", "state"],
+										properties: {
+											id: { type: "string" },
+											state: { type: "string", enum: ["open", "triaged", "resolved"] },
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+		);
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001", findings: [{ id: "F-001", state: "open" }] }] }),
+		);
+	}
+
+	it("happy path — updates nested item; documented output object present", () => {
+		setupReviewsWithFinding();
+		const result = executeBlock(
+			{
+				updateNested: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "REVIEW-001" },
+					nestedKey: "findings",
+					nestedMatch: { id: "F-001" },
+					set: { state: "resolved" },
+				},
+			},
+			"resolve-finding",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed", result.error);
+		const out = result.output as Record<string, unknown>;
+		assert.equal(out.updatedNested, "spec-reviews");
+		assert.equal(out.nestedKey, "findings");
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		assert.equal(onDisk.reviews[0].findings[0].state, "resolved");
+	});
+
+	it("predicate miss on nested → step failed", () => {
+		setupReviewsWithFinding();
+		const result = executeBlock(
+			{
+				updateNested: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "REVIEW-001" },
+					nestedKey: "findings",
+					nestedMatch: { id: "F-999" },
+					set: { state: "resolved" },
+				},
+			},
+			"resolve-finding",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "failed");
+		assert.ok(result.error?.includes("No matching nested item"));
+	});
+
+	it("resolves expressions in match, nestedMatch, and set before block-api call", () => {
+		setupReviewsWithFinding();
+		const scope = {
+			input: { parentId: "REVIEW-001", findingId: "F-001" },
+			steps: { prev: { output: { newState: "triaged" } } },
+		};
+		const result = executeBlock(
+			{
+				updateNested: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "${{ input.parentId }}" as unknown as string },
+					nestedKey: "findings",
+					nestedMatch: { id: "${{ input.findingId }}" as unknown as string },
+					set: { state: "${{ steps.prev.output.newState }}" as unknown as string },
+				},
+			},
+			"resolve-finding",
+			scope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed", result.error);
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		assert.equal(onDisk.reviews[0].findings[0].state, "triaged");
+	});
+});
+
+describe("block step: remove", () => {
+	it("happy path — removes matching item; documented output object present", () => {
+		const result = executeBlock(
+			{ remove: { name: "issues", key: "issues", match: { id: "g1" } } },
+			"prune",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed", result.error);
+		const out = result.output as Record<string, unknown>;
+		assert.equal(out.removed, 1);
+		assert.equal(out.name, "issues");
+		const data = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "issues.json"), "utf-8"));
+		assert.equal(data.issues.length, 0);
+	});
+
+	it("predicate miss → step completed with removed: 0 (idempotent)", () => {
+		const result = executeBlock(
+			{ remove: { name: "issues", key: "issues", match: { id: "nonexistent" } } },
+			"prune",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed");
+		const out = result.output as Record<string, unknown>;
+		assert.equal(out.removed, 0);
+	});
+
+	it("resolves expressions in match before block-api call", () => {
+		const scope = { input: { targetId: "g1" }, steps: {} };
+		const result = executeBlock(
+			{ remove: { name: "issues", key: "issues", match: { id: "${{ input.targetId }}" as unknown as string } } },
+			"prune",
+			scope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed", result.error);
+		const out = result.output as Record<string, unknown>;
+		assert.equal(out.removed, 1);
+	});
+});
+
+describe("block step: removeNested", () => {
+	function setupReviewsWithFindings(): void {
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "schemas", "spec-reviews.schema.json"),
+			JSON.stringify({
+				type: "object",
+				required: ["reviews"],
+				properties: {
+					reviews: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "findings"],
+							properties: {
+								id: { type: "string" },
+								findings: {
+									type: "array",
+									items: {
+										type: "object",
+										required: ["id"],
+										properties: { id: { type: "string" } },
+									},
+								},
+							},
+						},
+					},
+				},
+			}),
+		);
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({
+				reviews: [
+					{
+						id: "REVIEW-001",
+						findings: [{ id: "F-001" }, { id: "F-002" }],
+					},
+				],
+			}),
+		);
+	}
+
+	it("happy path — removes matching nested items; documented output object present", () => {
+		setupReviewsWithFindings();
+		const result = executeBlock(
+			{
+				removeNested: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "REVIEW-001" },
+					nestedKey: "findings",
+					nestedMatch: { id: "F-001" },
+				},
+			},
+			"drop-finding",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed", result.error);
+		const out = result.output as Record<string, unknown>;
+		assert.equal(out.removed, 1);
+		assert.equal(out.nestedKey, "findings");
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		assert.equal(onDisk.reviews[0].findings.length, 1);
+		assert.equal(onDisk.reviews[0].findings[0].id, "F-002");
+	});
+
+	it("nested predicate miss → step completed with removed: 0 (idempotent)", () => {
+		setupReviewsWithFindings();
+		const result = executeBlock(
+			{
+				removeNested: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "REVIEW-001" },
+					nestedKey: "findings",
+					nestedMatch: { id: "F-999" },
+				},
+			},
+			"drop-finding",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed");
+		const out = result.output as Record<string, unknown>;
+		assert.equal(out.removed, 0);
+	});
+
+	it("parent predicate miss → step failed", () => {
+		setupReviewsWithFindings();
+		const result = executeBlock(
+			{
+				removeNested: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "REVIEW-999" },
+					nestedKey: "findings",
+					nestedMatch: { id: "F-001" },
+				},
+			},
+			"drop-finding",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "failed");
+		assert.ok(result.error?.includes("No matching item"));
+	});
+
+	it("resolves expressions in nestedMatch before block-api call", () => {
+		setupReviewsWithFindings();
+		const scope = { input: { findingId: "F-002" }, steps: {} };
+		const result = executeBlock(
+			{
+				removeNested: {
+					name: "spec-reviews",
+					key: "reviews",
+					match: { id: "REVIEW-001" },
+					nestedKey: "findings",
+					nestedMatch: { id: "${{ input.findingId }}" as unknown as string },
+				},
+			},
+			"drop-finding",
+			scope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed", result.error);
+		const out = result.output as Record<string, unknown>;
+		assert.equal(out.removed, 1);
+	});
+});

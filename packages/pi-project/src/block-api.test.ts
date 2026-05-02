@@ -3,7 +3,17 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { appendToBlock, appendToNestedArray, readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
+import {
+	appendToBlock,
+	appendToNestedArray,
+	readBlock,
+	readBlockDir,
+	removeFromBlock,
+	removeFromNestedArray,
+	updateItemInBlock,
+	updateNestedArrayItem,
+	writeBlock,
+} from "./block-api.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
@@ -800,5 +810,734 @@ describe("appendToNestedArray", () => {
 		assert.strictEqual(onDisk.reviews[0].findings.length, 1);
 		assert.strictEqual(onDisk.reviews[1].findings.length, 0);
 		assert.ok(errs.some((s) => s.includes("appendToNestedArray") && s.includes("2 items matched")));
+	});
+});
+
+// Schema for nested update/remove tests — same shape as reviewsSchema above
+// but with nested item enum constraints to allow schema-violation testing.
+const reviewsWithStateSchema = {
+	type: "object",
+	required: ["reviews"],
+	properties: {
+		reviews: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "findings"],
+				properties: {
+					id: { type: "string" },
+					findings: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "state"],
+							properties: {
+								id: { type: "string" },
+								state: { type: "string", enum: ["open", "triaged", "resolved"] },
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+};
+
+describe("updateNestedArrayItem", () => {
+	it("happy path — updates matched nested item; siblings untouched", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-happy");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", reviewsWithStateSchema);
+
+		const initial = {
+			reviews: [
+				{
+					id: "REVIEW-001",
+					findings: [
+						{ id: "F-001", state: "open" },
+						{ id: "F-002", state: "open" },
+					],
+				},
+			],
+		};
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), JSON.stringify(initial));
+
+		updateNestedArrayItem(
+			tmpDir,
+			"spec-reviews",
+			"reviews",
+			(p) => p.id === "REVIEW-001",
+			"findings",
+			(f) => f.id === "F-001",
+			{ state: "resolved" },
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		assert.strictEqual(onDisk.reviews[0].findings[0].state, "resolved");
+		assert.strictEqual(onDisk.reviews[0].findings[1].state, "open");
+	});
+
+	it("throws when block file does not exist", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-nofile");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		assert.throws(
+			() =>
+				updateNestedArrayItem(
+					tmpDir,
+					"missing",
+					"reviews",
+					(p) => p.id === "x",
+					"findings",
+					(f) => f.id === "y",
+					{ state: "resolved" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not found"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when parent array key is missing", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-no-parent-key");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), JSON.stringify({ other: [] }));
+
+		assert.throws(
+			() =>
+				updateNestedArrayItem(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "x",
+					"findings",
+					(f) => f.id === "y",
+					{ state: "resolved" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("has no key"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when parent array key is not an array", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-parent-notarr");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), JSON.stringify({ reviews: "notanarray" }));
+
+		assert.throws(
+			() =>
+				updateNestedArrayItem(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "x",
+					"findings",
+					(f) => f.id === "y",
+					{ state: "resolved" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not an array"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when no parent matches", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-no-parent");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "OTHER", findings: [] }] }),
+		);
+
+		assert.throws(
+			() =>
+				updateNestedArrayItem(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-001",
+					"findings",
+					(f) => f.id === "any",
+					{ state: "resolved" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("No matching item"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when matched parent missing nestedKey", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-no-nested-key");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001" }] }),
+		);
+
+		assert.throws(
+			() =>
+				updateNestedArrayItem(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-001",
+					"findings",
+					(f) => f.id === "x",
+					{ state: "resolved" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("no nested key"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when matched parent's nested key is not an array", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-nested-notarr");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001", findings: "wrong" }] }),
+		);
+
+		assert.throws(
+			() =>
+				updateNestedArrayItem(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-001",
+					"findings",
+					(f) => f.id === "x",
+					{ state: "resolved" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("nested key"));
+				assert.ok(err.message.includes("not an array"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when no nested item matches", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-no-nested");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001", findings: [{ id: "F-001", state: "open" }] }] }),
+		);
+
+		assert.throws(
+			() =>
+				updateNestedArrayItem(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-001",
+					"findings",
+					(f) => f.id === "F-999",
+					{ state: "resolved" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("No matching nested item"));
+				return true;
+			},
+		);
+	});
+
+	it("throws ValidationError on schema-violating update — original unchanged", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-invalid");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", reviewsWithStateSchema);
+
+		const original = {
+			reviews: [{ id: "REVIEW-001", findings: [{ id: "F-001", state: "open" }] }],
+		};
+		const originalStr = JSON.stringify(original);
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), originalStr);
+
+		assert.throws(
+			() =>
+				updateNestedArrayItem(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-001",
+					"findings",
+					(f) => f.id === "F-001",
+					{ state: "not-a-valid-state" },
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof ValidationError);
+				return true;
+			},
+		);
+
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8");
+		assert.strictEqual(afterStr, originalStr);
+	});
+
+	it("multi-match warnings at parent and nested levels", (t) => {
+		const tmpDir = makeTmpDir("upd-nested-multi");
+		const origConsoleError = console.error;
+		const errs: string[] = [];
+		console.error = (...args: unknown[]) => {
+			errs.push(args.map(String).join(" "));
+		};
+		t.after(() => {
+			console.error = origConsoleError;
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		});
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "dups.json"),
+			JSON.stringify({
+				reviews: [
+					{
+						id: "DUP",
+						findings: [
+							{ id: "F-DUP", state: "open" },
+							{ id: "F-DUP", state: "open" },
+						],
+					},
+					{ id: "DUP", findings: [] },
+				],
+			}),
+		);
+
+		updateNestedArrayItem(
+			tmpDir,
+			"dups",
+			"reviews",
+			(p) => p.id === "DUP",
+			"findings",
+			(f) => f.id === "F-DUP",
+			{ state: "resolved" },
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "dups.json"), "utf-8"));
+		assert.strictEqual(onDisk.reviews[0].findings[0].state, "resolved");
+		assert.strictEqual(onDisk.reviews[0].findings[1].state, "open");
+		assert.ok(errs.some((s) => s.includes("updateNestedArrayItem") && s.includes("2 parent")));
+		assert.ok(errs.some((s) => s.includes("updateNestedArrayItem") && s.includes("2 nested")));
+	});
+});
+
+describe("removeFromBlock", () => {
+	it("happy path — single match removed", (t) => {
+		const tmpDir = makeTmpDir("rm-single");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsSchema);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "gaps.json"),
+			JSON.stringify({
+				gaps: [
+					{ id: "g1", description: "keep", status: "open" },
+					{ id: "g2", description: "drop", status: "open" },
+				],
+			}),
+		);
+
+		const result = removeFromBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g2");
+		assert.deepStrictEqual(result, { removed: 1 });
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(onDisk.gaps.length, 1);
+		assert.strictEqual(onDisk.gaps[0].id, "g1");
+	});
+
+	it("happy path — multi-match all removed", (t) => {
+		const tmpDir = makeTmpDir("rm-multi");
+		const origConsoleError = console.error;
+		const errs: string[] = [];
+		console.error = (...args: unknown[]) => {
+			errs.push(args.map(String).join(" "));
+		};
+		t.after(() => {
+			console.error = origConsoleError;
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		});
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "items.json"),
+			JSON.stringify({
+				items: [
+					{ id: "a", drop: true },
+					{ id: "b", drop: true },
+					{ id: "c", drop: false },
+				],
+			}),
+		);
+
+		const result = removeFromBlock(tmpDir, "items", "items", (i) => i.drop === true);
+		assert.deepStrictEqual(result, { removed: 2 });
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "items.json"), "utf-8"));
+		assert.strictEqual(onDisk.items.length, 1);
+		assert.strictEqual(onDisk.items[0].id, "c");
+		assert.ok(errs.some((s) => s.includes("removeFromBlock") && s.includes("2 items")));
+	});
+
+	it("no match — returns { removed: 0 } without throw, file unchanged", (t) => {
+		const tmpDir = makeTmpDir("rm-nomatch");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		const original = { items: [{ id: "a" }] };
+		const originalStr = JSON.stringify(original);
+		fs.writeFileSync(path.join(tmpDir, ".project", "items.json"), originalStr);
+
+		const result = removeFromBlock(tmpDir, "items", "items", (i) => i.id === "nonexistent");
+		assert.deepStrictEqual(result, { removed: 0 });
+
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "items.json"), "utf-8");
+		assert.strictEqual(afterStr, originalStr);
+	});
+
+	it("throws when block file does not exist", (t) => {
+		const tmpDir = makeTmpDir("rm-nofile");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		assert.throws(
+			() => removeFromBlock(tmpDir, "missing", "items", () => true),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not found"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when arrayKey is missing", (t) => {
+		const tmpDir = makeTmpDir("rm-nokey");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "data.json"), JSON.stringify({ other: [] }));
+
+		assert.throws(
+			() => removeFromBlock(tmpDir, "data", "items", () => true),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("has no key"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when arrayKey is not an array", (t) => {
+		const tmpDir = makeTmpDir("rm-notarr");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "data.json"), JSON.stringify({ items: "wrong" }));
+
+		assert.throws(
+			() => removeFromBlock(tmpDir, "data", "items", () => true),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not an array"));
+				return true;
+			},
+		);
+	});
+
+	it("throws ValidationError when removal violates schema (minItems)", (t) => {
+		const tmpDir = makeTmpDir("rm-minitems");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		// Schema requires at least one entry in items
+		setupSchema(tmpDir, "data", {
+			type: "object",
+			required: ["items"],
+			properties: {
+				items: { type: "array", minItems: 1, items: { type: "object" } },
+			},
+		});
+
+		const original = { items: [{ id: "only" }] };
+		const originalStr = JSON.stringify(original);
+		fs.writeFileSync(path.join(tmpDir, ".project", "data.json"), originalStr);
+
+		assert.throws(
+			() => removeFromBlock(tmpDir, "data", "items", (i) => i.id === "only"),
+			(err: unknown) => {
+				assert.ok(err instanceof ValidationError);
+				return true;
+			},
+		);
+
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "data.json"), "utf-8");
+		assert.strictEqual(afterStr, originalStr);
+	});
+});
+
+describe("removeFromNestedArray", () => {
+	it("happy path — removes matching nested items", (t) => {
+		const tmpDir = makeTmpDir("rmn-happy");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", reviewsWithStateSchema);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({
+				reviews: [
+					{
+						id: "REVIEW-001",
+						findings: [
+							{ id: "F-001", state: "open" },
+							{ id: "F-002", state: "open" },
+							{ id: "F-003", state: "resolved" },
+						],
+					},
+				],
+			}),
+		);
+
+		const result = removeFromNestedArray(
+			tmpDir,
+			"spec-reviews",
+			"reviews",
+			(p) => p.id === "REVIEW-001",
+			"findings",
+			(f) => f.state === "open",
+		);
+		assert.deepStrictEqual(result, { removed: 2 });
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		assert.strictEqual(onDisk.reviews[0].findings.length, 1);
+		assert.strictEqual(onDisk.reviews[0].findings[0].id, "F-003");
+	});
+
+	it("throws when no parent matches", (t) => {
+		const tmpDir = makeTmpDir("rmn-no-parent");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "OTHER", findings: [] }] }),
+		);
+
+		assert.throws(
+			() =>
+				removeFromNestedArray(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-001",
+					"findings",
+					() => true,
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("No matching item"));
+				return true;
+			},
+		);
+	});
+
+	it("no nested match — returns { removed: 0 } without throw, file unchanged", (t) => {
+		const tmpDir = makeTmpDir("rmn-no-nested");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		const original = { reviews: [{ id: "REVIEW-001", findings: [{ id: "F-001", state: "open" }] }] };
+		const originalStr = JSON.stringify(original);
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), originalStr);
+
+		const result = removeFromNestedArray(
+			tmpDir,
+			"spec-reviews",
+			"reviews",
+			(p) => p.id === "REVIEW-001",
+			"findings",
+			(f) => f.id === "F-999",
+		);
+		assert.deepStrictEqual(result, { removed: 0 });
+
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8");
+		assert.strictEqual(afterStr, originalStr);
+	});
+
+	it("throws when block file does not exist", (t) => {
+		const tmpDir = makeTmpDir("rmn-nofile");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		assert.throws(
+			() =>
+				removeFromNestedArray(
+					tmpDir,
+					"missing",
+					"reviews",
+					() => true,
+					"findings",
+					() => true,
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("not found"));
+				return true;
+			},
+		);
+	});
+
+	it("throws when matched parent has no nestedKey", (t) => {
+		const tmpDir = makeTmpDir("rmn-no-nested-key");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001" }] }),
+		);
+
+		assert.throws(
+			() =>
+				removeFromNestedArray(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-001",
+					"findings",
+					() => true,
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("no nested key"));
+				return true;
+			},
+		);
+	});
+
+	it("throws ValidationError when removal violates schema (nested minItems)", (t) => {
+		const tmpDir = makeTmpDir("rmn-minitems");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", {
+			type: "object",
+			required: ["reviews"],
+			properties: {
+				reviews: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "findings"],
+						properties: {
+							id: { type: "string" },
+							findings: {
+								type: "array",
+								minItems: 1,
+								items: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
+							},
+						},
+					},
+				},
+			},
+		});
+
+		const original = { reviews: [{ id: "REVIEW-001", findings: [{ id: "only" }] }] };
+		const originalStr = JSON.stringify(original);
+		fs.writeFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), originalStr);
+
+		assert.throws(
+			() =>
+				removeFromNestedArray(
+					tmpDir,
+					"spec-reviews",
+					"reviews",
+					(p) => p.id === "REVIEW-001",
+					"findings",
+					(f) => f.id === "only",
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof ValidationError);
+				return true;
+			},
+		);
+
+		const afterStr = fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8");
+		assert.strictEqual(afterStr, originalStr);
+	});
+});
+
+describe("readBlockDir", () => {
+	it("reads sorted JSON files from a subdirectory", (t) => {
+		const tmpDir = makeTmpDir("rdir-happy");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const wfDir = setupWorkflowDir(tmpDir);
+		const phasesDir = path.join(wfDir, "phases");
+		fs.mkdirSync(phasesDir);
+		fs.writeFileSync(path.join(phasesDir, "02-second.json"), JSON.stringify({ n: 2 }));
+		fs.writeFileSync(path.join(phasesDir, "01-first.json"), JSON.stringify({ n: 1 }));
+		// Non-JSON files should be ignored
+		fs.writeFileSync(path.join(phasesDir, "notes.txt"), "ignored");
+
+		const result = readBlockDir(tmpDir, "phases") as Array<{ n: number }>;
+		assert.strictEqual(result.length, 2);
+		assert.strictEqual(result[0].n, 1);
+		assert.strictEqual(result[1].n, 2);
+	});
+
+	it("returns [] for missing directory", (t) => {
+		const tmpDir = makeTmpDir("rdir-missing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		const result = readBlockDir(tmpDir, "nonexistent");
+		assert.deepStrictEqual(result, []);
+	});
+
+	it("throws on invalid JSON within an existing directory", (t) => {
+		const tmpDir = makeTmpDir("rdir-badjson");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const wfDir = setupWorkflowDir(tmpDir);
+		const dir = path.join(wfDir, "broken");
+		fs.mkdirSync(dir);
+		fs.writeFileSync(path.join(dir, "bad.json"), "not json{");
+
+		assert.throws(
+			() => readBlockDir(tmpDir, "broken"),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("Invalid JSON"));
+				assert.ok(err.message.includes("bad.json"));
+				return true;
+			},
+		);
 	});
 });

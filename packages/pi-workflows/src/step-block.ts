@@ -4,11 +4,14 @@
  *
  * Operations:
  * - read: single or multi-block read via readBlock()
- * - readDir: directory enumeration for .project/ subdirectories
+ * - readDir: directory enumeration via readBlockDir() (re-exported from block-api)
  * - write: validated write via writeBlock()
  * - append: array append via appendToBlock()
  * - update: item update via updateItemInBlock()
  * - nestedAppend: append to a nested array inside a parent-array item via appendToNestedArray()
+ * - updateNested: update an item inside a nested array on a parent-array item via updateNestedArrayItem()
+ * - remove: remove items matching a predicate from a top-level array via removeFromBlock()
+ * - removeNested: remove items matching a predicate from a nested array on a parent-array item via removeFromNestedArray()
  */
 
 import fs from "node:fs";
@@ -17,7 +20,11 @@ import {
 	appendToBlock,
 	appendToNestedArray,
 	readBlock,
+	readBlockDir,
+	removeFromBlock,
+	removeFromNestedArray,
 	updateItemInBlock,
+	updateNestedArrayItem,
 	writeBlock,
 } from "@davidorex/pi-project/block-api";
 import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
@@ -58,8 +65,16 @@ export function executeBlock(
 			output = executeUpdate(resolved.update, cwd);
 		} else if ("nestedAppend" in resolved) {
 			output = executeNestedAppend(resolved.nestedAppend, cwd);
+		} else if ("updateNested" in resolved) {
+			output = executeUpdateNested(resolved.updateNested, cwd);
+		} else if ("remove" in resolved) {
+			output = executeRemove(resolved.remove, cwd);
+		} else if ("removeNested" in resolved) {
+			output = executeRemoveNested(resolved.removeNested, cwd);
 		} else {
-			throw new Error("Block spec must have one of: read, readDir, write, append, update, nestedAppend");
+			throw new Error(
+				"Block spec must have one of: read, readDir, write, append, update, nestedAppend, updateNested, remove, removeNested",
+			);
 		}
 
 		const result: StepResult = {
@@ -124,37 +139,14 @@ function executeRead(read: string | string[], optional: string[] | undefined, cw
  * Read all JSON files in a .project/ subdirectory.
  * Returns sorted array of parsed contents.
  * Missing directories return [] (on-demand subdirectories).
+ *
+ * Thin delegation to readBlockDir() in pi-project/block-api so the workflow
+ * step and the read-block-dir registered tool share one implementation.
+ * Behavior contract is preserved exactly (sort order, missing-dir semantics,
+ * invalid-JSON message format).
  */
 function executeReadDir(subdir: string, cwd: string): unknown[] {
-	const dirPath = path.join(cwd, PROJECT_DIR, subdir);
-
-	let entries: string[];
-	try {
-		entries = fs
-			.readdirSync(dirPath)
-			.filter((f) => f.endsWith(".json"))
-			.sort();
-	} catch {
-		// Missing directory = "no items yet" for on-demand .project/ subdirectories
-		return [];
-	}
-
-	const results: unknown[] = [];
-	for (const filename of entries) {
-		const filePath = path.join(dirPath, filename);
-		let content: string;
-		try {
-			content = fs.readFileSync(filePath, "utf-8");
-		} catch {
-			throw new Error(`Cannot read file: ${PROJECT_DIR}/${subdir}/${filename}`);
-		}
-		try {
-			results.push(JSON.parse(content));
-		} catch {
-			throw new Error(`Invalid JSON in: ${PROJECT_DIR}/${subdir}/${filename}`);
-		}
-	}
-	return results;
+	return readBlockDir(cwd, subdir);
 }
 
 /**
@@ -240,4 +232,79 @@ function executeNestedAppend(
 	const predicate = (item: Record<string, unknown>) => Object.entries(spec.match).every(([k, v]) => item[k] === v);
 	appendToNestedArray(cwd, spec.name, spec.key, predicate, spec.nestedKey, spec.item);
 	return { nestedAppended: spec.name, key: spec.key, matched: spec.match, nestedKey: spec.nestedKey };
+}
+
+/**
+ * Update a single item inside a nested array on a parent-array item via
+ * updateNestedArrayItem. Both `match` (parent predicate) and `nestedMatch`
+ * (nested predicate) objects are converted to AND-of-equality predicates.
+ * Throws on no parent or no nested match (mirrors update semantics).
+ */
+function executeUpdateNested(
+	spec: {
+		name: string;
+		key: string;
+		match: Record<string, unknown>;
+		nestedKey: string;
+		nestedMatch: Record<string, unknown>;
+		set: Record<string, unknown>;
+	},
+	cwd: string,
+): Record<string, unknown> {
+	const parentPredicate = (item: Record<string, unknown>) =>
+		Object.entries(spec.match).every(([k, v]) => item[k] === v);
+	const nestedPredicate = (item: Record<string, unknown>) =>
+		Object.entries(spec.nestedMatch).every(([k, v]) => item[k] === v);
+	updateNestedArrayItem(cwd, spec.name, spec.key, parentPredicate, spec.nestedKey, nestedPredicate, spec.set);
+	return {
+		updatedNested: spec.name,
+		key: spec.key,
+		matched: spec.match,
+		nestedKey: spec.nestedKey,
+		nestedMatched: spec.nestedMatch,
+	};
+}
+
+/**
+ * Remove items matching `match` from a top-level array via removeFromBlock.
+ * Returns `{ removed: <count> }` plus operation metadata. Idempotent — a
+ * miss returns `removed: 0` without throwing.
+ */
+function executeRemove(
+	spec: { name: string; key: string; match: Record<string, unknown> },
+	cwd: string,
+): Record<string, unknown> {
+	const predicate = (item: Record<string, unknown>) => Object.entries(spec.match).every(([k, v]) => item[k] === v);
+	const result = removeFromBlock(cwd, spec.name, spec.key, predicate);
+	return { removed: result.removed, name: spec.name, key: spec.key, matched: spec.match };
+}
+
+/**
+ * Remove items matching `nestedMatch` from a nested array on the parent
+ * matched by `match` via removeFromNestedArray. Throws on no parent match.
+ * Nested-miss returns `removed: 0` without throwing (idempotent).
+ */
+function executeRemoveNested(
+	spec: {
+		name: string;
+		key: string;
+		match: Record<string, unknown>;
+		nestedKey: string;
+		nestedMatch: Record<string, unknown>;
+	},
+	cwd: string,
+): Record<string, unknown> {
+	const parentPredicate = (item: Record<string, unknown>) =>
+		Object.entries(spec.match).every(([k, v]) => item[k] === v);
+	const nestedPredicate = (item: Record<string, unknown>) =>
+		Object.entries(spec.nestedMatch).every(([k, v]) => item[k] === v);
+	const result = removeFromNestedArray(cwd, spec.name, spec.key, parentPredicate, spec.nestedKey, nestedPredicate);
+	return {
+		removed: result.removed,
+		name: spec.name,
+		key: spec.key,
+		matched: spec.match,
+		nestedKey: spec.nestedKey,
+		nestedMatched: spec.nestedMatch,
+	};
 }

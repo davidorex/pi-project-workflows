@@ -42,6 +42,7 @@ const REQUIREMENTS_SCHEMA_SRC = path.resolve(
 );
 
 const MACROS_SRC = path.resolve(import.meta.dirname, "..", "templates", "shared", "macros.md");
+const ITEMS_DIR_SRC = path.resolve(import.meta.dirname, "..", "templates", "items");
 
 /** Conformance-reference block data. */
 const CONFORMANCE_BLOCK = {
@@ -151,6 +152,18 @@ function scaffoldMockProject(tmpDir: string): { projectDir: string; templatesDir
 		const sharedDir = path.join(tplDir, "shared");
 		fs.mkdirSync(sharedDir, { recursive: true });
 		fs.copyFileSync(MACROS_SRC, path.join(sharedDir, "macros.md"));
+
+		// items/*.md — Plan 8 (Wave 4) restructured macros.md to delegate to
+		// per-item macros under items/. The whole-block macros render_conformance
+		// and render_requirements that this fixture's BASE_TEMPLATE consumes
+		// now `{% from "items/<kind>.md" import ... %}` internally, so the
+		// tmp template tree must include the items/ directory or the
+		// Nunjucks loader fails with "template not found: items/<kind>.md".
+		const itemsDir = path.join(tplDir, "items");
+		fs.mkdirSync(itemsDir, { recursive: true });
+		for (const entry of fs.readdirSync(ITEMS_DIR_SRC)) {
+			fs.copyFileSync(path.join(ITEMS_DIR_SRC, entry), path.join(itemsDir, entry));
+		}
 
 		// test-base/system.md — base template
 		const baseDir = path.join(tplDir, "test-base");

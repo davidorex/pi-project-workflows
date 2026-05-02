@@ -1,109 +1,106 @@
-{#- Block rendering macros — one per schema with agent prompt use cases.
-    Import via: {% from "shared/macros.md" import render_project, render_architecture %}
-    Each macro: null guard, markdown heading, field rendering. Missing data renders nothing. -#}
+{#- Block rendering macros — whole-block forms as derived views over per-item macros.
 
+    Plan 8 (Wave 4) refactor: each whole-block macro that has a per-item sibling
+    in templates/items/<kind>.md now delegates to that per-item macro by mapping
+    over the items array. Per-item macros own field rendering; whole-block macros
+    own the surrounding heading and the null/empty guard.
+
+    Imports for downstream consumers (unchanged signatures):
+        {% from "shared/macros.md" import render_project, render_architecture,
+                                          render_requirements, render_conformance,
+                                          render_domain, render_tasks, render_issues,
+                                          render_conventions,
+                                          render_exploration, render_exploration_full %}
+
+    Each macro:
+      - null/empty guard up front so "absent block" emits nothing,
+      - markdown heading once,
+      - delegation loop calling the per-item macro per item.
+
+    Retired in Plan 8:
+      - render_decisions(data) — legacy whole-block decisions macro deleted.
+        The new lifecycle decisions block has its own per-item macro
+        (templates/items/decisions.md ships render_decision + alias
+        render_decisions). The legacy macro rendered fields (decision,
+        rationale) that no longer match the current decisions.schema.json.
+      - render_gap(gap) — legacy single-item validation-concept macro deleted.
+        The framework-gaps.json block uses Plan 7's render_framework_gap in
+        templates/items/framework-gaps.md.
+
+    Retained as-is:
+      - render_exploration(exploration) and render_exploration_full(exploration)
+        are workflow-step output formatters (rendering exploration payloads
+        emitted by exploration agents), not project-block renderers. They do
+        not fit the per-item refactor pattern and stay unchanged. -#}
+
+{% from "items/project.md" import render_project_item %}
 {% macro render_project(data) %}
-{% if data %}
-## Project
-**{{ data.name }}** — {{ data.description }}
-{% if data.core_value %}Core value: {{ data.core_value }}{% endif %}
-{% if data.vision %}
-Vision: {{ data.vision }}{% endif %}
-{% if data.status %}Status: {{ data.status }}{% endif %}
-{% if data.target_users %}
-Target users: {{ data.target_users | join(", ") }}{% endif %}
-{% if data.constraints %}
-### Constraints
-{% for c in data.constraints %}- [{{ c.type }}] {{ c.description }}
-{% endfor %}{% endif %}
-{% if data.scope_boundaries %}
-### Scope
-**In:** {% for s in data.scope_boundaries.in %}{{ s }}{% if not loop.last %}, {% endif %}{% endfor %}
-
-**Out:** {% for s in data.scope_boundaries.out %}{{ s }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}
-{% if data.goals %}
-### Goals
-{% for g in data.goals %}- **{{ g.id }}**: {{ g.description }}{% if g.success_criteria %} — criteria: {{ g.success_criteria | join("; ") }}{% endif %}
-{% endfor %}{% endif %}
-{% endif %}
+{% if data %}{{ render_project_item(data) }}{% endif %}
 {% endmacro %}
 
+{% from "items/architecture.md" import render_architecture_item %}
 {% macro render_architecture(data) %}
-{% if data %}
-## Architecture
-{% if data.overview %}{{ data.overview }}
-{% endif %}
-{% if data.modules %}
-### Modules
-{% for m in data.modules %}- **{{ m.name }}** (`{{ m.file }}`{% if m.lines %}, {{ m.lines }} lines{% endif %}): {{ m.responsibility }}{% if m.dependencies %} — deps: {{ m.dependencies | join(", ") }}{% endif %}
-{% endfor %}{% endif %}
-{% if data.patterns %}
-### Patterns
-{% for p in data.patterns %}- **{{ p.name }}**: {{ p.description }}{% if p.used_in %} — used in: {{ p.used_in | join(", ") }}{% endif %}
-{% endfor %}{% endif %}
-{% if data.boundaries %}
-### Boundaries
-{% for b in data.boundaries %}- {{ b }}
-{% endfor %}{% endif %}
-{% endif %}
+{% if data %}{{ render_architecture_item(data) }}{% endif %}
 {% endmacro %}
 
+{% from "items/requirements.md" import render_requirement %}
 {% macro render_requirements(data) %}
 {% if data and data.requirements and data.requirements | length > 0 %}
 ## Requirements
-{% for r in data.requirements %}- **{{ r.id }}** [{{ r.priority }}] ({{ r.type }}, {{ r.status }}): {{ r.description }}{% if r.acceptance_criteria %}
-  Criteria: {{ r.acceptance_criteria | join("; ") }}{% endif %}
-{% endfor %}
+{% for req in data.requirements %}{{ render_requirement(req) }}{% endfor %}
 {% endif %}
 {% endmacro %}
 
+{% from "items/conformance.md" import render_conformance_principle %}
 {% macro render_conformance(data) %}
 {% if data and data.principles %}
 ## Conformance Reference
 {% if data.name %}**{{ data.name }}**{% endif %}
-{% for p in data.principles %}
-### {{ p.id }}: {{ p.name }}
-{% if p.description %}{{ p.description }}{% endif %}
-{% for r in p.rules %}- **{{ r.id }}**: {{ r.rule }}{% if r.severity %} [{{ r.severity }}]{% endif %}{% if r.check_method %} — check: {{ r.check_method }}{% endif %}
-{% if r.anti_patterns %}  Anti-patterns: {{ r.anti_patterns | join("; ") }}
-{% endif %}{% endfor %}
-{% endfor %}
+{% for p in data.principles %}{{ render_conformance_principle(p) }}{% endfor %}
 {% endif %}
 {% endmacro %}
 
+{% from "items/domain.md" import render_domain_entry %}
 {% macro render_domain(data) %}
 {% if data and data.entries %}
 ## Domain Knowledge
-{% for e in data.entries %}- **{{ e.id }}** [{{ e.category }}]: {{ e.title }}
-  {{ e.content }}{% if e.tags %} — tags: {{ e.tags | join(", ") }}{% endif %}
-{% endfor %}
+{% for e in data.entries %}{{ render_domain_entry(e) }}{% endfor %}
 {% endif %}
 {% endmacro %}
 
-{% macro render_decisions(data) %}
-{% if data and data.decisions %}
-## Decisions
-{% for d in data.decisions %}- **{{ d.id }}** ({{ d.status }}): {{ d.decision }}
-  Rationale: {{ d.rationale }}{% if d.context %} — context: {{ d.context }}{% endif %}
-{% endfor %}
-{% endif %}
-{% endmacro %}
-
+{% from "items/tasks.md" import render_task %}
 {% macro render_tasks(data) %}
 {% if data and data.tasks %}
 ## Tasks
-{% for t in data.tasks %}- **{{ t.id }}** [{{ t.status }}]: {{ t.description }}{% if t.phase %} (phase {{ t.phase }}){% endif %}{% if t.files %} — files: {{ t.files | join(", ") }}{% endif %}
-{% endfor %}
+{% for t in data.tasks %}{{ render_task(t) }}{% endfor %}
 {% endif %}
 {% endmacro %}
 
+{% from "items/issues.md" import render_issue %}
 {% macro render_issues(data) %}
 {% if data and data.issues %}
 ## Issues
-{% for i in data.issues %}- **{{ i.id }}** [{{ i.priority }}, {{ i.status }}]: {{ i.title }}
-  {{ i.body }}{% if i.location %} — {{ i.location }}{% endif %}{% if i.package %} ({{ i.package }}){% endif %}
-{% endfor %}
+{% for i in data.issues %}{{ render_issue(i) }}{% endfor %}
+{% endif %}
+{% endmacro %}
+
+{#- Authored fresh in Plan 8: render_conventions did not previously exist in
+    macros.md despite README references implying it did. The block-level
+    header surfaces test_conventions, lint_command, and lint_scope (all
+    optional) before iterating rules through render_convention.
+
+    Block schema: .project/schemas/conventions.schema.json. Required: rules.
+    Optional: test_conventions { runner_command, file_pattern }, lint_command,
+    lint_scope. -#}
+{% from "items/conventions.md" import render_convention %}
+{% macro render_conventions(data) %}
+{% if data and data.rules %}
+## Conventions
+{% if data.test_conventions %}
+**Tests:** `{{ data.test_conventions.runner_command }}` (pattern: `{{ data.test_conventions.file_pattern }}`)
+{% endif %}{% if data.lint_command %}**Lint:** `{{ data.lint_command }}`{% if data.lint_scope %} (scope: {{ data.lint_scope }}){% endif %}
+{% endif %}
+{% for rule in data.rules %}{{ render_convention(rule) }}{% endfor %}
 {% endif %}
 {% endmacro %}
 
@@ -138,15 +135,5 @@ Target users: {{ data.target_users | join(", ") }}{% endif %}
 ### Entry Points
 {% for ep in exploration.entryPoints %}- `{{ ep }}`
 {% endfor %}{% endif %}
-{% endif %}
-{% endmacro %}
-
-{% macro render_gap(gap) %}
-{% if gap %}
-**ID:** {{ gap.id }}
-**Description:** {{ gap.description }}
-**Category:** {{ gap.category | default("unspecified") }}
-**Priority:** {{ gap.priority | default("unspecified") }}
-{% if gap.details %}**Details:** {{ gap.details }}{% endif %}
 {% endif %}
 {% endmacro %}

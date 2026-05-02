@@ -157,31 +157,12 @@ describe("shared macros", () => {
 		});
 	});
 
-	describe("render_decisions", () => {
-		it("renders decisions with rationale", () => {
-			const data = {
-				decisions: [
-					{
-						id: "DEC-001",
-						decision: "Use Nunjucks",
-						rationale: "Template inheritance support",
-						status: "decided",
-						context: "Template engine selection",
-					},
-				],
-			};
-			const result = renderMacro("render_decisions", data);
-			assert.ok(result.includes("DEC-001"));
-			assert.ok(result.includes("Use Nunjucks"));
-			assert.ok(result.includes("Template inheritance support"));
-			assert.ok(result.includes("decided"));
-			assert.ok(result.includes("context: Template engine selection"));
-		});
-
-		it("renders nothing for null data", () => {
-			assert.strictEqual(renderMacro("render_decisions", null).trim(), "");
-		});
-	});
+	// render_decisions describe block retired in Plan 8 (Wave 4): the legacy
+	// whole-block render_decisions macro was deleted from shared/macros.md
+	// because the fields it rendered (decision, rationale) no longer match
+	// the current decisions.schema.json lifecycle shape. The new lifecycle
+	// decisions block has its own per-item macro (templates/items/decisions.md)
+	// with its own test coverage in render-decision.test.ts.
 
 	describe("render_tasks", () => {
 		it("renders tasks with status and phase", () => {
@@ -269,25 +250,10 @@ describe("shared macros", () => {
 		});
 	});
 
-	describe("render_gap", () => {
-		it("renders single gap object", () => {
-			const data = {
-				id: "gap-001",
-				description: "Missing tests",
-				category: "missing",
-				priority: "high",
-				details: "No test file for block-api",
-			};
-			const result = renderMacro("render_gap", data);
-			assert.ok(result.includes("gap-001"));
-			assert.ok(result.includes("Missing tests"));
-			assert.ok(result.includes("missing"));
-			assert.ok(result.includes("high"));
-			assert.ok(result.includes("No test file for block-api"));
-		});
-
-		it("renders nothing for null data", () => {
-			assert.strictEqual(renderMacro("render_gap", null).trim(), "");
-		});
-	});
+	// render_gap describe block retired in Plan 8 (Wave 4): the legacy
+	// single-item render_gap macro was deleted from shared/macros.md.
+	// Plan 7's render_framework_gap (templates/items/framework-gaps.md) is
+	// the new home for the framework-gaps.json block; the legacy "gap"
+	// validation concept folded into issues per the canonical-vocabulary
+	// direction.
 });

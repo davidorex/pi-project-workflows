@@ -7,6 +7,7 @@
 import type { ItemLocation } from "@davidorex/pi-project";
 import type { Api, AssistantMessage, Model } from "@mariozechner/pi-ai";
 import type nunjucks from "nunjucks";
+import type { BudgetWarning } from "./budget-enforcer.js";
 import type { RendererRegistry } from "./renderer-registry.js";
 
 /**
@@ -166,6 +167,24 @@ export interface CompiledAgent {
 	 * inspection, not the rendered string.
 	 */
 	contextValues: Record<string, unknown>;
+	/**
+	 * Optional list of budget-truncation warnings collected during compile.
+	 *
+	 * Populated by the `enforceBudget` Nunjucks global registered by
+	 * `compileAgent`: every macro invocation that exceeds the field's
+	 * `x-prompt-budget` annotation appends one entry naming the field path,
+	 * the declared budget, the actual measured token/word counts, and whether
+	 * truncation was applied. Surfaces composition-time prompt-size signals
+	 * to callers without breaking existing consumers (optional field; absent
+	 * when no enforceBudget call has produced a warning during this compile).
+	 *
+	 * Distinct from runtime errors — a warning here means the rendered prompt
+	 * is fully formed but a budgeted field carried more text than its
+	 * annotation declared. The truncated text appears in the rendered prompt
+	 * with the `[…truncated to budget]` marker; this array preserves the
+	 * full warning record for trace / inspection consumers.
+	 */
+	budgetWarnings?: BudgetWarning[];
 }
 
 /**

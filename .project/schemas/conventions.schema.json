@@ -12,7 +12,7 @@
 				"required": ["id", "description", "enforcement", "severity"],
 				"properties": {
 					"id": { "type": "string" },
-					"description": { "type": "string" },
+					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"enforcement": { "type": "string", "enum": ["lint", "test", "review", "manual"] },
 					"severity": { "type": "string", "enum": ["error", "warning", "info"] }
 				}

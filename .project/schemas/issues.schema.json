@@ -14,7 +14,11 @@
 				"properties": {
 					"id": { "type": "string", "pattern": "^issue-\\d{3}$" },
 					"title": { "type": "string", "description": "Scannable one-liner (GitHub issue title pattern)" },
-					"body": { "type": "string", "description": "Full detail and context for downstream composition" },
+					"body": {
+						"type": "string",
+						"description": "Full detail and context for downstream composition",
+						"x-prompt-budget": { "tokens": 1000, "words": 800 }
+					},
 					"location": { "type": "string", "description": "File path + line number, e.g. packages/pi-workflows/src/dag.ts:219" },
 					"status": { "type": "string", "enum": ["open", "resolved", "deferred"] },
 					"category": { "type": "string", "enum": ["primitive", "issue", "cleanup", "capability", "composition"] },

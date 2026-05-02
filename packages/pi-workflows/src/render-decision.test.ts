@@ -100,6 +100,10 @@ function makeEnv(idIndex: Map<string, ItemLocation>, availableMacros: Record<str
 		}
 	});
 
+	env.addGlobal("enforceBudget", (rendered: unknown): string =>
+		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
+	);
+
 	return env;
 }
 

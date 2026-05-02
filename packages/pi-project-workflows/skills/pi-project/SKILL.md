@@ -140,6 +140,16 @@ Initialize .project/ directory with default schemas and empty block files.
 
 </tool>
 
+<tool name="resolve-item-by-id">
+Look up the block, array key, and item payload for a given ID across all .project/ blocks. Returns null when no item matches. Mirrors the resolveItemById SDK function and shares its prefix-vs-block invariant — IDs whose prefix maps to a known block but live elsewhere throw at index-build time.
+
+*Resolve a kind-prefixed ID (DEC-/FEAT-/FGAP-/issue-/REQ-/TASK-/etc.) to its owning block and item*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | yes | Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 / FGAP-003 / issue-064 |
+</tool>
+
 <tool name="complete-task">
 Complete a task with verification gate — requires a passing verification entry targeting the task.
 

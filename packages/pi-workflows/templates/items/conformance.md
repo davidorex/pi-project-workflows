@@ -30,9 +30,14 @@
 {% macro render_conformance_principle(p, depth=0) %}
 {% if p %}
 ### {{ p.id }}: {{ p.name }}
-{% if p.description %}{{ p.description }}{% endif %}
-{% for r in p.rules %}- **{{ r.id }}**: {{ r.rule }}{% if r.severity %} [{{ r.severity }}]{% endif %}{% if r.check_method %} — check: {{ r.check_method }}{% endif %}
+{% if p.description %}{{ enforceBudget(p.description, "conformance-reference", "principles.items.description") }}{% endif %}
+{% for r in p.rules %}- **{{ r.id }}**: {{ enforceBudget(r.rule, "conformance-reference", "principles.items.rules.items.rule") }}{% if r.severity %} [{{ r.severity }}]{% endif %}{% if r.check_method %} — check: {{ r.check_method }}{% endif %}
 {% if r.anti_patterns %}  Anti-patterns: {{ r.anti_patterns | join("; ") }}
 {% endif %}{% endfor %}
 {% endif %}
 {% endmacro %}
+
+{#- Registry alias: derives `render_conformance_reference` from the
+    `conformance-reference` kind (hyphens → underscores), bridges to
+    canonical `render_conformance_principle` for per-item dispatch. -#}
+{% macro render_conformance_reference(p, depth=0) %}{{ render_conformance_principle(p, depth) }}{% endmacro %}

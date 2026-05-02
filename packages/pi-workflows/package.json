@@ -64,6 +64,7 @@
 	"dependencies": {
 		"nunjucks": "^3.2.4",
 		"yaml": "^2.7.1",
+		"@davidorex/pi-jit-agents": "^0.23.0",
 		"@davidorex/pi-project": "^0.23.0",
 		"@mariozechner/pi-ai": "^0.70.2",
 		"@mariozechner/pi-coding-agent": "^0.70.2",

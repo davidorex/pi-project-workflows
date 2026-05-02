@@ -27,11 +27,11 @@
 {% endif %}
 {% if a.modules %}
 ### Modules
-{% for m in a.modules %}- **{{ m.name }}** (`{{ m.file }}`{% if m.lines %}, {{ m.lines }} lines{% endif %}): {{ m.responsibility }}{% if m.dependencies %} — deps: {{ m.dependencies | join(", ") }}{% endif %}
+{% for m in a.modules %}- **{{ m.name }}** (`{{ m.file }}`{% if m.lines %}, {{ m.lines }} lines{% endif %}): {{ enforceBudget(m.responsibility, "architecture", "modules.items.responsibility") }}{% if m.dependencies %} — deps: {{ m.dependencies | join(", ") }}{% endif %}
 {% endfor %}{% endif %}
 {% if a.patterns %}
 ### Patterns
-{% for p in a.patterns %}- **{{ p.name }}**: {{ p.description }}{% if p.used_in %} — used in: {{ p.used_in | join(", ") }}{% endif %}
+{% for p in a.patterns %}- **{{ p.name }}**: {{ enforceBudget(p.description, "architecture", "patterns.items.description") }}{% if p.used_in %} — used in: {{ p.used_in | join(", ") }}{% endif %}
 {% endfor %}{% endif %}
 {% if a.boundaries %}
 ### Boundaries
@@ -39,3 +39,8 @@
 {% endfor %}{% endif %}
 {% endif %}
 {% endmacro %}
+
+{#- Registry alias: derives `render_architecture` from the `architecture`
+    kind, bridges to canonical `render_architecture_item` for per-item
+    dispatch via renderItemById / render_recursive. -#}
+{% macro render_architecture(a, depth=0) %}{{ render_architecture_item(a, depth) }}{% endmacro %}

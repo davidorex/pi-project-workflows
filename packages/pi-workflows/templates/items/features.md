@@ -51,10 +51,10 @@ Created at: {{ feat.created_at }}
 {% endif %}{% if feat.approved_at %}Approved at: {{ feat.approved_at }}
 {% endif %}
 Description:
-{{ feat.description }}
+{{ enforceBudget(feat.description, "features", "features.items.description") }}
 
 {% if feat.motivation %}Motivation:
-{{ feat.motivation }}
+{{ enforceBudget(feat.motivation, "features", "features.items.motivation") }}
 
 {% endif %}Acceptance criteria:
 {% if feat.acceptance_criteria and feat.acceptance_criteria | length > 0 %}{% for ac in feat.acceptance_criteria %}  - {{ ac }}
@@ -81,7 +81,7 @@ Description:
 {% endif %}{% endfor %}{% else %}  (none)
 {% endif %}{% endif %}Stories:
 {% if feat.stories and feat.stories | length > 0 %}{% for s in feat.stories %}  - {{ s.id }} [{{ s.status }}] {{ s.title }}
-{% if s.description %}    Description: {{ s.description }}
+{% if s.description %}    Description: {{ enforceBudget(s.description, "features", "features.items.stories.items.description") }}
 {% endif %}{% if s.acceptance_criteria is defined %}    Acceptance criteria: {% if s.acceptance_criteria | length > 0 %}{% for ac in s.acceptance_criteria %}{{ ac }}{% if not loop.last %}; {% endif %}{% endfor %}{% else %}(none){% endif %}
 {% endif %}{% if s.depends_on is defined %}    Depends on: {% if s.depends_on | length > 0 %}{% for dep in s.depends_on %}{{ dep }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
 {% endif %}{% if s.gates is defined %}    Gates: {% if s.gates | length > 0 %}{% for g in s.gates %}{{ g }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
@@ -96,7 +96,7 @@ Description:
 {% endif %}{% endfor %}{% else %}  (none)
 {% endif %}Findings:
 {% if feat.findings and feat.findings | length > 0 %}{% for f in feat.findings %}  - {{ f.id }} [{{ f.severity }}/{{ f.state }}] reporter={{ f.reporter }} at={{ f.created_at }}
-    Description: {{ f.description }}
+    Description: {{ enforceBudget(f.description, "features", "features.items.findings.items.description") }}
 {% if f.evidence %}    Evidence: {{ f.evidence }}
 {% endif %}{% if f.category %}    Category: {{ f.category }}
 {% endif %}{% if f.resolution %}    Resolution: {{ f.resolution }}

@@ -23,6 +23,10 @@
 -#}
 
 {% macro render_convention(rule, depth=0) %}
-{% if rule %}- **{{ rule.id }}** [{{ rule.severity }}, {{ rule.enforcement }}]: {{ rule.description }}
+{% if rule %}- **{{ rule.id }}** [{{ rule.severity }}, {{ rule.enforcement }}]: {{ enforceBudget(rule.description, "conventions", "rules.items.description") }}
 {% endif %}
 {% endmacro %}
+
+{#- Registry alias: derives `render_conventions` from the `conventions` kind,
+    bridges to canonical singular `render_convention`. -#}
+{% macro render_conventions(rule, depth=0) %}{{ render_convention(rule, depth) }}{% endmacro %}

@@ -47,16 +47,16 @@ Created at: {{ gap.created_at }}
 {% endif %}{% if gap.closed_at %}Closed at: {{ gap.closed_at }}
 {% endif %}
 Description:
-{{ gap.description }}
+{{ enforceBudget(gap.description, "framework-gaps", "gaps.items.description") }}
 
 Impact:
-{{ gap.impact }}
+{{ enforceBudget(gap.impact, "framework-gaps", "gaps.items.impact") }}
 
 Proposed resolution:
-{{ gap.proposed_resolution }}
+{{ enforceBudget(gap.proposed_resolution, "framework-gaps", "gaps.items.proposed_resolution") }}
 
 Evidence:
-{% if gap.evidence and gap.evidence | length > 0 %}{% for e in gap.evidence %}  - {{ e.file }}{% if e.lines %}:{{ e.lines }}{% endif %} — {{ e.reference }}
+{% if gap.evidence and gap.evidence | length > 0 %}{% for e in gap.evidence %}  - {{ e.file }}{% if e.lines %}:{{ e.lines }}{% endif %} — {{ enforceBudget(e.reference, "framework-gaps", "gaps.items.evidence.items.reference") }}
 {% endfor %}{% else %}  (none)
 {% endif %}{% if gap.related_features is defined %}Related features:
 {% if gap.related_features | length > 0 %}{% for fid in gap.related_features %}{% if depth > 0 %}{% set loc = resolve(fid) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}

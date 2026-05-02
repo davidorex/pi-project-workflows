@@ -19,6 +19,9 @@ function makeEnv(): nunjucks.Environment {
 	});
 	env.addGlobal("resolve", () => null);
 	env.addGlobal("render_recursive", () => "");
+	env.addGlobal("enforceBudget", (rendered: unknown): string =>
+		typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
+	);
 	return env;
 }
 

@@ -15,9 +15,165 @@ import fs from "node:fs";
 import path from "node:path";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-project";
 import { readBlock } from "@davidorex/pi-project/block-api";
+import type nunjucks from "nunjucks";
+import { type BudgetWarning, enforceBudget } from "./budget-enforcer.js";
 import { AgentCompileError } from "./errors.js";
+import type { RendererRegistry } from "./renderer-registry.js";
 import { renderTemplate, renderTemplateFile } from "./template.js";
 import type { AgentSpec, CompileContext, CompiledAgent, ContextBlockRef } from "./types.js";
+
+/**
+ * Translate a dotted shorthand schema-field reference into a JSON-pointer path.
+ *
+ * Accepts either:
+ *   - JSON pointer (`/properties/decisions/items/properties/context`) — passes through.
+ *   - Dotted shorthand (`decisions.items.context`) — expands each segment as a
+ *     `properties/<segment>` pair, with `items` translated literally to the
+ *     `items` keyword (the standard JSON-Schema array-element key). The
+ *     shorthand expansion is idempotent for inputs that already begin with
+ *     `/`, so callers can pass either form without ceremony.
+ *
+ * Examples:
+ *   "decisions.items.context"
+ *     → "/properties/decisions/items/properties/context"
+ *   "decisions.items.consequences.items"
+ *     → "/properties/decisions/items/properties/consequences/items"
+ *   "/properties/foo/properties/bar"
+ *     → "/properties/foo/properties/bar"           (unchanged)
+ */
+function expandFieldPathShorthand(fieldPathOrShorthand: string): string {
+	if (fieldPathOrShorthand.startsWith("/")) return fieldPathOrShorthand;
+	if (fieldPathOrShorthand === "") return "";
+	const segments = fieldPathOrShorthand.split(".");
+	const out: string[] = [];
+	for (const seg of segments) {
+		if (seg === "items") {
+			out.push("items");
+		} else {
+			out.push("properties", seg);
+		}
+	}
+	return `/${out.join("/")}`;
+}
+
+/**
+ * Register the composition-time Nunjucks globals on a template environment.
+ *
+ * Three globals are registered, scoped to the closure-captured state passed in:
+ *
+ *   - `resolve(id)` — looks up an item by ID via the lazy idIndex; returns
+ *                     ItemLocation or null. Used by macros to dispatch
+ *                     cross-block references.
+ *   - `render_recursive(loc, depth)` — renders an item via the registered
+ *                     per-item macro (resolved through the renderer registry).
+ *                     Cycle-detected via the visited set.
+ *   - `enforceBudget(rendered, blockName, fieldPathOrShorthand)` — measures
+ *                     rendered text against the field's `x-prompt-budget`
+ *                     annotation, returning truncated output when over budget;
+ *                     pass-through when annotation absent. Truncation warnings
+ *                     are appended to `warningsCollector` (closure-captured by
+ *                     the caller) so callers can surface them after compile
+ *                     returns.
+ *
+ * Used by both `compileAgent` (this module) and `renderItemById` in pi-workflows
+ * — the single source of truth for the composition-globals contract. Adding
+ * a new global, changing a signature, or adjusting a fallback means editing
+ * here and the contract propagates to every caller.
+ *
+ * The visited-set lifetime is one call to this function — sequential calls on
+ * the same env get isolated cycle scopes. addGlobal overwrites prior bindings,
+ * which is intentional (each composition pass owns its own scope).
+ */
+export function registerCompositionGlobals(opts: {
+	env: nunjucks.Environment;
+	cwd: string;
+	rendererRegistry: RendererRegistry | undefined;
+	getIdIndex: () => Map<string, ItemLocation>;
+	warningsCollector: BudgetWarning[];
+}): void {
+	const { env, cwd, rendererRegistry, getIdIndex, warningsCollector } = opts;
+
+	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
+		if (typeof id !== "string" || id.length === 0) return null;
+		try {
+			return getIdIndex().get(id) ?? null;
+		} catch {
+			return null;
+		}
+	});
+
+	const visitedThisPass = new Set<string>();
+	env.addGlobal("render_recursive", (loc: unknown, depth: unknown): string => {
+		if (!loc || typeof loc !== "object") return "";
+		const location = loc as ItemLocation;
+		const itemId = (location.item as { id?: unknown })?.id;
+		const idStr = typeof itemId === "string" ? itemId : "";
+		const blockName = typeof location.block === "string" ? location.block : "?";
+
+		if (idStr.length > 0 && visitedThisPass.has(idStr)) {
+			return `[cycle: ${idStr}]`;
+		}
+
+		const macroRef = rendererRegistry?.lookup(blockName) ?? null;
+		if (!macroRef) {
+			return `[unrendered: ${blockName}/${idStr}]`;
+		}
+
+		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
+		if (idStr.length > 0) visitedThisPass.add(idStr);
+		try {
+			let macroSource: string;
+			try {
+				macroSource = fs.readFileSync(macroRef.templatePath, "utf-8");
+			} catch (err) {
+				return `[render_error: ${blockName}/${idStr}: macro file unreadable at ${macroRef.templatePath}: ${
+					err instanceof Error ? err.message : String(err)
+				}]`;
+			}
+			const inline = `${macroSource}\n{{ ${macroRef.macroName}(item, depth) }}`;
+			return env.renderString(inline, { item: location.item, depth: depthNum });
+		} catch (err) {
+			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
+		} finally {
+			if (idStr.length > 0) visitedThisPass.delete(idStr);
+		}
+	});
+
+	env.addGlobal("enforceBudget", (rendered: unknown, blockName: unknown, fieldPathOrShorthand: unknown): string => {
+		// Defensive coercion — Nunjucks may pass non-string values when a
+		// macro references an undefined field. Treat undefined / null as
+		// empty string to remain pass-through rather than throw.
+		const renderedStr =
+			typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered);
+		if (typeof blockName !== "string" || blockName.length === 0) return renderedStr;
+		if (typeof fieldPathOrShorthand !== "string" || fieldPathOrShorthand.length === 0) return renderedStr;
+
+		const schemaPath = path.join(cwd, ".project", "schemas", `${blockName}.schema.json`);
+		if (!fs.existsSync(schemaPath)) return renderedStr; // no schema → pass-through
+
+		let schema: object;
+		try {
+			schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+		} catch {
+			return renderedStr; // unreadable / unparseable schema → pass-through
+		}
+
+		const fieldPath = expandFieldPathShorthand(fieldPathOrShorthand);
+		let result: { output: string; warning: BudgetWarning | null };
+		try {
+			result = enforceBudget(renderedStr, schema, fieldPath);
+		} catch {
+			// Malformed annotation — pass through the original text rather
+			// than corrupt the prompt. The annotation error is silently
+			// swallowed at this layer; future work may surface it via a
+			// separate structured warning channel.
+			return renderedStr;
+		}
+
+		if (result.warning) warningsCollector.push(result.warning);
+		return result.output;
+	});
+}
 
 /**
  * Wrap injected block content in anti-injection delimiters.
@@ -337,7 +493,14 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		}
 	}
 
-	// Nunjucks globals for per-item macro composition (Plans 6/7/8 consumers).
+	// Nunjucks globals for per-item macro composition (Plans 6/7/8 consumers,
+	// plus the v0.24.0 enforceBudget global). Registration is delegated to
+	// `registerCompositionGlobals` so that both compileAgent and
+	// `renderItemById` (in pi-workflows) share the same composition-globals
+	// contract — adding or modifying a global means editing one helper, not
+	// two parallel paths.
+	//
+	// Behavioural contract per global:
 	//
 	// `resolve(id)`           — lazy idIndex lookup; returns the ItemLocation
 	//                           or null. Templates use it as the dispatch
@@ -347,80 +510,34 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	//                         — looks up the per-item macro via the renderer
 	//                           registry, then renders it with `(item, depth)`
 	//                           bound. Cycle detection is scoped to this
-	//                           compileAgent call via a closure-local Set
-	//                           keyed on `loc.item.id` (the only stable
-	//                           identifier guaranteed by the prefix invariant
-	//                           in buildIdIndex). On a re-entry the helper
+	//                           composition pass via a closure-local Set keyed
+	//                           on `loc.item.id`. On a re-entry the helper
 	//                           returns `[cycle: <id>]` and does not recurse.
 	//                           The visited entry is removed after rendering
 	//                           so sibling subtrees can reach the same item
 	//                           at the same depth (only true ancestor cycles
 	//                           are blocked).
 	//
-	// Both globals degrade gracefully when their dependencies are absent:
-	//   - registry missing OR no macro for the kind → render_recursive
-	//     returns `[unrendered: <kind>/<id>]` (no throw).
-	//   - id not in index → resolve returns null; templates may guard via
-	//     `{% if resolve(id) %}`. render_recursive expects a non-null loc;
-	//     callers should guard at the resolve site.
+	// `enforceBudget(rendered, blockName, fieldPathOrShorthand)`
+	//                         — measures rendered text against the named field's
+	//                           `x-prompt-budget` annotation; returns truncated
+	//                           output when over budget, pass-through when the
+	//                           annotation is absent or the schema is missing.
+	//                           Truncation warnings are appended to the
+	//                           closure-captured `compilePassWarnings` array
+	//                           and surfaced on `CompiledAgent.budgetWarnings`
+	//                           after compile returns.
 	//
-	// addGlobal overwrites prior registrations on the same env — that is
-	// intentional, each compileAgent invocation owns its own visited-set
-	// scope. Sequential compiles against the same env are isolated.
+	// addGlobal overwrites prior registrations on the same env — intentional;
+	// each compileAgent call owns its own visited-set + warnings scope.
 	const env = ctx.env;
-	env.addGlobal("resolve", (id: unknown): ItemLocation | null => {
-		if (typeof id !== "string" || id.length === 0) return null;
-		try {
-			return getIdIndex().get(id) ?? null;
-		} catch {
-			return null;
-		}
-	});
-
-	const visitedThisCompile = new Set<string>();
-	env.addGlobal("render_recursive", (loc: unknown, depth: unknown): string => {
-		if (!loc || typeof loc !== "object") return "";
-		const location = loc as ItemLocation;
-		const itemId = (location.item as { id?: unknown })?.id;
-		const idStr = typeof itemId === "string" ? itemId : "";
-		const blockName = typeof location.block === "string" ? location.block : "?";
-
-		if (idStr.length > 0 && visitedThisCompile.has(idStr)) {
-			return `[cycle: ${idStr}]`;
-		}
-
-		const registry = ctx.rendererRegistry;
-		const macroRef = registry?.lookup(blockName) ?? null;
-		if (!macroRef) {
-			return `[unrendered: ${blockName}/${idStr}]`;
-		}
-
-		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
-		if (idStr.length > 0) visitedThisCompile.add(idStr);
-		try {
-			// Inline-by-source dispatch: read the macro file content directly
-			// and append a call expression. We deliberately avoid the Nunjucks
-			// `{% from "<path>" import ... %}` form because that goes through
-			// the Environment's FileSystemLoader, which is anchored to the
-			// three-tier search dirs from createTemplateEnv — absolute macro
-			// paths from the renderer registry are not generally resolvable
-			// through that loader. Reading the source and concatenating keeps
-			// dispatch independent of loader configuration.
-			let macroSource: string;
-			try {
-				macroSource = fs.readFileSync(macroRef.templatePath, "utf-8");
-			} catch (err) {
-				return `[render_error: ${blockName}/${idStr}: macro file unreadable at ${macroRef.templatePath}: ${
-					err instanceof Error ? err.message : String(err)
-				}]`;
-			}
-			const inline = `${macroSource}\n{{ ${macroRef.macroName}(item, depth) }}`;
-			return env.renderString(inline, { item: location.item, depth: depthNum });
-		} catch (err) {
-			return `[render_error: ${blockName}/${idStr}: ${err instanceof Error ? err.message : String(err)}]`;
-		} finally {
-			if (idStr.length > 0) visitedThisCompile.delete(idStr);
-		}
+	const compilePassWarnings: BudgetWarning[] = [];
+	registerCompositionGlobals({
+		env,
+		cwd: ctx.cwd,
+		rendererRegistry: ctx.rendererRegistry,
+		getIdIndex,
+		warningsCollector: compilePassWarnings,
 	});
 
 	let systemPrompt: string | undefined;
@@ -451,5 +568,12 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		model: spec.model,
 		outputSchema: resolveOutputSchemaForCompile(spec.outputSchema, ctx.cwd),
 		contextValues,
+		// Surface budget-truncation warnings collected during composition.
+		// Empty array means no enforceBudget call exceeded a budget; the
+		// field is included unconditionally so consumers can rely on its
+		// presence for trace pipelines without optional-chaining ceremony.
+		// (Legacy consumers reading the previous shape still work — the
+		// field is an optional addition on the type, not a rename.)
+		budgetWarnings: compilePassWarnings.length > 0 ? compilePassWarnings : undefined,
 	};
 }

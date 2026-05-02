@@ -38,7 +38,7 @@
 						"description": "Stable identifier: P1, P2, type-safety, error-handling, etc."
 					},
 					"name": { "type": "string" },
-					"description": { "type": "string" },
+					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"rules": {
 						"type": "array",
 						"description": "Concrete, checkable rules under this principle",
@@ -52,7 +52,8 @@
 								},
 								"rule": {
 									"type": "string",
-									"description": "The rule statement"
+									"description": "The rule statement",
+									"x-prompt-budget": { "tokens": 1000, "words": 800 }
 								},
 								"check_method": {
 									"type": "string",

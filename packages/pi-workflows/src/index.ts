@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { enforceBudget } from "@davidorex/pi-jit-agents";
 import { Type } from "@mariozechner/pi-ai";
 import type {
 	AgentToolResult,
@@ -18,6 +19,7 @@ import { Key } from "@mariozechner/pi-tui";
 import { createAgentLoader } from "./agent-spec.js";
 import type { IncompleteRun } from "./checkpoint.js";
 import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } from "./checkpoint.js";
+import { renderItemById } from "./render-by-id.js";
 import type { WorkflowResult, WorkflowSpec } from "./types.js";
 import { discoverWorkflows, findWorkflow } from "./workflow-discovery.js";
 import { executeWorkflow, requestPause } from "./workflow-executor.js";
@@ -726,6 +728,78 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: truncateHead(JSON.stringify(result, null, 2)).content }],
+			};
+		},
+	});
+
+	// ── Tool: render-item-by-id ─────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "render-item-by-id",
+		label: "Render Item By Id",
+		description:
+			"Render a project block item by ID through its registered per-item macro. Resolves the item via the cross-block resolver, looks up the macro via the renderer registry, and renders with the supplied depth and depth-aware cross-reference recursion. Returns `[not-found: <id>]` on resolver miss and `[unrendered: <kind>/<id>]` on registry miss — same fallback markers `render_recursive` emits inside agent prompts.",
+		promptSnippet:
+			"Render a project block item as prompt text via its per-item macro (with depth-controlled cross-ref recursion)",
+		parameters: Type.Object({
+			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-0001 / FEAT-001" }),
+			depth: Type.Optional(
+				Type.Number({
+					description: "0 = bare-ID refs (default), 1 = inline direct cross-references, 2+ = recurse further",
+				}),
+			),
+		}),
+
+		async execute(
+			_toolCallId: string,
+			params: { id: string; depth?: number },
+			_signal: AbortSignal | undefined,
+			_onUpdate: AgentToolUpdateCallback | undefined,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const renderedString = renderItemById(ctx.cwd, params.id, params.depth ?? 0);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: renderedString }],
+			};
+		},
+	});
+
+	// ── Tool: enforce-budget ────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "enforce-budget",
+		label: "Enforce Prompt Budget",
+		description:
+			"Check rendered text against an `x-prompt-budget` annotation on a schema field. Returns `{ output, warning }` — `output` is the original text passed through when under budget, or tail-truncated text with `[…truncated to budget]` marker when over; `warning` is null when no truncation occurred or a structured BudgetWarning record otherwise. Annotation absence is pass-through (no error). Mirrors the behaviour of the `enforceBudget` Nunjucks global registered by compileAgent.",
+		promptSnippet:
+			"Validate rendered text against a schema field's prompt budget — returns truncated output and warning",
+		parameters: Type.Object({
+			rendered: Type.String({ description: "Rendered text to check against the field's prompt budget" }),
+			blockName: Type.String({
+				description: "Block schema name (without .schema.json suffix), e.g. 'decisions' or 'features'",
+			}),
+			fieldPath: Type.String({
+				description: "JSON-pointer-style path to the field, e.g. '/properties/decisions/items/properties/context'",
+			}),
+		}),
+
+		async execute(
+			_toolCallId: string,
+			params: { rendered: string; blockName: string; fieldPath: string },
+			_signal: AbortSignal | undefined,
+			_onUpdate: AgentToolUpdateCallback | undefined,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const schemaPath = path.join(ctx.cwd, ".project", "schemas", `${params.blockName}.schema.json`);
+			if (!fs.existsSync(schemaPath)) {
+				throw new Error(`enforce-budget: schema file not found at ${schemaPath} for block '${params.blockName}'.`);
+			}
+			const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+			const result = enforceBudget(params.rendered, schema, params.fieldPath);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
 			};
 		},
 	});

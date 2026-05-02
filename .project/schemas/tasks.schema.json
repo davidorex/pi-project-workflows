@@ -12,7 +12,7 @@
 				"required": ["id", "description", "status"],
 				"properties": {
 					"id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
-					"description": { "type": "string" },
+					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"status": { "type": "string", "enum": ["planned", "in-progress", "completed", "blocked", "cancelled"] },
 					"phase": { "type": ["string", "integer"], "description": "Phase ID or number this task belongs to" },
 					"files": {
@@ -20,7 +20,10 @@
 						"items": { "type": "string" },
 						"description": "Files this task creates or modifies"
 					},
-					"acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+					"acceptance_criteria": {
+						"type": "array",
+						"items": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
+					},
 					"depends_on": {
 						"type": "array",
 						"items": { "type": "string" },
@@ -28,7 +31,7 @@
 					},
 					"assigned_agent": { "type": "string", "description": "Agent name if assigned" },
 					"verification": { "type": "string", "description": "Verification ID if verified" },
-					"notes": { "type": "string" }
+					"notes": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
 				},
 				"if": {
 					"properties": {

@@ -25,7 +25,7 @@ import {
 	writeBlock,
 } from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
-import { completeTask, findAppendableBlocks, projectState, validateProject } from "./project-sdk.js";
+import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -733,6 +733,32 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = initProject(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: resolve-item-by-id ──────────────────────────────────────────
+
+	pi.registerTool({
+		name: "resolve-item-by-id",
+		label: "Resolve Item By Id",
+		description:
+			"Look up the block, array key, and item payload for a given ID across all .project/ blocks. Returns null when no item matches. Mirrors the resolveItemById SDK function and shares its prefix-vs-block invariant — IDs whose prefix maps to a known block but live elsewhere throw at index-build time.",
+		promptSnippet: "Resolve a kind-prefixed ID (DEC-/FEAT-/FGAP-/issue-/REQ-/TASK-/etc.) to its owning block and item",
+		parameters: Type.Object({
+			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 / FGAP-003 / issue-064" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { id: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = resolveItemById(ctx.cwd, params.id);
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],

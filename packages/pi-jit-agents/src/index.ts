@@ -10,7 +10,7 @@ export type { AgentTraceQuery } from "./agent-trace-sdk.js";
 export { agentTrace, agentTraceChildren, agentTraceEntry } from "./agent-trace-sdk.js";
 export type { BudgetResult, BudgetWarning, PromptBudget } from "./budget-enforcer.js";
 export { enforceBudget } from "./budget-enforcer.js";
-export { compileAgent } from "./compile.js";
+export { compileAgent, registerCompositionGlobals } from "./compile.js";
 export * from "./errors.js";
 export { agentContract } from "./introspect.js";
 export type { CompleteFn, NormalizedToolChoice } from "./jit-runtime.js";

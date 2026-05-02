@@ -29,16 +29,16 @@
 {% macro render_project_item(p, depth=0) %}
 {% if p %}
 ## Project
-**{{ p.name }}** — {{ p.description }}
-{% if p.core_value %}Core value: {{ p.core_value }}{% endif %}
+**{{ p.name }}** — {{ enforceBudget(p.description, "project", "description") }}
+{% if p.core_value %}Core value: {{ enforceBudget(p.core_value, "project", "core_value") }}{% endif %}
 {% if p.vision %}
-Vision: {{ p.vision }}{% endif %}
+Vision: {{ enforceBudget(p.vision, "project", "vision") }}{% endif %}
 {% if p.status %}Status: {{ p.status }}{% endif %}
 {% if p.target_users %}
 Target users: {{ p.target_users | join(", ") }}{% endif %}
 {% if p.constraints %}
 ### Constraints
-{% for c in p.constraints %}- [{{ c.type }}] {{ c.description }}
+{% for c in p.constraints %}- [{{ c.type }}] {{ enforceBudget(c.description, "project", "constraints.items.description") }}
 {% endfor %}{% endif %}
 {% if p.scope_boundaries %}
 ### Scope
@@ -48,10 +48,14 @@ Target users: {{ p.target_users | join(", ") }}{% endif %}
 {% endif %}
 {% if p.goals %}
 ### Goals
-{% for g in p.goals %}- **{{ g.id }}**: {{ g.description }}{% if g.success_criteria %} — criteria: {{ g.success_criteria | join("; ") }}{% endif %}
+{% for g in p.goals %}- **{{ g.id }}**: {{ enforceBudget(g.description, "project", "goals.items.description") }}{% if g.success_criteria %} — criteria: {% for sc in g.success_criteria %}{{ enforceBudget(sc, "project", "goals.items.success_criteria.items") }}{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}
 {% endfor %}{% endif %}
 {% if p.repository %}Repository: {{ p.repository }}
 {% endif %}{% if p.stack %}Stack: {{ p.stack | join(", ") }}
 {% endif %}
 {% endif %}
 {% endmacro %}
+
+{#- Registry alias: derives `render_project` from the `project` kind, bridges
+    to canonical `render_project_item` for per-item dispatch. -#}
+{% macro render_project(p, depth=0) %}{{ render_project_item(p, depth) }}{% endmacro %}

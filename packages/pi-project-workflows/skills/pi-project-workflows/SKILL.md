@@ -18,14 +18,14 @@ pi install npm:@davidorex/pi-project-workflows
 <extension name="@davidorex/pi-project">
 Schema-driven project state management for Pi
 
-**Tools:** `append-block-item`, `update-block-item`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init`, `complete-task`
+**Tools:** `append-block-item`, `update-block-item`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init`, `resolve-item-by-id`, `complete-task`
 **Commands:** `/project`
 </extension>
 
 <extension name="@davidorex/pi-workflows">
 Workflow orchestration extension for Pi
 
-**Tools:** `workflow`, `workflow-list`, `workflow-agents`, `workflow-validate`, `workflow-status`, `workflow-init`
+**Tools:** `workflow`, `workflow-list`, `workflow-agents`, `workflow-validate`, `workflow-status`, `workflow-init`, `render-item-by-id`, `enforce-budget`
 **Commands:** `/workflow`
 **Shortcuts:** ctrl+h (Pause running workflow), ctrl+j (Resume paused workflow)
 </extension>

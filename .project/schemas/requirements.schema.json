@@ -12,11 +12,14 @@
 				"required": ["id", "description", "type", "status", "priority"],
 				"properties": {
 					"id": { "type": "string", "pattern": "^REQ-\\d{3,}$" },
-					"description": { "type": "string" },
+					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"type": { "type": "string", "enum": ["functional", "non-functional", "constraint", "integration"] },
 					"status": { "type": "string", "enum": ["proposed", "accepted", "deferred", "implemented", "verified"] },
 					"priority": { "type": "string", "enum": ["must", "should", "could", "wont"] },
-					"acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+					"acceptance_criteria": {
+						"type": "array",
+						"items": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
+					},
 					"source": {
 						"type": "string",
 						"enum": ["human", "agent", "analysis"],

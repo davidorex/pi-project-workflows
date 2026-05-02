@@ -61,6 +61,29 @@ Initialize .workflows/ directory for workflow run state.
 
 </tool>
 
+<tool name="render-item-by-id">
+Render a project block item by ID through its registered per-item macro. Resolves the item via the cross-block resolver, looks up the macro via the renderer registry, and renders with the supplied depth and depth-aware cross-reference recursion. Returns `[not-found: <id>]` on resolver miss and `[unrendered: <kind>/<id>]` on registry miss — same fallback markers `render_recursive` emits inside agent prompts.
+
+*Render a project block item as prompt text via its per-item macro (with depth-controlled cross-ref recursion)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | yes | Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 |
+| `depth` | number | no | 0 = bare-ID refs (default), 1 = inline direct cross-references, 2+ = recurse further |
+</tool>
+
+<tool name="enforce-budget">
+Check rendered text against an `x-prompt-budget` annotation on a schema field. Returns `{ output, warning }` — `output` is the original text passed through when under budget, or tail-truncated text with `[…truncated to budget]` marker when over; `warning` is null when no truncation occurred or a structured BudgetWarning record otherwise. Annotation absence is pass-through (no error). Mirrors the behaviour of the `enforceBudget` Nunjucks global registered by compileAgent.
+
+*Validate rendered text against a schema field's prompt budget — returns truncated output and warning*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `rendered` | string | yes | Rendered text to check against the field's prompt budget |
+| `blockName` | string | yes | Block schema name (without .schema.json suffix), e.g. 'decisions' or 'features' |
+| `fieldPath` | string | yes | JSON-pointer-style path to the field, e.g. '/properties/decisions/items/properties/context' |
+</tool>
+
 </tools_reference>
 
 <commands_reference>

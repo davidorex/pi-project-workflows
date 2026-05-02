@@ -819,4 +819,202 @@ describe("compileAgent", () => {
 		const env = createTemplateEnv({ cwd, userDir });
 		assert.throws(() => compileAgent(spec, { env, input: {}, cwd }), AgentCompileError);
 	});
+
+	// ── enforceBudget Nunjucks global (v0.24.0) ───────────────────────────
+
+	/**
+	 * Helper: scaffold a `.project/schemas/<name>.schema.json` with the supplied
+	 * raw schema object so the enforceBudget global can resolve fields against it.
+	 */
+	function seedSchema(cwd: string, schemaName: string, schema: object): void {
+		const schemasDir = path.join(cwd, ".project", "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(path.join(schemasDir, `${schemaName}.schema.json`), JSON.stringify(schema));
+	}
+
+	it("enforceBudget global: under-budget render passes through unchanged", (t) => {
+		const cwd = tmpDir();
+		const userDir = tmpDir();
+		t.after(() => {
+			fs.rmSync(cwd, { recursive: true, force: true });
+			fs.rmSync(userDir, { recursive: true, force: true });
+		});
+
+		seedSchema(cwd, "decisions", {
+			type: "object",
+			properties: {
+				decisions: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							context: { type: "string", "x-prompt-budget": { tokens: 1000, words: 800 } },
+						},
+					},
+				},
+			},
+		});
+
+		const tmplDir = path.join(cwd, ".project", "templates");
+		fs.mkdirSync(tmplDir, { recursive: true });
+		const tmplPath = path.join(tmplDir, "under-task.md");
+		fs.writeFileSync(tmplPath, 'Out: {{ enforceBudget("short context", "decisions", "decisions.items.context") }}');
+
+		const specPath = path.join(cwd, "under.agent.yaml");
+		fs.writeFileSync(
+			specPath,
+			["name: under", "model: test/m", "prompt:", "  task:", `    template: ${tmplPath}`].join("\n"),
+		);
+		const spec = parseAgentYaml(specPath);
+		const env = createTemplateEnv({ cwd, userDir });
+		const compiled = compileAgent(spec, { env, input: {}, cwd });
+		assert.ok(compiled.taskPrompt.includes("Out: short context"));
+		assert.strictEqual(compiled.budgetWarnings, undefined);
+	});
+
+	it("enforceBudget global: over-budget render truncates and populates budgetWarnings", (t) => {
+		const cwd = tmpDir();
+		const userDir = tmpDir();
+		t.after(() => {
+			fs.rmSync(cwd, { recursive: true, force: true });
+			fs.rmSync(userDir, { recursive: true, force: true });
+		});
+
+		seedSchema(cwd, "decisions", {
+			type: "object",
+			properties: {
+				decisions: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							context: { type: "string", "x-prompt-budget": { tokens: 5, words: 5 } },
+						},
+					},
+				},
+			},
+		});
+
+		const longText = "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda";
+		const tmplDir = path.join(cwd, ".project", "templates");
+		fs.mkdirSync(tmplDir, { recursive: true });
+		const tmplPath = path.join(tmplDir, "over-task.md");
+		fs.writeFileSync(tmplPath, `Out: {{ enforceBudget(long, "decisions", "decisions.items.context") }}`);
+
+		const specPath = path.join(cwd, "over.agent.yaml");
+		fs.writeFileSync(
+			specPath,
+			["name: over", "model: test/m", "prompt:", "  task:", `    template: ${tmplPath}`].join("\n"),
+		);
+		const spec = parseAgentYaml(specPath);
+		const env = createTemplateEnv({ cwd, userDir });
+		const compiled = compileAgent(spec, { env, input: { long: longText }, cwd });
+		assert.ok(
+			compiled.taskPrompt.includes("[…truncated to budget]"),
+			`expected truncation marker, got: ${compiled.taskPrompt}`,
+		);
+		assert.ok(Array.isArray(compiled.budgetWarnings) && compiled.budgetWarnings.length === 1);
+		const w = compiled.budgetWarnings![0]!;
+		assert.strictEqual(w.field, "/properties/decisions/items/properties/context");
+		assert.strictEqual(w.truncated, true);
+		assert.strictEqual(w.budget.tokens, 5);
+	});
+
+	it("enforceBudget global: accepts JSON-pointer field path verbatim", (t) => {
+		const cwd = tmpDir();
+		const userDir = tmpDir();
+		t.after(() => {
+			fs.rmSync(cwd, { recursive: true, force: true });
+			fs.rmSync(userDir, { recursive: true, force: true });
+		});
+
+		seedSchema(cwd, "decisions", {
+			type: "object",
+			properties: {
+				decisions: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							context: { type: "string", "x-prompt-budget": { tokens: 3, words: 3 } },
+						},
+					},
+				},
+			},
+		});
+
+		const longText = "one two three four five";
+		const tmplDir = path.join(cwd, ".project", "templates");
+		fs.mkdirSync(tmplDir, { recursive: true });
+		const tmplPath = path.join(tmplDir, "ptr-task.md");
+		fs.writeFileSync(
+			tmplPath,
+			`Out: {{ enforceBudget(long, "decisions", "/properties/decisions/items/properties/context") }}`,
+		);
+
+		const specPath = path.join(cwd, "ptr.agent.yaml");
+		fs.writeFileSync(
+			specPath,
+			["name: ptr", "model: test/m", "prompt:", "  task:", `    template: ${tmplPath}`].join("\n"),
+		);
+		const spec = parseAgentYaml(specPath);
+		const env = createTemplateEnv({ cwd, userDir });
+		const compiled = compileAgent(spec, { env, input: { long: longText }, cwd });
+		assert.ok(compiled.taskPrompt.includes("[…truncated to budget]"));
+		assert.ok(compiled.budgetWarnings && compiled.budgetWarnings.length === 1);
+	});
+
+	it("enforceBudget global: missing schema is pass-through (no warnings)", (t) => {
+		const cwd = tmpDir();
+		const userDir = tmpDir();
+		t.after(() => {
+			fs.rmSync(cwd, { recursive: true, force: true });
+			fs.rmSync(userDir, { recursive: true, force: true });
+		});
+		// No .project/schemas/decisions.schema.json — pass-through.
+		const tmplDir = path.join(cwd, ".project", "templates");
+		fs.mkdirSync(tmplDir, { recursive: true });
+		const tmplPath = path.join(tmplDir, "noschema-task.md");
+		fs.writeFileSync(
+			tmplPath,
+			`Out: {{ enforceBudget("anything goes", "nonexistent-block", "nonexistent.items.field") }}`,
+		);
+
+		const specPath = path.join(cwd, "noschema.agent.yaml");
+		fs.writeFileSync(
+			specPath,
+			["name: noschema", "model: test/m", "prompt:", "  task:", `    template: ${tmplPath}`].join("\n"),
+		);
+		const spec = parseAgentYaml(specPath);
+		const env = createTemplateEnv({ cwd, userDir });
+		const compiled = compileAgent(spec, { env, input: {}, cwd });
+		assert.ok(compiled.taskPrompt.includes("Out: anything goes"));
+		assert.strictEqual(compiled.budgetWarnings, undefined);
+	});
+
+	it("enforceBudget global: undefined rendered argument is pass-through (no error)", (t) => {
+		const cwd = tmpDir();
+		const userDir = tmpDir();
+		t.after(() => {
+			fs.rmSync(cwd, { recursive: true, force: true });
+			fs.rmSync(userDir, { recursive: true, force: true });
+		});
+
+		const tmplDir = path.join(cwd, ".project", "templates");
+		fs.mkdirSync(tmplDir, { recursive: true });
+		const tmplPath = path.join(tmplDir, "undef-task.md");
+		// `missing` is not in input — Nunjucks evaluates to undefined; the
+		// global must coerce defensively rather than throw.
+		fs.writeFileSync(tmplPath, `Out: '{{ enforceBudget(missing, "decisions", "decisions.items.context") }}'`);
+
+		const specPath = path.join(cwd, "undef.agent.yaml");
+		fs.writeFileSync(
+			specPath,
+			["name: undef", "model: test/m", "prompt:", "  task:", `    template: ${tmplPath}`].join("\n"),
+		);
+		const spec = parseAgentYaml(specPath);
+		const env = createTemplateEnv({ cwd, userDir });
+		const compiled = compileAgent(spec, { env, input: {}, cwd });
+		assert.ok(compiled.taskPrompt.includes("Out: ''"));
+	});
 });

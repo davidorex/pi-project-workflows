@@ -265,6 +265,15 @@ describe("compilation pipeline integration", () => {
 			autoescape: false,
 			throwOnUndefined: false,
 		});
+		// Per-item macros invoked through shared whole-block delegators reference
+		// resolve / render_recursive / enforceBudget globals registered by
+		// compileAgent in production. compileAgentSpec used here does not register
+		// them — pass-through stubs let the macros render under test.
+		env.addGlobal("resolve", () => null);
+		env.addGlobal("render_recursive", () => "");
+		env.addGlobal("enforceBudget", (rendered: unknown): string =>
+			typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
+		);
 
 		// Compile with block injection
 		const compiled = compileAgentSpec(spec, { path: "/src", role: "quality analyst" }, env, projectDir);
@@ -332,6 +341,15 @@ describe("compilation pipeline integration", () => {
 			autoescape: false,
 			throwOnUndefined: false,
 		});
+		// Per-item macros invoked through shared whole-block delegators reference
+		// resolve / render_recursive / enforceBudget globals registered by
+		// compileAgent in production. compileAgentSpec used here does not register
+		// them — pass-through stubs let the macros render under test.
+		env.addGlobal("resolve", () => null);
+		env.addGlobal("render_recursive", () => "");
+		env.addGlobal("enforceBudget", (rendered: unknown): string =>
+			typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
+		);
 
 		const spec = {
 			name: "custom-only-agent",
@@ -377,6 +395,15 @@ describe("compilation pipeline integration", () => {
 			autoescape: false,
 			throwOnUndefined: false,
 		});
+		// Per-item macros invoked through shared whole-block delegators reference
+		// resolve / render_recursive / enforceBudget globals registered by
+		// compileAgent in production. compileAgentSpec used here does not register
+		// them — pass-through stubs let the macros render under test.
+		env.addGlobal("resolve", () => null);
+		env.addGlobal("render_recursive", () => "");
+		env.addGlobal("enforceBudget", (rendered: unknown): string =>
+			typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
+		);
 
 		const spec = {
 			name: "missing-block-agent",
@@ -421,6 +448,15 @@ describe("compilation pipeline integration", () => {
 			autoescape: false,
 			throwOnUndefined: false,
 		});
+		// Per-item macros invoked through shared whole-block delegators reference
+		// resolve / render_recursive / enforceBudget globals registered by
+		// compileAgent in production. compileAgentSpec used here does not register
+		// them — pass-through stubs let the macros render under test.
+		env.addGlobal("resolve", () => null);
+		env.addGlobal("render_recursive", () => "");
+		env.addGlobal("enforceBudget", (rendered: unknown): string =>
+			typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
+		);
 
 		const spec = {
 			name: "no-project-agent",

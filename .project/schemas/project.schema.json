@@ -6,9 +6,17 @@
 	"required": ["name", "description", "core_value"],
 	"properties": {
 		"name": { "type": "string" },
-		"description": { "type": "string" },
-		"vision": { "type": "string", "description": "What this project aims to achieve and why it matters" },
-		"core_value": { "type": "string", "description": "One-sentence value proposition" },
+		"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
+		"vision": {
+			"type": "string",
+			"description": "What this project aims to achieve and why it matters",
+			"x-prompt-budget": { "tokens": 1000, "words": 800 }
+		},
+		"core_value": {
+			"type": "string",
+			"description": "One-sentence value proposition",
+			"x-prompt-budget": { "tokens": 1000, "words": 800 }
+		},
 		"target_users": {
 			"type": "array",
 			"items": { "type": "string" }
@@ -20,7 +28,7 @@
 				"required": ["type", "description"],
 				"properties": {
 					"type": { "type": "string" },
-					"description": { "type": "string" }
+					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
 				}
 			}
 		},
@@ -39,8 +47,11 @@
 				"required": ["id", "description"],
 				"properties": {
 					"id": { "type": "string" },
-					"description": { "type": "string" },
-					"success_criteria": { "type": "array", "items": { "type": "string" } }
+					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
+					"success_criteria": {
+						"type": "array",
+						"items": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
+					}
 				}
 			}
 		},

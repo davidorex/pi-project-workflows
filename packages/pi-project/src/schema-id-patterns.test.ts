@@ -199,3 +199,116 @@ describe("schema id-pattern enforcement (Plan 0)", () => {
 		});
 	}
 });
+
+/**
+ * Regression: v0.24.0 backfilled `x-prompt-budget` annotations on the eight
+ * legacy schemas (project, conventions, architecture, requirements,
+ * conformance-reference, domain, tasks, issues). Vendor extension keys are
+ * spec-permitted by JSON Schema draft-07 and AJV ignores unknown keywords by
+ * default. This regression asserts that the annotations do not reject existing
+ * minimal-required fixture data — if AJV grew strict-keyword behaviour or the
+ * annotation shape diverged, the existing data shape would start failing here.
+ */
+describe("legacy schema annotations: existing fixture data still validates clean", () => {
+	const ANNOTATED_LEGACY: Array<{ kind: string; arrayKey: string; item: Record<string, unknown> }> = [
+		{
+			kind: "tasks",
+			arrayKey: "tasks",
+			item: { id: "TASK-001", description: "narrative task description", status: "planned" },
+		},
+		{
+			kind: "requirements",
+			arrayKey: "requirements",
+			item: {
+				id: "REQ-001",
+				description: "narrative requirement",
+				type: "functional",
+				status: "proposed",
+				priority: "must",
+				acceptance_criteria: ["criterion one", "criterion two"],
+			},
+		},
+		{
+			kind: "issues",
+			arrayKey: "issues",
+			item: {
+				id: "issue-001",
+				title: "issue title",
+				body: "long narrative body content for the issue",
+				location: "x.ts:1",
+				status: "open",
+				category: "issue",
+				priority: "low",
+				package: "pi-project",
+			},
+		},
+	];
+	for (const c of ANNOTATED_LEGACY) {
+		const schemaPath = path.join(SCHEMAS_DIR, `${c.kind}.schema.json`);
+		it(`${c.kind}: annotated narrative fields still accept existing fixture shapes`, () => {
+			const data = { [c.arrayKey]: [c.item] };
+			const result = validateFromFile(schemaPath, data, `${c.kind} annotated`);
+			assert.deepStrictEqual(result, data);
+		});
+	}
+
+	it("project: annotated singleton schema still accepts minimal-required fields", () => {
+		const schemaPath = path.join(SCHEMAS_DIR, "project.schema.json");
+		const data = {
+			name: "test-project",
+			description: "narrative description",
+			core_value: "concise value statement",
+			vision: "vision narrative",
+			goals: [{ id: "G-001", description: "goal description", success_criteria: ["criterion one"] }],
+			constraints: [{ type: "platform", description: "constraint narrative" }],
+		};
+		const result = validateFromFile(schemaPath, data, "project annotated");
+		assert.deepStrictEqual(result, data);
+	});
+
+	it("conventions: annotated rules.description accepts existing rule shapes", () => {
+		const schemaPath = path.join(SCHEMAS_DIR, "conventions.schema.json");
+		const data = {
+			rules: [{ id: "R-001", description: "rule narrative", enforcement: "lint", severity: "warning" }],
+		};
+		const result = validateFromFile(schemaPath, data, "conventions annotated");
+		assert.deepStrictEqual(result, data);
+	});
+
+	it("domain: annotated entries.content accepts existing entry shapes", () => {
+		const schemaPath = path.join(SCHEMAS_DIR, "domain.schema.json");
+		const data = {
+			entries: [{ id: "D-001", title: "entry title", content: "knowledge body content", category: "research" }],
+		};
+		const result = validateFromFile(schemaPath, data, "domain annotated");
+		assert.deepStrictEqual(result, data);
+	});
+
+	it("architecture: annotated module.responsibility and pattern.description still validate", () => {
+		const schemaPath = path.join(SCHEMAS_DIR, "architecture.schema.json");
+		const data = {
+			modules: [{ name: "mod1", file: "src/m.ts", responsibility: "handles X with narrative detail" }],
+			patterns: [{ name: "P1", description: "pattern description narrative" }],
+		};
+		const result = validateFromFile(schemaPath, data, "architecture annotated");
+		assert.deepStrictEqual(result, data);
+	});
+
+	it("conformance-reference: annotated principle.description and rule.rule still validate", () => {
+		const schemaPath = path.join(SCHEMAS_DIR, "conformance-reference.schema.json");
+		const data = {
+			name: "ref",
+			scope: { type: "pi-extension" },
+			principles: [
+				{
+					id: "P1",
+					name: "Principle One",
+					description: "principle narrative",
+					rules: [{ id: "P1.1", rule: "rule statement narrative" }],
+				},
+			],
+		};
+		const result = validateFromFile(schemaPath, data, "conformance-reference annotated");
+		assert.deepStrictEqual(result, data);
+	});
+});

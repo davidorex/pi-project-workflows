@@ -26,10 +26,14 @@
 -#}
 
 {% macro render_requirement(req, depth=0) %}
-{% if req %}- **{{ req.id }}** [{{ req.priority }}] ({{ req.type }}, {{ req.status }}): {{ req.description }}{% if req.acceptance_criteria %}
-  Criteria: {{ req.acceptance_criteria | join("; ") }}{% endif %}
+{% if req %}- **{{ req.id }}** [{{ req.priority }}] ({{ req.type }}, {{ req.status }}): {{ enforceBudget(req.description, "requirements", "requirements.items.description") }}{% if req.acceptance_criteria %}
+  Criteria: {% for ac in req.acceptance_criteria %}{{ enforceBudget(ac, "requirements", "requirements.items.acceptance_criteria.items") }}{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}
 {% if req.source %}  Source: {{ req.source }}
 {% endif %}{% if req.traces_to is defined %}  Traces to: {% if req.traces_to | length > 0 %}{% for tid in req.traces_to %}{% if depth > 0 %}{% set loc = resolve(tid) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}{% else %}{{ tid }}{% endif %}{% else %}{{ tid }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
 {% endif %}{% if req.depends_on is defined %}  Depends on: {% if req.depends_on | length > 0 %}{% for did in req.depends_on %}{% if depth > 0 %}{% set loc = resolve(did) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}{% else %}{{ did }}{% endif %}{% else %}{{ did }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
 {% endif %}{% endif %}
 {% endmacro %}
+
+{#- Registry alias: derives `render_requirements` from the `requirements`
+    kind, bridges to canonical singular `render_requirement`. -#}
+{% macro render_requirements(req, depth=0) %}{{ render_requirement(req, depth) }}{% endmacro %}

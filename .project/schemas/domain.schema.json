@@ -13,7 +13,11 @@
 				"properties": {
 					"id": { "type": "string" },
 					"title": { "type": "string" },
-					"content": { "type": "string", "description": "The knowledge, research finding, or reference material" },
+					"content": {
+						"type": "string",
+						"description": "The knowledge, research finding, or reference material",
+						"x-prompt-budget": { "tokens": 1000, "words": 800 }
+					},
 					"category": { "type": "string", "enum": ["research", "reference", "domain-rule", "prior-art", "constraint"] },
 					"source": { "type": "string", "description": "Where this knowledge came from" },
 					"confidence": { "type": "string", "enum": ["high", "medium", "low"] },

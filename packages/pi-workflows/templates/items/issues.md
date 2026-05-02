@@ -23,9 +23,15 @@
 
 {% macro render_issue(i, depth=0) %}
 {% if i %}- **{{ i.id }}** [{{ i.priority }}, {{ i.status }}]: {{ i.title }}
-  {{ i.body }}{% if i.location %} — {{ i.location }}{% endif %}{% if i.package %} ({{ i.package }}){% endif %}
+  {{ enforceBudget(i.body, "issues", "issues.items.body") }}{% if i.location %} — {{ i.location }}{% endif %}{% if i.package %} ({{ i.package }}){% endif %}
 {% if i.category %}  Category: {{ i.category }}
 {% endif %}{% if i.source %}  Source: {{ i.source }}
 {% endif %}{% if i.resolved_by %}  Resolved by: {{ i.resolved_by }}
 {% endif %}{% endif %}
 {% endmacro %}
+
+{#- Registry alias: the renderer-registry derives `render_issues` from the
+    `issues` kind. The canonical per-item name is `render_issue` (singular).
+    This alias bridges the registry-default → canonical so that
+    `render_recursive` and `renderItemById` can dispatch when loc.block === "issues". -#}
+{% macro render_issues(i, depth=0) %}{{ render_issue(i, depth) }}{% endmacro %}

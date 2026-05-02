@@ -53,13 +53,13 @@ Created at: {{ dec.created_at }}
 {% endif %}{% if dec.enacted_at %}Enacted at: {{ dec.enacted_at }}
 {% endif %}
 Context:
-{{ dec.context }}
+{{ enforceBudget(dec.context, "decisions", "decisions.items.context") }}
 
 Decision:
-{{ dec.decision }}
+{{ enforceBudget(dec.decision, "decisions", "decisions.items.decision") }}
 
 Consequences:
-{% if dec.consequences and dec.consequences | length > 0 %}{% for c in dec.consequences %}  - {{ c }}
+{% if dec.consequences and dec.consequences | length > 0 %}{% for c in dec.consequences %}  - {{ enforceBudget(c, "decisions", "decisions.items.consequences.items") }}
 {% endfor %}{% else %}  (none)
 {% endif %}
 {% if dec.options_considered is defined %}Options considered:

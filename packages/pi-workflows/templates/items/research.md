@@ -57,16 +57,16 @@ Created at: {{ r.created_at }}
 {% endif %}{% if r.grounded_at %}Grounded at: {{ r.grounded_at }}
 {% endif %}
 Question:
-{{ r.question }}
+{{ enforceBudget(r.question, "research", "research.items.question") }}
 
 Method:
-{{ r.method }}
+{{ enforceBudget(r.method, "research", "research.items.method") }}
 
 {% if r.scope is defined %}Scope:
 {% if r.scope | length > 0 %}{% for s in r.scope %}  - {{ s }}
 {% endfor %}{% else %}  (none)
 {% endif %}{% endif %}Findings summary:
-{{ r.findings_summary }}
+{{ enforceBudget(r.findings_summary, "research", "research.items.findings_summary") }}
 
 {% if r.findings_document %}Findings document: {{ r.findings_document }}
 {% endif %}{% if r.grounding is defined %}Grounding:

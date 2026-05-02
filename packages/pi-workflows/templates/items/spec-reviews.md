@@ -55,14 +55,14 @@ Created at: {{ rev.created_at }}
 {% endif %}{% if rev.completed_at %}Completed at: {{ rev.completed_at }}
 {% endif %}{% if rev.clean is defined %}Clean: {{ rev.clean }}
 {% endif %}{% if rev.method %}Method:
-{{ rev.method }}
+{{ enforceBudget(rev.method, "spec-reviews", "reviews.items.method") }}
 
 {% endif %}{% if rev.scope is defined %}Scope:
 {% if rev.scope | length > 0 %}{% for s in rev.scope %}  - {{ s }}
 {% endfor %}{% else %}  (none)
 {% endif %}{% endif %}Findings:
 {% if rev.findings and rev.findings | length > 0 %}{% for f in rev.findings %}  - {{ f.id }} [{{ f.severity }}/{{ f.category }}/{{ f.state }}] reporter={{ f.reporter }} at={{ f.created_at }}
-    Description: {{ f.description }}
+    Description: {{ enforceBudget(f.description, "spec-reviews", "reviews.items.findings.items.description") }}
 {% if f.evidence %}    Evidence: {{ f.evidence }}
 {% endif %}{% if f.location %}    Location: {{ f.location }}
 {% endif %}{% if f.resolution %}    Resolution: {{ f.resolution }}

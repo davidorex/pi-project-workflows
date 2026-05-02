@@ -31,11 +31,16 @@
 -#}
 
 {% macro render_task(t, depth=0) %}
-{% if t %}- **{{ t.id }}** [{{ t.status }}]: {{ t.description }}{% if t.phase %} (phase {{ t.phase }}){% endif %}{% if t.files %} — files: {{ t.files | join(", ") }}{% endif %}
-{% if t.acceptance_criteria %}  Criteria: {{ t.acceptance_criteria | join("; ") }}
+{% if t %}- **{{ t.id }}** [{{ t.status }}]: {{ enforceBudget(t.description, "tasks", "tasks.items.description") }}{% if t.phase %} (phase {{ t.phase }}){% endif %}{% if t.files %} — files: {{ t.files | join(", ") }}{% endif %}
+{% if t.acceptance_criteria %}  Criteria: {% for ac in t.acceptance_criteria %}{{ enforceBudget(ac, "tasks", "tasks.items.acceptance_criteria.items") }}{% if not loop.last %}; {% endif %}{% endfor %}
 {% endif %}{% if t.assigned_agent %}  Assigned agent: {{ t.assigned_agent }}
-{% endif %}{% if t.notes %}  Notes: {{ t.notes }}
+{% endif %}{% if t.notes %}  Notes: {{ enforceBudget(t.notes, "tasks", "tasks.items.notes") }}
 {% endif %}{% if t.depends_on is defined %}  Depends on: {% if t.depends_on | length > 0 %}{% for did in t.depends_on %}{% if depth > 0 %}{% set loc = resolve(did) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}{% else %}{{ did }}{% endif %}{% else %}{{ did }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}(none){% endif %}
 {% endif %}{% if t.verification %}  Verification: {% if depth > 0 %}{% set loc = resolve(t.verification) %}{% if loc %}{{ render_recursive(loc, depth - 1) }}{% else %}{{ t.verification }}{% endif %}{% else %}{{ t.verification }}{% endif %}
 {% endif %}{% endif %}
 {% endmacro %}
+
+{#- Registry alias: derives the registry default name `render_tasks` from the
+    `tasks` kind. Bridges to canonical singular `render_task` for renderer-
+    registry / renderItemById dispatch when loc.block === "tasks". -#}
+{% macro render_tasks(t, depth=0) %}{{ render_task(t, depth) }}{% endmacro %}

@@ -8,6 +8,16 @@ const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(templatesDir)
 	autoescape: false,
 	throwOnUndefined: false,
 });
+// Per-item macros invoked through shared whole-block delegators reference
+// the `enforceBudget` Nunjucks global registered by compileAgent in
+// production. These macros tests don't go through compileAgent, so register
+// a pass-through here matching the real signature so the macros render
+// without raising "undefined or falsey" on the global call.
+env.addGlobal("resolve", () => null);
+env.addGlobal("render_recursive", () => "");
+env.addGlobal("enforceBudget", (rendered: unknown): string =>
+	typeof rendered === "string" ? rendered : rendered === undefined || rendered === null ? "" : String(rendered),
+);
 
 function renderMacro(macroName: string, data: unknown): string {
 	const template = `{% from "shared/macros.md" import ${macroName} %}{{ ${macroName}(data) }}`;

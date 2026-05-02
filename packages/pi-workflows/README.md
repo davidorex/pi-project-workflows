@@ -29,8 +29,15 @@ pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orch
 
 Workflows consume project blocks as typed input via `readBlock()` — structured data, not raw files. When workflow agents write back to project blocks, pi-project's schema validation enforces the shape at write time. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
 
-**Tool registered:**
+**Tools registered:**
 - `workflow` — run a named workflow with typed input
+- `workflow-list` — list available workflows from all three discovery tiers
+- `workflow-agents` — list available agents with their input/output contracts
+- `workflow-validate` — validate a workflow spec or all specs in scope
+- `workflow-status` — derived workflow vocabulary, agents, and contracts
+- `workflow-init` — scaffold `.workflows/` for run state
+- `render-item-by-id` — render a project block item via its per-item macro (consumes the renderer registry + cross-block resolver from pi-jit-agents)
+- `enforce-budget` — apply an `x-prompt-budget` annotation against rendered text and report truncation
 
 **Commands registered:**
 - `/workflow init` — scaffold `.workflows/` directory for run state
@@ -86,6 +93,8 @@ completion:
 | `foreach` | Iterate over an array |
 | `loop` | Repeat steps with a condition |
 | `pause` | Halt execution for human review |
+| `monitor` | Invoke a behavior monitor as a verification gate (CLEAN → continue, FLAG/NEW → fail) |
+| `block` | In-process block I/O via pi-project's block-api primitives — `read`, `readDir`, `write`, `append`, `update`, `nestedAppend`, `updateNested`, `remove`, `removeNested` (one variant per primitive; full top-level + nested CRUD without subprocess overhead) |
 
 ### Expressions
 
@@ -119,11 +128,16 @@ Available filters: `length`, `keys`, `filter`, `json`, `upper`, `lower`, `trim`,
 | `src/output.ts` | Step output persistence |
 | `src/completion.ts` | Post-workflow message resolution |
 | `src/tui.ts` | Terminal progress widget |
-| `src/types.ts` | Shared type definitions |
+| `src/types.ts` | Shared type definitions including the `BlockSpec` union (read / readDir / write / append / update / nestedAppend / updateNested / remove / removeNested) |
 | `src/format.ts` | Output formatting utilities |
 | `src/step-shared.ts` | Shared step execution utilities |
 | `src/workflows-dir.ts` | `WORKFLOWS_DIR` constant (`.workflows`) |
 | `src/step-*.ts` | Step type executors (one per type) |
+| `src/render-by-id.ts` | `renderItemById(cwd, id, depth)` composition helper (resolver + registry + Nunjucks env); consumed by the `render-item-by-id` registered tool |
+| `src/test-helpers.ts` | Shared per-macro test scaffolding (`makeEnv`, `buildFixtureIdIndex`, `renderItem`, `renderWhole`, `TEMPLATES_DIR`); consolidated harness for the 14 `render-*.test.ts` files |
+| `templates/items/<kind>.md` | Per-item Nunjucks macros — one per block kind, depth-aware, consume `resolve` / `render_recursive` / `enforceBudget` globals |
+| `templates/shared/macros.md` | Whole-block delegators that map per-item macros over block items |
+| `templates/shared/render-helpers.md` | Helper macros for the cross-reference recursion / optional-array / optional-scalar patterns; imported by per-item macros |
 
 ## Bundled Resources
 

@@ -13,6 +13,8 @@ export * from "./errors.js";
 export { agentContract } from "./introspect.js";
 export type { CompleteFn, NormalizedToolChoice } from "./jit-runtime.js";
 export { buildPhantomTool, executeAgent, normalizeToolChoice } from "./jit-runtime.js";
+export type { ItemMacroRef, RendererRegistry } from "./renderer-registry.js";
+export { createRendererRegistry } from "./renderer-registry.js";
 export type { TemplateEnvContext } from "./template.js";
 export { createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.js";
 export type { RedactionConfig, RedactionPattern } from "./trace-redactor.js";

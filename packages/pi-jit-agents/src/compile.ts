@@ -75,8 +75,16 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 
 	if (spec.contextBlocks && spec.contextBlocks.length > 0) {
 		const projectDir = path.join(ctx.cwd, ".project");
+		// Plan 3 widened `contextBlocks` to (string | ContextBlockRef)[]. Plan 4
+		// (Wave 2) owns object-form resolution semantics; until then object
+		// entries are intentionally ignored at compile time so this loop's
+		// observable behaviour for the established whole-block surface is
+		// unchanged. Filtering to strings here is a narrowing convenience, not
+		// a semantic decision — Plan 4 will replace this iteration with the
+		// per-item / scoped resolver.
+		const stringEntries = spec.contextBlocks.filter((entry): entry is string => typeof entry === "string");
 		if (fs.existsSync(projectDir)) {
-			for (const name of spec.contextBlocks) {
+			for (const name of stringEntries) {
 				const key = `_${name.replace(/-/g, "_")}`;
 				try {
 					const blockData = readBlock(ctx.cwd, name);
@@ -88,7 +96,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 				}
 			}
 		} else {
-			for (const name of spec.contextBlocks) {
+			for (const name of stringEntries) {
 				const key = `_${name.replace(/-/g, "_")}`;
 				contextValues[name] = null;
 				templateContext[key] = null;

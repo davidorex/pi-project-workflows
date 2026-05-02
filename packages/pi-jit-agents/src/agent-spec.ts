@@ -9,7 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { AgentNotFoundError, AgentParseError } from "./errors.js";
-import type { AgentSpec, LoadContext } from "./types.js";
+import type { AgentSpec, ContextBlockRef, LoadContext } from "./types.js";
 
 /**
  * Treat a prompt-field value that may be either an object with a `template`
@@ -42,6 +42,106 @@ function resolveSpecPath(value: string | undefined, specDir: string): string | u
 	if (value.startsWith("block:")) return value;
 	if (path.isAbsolute(value)) return value;
 	return path.resolve(specDir, value);
+}
+
+/**
+ * Validate and normalise a single `contextBlocks` entry.
+ *
+ * Accepts:
+ * - a non-empty string (whole-block reference, the established surface), or
+ * - an object with a required string `name` and optional `item` (string),
+ *   `focus` (record of string→string), and `depth` (non-negative number).
+ *
+ * Throws `AgentParseError` with a descriptive message naming the offending
+ * entry's index and the failing constraint. Plan 4 (Wave 2) consumes the
+ * resulting union shape; this helper does not assign any runtime semantics.
+ */
+function parseContextBlockEntry(
+	entry: unknown,
+	index: number,
+	agentName: string,
+	filePath: string,
+): string | ContextBlockRef {
+	if (typeof entry === "string") {
+		if (entry.length === 0) {
+			throw new AgentParseError(
+				agentName,
+				filePath,
+				new Error(`contextBlocks[${index}]: bare-string entry must be non-empty`),
+			);
+		}
+		return entry;
+	}
+	if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+		throw new AgentParseError(
+			agentName,
+			filePath,
+			new Error(
+				`contextBlocks[${index}]: entry must be a string or an object with at least { name: string }; got ${
+					Array.isArray(entry) ? "array" : entry === null ? "null" : typeof entry
+				}`,
+			),
+		);
+	}
+
+	const obj = entry as Record<string, unknown>;
+	if (typeof obj.name !== "string" || obj.name.length === 0) {
+		throw new AgentParseError(
+			agentName,
+			filePath,
+			new Error(`contextBlocks[${index}]: object form requires a non-empty string \`name\` field`),
+		);
+	}
+
+	const out: ContextBlockRef = { name: obj.name };
+
+	if (obj.item !== undefined) {
+		if (typeof obj.item !== "string" || obj.item.length === 0) {
+			throw new AgentParseError(
+				agentName,
+				filePath,
+				new Error(`contextBlocks[${index}].item: when present must be a non-empty string`),
+			);
+		}
+		out.item = obj.item;
+	}
+
+	if (obj.focus !== undefined) {
+		if (obj.focus === null || typeof obj.focus !== "object" || Array.isArray(obj.focus)) {
+			throw new AgentParseError(
+				agentName,
+				filePath,
+				new Error(`contextBlocks[${index}].focus: when present must be an object mapping string keys to string values`),
+			);
+		}
+		const focus: Record<string, string> = {};
+		for (const [k, v] of Object.entries(obj.focus as Record<string, unknown>)) {
+			if (typeof v !== "string") {
+				throw new AgentParseError(
+					agentName,
+					filePath,
+					new Error(`contextBlocks[${index}].focus.${k}: value must be a string; got ${typeof v}`),
+				);
+			}
+			focus[k] = v;
+		}
+		out.focus = focus;
+	}
+
+	if (obj.depth !== undefined) {
+		if (typeof obj.depth !== "number" || !Number.isFinite(obj.depth) || obj.depth < 0 || !Number.isInteger(obj.depth)) {
+			throw new AgentParseError(
+				agentName,
+				filePath,
+				new Error(
+					`contextBlocks[${index}].depth: when present must be a non-negative integer; got ${String(obj.depth)}`,
+				),
+			);
+		}
+		out.depth = obj.depth;
+	}
+
+	return out;
 }
 
 /**
@@ -93,7 +193,11 @@ export function parseAgentYaml(filePath: string): AgentSpec {
 		inputSchema: spec.input,
 		outputFormat: spec.output?.format,
 		outputSchema: resolveSpecPath(spec.output?.schema, specDir),
-		contextBlocks: Array.isArray(spec.contextBlocks) ? spec.contextBlocks : undefined,
+		contextBlocks: Array.isArray(spec.contextBlocks)
+			? spec.contextBlocks.map((entry: unknown, index: number) =>
+					parseContextBlockEntry(entry, index, spec.name || name, filePath),
+				)
+			: undefined,
 		loadedFrom: specDir,
 	};
 }

@@ -51,6 +51,108 @@ describe("parseAgentYaml", () => {
 	});
 });
 
+describe("parseAgentYaml — contextBlocks union form", () => {
+	function withSpec(t: { after: (fn: () => void) => void }, body: string): string {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		return writeAgent(dir, "ctx", `name: ctx\nmodel: test/m\n${body}`);
+	}
+
+	it("preserves bare-string array form (regression)", (t) => {
+		const file = withSpec(t, "contextBlocks:\n  - requirements\n  - decisions\n");
+		const spec = parseAgentYaml(file);
+		assert.deepStrictEqual(spec.contextBlocks, ["requirements", "decisions"]);
+	});
+
+	it("parses a mixed array of strings and objects", (t) => {
+		const file = withSpec(
+			t,
+			"contextBlocks:\n  - requirements\n  - name: features\n    item: FEAT-001\n    depth: 1\n",
+		);
+		const spec = parseAgentYaml(file);
+		assert.deepStrictEqual(spec.contextBlocks, ["requirements", { name: "features", item: "FEAT-001", depth: 1 }]);
+	});
+
+	it("parses an object entry with all optional fields populated", (t) => {
+		const file = withSpec(
+			t,
+			`${[
+				"contextBlocks:",
+				"  - name: features",
+				"    item: FEAT-001",
+				"    focus:",
+				"      story: STORY-001",
+				"    depth: 2",
+			].join("\n")}\n`,
+		);
+		const spec = parseAgentYaml(file);
+		assert.deepStrictEqual(spec.contextBlocks, [
+			{ name: "features", item: "FEAT-001", focus: { story: "STORY-001" }, depth: 2 },
+		]);
+	});
+
+	it("throws AgentParseError when an object entry is missing `name`", (t) => {
+		const file = withSpec(t, "contextBlocks:\n  - item: FEAT-001\n");
+		assert.throws(
+			() => parseAgentYaml(file),
+			(err: unknown) => {
+				assert.ok(err instanceof AgentParseError);
+				assert.match(err.message, /contextBlocks\[0\].*name/);
+				return true;
+			},
+		);
+	});
+
+	it("throws AgentParseError when `depth` is negative", (t) => {
+		const file = withSpec(t, "contextBlocks:\n  - name: features\n    depth: -1\n");
+		assert.throws(
+			() => parseAgentYaml(file),
+			(err: unknown) => {
+				assert.ok(err instanceof AgentParseError);
+				assert.match(err.message, /contextBlocks\[0\]\.depth/);
+				return true;
+			},
+		);
+	});
+
+	it("throws AgentParseError when an entry is neither string nor object", (t) => {
+		const file = withSpec(t, "contextBlocks:\n  - 42\n");
+		assert.throws(
+			() => parseAgentYaml(file),
+			(err: unknown) => {
+				assert.ok(err instanceof AgentParseError);
+				assert.match(err.message, /contextBlocks\[0\].*string or an object/);
+				return true;
+			},
+		);
+	});
+
+	it("throws AgentParseError when `focus` has a non-string value", (t) => {
+		const file = withSpec(t, "contextBlocks:\n  - name: features\n    focus:\n      story: 123\n");
+		assert.throws(
+			() => parseAgentYaml(file),
+			(err: unknown) => {
+				assert.ok(err instanceof AgentParseError);
+				assert.match(err.message, /contextBlocks\[0\]\.focus\.story/);
+				return true;
+			},
+		);
+	});
+
+	it("AgentContract projection inherits the union shape (type-only smoke)", (t) => {
+		const file = withSpec(t, "contextBlocks:\n  - requirements\n  - name: features\n    item: FEAT-001\n");
+		const spec = parseAgentYaml(file);
+		// Assignment-compatibility check: AgentContract.contextBlocks is the same
+		// union; if the type were narrowed, this would fail tsc in `npm run check`.
+		const contract: { contextBlocks?: (string | { name: string; item?: string })[] } = {
+			contextBlocks: spec.contextBlocks,
+		};
+		assert.strictEqual(contract.contextBlocks?.length, 2);
+		assert.strictEqual(contract.contextBlocks?.[0], "requirements");
+		assert.deepStrictEqual(contract.contextBlocks?.[1], { name: "features", item: "FEAT-001" });
+	});
+});
+
 describe("createAgentLoader", () => {
 	it("finds an agent in the project tier (.project/agents/)", (t) => {
 		const cwd = tmpProject();

@@ -40,12 +40,50 @@ export interface AgentSpec {
 	 * against the invocation cwd.
 	 */
 	outputSchema?: string;
-	contextBlocks?: string[];
+	/**
+	 * Block-context references injected into the agent's template environment.
+	 *
+	 * Two element shapes are accepted:
+	 *
+	 * - **Bare string** (e.g. `"requirements"`): whole-block injection — the
+	 *   entire `.project/<name>.json` payload is read at compile time and
+	 *   surfaced to the template under `_<name>`. This is the established
+	 *   surface and remains unchanged for existing specs.
+	 *
+	 * - **Object** ({@link ContextBlockRef}): per-item or scoped injection —
+	 *   declares a specific item id and/or kind-specific focus hints to be
+	 *   resolved by the compile-time injector. Plan 4 (Wave 2) owns the
+	 *   resolution semantics; the parser only typechecks the shape here.
+	 */
+	contextBlocks?: (string | ContextBlockRef)[];
 	/**
 	 * Directory the spec was loaded from. Internal use — exposed on the type
 	 * for tier-aware operations but never relied on by consumers directly.
 	 */
 	readonly loadedFrom: string;
+}
+
+/**
+ * Typed object form for {@link AgentSpec.contextBlocks} entries.
+ *
+ * Bare-string entries in `contextBlocks` denote whole-block injection
+ * (existing behaviour); object entries denote per-item or scoped injection
+ * — the surface Plan 4 (Wave 2) consumes to inject specific block items
+ * (e.g. one decision, one feature) rather than entire blocks.
+ *
+ * `compileAgent` does not yet honour these fields; this interface defines
+ * the parsing-time contract only. Plan 4 wires resolution through the
+ * cross-block resolver and per-item macros.
+ */
+export interface ContextBlockRef {
+	/** Block name, e.g. "decisions", "features". Required. */
+	name: string;
+	/** Optional ID of a specific item to inject. Plan 4 resolves via cross-block resolver. */
+	item?: string;
+	/** Optional kind-specific scope hints (e.g., { story: "STORY-001" }). Plan 4 passes through to macros. */
+	focus?: Record<string, string>;
+	/** Optional traversal depth. 0 = bare-ID refs (default), 1 = inline direct, 2+ recurse. */
+	depth?: number;
 }
 
 /**
@@ -186,7 +224,7 @@ export interface AgentContract {
 	name: string;
 	role?: string;
 	inputSchema?: Record<string, unknown>;
-	contextBlocks?: string[];
+	contextBlocks?: (string | ContextBlockRef)[];
 	outputFormat?: "json" | "text";
 	outputSchema?: string;
 }

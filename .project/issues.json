@@ -725,6 +725,28 @@
       "priority": "high",
       "package": "pi-behavior-monitors",
       "source": "agent"
+    },
+    {
+      "id": "issue-066",
+      "title": "workflow executor crashes with `name.replace is not a function` on any agent dispatch",
+      "body": "Surfaced by the v0.24.x verification protocol run (docs/reports/pi-internal-verification-protocol-2026-05-02.md). Every agent-dispatching test section returns the runtime error `name.replace is not a function` from the workflow executor before the agent subprocess is spawned. Suspected location: packages/pi-workflows/src/workflow-executor.ts or packages/pi-workflows/src/dispatch.ts where a name-like field is normalised; investigation needed to identify the exact call site (likely a recent refactor introduced a value where a string was previously assumed). Blocks 13 of the protocol test sections (4.4, 4.5, 4.6, 4.7, 4.8, 4.10, 4.12a, 4.13c, 4.13e, 4.15, 4.16, 4.18, 5.1) and is the gating defect for REVIEW-001 dispatch via workflow (the intended shape uses an agent step then nestedAppend findings). Direct-tool surfaces (resolve-item-by-id, render-item-by-id, enforce-budget, append-block-nested-item, update-block-nested-item, remove-block-item, remove-block-nested-item, read-block-dir) all pass end-to-end so the defect is contained to the workflow executor agent-step path. One error message means one bug-shape; investigation should be bounded.",
+      "location": "packages/pi-workflows/src/workflow-executor.ts (or sibling agent-dispatch site — exact line TBD by investigation)",
+      "status": "open",
+      "category": "issue",
+      "priority": "high",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "issue-067",
+      "title": "agent-spec discovery path split — pi-workflows uses .pi/agents/, pi-jit-agents uses .project/agents/ three-tier",
+      "body": "Surfaced by the v0.24.x verification protocol run. The protocol authored fixture agent yamls under `.project/agents/` per the three-tier loader contract documented in pi-jit-agents (`.project/agents/` → `~/.pi/agent/agents/` → consumer builtin). Workflow agent dispatch through pi-workflows did not see them — pi-workflows still uses its own loader that points at `.pi/agents/`. Two agent-discovery code paths coexist; consumer migration to adopt pi-jit-agents createAgentLoader as the canonical surface (FEAT-001 territory) has not landed for the workflow path. The protocol workaround (copying the fixture to `.pi/agents/`) cannot be exercised because issue-066 (workflow executor crash) blocks dispatch end-to-end. Resolution belongs inside the FEAT-001 consumer-migration arc; filed here so the discovery split is queryable independent of the FEAT record’s broader scope.",
+      "location": "packages/pi-workflows/src/agent-spec.ts or packages/pi-workflows/src/dispatch.ts (workflow-side loader); packages/pi-jit-agents/src/agent-spec.ts (canonical three-tier loader)",
+      "status": "open",
+      "category": "issue",
+      "priority": "medium",
+      "package": "pi-workflows",
+      "source": "agent"
     }
   ]
 }

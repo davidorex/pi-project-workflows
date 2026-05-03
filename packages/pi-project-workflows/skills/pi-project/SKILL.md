@@ -161,13 +161,41 @@ Complete a task with verification gate — requires a passing verification entry
 | `verificationId` | string | yes | Verification entry ID (must target this task with status 'passed') |
 </tool>
 
+<tool name="project-validate-relations">
+Validate the closure-table edges in .project/relations.json against config + per-block item snapshots; emit structured diagnostics for unknown relation types, parent/child residency mismatches, lens-bin membership, and cycles.
+
+*Validate substrate relations (closure-table edges + cycles)*
+
+</tool>
+
+<tool name="project-edges-for-lens">
+Return the materialized Edge[] for a named lens — synthetic from derived_from_field, or filtered authored edges for hand-curated lenses.
+
+*List edges for a substrate lens*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `lensId` | string | yes | Lens id from .project/config.json's lenses array |
+</tool>
+
+<tool name="project-walk-descendants">
+Walk closure-table descendants of parentId under the given relation_type. Returns the descendant id list (cycle-safe via visited-set guard).
+
+*Walk descendants of a node under a relation_type*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `parentId` | string | yes | Canonical id (e.g., FGAP-001) or lens.bins value |
+| `relationType` | string | yes | Edge label declared in config.hierarchy or config.lenses |
+</tool>
+
 </tools_reference>
 
 <commands_reference>
 <command name="/project">
 Project state management
 
-Subcommands: `init`, `install`, `status`, `add-work`, `validate`, `help`
+Subcommands: `init`, `install`, `view`, `lens-curate`, `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>

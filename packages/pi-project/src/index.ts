@@ -24,7 +24,15 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "./block-api.js";
-import { projectRoot } from "./project-context.js";
+import {
+	buildCurationSuggestions,
+	edgesForLensByName,
+	loadLensView,
+	renderLensView,
+	validateProjectRelations,
+	walkLensDescendants,
+} from "./lens-view.js";
+import { getProjectContext, projectRoot } from "./project-context.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import {
 	type ConfigBlock,
@@ -874,6 +882,83 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Tool: project-validate-relations ──────────────────────────────────
+
+	pi.registerTool({
+		name: "project-validate-relations",
+		label: "Project: validate relations",
+		description:
+			"Validate the closure-table edges in .project/relations.json against config + per-block item snapshots; emit structured diagnostics for unknown relation types, parent/child residency mismatches, lens-bin membership, and cycles.",
+		promptSnippet: "Validate substrate relations (closure-table edges + cycles)",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = validateProjectRelations(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: project-edges-for-lens ──────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-edges-for-lens",
+		label: "Project: edges for lens",
+		description:
+			"Return the materialized Edge[] for a named lens — synthetic from derived_from_field, or filtered authored edges for hand-curated lenses.",
+		promptSnippet: "List edges for a substrate lens",
+		parameters: Type.Object({
+			lensId: Type.String({ description: "Lens id from .project/config.json's lenses array" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { lensId: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = edgesForLensByName(ctx.cwd, params.lensId);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: project-walk-descendants ────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-walk-descendants",
+		label: "Project: walk descendants",
+		description:
+			"Walk closure-table descendants of parentId under the given relation_type. Returns the descendant id list (cycle-safe via visited-set guard).",
+		promptSnippet: "Walk descendants of a node under a relation_type",
+		parameters: Type.Object({
+			parentId: Type.String({ description: "Canonical id (e.g., FGAP-001) or lens.bins value" }),
+			relationType: Type.String({ description: "Edge label declared in config.hierarchy or config.lenses" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { parentId: string; relationType: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = walkLensDescendants(ctx.cwd, params.parentId, params.relationType);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
 	// ── Command: /project ──────────────────────────────────────────────────
 
 	interface SubcommandEntry {
@@ -918,6 +1003,53 @@ const extension = (pi: ExtensionAPI) => {
 				}
 				const level = result.notFound.length > 0 ? "warning" : "info";
 				ctx.ui.notify(lines.join("\n"), level);
+			},
+		},
+		view: {
+			description: "Render a configured lens view (groupByLens projection) into the conversation",
+			handler: (args, ctx) => {
+				const lensId = args.trim().split(/\s+/)[0];
+				if (!lensId) {
+					ctx.ui.notify("Usage: /project view <lensId>", "error");
+					return;
+				}
+				const result = loadLensView(ctx.cwd, lensId);
+				if ("error" in result) {
+					ctx.ui.notify(result.error, "error");
+					return;
+				}
+				const config = getProjectContext(ctx.cwd).config;
+				ctx.ui.notify(renderLensView(result, config?.naming), "info");
+			},
+		},
+		"lens-curate": {
+			description: "Walk uncategorized items in a lens and surface bin-assignment suggestions for the LLM to act on",
+			handler: (args, ctx) => {
+				const lensId = args.trim().split(/\s+/)[0];
+				if (!lensId) {
+					ctx.ui.notify("Usage: /project lens-curate <lensId>", "error");
+					return;
+				}
+				const result = loadLensView(ctx.cwd, lensId);
+				if ("error" in result) {
+					ctx.ui.notify(result.error, "error");
+					return;
+				}
+				if (result.uncategorized.length === 0) {
+					ctx.ui.notify(`Lens '${lensId}' has no uncategorized items — nothing to curate.`, "info");
+					return;
+				}
+				pi.sendMessage(
+					{
+						customType: "project-lens-curate",
+						content: buildCurationSuggestions(result),
+						display: false,
+					},
+					{
+						triggerTurn: true,
+						deliverAs: "followUp",
+					},
+				);
 			},
 		},
 		status: {

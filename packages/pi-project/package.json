@@ -63,7 +63,7 @@
 		"test": "tsx --test src/*.test.ts"
 	},
 	"dependencies": {
-		"@mariozechner/pi-coding-agent": "^0.70.2",
+		"@mariozechner/pi-coding-agent": "^0.72.1",
 		"typebox": "^1.1.24",
 		"ajv": "^8.17.1",
 		"ajv-formats": "^3.0.1",

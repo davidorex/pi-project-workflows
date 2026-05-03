@@ -59,7 +59,7 @@
 	},
 	"dependencies": {
 		"@davidorex/pi-project": "^0.24.2",
-		"@mariozechner/pi-ai": "^0.70.2",
+		"@mariozechner/pi-ai": "^0.72.1",
 		"nunjucks": "^3.2.4",
 		"proper-lockfile": "^4.1.2",
 		"yaml": "^2.7.1"

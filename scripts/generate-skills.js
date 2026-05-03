@@ -129,7 +129,7 @@ function extractSubcommands(config) {
 
 function scanResources(packageDir) {
 	const resources = [];
-	const resourceDirs = ["agents", "schemas", "workflows", "templates", "examples", "defaults"];
+	const resourceDirs = ["agents", "schemas", "workflows", "templates", "examples", "registry"];
 
 	for (const dir of resourceDirs) {
 		const fullPath = join(packageDir, dir);
@@ -157,6 +157,40 @@ function listFilesRecursive(dir) {
 		}
 	}
 	return results;
+}
+
+// ── Installable registry extraction ─────────────────────────────────────────
+
+/**
+ * Read `<packageDir>/registry/blocks/` and `<packageDir>/registry/schemas/`
+ * listings so SKILL.md can advertise the names valid for `installed_blocks`
+ * and `installed_schemas` arrays in `.project/config.json`. Returns null when
+ * the registry directory is absent (non-pi-project packages).
+ */
+function extractInstallableRegistry(packageDir) {
+	const registryDir = join(packageDir, "registry");
+	if (!existsSync(registryDir)) return null;
+
+	const result = { blocks: [], schemas: [] };
+
+	const blocksDir = join(registryDir, "blocks");
+	if (existsSync(blocksDir)) {
+		for (const file of readdirSync(blocksDir).sort()) {
+			if (!file.endsWith(".json")) continue;
+			result.blocks.push({ name: file.replace(/\.json$/, ""), file });
+		}
+	}
+
+	const schemasDir = join(registryDir, "schemas");
+	if (existsSync(schemasDir)) {
+		for (const file of readdirSync(schemasDir).sort()) {
+			if (!file.endsWith(".schema.json")) continue;
+			result.schemas.push({ name: file.replace(/\.schema\.json$/, ""), file });
+		}
+	}
+
+	if (result.blocks.length === 0 && result.schemas.length === 0) return null;
+	return result;
 }
 
 // ── Narrative frontmatter parsing ───────────────────────────────────────────
@@ -218,7 +252,7 @@ function parseNarrative(content) {
 // ── Project vocabulary extraction ────────────────────────────────────────────
 
 function extractProjectVocabulary(packageDir) {
-	const schemasDir = join(packageDir, "defaults", "schemas");
+	const schemasDir = join(packageDir, "registry", "schemas");
 	if (!existsSync(schemasDir)) return null;
 
 	const schemas = [];
@@ -381,6 +415,7 @@ function composeSkill(
 	monitorVocab,
 	agentVocab,
 	validationVocab,
+	installableRegistry,
 ) {
 	const lines = [];
 
@@ -487,7 +522,47 @@ function composeSkill(
 		lines.push("");
 	}
 
-	// ── Planning vocabulary (pi-project — from default schemas) ──
+	// ── Installable registry (pi-project — registry/blocks + registry/schemas) ──
+	// These are the names valid for `installed_blocks` / `installed_schemas`
+	// arrays in `.project/config.json`. `/project init` ships an empty skeleton
+	// and `/project install` opts blocks/schemas in by name from this registry.
+	if (installableRegistry) {
+		if (installableRegistry.blocks.length > 0) {
+			lines.push("<installable_blocks>");
+			lines.push("");
+			lines.push(
+				"Names valid for the `installed_blocks` array in `.project/config.json`. Install with `/project install <block>`.",
+			);
+			lines.push("");
+			lines.push("| Block | Source File |");
+			lines.push("|-------|-------------|");
+			for (const b of installableRegistry.blocks) {
+				lines.push(`| \`${b.name}\` | \`registry/blocks/${b.file}\` |`);
+			}
+			lines.push("");
+			lines.push("</installable_blocks>");
+			lines.push("");
+		}
+
+		if (installableRegistry.schemas.length > 0) {
+			lines.push("<installable_schemas>");
+			lines.push("");
+			lines.push(
+				"Names valid for the `installed_schemas` array in `.project/config.json`. Schemas back block validation; install with `/project install <schema>`.",
+			);
+			lines.push("");
+			lines.push("| Schema | Source File |");
+			lines.push("|--------|-------------|");
+			for (const s of installableRegistry.schemas) {
+				lines.push(`| \`${s.name}\` | \`registry/schemas/${s.file}\` |`);
+			}
+			lines.push("");
+			lines.push("</installable_schemas>");
+			lines.push("");
+		}
+	}
+
+	// ── Planning vocabulary (pi-project — from registry schemas) ──
 	if (vocabulary && vocabulary.length > 0) {
 		lines.push("<planning_vocabulary>");
 		lines.push("");
@@ -745,7 +820,7 @@ async function generateForPackage(packageDir) {
 		console.log(`  Narrative: ${narrativePath}`);
 	}
 
-	// Extract project vocabulary (for pi-project only — from defaults/schemas/)
+	// Extract project vocabulary (for pi-project only — from registry/schemas/)
 	const vocabulary = extractProjectVocabulary(packageDir);
 	if (vocabulary) {
 		console.log(`  Vocabulary: ${vocabulary.length} schemas`);
@@ -774,6 +849,14 @@ async function generateForPackage(packageDir) {
 		console.log(`  Validation vocabulary: ${validationVocab.length} checks`);
 	}
 
+	// Extract installable registry (for pi-project — from registry/blocks + registry/schemas)
+	const installableRegistry = extractInstallableRegistry(packageDir);
+	if (installableRegistry) {
+		console.log(
+			`  Installable registry: ${installableRegistry.blocks.length} blocks, ${installableRegistry.schemas.length} schemas`,
+		);
+	}
+
 	// Compose
 	const shortName = packageName.replace("@davidorex/", "");
 	const content = composeSkill(
@@ -787,6 +870,7 @@ async function generateForPackage(packageDir) {
 		monitorVocab,
 		agentVocab,
 		validationVocab,
+		installableRegistry,
 	);
 
 	// Write SKILL.md

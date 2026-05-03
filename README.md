@@ -36,9 +36,12 @@ pi install npm:@davidorex/pi-project
 pi install npm:@davidorex/pi-workflows
 
 # Initialize project structure
-/project init     # creates .project/ with schemas and empty blocks
+/project init     # writes the substrate skeleton + minimal .project/config.json (no schemas, no blocks)
+/project install  # reconciles .project/ against installed_schemas + installed_blocks declared in config.json
 /workflow init    # creates .workflows/ for run state
 ```
+
+Block kinds reach `.project/` only by declaring their names in `config.json`'s `installed_*` arrays and running `/project install` against the package-shipped `registry/`. The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
 
 ## Directory Ownership
 
@@ -46,24 +49,29 @@ After initialization, three directories coexist in a project:
 
 ```
 .pi/            — Pi platform (agents, skills, settings). Managed by Pi itself.
-.project/       — pi-project (schemas, block data, phases). Created by /project init.
-  schemas/      — JSON Schema files defining block types
-  phases/       — phase specification files
-  *.json        — block data files (issues, decisions, rationale, project, etc.)
+.project/       — pi-project. Created by /project init (skeleton-only).
+  config.json   — substrate bootstrap: root, naming, hierarchy, lenses, installed_*
+  relations.json — closure-table edges (created on first authored edge)
+  schemas/      — JSON Schema files (empty until /project install reifies declared names)
+  phases/       — phase specification files (empty until populated)
+  <name>.json   — block data files (each a /project install target or user-authored)
 .workflows/     — pi-workflows (run state). Created by /workflow init.
   runs/         — workflow execution state, session logs, outputs
 ```
 
-`.pi/` is Pi's territory — neither extension writes to it. `.project/` is tracked in git (schemas and blocks are source). `.workflows/` is gitignored (runtime state).
+`.pi/` is Pi's territory — neither extension writes to it. `.project/` is tracked in git (substrate, schemas, and blocks are source). `.workflows/` is gitignored (runtime state). `config.json` and `relations.json` always live at `.project/` (they define `root`); everything else lives under `<config.root>/...` and a relocated root reaches every read/write because all path construction routes through `projectRoot(cwd)`.
 
 ## What Each Extension Provides
 
 ### pi-project
 
-**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `read-block-dir`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `resolve-item-by-id`, `project-status`, `project-validate`, `project-init`, `complete-task` — block CRUD (top-level + nested array operations) with automatic schema validation, plus cross-block ID resolution
+**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `read-block-dir`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `resolve-item-by-id`, `project-status`, `project-validate`, `project-init`, `project-validate-relations`, `project-edges-for-lens`, `project-walk-descendants`, `complete-task` — block CRUD (top-level + nested array operations) with automatic schema validation, plus cross-block ID resolution and substrate (closure-table relations + lens) tooling
 
 **Commands:**
-- `/project init` — scaffold `.project/` with 13 default schemas and 4 starter blocks
+- `/project init` — write the substrate skeleton + minimal `config.json` bootstrap (no schemas, no starter blocks)
+- `/project install [--update]` — reconcile `.project/` against `installed_schemas` / `installed_blocks` declared in `config.json` from the package registry
+- `/project view <lensId>` — render a configured lens (groupByLens projection) into the conversation
+- `/project lens-curate <lensId>` — surface bin-assignment suggestions for uncategorized items as a follow-up turn
 - `/project status` — derived project state (source metrics, test counts, block summaries, git state)
 - `/project add-work` — extract structured items from conversation into typed blocks
 - `/project validate` — cross-block referential integrity checks

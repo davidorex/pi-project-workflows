@@ -143,9 +143,9 @@ Available filters: `length`, `keys`, `filter`, `json`, `upper`, `lower`, `trim`,
 
 | Directory | Contents |
 |-----------|----------|
-| `agents/` | 13 agent specs (`.agent.yaml`): investigator, decomposer, verifier, synthesizer, etc. |
-| `schemas/` | 11 output schemas (`.schema.json`): investigation-findings, execution-results, etc. |
-| `workflows/` | 10 workflow specs (`.workflow.yaml`): do-gap, create-phase, parallel-analysis, etc. |
+| `agents/` | Agent specs (`.agent.yaml`): investigator, decomposer, verifier, synthesizer, etc. Counts derivable via `/workflow status` or `ls packages/pi-workflows/agents/`. |
+| `schemas/` | Output schemas (`.schema.json`): investigation-findings, execution-results, etc. |
+| `workflows/` | Workflow specs (`.workflow.yaml`): do-gap, create-phase, parallel-analysis, etc. Discoverable via `/workflow list`. |
 | `templates/` | Nunjucks prompt templates organized by agent role |
 
 ## SDK (`src/workflow-sdk.ts`)
@@ -200,10 +200,14 @@ When working with this extension:
 npm test
 ```
 
-Runs `tsx --test src/*.test.ts`. 500+ tests covering step types, expressions, DAG planning, state persistence, checkpoint/resume, and template compilation.
+Runs `tsx --test src/*.test.ts`. Test files cover step types, expressions, DAG planning, state persistence, checkpoint/resume, and template compilation; the count is derivable via `ls src/*.test.ts | wc -l`.
 
 ## Development
 
-Part of the [`pi-project-workflows`](../../README.md) monorepo. All three packages (pi-project, pi-workflows, pi-behavior-monitors) are versioned in lockstep at 0.9.1.
+Part of the [`pi-project-workflows`](../../README.md) monorepo. All workspace packages are versioned in lockstep — query `cat packages/pi-workflows/package.json | jq -r .version` (or `git describe --tags`) for the current value rather than relying on a number embedded here.
 
 `npm run build` compiles TypeScript to `dist/` via `tsc`. The package ships `dist/`, not `src/` — the `pi.extensions` entry point is `./dist/index.js`.
+
+## Substrate root awareness
+
+pi-workflows reads project-block context via `@davidorex/pi-project`'s block-api, which routes through `projectRoot(cwd)` — workflows automatically follow a relocated `config.root` declared in `.project/config.json` without per-call configuration. Templates that consume `contextBlocks` get the same treatment.

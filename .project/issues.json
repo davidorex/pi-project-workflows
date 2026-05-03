@@ -754,11 +754,12 @@
       "title": "Lens curation ceremony — slash command for binning uncategorized items",
       "body": "POC v2's listUncategorized() + suggestionTemplate() in analysis/poc-degree-zero-lens/render.ts demonstrate the curation surface shape — emit would-be edge-append payloads for items in the (uncategorized) bucket of a hand-curated lens. The ceremony itself — a /project lens-curate <lensId> slash command that interactively walks uncategorized items, accepts bin assignments, and translates to batched appendToBlock writes against relations.json — needs registration in pi-project's command surface. Without it, lens curation is manual edge-authoring; with it, lens curation becomes a first-class workflow. Couples to DEC-0008 (typed contextBlocks) for lens-view rendering during curation, and to DEC-0007 (composition contract) for how the curation prompt itself is composed. Aligns with analysis/2026-05-01-ceremony-ideas.md sibling commands (/project new, /project new-phase, /project edit-item, /project archive-item). Surfaced as gap #15 in the heuristic-widening pass.",
       "location": "packages/pi-project/src/index.ts",
-      "status": "open",
+      "status": "resolved",
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
     },
     {
       "id": "issue-069",
@@ -866,33 +867,36 @@
       "title": "/project view <lens> command — no LLM-invocable surface for rendering lens views",
       "body": "Forcing context: the substrate SDK port (commit 8059764) landed groupByLens + renderClusterView (renderClusterView equivalent: lives in the POC's render.ts; needs production port if we want command output to match POC parity) plus all the substrate primitives. SDK functions exist in dist/ and tests prove them correct. There is no command an LLM can invoke from within a session to render a lens view.\n\nProposed shape: register `/project view <lensId>` subcommand in PROJECT_SUBCOMMANDS (packages/pi-project/src/index.ts:810-861) following the existing handler pattern. Handler logic: load config via loadConfig(ctx.cwd) — if null, error with run-init pointer; resolve named lens from config.lenses; load target items via readBlock(cwd, lens.target); compute lensEdges via edgesForLens(lens, items, getProjectContext(cwd).relations); compute grouped via groupByLens(items, lens, lensEdges); emit a markdown rendering via either ctx.ui.notify (multiline) or pi.sendMessage with customType 'project-view'. Display via existing ctx.ui infrastructure used by /project status + /project validate.\n\nCovers groupByLens + renderClusterView (or its production equivalent) consumption surfaces — those two SDK functions reach the user only through this command surface today.",
       "location": "packages/pi-project/src/index.ts:810-861",
-      "status": "open",
+      "status": "resolved",
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
     },
     {
       "id": "issue-079",
       "title": "validateRelations exposed as SDK function but not wrapped as a registered pi tool",
       "body": "Forcing context: validateRelations (packages/pi-project/src/project-context.ts) emits structured SubstrateValidationResult covering edge_unknown_relation_type, edge_parent_not_in_bins, edge_unresolved_parent/child, edge_parent/child_wrong_block, edge_cycle_detected. SDK function exists with full test coverage. There is no pi.registerTool wrapper, so an LLM in a session cannot invoke it via tool-use.\n\nExisting precedent: project-validate is registered both as a /project subcommand (PROJECT_SUBCOMMANDS) and as a tool (pi.registerTool({ name: 'project-validate', ... })) per packages/pi-project/src/index.ts:720+. The same dual-surface treatment applies here.\n\nProposed shape: register tool 'project-validate-relations' that internally calls validateRelations against loaded config + relations + per-block items snapshot. Tool returns the SubstrateValidationResult shape (status + issues array). Pairs with a corresponding /project validate-relations subcommand (or extension to /project validate that includes substrate-relations checks alongside the existing cross-block referential integrity checks).",
       "location": "packages/pi-project/src/index.ts:720",
-      "status": "open",
+      "status": "resolved",
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
     },
     {
       "id": "issue-080",
       "title": "edgesForLens + walkDescendants exposed as SDK functions but not wrapped as registered pi tools",
       "body": "Forcing context: both functions (packages/pi-project/src/project-context.ts) are pure graph operations over Edge[] — edgesForLens(lens, items, authoredEdges) returns the materialized edge set for a lens (synthetic or hand-curated); walkDescendants(parentId, relationType, edges) returns the closure-table descendants under a relation_type. SDK functions exist with full test coverage. No pi.registerTool wrappers — LLMs cannot inspect lens edges or walk hierarchies via tool-use today.\n\nProposed shape: register two tools — 'project-edges-for-lens' (params: lensId; computes via getProjectContext + edgesForLens; returns Edge[]) and 'project-walk-descendants' (params: parentId, relationType; computes via getProjectContext + walkDescendants; returns string[] of descendant ids). Both tools enable LLM-driven exploration of the substrate hierarchy — required for any agent workflow that wants to navigate closure-table relations programmatically.\n\nCombined into one issue per the user's gap inventory because both are pure-graph traversal functions sharing implementation pattern (resolve config + pull edges + run pure function).",
       "location": "packages/pi-project/src/index.ts:720",
-      "status": "open",
+      "status": "resolved",
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
     }
   ]
 }

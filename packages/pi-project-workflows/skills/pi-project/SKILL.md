@@ -177,7 +177,7 @@ Subcommands: `init`, `status`, `add-work`, `validate`, `help`
 </events>
 
 <bundled_resources>
-22 defaults bundled.
+2 schemas, 22 defaults bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 

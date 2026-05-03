@@ -52,6 +52,7 @@
 	},
 	"files": [
 		"dist/",
+		"schemas/",
 		"skills/",
 		"defaults/",
 		"*.md"

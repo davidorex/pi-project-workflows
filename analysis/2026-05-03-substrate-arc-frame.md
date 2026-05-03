@@ -1,8 +1,8 @@
 # Substrate arc — unifying frame
 
-**Date:** 2026-05-03
+**Date:** 2026-05-03 (amended same-day with heuristic-widening pass)
 **Status:** Planning substrate. Authoritative for subagent planning and implementation in this worktree until superseded.
-**Source basis:** POC v2 (`analysis/poc-degree-zero-lens/`), POC v1+v2 evaluations, integration-map review for jit-agents `compileAgent` path, catalog reframing pass.
+**Source basis:** POC v2 (`analysis/poc-degree-zero-lens/`), POC v1+v2 evaluations, integration-map review for jit-agents `compileAgent` path, catalog reframing pass, heuristic-widening pass over mandates and monitors.
 
 ---
 
@@ -10,7 +10,19 @@
 
 > The architectural arc has a clearer shape. What was a loose collection of FGAPs + issues + planning docs now has a unifying frame: **substrate = config + partitions + lenses + closure-table relations + per-item macros. Six discrete blocks, one coherent contract.** Each open item locates inside that frame as either a closure, a reframing, or unaffected.
 
-The frame is the basis for planning. Every open item in `.project/issues.json` and `.project/framework-gaps.json` should be located against it before being scheduled.
+### 1.1 Heuristic-widening (amended)
+
+The frame extends beyond `.project/` blocks. The same heuristic should govern every typed context that gets composed into a prompt:
+
+> **One heuristic for hierarchical context, writable and composable into prompts variably.**
+
+In scope under the heuristic:
+
+- **Project blocks** — `.project/*.json` (issues, framework-gaps, decisions, requirements, tasks, …). Already aligned with the heuristic; POC v2 closes the read side.
+- **Mandates** — currently `~/.claude/mandates.jsonl`, flat list, all-or-nothing prefix on every UserPromptSubmit. Under the heuristic: a typed block at user scope with its own schema; selective composition via lenses (e.g., `_lens:mandates-for-classify`); the current all-or-nothing prefix is the degenerate "all mandates" lens.
+- **Monitors** — currently `.pi/monitors/<name>.monitor.json` + `examples/<name>/classify.md`, ad-hoc shape. Under the heuristic: monitor specs as typed blocks; classify templates compose typed contexts via the same `contextBlocks` surface workflow agents use; closes the parallel-ungated path issue-065 surfaces.
+
+The frame is the basis for planning. Every open item in `.project/issues.json` and `.project/framework-gaps.json` — and every analogous item governing mandates discipline or monitor authoring — should be located against it before being scheduled.
 
 ---
 
@@ -26,7 +38,27 @@ The substrate is a single coherent contract composed of named blocks. Each block
 | **closure-table relations** | Generic edge primitive: `(parent, child, relation_type)` triples in a single block. Multiple parallel hierarchies coexist as different `relation_type` values. Hierarchy edges (parent ∈ canonical ids) and lens edges (parent ∈ lens.bins) share one schema, distinguished by validator at the SDK boundary. Reassignment is a single field-write at block-api. | `analysis/poc-degree-zero-lens/relations.json` (28 authored), `schemas/relations.schema.json`, `validateRelations()` in `render.ts` |
 | **per-item macros** | Rendering layer: each schema lands with its per-item macro as a single unit of work. Renderer registry owned by pi-jit-agents per DEC-0003. `render_cluster` composes per-item macros over lens-view groupings. | Not in POC v2 (POC uses inline placeholder format); design canonical at `analysis/2026-05-02-per-item-macros-atomic-plans.md` and `analysis/2026-04-15-blocks-as-prompt-substrate.md` |
 
-The user's framing names this as "six discrete blocks." Five are enumerated above against POC evidence; the sixth block-of-the-contract is preserved as wording per mandate-002 and pending user identification — candidates from the conversation are: schemas-as-substrate, hierarchies-as-distinct-block, or macros split into registry + emitter. Implementation must resolve which sixth block is authoritative before landing.
+The user's framing names this as "six discrete blocks." Five are enumerated above against POC evidence; the sixth block-of-the-contract is preserved as wording per mandate-002 and pending user identification.
+
+**Sixth-block candidates** (narrowed by the heuristic-widening pass):
+
+- *Pre-heuristic candidates:* schemas-as-substrate, hierarchies-as-distinct-block, macros split into registry + emitter.
+- *Heuristic-narrowed candidates (preferred):*
+  - **Prompt-composition contract** — the rules governing how typed contexts compose into prompts (order, deduplication, override, applicability conditions, token-budget allocation). Made central by the heuristic-widening pass; was implicit in the integration map.
+  - **Scopes** — user / project / agent layers, with composition rules across scopes. Mandates live at user scope; project blocks at project scope; agent overrides at agent scope. Composition resolves layered.
+
+Implementation must resolve which sixth block is authoritative before landing.
+
+### 2.1 Mandates and monitors as in-scope blocks
+
+Under the heuristic-widening, the contract extends to:
+
+| Context type | Today's shape | Heuristic-aligned shape |
+|---|---|---|
+| **Mandates** | `~/.claude/mandates.jsonl`, flat JSONL, all-or-nothing prefix | `mandates.json` block at user scope with `mandates.schema.json`; lens-selective injection via `_lens:mandates-for-<context>`; hierarchy edges for parent mandate + clarifications, supersession edges over time |
+| **Monitor specs** | `.pi/monitors/<name>.monitor.json` + handcoded classify templates with `{% if %}` guards | Typed monitor block with `monitors.schema.json`; classify templates declare `contextBlocks: [_lens:..., _mandate:..., ...]` flowing through the same composition layer workflow agents use |
+
+Both follow the same shape as project blocks: schema + canonical write surface + lens-projection composition.
 
 ---
 
@@ -52,7 +84,7 @@ All artifacts live under `analysis/poc-degree-zero-lens/`. Read-only consumption
 
 ## 4. Open-item map
 
-Every open entry in `.project/issues.json` and `.project/framework-gaps.json` locates as one of three:
+Every open entry in `.project/issues.json` and `.project/framework-gaps.json` locates as one of three. Under the heuristic-widening, the same locations apply to mandate-discipline and monitor-authoring work; those items are tagged inline below.
 
 ### 4.1 Closures (resolved when production lands the substrate)
 
@@ -72,22 +104,25 @@ Every open entry in `.project/issues.json` and `.project/framework-gaps.json` lo
 
 | Item | New framing |
 |---|---|
-| FGAP-001 | Closure-table relations as alternative to subpath block names. Decision pending: closure-table only, subpath only, or both. POC argues closure-table covers most originally-cited motivations; subpath remains relevant for genuine work-decomposition with atomic-per-item writes. |
+| FGAP-001 | Closure-table relations as alternative to subpath block names. Heuristic-widening tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types (mandates and monitors don't need subpath either). Decision pending; weight has shifted. |
 | issue-042 | Lens views drop pressure 86%; explicit budgeting still needed but urgency reduced |
 | issue-046 | Closure-table is a generic edge primitive that could subsume DAG edge typing if `relation_type` extends to DAG semantics. Convergence is now an option |
 | issue-061 | Lens substrate provides surface for staleness; staleness engine itself remains separate work |
 | issue-008, 030 | Writeback now has new target shape (closure-table edges); decision authoring becomes "write item + write edges that locate it in lenses" |
-| FGAP-004, issue-058 | Authorship attestation gains a new artifact target (the config block itself) |
+| FGAP-004, issue-058 | Authorship attestation gains a new artifact target (the config block itself, plus mandates and monitor specs) |
 | issue-055 | Mirror of FGAP-001; same reframing |
+| issue-023, 035, 038, 039, 040, 050, 063, 065 (monitor cluster) | Heuristic-widening reframes: monitor-authoring becomes "monitor specs as typed blocks composing typed contexts." issue-065 (write-action bypasses block-api) closes when monitor writes route through canonical surface. issue-050 (step-monitor ignores classify.agent) sits inside the same composition contract. issue-035/038/039/040 (per-monitor params, tuning, validator, skill coverage) become first-class authoring activities under the contract. |
 
 ### 4.3 Unaffected (still real, still need their own work)
 
+The heuristic-widening narrows this list by absorbing the monitor-cluster into §4.2 reframings.
+
 | Cluster | Items |
 |---|---|
-| Bug fixes | issue-049, issue-050, issue-066 |
-| Monitor primitives | issue-023, 030, 035, 038, 039, 040, 051, 053, 054 |
+| Bug fixes | issue-049, issue-066 |
+| Monitor primitives unaffected by heuristic | issue-030, 051, 053, 054 (write-back, directory-watching, pre-execution gating, tool-call budget — orthogonal to context-composition) |
 | Execution metadata / writeback / dispatch | issue-009, 010, 011, 028, 032, 036, 037, 047 |
-| Provider/model policy | issue-052, 062, 063, 064, GitHub [#1](https://github.com/davidorex/pi-project-workflows/issues/1) |
+| Provider/model policy | issue-052, 062, 064, GitHub [#1](https://github.com/davidorex/pi-project-workflows/issues/1) |
 | Path/discovery | issue-048, 067 |
 | Schema/validation orthogonal to lens | FGAP-005, issue-021, 022, 033, 034, 043, 044 |
 | Misc | issue-002, 003, 004, 005, 006, 007, 016, 017, 031 |
@@ -120,6 +155,25 @@ These did not exist before the substrate work. Each must be located in `framewor
 | 31 | Integration map | seedExamples migration for new config + schemas | Open — already-seeded projects don't get new files |
 | 32 | Integration map | block-api registration of `config` as typed block | Open — implicit via dynamic schema discovery, unverified |
 | 33 | Integration map | `partitions` field runtime semantics | Open — commit or drop |
+| 34 | Heuristic-widening | **Composition contract for prompt assembly** — order, deduplication, override, applicability evaluation, token budget allocation across mandates + lens views + raw blocks + monitor outputs | Open — top-priority; central API surface for the unified heuristic |
+| 35 | Heuristic-widening | Mandate-block schema fields (scope, priority, applicability conditions, lifecycle) | Open |
+| 36 | Heuristic-widening | Monitor-spec-as-block schema authority — typed block + `validateMonitor()` in pi-project SDK | Open |
+| 37 | Heuristic-widening | Scope layering — user / project / agent anchors with composition rules across scopes | Open — expansion of #24 |
+| 38 | Heuristic-widening | Applicability predicate language — when a typed-context entry applies to which agent / classifier / context | Open |
+
+### 5.1 Top decisions to make now and persist (under the heuristic)
+
+Five decisions gate downstream work. Each is independently decidable and persists once made via `DEC-NNNN` entries in `.project/decisions.json` plus updates to relevant fields here, in `.project/framework-gaps.json`, and in sibling analysis docs.
+
+| Rank | Decision | Why now | Persistence target |
+|---|---|---|---|
+| 1 | **Sixth-block identity** — under the heuristic, narrowed to two candidates: prompt-composition contract OR scopes (user / project / agent) | Contract enumeration is incomplete until resolved; every planning increment depends on it | DEC entry; §1.1 + §2 of this doc; the chosen sixth block enumerated alongside the other five |
+| 2 | **Composition contract for prompt assembly** (gap #34) — order, deduplication, override, applicability evaluation, token-budget allocation when mandates + lens views + raw blocks + monitor outputs all land in one prompt | Central API surface for the unified heuristic; was implicit in the integration map; locks in agent-authoring ergonomics | DEC entry; new design doc; §5 status update |
+| 3 | **#29 typed contextBlocks form** — the heuristic forces typed-only because bare-string `_lens:<id>` cannot carry the parameter set the unified surface needs (`_mandate:<id>`, `_lens:<id>?status=open`, `_monitor:<id>:last-classification`) | Locks API shape for agent authoring; conflict with per-item-macros plan #3 must resolve before either lands | DEC entry; update `analysis/2026-05-02-per-item-macros-atomic-plans.md` plan #3; §5 status |
+| 4 | **FGAP-001 direction** — closure-table-only / subpath-only / both. Heuristic tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types | Largest architectural fork; storage shape of features, tasks, and any nested-work block depends on it; cascade through block-api semantics | DEC entry; update FGAP-001's `proposed_resolution` in `.project/framework-gaps.json`; §4.2 of this doc |
+| 5 | **#37 scope layering** (expanded from #24) — user / project / agent anchors with composition rules across scopes | Determines whether issue #3 closes fully or partially; mandates and project blocks live at different scopes; layering rules need explicit specification | DEC entry; §5 status; cited in any production `loadConfig()` implementation |
+
+Cache placement (#25) drops below this top-five — it follows the composition contract (#34) once that's defined.
 
 ---
 
@@ -145,6 +199,12 @@ All integration-map gaps (#24–#33) require package edits to advance. They are 
 - `analysis/poc-degree-zero-lens/schemas/{config,relations}.schema.json`
 - `analysis/poc-degree-zero-lens/render.ts` — SDK-shape signatures: `loadConfig`, `loadRelations`, `groupByLens`, `walkDescendants`, `validateRelations`, `edgesForLens`, `synthesizeFromField`, `renderClusterView`, `displayName`, `listUncategorized`
 - `analysis/poc-degree-zero-lens/output/{primary,alt}/*.md` — generated lens views
+
+### Mandates + monitors substrate (under the heuristic-widening)
+- `~/.claude/mandates.jsonl` — current global mandates store; flat JSONL, one row per mandate; injected via external claude-side hook on every UserPromptSubmit. Heuristic-aligned target shape: typed `mandates.json` block at user scope.
+- `packages/pi-behavior-monitors/examples/<name>/` — bundled monitor classify templates with `{% if %}` guards on context variables. Heuristic-aligned target: classify templates declare typed `contextBlocks` flowing through the unified composition layer.
+- `packages/pi-behavior-monitors/agents/*-classifier.agent.yaml` — bundled classifier agent specs. Compose with mandates + lens views + collector outputs at classify time.
+- `analysis/2026-04-28-context-paths-extension-design.md` — already gestures at user-scope context injection (mandates path, project memory path) into both main pi session and classifier agents. Foundational for the scope-layering decision (#37).
 
 ### Existing analysis docs that compose with this frame
 - `analysis/2026-05-03-context-management-issue-cluster.md` — reproduced mechanically by primary profile's `context-management.md` lens render
@@ -178,19 +238,21 @@ All integration-map gaps (#24–#33) require package edits to advance. They are 
 ## 8. Subagent usage notes
 
 ### What this doc is
-Authoritative planning substrate for the substrate arc on this worktree. Synthesizes POC v2 mechanics + integration-map analysis + catalog reframing into a single navigable frame. Should be read before any planning, scoping, or implementation work that touches: contextBlocks, lens-view rendering, closure-table relations, the config block, partitions, per-item macros, or the resolution of any open item enumerated in §4.
+Authoritative planning substrate for the substrate arc on this worktree. Synthesizes POC v2 mechanics + integration-map analysis + catalog reframing + heuristic-widening pass into a single navigable frame. Should be read before any planning, scoping, or implementation work that touches: contextBlocks, lens-view rendering, closure-table relations, the config block, partitions, per-item macros, mandates discipline, monitor authoring, or the resolution of any open item enumerated in §4.
 
 ### What this doc is not
 - Not authorization to implement. Implementation requires explicit user authorization for any package-source edit.
-- Not a final spec. The sixth block of the contract is unresolved (§2). Decisions on #24–#33 are unresolved (§5). FGAP-001 fork is unresolved (§4.2).
+- Not a final spec. The sixth block of the contract is unresolved (§2). Decisions on #24–#38 are unresolved (§5). FGAP-001 fork is unresolved (§4.2).
 - Not a plan. A plan would order work, assign waves, gate on credentialed smoke. This doc is upstream of any such plan.
 
 ### Read-order for fresh subagent
-1. This doc (the frame)
+1. This doc (the frame) — including §1.1 heuristic-widening and §5.1 top decisions
 2. `analysis/poc-degree-zero-lens/README.md` (the proven artifact)
 3. `analysis/2026-05-02-per-item-macros-atomic-plans.md` (the complementary arc)
-4. The relevant `.project/` blocks (issues.json or framework-gaps.json) for the specific item being planned
-5. The integration-map review section in conversation history if doing jit-agents `compileAgent` planning
+4. `analysis/2026-04-28-context-paths-extension-design.md` (foundational for scope-layering decision #37)
+5. The relevant `.project/` blocks (issues.json or framework-gaps.json) for the specific item being planned
+6. `~/.claude/mandates.jsonl` and `packages/pi-behavior-monitors/examples/` if planning under the heuristic-widening
+7. The integration-map review section in conversation history if doing jit-agents `compileAgent` planning
 
 ### Authoritative facts vs. open decisions
 - §2 column "POC artifact" — authoritative (mechanically proved)

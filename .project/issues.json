@@ -676,11 +676,12 @@
       "title": "Framework gap FGAP-007 — no staleness engine for research blocks",
       "body": "Research entries (per the design in analysis/research-blocks-design.md) must carry grounding metadata (version-pinned dependencies, retrieved revisions, dated external refs) and stale_conditions (e.g. 'pi-ai upgrades past 0.63.x'). Staleness must currently be checked by hand. The framework cannot automatically fire stale_conditions against the current state of installed dependencies, git revisions, or external-URL content hashes — and cannot propagate invalidation downstream through 'informs' edges to flag affected decisions as needing re-grounding. Proposed resolution: add a staleness-engine runtime that reads every research entry's stale_conditions and compares them against the current state on a schedule or on-demand; transitions stale entries to status=stale; walks informs edges to emit structured diagnostics for any enacted decision whose supporting research has gone stale. Depends on the research block kind itself existing (research.json + research.schema.json), which is currently specified in analysis/research-blocks-design.md but not yet enacted. Canonical owner: to be added to .project/framework-gaps.json when the research block kind lands. Canonical vocabulary: grounding decay; citation rot; evidence expiry.",
       "location": "packages/pi-project/src/ (new staleness-engine module needed), .project/schemas/research.schema.json (pending)",
-      "status": "open",
+      "status": "resolved",
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Filed as FGAP-007 in framework-gaps.json (this commit). Issue mirror retired; canonical gap carries the staleness-engine work envelope."
     },
     {
       "id": "issue-062",

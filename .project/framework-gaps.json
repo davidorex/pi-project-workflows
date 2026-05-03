@@ -313,6 +313,47 @@
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "FGAP-007",
+      "title": "Staleness engine for research blocks",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-project",
+      "layer": "L2",
+      "description": "Research entries (`.project/research.json`, schema enacted with R-0001..R-0011 in canonical substrate) carry grounding metadata (version-pinned dependencies, retrieved revisions, dated external refs) and stale_conditions (e.g. 'pi-ai upgrades past 0.63.x'). The schema declares a `stale` lifecycle state, but no engine currently fires stale_conditions against the actual state of installed dependencies, git revisions, or external-URL content hashes. Staleness must be checked by hand. There is also no propagation primitive: when a research entry transitions to stale, its `informs` edges to decisions, features, reviews, gaps, and plans cannot fire structured diagnostics flagging any enacted artifact whose supporting research has gone stale. The gap was reserved in `analysis/research-blocks-design.md` but never filed canonically until now. issue-061 is the mirror entry that tracked the work pending this filing.",
+      "evidence": [
+        {
+          "file": ".project/schemas/research.schema.json",
+          "reference": "Schema declares `stale_conditions` array per entry, `grounding` block carrying version-pinned dependencies and retrieved revisions, and `stale` as a lifecycle state in the research-entry status enum. The substrate is in place; the engine that consumes it is not."
+        },
+        {
+          "file": ".project/research.json",
+          "reference": "11 research entries (R-0001..R-0011) carrying stale_conditions; none can be automatically evaluated."
+        },
+        {
+          "file": "analysis/research-blocks-design.md",
+          "lines": "lifecycle section (planned → in-progress → complete → stale | superseded) and stale_conditions / grounding / informs design",
+          "reference": "Original design specifying the staleness-engine surface; the gap was reserved here but not filed in canonical substrate prior to this entry."
+        },
+        {
+          "file": ".project/issues.json",
+          "lines": "issue-061",
+          "reference": "Mirror entry tracking the unfiled gap pending this filing."
+        }
+      ],
+      "impact": "Research entries declare stale_conditions but the framework cannot fire them automatically — staleness detection is manual and ad-hoc. Downstream invalidation cannot propagate: an enacted decision whose grounding research has gone stale receives no diagnostic; a feature whose research basis has decayed cannot be flagged. Research's value as ground truth substrate (per analysis/research-blocks-design.md) is materially weakened: entries accumulate without an authoritative-vs-stale distinction. This compounds with each new research entry and each external dependency upgrade.",
+      "canonical_vocabulary": "grounding decay; citation rot; evidence expiry; staleness propagation",
+      "proposed_resolution": "Land a staleness-engine runtime in pi-project (or expose via project-sdk) that: (1) reads every research entry's `stale_conditions`; (2) evaluates each condition against the current state — installed package versions for pi-ai/dependency conditions, git revisions for repo-scoped conditions, content hashes or HEAD checks for URL-scoped conditions; (3) transitions matching entries to `status: stale` via canonical block-api updateItemInBlock; (4) walks `informs` edges to emit structured diagnostics for any enacted decision / feature / review / gap whose supporting research has gone stale. Schedule: on-demand via SDK call; optionally cron-driven (couples to the loop / scheduled-tasks surfaces) when those land. Predicate language for stale_conditions couples to FGAP-010 (applicability predicate language) — a shared expression layer would unify both.",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [],
+      "related_issues": [
+        "issue-061"
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
     }
   ]
 }

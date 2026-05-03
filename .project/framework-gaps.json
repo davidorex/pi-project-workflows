@@ -1,182 +1,206 @@
 {
-	"gaps": [
-		{
-			"id": "FGAP-001",
-			"title": "Hierarchical / nested block storage",
-			"status": "identified",
-			"priority": "P1",
-			"package": "pi-project",
-			"layer": "L3",
-			"description": "pi-project's block-api assumes one flat JSON file per block. There is no way to express a nested decomposition like roadmap → milestone → epic → story → task as a directory tree. Work decomposition must be smuggled into a single flat array with denormalized parent references, which loses scope ownership and forces the global tasks.json to conflate work across all levels.",
-			"evidence": [
-				{
-					"file": "packages/pi-project/src/block-api.ts",
-					"reference": "readBlock / writeBlock / appendToBlock all take a simple block name and resolve to .project/<name>.json — no subpath support"
-				},
-				{
-					"file": ".project/tasks.json",
-					"reference": "current tasks block is a flat array with integer phase references; no milestone or epic hierarchy"
-				},
-				{
-					"file": "packages/pi-project/src/project-dir.ts",
-					"reference": "PROJECT_DIR / SCHEMAS_DIR constants assume flat directory layout"
-				}
-			],
-			"impact": "The L3 Work layer from the Muni five-layer model cannot be natively represented. Features like the consumer migration arc must live as single flat JSON files per feature, with stories and tasks embedded as arrays — preventing per-task atomic read/write and forcing whole-feature reads for any single-task operation.",
-			"canonical_vocabulary": "hierarchical work breakdown structure (WBS); nested aggregate storage",
-			"proposed_resolution": "Extend block-api to support subpath block names (e.g. readBlock('features/consumer-migration')). Add nested-directory discovery in availableBlocks. Schemas at the subdirectory root apply to all files underneath. Authority for partial-tree invalidation belongs to block-validation.ts.",
-			"related_features": ["FEAT-001"],
-			"related_decisions": [],
-			"related_issues": [],
-			"created_by": "agent/claude-opus-4-6",
-			"created_at": "2026-04-15T00:00:00Z"
-		},
-		{
-			"id": "FGAP-002",
-			"title": "Per-scope finding registries",
-			"status": "identified",
-			"priority": "P1",
-			"package": "pi-project",
-			"layer": "L2",
-			"description": "There is no convention for a block to carry its own embedded findings array distinct from global issues.json. A design issue discovered during review of jit-agents-spec.md has nowhere to live except the global issue tracker, where it is indistinguishable from task-level defects and feature-level scope conflicts. The result is issues.json conflating L2 architectural contradictions with L4 implementation bugs with L5 incident-derived rules.",
-			"evidence": [
-				{
-					"file": ".project/issues.json",
-					"reference": "62KB flat file mixing spec contradictions, task bugs, and session observations with no scope tagging beyond the informal 'package' field"
-				},
-				{
-					"file": ".project/schemas/issues.schema.json",
-					"reference": "single flat items array with no parent-scope reference — issues float free of the artifact they belong to"
-				}
-			],
-			"impact": "Every finding discovered during any layer of work lands in the same flat bucket. There is no mechanism to say 'this finding belongs to the review of spec X' or 'this defect belongs to task Y within feature Z'. The global tracker becomes an unmanageable tangle that must be sorted by hand to answer any scoped question.",
-			"canonical_vocabulary": "scoped issues; per-artifact defect list; embedded finding registries",
-			"proposed_resolution": "Standardize a 'findings' sub-array on every L2/L3/L4 block schema kind (specs, features, tasks). Each finding carries scope metadata (layer, parent_artifact). Provide a block-api helper appendFinding(blockName, parentItemId, finding). Global issues.json becomes a derived view (see FGAP-003).",
-			"related_features": ["FEAT-001"],
-			"related_decisions": [],
-			"related_issues": [],
-			"created_by": "agent/claude-opus-4-6",
-			"created_at": "2026-04-15T00:00:00Z"
-		},
-		{
-			"id": "FGAP-003",
-			"title": "Materialized views over scoped blocks",
-			"status": "identified",
-			"priority": "P2",
-			"package": "pi-project",
-			"layer": "L2",
-			"description": "There is no derived block kind. projectState() does in-memory aggregation but it is not a persisted, addressable, schema-validated block. There is no way to declare 'global issues_view.json is a derived index over per-scope finding registries' or 'open_work_view.json aggregates all non-terminal stories across features'.",
-			"evidence": [
-				{
-					"file": "packages/pi-project/src/project-sdk.ts",
-					"reference": "projectState() computes derived metrics at query time but returns in-memory only — no persistence, no addressability, no schema"
-				},
-				{
-					"file": "packages/pi-project/src/block-api.ts",
-					"reference": "only writeable blocks exist; no concept of a read-only derived block"
-				}
-			],
-			"impact": "Consumers who want a flat queryable view (the current issues.json shape) cannot have it alongside scope-owned registries without manual sync. Two sources of truth or fragile regeneration.",
-			"canonical_vocabulary": "materialized view (database canon)",
-			"proposed_resolution": "Add a view-block kind with a definition file that names source blocks, a projection function, and refresh triggers. block-api exposes readView(name) but disallows direct writes. Refresh fires on underlying block writes. Schemas describe the view shape.",
-			"related_features": ["FEAT-001"],
-			"related_decisions": [],
-			"related_issues": [],
-			"created_by": "agent/claude-opus-4-6",
-			"created_at": "2026-04-15T00:00:00Z"
-		},
-		{
-			"id": "FGAP-004",
-			"title": "Authorship attestation at write time",
-			"status": "identified",
-			"priority": "P1",
-			"package": "pi-project",
-			"layer": "L4",
-			"description": "Only issues.schema.json has a source enum (human | agent | monitor | workflow). tasks.schema.json has assigned_agent which is a different concept (assignment, not authorship). No block records created_by / modified_by / created_at / modified_at consistently. block-api.ts does not stamp authorship on writes. The authorship-matrix principle — 'only the user can advance a finding from proposed to decided' — cannot be enforced because the writer identity is not recorded.",
-			"evidence": [
-				{
-					"file": ".project/schemas/issues.schema.json",
-					"reference": "source enum exists here and only here — partial coverage, no other block has equivalent fields"
-				},
-				{
-					"file": "packages/pi-project/src/block-api.ts",
-					"reference": "writeBlock / appendToBlock / updateItemInBlock do not inject authorship metadata"
-				},
-				{
-					"file": ".project/schemas/tasks.schema.json",
-					"reference": "assigned_agent field is assignment semantics, not authorship — a task can be assigned to agent X but written by user Y"
-				}
-			],
-			"impact": "State-machine validation of user-gated transitions (decision enacted, finding decided, feature approved) is structurally impossible. The framework cannot distinguish 'user advanced this' from 'agent advanced this' and so cannot enforce authority matrices. The spec-loop invariant M4 is unenforceable.",
-			"canonical_vocabulary": "authorship attestation; written_by attribution; audit trail",
-			"proposed_resolution": "block-api.ts stamps created_by / modified_by / created_at / modified_at on every write, reading writer identity from a DispatchContext parameter. Every block schema adds these as required fields. Cross-block validation can then enforce authority-matrix rules per-transition.",
-			"related_features": ["FEAT-001"],
-			"related_decisions": [],
-			"related_issues": [],
-			"created_by": "agent/claude-opus-4-6",
-			"created_at": "2026-04-15T00:00:00Z"
-		},
-		{
-			"id": "FGAP-005",
-			"title": "State-machine validation on enum-field transitions",
-			"status": "identified",
-			"priority": "P1",
-			"package": "pi-project",
-			"layer": "L2",
-			"description": "AJV draft-07 validates current-value membership on enum fields but cannot express allowed transitions. Every block schema today permits any enum value on any write. 'Issue status can only go from open to in-progress, not back to open' is not expressible. 'Finding decided-state transitions require user authority' is not expressible.",
-			"evidence": [
-				{
-					"file": ".project/schemas/issues.schema.json",
-					"reference": "status enum has open | resolved | deferred but no transitions constraint — any value can overwrite any other on updateItemInBlock"
-				},
-				{
-					"file": "packages/pi-project/src/schema-validator.ts",
-					"reference": "AJV draft-07 wrapper with no custom keywords; no before-value inspection at write time"
-				},
-				{
-					"file": "packages/pi-project/src/block-api.ts",
-					"reference": "updateItemInBlock does not pass the prior value to validation, so transition rules cannot be applied even if expressible"
-				}
-			],
-			"impact": "The whole class of lifecycle-gated workflows (design review clean-gate, decision enacted gate, feature approval gate) cannot be enforced by schema. Current workaround is discipline. Discipline fails silently when agents run unattended.",
-			"canonical_vocabulary": "state-machine validation; lifecycle invariant; transition guard",
-			"proposed_resolution": "Add a custom AJV keyword (x-lifecycle) that the schema-validator reads. block-api.ts passes both prior-value and new-value to the validator at update time. Validator checks allowed transitions and required-authority. Fails write if transition is invalid or authority is insufficient.",
-			"related_features": ["FEAT-001"],
-			"related_decisions": [],
-			"related_issues": [],
-			"created_by": "agent/claude-opus-4-6",
-			"created_at": "2026-04-15T00:00:00Z"
-		},
-		{
-			"id": "FGAP-006",
-			"title": "Schema versioning and evolution",
-			"status": "identified",
-			"priority": "P2",
-			"package": "pi-project",
-			"layer": "L2",
-			"description": "Schemas have no version field, no $id, no migration story, no $ref composition, no shared-fragment reuse. Schemas drift silently across projects and across time. A schema rename or field rename has no backward-compatibility path. Schemas are effectively copy-paste snapshots with no evolution protocol.",
-			"evidence": [
-				{
-					"file": ".project/schemas/decisions.schema.json",
-					"reference": "flat draft-07 schema with no $id, no version, no allOf / anyOf composition"
-				},
-				{
-					"file": ".project/schemas/rationale.schema.json",
-					"reference": "duplicates fields from decisions.schema.json with no shared fragment — rename in one does not propagate"
-				},
-				{
-					"file": "CLAUDE.md",
-					"reference": "'All schemas are user-customizable. Edit .project/schemas/*.schema.json to add fields, change enums, or restructure — no code changes needed.' — no mention of migration or version compatibility"
-				}
-			],
-			"impact": "Long-term schema evolution is undefined. Projects that adopted the framework early and never updated their .project/schemas/ drift from projects that adopted later. There is no way for tooling to know what schema version a block conforms to.",
-			"canonical_vocabulary": "schema evolution; JSON Schema $id; schema registry; schema versioning",
-			"proposed_resolution": "Add a required $id (URI) and version field on every schema. schema-validator reads version and can apply migration functions. Introduce a schema-migrations registry. $ref fragment composition becomes the standard way to express shared fields (e.g. a common 'authorship-fragment.schema.json' imported by every block schema).",
-			"related_features": ["FEAT-001"],
-			"related_decisions": [],
-			"related_issues": [],
-			"created_by": "agent/claude-opus-4-6",
-			"created_at": "2026-04-15T00:00:00Z"
-		}
-	]
+  "gaps": [
+    {
+      "id": "FGAP-001",
+      "title": "Hierarchical / nested block storage",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-project",
+      "layer": "L3",
+      "description": "pi-project's block-api assumes one flat JSON file per block. There is no way to express a nested decomposition like roadmap → milestone → epic → story → task as a directory tree. Work decomposition must be smuggled into a single flat array with denormalized parent references, which loses scope ownership and forces the global tasks.json to conflate work across all levels.",
+      "evidence": [
+        {
+          "file": "packages/pi-project/src/block-api.ts",
+          "reference": "readBlock / writeBlock / appendToBlock all take a simple block name and resolve to .project/<name>.json — no subpath support"
+        },
+        {
+          "file": ".project/tasks.json",
+          "reference": "current tasks block is a flat array with integer phase references; no milestone or epic hierarchy"
+        },
+        {
+          "file": "packages/pi-project/src/project-dir.ts",
+          "reference": "PROJECT_DIR / SCHEMAS_DIR constants assume flat directory layout"
+        },
+        {
+          "file": "packages/pi-project/src/project-sdk.ts",
+          "reference": "buildIdIndex special-cases .project/phases/ — synthesized IDs from 'number'/'name' fields, not top-level 'id'. First of two existing one-off subdirectory walks that FGAP-001 generalizes; resolution shape is 'generalize two existing walks' rather than 'introduce subdirectory recursion'."
+        },
+        {
+          "file": "packages/pi-project/src/block-api.ts",
+          "reference": "readBlockDir(cwd, subdir) reads all *.json from .project/<subdir>/ — second existing one-off subdirectory walk. Phases-pattern coexistence rule: no .project/phases.json file exists alongside the .project/phases/ directory; partition replaces flat file in current precedent."
+        },
+        {
+          "file": "packages/pi-project/src/project-sdk.ts",
+          "reference": "Phase-files use synthesized IDs from non-'id' fields. Generalizing the subdirectory-walk pattern requires deciding whether per-subdirectory ID derivation rules are configurable like phases or whether subpath block files always carry top-level 'id'."
+        }
+      ],
+      "impact": "The L3 Work layer from the Muni five-layer model cannot be natively represented. Features like the consumer migration arc must live as single flat JSON files per feature, with stories and tasks embedded as arrays — preventing per-task atomic read/write and forcing whole-feature reads for any single-task operation.\n\nPer-file proper-lockfile contention: every write to features.json today blocks every other write to features.json. Partition-per-file unblocks parallel writes to siblings — concurrency improvement is an immediately-enabled effect of FGAP-001's resolution.\n\nMigration scope: per analysis/2026-05-01-github-issues-migration-inventory.md, nine blocks have issue-tracker shape and benefit from partitioning — framework-gaps, issues, tasks, spec-reviews, features, requirements, verification, audit, layer-plans. Single-block treatment understates the work envelope.",
+      "canonical_vocabulary": "hierarchical work breakdown structure (WBS); nested aggregate storage",
+      "proposed_resolution": "Extend block-api to support subpath block names (e.g. readBlock('features/consumer-migration')). Add nested-directory discovery in availableBlocks. Schemas at the subdirectory root apply to all files underneath. Authority for partial-tree invalidation belongs to block-validation.ts.\n\nSchema validation atomicity: partition writes implicitly target schema.properties.{arrayKey}.items as the per-file schema. The schema-walk's target object is the array-item subschema, not a separate schema file. Schema authoring contract changes implicitly with this resolution.\n\nBlock-validation rollback: block-validation.ts snapshots .project/*.json before each step and rolls back on failure. Recursion into subdirectories is part of the rollback contract change, not a separate concern.\n\nDefaults disposition: pi-project/defaults/ ships seed schemas to newly-initialized projects. The schema-walk semantics change requires deciding the defaults posture — we might ship no defaults at all, and/or move defaults to a separate install step users enact if they want. Decision pending.",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "FGAP-002",
+      "title": "Per-scope finding registries",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-project",
+      "layer": "L2",
+      "description": "There is no convention for a block to carry its own embedded findings array distinct from global issues.json. A design issue discovered during review of jit-agents-spec.md has nowhere to live except the global issue tracker, where it is indistinguishable from task-level defects and feature-level scope conflicts. The result is issues.json conflating L2 architectural contradictions with L4 implementation bugs with L5 incident-derived rules.",
+      "evidence": [
+        {
+          "file": ".project/issues.json",
+          "reference": "62KB flat file mixing spec contradictions, task bugs, and session observations with no scope tagging beyond the informal 'package' field"
+        },
+        {
+          "file": ".project/schemas/issues.schema.json",
+          "reference": "single flat items array with no parent-scope reference — issues float free of the artifact they belong to"
+        }
+      ],
+      "impact": "Every finding discovered during any layer of work lands in the same flat bucket. There is no mechanism to say 'this finding belongs to the review of spec X' or 'this defect belongs to task Y within feature Z'. The global tracker becomes an unmanageable tangle that must be sorted by hand to answer any scoped question.",
+      "canonical_vocabulary": "scoped issues; per-artifact defect list; embedded finding registries",
+      "proposed_resolution": "Standardize a 'findings' sub-array on every L2/L3/L4 block schema kind (specs, features, tasks). Each finding carries scope metadata (layer, parent_artifact). Provide a block-api helper appendFinding(blockName, parentItemId, finding). Global issues.json becomes a derived view (see FGAP-003).",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "FGAP-003",
+      "title": "Materialized views over scoped blocks",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-project",
+      "layer": "L2",
+      "description": "There is no derived block kind. projectState() does in-memory aggregation but it is not a persisted, addressable, schema-validated block. There is no way to declare 'global issues_view.json is a derived index over per-scope finding registries' or 'open_work_view.json aggregates all non-terminal stories across features'.",
+      "evidence": [
+        {
+          "file": "packages/pi-project/src/project-sdk.ts",
+          "reference": "projectState() computes derived metrics at query time but returns in-memory only — no persistence, no addressability, no schema"
+        },
+        {
+          "file": "packages/pi-project/src/block-api.ts",
+          "reference": "only writeable blocks exist; no concept of a read-only derived block"
+        }
+      ],
+      "impact": "Consumers who want a flat queryable view (the current issues.json shape) cannot have it alongside scope-owned registries without manual sync. Two sources of truth or fragile regeneration.",
+      "canonical_vocabulary": "materialized view (database canon)",
+      "proposed_resolution": "Add a view-block kind with a definition file that names source blocks, a projection function, and refresh triggers. block-api exposes readView(name) but disallows direct writes. Refresh fires on underlying block writes. Schemas describe the view shape.",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "FGAP-004",
+      "title": "Authorship attestation at write time",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-project",
+      "layer": "L4",
+      "description": "Only issues.schema.json has a source enum (human | agent | monitor | workflow). tasks.schema.json has assigned_agent which is a different concept (assignment, not authorship). No block records created_by / modified_by / created_at / modified_at consistently. block-api.ts does not stamp authorship on writes. The authorship-matrix principle — 'only the user can advance a finding from proposed to decided' — cannot be enforced because the writer identity is not recorded.",
+      "evidence": [
+        {
+          "file": ".project/schemas/issues.schema.json",
+          "reference": "source enum exists here and only here — partial coverage, no other block has equivalent fields"
+        },
+        {
+          "file": "packages/pi-project/src/block-api.ts",
+          "reference": "writeBlock / appendToBlock / updateItemInBlock do not inject authorship metadata"
+        },
+        {
+          "file": ".project/schemas/tasks.schema.json",
+          "reference": "assigned_agent field is assignment semantics, not authorship — a task can be assigned to agent X but written by user Y"
+        }
+      ],
+      "impact": "State-machine validation of user-gated transitions (decision enacted, finding decided, feature approved) is structurally impossible. The framework cannot distinguish 'user advanced this' from 'agent advanced this' and so cannot enforce authority matrices. The spec-loop invariant M4 is unenforceable.",
+      "canonical_vocabulary": "authorship attestation; written_by attribution; audit trail",
+      "proposed_resolution": "block-api.ts stamps created_by / modified_by / created_at / modified_at on every write, reading writer identity from a DispatchContext parameter. Every block schema adds these as required fields. Cross-block validation can then enforce authority-matrix rules per-transition.",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "FGAP-005",
+      "title": "State-machine validation on enum-field transitions",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-project",
+      "layer": "L2",
+      "description": "AJV draft-07 validates current-value membership on enum fields but cannot express allowed transitions. Every block schema today permits any enum value on any write. 'Issue status can only go from open to in-progress, not back to open' is not expressible. 'Finding decided-state transitions require user authority' is not expressible.",
+      "evidence": [
+        {
+          "file": ".project/schemas/issues.schema.json",
+          "reference": "status enum has open | resolved | deferred but no transitions constraint — any value can overwrite any other on updateItemInBlock"
+        },
+        {
+          "file": "packages/pi-project/src/schema-validator.ts",
+          "reference": "AJV draft-07 wrapper with no custom keywords; no before-value inspection at write time"
+        },
+        {
+          "file": "packages/pi-project/src/block-api.ts",
+          "reference": "updateItemInBlock does not pass the prior value to validation, so transition rules cannot be applied even if expressible"
+        }
+      ],
+      "impact": "The whole class of lifecycle-gated workflows (design review clean-gate, decision enacted gate, feature approval gate) cannot be enforced by schema. Current workaround is discipline. Discipline fails silently when agents run unattended.",
+      "canonical_vocabulary": "state-machine validation; lifecycle invariant; transition guard",
+      "proposed_resolution": "Add a custom AJV keyword (x-lifecycle) that the schema-validator reads. block-api.ts passes both prior-value and new-value to the validator at update time. Validator checks allowed transitions and required-authority. Fails write if transition is invalid or authority is insufficient.",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "FGAP-006",
+      "title": "Schema versioning and evolution",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-project",
+      "layer": "L2",
+      "description": "Schemas have no version field, no $id, no migration story, no $ref composition, no shared-fragment reuse. Schemas drift silently across projects and across time. A schema rename or field rename has no backward-compatibility path. Schemas are effectively copy-paste snapshots with no evolution protocol.",
+      "evidence": [
+        {
+          "file": ".project/schemas/decisions.schema.json",
+          "reference": "flat draft-07 schema with no $id, no version, no allOf / anyOf composition"
+        },
+        {
+          "file": ".project/schemas/rationale.schema.json",
+          "reference": "duplicates fields from decisions.schema.json with no shared fragment — rename in one does not propagate"
+        },
+        {
+          "file": "CLAUDE.md",
+          "reference": "'All schemas are user-customizable. Edit .project/schemas/*.schema.json to add fields, change enums, or restructure — no code changes needed.' — no mention of migration or version compatibility"
+        }
+      ],
+      "impact": "Long-term schema evolution is undefined. Projects that adopted the framework early and never updated their .project/schemas/ drift from projects that adopted later. There is no way for tooling to know what schema version a block conforms to.",
+      "canonical_vocabulary": "schema evolution; JSON Schema $id; schema registry; schema versioning",
+      "proposed_resolution": "Add a required $id (URI) and version field on every schema. schema-validator reads version and can apply migration functions. Introduce a schema-migrations registry. $ref fragment composition becomes the standard way to express shared fields (e.g. a common 'authorship-fragment.schema.json' imported by every block schema).",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z"
+    }
+  ]
 }

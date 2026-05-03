@@ -467,6 +467,48 @@
       ],
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0011",
+      "title": "Retire packaged defaults — pi-project ships no seed schemas or seed block files",
+      "status": "enacted",
+      "context": "pi-project today ships default schemas + default block files under packages/pi-project/defaults/{schemas,blocks}/, copied into newly-initialized projects by initProject (packages/pi-project/src/index.ts:215-236). The seeding pattern is a recurring source of architectural debt: stale seeded files cannot be updated by package upgrades. The original seedExamples copy-on-first-run pattern in pi-behavior-monitors had this exact failure mode and was retired in favor of live three-tier discovery (packages/pi-behavior-monitors/index.ts:325-352, doc-comment explicitly cites the retirement). Even pi-project's additive-only initProject creates the same divergence the moment a default ships an updated version: the file exists in the user's project from a prior install and never updates. The embedded note in FGAP-001's proposed_resolution surfaced this as 'decision pending' but the directional choice is not pending; the decision has been made and needs first-class reification so forward work does not continue down the already-decided-against path.",
+      "decision": "pi-project does not ship default schemas or default block files. Users install desired schemas and starter blocks via an opt-in mechanism — concrete shape of the install mechanism is unspecified but the directional choice is final: no auto-seeding, no copy-on-init defaults shipped from the package. Bundled defaults are retired. This applies to all future schema and block kinds (config, relations, etc.) and to the existing default set under packages/pi-project/defaults/ once the opt-in mechanism replaces it.",
+      "consequences": [
+        "issue-074's framing changes from 'fix seedExamples short-circuit' to 'the seeded artifacts must not exist; remove the source of the recurring class of issues'.",
+        "The substrate-arc subagent's recommended bundle 1 (Substrate seeding) is misframed: shipping config.schema.json + relations.schema.json + default config.json + default relations.json into packages/pi-project/defaults/ violates this decision. The POC's outputs ship as documentation/examples users copy, not as auto-seeded defaults.",
+        "packages/pi-project/defaults/ existing contents are grandfathered until the opt-in install mechanism is specified; no new content lands there.",
+        "initProject's default-copying loops at packages/pi-project/src/index.ts:215-236 are scheduled for retirement once the opt-in mechanism replaces them.",
+        "Future schema/block updates flow to users via the opt-in mechanism, not via package upgrades silently changing on-disk content. This eliminates the entire class of stale-seeded-file divergence issues at the source.",
+        "FGAP-001's proposed_resolution embedded note 'we might ship no defaults at all, and/or move defaults to a separate install step users enact if they want. Decision pending.' is superseded by this DEC."
+      ],
+      "related_gaps": [
+        "FGAP-001"
+      ],
+      "related_findings": [
+        "issue-074"
+      ],
+      "references": [
+        {
+          "label": "Original embedded note in FGAP-001 proposed_resolution preserving user wording",
+          "path": ".project/framework-gaps.json",
+          "lines": "FGAP-001 entry"
+        },
+        {
+          "label": "pi-project initProject default-copying loops",
+          "path": "packages/pi-project/src/index.ts",
+          "lines": "215-236"
+        },
+        {
+          "label": "pi-behavior-monitors live three-tier discovery (the retirement parallel)",
+          "path": "packages/pi-behavior-monitors/index.ts",
+          "lines": "325-352"
+        }
+      ],
+      "created_by": "user",
+      "created_at": "2026-05-03T00:00:00Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-03T00:00:00Z"
     }
   ]
 }

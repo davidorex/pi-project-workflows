@@ -156,10 +156,10 @@ These did not exist before the substrate work. Each must be located in `framewor
 | 32 | Integration map | block-api registration of `config` as typed block | Open — implicit via dynamic schema discovery, unverified |
 | 33 | Integration map | `partitions` field runtime semantics | Open — commit or drop |
 | 34 | Heuristic-widening | **Composition contract for prompt assembly** — order, deduplication, override, applicability evaluation, token budget allocation across mandates + lens views + raw blocks + monitor outputs | Open — tracked as **DEC-0007**; top-priority; central API surface for the unified heuristic |
-| 35 | Heuristic-widening | Mandate-block schema fields (scope, priority, applicability conditions, lifecycle) | Open |
-| 36 | Heuristic-widening | Monitor-spec-as-block schema authority — typed block + `validateMonitor()` in pi-project SDK | Open |
+| 35 | Heuristic-widening | Mandate-block schema fields (scope, priority, applicability conditions, lifecycle) | Open — tracked as **FGAP-008** in `.project/framework-gaps.json` |
+| 36 | Heuristic-widening | Monitor-spec-as-block schema authority — typed block + `validateMonitor()` in pi-project SDK | Open — tracked as **FGAP-009** |
 | 37 | Heuristic-widening | Scope layering — user / project / agent anchors with composition rules across scopes | Open — tracked as **DEC-0010**; expansion of #24 |
-| 38 | Heuristic-widening | Applicability predicate language — when a typed-context entry applies to which agent / classifier / context | Open |
+| 38 | Heuristic-widening | Applicability predicate language — when a typed-context entry applies to which agent / classifier / context | Open — tracked as **FGAP-010** |
 
 ### 5.1 Top decisions to make now and persist (under the heuristic)
 

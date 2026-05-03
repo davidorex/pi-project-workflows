@@ -201,6 +201,118 @@
       "related_issues": [],
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "FGAP-008",
+      "title": "Mandates as a typed block in the substrate contract",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-project",
+      "layer": "L1",
+      "description": "Under the unifying heuristic (substrate-arc-frame.md §1.1), every typed context that gets composed into a prompt belongs to one canonical contract. Mandates today live as ~/.claude/mandates.jsonl — a flat JSONL store with id/title/rule/tags fields, prefixed all-or-nothing on every UserPromptSubmit by an external claude-side hook. Under the heuristic mandates become a typed block at user scope with their own schema, enabling: selective composition (lens views like _lens:mandates-for-classify inject only classifier-relevant mandates rather than all-or-nothing), schema-validated writes (no parallel ungated path for mandate authoring), supersession edges (one mandate retiring another via closure-table relations), authorship attestation (mandates gain the same FGAP-004 target as project blocks). Concrete schema fields needed beyond today's id/title/rule/tags: scope (user/project/agent — couples to DEC-0010), priority/severity, applicability_conditions (which agents, which contexts — couples to FGAP-010 applicability predicate language), lifecycle (active/superseded), supersedes (lineage). Surfaced as gap #35 in the heuristic-widening pass.",
+      "evidence": [
+        {
+          "file": "~/.claude/mandates.jsonl",
+          "reference": "Today's mandate store: flat JSONL, no schema, no canonical write surface, no per-context selective composition. The all-or-nothing prefix on UserPromptSubmit is the degenerate 'all mandates' lens."
+        },
+        {
+          "file": "analysis/2026-05-03-substrate-arc-frame.md",
+          "lines": "§1.1, §2.1, §5 gap #35",
+          "reference": "Heuristic-widening pass surfaces mandates as in-scope under the same heuristic that governs project blocks."
+        }
+      ],
+      "impact": "Without typed mandate blocks: mandate authoring bypasses block-api (parallel ungated path); mandate-relevant lens injection (selective composition by context) is impossible; mandate authorship attestation has no target; supersession lineage cannot be carried; agent-scope opt-out / opt-in is unreachable. The heuristic-widening's second-class citizen problem: mandates exist in prompt-composition reality but not in the substrate contract.",
+      "canonical_vocabulary": "policy-as-data; declarative governance store; typed user-scope substrate",
+      "proposed_resolution": "Land mandates.json + mandates.schema.json under the configured user-scope root (per DEC-0010). Schema fields: id, title, rule, tags (preserved from today), plus scope, priority, applicability_conditions, lifecycle, supersedes. Migrate ~/.claude/mandates.jsonl content via one-shot conversion. Update the UserPromptSubmit hook to read from the new typed store (or to apply lens projection rather than all-or-nothing prefix). Resolution is gated on DEC-0007 (composition contract) for applicability_conditions evaluation timing and DEC-0010 (scope layering) for the user-scope discovery anchor.",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [
+        "DEC-0006",
+        "DEC-0007",
+        "DEC-0010"
+      ],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "FGAP-009",
+      "title": "Monitor specs as typed blocks under the substrate contract",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-behavior-monitors",
+      "layer": "L1",
+      "description": "Monitor specs today live as `.pi/monitors/<name>.monitor.json` with ad-hoc shape (classify.agent + collectors), classify templates as `examples/<name>/classify.md` with handcoded `{% if %}` guards on context variables. Monitor write-actions bypass block-api (issue-065 — silent schema drift from destination blocks). Under the unifying heuristic monitor specs become typed blocks: monitor.schema.json captures the spec contract (collectors, classify routing, write actions); validateMonitor() lives in pi-project SDK as a peer to validateProject() and validateRelations(). Classify templates declare typed contextBlocks (per DEC-0008) flowing through the same composition layer (DEC-0007) as workflow agents. Surfaced as gap #36.",
+      "evidence": [
+        {
+          "file": "packages/pi-behavior-monitors/examples/",
+          "reference": "Bundled monitor specs and classify templates use ad-hoc shape; no monitors.schema.json exists."
+        },
+        {
+          "file": "packages/pi-behavior-monitors/index.ts",
+          "reference": "executeWriteAction in monitor write-action path bypasses block-api per issue-065 — silent schema drift surface."
+        },
+        {
+          "file": "analysis/2026-05-03-substrate-arc-frame.md",
+          "lines": "§2.1, §4.2, §5 gap #36",
+          "reference": "Heuristic-widening pass surfaces monitor specs as in-scope typed contexts."
+        }
+      ],
+      "impact": "Without typed monitor blocks: monitor authoring lacks schema-validated writes (issue-065's parallel ungated path stays open); monitor classify templates duplicate composition logic that lens injection now provides; validateMonitor() does not exist (issue-039 mirrors this); monitor tooling (issue-038) cannot route through canonical surfaces. Monitors as a class become second-class citizens of the substrate.",
+      "canonical_vocabulary": "typed monitor specifications; declarative observation store; canonical monitor authoring surface",
+      "proposed_resolution": "Land monitors.json (flat block) or monitors/ subdirectory (only if DEC-0009 enacts subpath form, which is the rejected direction under the heuristic) + monitors.schema.json + validateMonitor() in pi-project SDK. Monitor write-actions route through block-api appendToBlock for any destination block they target (closes issue-065). Classify templates adopt typed contextBlocks (DEC-0008). Resolution coupled to DEC-0007 (composition contract for classify-prompt assembly) and DEC-0009 (storage primitive direction).",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [
+        "DEC-0007",
+        "DEC-0008",
+        "DEC-0009"
+      ],
+      "related_issues": [
+        "issue-039",
+        "issue-065"
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "FGAP-010",
+      "title": "Applicability predicate language for typed-context entries",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-project",
+      "layer": "L2",
+      "description": "Under the composition contract (DEC-0007) each typed-context entry (lens view, mandate, monitor output, raw block) carries an applicability declaration: which agent / classifier / context the entry applies to. Today this is implicit in template authoring (`{% if conversation_history %}`), in agent YAML inputSchema, and in monitor classify routing. Under the unifying heuristic applicability becomes a first-class declarative field with a predicate language that the composition layer evaluates at compile-time (or per-turn) to decide what enters the prompt. The predicate language must express: which agent kinds (workflow agents vs classifiers vs query agents); which scopes (user / project / agent); which lifecycle states (open issues only, enacted decisions only); which tags or attributes; logical composition (AND/OR/NOT). Surfaced as gap #38.",
+      "evidence": [
+        {
+          "file": "packages/pi-jit-agents/src/compile.ts",
+          "reference": "compileAgent's contextBlocks loop today reads each declared block unconditionally; no applicability filter at the compile boundary."
+        },
+        {
+          "file": "packages/pi-behavior-monitors/examples/",
+          "reference": "Classify templates use {% if %} guards on Nunjucks vars to express applicability — implicit, per-template, not declarative."
+        },
+        {
+          "file": "analysis/2026-05-03-substrate-arc-frame.md",
+          "lines": "§2.1, §5 gap #38",
+          "reference": "Heuristic-widening pass identifies applicability as the channel by which selective composition resolves which typed contexts enter which agent prompts."
+        }
+      ],
+      "impact": "Without an applicability predicate language: composition contract (DEC-0007) cannot specify when each typed-context entry applies; mandate-block applicability_conditions (FGAP-008) and monitor-spec applicability (FGAP-009) lack a shared expression form; lens-view filters (gap #30, collapsed into DEC-0008) lack a runtime evaluator. Each typed-context kind would invent its own ad-hoc applicability surface — the same fragmentation the substrate arc retires.",
+      "canonical_vocabulary": "declarative applicability predicates; pre-composition filter expressions; typed-context selectivity",
+      "proposed_resolution": "Specify an applicability predicate mini-language (or adopt an existing one — couples to ADR-0004's expression-language comparison; CEL is a candidate). Predicates live as a typed field on every typed-context entry's schema (mandates, monitor specs, lens views). Composition layer (DEC-0007) evaluates predicates at compile-time against {agent_kind, scope, context_tags, ...}. Predicates fail closed: missing predicate means 'applies always'; failed evaluation means 'does not apply.' Resolution gated on DEC-0007 for evaluation timing semantics.",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [
+        "DEC-0007",
+        "DEC-0008"
+      ],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
     }
   ]
 }

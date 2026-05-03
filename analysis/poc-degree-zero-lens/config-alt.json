@@ -1,0 +1,33 @@
+{
+	"schema_version": "0.2.0",
+	"root": "analysis/poc-degree-zero-lens/alt-substrate",
+	"naming": {
+		"issues": "Bug Tracker",
+		"framework-gaps": "Capability Gaps"
+	},
+	"partitions": [
+		{
+			"name": "tracking",
+			"blocks": ["issues", "framework-gaps"]
+		}
+	],
+	"hierarchy": [],
+	"lenses": [
+		{
+			"id": "by-priority",
+			"target": "issues",
+			"relation_type": "priority-membership",
+			"derived_from_field": "priority",
+			"bins": ["critical", "high", "medium", "low"],
+			"render_uncategorized": false
+		},
+		{
+			"id": "by-status",
+			"target": "issues",
+			"relation_type": "status-membership",
+			"derived_from_field": "status",
+			"bins": ["open", "deferred", "resolved"],
+			"render_uncategorized": true
+		}
+	]
+}

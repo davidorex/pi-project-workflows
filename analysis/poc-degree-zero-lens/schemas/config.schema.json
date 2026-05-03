@@ -1,0 +1,82 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "POC degree-zero substrate config",
+	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. POC scope: minimal viable shape — root, naming aliases, partitions, hierarchy declarations, lens definitions, schema_version. No guarantees this matches a future production schema.",
+	"type": "object",
+	"required": ["schema_version", "root", "partitions", "lenses"],
+	"additionalProperties": false,
+	"properties": {
+		"schema_version": {
+			"type": "string",
+			"pattern": "^\\d+\\.\\d+\\.\\d+$",
+			"description": "Semver of this config schema. Closes FGAP-006 at the meta-layer."
+		},
+		"root": {
+			"type": "string",
+			"description": "On-disk directory housing the substrate. Default '.project'. Closes GitHub issue #3 surface."
+		},
+		"naming": {
+			"type": "object",
+			"description": "Canonical-id → user-facing-name alias map. Code references canonical ids; UI/macros render configured names. Decouples terminology from code.",
+			"additionalProperties": { "type": "string" }
+		},
+		"partitions": {
+			"type": "array",
+			"description": "Top-level organizational divisions. Each partition declares which canonical block ids may live in it. POC degenerate one-partition case is permitted.",
+			"items": {
+				"type": "object",
+				"required": ["name", "blocks"],
+				"additionalProperties": false,
+				"properties": {
+					"name": { "type": "string" },
+					"blocks": {
+						"type": "array",
+						"items": { "type": "string" }
+					}
+				}
+			}
+		},
+		"hierarchy": {
+			"type": "array",
+			"description": "Constraint declaration: which (parent_block, child_block, relation_type) edges are legal in relations.json. Not the closure-table data itself. Distinguishes hierarchy edges (parent ∈ canonical ids of parent_block) from lens edges (parent ∈ lens.bins).",
+			"items": {
+				"type": "object",
+				"required": ["parent_block", "child_block", "relation_type"],
+				"additionalProperties": false,
+				"properties": {
+					"parent_block": { "type": "string", "description": "Canonical block id whose items may appear in edge.parent" },
+					"child_block": { "type": "string", "description": "Canonical block id whose items may appear in edge.child" },
+					"relation_type": { "type": "string", "description": "Edge label disambiguating this hierarchy from lens edges" }
+				}
+			}
+		},
+		"lenses": {
+			"type": "array",
+			"description": "Named projections over a target block. Each lens declares either a derived_from_field (auto-projection from existing item field) or relies on hand-curated edges in relations.json.",
+			"items": {
+				"type": "object",
+				"required": ["id", "target", "relation_type", "bins"],
+				"additionalProperties": false,
+				"properties": {
+					"id": { "type": "string" },
+					"target": { "type": "string", "description": "Canonical block id whose items are being projected" },
+					"relation_type": { "type": "string", "description": "Edge label in the closure table" },
+					"derived_from_field": {
+						"type": ["string", "null"],
+						"description": "If set, edges synthesized at read-time from this field on each item. If null, edges read from relations.json."
+					},
+					"bins": {
+						"type": "array",
+						"description": "Ordered list of cluster names for rendering. Items not matching any bin go into an implicit (uncategorized) cluster.",
+						"items": { "type": "string" }
+					},
+					"render_uncategorized": {
+						"type": "boolean",
+						"description": "Whether to render the (uncategorized) bucket of items not placed into any declared bin. Default true. Set false for curated final views.",
+						"default": true
+					}
+				}
+			}
+		}
+	}
+}

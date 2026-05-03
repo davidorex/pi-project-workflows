@@ -1,0 +1,56 @@
+{
+	"schema_version": "0.2.0",
+	"root": ".project",
+	"naming": {
+		"issues": "Issue Tracker",
+		"framework-gaps": "Framework Gaps"
+	},
+	"partitions": [
+		{
+			"name": "substrate",
+			"blocks": ["issues", "framework-gaps"]
+		}
+	],
+	"hierarchy": [
+		{
+			"parent_block": "framework-gaps",
+			"child_block": "issues",
+			"relation_type": "gap-membership"
+		}
+	],
+	"lenses": [
+		{
+			"id": "by-package",
+			"target": "issues",
+			"relation_type": "package-membership",
+			"derived_from_field": "package",
+			"bins": [
+				"pi-jit-agents",
+				"pi-behavior-monitors",
+				"pi-workflows",
+				"pi-project",
+				"pi-project-workflows"
+			],
+			"render_uncategorized": false
+		},
+		{
+			"id": "context-management",
+			"target": "issues",
+			"relation_type": "context-mgmt-concern",
+			"derived_from_field": null,
+			"bins": [
+				"substrate-shape",
+				"substrate-integrity",
+				"provenance",
+				"automatic-capture",
+				"context-projection",
+				"context-window",
+				"lifecycle-linkage",
+				"identity-idempotence",
+				"visibility",
+				"reachability"
+			],
+			"render_uncategorized": true
+		}
+	]
+}

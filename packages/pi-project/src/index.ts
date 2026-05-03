@@ -24,6 +24,7 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "./block-api.js";
+import { projectRoot } from "./project-context.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import {
 	type ConfigBlock,
@@ -125,11 +126,11 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
  * items from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
-	const workflowDir = path.join(ctx.cwd, PROJECT_DIR);
+	const workflowDir = path.join(ctx.cwd, projectRoot(ctx.cwd));
 	const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
 
 	if (!fs.existsSync(schemasDir)) {
-		ctx.ui.notify(`No ${PROJECT_DIR}/${SCHEMAS_DIR}/ directory found.`, "warning");
+		ctx.ui.notify(`No ${projectRoot(ctx.cwd)}/${SCHEMAS_DIR}/ directory found.`, "warning");
 		return;
 	}
 
@@ -270,8 +271,8 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 	}
 
 	const registryRoot = path.resolve(import.meta.dirname, "..", "registry");
-	const projectRoot = path.join(cwd, PROJECT_DIR);
-	const schemasRoot = path.join(projectRoot, SCHEMAS_DIR);
+	const destRoot = path.join(cwd, projectRoot(cwd));
+	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
 
 	const installedSchemas = (config as ConfigBlock & { installed_schemas?: string[] }).installed_schemas ?? [];
 	for (const name of installedSchemas) {
@@ -294,7 +295,7 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 	const installedBlocks = (config as ConfigBlock & { installed_blocks?: string[] }).installed_blocks ?? [];
 	for (const name of installedBlocks) {
 		const sourceFile = path.join(registryRoot, "blocks", `${name}.json`);
-		const destFile = path.join(projectRoot, `${name}.json`);
+		const destFile = path.join(destRoot, `${name}.json`);
 		const relDest = `${name}.json`;
 		if (!fs.existsSync(sourceFile)) {
 			result.notFound.push(relDest);

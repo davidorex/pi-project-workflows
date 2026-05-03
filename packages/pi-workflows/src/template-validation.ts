@@ -7,7 +7,7 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { schemaPath } from "@davidorex/pi-project/project-dir";
+import { schemaPath } from "@davidorex/pi-project/project-context";
 import { createAgentLoader } from "./agent-spec.js";
 import { bundledDir } from "./bundled-dirs.js";
 import { resolveSchemaPath } from "./step-shared.js";

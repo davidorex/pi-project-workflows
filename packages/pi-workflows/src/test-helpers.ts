@@ -10,7 +10,7 @@ import {
 	expandFieldPathShorthand,
 	enforceBudget as realEnforceBudget,
 } from "@davidorex/pi-jit-agents";
-import { schemaPath } from "@davidorex/pi-project/project-dir";
+import { schemaPath } from "@davidorex/pi-project/project-context";
 import nunjucks from "nunjucks";
 import { bundledDir } from "./bundled-dirs.js";
 import type { StepSpec, WorkflowSpec } from "./types.js";

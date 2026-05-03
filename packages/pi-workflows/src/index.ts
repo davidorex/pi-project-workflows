@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { enforceBudget } from "@davidorex/pi-jit-agents";
-import { schemaPath } from "@davidorex/pi-project/project-dir";
+import { schemaPath } from "@davidorex/pi-project/project-context";
 import { Type } from "@mariozechner/pi-ai";
 import type {
 	AgentToolResult,

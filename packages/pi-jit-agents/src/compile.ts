@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-project";
 import { readBlock } from "@davidorex/pi-project/block-api";
-import { projectDir, schemaPath } from "@davidorex/pi-project/project-dir";
+import { projectDir, schemaPath } from "@davidorex/pi-project/project-context";
 import type nunjucks from "nunjucks";
 import { type BudgetWarning, enforceBudget } from "./budget-enforcer.js";
 import { dispatchInlineMacro } from "./dispatch-inline.js";

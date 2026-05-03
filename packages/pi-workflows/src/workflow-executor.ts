@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { readBlock, writeBlock } from "@davidorex/pi-project/block-api";
 import { rollbackBlockFiles, snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-project/block-validation";
-import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
+import { projectRoot } from "@davidorex/pi-project/project-context";
 import { validate, validateFromFile } from "@davidorex/pi-project/schema-validator";
 import { truncateTail } from "@mariozechner/pi-coding-agent";
 import type nunjucks from "nunjucks";
@@ -876,7 +876,7 @@ export async function executeWorkflow(
 				}
 
 				// Route project block JSON targets through block-api for block-schema validation
-				const workflowPrefix = path.join(ctx.cwd, PROJECT_DIR) + path.sep;
+				const workflowPrefix = path.join(ctx.cwd, projectRoot(ctx.cwd)) + path.sep;
 				if (absolutePath.startsWith(workflowPrefix) && absolutePath.endsWith(".json")) {
 					const blockName = path.basename(absolutePath, ".json");
 					writeBlock(ctx.cwd, blockName, data);
@@ -898,7 +898,8 @@ export async function executeWorkflow(
 				const resolvedPath = String(resolveExpressions(artifactSpec.path, artifactScope));
 				const absolutePath = path.isAbsolute(resolvedPath) ? resolvedPath : path.resolve(workflowDir, resolvedPath);
 				const isBlockTarget =
-					absolutePath.startsWith(path.join(ctx.cwd, PROJECT_DIR) + path.sep) && absolutePath.endsWith(".json");
+					absolutePath.startsWith(path.join(ctx.cwd, projectRoot(ctx.cwd)) + path.sep) &&
+					absolutePath.endsWith(".json");
 				if (isBlockTarget) {
 					state.status = "failed";
 					if (ctx.hasUI) {

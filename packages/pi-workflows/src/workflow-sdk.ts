@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
+import { projectRoot } from "@davidorex/pi-project/project-context";
 import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { bundledDir } from "./bundled-dirs.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
@@ -613,7 +613,7 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 	}
 
 	// 7c. contextBlocks existence — do declared context blocks exist in .project/?
-	const projectDirPath = path.join(cwd, PROJECT_DIR);
+	const projectDirPath = path.join(cwd, projectRoot(cwd));
 	const projectDirExists = fs.existsSync(projectDirPath);
 
 	for (const [_stepName, step, fieldPrefix] of walkAllSteps(spec.steps)) {

@@ -40,6 +40,10 @@
 		"./project-sdk": {
 			"types": "./dist/project-sdk.d.ts",
 			"default": "./dist/project-sdk.js"
+		},
+		"./project-context": {
+			"types": "./dist/project-context.d.ts",
+			"default": "./dist/project-context.js"
 		}
 	},
 	"pi": {

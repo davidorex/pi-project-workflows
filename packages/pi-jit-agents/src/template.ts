@@ -18,7 +18,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { projectTemplatesDir } from "@davidorex/pi-project/project-dir";
+import { projectTemplatesDir } from "@davidorex/pi-project/project-context";
 import nunjucks from "nunjucks";
 
 export interface TemplateEnvContext {

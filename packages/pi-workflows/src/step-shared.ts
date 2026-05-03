@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock } from "@davidorex/pi-project/block-api";
-import { projectDir, schemaPath } from "@davidorex/pi-project/project-dir";
+import { projectDir, schemaPath } from "@davidorex/pi-project/project-context";
 import type nunjucks from "nunjucks";
 import { writeState } from "./state.js";
 import { renderTemplate, renderTemplateFile } from "./template.js";

@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { agentsDir } from "@davidorex/pi-project/project-dir";
+import { agentsDir } from "@davidorex/pi-project/project-context";
 import { parse as parseYaml } from "yaml";
 import { AgentNotFoundError, AgentParseError } from "./errors.js";
 import type { AgentSpec, ContextBlockRef, LoadContext } from "./types.js";

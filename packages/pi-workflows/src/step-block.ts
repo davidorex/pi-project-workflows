@@ -27,7 +27,7 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "@davidorex/pi-project/block-api";
-import { PROJECT_DIR, schemaPath } from "@davidorex/pi-project/project-dir";
+import { projectRoot, schemaPath } from "@davidorex/pi-project/project-context";
 import { validateFromFile } from "@davidorex/pi-project/schema-validator";
 import { resolveExpressions } from "./expression.js";
 import { persistStepOutput } from "./output.js";
@@ -159,7 +159,7 @@ function executeWrite(spec: { name: string; data: unknown; path?: string }, cwd:
 	}
 
 	writeBlock(cwd, spec.name, spec.data);
-	return { written: spec.name, path: `${PROJECT_DIR}/${spec.name}.json` };
+	return { written: spec.name, path: `${projectRoot(cwd)}/${spec.name}.json` };
 }
 
 /**
@@ -167,7 +167,7 @@ function executeWrite(spec: { name: string; data: unknown; path?: string }, cwd:
  * validation from `name`. Provides atomic writes and directory creation.
  */
 function executeSubdirWrite(schemaName: string, data: unknown, subPath: string, cwd: string): Record<string, string> {
-	const filePath = path.join(cwd, PROJECT_DIR, `${subPath}.json`);
+	const filePath = path.join(cwd, projectRoot(cwd), `${subPath}.json`);
 	const schemaFile = schemaPath(cwd, schemaName);
 
 	// Validate against schema if it exists
@@ -190,10 +190,10 @@ function executeSubdirWrite(schemaName: string, data: unknown, subPath: string, 
 			/* cleanup best-effort */
 		}
 		const msg = err instanceof Error ? err.message : String(err);
-		throw new Error(`Failed to write ${PROJECT_DIR}/${subPath}.json: ${msg}`);
+		throw new Error(`Failed to write ${projectRoot(cwd)}/${subPath}.json: ${msg}`);
 	}
 
-	return { written: schemaName, path: `${PROJECT_DIR}/${subPath}.json` };
+	return { written: schemaName, path: `${projectRoot(cwd)}/${subPath}.json` };
 }
 
 /**

@@ -748,6 +748,105 @@
       "priority": "medium",
       "package": "pi-workflows",
       "source": "agent"
+    },
+    {
+      "id": "issue-068",
+      "title": "Lens curation ceremony — slash command for binning uncategorized items",
+      "body": "POC v2's listUncategorized() + suggestionTemplate() in analysis/poc-degree-zero-lens/render.ts demonstrate the curation surface shape — emit would-be edge-append payloads for items in the (uncategorized) bucket of a hand-curated lens. The ceremony itself — a /project lens-curate <lensId> slash command that interactively walks uncategorized items, accepts bin assignments, and translates to batched appendToBlock writes against relations.json — needs registration in pi-project's command surface. Without it, lens curation is manual edge-authoring; with it, lens curation becomes a first-class workflow. Couples to DEC-0008 (typed contextBlocks) for lens-view rendering during curation, and to DEC-0007 (composition contract) for how the curation prompt itself is composed. Aligns with analysis/2026-05-01-ceremony-ideas.md sibling commands (/project new, /project new-phase, /project edit-item, /project archive-item). Surfaced as gap #15 in the heuristic-widening pass.",
+      "location": "packages/pi-project/src/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-069",
+      "title": "Route POC AJV instance through pi-project schema-validator's cache",
+      "body": "POC v2 (analysis/poc-degree-zero-lens/render.ts:77) creates its own AJV instance per run for config + relations validation, matching pi-project's schema-validator.ts ESM/CJS import shim pattern. Production form must consume the existing schema-validator cache rather than spinning parallel AJV instances per consumer. Without routing, every consumer (compile.ts lens injection, walk_descendants Nunjucks global, validateRelations gate, cluster-render) compiles its own schemas — duplicate state, duplicate compile cost, fragmented invalidation strategy. Pure integration discipline; no new mechanism needed. Surfaced as gap #20 in the POC v2 evaluation; classified as package-bound because it requires pi-project edit.",
+      "location": "packages/pi-project/src/schema-validator.ts",
+      "status": "open",
+      "category": "cleanup",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-070",
+      "title": "Cross-package cache surface for config + relations + synthesized edges",
+      "body": "Multiple consumers want cached substrate state: compile.ts (lens injection), walk_descendants Nunjucks global, validateRelations gate, cluster-render. Three placement candidates: (a) pi-project SDK new export getProjectContext(cwd, scope) returning a memoized handle — canonical-surface aligned per DEC-0003; (b) pi-jit-agents compile-call-local — fresh per compile, no cross-package surface; (c) module-level singleton in pi-project — cwd-keyed map, mtime-invalidated. Without an explicit choice every consumer duplicates state or pays cold-cache cost. Couples to DEC-0007 (composition contract): cache strategy follows once the contract specifies what gets cached and at what scope. Issue-069 (AJV cache routing) is the schema-side analogue. Surfaced as gap #25 in the integration-map review.",
+      "location": "packages/pi-project/src/project-sdk.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-071",
+      "title": "Bound synthetic-edge synthesis: lazy per-lens vs eager union",
+      "body": "POC v2's edgesForLens() + synthesizeFromField() unified accessor decides at query time whether synthetic edges (auto-derived lens edges from item fields) get computed. Production scale requires bounding the cardinality. Eager union — synthesizeAll(config) computing every lens's synthetic edges per call — is O(L × N) per query; for L=50 lenses and N=1000 items that's 50K synthetic edges per call. Lazy per-lens — only synthesize for the lens being queried — is O(N) per call, but requires the unified-accessor signature to know which lens is being queried. Lazy is correct for production scale; eager simpler to implement. Couples to issue-070 (cache placement) — caching synthetic edges and invalidating on item-field change is the orthogonal optimization. Surfaced as gap #26 in the integration-map review.",
+      "location": "analysis/poc-degree-zero-lens/render.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-072",
+      "title": "Cycle handling composes between walkDescendants visited-guard and render_recursive depth-guard",
+      "body": "Integration map proposes templates combining walk_descendants() (Nunjucks global) with render_recursive(resolve(id), depth) per per-item-macros plan. POC v2's walkDescendants has a visited-guard preventing infinite traversal at edge-walk time. Per-item-macros' render_recursive has a depth-guard. The two guards must compose when authored relations contain cycles: walk-level visited prevents revisiting; depth-level guard prevents infinite recursion at render. Markers module (residual-debt survey item 9) emits [cycle: <id>] markers — tests against named constants. Without explicit composition, cyclic data could fail to render certain items (silent non-render) instead of emitting the cycle marker. Trace: cycle in authored edges → walk halts at visited → some items not visited → silent non-render vs marker emission. Surfaced as gap #27 in the integration-map review.",
+      "location": "packages/pi-jit-agents/src/compile.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-jit-agents",
+      "source": "agent"
+    },
+    {
+      "id": "issue-073",
+      "title": "Extend validateRelations to detect cycles in authored relations",
+      "body": "POC v2 validateRelations() catches dangling-id cases (edge_unresolved_child, edge_parent_wrong_block, edge_parent_not_in_bins, edge_unknown_relation_type) but does NOT detect cycles in (parent, child, relation_type) triples. Cycles in hierarchy edges create infinite drill-down for any consumer walking the hierarchy. Cycles in lens edges are nonsensical (a bin is its own item?). Validator should walk each relation_type subgraph (Tarjan or simple DFS with visited+stack) and emit edge_cycle_detected diagnostics with the cycle path. Authoring-time validation prevents the issue rather than handling it at runtime via guards (which is the issue-072 concern). Surfaced as gap #28 in the integration-map review.",
+      "location": "analysis/poc-degree-zero-lens/render.ts",
+      "status": "open",
+      "category": "primitive",
+      "priority": "high",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-074",
+      "title": "seedExamples short-circuit blocks new substrate files from reaching already-seeded projects",
+      "body": "Per memory feedback_seed_examples_does_not_overwrite, seedExamples() short-circuits on existing seeded files — bundled examples updates do not propagate to seeded .pi/monitors/ in already-initialized projects. Same pattern blocks substrate-arc landings: when production lands config.json + relations.json + new schemas (config.schema.json, relations.schema.json), already-seeded projects don't get them. Two paths: (a) seedExamples gains an additive-only path that copies missing files without overwriting existing user customizations; (b) /project init gains a --migrate flag that diffs against bundled defaults and seeds missing pieces. Without one of these, every existing user must hand-copy new schemas + bootstrap config. Surfaced as gap #31 in the integration-map review.",
+      "location": "packages/pi-project/src/index.ts",
+      "status": "open",
+      "category": "capability",
+      "priority": "high",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-075",
+      "title": "Verify writeBlock dynamic schema discovery accepts config as a typed block",
+      "body": "Degree-zero principle requires writeBlock(cwd, 'config', data) to validate against config.schema.json. Block-api's existing dynamic schema discovery (availableSchemas reads schemas/*.schema.json without code change) should handle this for any new block name — but it is unverified for the config-as-block case specifically. Verification: drop config.schema.json into .project/schemas/, attempt writeBlock(cwd, 'config', validData) and writeBlock(cwd, 'config', invalidData), assert valid passes and invalid throws ValidationError. If discovery does not handle the case (e.g. blockFilePath naming assumption, schema-path resolution edge case), a code change is needed. Likely a verification confirming existing behavior, but unverified is unverified. Surfaced as gap #32 in the integration-map review.",
+      "location": "packages/pi-project/src/block-api.ts",
+      "status": "open",
+      "category": "cleanup",
+      "priority": "low",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-076",
+      "title": "partitions field on config block: commit to runtime semantics or drop from schema",
+      "body": "POC v2 config.schema.json declares partitions: [{name, blocks: [...]}] — top-level organizational divisions over the substrate. POC's render.ts reads the field but does not consume it. Integration map omits it. Two paths: (a) commit to runtime semantics — partitions scope validateProject passes (a partition's validation runs only over its declared blocks), or partitions become directory subpaths (which DEC-0009 rejects under closure-table-only direction), or partitions become the within-scope-grouping concept DEC-0010 (scope layering) might require; (b) drop from schema as dead config until a runtime use emerges. Without explicit decision, partitions sits as schema-validated noise. Couples to DEC-0009 (storage primitive direction) and DEC-0010 (scope layering). Surfaced as gap #33 in the integration-map review.",
+      "location": "analysis/poc-degree-zero-lens/schemas/config.schema.json",
+      "status": "open",
+      "category": "cleanup",
+      "priority": "low",
+      "package": "pi-project",
+      "source": "agent"
     }
   ]
 }

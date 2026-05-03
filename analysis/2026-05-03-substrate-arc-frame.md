@@ -136,25 +136,25 @@ These did not exist before the substrate work. Each must be located in `framewor
 | # | Source | Item | Status |
 |---|---|---|---|
 | 14 | POC v1 eval | Referential integrity for edges | Closed in POC v2 via `validateRelations` |
-| 15 | POC v1 eval | Lens curation ceremony | Shape closed in POC v2; full ceremony package-bound |
+| 15 | POC v1 eval | Lens curation ceremony | Shape closed in POC v2; full ceremony package-bound — tracked as **issue-068** |
 | 16 | POC v1 eval | Bins enum drift | Closed in POC v2 |
 | 17 | POC v1 eval | Hierarchy field semantics | Closed in POC v2 (constraint declaration) |
 | 18 | POC v1 eval | Auto-derived edge materialization strategy | Closed in POC v2 (query-time synthetic edges) |
 | 19 | POC v1 eval | Format choice (YAML vs JSON) | Closed (JSON, parallels other blocks) |
-| 20 | POC v1 eval | AJV cache integration | Package-bound |
+| 20 | POC v1 eval | AJV cache integration | Package-bound — tracked as **issue-069** |
 | 21 | POC v1 eval | Edge schema disambiguation | Closed in POC v2 (schema permissive, SDK validates) |
 | 22 | POC v1 eval | `render_uncategorized` policy | Closed in POC v2 |
 | 23 | POC v1 eval | Naming alias unused in renderer | Closed in POC v2 |
 | 24 | Integration map | Config discovery anchor | Open — needs decision before code lands |
-| 25 | Integration map | Cross-package cache placement | Open — design decision |
-| 26 | Integration map | Synthetic edge cardinality bound | Open — lazy-per-lens vs eager-all |
-| 27 | Integration map | Cycle composition (walk + recursive render) | Open |
-| 28 | Integration map | Cycle detection in `validateRelations` | Open — extend POC validator |
+| 25 | Integration map | Cross-package cache placement | Open — tracked as **issue-070** |
+| 26 | Integration map | Synthetic edge cardinality bound | Open — tracked as **issue-071**; lazy-per-lens vs eager-all |
+| 27 | Integration map | Cycle composition (walk + recursive render) | Open — tracked as **issue-072** |
+| 28 | Integration map | Cycle detection in `validateRelations` | Open — tracked as **issue-073** |
 | 29 | Integration map | Bare-string `_lens:` vs typed contextBlocks | Open — tracked as **DEC-0008**; proposed direction is typed-only |
 | 30 | Integration map | Lens-view filter parameterization channel | Open |
-| 31 | Integration map | seedExamples migration for new config + schemas | Open — already-seeded projects don't get new files |
-| 32 | Integration map | block-api registration of `config` as typed block | Open — implicit via dynamic schema discovery, unverified |
-| 33 | Integration map | `partitions` field runtime semantics | Open — commit or drop |
+| 31 | Integration map | seedExamples migration for new config + schemas | Open — tracked as **issue-074** |
+| 32 | Integration map | block-api registration of `config` as typed block | Open — tracked as **issue-075**; verification likely passes, unverified is unverified |
+| 33 | Integration map | `partitions` field runtime semantics | Open — tracked as **issue-076**; commit or drop |
 | 34 | Heuristic-widening | **Composition contract for prompt assembly** — order, deduplication, override, applicability evaluation, token budget allocation across mandates + lens views + raw blocks + monitor outputs | Open — tracked as **DEC-0007**; top-priority; central API surface for the unified heuristic |
 | 35 | Heuristic-widening | Mandate-block schema fields (scope, priority, applicability conditions, lifecycle) | Open — tracked as **FGAP-008** in `.project/framework-gaps.json` |
 | 36 | Heuristic-widening | Monitor-spec-as-block schema authority — typed block + `validateMonitor()` in pi-project SDK | Open — tracked as **FGAP-009** |

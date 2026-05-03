@@ -60,10 +60,10 @@ Work is not complete until the runtime can load it. Pi loads extensions from `no
 6. **Commit**: forensic commit message per global CLAUDE.md guidelines
 7. **Merge to main**: if on a feature branch
 8. **Release**: `npm run release:patch|minor|major` based on commit type (`fix:` → patch, `feat:` → minor, `feat!:` → major). This bumps versions, commits, and tags.
-9. **Credentialed smoke gate (pre-publish)**: with `OPENROUTER_API_KEY` set, run `OPENROUTER_API_KEY=$KEY npm test -w @davidorex/pi-jit-agents` and verify `jit-runtime.smoke.test.ts` actually executes (does NOT skip) and reports 0 failures. Tests gated on credentials but never run credentialed detect no fragility — F-011 shipped to runtime because this gate did not exist. If the orchestrator does not have credentials, the gate is the user's responsibility before step 10.
+9. **Credentialed verification (pre-publish for arc-completion releases)**: for releases that ship new public surface (new SDK exports, new commands, new tools, new schema kinds) or complete a substrate arc, run the canonical verification protocol at `docs/reports/pi-internal-verification-protocol-2026-05-02.md` (or its successor) end-to-end. The protocol uses pi's `auth.json` credentials directly (set up by `pi auth login`); no separate env-var gate. Routine peer-dep bumps and isolated bug-fix releases do not require this gate — the build/check/test sequence catches breakage from there. The previous `jit-runtime.smoke.test.ts` gate was retired in commit `d931dc4` per DEC-0011 (parallel-credential-surface removal); see `feedback_pre_publish_credentialed_smoke.md` for the current rule.
 10. **Publish**: requires interactive `npm login` + OTP — inform user to run `npm publish --workspaces --access public`
 
-Steps 1-8 are the agent's responsibility. Step 9 requires credentials (orchestrator if available, otherwise user). Step 10 requires user action. Declaring work "done" before step 8 is a failure — the changes are unreachable at runtime; before step 9 is a failure — credentialed paths are unverified.
+Steps 1-8 are the agent's responsibility. Step 9 applies to arc-completion releases only; user runs the verification protocol when scope warrants. Step 10 requires user action. Declaring work "done" before step 8 is a failure — the changes are unreachable at runtime.
 
 ## Do Not Touch
 

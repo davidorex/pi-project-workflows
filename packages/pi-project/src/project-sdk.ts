@@ -82,7 +82,13 @@ export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayK
 
 // ── Vocabulary (derived from schemas) ─────────────────────────────────────────
 
-/** Default planning lifecycle block types shipped with /project init. */
+/**
+ * Planning lifecycle block types available in the package registry. Per
+ * DEC-0011, these are NOT auto-installed by /project init; they reach
+ * .project/ only when declared in config.json's installed_blocks /
+ * installed_schemas lists and the user runs /project install. Constant
+ * remains as the canonical vocabulary anchor for SDK consumers.
+ */
 export const PROJECT_BLOCK_TYPES = [
 	"project",
 	"domain",

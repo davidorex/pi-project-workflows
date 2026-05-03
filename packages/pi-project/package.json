@@ -54,7 +54,7 @@
 		"dist/",
 		"schemas/",
 		"skills/",
-		"defaults/",
+		"registry/",
 		"*.md"
 	],
 	"scripts": {

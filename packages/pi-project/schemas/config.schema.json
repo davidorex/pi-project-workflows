@@ -61,6 +61,16 @@
 					}
 				}
 			}
+		},
+		"installed_schemas": {
+			"type": "array",
+			"description": "Schema basenames declared for installation. /project install copies registry/schemas/<name>.schema.json into .project/schemas/. User-opt-in surface per DEC-0011 (no auto-shipped defaults). Empty when omitted.",
+			"items": { "type": "string" }
+		},
+		"installed_blocks": {
+			"type": "array",
+			"description": "Block basenames declared for starter installation. /project install copies registry/blocks/<name>.json into .project/. User-opt-in surface per DEC-0011 (no auto-shipped defaults). Empty when omitted.",
+			"items": { "type": "string" }
 		}
 	}
 }

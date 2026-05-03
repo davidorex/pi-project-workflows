@@ -26,7 +26,7 @@ const CONFORMANCE_SCHEMA_SRC = path.resolve(
 	"..",
 	"..",
 	"pi-project",
-	"defaults",
+	"registry",
 	"schemas",
 	"conformance-reference.schema.json",
 );
@@ -36,7 +36,7 @@ const REQUIREMENTS_SCHEMA_SRC = path.resolve(
 	"..",
 	"..",
 	"pi-project",
-	"defaults",
+	"registry",
 	"schemas",
 	"requirements.schema.json",
 );

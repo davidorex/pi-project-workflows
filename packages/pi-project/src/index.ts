@@ -25,7 +25,15 @@ import {
 	writeBlock,
 } from "./block-api.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
-import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
+import {
+	type ConfigBlock,
+	completeTask,
+	findAppendableBlocks,
+	loadConfig,
+	projectState,
+	resolveItemById,
+	validateProject,
+} from "./project-sdk.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -185,18 +193,17 @@ ${blockInfo.join("\n\n")}
 }
 
 /**
- * Initialize .project/ directory with default schemas and empty block files.
- * Idempotent: skips files that already exist. Shared by the /project init
- * command handler and the project-init tool.
+ * Initialize .project/ directory and write a minimal config.json bootstrap.
+ * Per DEC-0011, no schemas or starter blocks are auto-copied — users opt in
+ * by editing config.json's installed_schemas / installed_blocks lists and
+ * running /project install. Idempotent: skips files/dirs that already exist.
+ * Shared by the /project init command handler and the project-init tool.
  */
 function initProject(cwd: string): { created: string[]; skipped: string[] } {
 	const projectDir = path.join(cwd, PROJECT_DIR);
 	const schemasDir = path.join(projectDir, SCHEMAS_DIR);
 	const phasesDir = path.join(projectDir, "phases");
-
-	const defaultsDir = path.resolve(import.meta.dirname, "..", "defaults");
-	const defaultSchemasDir = path.join(defaultsDir, "schemas");
-	const defaultBlocksDir = path.join(defaultsDir, "blocks");
+	const configPath = path.join(projectDir, "config.json");
 
 	const created: string[] = [];
 	const skipped: string[] = [];
@@ -209,33 +216,100 @@ function initProject(cwd: string): { created: string[]; skipped: string[] } {
 		}
 	}
 
-	// Copy default schemas
-	if (fs.existsSync(defaultSchemasDir)) {
-		for (const file of fs.readdirSync(defaultSchemasDir)) {
-			const dest = path.join(schemasDir, file);
-			if (fs.existsSync(dest)) {
-				skipped.push(`${SCHEMAS_DIR}/${file}`);
-			} else {
-				fs.copyFileSync(path.join(defaultSchemasDir, file), dest);
-				created.push(`${SCHEMAS_DIR}/${file}`);
-			}
-		}
-	}
-
-	// Create default block files
-	if (fs.existsSync(defaultBlocksDir)) {
-		for (const file of fs.readdirSync(defaultBlocksDir)) {
-			const dest = path.join(projectDir, file);
-			if (fs.existsSync(dest)) {
-				skipped.push(file);
-			} else {
-				fs.copyFileSync(path.join(defaultBlocksDir, file), dest);
-				created.push(file);
-			}
-		}
+	// Write minimal config.json bootstrap (only if absent — preserves user edits)
+	if (fs.existsSync(configPath)) {
+		skipped.push("config.json");
+	} else {
+		const minimalConfig = {
+			schema_version: "0.2.0",
+			root: PROJECT_DIR,
+			lenses: [],
+			installed_schemas: [],
+			installed_blocks: [],
+		};
+		fs.writeFileSync(configPath, `${JSON.stringify(minimalConfig, null, 2)}\n`);
+		created.push("config.json");
 	}
 
 	return { created, skipped };
+}
+
+/**
+ * Reconcile .project/ against config.json's installed_schemas + installed_blocks
+ * lists by copying declared assets from the package's registry/ directory.
+ * Replaces the prior default-copying loops in initProject per DEC-0011.
+ *
+ * Behavior:
+ *   - Returns an error result if .project/config.json is absent (caller should
+ *     surface it via ctx.ui.notify).
+ *   - For each name in installed_schemas: copy registry/schemas/<name>.schema.json
+ *     into .project/schemas/.
+ *   - For each name in installed_blocks: copy registry/blocks/<name>.json
+ *     into .project/.
+ *   - Default behavior is skip-if-exists. With overwrite=true, replaces the
+ *     destination file and reports as "updated" rather than "installed".
+ *   - Sources missing from the registry are reported as "notFound".
+ *   - Empty install lists are not an error — the result is a clean no-op.
+ */
+export interface InstallResult {
+	error?: string;
+	installed: string[];
+	updated: string[];
+	skipped: string[];
+	notFound: string[];
+}
+
+export function installProject(cwd: string, options: { overwrite?: boolean } = {}): InstallResult {
+	const result: InstallResult = { installed: [], updated: [], skipped: [], notFound: [] };
+	const overwrite = options.overwrite === true;
+
+	const config = loadConfig(cwd);
+	if (!config) {
+		result.error = "No .project/config.json — run /project init first.";
+		return result;
+	}
+
+	const registryRoot = path.resolve(import.meta.dirname, "..", "registry");
+	const projectRoot = path.join(cwd, PROJECT_DIR);
+	const schemasRoot = path.join(projectRoot, SCHEMAS_DIR);
+
+	const installedSchemas = (config as ConfigBlock & { installed_schemas?: string[] }).installed_schemas ?? [];
+	for (const name of installedSchemas) {
+		const sourceFile = path.join(registryRoot, "schemas", `${name}.schema.json`);
+		const destFile = path.join(schemasRoot, `${name}.schema.json`);
+		const relDest = `${SCHEMAS_DIR}/${name}.schema.json`;
+		if (!fs.existsSync(sourceFile)) {
+			result.notFound.push(relDest);
+			continue;
+		}
+		const destExists = fs.existsSync(destFile);
+		if (destExists && !overwrite) {
+			result.skipped.push(relDest);
+			continue;
+		}
+		fs.copyFileSync(sourceFile, destFile);
+		(destExists ? result.updated : result.installed).push(relDest);
+	}
+
+	const installedBlocks = (config as ConfigBlock & { installed_blocks?: string[] }).installed_blocks ?? [];
+	for (const name of installedBlocks) {
+		const sourceFile = path.join(registryRoot, "blocks", `${name}.json`);
+		const destFile = path.join(projectRoot, `${name}.json`);
+		const relDest = `${name}.json`;
+		if (!fs.existsSync(sourceFile)) {
+			result.notFound.push(relDest);
+			continue;
+		}
+		const destExists = fs.existsSync(destFile);
+		if (destExists && !overwrite) {
+			result.skipped.push(relDest);
+			continue;
+		}
+		fs.copyFileSync(sourceFile, destFile);
+		(destExists ? result.updated : result.installed).push(relDest);
+	}
+
+	return result;
 }
 
 /**
@@ -809,8 +883,41 @@ const extension = (pi: ExtensionAPI) => {
 
 	const PROJECT_SUBCOMMANDS: Record<string, SubcommandEntry> = {
 		init: {
-			description: "Initialize .project/ with schemas and default blocks",
+			description: "Initialize .project/ directory + minimal config.json bootstrap",
 			handler: (_args, ctx) => handleInit(ctx),
+		},
+		install: {
+			description: "Copy schemas and starter blocks declared in .project/config.json from the package registry",
+			handler: (args, ctx) => {
+				const overwrite = /(^|\s)--update(\s|$)/.test(args);
+				const result = installProject(ctx.cwd, { overwrite });
+				if (result.error) {
+					ctx.ui.notify(result.error, "error");
+					return;
+				}
+				const lines: string[] = [];
+				if (result.installed.length > 0) {
+					lines.push(`Installed (${result.installed.length}): ${result.installed.join(", ")}`);
+				}
+				if (result.updated.length > 0) {
+					lines.push(`Updated (${result.updated.length}): ${result.updated.join(", ")}`);
+				}
+				if (result.skipped.length > 0) {
+					lines.push(
+						`Skipped (${result.skipped.length}, exists — pass --update to overwrite): ${result.skipped.join(", ")}`,
+					);
+				}
+				if (result.notFound.length > 0) {
+					lines.push(`Not found in registry (${result.notFound.length}): ${result.notFound.join(", ")}`);
+				}
+				if (lines.length === 0) {
+					lines.push(
+						"Nothing declared in installed_schemas / installed_blocks — edit .project/config.json to add entries.",
+					);
+				}
+				const level = result.notFound.length > 0 ? "warning" : "info";
+				ctx.ui.notify(lines.join("\n"), level);
+			},
 		},
 		status: {
 			description: "Show derived project state",

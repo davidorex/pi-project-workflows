@@ -10,6 +10,7 @@
 - **issue-041** [open] — `pi-jit-agents` — Scoped/filtered contextBlocks reads — agents cannot request subsets of block data
 - **issue-045** [open] — `pi-jit-agents` — Framework-level anti-injection wrapping — contextBlocks injection not systematically wrapped in delimiters
 - **issue-052** [open] — `pi-jit-agents` — Dynamic model selection via expressions in agent spec model field
+- **issue-072** [open] — `pi-jit-agents` — Cycle handling composes between walkDescendants visited-guard and render_recursive depth-guard
 
 ## pi-behavior-monitors
 
@@ -68,7 +69,14 @@
 - **issue-058** [open] — `pi-project` — Framework gap FGAP-004 — no authorship attestation at block write time
 - **issue-059** [open] — `pi-project` — Framework gap FGAP-005 — no state-machine validation on enum-field transitions
 - **issue-060** [open] — `pi-project` — Framework gap FGAP-006 — no schema versioning or evolution protocol
-- **issue-061** [open] — `pi-project` — Framework gap FGAP-007 — no staleness engine for research blocks
+- **issue-068** [open] — `pi-project` — Lens curation ceremony — slash command for binning uncategorized items
+- **issue-069** [open] — `pi-project` — Route POC AJV instance through pi-project schema-validator's cache
+- **issue-070** [open] — `pi-project` — Cross-package cache surface for config + relations + synthesized edges
+- **issue-071** [open] — `pi-project` — Bound synthetic-edge synthesis: lazy per-lens vs eager union
+- **issue-073** [open] — `pi-project` — Extend validateRelations to detect cycles in authored relations
+- **issue-074** [open] — `pi-project` — seedExamples short-circuit blocks new substrate files from reaching already-seeded projects
+- **issue-075** [open] — `pi-project` — Verify writeBlock dynamic schema discovery accepts config as a typed block
+- **issue-076** [open] — `pi-project` — partitions field on config block: commit to runtime semantics or drop from schema
 
 ## pi-project-workflows
 
@@ -78,4 +86,4 @@
 
 ---
 
-**Total items rendered:** 56
+**Total items rendered:** 64

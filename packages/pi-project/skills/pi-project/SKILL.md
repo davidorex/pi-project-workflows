@@ -167,7 +167,7 @@ Complete a task with verification gate — requires a passing verification entry
 <command name="/project">
 Project state management
 
-Subcommands: `init`, `status`, `add-work`, `validate`, `help`
+Subcommands: `init`, `install`, `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>
@@ -177,57 +177,9 @@ Subcommands: `init`, `status`, `add-work`, `validate`, `help`
 </events>
 
 <bundled_resources>
-2 schemas, 22 defaults bundled.
+2 schemas bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
-
-<planning_vocabulary>
-
-**Block Types:**
-
-| Block | Title | Array Key | Item Fields |
-|-------|-------|-----------|-------------|
-| `architecture` | Architecture | `modules` | name, file, responsibility, dependencies? (array), lines? (integer) |
-| `audit` | Audit | `checks` | id, description, status (string (pass|fail|warn|skip)), category?, details? |
-| `conformance-reference` | Conformance Reference | `principles` | id, name, description?, rules (array) |
-| `decisions` | Decisions | `decisions` | id, decision, rationale, phase? (string|integer), status (string (decided|tentative|revisit|superseded)), context?, task? |
-| `domain` | Domain Knowledge | `entries` | id, title, content, category (string (research|reference|domain-rule|prior-art|constraint)), source?, confidence? (string (high|medium|low)), related_requirements? (array), tags? (array) |
-| `handoff` | Handoff | `current_tasks` |  |
-| `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by? |
-| `phase` | Phase | `success_criteria` | criterion, verify_method (string (command|inspect|test)) |
-| `project` | Project Identity | `target_users` |  |
-| `rationale` | Design Rationale | `rationales` | id, title, narrative, related_decisions? (array), phase? (string|integer), context? |
-| `requirements` | Requirements | `requirements` | id, description, type (string (functional|non-functional|constraint|integration)), status (string (proposed|accepted|deferred|implemented|verified)), priority (string (must|should|could|wont)), acceptance_criteria? (array), source? (string (human|agent|analysis)), traces_to? (array), depends_on? (array) |
-| `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), phase? (string|integer), files? (array), acceptance_criteria? (array), depends_on? (array), assigned_agent?, verification?, notes? |
-| `verification` | Verification | `verifications` | id, target, target_type (string (task|phase|requirement)), status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array) |
-
-**Status Enums:**
-
-| Block | Field | Values |
-|-------|-------|--------|
-| `audit` | `status` | pass, fail, warn, skip |
-| `audit` | `severity` | error, warning, info |
-| `decisions` | `status` | decided, tentative, revisit, superseded |
-| `domain` | `category` | research, reference, domain-rule, prior-art, constraint |
-| `domain` | `confidence` | high, medium, low |
-| `issues` | `status` | open, resolved, deferred |
-| `issues` | `category` | primitive, issue, cleanup, capability, composition |
-| `issues` | `priority` | low, medium, high, critical |
-| `issues` | `source` | human, agent, monitor, workflow |
-| `phase` | `status` | planned, in-progress, completed |
-| `phase` | `verify_method` | command, inspect, test |
-| `phase` | `status` | planned, in-progress, completed |
-| `project` | `status` | inception, planning, development, maintenance, complete |
-| `requirements` | `type` | functional, non-functional, constraint, integration |
-| `requirements` | `status` | proposed, accepted, deferred, implemented, verified |
-| `requirements` | `priority` | must, should, could, wont |
-| `requirements` | `source` | human, agent, analysis |
-| `tasks` | `status` | planned, in-progress, completed, blocked, cancelled |
-| `verification` | `target_type` | task, phase, requirement |
-| `verification` | `status` | passed, failed, partial, skipped |
-| `verification` | `method` | command, inspect, test |
-
-</planning_vocabulary>
 
 <objective>
 pi-project manages structured project state in `.project/` — a directory of JSON block files validated against schemas.

@@ -1027,11 +1027,11 @@ describe("blockStructure", () => {
 
 // ── Schema-enforced verification gate (if/then) ───────────────────────────
 
-/** Path to the real tasks.schema.json shipped as a default */
+/** Path to the real tasks.schema.json shipped in the package registry (per DEC-0011 — moved from defaults/ to registry/). */
 const REAL_TASKS_SCHEMA = path.join(
 	path.dirname(new URL(import.meta.url).pathname),
 	"..",
-	"defaults",
+	"registry",
 	"schemas",
 	"tasks.schema.json",
 );

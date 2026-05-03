@@ -85,12 +85,20 @@
 - **issue-058** [open] — `pi-project` — Framework gap FGAP-004 — no authorship attestation at block write time
 - **issue-059** [open] — `pi-project` — Framework gap FGAP-005 — no state-machine validation on enum-field transitions
 - **issue-060** [open] — `pi-project` — Framework gap FGAP-006 — no schema versioning or evolution protocol
-- **issue-061** [open] — `pi-project` — Framework gap FGAP-007 — no staleness engine for research blocks
 - **issue-062** [open] — `pi-behavior-monitors` — Monitor provider-pin — parseModelSpec defaults bare model ids to provider='anthropic'
 - **issue-063** [open] — `pi-behavior-monitors` — Dead 'thinking: on' config in five bundled classifier agent YAMLs — silently dropped by classify path
 - **issue-064** [open] — `pi-workflows` — pi-workflows dispatch.ts lacks per-step provider/model override
 - **issue-066** [open] — `pi-workflows` — workflow executor crashes with `name.replace is not a function` on any agent dispatch
+- **issue-068** [open] — `pi-project` — Lens curation ceremony — slash command for binning uncategorized items
+- **issue-069** [open] — `pi-project` — Route POC AJV instance through pi-project schema-validator's cache
+- **issue-070** [open] — `pi-project` — Cross-package cache surface for config + relations + synthesized edges
+- **issue-071** [open] — `pi-project` — Bound synthetic-edge synthesis: lazy per-lens vs eager union
+- **issue-072** [open] — `pi-jit-agents` — Cycle handling composes between walkDescendants visited-guard and render_recursive depth-guard
+- **issue-073** [open] — `pi-project` — Extend validateRelations to detect cycles in authored relations
+- **issue-074** [open] — `pi-project` — seedExamples short-circuit blocks new substrate files from reaching already-seeded projects
+- **issue-075** [open] — `pi-project` — Verify writeBlock dynamic schema discovery accepts config as a typed block
+- **issue-076** [open] — `pi-project` — partitions field on config block: commit to runtime semantics or drop from schema
 
 ---
 
-**Total items rendered:** 56
+**Total items rendered:** 64

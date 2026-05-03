@@ -206,6 +206,274 @@
       ],
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-04-26T00:00:00Z"
+    },
+    {
+      "id": "DEC-0006",
+      "title": "Sixth block of the substrate contract",
+      "status": "open",
+      "context": "The user's framing names the substrate contract as 'six discrete blocks.' Five enumerated against POC v2 evidence (config, partitions, lenses, closure-table relations, per-item macros). The sixth block of the contract is unresolved. Pre-heuristic candidates from the conversation were schemas-as-substrate, hierarchies-as-distinct-block, or macros split into registry + emitter. The heuristic-widening pass (mandates + monitors as in-scope typed contexts under one heuristic) narrows preferred candidates to two: prompt-composition contract OR scopes (user / project / agent). Implementation cannot proceed with contract enumeration until this resolves.",
+      "decision": "Decision pending. Two heuristic-aligned candidates compete; three pre-heuristic candidates retained for completeness but not preferred. Resolution updates §1.1 + §2 of analysis/2026-05-03-substrate-arc-frame.md and gates downstream block-enumeration.",
+      "options_considered": [
+        {
+          "label": "Prompt-composition contract",
+          "description": "The rules governing how typed contexts compose into prompts: order, deduplication, override, applicability evaluation, token-budget allocation across mandates + lens views + raw blocks + monitor outputs. Made central by the heuristic-widening; was implicit in the integration map.",
+          "tradeoffs": "Heuristic-aligned; central API surface for the unified frame. Couples sixth-block to gap #34 (composition contract)."
+        },
+        {
+          "label": "Scopes (user / project / agent)",
+          "description": "Layered anchors with composition rules across scopes. Mandates live at user scope; project blocks at project scope; agent overrides at agent scope. Composition resolves layered. Foundational for scope-layering decision DEC-0010.",
+          "tradeoffs": "Heuristic-aligned; couples sixth-block to gap #37 (scope layering). Selection here cascades into discovery-anchor mechanics."
+        },
+        {
+          "label": "Schemas-as-substrate (pre-heuristic)",
+          "description": "Every schema is itself a block, the meta-meta layer. Pre-heuristic candidate from POC v2 evaluation.",
+          "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+        },
+        {
+          "label": "Hierarchies-as-distinct-block (pre-heuristic)",
+          "description": "Hierarchy declarations elevate from a config field to their own typed block. Pre-heuristic candidate.",
+          "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+        },
+        {
+          "label": "Macros-split (pre-heuristic)",
+          "description": "Per-item macros + a separate cluster/whole-block render layer as separate blocks.",
+          "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+        }
+      ],
+      "consequences": [
+        "The contract enumeration in §1.1 + §2 of the substrate-arc-frame doc resolves from five-with-pending-sixth to fully enumerated",
+        "Downstream block-shape work (per-item macros plan #3, integration-map design) can proceed against a closed contract",
+        "Selection of prompt-composition contract OR scopes determines whether the next-most-foundational gap is gap #34 (composition contract) or gap #37 (scope layering)",
+        "Three pre-heuristic candidates marked rejected_reason if not chosen; remain in the catalog as superseded-by-heuristic for traceability"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [
+        "FGAP-001",
+        "FGAP-002",
+        "FGAP-003",
+        "FGAP-006"
+      ],
+      "references": [
+        {
+          "label": "frame doc §1.1 + §2",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        },
+        {
+          "label": "POC v2 contract enumeration",
+          "path": "analysis/poc-degree-zero-lens/README.md"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0007",
+      "title": "Composition contract for prompt assembly across typed contexts",
+      "status": "open",
+      "context": "Under the unifying heuristic, multiple typed-context entries (lenses, mandates, monitor outputs, raw blocks) can land in one agent's prompt. The integration-map design assumed pre-rendered injection without articulating how N typed contexts compose. Order, deduplication, override semantics, applicability-evaluation timing, and token-budget allocation are unspecified. This is the central API surface for the unified heuristic; lens injection, mandate injection, monitor-output injection all flow through it. Surfaced as gap #34 in the heuristic-widening pass.",
+      "decision": "Decision pending. The composition contract must specify: (1) ordering rules across context types; (2) deduplication when multiple entries pull the same item; (3) override semantics including agent-scope opt-out of mandates / lenses; (4) applicability-predicate evaluation timing (compile-time vs per-turn); (5) token-budget allocation policy with truncation strategy. Resolution lands as a new design doc plus DEC enactment; gates implementation of jit-agents lens-injection path and downstream typed-context surfaces.",
+      "consequences": [
+        "Lens-view injection (DEC-0008 typed contextBlocks form) cannot ship a stable surface without this contract",
+        "Mandate-block schema (gap #35) requires applicability-predicate fields whose evaluation timing depends on this contract",
+        "Monitor-spec-as-block (gap #36) injects into classify prompts via this same contract",
+        "Cache placement (gap #25) follows once the contract specifies what gets cached and at what scope",
+        "Sixth-block identity (DEC-0006) may resolve to 'prompt-composition contract' if this becomes the canonical sixth — coupled decisions"
+      ],
+      "related_findings": [
+        "issue-020",
+        "issue-041",
+        "issue-042",
+        "issue-045"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [
+        "FGAP-002",
+        "FGAP-003"
+      ],
+      "references": [
+        {
+          "label": "frame doc §5 gap #34 + §5.1 rank 2",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        },
+        {
+          "label": "anti-injection wrapping pattern",
+          "path": "packages/pi-jit-agents/src/compile.ts"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0008",
+      "title": "contextBlocks parameterization: typed object form vs bare-string convention",
+      "status": "open",
+      "context": "The integration-map design proposed a bare-string `_lens:<id>` convention for lens-view injection in agent contextBlocks. The per-item-macros plan (analysis/2026-05-02-per-item-macros-atomic-plans.md plan #3) extends contextBlocks to a typed object form `{name, item, focus, depth}`. Two parallel parameterization mechanisms in one field. The heuristic-widening pass forces typed-only because bare-string cannot carry the parameter set the unified surface needs: `_mandate:<id>`, `_lens:<id>?status=open`, `_monitor:<id>:last-classification`, agent-scope omit lists, applicability filters. Bare-string would proliferate as `_kind:id:opt1:opt2` — a regression toward stringly-typed configuration. Surfaced as gap #29.",
+      "decision": "Adopt typed object form as the only contextBlocks parameterization mechanism. Bare-string entries continue to mean whole-block injection (today's behavior, backward-compatible). Lens views, mandates, monitor outputs all use typed form: {kind: 'lens'|'mandate'|'monitor'|'block', id: <string>, scope?, applicability?, focus?, depth?, filters?}. The bare-string `_lens:` convention from the integration-map design is rejected. The per-item-macros plan #3's typed extension is the canonical contextBlocks surface.",
+      "options_considered": [
+        {
+          "label": "Typed object form only (proposed direction)",
+          "description": "Single typed surface. Carries kind, id, scope, applicability, focus, depth, filters. Bare-string remains valid for whole-block injection only.",
+          "tradeoffs": "Slightly more verbose at the simple case (whole-block injection unchanged; lens injection requires typed entry). Single canonical surface; no fragmentation."
+        },
+        {
+          "label": "Bare-string convention layered on typed (coexistence)",
+          "description": "Both surfaces accepted. Bare-string for trivial cases; typed for parameterized.",
+          "tradeoffs": "Two surfaces to maintain. Author must learn when to use which. Composition contract (DEC-0007) more complex.",
+          "rejected_reason": "Heuristic prefers one canonical surface; coexistence creates the same parallel-ungated-path pattern the substrate arc retires."
+        }
+      ],
+      "consequences": [
+        "per-item-macros plan #3 (typed contextBlocks extension) is the canonical landing path; no parallel bare-string convention",
+        "Lens-view injection lands as `{kind: 'lens', id: 'context-management', filters: {status: 'open'}}` not `_lens:context-management`",
+        "Mandate injection lands as `{kind: 'mandate', id: 'mandate-001'}` or `{kind: 'mandate', filter: {tags: ['workflow']}}`",
+        "Monitor output injection lands as `{kind: 'monitor', id: 'fragility', focus: 'last-classification'}`",
+        "Filter parameterization channel (gap #30) collapses into the typed form's `filters` field"
+      ],
+      "related_findings": [
+        "issue-020",
+        "issue-029",
+        "issue-041"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [
+        "FGAP-002",
+        "FGAP-003"
+      ],
+      "references": [
+        {
+          "label": "per-item-macros plan #3",
+          "path": "analysis/2026-05-02-per-item-macros-atomic-plans.md"
+        },
+        {
+          "label": "integration-map review + frame doc §5 gap #29",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0009",
+      "title": "FGAP-001 resolution: closure-table relations vs subpath block names",
+      "status": "open",
+      "context": "FGAP-001 (hierarchical/nested block storage) was originally framed with proposed_resolution = 'extend block-api to support subpath block names (e.g. readBlock(features/consumer-migration)).' The substrate-arc POC v2 demonstrates closure-table relations as an alternative substrate for hierarchy: (parent, child, relation_type) edges over flat blocks, with multiple parallel hierarchies coexisting as different relation_type values. The heuristic-widening pass (mandates and monitors as in-scope typed contexts) tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types — mandates and monitors do not need subpath storage.",
+      "decision": "Adopt closure-table relations as the canonical hierarchy substrate. Subpath block names not pursued as a distinct storage form. Work decomposition (epics → stories → tasks) lives as edges in relations.json over flat blocks; atomic per-item writes that originally motivated subpath form become atomic per-edge appends or per-item updates via existing block-api. POC v2's two-profile demonstration confirms the substrate-shape is sufficient for the originally-cited motivations.",
+      "options_considered": [
+        {
+          "label": "Closure-table relations only (proposed)",
+          "description": "All hierarchy expressed as edges in relations.json over flat blocks. One storage primitive across all context types per heuristic.",
+          "tradeoffs": "Per-item lock contention unchanged from today (per-block file lock). Hierarchy queries require edge-walk per query (mitigated by SDK caching). Authoring experience: edge-write rather than file-tree write."
+        },
+        {
+          "label": "Subpath block names only (original FGAP-001 framing)",
+          "description": "readBlock('features/consumer-migration/stories/STORY-A'). Native tree shape on disk. Atomic per-item writes.",
+          "tradeoffs": "Two storage forms across the contract (subpath for hierarchy, flat-with-edges for everything else). Block-api gains directory-walk semantics. Schema-walk targeting array-item subschema is a new contract.",
+          "rejected_reason": "Heuristic prefers one storage primitive; subpath form would create a parallel ungated path for hierarchy expression that the closure-table primitive already handles."
+        },
+        {
+          "label": "Both (closure-table for cross-cutting taxonomies, subpath for work-decomposition)",
+          "description": "Hybrid: closure-table for lens-style organization, subpath for genuine work-decomposition with atomic-write requirements.",
+          "tradeoffs": "Dual maintenance burden. Two query paths, two write paths, two validation paths.",
+          "rejected_reason": "Heuristic prefers one canonical substrate; hybrid creates the same fragmentation the unifying frame is meant to retire."
+        }
+      ],
+      "consequences": [
+        "FGAP-001's proposed_resolution field updates to closure-table-only direction on enactment",
+        "Subpath block names not implemented; readBlockDir's existing one-off subdirectory walks (phases pattern) remain as exceptions, not generalized",
+        "Work decomposition (FEAT-001 epics → stories → tasks, future PHASE-NNN structures) lives as flat blocks with closure-table edges",
+        "Lock contention claim from FGAP-001 framing unchanged: per-block file lock; partition-per-file unblock is not pursued under this direction",
+        "block-validation.ts rollback contract simpler: no recursion into subdirectories"
+      ],
+      "related_gaps": [
+        "FGAP-001"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "references": [
+        {
+          "label": "FGAP-001 original framing",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "POC v2 closure-table demonstration",
+          "path": "analysis/poc-degree-zero-lens/relations.json"
+        },
+        {
+          "label": "frame doc §4.2",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0010",
+      "title": "Scope discovery and layering across user / project / agent anchors",
+      "status": "open",
+      "context": "GitHub issue #3 asked for 'configuration for folder placement' — relocating .project/ + .workflows/. The POC v2 closes the data-relocation surface via config.root. The heuristic-widening pass widens this to a layered-scope decision because mandates live at user scope (~/.claude/mandates.jsonl) while project blocks live at project scope (<config.root>). Agent-scope overrides (e.g., classifier X opts out of mandates Y, Z) form a third layer. Composition rules across scopes are unspecified: which scope wins on conflict, how config-discovery walks scopes, whether the config file itself is relocatable (or fixed at .project/). Surfaced as gap #37, expansion of gap #24.",
+      "decision": "Decision pending. Composition rule must specify: (1) discovery anchor for the config file itself — `.project/config.json` always vs env-var (PI_PROJECT_ROOT) vs package.json field vs walk-up; (2) layered config merge semantics across user → project → agent (project overrides user; agent filters within composed result, with explicit allow-list / deny-list); (3) scope assignment per block kind (mandates user-scope; project blocks project-scope; monitor specs project-scope or split). Resolution lands as DEC enactment plus updates to §1.1 and §5 of the substrate-arc-frame doc.",
+      "options_considered": [
+        {
+          "label": "`.project/config.json` always anchored",
+          "description": "Config file fixed at `.project/`; only data files relocate via config.root. Issue #3 closes for data, not for config-file location.",
+          "tradeoffs": "Predictable; no env-var discovery. User who literally wants no `.project/` directory at all not served."
+        },
+        {
+          "label": "Env-var discovery (e.g., PI_PROJECT_ROOT)",
+          "description": "Config relocatable via environment. Substrate fully unanchored from `.project/`.",
+          "tradeoffs": "Requires env state; users who don't set the var get default `.project/`. Forking and CI environments must surface the var."
+        },
+        {
+          "label": "package.json field (e.g., `pi.project.root`)",
+          "description": "Declarative; no env state. Lives in repo's package.json.",
+          "tradeoffs": "Couples pi config surface to npm package surface. Non-npm projects need an alternative."
+        },
+        {
+          "label": "Walk-up discovery (find .project/config.json or named alternative in nearest ancestor)",
+          "description": "Discovery follows git-root convention; first-found wins.",
+          "tradeoffs": "Implicit anchor; may surprise users in nested-project contexts."
+        }
+      ],
+      "consequences": [
+        "GitHub issue #3 closes either fully (env-var / package.json / walk-up paths) or partially (`.project/`-fixed path)",
+        "Mandates as user-scope block requires a discovery convention for user-scope substrate; the chosen path may differ from the project-scope discovery",
+        "loadConfig() implementation in pi-project's project-sdk encodes the chosen discovery mechanism",
+        "Composition contract (DEC-0007) consumes scope-layered config when assembling per-agent context",
+        "Sixth-block identity (DEC-0006) may resolve to 'scopes' if this decision elevates layering as the canonical sixth — coupled decisions"
+      ],
+      "related_findings": [
+        "issue-048",
+        "issue-067"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [
+        "FGAP-001"
+      ],
+      "references": [
+        {
+          "label": "GitHub issue #3 (folder placement)",
+          "path": "https://github.com/davidorex/pi-project-workflows/issues/3"
+        },
+        {
+          "label": "frame doc §5 gap #37 + §5.1 rank 5",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        },
+        {
+          "label": "context-paths design (gestures at user-scope injection)",
+          "path": "analysis/2026-04-28-context-paths-extension-design.md"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
     }
   ]
 }

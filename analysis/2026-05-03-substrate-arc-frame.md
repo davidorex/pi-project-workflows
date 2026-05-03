@@ -47,7 +47,7 @@ The user's framing names this as "six discrete blocks." Five are enumerated abov
   - **Prompt-composition contract** — the rules governing how typed contexts compose into prompts (order, deduplication, override, applicability conditions, token-budget allocation). Made central by the heuristic-widening pass; was implicit in the integration map.
   - **Scopes** — user / project / agent layers, with composition rules across scopes. Mandates live at user scope; project blocks at project scope; agent overrides at agent scope. Composition resolves layered.
 
-Implementation must resolve which sixth block is authoritative before landing.
+Implementation must resolve which sixth block is authoritative before landing. Tracked as **DEC-0006** (open) in `.project/decisions.json`.
 
 ### 2.1 Mandates and monitors as in-scope blocks
 
@@ -104,7 +104,7 @@ Every open entry in `.project/issues.json` and `.project/framework-gaps.json` lo
 
 | Item | New framing |
 |---|---|
-| FGAP-001 | Closure-table relations as alternative to subpath block names. Heuristic-widening tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types (mandates and monitors don't need subpath either). Decision pending; weight has shifted. |
+| FGAP-001 | Closure-table relations as alternative to subpath block names. Heuristic-widening tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types (mandates and monitors don't need subpath either). Tracked as **DEC-0009** (open) in `.project/decisions.json`; proposed direction is closure-table-only. |
 | issue-042 | Lens views drop pressure 86%; explicit budgeting still needed but urgency reduced |
 | issue-046 | Closure-table is a generic edge primitive that could subsume DAG edge typing if `relation_type` extends to DAG semantics. Convergence is now an option |
 | issue-061 | Lens substrate provides surface for staleness; staleness engine itself remains separate work |
@@ -150,30 +150,32 @@ These did not exist before the substrate work. Each must be located in `framewor
 | 26 | Integration map | Synthetic edge cardinality bound | Open — lazy-per-lens vs eager-all |
 | 27 | Integration map | Cycle composition (walk + recursive render) | Open |
 | 28 | Integration map | Cycle detection in `validateRelations` | Open — extend POC validator |
-| 29 | Integration map | Bare-string `_lens:` vs typed contextBlocks | Open — conflicts with per-item-macros plan #3 |
+| 29 | Integration map | Bare-string `_lens:` vs typed contextBlocks | Open — tracked as **DEC-0008**; proposed direction is typed-only |
 | 30 | Integration map | Lens-view filter parameterization channel | Open |
 | 31 | Integration map | seedExamples migration for new config + schemas | Open — already-seeded projects don't get new files |
 | 32 | Integration map | block-api registration of `config` as typed block | Open — implicit via dynamic schema discovery, unverified |
 | 33 | Integration map | `partitions` field runtime semantics | Open — commit or drop |
-| 34 | Heuristic-widening | **Composition contract for prompt assembly** — order, deduplication, override, applicability evaluation, token budget allocation across mandates + lens views + raw blocks + monitor outputs | Open — top-priority; central API surface for the unified heuristic |
+| 34 | Heuristic-widening | **Composition contract for prompt assembly** — order, deduplication, override, applicability evaluation, token budget allocation across mandates + lens views + raw blocks + monitor outputs | Open — tracked as **DEC-0007**; top-priority; central API surface for the unified heuristic |
 | 35 | Heuristic-widening | Mandate-block schema fields (scope, priority, applicability conditions, lifecycle) | Open |
 | 36 | Heuristic-widening | Monitor-spec-as-block schema authority — typed block + `validateMonitor()` in pi-project SDK | Open |
-| 37 | Heuristic-widening | Scope layering — user / project / agent anchors with composition rules across scopes | Open — expansion of #24 |
+| 37 | Heuristic-widening | Scope layering — user / project / agent anchors with composition rules across scopes | Open — tracked as **DEC-0010**; expansion of #24 |
 | 38 | Heuristic-widening | Applicability predicate language — when a typed-context entry applies to which agent / classifier / context | Open |
 
 ### 5.1 Top decisions to make now and persist (under the heuristic)
 
-Five decisions gate downstream work. Each is independently decidable and persists once made via `DEC-NNNN` entries in `.project/decisions.json` plus updates to relevant fields here, in `.project/framework-gaps.json`, and in sibling analysis docs.
+Five decisions gate downstream work. Each is independently decidable. All five are filed as open `DEC-NNNN` entries in `.project/decisions.json` carrying their option sets and forcing artifacts; enactment updates `status: open → enacted` plus the targets listed below.
 
-| Rank | Decision | Why now | Persistence target |
-|---|---|---|---|
-| 1 | **Sixth-block identity** — under the heuristic, narrowed to two candidates: prompt-composition contract OR scopes (user / project / agent) | Contract enumeration is incomplete until resolved; every planning increment depends on it | DEC entry; §1.1 + §2 of this doc; the chosen sixth block enumerated alongside the other five |
-| 2 | **Composition contract for prompt assembly** (gap #34) — order, deduplication, override, applicability evaluation, token-budget allocation when mandates + lens views + raw blocks + monitor outputs all land in one prompt | Central API surface for the unified heuristic; was implicit in the integration map; locks in agent-authoring ergonomics | DEC entry; new design doc; §5 status update |
-| 3 | **#29 typed contextBlocks form** — the heuristic forces typed-only because bare-string `_lens:<id>` cannot carry the parameter set the unified surface needs (`_mandate:<id>`, `_lens:<id>?status=open`, `_monitor:<id>:last-classification`) | Locks API shape for agent authoring; conflict with per-item-macros plan #3 must resolve before either lands | DEC entry; update `analysis/2026-05-02-per-item-macros-atomic-plans.md` plan #3; §5 status |
-| 4 | **FGAP-001 direction** — closure-table-only / subpath-only / both. Heuristic tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types | Largest architectural fork; storage shape of features, tasks, and any nested-work block depends on it; cascade through block-api semantics | DEC entry; update FGAP-001's `proposed_resolution` in `.project/framework-gaps.json`; §4.2 of this doc |
-| 5 | **#37 scope layering** (expanded from #24) — user / project / agent anchors with composition rules across scopes | Determines whether issue #3 closes fully or partially; mandates and project blocks live at different scopes; layering rules need explicit specification | DEC entry; §5 status; cited in any production `loadConfig()` implementation |
+| Rank | DEC | Decision | Why now | Persistence target on enactment |
+|---|---|---|---|---|
+| 1 | **DEC-0006** | **Sixth-block identity** — under the heuristic, narrowed to two candidates: prompt-composition contract OR scopes (user / project / agent) | Contract enumeration is incomplete until resolved; every planning increment depends on it | §1.1 + §2 of this doc; the chosen sixth block enumerated alongside the other five |
+| 2 | **DEC-0007** | **Composition contract for prompt assembly** (gap #34) — order, deduplication, override, applicability evaluation, token-budget allocation when mandates + lens views + raw blocks + monitor outputs all land in one prompt | Central API surface for the unified heuristic; was implicit in the integration map; locks in agent-authoring ergonomics | New design doc; §5 status update |
+| 3 | **DEC-0008** | **#29 typed contextBlocks form** — the heuristic forces typed-only because bare-string `_lens:<id>` cannot carry the parameter set the unified surface needs (`_mandate:<id>`, `_lens:<id>?status=open`, `_monitor:<id>:last-classification`) | Locks API shape for agent authoring; conflict with per-item-macros plan #3 must resolve before either lands | Update `analysis/2026-05-02-per-item-macros-atomic-plans.md` plan #3; §5 status |
+| 4 | **DEC-0009** | **FGAP-001 direction** — closure-table-only / subpath-only / both. Heuristic tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types | Largest architectural fork; storage shape of features, tasks, and any nested-work block depends on it; cascade through block-api semantics | Update FGAP-001's `proposed_resolution` in `.project/framework-gaps.json`; §4.2 of this doc |
+| 5 | **DEC-0010** | **#37 scope layering** (expanded from #24) — user / project / agent anchors with composition rules across scopes | Determines whether issue #3 closes fully or partially; mandates and project blocks live at different scopes; layering rules need explicit specification | §5 status; cited in any production `loadConfig()` implementation |
 
-Cache placement (#25) drops below this top-five — it follows the composition contract (#34) once that's defined.
+Cache placement (#25) drops below this top-five — it follows DEC-0007 (composition contract) once that's defined.
+
+The five DEC entries' full context, options_considered, consequences, and references live in `.project/decisions.json` (canonical) — read there for the decidable detail, not from this table.
 
 ---
 

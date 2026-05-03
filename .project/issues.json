@@ -809,11 +809,12 @@
       "title": "Extend validateRelations to detect cycles in authored relations",
       "body": "POC v2 validateRelations() catches dangling-id cases (edge_unresolved_child, edge_parent_wrong_block, edge_parent_not_in_bins, edge_unknown_relation_type) but does NOT detect cycles in (parent, child, relation_type) triples. Cycles in hierarchy edges create infinite drill-down for any consumer walking the hierarchy. Cycles in lens edges are nonsensical (a bin is its own item?). Validator should walk each relation_type subgraph (Tarjan or simple DFS with visited+stack) and emit edge_cycle_detected diagnostics with the cycle path. Authoring-time validation prevents the issue rather than handling it at runtime via guards (which is the issue-072 concern). Surfaced as gap #28 in the integration-map review.",
       "location": "analysis/poc-degree-zero-lens/render.ts",
-      "status": "open",
+      "status": "resolved",
       "category": "primitive",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit 8059764 (substrate SDK port). validateRelations final-pass cycle detection landed with edge_cycle_detected diagnostic shape { code, message, cycle: string[], relation_type } per the issue spec. Six tests cover 2-node, 3-node, self-loop, multi-component, acyclic-control, partition-by-relation_type. Status was open in error; this update brings the lifecycle in sync with the implementation reality."
     },
     {
       "id": "issue-074",
@@ -859,6 +860,39 @@
       "package": "pi-project",
       "source": "agent",
       "resolved_by": "Resolved in commit 2b42760 — feat(pi-project): block-api PROJECT_DIR retrofit. project-context.ts module extracted, projectRoot resolver threaded through block-api / block-validation / project-sdk / index.ts, plus pi-jit-agents and pi-workflows imports repointed. 14 new tests verify config.root behavior + back-compat. All workspaces pass."
+    },
+    {
+      "id": "issue-078",
+      "title": "/project view <lens> command — no LLM-invocable surface for rendering lens views",
+      "body": "Forcing context: the substrate SDK port (commit 8059764) landed groupByLens + renderClusterView (renderClusterView equivalent: lives in the POC's render.ts; needs production port if we want command output to match POC parity) plus all the substrate primitives. SDK functions exist in dist/ and tests prove them correct. There is no command an LLM can invoke from within a session to render a lens view.\n\nProposed shape: register `/project view <lensId>` subcommand in PROJECT_SUBCOMMANDS (packages/pi-project/src/index.ts:810-861) following the existing handler pattern. Handler logic: load config via loadConfig(ctx.cwd) — if null, error with run-init pointer; resolve named lens from config.lenses; load target items via readBlock(cwd, lens.target); compute lensEdges via edgesForLens(lens, items, getProjectContext(cwd).relations); compute grouped via groupByLens(items, lens, lensEdges); emit a markdown rendering via either ctx.ui.notify (multiline) or pi.sendMessage with customType 'project-view'. Display via existing ctx.ui infrastructure used by /project status + /project validate.\n\nCovers groupByLens + renderClusterView (or its production equivalent) consumption surfaces — those two SDK functions reach the user only through this command surface today.",
+      "location": "packages/pi-project/src/index.ts:810-861",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-079",
+      "title": "validateRelations exposed as SDK function but not wrapped as a registered pi tool",
+      "body": "Forcing context: validateRelations (packages/pi-project/src/project-context.ts) emits structured SubstrateValidationResult covering edge_unknown_relation_type, edge_parent_not_in_bins, edge_unresolved_parent/child, edge_parent/child_wrong_block, edge_cycle_detected. SDK function exists with full test coverage. There is no pi.registerTool wrapper, so an LLM in a session cannot invoke it via tool-use.\n\nExisting precedent: project-validate is registered both as a /project subcommand (PROJECT_SUBCOMMANDS) and as a tool (pi.registerTool({ name: 'project-validate', ... })) per packages/pi-project/src/index.ts:720+. The same dual-surface treatment applies here.\n\nProposed shape: register tool 'project-validate-relations' that internally calls validateRelations against loaded config + relations + per-block items snapshot. Tool returns the SubstrateValidationResult shape (status + issues array). Pairs with a corresponding /project validate-relations subcommand (or extension to /project validate that includes substrate-relations checks alongside the existing cross-block referential integrity checks).",
+      "location": "packages/pi-project/src/index.ts:720",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-080",
+      "title": "edgesForLens + walkDescendants exposed as SDK functions but not wrapped as registered pi tools",
+      "body": "Forcing context: both functions (packages/pi-project/src/project-context.ts) are pure graph operations over Edge[] — edgesForLens(lens, items, authoredEdges) returns the materialized edge set for a lens (synthetic or hand-curated); walkDescendants(parentId, relationType, edges) returns the closure-table descendants under a relation_type. SDK functions exist with full test coverage. No pi.registerTool wrappers — LLMs cannot inspect lens edges or walk hierarchies via tool-use today.\n\nProposed shape: register two tools — 'project-edges-for-lens' (params: lensId; computes via getProjectContext + edgesForLens; returns Edge[]) and 'project-walk-descendants' (params: parentId, relationType; computes via getProjectContext + walkDescendants; returns string[] of descendant ids). Both tools enable LLM-driven exploration of the substrate hierarchy — required for any agent workflow that wants to navigate closure-table relations programmatically.\n\nCombined into one issue per the user's gap inventory because both are pure-graph traversal functions sharing implementation pattern (resolve config + pull edges + run pure function).",
+      "location": "packages/pi-project/src/index.ts:720",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "pi-project",
+      "source": "agent"
     }
   ]
 }

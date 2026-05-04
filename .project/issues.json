@@ -929,9 +929,10 @@
       "location": "packages/pi-project/src/project-context.ts, packages/pi-project/src/lens-view.ts:40, packages/pi-project/src/index.ts",
       "category": "capability",
       "priority": "high",
-      "status": "open",
+      "status": "resolved",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit 048a2ac — composition lens kind dispatch (resolveComposition + loadLensView routing + project-resolve-composition tool); FGAP-012 implementation complete, status transition deferred to user authority per framework-gaps lifecycle convention."
     },
     {
       "id": "issue-084",

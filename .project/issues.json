@@ -941,9 +941,10 @@
       "location": "packages/pi-project/src/roadmap-plan.ts, packages/pi-project/src/index.ts",
       "category": "capability",
       "priority": "high",
-      "status": "open",
+      "status": "resolved",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit 5f852b1 — roadmap primitives + four tools + three subcommands + diamond-fixture regression coverage landed; renderRoadmap is pure-textual markdown with no-mermaid regression guard."
     },
     {
       "id": "issue-085",

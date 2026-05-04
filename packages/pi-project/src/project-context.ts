@@ -45,12 +45,41 @@ export interface HierarchyDecl {
 	relation_type: string;
 }
 
+/**
+ * Composition member declaration. Either references a sub-lens by id
+ * (whose items become members of the composition) or selects a flat
+ * subset of a block by field-equality predicate. oneOf-mutual-exclusion
+ * enforced by config.schema.json at the schema layer; SDK does not
+ * re-enforce.
+ */
+export interface CompositionMember {
+	lens?: string;
+	from?: string;
+	where?: Record<string, string | number | boolean>;
+}
+
+/**
+ * LensSpec — target lens (kind="target", existing semantics) OR
+ * composition lens (kind="composition", aggregates across blocks /
+ * sub-lenses). The kind discriminator gates loadLensView's dispatch
+ * between today's single-block path and the new resolveComposition
+ * path. Per FGAP-012: target lenses use target+relation_type+
+ * (derived_from_field or authored edges); composition lenses use
+ * targets+members.
+ *
+ * Fields are typed as optional at the TS layer because schema-level
+ * required-ness varies by kind. SDK enforces kind-specific required
+ * fields at load time and emits structured errors when violated.
+ */
 export interface LensSpec {
 	id: string;
-	target: string;
-	relation_type: string;
-	derived_from_field: string | null;
 	bins: string[];
+	kind?: "target" | "composition";
+	target?: string;
+	targets?: string[];
+	members?: CompositionMember[];
+	relation_type?: string;
+	derived_from_field?: string | null;
 	render_uncategorized?: boolean;
 }
 
@@ -247,13 +276,17 @@ export function projectTemplatesDir(cwd: string): string {
  * hand-curated edges instead).
  */
 export function synthesizeFromField(lens: LensSpec, items: ItemRecord[]): Edge[] {
-	if (lens.derived_from_field === null) return [];
+	// Synthetic-from-field requires both derived_from_field AND relation_type
+	// (synthetic edges need a label). Composition lenses without a relation_type
+	// or target lenses with derived_from_field=null short-circuit to no synthesis.
+	if (!lens.derived_from_field || !lens.relation_type) return [];
 	const field = lens.derived_from_field;
+	const relationType = lens.relation_type;
 	const out: Edge[] = [];
 	for (const item of items) {
 		const v = item[field];
 		if (typeof v === "string") {
-			out.push({ parent: v, child: item.id, relation_type: lens.relation_type });
+			out.push({ parent: v, child: item.id, relation_type: relationType });
 		}
 	}
 	return out;
@@ -345,7 +378,11 @@ export function validateRelations(
 	const issues: SubstrateValidationIssue[] = [];
 
 	const lensesByRelType = new Map<string, LensSpec>();
-	for (const l of config.lenses) lensesByRelType.set(l.relation_type, l);
+	for (const l of config.lenses) {
+		// Composition lenses may omit relation_type when they only aggregate.
+		// Skip them in the by-relation_type index — their edges aren't routed through it.
+		if (l.relation_type) lensesByRelType.set(l.relation_type, l);
+	}
 	const hierarchyByRelType = new Map<string, HierarchyDecl>();
 	for (const h of config.hierarchy ?? []) hierarchyByRelType.set(h.relation_type, h);
 
@@ -477,6 +514,142 @@ export function validateRelations(
 	return { status, issues };
 }
 
+// ── Composition resolution (lens-of-lenses) ─────────────────────────────────
+
+/**
+ * Result of resolving a composition lens. members carries the per-member
+ * resolution; unionedItems is the deduped union (by item.id) used by
+ * loadLensView; perItemOrigin maps item.id → originating block name (or
+ * sub-lens id when the member resolves through another lens).
+ */
+export interface ResolvedComposition {
+	members: Array<{
+		source: { lens?: string; from?: string; where?: Record<string, string | number | boolean> };
+		items: ItemRecord[];
+	}>;
+	unionedItems: ItemRecord[];
+	perItemOrigin: Map<string, string>;
+}
+
+/**
+ * Resolve a composition lens by walking each member declaration:
+ *   - { lens: <id> }: lookup the named sub-lens in config.lenses; if it's
+ *     also composition, recurse via resolveCompositionInternal carrying
+ *     the visited-set; if it's target, load its target block items.
+ *   - { from: <block>, where: <field-equality> }: readBlock(cwd, from) and
+ *     filter items by field-equality predicate.
+ *
+ * Cycle detection: if a sub-lens reference forms a cycle in the composition
+ * graph (lens A → lens B → lens A), throws an Error with message
+ * "composition_cycle_detected: <cycle path>". walkLensDescendants's
+ * visited-set guard handles cycles silently at the walk layer; this function
+ * surfaces them because composition cycles indicate authoring error.
+ *
+ * Throws when:
+ *   - lens is not kind="composition"
+ *   - composition members reference a non-existent sub-lens id
+ *   - composition members reference a sub-lens that throws on resolution
+ *   - cycle detected
+ *
+ * Caller (loadLensView) catches Error and returns { error: <message> }.
+ */
+export function resolveComposition(cwd: string, lens: LensSpec): ResolvedComposition {
+	if (lens.kind !== "composition") {
+		throw new Error(`resolveComposition: lens '${lens.id}' is not kind=composition`);
+	}
+	const ctx = getProjectContext(cwd);
+	if (!ctx.config) {
+		throw new Error("resolveComposition: no .project/config.json");
+	}
+	return resolveCompositionInternal(cwd, lens, ctx.config, new Set());
+}
+
+function resolveCompositionInternal(
+	cwd: string,
+	lens: LensSpec,
+	config: ConfigBlock,
+	visited: Set<string>,
+): ResolvedComposition {
+	if (visited.has(lens.id)) {
+		const cyclePath = [...visited, lens.id].join(" → ");
+		throw new Error(`composition_cycle_detected: ${cyclePath}`);
+	}
+	visited.add(lens.id);
+
+	const members: ResolvedComposition["members"] = [];
+	const perItemOrigin = new Map<string, string>();
+	const unionedById = new Map<string, ItemRecord>();
+
+	for (const member of lens.members ?? []) {
+		if (member.lens) {
+			const subLens = config.lenses.find((l) => l.id === member.lens);
+			if (!subLens) {
+				throw new Error(`resolveComposition: member references unknown lens '${member.lens}'`);
+			}
+			let memberItems: ItemRecord[] = [];
+			if (subLens.kind === "composition") {
+				const subResult = resolveCompositionInternal(cwd, subLens, config, new Set(visited));
+				memberItems = subResult.unionedItems;
+				for (const [id, origin] of subResult.perItemOrigin) {
+					if (!perItemOrigin.has(id)) perItemOrigin.set(id, origin);
+				}
+			} else {
+				// Target lens: read its target block items directly. Don't
+				// invoke loadLensView here (avoids importing block-api;
+				// project-context.ts is at a lower layer and avoiding the
+				// cycle through lens-view).
+				if (!subLens.target) {
+					throw new Error(`resolveComposition: sub-lens '${subLens.id}' is kind=target but missing target field`);
+				}
+				memberItems = readBlockItems(cwd, subLens.target);
+				for (const item of memberItems) {
+					if (typeof item.id === "string" && !perItemOrigin.has(item.id)) {
+						perItemOrigin.set(item.id, subLens.target);
+					}
+				}
+			}
+			members.push({ source: { lens: member.lens }, items: memberItems });
+			for (const item of memberItems) {
+				if (typeof item.id === "string" && !unionedById.has(item.id)) {
+					unionedById.set(item.id, item);
+				}
+			}
+		} else if (member.from) {
+			const blockName = member.from;
+			const blockItems = readBlockItems(cwd, blockName);
+			const where = member.where ?? {};
+			const filtered = blockItems.filter((item) => {
+				for (const [k, v] of Object.entries(where)) {
+					if (item[k] !== v) return false;
+				}
+				return true;
+			});
+			members.push({ source: { from: blockName, where: member.where }, items: filtered });
+			for (const item of filtered) {
+				if (typeof item.id === "string") {
+					if (!unionedById.has(item.id)) unionedById.set(item.id, item);
+					if (!perItemOrigin.has(item.id)) perItemOrigin.set(item.id, blockName);
+				}
+			}
+		}
+	}
+
+	return { members, unionedItems: [...unionedById.values()], perItemOrigin };
+}
+
+function readBlockItems(cwd: string, blockName: string): ItemRecord[] {
+	// Inline minimal block read to avoid importing block-api at this layer
+	// (project-context.ts must remain free of block-api dependencies to
+	// preserve the no-circular-import contract — block-api imports
+	// projectRoot from here).
+	const filePath = path.join(cwd, projectRoot(cwd), `${blockName}.json`);
+	if (!fs.existsSync(filePath)) return [];
+	const raw = JSON.parse(fs.readFileSync(filePath, "utf-8")) as Record<string, unknown>;
+	const arrayKey = Object.keys(raw).find((k) => Array.isArray(raw[k]));
+	if (!arrayKey) return [];
+	return raw[arrayKey] as ItemRecord[];
+}
+
 /** Resolve a canonical id to its display name via the naming alias map; falls back to the id itself. */
 export function displayName(canonicalId: string, naming: Record<string, string> | undefined): string {
 	if (!naming) return canonicalId;
@@ -497,9 +670,13 @@ export function listUncategorized(
 	suggestionTemplate: (binName: string, item: ItemRecord) => CurationSuggestion;
 } {
 	const uncat = grouped.get("(uncategorized)") ?? [];
+	// Composition lenses without a relation_type fall back to a placeholder
+	// the curation ceremony can prompt the user to fill in. Target lenses
+	// always have one (per kind=target SDK contract).
+	const suggestionRelationType = lens.relation_type ?? "<set-relation_type-on-lens>";
 	const suggestionTemplate = (binName: string, item: ItemRecord): CurationSuggestion => ({
 		would_append_to: "relations.json#/edges",
-		payload: { parent: binName, child: item.id, relation_type: lens.relation_type },
+		payload: { parent: binName, child: item.id, relation_type: suggestionRelationType },
 	});
 	return { uncategorized: uncat, suggestionTemplate };
 }

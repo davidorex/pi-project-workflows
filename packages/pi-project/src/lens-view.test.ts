@@ -213,7 +213,7 @@ describe("renderLensView", () => {
 		const view = loadLensView(tmpRoot, "by-package");
 		assert.ok(!("error" in view));
 		const md = renderLensView(view, { issues: "Issue Tracker" });
-		assert.match(md, /\*\*Target block:\*\* Issue Tracker/);
+		assert.match(md, /\*\*Target:\*\* Issue Tracker/);
 	});
 });
 

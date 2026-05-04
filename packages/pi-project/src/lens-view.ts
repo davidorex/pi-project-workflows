@@ -17,6 +17,7 @@ import {
 	type ItemRecord,
 	type LensSpec,
 	listUncategorized,
+	resolveComposition,
 	type SubstrateValidationResult,
 	validateRelations,
 	walkDescendants,
@@ -47,17 +48,41 @@ export function loadLensView(cwd: string, lensId: string): LoadedLensView | { er
 		const known = ctx.config.lenses.map((l) => l.id).join(", ") || "(none)";
 		return { error: `Lens '${lensId}' not found in config. Known lenses: ${known}` };
 	}
+
+	// Composition dispatch (FGAP-012): kind="composition" lenses route through
+	// resolveComposition which walks members[] and returns a unioned item set.
+	// Catches composition_cycle_detected and other resolution errors as { error }.
+	if (lens.kind === "composition") {
+		let items: ItemRecord[];
+		try {
+			const composed = resolveComposition(cwd, lens);
+			items = composed.unionedItems;
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			return { error: `Cannot resolve composition lens '${lensId}': ${msg}` };
+		}
+		const edges = edgesForLens(lens, items, ctx.relations);
+		const grouped = groupByLens(items, lens, edges);
+		const { uncategorized, suggestionTemplate } = listUncategorized(lens, grouped);
+		return { lens, items, edges, grouped, uncategorized, suggestionTemplate };
+	}
+
+	// Target-lens path (existing semantics).
+	if (!lens.target) {
+		return { error: `Lens '${lensId}' is kind=target but missing required field 'target'.` };
+	}
+	const targetBlock = lens.target;
 	let items: ItemRecord[];
 	try {
-		const data = readBlock(cwd, lens.target) as Record<string, unknown>;
+		const data = readBlock(cwd, targetBlock) as Record<string, unknown>;
 		const arrayKey = Object.keys(data).find((k) => Array.isArray(data[k]));
 		if (!arrayKey) {
-			return { error: `Block '${lens.target}' (target of lens '${lensId}') has no array property to project.` };
+			return { error: `Block '${targetBlock}' (target of lens '${lensId}') has no array property to project.` };
 		}
 		items = data[arrayKey] as ItemRecord[];
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
-		return { error: `Cannot read lens.target block '${lens.target}': ${msg}` };
+		return { error: `Cannot read lens.target block '${targetBlock}': ${msg}` };
 	}
 	const edges = edgesForLens(lens, items, ctx.relations);
 	const grouped = groupByLens(items, lens, edges);
@@ -73,13 +98,24 @@ export function loadLensView(cwd: string, lensId: string): LoadedLensView | { er
  */
 export function renderLensView(view: LoadedLensView, naming: Record<string, string> | undefined): string {
 	const lines: string[] = [];
-	const targetDisplay = naming?.[view.lens.target] ?? view.lens.target;
+	const isComposition = view.lens.kind === "composition";
+	const targetLabel = isComposition
+		? `${(view.lens.targets ?? []).map((t) => naming?.[t] ?? t).join(", ")} (composition)`
+		: ((view.lens.target ? naming?.[view.lens.target] : undefined) ?? view.lens.target ?? "(unknown)");
 	lines.push(`# Lens: ${view.lens.id}`);
 	lines.push("");
-	lines.push(`**Target block:** ${targetDisplay}  `);
-	lines.push(`**Relation type:** ${view.lens.relation_type}  `);
+	lines.push(`**Target:** ${targetLabel}  `);
 	lines.push(
-		`**Source:** ${view.lens.derived_from_field !== null ? `auto-derived from \`${view.lens.derived_from_field}\` field` : "hand-curated edges in relations.json"}`,
+		`**Relation type:** ${view.lens.relation_type ?? "(none — composition aggregates without a binding relation_type)"}  `,
+	);
+	lines.push(
+		`**Source:** ${
+			isComposition
+				? `composition over ${(view.lens.members ?? []).length} member declaration(s)`
+				: view.lens.derived_from_field
+					? `auto-derived from \`${view.lens.derived_from_field}\` field`
+					: "hand-curated edges in relations.json"
+		}`,
 	);
 	const renderUncat = view.lens.render_uncategorized !== false;
 	lines.push(`**Render uncategorized:** ${renderUncat}`);
@@ -190,12 +226,21 @@ export function edgesForLensByName(cwd: string, lensId: string): Edge[] | { erro
 		return { error: `Lens '${lensId}' not found in config. Known lenses: ${known}` };
 	}
 	let items: ItemRecord[] = [];
-	try {
-		const data = readBlock(cwd, lens.target) as Record<string, unknown>;
-		const arrayKey = Object.keys(data).find((k) => Array.isArray(data[k]));
-		if (arrayKey) items = data[arrayKey] as ItemRecord[];
-	} catch {
-		/* lens.target block may not exist — return synthetic-from-empty (which is []) */
+	if (lens.kind === "composition") {
+		try {
+			items = resolveComposition(cwd, lens).unionedItems;
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			return { error: `Cannot resolve composition lens '${lensId}': ${msg}` };
+		}
+	} else if (lens.target) {
+		try {
+			const data = readBlock(cwd, lens.target) as Record<string, unknown>;
+			const arrayKey = Object.keys(data).find((k) => Array.isArray(data[k]));
+			if (arrayKey) items = data[arrayKey] as ItemRecord[];
+		} catch {
+			/* lens.target block may not exist — return synthetic-from-empty (which is []) */
+		}
 	}
 	return edgesForLens(lens, items, ctx.relations);
 }

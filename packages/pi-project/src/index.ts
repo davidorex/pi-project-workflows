@@ -32,7 +32,7 @@ import {
 	validateProjectRelations,
 	walkLensDescendants,
 } from "./lens-view.js";
-import { getProjectContext, projectRoot } from "./project-context.js";
+import { getProjectContext, projectRoot, resolveComposition } from "./project-context.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import {
 	type ConfigBlock,
@@ -957,6 +957,84 @@ const extension = (pi: ExtensionAPI) => {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
 			};
+		},
+	});
+
+	// ── Tool: project-resolve-composition ─────────────────────────────────
+
+	pi.registerTool({
+		name: "project-resolve-composition",
+		label: "Project: resolve composition lens",
+		description:
+			"Resolve a composition lens (kind=composition) by walking its members[] declarations. Returns the per-member resolution + unioned items + per-item origin map. Throws composition_cycle_detected when a sub-lens reference forms a cycle. Use to inspect what items a composition lens aggregates without rendering the full lens view.",
+		promptSnippet: "Resolve a composition lens to its constituent items",
+		parameters: Type.Object({
+			lensId: Type.String({ description: "Composition lens id from .project/config.json's lenses array" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { lensId: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const projectCtx = getProjectContext(ctx.cwd);
+			if (!projectCtx.config) {
+				return {
+					details: undefined,
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({ error: "No .project/config.json — run /project init first." }, null, 2),
+						},
+					],
+				};
+			}
+			const lens = projectCtx.config.lenses.find((l) => l.id === params.lensId);
+			if (!lens) {
+				return {
+					details: undefined,
+					content: [
+						{ type: "text", text: JSON.stringify({ error: `Lens '${params.lensId}' not found in config.` }, null, 2) },
+					],
+				};
+			}
+			if (lens.kind !== "composition") {
+				return {
+					details: undefined,
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify(
+								{ error: `Lens '${params.lensId}' is kind='${lens.kind ?? "target"}', not composition.` },
+								null,
+								2,
+							),
+						},
+					],
+				};
+			}
+			try {
+				const composed = resolveComposition(ctx.cwd, lens);
+				// Map → object for JSON serialization
+				const perItemOriginObj: Record<string, string> = {};
+				for (const [k, v] of composed.perItemOrigin) perItemOriginObj[k] = v;
+				const result = {
+					members: composed.members,
+					unionedItems: composed.unionedItems,
+					perItemOrigin: perItemOriginObj,
+				};
+				return {
+					details: undefined,
+					content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+				};
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				return {
+					details: undefined,
+					content: [{ type: "text", text: JSON.stringify({ error: msg }, null, 2) }],
+				};
+			}
 		},
 	});
 

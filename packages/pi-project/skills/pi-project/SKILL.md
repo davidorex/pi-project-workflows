@@ -190,6 +190,16 @@ Walk closure-table descendants of parentId under the given relation_type. Return
 | `relationType` | string | yes | Edge label declared in config.hierarchy or config.lenses |
 </tool>
 
+<tool name="project-resolve-composition">
+Resolve a composition lens (kind=composition) by walking its members[] declarations. Returns the per-member resolution + unioned items + per-item origin map. Throws composition_cycle_detected when a sub-lens reference forms a cycle. Use to inspect what items a composition lens aggregates without rendering the full lens view.
+
+*Resolve a composition lens to its constituent items*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `lensId` | string | yes | Composition lens id from .project/config.json's lenses array |
+</tool>
+
 <tool name="project-status-rollup">
 Roll up status across items in a block (or a named subset by id). Maps each item's native status enum value through STATUS_VOCABULARY to a normalized StatusBucket (complete | in_progress | blocked | todo | unknown), returns counts per bucket plus the rolled-up bucket. Rollup precedence: blocked > in_progress > todo > complete > unknown — any blocked item rolls the whole set as blocked. Useful for roadmap phase status, plan progress, dashboards.
 

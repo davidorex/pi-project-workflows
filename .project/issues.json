@@ -978,6 +978,17 @@
       "status": "open",
       "package": "pi-workflows",
       "source": "agent"
+    },
+    {
+      "id": "issue-088",
+      "title": "validateRoadmaps milestone validation runs independent of lens resolution — emergent in 5f852b1 without prior plan or authorization",
+      "body": "validateRoadmaps in packages/pi-project/src/roadmap-plan.ts (introduced in commit 5f852b1) runs the milestone-evidence and milestone-query checks (codes roadmap_milestone_evidence_block_missing at line 535, roadmap_milestone_query_invalid at line 552) without gating on the parent phase's lens-resolution outcome. A phase whose lens triggers roadmap_lens_missing or roadmap_composition_cycle still has its milestones validated; both classes of issues surface in the same validateRoadmaps result.\n\nThe plan at /Users/david/.claude/plans/idempotent-dancing-wilkes.md §'validateRoadmaps' specifies seven predicates but is silent on ordering between them. The independent-from-lens choice was made by the implementing subagent without prior planning entry or user authorization.",
+      "location": "packages/pi-project/src/roadmap-plan.ts:535,552",
+      "status": "open",
+      "category": "issue",
+      "priority": "low",
+      "package": "pi-project",
+      "source": "agent"
     }
   ]
 }

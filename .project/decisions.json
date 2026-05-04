@@ -513,14 +513,15 @@
     {
       "id": "DEC-0012",
       "title": "Phase/item dependency authoring shape: inline depends_on with edge projection vs edges-only authoring",
-      "status": "open",
+      "status": "enacted",
       "context": "The roadmap/plan substrate proposal requires expressing per-phase ordering (phase A before phase B in a roadmap) and per-item ordering (task A before task B in a plan). DEC-0009 mandates closure-table edges as the canonical primitive for hierarchical decomposition, which covers ordering. Two authoring shapes are mandate-compliant under DEC-0009 — both ship ordering as edges; difference is the user-facing surface for declaring them. The proposal flagged this as a forking choice that user must resolve before implementation step 4 (loadRoadmap) lands.",
-      "decision": "Pending user resolution. See options_considered.",
+      "decision": "Edges-only authoring for both phase ordering and plan-item ordering. roadmap.schema.json's phases items omit depends_on entirely; plan.schema.json's items omit depends_on entirely. All ordering lives in relations.json with relation_type='phase_depends_on' (phases) and relation_type='plan_item_depends_on' (plan items). SDK reads and topologically sorts purely from edges. Authoring a dependency means appending an edge via append-block-item — identical to how lens-curate's curation-ceremony writes edges today. No inline syntactic-sugar field, no SDK projection logic, no inline-vs-edge sync, no drift diagnostic.",
       "options_considered": [
         {
           "label": "Inline depends_on with SDK projection",
           "description": "roadmap.schema.json's phases items + plan.schema.json's items each carry a depends_on: string[] field. At validation time, the SDK projects these to closure-table edges in relations.json with relation_type='phase_depends_on' or 'plan_item_depends_on'. Edges become the canonical storage; inline depends_on is authoring sugar. validateRoadmaps / validatePlans check inline-vs-edge consistency and emit drift diagnostics if they disagree.",
-          "tradeoffs": "Pro: ergonomic authoring (depends_on lives where the phase is defined; one-place edits). Con: two surfaces for the same data; sync logic needed; drift surface; edge writes must check inline-syntactic-sugar fields too."
+          "tradeoffs": "Pro: ergonomic authoring (depends_on lives where the phase is defined; one-place edits). Con: two surfaces for the same data; sync logic needed; drift surface; edge writes must check inline-syntactic-sugar fields too.",
+          "rejected_reason": "Introduces inline depends_on as a parallel storage primitive alongside the canonical closure-table edges, contradicting DEC-0009's principle of one storage primitive across all context types. Triggers the parallel-ungated-path antipattern (feedback_no_parallel_ungated_paths.md): the inline field becomes a writable surface alongside the canonical edges and requires the SDK to enforce sync, surfacing a roadmap_dep_drift diagnostic class that has no analogue under the edges-only path. Mutation cost is also higher: slotting a new plan into a roadmap requires nested-array surgery on the roadmap document AND a synced edge write; reordering requires per-affected-phase edits AND cascaded edge updates."
         },
         {
           "label": "Edges-only authoring",
@@ -530,15 +531,20 @@
       ],
       "consequences": [
         "Whichever option enacts becomes the canonical authoring contract for every future composition that needs ordering (sequence of decisions, dependency graph between research entries, etc.).",
-        "Inline option requires SDK validators to enforce sync between inline fields and edges; edges-only option requires authoring tools (or a /project add-dep convenience subcommand) to make ordering authoring ergonomic from a session.",
-        "Inline option is friendlier to fresh users who haven't internalized the closure-table model; edges-only option is more consistent with the substrate's stated principle (one storage primitive)."
+        "Edges-only option requires authoring tools (or a /project add-dep convenience subcommand) to make ordering authoring ergonomic from a session — append-block-item with the right relation_type is the canonical path.",
+        "Single source of truth for hierarchical/sequencing concerns honors DEC-0009. No new storage primitive introduced. validateRoadmaps + validatePlans diagnostic surface stays minimal — no roadmap_dep_drift / plan_dep_drift codes needed because no drift can occur.",
+        "Mutation patterns scale: slotting a new plan into a roadmap = one append-block-item on relations.json (atomic, schema-validated). Reordering plans = pure dependency-graph edit on relations.json (roadmap structure untouched). Same operation users already perform for lens curation.",
+        "Reading raw JSON requires a relations.json query to surface dependencies; this is irrelevant in practice because /project roadmap-view + project-roadmap-render assemble the full picture for display. Raw-JSON-reading is for authoring (per-edge), not for browsing.",
+        "Implementation impact: issue-081's roadmap.schema.json + plan.schema.json land WITHOUT depends_on fields on phases/items. issue-084 (loadRoadmap) + issue-085 (loadPlan) read ordering exclusively from getProjectContext(cwd).relations filtered by the new relation_types."
       ],
       "related_gaps": [
         "FGAP-012"
       ],
       "references": [],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-04T00:00:00Z"
+      "created_at": "2026-05-04T00:00:00Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-04T00:00:00Z"
     }
   ]
 }

@@ -917,9 +917,10 @@
       "location": "packages/pi-project/src/roadmap-plan.ts (new), packages/pi-project/src/index.ts (tool registration)",
       "category": "capability",
       "priority": "high",
-      "status": "open",
+      "status": "resolved",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit b7bf11b — feat(pi-project): step 2 of roadmap/plan substrate. STATUS_VOCABULARY + topoSort + rollupPhaseStatus pure functions in new roadmap-plan.ts; project-status-rollup tool registered. 24 new tests cover all three primitives. STATUS_VOCABULARY is interim-hardcoded per FGAP-013."
     },
     {
       "id": "issue-083",

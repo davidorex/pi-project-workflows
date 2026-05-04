@@ -190,6 +190,17 @@ Walk closure-table descendants of parentId under the given relation_type. Return
 | `relationType` | string | yes | Edge label declared in config.hierarchy or config.lenses |
 </tool>
 
+<tool name="project-status-rollup">
+Roll up status across items in a block (or a named subset by id). Maps each item's native status enum value through STATUS_VOCABULARY to a normalized StatusBucket (complete | in_progress | blocked | todo | unknown), returns counts per bucket plus the rolled-up bucket. Rollup precedence: blocked > in_progress > todo > complete > unknown — any blocked item rolls the whole set as blocked. Useful for roadmap phase status, plan progress, dashboards.
+
+*Roll up status across a block's items*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name to read (e.g., 'issues', 'tasks', 'decisions'). |
+| `ids` | array | no | Optional list of item ids to filter to. When omitted, rolls up across the entire block's array. |
+</tool>
+
 </tools_reference>
 
 <commands_reference>

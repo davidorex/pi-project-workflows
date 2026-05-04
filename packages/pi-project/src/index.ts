@@ -43,6 +43,7 @@ import {
 	resolveItemById,
 	validateProject,
 } from "./project-sdk.js";
+import { rollupPhaseStatus } from "./roadmap-plan.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -952,6 +953,53 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = walkLensDescendants(ctx.cwd, params.parentId, params.relationType);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: project-status-rollup ───────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-status-rollup",
+		label: "Project: status rollup",
+		description:
+			"Roll up status across items in a block (or a named subset by id). Maps each item's native status enum value through STATUS_VOCABULARY to a normalized StatusBucket (complete | in_progress | blocked | todo | unknown), returns counts per bucket plus the rolled-up bucket. Rollup precedence: blocked > in_progress > todo > complete > unknown — any blocked item rolls the whole set as blocked. Useful for roadmap phase status, plan progress, dashboards.",
+		promptSnippet: "Roll up status across a block's items",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name to read (e.g., 'issues', 'tasks', 'decisions')." }),
+			ids: Type.Optional(
+				Type.Array(Type.String(), {
+					description:
+						"Optional list of item ids to filter to. When omitted, rolls up across the entire block's array.",
+				}),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { block: string; ids?: string[] },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			let items: Array<Record<string, unknown>> = [];
+			try {
+				const data = readBlock(ctx.cwd, params.block) as Record<string, unknown>;
+				const arrayKey = Object.keys(data).find((k) => Array.isArray(data[k]));
+				if (arrayKey) items = data[arrayKey] as Array<Record<string, unknown>>;
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				return {
+					details: undefined,
+					content: [
+						{ type: "text", text: JSON.stringify({ error: `Cannot read block '${params.block}': ${msg}` }, null, 2) },
+					],
+				};
+			}
+			const filtered = params.ids ? items.filter((i) => typeof i.id === "string" && params.ids?.includes(i.id)) : items;
+			const result = rollupPhaseStatus(filtered as Parameters<typeof rollupPhaseStatus>[0]);
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],

@@ -897,6 +897,91 @@
       "package": "pi-project",
       "source": "agent",
       "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
+    },
+    {
+      "id": "issue-081",
+      "title": "Roadmap/plan schema landing: roadmap.schema.json + plan.schema.json + LensSpec composition extension + relations ordinal field",
+      "body": "Step 1 of the roadmap/plan substrate proposal. Land four schema changes: (a) packages/pi-project/registry/schemas/roadmap.schema.json — full roadmap schema with phases, milestones, exit_criteria, depends_on (shape gated by DEC-0012); (b) packages/pi-project/registry/schemas/plan.schema.json — plan schema with item refs, depends_on, optional roadmap/phase association; (c) packages/pi-project/schemas/config.schema.json — extend lenses items with kind/targets/members fields per FGAP-012 resolution (oneOf discriminated by kind); (d) packages/pi-project/schemas/relations.schema.json — add optional ordinal: integer field for deterministic sibling ordering. Plus reserved relation_types: roadmap_phase, phase_member, plan_member, phase_depends_on, plan_item_depends_on. Per DEC-0011 nothing ships pre-installed. Per DEC-0009 sequencing is closure-table edges only (no subdirectory layout). Tests: schema-validator round-trips on fixtures.",
+      "location": "packages/pi-project/registry/schemas/, packages/pi-project/schemas/",
+      "category": "capability",
+      "priority": "high",
+      "status": "open",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-082",
+      "title": "STATUS_VOCABULARY + topoSort + status rollup SDK primitives in new roadmap-plan.ts module",
+      "body": "Step 2. New module packages/pi-project/src/roadmap-plan.ts. Pure functions: STATUS_VOCABULARY mapping (interim TS-baked per FGAP-013; will eventually read from config.status_buckets when FGAP-013 lands), topoSort<T>(nodes, idOf, deps) returning { order: string[], cycles: string[][] } via Kahn's algorithm, rollupPhaseStatus(items: ItemRecord[]) returning { bucket: StatusBucket, counts, total }. New tool: project-status-rollup with params { block, ids? } — generally useful beyond roadmaps. Wired into existing pi.registerTool pattern. Unit-tested in isolation.",
+      "location": "packages/pi-project/src/roadmap-plan.ts (new), packages/pi-project/src/index.ts (tool registration)",
+      "category": "capability",
+      "priority": "high",
+      "status": "open",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-083",
+      "title": "resolveComposition SDK function + loadLensView dispatch on lens.kind composition",
+      "body": "Step 3. Closes FGAP-012 implementation. Add resolveComposition(cwd, lens) to packages/pi-project/src/project-context.ts. For each member of lens.members: if {lens} member, recurse via resolveComposition (or loadLensView if target lens); if {from, where} member, readBlock(cwd, from) + filter by where field-equality. Cycle-safe via visited-set on lens ids; throws composition_cycle_detected. Extend loadLensView (packages/pi-project/src/lens-view.ts:40) to dispatch on lens.kind === 'composition' before falling back to today's target-lens path. New tool: project-resolve-composition with params { lensId } — exposes composed-lens result for inspection without rendering. Tests: composition fixture + cycle test.",
+      "location": "packages/pi-project/src/project-context.ts, packages/pi-project/src/lens-view.ts:40, packages/pi-project/src/index.ts",
+      "category": "capability",
+      "priority": "high",
+      "status": "open",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-084",
+      "title": "Roadmap primitives: loadRoadmap + listRoadmaps + validateRoadmaps + renderRoadmap + tools + subcommands",
+      "body": "Step 4. Land roadmap consumption surface in packages/pi-project/src/roadmap-plan.ts: loadRoadmap(cwd, roadmapId) returning RoadmapView with topo-sorted phases + status rollup + milestone evidence resolution, listRoadmaps(cwd), validateRoadmaps(cwd) emitting roadmap_lens_missing | roadmap_phase_dep_missing | roadmap_phase_cycle | roadmap_milestone_evidence_block_missing | roadmap_milestone_query_invalid | roadmap_composition_cycle | roadmap_status_unknown_value diagnostic codes (wired into validateProject aggregate). Subcommands: /project roadmap-list, roadmap-view <ROADMAP-id>, roadmap-validate [ROADMAP-id]. Tools: project-roadmap-{load,render,validate,list}. renderRoadmap emits per-phase markdown sections + mermaid 'graph LR' phase DAG.",
+      "location": "packages/pi-project/src/roadmap-plan.ts, packages/pi-project/src/index.ts",
+      "category": "capability",
+      "priority": "high",
+      "status": "open",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-085",
+      "title": "Plan primitives: loadPlan + listPlans + validatePlans + renderPlan + tools + subcommands",
+      "body": "Step 5. Symmetric to issue-084 for plans. loadPlan(cwd, planId) returning PlanView with topo-sorted items resolved via existing resolveItemById, validatePlans(cwd) emitting plan_ref_unresolved | plan_dep_missing | plan_item_cycle | plan_roadmap_missing | plan_phase_missing | plan_status_inconsistent. Subcommands: /project plan-{list,view,validate}. Tools: project-plan-{load,render,validate,list}. renderPlan emits ordered numbered list grouped by topo-order strata + mermaid 'graph TD' for dependency graph + status rollup summary header.",
+      "location": "packages/pi-project/src/roadmap-plan.ts, packages/pi-project/src/index.ts",
+      "category": "capability",
+      "priority": "high",
+      "status": "open",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-086",
+      "title": "Curation ceremonies: roadmap-curate + plan-curate subcommands with buildCurationSuggestions parallels",
+      "body": "Step 6. Mirror lens-curate's pattern (packages/pi-project/src/lens-view.ts:116, packages/pi-project/src/index.ts:1042). buildRoadmapCurationSuggestions(view: RoadmapView) enumerates the roadmap's composition lenses and surfaces unbinned items per phase as append-block-item suggestions for relations.json with relation_type='phase_member' + suggested ordinal. buildPlanCurationSuggestions(view: PlanView) enumerates plan items missing depends_on edges against the existing block items they reference and surfaces dependency suggestions. /project roadmap-curate <ROADMAP-id> + /project plan-curate <PLAN-id> handlers use pi.sendMessage with { triggerTurn: true, deliverAs: 'followUp' } to drive the LLM through the curation. No new write surface — LLM persists via existing append-block-item.",
+      "location": "packages/pi-project/src/roadmap-plan.ts, packages/pi-project/src/index.ts",
+      "category": "capability",
+      "priority": "medium",
+      "status": "open",
+      "package": "pi-project",
+      "source": "agent"
+    },
+    {
+      "id": "issue-087",
+      "title": "render_roadmap + render_plan macros in packages/pi-workflows/templates/shared/macros.md for contextBlocks injection",
+      "body": "Step 7. Per-block-kind render macros following the existing pattern in packages/pi-workflows/templates/shared/macros.md. Add render_roadmap(roadmap) and render_plan(plan) Nunjucks macros so workflow agents can declare contextBlocks: [roadmap, plan] and have rendered roadmap/plan markdown injected into their prompts. Closes the agent-prompt-substrate side of the substrate-arc thesis for these new block kinds.",
+      "location": "packages/pi-workflows/templates/shared/macros.md",
+      "category": "capability",
+      "priority": "medium",
+      "status": "open",
+      "package": "pi-workflows",
+      "source": "agent"
+    },
+    {
+      "id": "fragility-fragility-moqfv0wl",
+      "description": "The agent identified that the narrative sections appear in the lower half of the SKILL.md (lines 280-400 out of 413) and that this placement \"may have caused the reviewer to miss them if they only scanned the first half,\" but took no action to improve placement or signal this ordering issue — leaving a known usability/discoverability problem unaddressed.",
+      "status": "open",
+      "category": "fragility",
+      "priority": "warning",
+      "source": "monitor"
     }
   ]
 }

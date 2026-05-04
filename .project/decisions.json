@@ -509,6 +509,36 @@
       "created_at": "2026-05-03T00:00:00Z",
       "enacted_by": "user",
       "enacted_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0012",
+      "title": "Phase/item dependency authoring shape: inline depends_on with edge projection vs edges-only authoring",
+      "status": "open",
+      "context": "The roadmap/plan substrate proposal requires expressing per-phase ordering (phase A before phase B in a roadmap) and per-item ordering (task A before task B in a plan). DEC-0009 mandates closure-table edges as the canonical primitive for hierarchical decomposition, which covers ordering. Two authoring shapes are mandate-compliant under DEC-0009 — both ship ordering as edges; difference is the user-facing surface for declaring them. The proposal flagged this as a forking choice that user must resolve before implementation step 4 (loadRoadmap) lands.",
+      "decision": "Pending user resolution. See options_considered.",
+      "options_considered": [
+        {
+          "label": "Inline depends_on with SDK projection",
+          "description": "roadmap.schema.json's phases items + plan.schema.json's items each carry a depends_on: string[] field. At validation time, the SDK projects these to closure-table edges in relations.json with relation_type='phase_depends_on' or 'plan_item_depends_on'. Edges become the canonical storage; inline depends_on is authoring sugar. validateRoadmaps / validatePlans check inline-vs-edge consistency and emit drift diagnostics if they disagree.",
+          "tradeoffs": "Pro: ergonomic authoring (depends_on lives where the phase is defined; one-place edits). Con: two surfaces for the same data; sync logic needed; drift surface; edge writes must check inline-syntactic-sugar fields too."
+        },
+        {
+          "label": "Edges-only authoring",
+          "description": "roadmap.schema.json's phases items + plan.schema.json's items omit depends_on entirely. All ordering lives in relations.json with the new relation_types. Authoring a roadmap dependency means appending an edge via append-block-item with relation_type='phase_depends_on'; SDK reads + topo-sorts purely from edges.",
+          "tradeoffs": "Pro: single source of truth; uniform with how lens-curate works (edges are the canonical write surface). Con: less local — to see what phase A depends on, must query relations.json under the relation_type filter."
+        }
+      ],
+      "consequences": [
+        "Whichever option enacts becomes the canonical authoring contract for every future composition that needs ordering (sequence of decisions, dependency graph between research entries, etc.).",
+        "Inline option requires SDK validators to enforce sync between inline fields and edges; edges-only option requires authoring tools (or a /project add-dep convenience subcommand) to make ordering authoring ergonomic from a session.",
+        "Inline option is friendlier to fresh users who haven't internalized the closure-table model; edges-only option is more consistent with the substrate's stated principle (one storage primitive)."
+      ],
+      "related_gaps": [
+        "FGAP-012"
+      ],
+      "references": [],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-04T00:00:00Z"
     }
   ]
 }

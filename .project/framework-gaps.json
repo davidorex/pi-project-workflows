@@ -388,6 +388,95 @@
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "FGAP-012",
+      "title": "Lens-of-lenses composition — current LensSpec cannot express cross-block aggregation",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-project",
+      "layer": "L2",
+      "description": "Current LensSpec (packages/pi-project/src/project-context.ts) requires a single string `target` block and a single `relation_type`. There is no shape for a lens that aggregates multiple blocks (issues + decisions + features in one view) or that composes other lenses (a roadmap-shaped aggregation that pulls grouped output from named child lenses). This blocks every roadmap-shape, plan-shape, or any user-facing summary view that needs to span block kinds. The user's stated capability goal — 'LLMs can create roadmaps and plans out of blocks' — cannot be expressed under the current LensSpec without a flat-lens scope reduction (which is mandate-004 violating).",
+      "evidence": [
+        {
+          "file": "packages/pi-project/src/project-context.ts",
+          "reference": "LensSpec interface declares target: string (single block); relation_type: string (single edge label); no field for composing lenses or pulling from multiple blocks."
+        },
+        {
+          "file": "packages/pi-project/src/lens-view.ts",
+          "reference": "loadLensView reads exactly one block via lens.target; renderLensView emits one heading-per-bin; no codepath for multi-target or lens-id resolution."
+        },
+        {
+          "file": "packages/pi-project/schemas/config.schema.json",
+          "reference": "lenses items require target as string; no kind/composition/targets/members fields. additionalProperties: false rejects any extension."
+        }
+      ],
+      "impact": "Every aggregation that spans block kinds requires either (a) a manual-edit flat lens reducing the user's hierarchical design intent (scope reduction), or (b) hand-written prose substitution for what should be a substrate primitive. Until this gap closes, roadmaps, plans, cross-cutting summary views, status rollups across mixed blocks, and any future lens variant (filter, join, etc.) all stall. Forward concern surfaced by the substrate-arc proposal: introducing kind: 'composition' as the first lens-shape variant means subsequent variants (filter, join) will need a discriminated-union schema if not consolidated; FGAP-012's resolution should specify the discriminator field shape so future variants extend cleanly rather than fork.",
+      "canonical_vocabulary": "lens composition; cross-block aggregation; discriminated-union lens variant",
+      "proposed_resolution": "Extend LensSpec with kind: 'target' | 'composition' (discriminator), targets: string[] (when composition; pulls items from multiple blocks), members: array of either { lens: <id> } (sub-lens reference) or { from: <block>, where: <field-equality> } (flat selection). config.schema.json oneOf-enforces the kind-discriminated union. resolveComposition(cwd, lens) SDK function recurses sub-lens references with cycle detection (composition_cycle_detected diagnostic). loadLensView dispatches on lens.kind. renderLensView emits per-member subsections for composition lenses. validateRelations gains lens-graph cycle detection on relation_type='lens_member'. Closes the substrate-shape gap that the roadmap/plan substrate proposal demands.",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-04T00:00:00Z"
+    },
+    {
+      "id": "FGAP-013",
+      "title": "No canonical status vocabulary registry — status rollup hardcoded in TS, not user-extensible per project",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-project",
+      "layer": "L1",
+      "description": "The substrate has no canonical mapping from per-schema status enums to a normalized status vocabulary. Each block schema independently declares its own status enum (issues uses open|resolved|deferred; decisions uses open|enacted|superseded; tasks uses todo|in_progress|completed). Any aggregation across blocks (status rollup over mixed-kind items in a roadmap phase or plan) must collapse these to a normalized set (complete|in_progress|blocked|todo|unknown). Hardcoding the mapping in TypeScript (the proposal's STATUS_VOCABULARY) is not user-extensible per project and bakes in canonical-engineering vocabulary the user has flagged as opaque. Forces every cross-block aggregation to fail open or to lose semantic precision when a project introduces a new status value.",
+      "evidence": [
+        {
+          "file": ".project/schemas/issues.schema.json",
+          "reference": "issues.status enum: open|resolved|deferred"
+        },
+        {
+          "file": ".project/schemas/decisions.schema.json",
+          "reference": "decisions.status enum: open|enacted|superseded (3-state lifecycle, x-lifecycle metadata)"
+        },
+        {
+          "file": "packages/pi-project/registry/schemas/tasks.schema.json",
+          "reference": "tasks.status enum: todo|in_progress|completed|cancelled (different vocabulary)"
+        }
+      ],
+      "impact": "Without a canonical mapping at the substrate layer, every consumer that aggregates status across block kinds (status rollup, roadmap phase status, plan status, dashboards) must either ship its own hardcoded mapping (duplicated drift surface) or fall back to per-block reporting (no rollup possible). Per-project status extensions (a project adds a 'queued' status) cannot be onboarded without code change. Sub-gap surfaced by the roadmap/plan substrate proposal that needs first-class substrate handling.",
+      "canonical_vocabulary": "status vocabulary registry; status normalization; cross-block status rollup",
+      "proposed_resolution": "Add status_buckets field to config.schema.json: { complete: string[], in_progress: string[], blocked: string[], todo: string[] }. Each bucket lists the per-schema status values that map into it. Per-project extensible — a project adds 'queued' to todo by editing config.json. SDK rollupPhaseStatus / rollupPlanStatus functions read from getProjectContext(cwd).config?.status_buckets with a default mapping (resolved/done/enacted/completed → complete; in_progress/active → in_progress; etc.) if absent. Validator emits status_unknown_value warnings for items whose status doesn't appear in any bucket.",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-04T00:00:00Z"
+    },
+    {
+      "id": "FGAP-014",
+      "title": "No render-time pagination primitive for projection rendering — large views overflow context windows",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-project",
+      "layer": "L2",
+      "description": "renderLensView, renderRoadmap (proposed), renderPlan (proposed), and any future projection renderer emit complete markdown with no pagination boundary. truncateHead (used by read-block via @mariozechner/pi-coding-agent) is intentionally NOT applied — full markdown is the contract; truncation defeats compositional projection. At small scales (≤10 phases per roadmap, ≤50 items per phase, ≤200 items per plan) this fits comfortably under typical context windows. At larger scales it overflows. The substrate currently has no primitive for: (a) page/section selection (render only phase X of roadmap Y), (b) summary-vs-detail rendering modes, (c) lazy materialization of nested compositions. Affects every aggregation primitive; particularly acute for the proposed roadmap/plan compositions.",
+      "evidence": [
+        {
+          "file": "packages/pi-project/src/lens-view.ts",
+          "reference": "renderLensView emits all bins + items unconditionally; no pagination params; no summary mode."
+        },
+        {
+          "file": "packages/pi-project/src/index.ts",
+          "reference": "read-block tool wraps payload in truncateHead per @mariozechner/pi-coding-agent — but lens-view rendering is exempt by design; no equivalent pagination knob exists for renderers."
+        }
+      ],
+      "impact": "Today: not blocking — all current renders fit in context. Tomorrow: every roadmap/plan substrate consumer needs a way to address sub-views (one phase at a time, one bin at a time, summary-only, count-only). Without pagination primitives, the substrate's expressivity is bounded by the user's context window. Cannot be deferred indefinitely once roadmaps/plans land at scale; users will hit the wall on first large composition.",
+      "canonical_vocabulary": "render-time pagination; sub-view selection; summary vs detail rendering",
+      "proposed_resolution": "Add optional render-time params to renderLensView/renderRoadmap/renderPlan: { detail: 'summary' | 'full', limit?: number, offset?: number, focus?: string[] (bin or item ids to render exclusively) }. SDK functions return paginated markdown with explicit cursor metadata (nextOffset, totalCount). Tool wrappers expose the params so LLMs can request specific sub-views. renderRoadmap's mermaid graph stays full (DAG topology rendering is cheap); per-phase item tables paginate. renderPlan's dependency graph stays full; item table paginates. Add a count-only mode that returns just the structural shape (phase names, item counts, status rollup) without item content. Filed forward per mandate-007 even though not currently triggered.",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-04T00:00:00Z"
     }
   ]
 }

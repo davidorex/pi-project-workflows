@@ -206,7 +206,7 @@ Subcommands: `init`, `install`, `view`, `lens-curate`, `status`, `add-work`, `va
 </events>
 
 <bundled_resources>
-2 schemas, 22 registry bundled.
+2 schemas, 24 registry bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 
@@ -242,9 +242,11 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 | `handoff` | `registry/schemas/handoff.schema.json` |
 | `issues` | `registry/schemas/issues.schema.json` |
 | `phase` | `registry/schemas/phase.schema.json` |
+| `plan` | `registry/schemas/plan.schema.json` |
 | `project` | `registry/schemas/project.schema.json` |
 | `rationale` | `registry/schemas/rationale.schema.json` |
 | `requirements` | `registry/schemas/requirements.schema.json` |
+| `roadmap` | `registry/schemas/roadmap.schema.json` |
 | `tasks` | `registry/schemas/tasks.schema.json` |
 | `verification` | `registry/schemas/verification.schema.json` |
 
@@ -264,9 +266,11 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 | `handoff` | Handoff | `current_tasks` |  |
 | `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by? |
 | `phase` | Phase | `success_criteria` | criterion, verify_method (string (command|inspect|test)) |
+| `plan` | Project plans | `plans` | id, title, description?, status? (string (draft|active|blocked|complete|archived)), roadmap? (string|null), phase? (string|null), items (array) |
 | `project` | Project Identity | `target_users` |  |
 | `rationale` | Design Rationale | `rationales` | id, title, narrative, related_decisions? (array), phase? (string|integer), context? |
 | `requirements` | Requirements | `requirements` | id, description, type (string (functional|non-functional|constraint|integration)), status (string (proposed|accepted|deferred|implemented|verified)), priority (string (must|should|could|wont)), acceptance_criteria? (array), source? (string (human|agent|analysis)), traces_to? (array), depends_on? (array) |
+| `roadmap` | Project roadmaps | `roadmaps` | id, title, description?, status? (string (draft|active|paused|complete|archived)), phases (array), milestones? (array) |
 | `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), phase? (string|integer), files? (array), acceptance_criteria? (array), depends_on? (array), assigned_agent?, verification?, notes? |
 | `verification` | Verification | `verifications` | id, target, target_type (string (task|phase|requirement)), status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array) |
 
@@ -286,11 +290,13 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 | `phase` | `status` | planned, in-progress, completed |
 | `phase` | `verify_method` | command, inspect, test |
 | `phase` | `status` | planned, in-progress, completed |
+| `plan` | `status` | draft, active, blocked, complete, archived |
 | `project` | `status` | inception, planning, development, maintenance, complete |
 | `requirements` | `type` | functional, non-functional, constraint, integration |
 | `requirements` | `status` | proposed, accepted, deferred, implemented, verified |
 | `requirements` | `priority` | must, should, could, wont |
 | `requirements` | `source` | human, agent, analysis |
+| `roadmap` | `status` | draft, active, paused, complete, archived |
 | `tasks` | `status` | planned, in-progress, completed, blocked, cancelled |
 | `verification` | `target_type` | task, phase, requirement |
 | `verification` | `status` | passed, failed, partial, skipped |

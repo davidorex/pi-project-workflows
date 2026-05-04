@@ -23,7 +23,11 @@
 					},
 					"relation_type": {
 						"type": "string",
-						"description": "Lens id or hierarchy edge type. Allows multiple parallel hierarchies over the same items."
+						"description": "Lens id or hierarchy edge type. Allows multiple parallel hierarchies over the same items. Reserved relation_types for the roadmap/plan substrate per DEC-0012: 'phase_depends_on' (phase-A → phase-B ordering); 'plan_item_depends_on' (item-A → item-B ordering); 'phase_member' (phase-id → item-id membership); 'plan_member' (plan-id → item-id membership)."
+					},
+					"ordinal": {
+						"type": "integer",
+						"description": "Optional sort key for siblings under the same parent under the same relation_type. Ties broken by insertion order. Useful when a plan or roadmap wants explicit total ordering of independent items inside a phase or section."
 					}
 				}
 			}

@@ -36,18 +36,62 @@
 		},
 		"lenses": {
 			"type": "array",
-			"description": "Named projections over a target block. Each lens declares either a derived_from_field (auto-projection from existing item field) or relies on hand-curated edges in relations.json.",
+			"description": "Named projections over a target block (kind=target) or composition over multiple blocks / sub-lenses (kind=composition). Per FGAP-012, target lenses use the existing target+relation_type contract; composition lenses use targets+members and aggregate items across blocks. The kind discriminator selects the dispatch path in loadLensView; SDK enforces kind-specific required-field constraints (target+relation_type for target; targets+members for composition) at load time.",
 			"items": {
 				"type": "object",
-				"required": ["id", "target", "relation_type", "bins"],
+				"required": ["id", "bins"],
 				"additionalProperties": false,
 				"properties": {
 					"id": { "type": "string" },
-					"target": { "type": "string", "description": "Canonical block id whose items are being projected" },
-					"relation_type": { "type": "string", "description": "Edge label in the closure table" },
+					"kind": {
+						"type": "string",
+						"enum": ["target", "composition"],
+						"default": "target",
+						"description": "Lens dispatch discriminator. 'target' = single-block lens (existing semantics). 'composition' = aggregates items across multiple blocks via members[]. Defaults to 'target' when omitted to preserve back-compat with pre-FGAP-012 lens authors."
+					},
+					"target": {
+						"type": "string",
+						"description": "Canonical block id whose items are being projected. Required when kind=target; ignored when kind=composition (use targets[] instead)."
+					},
+					"targets": {
+						"type": "array",
+						"description": "Canonical block ids contributing items when kind=composition. Required when kind=composition; ignored when kind=target.",
+						"items": { "type": "string" }
+					},
+					"members": {
+						"type": "array",
+						"description": "Composition member declarations. Required when kind=composition. Each entry is either { lens: <lens-id> } pulling another lens's items, or { from: <block>, where: <field-equality> } pulling a flat selection from a block.",
+						"items": {
+							"type": "object",
+							"oneOf": [
+								{
+									"required": ["lens"],
+									"additionalProperties": false,
+									"properties": {
+										"lens": { "type": "string" }
+									}
+								},
+								{
+									"required": ["from"],
+									"additionalProperties": false,
+									"properties": {
+										"from": { "type": "string" },
+										"where": {
+											"type": "object",
+											"additionalProperties": { "type": ["string", "number", "boolean"] }
+										}
+									}
+								}
+							]
+						}
+					},
+					"relation_type": {
+						"type": "string",
+						"description": "Edge label in the closure table. Required when kind=target. Optional when kind=composition (composition lens may declare its own relation_type for hand-curated edges authored against the composition's bins; bins are otherwise the union over members)."
+					},
 					"derived_from_field": {
 						"type": ["string", "null"],
-						"description": "If set, edges synthesized at read-time from this field on each item. If null, edges read from relations.json."
+						"description": "If set (kind=target only), edges synthesized at read-time from this field on each item. If null, edges read from relations.json. Composition lenses do NOT use derived_from_field — composition pulls items via members[] declarations."
 					},
 					"bins": {
 						"type": "array",

@@ -905,9 +905,10 @@
       "location": "packages/pi-project/registry/schemas/, packages/pi-project/schemas/",
       "category": "capability",
       "priority": "high",
-      "status": "open",
+      "status": "resolved",
       "package": "pi-project",
-      "source": "agent"
+      "source": "agent",
+      "resolved_by": "Resolved in commit c5c4725 — feat(pi-project): step 1 of roadmap/plan substrate — schema landing. Two new registry schemas (roadmap.schema.json + plan.schema.json) land per DEC-0012 (edges-only authoring; phases + plan items omit depends_on). config.schema.json LensSpec extended with kind/targets/members fields per FGAP-012 composition extension. relations.schema.json gains optional ordinal field. 19 new tests covering positive + negative validation. Skills auto-regenerated."
     },
     {
       "id": "issue-082",
@@ -974,14 +975,6 @@
       "status": "open",
       "package": "pi-workflows",
       "source": "agent"
-    },
-    {
-      "id": "fragility-fragility-moqfv0wl",
-      "description": "The agent identified that the narrative sections appear in the lower half of the SKILL.md (lines 280-400 out of 413) and that this placement \"may have caused the reviewer to miss them if they only scanned the first half,\" but took no action to improve placement or signal this ordering issue — leaving a known usability/discoverability problem unaddressed.",
-      "status": "open",
-      "category": "fragility",
-      "priority": "warning",
-      "source": "monitor"
     }
   ]
 }

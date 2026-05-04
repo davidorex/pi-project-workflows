@@ -211,13 +211,50 @@ Roll up status across items in a block (or a named subset by id). Maps each item
 | `ids` | array | no | Optional list of item ids to filter to. When omitted, rolls up across the entire block's array. |
 </tool>
 
+<tool name="project-roadmap-load">
+Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Per DEC-0012 phase ordering lives in relations.json with relation_type='phase_depends_on'.
+
+*Load a roadmap by id*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `roadmapId` | string | yes | ROADMAP-NNN id from <config.root>/roadmap.json |
+</tool>
+
+<tool name="project-roadmap-render">
+Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, milestone resolution, exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.
+
+*Render a roadmap as markdown*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `roadmapId` | string | yes | ROADMAP-NNN id from <config.root>/roadmap.json |
+</tool>
+
+<tool name="project-roadmap-validate">
+Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_evidence_block_missing, roadmap_milestone_query_invalid, roadmap_status_unknown_value. Optional roadmapId filter restricts issue list to a single roadmap.
+
+*Validate roadmaps*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `roadmapId` | string | no | Filter to issues matching this roadmap_id (omit for full-project validation) |
+</tool>
+
+<tool name="project-roadmap-list">
+List every roadmap in <config.root>/roadmap.json with id, title, optional status, and phase count. Returns [] when roadmap.json absent (opt-in block; absence is the truthful answer).
+
+*List roadmaps*
+
+</tool>
+
 </tools_reference>
 
 <commands_reference>
 <command name="/project">
 Project state management
 
-Subcommands: `init`, `install`, `view`, `lens-curate`, `status`, `add-work`, `validate`, `help`
+Subcommands: `init`, `install`, `view`, `lens-curate`, `roadmap-list`, `roadmap-view`, `roadmap-validate`, `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>

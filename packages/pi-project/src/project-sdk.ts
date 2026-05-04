@@ -10,6 +10,7 @@ import path from "node:path";
 import { readBlock, updateItemInBlock } from "./block-api.js";
 import { projectRoot } from "./project-context.js";
 import { SCHEMAS_DIR } from "./project-dir.js";
+import { type RoadmapValidationIssue, validateRoadmaps } from "./roadmap-plan.js";
 
 // Re-export substrate types, algorithms, and the projectRoot resolver
 // (extracted to project-context.ts in the issue-077 retrofit so block-api
@@ -707,6 +708,50 @@ export interface ProjectValidationResult {
 }
 
 /**
+ * Map a RoadmapValidationIssue to the cross-block ProjectValidationIssue
+ * shape. Severity assignment + block/field labelling follow the table in
+ * docs/planning/idempotent-dancing-wilkes.md §"Step 4 — issue-084".
+ */
+function mapRoadmapIssue(ri: RoadmapValidationIssue): ProjectValidationIssue {
+	const isError =
+		ri.code === "roadmap_lens_missing" ||
+		ri.code === "roadmap_phase_dep_missing" ||
+		ri.code === "roadmap_phase_cycle" ||
+		ri.code === "roadmap_composition_cycle";
+	const severity: "error" | "warning" = isError ? "error" : "warning";
+	let block = "roadmap";
+	let field: string;
+	switch (ri.code) {
+		case "roadmap_lens_missing":
+			field = `roadmaps[${ri.roadmap_id}].phases[${ri.phase_id}].lens`;
+			break;
+		case "roadmap_phase_dep_missing":
+			block = "relations";
+			field = `edges[phase_depends_on].${ri.phase_id ?? ""}`;
+			break;
+		case "roadmap_phase_cycle":
+			block = "relations";
+			field = "edges[phase_depends_on].cycle";
+			break;
+		case "roadmap_composition_cycle":
+			field = `roadmaps[${ri.roadmap_id}].phases[${ri.phase_id}].lens`;
+			break;
+		case "roadmap_milestone_evidence_block_missing":
+			field = `roadmaps[${ri.roadmap_id}].milestones.evidence_block`;
+			break;
+		case "roadmap_milestone_query_invalid":
+			field = `roadmaps[${ri.roadmap_id}].milestones.evidence_query`;
+			break;
+		case "roadmap_status_unknown_value":
+			field = ri.phase_id
+				? `roadmaps[${ri.roadmap_id}].phases[${ri.phase_id}].status`
+				: `roadmaps[${ri.roadmap_id}].status`;
+			break;
+	}
+	return { severity, message: ri.message, block, field };
+}
+
+/**
  * Validate cross-block referential integrity: do IDs referenced across blocks
  * actually exist? Returns structured issues rather than throwing.
  *
@@ -926,6 +971,17 @@ export function validateProject(cwd: string): ProjectValidationResult {
 		}
 	} catch {
 		/* block doesn't exist */
+	}
+
+	// Validate roadmaps (issue-084) — pure integration; mapRoadmapIssue
+	// projects RoadmapValidationIssue → ProjectValidationIssue per the
+	// severity / block / field mapping table. roadmap.json absence is a
+	// non-defect (opt-in block); validateRoadmaps returns clean in that case.
+	try {
+		const roadmapResult = validateRoadmaps(cwd);
+		for (const ri of roadmapResult.issues) issues.push(mapRoadmapIssue(ri));
+	} catch {
+		/* roadmap module absent or unreadable — defensive */
 	}
 
 	const errorCount = issues.filter((i) => i.severity === "error").length;

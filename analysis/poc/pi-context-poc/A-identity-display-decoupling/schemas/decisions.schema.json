@@ -1,0 +1,24 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "decisions-block",
+	"description": "POC A minimal schema for the decisions block. Mirrors the candidate articulation's typed-memory-store invariant (validated writes) at POC fidelity; AJV not invoked here per POC scope.",
+	"type": "object",
+	"required": ["decisions"],
+	"properties": {
+		"decisions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "title"],
+				"properties": {
+					"id": { "type": "string", "pattern": "^DEC-\\d{3,4}$" },
+					"title": { "type": "string" },
+					"status": { "type": "string", "enum": ["proposed", "enacted", "superseded"] },
+					"body": { "type": "string" }
+				},
+				"additionalProperties": false
+			}
+		}
+	},
+	"additionalProperties": false
+}

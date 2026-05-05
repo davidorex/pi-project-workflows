@@ -1,0 +1,22 @@
+{
+	"decisions": [
+		{
+			"id": "DEC-001",
+			"title": "Adopt config-driven block_kinds registry",
+			"status": "enacted",
+			"body": "All identity-bearing vocabulary (canonical_id, display_name, prefix, schema_path, array_key, data_path) is declared in config.json rather than hardcoded in TypeScript. Adding a block kind is a config + schema edit; renaming the displayed label is a config-only edit."
+		},
+		{
+			"id": "DEC-002",
+			"title": "Identity is opaque, display is mutable",
+			"status": "enacted",
+			"body": "canonical_id is the programmatic handle and never appears in user-facing surfaces. display_name flows through one universal lookup (displayName(cfg, canonicalId)) consumed by every render path. This decouples vocabulary churn from data, schema, and code."
+		},
+		{
+			"id": "DEC-003",
+			"title": "POC scope excludes AJV validation",
+			"status": "enacted",
+			"body": "POC A reads + parses fixture JSON without AJV invocation. The production pi-context layer adds AJV-at-every-write per the F-006 single-ingress invariant; POC stays at minimum surface to keep the identity-display claim mechanically isolated."
+		}
+	]
+}

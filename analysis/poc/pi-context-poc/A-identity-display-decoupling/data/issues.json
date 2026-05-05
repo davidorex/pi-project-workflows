@@ -1,0 +1,22 @@
+{
+	"issues": [
+		{
+			"id": "issue-001",
+			"title": "Render path must consume display_name uniformly",
+			"status": "resolved",
+			"body": "Every markdown emission site (block headers, lens headers, render-by-id callouts) must route through displayName(cfg, canonicalId). Inline string literals for display labels are forbidden; they are the failure mode that re-couples identity to display."
+		},
+		{
+			"id": "issue-002",
+			"title": "Prefix-collision class becomes registration-time error",
+			"status": "open",
+			"body": "Today (pre-rename), prefix collisions surface at fixture-write time when two block kinds independently emit overlapping id patterns. With config-driven block_kinds, the registry walk at config-load time enumerates declared prefixes and rejects duplicates structurally. POC A keeps prefixes constant per design; POC B and beyond exercise the registration-time check."
+		},
+		{
+			"id": "issue-003",
+			"title": "naming map is the fallback, block_kinds[].display_name is primary",
+			"status": "in_progress",
+			"body": "displayName(cfg, canonicalId) reads block_kinds[].display_name first, falls back to naming[canonicalId], finally returns canonicalId. The naming map remains as a place to alias non-block identifiers (lenses, relation types) once those POCs land."
+		}
+	]
+}

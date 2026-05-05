@@ -1,0 +1,26 @@
+{
+	"schema_version": "0.1.0",
+	"root": ".",
+	"block_kinds": [
+		{
+			"canonical_id": "decisions-block",
+			"display_name": "Architectural Records",
+			"prefix": "DEC-",
+			"schema_path": "schemas/decisions.schema.json",
+			"array_key": "decisions",
+			"data_path": "data/decisions.json"
+		},
+		{
+			"canonical_id": "issues-block",
+			"display_name": "Open Questions",
+			"prefix": "issue-",
+			"schema_path": "schemas/issues.schema.json",
+			"array_key": "issues",
+			"data_path": "data/issues.json"
+		}
+	],
+	"naming": {
+		"decisions-block": "Architectural Records",
+		"issues-block": "Open Questions"
+	}
+}

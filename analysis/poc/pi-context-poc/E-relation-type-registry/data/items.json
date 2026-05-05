@@ -1,0 +1,29 @@
+{
+	"items": [
+		{
+			"id": "PHASE-A",
+			"title": "Discovery",
+			"body": "Initial discovery and constraint enumeration."
+		},
+		{
+			"id": "PHASE-B",
+			"title": "Specification",
+			"body": "Specification authored from discovery output."
+		},
+		{
+			"id": "PHASE-C",
+			"title": "Planning",
+			"body": "Plan synthesized from specification."
+		},
+		{
+			"id": "PHASE-D",
+			"title": "Implementation",
+			"body": "Implementation against plan."
+		},
+		{
+			"id": "PHASE-E",
+			"title": "Verification",
+			"body": "Verification consumes discovery, specification, and planning artifacts to score implementation."
+		}
+	]
+}

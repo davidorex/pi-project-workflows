@@ -1,0 +1,68 @@
+{
+  "items": [
+    {
+      "id": "ITEM-001",
+      "title": "Adopt vitest as canonical testing strategy",
+      "body": "Selected vitest as the unified testing strategy across all packages. Testing scope covers unit, integration, and snapshot tests. Strategy emphasizes fast feedback and TypeScript-native execution. Replaces ad-hoc testing patterns with one uniform framework.",
+      "status": "enacted",
+      "created_at": "2026-05-04T00:00:00Z",
+      "content_hash": "d53c3559702884b48351c4d903e135dd4bba4171247f977c9d2786b8678567c0"
+    },
+    {
+      "id": "ITEM-002",
+      "title": "Property-based testing complements example testing strategy",
+      "body": "Property-based testing layered on top of the example-based testing strategy. fast-check binding for vitest enables invariant assertions. Strategy prefers property tests for pure functions and example tests for IO-bound surfaces. Testing coverage rises measurably.",
+      "status": "enacted",
+      "created_at": "2026-05-04T00:00:00Z",
+      "content_hash": "6e1b32cd77761c0ea2a412e81449f9012eae647ff5be69a68ade6ccf91e5086c"
+    },
+    {
+      "id": "ITEM-003",
+      "title": "Testing strategy for fixture-based regression coverage",
+      "body": "Testing strategy mandates fixture-based regression coverage for every public surface. The testing harness loads fixtures from data/ uniformly. Strategy keeps fixture scope tight: one testing fixture per behavior. Strategy review enforced at audit time. Updated 2026-05-04 to reflect the canonical schema rules audit refresh.",
+      "status": "enacted",
+      "created_at": "2026-05-04T00:00:00Z",
+      "content_hash": "69185ca0d264d2f00a3fb936b179cf6c0db2dd612e85db7aa085c1ed06c714a8"
+    },
+    {
+      "id": "ITEM-004",
+      "title": "Scheduled cron jobs for periodic agents",
+      "body": "Introduces a scheduling primitive backed by cron expressions. Periodic agents declare their schedule in YAML. The scheduler dispatches at the configured cadence with jitter to avoid thundering herd issues during peak load.",
+      "status": "enacted",
+      "created_at": "2026-05-04T00:00:00Z",
+      "content_hash": "a5ca189329bc19dc7d559f336c9d88a41188a41c2c28edf00118e3dac64bc8db"
+    },
+    {
+      "id": "ITEM-005",
+      "title": "Testing strategy for non-deterministic timing-sensitive specs",
+      "body": "Workflow executor subprocess testing produces sporadic failures. Testing strategy needs hardening for non-deterministic timing-sensitive specs. Reproducible in roughly one in twenty runs. Mitigation via deterministic seed injection and explicit await fences in testing harness.",
+      "status": "open",
+      "created_at": "2026-05-04T00:00:00Z",
+      "content_hash": "00f1c6c82c70cd047433d5f901e94e4c99186ab6512bffbb6f66426555dee112"
+    },
+    {
+      "id": "ITEM-006",
+      "title": "Performance profiling harness for workflow steps",
+      "body": "Adds performance instrumentation to the workflow executor. Captures per-step latency, memory residency, and subprocess startup overhead. Performance regressions surface as build-gate failures. Profiling output integrates with existing trace pipeline.",
+      "status": "enacted",
+      "created_at": "2026-05-04T00:00:00Z",
+      "content_hash": "3db841ad2ba5a99ad908842d25d939edb614b2a23b61fcc6dd5d26b2371b72d0"
+    },
+    {
+      "id": "ITEM-007",
+      "title": "Testing strategy review under coverage gate",
+      "body": "Reviewed the testing strategy against the coverage-gate proposal. Strategy retains 80% line coverage as the minimum bar; testing branches that fall below the threshold trigger CI failure. Strategy review enacted per the conformance audit.",
+      "status": "enacted",
+      "created_at": "2026-05-04T00:00:00Z",
+      "content_hash": "6363cd7b9d7d4b7fb8090d46ffd881f85fbaaa94004b11c7afc54e60b083579a"
+    },
+    {
+      "id": "ITEM-008",
+      "title": "TLS 1.3 enforcement on inbound API endpoints",
+      "body": "All HTTP endpoints reject connections below TLS 1.3. Security review flagged downgrade attacks as the dominant threat surface. Cipher allowlist constrained; audit logging captures handshake failures for security incident triage.",
+      "status": "enacted",
+      "created_at": "2026-05-04T00:00:00Z",
+      "content_hash": "2c7e99257f6872f11583089f04ea650f32b9d462037e537fdb94076fdb2a5122"
+    }
+  ]
+}

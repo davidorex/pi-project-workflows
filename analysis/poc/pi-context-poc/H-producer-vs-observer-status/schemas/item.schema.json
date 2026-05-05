@@ -1,0 +1,33 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "item.schema.json",
+	"title": "Item with dual status fields",
+	"description": "POC H — declares both an observer-derived lifecycle status (status) and a producer-asserted self-report (producer_status). The two fields are intentionally independent at write time; consistency between them is a derived signal that the validator surfaces.",
+	"type": "object",
+	"required": ["id", "title", "status"],
+	"additionalProperties": false,
+	"properties": {
+		"id": {
+			"type": "string",
+			"description": "Stable canonical identifier."
+		},
+		"title": {
+			"type": "string",
+			"description": "Human-readable label."
+		},
+		"status": {
+			"type": "string",
+			"enum": ["open", "enacted", "superseded"],
+			"description": "Observer-derived lifecycle state — what the substrate sees about this item's place in the lifecycle. Authored by observers (curators, lifecycle transitions), not by the agent that produced the work."
+		},
+		"producer_status": {
+			"type": "string",
+			"enum": ["PASS", "FAIL", "PARTIAL"],
+			"description": "Producer-asserted self-report — what the agent that produced the work claims about its own outcome. Optional: items without a producer_status are observer-only entries (no claim was filed)."
+		},
+		"note": {
+			"type": "string",
+			"description": "Optional human-readable explanation; not used by the validator."
+		}
+	}
+}

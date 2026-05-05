@@ -1,0 +1,32 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "issues.schema.json",
+	"title": "Issues block — extracted candidate item",
+	"description": "Target schema for auto-extracted issue-* candidates. POC G uses this as the AJV gate. Required fields include `body` so the malformed-candidate fixture (issue-XYZ missing body) can demonstrate AJV's missing-required-field diagnostic. id pattern enforces the lowercase 'issue-' prefix + 3 digits convention.",
+	"type": "object",
+	"required": ["id", "title", "status", "body"],
+	"additionalProperties": true,
+	"properties": {
+		"id": {
+			"type": "string",
+			"pattern": "^issue-\\d{3}$",
+			"description": "Canonical issue identifier (issue- prefix + 3 digits)."
+		},
+		"title": {
+			"type": "string",
+			"minLength": 1
+		},
+		"status": {
+			"type": "string",
+			"enum": ["open", "in_progress", "resolved", "closed"]
+		},
+		"body": {
+			"type": "string",
+			"minLength": 1
+		},
+		"priority": {
+			"type": "string",
+			"enum": ["low", "medium", "high"]
+		}
+	}
+}

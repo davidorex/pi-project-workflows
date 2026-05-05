@@ -1,0 +1,18 @@
+{
+	"schema_version": "0.1.0",
+	"root": ".",
+	"relation_types": [
+		{
+			"name": "phase_depends_on",
+			"category": "ordering",
+			"cycle_allowed": false,
+			"description": "Linear dependency between phases. Validator runs topological sort + cycle detection."
+		},
+		{
+			"name": "consumes",
+			"category": "data_flow",
+			"cycle_allowed": false,
+			"description": "Downstream item consumes upstream item's content. Validator runs content-hash propagation simulation."
+		}
+	]
+}

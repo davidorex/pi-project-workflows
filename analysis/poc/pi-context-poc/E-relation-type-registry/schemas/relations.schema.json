@@ -1,0 +1,22 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "POC E — closure-table edges",
+	"type": "object",
+	"required": ["edges"],
+	"additionalProperties": false,
+	"properties": {
+		"edges": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["parent", "child", "relation_type"],
+				"additionalProperties": false,
+				"properties": {
+					"parent": { "type": "string", "minLength": 1 },
+					"child": { "type": "string", "minLength": 1 },
+					"relation_type": { "type": "string", "minLength": 1 }
+				}
+			}
+		}
+	}
+}

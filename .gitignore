@@ -17,3 +17,5 @@ packages/*/.workflows/
 tmp/
 # POC runtime cache files — per-run state, not demonstration artifacts
 analysis/poc/**/.cache-hashes.json
+# Git-log-derived analysis snapshots — regenerable from scripts/, stale-on-arrival
+analysis/commits-*.md

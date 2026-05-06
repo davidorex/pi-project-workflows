@@ -477,6 +477,95 @@
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-04T00:00:00Z"
+    },
+    {
+      "id": "FGAP-015",
+      "title": "Decision lifecycle has no broadened-by state — superseded enum mis-fits enacted-then-broadened transitions",
+      "status": "identified",
+      "package": "pi-project",
+      "layer": "L1",
+      "description": "The decisions schema declares status enum [open, enacted, superseded] with the description characterizing superseded as withdrawn-without-enactment / not-a-real-decision. This covers open -> superseded cleanly but does not cover enacted -> superseded cleanly when the predecessor was a correct, ratified decision whose scope is later broadened by a successor decision (the case for DEC-0012 superseded by DEC-0013 on 2026-05-07). The schema forces this transition into the same superseded state with no way to distinguish retracted from broadened-by.",
+      "evidence": [
+        {
+          "file": ".project/schemas/decisions.schema.json",
+          "reference": "status enum description"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0006/0007/0010 (open->superseded, fits) vs DEC-0012 (enacted->superseded, semantic stretch)"
+        }
+      ],
+      "impact": "Substrate-level integrity ambiguity: a downstream reading status=superseded cannot distinguish retired-as-never-real from correctly-enacted-then-broadened. Lineage recoverable via supersedes/superseded_by fields but lifecycle vocabulary loses signal. Recurs as pi-context config-driven vocabulary matures (block_kinds, relation_types, status_buckets all evolve via broadening).",
+      "proposed_resolution": "Add a fourth status enum value (extended or broadened) for enacted -> broadened-by-successor. Update description distinguishing superseded (retired without ratification) from extended (correctly enacted, scope broadened by successor, original preserved). Transition rules: superseded reachable from open; extended reachable from enacted. Couples to FGAP-006 (schema versioning).",
+      "canonical_vocabulary": "decision-record lifecycle; supersession vs extension",
+      "related_decisions": [
+        "DEC-0012",
+        "DEC-0013"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "priority": "P2",
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-06T22:18:41.991Z"
+    },
+    {
+      "id": "FGAP-016",
+      "title": "Enum-vocabulary divergence across schemas — every schema declares its own per-field enums with no canonical registry, no shared identity, no display layer",
+      "status": "identified",
+      "package": "pi-project",
+      "layer": "L1",
+      "description": "Across .project/schemas/*.schema.json (and packages/pi-project/registry/schemas/* mirrors), every block kind declares its own enum vocabulary for conceptually-shared dimensions. The pattern recurs at multiple field surfaces:\n\nPriority/severity: domain [high,medium,low]; features [critical,major,minor,trivial]; framework-gaps [P0,P1,P2,P3]; issues [low,medium,high,critical]; spec-reviews [critical,major,minor,trivial]; state [low,medium,high,critical]. Five distinct vocabularies for the same dimension; no canonical mapping; no display-layer indirection.\n\nStatus/lifecycle: decisions [open,enacted,superseded]; features (multiple sub-fields) [proposed,approved,in-progress,in-review,complete,blocked,cancelled] / [todo,in-progress,in-review,done,blocked]; framework-gaps [identified,accepted,in-progress,closed,wontfix]; inventory [planned,in-progress,completed]; issues [open,resolved,deferred]; layer-plans [draft,proposed,decided,in-progress,complete,abandoned] / [pending,in-progress,complete,blocked]; phase [planned,in-progress,completed]; project [inception,planning,development,maintenance,complete]; requirements [proposed,accepted,deferred,implemented,verified]; research [planned,in-progress,complete,stale,superseded,revised]; spec-reviews [not-started,in-progress,complete,abandoned]; tasks [planned,in-progress,completed,blocked,cancelled]; verification [passed,failed,partial,skipped] / [passed,failed,skipped]. Fourteen-plus distinct lifecycle vocabularies. FGAP-013 captures one slice of this (cross-block aggregation requires normalization); FGAP-016 is the broader structural form.\n\nSeverity-level: audit / conformance-reference / conventions all use [error,warning,info] — a rare case of de-facto convergence with no enforcing registry; addition of a fourth schema would silently re-diverge.\n\nVerification-method: audit [command,grep,inspect]; conformance-reference [grep,command,ast,inspect]; phase [command,inspect,human]; verification [command,inspect,test]; conventions [lint,test,review,manual]. Five vocabularies for what is conceptually method-of-checking.\n\nSource/authorship: issues [human,agent,monitor,workflow]; requirements [human,agent,analysis]. Two vocabularies for what records-an-item.\n\nLayer: features / framework-gaps / research all use [L1,L2,L3,L4,L5] — convergent by editorial discipline, not by registry.\n\nThe structural pattern: every enum is hardcoded in its schema file as a JSON Schema enum keyword, with no  to a shared fragment, no canonical identity layer, no display-name indirection. Renaming a value (e.g. priority high to urgent) requires editing every schema that uses it plus migrating data plus updating every consumer. The POC A identity-display split, the POC C two-phase token budget per status_buckets demo, and the POC E config.relation_types[] pattern all demonstrate the closure shape: opaque canonical ids in one config-driven registry per dimension, display labels per consumer, schema  to the registry rather than embedded enums.",
+      "evidence": [
+        {
+          "file": ".project/schemas/issues.schema.json",
+          "reference": "priority enum [low,medium,high,critical]"
+        },
+        {
+          "file": ".project/schemas/framework-gaps.schema.json",
+          "reference": "priority enum [P0,P1,P2,P3] — same dimension, parallel vocabulary, exposed during FGAP-015 filing 2026-05-07"
+        },
+        {
+          "file": ".project/schemas/features.schema.json",
+          "reference": "severity enum [critical,major,minor,trivial] plus three distinct status enums for feature/story/task levels"
+        },
+        {
+          "file": ".project/schemas/decisions.schema.json",
+          "reference": "status enum [open,enacted,superseded] (predecessor of FGAP-015 broadened-by gap)"
+        },
+        {
+          "file": ".project/schemas/research.schema.json",
+          "reference": "status enum includes [stale,superseded,revised] — additional terminal states absent from sibling schemas"
+        },
+        {
+          "file": ".project/schemas/verification.schema.json",
+          "reference": "two distinct verification-result enums in same file ([passed,failed,partial,skipped] vs [passed,failed,skipped])"
+        },
+        {
+          "file": "packages/pi-project/src/roadmap-plan.ts",
+          "reference": "STATUS_VOCABULARY hardcoded TS table that normalizes a subset of these enums for cross-block rollup (FGAP-013 mitigation, not closure)"
+        },
+        {
+          "file": "analysis/poc/pi-context-poc/A-identity-display-decoupling/",
+          "reference": "demonstrates the canonical-id / display-name split applied to block kinds; same shape generalizes to every enum dimension"
+        },
+        {
+          "file": "analysis/poc/pi-context-poc/E-relation-type-registry/",
+          "reference": "demonstrates config-driven registry with category dispatch for relation_types; same pattern applies to priority_buckets / status_buckets / severity_levels / verification_methods / source_kinds"
+        }
+      ],
+      "impact": "Every cross-block aggregation, rollup, or projection must hand-normalize between vocabularies (or fail to compose). Every rename touches every schema-and-consumer that uses the value (display-name change requires data migration). New block kinds inherit the fragmentation pressure: a designer adding a new kind picks an enum vocabulary in isolation, which either silently diverges from siblings (most current cases) or only by editorial vigilance converges (the L1..L5 layer convergence is the rare positive case, achieved without any enforcing surface). Under pi-context the same authoring antipattern that produced the PLAN- prefix collision (issue-089) and the FGAP-013 STATUS_VOCABULARY hardcoding extends to every enum dimension — without a registry, every new block kind is a fresh opportunity for divergence. The lens reframe (PM is a lens upon memory) presumes vocabulary substrates; FGAP-016 names the structural barrier to that presumption.",
+      "proposed_resolution": "Introduce config-level vocabulary registries: config.priority_buckets[], config.status_buckets[] (FGAP-013), config.severity_levels[], config.verification_methods[], config.source_kinds[], config.layers[] (already adjacent in scope to layer-plans semantic). Each entry: canonical_id (opaque, immutable), display_name (mutable), description, category-or-ordering metadata where applicable. Schemas reference registries via  to a shared enum fragment derived from config rather than embedded JSON-Schema enum literals. Schema-validator resolves the registry at validation time and emits per-registry-mismatch diagnostics. Rename-via-config-edit per POC A. Per-consumer display per POC C/E pattern. Couples to FGAP-006 (schema versioning /  composition / migration story) since this requires schema-fragment composition the current schemas do not use. Couples to FGAP-013 (the status-vocabulary slice). Couples to FGAP-011 (canonical schema-write surface, since registry edits today require direct fs Edit on schema files).",
+      "canonical_vocabulary": "enum-fragment composition; shared-vocabulary registry; canonical-identity-with-display-layer; JSON Schema  fragments",
+      "related_decisions": [
+        "DEC-0013"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "priority": "P1",
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-06T22:22:49.154Z"
     }
   ]
 }

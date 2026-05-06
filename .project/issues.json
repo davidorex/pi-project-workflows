@@ -1000,6 +1000,17 @@
       "priority": "high",
       "package": "pi-project",
       "source": "agent"
+    },
+    {
+      "id": "issue-090",
+      "title": "POC B / POC I share a single output/.cache-hashes.json across r1 and r2 runs — order-dependent output drift, run-order-fragile",
+      "body": "POC B (analysis/poc/pi-context-poc/B-content-hash-skip-detection/render.ts:68,77) and POC I (analysis/poc/pi-context-poc/I-skip-detection-e2e/render.ts) define a single cache file at output/.cache-hashes.json shared between the r1 and r2 invocation modes. r2 reads the cache written by r1 (the documented forward path), but r2 also overwrites the cache with r2 hashes, so any subsequent r1 invocation reads r2 hashes — producing wrong output for r1 (e.g., labelling the mutated item as re-rendered against r2 hash, when r1 should report all items as first-run rendered).\n\nThe POC works correctly only for the canonical ordering: clean cache -> r1 -> r2. Any other ordering (r1 -> r2 -> r1; r2 first; running twice) produces output that misrepresents the cache-coherence claim.\n\nSurfaced 2026-05-07 during a verification re-run after an unrelated .ts->.js import-suffix fix in B/F/I render.ts files. The re-run drifted output/round2.md (B) and output/r2-injection.md (I) against the originally-committed output. Cleanup required deleting cache files + restoring output md files from HEAD; root cause is the shared-cache-path design.\n\nProposed resolution: separate cache paths per invocation mode (output/.cache-hashes-r1.json, output/.cache-hashes-r2.json) so r2 reads r1 cache without overwriting it, and a subsequent r1 run reads its own clean state. Alternatively, treat the cache as ephemeral, ensure it is always deleted at start of every invocation, and reconstruct from prior round md output. Couples to feedback_poc_run_discipline.md memory which records the do-not-re-run-POCs convention as workaround.",
+      "location": "analysis/poc/pi-context-poc/B-content-hash-skip-detection/render.ts:60-80, analysis/poc/pi-context-poc/I-skip-detection-e2e/render.ts",
+      "status": "open",
+      "category": "issue",
+      "priority": "low",
+      "package": "pi-project",
+      "source": "agent"
     }
   ]
 }

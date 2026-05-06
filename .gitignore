@@ -15,3 +15,5 @@ packages/*/.project/
 packages/*/.workflows/
 # Interim working files — prompts, helper scripts, candidates, dispatch outputs
 tmp/
+# POC runtime cache files — per-run state, not demonstration artifacts
+analysis/poc/**/.cache-hashes.json

@@ -1,0 +1,44 @@
+{
+  "items": [
+    {
+      "id": "ITEM-001",
+      "title": "Initial substrate proposal",
+      "body": "Outline the typed-substrate shape: per-kind JSON files under .project/, closure-table relations, opaque canonical_id with mutable display_name.",
+      "status": "open",
+      "created_at": "2026-05-06T09:12:33Z",
+      "content_hash": "2828552f6d5ef38df5432c50af653b9783935f1254fe28aad46f4cc6f89c4ae3"
+    },
+    {
+      "id": "ITEM-002",
+      "title": "Lens primitive sketch",
+      "body": "Lens = composition over a target block. Two kinds: target lens (one block) and composition lens (lens-of-lenses). Cycle detection at evaluation time.",
+      "status": "open",
+      "created_at": "2026-05-06T09:14:18Z",
+      "content_hash": "75ea363b9e0a9012312fc5f128c24d5cd0b3c7f699f30570b3164f2117119918"
+    },
+    {
+      "id": "ITEM-003",
+      "title": "Coverage-rank ranker port",
+      "body": "Lift coverage-rank from pi-memctx. Keyword overlap plus position weighting plus frequency. Build buildIdIndex over typed substrate at load time.",
+      "status": "open",
+      "created_at": "2026-05-06T09:18:02Z",
+      "content_hash": "e2101d21d545b831dbfffd1c434639235aca767f1acc842639989688b6f811d9"
+    },
+    {
+      "id": "ITEM-004",
+      "title": "Anti-injection delimiter contract",
+      "body": "Every injected block content wraps in framework-level delimiters. Wrap, never strip — substrate fidelity preserved for forensic review.",
+      "status": "enacted",
+      "created_at": "2026-05-06T09:21:44Z",
+      "content_hash": "ce6f0f69533e59fe59aeab7da2d9d449c0485633ca13a01047c6cf9b311aa79f"
+    },
+    {
+      "id": "ITEM-005",
+      "title": "Content-hash skip detection",
+      "body": "SHA-256 over canonicalized item content with timestamps stripped. Re-render only when hash differs from cached value. Sidecar or embedded field.",
+      "status": "open",
+      "created_at": "2026-05-06T09:25:11Z",
+      "content_hash": "d7f47e3e16de8da634b309c095b5c291fab87e4ae6f9d346960d4822575e9f07"
+    }
+  ]
+}

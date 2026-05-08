@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Decisions",
-	"description": "Live decision log. Each entry is a decision either open (needs to be made and gates work) or enacted (ratified by user authority, with the new constraint reflected in forward-looking constraint blocks and in code). Entries persist through the lifecycle — enacted entries are NOT removed, so the lineage remains readable. Every decision must cite its forcing artifact (issue, gap, or feature) via related_findings, related_features, or related_gaps — decisions without forcing artifacts do not belong here and are research instead. Supporting references (code paths with lines, research documents, commit SHAs, external specs) live in the references array. Options are enumerated only when multiple mandate-compliant candidates genuinely compete; mandate-violating candidates never appear.",
+	"description": "Live decision log. Each entry is a decision either open (needs to be made and gates work), enacted (ratified by user authority, with the new constraint reflected in forward-looking constraint blocks and in code), or superseded (withdrawn without enactment — the entry was filed under proliferation pressure or on incorrect framing and is acknowledged as not-a-real-decision; reasoning lives in consequences). Entries persist through the lifecycle — neither enacted nor superseded entries are removed, so the lineage remains readable. Every decision must cite its forcing artifact (issue, gap, or feature) via related_findings, related_features, or related_gaps — decisions without forcing artifacts do not belong here and are research instead. Supporting references (code paths with lines, research documents, commit SHAs, external specs) live in the references array. Options are enumerated only when multiple mandate-compliant candidates genuinely compete; mandate-violating candidates never appear.",
 	"type": "object",
 	"required": ["decisions"],
 	"properties": {
@@ -26,8 +26,8 @@
 					"title": { "type": "string" },
 					"status": {
 						"type": "string",
-						"enum": ["open", "enacted"],
-						"description": "open = decision needs to be made; gates work. enacted = ratified by user authority; new constraint is in code and forward-looking constraint blocks."
+						"enum": ["open", "enacted", "superseded"],
+						"description": "open = decision needs to be made; gates work. enacted = ratified by user authority; new constraint is in code and forward-looking constraint blocks. superseded = withdrawn without enactment; the entry was filed under proliferation pressure or on incorrect framing and is acknowledged as not-a-real-decision. Reasoning for supersession lives in consequences. Entry is preserved; not deleted."
 					},
 					"context": {
 						"type": "string",
@@ -108,11 +108,12 @@
 	},
 	"x-lifecycle": {
 		"field": "status",
-		"states": ["open", "enacted"],
+		"states": ["open", "enacted", "superseded"],
 		"transitions": [
 			{ "from": "open", "to": "enacted", "required_authority": "user", "note": "Enactment updates forward-looking constraint blocks and lands code change; entry is NOT removed on enactment." },
-			{ "from": "enacted", "to": "open", "required_authority": "user", "note": "Reopening for revision; creates a new open state on the existing entry rather than a new entry. Alternative pattern: create a new decision entry with supersedes referencing this one." }
+			{ "from": "enacted", "to": "open", "required_authority": "user", "note": "Reopening for revision; creates a new open state on the existing entry rather than a new entry. Alternative pattern: create a new decision entry with supersedes referencing this one." },
+			{ "from": "open", "to": "superseded", "required_authority": "user", "note": "Withdrawal of an entry that was filed under proliferation pressure or on incorrect framing. Reasoning lives in consequences. Used when the entry is acknowledged as not-a-real-decision rather than enacted." }
 		],
-		"note": "Two-state lifecycle. AJV draft-07 cannot enforce transition validity or required_authority; this block is metadata for future framework-level state-machine validation (FGAP-005) and authorship attestation (FGAP-004)."
+		"note": "Three-state lifecycle. AJV draft-07 cannot enforce transition validity or required_authority; this block is metadata for future framework-level state-machine validation (FGAP-005) and authorship attestation (FGAP-004)."
 	}
 }

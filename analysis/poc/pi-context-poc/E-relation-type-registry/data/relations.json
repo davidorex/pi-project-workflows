@@ -1,0 +1,12 @@
+{
+	"edges": [
+		{ "parent": "PHASE-A", "child": "PHASE-B", "relation_type": "phase_depends_on" },
+		{ "parent": "PHASE-B", "child": "PHASE-C", "relation_type": "phase_depends_on" },
+		{ "parent": "PHASE-C", "child": "PHASE-D", "relation_type": "phase_depends_on" },
+		{ "parent": "PHASE-D", "child": "PHASE-E", "relation_type": "phase_depends_on" },
+
+		{ "parent": "PHASE-A", "child": "PHASE-E", "relation_type": "consumes" },
+		{ "parent": "PHASE-B", "child": "PHASE-E", "relation_type": "consumes" },
+		{ "parent": "PHASE-C", "child": "PHASE-E", "relation_type": "consumes" }
+	]
+}

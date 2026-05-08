@@ -1,0 +1,30 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "decisions.schema.json",
+	"title": "Decisions block — extracted candidate item",
+	"description": "Target schema for auto-extracted DEC-* candidates. POC G uses this as the AJV gate against classifier output. Required fields modelled on .project/decisions.json shape (id, title, status); body optional for the decision case to demonstrate per-schema field divergence vs issues.schema.json.",
+	"type": "object",
+	"required": ["id", "title", "status"],
+	"additionalProperties": true,
+	"properties": {
+		"id": {
+			"type": "string",
+			"pattern": "^DEC-\\d{3,4}$",
+			"description": "Canonical decision identifier (DEC- prefix + 3 or 4 digits)."
+		},
+		"title": {
+			"type": "string",
+			"minLength": 1
+		},
+		"status": {
+			"type": "string",
+			"enum": ["open", "enacted", "superseded"]
+		},
+		"body": {
+			"type": "string"
+		},
+		"phase": {
+			"type": "string"
+		}
+	}
+}

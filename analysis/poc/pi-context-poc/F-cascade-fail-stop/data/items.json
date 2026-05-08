@@ -1,0 +1,29 @@
+{
+	"items": [
+		{
+			"id": "ITEM-001",
+			"title": "First valid item",
+			"body": "Body text for item one. Plain prose with no special tokens."
+		},
+		{
+			"id": "ITEM-002",
+			"title": "Second valid item",
+			"body": "Body text for item two. Also plain prose."
+		},
+		{
+			"id": "ITEM-003",
+			"title": "Third item — intentionally malformed",
+			"body": "Body contains a forbidden render token <<UNPARSEABLE>> that the render step rejects."
+		},
+		{
+			"id": "ITEM-004",
+			"title": "Fourth valid item",
+			"body": "Body text for item four. Plain prose with no special tokens."
+		},
+		{
+			"id": "ITEM-005",
+			"title": "Fifth valid item",
+			"body": "Body text for item five. Plain prose with no special tokens."
+		}
+	]
+}

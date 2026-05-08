@@ -1,0 +1,94 @@
+{
+	"items": [
+		{
+			"id": "DEC-0101",
+			"kind": "decision",
+			"title": "Adopt vitest for unit testing strategy",
+			"body": "Selected vitest as the canonical unit testing framework after evaluating jest, mocha, and node:test. Testing strategy emphasizes fast feedback, in-source testing, and TypeScript-native execution. Replaces ad-hoc testing patterns with a uniform suite. Test coverage targets are tracked per package."
+		},
+		{
+			"id": "DEC-0102",
+			"kind": "decision",
+			"title": "Standardize naming conventions for block kinds",
+			"body": "All block kinds use lowercase hyphenated naming. The naming registry in config.json maps canonical_id to display_name, decoupling identity from labels. Naming conventions apply to schemas, templates, and tool surfaces uniformly."
+		},
+		{
+			"id": "DEC-0103",
+			"kind": "decision",
+			"title": "Enforce TLS 1.3 for inbound API security",
+			"body": "All HTTP endpoints reject connections below TLS 1.3. Security review flagged downgrade attacks as the dominant threat surface. Cipher allowlist constrained; audit logging captures handshake failures for security incident triage."
+		},
+		{
+			"id": "FEAT-0201",
+			"kind": "feature",
+			"title": "Performance profiling harness for workflow steps",
+			"body": "Adds performance instrumentation to the workflow executor. Captures per-step latency, memory residency, and subprocess startup overhead. Performance regressions surface as build-gate failures. Profiling output integrates with existing trace pipeline for downstream analysis."
+		},
+		{
+			"id": "FEAT-0202",
+			"kind": "feature",
+			"title": "Cron-based job scheduling for periodic agents",
+			"body": "Introduces a scheduling primitive backed by cron expressions. Periodic agents (digest summarizers, staleness scanners, scheduled audits) declare their schedule in YAML. The scheduler dispatches at the configured cadence with jitter to avoid thundering herd."
+		},
+		{
+			"id": "FEAT-0203",
+			"kind": "feature",
+			"title": "Caching layer for repeated query optimization",
+			"body": "Memoizes expensive query results keyed by content hash. Performance benchmarks show 10x improvement on hot paths. Cache invalidation tied to upstream content_hash changes. Optimization targets the read-heavy SDK surface where lookup dominates total latency."
+		},
+		{
+			"id": "R-0301",
+			"kind": "research",
+			"title": "Survey of property-based testing libraries",
+			"body": "Surveyed fast-check, jsverify, and stream-based testing tooling. Property-based testing complements example-based unit tests; testing strategy benefits from invariant assertions on pure functions. Integration with vitest is straightforward via fast-check's vitest binding."
+		},
+		{
+			"id": "R-0302",
+			"kind": "research",
+			"title": "Benchmark of JSON parsing performance across runtimes",
+			"body": "Compared performance of native JSON.parse, simdjson, and streaming parsers under various payload sizes. Performance scales linearly with payload size for JSON.parse; simdjson offers 3-5x speedup on large documents. Optimization opportunity confirmed for hot-path JSON loads."
+		},
+		{
+			"id": "R-0303",
+			"kind": "research",
+			"title": "Evaluation of cron expression parsers",
+			"body": "Reviewed node-cron, croner, and cron-parser libraries. Scheduling needs include human-readable expressions, timezone handling, and next-fire-time prediction. Croner offered the cleanest API and handles DST transitions correctly. Scheduled task semantics align with our agent dispatch model."
+		},
+		{
+			"id": "FGAP-0401",
+			"kind": "framework-gap",
+			"title": "No canonical naming conventions for derived artifacts",
+			"body": "Derived artifacts (intermediate files, cache entries, lens renders) lack consistent naming conventions. Each consumer invents its own scheme. Closing this gap requires a registry of artifact-naming patterns alongside block-kind naming. Naming consistency improves grep-ability and audit-trail clarity."
+		},
+		{
+			"id": "FGAP-0402",
+			"kind": "framework-gap",
+			"title": "No security audit surface for agent tool permissions",
+			"body": "Agent specs declare tool access but no security validator confirms the declaration matches actual invocations. Security drift goes undetected. Mitigation requires runtime enforcement plus an audit report comparing declared vs. observed tool usage per agent."
+		},
+		{
+			"id": "FGAP-0403",
+			"kind": "framework-gap",
+			"title": "No performance budget enforcement on workflow steps",
+			"body": "Workflow steps may consume arbitrary CPU and memory; no performance budget mechanism exists. A step that regresses 10x in latency ships silently. Performance budgets per step type would gate optimization opportunities and catch regressions during CI."
+		},
+		{
+			"id": "issue-0501",
+			"kind": "issue",
+			"title": "Test suite intermittently fails on Node 23 macOS",
+			"body": "Testing on Node 23 macOS produces sporadic failures in the workflow executor's subprocess test. Failure mode: tsx import resolution race. Reproducible in roughly one in twenty runs. Testing strategy needs hardening for non-deterministic timing-sensitive specs."
+		},
+		{
+			"id": "issue-0502",
+			"kind": "issue",
+			"title": "Naming collision between PLAN- and PHASE- identifier prefixes",
+			"body": "The naming convention overloads PLAN- as both a layer-plan and a milestone marker. Identifier prefix collisions break id-index lookup. Naming registry should reject collisions at config load time. Affects existing fixture data; migration path required."
+		},
+		{
+			"id": "issue-0503",
+			"kind": "issue",
+			"title": "Scheduled cron job fires twice during DST transition",
+			"body": "The scheduling subsystem fires the digest job twice on the spring-forward DST boundary. Cron parser does not normalize the skipped hour; second firing produces a duplicate scheduled artifact. Fix requires DST-aware scheduled-time computation."
+		}
+	]
+}

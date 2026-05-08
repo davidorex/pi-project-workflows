@@ -1,0 +1,60 @@
+{
+	"issues": [
+		{
+			"id": "alt-bug-001",
+			"title": "Synthetic critical bug for POC alt-substrate demo",
+			"body": "Demonstrates that root: '<custom-path>' resolves to a separate on-disk substrate.",
+			"location": "synthetic/example.ts:1",
+			"status": "open",
+			"category": "primitive",
+			"priority": "critical",
+			"package": "synthetic-pkg-a",
+			"source": "human"
+		},
+		{
+			"id": "alt-bug-002",
+			"title": "Synthetic high-priority issue with resolved status",
+			"body": "Demonstrates status-bin filtering.",
+			"location": "synthetic/example.ts:42",
+			"status": "resolved",
+			"category": "primitive",
+			"priority": "high",
+			"package": "synthetic-pkg-a",
+			"source": "agent",
+			"resolved_by": "alt-fix-001"
+		},
+		{
+			"id": "alt-bug-003",
+			"title": "Synthetic medium-priority issue",
+			"body": "Demonstrates auto-derivation working over alt-substrate.",
+			"location": "synthetic/another.ts:7",
+			"status": "open",
+			"category": "capability",
+			"priority": "medium",
+			"package": "synthetic-pkg-b",
+			"source": "human"
+		},
+		{
+			"id": "alt-bug-004",
+			"title": "Synthetic low-priority issue, deferred",
+			"body": "Demonstrates deferred lifecycle state.",
+			"location": "synthetic/legacy.ts:99",
+			"status": "deferred",
+			"category": "cleanup",
+			"priority": "low",
+			"package": "synthetic-pkg-b",
+			"source": "human"
+		},
+		{
+			"id": "alt-bug-005",
+			"title": "Synthetic high-priority open issue",
+			"body": "Demonstrates priority-lens binning across multiple items.",
+			"location": "synthetic/critical.ts:3",
+			"status": "open",
+			"category": "primitive",
+			"priority": "high",
+			"package": "synthetic-pkg-a",
+			"source": "monitor"
+		}
+	]
+}

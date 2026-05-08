@@ -206,6 +206,385 @@
       ],
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-04-26T00:00:00Z"
+    },
+    {
+      "id": "DEC-0006",
+      "title": "Sixth block of the substrate contract",
+      "status": "superseded",
+      "context": "The user's framing names the substrate contract as 'six discrete blocks.' Five enumerated against POC v2 evidence (config, partitions, lenses, closure-table relations, per-item macros). The sixth block of the contract is unresolved. Pre-heuristic candidates from the conversation were schemas-as-substrate, hierarchies-as-distinct-block, or macros split into registry + emitter. The heuristic-widening pass (mandates + monitors as in-scope typed contexts under one heuristic) narrows preferred candidates to two: prompt-composition contract OR scopes (user / project / agent). Implementation cannot proceed with contract enumeration until this resolves.",
+      "decision": "Decision pending. Two heuristic-aligned candidates compete; three pre-heuristic candidates retained for completeness but not preferred. Resolution updates §1.1 + §2 of analysis/2026-05-03-substrate-arc-frame.md and gates downstream block-enumeration.",
+      "options_considered": [
+        {
+          "label": "Prompt-composition contract",
+          "description": "The rules governing how typed contexts compose into prompts: order, deduplication, override, applicability evaluation, token-budget allocation across mandates + lens views + raw blocks + monitor outputs. Made central by the heuristic-widening; was implicit in the integration map.",
+          "tradeoffs": "Heuristic-aligned; central API surface for the unified frame. Couples sixth-block to gap #34 (composition contract)."
+        },
+        {
+          "label": "Scopes (user / project / agent)",
+          "description": "Layered anchors with composition rules across scopes. Mandates live at user scope; project blocks at project scope; agent overrides at agent scope. Composition resolves layered. Foundational for scope-layering decision DEC-0010.",
+          "tradeoffs": "Heuristic-aligned; couples sixth-block to gap #37 (scope layering). Selection here cascades into discovery-anchor mechanics."
+        },
+        {
+          "label": "Schemas-as-substrate (pre-heuristic)",
+          "description": "Every schema is itself a block, the meta-meta layer. Pre-heuristic candidate from POC v2 evaluation.",
+          "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+        },
+        {
+          "label": "Hierarchies-as-distinct-block (pre-heuristic)",
+          "description": "Hierarchy declarations elevate from a config field to their own typed block. Pre-heuristic candidate.",
+          "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+        },
+        {
+          "label": "Macros-split (pre-heuristic)",
+          "description": "Per-item macros + a separate cluster/whole-block render layer as separate blocks.",
+          "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+        }
+      ],
+      "consequences": [
+        "Superseded: off-by-one re-count of the substrate contract. Original framing claimed six discrete blocks while enumerating five (config + partitions + lenses + closure-table relations + per-item macros). On reflection no sixth block exists; the contract is five blocks. Filed under proliferation pressure during the heuristic-widening pass; retired without enactment."
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [
+        "FGAP-001",
+        "FGAP-002",
+        "FGAP-003",
+        "FGAP-006"
+      ],
+      "references": [
+        {
+          "label": "frame doc §1.1 + §2",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        },
+        {
+          "label": "POC v2 contract enumeration",
+          "path": "analysis/poc-degree-zero-lens/README.md"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0007",
+      "title": "Composition contract for prompt assembly across typed contexts",
+      "status": "superseded",
+      "context": "Under the unifying heuristic, multiple typed-context entries (lenses, mandates, monitor outputs, raw blocks) can land in one agent's prompt. The integration-map design assumed pre-rendered injection without articulating how N typed contexts compose. Order, deduplication, override semantics, applicability-evaluation timing, and token-budget allocation are unspecified. This is the central API surface for the unified heuristic; lens injection, mandate injection, monitor-output injection all flow through it. Surfaced as gap #34 in the heuristic-widening pass.",
+      "decision": "Decision pending. The composition contract must specify: (1) ordering rules across context types; (2) deduplication when multiple entries pull the same item; (3) override semantics including agent-scope opt-out of mandates / lenses; (4) applicability-predicate evaluation timing (compile-time vs per-turn); (5) token-budget allocation policy with truncation strategy. Resolution lands as a new design doc plus DEC enactment; gates implementation of jit-agents lens-injection path and downstream typed-context surfaces.",
+      "consequences": [
+        "Superseded: composition rules for prompt assembly (ordering, deduplication, override, applicability evaluation, token-budget allocation) are specification work, not a directional choice between mandate-compliant alternatives. Belongs as an FGAP or implementation-issue series, not a DEC. Filed by treating 'things that need specification' as 'decisions to make'; retired without enactment."
+      ],
+      "related_findings": [
+        "issue-020",
+        "issue-041",
+        "issue-042",
+        "issue-045"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [
+        "FGAP-002",
+        "FGAP-003"
+      ],
+      "references": [
+        {
+          "label": "frame doc §5 gap #34 + §5.1 rank 2",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        },
+        {
+          "label": "anti-injection wrapping pattern",
+          "path": "packages/pi-jit-agents/src/compile.ts"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0008",
+      "title": "contextBlocks parameterization: typed object form vs bare-string convention",
+      "status": "enacted",
+      "context": "The integration-map design proposed a bare-string `_lens:<id>` convention for lens-view injection in agent contextBlocks. The per-item-macros plan (analysis/2026-05-02-per-item-macros-atomic-plans.md plan #3) extends contextBlocks to a typed object form `{name, item, focus, depth}`. Two parallel parameterization mechanisms in one field. The heuristic-widening pass forces typed-only because bare-string cannot carry the parameter set the unified surface needs: `_mandate:<id>`, `_lens:<id>?status=open`, `_monitor:<id>:last-classification`, agent-scope omit lists, applicability filters. Bare-string would proliferate as `_kind:id:opt1:opt2` — a regression toward stringly-typed configuration. Surfaced as gap #29.",
+      "decision": "Typed object form of contextBlocks entries (name + optional item/focus/depth) is the canonical injection surface for selective composition. Bare-string form (whole-block injection by name) remains valid for backward compatibility with existing agent YAMLs. The heuristic-widening forces the typed form because bare-string cannot carry the parameter set the unified composition surface needs (lens id, item selector, focus, depth, applicability predicate). Per-item-macros plan #3 is the canonical landing path.",
+      "options_considered": [
+        {
+          "label": "Typed object form only (proposed direction)",
+          "description": "Single typed surface. Carries kind, id, scope, applicability, focus, depth, filters. Bare-string remains valid for whole-block injection only.",
+          "tradeoffs": "Slightly more verbose at the simple case (whole-block injection unchanged; lens injection requires typed entry). Single canonical surface; no fragmentation."
+        },
+        {
+          "label": "Bare-string convention layered on typed (coexistence)",
+          "description": "Both surfaces accepted. Bare-string for trivial cases; typed for parameterized.",
+          "tradeoffs": "Two surfaces to maintain. Author must learn when to use which. Composition contract (DEC-0007) more complex.",
+          "rejected_reason": "Heuristic prefers one canonical surface; coexistence creates the same parallel-ungated-path pattern the substrate arc retires."
+        }
+      ],
+      "consequences": [
+        "per-item-macros plan #3 (typed contextBlocks extension) is the canonical landing path; no parallel bare-string convention",
+        "Lens-view injection lands as `{kind: 'lens', id: 'context-management', filters: {status: 'open'}}` not `_lens:context-management`",
+        "Mandate injection lands as `{kind: 'mandate', id: 'mandate-001'}` or `{kind: 'mandate', filter: {tags: ['workflow']}}`",
+        "Monitor output injection lands as `{kind: 'monitor', id: 'fragility', focus: 'last-classification'}`",
+        "Filter parameterization channel (gap #30) collapses into the typed form's `filters` field"
+      ],
+      "related_findings": [
+        "issue-020",
+        "issue-029",
+        "issue-041"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [
+        "FGAP-002",
+        "FGAP-003"
+      ],
+      "references": [
+        {
+          "label": "per-item-macros plan #3",
+          "path": "analysis/2026-05-02-per-item-macros-atomic-plans.md"
+        },
+        {
+          "label": "integration-map review + frame doc §5 gap #29",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0009",
+      "title": "FGAP-001 resolution: closure-table relations vs subpath block names",
+      "status": "enacted",
+      "context": "FGAP-001 (hierarchical/nested block storage) was originally framed with proposed_resolution = 'extend block-api to support subpath block names (e.g. readBlock(features/consumer-migration)).' The substrate-arc POC v2 demonstrates closure-table relations as an alternative substrate for hierarchy: (parent, child, relation_type) edges over flat blocks, with multiple parallel hierarchies coexisting as different relation_type values. The heuristic-widening pass (mandates and monitors as in-scope typed contexts) tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types — mandates and monitors do not need subpath storage.",
+      "decision": "Closure-table relations are the canonical primitive for hierarchical decomposition over project blocks. Subpath block names (FGAP-001's original framing) are not pursued. The heuristic prefers ONE storage primitive across all context types (project blocks, mandates, monitor specs). The phases-pattern subdirectory walks (readBlockDir + buildIdIndex's phases handling) remain as legacy exceptions, not generalized. POC at analysis/poc-degree-zero-lens/ proves the closure-table shape mechanically; FGAP-001's resolution path is now closure-table-only via a relations.json block kind landing in pi-project.",
+      "options_considered": [
+        {
+          "label": "Closure-table relations only (proposed)",
+          "description": "All hierarchy expressed as edges in relations.json over flat blocks. One storage primitive across all context types per heuristic.",
+          "tradeoffs": "Per-item lock contention unchanged from today (per-block file lock). Hierarchy queries require edge-walk per query (mitigated by SDK caching). Authoring experience: edge-write rather than file-tree write."
+        },
+        {
+          "label": "Subpath block names only (original FGAP-001 framing)",
+          "description": "readBlock('features/consumer-migration/stories/STORY-A'). Native tree shape on disk. Atomic per-item writes.",
+          "tradeoffs": "Two storage forms across the contract (subpath for hierarchy, flat-with-edges for everything else). Block-api gains directory-walk semantics. Schema-walk targeting array-item subschema is a new contract.",
+          "rejected_reason": "Heuristic prefers one storage primitive; subpath form would create a parallel ungated path for hierarchy expression that the closure-table primitive already handles."
+        },
+        {
+          "label": "Both (closure-table for cross-cutting taxonomies, subpath for work-decomposition)",
+          "description": "Hybrid: closure-table for lens-style organization, subpath for genuine work-decomposition with atomic-write requirements.",
+          "tradeoffs": "Dual maintenance burden. Two query paths, two write paths, two validation paths.",
+          "rejected_reason": "Heuristic prefers one canonical substrate; hybrid creates the same fragmentation the unifying frame is meant to retire."
+        }
+      ],
+      "consequences": [
+        "FGAP-001's proposed_resolution field updates to closure-table-only direction on enactment",
+        "Subpath block names not implemented; readBlockDir's existing one-off subdirectory walks (phases pattern) remain as exceptions, not generalized",
+        "Work decomposition (FEAT-001 epics → stories → tasks, future PHASE-NNN structures) lives as flat blocks with closure-table edges",
+        "Lock contention claim from FGAP-001 framing unchanged: per-block file lock; partition-per-file unblock is not pursued under this direction",
+        "block-validation.ts rollback contract simpler: no recursion into subdirectories"
+      ],
+      "related_gaps": [
+        "FGAP-001"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "references": [
+        {
+          "label": "FGAP-001 original framing",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "POC v2 closure-table demonstration",
+          "path": "analysis/poc-degree-zero-lens/relations.json"
+        },
+        {
+          "label": "frame doc §4.2",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0010",
+      "title": "Scope discovery and layering across user / project / agent anchors",
+      "status": "superseded",
+      "context": "GitHub issue #3 asked for 'configuration for folder placement' — relocating .project/ + .workflows/. The POC v2 closes the data-relocation surface via config.root. The heuristic-widening pass widens this to a layered-scope decision because mandates live at user scope (~/.claude/mandates.jsonl) while project blocks live at project scope (<config.root>). Agent-scope overrides (e.g., classifier X opts out of mandates Y, Z) form a third layer. Composition rules across scopes are unspecified: which scope wins on conflict, how config-discovery walks scopes, whether the config file itself is relocatable (or fixed at .project/). Surfaced as gap #37, expansion of gap #24.",
+      "decision": "Decision pending. Composition rule must specify: (1) discovery anchor for the config file itself — `.project/config.json` always vs env-var (PI_PROJECT_ROOT) vs package.json field vs walk-up; (2) layered config merge semantics across user → project → agent (project overrides user; agent filters within composed result, with explicit allow-list / deny-list); (3) scope assignment per block kind (mandates user-scope; project blocks project-scope; monitor specs project-scope or split). Resolution lands as DEC enactment plus updates to §1.1 and §5 of the substrate-arc-frame doc.",
+      "options_considered": [
+        {
+          "label": "`.project/config.json` always anchored",
+          "description": "Config file fixed at `.project/`; only data files relocate via config.root. Issue #3 closes for data, not for config-file location.",
+          "tradeoffs": "Predictable; no env-var discovery. User who literally wants no `.project/` directory at all not served."
+        },
+        {
+          "label": "Env-var discovery (e.g., PI_PROJECT_ROOT)",
+          "description": "Config relocatable via environment. Substrate fully unanchored from `.project/`.",
+          "tradeoffs": "Requires env state; users who don't set the var get default `.project/`. Forking and CI environments must surface the var."
+        },
+        {
+          "label": "package.json field (e.g., `pi.project.root`)",
+          "description": "Declarative; no env state. Lives in repo's package.json.",
+          "tradeoffs": "Couples pi config surface to npm package surface. Non-npm projects need an alternative."
+        },
+        {
+          "label": "Walk-up discovery (find .project/config.json or named alternative in nearest ancestor)",
+          "description": "Discovery follows git-root convention; first-found wins.",
+          "tradeoffs": "Implicit anchor; may surprise users in nested-project contexts."
+        }
+      ],
+      "consequences": [
+        "Superseded: the real concern (GitHub #3 folder placement) is already closed empirically by the POC's config.root field. The user/project/agent scope-layering expansion was theoretical embellishment from the heuristic-widening pass — not a question anyone asked. Mandates being user-scope is a fact, not a decision. Filed by lumping a closed folder-placement question together with scope-layering theory; retired without enactment."
+      ],
+      "related_findings": [
+        "issue-048",
+        "issue-067"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [
+        "FGAP-001"
+      ],
+      "references": [
+        {
+          "label": "GitHub issue #3 (folder placement)",
+          "path": "https://github.com/davidorex/pi-project-workflows/issues/3"
+        },
+        {
+          "label": "frame doc §5 gap #37 + §5.1 rank 5",
+          "path": "analysis/2026-05-03-substrate-arc-frame.md"
+        },
+        {
+          "label": "context-paths design (gestures at user-scope injection)",
+          "path": "analysis/2026-04-28-context-paths-extension-design.md"
+        }
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0011",
+      "title": "Retire packaged defaults — pi-project ships no seed schemas or seed block files",
+      "status": "enacted",
+      "context": "pi-project today ships default schemas + default block files under packages/pi-project/defaults/{schemas,blocks}/, copied into newly-initialized projects by initProject (packages/pi-project/src/index.ts:215-236). The seeding pattern is a recurring source of architectural debt: stale seeded files cannot be updated by package upgrades. The original seedExamples copy-on-first-run pattern in pi-behavior-monitors had this exact failure mode and was retired in favor of live three-tier discovery (packages/pi-behavior-monitors/index.ts:325-352, doc-comment explicitly cites the retirement). Even pi-project's additive-only initProject creates the same divergence the moment a default ships an updated version: the file exists in the user's project from a prior install and never updates. The embedded note in FGAP-001's proposed_resolution surfaced this as 'decision pending' but the directional choice is not pending; the decision has been made and needs first-class reification so forward work does not continue down the already-decided-against path.",
+      "decision": "pi-project does not ship default schemas or default block files. Users install desired schemas and starter blocks via an opt-in mechanism — concrete shape of the install mechanism is unspecified but the directional choice is final: no auto-seeding, no copy-on-init defaults shipped from the package. Bundled defaults are retired. This applies to all future schema and block kinds (config, relations, etc.) and to the existing default set under packages/pi-project/defaults/ once the opt-in mechanism replaces it.",
+      "consequences": [
+        "issue-074's framing changes from 'fix seedExamples short-circuit' to 'the seeded artifacts must not exist; remove the source of the recurring class of issues'.",
+        "The substrate-arc subagent's recommended bundle 1 (Substrate seeding) is misframed: shipping config.schema.json + relations.schema.json + default config.json + default relations.json into packages/pi-project/defaults/ violates this decision. The POC's outputs ship as documentation/examples users copy, not as auto-seeded defaults.",
+        "packages/pi-project/defaults/ existing contents are grandfathered until the opt-in install mechanism is specified; no new content lands there.",
+        "initProject's default-copying loops at packages/pi-project/src/index.ts:215-236 are scheduled for retirement once the opt-in mechanism replaces them.",
+        "Future schema/block updates flow to users via the opt-in mechanism, not via package upgrades silently changing on-disk content. This eliminates the entire class of stale-seeded-file divergence issues at the source.",
+        "FGAP-001's proposed_resolution embedded note 'we might ship no defaults at all, and/or move defaults to a separate install step users enact if they want. Decision pending.' is superseded by this DEC."
+      ],
+      "related_gaps": [
+        "FGAP-001"
+      ],
+      "related_findings": [
+        "issue-074"
+      ],
+      "references": [
+        {
+          "label": "Original embedded note in FGAP-001 proposed_resolution preserving user wording",
+          "path": ".project/framework-gaps.json",
+          "lines": "FGAP-001 entry"
+        },
+        {
+          "label": "pi-project initProject default-copying loops",
+          "path": "packages/pi-project/src/index.ts",
+          "lines": "215-236"
+        },
+        {
+          "label": "pi-behavior-monitors live three-tier discovery (the retirement parallel)",
+          "path": "packages/pi-behavior-monitors/index.ts",
+          "lines": "325-352"
+        }
+      ],
+      "created_by": "user",
+      "created_at": "2026-05-03T00:00:00Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-03T00:00:00Z"
+    },
+    {
+      "id": "DEC-0012",
+      "title": "Phase/item dependency authoring shape: inline depends_on with edge projection vs edges-only authoring",
+      "status": "superseded",
+      "context": "The roadmap/plan substrate proposal requires expressing per-phase ordering (phase A before phase B in a roadmap) and per-item ordering (task A before task B in a plan). DEC-0009 mandates closure-table edges as the canonical primitive for hierarchical decomposition, which covers ordering. Two authoring shapes are mandate-compliant under DEC-0009 — both ship ordering as edges; difference is the user-facing surface for declaring them. The proposal flagged this as a forking choice that user must resolve before implementation step 4 (loadRoadmap) lands.",
+      "decision": "Edges-only authoring for both phase ordering and plan-item ordering. roadmap.schema.json's phases items omit depends_on entirely; plan.schema.json's items omit depends_on entirely. All ordering lives in relations.json with relation_type='phase_depends_on' (phases) and relation_type='plan_item_depends_on' (plan items). SDK reads and topologically sorts purely from edges. Authoring a dependency means appending an edge via append-block-item — identical to how lens-curate's curation-ceremony writes edges today. No inline syntactic-sugar field, no SDK projection logic, no inline-vs-edge sync, no drift diagnostic.",
+      "options_considered": [
+        {
+          "label": "Inline depends_on with SDK projection",
+          "description": "roadmap.schema.json's phases items + plan.schema.json's items each carry a depends_on: string[] field. At validation time, the SDK projects these to closure-table edges in relations.json with relation_type='phase_depends_on' or 'plan_item_depends_on'. Edges become the canonical storage; inline depends_on is authoring sugar. validateRoadmaps / validatePlans check inline-vs-edge consistency and emit drift diagnostics if they disagree.",
+          "tradeoffs": "Pro: ergonomic authoring (depends_on lives where the phase is defined; one-place edits). Con: two surfaces for the same data; sync logic needed; drift surface; edge writes must check inline-syntactic-sugar fields too.",
+          "rejected_reason": "Introduces inline depends_on as a parallel storage primitive alongside the canonical closure-table edges, contradicting DEC-0009's principle of one storage primitive across all context types. Triggers the parallel-ungated-path antipattern (feedback_no_parallel_ungated_paths.md): the inline field becomes a writable surface alongside the canonical edges and requires the SDK to enforce sync, surfacing a roadmap_dep_drift diagnostic class that has no analogue under the edges-only path. Mutation cost is also higher: slotting a new plan into a roadmap requires nested-array surgery on the roadmap document AND a synced edge write; reordering requires per-affected-phase edits AND cascaded edge updates."
+        },
+        {
+          "label": "Edges-only authoring",
+          "description": "roadmap.schema.json's phases items + plan.schema.json's items omit depends_on entirely. All ordering lives in relations.json with the new relation_types. Authoring a roadmap dependency means appending an edge via append-block-item with relation_type='phase_depends_on'; SDK reads + topo-sorts purely from edges.",
+          "tradeoffs": "Pro: single source of truth; uniform with how lens-curate works (edges are the canonical write surface). Con: less local — to see what phase A depends on, must query relations.json under the relation_type filter."
+        }
+      ],
+      "consequences": [
+        "Whichever option enacts becomes the canonical authoring contract for every future composition that needs ordering (sequence of decisions, dependency graph between research entries, etc.).",
+        "Edges-only option requires authoring tools (or a /project add-dep convenience subcommand) to make ordering authoring ergonomic from a session — append-block-item with the right relation_type is the canonical path.",
+        "Single source of truth for hierarchical/sequencing concerns honors DEC-0009. No new storage primitive introduced. validateRoadmaps + validatePlans diagnostic surface stays minimal — no roadmap_dep_drift / plan_dep_drift codes needed because no drift can occur.",
+        "Mutation patterns scale: slotting a new plan into a roadmap = one append-block-item on relations.json (atomic, schema-validated). Reordering plans = pure dependency-graph edit on relations.json (roadmap structure untouched). Same operation users already perform for lens curation.",
+        "Reading raw JSON requires a relations.json query to surface dependencies; this is irrelevant in practice because /project roadmap-view + project-roadmap-render assemble the full picture for display. Raw-JSON-reading is for authoring (per-edge), not for browsing.",
+        "Implementation impact: issue-081's roadmap.schema.json + plan.schema.json land WITHOUT depends_on fields on phases/items. issue-084 (loadRoadmap) + issue-085 (loadPlan) read ordering exclusively from getProjectContext(cwd).relations filtered by the new relation_types."
+      ],
+      "related_gaps": [
+        "FGAP-012"
+      ],
+      "references": [],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-04T00:00:00Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-04T00:00:00Z",
+      "superseded_by": "DEC-0013"
+    },
+    {
+      "id": "DEC-0013",
+      "title": "Edges-only authoring generalized: all inter-item relationships go through config-declared relation_types",
+      "status": "enacted",
+      "context": "DEC-0012 (enacted 2026-05-04) committed roadmap phase ordering and plan item ordering to edges in relations.json with hardcoded relation_type strings phase_depends_on and plan_item_depends_on. POC E (analysis/poc/pi-context-poc/E-relation-type-registry/, landed 2026-05-06 in commit 22a07a9) demonstrated mechanically that the same edges-only pattern works for any inter-item relationship type, and that the set of relation_types should be declared in config.relation_types[] with a category field (ordering | data_flow | membership) driving validator dispatch — not hardcoded as TS string constants in the SDK. The pi-context candidate articulation (analysis/2026-05-05-pi-context-executive-summary-candidate.md) names config-driven relation_types as a load-bearing primitive of the renamed substrate. DEC-0012's narrow scope leaves the substrate with edges-only ordering for two specific relationships and silently hardcoded everything else, mirroring the FGAP-013 antipattern that POC C/E close.",
+      "decision": "All inter-item relationships in the typed-context substrate are authored as edges in relations.json with a relation_type field. The set of valid relation_types is declared in config.relation_types[] (one entry per kind, fields: canonical_id, display_name, category, cycle_allowed). Validators dispatch on category (ordering: topo sort + cycle check; data_flow: upstream-content-hash propagation; membership: parent-child set membership) via a CATEGORY_HANDLERS table keyed on category, not on relation_type name. Per-block schemas omit any inline depends_on / parent / consumes / member field that would parallel-store relationship data. SDK functions read the registry from config and emit per-category diagnostics. Adding a new relationship type is a config edit; no TypeScript change.",
+      "consequences": [
+        "DEC-0012's scope (only phase_depends_on + plan_item_depends_on) is generalized to all inter-item relationships under any block kind. DEC-0012 is superseded by this decision.",
+        "ID_PREFIX_TO_BLOCK style hardcoded relation_type strings in pi-project/src/* (e.g. relation_type === 'phase_depends_on' branches) are antipattern under this decision; per-category dispatch tables key on category, not name.",
+        "FGAP-013 (status vocabulary registry hardcoded in TS) is the analogous gap on the status side; both close under the same config-driven-vocabulary architectural direction validated by POCs A/C/E.",
+        "Schema-side: roadmap.schema.json's phases items + plan.schema.json's items continue to omit depends_on (DEC-0012 contract preserved); future block kinds inherit the same omission as a substrate convention rather than a per-schema choice.",
+        "Adding a relation_type becomes a config.relation_types[] entry plus a category handler if a new category is introduced. Most additions reuse existing categories.",
+        "validateRelations() dispatches per category for diagnostics rather than emitting one undifferentiated diagnostic class.",
+        "This decision presumes the pi-context architectural direction (config-driven vocabulary substrate). Under continued pi-project naming with hardcoded vocabulary, this decision would not enact; it is coupled to that direction."
+      ],
+      "options_considered": [
+        {
+          "label": "Rewrite DEC-0012 with broader scope",
+          "description": "Edit DEC-0012 in place to extend its decision text and consequences to cover all relation_types.",
+          "tradeoffs": "Mutates an already-enacted decision in place. Erases the historical record of what DEC-0012 originally decided (narrow scope, two specific relation_types). Violates the lifecycle contract (open -> enacted; enacted is an integrity-preserving terminal state for that record). Rejected on integrity grounds."
+        },
+        {
+          "label": "File DEC-0013 with broader scope; mark DEC-0012 superseded (this option)",
+          "description": "New decision filed with explicit supersedes: [DEC-0012]; DEC-0012 transitions enacted -> superseded with superseded_by: DEC-0013 and consequences appended explaining the broadening.",
+          "tradeoffs": "Pro: preserves the historical decision record; uses the schema-supported supersession transition. Con: the schema status enum description for superseded says withdrawn without enactment / not-a-real-decision, which does not cleanly match enacted -> superseded for broadening. Stretching the semantic. File FGAP-015 (or next available) for the decision lifecycle gap (no broadened-by state)."
+        }
+      ],
+      "related_gaps": [
+        "FGAP-013"
+      ],
+      "references": [],
+      "supersedes": [
+        "DEC-0012"
+      ],
+      "created_by": "agent/claude-opus-4-7",
+      "created_at": "2026-05-06T22:14:17.096Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-06T22:14:17.096Z"
     }
   ]
 }

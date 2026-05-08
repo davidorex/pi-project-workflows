@@ -1,0 +1,32 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "item.schema.json",
+	"title": "Budget-aware item",
+	"description": "POC C — items declare summary + body fields with x-prompt-budget annotations the renderer's two-phase allocator consumes. The x-prompt-budget vendor extension carries an estimated token count so the allocator can plan before generating any output bytes.",
+	"type": "object",
+	"required": ["id", "priority", "summary", "body"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"pattern": "^ITEM-\\d{3}$"
+		},
+		"title": {
+			"type": "string"
+		},
+		"priority": {
+			"type": "integer",
+			"minimum": 1,
+			"description": "Lower number = higher priority. Drives both phase 1 summary trim ordering (when budget cannot fit all summaries) and phase 2 body fill ordering."
+		},
+		"summary": {
+			"type": "string",
+			"x-prompt-budget": { "tokens": 0 },
+			"description": "Always-keep segment. Phase 1 reserves space for ALL selected items' summaries. The x-prompt-budget.tokens value here is the per-item summary token estimate; the renderer also recomputes via word-count heuristic and records both."
+		},
+		"body": {
+			"type": "string",
+			"x-prompt-budget": { "tokens": 0 },
+			"description": "Trimmable segment. Phase 2 fills remaining budget per priority order; bodies that do not fit are marked 'body trimmed'."
+		}
+	}
+}

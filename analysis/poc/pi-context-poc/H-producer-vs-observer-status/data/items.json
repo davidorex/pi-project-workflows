@@ -1,0 +1,38 @@
+{
+	"items": [
+		{
+			"id": "ITEM-001",
+			"title": "Producer claims PASS, observer sees enacted",
+			"status": "enacted",
+			"producer_status": "PASS",
+			"note": "Both signals agree the work is complete."
+		},
+		{
+			"id": "ITEM-002",
+			"title": "Producer claims FAIL, observer sees superseded",
+			"status": "superseded",
+			"producer_status": "FAIL",
+			"note": "Both signals agree the work did not land in its original form."
+		},
+		{
+			"id": "ITEM-003",
+			"title": "Producer claims PASS, observer sees open",
+			"status": "open",
+			"producer_status": "PASS",
+			"note": "Mismatch: producer asserts done, lifecycle has not transitioned."
+		},
+		{
+			"id": "ITEM-004",
+			"title": "Producer claims FAIL, observer sees enacted",
+			"status": "enacted",
+			"producer_status": "FAIL",
+			"note": "Mismatch: producer asserts failure, lifecycle records enactment."
+		},
+		{
+			"id": "ITEM-005",
+			"title": "Observer-only entry, no producer claim",
+			"status": "open",
+			"note": "No producer_status filed — nothing to validate consistency against."
+		}
+	]
+}

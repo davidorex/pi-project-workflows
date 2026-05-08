@@ -1,0 +1,41 @@
+{
+	"edges": [
+		{ "parent": "substrate-integrity", "child": "issue-017", "relation_type": "context-mgmt-concern" },
+		{ "parent": "substrate-integrity", "child": "issue-021", "relation_type": "context-mgmt-concern" },
+		{ "parent": "substrate-integrity", "child": "issue-022", "relation_type": "context-mgmt-concern" },
+		{ "parent": "substrate-integrity", "child": "issue-065", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "provenance", "child": "issue-011", "relation_type": "context-mgmt-concern" },
+		{ "parent": "provenance", "child": "issue-036", "relation_type": "context-mgmt-concern" },
+		{ "parent": "provenance", "child": "issue-037", "relation_type": "context-mgmt-concern" },
+		{ "parent": "provenance", "child": "issue-047", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "automatic-capture", "child": "issue-008", "relation_type": "context-mgmt-concern" },
+		{ "parent": "automatic-capture", "child": "issue-028", "relation_type": "context-mgmt-concern" },
+		{ "parent": "automatic-capture", "child": "issue-030", "relation_type": "context-mgmt-concern" },
+		{ "parent": "automatic-capture", "child": "issue-032", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "context-projection", "child": "issue-020", "relation_type": "context-mgmt-concern" },
+		{ "parent": "context-projection", "child": "issue-029", "relation_type": "context-mgmt-concern" },
+		{ "parent": "context-projection", "child": "issue-041", "relation_type": "context-mgmt-concern" },
+		{ "parent": "context-projection", "child": "issue-043", "relation_type": "context-mgmt-concern" },
+		{ "parent": "context-projection", "child": "issue-045", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "context-window", "child": "issue-035", "relation_type": "context-mgmt-concern" },
+		{ "parent": "context-window", "child": "issue-042", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "lifecycle-linkage", "child": "issue-009", "relation_type": "context-mgmt-concern" },
+		{ "parent": "lifecycle-linkage", "child": "issue-010", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "identity-idempotence", "child": "issue-044", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "visibility", "child": "issue-023", "relation_type": "context-mgmt-concern" },
+		{ "parent": "visibility", "child": "issue-033", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "reachability", "child": "issue-067", "relation_type": "context-mgmt-concern" },
+
+		{ "parent": "FGAP-001", "child": "issue-055", "relation_type": "gap-membership" },
+		{ "parent": "FGAP-002", "child": "issue-056", "relation_type": "gap-membership" },
+		{ "parent": "FGAP-003", "child": "issue-057", "relation_type": "gap-membership" }
+	]
+}

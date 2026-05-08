@@ -10,7 +10,7 @@ Technical missteps preserved if we keep all post-release code:
 → codes stay opaque slugs; display strings via `config.display_strings`.
 
 **4. Priority enum mismatch** (`issues.schema.json` [low/medium/high/critical] vs `framework-gaps.schema.json` [P0–P3]). FGAP-016.
-→ `config.priority_buckets` canonical registry; schema $ref to shared fragment; data migration.
+→ `config.priority_buckets` canonical registry; schema $ref to shared schema; data migration.
 
 **5. Schema lifecycle/severity/method enums diverge across 14+ schemas**. FGAP-016 broader form.
 → same as #4 generalized: $ref to canonical registries per dimension.
@@ -34,7 +34,7 @@ Technical missteps preserved if we keep all post-release code:
 → port patterns from project-side schemas to registry; or accept asymmetry as deliberate strict-vs-loose tier.
 
 **12. No `$id`/version/$ref composition in schemas** (FGAP-006).
-→ add `$id` + `version` field per schema; introduce shared fragments (priority-fragment.schema.json, status-fragment.schema.json); schema-validator reads version; migration registry.
+→ add `$id` + `version` field per schema; introduce shared schemas (priority.schema.json, status.schema.json); schema-validator reads version; migration registry.
 
 **13. No authorship attestation** (FGAP-004). block-api doesn't stamp created_by/modified_by/at.
 → extend block-api signatures with DispatchContext carrying writer identity; stamp on every write; schemas add the four fields.

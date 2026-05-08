@@ -179,7 +179,7 @@
       "priority": "P2",
       "package": "pi-project",
       "layer": "L2",
-      "description": "Schemas have no version field, no $id, no migration story, no $ref composition, no shared-fragment reuse. Schemas drift silently across projects and across time. A schema rename or field rename has no backward-compatibility path. Schemas are effectively copy-paste snapshots with no evolution protocol.",
+      "description": "Schemas have no version field, no $id, no migration story, no $ref composition, no schema reuse via $ref. Schemas drift silently across projects and across time. A schema rename or field rename has no backward-compatibility path. Schemas are effectively copy-paste snapshots with no evolution protocol.",
       "evidence": [
         {
           "file": ".project/schemas/decisions.schema.json",
@@ -187,7 +187,7 @@
         },
         {
           "file": ".project/schemas/rationale.schema.json",
-          "reference": "duplicates fields from decisions.schema.json with no shared fragment — rename in one does not propagate"
+          "reference": "duplicates fields from decisions.schema.json with no $ref to a shared schema — rename in one does not propagate"
         },
         {
           "file": "CLAUDE.md",
@@ -196,7 +196,7 @@
       ],
       "impact": "Long-term schema evolution is undefined. Projects that adopted the framework early and never updated their .project/schemas/ drift from projects that adopted later. There is no way for tooling to know what schema version a block conforms to.",
       "canonical_vocabulary": "schema evolution; JSON Schema $id; schema registry; schema versioning",
-      "proposed_resolution": "Add a required $id (URI) and version field on every schema. schema-validator reads version and can apply migration functions. Introduce a schema-migrations registry. $ref fragment composition becomes the standard way to express shared fields (e.g. a common 'authorship-fragment.schema.json' imported by every block schema).",
+      "proposed_resolution": "Add a required $id (URI) and version field on every schema. schema-validator reads version and can apply migration functions. Introduce a schema-migrations registry. Schema composition via $ref becomes the standard way to express shared fields (e.g. a common 'authorship.schema.json' imported by every block schema).",
       "related_features": [
         "FEAT-001"
       ],
@@ -555,8 +555,8 @@
         }
       ],
       "impact": "Every cross-block aggregation, rollup, or projection must hand-normalize between vocabularies (or fail to compose). Every rename touches every schema-and-consumer that uses the value (display-name change requires data migration). New block kinds inherit the fragmentation pressure: a designer adding a new kind picks an enum vocabulary in isolation, which either silently diverges from siblings (most current cases) or only by editorial vigilance converges (the L1..L5 layer convergence is the rare positive case, achieved without any enforcing surface). Under pi-context the same authoring antipattern that produced the PLAN- prefix collision (issue-089) and the FGAP-013 STATUS_VOCABULARY hardcoding extends to every enum dimension — without a registry, every new block kind is a fresh opportunity for divergence. The lens reframe (PM is a lens upon memory) presumes vocabulary substrates; FGAP-016 names the structural barrier to that presumption.",
-      "proposed_resolution": "Introduce config-level vocabulary registries: config.priority_buckets[], config.status_buckets[] (FGAP-013), config.severity_levels[], config.verification_methods[], config.source_kinds[], config.layers[] (already adjacent in scope to layer-plans semantic). Each entry: canonical_id (opaque, immutable), display_name (mutable), description, category-or-ordering metadata where applicable. Schemas reference registries via  to a shared enum fragment derived from config rather than embedded JSON-Schema enum literals. Schema-validator resolves the registry at validation time and emits per-registry-mismatch diagnostics. Rename-via-config-edit per POC A. Per-consumer display per POC C/E pattern. Couples to FGAP-006 (schema versioning /  composition / migration story) since this requires schema-fragment composition the current schemas do not use. Couples to FGAP-013 (the status-vocabulary slice). Couples to FGAP-011 (canonical schema-write surface, since registry edits today require direct fs Edit on schema files).",
-      "canonical_vocabulary": "enum-fragment composition; shared-vocabulary registry; canonical-identity-with-display-layer; JSON Schema  fragments",
+      "proposed_resolution": "Introduce config-level vocabulary registries: config.priority_buckets[], config.status_buckets[] (FGAP-013), config.severity_levels[], config.verification_methods[], config.source_kinds[], config.layers[] (already adjacent in scope to layer-plans semantic). Each entry: canonical_id (opaque, immutable), display_name (mutable), description, category-or-ordering metadata where applicable. Schemas reference registries via $ref to a shared schema derived from config rather than embedded JSON-Schema enum literals. Schema-validator resolves the registry at validation time and emits per-registry-mismatch diagnostics. Rename-via-config-edit per POC A. Per-consumer display per POC C/E pattern. Couples to FGAP-006 (schema versioning / $ref composition / migration story) since this requires schema composition the current schemas do not use. Couples to FGAP-013 (the status-vocabulary slice). Couples to FGAP-011 (canonical schema-write surface, since registry edits today require direct fs Edit on schema files).",
+      "canonical_vocabulary": "enum schema composition; shared-vocabulary registry; canonical-identity-with-display-layer; JSON Schema $ref",
       "related_decisions": [
         "DEC-0013"
       ],

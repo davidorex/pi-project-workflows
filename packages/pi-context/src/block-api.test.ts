@@ -14,6 +14,7 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "./block-api.js";
+import type { DispatchContext } from "./dispatch-context.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
@@ -1539,5 +1540,378 @@ describe("readBlockDir", () => {
 				return true;
 			},
 		);
+	});
+});
+
+// ── DispatchContext coverage (FGAP-004) ─────────────────────────────────────
+
+// Schema variant of gapsSchema that DOES declare per-item author fields.
+// Used to verify ctx-stamping populates the fields when the schema permits.
+const gapsAuthoredSchema = {
+	type: "object",
+	required: ["gaps"],
+	properties: {
+		gaps: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "description", "status"],
+				properties: {
+					id: { type: "string" },
+					description: { type: "string" },
+					status: { type: "string", enum: ["open", "resolved", "deferred"] },
+					created_by: { type: "string" },
+					created_at: { type: "string" },
+					modified_by: { type: "string" },
+					modified_at: { type: "string" },
+				},
+			},
+		},
+	},
+};
+
+const ctxAgent: DispatchContext = {
+	writer: { kind: "agent", agent_id: "claude-opus-4-7" },
+};
+
+describe("DispatchContext — ctx-omitted path is byte-identical to pre-step-3 surface", () => {
+	it("appendToBlock without ctx leaves item untouched (no created_by injected)", (t) => {
+		const tmpDir = makeTmpDir("ctx-omitted-append");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsAuthoredSchema);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [] }));
+
+		appendToBlock(tmpDir, "gaps", "gaps", { id: "g1", description: "noctx", status: "open" });
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(onDisk.gaps[0].id, "g1");
+		assert.strictEqual(onDisk.gaps[0].created_by, undefined);
+		assert.strictEqual(onDisk.gaps[0].modified_by, undefined);
+	});
+
+	it("updateItemInBlock without ctx does not refresh modified_by", (t) => {
+		const tmpDir = makeTmpDir("ctx-omitted-update");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsAuthoredSchema);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "gaps.json"),
+			JSON.stringify({
+				gaps: [
+					{
+						id: "g1",
+						description: "x",
+						status: "open",
+						created_by: "human/legacy",
+						modified_by: "human/legacy",
+					},
+				],
+			}),
+		);
+
+		updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "resolved" });
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(onDisk.gaps[0].status, "resolved");
+		// modified_by/_at fields keep their pre-existing values when ctx is omitted
+		assert.strictEqual(onDisk.gaps[0].modified_by, "human/legacy");
+	});
+});
+
+describe("DispatchContext — ctx-provided path stamps when schema declares author fields", () => {
+	it("appendToBlock stamps created_by + modified_by on a fresh item", (t) => {
+		const tmpDir = makeTmpDir("ctx-append-authored");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsAuthoredSchema);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [] }));
+
+		appendToBlock(tmpDir, "gaps", "gaps", { id: "g1", description: "stamped", status: "open" }, ctxAgent);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(onDisk.gaps[0].created_by, "agent/claude-opus-4-7");
+		assert.strictEqual(onDisk.gaps[0].modified_by, "agent/claude-opus-4-7");
+		assert.ok(typeof onDisk.gaps[0].created_at === "string");
+		assert.ok(typeof onDisk.gaps[0].modified_at === "string");
+	});
+
+	it("updateItemInBlock refreshes modified_by, preserves created_by", (t) => {
+		const tmpDir = makeTmpDir("ctx-update-authored");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsAuthoredSchema);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "gaps.json"),
+			JSON.stringify({
+				gaps: [
+					{
+						id: "g1",
+						description: "x",
+						status: "open",
+						created_by: "human/legacy",
+						created_at: "2025-01-01T00:00:00.000Z",
+						modified_by: "human/legacy",
+						modified_at: "2025-01-01T00:00:00.000Z",
+					},
+				],
+			}),
+		);
+
+		updateItemInBlock(tmpDir, "gaps", "gaps", (g) => g.id === "g1", { status: "resolved" }, ctxAgent);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(onDisk.gaps[0].status, "resolved");
+		assert.strictEqual(onDisk.gaps[0].created_by, "human/legacy"); // preserved
+		assert.strictEqual(onDisk.gaps[0].created_at, "2025-01-01T00:00:00.000Z"); // preserved
+		assert.strictEqual(onDisk.gaps[0].modified_by, "agent/claude-opus-4-7"); // refreshed
+		assert.notStrictEqual(onDisk.gaps[0].modified_at, "2025-01-01T00:00:00.000Z");
+	});
+
+	it("appendToNestedArray stamps the nested item when nested-item schema declares author fields", (t) => {
+		const tmpDir = makeTmpDir("ctx-nested-authored");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", {
+			type: "object",
+			required: ["reviews"],
+			properties: {
+				reviews: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "findings"],
+						properties: {
+							id: { type: "string" },
+							findings: {
+								type: "array",
+								items: {
+									type: "object",
+									required: ["id", "description"],
+									properties: {
+										id: { type: "string" },
+										description: { type: "string" },
+										created_by: { type: "string" },
+										created_at: { type: "string" },
+										modified_by: { type: "string" },
+										modified_at: { type: "string" },
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({ reviews: [{ id: "REVIEW-001", findings: [] }] }),
+		);
+
+		appendToNestedArray(
+			tmpDir,
+			"spec-reviews",
+			"reviews",
+			(r) => r.id === "REVIEW-001",
+			"findings",
+			{ id: "F-001", description: "stamped finding" },
+			ctxAgent,
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		const finding = onDisk.reviews[0].findings[0];
+		assert.strictEqual(finding.created_by, "agent/claude-opus-4-7");
+		assert.strictEqual(finding.modified_by, "agent/claude-opus-4-7");
+	});
+
+	it("updateNestedArrayItem refreshes modified_*, preserves created_*", (t) => {
+		const tmpDir = makeTmpDir("ctx-update-nested-authored");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "spec-reviews", {
+			type: "object",
+			required: ["reviews"],
+			properties: {
+				reviews: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "findings"],
+						properties: {
+							id: { type: "string" },
+							findings: {
+								type: "array",
+								items: {
+									type: "object",
+									required: ["id", "state"],
+									properties: {
+										id: { type: "string" },
+										state: { type: "string", enum: ["open", "resolved"] },
+										created_by: { type: "string" },
+										created_at: { type: "string" },
+										modified_by: { type: "string" },
+										modified_at: { type: "string" },
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({
+				reviews: [
+					{
+						id: "REVIEW-001",
+						findings: [
+							{
+								id: "F-001",
+								state: "open",
+								created_by: "human/legacy",
+								created_at: "2025-01-01T00:00:00.000Z",
+								modified_by: "human/legacy",
+								modified_at: "2025-01-01T00:00:00.000Z",
+							},
+						],
+					},
+				],
+			}),
+		);
+
+		updateNestedArrayItem(
+			tmpDir,
+			"spec-reviews",
+			"reviews",
+			(p) => p.id === "REVIEW-001",
+			"findings",
+			(f) => f.id === "F-001",
+			{ state: "resolved" },
+			ctxAgent,
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "spec-reviews.json"), "utf-8"));
+		const f = onDisk.reviews[0].findings[0];
+		assert.strictEqual(f.state, "resolved");
+		assert.strictEqual(f.created_by, "human/legacy");
+		assert.strictEqual(f.created_at, "2025-01-01T00:00:00.000Z");
+		assert.strictEqual(f.modified_by, "agent/claude-opus-4-7");
+		assert.notStrictEqual(f.modified_at, "2025-01-01T00:00:00.000Z");
+	});
+
+	it("writeBlock stamps top-level envelope when schema declares author fields at top level", (t) => {
+		const tmpDir = makeTmpDir("ctx-write-toplevel");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "manifest", {
+			type: "object",
+			required: ["title"],
+			properties: {
+				title: { type: "string" },
+				created_by: { type: "string" },
+				created_at: { type: "string" },
+				modified_by: { type: "string" },
+				modified_at: { type: "string" },
+			},
+		});
+
+		writeBlock(tmpDir, "manifest", { title: "demo" }, ctxAgent);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "manifest.json"), "utf-8"));
+		assert.strictEqual(onDisk.title, "demo");
+		assert.strictEqual(onDisk.created_by, "agent/claude-opus-4-7");
+		assert.strictEqual(onDisk.modified_by, "agent/claude-opus-4-7");
+	});
+});
+
+describe("DispatchContext — schemas without author fields skip stamping (no AJV failure)", () => {
+	it("appendToBlock with ctx + additionalProperties:false schema does not inject author fields", (t) => {
+		const tmpDir = makeTmpDir("ctx-noauthor-strict");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "items", {
+			type: "object",
+			required: ["items"],
+			properties: {
+				items: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id"],
+						properties: { id: { type: "string" } },
+						additionalProperties: false,
+					},
+				},
+			},
+		});
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "items.json"), JSON.stringify({ items: [] }));
+
+		// Should NOT throw — stamping is skipped for schemas that don't declare author fields
+		appendToBlock(tmpDir, "items", "items", { id: "x" }, ctxAgent);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "items.json"), "utf-8"));
+		assert.strictEqual(onDisk.items[0].id, "x");
+		assert.strictEqual(onDisk.items[0].created_by, undefined);
+		assert.strictEqual(onDisk.items[0].modified_by, undefined);
+	});
+
+	it("appendToBlock with ctx + no schema at all skips stamping silently", (t) => {
+		const tmpDir = makeTmpDir("ctx-noschema");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "freeform.json"), JSON.stringify({ items: [] }));
+
+		appendToBlock(tmpDir, "freeform", "items", { id: "y" }, ctxAgent);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "freeform.json"), "utf-8"));
+		assert.strictEqual(onDisk.items[0].id, "y");
+		assert.strictEqual(onDisk.items[0].created_by, undefined);
+	});
+
+	it("removeFromBlock accepts ctx for signature parity (no stamping side effects)", (t) => {
+		const tmpDir = makeTmpDir("ctx-remove-parity");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "data.json"), JSON.stringify({ items: [{ id: "a" }, { id: "b" }] }));
+
+		const result = removeFromBlock(tmpDir, "data", "items", (i) => i.id === "a", ctxAgent);
+		assert.deepStrictEqual(result, { removed: 1 });
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "data.json"), "utf-8"));
+		assert.strictEqual(onDisk.items.length, 1);
+	});
+
+	it("removeFromNestedArray accepts ctx for signature parity", (t) => {
+		const tmpDir = makeTmpDir("ctx-remove-nested-parity");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "spec-reviews.json"),
+			JSON.stringify({
+				reviews: [{ id: "R", findings: [{ id: "F-1" }, { id: "F-2" }] }],
+			}),
+		);
+
+		const result = removeFromNestedArray(
+			tmpDir,
+			"spec-reviews",
+			"reviews",
+			(p) => p.id === "R",
+			"findings",
+			(f) => f.id === "F-1",
+			ctxAgent,
+		);
+		assert.deepStrictEqual(result, { removed: 1 });
 	});
 });

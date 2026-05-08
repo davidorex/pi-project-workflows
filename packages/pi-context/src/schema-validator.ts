@@ -40,6 +40,27 @@ export function validate(schema: Record<string, unknown>, data: unknown, label: 
 }
 
 /**
+ * Validate that `schema` itself is a structurally-valid JSON Schema.
+ * Routes through AJV's bundled draft-07 meta-schema via `ajv.validateSchema`,
+ * which is the canonical "is this a schema?" check on the same AJV instance
+ * already in use for data validation. Throws `ValidationError` listing every
+ * meta-schema violation when the schema is malformed (e.g. unknown keyword
+ * combinations, invalid `type` value, malformed `properties`). Returns the
+ * input on success (pass-through, mirrors `validate`).
+ *
+ * Reusing the module-internal `ajv` instance is intentional per the rebuild
+ * arc — the schema-write surface (FGAP-011) must not stand up a parallel AJV
+ * instance with diverging strictness / format settings.
+ */
+export function validateSchemaAgainstMeta(schema: unknown, label: string): unknown {
+	const valid = ajv.validateSchema(schema as Parameters<typeof ajv.validateSchema>[0]);
+	if (valid !== true) {
+		throw new ValidationError(label, ajv.errors ?? []);
+	}
+	return schema;
+}
+
+/**
  * Load a JSON Schema from a file path and validate data against it.
  * Throws if the schema file doesn't exist or is invalid JSON.
  * Throws ValidationError on validation failure.

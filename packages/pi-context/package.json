@@ -45,6 +45,14 @@
 			"types": "./dist/project-context.d.ts",
 			"default": "./dist/project-context.js"
 		},
+		"./dispatch-context": {
+			"types": "./dist/dispatch-context.d.ts",
+			"default": "./dist/dispatch-context.js"
+		},
+		"./schema-write": {
+			"types": "./dist/schema-write.d.ts",
+			"default": "./dist/schema-write.js"
+		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
 		"./schemas/relations.schema.json": "./schemas/relations.schema.json"
 	},

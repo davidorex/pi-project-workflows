@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
+import { PROJECT_DIR } from "@davidorex/pi-context/project-dir";
 import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { bundledDir } from "./bundled-dirs.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";

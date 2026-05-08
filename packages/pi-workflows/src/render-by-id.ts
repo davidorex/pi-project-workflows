@@ -34,6 +34,7 @@
  * tier in the registry's project / user / builtin search.
  */
 
+import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
 import type { BudgetWarning } from "@davidorex/pi-jit-agents";
 import {
 	createRendererRegistry,
@@ -43,7 +44,6 @@ import {
 	registerCompositionGlobals,
 	unrenderedMarker,
 } from "@davidorex/pi-jit-agents";
-import { buildIdIndex, type ItemLocation } from "@davidorex/pi-project";
 import { bundledDir } from "./bundled-dirs.js";
 
 /**

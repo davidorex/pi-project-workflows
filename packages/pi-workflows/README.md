@@ -9,7 +9,7 @@ The schemas in `schemas/` (investigation-findings, decomposition-specs, executio
 ## Install
 
 ```bash
-pi install npm:@davidorex/pi-project    # dependency
+pi install npm:@davidorex/pi-context    # dependency
 pi install npm:@davidorex/pi-workflows
 ```
 

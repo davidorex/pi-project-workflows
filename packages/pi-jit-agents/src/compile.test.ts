@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { buildIdIndex, type ItemLocation } from "@davidorex/pi-project";
+import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
 import { parseAgentYaml } from "./agent-spec.js";
 import { compileAgent } from "./compile.js";
 import { AgentCompileError } from "./errors.js";

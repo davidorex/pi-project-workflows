@@ -40,7 +40,7 @@ function run(cmd, options = {}) {
 }
 
 function getVersion() {
-	const pkg = JSON.parse(readFileSync("packages/pi-project/package.json", "utf-8"));
+	const pkg = JSON.parse(readFileSync("packages/pi-context/package.json", "utf-8"));
 	return pkg.version;
 }
 

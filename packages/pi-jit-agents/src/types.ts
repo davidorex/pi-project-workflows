@@ -4,7 +4,7 @@
  * Implements the jit-agents-spec.md §2 boundary contract: four public surfaces
  * (load, compile, execute, introspect) with typed inputs and outputs.
  */
-import type { ItemLocation } from "@davidorex/pi-project";
+import type { ItemLocation } from "@davidorex/pi-context";
 import type { Api, AssistantMessage, Model } from "@mariozechner/pi-ai";
 import type nunjucks from "nunjucks";
 import type { BudgetWarning } from "./budget-enforcer.js";

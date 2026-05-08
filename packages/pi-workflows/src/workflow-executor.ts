@@ -4,10 +4,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { readBlock, writeBlock } from "@davidorex/pi-project/block-api";
-import { rollbackBlockFiles, snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-project/block-validation";
-import { PROJECT_DIR } from "@davidorex/pi-project/project-dir";
-import { validate, validateFromFile } from "@davidorex/pi-project/schema-validator";
+import { readBlock, writeBlock } from "@davidorex/pi-context/block-api";
+import { rollbackBlockFiles, snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-context/block-validation";
+import { PROJECT_DIR } from "@davidorex/pi-context/project-dir";
+import { validate, validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { truncateTail } from "@mariozechner/pi-coding-agent";
 import type nunjucks from "nunjucks";
 import { resolveCompletion } from "./completion.js";

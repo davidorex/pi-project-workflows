@@ -1,5 +1,5 @@
 ---
-name: pi-project
+name: pi-context
 description: >
   Schema-driven project state management with typed JSON blocks, schema
   validation, planning lifecycle, and cross-block referential integrity. Use when

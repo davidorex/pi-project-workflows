@@ -7,7 +7,7 @@ Schemas are the design language. You define what your project tracks by writing 
 ## Install
 
 ```bash
-pi install npm:@davidorex/pi-project
+pi install npm:@davidorex/pi-context
 ```
 
 ## Getting Started

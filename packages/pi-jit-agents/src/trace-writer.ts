@@ -15,7 +15,7 @@
 //     pi-coding-agent's transitive dependency tree). Node 23.x exposes node:fs flockSync as
 //     `undefined` in the version this repo targets, so the userspace lockfile approach is
 //     the working option; the lock is held only for the duration of the append.
-//   - Schema validation reuses validateFromFile from @davidorex/pi-project/schema-validator
+//   - Schema validation reuses validateFromFile from @davidorex/pi-context/schema-validator
 //     so the AJV runtime, error format, and ESM/CJS interop shim live in one place.
 //
 // Size-rotation strategy:
@@ -27,7 +27,7 @@
 import { appendFileSync, existsSync, mkdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateFromFile } from "@davidorex/pi-project/schema-validator";
+import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 // proper-lockfile is CommonJS — under Node16 module resolution + ESM consumer the default
 // import resolves to the module namespace, so lockSync hangs off the default export.
 import _properLockfile from "proper-lockfile";

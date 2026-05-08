@@ -5,12 +5,12 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { schemaPath } from "@davidorex/pi-context/project-dir";
 import {
 	CANONICAL_MACRO_NAMES,
 	expandFieldPathShorthand,
 	enforceBudget as realEnforceBudget,
 } from "@davidorex/pi-jit-agents";
-import { schemaPath } from "@davidorex/pi-project/project-dir";
 import nunjucks from "nunjucks";
 import { bundledDir } from "./bundled-dirs.js";
 import type { StepSpec, WorkflowSpec } from "./types.js";

@@ -26,9 +26,9 @@ import {
 	updateItemInBlock,
 	updateNestedArrayItem,
 	writeBlock,
-} from "@davidorex/pi-project/block-api";
-import { PROJECT_DIR, schemaPath } from "@davidorex/pi-project/project-dir";
-import { validateFromFile } from "@davidorex/pi-project/schema-validator";
+} from "@davidorex/pi-context/block-api";
+import { PROJECT_DIR, schemaPath } from "@davidorex/pi-context/project-dir";
+import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { resolveExpressions } from "./expression.js";
 import { persistStepOutput } from "./output.js";
 import { zeroUsage } from "./step-shared.js";

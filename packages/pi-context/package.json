@@ -1,6 +1,6 @@
 {
-	"name": "@davidorex/pi-project",
-	"version": "0.24.2",
+	"name": "@davidorex/pi-context",
+	"version": "0.25.0",
 	"description": "Schema-driven project state management for Pi",
 	"license": "MIT",
 	"author": "David Ryan",
@@ -11,9 +11,9 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/davidorex/pi-project-workflows.git",
-		"directory": "packages/pi-project"
+		"directory": "packages/pi-context"
 	},
-	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-project",
+	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-context",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {

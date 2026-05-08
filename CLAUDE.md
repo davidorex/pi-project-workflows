@@ -40,7 +40,7 @@ npx tsx -e "import * as sdk from'./packages/pi-workflows/src/workflow-sdk.js';co
 ## Conventions
 
 - ESM, TypeScript compiled via `tsc` to `dist/`. Pi loads `dist/index.js` from each package.
-- Cross-package imports use named subpath exports (e.g., `@davidorex/pi-project/block-api`). pi-project defines explicit exports in package.json — unlisted subpaths are not importable.
+- Cross-package imports use named subpath exports (e.g., `@davidorex/pi-context/block-api`). pi-context defines explicit exports in package.json — unlisted subpaths are not importable.
 - Tests: `tsx --test` for pi-project and pi-workflows, `vitest` for pi-behavior-monitors
 - Biome linting: tab indent, 120-char lines, scoped per `biome.json` (`packages/*/src/**` + `scripts/**`); version pinned in root `package.json` devDependencies. `npm run lint` / `npm run format`. `biome.json` declares `vcs.useIgnoreFile: true` so nested `.claude/worktrees/*` configs do not trigger nested-root errors
 - Husky pre-commit hook runs `npm run check` (biome + tsc --noEmit) before every commit

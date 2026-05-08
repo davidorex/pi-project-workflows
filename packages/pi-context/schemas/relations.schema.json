@@ -1,0 +1,29 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "pi-context closure-table relations",
+	"description": "Generic closure-table substrate. One row per (parent, child, relation_type) edge. Multiple parallel hierarchies coexist as different relation_type values. Reassignment is a single field write. The schema is intentionally permissive on edge.parent's namespace — disambiguation between hierarchy edges (parent ∈ canonical ids) and lens edges (parent ∈ lens.bins) is cross-document and lives at substrate-SDK validateRelations(). Cycle detection lives at SDK traversal primitives.",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"required": ["parent", "child", "relation_type"],
+		"additionalProperties": false,
+		"properties": {
+			"parent": {
+				"type": "string",
+				"description": "Either a canonical id (DEC-NNNN, FGAP-NNN, issue-NNN) or a bin name from a lens definition. Mixing is intentional — a lens bin acts as a virtual parent node."
+			},
+			"child": {
+				"type": "string",
+				"description": "Canonical id of the member item."
+			},
+			"relation_type": {
+				"type": "string",
+				"description": "Lens id, hierarchy edge type, or registered relation_type canonical_id. Allows multiple parallel hierarchies over the same items."
+			},
+			"ordinal": {
+				"type": "integer",
+				"description": "Optional sibling-ordering within (parent, relation_type)."
+			}
+		}
+	}
+}

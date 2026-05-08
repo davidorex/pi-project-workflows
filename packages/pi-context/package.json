@@ -40,7 +40,13 @@
 		"./project-sdk": {
 			"types": "./dist/project-sdk.d.ts",
 			"default": "./dist/project-sdk.js"
-		}
+		},
+		"./project-context": {
+			"types": "./dist/project-context.d.ts",
+			"default": "./dist/project-context.js"
+		},
+		"./schemas/config.schema.json": "./schemas/config.schema.json",
+		"./schemas/relations.schema.json": "./schemas/relations.schema.json"
 	},
 	"pi": {
 		"extensions": [

@@ -23,12 +23,112 @@ function makeTmpDir(prefix: string): string {
 /**
  * Provision a `.project/` directory with one item per prefixed block kind.
  * Each block uses its canonical array key (per the live schemas). All IDs
- * conform to their corresponding ID_PREFIX_TO_BLOCK entry so buildIdIndex
- * does not throw the prefix-vs-block invariant.
+ * conform to the prefix declared in the seeded config.block_kinds[] entry,
+ * so buildIdIndex does not throw the prefix-vs-block invariant.
  */
-function seedFullFixture(tmpDir: string): void {
+function seedConfig(tmpDir: string): void {
 	const projectDir = path.join(tmpDir, ".project");
 	fs.mkdirSync(projectDir, { recursive: true });
+	const cfg = {
+		schema_version: "1.0.0",
+		root: ".project",
+		block_kinds: [
+			{
+				canonical_id: "decisions",
+				display_name: "Decisions",
+				prefix: "DEC-",
+				schema_path: "schemas/decisions.schema.json",
+				array_key: "decisions",
+				data_path: "decisions.json",
+			},
+			{
+				canonical_id: "framework-gaps",
+				display_name: "Framework Gaps",
+				prefix: "FGAP-",
+				schema_path: "schemas/framework-gaps.schema.json",
+				array_key: "gaps",
+				data_path: "framework-gaps.json",
+			},
+			{
+				canonical_id: "research",
+				display_name: "Research",
+				prefix: "R-",
+				schema_path: "schemas/research.schema.json",
+				array_key: "research",
+				data_path: "research.json",
+			},
+			{
+				canonical_id: "spec-reviews",
+				display_name: "Spec Reviews",
+				prefix: "REVIEW-",
+				schema_path: "schemas/spec-reviews.schema.json",
+				array_key: "reviews",
+				data_path: "spec-reviews.json",
+			},
+			{
+				canonical_id: "features",
+				display_name: "Features",
+				prefix: "FEAT-",
+				schema_path: "schemas/features.schema.json",
+				array_key: "features",
+				data_path: "features.json",
+			},
+			{
+				canonical_id: "layer-plans",
+				display_name: "Layer Plans",
+				prefix: "PLAN-",
+				schema_path: "schemas/layer-plans.schema.json",
+				array_key: "plans",
+				data_path: "layer-plans.json",
+			},
+			{
+				canonical_id: "tasks",
+				display_name: "Tasks",
+				prefix: "TASK-",
+				schema_path: "schemas/tasks.schema.json",
+				array_key: "tasks",
+				data_path: "tasks.json",
+			},
+			{
+				canonical_id: "requirements",
+				display_name: "Requirements",
+				prefix: "REQ-",
+				schema_path: "schemas/requirements.schema.json",
+				array_key: "requirements",
+				data_path: "requirements.json",
+			},
+			{
+				canonical_id: "verification",
+				display_name: "Verification",
+				prefix: "VER-",
+				schema_path: "schemas/verification.schema.json",
+				array_key: "verifications",
+				data_path: "verification.json",
+			},
+			{
+				canonical_id: "rationale",
+				display_name: "Rationale",
+				prefix: "RAT-",
+				schema_path: "schemas/rationale.schema.json",
+				array_key: "rationales",
+				data_path: "rationale.json",
+			},
+			{
+				canonical_id: "issues",
+				display_name: "Issues",
+				prefix: "issue-",
+				schema_path: "schemas/issues.schema.json",
+				array_key: "issues",
+				data_path: "issues.json",
+			},
+		],
+	};
+	fs.writeFileSync(path.join(projectDir, "config.json"), JSON.stringify(cfg));
+}
+
+function seedFullFixture(tmpDir: string): void {
+	seedConfig(tmpDir);
+	const projectDir = path.join(tmpDir, ".project");
 
 	fs.writeFileSync(
 		path.join(projectDir, "decisions.json"),
@@ -158,12 +258,13 @@ describe("buildIdIndex — prefix-vs-block invariant", () => {
 		const tmpDir = makeTmpDir("prefix-violation");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
+		seedConfig(tmpDir);
 		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
 
 		// Direct-fs write: stuff a DEC- ID into the tasks block. Plan 0's
 		// schema patterns would reject this through the validated write
-		// surface; here we bypass AJV to exercise the resolver's invariant.
+		// surface; here we bypass AJV to exercise the resolver's invariant
+		// (config.block_kinds[] declares DEC- → 'decisions', not 'tasks').
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
 			JSON.stringify({

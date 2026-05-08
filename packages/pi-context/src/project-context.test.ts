@@ -1,0 +1,527 @@
+/**
+ * Tests for substrate SDK (project-context.ts) — covers loaders, mtime cache,
+ * synthesis, traversal, projection, display-name resolution, curation
+ * surface, and the seven validateRelations issue codes.
+ */
+
+import assert from "node:assert";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { describe, it } from "node:test";
+import {
+	type ConfigBlock,
+	displayName,
+	type Edge,
+	edgesForLens,
+	getProjectContext,
+	groupByLens,
+	type ItemRecord,
+	type LensSpec,
+	listUncategorized,
+	loadConfig,
+	loadRelations,
+	projectRoot,
+	type SubstrateValidationIssue,
+	synthesizeFromField,
+	validateRelations,
+	walkDescendants,
+} from "./project-context.js";
+import { ValidationError } from "./schema-validator.js";
+
+function makeTmpDir(prefix: string): string {
+	return fs.mkdtempSync(path.join(os.tmpdir(), `pcx-${prefix}-`));
+}
+
+function writeConfig(tmpDir: string, cfg: ConfigBlock | Record<string, unknown>): void {
+	const dir = path.join(tmpDir, ".project");
+	fs.mkdirSync(dir, { recursive: true });
+	fs.writeFileSync(path.join(dir, "config.json"), JSON.stringify(cfg));
+}
+
+function writeRelations(tmpDir: string, edges: Edge[]): void {
+	const dir = path.join(tmpDir, ".project");
+	fs.mkdirSync(dir, { recursive: true });
+	fs.writeFileSync(path.join(dir, "relations.json"), JSON.stringify(edges));
+}
+
+const minimalConfig = (): ConfigBlock => ({
+	schema_version: "1.0.0",
+	root: ".project",
+	block_kinds: [
+		{
+			canonical_id: "decisions",
+			display_name: "Design Decisions",
+			prefix: "DEC-",
+			schema_path: "schemas/decisions.schema.json",
+			array_key: "decisions",
+			data_path: "decisions.json",
+		},
+	],
+});
+
+// ── loadConfig ──────────────────────────────────────────────────────────────
+
+describe("loadConfig", () => {
+	it("returns null when config.json is absent", (t) => {
+		const tmp = makeTmpDir("load-config-absent");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.strictEqual(loadConfig(tmp), null);
+	});
+
+	it("loads + AJV-validates a minimal valid config", (t) => {
+		const tmp = makeTmpDir("load-config-valid");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, minimalConfig());
+		const cfg = loadConfig(tmp);
+		assert.ok(cfg);
+		assert.strictEqual(cfg!.schema_version, "1.0.0");
+		assert.strictEqual(cfg!.block_kinds.length, 1);
+	});
+
+	it("throws ValidationError on schema-invalid config", (t) => {
+		const tmp = makeTmpDir("load-config-invalid");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		// Missing required block_kinds
+		writeConfig(tmp, { schema_version: "1.0.0", root: ".project" });
+		assert.throws(
+			() => loadConfig(tmp),
+			(err: unknown) => err instanceof ValidationError,
+		);
+	});
+
+	it("throws helpful error on malformed JSON", (t) => {
+		const tmp = makeTmpDir("load-config-bad-json");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const dir = path.join(tmp, ".project");
+		fs.mkdirSync(dir, { recursive: true });
+		fs.writeFileSync(path.join(dir, "config.json"), "{not json");
+		assert.throws(
+			() => loadConfig(tmp),
+			(err: unknown) => err instanceof Error && /invalid JSON/i.test(err.message),
+		);
+	});
+});
+
+// ── loadRelations ───────────────────────────────────────────────────────────
+
+describe("loadRelations", () => {
+	it("returns [] when relations.json is absent", (t) => {
+		const tmp = makeTmpDir("load-rel-absent");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.deepStrictEqual(loadRelations(tmp), []);
+	});
+
+	it("loads + AJV-validates a valid relations array", (t) => {
+		const tmp = makeTmpDir("load-rel-valid");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const edges: Edge[] = [{ parent: "DEC-0001", child: "DEC-0002", relation_type: "supersedes" }];
+		writeRelations(tmp, edges);
+		const got = loadRelations(tmp);
+		assert.deepStrictEqual(got, edges);
+	});
+
+	it("throws ValidationError on edges missing required fields", (t) => {
+		const tmp = makeTmpDir("load-rel-invalid");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const dir = path.join(tmp, ".project");
+		fs.mkdirSync(dir, { recursive: true });
+		// Missing relation_type
+		fs.writeFileSync(path.join(dir, "relations.json"), JSON.stringify([{ parent: "a", child: "b" }]));
+		assert.throws(
+			() => loadRelations(tmp),
+			(err: unknown) => err instanceof ValidationError,
+		);
+	});
+});
+
+// ── projectRoot ─────────────────────────────────────────────────────────────
+
+describe("projectRoot", () => {
+	it("falls back to <cwd>/.project when no config", (t) => {
+		const tmp = makeTmpDir("root-fallback");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.strictEqual(projectRoot(tmp), path.join(tmp, ".project"));
+	});
+
+	it("respects config.root override", (t) => {
+		const tmp = makeTmpDir("root-override");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg = minimalConfig();
+		cfg.root = "alt-substrate";
+		writeConfig(tmp, cfg);
+		assert.strictEqual(projectRoot(tmp), path.resolve(tmp, "alt-substrate"));
+	});
+});
+
+// ── getProjectContext (mtime cache) ─────────────────────────────────────────
+
+describe("getProjectContext", () => {
+	it("caches and returns identical reference when files unchanged", (t) => {
+		const tmp = makeTmpDir("ctx-cache-hit");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, minimalConfig());
+		const a = getProjectContext(tmp);
+		const b = getProjectContext(tmp);
+		assert.strictEqual(a, b, "cache hit returns same reference");
+	});
+
+	it("invalidates when config.json mtime changes", async (t) => {
+		const tmp = makeTmpDir("ctx-cache-miss-config");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, minimalConfig());
+		const a = getProjectContext(tmp);
+
+		// Bump mtime by writing a new config (sleep 10ms to ensure mtime tick on
+		// filesystems that quantize to ms; node test runners run fast).
+		await new Promise((res) => setTimeout(res, 15));
+		const cfg2 = minimalConfig();
+		cfg2.naming = { decisions: "Decisions" };
+		writeConfig(tmp, cfg2);
+
+		const b = getProjectContext(tmp);
+		assert.notStrictEqual(a, b, "cache invalidates on config mtime change");
+		assert.deepStrictEqual(b.config?.naming, { decisions: "Decisions" });
+	});
+
+	it("invalidates when relations.json mtime changes", async (t) => {
+		const tmp = makeTmpDir("ctx-cache-miss-rel");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, minimalConfig());
+		writeRelations(tmp, []);
+		const a = getProjectContext(tmp);
+
+		await new Promise((res) => setTimeout(res, 15));
+		writeRelations(tmp, [{ parent: "x", child: "y", relation_type: "rt" }]);
+		const b = getProjectContext(tmp);
+		assert.notStrictEqual(a, b);
+		assert.strictEqual(b.relations.length, 1);
+	});
+});
+
+// ── synthesizeFromField / edgesForLens ──────────────────────────────────────
+
+describe("synthesizeFromField + edgesForLens", () => {
+	const items: ItemRecord[] = [
+		{ id: "issue-1", package: "pi-context" },
+		{ id: "issue-2", package: "pi-workflows" },
+		{ id: "issue-3" }, // no package
+	];
+
+	it("synthesizeFromField yields one edge per item with the field", () => {
+		const lens: LensSpec = {
+			id: "by-package",
+			derived_from_field: "package",
+			relation_type: "package-membership",
+			bins: ["pi-context", "pi-workflows"],
+		};
+		const edges = synthesizeFromField(lens, items);
+		assert.strictEqual(edges.length, 2);
+		assert.deepStrictEqual(edges[0], { parent: "pi-context", child: "issue-1", relation_type: "package-membership" });
+	});
+
+	it("synthesizeFromField returns [] when derived_from_field is null", () => {
+		const lens: LensSpec = { id: "x", derived_from_field: null, bins: ["a"] };
+		assert.deepStrictEqual(synthesizeFromField(lens, items), []);
+	});
+
+	it("edgesForLens dispatches to synth for derived lens", () => {
+		const lens: LensSpec = {
+			id: "by-package",
+			derived_from_field: "package",
+			relation_type: "package-membership",
+			bins: ["pi-context"],
+		};
+		const edges = edgesForLens(lens, items, []);
+		assert.strictEqual(edges.length, 2);
+	});
+
+	it("edgesForLens filters authored edges for null-derived lens", () => {
+		const lens: LensSpec = {
+			id: "context-mgmt",
+			derived_from_field: null,
+			relation_type: "context-mgmt-concern",
+			bins: ["substrate-shape"],
+		};
+		const authored: Edge[] = [
+			{ parent: "substrate-shape", child: "issue-1", relation_type: "context-mgmt-concern" },
+			{ parent: "other-bin", child: "issue-2", relation_type: "different-rt" },
+		];
+		const edges = edgesForLens(lens, items, authored);
+		assert.strictEqual(edges.length, 1);
+		assert.strictEqual(edges[0].child, "issue-1");
+	});
+});
+
+// ── walkDescendants ─────────────────────────────────────────────────────────
+
+describe("walkDescendants", () => {
+	it("walks a linear chain", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "b", relation_type: "rt" },
+			{ parent: "b", child: "c", relation_type: "rt" },
+			{ parent: "c", child: "d", relation_type: "rt" },
+		];
+		const desc = walkDescendants("a", "rt", edges);
+		assert.deepStrictEqual(desc.sort(), ["b", "c", "d"]);
+	});
+
+	it("is cycle-safe (does not loop on back-edges)", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "b", relation_type: "rt" },
+			{ parent: "b", child: "a", relation_type: "rt" }, // cycle
+		];
+		const desc = walkDescendants("a", "rt", edges);
+		// Termination is the property under test; both nodes appear once each.
+		assert.ok(desc.length <= 4);
+		assert.ok(desc.includes("b"));
+	});
+
+	it("ignores edges with mismatched relation_type", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "b", relation_type: "rt-1" },
+			{ parent: "a", child: "c", relation_type: "rt-2" },
+		];
+		assert.deepStrictEqual(walkDescendants("a", "rt-1", edges), ["b"]);
+	});
+});
+
+// ── groupByLens ─────────────────────────────────────────────────────────────
+
+describe("groupByLens", () => {
+	const items: ItemRecord[] = [{ id: "i1" }, { id: "i2" }, { id: "i3" }];
+
+	it("groups items into bins by edge.parent", () => {
+		const lens: LensSpec = { id: "l", derived_from_field: null, bins: ["A", "B"] };
+		const edges: Edge[] = [
+			{ parent: "A", child: "i1", relation_type: "l" },
+			{ parent: "B", child: "i2", relation_type: "l" },
+		];
+		const grouped = groupByLens(items, lens, edges);
+		assert.strictEqual(grouped.get("A")!.length, 1);
+		assert.strictEqual(grouped.get("B")!.length, 1);
+		assert.strictEqual(grouped.get("(uncategorized)")!.length, 1);
+		assert.strictEqual(grouped.get("(uncategorized)")![0].id, "i3");
+	});
+
+	it("composition lens (no target) places by bin membership", () => {
+		const lens: LensSpec = { id: "comp", kind: "composition", derived_from_field: null, bins: ["A"] };
+		const edges: Edge[] = [{ parent: "A", child: "i1", relation_type: "comp" }];
+		const grouped = groupByLens(items, lens, edges);
+		assert.strictEqual(grouped.get("A")!.length, 1);
+	});
+});
+
+// ── displayName ─────────────────────────────────────────────────────────────
+
+describe("displayName", () => {
+	it("returns canonical id when cfg is null", () => {
+		assert.strictEqual(displayName(null, "DEC-0001"), "DEC-0001");
+	});
+
+	it("uses naming alias when present", () => {
+		const cfg = minimalConfig();
+		cfg.naming = { decisions: "Choices" };
+		assert.strictEqual(displayName(cfg, "decisions"), "Choices");
+	});
+
+	it("falls back to block_kinds[].display_name", () => {
+		const cfg = minimalConfig();
+		assert.strictEqual(displayName(cfg, "decisions"), "Design Decisions");
+	});
+
+	it("falls back to canonical id when nothing matches", () => {
+		const cfg = minimalConfig();
+		assert.strictEqual(displayName(cfg, "unknown-block"), "unknown-block");
+	});
+});
+
+// ── listUncategorized ───────────────────────────────────────────────────────
+
+describe("listUncategorized", () => {
+	it("returns uncategorized items + suggestion template", () => {
+		const lens: LensSpec = { id: "l", derived_from_field: null, relation_type: "rt", bins: ["A"] };
+		const grouped = new Map<string, ItemRecord[]>([
+			["A", [{ id: "i1" }]],
+			["(uncategorized)", [{ id: "i2" }]],
+		]);
+		const { uncategorized, suggestionTemplate } = listUncategorized(lens, grouped);
+		assert.strictEqual(uncategorized.length, 1);
+		const sug = suggestionTemplate("A", uncategorized[0]);
+		assert.deepStrictEqual(sug.payload, { parent: "A", child: "i2", relation_type: "rt" });
+		assert.ok(typeof sug.reason === "string" && sug.reason.length > 0);
+	});
+
+	it("handles empty uncategorized", () => {
+		const lens: LensSpec = { id: "l", derived_from_field: null, bins: ["A"] };
+		const grouped = new Map<string, ItemRecord[]>([["A", [{ id: "i1" }]]]);
+		const { uncategorized } = listUncategorized(lens, grouped);
+		assert.deepStrictEqual(uncategorized, []);
+	});
+});
+
+// ── validateRelations (seven issue codes) ───────────────────────────────────
+
+function configWithLensAndHierarchy(): ConfigBlock {
+	return {
+		schema_version: "1.0.0",
+		root: ".project",
+		block_kinds: [
+			{
+				canonical_id: "issues",
+				display_name: "Issues",
+				prefix: "issue-",
+				schema_path: "schemas/issues.schema.json",
+				array_key: "issues",
+				data_path: "issues.json",
+			},
+			{
+				canonical_id: "framework-gaps",
+				display_name: "Framework Gaps",
+				prefix: "FGAP-",
+				schema_path: "schemas/framework-gaps.schema.json",
+				array_key: "gaps",
+				data_path: "framework-gaps.json",
+			},
+		],
+		lenses: [
+			{
+				id: "context-mgmt",
+				kind: "target",
+				target: "issues",
+				relation_type: "context-mgmt-concern",
+				derived_from_field: null,
+				bins: ["substrate-shape", "context-projection"],
+			},
+		],
+		hierarchy: [{ parent_block: "framework-gaps", child_block: "issues", relation_type: "gap-membership" }],
+		relation_types: [{ canonical_id: "supersedes", display_name: "Supersedes", category: "ordering" }],
+	};
+}
+
+const itemsByBlock: Record<string, ItemRecord[]> = {
+	issues: [{ id: "issue-1" }, { id: "issue-2" }, { id: "issue-3" }],
+	"framework-gaps": [{ id: "FGAP-001" }, { id: "FGAP-002" }],
+};
+
+function find(issues: SubstrateValidationIssue[], code: SubstrateValidationIssue["code"]) {
+	return issues.find((i) => i.code === code);
+}
+
+describe("validateRelations", () => {
+	it("clean status when all edges resolve", () => {
+		const cfg = configWithLensAndHierarchy();
+		const edges: Edge[] = [
+			{ parent: "substrate-shape", child: "issue-1", relation_type: "context-mgmt-concern" },
+			{ parent: "FGAP-001", child: "issue-2", relation_type: "gap-membership" },
+		];
+		const r = validateRelations(cfg, edges, itemsByBlock);
+		assert.strictEqual(r.status, "clean");
+		assert.deepStrictEqual(r.issues, []);
+	});
+
+	it("edge_unknown_relation_type", () => {
+		const cfg = configWithLensAndHierarchy();
+		const edges: Edge[] = [{ parent: "x", child: "issue-1", relation_type: "no-such-rt" }];
+		const r = validateRelations(cfg, edges, itemsByBlock);
+		assert.strictEqual(r.status, "invalid");
+		assert.ok(find(r.issues, "edge_unknown_relation_type"));
+	});
+
+	it("edge_parent_not_in_bins", () => {
+		const cfg = configWithLensAndHierarchy();
+		const edges: Edge[] = [{ parent: "typo-bin", child: "issue-1", relation_type: "context-mgmt-concern" }];
+		const r = validateRelations(cfg, edges, itemsByBlock);
+		assert.ok(find(r.issues, "edge_parent_not_in_bins"));
+	});
+
+	it("edge_unresolved_child (lens edge)", () => {
+		const cfg = configWithLensAndHierarchy();
+		const edges: Edge[] = [{ parent: "substrate-shape", child: "issue-9999", relation_type: "context-mgmt-concern" }];
+		const r = validateRelations(cfg, edges, itemsByBlock);
+		assert.ok(find(r.issues, "edge_unresolved_child"));
+	});
+
+	it("edge_unresolved_parent (hierarchy edge)", () => {
+		const cfg = configWithLensAndHierarchy();
+		const edges: Edge[] = [{ parent: "FGAP-9999", child: "issue-1", relation_type: "gap-membership" }];
+		const r = validateRelations(cfg, edges, itemsByBlock);
+		assert.ok(find(r.issues, "edge_unresolved_parent"));
+	});
+
+	it("edge_parent_wrong_block", () => {
+		const cfg = configWithLensAndHierarchy();
+		// issue-1 lives in 'issues' but hierarchy expects parent in 'framework-gaps'
+		const edges: Edge[] = [{ parent: "issue-1", child: "issue-2", relation_type: "gap-membership" }];
+		const r = validateRelations(cfg, edges, itemsByBlock);
+		assert.ok(find(r.issues, "edge_parent_wrong_block"));
+	});
+
+	it("edge_child_wrong_block", () => {
+		const cfg = configWithLensAndHierarchy();
+		// FGAP-001 is in framework-gaps, but lens.target is 'issues'
+		const edges: Edge[] = [{ parent: "substrate-shape", child: "FGAP-001", relation_type: "context-mgmt-concern" }];
+		const r = validateRelations(cfg, edges, itemsByBlock);
+		assert.ok(find(r.issues, "edge_child_wrong_block"));
+	});
+
+	it("edge_cycle_detected on a hierarchy relation_type", () => {
+		// Hierarchy with parent_block === child_block to allow same-block edges
+		const cfg: ConfigBlock = {
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [
+				{
+					canonical_id: "tasks",
+					display_name: "Tasks",
+					prefix: "TASK-",
+					schema_path: "schemas/tasks.schema.json",
+					array_key: "tasks",
+					data_path: "tasks.json",
+				},
+			],
+			hierarchy: [{ parent_block: "tasks", child_block: "tasks", relation_type: "task_depends_on" }],
+		};
+		const edges: Edge[] = [
+			{ parent: "TASK-1", child: "TASK-2", relation_type: "task_depends_on" },
+			{ parent: "TASK-2", child: "TASK-3", relation_type: "task_depends_on" },
+			{ parent: "TASK-3", child: "TASK-1", relation_type: "task_depends_on" },
+		];
+		const items: Record<string, ItemRecord[]> = {
+			tasks: [{ id: "TASK-1" }, { id: "TASK-2" }, { id: "TASK-3" }],
+		};
+		const r = validateRelations(cfg, edges, items);
+		const cycleIssue = find(r.issues, "edge_cycle_detected");
+		assert.ok(cycleIssue, "cycle should be detected");
+		assert.ok(Array.isArray(cycleIssue!.cycle));
+		assert.strictEqual(cycleIssue!.relation_type, "task_depends_on");
+	});
+
+	it("relation_types declared with cycle_allowed=true skips cycle check", () => {
+		const cfg: ConfigBlock = {
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [
+				{
+					canonical_id: "tasks",
+					display_name: "Tasks",
+					prefix: "TASK-",
+					schema_path: "x",
+					array_key: "tasks",
+					data_path: "tasks.json",
+				},
+			],
+			hierarchy: [{ parent_block: "tasks", child_block: "tasks", relation_type: "loopy" }],
+			relation_types: [{ canonical_id: "loopy", display_name: "Loopy", category: "data_flow", cycle_allowed: true }],
+		};
+		// Note: hierarchy + relation_types both register 'loopy'; cycle_allowed=true
+		// in relation_types causes cycle check to be skipped.
+		const edges: Edge[] = [
+			{ parent: "TASK-1", child: "TASK-2", relation_type: "loopy" },
+			{ parent: "TASK-2", child: "TASK-1", relation_type: "loopy" },
+		];
+		const items: Record<string, ItemRecord[]> = { tasks: [{ id: "TASK-1" }, { id: "TASK-2" }] };
+		const r = validateRelations(cfg, edges, items);
+		assert.strictEqual(find(r.issues, "edge_cycle_detected"), undefined);
+	});
+});

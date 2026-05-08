@@ -8,7 +8,38 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock, updateItemInBlock } from "./block-api.js";
+import { type ConfigBlock, loadConfig } from "./project-context.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+
+// Re-export substrate SDK so consumers can keep importing through project-sdk
+// during the migration arc.
+export {
+	type BlockKindDecl,
+	type CompositionMember,
+	type ConfigBlock,
+	type CurationSuggestion,
+	displayName,
+	type Edge,
+	edgesForLens,
+	getProjectContext,
+	groupByLens,
+	type HierarchyDecl,
+	type ItemRecord,
+	type LayerDecl,
+	type LensSpec,
+	listUncategorized,
+	loadConfig,
+	loadRelations,
+	type ProjectContext,
+	projectRoot,
+	type RelationTypeDecl,
+	type StatusBucket,
+	type SubstrateValidationIssue,
+	type SubstrateValidationResult,
+	synthesizeFromField,
+	validateRelations,
+	walkDescendants,
+} from "./project-context.js";
 
 // ── Block discovery ──────────────────────────────────────────────────────────
 
@@ -527,39 +558,33 @@ export interface ItemLocation {
 }
 
 /**
- * Map from item-ID prefix to the block name that ID is expected to live in.
- * Plan 0 (v0.15.0) tightened the relevant block schemas so AJV rejects
- * ID values that violate these prefix conventions at write time. The
- * resolver enforces the same invariant at index-build time as a defense
- * against direct-fs writes that bypass validation.
+ * Look up the block expected to host an ID based on its prefix, driven by
+ * the config registry.
  *
- * IDs whose prefix is not in this table are still indexed; only listed
- * prefixes are subject to block-of-residence enforcement.
+ * Resolution: scan `cfg.block_kinds[]` for the longest-matching `prefix`
+ * and return its `canonical_id`. Returns null when:
+ *   - `cfg` is null (no config / pre-bootstrap project — graceful fallback)
+ *   - no `block_kinds[].prefix` matches the id (bare phase IDs, legacy
+ *     unprefixed IDs, future prefixes not yet registered)
+ *
+ * Registry is config-driven from line 1 — prefix conflicts surface at
+ * config-registration time rather than fixture-write time. Closes issue-089
+ * class (PLAN- vs PLAN-NNN collision) structurally.
+ *
+ * Longest-prefix wins so that compatible registrations like `R-` and
+ * `REVIEW-` resolve unambiguously.
  */
-const ID_PREFIX_TO_BLOCK: Record<string, string> = {
-	"DEC-": "decisions",
-	"FGAP-": "framework-gaps",
-	"R-": "research",
-	"REVIEW-": "spec-reviews",
-	"FEAT-": "features",
-	"PLAN-": "layer-plans",
-	"TASK-": "tasks",
-	"REQ-": "requirements",
-	"VER-": "verification",
-	"RAT-": "rationale",
-	"issue-": "issues",
-};
-
-/**
- * Look up the block expected to host an ID based on its prefix.
- * Returns null when the ID matches no known prefix (e.g., bare phase IDs,
- * legacy unprefixed IDs, or future prefix conventions not yet wired in).
- */
-function expectedBlockForId(id: string): string | null {
-	for (const [prefix, block] of Object.entries(ID_PREFIX_TO_BLOCK)) {
-		if (id.startsWith(prefix)) return block;
+export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string | null {
+	if (!cfg) return null;
+	let best: { prefix: string; canonical: string } | null = null;
+	for (const bk of cfg.block_kinds) {
+		if (id.startsWith(bk.prefix)) {
+			if (!best || bk.prefix.length > best.prefix.length) {
+				best = { prefix: bk.prefix, canonical: bk.canonical_id };
+			}
+		}
 	}
-	return null;
+	return best ? best.canonical : null;
 }
 
 /**
@@ -571,12 +596,14 @@ function expectedBlockForId(id: string): string | null {
  *   2. `.project/*.json` — every array property whose items are objects with
  *      a string `id` field becomes an indexed entry.
  *
- * Prefix invariant: when an item ID starts with one of the known prefixes
- * (see ID_PREFIX_TO_BLOCK), the block it was found in must match the
- * expected block. Mismatches throw immediately — Plan 0's schema patterns
- * make this state unreachable through validated writes, so encountering
- * one indicates either a direct-fs corruption or an unmapped prefix
- * collision that needs explicit resolution.
+ * Prefix invariant: when an item ID starts with one of the prefixes registered
+ * in `config.block_kinds[]`, the block it was found in must match that
+ * registry's `canonical_id`. Mismatches throw immediately — schema patterns
+ * make this state unreachable through validated writes, so encountering one
+ * indicates either a direct-fs corruption or an unmapped prefix collision that
+ * needs explicit resolution. When no config exists (pre-bootstrap project),
+ * the prefix invariant is silently skipped — every encountered id is indexed
+ * without enforcement.
  *
  * Collisions on identical IDs across different blocks: first writer wins
  * (no overwrite) — duplicate entries are intentionally ignored to keep
@@ -585,6 +612,7 @@ function expectedBlockForId(id: string): string | null {
 export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
 	const index = new Map<string, ItemLocation>();
 	const blockDir = path.join(cwd, PROJECT_DIR);
+	const cfg = loadConfig(cwd);
 
 	// Phase files — special: synthesized IDs from number + name fields,
 	// not from a top-level `id` string. No prefix — exempt from the
@@ -630,7 +658,7 @@ export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
 				const idVal = item.id;
 				if (typeof idVal !== "string" || idVal.length === 0) continue;
 
-				const expected = expectedBlockForId(idVal);
+				const expected = expectedBlockForId(idVal, cfg);
 				if (expected !== null && expected !== blockName) {
 					throw new Error(
 						`buildIdIndex: ID '${idVal}' found in block '${blockName}' but its prefix maps to block '${expected}'. ` +

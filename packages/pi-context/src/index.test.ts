@@ -1,5 +1,5 @@
 /**
- * Tool-level smoke tests for pi-project tools registered via the extension
+ * Tool-level smoke tests for pi-context tools registered via the extension
  * factory. The tool execute callbacks are thin wrappers over SDK functions
  * (the SDK has its own deeper coverage); these tests verify the registration
  * shape and the result-serialisation contract.
@@ -49,7 +49,7 @@ function captureTools(): { tools: Map<string, CapturedTool>; api: unknown } {
 }
 
 function tmpDir(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "pi-project-tool-"));
+	return fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-tool-"));
 }
 
 function seedFixture(cwd: string): void {
@@ -73,7 +73,7 @@ function seedFixture(cwd: string): void {
 					status: "open",
 					category: "issue",
 					priority: "low",
-					package: "pi-project",
+					package: "pi-context",
 				},
 			],
 		}),

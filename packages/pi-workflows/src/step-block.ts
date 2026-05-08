@@ -140,7 +140,7 @@ function executeRead(read: string | string[], optional: string[] | undefined, cw
  * Returns sorted array of parsed contents.
  * Missing directories return [] (on-demand subdirectories).
  *
- * Thin delegation to readBlockDir() in pi-project/block-api so the workflow
+ * Thin delegation to readBlockDir() in pi-context/block-api so the workflow
  * step and the read-block-dir registered tool share one implementation.
  * Behavior contract is preserved exactly (sort order, missing-dir semantics,
  * invalid-JSON message format).

@@ -121,7 +121,7 @@ describe("per-item macro budget enforcement wiring", () => {
 			id: "FGAP-001",
 			title: "t",
 			status: "open",
-			package: "pi-project",
+			package: "pi-context",
 			description: LONG_TEXT,
 			impact: "x",
 			proposed_resolution: "y",
@@ -330,7 +330,7 @@ describe("per-item macro budget enforcement wiring", () => {
 			status: "open",
 			category: "issue",
 			priority: "low",
-			package: "pi-project",
+			package: "pi-context",
 		};
 		const out = env.renderString(`{% from "items/issues.md" import render_issue %}{{ render_issue(i, 0) }}`, {
 			i,

@@ -71,7 +71,7 @@ let _previousDispose: (() => void) | undefined;
  *     ✓ load                           2s
  *     ✓ investigate    42s  $0.03  12k tok
  *     ▸ implement   3 turns  8k tok  $0.02   50s
- *       edit packages/pi-project/src/block-api.ts
+ *       edit packages/pi-context/src/block-api.ts
  *     · verify
  *   ─────────────────────────────────────────────
  */

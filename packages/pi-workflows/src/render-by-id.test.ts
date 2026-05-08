@@ -164,7 +164,7 @@ describe("renderItemById helper", () => {
 				status: "open",
 				category: "issue",
 				priority: "high",
-				package: "pi-project",
+				package: "pi-context",
 			},
 		]);
 

@@ -130,7 +130,7 @@ describe("projectState", () => {
 						status: "open",
 						category: "issue",
 						priority: "high",
-						package: "pi-project",
+						package: "pi-context",
 					},
 					{
 						id: "g2",
@@ -140,7 +140,7 @@ describe("projectState", () => {
 						status: "resolved",
 						category: "cleanup",
 						priority: "low",
-						package: "pi-project",
+						package: "pi-context",
 					},
 					{
 						id: "g3",
@@ -150,7 +150,7 @@ describe("projectState", () => {
 						status: "open",
 						category: "capability",
 						priority: "medium",
-						package: "pi-project",
+						package: "pi-context",
 					},
 				],
 			}),

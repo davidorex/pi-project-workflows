@@ -23,7 +23,7 @@ import { ValidationError, validateFromFile } from "./schema-validator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// repo root is three levels above packages/pi-project/src/
+// repo root is three levels above packages/pi-context/src/
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
 const SCHEMAS_DIR = path.join(REPO_ROOT, ".project", "schemas");
 
@@ -145,11 +145,11 @@ const CASES: Case[] = [
 			id,
 			title: "stub issue",
 			body: "stub body",
-			location: "packages/pi-project/src/stub.ts:1",
+			location: "packages/pi-context/src/stub.ts:1",
 			status: "open",
 			category: "issue",
 			priority: "low",
-			package: "pi-project",
+			package: "pi-context",
 		}),
 	},
 	{
@@ -239,7 +239,7 @@ describe("legacy schema annotations: existing fixture data still validates clean
 				status: "open",
 				category: "issue",
 				priority: "low",
-				package: "pi-project",
+				package: "pi-context",
 			},
 		},
 	];

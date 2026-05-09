@@ -566,6 +566,33 @@
       "priority": "P1",
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-06T22:22:49.154Z"
+    },
+    {
+      "id": "FGAP-017",
+      "title": "Registry schemas lack $ref to shared enum schemas",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "15 framework-shipped registry schemas (architecture, audit, conformance-reference, decisions, domain, handoff, issues, phase, plan, project, rationale, requirements, roadmap, tasks, verification) carry inline enum strings for fields like priority / status / severity rather than $ref-ing the 6 canonical enum schemas landed at Step 4 (FGAP-016 surface). Drift risk: an enum value added to status.schema.json doesn't propagate to consumers; per-schema enum drift was the original FGAP-016 forcing condition.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/registry/schemas/issues.schema.json",
+          "reference": "Inline enum for priority / status / severity / source rather than $ref to the 6 shared enum schemas under packages/pi-context/schemas/"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/decisions.schema.json",
+          "reference": "Inline enum for status; no $id/version per FGAP-006 discipline"
+        },
+        {
+          "file": "packages/pi-context/schemas/{priority,status,severity,source,layer,verification-method}.schema.json",
+          "reference": "6 canonical shared enum schemas exist with $id pi-context://schemas/<name>; registry schemas don't reference them"
+        }
+      ],
+      "impact": "Enum-value additions to shared schemas don't propagate to consumer block schemas. The cross-block consistency that FGAP-016 surface was filed to enable is structurally unrealized for the 15 framework-shipped registry schemas. User-customized .project/schemas/ overrides also can't inherit enum updates from shared schemas.",
+      "proposed_resolution": "Per-schema migration adding $id (pi-context://schemas/<name>) + version: '1.0.0' + $ref substitution for inline enums where applicable. Migration registry entries (per Step 4's schema-migrations.ts) author 1.0.0->1.1.0 transitions for any enum-value renames. Non-blocking for Step 5 install/lens-view surface — registry schemas carry forward verbatim in Step 5; this gap closure is its own future step (5b or later) that links the closing commit via resolved_by.",
+      "created_by": "agent/step-5-orchestrator",
+      "created_at": "2026-05-09T01:58:41.571Z"
     }
   ]
 }

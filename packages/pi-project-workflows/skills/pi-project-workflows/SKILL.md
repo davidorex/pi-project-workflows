@@ -1,7 +1,7 @@
 ---
 name: pi-project-workflows
 description: >
-  Meta-package re-exporting pi-project (schema-driven project state),
+  Meta-package re-exporting pi-context (schema-driven project state),
   pi-workflows (workflow orchestration), and pi-behavior-monitors (autonomous
   behavior monitoring). Install once to get all three extensions.
 ---

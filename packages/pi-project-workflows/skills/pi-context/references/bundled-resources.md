@@ -11,27 +11,29 @@
 - `schemas/status.schema.json`
 - `schemas/verification-method.schema.json`
 
-## defaults/ (22 files)
+## registry/ (24 files)
 
-- `defaults/blocks/conformance-reference.json`
-- `defaults/blocks/decisions.json`
-- `defaults/blocks/domain.json`
-- `defaults/blocks/issues.json`
-- `defaults/blocks/project.json`
-- `defaults/blocks/rationale.json`
-- `defaults/blocks/requirements.json`
-- `defaults/blocks/tasks.json`
-- `defaults/blocks/verification.json`
-- `defaults/schemas/architecture.schema.json`
-- `defaults/schemas/audit.schema.json`
-- `defaults/schemas/conformance-reference.schema.json`
-- `defaults/schemas/decisions.schema.json`
-- `defaults/schemas/domain.schema.json`
-- `defaults/schemas/handoff.schema.json`
-- `defaults/schemas/issues.schema.json`
-- `defaults/schemas/phase.schema.json`
-- `defaults/schemas/project.schema.json`
-- `defaults/schemas/rationale.schema.json`
-- `defaults/schemas/requirements.schema.json`
-- `defaults/schemas/tasks.schema.json`
-- `defaults/schemas/verification.schema.json`
+- `registry/blocks/conformance-reference.json`
+- `registry/blocks/decisions.json`
+- `registry/blocks/domain.json`
+- `registry/blocks/issues.json`
+- `registry/blocks/project.json`
+- `registry/blocks/rationale.json`
+- `registry/blocks/requirements.json`
+- `registry/blocks/tasks.json`
+- `registry/blocks/verification.json`
+- `registry/schemas/architecture.schema.json`
+- `registry/schemas/audit.schema.json`
+- `registry/schemas/conformance-reference.schema.json`
+- `registry/schemas/decisions.schema.json`
+- `registry/schemas/domain.schema.json`
+- `registry/schemas/handoff.schema.json`
+- `registry/schemas/issues.schema.json`
+- `registry/schemas/phase.schema.json`
+- `registry/schemas/plan.schema.json`
+- `registry/schemas/project.schema.json`
+- `registry/schemas/rationale.schema.json`
+- `registry/schemas/requirements.schema.json`
+- `registry/schemas/roadmap.schema.json`
+- `registry/schemas/tasks.schema.json`
+- `registry/schemas/verification.schema.json`

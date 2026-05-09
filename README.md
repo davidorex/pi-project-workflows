@@ -2,7 +2,7 @@
 
 Three [Pi](https://github.com/badlogic/pi-mono) extensions plus a shared agent-runtime library: typed, multi-step workflow execution via `.workflow.yaml` specs; schema-driven project state in `.project/`; behavior monitors that classify agent activity and steer corrections; and a library package that owns everything between "I have a spec" and "I have a typed result."
 
-Schemas are the contract layer. In pi-project, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. In pi-jit-agents, agent specs are compiled to typed results with phantom-tool structured output enforcement. The three extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
+Schemas are the contract layer. In pi-context, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. In pi-jit-agents, agent specs are compiled to typed results with phantom-tool structured output enforcement. The three extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
 
 ## Philosophy
 
@@ -36,9 +36,12 @@ pi install npm:@davidorex/pi-context
 pi install npm:@davidorex/pi-workflows
 
 # Initialize project structure
-/project init     # creates .project/ with schemas and empty blocks
+/project init     # writes the substrate skeleton + minimal .project/config.json (no schemas, no blocks)
+/project install  # reconciles .project/ against installed_schemas + installed_blocks declared in config.json
 /workflow init    # creates .workflows/ for run state
 ```
+
+Block kinds reach `.project/` only by declaring their names in `config.json`'s `installed_*` arrays and running `/project install` against the package-shipped `registry/`. The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
 
 ## Directory Ownership
 
@@ -46,24 +49,29 @@ After initialization, three directories coexist in a project:
 
 ```
 .pi/            — Pi platform (agents, skills, settings). Managed by Pi itself.
-.project/       — pi-project (schemas, block data, phases). Created by /project init.
-  schemas/      — JSON Schema files defining block types
-  phases/       — phase specification files
-  *.json        — block data files (issues, decisions, rationale, project, etc.)
+.project/       — pi-context. Created by /project init (skeleton-only).
+  config.json   — substrate bootstrap: root, naming, hierarchy, lenses, installed_*
+  relations.json — closure-table edges (created on first authored edge)
+  schemas/      — JSON Schema files (empty until /project install reifies declared names)
+  phases/       — phase specification files (empty until populated)
+  <name>.json   — block data files (each a /project install target or user-authored)
 .workflows/     — pi-workflows (run state). Created by /workflow init.
   runs/         — workflow execution state, session logs, outputs
 ```
 
-`.pi/` is Pi's territory — neither extension writes to it. `.project/` is tracked in git (schemas and blocks are source). `.workflows/` is gitignored (runtime state).
+`.pi/` is Pi's territory — neither extension writes to it. `.project/` is tracked in git (substrate, schemas, and blocks are source). `.workflows/` is gitignored (runtime state). `config.json` and `relations.json` always live at `.project/` (they define `root`); everything else lives under `<config.root>/...` and a relocated root reaches every read/write because all path construction routes through `projectRoot(cwd)`.
 
 ## What Each Extension Provides
 
-### pi-project
+### pi-context
 
-**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init` — generic block CRUD with automatic schema validation
+**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `read-block-dir`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `resolve-item-by-id`, `project-status`, `project-validate`, `project-init`, `project-validate-relations`, `project-edges-for-lens`, `project-walk-descendants`, `complete-task` — block CRUD (top-level + nested array operations) with automatic schema validation, plus cross-block ID resolution and substrate (closure-table relations + lens) tooling
 
 **Commands:**
-- `/project init` — scaffold `.project/` with 13 default schemas and 4 starter blocks
+- `/project init` — write the substrate skeleton + minimal `config.json` bootstrap (no schemas, no starter blocks)
+- `/project install [--update]` — reconcile `.project/` against `installed_schemas` / `installed_blocks` declared in `config.json` from the package registry
+- `/project view <lensId>` — render a configured lens (groupByLens projection) into the conversation
+- `/project lens-curate <lensId>` — surface bin-assignment suggestions for uncategorized items as a follow-up turn
 - `/project status` — derived project state (source metrics, test counts, block summaries, git state)
 - `/project add-work` — extract structured items from conversation into typed blocks
 - `/project validate` — cross-block referential integrity checks
@@ -115,7 +123,7 @@ npm run build
 npm test
 
 # Run per-package
-npm test -w packages/pi-project
+npm test -w packages/pi-context
 npm test -w packages/pi-workflows
 npm test -w packages/pi-behavior-monitors
 
@@ -132,7 +140,7 @@ npm run clean
 
 # Derive project state
 npx tsx -e "
-  import { projectState } from './packages/pi-project/src/project-sdk.js';
+  import { projectState } from './packages/pi-context/src/project-sdk.js';
   console.log(JSON.stringify(projectState('.'), null, 2));
 "
 ```
@@ -141,9 +149,12 @@ npx tsx -e "
 
 - **Main conversation is the control plane; workflows are subordinate.** Each workflow step runs as a subprocess (`pi --mode json`) with its own context window. The main LLM orchestrates; step agents execute.
 - **Agent specs are `.agent.yaml` only** (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time. Agents declare `inputSchema` for typed input validation at dispatch, `contextBlocks` to inject project block data into templates, and `output.format`/`output.schema` for output validation.
-- **`contextBlocks`** — an agent YAML field listing block names (e.g., `contextBlocks: [conventions, requirements, conformance-reference]`). At dispatch time, each named block is read from `.project/` and injected into the Nunjucks template context as `_<name>` (hyphens become underscores). Templates access block data via `{{ _conventions.rules }}` or render it with shared macros via `{% from "shared/macros.md" import render_conventions %}{{ render_conventions(_conventions) }}`. Missing blocks are `null`; templates guard with `{% if _conventions %}`. No `.project/` directory means injection is skipped entirely. This is how project state — conventions, requirements, architecture decisions — flows into agent prompts declaratively.
+- **`contextBlocks`** — an agent YAML field. Each entry is either a bare block-name string (whole-block injection) or an object `{ name, item?, focus?, depth? }` (per-item or scoped injection). At dispatch time, string entries inject the whole block under `_<name>` (hyphens become underscores). Object entries with `item` resolve the ID via the cross-block resolver and inject under `_<name>_item` (single-entry case) or `_<name>_items` array (multi-entry case for the same name — e.g., three decisions in one contextBlocks array). `depth` controls cross-reference recursion; `focus` carries kind-specific scope hints. Templates access block data via `{{ _conventions.rules }}` or render via the per-item macros under `templates/items/` (e.g., `{% from "items/conventions.md" import render_convention %}{{ render_convention(rule) }}`). Whole-block delegators in `templates/shared/macros.md` map over items. Missing blocks are `null`; templates guard with `{% if _conventions %}`. No `.project/` directory means injection is skipped entirely. This is how project state flows into agent prompts declaratively.
 - **`inputSchema`** — an agent YAML field defining a JSON Schema for the agent's input. Validated at dispatch time before the agent subprocess is spawned. If validation fails, the step fails immediately — no LLM call is made.
-- **Shared macros** (`templates/shared/macros.md`) — Nunjucks macros that render block data as markdown. One per block schema: `render_project`, `render_architecture`, `render_conventions`, `render_requirements`, `render_conformance`, `render_domain`, `render_decisions`, `render_tasks`, `render_issues`, plus `render_exploration`, `render_exploration_full`, `render_gap` for workflow step data. Each macro null-guards its input. Resolved via three-tier template search — users override by placing `shared/macros.md` in `.pi/templates/`.
+- **Per-item macros** (`templates/items/<kind>.md`) — one per block kind, each rendering a single item. Macro names follow canonical singular convention (e.g. `render_decision`, `render_feature`, `render_framework_gap`, `render_convention`); the renderer registry maps each kind to its canonical macro via `CANONICAL_MACRO_NAMES`. Macros are depth-aware: cross-block ID references inline via the `resolve` and `render_recursive` Nunjucks globals when `depth > 0`, fall back to bare-ID emission at `depth = 0`, and produce the named `cycleMarker` / `unrenderedMarker` / `notFoundMarker` sentinels on cycles, missing macros, or unresolved IDs. Budget-annotated fields render through the `enforceBudget` Nunjucks global; warnings surface on `CompiledAgent.budgetWarnings`.
+- **Whole-block delegators** (`templates/shared/macros.md`) — thin `for x in data.<key> { render_<kind>_item(x) }` wrappers over the per-item macros, for callers that want to dump a whole block.
+- **Shared render-helpers** (`templates/shared/render-helpers.md`) — helper macros for the recursion / optional-array / optional-scalar patterns. Per-item macros import what they need; new block kinds added later get the same recursion behavior without copy-pasting the pattern.
+- All resolved via three-tier template search — users override by placing alternate macro files in `.pi/templates/items/<kind>.md` or `.pi/templates/shared/...`.
 - **DAG planner infers parallelism** from `${{ steps.X }}` expression references and `context: [stepName]` declarations. Steps without explicit dependencies run sequentially by declaration order.
 - **Step context injection** — agent steps with `context: [step1, step2]` get prior step `textOutput` inlined into their dispatch prompt as labeled markdown sections. Complements expression-based structured data flow with narrative text inlining.
 - **Monitor step type** — workflows can invoke monitors as verification gates via `monitor: <name>`. CLEAN → completed, FLAG/NEW → failed.
@@ -154,15 +165,15 @@ npx tsx -e "
 - **ESM, TypeScript** compiled via `tsc` to `dist/`. Pi loads compiled JS from each package's `dist/index.js`. Cross-package imports use `.js` extensions for Node16 module resolution.
 - **Skill self-install** — each extension copies its `skills/` directory to `~/.pi/agent/skills/` on activation, ensuring skills are discoverable regardless of install method.
 - **Pre-commit hook** (husky) runs `npm run check` before every commit. **CI** (GitHub Actions) runs check + build + test on Node 22/23.
-- All four packages use **direct dependencies**. pi-jit-agents depends on pi-project for block-api reads during contextBlocks injection. pi-workflows and pi-behavior-monitors depend on pi-project for block state; consumer migration to adopt pi-jit-agents as their agent runtime is tracked in `docs/planning/jit-agents-spec.md`. pi-project has no knowledge of workflows, monitors, or jit-agents.
+- All four packages use **direct dependencies**. pi-jit-agents depends on pi-context for block-api reads during contextBlocks injection. pi-workflows and pi-behavior-monitors depend on pi-context for block state; consumer migration to adopt pi-jit-agents as their agent runtime is tracked in `docs/planning/jit-agents-spec.md`. pi-context has no knowledge of workflows, monitors, or jit-agents.
 
 ## For LLMs
 
 When working in this repository:
 
-- **Read package READMEs** for detailed API docs: [pi-project](packages/pi-project/README.md), [pi-workflows](packages/pi-workflows/README.md), [pi-behavior-monitors](packages/pi-behavior-monitors/README.md)
-- **`packages/pi-project/src/project-sdk.ts`** — derived state, block discovery, the `projectState()` function
-- **`packages/pi-project/src/block-api.ts`** — block CRUD with schema validation
+- **Read package READMEs** for detailed API docs: [pi-context](packages/pi-context/README.md), [pi-workflows](packages/pi-workflows/README.md), [pi-behavior-monitors](packages/pi-behavior-monitors/README.md)
+- **`packages/pi-context/src/project-sdk.ts`** — derived state, block discovery, the `projectState()` function
+- **`packages/pi-context/src/block-api.ts`** — block CRUD with schema validation
 - **`packages/pi-workflows/src/workflow-sdk.ts`** — vocabulary, discovery, introspection for workflows
 - **`packages/pi-workflows/src/workflow-spec.ts`** — YAML parsing and `STEP_TYPES` registry
 - **`packages/pi-workflows/src/expression.ts`** — expression evaluator and filter registry

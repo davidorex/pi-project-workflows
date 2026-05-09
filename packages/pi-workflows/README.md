@@ -27,7 +27,7 @@ Creates `.workflows/` for run state. Workflow YAML specs are discovered automati
 
 pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orchestration. Workflows are YAML specs. Steps run as subprocesses (`pi --mode json`) with their own context windows. The main conversation is the control plane; workflows are subordinate.
 
-Workflows consume project blocks as typed input via `readBlock()` — structured data, not raw files. When workflow agents write back to project blocks, pi-project's schema validation enforces the shape at write time. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
+Workflows consume project blocks as typed input via `readBlock()` — structured data, not raw files. When workflow agents write back to project blocks, pi-context's schema validation enforces the shape at write time. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
 
 **Tool registered:**
 - `workflow` — run a named workflow with typed input
@@ -190,6 +190,6 @@ Runs `tsx --test src/*.test.ts`. 500+ tests covering step types, expressions, DA
 
 ## Development
 
-Part of the [`pi-project-workflows`](../../README.md) monorepo. All three packages (pi-project, pi-workflows, pi-behavior-monitors) are versioned in lockstep at 0.9.1.
+Part of the [`pi-project-workflows`](../../README.md) monorepo. All four packages (pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors) are versioned in lockstep at 0.25.0.
 
 `npm run build` compiles TypeScript to `dist/` via `tsc`. The package ships `dist/`, not `src/` — the `pi.extensions` entry point is `./dist/index.js`.

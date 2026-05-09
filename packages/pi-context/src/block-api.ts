@@ -667,7 +667,27 @@ export function upsertItemInBlock(
 		const mode: "appended" | "updated" = idx === -1 ? "appended" : "updated";
 		const stampMode: "create" | "update" = mode === "appended" ? "create" : "update";
 		const schemaPath = existingBlockSchemaPath(cwd, blockName);
-		const stamped = ctx ? maybeStampItem(schemaPath, arrayKey, item, ctx, stampMode) : item;
+
+		// FGAP-018 fix: on update branch, pre-merge create-time attestation fields
+		// from the existing on-disk item onto the supplied item if absent. stampItem
+		// in update-mode does not touch created_*; this carries them forward across
+		// replacement so attestation integrity (FGAP-004) holds.
+		let itemForStamp = item;
+		if (idx !== -1 && schemaPath) {
+			const declared = declaredAuthorFieldsForArray(schemaPath, arrayKey);
+			const existing = arr[idx];
+			const carriedFields: Record<string, unknown> = {};
+			for (const field of ["created_by", "created_at"]) {
+				if (declared.has(field) && !(field in item) && existing && field in existing) {
+					carriedFields[field] = existing[field];
+				}
+			}
+			if (Object.keys(carriedFields).length > 0) {
+				itemForStamp = { ...carriedFields, ...item };
+			}
+		}
+
+		const stamped = ctx ? maybeStampItem(schemaPath, arrayKey, itemForStamp, ctx, stampMode) : itemForStamp;
 		const patched = [...arr];
 		if (idx === -1) {
 			patched.push(stamped);

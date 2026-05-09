@@ -2118,14 +2118,43 @@ describe("upsertItemInBlock", () => {
 		// modified_* refreshed under update-mode stamping.
 		assert.strictEqual(afterUpdate.gaps[0].modified_by, "agent/claude-opus-4-7");
 		assert.notStrictEqual(afterUpdate.gaps[0].modified_at, originalModifiedAt);
-		// upsert is REPLACEMENT (not shallow-merge). When the supplied item omits
-		// created_by / created_at and stampItem runs in update-mode, the create
-		// branch is skipped — the prior created_* values are NOT carried forward.
-		// This is the documented contract: callers wanting to preserve created_*
-		// across upserts must include them in the supplied item explicitly, or
-		// route through updateItemInBlock (shallow-merge keeps prior fields).
-		assert.strictEqual(Object.hasOwn(afterUpdate.gaps[0], "created_by"), false);
-		assert.strictEqual(Object.hasOwn(afterUpdate.gaps[0], "created_at"), false);
+		// FGAP-018 closure: upsert update-branch pre-merges declared create-time
+		// attestation fields from the existing on-disk item when supplied item omits
+		// them. created_* survives replacement; modified_* refreshes per update-mode.
+		assert.strictEqual(afterUpdate.gaps[0].created_by, "agent/claude-opus-4-7");
+		assert.strictEqual(afterUpdate.gaps[0].created_at, afterAppend.gaps[0].created_at);
+	});
+
+	it("FGAP-018: preserves created_* across multiple upsert updates when caller omits them", (t) => {
+		const tmpDir = makeTmpDir("upsert-attestation-multi");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsAuthoredSchema);
+		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [] }));
+
+		upsertItemInBlock(tmpDir, "gaps", "gaps", { id: "g1", description: "v1", status: "open" }, "id", ctxAgent);
+		const afterFirst = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		const originalCreatedBy = afterFirst.gaps[0].created_by;
+		const originalCreatedAt = afterFirst.gaps[0].created_at;
+
+		const ctxOther: DispatchContext = { writer: { kind: "human", user: "david" } };
+		upsertItemInBlock(tmpDir, "gaps", "gaps", { id: "g1", description: "v2", status: "open" }, "id", ctxOther);
+
+		// Wait long enough that ISO timestamp differs (≥1 ms guaranteed by busy loop)
+		const start = Date.now();
+		while (Date.now() === start) {
+			/* spin */
+		}
+
+		upsertItemInBlock(tmpDir, "gaps", "gaps", { id: "g1", description: "v3", status: "resolved" }, "id", ctxAgent);
+
+		const afterThird = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(afterThird.gaps[0].description, "v3");
+		assert.strictEqual(afterThird.gaps[0].status, "resolved");
+		assert.strictEqual(afterThird.gaps[0].created_by, originalCreatedBy, "created_by carried across two updates");
+		assert.strictEqual(afterThird.gaps[0].created_at, originalCreatedAt, "created_at carried across two updates");
+		assert.strictEqual(afterThird.gaps[0].modified_by, "agent/claude-opus-4-7");
+		assert.notStrictEqual(afterThird.gaps[0].modified_at, originalCreatedAt);
 	});
 });
 

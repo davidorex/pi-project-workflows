@@ -713,6 +713,118 @@
       "proposed_resolution": "Per-dimension reconciliation decisions, each requiring a data-migration consideration (existing on-disk block items use current registry vocabulary): (1) priority — drop p-prefix from shared OR migrate registry to add prefix; (2) status — formally accept multi-vocabulary-per-dimension (workflow vs issue-tracker vs document-lifecycle as distinct shared schemas) OR collapse into one canonical form; (3) severity — align scales (3-value canonical OR 5-value canonical) across audit/domain/conformance-reference/shared; (4) verification-method — formalize subset-as-restriction via JSON Schema's $ref + constraints OR accept inline subsets as the consumer-restriction pattern. Each decision needs a migration registry entry per Step 4's schema-migrations.ts to bump schema version + transform existing data. The decision space is genuinely architectural (substrate vocabulary semantics), not mechanical.",
       "created_by": "agent/step-5.1-orchestrator",
       "created_at": "2026-05-09T09:28:59.735Z"
+    },
+    {
+      "id": "FGAP-022",
+      "title": "renderLensView does not emit per-member subsections for composition lenses",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "renderLensView at packages/pi-context/src/lens-view.ts:100 detects composition via view.lens.kind === 'composition' and emits a header line stating 'composition over N member declaration(s)', but bin grouping uses view.grouped.get(bin) which projects items as a flat union. The composition's perItemOrigin map (populated by resolveComposition with member-source tags per item) is not consumed by the renderer. Output flattens membership; readers cannot see which member contributed which items.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/lens-view.ts",
+          "reference": "Line 100-130 renderLensView body: composition path emits target/relation_type/source header lines but bin iteration (lines 125-130) operates on view.grouped without member dimension. perItemOrigin from ResolvedComposition is unused in this function."
+        },
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "ResolvedComposition.perItemOrigin: Map<string, string> exists in the resolveComposition return type and tracks member-source per item id, but renderLensView does not access it."
+        }
+      ],
+      "impact": "Composition lens output collapses provenance. Two composition-lens shapes that aggregate the same items from different members produce identical render output. Curation suggestions (buildCurationSuggestions consumer) lose member context. Diamond-DAG-style lenses where the same item appears via multiple members render with no indication of multi-membership.",
+      "proposed_resolution": "Extend renderLensView to: (a) consume view.lensView.perItemOrigin or accept a ResolvedComposition reference alongside LoadedLensView for composition-kind lenses; (b) emit a per-member subsection (## Member: <member-id>) before the bin-grouped items contributed by that member; (c) annotate items appearing in multiple members with origin tags. Surfaced by adversarial audit of FGAP-012 closure (commit 3625758).",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8-audit-orchestrator",
+      "created_at": "2026-05-09T23:03:46.282Z"
+    },
+    {
+      "id": "FGAP-023",
+      "title": "validateRelations does not surface composition lens cycles",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "validateRelations at packages/pi-context/src/project-context.ts:411 walks relations.json edges and emits edge_cycle_detected via DFS recursion-stack tracking on hierarchy relation_types. Composition lens cycles (lens A members → lens B; lens B members → lens A, expressed in config.json's lens.members[]) are caught only via resolveComposition's internal visited-set which throws composition_cycle_detected (project-context.ts:633) when someone actually invokes resolveComposition. validateRelations does not proactively walk lens.members[] composition graphs; composition cycles surface only on consumer dispatch, not on validation pass.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "validateRelations (line 411) emits 7 codes covering edge integrity (edge_unknown_relation_type, edge_dangling_parent, edge_dangling_child, edge_cycle_detected, etc.). Code list does not include any lens-composition cycle code."
+        },
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "resolveComposition (line ~600) detects sub-lens cycles via internal visited-set + throws composition_cycle_detected. Throw reaches consumers of resolveComposition (loadLensView, lens-view consumers) but does not register as a validateRelations diagnostic."
+        }
+      ],
+      "impact": "validateProject + project-validate-relations pi tool report 'clean' on a config with cyclic composition lenses. The cycle surfaces only when a downstream consumer (e.g. /project view <cycling-lens>) invokes loadLensView and resolveComposition throws. Pre-flight validation is not pre-flight for composition integrity.",
+      "proposed_resolution": "Extend validateRelations (or add a sibling validateLensComposition function dispatched via lens-validator registry per Step 7's lens-validator dispatch) that walks every config.lenses[] entry with kind='composition', resolves member graph via the resolveComposition cycle-detection path, and emits a new SubstrateValidationIssue code (e.g. 'lens_composition_cycle_detected') when a cycle is found. Issue carries the cyclic lens ids. Surfaced by adversarial audit of FGAP-012 closure (commit 3625758).",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8-audit-orchestrator",
+      "created_at": "2026-05-09T23:03:46.282Z"
+    },
+    {
+      "id": "FGAP-024",
+      "title": "No write-authority enforcement layer beyond schema validation",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "FGAP-004 closure landed DispatchContext + WriterIdentity stamping (writer attribution on every block-api write). The stamping records WHO wrote; it does not enforce WHO IS ALLOWED to write. block-api's withBlockLock + AJV schema validation gate WHAT shape is written, not WHICH writer kind is permitted to write to which block. A monitor with kind=monitor can write to .project/decisions.json (a human-authored block) and the write succeeds as long as schema validates; only the created_by stamp differentiates.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "writeBlock, appendToBlock, updateItemInBlock, upsertItemInBlock all accept optional ctx?: DispatchContext but do not consult any authority configuration. ctx.writer is read for stamping; not read for permission."
+        },
+        {
+          "file": "packages/pi-context/src/dispatch-context.ts",
+          "reference": "WriterIdentity union covers 4 kinds (human, agent, monitor, workflow). No corresponding allowlist/denylist surface exists in pi-context for which kind can write to which block name."
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/",
+          "reference": "No registry schema declares an x-allowed-writers / x-write-authority extension; no config.json field declares per-block writer permissions."
+        }
+      ],
+      "impact": "Monitor write-action routing (Step 6 / commit 523fa96) closed the bypass-the-validation-layer concern but not the bypass-the-intended-author concern. A misconfigured monitor.json action.write.block can target .project/decisions.json and append entries that pass schema validation; the only differentiator is created_by stamp on the entry. Cross-writer authority drift is undetectable at write time.",
+      "proposed_resolution": "Define authority-matrix surface — either (a) per-schema x-allowed-writers extension declaring permitted WriterIdentity.kind values; (b) config.json write_authority object mapping block-name → allowed-kinds[]; or (c) WriterIdentity-aware predicate at block-api write surface that consults a registered authority-policy module (parallel to lens-validator dispatch). On violation, throw before write reaches AJV. Surfaced by adversarial audit of FGAP-004 closure (commit 001d11a + 2ed2102 + d24769a).",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8-audit-orchestrator",
+      "created_at": "2026-05-09T23:03:46.282Z"
+    },
+    {
+      "id": "FGAP-025",
+      "title": "No cross-block status-vocabulary validator surfaces unknown status values",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "Step 7's roadmap-plan validateRoadmaps emits roadmap_status_unknown_value when a roadmap.status field carries a value outside ROADMAP_STATUS_ENUM. This single-block coverage exists only for roadmap. Other blocks with status fields (issues, decisions, tasks, requirements, plan, project, features, layer-plans, etc.) rely entirely on AJV schema-enum validation at write time. validateProject + project-validate pi tool do not surface 'this on-disk item carries a status value not in the current schema enum' diagnostics for those blocks. Schema migrations (FGAP-006 surface) that change enum values silently invalidate on-disk data until the next write attempt against that item.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/roadmap-plan.ts",
+          "reference": "validateRoadmaps emits 7 diagnostic codes including roadmap_status_unknown_value, scoped to roadmap blocks only. No equivalent validator exists for issues.status, decisions.status, tasks.status, etc."
+        },
+        {
+          "file": "packages/pi-context/src/project-sdk.ts",
+          "reference": "validateProject iterates getLensValidators() (Step 7's lens-validator dispatch) but no cross-block status-vocabulary validator is registered. The lens-validator dispatch surface accommodates such a validator but none is authored."
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/",
+          "reference": "11 registry schemas declare status enums (verified via grep). A schema-enum mutation through writeSchema/updateSchema (Step 3 surface) does not retroactively diagnose pre-existing on-disk items whose status falls outside the new enum."
+        }
+      ],
+      "impact": "Schema enum evolution silently strands on-disk data. Status values that became invalid via a schema migration remain readable but are undiagnosed until an LLM or workflow attempts to mutate the item. Cross-block lens rendering (groupByLens, lens-view consumers) may bin orphaned-status items into the (uncategorized) bucket without any signal that the underlying status value is schema-invalid rather than schema-omitted.",
+      "proposed_resolution": "Author a lens-validator-dispatch-registered cross-block status-vocabulary validator (parallel to the roadmap-plan lens-validator pattern from Step 7): for every block with a 'status' property in its schema, walk all items and emit a SubstrateValidationIssue code (e.g. 'block_status_unknown_value') when an item's status falls outside the schema's declared enum at validation time. Couples to FGAP-013 (config.status_buckets vocabulary registry) and FGAP-006 (schema-versioning + migration registry). Surfaced by adversarial audit of FGAP-013 closure (commit d4ec3ce + 5fe8969).",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8-audit-orchestrator",
+      "created_at": "2026-05-09T23:03:46.282Z"
     }
   ]
 }

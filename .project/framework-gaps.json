@@ -570,7 +570,7 @@
     {
       "id": "FGAP-017",
       "title": "Registry schemas lack $ref to shared enum schemas",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L1",
@@ -592,7 +592,9 @@
       "impact": "Enum-value additions to shared schemas don't propagate to consumer block schemas. The cross-block consistency that FGAP-016 surface was filed to enable is structurally unrealized for the 15 framework-shipped registry schemas. User-customized .project/schemas/ overrides also can't inherit enum updates from shared schemas.",
       "proposed_resolution": "Per-schema migration adding $id (pi-context://schemas/<name>) + version: '1.0.0' + $ref substitution for inline enums where applicable. Migration registry entries (per Step 4's schema-migrations.ts) author 1.0.0->1.1.0 transitions for any enum-value renames. Non-blocking for Step 5 install/lens-view surface — registry schemas carry forward verbatim in Step 5; this gap closure is its own future step (5b or later) that links the closing commit via resolved_by.",
       "created_by": "agent/step-5-orchestrator",
-      "created_at": "2026-05-09T01:58:41.571Z"
+      "created_at": "2026-05-09T01:58:41.571Z",
+      "closed_by": "agent/step-5.1-orchestrator",
+      "closed_at": "2026-05-09T09:27:54.059Z"
     },
     {
       "id": "FGAP-018",

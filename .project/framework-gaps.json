@@ -620,6 +620,37 @@
       "proposed_resolution": "Two coherent shapes — user decides:  (a) Make upsertItemInBlock perform field-level merge instead of replace: on update, read existing item, shallow-merge supplied item over it (preserving fields not in supplied), then stamp. Preserves attestation by construction; matches typical 'upsert' semantic in databases.  (b) Make upsertItemInBlock preserve created_by/created_at specifically on update: read existing item, copy created_* fields into supplied item before replacement, then stamp. Surgical fix; preserves only attestation.  Path (a) is cleaner contract; path (b) is minimal change. Either closes the attestation-loss fragility. Migration registry entry not required (existing on-disk data unaffected; only future upsert calls change behavior).",
       "created_by": "agent/step-6-orchestrator",
       "created_at": "2026-05-09T05:34:01.350Z"
+    },
+    {
+      "id": "FGAP-019",
+      "title": "No canonical validated write surface for monitor side-car state (instructions/patterns)",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-behavior-monitors",
+      "layer": "L1",
+      "description": "FGAP-011 (canonical schema-write surface, enacted Step 3 + Step 6) covers writes to .project/<block>.json only — block-api derives schema from .project/schemas/<block>.schema.json. Monitor side-car state files (per-monitor instructions and learned patterns) live in the discovery-tier dir (.pi/monitors/<name>/, ~/.pi/agent/monitors/<name>/, or bundled examples/<name>/) NOT under .project/. They are written via parallel ungated fs.writeFileSync paths at packages/pi-behavior-monitors/index.ts:947 (saveInstructions writing MonitorInstruction[]) and :1485 (pattern-learning writer writing MonitorPattern[]). Both bypass three of issue-065's four enumerated bypasses: AJV schema validation against their format schemas (packages/pi-behavior-monitors/schemas/{monitor,patterns}.schema.json declare the format but no validation runs at write time), proper-lockfile contention guard, centralized monitor-bypass detection. The fourth bypass (DispatchContext author stamping) doesn't apply because the side-car format schemas don't declare author fields.",
+      "evidence": [
+        {
+          "file": "packages/pi-behavior-monitors/index.ts",
+          "reference": "Line 947: saveInstructions writes MonitorInstruction[] via fs.writeFileSync to monitor.resolvedInstructionsPath (resolved at line 447 from the monitor spec's instructions.path field). No AJV validation, no lock."
+        },
+        {
+          "file": "packages/pi-behavior-monitors/index.ts",
+          "reference": "Line 1485: pattern-learning writer writes MonitorPattern[] via fs.writeFileSync to monitor.resolvedPatternsPath (resolved at line 446 from the monitor spec's patterns.path field). No AJV validation, no lock."
+        },
+        {
+          "file": "packages/pi-behavior-monitors/schemas/",
+          "reference": "Format schemas exist for monitor + patterns but are not consumed by the side-car write paths. Step 6's executeWriteAction refactor (commit 523fa96) closed equivalent bypasses for .project/ block writes via block-api routing; no analogous surface exists for non-.project/ side-car state."
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "block-api primitives (appendToBlock, updateItemInBlock, upsertItemInBlock, writeBlock) hardcode .project/<block>.json path resolution via blockFilePath. Cannot target arbitrary discovery-dir paths."
+        }
+      ],
+      "impact": "Monitor side-car state writes can corrupt under concurrent access (no lock), can drift silently from their format schemas (no validation), and have no centralized choke point that recognizes 'side-car write happened here'. Compounds every time a monitor learns a new pattern (line 1485 fires on every NEW classify verdict) or the user adds a steering rule (line 947 fires on every /monitors rules add). FGAP-011 is partially enacted: substrate writes are validated; framework-level side-car writes are not.",
+      "proposed_resolution": "Extend the canonical validated write surface to cover non-.project/ framework state. Two coherent shapes — user decides:  (a) Generalize block-api to take an arbitrary base path + schema path pair: appendToTypedFile(filePath, schemaPath, arrayKey, item). Existing block-api primitives become thin wrappers passing the .project/-derived paths. Monitor side-car writers call the new primitive with discovery-dir paths + framework schema paths.  (b) Add a parallel pi-behavior-monitors-internal validated write helper that wraps the existing fs.writeFileSync sites with proper-lockfile + AJV validation against the framework schemas, without involving block-api. Smaller surface, no block-api generalization, but creates a parallel ungated path elsewhere if other consumers need similar support.  Path (a) is the FGAP-011-extension story (one canonical surface for all validated writes); path (b) is the surgical fix (closes the immediate side-car bypass without architectural change). Either closes the three remaining bypasses for monitor side-car writes.",
+      "created_by": "agent/step-6-orchestrator",
+      "created_at": "2026-05-09T05:38:52.759Z"
     }
   ]
 }

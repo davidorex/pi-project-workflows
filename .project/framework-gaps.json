@@ -659,7 +659,7 @@
     {
       "id": "FGAP-020",
       "title": "Find-or-merge block-api primitives lack typed-file generalization",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "layer": "L1",
@@ -677,7 +677,9 @@
       "impact": "Future consumers of non-.project/ side-car state needing find-or-merge / upsert / nested-mutation semantics cannot reuse block-api's atomic critical-section + AJV + ctx-stamping infrastructure. Each such consumer either (a) re-implements the read-mutate-write loop with its own lock/validate/stamp logic — recreating FGAP-019, or (b) constructs a synthetic block name pointing outside .project/ — abuse of the wrapper boundary. The architectural symmetry FGAP-019 closure was meant to deliver (one canonical surface for ALL framework writes) is delivered for whole-file + simple-append only.",
       "proposed_resolution": "Extract typed-file equivalents for the remaining six find-or-merge primitives: updateItemInTypedFile, upsertItemInTypedFile, appendToNestedTypedFile, updateNestedItemInTypedFile, removeFromTypedFile, removeFromNestedTypedFile. Each follows the same generalization pattern as Phase A of Step 6.1 — operate on (filePath, schemaPath, ...) pairs, withBlockLock wraps the read-mutate-write critical section, ctx-stamping via maybeStampItem (already schemaPath-keyed per Phase B). Existing .project/-targeting primitives become wrappers as in Phase C. ~+200 net lines; test surface ~+10 typed-file find-or-merge tests + wrapper-continuity smoke. No live regression — purely architectural-symmetry completion of Step 6.1.",
       "created_by": "agent/step-6.1-orchestrator",
-      "created_at": "2026-05-09T07:16:50.240Z"
+      "created_at": "2026-05-09T07:16:50.240Z",
+      "closed_by": "agent/step-6.3-orchestrator",
+      "closed_at": "2026-05-09T08:08:48.641Z"
     }
   ]
 }

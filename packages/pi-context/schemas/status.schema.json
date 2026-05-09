@@ -1,0 +1,9 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/status",
+	"version": "1.0.0",
+	"title": "Status canonical enum",
+	"description": "Opaque canonical status IDs. Display labels per consumer come from config.status_buckets normalization. Matches POC-C StatusBucket vocabulary.",
+	"type": "string",
+	"enum": ["todo", "in_progress", "blocked", "complete", "unknown"]
+}

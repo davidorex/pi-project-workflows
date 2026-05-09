@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/config",
+	"version": "1.0.0",
 	"title": "pi-context substrate config",
 	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, and lens specs. Closes FGAP-001 (hierarchical block storage), FGAP-013 (status vocabulary registry), issue-089 class (PLAN- prefix collision) by making registries config-driven from line 1.",
 	"type": "object",

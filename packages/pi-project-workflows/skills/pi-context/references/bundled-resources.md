@@ -1,9 +1,15 @@
 # Bundled Resources
 
-## schemas/ (2 files)
+## schemas/ (8 files)
 
 - `schemas/config.schema.json`
+- `schemas/layer.schema.json`
+- `schemas/priority.schema.json`
 - `schemas/relations.schema.json`
+- `schemas/severity.schema.json`
+- `schemas/source.schema.json`
+- `schemas/status.schema.json`
+- `schemas/verification-method.schema.json`
 
 ## defaults/ (22 files)
 

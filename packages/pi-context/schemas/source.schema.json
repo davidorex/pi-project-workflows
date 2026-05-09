@@ -1,0 +1,9 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/source",
+	"version": "1.0.0",
+	"title": "Source canonical enum",
+	"description": "Opaque canonical source IDs identifying which actor produced a piece of substrate state (human, agent run, monitor classification, workflow execution).",
+	"type": "string",
+	"enum": ["human", "agent", "monitor", "workflow"]
+}

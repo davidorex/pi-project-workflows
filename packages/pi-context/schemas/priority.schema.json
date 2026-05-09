@@ -1,0 +1,9 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/priority",
+	"version": "1.0.0",
+	"title": "Priority canonical enum",
+	"description": "Opaque canonical priority IDs. Display labels per consumer come from config.priority_buckets.",
+	"type": "string",
+	"enum": ["p-low", "p-medium", "p-high", "p-critical"]
+}

@@ -1,0 +1,9 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/verification-method",
+	"version": "1.0.0",
+	"title": "Verification method canonical enum",
+	"description": "Opaque canonical verification-method IDs identifying how a verification claim is to be substantiated.",
+	"type": "string",
+	"enum": ["command", "grep", "ast", "inspect", "human", "test"]
+}

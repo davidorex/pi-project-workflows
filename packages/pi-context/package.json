@@ -53,8 +53,18 @@
 			"types": "./dist/schema-write.d.ts",
 			"default": "./dist/schema-write.js"
 		},
+		"./schema-migrations": {
+			"types": "./dist/schema-migrations.d.ts",
+			"default": "./dist/schema-migrations.js"
+		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
-		"./schemas/relations.schema.json": "./schemas/relations.schema.json"
+		"./schemas/relations.schema.json": "./schemas/relations.schema.json",
+		"./schemas/priority.schema.json": "./schemas/priority.schema.json",
+		"./schemas/status.schema.json": "./schemas/status.schema.json",
+		"./schemas/severity.schema.json": "./schemas/severity.schema.json",
+		"./schemas/source.schema.json": "./schemas/source.schema.json",
+		"./schemas/layer.schema.json": "./schemas/layer.schema.json",
+		"./schemas/verification-method.schema.json": "./schemas/verification-method.schema.json"
 	},
 	"pi": {
 		"extensions": [

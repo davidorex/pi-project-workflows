@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/relations",
+	"version": "1.0.0",
 	"title": "pi-context closure-table relations",
 	"description": "Generic closure-table substrate. One row per (parent, child, relation_type) edge. Multiple parallel hierarchies coexist as different relation_type values. Reassignment is a single field write. The schema is intentionally permissive on edge.parent's namespace — disambiguation between hierarchy edges (parent ∈ canonical ids) and lens edges (parent ∈ lens.bins) is cross-document and lives at substrate-SDK validateRelations(). Cycle detection lives at SDK traversal primitives.",
 	"type": "array",

@@ -486,6 +486,442 @@ export function appendToTypedFile(
 	});
 }
 
+// ── Internal helpers shared by the typed-file find-or-merge primitives ─────
+
+/**
+ * Resolve the array reachable by `arrayPath` against `data` after the
+ * standard read step, throwing labeled errors for the three structural
+ * invariants common to every find-or-merge primitive:
+ *   - `arrayPath === null` → `data` itself must be a plain array
+ *   - `arrayPath === string` → `data` must be a non-array object with that
+ *     key present and the value must be an array
+ *
+ * Returns the resolved array PLUS a writer thunk that puts the (possibly
+ * new) array reference back into the parent shape so callers can hand the
+ * mutated parent to `writeTypedFile`. The writer thunk is what isolates
+ * the "file IS the array" case from the "object with array field" case
+ * inside primitive bodies — every primitive uses the same shape-resolution
+ * preamble and the same final `writeTypedFile` call regardless of the
+ * top-level shape.
+ *
+ * Multi-match warnings, predicate-not-found semantics, and ctx-stamping
+ * are NOT part of this helper — they vary per primitive (update throws on
+ * miss, remove is idempotent, upsert decides append-vs-replace, etc.).
+ */
+function resolveTypedArrayShape(
+	data: unknown,
+	arrayPath: string | null,
+	label: string,
+): {
+	arr: unknown[];
+	rewriteParent: (next: unknown[]) => unknown;
+} {
+	if (arrayPath === null) {
+		if (!Array.isArray(data)) {
+			throw new Error(`${label}: expected top-level array, got ${typeof data}`);
+		}
+		return {
+			arr: data,
+			rewriteParent: (next) => next,
+		};
+	}
+	if (!data || typeof data !== "object" || Array.isArray(data)) {
+		throw new Error(`${label}: expected object with array field '${arrayPath}'`);
+	}
+	const record = data as Record<string, unknown>;
+	if (!(arrayPath in record)) {
+		throw new Error(`${label} has no key '${arrayPath}'`);
+	}
+	const candidate = record[arrayPath];
+	if (!Array.isArray(candidate)) {
+		throw new Error(`${label} key '${arrayPath}' is not an array`);
+	}
+	return {
+		arr: candidate,
+		rewriteParent: (next) => ({ ...record, [arrayPath]: next }),
+	};
+}
+
+/**
+ * Per-item ctx-stamping for the typed-file find-or-merge primitives.
+ * Mirrors the existing `maybeStampItem` semantics but keys the schema
+ * lookup by `arrayPath`. For the flat-array case (`arrayPath === null`)
+ * the lookup uses the `__top__` sentinel which `collectArrayItemAuthorDecisions`
+ * never populates — flat-array stamping is intentionally a no-op until a
+ * schema actually declares author fields on a top-level array shape (no
+ * current consumer does so). Documented in the FGAP-019 closure commit.
+ */
+function maybeStampTypedItem(
+	schemaPath: string | null,
+	arrayPath: string | null,
+	item: Record<string, unknown>,
+	ctx: DispatchContext | undefined,
+	mode: "create" | "update",
+): Record<string, unknown> {
+	const key = arrayPath ?? "__top__";
+	return maybeStampItem(schemaPath, key, item, ctx, mode);
+}
+
+/**
+ * Validated atomic find-by-predicate update of one item inside an array
+ * reachable from `(filePath, schemaPath, arrayPath)`. Generalises
+ * `updateItemInBlock` to arbitrary file paths and supports both top-level
+ * array files (`arrayPath === null`) and object-with-array-field files
+ * (`arrayPath === string`). Throws on predicate miss; AJV validates the
+ * whole file after mutation.
+ *
+ * Multi-match warning emits on stderr with the established `[block-api]`
+ * prefix (grep-discoverable across legacy log lines).
+ *
+ * `ctx`: when supplied AND the schema declares author fields on the items
+ * reachable by `arrayPath`, the merged item is stamped in update-mode
+ * before AJV runs. Flat-array stamping is a no-op (see
+ * `maybeStampTypedItem`).
+ */
+export function updateItemInTypedFile(
+	filePath: string,
+	schemaPath: string | null,
+	arrayPath: string | null,
+	predicate: (item: Record<string, unknown>) => boolean,
+	updates: Record<string, unknown>,
+	ctx?: DispatchContext,
+	errorLabel?: string,
+): void {
+	const label = errorLabel ?? filePath;
+	withBlockLock(filePath, () => {
+		const data = readTypedFile(filePath, label);
+		const { arr: rawArr, rewriteParent } = resolveTypedArrayShape(data, arrayPath, label);
+		const arr = rawArr as Record<string, unknown>[];
+		const idx = arr.findIndex(predicate);
+		if (idx === -1) {
+			throw new Error(`No matching item in ${label}${arrayPath !== null ? ` key '${arrayPath}'` : ""}`);
+		}
+		let matchCount = 1;
+		for (let i = idx + 1; i < arr.length; i++) {
+			if (predicate(arr[i])) matchCount++;
+		}
+		if (matchCount > 1) {
+			console.error(`[block-api] updateItemInBlock: ${matchCount} items matched predicate, only first updated`);
+		}
+		const merged: Record<string, unknown> = { ...arr[idx], ...updates };
+		const updated = ctx ? maybeStampTypedItem(schemaPath, arrayPath, merged, ctx, "update") : merged;
+		const patched = [...arr];
+		patched[idx] = updated;
+		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label);
+	});
+}
+
+/**
+ * Validated atomic find-or-append. Generalises `upsertItemInBlock` to
+ * arbitrary `(filePath, schemaPath, arrayPath)` triples, including
+ * top-level array files via `arrayPath === null`.
+ *
+ * FGAP-018 fix lives here (was in `upsertItemInBlock` prior to Step 6.3):
+ * on the update branch, declared create-time attestation fields are
+ * pre-merged from the existing on-disk item onto the supplied item if
+ * absent, so attestation integrity (FGAP-004) holds across replacement.
+ * The wrapper `upsertItemInBlock` inherits the fix structurally.
+ *
+ * For the flat-array case the pre-merge is a structural no-op — the
+ * `declaredAuthorFieldsForArray` lookup keyed by `__top__` returns the
+ * empty set (top-level array schemas are never visited by
+ * `collectArrayItemAuthorDecisions`), so no fields are carried. This is
+ * intentional: no current consumer declares author fields on a top-level
+ * array shape, and the unconditional pre-merge code path simply finds
+ * nothing to merge. If a future consumer lands such a schema, the
+ * stamping cataloguer needs an extension (filed-or-future work) — this
+ * primitive will then start preserving attestation on flat-array upserts
+ * automatically.
+ */
+export function upsertItemInTypedFile(
+	filePath: string,
+	schemaPath: string | null,
+	arrayPath: string | null,
+	item: Record<string, unknown>,
+	idField: string,
+	ctx?: DispatchContext,
+	errorLabel?: string,
+): { mode: "appended" | "updated" } {
+	const label = errorLabel ?? filePath;
+	const idValue = item[idField];
+	if (idValue === undefined || idValue === null || idValue === "") {
+		throw new Error(
+			`upsertItemInTypedFile: item is missing required idField '${idField}' (got: ${JSON.stringify(idValue)}) for ${label}`,
+		);
+	}
+	return withBlockLock(filePath, () => {
+		const data = readTypedFile(filePath, label);
+		const { arr: rawArr, rewriteParent } = resolveTypedArrayShape(data, arrayPath, label);
+		const arr = rawArr as Record<string, unknown>[];
+		const idx = arr.findIndex((existing) => existing && existing[idField] === idValue);
+		const mode: "appended" | "updated" = idx === -1 ? "appended" : "updated";
+		const stampMode: "create" | "update" = mode === "appended" ? "create" : "update";
+
+		// FGAP-018 fix: on update branch, pre-merge create-time attestation fields
+		// from the existing on-disk item onto the supplied item if absent. stampItem
+		// in update-mode does not touch created_*; this carries them forward across
+		// replacement so attestation integrity (FGAP-004) holds. For the flat-array
+		// case (arrayPath === null) the declared-fields lookup returns an empty set
+		// and no carry happens — see the function-doc note.
+		let itemForStamp = item;
+		if (idx !== -1 && schemaPath) {
+			const declared = declaredAuthorFieldsForArray(schemaPath, arrayPath ?? "__top__");
+			const existing = arr[idx];
+			const carriedFields: Record<string, unknown> = {};
+			for (const field of ["created_by", "created_at"]) {
+				if (declared.has(field) && !(field in item) && existing && field in existing) {
+					carriedFields[field] = existing[field];
+				}
+			}
+			if (Object.keys(carriedFields).length > 0) {
+				itemForStamp = { ...carriedFields, ...item };
+			}
+		}
+
+		const stamped = ctx ? maybeStampTypedItem(schemaPath, arrayPath, itemForStamp, ctx, stampMode) : itemForStamp;
+		const patched = [...arr];
+		if (idx === -1) {
+			patched.push(stamped);
+		} else {
+			patched[idx] = stamped;
+		}
+		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label);
+		return { mode };
+	});
+}
+
+/**
+ * Validated atomic predicate-based remove. Generalises `removeFromBlock`
+ * to arbitrary `(filePath, schemaPath, arrayPath)` triples including
+ * top-level array files. Idempotent on miss (returns `{ removed: 0 }`
+ * without throwing or writing). AJV validates whole file after mutation
+ * (so e.g. a `minItems` violation surfaces).
+ */
+export function removeFromTypedFile(
+	filePath: string,
+	schemaPath: string | null,
+	arrayPath: string | null,
+	predicate: (item: Record<string, unknown>) => boolean,
+	ctx?: DispatchContext,
+	errorLabel?: string,
+): { removed: number } {
+	// See note in removeFromBlock: ctx is accepted for surface parity; no items
+	// remain to stamp on removal.
+	void ctx;
+	const label = errorLabel ?? filePath;
+	return withBlockLock(filePath, () => {
+		const data = readTypedFile(filePath, label);
+		const { arr: rawArr, rewriteParent } = resolveTypedArrayShape(data, arrayPath, label);
+		const arr = rawArr as Record<string, unknown>[];
+		const remaining = arr.filter((it) => !predicate(it));
+		const removed = arr.length - remaining.length;
+		if (removed === 0) {
+			return { removed: 0 };
+		}
+		if (removed > 1) {
+			console.error(`[block-api] removeFromBlock: ${removed} items matched predicate, all removed`);
+		}
+		writeTypedFile(filePath, schemaPath, rewriteParent(remaining), undefined, label);
+		return { removed };
+	});
+}
+
+/**
+ * Validated atomic append to a nested array inside a parent-array item.
+ * Generalises `appendToNestedArray` to arbitrary `(filePath, schemaPath,
+ * parentArrayKey, nestedArrayKey)`. Nesting requires object-with-array-field
+ * shape — a top-level array file cannot host nested arrays at the same
+ * structural level — so `parentArrayKey` is `string` (no `null` form).
+ *
+ * Throws on missing parent key, no parent match, missing nested key, or
+ * AJV failure. Multi-match warning emits at parent level via stderr with
+ * the established `[block-api]` prefix.
+ */
+export function appendToNestedTypedFile(
+	filePath: string,
+	schemaPath: string | null,
+	parentArrayKey: string,
+	predicate: (item: Record<string, unknown>) => boolean,
+	nestedArrayKey: string,
+	item: unknown,
+	ctx?: DispatchContext,
+	errorLabel?: string,
+): void {
+	const label = errorLabel ?? filePath;
+	withBlockLock(filePath, () => {
+		const data = readTypedFile(filePath, label);
+		const { arr: rawArr, rewriteParent } = resolveTypedArrayShape(data, parentArrayKey, label);
+		const arr = rawArr as Record<string, unknown>[];
+		const idx = arr.findIndex(predicate);
+		if (idx === -1) {
+			throw new Error(`No matching item in ${label} key '${parentArrayKey}'`);
+		}
+		let matchCount = 1;
+		for (let i = idx + 1; i < arr.length; i++) {
+			if (predicate(arr[i])) matchCount++;
+		}
+		if (matchCount > 1) {
+			console.error(`[block-api] appendToNestedArray: ${matchCount} items matched predicate, only first updated`);
+		}
+		const parent = arr[idx];
+		if (!(nestedArrayKey in parent)) {
+			throw new Error(`Matched item in ${label} key '${parentArrayKey}' has no nested key '${nestedArrayKey}'`);
+		}
+		if (!Array.isArray(parent[nestedArrayKey])) {
+			throw new Error(
+				`Matched item in ${label} key '${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
+			);
+		}
+		const itemToAppend =
+			ctx && item && typeof item === "object" && !Array.isArray(item)
+				? maybeStampItem(schemaPath, nestedArrayKey, item as Record<string, unknown>, ctx, "create")
+				: item;
+		const updatedParent = {
+			...parent,
+			[nestedArrayKey]: [...(parent[nestedArrayKey] as unknown[]), itemToAppend],
+		};
+		const patched = [...arr];
+		patched[idx] = updatedParent;
+		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label);
+	});
+}
+
+/**
+ * Validated atomic update of a single item inside a nested array on a
+ * parent-array item. Generalises `updateNestedArrayItem` to arbitrary
+ * `(filePath, schemaPath, parentArrayKey, nestedArrayKey)`. Object-shape
+ * file required (see `appendToNestedTypedFile` doc).
+ *
+ * Throws on missing parent key, no parent/nested match, missing nested
+ * key, or AJV failure. Multi-match warnings emit at both parent and
+ * nested levels via stderr with the `[block-api]` prefix.
+ */
+export function updateNestedItemInTypedFile(
+	filePath: string,
+	schemaPath: string | null,
+	parentArrayKey: string,
+	parentPredicate: (item: Record<string, unknown>) => boolean,
+	nestedArrayKey: string,
+	nestedPredicate: (item: Record<string, unknown>) => boolean,
+	updates: Record<string, unknown>,
+	ctx?: DispatchContext,
+	errorLabel?: string,
+): void {
+	const label = errorLabel ?? filePath;
+	withBlockLock(filePath, () => {
+		const data = readTypedFile(filePath, label);
+		const { arr: rawArr, rewriteParent } = resolveTypedArrayShape(data, parentArrayKey, label);
+		const arr = rawArr as Record<string, unknown>[];
+		const parentIdx = arr.findIndex(parentPredicate);
+		if (parentIdx === -1) {
+			throw new Error(`No matching item in ${label} key '${parentArrayKey}'`);
+		}
+		let parentMatchCount = 1;
+		for (let i = parentIdx + 1; i < arr.length; i++) {
+			if (parentPredicate(arr[i])) parentMatchCount++;
+		}
+		if (parentMatchCount > 1) {
+			console.error(
+				`[block-api] updateNestedArrayItem: ${parentMatchCount} parent items matched predicate, only first updated`,
+			);
+		}
+		const parent = arr[parentIdx];
+		if (!(nestedArrayKey in parent)) {
+			throw new Error(`Matched item in ${label} key '${parentArrayKey}' has no nested key '${nestedArrayKey}'`);
+		}
+		if (!Array.isArray(parent[nestedArrayKey])) {
+			throw new Error(
+				`Matched item in ${label} key '${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
+			);
+		}
+		const nestedArr = parent[nestedArrayKey] as Record<string, unknown>[];
+		const nestedIdx = nestedArr.findIndex(nestedPredicate);
+		if (nestedIdx === -1) {
+			throw new Error(`No matching nested item in ${label} key '${parentArrayKey}[${parentIdx}].${nestedArrayKey}'`);
+		}
+		let nestedMatchCount = 1;
+		for (let i = nestedIdx + 1; i < nestedArr.length; i++) {
+			if (nestedPredicate(nestedArr[i])) nestedMatchCount++;
+		}
+		if (nestedMatchCount > 1) {
+			console.error(
+				`[block-api] updateNestedArrayItem: ${nestedMatchCount} nested items matched predicate, only first updated`,
+			);
+		}
+		const mergedNested: Record<string, unknown> = { ...nestedArr[nestedIdx], ...updates };
+		const updatedNested = ctx ? maybeStampItem(schemaPath, nestedArrayKey, mergedNested, ctx, "update") : mergedNested;
+		const patchedNested = [...nestedArr];
+		patchedNested[nestedIdx] = updatedNested;
+		const updatedParent = { ...parent, [nestedArrayKey]: patchedNested };
+		const patchedParents = [...arr];
+		patchedParents[parentIdx] = updatedParent;
+		writeTypedFile(filePath, schemaPath, rewriteParent(patchedParents), undefined, label);
+	});
+}
+
+/**
+ * Validated atomic remove from a nested array. Generalises
+ * `removeFromNestedArray` to arbitrary `(filePath, schemaPath,
+ * parentArrayKey, nestedArrayKey)`. Object-shape file required (see
+ * `appendToNestedTypedFile` doc). Idempotent on nested-miss (returns
+ * `{ removed: 0 }`); throws on parent-miss to surface a malformed
+ * caller, mirroring the wrapper's prior semantics.
+ */
+export function removeFromNestedTypedFile(
+	filePath: string,
+	schemaPath: string | null,
+	parentArrayKey: string,
+	parentPredicate: (item: Record<string, unknown>) => boolean,
+	nestedArrayKey: string,
+	nestedPredicate: (item: Record<string, unknown>) => boolean,
+	ctx?: DispatchContext,
+	errorLabel?: string,
+): { removed: number } {
+	void ctx;
+	const label = errorLabel ?? filePath;
+	return withBlockLock(filePath, () => {
+		const data = readTypedFile(filePath, label);
+		const { arr: rawArr, rewriteParent } = resolveTypedArrayShape(data, parentArrayKey, label);
+		const arr = rawArr as Record<string, unknown>[];
+		const parentIdx = arr.findIndex(parentPredicate);
+		if (parentIdx === -1) {
+			throw new Error(`No matching item in ${label} key '${parentArrayKey}'`);
+		}
+		let parentMatchCount = 1;
+		for (let i = parentIdx + 1; i < arr.length; i++) {
+			if (parentPredicate(arr[i])) parentMatchCount++;
+		}
+		if (parentMatchCount > 1) {
+			console.error(
+				`[block-api] removeFromNestedArray: ${parentMatchCount} parent items matched predicate, only first targeted`,
+			);
+		}
+		const parent = arr[parentIdx];
+		if (!(nestedArrayKey in parent)) {
+			throw new Error(`Matched item in ${label} key '${parentArrayKey}' has no nested key '${nestedArrayKey}'`);
+		}
+		if (!Array.isArray(parent[nestedArrayKey])) {
+			throw new Error(
+				`Matched item in ${label} key '${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
+			);
+		}
+		const nestedArr = parent[nestedArrayKey] as Record<string, unknown>[];
+		const nestedRemaining = nestedArr.filter((it) => !nestedPredicate(it));
+		const removed = nestedArr.length - nestedRemaining.length;
+		if (removed === 0) {
+			return { removed: 0 };
+		}
+		if (removed > 1) {
+			console.error(`[block-api] removeFromNestedArray: ${removed} nested items matched predicate, all removed`);
+		}
+		const updatedParent = { ...parent, [nestedArrayKey]: nestedRemaining };
+		const patched = [...arr];
+		patched[parentIdx] = updatedParent;
+		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label);
+		return { removed };
+	});
+}
+
 /**
  * Validate `data` against its schema (if one exists) and write atomically
  * to `.project/{blockName}.json`. Throws `ValidationError` on schema failure.
@@ -568,46 +1004,9 @@ export function updateItemInBlock(
 	updates: Record<string, unknown>,
 	ctx?: DispatchContext,
 ): void {
-	withBlockLock(blockFilePath(cwd, blockName), () => {
-		const data = readBlock(cwd, blockName);
-
-		if (!data || typeof data !== "object") {
-			throw new Error(`Block '${blockName}' is not an object`);
-		}
-
-		const record = data as Record<string, unknown>;
-		if (!(arrayKey in record)) {
-			throw new Error(`Block '${blockName}' has no key '${arrayKey}'`);
-		}
-		if (!Array.isArray(record[arrayKey])) {
-			throw new Error(`Block '${blockName}' key '${arrayKey}' is not an array`);
-		}
-
-		const arr = record[arrayKey] as Record<string, unknown>[];
-		const idx = arr.findIndex(predicate);
-		if (idx === -1) {
-			throw new Error(`No matching item in block '${blockName}' key '${arrayKey}'`);
-		}
-
-		// Count total matches to warn if predicate is ambiguous
-		let matchCount = 1;
-		for (let i = idx + 1; i < arr.length; i++) {
-			if (predicate(arr[i])) matchCount++;
-		}
-		if (matchCount > 1) {
-			console.error(`[block-api] updateItemInBlock: ${matchCount} items matched predicate, only first updated`);
-		}
-
-		// Clone the matched item with updates applied — avoid mutating in-memory
-		// before validation. If writeBlock fails, the original array is unmodified.
-		const merged: Record<string, unknown> = { ...arr[idx], ...updates };
-		const schemaPath = existingBlockSchemaPath(cwd, blockName);
-		const updated = ctx ? maybeStampItem(schemaPath, arrayKey, merged, ctx, "update") : merged;
-		const patched = [...arr];
-		patched[idx] = updated;
-		record[arrayKey] = patched;
-		writeBlock(cwd, blockName, record);
-	});
+	const filePath = blockFilePath(cwd, blockName);
+	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	updateItemInTypedFile(filePath, schemaPath, arrayKey, predicate, updates, ctx, `block file '${blockName}.json'`);
 }
 
 /**
@@ -644,60 +1043,9 @@ export function upsertItemInBlock(
 	idField: string,
 	ctx?: DispatchContext,
 ): { mode: "appended" | "updated" } {
-	const idValue = item[idField];
-	if (idValue === undefined || idValue === null || idValue === "") {
-		throw new Error(
-			`upsertItemInBlock: item is missing required idField '${idField}' (got: ${JSON.stringify(idValue)})`,
-		);
-	}
-	return withBlockLock(blockFilePath(cwd, blockName), () => {
-		const data = readBlock(cwd, blockName);
-		if (!data || typeof data !== "object") {
-			throw new Error(`Block '${blockName}' is not an object`);
-		}
-		const record = data as Record<string, unknown>;
-		if (!(arrayKey in record)) {
-			throw new Error(`Block '${blockName}' has no key '${arrayKey}'`);
-		}
-		if (!Array.isArray(record[arrayKey])) {
-			throw new Error(`Block '${blockName}' key '${arrayKey}' is not an array`);
-		}
-		const arr = record[arrayKey] as Record<string, unknown>[];
-		const idx = arr.findIndex((existing) => existing && existing[idField] === idValue);
-		const mode: "appended" | "updated" = idx === -1 ? "appended" : "updated";
-		const stampMode: "create" | "update" = mode === "appended" ? "create" : "update";
-		const schemaPath = existingBlockSchemaPath(cwd, blockName);
-
-		// FGAP-018 fix: on update branch, pre-merge create-time attestation fields
-		// from the existing on-disk item onto the supplied item if absent. stampItem
-		// in update-mode does not touch created_*; this carries them forward across
-		// replacement so attestation integrity (FGAP-004) holds.
-		let itemForStamp = item;
-		if (idx !== -1 && schemaPath) {
-			const declared = declaredAuthorFieldsForArray(schemaPath, arrayKey);
-			const existing = arr[idx];
-			const carriedFields: Record<string, unknown> = {};
-			for (const field of ["created_by", "created_at"]) {
-				if (declared.has(field) && !(field in item) && existing && field in existing) {
-					carriedFields[field] = existing[field];
-				}
-			}
-			if (Object.keys(carriedFields).length > 0) {
-				itemForStamp = { ...carriedFields, ...item };
-			}
-		}
-
-		const stamped = ctx ? maybeStampItem(schemaPath, arrayKey, itemForStamp, ctx, stampMode) : itemForStamp;
-		const patched = [...arr];
-		if (idx === -1) {
-			patched.push(stamped);
-		} else {
-			patched[idx] = stamped;
-		}
-		record[arrayKey] = patched;
-		writeBlock(cwd, blockName, record);
-		return { mode };
-	});
+	const filePath = blockFilePath(cwd, blockName);
+	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	return upsertItemInTypedFile(filePath, schemaPath, arrayKey, item, idField, ctx, `block file '${blockName}.json'`);
 }
 
 /**
@@ -721,56 +1069,18 @@ export function appendToNestedArray(
 	item: unknown,
 	ctx?: DispatchContext,
 ): void {
-	withBlockLock(blockFilePath(cwd, blockName), () => {
-		const data = readBlock(cwd, blockName);
-		if (!data || typeof data !== "object") {
-			throw new Error(`Block '${blockName}' is not an object`);
-		}
-		const record = data as Record<string, unknown>;
-		if (!(parentArrayKey in record)) {
-			throw new Error(`Block '${blockName}' has no key '${parentArrayKey}'`);
-		}
-		if (!Array.isArray(record[parentArrayKey])) {
-			throw new Error(`Block '${blockName}' key '${parentArrayKey}' is not an array`);
-		}
-		const arr = record[parentArrayKey] as Record<string, unknown>[];
-		const idx = arr.findIndex(predicate);
-		if (idx === -1) {
-			throw new Error(`No matching item in block '${blockName}' key '${parentArrayKey}'`);
-		}
-		let matchCount = 1;
-		for (let i = idx + 1; i < arr.length; i++) {
-			if (predicate(arr[i])) matchCount++;
-		}
-		if (matchCount > 1) {
-			console.error(`[block-api] appendToNestedArray: ${matchCount} items matched predicate, only first updated`);
-		}
-		const parent = arr[idx];
-		if (!(nestedArrayKey in parent)) {
-			throw new Error(`Matched item in '${blockName}.${parentArrayKey}' has no nested key '${nestedArrayKey}'`);
-		}
-		if (!Array.isArray(parent[nestedArrayKey])) {
-			throw new Error(
-				`Matched item in '${blockName}.${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
-			);
-		}
-		// Clone parent (and replace its nested array) before validation to keep
-		// the original array unmodified if writeBlock fails — mirrors
-		// updateItemInBlock's clone-then-write pattern.
-		const schemaPath = existingBlockSchemaPath(cwd, blockName);
-		const itemToAppend =
-			ctx && item && typeof item === "object" && !Array.isArray(item)
-				? maybeStampItem(schemaPath, nestedArrayKey, item as Record<string, unknown>, ctx, "create")
-				: item;
-		const updatedParent = {
-			...parent,
-			[nestedArrayKey]: [...(parent[nestedArrayKey] as unknown[]), itemToAppend],
-		};
-		const patched = [...arr];
-		patched[idx] = updatedParent;
-		record[parentArrayKey] = patched;
-		writeBlock(cwd, blockName, record);
-	});
+	const filePath = blockFilePath(cwd, blockName);
+	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	appendToNestedTypedFile(
+		filePath,
+		schemaPath,
+		parentArrayKey,
+		predicate,
+		nestedArrayKey,
+		item,
+		ctx,
+		`block file '${blockName}.json'`,
+	);
 }
 
 /**
@@ -795,71 +1105,19 @@ export function updateNestedArrayItem(
 	updates: Record<string, unknown>,
 	ctx?: DispatchContext,
 ): void {
-	withBlockLock(blockFilePath(cwd, blockName), () => {
-		const data = readBlock(cwd, blockName);
-		if (!data || typeof data !== "object") {
-			throw new Error(`Block '${blockName}' is not an object`);
-		}
-		const record = data as Record<string, unknown>;
-		if (!(parentArrayKey in record)) {
-			throw new Error(`Block '${blockName}' has no key '${parentArrayKey}'`);
-		}
-		if (!Array.isArray(record[parentArrayKey])) {
-			throw new Error(`Block '${blockName}' key '${parentArrayKey}' is not an array`);
-		}
-		const arr = record[parentArrayKey] as Record<string, unknown>[];
-		const parentIdx = arr.findIndex(parentPredicate);
-		if (parentIdx === -1) {
-			throw new Error(`No matching item in block '${blockName}' key '${parentArrayKey}'`);
-		}
-		let parentMatchCount = 1;
-		for (let i = parentIdx + 1; i < arr.length; i++) {
-			if (parentPredicate(arr[i])) parentMatchCount++;
-		}
-		if (parentMatchCount > 1) {
-			console.error(
-				`[block-api] updateNestedArrayItem: ${parentMatchCount} parent items matched predicate, only first updated`,
-			);
-		}
-		const parent = arr[parentIdx];
-		if (!(nestedArrayKey in parent)) {
-			throw new Error(`Matched item in '${blockName}.${parentArrayKey}' has no nested key '${nestedArrayKey}'`);
-		}
-		if (!Array.isArray(parent[nestedArrayKey])) {
-			throw new Error(
-				`Matched item in '${blockName}.${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
-			);
-		}
-		const nestedArr = parent[nestedArrayKey] as Record<string, unknown>[];
-		const nestedIdx = nestedArr.findIndex(nestedPredicate);
-		if (nestedIdx === -1) {
-			throw new Error(
-				`No matching nested item in block '${blockName}.${parentArrayKey}[${parentIdx}].${nestedArrayKey}'`,
-			);
-		}
-		let nestedMatchCount = 1;
-		for (let i = nestedIdx + 1; i < nestedArr.length; i++) {
-			if (nestedPredicate(nestedArr[i])) nestedMatchCount++;
-		}
-		if (nestedMatchCount > 1) {
-			console.error(
-				`[block-api] updateNestedArrayItem: ${nestedMatchCount} nested items matched predicate, only first updated`,
-			);
-		}
-		// Clone nested item with updates applied; clone nested array; clone parent
-		// with replaced nested array; clone parent array with replaced parent.
-		// Original arrays remain untouched until writeBlock succeeds.
-		const mergedNested: Record<string, unknown> = { ...nestedArr[nestedIdx], ...updates };
-		const schemaPath = existingBlockSchemaPath(cwd, blockName);
-		const updatedNested = ctx ? maybeStampItem(schemaPath, nestedArrayKey, mergedNested, ctx, "update") : mergedNested;
-		const patchedNested = [...nestedArr];
-		patchedNested[nestedIdx] = updatedNested;
-		const updatedParent = { ...parent, [nestedArrayKey]: patchedNested };
-		const patchedParents = [...arr];
-		patchedParents[parentIdx] = updatedParent;
-		record[parentArrayKey] = patchedParents;
-		writeBlock(cwd, blockName, record);
-	});
+	const filePath = blockFilePath(cwd, blockName);
+	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	updateNestedItemInTypedFile(
+		filePath,
+		schemaPath,
+		parentArrayKey,
+		parentPredicate,
+		nestedArrayKey,
+		nestedPredicate,
+		updates,
+		ctx,
+		`block file '${blockName}.json'`,
+	);
 }
 
 /**
@@ -878,39 +1136,9 @@ export function removeFromBlock(
 	predicate: (item: Record<string, unknown>) => boolean,
 	ctx?: DispatchContext,
 ): { removed: number } {
-	// Removal does not produce a new item to stamp; the parameter is accepted
-	// for signature parity with the other write functions per FGAP-004 so a
-	// caller threading `ctx` through the surface uniformly need not branch on
-	// "is this a remove?". Future work (e.g. an audit-log block written by
-	// removeFromBlock alongside the deletion) can read the writer identity
-	// off this parameter without further plumbing.
-	void ctx;
-	return withBlockLock(blockFilePath(cwd, blockName), () => {
-		const data = readBlock(cwd, blockName);
-		if (!data || typeof data !== "object") {
-			throw new Error(`Block '${blockName}' is not an object`);
-		}
-		const record = data as Record<string, unknown>;
-		if (!(arrayKey in record)) {
-			throw new Error(`Block '${blockName}' has no key '${arrayKey}'`);
-		}
-		if (!Array.isArray(record[arrayKey])) {
-			throw new Error(`Block '${blockName}' key '${arrayKey}' is not an array`);
-		}
-		const arr = record[arrayKey] as Record<string, unknown>[];
-		const remaining = arr.filter((item) => !predicate(item));
-		const removed = arr.length - remaining.length;
-		if (removed === 0) {
-			// Idempotent — no match means no work, no write, no throw.
-			return { removed: 0 };
-		}
-		if (removed > 1) {
-			console.error(`[block-api] removeFromBlock: ${removed} items matched predicate, all removed`);
-		}
-		record[arrayKey] = remaining;
-		writeBlock(cwd, blockName, record);
-		return { removed };
-	});
+	const filePath = blockFilePath(cwd, blockName);
+	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	return removeFromTypedFile(filePath, schemaPath, arrayKey, predicate, ctx, `block file '${blockName}.json'`);
 }
 
 /**
@@ -932,61 +1160,18 @@ export function removeFromNestedArray(
 	nestedPredicate: (item: Record<string, unknown>) => boolean,
 	ctx?: DispatchContext,
 ): { removed: number } {
-	// See note in removeFromBlock: ctx is accepted for surface parity; no
-	// items remain to stamp. Reserving the slot keeps future audit-log
-	// integrations a single-line change.
-	void ctx;
-	return withBlockLock(blockFilePath(cwd, blockName), () => {
-		const data = readBlock(cwd, blockName);
-		if (!data || typeof data !== "object") {
-			throw new Error(`Block '${blockName}' is not an object`);
-		}
-		const record = data as Record<string, unknown>;
-		if (!(parentArrayKey in record)) {
-			throw new Error(`Block '${blockName}' has no key '${parentArrayKey}'`);
-		}
-		if (!Array.isArray(record[parentArrayKey])) {
-			throw new Error(`Block '${blockName}' key '${parentArrayKey}' is not an array`);
-		}
-		const arr = record[parentArrayKey] as Record<string, unknown>[];
-		const parentIdx = arr.findIndex(parentPredicate);
-		if (parentIdx === -1) {
-			throw new Error(`No matching item in block '${blockName}' key '${parentArrayKey}'`);
-		}
-		let parentMatchCount = 1;
-		for (let i = parentIdx + 1; i < arr.length; i++) {
-			if (parentPredicate(arr[i])) parentMatchCount++;
-		}
-		if (parentMatchCount > 1) {
-			console.error(
-				`[block-api] removeFromNestedArray: ${parentMatchCount} parent items matched predicate, only first targeted`,
-			);
-		}
-		const parent = arr[parentIdx];
-		if (!(nestedArrayKey in parent)) {
-			throw new Error(`Matched item in '${blockName}.${parentArrayKey}' has no nested key '${nestedArrayKey}'`);
-		}
-		if (!Array.isArray(parent[nestedArrayKey])) {
-			throw new Error(
-				`Matched item in '${blockName}.${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
-			);
-		}
-		const nestedArr = parent[nestedArrayKey] as Record<string, unknown>[];
-		const nestedRemaining = nestedArr.filter((item) => !nestedPredicate(item));
-		const removed = nestedArr.length - nestedRemaining.length;
-		if (removed === 0) {
-			return { removed: 0 };
-		}
-		if (removed > 1) {
-			console.error(`[block-api] removeFromNestedArray: ${removed} nested items matched predicate, all removed`);
-		}
-		const updatedParent = { ...parent, [nestedArrayKey]: nestedRemaining };
-		const patched = [...arr];
-		patched[parentIdx] = updatedParent;
-		record[parentArrayKey] = patched;
-		writeBlock(cwd, blockName, record);
-		return { removed };
-	});
+	const filePath = blockFilePath(cwd, blockName);
+	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	return removeFromNestedTypedFile(
+		filePath,
+		schemaPath,
+		parentArrayKey,
+		parentPredicate,
+		nestedArrayKey,
+		nestedPredicate,
+		ctx,
+		`block file '${blockName}.json'`,
+	);
 }
 
 /**

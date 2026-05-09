@@ -6,14 +6,20 @@ import { describe, it } from "node:test";
 import {
 	appendToBlock,
 	appendToNestedArray,
+	appendToNestedTypedFile,
 	appendToTypedFile,
 	readBlock,
 	readBlockDir,
 	removeFromBlock,
 	removeFromNestedArray,
+	removeFromNestedTypedFile,
+	removeFromTypedFile,
 	updateItemInBlock,
+	updateItemInTypedFile,
 	updateNestedArrayItem,
+	updateNestedItemInTypedFile,
 	upsertItemInBlock,
+	upsertItemInTypedFile,
 	writeBlock,
 	writeTypedFile,
 } from "./block-api.js";
@@ -2335,5 +2341,507 @@ describe("wrapper continuity smoke (writeBlock + appendToBlock still byte-identi
 		const afterAppend = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
 		assert.strictEqual(afterAppend.gaps.length, 1);
 		assert.strictEqual(afterAppend.gaps[0].id, "g1");
+	});
+});
+
+// =============================================================================
+// FGAP-020 closure: 6 typed-file find-or-merge primitives reach the validated-
+// write surface for arbitrary `(filePath, schemaPath, arrayPath)` triples.
+// 3 of 6 (update / upsert / remove) accept arrayPath = null (top-level array
+// shape, e.g. monitor pattern lists). The 3 nested variants require object-
+// with-array-field shape — nesting on a top-level array is structurally
+// nonsensical. The 6 .project/-targeting wrappers (updateItemInBlock,
+// upsertItemInBlock, appendToNestedArray, updateNestedArrayItem,
+// removeFromBlock, removeFromNestedArray) delegate to these primitives;
+// their existing tests above remain unmodified to assert wrapper continuity.
+// =============================================================================
+
+// Schema for object-shape typed-file tests below — small list of items by id,
+// suitable for update / upsert / remove exercises against an arbitrary
+// (filePath, schemaPath) outside `.project/`.
+const sideObjectSchema = {
+	type: "object",
+	required: ["items"],
+	properties: {
+		items: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "label"],
+				properties: {
+					id: { type: "string" },
+					label: { type: "string" },
+				},
+			},
+		},
+	},
+};
+
+// Author-bearing variant of the side-object schema — used to exercise the
+// FGAP-018 pre-merge through `upsertItemInTypedFile` with a real schema-path
+// declaration outside `.project/`. additionalProperties:false would also work
+// here; omitted to keep the test focused on attestation preservation rather
+// than partial-declaration AJV interactions (covered by the FGAP-017 test).
+const sideObjectAuthoredSchema = {
+	type: "object",
+	required: ["items"],
+	properties: {
+		items: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "label"],
+				properties: {
+					id: { type: "string" },
+					label: { type: "string" },
+					created_by: { type: "string" },
+					created_at: { type: "string" },
+					modified_by: { type: "string" },
+					modified_at: { type: "string" },
+				},
+			},
+		},
+	},
+};
+
+// Object-shape schema with nested arrays for nested-typed-file tests. Mirrors
+// the spec-reviews shape but anchored at an arbitrary file path (no .project/
+// dependency). Nested `findings` carries an enum constraint so AJV violation
+// paths can be exercised independently.
+const sideNestedSchema = {
+	type: "object",
+	required: ["reviews"],
+	properties: {
+		reviews: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "findings"],
+				properties: {
+					id: { type: "string" },
+					findings: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "description", "severity"],
+							properties: {
+								id: { type: "string" },
+								description: { type: "string" },
+								severity: { type: "string", enum: ["info", "warning", "error"] },
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+};
+
+describe("updateItemInTypedFile", () => {
+	it("arrayPath = string updates item in object-with-array-field file", (t) => {
+		const tmpDir = makeTmpDir("typed-update-object");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "obj.schema.json", sideObjectSchema);
+		const filePath = path.join(tmpDir, "side-car", "obj.json");
+		fs.mkdirSync(path.dirname(filePath), { recursive: true });
+		fs.writeFileSync(
+			filePath,
+			JSON.stringify({
+				items: [
+					{ id: "a", label: "alpha" },
+					{ id: "b", label: "beta" },
+				],
+			}),
+		);
+
+		updateItemInTypedFile(filePath, schemaPath, "items", (it) => it.id === "a", { label: "ALPHA" });
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.deepStrictEqual(onDisk.items[0], { id: "a", label: "ALPHA" });
+		assert.deepStrictEqual(onDisk.items[1], { id: "b", label: "beta" });
+	});
+
+	it("arrayPath = null updates item in top-level array file (flat-array shape)", (t) => {
+		const tmpDir = makeTmpDir("typed-update-flat");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "list.schema.json", flatPatternListSchema);
+		const filePath = path.join(tmpDir, "patterns.json");
+		writeTypedFile(
+			filePath,
+			schemaPath,
+			[
+				{ id: "p1", description: "first", severity: "info" },
+				{ id: "p2", description: "second", severity: "warning" },
+			],
+			undefined,
+			"patterns",
+		);
+
+		updateItemInTypedFile(
+			filePath,
+			schemaPath,
+			null,
+			(it) => it.id === "p1",
+			{ severity: "error" },
+			undefined,
+			"patterns",
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.length, 2);
+		assert.strictEqual(onDisk[0].severity, "error");
+		assert.strictEqual(onDisk[1].id, "p2");
+	});
+});
+
+describe("upsertItemInTypedFile", () => {
+	it("arrayPath = string appends new + replaces existing inside object-with-array-field file", (t) => {
+		const tmpDir = makeTmpDir("typed-upsert-object");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "obj.schema.json", sideObjectSchema);
+		const filePath = path.join(tmpDir, "obj.json");
+		fs.writeFileSync(filePath, JSON.stringify({ items: [{ id: "a", label: "alpha" }] }));
+
+		const r1 = upsertItemInTypedFile(filePath, schemaPath, "items", { id: "b", label: "beta" }, "id");
+		assert.deepStrictEqual(r1, { mode: "appended" });
+		const r2 = upsertItemInTypedFile(filePath, schemaPath, "items", { id: "a", label: "ALPHA-replaced" }, "id");
+		assert.deepStrictEqual(r2, { mode: "updated" });
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.items.length, 2);
+		assert.strictEqual(onDisk.items[0].label, "ALPHA-replaced");
+		assert.strictEqual(onDisk.items[1].id, "b");
+	});
+
+	it("arrayPath = null appends + replaces inside top-level array file (flat-array shape)", (t) => {
+		const tmpDir = makeTmpDir("typed-upsert-flat");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "list.schema.json", flatPatternListSchema);
+		const filePath = path.join(tmpDir, "patterns.json");
+		writeTypedFile(filePath, schemaPath, [], undefined, "patterns");
+
+		const r1 = upsertItemInTypedFile(
+			filePath,
+			schemaPath,
+			null,
+			{ id: "p1", description: "first", severity: "info" },
+			"id",
+			undefined,
+			"patterns",
+		);
+		assert.deepStrictEqual(r1, { mode: "appended" });
+
+		const r2 = upsertItemInTypedFile(
+			filePath,
+			schemaPath,
+			null,
+			{ id: "p1", description: "first-updated", severity: "warning" },
+			"id",
+			undefined,
+			"patterns",
+		);
+		assert.deepStrictEqual(r2, { mode: "updated" });
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.length, 1);
+		assert.strictEqual(onDisk[0].description, "first-updated");
+		assert.strictEqual(onDisk[0].severity, "warning");
+	});
+
+	// FGAP-018 regression — pre-merge logic now lives inside upsertItemInTypedFile.
+	// On the object-shape side the wrapper test on line ~2128 already proves
+	// preservation of declared created_* through the wrapper; this test asserts the
+	// same on the typed-file primitive directly with an arbitrary (non-.project/)
+	// file path.
+	it("FGAP-018 (object-shape): preserves declared created_* across upsert update when caller omits them", (t) => {
+		const tmpDir = makeTmpDir("typed-upsert-fgap-018-obj");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(
+			path.join(tmpDir, "schemas"),
+			"obj-authored.schema.json",
+			sideObjectAuthoredSchema,
+		);
+		const filePath = path.join(tmpDir, "side", "authored.json");
+		fs.mkdirSync(path.dirname(filePath), { recursive: true });
+		fs.writeFileSync(filePath, JSON.stringify({ items: [] }));
+
+		const ctx: DispatchContext = { writer: { kind: "agent", agent_id: "claude-opus-4-7" } };
+		upsertItemInTypedFile(filePath, schemaPath, "items", { id: "x", label: "v1" }, "id", ctx, "side authored");
+		const afterFirst = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		const originalCreatedBy = afterFirst.items[0].created_by;
+		const originalCreatedAt = afterFirst.items[0].created_at;
+		assert.strictEqual(originalCreatedBy, "agent/claude-opus-4-7");
+
+		const start = Date.now();
+		while (Date.now() === start) {
+			/* spin to guarantee modified_at differs */
+		}
+
+		const ctxOther: DispatchContext = { writer: { kind: "human", user: "david" } };
+		upsertItemInTypedFile(filePath, schemaPath, "items", { id: "x", label: "v2" }, "id", ctxOther, "side authored");
+
+		const afterSecond = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(afterSecond.items[0].label, "v2");
+		assert.strictEqual(afterSecond.items[0].created_by, originalCreatedBy, "created_by carried");
+		assert.strictEqual(afterSecond.items[0].created_at, originalCreatedAt, "created_at carried");
+		assert.strictEqual(afterSecond.items[0].modified_by, "human/david");
+	});
+
+	// FGAP-018 (flat-array) — DOCUMENTED SKIP. The pre-merge logic structurally
+	// no-ops for arrayPath = null because `collectArrayItemAuthorDecisions`
+	// never visits a top-level array schema, so the declared-fields lookup
+	// keyed by `__top__` returns the empty set. No current consumer declares
+	// author fields on a flat-array shape; if one ever does, the cataloguer
+	// needs an extension (filed-or-future work) — this test pins the current
+	// behavior so a future change that adds flat-array stamping must update
+	// the test alongside the cataloguer extension.
+	it("FGAP-018 (flat-array): pre-merge is a no-op (cataloguer does not visit top-level array schemas)", (t) => {
+		const tmpDir = makeTmpDir("typed-upsert-fgap-018-flat");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "list.schema.json", flatPatternListSchema);
+		const filePath = path.join(tmpDir, "patterns.json");
+		writeTypedFile(filePath, schemaPath, [], undefined, "patterns");
+
+		// Pre-seed an item that already has additionalProperties — but the schema
+		// is additionalProperties:false, so we keep only declared fields.
+		upsertItemInTypedFile(
+			filePath,
+			schemaPath,
+			null,
+			{ id: "p1", description: "first", severity: "info" },
+			"id",
+			undefined,
+			"patterns",
+		);
+
+		// Replace it with a new item omitting `severity`. Pre-merge would carry
+		// declared fields IF the schema declared author fields at the top-level
+		// item shape; flatPatternListSchema does not declare any author fields on
+		// items, so the pre-merge contributes nothing — the replacement
+		// semantics fully overwrite. This documents the structural no-op.
+		upsertItemInTypedFile(
+			filePath,
+			schemaPath,
+			null,
+			{ id: "p1", description: "first-updated" },
+			"id",
+			undefined,
+			"patterns",
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.length, 1);
+		assert.strictEqual(onDisk[0].description, "first-updated");
+		// severity gone — no carry; replacement semantics intact.
+		assert.strictEqual(Object.hasOwn(onDisk[0], "severity"), false);
+	});
+});
+
+describe("removeFromTypedFile", () => {
+	it("arrayPath = string removes matching items from object-with-array-field file", (t) => {
+		const tmpDir = makeTmpDir("typed-remove-object");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "obj.schema.json", sideObjectSchema);
+		const filePath = path.join(tmpDir, "obj.json");
+		fs.writeFileSync(
+			filePath,
+			JSON.stringify({
+				items: [
+					{ id: "a", label: "alpha" },
+					{ id: "b", label: "beta" },
+					{ id: "c", label: "gamma" },
+				],
+			}),
+		);
+
+		const r = removeFromTypedFile(filePath, schemaPath, "items", (it) => it.id === "b");
+		assert.deepStrictEqual(r, { removed: 1 });
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.items.length, 2);
+		assert.strictEqual(onDisk.items.map((it: { id: string }) => it.id).join(","), "a,c");
+	});
+
+	it("arrayPath = null removes matching items from top-level array file; idempotent on miss", (t) => {
+		const tmpDir = makeTmpDir("typed-remove-flat");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "list.schema.json", flatPatternListSchema);
+		const filePath = path.join(tmpDir, "patterns.json");
+		writeTypedFile(
+			filePath,
+			schemaPath,
+			[
+				{ id: "p1", description: "first", severity: "info" },
+				{ id: "p2", description: "second", severity: "warning" },
+			],
+			undefined,
+			"patterns",
+		);
+
+		const r1 = removeFromTypedFile(filePath, schemaPath, null, (it) => it.id === "p1", undefined, "patterns");
+		assert.deepStrictEqual(r1, { removed: 1 });
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.length, 1);
+		assert.strictEqual(onDisk[0].id, "p2");
+
+		// Idempotent miss
+		const r2 = removeFromTypedFile(filePath, schemaPath, null, (it) => it.id === "nonexistent", undefined, "patterns");
+		assert.deepStrictEqual(r2, { removed: 0 });
+		const onDisk2 = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk2.length, 1);
+	});
+});
+
+describe("appendToNestedTypedFile", () => {
+	it("appends to nested array on matched parent in arbitrary object-shape file", (t) => {
+		const tmpDir = makeTmpDir("typed-nested-append");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "nested.schema.json", sideNestedSchema);
+		const filePath = path.join(tmpDir, "side", "reviews.json");
+		fs.mkdirSync(path.dirname(filePath), { recursive: true });
+		fs.writeFileSync(
+			filePath,
+			JSON.stringify({
+				reviews: [{ id: "REVIEW-001", findings: [] }],
+			}),
+		);
+
+		appendToNestedTypedFile(
+			filePath,
+			schemaPath,
+			"reviews",
+			(it) => it.id === "REVIEW-001",
+			"findings",
+			{ id: "F-001", description: "first", severity: "info" },
+			undefined,
+			"side reviews",
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.reviews[0].findings.length, 1);
+		assert.strictEqual(onDisk.reviews[0].findings[0].id, "F-001");
+	});
+});
+
+describe("updateNestedItemInTypedFile", () => {
+	it("updates nested item identified by parent + nested predicates in object-shape file", (t) => {
+		const tmpDir = makeTmpDir("typed-nested-update");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "nested.schema.json", sideNestedSchema);
+		const filePath = path.join(tmpDir, "reviews.json");
+		fs.writeFileSync(
+			filePath,
+			JSON.stringify({
+				reviews: [
+					{
+						id: "REVIEW-001",
+						findings: [
+							{ id: "F-001", description: "first", severity: "info" },
+							{ id: "F-002", description: "second", severity: "warning" },
+						],
+					},
+				],
+			}),
+		);
+
+		updateNestedItemInTypedFile(
+			filePath,
+			schemaPath,
+			"reviews",
+			(it) => it.id === "REVIEW-001",
+			"findings",
+			(it) => it.id === "F-001",
+			{ severity: "error", description: "first-escalated" },
+			undefined,
+			"reviews",
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		const finding = onDisk.reviews[0].findings.find((f: { id: string }) => f.id === "F-001");
+		assert.strictEqual(finding.severity, "error");
+		assert.strictEqual(finding.description, "first-escalated");
+		// Sibling untouched
+		const sibling = onDisk.reviews[0].findings.find((f: { id: string }) => f.id === "F-002");
+		assert.strictEqual(sibling.severity, "warning");
+	});
+});
+
+describe("removeFromNestedTypedFile", () => {
+	it("removes nested items matching predicate; idempotent on nested-miss; throws on parent-miss", (t) => {
+		const tmpDir = makeTmpDir("typed-nested-remove");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "nested.schema.json", sideNestedSchema);
+		const filePath = path.join(tmpDir, "reviews.json");
+		fs.writeFileSync(
+			filePath,
+			JSON.stringify({
+				reviews: [
+					{
+						id: "REVIEW-001",
+						findings: [
+							{ id: "F-001", description: "first", severity: "info" },
+							{ id: "F-002", description: "second", severity: "warning" },
+						],
+					},
+				],
+			}),
+		);
+
+		const r1 = removeFromNestedTypedFile(
+			filePath,
+			schemaPath,
+			"reviews",
+			(it) => it.id === "REVIEW-001",
+			"findings",
+			(it) => it.id === "F-001",
+			undefined,
+			"reviews",
+		);
+		assert.deepStrictEqual(r1, { removed: 1 });
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.reviews[0].findings.length, 1);
+		assert.strictEqual(onDisk.reviews[0].findings[0].id, "F-002");
+
+		// Idempotent on nested miss (parent matches, nested predicate finds nothing)
+		const r2 = removeFromNestedTypedFile(
+			filePath,
+			schemaPath,
+			"reviews",
+			(it) => it.id === "REVIEW-001",
+			"findings",
+			(it) => it.id === "F-nonexistent",
+			undefined,
+			"reviews",
+		);
+		assert.deepStrictEqual(r2, { removed: 0 });
+
+		// Throws on parent miss (mirrors wrapper semantics)
+		assert.throws(
+			() =>
+				removeFromNestedTypedFile(
+					filePath,
+					schemaPath,
+					"reviews",
+					(it) => it.id === "REVIEW-NEVER",
+					"findings",
+					(_) => true,
+					undefined,
+					"reviews",
+				),
+			(err: unknown) => err instanceof Error && err.message.includes("No matching item"),
+		);
 	});
 });

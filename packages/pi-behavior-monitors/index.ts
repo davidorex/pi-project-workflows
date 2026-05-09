@@ -12,7 +12,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readBlock } from "@davidorex/pi-context/block-api";
+import { appendToBlock, readBlock, upsertItemInBlock } from "@davidorex/pi-context/block-api";
+import type { DispatchContext as BlockApiDispatchContext } from "@davidorex/pi-context/dispatch-context";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { type CompiledAgent, type DispatchContext, dateRotatedPath, executeAgent } from "@davidorex/pi-jit-agents";
 import { createAgentLoader } from "@davidorex/pi-workflows/agent-spec";
@@ -162,11 +163,24 @@ export interface MonitorScope {
 export interface MonitorAction {
 	steer?: string | null;
 	learn_pattern?: boolean;
+	/**
+	 * Monitor write-action contract — closes issue-065 by routing through
+	 * `@davidorex/pi-context/block-api` rather than raw fs.writeFileSync.
+	 *
+	 * `block` (replaces former `path`): the named .project/ block to write
+	 * to; block-api derives the on-disk path as `<cwd>/.project/<block>.json`
+	 * and the schema as `<cwd>/.project/schemas/<block>.schema.json`. Removing
+	 * the explicit `path` + `schema` fields collapses the four prior bypass
+	 * paths (no AJV, no lock, no DispatchContext stamping, no central choke
+	 * point) into one validated, locked, attributed write surface.
+	 *
+	 * `merge`: "append" calls `appendToBlock`; "upsert" calls
+	 * `upsertItemInBlock` keyed on `id`.
+	 */
 	write?: {
-		path: string;
-		schema?: string;
-		merge: "append" | "upsert";
+		block: string;
 		array_field: string;
+		merge: "append" | "upsert";
 		template: Record<string, string>;
 	};
 }
@@ -1488,13 +1502,44 @@ export function generateFindingId(monitorName: string, _description: string): st
 	return `${monitorName}-${Date.now().toString(36)}`;
 }
 
-function executeWriteAction(monitor: Monitor, action: MonitorAction, result: ClassifyResult): void {
+/**
+ * Apply a monitor's write-action by routing through `@davidorex/pi-context/block-api`.
+ *
+ * Closes issue-065: the prior body wrote findings via `fs.writeFileSync`
+ * after manual JSON read+merge+write, bypassing AJV schema validation,
+ * proper-lockfile contention guards, DispatchContext author stamping, and
+ * any centralized "monitor wrote here" choke point. This refactor routes
+ * every monitor write through `appendToBlock` / `upsertItemInBlock` with
+ * a `DispatchContext.writer` of `{ kind: "monitor", monitor_name }` so:
+ *
+ *   1. AJV validates the entry against `.project/schemas/<block>.schema.json`
+ *      before write — drift surfaces immediately, not on later reader load.
+ *   2. proper-lockfile guards concurrent monitor + LLM writes against the
+ *      same block file.
+ *   3. created_by / created_at / modified_by / modified_at fields, when
+ *      declared on the destination schema, are stamped with the monitor's
+ *      writer string ("monitor/<name>") so monitor-authored entries are
+ *      distinguishable from human / agent / workflow entries downstream.
+ *   4. All monitor writes funnel through one execute boundary — the future
+ *      "detect monitor bypass" check has a single call site to inspect.
+ *
+ * Failure model: AJV ValidationError or any block-api error is logged via
+ * console.error with the monitor name and propagated NO FURTHER. This
+ * mirrors the previous fs-write failure handling — a monitor that cannot
+ * persist a finding does not crash the host turn; the operator sees the
+ * stderr line and can investigate. Re-raising would change the host
+ * extension's failure model and is out of scope for this refactor.
+ *
+ * Exported for unit-test access (Phase F of issue-065 closure plan).
+ */
+export function executeWriteAction(monitor: Monitor, action: MonitorAction, result: ClassifyResult): void {
 	if (!action.write) return;
 
 	const writeCfg = action.write;
-	const filePath = path.isAbsolute(writeCfg.path) ? writeCfg.path : path.resolve(process.cwd(), writeCfg.path);
 
-	// Build the entry from template, substituting placeholders
+	// Build the entry from template, substituting placeholders.
+	// Template substitution semantics preserved verbatim from the prior body —
+	// the change is the persistence path, not the entry shape.
 	const findingId = generateFindingId(monitor.name, result.description ?? "unknown");
 	const entry: Record<string, unknown> = {};
 	for (const [key, tmpl] of Object.entries(writeCfg.template)) {
@@ -1506,43 +1551,24 @@ function executeWriteAction(monitor: Monitor, action: MonitorAction, result: Cla
 			.replace(/\{timestamp\}/g, new Date().toISOString());
 	}
 
-	// Read existing file or create structure
-	let data: Record<string, unknown> = {};
+	// DispatchContext writer identifying the monitor — block-api stamps
+	// created_by / modified_by with `writerToString({ kind: "monitor", monitor_name })`
+	// → "monitor/<name>" when the destination schema declares those fields.
+	const ctx: BlockApiDispatchContext = {
+		writer: { kind: "monitor", monitor_name: monitor.name },
+	};
+
 	try {
-		data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-	} catch {
-		// file doesn't exist or is invalid — create fresh
-	}
-
-	const arrayField = writeCfg.array_field;
-	if (!Array.isArray(data[arrayField])) {
-		data[arrayField] = [];
-	}
-	const arr = data[arrayField] as Record<string, unknown>[];
-
-	if (writeCfg.merge === "upsert") {
-		const idx = arr.findIndex((item) => item.id === entry.id);
-		if (idx !== -1) {
-			arr[idx] = entry;
+		if (writeCfg.merge === "upsert") {
+			upsertItemInBlock(process.cwd(), writeCfg.block, writeCfg.array_field, entry, "id", ctx);
 		} else {
-			arr.push(entry);
+			appendToBlock(process.cwd(), writeCfg.block, writeCfg.array_field, entry, ctx);
 		}
-	} else {
-		arr.push(entry);
-	}
-
-	const tmpPath = `${filePath}.${process.pid}.tmp`;
-	try {
-		fs.mkdirSync(path.dirname(filePath), { recursive: true });
-		fs.writeFileSync(tmpPath, `${JSON.stringify(data, null, 2)}\n`);
-		fs.renameSync(tmpPath, filePath);
 	} catch (err) {
-		try {
-			fs.unlinkSync(tmpPath);
-		} catch {
-			/* cleanup */
-		}
-		console.error(`[${monitor.name}] Failed to write to ${filePath}: ${err instanceof Error ? err.message : err}`);
+		// Mirror the previous failure model: log + continue. Includes AJV
+		// ValidationError (schema mismatch), missing block file, missing
+		// arrayKey, lock-contention timeout — all surface here as Error.
+		console.error(`[${monitor.name}] block-api write failed: ${err instanceof Error ? err.message : String(err)}`);
 	}
 }
 

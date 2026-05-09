@@ -21,8 +21,7 @@
 		"on_flag": {
 			"steer": "{{ description }}",
 			"write": {
-				"path": ".project/issues.json",
-				"schema": "schemas/issues.schema.json",
+				"block": "issues",
 				"merge": "append",
 				"array_field": "issues",
 				"template": {
@@ -39,8 +38,7 @@
 			"steer": "{{ description }}",
 			"learn_pattern": true,
 			"write": {
-				"path": ".project/issues.json",
-				"schema": "schemas/issues.schema.json",
+				"block": "issues",
 				"merge": "append",
 				"array_field": "issues",
 				"template": {

@@ -12,6 +12,7 @@ import {
 	removeFromNestedArray,
 	updateItemInBlock,
 	updateNestedArrayItem,
+	upsertItemInBlock,
 	writeBlock,
 } from "./block-api.js";
 import type { DispatchContext } from "./dispatch-context.js";
@@ -1974,5 +1975,154 @@ describe("DispatchContext — partial author-field declaration with additionalPr
 		assert.strictEqual(Object.hasOwn(onDisk.gaps[0], "created_at"), false);
 		assert.strictEqual(Object.hasOwn(onDisk.gaps[0], "modified_by"), false);
 		assert.strictEqual(Object.hasOwn(onDisk.gaps[0], "modified_at"), false);
+	});
+});
+
+describe("upsertItemInBlock", () => {
+	it("appends new item when idField value is not present in array", (t) => {
+		const tmpDir = makeTmpDir("upsert-append-new");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsSchema);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", description: "existing", status: "open" }] }),
+		);
+
+		const result = upsertItemInBlock(
+			tmpDir,
+			"gaps",
+			"gaps",
+			{ id: "g2", description: "new entry", status: "open" },
+			"id",
+		);
+
+		assert.deepStrictEqual(result, { mode: "appended" });
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(onDisk.gaps.length, 2);
+		assert.strictEqual(onDisk.gaps[0].id, "g1");
+		assert.strictEqual(onDisk.gaps[1].id, "g2");
+		assert.strictEqual(onDisk.gaps[1].description, "new entry");
+	});
+
+	it("replaces item at index when idField value matches existing", (t) => {
+		const tmpDir = makeTmpDir("upsert-replace-existing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsSchema);
+
+		fs.writeFileSync(
+			path.join(tmpDir, ".project", "gaps.json"),
+			JSON.stringify({
+				gaps: [
+					{ id: "g1", description: "original first", status: "open" },
+					{ id: "g2", description: "second", status: "open" },
+				],
+			}),
+		);
+
+		const result = upsertItemInBlock(
+			tmpDir,
+			"gaps",
+			"gaps",
+			{ id: "g1", description: "replaced first", status: "resolved" },
+			"id",
+		);
+
+		assert.deepStrictEqual(result, { mode: "updated" });
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(onDisk.gaps.length, 2); // no growth — replacement, not append
+		assert.strictEqual(onDisk.gaps[0].id, "g1");
+		// Replacement semantics: prior fields not in new item are GONE (not merged).
+		assert.strictEqual(onDisk.gaps[0].description, "replaced first");
+		assert.strictEqual(onDisk.gaps[0].status, "resolved");
+		// Sibling at index 1 untouched
+		assert.strictEqual(onDisk.gaps[1].id, "g2");
+		assert.strictEqual(onDisk.gaps[1].description, "second");
+	});
+
+	it("throws when item[idField] is missing", (t) => {
+		const tmpDir = makeTmpDir("upsert-missing-idfield");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsSchema);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [] }));
+
+		assert.throws(
+			() => upsertItemInBlock(tmpDir, "gaps", "gaps", { description: "no id present", status: "open" }, "id"),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.ok(err.message.includes("missing required idField 'id'"));
+				return true;
+			},
+		);
+
+		// File must be unchanged — defensive throw fires before any write
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.deepStrictEqual(onDisk, { gaps: [] });
+	});
+
+	it("ctx-stamping: append uses create-mode (created_* + modified_*); update uses update-mode (only modified_* refreshed)", (t) => {
+		const tmpDir = makeTmpDir("upsert-ctx-stamping");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsAuthoredSchema);
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "gaps.json"), JSON.stringify({ gaps: [] }));
+
+		// First call: append -> create-mode stamps both created_* and modified_*
+		const r1 = upsertItemInBlock(
+			tmpDir,
+			"gaps",
+			"gaps",
+			{ id: "g1", description: "first write", status: "open" },
+			"id",
+			ctxAgent,
+		);
+		assert.deepStrictEqual(r1, { mode: "appended" });
+
+		const afterAppend = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(afterAppend.gaps[0].created_by, "agent/claude-opus-4-7");
+		assert.strictEqual(afterAppend.gaps[0].modified_by, "agent/claude-opus-4-7");
+		assert.ok(typeof afterAppend.gaps[0].created_at === "string");
+		const originalModifiedAt: string = afterAppend.gaps[0].modified_at;
+		assert.ok(typeof originalModifiedAt === "string");
+
+		// Wait long enough that ISO timestamp differs (≥1 ms guaranteed by busy loop)
+		const start = Date.now();
+		while (Date.now() === start) {
+			/* spin */
+		}
+
+		// Second call with same id: update-mode stamps modified_* only; created_* preserved.
+		// Replacement semantics replace the whole item, but stampItem in update-mode then
+		// preserves prior created_by/created_at IF the supplied item lacks them — verified here.
+		// To make the assertion meaningful, we re-supply the same item shape WITHOUT author fields.
+		const r2 = upsertItemInBlock(
+			tmpDir,
+			"gaps",
+			"gaps",
+			{ id: "g1", description: "second write", status: "resolved" },
+			"id",
+			ctxAgent,
+		);
+		assert.deepStrictEqual(r2, { mode: "updated" });
+
+		const afterUpdate = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(afterUpdate.gaps[0].description, "second write");
+		assert.strictEqual(afterUpdate.gaps[0].status, "resolved");
+		// modified_* refreshed under update-mode stamping.
+		assert.strictEqual(afterUpdate.gaps[0].modified_by, "agent/claude-opus-4-7");
+		assert.notStrictEqual(afterUpdate.gaps[0].modified_at, originalModifiedAt);
+		// upsert is REPLACEMENT (not shallow-merge). When the supplied item omits
+		// created_by / created_at and stampItem runs in update-mode, the create
+		// branch is skipped — the prior created_* values are NOT carried forward.
+		// This is the documented contract: callers wanting to preserve created_*
+		// across upserts must include them in the supplied item explicitly, or
+		// route through updateItemInBlock (shallow-merge keeps prior fields).
+		assert.strictEqual(Object.hasOwn(afterUpdate.gaps[0], "created_by"), false);
+		assert.strictEqual(Object.hasOwn(afterUpdate.gaps[0], "created_at"), false);
 	});
 });

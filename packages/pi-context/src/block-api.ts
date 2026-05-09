@@ -478,6 +478,75 @@ export function updateItemInBlock(
 }
 
 /**
+ * Atomically find-or-append a single item in `data[arrayKey]` keyed by
+ * `idField`. Acquires the block lock; reads the array; locates the first
+ * existing item where `existingItem[idField] === item[idField]`; if found
+ * the item at that index is REPLACED (not shallow-merged) by the supplied
+ * `item` and stamping runs in `"update"` mode; otherwise `item` is pushed
+ * onto the array and stamping runs in `"create"` mode. AJV validates the
+ * whole file against the schema after mutation, before write.
+ *
+ * Composing existing `updateItemInBlock` + `appendToBlock` from a caller
+ * would release the block lock between the read-check and the mutating
+ * write, which is race-prone for concurrent monitor/LLM writes against the
+ * same block — this primitive holds the lock for both halves of the
+ * find-or-append decision in one atomic critical section.
+ *
+ * Throws when `item[idField]` is missing or empty (defensive — surfaces a
+ * malformed call site early instead of silently appending a duplicate
+ * that would never match on a subsequent upsert). Throws on the usual
+ * block / arrayKey / not-array invariants and on AJV validation failure.
+ *
+ * Replacement semantics (vs. updateItemInBlock's shallow-merge): upsert is
+ * the call surface for monitor write-actions where the template produces
+ * the FULL item shape per classification — there is no prior partial state
+ * to merge against. Callers that need merge-on-update should continue to
+ * use `updateItemInBlock`.
+ */
+export function upsertItemInBlock(
+	cwd: string,
+	blockName: string,
+	arrayKey: string,
+	item: Record<string, unknown>,
+	idField: string,
+	ctx?: DispatchContext,
+): { mode: "appended" | "updated" } {
+	const idValue = item[idField];
+	if (idValue === undefined || idValue === null || idValue === "") {
+		throw new Error(
+			`upsertItemInBlock: item is missing required idField '${idField}' (got: ${JSON.stringify(idValue)})`,
+		);
+	}
+	return withBlockLock(blockFilePath(cwd, blockName), () => {
+		const data = readBlock(cwd, blockName);
+		if (!data || typeof data !== "object") {
+			throw new Error(`Block '${blockName}' is not an object`);
+		}
+		const record = data as Record<string, unknown>;
+		if (!(arrayKey in record)) {
+			throw new Error(`Block '${blockName}' has no key '${arrayKey}'`);
+		}
+		if (!Array.isArray(record[arrayKey])) {
+			throw new Error(`Block '${blockName}' key '${arrayKey}' is not an array`);
+		}
+		const arr = record[arrayKey] as Record<string, unknown>[];
+		const idx = arr.findIndex((existing) => existing && existing[idField] === idValue);
+		const mode: "appended" | "updated" = idx === -1 ? "appended" : "updated";
+		const stampMode: "create" | "update" = mode === "appended" ? "create" : "update";
+		const stamped = ctx ? maybeStampItem(cwd, blockName, arrayKey, item, ctx, stampMode) : item;
+		const patched = [...arr];
+		if (idx === -1) {
+			patched.push(stamped);
+		} else {
+			patched[idx] = stamped;
+		}
+		record[arrayKey] = patched;
+		writeBlock(cwd, blockName, record);
+		return { mode };
+	});
+}
+
+/**
  * Atomically append an item to a nested array inside a parent-array item.
  *
  * Read current file, locate parent-array item by predicate, push `item` onto

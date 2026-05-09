@@ -4,15 +4,19 @@ import * as path from "node:path";
 import nunjucks from "nunjucks";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+	type ClassifyResult,
 	COLLECTOR_DESCRIPTORS,
 	COLLECTOR_NAMES,
 	collectAssistantText,
 	collectConversationHistory,
 	discoverMonitors,
+	executeWriteAction,
 	extractResponseText,
 	generateFindingId,
 	invokeMonitor,
 	isReferentialMessage,
+	type Monitor,
+	type MonitorAction,
 	type MonitorOverride,
 	mapVerdictToClassifyResult,
 	parseModelSpec,
@@ -1255,5 +1259,232 @@ describe("collectAssistantText", () => {
 			]),
 		];
 		expect(collectAssistantText(branch as any)).toBe("visible");
+	});
+});
+
+// =============================================================================
+// executeWriteAction routing through @davidorex/pi-context/block-api
+// (Phase F of issue-065 closure plan — verifies the four bypass paths
+// previously taken by raw fs.writeFileSync are now covered: AJV validation,
+// proper-lockfile contention, DispatchContext author-stamping, centralized
+// monitor write surface.)
+// =============================================================================
+
+interface WriteActionFixture {
+	tmpDir: string;
+	cwdRestore: () => void;
+}
+
+function setupExecuteWriteFixture(opts: {
+	schema?: Record<string, unknown> | null;
+	initialBlock?: Record<string, unknown>;
+	blockName?: string;
+}): WriteActionFixture {
+	const blockName = opts.blockName ?? "issues";
+	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "monitor-write-action-"));
+	const projectDir = path.join(tmpDir, ".project");
+	const schemasDir = path.join(projectDir, "schemas");
+	fs.mkdirSync(schemasDir, { recursive: true });
+
+	const initial = opts.initialBlock ?? { issues: [] };
+	fs.writeFileSync(path.join(projectDir, `${blockName}.json`), JSON.stringify(initial, null, 2));
+
+	if (opts.schema !== null) {
+		const schema = opts.schema ?? {
+			$schema: "http://json-schema.org/draft-07/schema#",
+			type: "object",
+			required: ["issues"],
+			properties: {
+				issues: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "description", "status", "source"],
+						additionalProperties: true,
+						properties: {
+							id: { type: "string" },
+							description: { type: "string" },
+							status: { type: "string", enum: ["open", "resolved", "deferred"] },
+							source: { type: "string", enum: ["human", "agent", "monitor", "workflow"] },
+							category: { type: "string" },
+							priority: { type: "string" },
+							created_by: { type: "string" },
+							created_at: { type: "string" },
+							modified_by: { type: "string" },
+							modified_at: { type: "string" },
+						},
+					},
+				},
+			},
+		};
+		fs.writeFileSync(path.join(schemasDir, `${blockName}.schema.json`), JSON.stringify(schema, null, 2));
+	}
+
+	const priorCwd = process.cwd();
+	process.chdir(tmpDir);
+
+	return {
+		tmpDir,
+		cwdRestore: () => {
+			process.chdir(priorCwd);
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		},
+	};
+}
+
+function makeStubMonitor(name: string): Monitor {
+	return { name } as unknown as Monitor;
+}
+
+describe("executeWriteAction (Phase F — issue-065 routing)", () => {
+	it("append mode: routes through appendToBlock, persists entry with monitor writer stamp", () => {
+		const fx = setupExecuteWriteFixture({});
+		try {
+			const action: MonitorAction = {
+				write: {
+					block: "issues",
+					merge: "append",
+					array_field: "issues",
+					template: {
+						id: "fragility-{finding_id}",
+						description: "{description}",
+						status: "open",
+						source: "monitor",
+						category: "fragility",
+					},
+				},
+			};
+			const result: ClassifyResult = { verdict: "flag", description: "missing assertion", severity: "warning" };
+
+			executeWriteAction(makeStubMonitor("fragility"), action, result);
+
+			const onDisk = JSON.parse(fs.readFileSync(path.join(fx.tmpDir, ".project", "issues.json"), "utf-8"));
+			expect(onDisk.issues.length).toBe(1);
+			const entry = onDisk.issues[0];
+			expect(String(entry.id).startsWith("fragility-fragility-")).toBe(true);
+			expect(entry.description).toBe("missing assertion");
+			expect(entry.status).toBe("open");
+			expect(entry.source).toBe("monitor");
+			expect(entry.created_by).toBe("monitor/fragility");
+			expect(entry.modified_by).toBe("monitor/fragility");
+			expect(typeof entry.created_at).toBe("string");
+			expect(typeof entry.modified_at).toBe("string");
+		} finally {
+			fx.cwdRestore();
+		}
+	});
+
+	it("upsert mode: second call with same id replaces in place, refreshes modified_*", () => {
+		const fx = setupExecuteWriteFixture({});
+		try {
+			const action: MonitorAction = {
+				write: {
+					block: "issues",
+					merge: "upsert",
+					array_field: "issues",
+					template: {
+						id: "stable-id-1",
+						description: "{description}",
+						status: "open",
+						source: "monitor",
+					},
+				},
+			};
+			executeWriteAction(makeStubMonitor("hedge"), action, {
+				verdict: "flag",
+				description: "first call",
+				severity: "warning",
+			});
+			const after1 = JSON.parse(fs.readFileSync(path.join(fx.tmpDir, ".project", "issues.json"), "utf-8"));
+			expect(after1.issues.length).toBe(1);
+			expect(after1.issues[0].description).toBe("first call");
+			const firstModifiedAt: string = after1.issues[0].modified_at;
+			expect(typeof firstModifiedAt).toBe("string");
+
+			const start = Date.now();
+			while (Date.now() === start) {
+				/* spin */
+			}
+
+			executeWriteAction(makeStubMonitor("hedge"), action, {
+				verdict: "flag",
+				description: "second call",
+				severity: "warning",
+			});
+			const after2 = JSON.parse(fs.readFileSync(path.join(fx.tmpDir, ".project", "issues.json"), "utf-8"));
+			expect(after2.issues.length).toBe(1);
+			expect(after2.issues[0].description).toBe("second call");
+			expect(after2.issues[0].modified_by).toBe("monitor/hedge");
+			expect(after2.issues[0].modified_at).not.toBe(firstModifiedAt);
+		} finally {
+			fx.cwdRestore();
+		}
+	});
+
+	it("AJV ValidationError surfaces via console.error and does not throw out of executeWriteAction", () => {
+		const fx = setupExecuteWriteFixture({});
+		try {
+			const action: MonitorAction = {
+				write: {
+					block: "issues",
+					merge: "append",
+					array_field: "issues",
+					template: {
+						id: "broken-{finding_id}",
+						status: "open",
+						source: "monitor",
+					},
+				},
+			};
+			const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+			try {
+				expect(() =>
+					executeWriteAction(makeStubMonitor("broken"), action, {
+						verdict: "flag",
+						description: "irrelevant",
+					}),
+				).not.toThrow();
+				const calls = errSpy.mock.calls.map((c) => String(c[0] ?? ""));
+				const blockApiLine = calls.find((line) => line.includes("[broken] block-api write failed"));
+				expect(blockApiLine).toBeDefined();
+				const onDisk = JSON.parse(fs.readFileSync(path.join(fx.tmpDir, ".project", "issues.json"), "utf-8"));
+				expect(onDisk.issues.length).toBe(0);
+			} finally {
+				errSpy.mockRestore();
+			}
+		} finally {
+			fx.cwdRestore();
+		}
+	});
+
+	it("missing schema: block-api writes without validation (block-api default semantics)", () => {
+		const fx = setupExecuteWriteFixture({ schema: null });
+		try {
+			const action: MonitorAction = {
+				write: {
+					block: "issues",
+					merge: "append",
+					array_field: "issues",
+					template: {
+						id: "no-schema-{finding_id}",
+						description: "{description}",
+						status: "open",
+						source: "monitor",
+					},
+				},
+			};
+			executeWriteAction(makeStubMonitor("schemaless"), action, {
+				verdict: "flag",
+				description: "no schema present",
+				severity: "info",
+			});
+			const onDisk = JSON.parse(fs.readFileSync(path.join(fx.tmpDir, ".project", "issues.json"), "utf-8"));
+			expect(onDisk.issues.length).toBe(1);
+			expect(onDisk.issues[0].description).toBe("no schema present");
+			expect(Object.hasOwn(onDisk.issues[0], "created_by")).toBe(false);
+			expect(Object.hasOwn(onDisk.issues[0], "modified_by")).toBe(false);
+		} finally {
+			fx.cwdRestore();
+		}
 	});
 });

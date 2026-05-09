@@ -597,7 +597,7 @@
     {
       "id": "FGAP-018",
       "title": "upsertItemInBlock replacement-mode strips created_by/created_at on update path",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L1",
@@ -619,7 +619,9 @@
       "impact": "Bundled monitor templates (fragility, work-quality) currently use merge: 'append' so no live regression. But any future consumer using merge: 'upsert' (with monitor or any other writer kind) silently destroys author attestation on every update. The FGAP-004 closure surface (Step 3) is undermined by Step 6's upsert primitive. Affects: monitor upsert-templates, any future agent/workflow using upsertItemInBlock for state mutation against a schema declaring created_*.",
       "proposed_resolution": "Two coherent shapes — user decides:  (a) Make upsertItemInBlock perform field-level merge instead of replace: on update, read existing item, shallow-merge supplied item over it (preserving fields not in supplied), then stamp. Preserves attestation by construction; matches typical 'upsert' semantic in databases.  (b) Make upsertItemInBlock preserve created_by/created_at specifically on update: read existing item, copy created_* fields into supplied item before replacement, then stamp. Surgical fix; preserves only attestation.  Path (a) is cleaner contract; path (b) is minimal change. Either closes the attestation-loss fragility. Migration registry entry not required (existing on-disk data unaffected; only future upsert calls change behavior).",
       "created_by": "agent/step-6-orchestrator",
-      "created_at": "2026-05-09T05:34:01.350Z"
+      "created_at": "2026-05-09T05:34:01.350Z",
+      "closed_by": "agent/step-6.2-orchestrator",
+      "closed_at": "2026-05-09T07:32:43.789Z"
     },
     {
       "id": "FGAP-019",

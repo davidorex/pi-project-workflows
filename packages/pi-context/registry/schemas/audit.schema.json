@@ -1,4 +1,7 @@
 {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/audit",
+	"version": "1.0.0",
 	"type": "object",
 	"title": "Audit",
 	"description": "Structured results from running conformance checks. Evidence of compliance or violation against the conformance reference. Produced by audit workflows, consumed by fix-audit workflows.",
@@ -112,12 +115,8 @@
 						"description": "Stable identifier for dedup across sources: principle-slug-file-concern"
 					},
 					"severity": {
-						"type": "string",
-						"enum": [
-							"error",
-							"warning",
-							"info"
-						]
+						"$ref": "pi-context://schemas/severity",
+						"description": "Finding severity. Vocabulary $ref'd from pi-context://schemas/severity (FGAP-017 closure)."
 					},
 					"principle": {
 						"type": "string",
@@ -174,7 +173,7 @@
 									"grep",
 									"inspect"
 								],
-								"description": "How to verify the fix was applied correctly"
+								"description": "How to verify the fix was applied correctly. Intentionally narrower subset of pi-context://schemas/verification-method (which adds 'ast', 'human', 'test'); audit-fix verification supports only 3 lightweight methods. Reconciliation tracked in FGAP-021."
 							},
 							"verify_command": {
 								"type": "string",

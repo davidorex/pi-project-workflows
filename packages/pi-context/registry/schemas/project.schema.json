@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/project",
+	"version": "1.0.0",
 	"description": "Identity and scope. What this project is, what it aims to do, what is in and out of scope. The anchor all other blocks reference. Contains name, vision, core value proposition, goals with success criteria, constraints, and current status.",
 	"title": "Project Identity",
 	"type": "object",
@@ -100,7 +102,8 @@
 				"development",
 				"maintenance",
 				"complete"
-			]
+			],
+			"description": "Project lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); project uses product-lifecycle stages. Reconciliation tracked in FGAP-021."
 		},
 		"repository": {
 			"type": "string"

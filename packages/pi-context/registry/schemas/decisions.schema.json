@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/decisions",
+	"version": "1.0.0",
 	"description": "Choices made and why. Architectural, technical, and process choices with rationale and status (decided, tentative, revisit). The record of deliberate selection between alternatives. Decisions say what was chosen.",
 	"title": "Decisions",
 	"type": "object",
@@ -40,7 +42,8 @@
 							"tentative",
 							"revisit",
 							"superseded"
-						]
+						],
+						"description": "Decision lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); decisions use deliberation-shaped semantics (tentative→decided→revisit/superseded). Reconciliation tracked in FGAP-021."
 					},
 					"context": {
 						"type": "string",

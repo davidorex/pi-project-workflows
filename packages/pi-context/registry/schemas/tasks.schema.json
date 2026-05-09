@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/tasks",
+	"version": "1.0.0",
 	"description": "Discrete units of work with status lifecycle (planned, in-progress, completed, blocked, cancelled) and phase linkage. The operational layer between gaps/requirements and code changes.",
 	"title": "Tasks",
 	"type": "object",
@@ -31,7 +33,8 @@
 							"completed",
 							"blocked",
 							"cancelled"
-						]
+						],
+						"description": "Task lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped todo/in_progress/blocked/complete/unknown); tasks use a 5-state operational lifecycle with cancellation. Reconciliation tracked in FGAP-021."
 					},
 					"phase": {
 						"type": [

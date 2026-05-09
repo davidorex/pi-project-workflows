@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/roadmap",
+	"version": "1.0.0",
 	"title": "Project roadmaps",
 	"description": "Sequenced phases with milestones; each phase aggregates items via a lens (target or composition). Phase ordering lives in relations.json with relation_type='phase_depends_on' per DEC-0012 (edges-only authoring; no inline depends_on field on phases). Phase membership beyond the lens's auto-grouping is authored via relations.json with relation_type='phase_member'. Roadmaps reside under <config.root>/roadmap.json and are opt-in via config.json's installed_blocks.",
 	"type": "object",
@@ -22,7 +24,8 @@
 					"description": { "type": "string" },
 					"status": {
 						"type": "string",
-						"enum": ["draft", "active", "paused", "complete", "archived"]
+						"enum": ["draft", "active", "paused", "complete", "archived"],
+						"description": "Roadmap lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); roadmaps use authoring lifecycle (draft→active→complete with paused/archived states). Reconciliation tracked in FGAP-021."
 					},
 					"phases": {
 						"type": "array",

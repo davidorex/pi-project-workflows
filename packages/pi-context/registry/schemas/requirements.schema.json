@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/requirements",
+	"version": "1.0.0",
 	"description": "What the project must deliver. Functional and non-functional requirements with MoSCoW priority and lifecycle states (proposed, accepted, implemented, verified). The contract between intent and implementation.",
 	"title": "Requirements",
 	"type": "object",
@@ -42,7 +44,8 @@
 							"deferred",
 							"implemented",
 							"verified"
-						]
+						],
+						"description": "Requirement lifecycle. Intentionally divergent from pi-context://schemas/status (which uses workflow-shaped todo/in_progress/blocked/complete/unknown); requirements use a 5-state proposed→verified flow. Reconciliation tracked in FGAP-021."
 					},
 					"priority": {
 						"type": "string",
@@ -51,7 +54,8 @@
 							"should",
 							"could",
 							"wont"
-						]
+						],
+						"description": "MoSCoW priority. Intentionally divergent from pi-context://schemas/priority (which uses p- prefix for workflow-vocabulary fragility classification). Reconciliation tracked in FGAP-021."
 					},
 					"acceptance_criteria": {
 						"type": "array",
@@ -66,7 +70,7 @@
 							"agent",
 							"analysis"
 						],
-						"description": "How this requirement was created"
+						"description": "How this requirement was created. Intentionally divergent subset/variant of pi-context://schemas/source (which is human/agent/monitor/workflow); requirements substitute 'analysis' for monitor/workflow because requirements originate from analytical work products, not runtime emitters. Reconciliation tracked in FGAP-021."
 					},
 					"traces_to": {
 						"type": "array",

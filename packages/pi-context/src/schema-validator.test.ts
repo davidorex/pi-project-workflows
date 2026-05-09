@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { createRegistry } from "./schema-migrations.js";
 import { ValidationError, validate, validateBlockWithMigration, validateFromFile } from "./schema-validator.js";
 
@@ -136,6 +137,84 @@ describe("framework schema $ref resolution", () => {
 			() => validate(composing, { s: "wip" }, "status-host"),
 			(err: unknown) => err instanceof ValidationError,
 		);
+	});
+});
+
+describe("registry schema $ref resolution (FGAP-017 closure)", () => {
+	// Registry schemas at packages/pi-context/registry/schemas/ now $ref the
+	// shared enum schemas pre-registered on the AJV instance. These tests load
+	// the on-disk registry schemas and validate items that exercise the $ref
+	// path — failure indicates the URN is unreachable to the AJV instance or
+	// strict-mode rejected the cross-schema reference.
+	const __dirnameTest = path.dirname(fileURLToPath(import.meta.url));
+	// __dirnameTest = packages/pi-context/src; registry schemas live at
+	// packages/pi-context/registry/schemas/
+	const REGISTRY_SCHEMAS = path.resolve(__dirnameTest, "..", "registry", "schemas");
+
+	it("issues.schema.json: source field validates 'monitor' via $ref to pi-context://schemas/source", () => {
+		const schemaPath = path.join(REGISTRY_SCHEMAS, "issues.schema.json");
+		const data = {
+			issues: [
+				{
+					id: "issue-001",
+					title: "test",
+					body: "body",
+					location: "src/foo.ts:1",
+					status: "open",
+					category: "issue",
+					priority: "high",
+					package: "pi-context",
+					source: "monitor",
+				},
+			],
+		};
+		const out = validateFromFile(schemaPath, data, "issues-source-ref");
+		assert.deepStrictEqual(out, data);
+	});
+
+	it("audit.schema.json: finding severity validates 'error' via $ref to pi-context://schemas/severity", () => {
+		const schemaPath = path.join(REGISTRY_SCHEMAS, "audit.schema.json");
+		const data = {
+			subject: { project: "pi-context", files: ["src/foo.ts"] },
+			auditor: { name: "test-auditor" },
+			timestamp: "2026-05-09T00:00:00Z",
+			findings: [
+				{
+					id: "F-001",
+					severity: "error",
+					principle: "type-safety",
+					description: "missing return type",
+					locations: [{ file: "src/foo.ts", snippet: "function f() { return 1; }" }],
+					fix: { suggestion: "annotate return", verify_method: "inspect" },
+				},
+			],
+			summary: { errors: 1, warnings: 0, infos: 0 },
+		};
+		const out = validateFromFile(schemaPath, data, "audit-severity-ref");
+		assert.deepStrictEqual(out, data);
+	});
+
+	it("conformance-reference.schema.json: rule severity validates 'warning' via $ref to pi-context://schemas/severity", () => {
+		const schemaPath = path.join(REGISTRY_SCHEMAS, "conformance-reference.schema.json");
+		const data = {
+			name: "pi-extension-conventions",
+			scope: { type: "pi-extension" },
+			principles: [
+				{
+					id: "P1",
+					name: "Type Safety",
+					rules: [
+						{
+							id: "P1.1",
+							rule: "All exported functions declare return types",
+							severity: "warning",
+						},
+					],
+				},
+			],
+		};
+		const out = validateFromFile(schemaPath, data, "conformance-severity-ref");
+		assert.deepStrictEqual(out, data);
 	});
 });
 

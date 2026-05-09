@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/verification",
+	"version": "1.0.0",
 	"description": "Evidence that work meets its criteria. Per-task, per-phase, or per-requirement completion evidence. The accountability record linking implementation to acceptance.",
 	"title": "Verification",
 	"type": "object",
@@ -41,7 +43,8 @@
 							"failed",
 							"partial",
 							"skipped"
-						]
+						],
+						"description": "Verification outcome. Intentionally divergent from pi-context://schemas/status (workflow-shaped); verifications use evidence-shaped outcome semantics (passed/failed/partial/skipped). Reconciliation tracked in FGAP-021."
 					},
 					"method": {
 						"type": "string",
@@ -49,7 +52,8 @@
 							"command",
 							"inspect",
 							"test"
-						]
+						],
+						"description": "Verification method. Intentionally narrower subset of pi-context://schemas/verification-method (which is command/grep/ast/inspect/human/test); verifications support only the 3 most common methods. Reconciliation tracked in FGAP-021."
 					},
 					"evidence": {
 						"type": "string",

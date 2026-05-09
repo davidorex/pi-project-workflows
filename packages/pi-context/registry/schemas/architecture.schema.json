@@ -1,5 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/architecture",
+	"version": "1.0.0",
 	"description": "How the system is structured. Modules, boundaries, patterns, dependencies. The map that constrains implementation decisions. Consumed by planning agents to understand what exists before proposing changes.",
 	"title": "Architecture",
 	"type": "object",

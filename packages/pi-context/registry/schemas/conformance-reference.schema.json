@@ -1,4 +1,7 @@
 {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/conformance-reference",
+	"version": "1.0.0",
 	"type": "object",
 	"title": "Conformance Reference",
 	"description": "Executable code conventions with check methods and patterns. The standards that implementation must comply with. Used by audit workflows to verify conformance and by agents as constraints during code generation.",
@@ -81,7 +84,7 @@
 										"ast",
 										"inspect"
 									],
-									"description": "How to verify compliance: grep (pattern match), command (run tool), ast (parse tree), inspect (LLM judgment)"
+									"description": "How to verify compliance: grep (pattern match), command (run tool), ast (parse tree), inspect (LLM judgment). Intentionally narrower subset of pi-context://schemas/verification-method (which adds 'human' and 'test'); conformance checks are automation-oriented and exclude human/test methods. Reconciliation tracked in FGAP-021."
 								},
 								"check_pattern": {
 									"type": "string",
@@ -102,13 +105,8 @@
 									"description": "What violates this rule"
 								},
 								"severity": {
-									"type": "string",
-									"enum": [
-										"error",
-										"warning",
-										"info"
-									],
-									"description": "Default severity when this rule is violated"
+									"$ref": "pi-context://schemas/severity",
+									"description": "Default severity when this rule is violated. Vocabulary $ref'd from pi-context://schemas/severity (FGAP-017 closure)."
 								}
 							}
 						}

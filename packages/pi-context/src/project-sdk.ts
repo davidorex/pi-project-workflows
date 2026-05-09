@@ -8,6 +8,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock, updateItemInBlock } from "./block-api.js";
+import { getLensValidators } from "./lens-validator.js";
 import { type ConfigBlock, loadConfig } from "./project-context.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 
@@ -691,7 +692,19 @@ export interface ProjectValidationIssue {
 	severity: "error" | "warning";
 	message: string;
 	block: string;
-	field: string;
+	/**
+	 * Defect locator within the block. Required for cross-block reference
+	 * diagnostics; optional for lens-validator-sourced issues whose
+	 * locator (e.g. phase_id) does not always map to a field path.
+	 */
+	field?: string;
+	/**
+	 * Opaque diagnostic slug from a registered lens-validator
+	 * (e.g. roadmap_lens_missing). Absent on issues produced by the
+	 * built-in cross-block reference scan, which has no slug surface
+	 * (its diagnostics are uniquely identified by block + field).
+	 */
+	code?: string;
 }
 
 export interface ProjectValidationResult {
@@ -919,6 +932,33 @@ export function validateProject(cwd: string): ProjectValidationResult {
 		}
 	} catch {
 		/* block doesn't exist */
+	}
+
+	// Lens-validator dispatch (Step 7 / pi-context Divergence 3): iterate every
+	// validator registered via registerLensValidator and merge its issues into
+	// the project-validation result. Validators are guarded individually so a
+	// throwing validator surfaces as a warning issue rather than a hard fail —
+	// keeps the whole-project validate command robust against per-lens bugs.
+	for (const v of getLensValidators()) {
+		try {
+			const result = v.validate(cwd);
+			for (const li of result.issues) {
+				issues.push({
+					severity: li.severity,
+					message: li.message,
+					block: li.block,
+					...(li.field !== undefined ? { field: li.field } : {}),
+					code: li.code,
+				});
+			}
+		} catch (err) {
+			issues.push({
+				severity: "warning",
+				message: `Lens validator '${v.name}' threw: ${err instanceof Error ? err.message : String(err)}`,
+				block: "lens-validator",
+				code: `lens_validator_failed:${v.name}`,
+			});
+		}
 	}
 
 	const errorCount = issues.filter((i) => i.severity === "error").length;

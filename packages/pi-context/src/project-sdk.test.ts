@@ -11,6 +11,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { appendToBlock, updateItemInBlock } from "./block-api.js";
+import { clearLensValidators, getLensValidators, type LensValidator, registerLensValidator } from "./lens-validator.js";
 import {
 	availableBlocks,
 	availableSchemas,
@@ -560,6 +561,77 @@ describe("validation result status field", () => {
 			result.issues.every((i) => i.severity === "warning"),
 			"all issues should be warnings",
 		);
+	});
+});
+
+// ── lens-validator dispatch (Step 7) ──────────────────────────────────────
+
+describe("validateProject lens-validator dispatch", () => {
+	// Late-bound import to avoid clearing the registry at this file's top scope
+	// (other test files in the same tsx --test run rely on module-init
+	// registrations). Each test reaches in, snapshots, mutates, restores.
+	it("merges issues from a registered lens-validator into validateProject output", (t) => {
+		// Snapshot the existing registry so we can restore after the test —
+		// must not strand permanent test-only validators in the module-level
+		// registry that other tests would observe.
+		const snapshot: LensValidator[] = [...getLensValidators()];
+		t.after(() => {
+			clearLensValidators();
+			for (const v of snapshot) registerLensValidator(v);
+		});
+
+		clearLensValidators();
+		registerLensValidator({
+			name: "sdk-test-validator",
+			validate: () => ({
+				status: "warnings" as const,
+				issues: [
+					{
+						code: "sdk_dispatch_diagnostic",
+						severity: "warning" as const,
+						message: "merged from registered validator",
+						block: "sdk-fake-block",
+						field: "sdk.field",
+					},
+				],
+			}),
+		});
+
+		const tmpDir = makeTmpDir("sdk-dispatch");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmpDir, ".project"), { recursive: true });
+
+		const result = validateProject(tmpDir);
+		const merged = result.issues.find((i) => i.code === "sdk_dispatch_diagnostic");
+		assert.ok(merged, "expected sdk_dispatch_diagnostic to surface via dispatch");
+		assert.strictEqual(merged.block, "sdk-fake-block");
+		assert.strictEqual(merged.field, "sdk.field");
+	});
+
+	it("wraps a throwing lens-validator as a warning issue (defensive try/catch)", (t) => {
+		const snapshot: LensValidator[] = [...getLensValidators()];
+		t.after(() => {
+			clearLensValidators();
+			for (const v of snapshot) registerLensValidator(v);
+		});
+
+		clearLensValidators();
+		registerLensValidator({
+			name: "sdk-throwing-validator",
+			validate: () => {
+				throw new Error("boom from sdk test");
+			},
+		});
+
+		const tmpDir = makeTmpDir("sdk-dispatch-throw");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmpDir, ".project"), { recursive: true });
+
+		const result = validateProject(tmpDir);
+		const wrapped = result.issues.find((i) => i.code === "lens_validator_failed:sdk-throwing-validator");
+		assert.ok(wrapped, "expected wrapped failure issue from throwing validator");
+		assert.strictEqual(wrapped.severity, "warning");
+		assert.match(wrapped.message ?? "", /boom from sdk test/);
 	});
 });
 

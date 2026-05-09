@@ -35,6 +35,7 @@ import {
 import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
+import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -962,6 +963,145 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Roadmap tools (Step 7 / pi-context PM-lens) ─────────────────────────
+
+	// Strip non-serializable fields (suggestionTemplate fn, grouped Map) from
+	// the embedded LoadedLensView records before tool serialization. Mirrors
+	// the Map → object precedent used elsewhere for tool boundary shapes.
+	const serializeRoadmapView = (view: RoadmapView): unknown => ({
+		roadmap: view.roadmap,
+		phases: view.phases.map((pv) => ({
+			phase: pv.phase,
+			lensView:
+				"error" in pv.lensView
+					? pv.lensView
+					: {
+							lens: pv.lensView.lens,
+							items: pv.lensView.items,
+							edges: pv.lensView.edges,
+							grouped: Object.fromEntries(pv.lensView.grouped),
+							uncategorized: pv.lensView.uncategorized,
+						},
+			status: pv.status,
+			...(pv.milestone ? { milestone: pv.milestone } : {}),
+			...(pv.milestoneSatisfied !== undefined ? { milestoneSatisfied: pv.milestoneSatisfied } : {}),
+		})),
+		phaseOrder: view.phaseOrder,
+		cycles: view.cycles,
+		edges: view.edges,
+	});
+
+	pi.registerTool({
+		name: "project-roadmap-load",
+		label: "Project: load roadmap",
+		description:
+			"Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Per DEC-0012 phase ordering lives in relations.json with relation_type='phase_depends_on'.",
+		promptSnippet: "Load a roadmap by id",
+		parameters: Type.Object({
+			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { roadmapId: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const view = loadRoadmap(ctx.cwd, params.roadmapId);
+			if ("error" in view) {
+				return {
+					details: undefined,
+					content: [{ type: "text", text: JSON.stringify(view, null, 2) }],
+				};
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(serializeRoadmapView(view), null, 2) }],
+			};
+		},
+	});
+
+	pi.registerTool({
+		name: "project-roadmap-render",
+		label: "Project: render roadmap",
+		description:
+			"Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, milestone resolution, exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.",
+		promptSnippet: "Render a roadmap as markdown",
+		parameters: Type.Object({
+			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { roadmapId: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const view = loadRoadmap(ctx.cwd, params.roadmapId);
+			if ("error" in view) {
+				return {
+					details: undefined,
+					content: [{ type: "text", text: JSON.stringify(view, null, 2) }],
+				};
+			}
+			const naming = getProjectContext(ctx.cwd).config?.naming;
+			return {
+				details: undefined,
+				content: [{ type: "text", text: renderRoadmap(view, naming) }],
+			};
+		},
+	});
+
+	pi.registerTool({
+		name: "project-roadmap-validate",
+		label: "Project: validate roadmap(s)",
+		description:
+			"Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_evidence_block_missing, roadmap_milestone_query_invalid, roadmap_status_unknown_value. Display strings flow through config.display_strings (pi-context divergence). Optional roadmapId filter restricts issue list to a single roadmap.",
+		promptSnippet: "Validate roadmaps",
+		parameters: Type.Object({
+			roadmapId: Type.Optional(
+				Type.String({ description: "Filter to issues matching this roadmap_id (omit for full-project validation)" }),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { roadmapId?: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = validateRoadmaps(ctx.cwd);
+			const filtered = params.roadmapId
+				? result.issues.filter((i) => !i.roadmap_id || i.roadmap_id === params.roadmapId)
+				: result.issues;
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify({ status: result.status, issues: filtered }, null, 2) }],
+			};
+		},
+	});
+
+	pi.registerTool({
+		name: "project-roadmap-list",
+		label: "Project: list roadmaps",
+		description:
+			"List every roadmap in <config.root>/roadmap.json with id, title, optional status, and phase count. Returns [] when roadmap.json absent (opt-in block; absence is the truthful answer).",
+		promptSnippet: "List roadmaps",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(listRoadmaps(ctx.cwd), null, 2) }],
+			};
+		},
+	});
+
 	// ── Command: /project ──────────────────────────────────────────────────
 
 	interface SubcommandEntry {
@@ -1055,6 +1195,59 @@ const extension = (pi: ExtensionAPI) => {
 				);
 			},
 		},
+		"roadmap-list": {
+			description: "List every roadmap in <config.root>/roadmap.json with id, title, status, and phase count",
+			handler: (_args, ctx) => {
+				const list = listRoadmaps(ctx.cwd);
+				if (list.length === 0) {
+					ctx.ui.notify(
+						"No roadmaps found. Install the roadmap block via .project/config.json's installed_blocks, then author roadmap.json.",
+						"info",
+					);
+					return;
+				}
+				const lines = list.map(
+					(r) =>
+						`${r.id} [${r.status ?? "(unspecified)"}] ${r.title} (${r.phaseCount} phase${r.phaseCount === 1 ? "" : "s"})`,
+				);
+				ctx.ui.notify(lines.join("\n"), "info");
+			},
+		},
+		"roadmap-view": {
+			description:
+				"Render a roadmap as pure-textual markdown (phase order, per-phase adjacency from authored phase_depends_on edges, status rollup, milestone resolution). NO mermaid.",
+			handler: (args, ctx) => {
+				const roadmapId = args.trim().split(/\s+/)[0];
+				if (!roadmapId) {
+					ctx.ui.notify("Usage: /project roadmap-view <ROADMAP-id>", "error");
+					return;
+				}
+				const view = loadRoadmap(ctx.cwd, roadmapId);
+				if ("error" in view) {
+					ctx.ui.notify(view.error, "error");
+					return;
+				}
+				const naming = getProjectContext(ctx.cwd).config?.naming;
+				ctx.ui.notify(renderRoadmap(view, naming), "info");
+			},
+		},
+		"roadmap-validate": {
+			description: "Validate every roadmap (or a single one when ROADMAP-id supplied) — surfaces structured issues",
+			handler: (args, ctx) => {
+				const roadmapId = args.trim().split(/\s+/)[0] || undefined;
+				const result = validateRoadmaps(ctx.cwd);
+				const filtered = roadmapId
+					? result.issues.filter((i) => !i.roadmap_id || i.roadmap_id === roadmapId)
+					: result.issues;
+				if (filtered.length === 0) {
+					ctx.ui.notify(`✓ Roadmap validation passed${roadmapId ? ` for ${roadmapId}` : ""}.`, "info");
+					return;
+				}
+				const lines = filtered.map((i) => `✗ [${i.code}] ${i.roadmap_id ?? ""}/${i.phase_id ?? ""}: ${i.message}`);
+				const level = result.status === "invalid" ? "error" : "warning";
+				ctx.ui.notify(lines.join("\n"), level);
+			},
+		},
 		status: {
 			description: "Show derived project state",
 			handler: (_args, ctx) => handleStatus(ctx, pi),
@@ -1082,7 +1275,8 @@ const extension = (pi: ExtensionAPI) => {
 				} else {
 					for (const issue of result.issues) {
 						const icon = issue.severity === "error" ? "\u2717" : "\u26a0";
-						lines.push(`${icon} [${issue.block}] ${issue.field}: ${issue.message}`);
+						const locator = issue.field ?? issue.code ?? "(no locator)";
+						lines.push(`${icon} [${issue.block}] ${locator}: ${issue.message}`);
 					}
 					lines.push("");
 					lines.push(`${statusIcon} ${errors} error(s), ${warnings} warning(s)`);
@@ -1160,3 +1354,17 @@ export {
 	schemaInfo,
 	schemaVocabulary,
 } from "./project-sdk.js";
+export {
+	listRoadmaps,
+	loadRoadmap,
+	type PhaseSpec,
+	type PhaseStatus,
+	type PhaseView,
+	type RoadmapSpec,
+	type RoadmapView,
+	renderRoadmap,
+	resolveStatusVocabulary,
+	rollupPhaseStatus,
+	topoSort,
+	validateRoadmaps,
+} from "./roadmap-plan.js";

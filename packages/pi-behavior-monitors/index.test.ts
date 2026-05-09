@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { ValidationError } from "@davidorex/pi-context/schema-validator";
 import nunjucks from "nunjucks";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -15,6 +16,7 @@ import {
 	generateFindingId,
 	invokeMonitor,
 	isReferentialMessage,
+	learnPattern,
 	type Monitor,
 	type MonitorAction,
 	type MonitorOverride,
@@ -23,6 +25,7 @@ import {
 	parseMonitorsArgs,
 	parseVerdict,
 	SCOPE_TARGETS,
+	saveInstructions,
 	VALID_EVENTS,
 	VERDICT_TYPES,
 	WHEN_CONDITIONS,
@@ -1488,3 +1491,108 @@ describe("executeWriteAction (Phase F — issue-065 routing)", () => {
 		}
 	});
 });
+
+// =============================================================================
+// Side-car writers (Step 6.1 — FGAP-019 closure):
+// saveInstructions + learnPattern now route through writeTypedFile /
+// appendToTypedFile from `@davidorex/pi-context/block-api`. The two retained
+// `fs.writeFileSync` sites are gone; AJV validates against the new monitor
+// list-schemas; proper-lockfile gates the read-modify-write critical
+// section; atomic tmp+rename mirrors the .project/<block>.json writes.
+// =============================================================================
+
+function makeSideCarMonitor(name: string, dir: string): Monitor {
+	return {
+		name,
+		resolvedInstructionsPath: path.join(dir, `${name}.instructions.json`),
+		resolvedPatternsPath: path.join(dir, `${name}.patterns.json`),
+	} as unknown as Monitor;
+}
+
+describe("saveInstructions (Step 6.1 — routes through writeTypedFile)", () => {
+	it("persists instructions array; AJV validates; missing required `text` field surfaces error", () => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "monitor-side-car-instr-"));
+		try {
+			const monitor = makeSideCarMonitor("test", tmpDir);
+
+			// Happy path — well-formed instruction list
+			const ok = saveInstructions(monitor, [{ text: "rule one", added_at: "2026-05-09T00:00:00Z" }]);
+			expect(ok).toBeNull();
+			const onDisk = JSON.parse(fs.readFileSync(monitor.resolvedInstructionsPath, "utf-8"));
+			expect(onDisk).toEqual([{ text: "rule one", added_at: "2026-05-09T00:00:00Z" }]);
+
+			// Failure path — entry missing required `text` triggers AJV; saveInstructions
+			// catches the throw and returns the error message rather than throwing
+			// upward (preserves prior contract — callers display the string).
+			const err = saveInstructions(monitor, [
+				// @ts-expect-error — intentionally malformed for the AJV path
+				{ added_at: "2026-05-09T00:00:01Z" },
+			]);
+			expect(err).not.toBeNull();
+			expect(typeof err).toBe("string");
+			// Original list still on disk — failed write must not corrupt prior state.
+			const stillOnDisk = JSON.parse(fs.readFileSync(monitor.resolvedInstructionsPath, "utf-8"));
+			expect(stillOnDisk).toEqual([{ text: "rule one", added_at: "2026-05-09T00:00:00Z" }]);
+		} finally {
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		}
+	});
+});
+
+describe("learnPattern (Step 6.1 — routes through appendToTypedFile)", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("persists pattern; second call with same description is deduped by id", () => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "monitor-side-car-learn-"));
+		try {
+			const monitor = makeSideCarMonitor("learnme", tmpDir);
+
+			learnPattern(monitor, "Found stale dependency", "warning");
+			learnPattern(monitor, "Found stale dependency", "warning"); // dedup expected
+
+			const onDisk = JSON.parse(fs.readFileSync(monitor.resolvedPatternsPath, "utf-8"));
+			expect(Array.isArray(onDisk)).toBe(true);
+			expect(onDisk.length).toBe(1);
+			expect(onDisk[0].description).toBe("Found stale dependency");
+			expect(onDisk[0].severity).toBe("warning");
+			expect(onDisk[0].source).toBe("learned");
+			expect(typeof onDisk[0].learned_at).toBe("string");
+		} finally {
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		}
+	});
+
+	it("AJV catches a pattern entry that violates the list schema; learnPattern returns without throwing and logs to console.error", () => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "monitor-side-car-learn-bad-"));
+		try {
+			const monitor = makeSideCarMonitor("bad-learn", tmpDir);
+
+			// Seed the patterns file with an entry that already violates the
+			// monitor-pattern-list schema (extra unknown property — schema is
+			// `additionalProperties: false`). The next learnPattern call will
+			// trigger AJV when appendToTypedFile validates the WHOLE array
+			// against the schema.
+			fs.writeFileSync(
+				monitor.resolvedPatternsPath,
+				JSON.stringify([{ id: "preexisting", description: "ok", bogus: "x" }], null, 2),
+			);
+
+			const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+			// learnPattern catches internally and logs — must not throw upward.
+			expect(() => learnPattern(monitor, "another pattern", "warning")).not.toThrow();
+			expect(errSpy).toHaveBeenCalled();
+			const message = (errSpy.mock.calls[0]?.[0] as string) ?? "";
+			expect(message).toContain("Failed to write pattern");
+		} finally {
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		}
+	});
+});
+
+// Reference the imported ValidationError so the unused-import linter
+// (or a future enforcement pass) does not strip the symbol — the type is
+// re-exported here for potential downstream tests asserting on the class.
+void ValidationError;

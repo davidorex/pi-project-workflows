@@ -12,7 +12,13 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { appendToBlock, readBlock, upsertItemInBlock } from "@davidorex/pi-context/block-api";
+import {
+	appendToBlock,
+	appendToTypedFile,
+	readBlock,
+	upsertItemInBlock,
+	writeTypedFile,
+} from "@davidorex/pi-context/block-api";
 import type { DispatchContext as BlockApiDispatchContext } from "@davidorex/pi-context/dispatch-context";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { type CompiledAgent, type DispatchContext, dateRotatedPath, executeAgent } from "@davidorex/pi-jit-agents";
@@ -46,6 +52,20 @@ const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.basename(EXTENSION_DIR) === "dist" ? path.dirname(EXTENSION_DIR) : EXTENSION_DIR;
 const EXAMPLES_DIR = path.join(PACKAGE_ROOT, "examples");
 const AGENTS_DIR = path.join(PACKAGE_ROOT, "agents");
+const SCHEMAS_DIR = path.join(PACKAGE_ROOT, "schemas");
+/**
+ * Framework-contract schemas for monitor side-car state files. The
+ * `*.patterns.json` and `*.instructions.json` files written by `learnPattern`
+ * and `saveInstructions` route through `appendToTypedFile` /
+ * `writeTypedFile` from `@davidorex/pi-context/block-api`, threading these
+ * schema paths so AJV validation, atomic write, and proper-lockfile gating
+ * apply uniformly with `.project/<block>.json` writes (FGAP-019 closure;
+ * issue-065's three remaining bypass categories — no AJV, no
+ * proper-lockfile, no centralized choke point — closed for monitor
+ * framework state).
+ */
+const PATTERN_LIST_SCHEMA_PATH = path.join(SCHEMAS_DIR, "monitor-pattern-list.schema.json");
+const INSTRUCTIONS_LIST_SCHEMA_PATH = path.join(SCHEMAS_DIR, "monitor-instruction-list.schema.json");
 
 /**
  * Tool definition for forcing structured verdict output from the classify LLM call.
@@ -941,18 +961,25 @@ function loadInstructions(monitor: Monitor): MonitorInstruction[] {
 	}
 }
 
-function saveInstructions(monitor: Monitor, instructions: MonitorInstruction[]): string | null {
-	const tmpPath = `${monitor.resolvedInstructionsPath}.${process.pid}.tmp`;
+// Exported (over the package barrel) so the side-car-routing test suite in
+// `index.test.ts` can drive it directly without reaching through the
+// `/monitors rules ...` command surface; behavior is otherwise identical to
+// when this was a module-private helper.
+export function saveInstructions(monitor: Monitor, instructions: MonitorInstruction[]): string | null {
+	// Routes through `writeTypedFile` so AJV validates the array against
+	// `monitor-instruction-list.schema.json`, the write goes through
+	// proper-lockfile, and the same atomic tmp+rename + cleanup-on-failure
+	// applies as for `.project/<block>.json` writes — FGAP-019 closure.
 	try {
-		fs.writeFileSync(tmpPath, `${JSON.stringify(instructions, null, 2)}\n`);
-		fs.renameSync(tmpPath, monitor.resolvedInstructionsPath);
+		writeTypedFile(
+			monitor.resolvedInstructionsPath,
+			INSTRUCTIONS_LIST_SCHEMA_PATH,
+			instructions,
+			undefined,
+			`monitor '${monitor.name}' instructions`,
+		);
 		return null;
 	} catch (err) {
-		try {
-			fs.unlinkSync(tmpPath);
-		} catch {
-			/* cleanup */
-		}
 		return err instanceof Error ? err.message : String(err);
 	}
 }
@@ -1461,8 +1488,10 @@ async function classifyViaAgent(
 // Pattern learning (JSON)
 // =============================================================================
 
-function learnPattern(monitor: Monitor, description: string, severity = "warning"): void {
-	const patterns = loadPatterns(monitor);
+// Exported (over the package barrel) so the side-car-routing test suite can
+// drive it directly without reaching through the dispatch path; behavior is
+// otherwise identical to when this was a module-private helper.
+export function learnPattern(monitor: Monitor, description: string, severity = "warning"): void {
 	const id = description
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, "-")
@@ -1470,26 +1499,44 @@ function learnPattern(monitor: Monitor, description: string, severity = "warning
 
 	// dedup by ID — two different descriptions can slugify to the same ID,
 	// so check ID rather than raw description to avoid collisions
-	if (patterns.some((p) => p.id === id)) return;
+	const existing = loadPatterns(monitor);
+	if (existing.some((p) => p.id === id)) return;
 
-	patterns.push({
+	const newPattern: MonitorPattern = {
 		id,
 		description,
 		severity,
 		source: "learned",
 		learned_at: new Date().toISOString(),
-	});
+	};
 
-	const tmpPath = `${monitor.resolvedPatternsPath}.${process.pid}.tmp`;
+	// Routes through `appendToTypedFile` (arrayPath = null = top-level array
+	// shape) so AJV validates the appended item + the whole array against
+	// `monitor-pattern-list.schema.json`, the read-modify-write critical
+	// section is wrapped in proper-lockfile, and the same atomic tmp+rename
+	// applies as for `.project/<block>.json` writes — FGAP-019 closure.
+	// `appendToTypedFile` requires the file to already exist, so bootstrap
+	// an empty list here when the patterns file is absent (matching the
+	// prior "loadPatterns returns [] on read failure" behavior).
 	try {
-		fs.writeFileSync(tmpPath, `${JSON.stringify(patterns, null, 2)}\n`);
-		fs.renameSync(tmpPath, monitor.resolvedPatternsPath);
-	} catch (err) {
-		try {
-			fs.unlinkSync(tmpPath);
-		} catch {
-			/* cleanup */
+		if (!fs.existsSync(monitor.resolvedPatternsPath)) {
+			writeTypedFile(
+				monitor.resolvedPatternsPath,
+				PATTERN_LIST_SCHEMA_PATH,
+				[],
+				undefined,
+				`monitor '${monitor.name}' patterns`,
+			);
 		}
+		appendToTypedFile(
+			monitor.resolvedPatternsPath,
+			PATTERN_LIST_SCHEMA_PATH,
+			null,
+			newPattern,
+			undefined,
+			`monitor '${monitor.name}' pattern`,
+		);
+	} catch (err) {
 		console.error(`[${monitor.name}] Failed to write pattern: ${err instanceof Error ? err.message : err}`);
 	}
 }

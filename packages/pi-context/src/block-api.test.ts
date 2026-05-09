@@ -6,6 +6,7 @@ import { describe, it } from "node:test";
 import {
 	appendToBlock,
 	appendToNestedArray,
+	appendToTypedFile,
 	readBlock,
 	readBlockDir,
 	removeFromBlock,
@@ -14,6 +15,7 @@ import {
 	updateNestedArrayItem,
 	upsertItemInBlock,
 	writeBlock,
+	writeTypedFile,
 } from "./block-api.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { ValidationError } from "./schema-validator.js";
@@ -2124,5 +2126,185 @@ describe("upsertItemInBlock", () => {
 		// route through updateItemInBlock (shallow-merge keeps prior fields).
 		assert.strictEqual(Object.hasOwn(afterUpdate.gaps[0], "created_by"), false);
 		assert.strictEqual(Object.hasOwn(afterUpdate.gaps[0], "created_at"), false);
+	});
+});
+
+// =============================================================================
+// writeTypedFile / appendToTypedFile — generalised (filePath, schemaPath) surface
+// FGAP-019 closure: the same validated-write surface that fronts .project/<block>.json
+// writes is now reachable for arbitrary file paths + schema paths (e.g. monitor
+// side-car state). The existing block-api primitives wrap it.
+// =============================================================================
+
+const flatPatternListSchema = {
+	type: "array",
+	items: {
+		type: "object",
+		properties: {
+			id: { type: "string" },
+			description: { type: "string" },
+			severity: { type: "string" },
+		},
+		required: ["id", "description"],
+		additionalProperties: false,
+	},
+};
+
+const envelopeAuthorSchema = {
+	type: "object",
+	required: ["name"],
+	properties: {
+		name: { type: "string" },
+		created_by: { type: "string" },
+		created_at: { type: "string" },
+	},
+	additionalProperties: false,
+};
+
+function writeSchemaFile(dir: string, basename: string, schema: Record<string, unknown>): string {
+	fs.mkdirSync(dir, { recursive: true });
+	const p = path.join(dir, basename);
+	fs.writeFileSync(p, JSON.stringify(schema, null, 2));
+	return p;
+}
+
+describe("writeTypedFile", () => {
+	it("writes data to arbitrary tmpdir path with arbitrary schema and validates atomically", (t) => {
+		const tmpDir = makeTmpDir("typed-write-arbitrary");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "list.schema.json", flatPatternListSchema);
+		const filePath = path.join(tmpDir, "side-car", "patterns.json");
+		const data = [{ id: "p1", description: "first", severity: "warning" }];
+
+		writeTypedFile(filePath, schemaPath, data, undefined, "side-car patterns");
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.deepStrictEqual(onDisk, data);
+		// Atomic write produced no leftover tmp file
+		const dirEntries = fs.readdirSync(path.dirname(filePath));
+		assert.deepStrictEqual(
+			dirEntries.filter((e) => e.includes("tmp")),
+			[],
+		);
+	});
+
+	it("schemaPath = null skips validation entirely", (t) => {
+		const tmpDir = makeTmpDir("typed-write-no-schema");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const filePath = path.join(tmpDir, "anything.json");
+		// Data shape that would FAIL the flat-list schema (missing required id+description)
+		const data = [{ unrelated: "field" }];
+
+		// schemaPath = null → no AJV → write succeeds
+		assert.doesNotThrow(() => writeTypedFile(filePath, null, data));
+		assert.deepStrictEqual(JSON.parse(fs.readFileSync(filePath, "utf-8")), data);
+	});
+
+	it("ctx-stamping fires when schema declares envelope author fields", (t) => {
+		const tmpDir = makeTmpDir("typed-write-envelope-stamp");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "env.schema.json", envelopeAuthorSchema);
+		const filePath = path.join(tmpDir, "envelope.json");
+		const ctx: DispatchContext = { writer: { kind: "agent", agent_id: "test-writer" } };
+
+		writeTypedFile(filePath, schemaPath, { name: "thing" }, ctx, "envelope file");
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.name, "thing");
+		assert.strictEqual(onDisk.created_by, "agent/test-writer");
+		// (writerToString renders { kind: "agent", agent_id: "test-writer" } as "agent/test-writer")
+		assert.ok(typeof onDisk.created_at === "string" && onDisk.created_at.length > 0);
+	});
+});
+
+describe("appendToTypedFile", () => {
+	it("arrayPath = null appends to top-level array file (flat-array shape)", (t) => {
+		const tmpDir = makeTmpDir("typed-append-flat");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "list.schema.json", flatPatternListSchema);
+		const filePath = path.join(tmpDir, "patterns.json");
+		// bootstrap an empty list
+		writeTypedFile(filePath, schemaPath, [], undefined, "patterns");
+
+		appendToTypedFile(
+			filePath,
+			schemaPath,
+			null,
+			{ id: "p1", description: "first", severity: "info" },
+			undefined,
+			"patterns",
+		);
+		appendToTypedFile(
+			filePath,
+			schemaPath,
+			null,
+			{ id: "p2", description: "second", severity: "warning" },
+			undefined,
+			"patterns",
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.length, 2);
+		assert.strictEqual(onDisk[0].id, "p1");
+		assert.strictEqual(onDisk[1].id, "p2");
+	});
+
+	it("arrayPath = string appends to data[arrayPath] within object-shape file", (t) => {
+		const tmpDir = makeTmpDir("typed-append-object");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const filePath = path.join(tmpDir, "obj.json");
+		fs.writeFileSync(filePath, JSON.stringify({ items: [] }));
+
+		appendToTypedFile(filePath, null, "items", { name: "alpha" }, undefined, "obj file");
+		appendToTypedFile(filePath, null, "items", { name: "beta" }, undefined, "obj file");
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.deepStrictEqual(onDisk.items, [{ name: "alpha" }, { name: "beta" }]);
+	});
+
+	it("AJV validates the appended item against the list schema (malformed item throws)", (t) => {
+		const tmpDir = makeTmpDir("typed-append-validates");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "list.schema.json", flatPatternListSchema);
+		const filePath = path.join(tmpDir, "patterns.json");
+		writeTypedFile(filePath, schemaPath, [], undefined, "patterns");
+
+		// Missing required `description` — must throw ValidationError, leaving file untouched.
+		assert.throws(
+			() => appendToTypedFile(filePath, schemaPath, null, { id: "p-bad" }, undefined, "patterns"),
+			(err: unknown) => err instanceof ValidationError,
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.deepStrictEqual(onDisk, []);
+	});
+});
+
+describe("wrapper continuity smoke (writeBlock + appendToBlock still byte-identical)", () => {
+	it("appendToBlock + writeBlock route through writeTypedFile and produce expected on-disk state", (t) => {
+		const tmpDir = makeTmpDir("wrapper-continuity");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsSchema);
+
+		// writeBlock — whole-file overwrite
+		writeBlock(tmpDir, "gaps", { gaps: [] });
+		const initial = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.deepStrictEqual(initial, { gaps: [] });
+
+		// appendToBlock — read-modify-write under withBlockLock; must NOT
+		// re-acquire the lock inside writeTypedFile (that bug surfaced as
+		// "Lock file is already being held" during initial Step 6.1
+		// implementation; this test guards the regression).
+		appendToBlock(tmpDir, "gaps", "gaps", { id: "g1", description: "d", status: "open" });
+		const afterAppend = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "gaps.json"), "utf-8"));
+		assert.strictEqual(afterAppend.gaps.length, 1);
+		assert.strictEqual(afterAppend.gaps[0].id, "g1");
 	});
 });

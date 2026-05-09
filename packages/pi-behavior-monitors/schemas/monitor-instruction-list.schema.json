@@ -1,0 +1,15 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Monitor instruction list",
+	"description": "Top-level array of MonitorInstruction entries persisted at <discovery-dir>/<name>.instructions.json",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"properties": {
+			"text": { "type": "string" },
+			"added_at": { "type": "string" }
+		},
+		"required": ["text"],
+		"additionalProperties": false
+	}
+}

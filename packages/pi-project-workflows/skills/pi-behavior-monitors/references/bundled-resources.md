@@ -8,8 +8,10 @@
 - `agents/unauthorized-action-classifier.agent.yaml`
 - `agents/work-quality-classifier.agent.yaml`
 
-## schemas/ (3 files)
+## schemas/ (5 files)
 
+- `schemas/monitor-instruction-list.schema.json`
+- `schemas/monitor-pattern-list.schema.json`
 - `schemas/monitor-pattern.schema.json`
 - `schemas/monitor.schema.json`
 - `schemas/verdict.schema.json`

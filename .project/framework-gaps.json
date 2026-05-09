@@ -624,7 +624,7 @@
     {
       "id": "FGAP-019",
       "title": "No canonical validated write surface for monitor side-car state (instructions/patterns)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-behavior-monitors",
       "layer": "L1",
@@ -650,7 +650,32 @@
       "impact": "Monitor side-car state writes can corrupt under concurrent access (no lock), can drift silently from their format schemas (no validation), and have no centralized choke point that recognizes 'side-car write happened here'. Compounds every time a monitor learns a new pattern (line 1485 fires on every NEW classify verdict) or the user adds a steering rule (line 947 fires on every /monitors rules add). FGAP-011 is partially enacted: substrate writes are validated; framework-level side-car writes are not.",
       "proposed_resolution": "Extend the canonical validated write surface to cover non-.project/ framework state. Two coherent shapes — user decides:  (a) Generalize block-api to take an arbitrary base path + schema path pair: appendToTypedFile(filePath, schemaPath, arrayKey, item). Existing block-api primitives become thin wrappers passing the .project/-derived paths. Monitor side-car writers call the new primitive with discovery-dir paths + framework schema paths.  (b) Add a parallel pi-behavior-monitors-internal validated write helper that wraps the existing fs.writeFileSync sites with proper-lockfile + AJV validation against the framework schemas, without involving block-api. Smaller surface, no block-api generalization, but creates a parallel ungated path elsewhere if other consumers need similar support.  Path (a) is the FGAP-011-extension story (one canonical surface for all validated writes); path (b) is the surgical fix (closes the immediate side-car bypass without architectural change). Either closes the three remaining bypasses for monitor side-car writes.",
       "created_by": "agent/step-6-orchestrator",
-      "created_at": "2026-05-09T05:38:52.759Z"
+      "created_at": "2026-05-09T05:38:52.759Z",
+      "closed_by": "agent/step-6.1-orchestrator",
+      "closed_at": "2026-05-09T07:18:06.691Z"
+    },
+    {
+      "id": "FGAP-020",
+      "title": "Find-or-merge block-api primitives lack typed-file generalization",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "FGAP-019 closure (commit 2160c63) generalized writeBlock and appendToBlock to typed-file primitives (writeTypedFile, appendToTypedFile) operating on arbitrary (filePath, schemaPath) pairs. The other six block-api primitives (updateItemInBlock, upsertItemInBlock, appendToNestedArray, updateNestedArrayItem, removeFromBlock, removeFromNestedArray) still hardcode .project/-block path resolution via blockFilePath/blockSchemaPath. Their refactor as wrappers (Phase C of Step 6.1) routes through writeBlock for the final write — which now goes through writeTypedFile — but the find-or-merge LOGIC stays hardcoded to .project/-targeting at the wrapper boundary. Asymmetric surface: typed-file primitives exist for whole-file write + array-append but not for find-or-merge / upsert / nested-append / nested-update / remove operations on non-.project/ paths.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "writeTypedFile + appendToTypedFile exported (lines 377, 442). updateItemInBlock, upsertItemInBlock, appendToNestedArray, updateNestedArrayItem, removeFromBlock, removeFromNestedArray exported but only as .project/-block-name primitives."
+        },
+        {
+          "file": "packages/pi-behavior-monitors/index.ts",
+          "reference": "learnPattern uses dedup-then-append today (loadPatterns + check + appendToTypedFile). If the contract evolved to upsert-by-id (id-keyed pattern that should refresh learned_at on re-detection), no typed-file upsert primitive exists — would force re-implementing the find-or-merge logic outside block-api or revert to fs.writeFileSync."
+        }
+      ],
+      "impact": "Future consumers of non-.project/ side-car state needing find-or-merge / upsert / nested-mutation semantics cannot reuse block-api's atomic critical-section + AJV + ctx-stamping infrastructure. Each such consumer either (a) re-implements the read-mutate-write loop with its own lock/validate/stamp logic — recreating FGAP-019, or (b) constructs a synthetic block name pointing outside .project/ — abuse of the wrapper boundary. The architectural symmetry FGAP-019 closure was meant to deliver (one canonical surface for ALL framework writes) is delivered for whole-file + simple-append only.",
+      "proposed_resolution": "Extract typed-file equivalents for the remaining six find-or-merge primitives: updateItemInTypedFile, upsertItemInTypedFile, appendToNestedTypedFile, updateNestedItemInTypedFile, removeFromTypedFile, removeFromNestedTypedFile. Each follows the same generalization pattern as Phase A of Step 6.1 — operate on (filePath, schemaPath, ...) pairs, withBlockLock wraps the read-mutate-write critical section, ctx-stamping via maybeStampItem (already schemaPath-keyed per Phase B). Existing .project/-targeting primitives become wrappers as in Phase C. ~+200 net lines; test surface ~+10 typed-file find-or-merge tests + wrapper-continuity smoke. No live regression — purely architectural-symmetry completion of Step 6.1.",
+      "created_by": "agent/step-6.1-orchestrator",
+      "created_at": "2026-05-09T07:16:50.240Z"
     }
   ]
 }

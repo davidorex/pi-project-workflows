@@ -92,47 +92,61 @@ export function writerToString(w: WriterIdentity): string {
  * The original `item` is never mutated — callers can safely retain the
  * pre-stamp reference.
  *
- * Stamping rules:
+ * Stamping rules (each field is only assigned when `declaredFields` includes
+ * its name — schemas that declare a SUBSET of the four author fields receive
+ * stamps only for the declared subset; the rest are left untouched so that
+ * `additionalProperties: false` schemas validate cleanly):
  *   - mode === "create":
- *       `created_by` and `created_at` are set ONLY if the field is missing
- *       (or present-but-undefined). Pre-existing values are preserved so
- *       that re-creates / replays do not overwrite the original author.
- *       `modified_by` and `modified_at` are always set to current values.
+ *       `created_by` and `created_at` (if declared) are set ONLY if the field
+ *       is missing (or present-but-undefined). Pre-existing values are
+ *       preserved so that re-creates / replays do not overwrite the original
+ *       author. `modified_by` and `modified_at` (if declared) are always set
+ *       to current values.
  *   - mode === "update":
- *       `created_by` and `created_at` are NEVER touched. `modified_by` and
- *       `modified_at` are always refreshed to current values.
+ *       `created_by` and `created_at` are NEVER touched even when declared.
+ *       `modified_by` and `modified_at` (if declared) are always refreshed
+ *       to current values.
  *
  * Timestamps use ISO 8601 via `new Date().toISOString()`, matching the
  * format shipping in `.project/decisions.json` etc.
  *
- * The function does not consult the target schema — it always sets the
- * four fields. The block-api write surface is responsible for first
- * deciding whether the schema *declares* those fields (see
- * `block-api.ts` schema introspection cache); if not, stamping is
- * skipped to avoid `additionalProperties: false` AJV failures.
+ * `declaredFields` is the per-schema set of author-field property names that
+ * the target shape's `properties` object declares. The block-api schema
+ * introspection cache builds the set per (block, arrayKey or envelope) and
+ * threads it in here. An empty set means "schema declares no author fields"
+ * — `stampItem` then returns the item unchanged. Callers should normally
+ * route through `maybeStampItem` (block-api.ts) which short-circuits before
+ * this function on an empty set; the empty-set path here is defensive.
  */
 export function stampItem(
 	item: Record<string, unknown>,
 	ctx: DispatchContext,
 	mode: "create" | "update",
+	declaredFields: ReadonlySet<string>,
 ): Record<string, unknown> {
+	if (declaredFields.size === 0) return { ...item };
+
 	const writer = writerToString(ctx.writer);
 	const now = new Date().toISOString();
 	const out: Record<string, unknown> = { ...item };
 
 	if (mode === "create") {
-		if (out.created_by === undefined || out.created_by === null) {
+		if (declaredFields.has("created_by") && (out.created_by === undefined || out.created_by === null)) {
 			out.created_by = writer;
 		}
-		if (out.created_at === undefined || out.created_at === null) {
+		if (declaredFields.has("created_at") && (out.created_at === undefined || out.created_at === null)) {
 			out.created_at = now;
 		}
 	}
 
 	// modified_by + modified_at refresh on every call — both create (item is
-	// also being modified at create time) and update.
-	out.modified_by = writer;
-	out.modified_at = now;
+	// also being modified at create time) and update — but only when declared.
+	if (declaredFields.has("modified_by")) {
+		out.modified_by = writer;
+	}
+	if (declaredFields.has("modified_at")) {
+		out.modified_at = now;
+	}
 
 	return out;
 }

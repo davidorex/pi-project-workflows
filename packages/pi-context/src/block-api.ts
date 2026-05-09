@@ -65,21 +65,26 @@ const AUTHOR_FIELDS = ["created_by", "created_at", "modified_by", "modified_at"]
 
 interface SchemaCacheEntry {
 	mtimeMs: number;
-	/** True when the schema declares any author field anywhere — top-level
+	/** True when the schema declares ANY author field anywhere — top-level
 	 * envelope OR any nested array item shape. Used for the cheap "could
-	 * stamping ever happen for this block?" check. */
+	 * stamping ever happen for this block?" check. Derived from
+	 * `envelopeDeclares.size > 0 || any perArrayKey value has size > 0`. */
 	hasAuthorFields: boolean;
-	/** True when the TOP-LEVEL envelope's `properties` carries any author
-	 * field. Distinguished from `hasAuthorFields` so `writeBlock`'s
+	/** Subset of `AUTHOR_FIELDS` declared on the TOP-LEVEL envelope's
+	 * `properties`. Distinguished from per-array-key state so `writeBlock`'s
 	 * envelope-stamp does not fire merely because some nested array's items
-	 * carry author fields. */
-	envelopeDeclares: boolean;
-	/** Per-array-key decision — keyed by the array property name (NOT a
-	 * dotted path). Built by recursing through the schema so nested arrays
+	 * carry author fields. Empty set = "no envelope-level stamping". */
+	envelopeDeclares: ReadonlySet<string>;
+	/** Per-array-key declared subset — keyed by the array property name (NOT
+	 * a dotted path). Built by recursing through the schema so nested arrays
 	 * (e.g. `properties.reviews.items.properties.findings`) appear under
 	 * their own key. Lookup miss = "no entry for this key" = stamping is
-	 * skipped (safe default for unrecognised keys). */
-	perArrayKey: Map<string, boolean>;
+	 * skipped (safe default for unrecognised keys). The Set value carries
+	 * the SUBSET of `AUTHOR_FIELDS` that the array's items declare so
+	 * `stampItem` only touches schema-declared fields and does not trip
+	 * `additionalProperties: false`. Empty set = "key catalogued but no
+	 * author fields declared on its items". */
+	perArrayKey: Map<string, ReadonlySet<string>>;
 }
 
 const schemaCache = new Map<string, SchemaCacheEntry>();
@@ -93,19 +98,21 @@ function safeStat(p: string): fs.Stats | null {
 }
 
 /**
- * True when the schema's TOP-LEVEL `properties` object declares any author
- * field. Used by `writeBlock`'s envelope-stamp question — whole-block writes
- * stamp on the envelope, not on every nested item.
+ * Subset of `AUTHOR_FIELDS` that the schema's TOP-LEVEL `properties` object
+ * declares. Used by `writeBlock`'s envelope-stamp question — whole-block
+ * writes stamp on the envelope, not on every nested item. Empty set = "no
+ * envelope-level author fields declared, skip stamping."
  */
-function schemaTopLevelDeclaresAuthorFields(schema: unknown): boolean {
-	if (!schema || typeof schema !== "object") return false;
+function schemaTopLevelDeclaredAuthorFields(schema: unknown): ReadonlySet<string> {
+	const out = new Set<string>();
+	if (!schema || typeof schema !== "object") return out;
 	const s = schema as Record<string, unknown>;
 	const props = s.properties as Record<string, unknown> | undefined;
-	if (!props) return false;
+	if (!props) return out;
 	for (const f of AUTHOR_FIELDS) {
-		if (Object.hasOwn(props, f)) return true;
+		if (Object.hasOwn(props, f)) out.add(f);
 	}
-	return false;
+	return out;
 }
 
 /**
@@ -122,7 +129,7 @@ function schemaTopLevelDeclaresAuthorFields(schema: unknown): boolean {
  * of cycles unless the schema uses `$ref` cycles (which AJV would reject as
  * malformed during data validation, and step-3 schemas use no $ref).
  */
-function collectArrayItemAuthorDecisions(schema: unknown, into: Map<string, boolean>): void {
+function collectArrayItemAuthorDecisions(schema: unknown, into: Map<string, ReadonlySet<string>>): void {
 	if (!schema || typeof schema !== "object") return;
 	const s = schema as Record<string, unknown>;
 	const props = s.properties as Record<string, unknown> | undefined;
@@ -135,18 +142,24 @@ function collectArrayItemAuthorDecisions(schema: unknown, into: Map<string, bool
 			if (items && typeof items === "object") {
 				const itemProps = items.properties as Record<string, unknown> | undefined;
 				if (itemProps) {
-					let declares = false;
+					const declared = new Set<string>();
 					for (const f of AUTHOR_FIELDS) {
-						if (Object.hasOwn(itemProps, f)) {
-							declares = true;
-							break;
-						}
+						if (Object.hasOwn(itemProps, f)) declared.add(f);
 					}
-					// "Last writer wins" if the same key appears at multiple
-					// nesting depths — stamps on positive declaration if any
-					// reachable shape carries the field.
+					// "Union" if the same key appears at multiple nesting
+					// depths — the recorded set is the union of declared
+					// fields across all reachable shapes for the key. This
+					// preserves the earlier "stamp on positive declaration
+					// if any reachable shape carries the field" behavior
+					// without losing the per-field grain.
 					const prior = into.get(propKey);
-					into.set(propKey, declares || prior === true);
+					if (prior) {
+						const merged = new Set<string>(prior);
+						for (const f of declared) merged.add(f);
+						into.set(propKey, merged);
+					} else {
+						into.set(propKey, declared);
+					}
 					// Recurse into items so deeper nested arrays are catalogued too.
 					collectArrayItemAuthorDecisions(items, into);
 				}
@@ -189,25 +202,25 @@ function getSchemaCacheEntry(cwd: string, blockName: string): SchemaCacheEntry |
 		const entry: SchemaCacheEntry = {
 			mtimeMs,
 			hasAuthorFields: false,
-			envelopeDeclares: false,
+			envelopeDeclares: new Set<string>(),
 			perArrayKey: new Map(),
 		};
 		schemaCache.set(key, entry);
 		return entry;
 	}
-	const perArrayKey = new Map<string, boolean>();
+	const perArrayKey = new Map<string, ReadonlySet<string>>();
 	collectArrayItemAuthorDecisions(schema, perArrayKey);
-	const envelopeDeclares = schemaTopLevelDeclaresAuthorFields(schema);
+	const envelopeDeclares = schemaTopLevelDeclaredAuthorFields(schema);
 	let anyArrayItemDeclares = false;
 	for (const v of perArrayKey.values()) {
-		if (v) {
+		if (v.size > 0) {
 			anyArrayItemDeclares = true;
 			break;
 		}
 	}
 	const entry: SchemaCacheEntry = {
 		mtimeMs,
-		hasAuthorFields: envelopeDeclares || anyArrayItemDeclares,
+		hasAuthorFields: envelopeDeclares.size > 0 || anyArrayItemDeclares,
 		envelopeDeclares,
 		perArrayKey,
 	};
@@ -216,32 +229,30 @@ function getSchemaCacheEntry(cwd: string, blockName: string): SchemaCacheEntry |
 }
 
 /**
- * True when the block's schema declares author fields at the top-level
- * envelope. Used by `writeBlock` to decide whether to stamp the envelope on
- * a whole-block write — distinct from per-item stamping which uses
- * `arrayItemsHaveAuthorFields`.
+ * Subset of `AUTHOR_FIELDS` declared at the block schema's top-level envelope.
+ * Used by `writeBlock` to decide which envelope fields to stamp on a
+ * whole-block write — distinct from per-item stamping which uses
+ * `declaredAuthorFieldsForArray`. Empty set = "no envelope-level stamping."
  */
-function blockEnvelopeHasAuthorFields(cwd: string, blockName: string): boolean {
+function declaredAuthorFieldsForEnvelope(cwd: string, blockName: string): ReadonlySet<string> {
 	const entry = getSchemaCacheEntry(cwd, blockName);
-	return entry?.envelopeDeclares === true;
+	return entry?.envelopeDeclares ?? new Set<string>();
 }
 
 /**
- * True when the block's schema declares author fields on the items of the
- * array reached by `arrayKey` — at any nesting depth. Used by appendToBlock /
- * updateItemInBlock / appendToNestedArray / updateNestedArrayItem to decide
- * whether to stamp the appended-or-merged item.
+ * Subset of `AUTHOR_FIELDS` declared on the items of the array reached by
+ * `arrayKey` — at any nesting depth. Used by appendToBlock /
+ * updateItemInBlock / appendToNestedArray / updateNestedArrayItem to thread
+ * the per-field stamping decision into `stampItem`. An array key not
+ * catalogued by the schema returns the empty set — stamping a key the schema
+ * does not describe is the path that triggers `additionalProperties: false`
+ * AJV failures, so the safe default is "skip" rather than "trust the envelope
+ * answer." Empty set = "no per-item stamping."
  */
-function arrayItemsHaveAuthorFields(cwd: string, blockName: string, arrayKey: string): boolean {
+function declaredAuthorFieldsForArray(cwd: string, blockName: string, arrayKey: string): ReadonlySet<string> {
 	const entry = getSchemaCacheEntry(cwd, blockName);
-	if (!entry) return false;
-	const explicit = entry.perArrayKey.get(arrayKey);
-	if (typeof explicit === "boolean") return explicit;
-	// Array key not catalogued by the schema — fall through to "no, don't
-	// stamp." Stamping a key the schema does not describe is the path that
-	// triggers `additionalProperties: false` AJV failures, so the safe default
-	// is "skip" rather than "trust the envelope answer."
-	return false;
+	if (!entry) return new Set<string>();
+	return entry.perArrayKey.get(arrayKey) ?? new Set<string>();
 }
 
 /**
@@ -261,8 +272,9 @@ function maybeStampItem(
 	mode: "create" | "update",
 ): Record<string, unknown> {
 	if (!ctx) return item;
-	if (!arrayItemsHaveAuthorFields(cwd, blockName, arrayKey)) return item;
-	return stampItem(item, ctx, mode);
+	const declared = declaredAuthorFieldsForArray(cwd, blockName, arrayKey);
+	if (declared.size === 0) return item;
+	return stampItem(item, ctx, mode, declared);
 }
 
 /**
@@ -322,11 +334,15 @@ export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: 
 	const schemaFile = blockSchemaPath(cwd, blockName);
 
 	// Optional ctx-stamping: only when the schema declares author fields at
-	// the top-level envelope, and only on object-shaped data.
+	// the top-level envelope, and only on object-shaped data. Per-field
+	// declared subset is threaded into `stampItem` so partial declarations
+	// (e.g. envelope declares `created_by` only) do not inject the other
+	// three fields and trip `additionalProperties: false`.
 	let toWrite = data;
 	if (ctx && fs.existsSync(schemaFile) && data && typeof data === "object" && !Array.isArray(data)) {
-		if (blockEnvelopeHasAuthorFields(cwd, blockName)) {
-			toWrite = stampItem(data as Record<string, unknown>, ctx, "create");
+		const declared = declaredAuthorFieldsForEnvelope(cwd, blockName);
+		if (declared.size > 0) {
+			toWrite = stampItem(data as Record<string, unknown>, ctx, "create", declared);
 		}
 	}
 

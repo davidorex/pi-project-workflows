@@ -1915,3 +1915,64 @@ describe("DispatchContext — schemas without author fields skip stamping (no AJ
 		assert.deepStrictEqual(result, { removed: 1 });
 	});
 });
+
+// FGAP-017 regression: schemas may declare a SUBSET of the four author
+// fields. The framework-gaps.schema.json shape (item declares `created_by`
+// only, with `additionalProperties: false`) was the empirical trigger that
+// surfaced the original bug — `stampItem` injected all four fields, and
+// AJV rejected the write with "must NOT have additional properties
+// (modified_by)". This test mirrors that schema shape so any future
+// regression that re-introduces unconditional stamping fails here loudly.
+describe("DispatchContext — partial author-field declaration with additionalProperties:false (FGAP-017)", () => {
+	it("appendToBlock with ctx + schema declaring `created_by` only writes only created_by", (t) => {
+		const tmpDir = makeTmpDir("ctx-partial-created-by-only");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		// Mirrors framework-gaps.schema.json's per-item shape: created_by
+		// declared, the other three author fields NOT declared, and
+		// additionalProperties:false at item level. The pre-fix all-or-
+		// nothing decision said "schema declares ANY author field, so stamp
+		// all four" — which AJV then rejected.
+		setupSchema(tmpDir, "framework-gaps", {
+			type: "object",
+			required: ["gaps"],
+			properties: {
+				gaps: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "description", "status"],
+						properties: {
+							id: { type: "string" },
+							description: { type: "string" },
+							status: { type: "string", enum: ["open", "resolved", "deferred"] },
+							created_by: { type: "string" },
+						},
+						additionalProperties: false,
+					},
+				},
+			},
+		});
+
+		fs.writeFileSync(path.join(tmpDir, ".project", "framework-gaps.json"), JSON.stringify({ gaps: [] }));
+
+		// Must not throw. Pre-fix this raised:
+		//   ValidationError: ... /gaps/0: must NOT have additional properties (modified_by)
+		appendToBlock(
+			tmpDir,
+			"framework-gaps",
+			"gaps",
+			{ id: "FGAP-017", description: "regression-test entry", status: "open" },
+			ctxAgent,
+		);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmpDir, ".project", "framework-gaps.json"), "utf-8"));
+		assert.strictEqual(onDisk.gaps[0].id, "FGAP-017");
+		// created_by stamped from ctx writer — the one declared author field
+		assert.strictEqual(onDisk.gaps[0].created_by, "agent/claude-opus-4-7");
+		// The three undeclared fields must be absent from the written item
+		assert.strictEqual(Object.hasOwn(onDisk.gaps[0], "created_at"), false);
+		assert.strictEqual(Object.hasOwn(onDisk.gaps[0], "modified_by"), false);
+		assert.strictEqual(Object.hasOwn(onDisk.gaps[0], "modified_at"), false);
+	});
+});

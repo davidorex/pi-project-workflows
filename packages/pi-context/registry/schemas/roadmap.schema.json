@@ -1,0 +1,89 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Project roadmaps",
+	"description": "Sequenced phases with milestones; each phase aggregates items via a lens (target or composition). Phase ordering lives in relations.json with relation_type='phase_depends_on' per DEC-0012 (edges-only authoring; no inline depends_on field on phases). Phase membership beyond the lens's auto-grouping is authored via relations.json with relation_type='phase_member'. Roadmaps reside under <config.root>/roadmap.json and are opt-in via config.json's installed_blocks.",
+	"type": "object",
+	"required": ["roadmaps"],
+	"additionalProperties": false,
+	"properties": {
+		"roadmaps": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "title", "phases"],
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string",
+						"pattern": "^ROADMAP-\\d{3}$",
+						"description": "Stable identifier; ROADMAP-NNN."
+					},
+					"title": { "type": "string" },
+					"description": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["draft", "active", "paused", "complete", "archived"]
+					},
+					"phases": {
+						"type": "array",
+						"description": "Phase entries. Ordering NOT in this array — declared via relations.json edges with relation_type='phase_depends_on'.",
+						"items": {
+							"type": "object",
+							"required": ["id", "name", "lens"],
+							"additionalProperties": false,
+							"properties": {
+								"id": {
+									"type": "string",
+									"pattern": "^PHASE-[A-Z0-9-]+$",
+									"description": "Phase identifier; PHASE-<UPPER>."
+								},
+								"name": { "type": "string" },
+								"description": { "type": "string" },
+								"lens": {
+									"type": "string",
+									"description": "Lens id from config.lenses; populates the phase via groupByLens. Either a target lens or a composition lens."
+								},
+								"milestone": {
+									"type": "string",
+									"pattern": "^MILESTONE-[A-Z0-9-]+$",
+									"description": "Optional milestone id terminating this phase. References an entry in milestones[]."
+								},
+								"exit_criteria": {
+									"type": "array",
+									"items": { "type": "string" },
+									"description": "Free-text criteria a reader uses to decide whether the phase is complete."
+								}
+							}
+						}
+					},
+					"milestones": {
+						"type": "array",
+						"description": "Inline milestones declared by this roadmap. Each milestone optionally points at an evidence_block + evidence_query that determines whether the milestone is satisfied at load time.",
+						"items": {
+							"type": "object",
+							"required": ["id", "name"],
+							"additionalProperties": false,
+							"properties": {
+								"id": {
+									"type": "string",
+									"pattern": "^MILESTONE-[A-Z0-9-]+$"
+								},
+								"name": { "type": "string" },
+								"criterion": { "type": "string" },
+								"evidence_block": {
+									"type": "string",
+									"description": "Block name whose items count as evidence (e.g., verification)."
+								},
+								"evidence_query": {
+									"type": "object",
+									"description": "Field-equality predicate against evidence_block items. Milestone is satisfied when at least one item matches.",
+									"additionalProperties": true
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

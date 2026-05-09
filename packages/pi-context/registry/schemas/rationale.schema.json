@@ -1,0 +1,50 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"description": "The deeper reasoning behind decisions. Why this approach over others, what constraints drove the choice, what tradeoffs were accepted. Cross-references decisions. Decisions say we chose X. Rationale says because Y, given Z.",
+	"title": "Design Rationale",
+	"type": "object",
+	"required": [
+		"rationales"
+	],
+	"properties": {
+		"rationales": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"id",
+					"title",
+					"narrative"
+				],
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"narrative": {
+						"type": "string"
+					},
+					"related_decisions": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "IDs linking to decisions.json"
+					},
+					"phase": {
+						"type": [
+							"string",
+							"integer"
+						]
+					},
+					"context": {
+						"type": "string",
+						"description": "What prompted this rationale"
+					}
+				}
+			}
+		}
+	}
+}

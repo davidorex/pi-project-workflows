@@ -574,5 +574,140 @@ export function validateRelations(
 	return { status, issues };
 }
 
+// ── Composition resolution (lens-of-lenses) ─────────────────────────────────
+
+/**
+ * Result of resolving a composition lens. members carries the per-member
+ * resolution; unionedItems is the deduped union (by item.id) used by
+ * loadLensView; perItemOrigin maps item.id → originating block name (or
+ * sub-lens id when the member resolves through another lens).
+ */
+export interface ResolvedComposition {
+	members: Array<{
+		source: { lens?: string; from?: string; where?: Record<string, string | number | boolean> };
+		items: ItemRecord[];
+	}>;
+	unionedItems: ItemRecord[];
+	perItemOrigin: Map<string, string>;
+}
+
+/**
+ * Resolve a composition lens by walking each member declaration:
+ *   - { lens: <id> }: lookup the named sub-lens in config.lenses; if it's
+ *     also composition, recurse via resolveCompositionInternal carrying
+ *     the visited-set; if it's target, load its target block items.
+ *   - { from: <block>, where: <field-equality> }: read the block items and
+ *     filter by field-equality predicate.
+ *
+ * Cycle detection: if a sub-lens reference forms a cycle in the composition
+ * graph (lens A → lens B → lens A), throws an Error with message
+ * "composition_cycle_detected: <cycle path>".
+ *
+ * Throws when:
+ *   - lens is not kind="composition"
+ *   - composition members reference a non-existent sub-lens id
+ *   - composition members reference a sub-lens that throws on resolution
+ *   - cycle detected
+ *
+ * Caller (loadLensView) catches Error and returns { error: <message> }.
+ */
+export function resolveComposition(cwd: string, lens: LensSpec): ResolvedComposition {
+	if (lens.kind !== "composition") {
+		throw new Error(`resolveComposition: lens '${lens.id}' is not kind=composition`);
+	}
+	const ctx = getProjectContext(cwd);
+	if (!ctx.config) {
+		throw new Error("resolveComposition: no .project/config.json");
+	}
+	return resolveCompositionInternal(cwd, lens, ctx.config, new Set());
+}
+
+function resolveCompositionInternal(
+	cwd: string,
+	lens: LensSpec,
+	config: ConfigBlock,
+	visited: Set<string>,
+): ResolvedComposition {
+	if (visited.has(lens.id)) {
+		const cyclePath = [...visited, lens.id].join(" → ");
+		throw new Error(`composition_cycle_detected: ${cyclePath}`);
+	}
+	visited.add(lens.id);
+
+	const members: ResolvedComposition["members"] = [];
+	const perItemOrigin = new Map<string, string>();
+	const unionedById = new Map<string, ItemRecord>();
+	const allLenses = config.lenses ?? [];
+
+	for (const member of lens.members ?? []) {
+		if (member.lens) {
+			const subLens = allLenses.find((l) => l.id === member.lens);
+			if (!subLens) {
+				throw new Error(`resolveComposition: member references unknown lens '${member.lens}'`);
+			}
+			let memberItems: ItemRecord[] = [];
+			if (subLens.kind === "composition") {
+				const subResult = resolveCompositionInternal(cwd, subLens, config, new Set(visited));
+				memberItems = subResult.unionedItems;
+				for (const [id, origin] of subResult.perItemOrigin) {
+					if (!perItemOrigin.has(id)) perItemOrigin.set(id, origin);
+				}
+			} else {
+				// Target lens: read its target block items directly. Don't
+				// invoke loadLensView here (avoids importing block-api;
+				// project-context.ts is at a lower layer than lens-view).
+				if (!subLens.target) {
+					throw new Error(`resolveComposition: sub-lens '${subLens.id}' is kind=target but missing target field`);
+				}
+				memberItems = readBlockItems(cwd, subLens.target);
+				for (const item of memberItems) {
+					if (typeof item.id === "string" && !perItemOrigin.has(item.id)) {
+						perItemOrigin.set(item.id, subLens.target);
+					}
+				}
+			}
+			members.push({ source: { lens: member.lens }, items: memberItems });
+			for (const item of memberItems) {
+				if (typeof item.id === "string" && !unionedById.has(item.id)) {
+					unionedById.set(item.id, item);
+				}
+			}
+		} else if (member.from) {
+			const blockName = member.from;
+			const blockItems = readBlockItems(cwd, blockName);
+			const where = member.where ?? {};
+			const filtered = blockItems.filter((item) => {
+				for (const [k, v] of Object.entries(where)) {
+					if (item[k] !== v) return false;
+				}
+				return true;
+			});
+			members.push({ source: { from: blockName, where: member.where }, items: filtered });
+			for (const item of filtered) {
+				if (typeof item.id === "string") {
+					if (!unionedById.has(item.id)) unionedById.set(item.id, item);
+					if (!perItemOrigin.has(item.id)) perItemOrigin.set(item.id, blockName);
+				}
+			}
+		}
+	}
+
+	return { members, unionedItems: [...unionedById.values()], perItemOrigin };
+}
+
+/**
+ * Inline minimal block read used by resolveComposition. Avoids importing
+ * block-api at this layer (project-context.ts must remain free of
+ * block-api dependencies — block-api imports projectRoot from here).
+ */
+function readBlockItems(cwd: string, blockName: string): ItemRecord[] {
+	const filePath = path.join(projectRoot(cwd), `${blockName}.json`);
+	if (!fs.existsSync(filePath)) return [];
+	const raw = JSON.parse(fs.readFileSync(filePath, "utf-8")) as Record<string, unknown>;
+	const arrayKey = Object.keys(raw).find((k) => Array.isArray(raw[k]));
+	if (!arrayKey) return [];
+	return raw[arrayKey] as ItemRecord[];
+}
+
 // Re-export ValidationError so consumers don't have to dual-import.
 export { ValidationError };

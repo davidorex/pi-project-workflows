@@ -24,6 +24,15 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "./block-api.js";
+import {
+	buildCurationSuggestions,
+	edgesForLensByName,
+	loadLensView,
+	renderLensView,
+	validateProjectRelations,
+	walkLensDescendants,
+} from "./lens-view.js";
+import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
 import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
 import { checkForUpdates } from "./update-check.js";
@@ -236,6 +245,83 @@ function initProject(cwd: string): { created: string[]; skipped: string[] } {
 	}
 
 	return { created, skipped };
+}
+
+/**
+ * Result shape from installProject. installed/updated/skipped/notFound carry
+ * relative-to-project-root destination paths (schemas/<name>.schema.json or
+ * <name>.json). error is set only when no .project/config.json exists.
+ */
+export interface InstallResult {
+	error?: string;
+	installed: string[];
+	updated: string[];
+	skipped: string[];
+	notFound: string[];
+}
+
+/**
+ * /project install opt-in mechanism (DEC-0011). Reads config.installed_schemas
+ * and config.installed_blocks, copies declared assets from the package
+ * registry/ catalog into the project's substrate root + schemas dir.
+ *
+ *   - Default behavior is skip-if-exists. With overwrite=true, replaces the
+ *     destination file and reports as "updated" rather than "installed".
+ *   - Sources missing from the registry are reported as "notFound".
+ *   - Empty install lists are not an error — the result is a clean no-op.
+ */
+export function installProject(cwd: string, options: { overwrite?: boolean } = {}): InstallResult {
+	const result: InstallResult = { installed: [], updated: [], skipped: [], notFound: [] };
+	const overwrite = options.overwrite === true;
+
+	const config = loadConfig(cwd);
+	if (!config) {
+		result.error = "No .project/config.json — run /project init first.";
+		return result;
+	}
+
+	const registryRoot = path.resolve(import.meta.dirname, "..", "registry");
+	const destRoot = projectRoot(cwd);
+	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
+	if (!fs.existsSync(schemasRoot)) fs.mkdirSync(schemasRoot, { recursive: true });
+
+	const installedSchemas = (config as ConfigBlock).installed_schemas ?? [];
+	for (const name of installedSchemas) {
+		const sourceFile = path.join(registryRoot, "schemas", `${name}.schema.json`);
+		const destFile = path.join(schemasRoot, `${name}.schema.json`);
+		const relDest = `${SCHEMAS_DIR}/${name}.schema.json`;
+		if (!fs.existsSync(sourceFile)) {
+			result.notFound.push(relDest);
+			continue;
+		}
+		const destExists = fs.existsSync(destFile);
+		if (destExists && !overwrite) {
+			result.skipped.push(relDest);
+			continue;
+		}
+		fs.copyFileSync(sourceFile, destFile);
+		(destExists ? result.updated : result.installed).push(relDest);
+	}
+
+	const installedBlocks = (config as ConfigBlock).installed_blocks ?? [];
+	for (const name of installedBlocks) {
+		const sourceFile = path.join(registryRoot, "blocks", `${name}.json`);
+		const destFile = path.join(destRoot, `${name}.json`);
+		const relDest = `${name}.json`;
+		if (!fs.existsSync(sourceFile)) {
+			result.notFound.push(relDest);
+			continue;
+		}
+		const destExists = fs.existsSync(destFile);
+		if (destExists && !overwrite) {
+			result.skipped.push(relDest);
+			continue;
+		}
+		fs.copyFileSync(sourceFile, destFile);
+		(destExists ? result.updated : result.installed).push(relDest);
+	}
+
+	return result;
 }
 
 /**
@@ -799,6 +885,83 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Tool: project-validate-relations ──────────────────────────────────
+
+	pi.registerTool({
+		name: "project-validate-relations",
+		label: "Project Validate Relations",
+		description:
+			"Validate substrate relations.json edges against config-declared lenses + hierarchy + relation_types and the cross-block id index. Returns SubstrateValidationResult with status (clean/warnings/invalid) and per-issue diagnostics.",
+		promptSnippet: "Validate substrate relations against config + items",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = validateProjectRelations(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: project-edges-for-lens ──────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-edges-for-lens",
+		label: "Project Edges For Lens",
+		description:
+			"Materialize the Edge[] for a named lens — synthetic edges from derived_from_field for auto-derived lenses; authored edges filtered by relation_type for hand-curated lenses; unioned items from composition members for kind=composition lenses.",
+		promptSnippet: "Materialize edges for a named lens (auto-derived or hand-curated)",
+		parameters: Type.Object({
+			lensId: Type.String({ description: "Lens id from config.lenses[].id" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { lensId: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = edgesForLensByName(ctx.cwd, params.lensId);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: project-walk-descendants ────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-walk-descendants",
+		label: "Project Walk Descendants",
+		description:
+			"Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent).",
+		promptSnippet: "Walk closure-table descendants under a relation_type",
+		parameters: Type.Object({
+			parentId: Type.String({ description: "Parent id (canonical id or lens bin name)" }),
+			relationType: Type.String({ description: "Relation type from config.relation_types[].canonical_id" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { parentId: string; relationType: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = walkLensDescendants(ctx.cwd, params.parentId, params.relationType);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
 	// ── Command: /project ──────────────────────────────────────────────────
 
 	interface SubcommandEntry {
@@ -811,6 +974,86 @@ const extension = (pi: ExtensionAPI) => {
 		init: {
 			description: "Initialize .project/ with schemas and default blocks",
 			handler: (_args, ctx) => handleInit(ctx),
+		},
+		install: {
+			description: "Copy schemas and starter blocks declared in .project/config.json from the package registry",
+			handler: (args, ctx) => {
+				const overwrite = /(^|\s)--update(\s|$)/.test(args);
+				const result = installProject(ctx.cwd, { overwrite });
+				if (result.error) {
+					ctx.ui.notify(result.error, "error");
+					return;
+				}
+				const lines: string[] = [];
+				if (result.installed.length > 0) {
+					lines.push(`Installed (${result.installed.length}): ${result.installed.join(", ")}`);
+				}
+				if (result.updated.length > 0) {
+					lines.push(`Updated (${result.updated.length}): ${result.updated.join(", ")}`);
+				}
+				if (result.skipped.length > 0) {
+					lines.push(
+						`Skipped (${result.skipped.length}, exists — pass --update to overwrite): ${result.skipped.join(", ")}`,
+					);
+				}
+				if (result.notFound.length > 0) {
+					lines.push(`Not found in registry (${result.notFound.length}): ${result.notFound.join(", ")}`);
+				}
+				if (lines.length === 0) {
+					lines.push(
+						"Nothing declared in installed_schemas / installed_blocks — edit .project/config.json to add entries.",
+					);
+				}
+				const level = result.notFound.length > 0 ? "warning" : "info";
+				ctx.ui.notify(lines.join("\n"), level);
+			},
+		},
+		view: {
+			description: "Render a configured lens view (groupByLens projection) into the conversation",
+			handler: (args, ctx) => {
+				const lensId = args.trim().split(/\s+/)[0];
+				if (!lensId) {
+					ctx.ui.notify("Usage: /project view <lensId>", "error");
+					return;
+				}
+				const result = loadLensView(ctx.cwd, lensId);
+				if ("error" in result) {
+					ctx.ui.notify(result.error, "error");
+					return;
+				}
+				const config = getProjectContext(ctx.cwd).config;
+				ctx.ui.notify(renderLensView(result, config?.naming), "info");
+			},
+		},
+		"lens-curate": {
+			description: "Walk uncategorized items in a lens and surface bin-assignment suggestions for the LLM to act on",
+			handler: (args, ctx) => {
+				const lensId = args.trim().split(/\s+/)[0];
+				if (!lensId) {
+					ctx.ui.notify("Usage: /project lens-curate <lensId>", "error");
+					return;
+				}
+				const result = loadLensView(ctx.cwd, lensId);
+				if ("error" in result) {
+					ctx.ui.notify(result.error, "error");
+					return;
+				}
+				if (result.uncategorized.length === 0) {
+					ctx.ui.notify(`Lens '${lensId}' has no uncategorized items — nothing to curate.`, "info");
+					return;
+				}
+				pi.sendMessage(
+					{
+						customType: "project-lens-curate",
+						content: buildCurationSuggestions(result),
+						display: false,
+					},
+					{
+						triggerTurn: true,
+						deliverAs: "followUp",
+					},
+				);
+			},
 		},
 		status: {
 			description: "Show derived project state",

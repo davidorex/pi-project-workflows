@@ -1,0 +1,87 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"description": "Discrete units of work with status lifecycle (planned, in-progress, completed, blocked, cancelled) and phase linkage. The operational layer between gaps/requirements and code changes.",
+	"title": "Tasks",
+	"type": "object",
+	"required": [
+		"tasks"
+	],
+	"properties": {
+		"tasks": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"id",
+					"description",
+					"status"
+				],
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"planned",
+							"in-progress",
+							"completed",
+							"blocked",
+							"cancelled"
+						]
+					},
+					"phase": {
+						"type": [
+							"string",
+							"integer"
+						],
+						"description": "Phase ID or number this task belongs to"
+					},
+					"files": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "Files this task creates or modifies"
+					},
+					"acceptance_criteria": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"depends_on": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "IDs of tasks this depends on"
+					},
+					"assigned_agent": {
+						"type": "string",
+						"description": "Agent name if assigned"
+					},
+					"verification": {
+						"type": "string",
+						"description": "Verification ID if verified"
+					},
+					"notes": {
+						"type": "string"
+					}
+				},
+				"if": {
+					"properties": {
+						"status": { "const": "completed" }
+					},
+					"required": ["status"]
+				},
+				"then": {
+					"required": ["id", "description", "status", "verification"]
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,56 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Project plans",
+	"description": "Ordered work sequences referencing existing block items. Item ordering lives in relations.json with relation_type='plan_item_depends_on' per DEC-0012 (edges-only authoring; no inline depends_on field on plan items). Plan-membership beyond the items[] array is authored via relations.json with relation_type='plan_member'. Plans reside under <config.root>/plan.json and are opt-in via config.json's installed_blocks.",
+	"type": "object",
+	"required": ["plans"],
+	"additionalProperties": false,
+	"properties": {
+		"plans": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "title", "items"],
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string",
+						"pattern": "^PLAN-\\d{3}$",
+						"description": "Stable identifier; PLAN-NNN."
+					},
+					"title": { "type": "string" },
+					"description": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["draft", "active", "blocked", "complete", "archived"]
+					},
+					"roadmap": {
+						"type": ["string", "null"],
+						"description": "Optional ROADMAP-* this plan operationalizes."
+					},
+					"phase": {
+						"type": ["string", "null"],
+						"description": "Optional PHASE-* within the referenced roadmap."
+					},
+					"items": {
+						"type": "array",
+						"description": "Plan items. Each is a reference to an existing block item; ordering NOT in this array — declared via relations.json edges with relation_type='plan_item_depends_on'.",
+						"items": {
+							"type": "object",
+							"required": ["ref"],
+							"additionalProperties": false,
+							"properties": {
+								"ref": {
+									"type": "string",
+									"description": "Canonical id of an existing block item (issue-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, FEAT-NNN, ...). Resolved at load time via resolveItemById."
+								},
+								"assignee": { "type": "string" },
+								"note": { "type": "string" }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

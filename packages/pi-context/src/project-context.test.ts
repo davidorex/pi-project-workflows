@@ -22,6 +22,7 @@ import {
 	loadConfig,
 	loadRelations,
 	projectRoot,
+	resolveComposition,
 	type SubstrateValidationIssue,
 	synthesizeFromField,
 	validateRelations,
@@ -523,5 +524,152 @@ describe("validateRelations", () => {
 		const items: Record<string, ItemRecord[]> = { tasks: [{ id: "TASK-1" }, { id: "TASK-2" }] };
 		const r = validateRelations(cfg, edges, items);
 		assert.strictEqual(find(r.issues, "edge_cycle_detected"), undefined);
+	});
+});
+
+// ── resolveComposition ──────────────────────────────────────────────────────
+
+describe("resolveComposition", () => {
+	function writeBlock(tmpDir: string, name: string, payload: unknown): void {
+		const dir = path.join(tmpDir, ".project");
+		fs.mkdirSync(dir, { recursive: true });
+		fs.writeFileSync(path.join(dir, `${name}.json`), JSON.stringify(payload));
+	}
+
+	it("resolves a single 'from' member with no where clause", (t) => {
+		const tmp = makeTmpDir("rc-single-from");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg: ConfigBlock = {
+			...minimalConfig(),
+			lenses: [
+				{
+					id: "all-tasks",
+					kind: "composition",
+					bins: [],
+					members: [{ from: "tasks" }],
+				},
+			],
+		};
+		writeConfig(tmp, cfg);
+		writeBlock(tmp, "tasks", {
+			tasks: [
+				{ id: "TASK-1", description: "x", status: "planned" },
+				{ id: "TASK-2", description: "y", status: "completed" },
+			],
+		});
+		const result = resolveComposition(tmp, cfg.lenses![0]);
+		assert.strictEqual(result.members.length, 1);
+		assert.strictEqual(result.unionedItems.length, 2);
+		assert.strictEqual(result.perItemOrigin.get("TASK-1"), "tasks");
+		assert.strictEqual(result.perItemOrigin.get("TASK-2"), "tasks");
+	});
+
+	it("filters members by where-clause field equality", (t) => {
+		const tmp = makeTmpDir("rc-where");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg: ConfigBlock = {
+			...minimalConfig(),
+			lenses: [
+				{
+					id: "completed-tasks",
+					kind: "composition",
+					bins: [],
+					members: [{ from: "tasks", where: { status: "completed" } }],
+				},
+			],
+		};
+		writeConfig(tmp, cfg);
+		writeBlock(tmp, "tasks", {
+			tasks: [
+				{ id: "TASK-1", description: "x", status: "planned" },
+				{ id: "TASK-2", description: "y", status: "completed" },
+				{ id: "TASK-3", description: "z", status: "completed" },
+			],
+		});
+		const result = resolveComposition(tmp, cfg.lenses![0]);
+		assert.strictEqual(result.unionedItems.length, 2);
+		assert.deepStrictEqual(result.unionedItems.map((i) => i.id).sort(), ["TASK-2", "TASK-3"]);
+	});
+
+	it("detects composition cycle (lens A → lens B → lens A)", (t) => {
+		const tmp = makeTmpDir("rc-cycle");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg: ConfigBlock = {
+			...minimalConfig(),
+			lenses: [
+				{
+					id: "lens-a",
+					kind: "composition",
+					bins: [],
+					members: [{ lens: "lens-b" }],
+				},
+				{
+					id: "lens-b",
+					kind: "composition",
+					bins: [],
+					members: [{ lens: "lens-a" }],
+				},
+			],
+		};
+		writeConfig(tmp, cfg);
+		assert.throws(() => resolveComposition(tmp, cfg.lenses![0]), /composition_cycle_detected/);
+	});
+
+	it("throws when a member references an unknown sub-lens", (t) => {
+		const tmp = makeTmpDir("rc-missing-sublens");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg: ConfigBlock = {
+			...minimalConfig(),
+			lenses: [
+				{
+					id: "outer",
+					kind: "composition",
+					bins: [],
+					members: [{ lens: "does-not-exist" }],
+				},
+			],
+		};
+		writeConfig(tmp, cfg);
+		assert.throws(() => resolveComposition(tmp, cfg.lenses![0]), /member references unknown lens 'does-not-exist'/);
+	});
+
+	it("resolves a target sub-lens by reading its target block", (t) => {
+		const tmp = makeTmpDir("rc-sublens-target");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg: ConfigBlock = {
+			...minimalConfig(),
+			lenses: [
+				{
+					id: "inner",
+					kind: "target",
+					target: "tasks",
+					bins: [],
+				},
+				{
+					id: "outer",
+					kind: "composition",
+					bins: [],
+					members: [{ lens: "inner" }],
+				},
+			],
+		};
+		writeConfig(tmp, cfg);
+		writeBlock(tmp, "tasks", {
+			tasks: [{ id: "TASK-1", description: "x", status: "planned" }],
+		});
+		const result = resolveComposition(tmp, cfg.lenses![1]);
+		assert.strictEqual(result.unionedItems.length, 1);
+		assert.strictEqual(result.perItemOrigin.get("TASK-1"), "tasks");
+	});
+
+	it("throws when the lens passed in is not kind=composition", (t) => {
+		const tmp = makeTmpDir("rc-wrong-kind");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg: ConfigBlock = {
+			...minimalConfig(),
+			lenses: [{ id: "target-only", kind: "target", target: "tasks", bins: [] }],
+		};
+		writeConfig(tmp, cfg);
+		assert.throws(() => resolveComposition(tmp, cfg.lenses![0]), /is not kind=composition/);
 	});
 });

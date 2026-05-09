@@ -57,6 +57,10 @@
 			"types": "./dist/schema-migrations.d.ts",
 			"default": "./dist/schema-migrations.js"
 		},
+		"./lens-view": {
+			"types": "./dist/lens-view.d.ts",
+			"default": "./dist/lens-view.js"
+		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
 		"./schemas/relations.schema.json": "./schemas/relations.schema.json",
 		"./schemas/priority.schema.json": "./schemas/priority.schema.json",
@@ -78,6 +82,8 @@
 		"dist/",
 		"skills/",
 		"defaults/",
+		"registry/",
+		"schemas/",
 		"*.md"
 	],
 	"scripts": {

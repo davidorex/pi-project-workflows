@@ -1,0 +1,70 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"description": "The problem space the project operates in. Research findings, reference material, domain rules, terminology. What you need to know about the world outside the code to make correct decisions. Not an implementation glossary — the territory the implementation navigates.",
+	"title": "Domain Knowledge",
+	"type": "object",
+	"required": [
+		"entries"
+	],
+	"properties": {
+		"entries": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"id",
+					"title",
+					"content",
+					"category"
+				],
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"content": {
+						"type": "string",
+						"description": "The knowledge, research finding, or reference material"
+					},
+					"category": {
+						"type": "string",
+						"enum": [
+							"research",
+							"reference",
+							"domain-rule",
+							"prior-art",
+							"constraint"
+						]
+					},
+					"source": {
+						"type": "string",
+						"description": "Where this knowledge came from"
+					},
+					"confidence": {
+						"type": "string",
+						"enum": [
+							"high",
+							"medium",
+							"low"
+						]
+					},
+					"related_requirements": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "IDs of requirements this informs"
+					},
+					"tags": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				}
+			}
+		}
+	}
+}

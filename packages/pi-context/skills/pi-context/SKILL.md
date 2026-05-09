@@ -161,13 +161,41 @@ Complete a task with verification gate — requires a passing verification entry
 | `verificationId` | string | yes | Verification entry ID (must target this task with status 'passed') |
 </tool>
 
+<tool name="project-validate-relations">
+Validate substrate relations.json edges against config-declared lenses + hierarchy + relation_types and the cross-block id index. Returns SubstrateValidationResult with status (clean/warnings/invalid) and per-issue diagnostics.
+
+*Validate substrate relations against config + items*
+
+</tool>
+
+<tool name="project-edges-for-lens">
+Materialize the Edge[] for a named lens — synthetic edges from derived_from_field for auto-derived lenses; authored edges filtered by relation_type for hand-curated lenses; unioned items from composition members for kind=composition lenses.
+
+*Materialize edges for a named lens (auto-derived or hand-curated)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `lensId` | string | yes | Lens id from config.lenses[].id |
+</tool>
+
+<tool name="project-walk-descendants">
+Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent).
+
+*Walk closure-table descendants under a relation_type*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `parentId` | string | yes | Parent id (canonical id or lens bin name) |
+| `relationType` | string | yes | Relation type from config.relation_types[].canonical_id |
+</tool>
+
 </tools_reference>
 
 <commands_reference>
 <command name="/project">
 Project state management
 
-Subcommands: `init`, `status`, `add-work`, `validate`, `help`
+Subcommands: `init`, `install`, `view`, `lens-curate`, `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>

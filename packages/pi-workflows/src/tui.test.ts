@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import type { Theme } from "@mariozechner/pi-coding-agent";
-import type { TUI } from "@mariozechner/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
+import type { TUI } from "@earendil-works/pi-tui";
 import { createProgressWidget, type ProgressWidgetState } from "./tui.js";
 import type { StepUsage, WorkflowSpec } from "./types.js";
 

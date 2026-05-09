@@ -2,8 +2,8 @@
  * TUI progress widget for workflow execution.
  * Shows per-step colored bars with live activity, metrics, and a progress bar header.
  */
-import type { Theme, ThemeColor } from "@mariozechner/pi-coding-agent";
-import type { Component, TUI } from "@mariozechner/pi-tui";
+import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
+import type { Component, TUI } from "@earendil-works/pi-tui";
 import { formatCost, formatDuration, formatTokens } from "./format.js";
 import type { ExecutionState, StepResult, WorkflowSpec } from "./types.js";
 

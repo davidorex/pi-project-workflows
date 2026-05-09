@@ -6,9 +6,9 @@ export default defineConfig({
 		// Tests only exercise pure exported functions, so we alias the pi
 		// packages to lightweight stubs that satisfy the import resolver.
 		alias: {
-			"@mariozechner/pi-ai": new URL("./test/stubs/pi-ai.ts", import.meta.url).pathname,
-			"@mariozechner/pi-coding-agent": new URL("./test/stubs/pi-coding-agent.ts", import.meta.url).pathname,
-			"@mariozechner/pi-tui": new URL("./test/stubs/pi-tui.ts", import.meta.url).pathname,
+			"@earendil-works/pi-ai": new URL("./test/stubs/pi-ai.ts", import.meta.url).pathname,
+			"@earendil-works/pi-coding-agent": new URL("./test/stubs/pi-coding-agent.ts", import.meta.url).pathname,
+			"@earendil-works/pi-tui": new URL("./test/stubs/pi-tui.ts", import.meta.url).pathname,
 		},
 	},
 });

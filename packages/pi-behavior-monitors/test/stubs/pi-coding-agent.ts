@@ -1,8 +1,8 @@
-// Minimal stub — satisfies `import { getAgentDir } from "@mariozechner/pi-coding-agent"`
+// Minimal stub — satisfies `import { getAgentDir } from "@earendil-works/pi-coding-agent"`
 // and the type-only imports used in index.ts.
 //
 // `getAgentDir` honors the same `PI_CODING_AGENT_DIR` env var the real
-// pi-coding-agent does (see node_modules/@mariozechner/pi-coding-agent/dist/
+// pi-coding-agent does (see node_modules/@earendil-works/pi-coding-agent/dist/
 // config.js:175-186). This lets tier-resolution tests redirect the global
 // tier into a tmp directory at runtime; without the env-var honor, the
 // stub would always return its baked path and tier-2 override scenarios

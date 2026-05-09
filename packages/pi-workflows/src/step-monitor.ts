@@ -10,9 +10,9 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { Api, AssistantMessage, Model, TextContent } from "@mariozechner/pi-ai";
-import { complete } from "@mariozechner/pi-ai";
-import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
+import type { Api, AssistantMessage, Model, TextContent } from "@earendil-works/pi-ai";
+import { complete } from "@earendil-works/pi-ai";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import nunjucks from "nunjucks";
 import { persistStepOutput } from "./output.js";
 import { zeroUsage } from "./step-shared.js";

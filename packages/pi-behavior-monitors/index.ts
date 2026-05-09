@@ -25,8 +25,8 @@ import { type CompiledAgent, type DispatchContext, dateRotatedPath, executeAgent
 import { createAgentLoader } from "@davidorex/pi-workflows/agent-spec";
 import { compileAgentSpec } from "@davidorex/pi-workflows/step-shared";
 import type { AgentSpec } from "@davidorex/pi-workflows/types";
-import type { Api, Model, TextContent, Tool } from "@mariozechner/pi-ai";
-import { StringEnum, Type } from "@mariozechner/pi-ai";
+import type { Api, Model, TextContent, Tool } from "@earendil-works/pi-ai";
+import { StringEnum, Type } from "@earendil-works/pi-ai";
 import type {
 	AgentEndEvent,
 	AgentToolResult,
@@ -36,9 +36,9 @@ import type {
 	SessionEntry,
 	SessionMessageEntry,
 	TurnEndEvent,
-} from "@mariozechner/pi-coding-agent";
-import { getAgentDir } from "@mariozechner/pi-coding-agent";
-import { Box, Text } from "@mariozechner/pi-tui";
+} from "@earendil-works/pi-coding-agent";
+import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import { Box, Text } from "@earendil-works/pi-tui";
 import nunjucks from "nunjucks";
 
 const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));

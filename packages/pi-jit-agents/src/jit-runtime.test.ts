@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import path from "node:path";
 import { describe, it } from "node:test";
-import type { AssistantMessage, Model } from "@mariozechner/pi-ai";
+import type { AssistantMessage, Model } from "@earendil-works/pi-ai";
 import { AgentDispatchError } from "./errors.js";
 import { buildPhantomTool, executeAgent, normalizeToolChoice } from "./jit-runtime.js";
 import type { CompiledAgent } from "./types.js";

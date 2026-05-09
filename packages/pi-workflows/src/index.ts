@@ -7,16 +7,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { schemaPath } from "@davidorex/pi-context/project-dir";
 import { enforceBudget } from "@davidorex/pi-jit-agents";
-import { Type } from "@mariozechner/pi-ai";
+import { Type } from "@earendil-works/pi-ai";
 import type {
 	AgentToolResult,
 	AgentToolUpdateCallback,
 	ExtensionAPI,
 	ExtensionCommandContext,
 	ExtensionContext,
-} from "@mariozechner/pi-coding-agent";
-import { truncateHead } from "@mariozechner/pi-coding-agent";
-import { Key } from "@mariozechner/pi-tui";
+} from "@earendil-works/pi-coding-agent";
+import { truncateHead } from "@earendil-works/pi-coding-agent";
+import { Key } from "@earendil-works/pi-tui";
 import { createAgentLoader } from "./agent-spec.js";
 import type { IncompleteRun } from "./checkpoint.js";
 import { findIncompleteRun, formatIncompleteRun, validateResumeCompatibility } from "./checkpoint.js";

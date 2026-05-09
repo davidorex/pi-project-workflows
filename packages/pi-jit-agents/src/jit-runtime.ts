@@ -18,8 +18,8 @@
  */
 import fs from "node:fs";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
-import type { Api, AssistantMessage, Model, ProviderStreamOptions, Tool, ToolCall } from "@mariozechner/pi-ai";
-import { complete as piAiComplete, Type } from "@mariozechner/pi-ai";
+import type { Api, AssistantMessage, Model, ProviderStreamOptions, Tool, ToolCall } from "@earendil-works/pi-ai";
+import { complete as piAiComplete, Type } from "@earendil-works/pi-ai";
 import { AgentDispatchError } from "./errors.js";
 import {
 	loadProjectRedactionConfig,
@@ -247,7 +247,7 @@ export type NormalizedToolChoice =
  * / Google providers is collapsed here, not at each consumer call site.
  *
  * Coverage map (pi-ai 0.70.2 — verified against
- * `node_modules/@mariozechner/pi-ai/dist/providers/*`):
+ * `node_modules/@earendil-works/pi-ai/dist/providers/*`):
  *
  *   - `anthropic-messages` — passes object through unchanged. Anthropic
  *     Messages API expects `{type:"tool", name}`.

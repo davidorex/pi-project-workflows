@@ -8,7 +8,7 @@ import { readBlock, writeBlock } from "@davidorex/pi-context/block-api";
 import { rollbackBlockFiles, snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-context/block-validation";
 import { PROJECT_DIR } from "@davidorex/pi-context/project-dir";
 import { validate, validateFromFile } from "@davidorex/pi-context/schema-validator";
-import { truncateTail } from "@mariozechner/pi-coding-agent";
+import { truncateTail } from "@earendil-works/pi-coding-agent";
 import type nunjucks from "nunjucks";
 import { resolveCompletion } from "./completion.js";
 import type { ExecutionPlan } from "./dag.js";
@@ -518,7 +518,7 @@ async function executeStepByType(
 			: undefined;
 		const monitorResult = await executeMonitor(stepSpec.monitor, stepName, resolvedInput, {
 			cwd: ctx.cwd,
-			ctx: ctx as import("@mariozechner/pi-coding-agent").ExtensionContext,
+			ctx: ctx as import("@earendil-works/pi-coding-agent").ExtensionContext,
 			signal,
 			runDir,
 			outputPath: resolvedMonitorOutputPath,

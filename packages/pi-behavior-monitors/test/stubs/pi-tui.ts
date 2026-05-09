@@ -1,4 +1,4 @@
-// Minimal stub — satisfies `import { Box, Text } from "@mariozechner/pi-tui"`
+// Minimal stub — satisfies `import { Box, Text } from "@earendil-works/pi-tui"`
 
 export class Box {
 	constructor(..._args: unknown[]) {}

@@ -10,8 +10,8 @@ import type {
 	ExtensionAPI,
 	ExtensionCommandContext,
 	ExtensionContext,
-} from "@mariozechner/pi-coding-agent";
-import { truncateHead } from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
+import { truncateHead } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import {
 	appendToBlock,

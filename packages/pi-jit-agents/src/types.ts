@@ -5,7 +5,7 @@
  * (load, compile, execute, introspect) with typed inputs and outputs.
  */
 import type { ItemLocation } from "@davidorex/pi-context";
-import type { Api, AssistantMessage, Model } from "@mariozechner/pi-ai";
+import type { Api, AssistantMessage, Model } from "@earendil-works/pi-ai";
 import type nunjucks from "nunjucks";
 import type { BudgetWarning } from "./budget-enforcer.js";
 import type { RendererRegistry } from "./renderer-registry.js";

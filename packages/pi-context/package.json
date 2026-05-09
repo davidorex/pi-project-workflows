@@ -93,7 +93,7 @@
 		"test": "tsx --test src/*.test.ts"
 	},
 	"dependencies": {
-		"@mariozechner/pi-coding-agent": "^0.70.2",
+		"@earendil-works/pi-coding-agent": "^0.74.0",
 		"typebox": "^1.1.24",
 		"ajv": "^8.17.1",
 		"ajv-formats": "^3.0.1",

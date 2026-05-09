@@ -28,7 +28,7 @@ import assert from "node:assert";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { getModel, complete as piAiComplete } from "@mariozechner/pi-ai";
+import { getModel, complete as piAiComplete } from "@earendil-works/pi-ai";
 import { compileAgent } from "./compile.js";
 import { executeAgent } from "./jit-runtime.js";
 import { createTemplateEnv } from "./template.js";

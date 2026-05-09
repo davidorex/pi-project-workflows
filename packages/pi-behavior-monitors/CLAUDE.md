@@ -45,4 +45,4 @@ The `files` field in package.json controls what's included: `dist/`, `examples/`
 
 ## Dependencies
 
-Runtime dependencies: nunjucks, @davidorex/pi-context, @mariozechner/pi-ai, @mariozechner/pi-coding-agent, @mariozechner/pi-tui, @sinclair/typebox.
+Runtime dependencies: nunjucks, @davidorex/pi-context, @earendil-works/pi-ai, @earendil-works/pi-coding-agent, @earendil-works/pi-tui, @sinclair/typebox.

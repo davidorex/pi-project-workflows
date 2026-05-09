@@ -1,4 +1,4 @@
-// Minimal stub — satisfies value imports from `@mariozechner/pi-ai` used
+// Minimal stub — satisfies value imports from `@earendil-works/pi-ai` used
 // at module load in index.ts (notably the `Type` / `StringEnum` builders
 // referenced by the `_VERDICT_TOOL` documentation Tool definition). No
 // runtime behaviour needed; tests never call into the real pi-ai SDK or

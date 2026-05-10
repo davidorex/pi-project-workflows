@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { clearLensValidators, getLensValidators, registerLensValidator } from "./lens-validator.js";
 import type { ItemRecord } from "./project-context.js";
+import { writeBootstrapPointer } from "./project-dir.js";
 import { validateProject } from "./project-sdk.js";
 import {
 	listRoadmaps,
@@ -23,6 +24,7 @@ import {
 describe("STATUS_VOCABULARY (default registry resolved with no config overrides)", () => {
 	function vocabIn(): Record<string, StatusBucket> {
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "roadmap-vocab-default-"));
+		writeBootstrapPointer(dir, ".project");
 		fs.mkdirSync(path.join(dir, ".project"), { recursive: true });
 		fs.writeFileSync(
 			path.join(dir, ".project", "config.json"),
@@ -304,6 +306,7 @@ interface RoadmapFixture {
 
 function makeRoadmapProject(fixture: RoadmapFixture): string {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-roadmap-"));
+	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 	const config: Record<string, unknown> = {
 		schema_version: "0.2.0",
@@ -403,6 +406,7 @@ describe("loadRoadmap", () => {
 
 	it("returns error when no config exists", () => {
 		roadmapTmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-roadmap-noconfig-"));
+		writeBootstrapPointer(roadmapTmpRoot, ".project");
 		fs.mkdirSync(path.join(roadmapTmpRoot, ".project"), { recursive: true });
 		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
 		assert.ok("error" in result);

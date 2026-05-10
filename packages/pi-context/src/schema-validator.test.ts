@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { writeBootstrapPointer } from "./project-dir.js";
 import { createRegistry } from "./schema-migrations.js";
 import { ValidationError, validate, validateBlockWithMigration, validateFromFile } from "./schema-validator.js";
 
@@ -221,6 +222,7 @@ describe("registry schema $ref resolution (FGAP-017 closure)", () => {
 describe("validateBlockWithMigration", () => {
 	function setupTmpProject(schemaContent: object): { tmpDir: string; schemaName: string } {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-mig-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const schemasDir = path.join(tmpDir, ".project", "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
 		const schemaName = "thing";

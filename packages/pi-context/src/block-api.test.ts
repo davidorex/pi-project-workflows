@@ -24,10 +24,13 @@ import {
 	writeTypedFile,
 } from "./block-api.js";
 import type { DispatchContext } from "./dispatch-context.js";
+import { writeBootstrapPointer } from "./project-dir.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), `block-api-${prefix}-`));
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), `block-api-${prefix}-`));
+	writeBootstrapPointer(cwd, ".project");
+	return cwd;
 }
 
 function setupWorkflowDir(tmpDir: string): string {

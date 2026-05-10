@@ -17,6 +17,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import extension from "./index.js";
+import { writeBootstrapPointer } from "./project-dir.js";
 
 interface CapturedTool {
 	name: string;
@@ -49,7 +50,9 @@ function captureTools(): { tools: Map<string, CapturedTool>; api: unknown } {
 }
 
 function tmpDir(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-tool-"));
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-tool-"));
+	writeBootstrapPointer(cwd, ".project");
+	return cwd;
 }
 
 function seedFixture(cwd: string): void {

@@ -10,7 +10,8 @@
         "read-config + read-schema tools registered",
         ".pi-context.json written for this repo containing {contextDir: '.project'}"
       ],
-      "status": "planned"
+      "status": "in-progress",
+      "notes": "FGAP-026 phase 1.2 re-plan progress at HEAD 99436c3. Sections landed: A bb2c7d5 (resolver foundation: resolveContextDir + BootstrapNotFoundError + writeBootstrapPointer); B 9846b90 (pi-context internal cascade + initProject self-bootstrap); C.1 8f33a38 (pi-context fixtures cascade; 390/0/0); audit fix cluster 1a98345 + e780db0 + 7cd3c6c + b94264b (D-A-1/D-B-1 schema-validator cascade + D-B-2 naming unification + D-B-3/D-B-4 BootstrapNotFoundError catch at tool entry + Fix 1 follow-up); E 55a03c2 (husky gate extension) then revert 278b2b8 (gate-window open for cross-package cascade); C.2 99436c3 (pi-jit-agents fixtures; 150/0/1). Adversarial audit at /tmp/audit-sections-a-b-c1.md surfaced YELLOW verdict; gating items 1+4 resolved; non-gating items 5+6+7 also resolved. Next: C.3 (pi-workflows fixtures, ~35 mkdtempSync), C.4 (pi-behavior-monitors, ~8 vitest), D (jit-agents static fixtures — likely empty per audit), F (project-dir.test.ts NEW with 7 tests). Then re-land Section E husky-gate extension. Then Phase 1.3 (read-config + read-schema tools)."
     },
     {
       "id": "TASK-022",

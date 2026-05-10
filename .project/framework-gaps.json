@@ -912,6 +912,47 @@
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T03:30:10.099Z"
+    },
+    {
+      "id": "FGAP-028",
+      "title": "Substrate completeness measured by harness-confined-LLM arc-dispatch capability, not by isolated tool/primitive existence",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "Substrate completeness has been measured arc-step-by-arc-step ('Step 1 lands; Step 2 lands; tools added; tests pass') — isolated tool/primitive existence as the proxy for completion. Under DEC-0014 (harness-confined main LLM as canonical execution surface) the actual completion criterion is 'could a harness-confined main LLM dispatch a representative arc-of-work to completion using only extension tools + JIT-agent dispatch via workflows, with no bash/read/write fallback?'. Today the answer is no across the rebuild arc — 22+ tool gaps enumerated in analysis/2026-05-10-tool-surface-gap-audit.md (filter-block-items, resolve-items-by-id, read-config, read-schema, workflow-execute, etc.); workflow-execute likely subcommand-only (per the audit's subcommand-only callout); arc-tracking blocks (roadmap/phase/tasks/relations/config) have no concrete instances in this repo. Without dogfood-completeness as the explicit completion criterion, sub-arcs that pass build/check/test individually still leave the substrate structurally inoperable for the consumer the substrate is built for.\n\nThe distinction: 'tool exists' vs 'tool composes into an executable arc'. Step 6.1 (typed-file primitives, FGAP-019 closure) lands 8 functions in JS source — tool-existence test passes. Step 6.3 (find-or-merge typed-file primitives, FGAP-020 closure) lands 6 more — tool-existence test passes. But under DEC-0014 lens, NONE of the 8 typed-file primitives have agent-reachable tool wrappers; the architectural-symmetry deliverable that closed FGAP-020 is invisible to the harness-confined main LLM. Tool-existence-as-completion-proxy hides this from build/check/test gates.\n\nMeta-architectural framing surfaced during dogfooding-perspective discussion 2026-05-10 + load-bearing under DEC-0014 because the consumer the substrate is built for cannot validate substrate operability via build/check/test — only by attempting actual arc dispatch through the substrate's surface.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-10-tool-surface-gap-audit.md",
+          "reference": "22 enumerated gaps + meta-pattern (pi tool surface systematically lags JS export surface; ~40% query coverage). Under DEC-0014 every gap becomes load-bearing because no bash/read/write fallback exists for the main LLM."
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0014 (enacted 2026-05-10) establishes harness-confined main LLM as canonical execution surface. Implies the substrate's completion criterion is operability under that constraint, not isolated tool/primitive existence."
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "8 typed-file primitives from FGAP-019/020 closure are JS exports with no agent-reachable tool wrappers. Tool-existence completion proxy treated FGAP-020 as closed; under DEC-0014 lens the architectural-symmetry deliverable is invisible to the consumer."
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "Subcommand-only surfaces (/project view, /project lens-curate, /project install, /project add-work) per the gap audit are unreachable by the harness-confined main LLM under DEC-0014 — the build/check/test gate at Step 8 closure passed without surfacing this incompleteness."
+        },
+        {
+          "file": ".project/framework-gaps.json",
+          "reference": "FGAP-026 (config-driven bootstrap), FGAP-024 (write-authority enforcement), FGAP-005 (state-machine transitions), FGAP-002/003/007/008/009/010/014/015 (other identified gaps) all surface or amplify under the dogfood-completeness criterion. Without FGAP-028's framing, each is enumerated in isolation; under FGAP-028, they collectively define what 'arc-dispatchable substrate' means."
+        }
+      ],
+      "impact": "Without dogfood-completeness as the criterion, substrate-arc work can ship as 'complete' while structurally inoperable for the consumer the substrate is built for. Concrete near-term consequence: v0.25.0 release (Task #12 / Step 10) could ship with all currently-enumerated FGAPs closed, all 4 packages tests green, all docs aligned, and a fresh-repo harness-confined main LLM still cannot author + execute its own arc because (a) filter-block-items doesn't exist (90 issues, can't query); (b) workflow-execute is subcommand-only (can't dispatch out-of-substrate work); (c) arc-tracking blocks (roadmap/phase/tasks/relations/config) have no concrete instances; (d) per-item read returns location not payload; etc. Step 9 (adversarial audit) and Step 10 (release) currently lack the dogfood-dispatch gate that would catch this. The rebuild arc could declare itself complete and ship a v0.25.0 npm publish that immediately surfaces as inoperable on first user dispatch.",
+      "proposed_resolution": "Add dogfood-completeness as the explicit substrate-arc completion criterion alongside build/check/test/skills/commit/release sequence in CLAUDE.md Completion Sequence. Operationalize: every arc-completion release runs a 'harness-confined dispatch dry-run' — synthetic main-LLM-as-tool-only invocation of a representative arc (e.g., file a new FGAP via append-block-item with DispatchContext, transition its status via update-block-item, dispatch a workflow that exercises a JIT-agent build, mark phase complete via update on roadmap/phase block) — using only extension tools, no bash/read/write fallback. If the dry-run fails because of missing tools/primitives, those become P0 closure items before release. Step 9 (adversarial audit, Task #11) gains a dogfood-dispatch test gate as part of its protocol — fresh-context audit subagent dispatched with HARNESS-CONFINED tool surface, asked to perform representative arc work, surfaces gaps as findings. Step 10 (release, Task #12) is conditioned on Step 9's dogfood-dispatch passing. Future arcs scoped against dogfood-completeness as precondition. Couples to FGAP-026 (resolver + bootstrap pointer enables harness-confined operability), tool-surface gap audit (concrete tool deliverables block dispatch capability), DEC-0014 (defines the canonical execution surface dogfood measures against). The 7-phase FGAP-026 closure plan needs re-sequencing under this criterion: high-impact tool gaps (filter-block-items, read-config, read-schema, workflow-execute) pulled INTO Phase 1 so subsequent phases become harness-confined-dispatchable; arc-tracking blocks (roadmap/phase/tasks/relations/config) authored mid-arc as both the dogfood-dispatch substrate AND the arc-tracking record. Per mandate-007 surfaced as substrate-canon, not architectural-debt-deferred.",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0015"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8.6-orchestrator",
+      "created_at": "2026-05-10T03:41:49.494Z"
     }
   ]
 }

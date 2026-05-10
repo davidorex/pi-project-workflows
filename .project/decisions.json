@@ -603,7 +603,8 @@
         "Step 10 (release, Task #12) — npm publish + git tag + git reset --hard + git push remain user-execution per existing convention (interactive OTP, etc.). Agent-side build/check/test of step 1-8 must route through workflows that dispatch JIT agents with bash.",
         "DispatchContext attestation (FGAP-004 closure) gains semantic weight — the WriterIdentity discriminator (human/agent/monitor/workflow) accurately reflects who took an action because the harness no longer permits ad-hoc bypass.",
         "FGAP-024 (no write-authority enforcement) becomes more pressing — under harness-confined operation, blocking the main LLM from writing to inappropriate blocks at the dispatch boundary becomes the only enforcement layer.",
-        "feedback memory entries that gated bypass behavior (feedback_no_ad_hoc_code.md, feedback_no_destructive_git_ops.md, feedback_persist_means_mv_verbatim.md, feedback_tsx_eval_for_deterministic_state.md) describe behaviors the main LLM no longer has the surface to perform; they remain valid for JIT-agent-dispatched contexts."
+        "feedback memory entries that gated bypass behavior (feedback_no_ad_hoc_code.md, feedback_no_destructive_git_ops.md, feedback_persist_means_mv_verbatim.md, feedback_tsx_eval_for_deterministic_state.md) describe behaviors the main LLM no longer has the surface to perform; they remain valid for JIT-agent-dispatched contexts.",
+        "Substrate-arc completion criterion (per FGAP-028, filed 2026-05-10): 'harness-confined dispatch dry-run' — synthetic main-LLM-as-tool-only invocation of representative arc work using ONLY extension tools + JIT-agent dispatch via workflows. Step 9 (adversarial audit, Task #11) gains a dogfood-dispatch test gate as part of its protocol. Step 10 (release, Task #12) is conditioned on Step 9's dogfood-dispatch passing. Tool-existence-as-completion-proxy (build/check/test gate) is necessary but insufficient under DEC-0014 because it hides agent-reachable surface gaps (e.g. 8 typed-file primitives from FGAP-019/020 closure ship as JS exports with no agent-reachable tool wrappers — invisible to the harness-confined consumer despite passing all builds/tests). FGAP-028 codifies the dogfood-completeness criterion; FGAP-026 closure + tool-surface gap audit closure are scoped against it."
       ],
       "options_considered": [
         {
@@ -619,7 +620,8 @@
       ],
       "related_gaps": [
         "FGAP-024",
-        "FGAP-026"
+        "FGAP-026",
+        "FGAP-028"
       ],
       "references": [
         {

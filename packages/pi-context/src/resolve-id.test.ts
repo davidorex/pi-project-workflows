@@ -14,13 +14,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeBootstrapPointer } from "./project-dir.js";
 import { buildIdIndex, type ItemLocation, resolveItemById } from "./project-sdk.js";
 
 function makeTmpDir(prefix: string): string {
-	const dir = fs.mkdtempSync(path.join(os.tmpdir(), `resolve-id-${prefix}-`));
-	writeBootstrapPointer(dir, ".project");
-	return dir;
+	return fs.mkdtempSync(path.join(os.tmpdir(), `resolve-id-${prefix}-`));
 }
 
 /**

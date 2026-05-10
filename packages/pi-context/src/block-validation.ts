@@ -6,42 +6,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import {
-	BootstrapNotFoundError,
-	projectDir as resolveProjectDir,
-	schemasDir as resolveSchemasDir,
-} from "./project-dir.js";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import { validateFromFile } from "./schema-validator.js";
-
-/**
- * Best-effort substrate-dir resolution for snapshot/validate/rollback paths.
- * Treats `BootstrapNotFoundError` as "no substrate present yet" — preserves
- * the pre-resolver semantic where snapshotBlockFiles silently returned an
- * empty map when `<cwd>/.project/` did not exist. The graceful surface is
- * deliberate: `snapshotDir` / `validateChangedInDir` / `rollbackDir` already
- * tolerate missing directories, so propagating the resolver error would
- * regress that tolerance for callers (e.g. pi-workflows step-executor)
- * that operate against tmp dirs without a bootstrap pointer. Phase 7 of
- * the FGAP-026 closure cascade migrates pi-workflows callers; this guard
- * keeps the surface backward-compatible until then.
- */
-function tryResolveProjectDir(cwd: string): string | null {
-	try {
-		return resolveProjectDir(cwd);
-	} catch (err) {
-		if (err instanceof BootstrapNotFoundError) return null;
-		throw err;
-	}
-}
-
-function tryResolveSchemasDir(cwd: string): string | null {
-	try {
-		return resolveSchemasDir(cwd);
-	} catch (err) {
-		if (err instanceof BootstrapNotFoundError) return null;
-		throw err;
-	}
-}
 
 export interface BlockFileSnapshot {
 	mtime: number;
@@ -93,10 +59,9 @@ function snapshotDir(dirPath: string, result: BlockSnapshot): void {
  */
 export function snapshotBlockFiles(cwd: string): BlockSnapshot {
 	const result: BlockSnapshot = new Map();
-	const projectDir = tryResolveProjectDir(cwd);
-	if (projectDir === null) return result;
+	const projectDir = path.join(cwd, PROJECT_DIR);
 
-	// Top-level <substrate>/*.json
+	// Top-level .project/*.json
 	snapshotDir(projectDir, result);
 
 	// Known subdirectories
@@ -179,13 +144,12 @@ function validateChangedInDir(
  * @throws Error if any changed block file fails schema validation
  */
 export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void {
-	const projectDir = tryResolveProjectDir(cwd);
-	const schemasDir = tryResolveSchemasDir(cwd);
-	if (projectDir === null || schemasDir === null) return;
+	const projectDir = path.join(cwd, PROJECT_DIR);
+	const schemasDir = path.join(projectDir, SCHEMAS_DIR);
 
 	const errors: string[] = [];
 
-	// Top-level <substrate>/*.json
+	// Top-level .project/*.json
 	validateChangedInDir(projectDir, schemasDir, before, errors);
 
 	// Known subdirectories
@@ -252,11 +216,10 @@ function rollbackDir(dirPath: string, before: BlockSnapshot, rolledBack: string[
  * Returns list of rolled-back file paths.
  */
 export function rollbackBlockFiles(cwd: string, before: BlockSnapshot): string[] {
-	const projectDir = tryResolveProjectDir(cwd);
+	const projectDir = path.join(cwd, PROJECT_DIR);
 	const rolledBack: string[] = [];
-	if (projectDir === null) return rolledBack;
 
-	// Top-level <substrate>/*.json
+	// Top-level .project/*.json
 	rollbackDir(projectDir, before, rolledBack);
 
 	// Known subdirectories

@@ -4,13 +4,11 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { installProject } from "./index.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 
 let tmpRoot: string;
 
 function makeProject(installedSchemas: string[] = [], installedBlocks: string[] = []): string {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-install-"));
-	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 	const config = {
 		schema_version: "1.0.0",
@@ -31,11 +29,6 @@ describe("installProject", () => {
 
 	it("returns error when .project/config.json is absent", () => {
 		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-install-noconfig-"));
-		// Bootstrap pointer present (so resolveContextDir resolves) but
-		// config.json absent — exercises the missing-config branch only,
-		// preserving original test intent. Per FGAP-026 closure phase 1.2
-		// Section G conservative position on noconfig fixtures.
-		writeBootstrapPointer(tmpRoot, ".project");
 		const result = installProject(tmpRoot);
 		assert.ok(result.error, "expected error string when config is absent");
 		assert.match(result.error, /config\.json/);

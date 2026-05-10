@@ -11,7 +11,6 @@ import {
 	validateProjectRelations,
 	walkLensDescendants,
 } from "./lens-view.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 
 let tmpRoot: string;
 
@@ -33,7 +32,6 @@ function makeProject(
 	} = {},
 ): string {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-lens-view-"));
-	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 	const config = {
 		schema_version: "1.0.0",
@@ -67,9 +65,6 @@ describe("loadLensView", () => {
 
 	it("returns error when no config exists", () => {
 		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-lens-view-noconfig-"));
-		// Bootstrap pointer present so resolveContextDir resolves; config absent
-		// preserves the original test intent (missing-config branch only).
-		writeBootstrapPointer(tmpRoot, ".project");
 		fs.mkdirSync(path.join(tmpRoot, ".project"), { recursive: true });
 		const result = loadLensView(tmpRoot, "any");
 		assert.ok("error" in result);
@@ -260,9 +255,6 @@ describe("validateProjectRelations", () => {
 
 	it("returns invalid + diagnostic when no config exists", () => {
 		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-validate-noconfig-"));
-		// Bootstrap pointer present so resolveContextDir resolves; config absent
-		// preserves the original test intent (missing-config branch only).
-		writeBootstrapPointer(tmpRoot, ".project");
 		fs.mkdirSync(path.join(tmpRoot, ".project"), { recursive: true });
 		const result = validateProjectRelations(tmpRoot);
 		assert.equal(result.status, "invalid");

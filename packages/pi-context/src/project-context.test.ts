@@ -28,13 +28,10 @@ import {
 	validateRelations,
 	walkDescendants,
 } from "./project-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
-	const dir = fs.mkdtempSync(path.join(os.tmpdir(), `pcx-${prefix}-`));
-	writeBootstrapPointer(dir, ".project");
-	return dir;
+	return fs.mkdtempSync(path.join(os.tmpdir(), `pcx-${prefix}-`));
 }
 
 function writeConfig(tmpDir: string, cfg: ConfigBlock | Record<string, unknown>): void {

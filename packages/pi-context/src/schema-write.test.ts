@@ -3,14 +3,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeBootstrapPointer } from "./project-dir.js";
 import { ValidationError } from "./schema-validator.js";
 import { readSchema, updateSchema, writeSchema } from "./schema-write.js";
 
 function makeTmpDir(prefix: string): string {
-	const dir = fs.mkdtempSync(path.join(os.tmpdir(), `schema-write-${prefix}-`));
-	writeBootstrapPointer(dir, ".project");
-	return dir;
+	return fs.mkdtempSync(path.join(os.tmpdir(), `schema-write-${prefix}-`));
 }
 
 function setupProjectDir(tmpDir: string): string {

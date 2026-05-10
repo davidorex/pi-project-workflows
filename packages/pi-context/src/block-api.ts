@@ -21,7 +21,7 @@ import path from "node:path";
 import _lockfile from "proper-lockfile";
 import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
-import { projectDir, schemaPath as resolveSchemaPath } from "./project-dir.js";
+import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
 import { validateFromFile } from "./schema-validator.js";
 
 // Node16 module resolution + CJS interop: default import may be wrapped
@@ -45,11 +45,11 @@ function withBlockLock<T>(filePath: string, fn: () => T): T {
 }
 
 function blockFilePath(cwd: string, blockName: string): string {
-	return path.join(projectDir(cwd), `${blockName}.json`);
+	return path.join(cwd, PROJECT_DIR, `${blockName}.json`);
 }
 
 function blockSchemaPath(cwd: string, blockName: string): string {
-	return resolveSchemaPath(cwd, blockName);
+	return path.join(cwd, PROJECT_DIR, SCHEMAS_DIR, `${blockName}.schema.json`);
 }
 
 // ── Schema introspection cache (DispatchContext support, FGAP-004) ───────────
@@ -1186,8 +1186,7 @@ export function removeFromNestedArray(
  * tool consume this single export.
  */
 export function readBlockDir(cwd: string, subdir: string): unknown[] {
-	const dirPath = path.join(projectDir(cwd), subdir);
-	const relDirForError = path.relative(cwd, dirPath);
+	const dirPath = path.join(cwd, PROJECT_DIR, subdir);
 
 	let entries: string[];
 	try {
@@ -1196,7 +1195,7 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
 			.filter((f) => f.endsWith(".json"))
 			.sort();
 	} catch {
-		// Missing directory = "no items yet" for on-demand substrate subdirectories
+		// Missing directory = "no items yet" for on-demand .project/ subdirectories
 		return [];
 	}
 
@@ -1207,12 +1206,12 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
 		try {
 			content = fs.readFileSync(filePath, "utf-8");
 		} catch {
-			throw new Error(`Cannot read file: ${relDirForError}/${filename}`);
+			throw new Error(`Cannot read file: ${PROJECT_DIR}/${subdir}/${filename}`);
 		}
 		try {
 			results.push(JSON.parse(content));
 		} catch {
-			throw new Error(`Invalid JSON in: ${relDirForError}/${filename}`);
+			throw new Error(`Invalid JSON in: ${PROJECT_DIR}/${subdir}/${filename}`);
 		}
 	}
 	return results;

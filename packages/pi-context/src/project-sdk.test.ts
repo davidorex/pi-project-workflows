@@ -12,7 +12,6 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { appendToBlock, updateItemInBlock } from "./block-api.js";
 import { clearLensValidators, getLensValidators, type LensValidator, registerLensValidator } from "./lens-validator.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 import {
 	availableBlocks,
 	availableSchemas,
@@ -26,9 +25,7 @@ import {
 import { ValidationError, validate } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
-	const dir = fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));
-	writeBootstrapPointer(dir, ".project");
-	return dir;
+	return fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));
 }
 
 // ── Discovery ────────────────────────────────────────────────────────────────

@@ -4,14 +4,6 @@ import { fileURLToPath } from "node:url";
 import type { ErrorObject } from "ajv";
 import _Ajv from "ajv";
 import _addFormats from "ajv-formats";
-// project-dir imports `validate` from this module (for AJV-checking the
-// bootstrap pointer in resolveContextDir), so the import edge here is a
-// runtime cycle. ESM tolerates it because schemaPath is only invoked from
-// validateBlockWithMigration at call-time — well after both modules have
-// finished initialization. Module-init in schema-validator does NOT reach
-// for project-dir bindings (FRAMEWORK_SCHEMA_NAMES loads via __dirname-relative
-// schema paths), so the cycle is benign.
-import { schemaPath as resolveSchemaPath } from "./project-dir.js";
 import { type MigrationRegistry, runMigrations } from "./schema-migrations.js";
 
 // Node16 module resolution + CJS interop: default import is the module namespace
@@ -42,7 +34,6 @@ addFormats(ajv);
 const FRAMEWORK_SCHEMA_NAMES = [
 	"config",
 	"relations",
-	"bootstrap",
 	"priority",
 	"status",
 	"severity",
@@ -214,7 +205,7 @@ export function validateBlockWithMigration(
 	data: unknown,
 	registry?: MigrationRegistry,
 ): unknown {
-	const schemaPath = resolveSchemaPath(cwd, schemaName);
+	const schemaPath = path.join(cwd, ".project", "schemas", `${schemaName}.schema.json`);
 	if (!fs.existsSync(schemaPath)) {
 		throw new Error(`validateBlockWithMigration: schema file not found at ${schemaPath}`);
 	}

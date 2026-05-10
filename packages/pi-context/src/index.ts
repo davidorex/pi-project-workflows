@@ -33,7 +33,7 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
-import { projectDir, SCHEMAS_DIR, schemasDir, writeBootstrapPointer } from "./project-dir.js";
+import { BootstrapNotFoundError, projectDir, SCHEMAS_DIR, schemasDir, writeBootstrapPointer } from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { checkForUpdates } from "./update-check.js";
@@ -127,13 +127,28 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
  * items from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
-	const workflowDir = projectDir(ctx.cwd);
-	const schemasDirPath = schemasDir(ctx.cwd);
+	let workflowDir: string;
+	let schemasDirPath: string;
+	try {
+		workflowDir = projectDir(ctx.cwd);
+		schemasDirPath = schemasDir(ctx.cwd);
+	} catch (err) {
+		if (err instanceof BootstrapNotFoundError) {
+			ctx.ui.notify(
+				"No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.",
+				"error",
+			);
+			return;
+		}
+		throw err;
+	}
 
 	if (!fs.existsSync(schemasDirPath)) {
-		// User-facing display string keeps the legacy `.project/schemas/` literal —
-		// the resolver-cascade is invisible to users at the prompt surface.
-		ctx.ui.notify(`No .project/schemas/ directory found.`, "warning");
+		// Reachable only when the bootstrap pointer is present but the substrate
+		// dir's schemas/ subdirectory is absent (e.g. partial init). Display
+		// string references the resolved schemas path rather than the literal
+		// `.project/schemas/` so non-default substrate dirs surface accurately.
+		ctx.ui.notify(`No schemas directory found at ${schemasDirPath}.`, "warning");
 		return;
 	}
 
@@ -290,14 +305,24 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 	const result: InstallResult = { installed: [], updated: [], skipped: [], notFound: [] };
 	const overwrite = options.overwrite === true;
 
-	const config = loadConfig(cwd);
-	if (!config) {
-		result.error = "No .project/config.json — run /project init first.";
-		return result;
+	let config: ConfigBlock | null;
+	let destRoot: string;
+	try {
+		config = loadConfig(cwd);
+		if (!config) {
+			result.error = "No config.json found in substrate dir — run /project init first.";
+			return result;
+		}
+		destRoot = projectRoot(cwd);
+	} catch (err) {
+		if (err instanceof BootstrapNotFoundError) {
+			result.error = "No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.";
+			return result;
+		}
+		throw err;
 	}
 
 	const registryRoot = path.resolve(import.meta.dirname, "..", "registry");
-	const destRoot = projectRoot(cwd);
 	// destRoot is resolver-aware via projectRoot(cwd) — it already cascades
 	// through resolveContextDir under the hood (project-context.ts:projectRoot
 	// fallback). SCHEMAS_DIR is composed as a bare segment off that

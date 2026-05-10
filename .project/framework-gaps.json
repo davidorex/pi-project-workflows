@@ -3,14 +3,14 @@
     {
       "id": "FGAP-001",
       "title": "Hierarchical / nested block storage",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-project",
       "layer": "L3",
       "description": "pi-project's block-api assumes one flat JSON file per block. There is no way to express a nested decomposition like roadmap → milestone → epic → story → task as a directory tree. Work decomposition must be smuggled into a single flat array with denormalized parent references, which loses scope ownership and forces the global tasks.json to conflate work across all levels.",
       "evidence": [
         {
-          "file": "packages/pi-project/src/block-api.ts",
+          "file": "packages/pi-context/src/block-api.ts",
           "reference": "readBlock / writeBlock / appendToBlock all take a simple block name and resolve to .project/<name>.json — no subpath support"
         },
         {
@@ -18,25 +18,25 @@
           "reference": "current tasks block is a flat array with integer phase references; no milestone or epic hierarchy"
         },
         {
-          "file": "packages/pi-project/src/project-dir.ts",
+          "file": "packages/pi-context/src/project-dir.ts",
           "reference": "PROJECT_DIR / SCHEMAS_DIR constants assume flat directory layout"
         },
         {
-          "file": "packages/pi-project/src/project-sdk.ts",
+          "file": "packages/pi-context/src/project-sdk.ts",
           "reference": "buildIdIndex special-cases .project/phases/ — synthesized IDs from 'number'/'name' fields, not top-level 'id'. First of two existing one-off subdirectory walks that FGAP-001 generalizes; resolution shape is 'generalize two existing walks' rather than 'introduce subdirectory recursion'."
         },
         {
-          "file": "packages/pi-project/src/block-api.ts",
+          "file": "packages/pi-context/src/block-api.ts",
           "reference": "readBlockDir(cwd, subdir) reads all *.json from .project/<subdir>/ — second existing one-off subdirectory walk. Phases-pattern coexistence rule: no .project/phases.json file exists alongside the .project/phases/ directory; partition replaces flat file in current precedent."
         },
         {
-          "file": "packages/pi-project/src/project-sdk.ts",
+          "file": "packages/pi-context/src/project-sdk.ts",
           "reference": "Phase-files use synthesized IDs from non-'id' fields. Generalizing the subdirectory-walk pattern requires deciding whether per-subdirectory ID derivation rules are configurable like phases or whether subpath block files always carry top-level 'id'."
         }
       ],
       "impact": "The L3 Work layer from the Muni five-layer model cannot be natively represented. Features like the consumer migration arc must live as single flat JSON files per feature, with stories and tasks embedded as arrays — preventing per-task atomic read/write and forcing whole-feature reads for any single-task operation.\n\nPer-file proper-lockfile contention: every write to features.json today blocks every other write to features.json. Partition-per-file unblocks parallel writes to siblings — concurrency improvement is an immediately-enabled effect of FGAP-001's resolution.\n\nMigration scope: per analysis/2026-05-01-github-issues-migration-inventory.md, nine blocks have issue-tracker shape and benefit from partitioning — framework-gaps, issues, tasks, spec-reviews, features, requirements, verification, audit, layer-plans. Single-block treatment understates the work envelope.",
       "canonical_vocabulary": "hierarchical work breakdown structure (WBS); nested aggregate storage",
-      "proposed_resolution": "Extend block-api to support subpath block names (e.g. readBlock('features/consumer-migration')). Add nested-directory discovery in availableBlocks. Schemas at the subdirectory root apply to all files underneath. Authority for partial-tree invalidation belongs to block-validation.ts.\n\nSchema validation atomicity: partition writes implicitly target schema.properties.{arrayKey}.items as the per-file schema. The schema-walk's target object is the array-item subschema, not a separate schema file. Schema authoring contract changes implicitly with this resolution.\n\nBlock-validation rollback: block-validation.ts snapshots .project/*.json before each step and rolls back on failure. Recursion into subdirectories is part of the rollback contract change, not a separate concern.\n\nDefaults disposition: superseded by DEC-0011 (enacted 2026-05-03) — pi-project ships no default schemas or default block files; users install desired schemas via an opt-in mechanism. Bundled defaults retired. The schema-walk semantics change does not propagate via package-shipped defaults.\n\nDEC-0009 enactment update (2026-05-03): closure-table relations are the canonical primitive for hierarchical decomposition. The subpath block-names direction above is superseded — FGAP-001's resolution path is now closure-table-only via a relations.json block kind landing in pi-project. The phases-pattern subdirectory walks remain as legacy exceptions, not the generalized resolution. POC at analysis/poc-degree-zero-lens/ proves the closure-table shape mechanically; production landing requires block-api integration of the new block kind plus SDK consumers (validateRelations, walkDescendants, edgesForLens, groupByLens).",
+      "proposed_resolution": "Extend block-api to support subpath block names (e.g. readBlock('features/consumer-migration')). Add nested-directory discovery in availableBlocks. Schemas at the subdirectory root apply to all files underneath. Authority for partial-tree invalidation belongs to block-validation.ts.\n\nSchema validation atomicity: partition writes implicitly target schema.properties.{arrayKey}.items as the per-file schema. The schema-walk's target object is the array-item subschema, not a separate schema file. Schema authoring contract changes implicitly with this resolution.\n\nBlock-validation rollback: block-validation.ts snapshots .project/*.json before each step and rolls back on failure. Recursion into subdirectories is part of the rollback contract change, not a separate concern.\n\nDefaults disposition: superseded by DEC-0011 (enacted 2026-05-03) — pi-project ships no default schemas or default block files; users install desired schemas via an opt-in mechanism. Bundled defaults retired. The schema-walk semantics change does not propagate via package-shipped defaults.\n\nDEC-0009 enactment update (2026-05-03): closure-table relations are the canonical primitive for hierarchical decomposition. The subpath block-names direction above is superseded — FGAP-001's resolution path is now closure-table-only via a relations.json block kind landing in pi-project. The phases-pattern subdirectory walks remain as legacy exceptions, not the generalized resolution. POC at analysis/poc-degree-zero-lens/ proves the closure-table shape mechanically; production landing requires block-api integration of the new block kind plus SDK consumers (validateRelations, walkDescendants, edgesForLens, groupByLens).\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `d4ec3ce` (Step 2 substrate SDK port — closure-table relations + 5 SDK consumers + relations.schema.json land per DEC-0009 closure-table-only direction). DEC-0009's closure-table-only direction enacted; relations.json + 5 SDK consumers (loadRelations, validateRelations, walkDescendants, edgesForLens, groupByLens) ship in pi-context. Description text above preserves the forensic record of the pre-closure state.",
       "related_features": [
         "FEAT-001"
       ],
@@ -46,7 +46,9 @@
       ],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-6",
-      "created_at": "2026-04-15T00:00:00Z"
+      "created_at": "2026-04-15T00:00:00Z",
+      "closed_by": "agent/step-8.5-orchestrator",
+      "closed_at": "2026-05-09T23:58:13.827Z"
     },
     {
       "id": "FGAP-002",
@@ -87,11 +89,11 @@
       "description": "There is no derived block kind. projectState() does in-memory aggregation but it is not a persisted, addressable, schema-validated block. There is no way to declare 'global issues_view.json is a derived index over per-scope finding registries' or 'open_work_view.json aggregates all non-terminal stories across features'.",
       "evidence": [
         {
-          "file": "packages/pi-project/src/project-sdk.ts",
+          "file": "packages/pi-context/src/project-sdk.ts",
           "reference": "projectState() computes derived metrics at query time but returns in-memory only — no persistence, no addressability, no schema"
         },
         {
-          "file": "packages/pi-project/src/block-api.ts",
+          "file": "packages/pi-context/src/block-api.ts",
           "reference": "only writeable blocks exist; no concept of a read-only derived block"
         }
       ],
@@ -109,7 +111,7 @@
     {
       "id": "FGAP-004",
       "title": "Authorship attestation at write time",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-project",
       "layer": "L4",
@@ -120,7 +122,7 @@
           "reference": "source enum exists here and only here — partial coverage, no other block has equivalent fields"
         },
         {
-          "file": "packages/pi-project/src/block-api.ts",
+          "file": "packages/pi-context/src/block-api.ts",
           "reference": "writeBlock / appendToBlock / updateItemInBlock do not inject authorship metadata"
         },
         {
@@ -130,14 +132,16 @@
       ],
       "impact": "State-machine validation of user-gated transitions (decision enacted, finding decided, feature approved) is structurally impossible. The framework cannot distinguish 'user advanced this' from 'agent advanced this' and so cannot enforce authority matrices. The spec-loop invariant M4 is unenforceable.",
       "canonical_vocabulary": "authorship attestation; written_by attribution; audit trail",
-      "proposed_resolution": "block-api.ts stamps created_by / modified_by / created_at / modified_at on every write, reading writer identity from a DispatchContext parameter. Every block schema adds these as required fields. Cross-block validation can then enforce authority-matrix rules per-transition.",
+      "proposed_resolution": "block-api.ts stamps created_by / modified_by / created_at / modified_at on every write, reading writer identity from a DispatchContext parameter. Every block schema adds these as required fields. Cross-block validation can then enforce authority-matrix rules per-transition.\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `001d11a` (Step 3 DispatchContext + WriterIdentity + stampItem) + `2ed2102` (Step 3.1 per-field schema declaration honoring) + `d24769a` (Step 6.2 upsert attestation pre-merge). DispatchContext + WriterIdentity + per-field-aware stampItem land authorship attestation across all block-api write surfaces; upsert pre-merge preserves created_* across replacement updates. Description text above preserves the forensic record of the pre-closure state.",
       "related_features": [
         "FEAT-001"
       ],
       "related_decisions": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-6",
-      "created_at": "2026-04-15T00:00:00Z"
+      "created_at": "2026-04-15T00:00:00Z",
+      "closed_by": "agent/step-8.5-orchestrator",
+      "closed_at": "2026-05-09T23:58:13.827Z"
     },
     {
       "id": "FGAP-005",
@@ -153,11 +157,11 @@
           "reference": "status enum has open | resolved | deferred but no transitions constraint — any value can overwrite any other on updateItemInBlock"
         },
         {
-          "file": "packages/pi-project/src/schema-validator.ts",
+          "file": "packages/pi-context/src/schema-validator.ts",
           "reference": "AJV draft-07 wrapper with no custom keywords; no before-value inspection at write time"
         },
         {
-          "file": "packages/pi-project/src/block-api.ts",
+          "file": "packages/pi-context/src/block-api.ts",
           "reference": "updateItemInBlock does not pass the prior value to validation, so transition rules cannot be applied even if expressible"
         }
       ],
@@ -175,7 +179,7 @@
     {
       "id": "FGAP-006",
       "title": "Schema versioning and evolution",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-project",
       "layer": "L2",
@@ -196,14 +200,16 @@
       ],
       "impact": "Long-term schema evolution is undefined. Projects that adopted the framework early and never updated their .project/schemas/ drift from projects that adopted later. There is no way for tooling to know what schema version a block conforms to.",
       "canonical_vocabulary": "schema evolution; JSON Schema $id; schema registry; schema versioning",
-      "proposed_resolution": "Add a required $id (URI) and version field on every schema. schema-validator reads version and can apply migration functions. Introduce a schema-migrations registry. Schema composition via $ref becomes the standard way to express shared fields (e.g. a common 'authorship.schema.json' imported by every block schema).",
+      "proposed_resolution": "Add a required $id (URI) and version field on every schema. schema-validator reads version and can apply migration functions. Introduce a schema-migrations registry. Schema composition via $ref becomes the standard way to express shared fields (e.g. a common 'authorship.schema.json' imported by every block schema).\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `899bcc3` (Step 4 6 shared enum schemas + schema-migrations.ts + schema-validator $ref resolution) + `a4e8c9c` (Step 5.1 15 registry schemas $id+version + 3 $ref consolidations). 23 schemas (8 framework + 15 registry) carry $id (pi-context://schemas/<name>) + version: '1.0.0'; schema-migrations.ts ships per-schema migration registry + runMigrations chain; schema-validator pre-registers + resolves $ref. Description text above preserves the forensic record of the pre-closure state.",
       "related_features": [
         "FEAT-001"
       ],
       "related_decisions": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-6",
-      "created_at": "2026-04-15T00:00:00Z"
+      "created_at": "2026-04-15T00:00:00Z",
+      "closed_by": "agent/step-8.5-orchestrator",
+      "closed_at": "2026-05-09T23:58:13.827Z"
     },
     {
       "id": "FGAP-008",
@@ -361,14 +367,14 @@
     {
       "id": "FGAP-011",
       "title": "No canonical write-surface for schema files",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-project",
       "layer": "L2",
       "description": "pi-project's block-api provides typed write-surface for block data (.project/<name>.json) via writeBlock / appendToBlock / updateItemInBlock / appendToNestedArray / updateNestedArrayItem / removeFromBlock / removeFromNestedArray / readBlockDir. No parallel surface exists for schema files (.project/schemas/<name>.schema.json). Every schema modification — adding an enum value, adding a property, restructuring — happens via filesystem-direct Edit, bypassing the write-time-validation pattern block-api enforces for block data. This is a parallel-ungated path relative to the F-006 mitigation pattern: schemas are foundational artifacts of the substrate contract but lack the typed write surface that block files have.",
       "evidence": [
         {
-          "file": "packages/pi-project/src/block-api.ts",
+          "file": "packages/pi-context/src/block-api.ts",
           "reference": "Nine exported write functions all route through blockFilePath() to .project/<name>.json. None target .project/schemas/<name>.schema.json. No writeSchema, addSchemaEnumValue, addSchemaProperty, or equivalent exports."
         },
         {
@@ -382,48 +388,52 @@
       ],
       "impact": "Every schema edit is a manual operation outside the block-api validation pattern. Schema validity (well-formed JSON Schema, AJV-compilable) is unverified at write time. Cross-block invariants — e.g., that an enum-value removal is rejected when existing block items still carry that value — are not enforced. Schemas drift independently of the items they validate. Schema modifications cannot participate in the block-validation snapshot/rollback contract because they happen below the block-api boundary.",
       "canonical_vocabulary": "schema-write surface; meta-validation; schema-as-substrate write contract",
-      "proposed_resolution": "Extend block-api with schema-write functions: writeSchema (full replacement with AJV meta-validation), addSchemaEnumValue (additive enum extension with check that no existing items become invalid), addSchemaProperty (additive property extension with check on required-key handling), removeSchemaEnumValue (with rejection if any existing item still carries the value). All functions perform JSON Schema meta-validation at write time and check that existing block items remain valid under the modified schema. SDK validateProject gains schema-modification atomicity guarantees. Block-validation rollback extends to cover schema files in its snapshot/restore set.",
+      "proposed_resolution": "Extend block-api with schema-write functions: writeSchema (full replacement with AJV meta-validation), addSchemaEnumValue (additive enum extension with check that no existing items become invalid), addSchemaProperty (additive property extension with check on required-key handling), removeSchemaEnumValue (with rejection if any existing item still carries the value). All functions perform JSON Schema meta-validation at write time and check that existing block items remain valid under the modified schema. SDK validateProject gains schema-modification atomicity guarantees. Block-validation rollback extends to cover schema files in its snapshot/restore set.\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `001d11a` (Step 3 schema-write.ts: writeSchema/updateSchema/readSchema with AJV meta-validation) + `523fa96` (Step 6 monitor write-action routing through block-api) + `2160c63` (Step 6.1 typed-file generalization) + `1e68034` (Step 6.3 6 typed-file find-or-merge primitives). schema-write.ts ships writeSchema/updateSchema/readSchema with AJV meta-schema validation; block-api generalized to 16 primitives (8 .project/-targeting wrappers + 8 typed-file primitives operating on arbitrary (filePath, schemaPath) pairs); monitor write-actions route through block-api; zero parallel ungated paths remain. Description text above preserves the forensic record of the pre-closure state.",
       "related_decisions": [],
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-03T00:00:00Z"
+      "created_at": "2026-05-03T00:00:00Z",
+      "closed_by": "agent/step-8.5-orchestrator",
+      "closed_at": "2026-05-09T23:58:13.827Z"
     },
     {
       "id": "FGAP-012",
       "title": "Lens-of-lenses composition — current LensSpec cannot express cross-block aggregation",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-project",
       "layer": "L2",
       "description": "Current LensSpec (packages/pi-project/src/project-context.ts) requires a single string `target` block and a single `relation_type`. There is no shape for a lens that aggregates multiple blocks (issues + decisions + features in one view) or that composes other lenses (a roadmap-shaped aggregation that pulls grouped output from named child lenses). This blocks every roadmap-shape, plan-shape, or any user-facing summary view that needs to span block kinds. The user's stated capability goal — 'LLMs can create roadmaps and plans out of blocks' — cannot be expressed under the current LensSpec without a flat-lens scope reduction (which is mandate-004 violating).",
       "evidence": [
         {
-          "file": "packages/pi-project/src/project-context.ts",
+          "file": "packages/pi-context/src/project-context.ts",
           "reference": "LensSpec interface declares target: string (single block); relation_type: string (single edge label); no field for composing lenses or pulling from multiple blocks."
         },
         {
-          "file": "packages/pi-project/src/lens-view.ts",
+          "file": "packages/pi-context/src/lens-view.ts",
           "reference": "loadLensView reads exactly one block via lens.target; renderLensView emits one heading-per-bin; no codepath for multi-target or lens-id resolution."
         },
         {
-          "file": "packages/pi-project/schemas/config.schema.json",
+          "file": "packages/pi-context/schemas/config.schema.json",
           "reference": "lenses items require target as string; no kind/composition/targets/members fields. additionalProperties: false rejects any extension."
         }
       ],
       "impact": "Every aggregation that spans block kinds requires either (a) a manual-edit flat lens reducing the user's hierarchical design intent (scope reduction), or (b) hand-written prose substitution for what should be a substrate primitive. Until this gap closes, roadmaps, plans, cross-cutting summary views, status rollups across mixed blocks, and any future lens variant (filter, join, etc.) all stall. Forward concern surfaced by the substrate-arc proposal: introducing kind: 'composition' as the first lens-shape variant means subsequent variants (filter, join) will need a discriminated-union schema if not consolidated; FGAP-012's resolution should specify the discriminator field shape so future variants extend cleanly rather than fork.",
       "canonical_vocabulary": "lens composition; cross-block aggregation; discriminated-union lens variant",
-      "proposed_resolution": "Extend LensSpec with kind: 'target' | 'composition' (discriminator), targets: string[] (when composition; pulls items from multiple blocks), members: array of either { lens: <id> } (sub-lens reference) or { from: <block>, where: <field-equality> } (flat selection). config.schema.json oneOf-enforces the kind-discriminated union. resolveComposition(cwd, lens) SDK function recurses sub-lens references with cycle detection (composition_cycle_detected diagnostic). loadLensView dispatches on lens.kind. renderLensView emits per-member subsections for composition lenses. validateRelations gains lens-graph cycle detection on relation_type='lens_member'. Closes the substrate-shape gap that the roadmap/plan substrate proposal demands.",
+      "proposed_resolution": "Extend LensSpec with kind: 'target' | 'composition' (discriminator), targets: string[] (when composition; pulls items from multiple blocks), members: array of either { lens: <id> } (sub-lens reference) or { from: <block>, where: <field-equality> } (flat selection). config.schema.json oneOf-enforces the kind-discriminated union. resolveComposition(cwd, lens) SDK function recurses sub-lens references with cycle detection (composition_cycle_detected diagnostic). loadLensView dispatches on lens.kind. renderLensView emits per-member subsections for composition lenses. validateRelations gains lens-graph cycle detection on relation_type='lens_member'. Closes the substrate-shape gap that the roadmap/plan substrate proposal demands.\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `3625758` (Step 5 lens-view + composition lens dispatch + resolveComposition with cycle detection) — partially closed; 2 residuals filed as FGAP-022 (renderLensView per-member subsections) + FGAP-023 (validateRelations composition cycle detection). LensSpec extended with kind/targets/members; resolveComposition with cycle detection; loadLensView dispatches on lens.kind. Two refinement residuals (renderLensView per-member subsections + validateRelations composition cycle detection) filed as FGAP-022/023 per audit. Description text above preserves the forensic record of the pre-closure state.",
       "related_decisions": [],
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-04T00:00:00Z"
+      "created_at": "2026-05-04T00:00:00Z",
+      "closed_by": "agent/step-8.5-orchestrator",
+      "closed_at": "2026-05-09T23:58:13.827Z"
     },
     {
       "id": "FGAP-013",
       "title": "No canonical status vocabulary registry — status rollup hardcoded in TS, not user-extensible per project",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-project",
       "layer": "L1",
@@ -438,18 +448,20 @@
           "reference": "decisions.status enum: open|enacted|superseded (3-state lifecycle, x-lifecycle metadata)"
         },
         {
-          "file": "packages/pi-project/registry/schemas/tasks.schema.json",
+          "file": "packages/pi-context/registry/schemas/tasks.schema.json",
           "reference": "tasks.status enum: todo|in_progress|completed|cancelled (different vocabulary)"
         }
       ],
       "impact": "Without a canonical mapping at the substrate layer, every consumer that aggregates status across block kinds (status rollup, roadmap phase status, plan status, dashboards) must either ship its own hardcoded mapping (duplicated drift surface) or fall back to per-block reporting (no rollup possible). Per-project status extensions (a project adds a 'queued' status) cannot be onboarded without code change. Sub-gap surfaced by the roadmap/plan substrate proposal that needs first-class substrate handling.",
       "canonical_vocabulary": "status vocabulary registry; status normalization; cross-block status rollup",
-      "proposed_resolution": "Add status_buckets field to config.schema.json: { complete: string[], in_progress: string[], blocked: string[], todo: string[] }. Each bucket lists the per-schema status values that map into it. Per-project extensible — a project adds 'queued' to todo by editing config.json. SDK rollupPhaseStatus / rollupPlanStatus functions read from getProjectContext(cwd).config?.status_buckets with a default mapping (resolved/done/enacted/completed → complete; in_progress/active → in_progress; etc.) if absent. Validator emits status_unknown_value warnings for items whose status doesn't appear in any bucket.",
+      "proposed_resolution": "Add status_buckets field to config.schema.json: { complete: string[], in_progress: string[], blocked: string[], todo: string[] }. Each bucket lists the per-schema status values that map into it. Per-project extensible — a project adds 'queued' to todo by editing config.json. SDK rollupPhaseStatus / rollupPlanStatus functions read from getProjectContext(cwd).config?.status_buckets with a default mapping (resolved/done/enacted/completed → complete; in_progress/active → in_progress; etc.) if absent. Validator emits status_unknown_value warnings for items whose status doesn't appear in any bucket.\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `d4ec3ce` (Step 2 config.status_buckets in ConfigBlock + schema declaration) + `5fe8969` (Step 7 resolveStatusVocabulary merge function in roadmap-plan). ConfigBlock.status_buckets schema field declared; resolveStatusVocabulary merges hardcoded defaults with per-project config.status_buckets override; loadRoadmap consumes via Step 7. Description text above preserves the forensic record of the pre-closure state.",
       "related_decisions": [],
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-04T00:00:00Z"
+      "created_at": "2026-05-04T00:00:00Z",
+      "closed_by": "agent/step-8.5-orchestrator",
+      "closed_at": "2026-05-09T23:58:13.827Z"
     },
     {
       "id": "FGAP-014",
@@ -461,11 +473,11 @@
       "description": "renderLensView, renderRoadmap (proposed), renderPlan (proposed), and any future projection renderer emit complete markdown with no pagination boundary. truncateHead (used by read-block via @mariozechner/pi-coding-agent) is intentionally NOT applied — full markdown is the contract; truncation defeats compositional projection. At small scales (≤10 phases per roadmap, ≤50 items per phase, ≤200 items per plan) this fits comfortably under typical context windows. At larger scales it overflows. The substrate currently has no primitive for: (a) page/section selection (render only phase X of roadmap Y), (b) summary-vs-detail rendering modes, (c) lazy materialization of nested compositions. Affects every aggregation primitive; particularly acute for the proposed roadmap/plan compositions.",
       "evidence": [
         {
-          "file": "packages/pi-project/src/lens-view.ts",
+          "file": "packages/pi-context/src/lens-view.ts",
           "reference": "renderLensView emits all bins + items unconditionally; no pagination params; no summary mode."
         },
         {
-          "file": "packages/pi-project/src/index.ts",
+          "file": "packages/pi-context/src/index.ts",
           "reference": "read-block tool wraps payload in truncateHead per @mariozechner/pi-coding-agent — but lens-view rendering is exempt by design; no equivalent pagination knob exists for renderers."
         }
       ],
@@ -512,7 +524,7 @@
     {
       "id": "FGAP-016",
       "title": "Enum-vocabulary divergence across schemas — every schema declares its own per-field enums with no canonical registry, no shared identity, no display layer",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-project",
       "layer": "L1",
       "description": "Across .project/schemas/*.schema.json (and packages/pi-project/registry/schemas/* mirrors), every block kind declares its own enum vocabulary for conceptually-shared dimensions. The pattern recurs at multiple field surfaces:\n\nPriority/severity: domain [high,medium,low]; features [critical,major,minor,trivial]; framework-gaps [P0,P1,P2,P3]; issues [low,medium,high,critical]; spec-reviews [critical,major,minor,trivial]; state [low,medium,high,critical]. Five distinct vocabularies for the same dimension; no canonical mapping; no display-layer indirection.\n\nStatus/lifecycle: decisions [open,enacted,superseded]; features (multiple sub-fields) [proposed,approved,in-progress,in-review,complete,blocked,cancelled] / [todo,in-progress,in-review,done,blocked]; framework-gaps [identified,accepted,in-progress,closed,wontfix]; inventory [planned,in-progress,completed]; issues [open,resolved,deferred]; layer-plans [draft,proposed,decided,in-progress,complete,abandoned] / [pending,in-progress,complete,blocked]; phase [planned,in-progress,completed]; project [inception,planning,development,maintenance,complete]; requirements [proposed,accepted,deferred,implemented,verified]; research [planned,in-progress,complete,stale,superseded,revised]; spec-reviews [not-started,in-progress,complete,abandoned]; tasks [planned,in-progress,completed,blocked,cancelled]; verification [passed,failed,partial,skipped] / [passed,failed,skipped]. Fourteen-plus distinct lifecycle vocabularies. FGAP-013 captures one slice of this (cross-block aggregation requires normalization); FGAP-016 is the broader structural form.\n\nSeverity-level: audit / conformance-reference / conventions all use [error,warning,info] — a rare case of de-facto convergence with no enforcing registry; addition of a fourth schema would silently re-diverge.\n\nVerification-method: audit [command,grep,inspect]; conformance-reference [grep,command,ast,inspect]; phase [command,inspect,human]; verification [command,inspect,test]; conventions [lint,test,review,manual]. Five vocabularies for what is conceptually method-of-checking.\n\nSource/authorship: issues [human,agent,monitor,workflow]; requirements [human,agent,analysis]. Two vocabularies for what records-an-item.\n\nLayer: features / framework-gaps / research all use [L1,L2,L3,L4,L5] — convergent by editorial discipline, not by registry.\n\nThe structural pattern: every enum is hardcoded in its schema file as a JSON Schema enum keyword, with no  to a shared fragment, no canonical identity layer, no display-name indirection. Renaming a value (e.g. priority high to urgent) requires editing every schema that uses it plus migrating data plus updating every consumer. The POC A identity-display split, the POC C two-phase token budget per status_buckets demo, and the POC E config.relation_types[] pattern all demonstrate the closure shape: opaque canonical ids in one config-driven registry per dimension, display labels per consumer, schema  to the registry rather than embedded enums.",
@@ -542,7 +554,7 @@
           "reference": "two distinct verification-result enums in same file ([passed,failed,partial,skipped] vs [passed,failed,skipped])"
         },
         {
-          "file": "packages/pi-project/src/roadmap-plan.ts",
+          "file": "packages/pi-context/src/roadmap-plan.ts",
           "reference": "STATUS_VOCABULARY hardcoded TS table that normalizes a subset of these enums for cross-block rollup (FGAP-013 mitigation, not closure)"
         },
         {
@@ -555,7 +567,7 @@
         }
       ],
       "impact": "Every cross-block aggregation, rollup, or projection must hand-normalize between vocabularies (or fail to compose). Every rename touches every schema-and-consumer that uses the value (display-name change requires data migration). New block kinds inherit the fragmentation pressure: a designer adding a new kind picks an enum vocabulary in isolation, which either silently diverges from siblings (most current cases) or only by editorial vigilance converges (the L1..L5 layer convergence is the rare positive case, achieved without any enforcing surface). Under pi-context the same authoring antipattern that produced the PLAN- prefix collision (issue-089) and the FGAP-013 STATUS_VOCABULARY hardcoding extends to every enum dimension — without a registry, every new block kind is a fresh opportunity for divergence. The lens reframe (PM is a lens upon memory) presumes vocabulary substrates; FGAP-016 names the structural barrier to that presumption.",
-      "proposed_resolution": "Introduce config-level vocabulary registries: config.priority_buckets[], config.status_buckets[] (FGAP-013), config.severity_levels[], config.verification_methods[], config.source_kinds[], config.layers[] (already adjacent in scope to layer-plans semantic). Each entry: canonical_id (opaque, immutable), display_name (mutable), description, category-or-ordering metadata where applicable. Schemas reference registries via $ref to a shared schema derived from config rather than embedded JSON-Schema enum literals. Schema-validator resolves the registry at validation time and emits per-registry-mismatch diagnostics. Rename-via-config-edit per POC A. Per-consumer display per POC C/E pattern. Couples to FGAP-006 (schema versioning / $ref composition / migration story) since this requires schema composition the current schemas do not use. Couples to FGAP-013 (the status-vocabulary slice). Couples to FGAP-011 (canonical schema-write surface, since registry edits today require direct fs Edit on schema files).",
+      "proposed_resolution": "Introduce config-level vocabulary registries: config.priority_buckets[], config.status_buckets[] (FGAP-013), config.severity_levels[], config.verification_methods[], config.source_kinds[], config.layers[] (already adjacent in scope to layer-plans semantic). Each entry: canonical_id (opaque, immutable), display_name (mutable), description, category-or-ordering metadata where applicable. Schemas reference registries via $ref to a shared schema derived from config rather than embedded JSON-Schema enum literals. Schema-validator resolves the registry at validation time and emits per-registry-mismatch diagnostics. Rename-via-config-edit per POC A. Per-consumer display per POC C/E pattern. Couples to FGAP-006 (schema versioning / $ref composition / migration story) since this requires schema composition the current schemas do not use. Couples to FGAP-013 (the status-vocabulary slice). Couples to FGAP-011 (canonical schema-write surface, since registry edits today require direct fs Edit on schema files).\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `899bcc3` (Step 4 6 shared enum schemas authored under packages/pi-context/schemas/ with $id pi-context://schemas/<name>) + `a4e8c9c` (Step 5.1 3 $ref consolidations: issues.source, audit.severity, conformance-reference.severity) — surface closed; residual reconciliation filed as FGAP-021. 6 shared enum schemas (priority/status/severity/source/layer/verification-method) authored at packages/pi-context/schemas/ with $id; 3 vocabulary alignments consolidated via $ref (issues.source, audit.severity, conformance-reference.severity); residual unreconciled vocabularies filed as FGAP-021. Description text above preserves the forensic record of the pre-closure state.",
       "canonical_vocabulary": "enum schema composition; shared-vocabulary registry; canonical-identity-with-display-layer; JSON Schema $ref",
       "related_decisions": [
         "DEC-0013"
@@ -565,7 +577,9 @@
       ],
       "priority": "P1",
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-06T22:22:49.154Z"
+      "created_at": "2026-05-06T22:22:49.154Z",
+      "closed_by": "agent/step-8.5-orchestrator",
+      "closed_at": "2026-05-09T23:58:13.827Z"
     },
     {
       "id": "FGAP-017",

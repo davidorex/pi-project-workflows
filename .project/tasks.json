@@ -1,3 +1,123 @@
 {
-	"tasks": []
+  "tasks": [
+    {
+      "id": "TASK-021",
+      "description": "FGAP-026 closure phase 1 (Step 8.7.1; Claude Code Task #21): Resolver foundation + 2 discovery tools (read-config, read-schema) + atomic safety .pi-context.json write",
+      "acceptance_criteria": [
+        "resolveContextDir(cwd) function in project-dir.ts replacing PROJECT_DIR/SCHEMAS_DIR constants",
+        "bootstrap.schema.json with $id pi-context://schemas/bootstrap + version 1.0.0",
+        "block-api + project-context cascade through resolver",
+        "read-config + read-schema tools registered",
+        ".pi-context.json written for this repo containing {contextDir: '.project'}"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-022",
+      "description": "FGAP-026 closure phase 2 (Step 8.7.2; Claude Code Task #22): High-impact query tools — filter-block-items, resolve-items-by-id (bulk), walk-ancestors (FGAP-029 partial), walk-by-relation, find-references",
+      "acceptance_criteria": [
+        "filter-block-items collapses N-call serial probes to 1 call",
+        "resolve-items-by-id batch-resolves",
+        "walkAncestors JS export + walk-ancestors tool symmetric to walkDescendants",
+        "find-references cross-block reverse-index"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-023",
+      "description": "FGAP-026 closure phase 3 (Step 8.7.3; Claude Code Task #23): Work-unit context composition substrate per DEC-0017 — context contract substrate (FGAP-030) + gather-execution-context primitive (FGAP-031)",
+      "acceptance_criteria": [
+        "context contract substrate in place (block kind OR composition-lens encoding; closure picks)",
+        "gather-execution-context(unitId, kind) JS export + tool wrapper",
+        "bidirectional traversal per declared relation_types in contract",
+        "ContextBundle structure returned as one tool call",
+        "FGAP-030 + FGAP-031 closed; FGAP-029 fully closed"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-024",
+      "description": "FGAP-026 closure phase 4 (Step 8.7.4; Claude Code Task #24): Workflow-execute + dispatch tools — main LLM's path to bash/read/write under DEC-0014 via JIT-agent dispatch through workflow steps",
+      "acceptance_criteria": [
+        "workflow-execute(name, params) tool registered",
+        "workflow-list + workflow-status tools registered",
+        "subcommand-only /workflow surfaces per audit get tool wrappers",
+        "main LLM can dispatch a workflow that runs npm run build via JIT-agent"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-025",
+      "description": "FGAP-026 closure phase 5 (Step 8.7.5; Claude Code Task #25): Arc-tracking blocks authored as dogfood substrate per FGAP-028 — config + relations + roadmap + phase + (extend tasks.json) + context-contracts for THIS REPO",
+      "acceptance_criteria": [
+        "config.json declares relation_types[] including DEC-0017 work-unit-relation kinds + lenses",
+        "relations.json with phase_depends_on + per-task constraint edges per DEC-0017",
+        "roadmap.json with ROADMAP-001 referencing PHASE-006..010",
+        "phase.json with PHASE-006..010 entries",
+        "tasks.json extended with phase references via update-block-item (TASK-021..030 entries already authored pre-Phase-5; Phase 5 adds phase linkage via relations.json edges per DEC-0013/0017)",
+        "context-contract entries per work-unit-kind",
+        "gather-execution-context returns valid bundle for representative arc-tracking task"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-026",
+      "description": "FGAP-026 closure phase 6 (Step 8.7.6; Claude Code Task #26): Surface rename + context-* tools + context-init/install/migrate",
+      "acceptance_criteria": [
+        "subcommand /project → /context",
+        "pi tool names project-* → context-* (15+ tools)",
+        "context-init prompt-required for dirName per DEC-0015",
+        "context-install wraps installProject",
+        "context-migrate(newName) atomic dir-rename + pointer-update + config.root-update; body authored not stub"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-027",
+      "description": "FGAP-026 closure phase 7 (Step 8.7.7; Claude Code Task #27): Cross-package cascade + FGAP-032 item-level contextBlocks selectivity in pi-jit-agents",
+      "acceptance_criteria": [
+        "pi-jit-agents agent-spec/template/compile cascade through resolver",
+        "AgentSpec.contextBlocks gather_for_unit shape; bundle injection as _<name>_bundle template variable",
+        "pi-workflows path-construction sites cascade",
+        "pi-behavior-monitors block resolution cascade",
+        "zero .project/ literals in any production source per grep"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-028",
+      "description": "FGAP-026 closure phase 8 (Step 8.7.8; Claude Code Task #28): Test-fixture cascade — all setup helpers write .pi-context.json per-tmpdir",
+      "acceptance_criteria": [
+        "setupWorkflowDir / setupSchema / makeTmpDir helpers write .pi-context.json",
+        "tests cascade through resolver; counts unchanged 390/151/826/157, 0-fail"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-029",
+      "description": "FGAP-026 closure phase 9 (Step 8.7.9; Claude Code Task #29): Documentation refresh + skills regen + 4-canon binding statements (DEC-0014/0015/0016/0017)",
+      "acceptance_criteria": [
+        "CLAUDE.md / READMEs / skill-narratives reflect post-rebuild surface",
+        "DEC-0015 9th consequence binding (dual-nature note) in code comments + docs",
+        "DEC-0017 surface documented (gather-execution-context + context-contract + per-unit-kind bundle semantics)",
+        "DEC-0016 binding statement in CLAUDE.md",
+        "npm run skills regenerates SKILL.md outputs"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "TASK-030",
+      "description": "FGAP-026 closure phase 10 LAST (Step 8.7.10; Claude Code Task #30): Migrate this repo's .project/ → user-chosen dir + final FGAP-028 dogfood-dispatch dry-run",
+      "acceptance_criteria": [
+        "context-migrate run with prompt for user's chosen dir",
+        ".project/ → <user-chosen>/ rename atomic with .pi-context.json + config.root update",
+        "arc-tracking blocks move with substrate",
+        "all substrate operations work post-migration via gather-execution-context check",
+        "final dogfood-dispatch dry-run passes (FGAP-028 gate); failures back-loop into arc as gap closures",
+        "FGAP-026 transitions to closed with closed_by = closing commit composition",
+        "Task #11 (Step 9 adversarial audit) unblocked; subsequently Task #12 (Step 10 release)"
+      ],
+      "status": "planned"
+    }
+  ]
 }

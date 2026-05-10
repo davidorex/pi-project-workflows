@@ -839,6 +839,44 @@
       "related_issues": [],
       "created_by": "agent/post-step-8-audit-orchestrator",
       "created_at": "2026-05-09T23:03:46.282Z"
+    },
+    {
+      "id": "FGAP-026",
+      "title": "Substrate bootstrap hardcodes .project/ — config-driven-from-line-1 claim unrealized at bootstrap edge",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "Step 2 substrate SDK port (commit d4ec3ce) commit message claims 'config-driven vocabulary registries from line 1'. ConfigBlock declares a `root` field; getProjectContext / loadConfig / lens-view / roadmap-plan all consume config.root for substrate operations. But the bootstrap edge — WHERE pi-context looks for config.json before it can read config.root — is hardcoded to `<cwd>/.project/config.json` via PROJECT_DIR + SCHEMAS_DIR constants in packages/pi-context/src/project-dir.ts. Every block-api primitive composes blockFilePath(cwd, blockName) = path.join(cwd, '.project', `${blockName}.json`); blockSchemaPath similarly. config.root is read AFTER bootstrap; it cannot relocate the bootstrap dir itself. Result: user cannot choose the substrate dir name. The 'config is the source of truth' substrate principle is structurally undelivered — config.root only relocates substrate state INSIDE the hardcoded `.project/` location, not the location itself.\n\nSecondary: subcommand surface is `/project init`, `/project install`, `/project view`, etc. — package was renamed pi-project → pi-context at Step 1 but command surface kept the old `/project` namespace. The command name implies `.project/` is the dir; the package implies `/context`. Both contradict config.root being the source of truth.\n\nLLM rationalization in HANDOFF.md called this a 'Bootstrap exemption: config.json + relations.json continue at <cwd>/.project/' — that framing is LLM hedging, not a design decision. The exemption was never authored by user direction; it post-hoc justifies an incomplete fix as if it were deliberate.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/project-dir.ts",
+          "reference": "PROJECT_DIR = '.project' + SCHEMAS_DIR = 'schemas' constants. Single point where the substrate dir name is hardcoded."
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "blockFilePath(cwd, blockName) and blockSchemaPath(cwd, blockName) compose against PROJECT_DIR — every block-api primitive (16 of them post-Step-6.3) inherits the hardcode via these helpers."
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "PROJECT_SUBCOMMANDS register under '/project' namespace (init, install, view, lens-curate, roadmap-list/view/validate). Package renamed to pi-context at Step 1 but command surface kept '/project'."
+        },
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "ConfigBlock.root field declared but loadConfig itself reads from path.join(cwd, PROJECT_DIR, 'config.json') — root field can describe the substrate dir but cannot relocate WHERE config is found."
+        },
+        {
+          "file": "/Users/david/.claude/projects/-Users-david-Projects-workflowsPiExtension/memory/HANDOFF.md",
+          "reference": "HANDOFF text 'Bootstrap exemption: config.json + relations.json continue at <cwd>/.project/' frames the hardcode as design when it is LLM rationalization of unaddressed work."
+        }
+      ],
+      "impact": "Substrate-arc thesis structurally undelivered at the bootstrap edge. User cannot pick a substrate dir name; config.root indirection is cosmetic (relocates blocks within a hardcoded outer dir). Onboarding UX for new users (or LLMs) requires accepting `.project/` regardless of project conventions. Other consumers (pi-jit-agents, pi-workflows, pi-behavior-monitors) inherit the hardcode via block-api imports. Multi-substrate scenarios (a repo wanting two parallel substrates) impossible. The 'config-driven from line 1' commit-message claim creates a credibility gap with the actual code.",
+      "proposed_resolution": "Replace PROJECT_DIR constant with a per-cwd resolver `resolveContextDir(cwd): string` that reads a bootstrap pointer (e.g. `<cwd>/.pi-context-root` plain-text file containing the dir name) with a default fallback to `.context/` (matches package name; backward-compatible by writing `.pi-context-root` containing `.project` for legacy repos). Update blockFilePath / blockSchemaPath in block-api.ts to compose against the resolver. Update loadConfig in project-context.ts to find config.json at `<cwd>/<resolveContextDir(cwd)>/config.json`. Cascade through pi-jit-agents / pi-workflows / pi-behavior-monitors path-construction sites. Rename `/project` subcommand surface to `/context` to match package name + reflect that the dir is config-driven, not name-bound. New `/context init [dir-name]` subcommand: arg-driven OR prompt-driven; creates `<dir-name>/config.json` with root: '<dir-name>' AND writes `<cwd>/.pi-context-root` containing the dir name. Migration ceremony for existing repos using `.project/`: `pi context migrate` writes `.pi-context-root` containing `.project` (zero-downtime; substrate stays where it is, just bootstrap pointer added). Tool-name rename (`project-status` → `context-status` etc.) is a separate decision; user direction needed.",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8.6-orchestrator",
+      "created_at": "2026-05-10T01:22:24.605Z"
     }
   ]
 }

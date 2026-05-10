@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { ErrorObject } from "ajv";
 import _Ajv from "ajv";
 import _addFormats from "ajv-formats";
+import { schemaPath as schemaPathHelper } from "./project-dir.js";
 import { type MigrationRegistry, runMigrations } from "./schema-migrations.js";
 
 // Node16 module resolution + CJS interop: default import is the module namespace
@@ -206,7 +207,7 @@ export function validateBlockWithMigration(
 	data: unknown,
 	registry?: MigrationRegistry,
 ): unknown {
-	const schemaPath = path.join(cwd, ".project", "schemas", `${schemaName}.schema.json`);
+	const schemaPath = schemaPathHelper(cwd, schemaName);
 	if (!fs.existsSync(schemaPath)) {
 		throw new Error(`validateBlockWithMigration: schema file not found at ${schemaPath}`);
 	}

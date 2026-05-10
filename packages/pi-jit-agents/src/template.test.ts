@@ -3,10 +3,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.js";
 
 function tmpDir(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "jit-template-test-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jit-template-test-"));
+	writeBootstrapPointer(dir, ".project");
+	return dir;
 }
 
 describe("createTemplateEnv", () => {

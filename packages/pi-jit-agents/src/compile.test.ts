@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { parseAgentYaml } from "./agent-spec.js";
 import { compileAgent } from "./compile.js";
 import { AgentCompileError } from "./errors.js";
@@ -15,7 +16,9 @@ const FIXTURES_DIR = path.resolve(import.meta.dirname, "..", "test-fixtures");
 const FIXTURE_AGENTS_DIR = path.join(FIXTURES_DIR, "agents");
 
 function tmpDir(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "jit-compile-test-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jit-compile-test-"));
+	writeBootstrapPointer(dir, ".project");
+	return dir;
 }
 
 describe("compileAgent", () => {

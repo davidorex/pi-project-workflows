@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { AgentNotFoundError, AgentParseError } from "./errors.js";
 
@@ -10,7 +11,9 @@ const FIXTURES_DIR = path.resolve(import.meta.dirname, "..", "test-fixtures");
 const FIXTURE_AGENTS_DIR = path.join(FIXTURES_DIR, "agents");
 
 function tmpProject(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "jit-agent-test-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jit-agent-test-"));
+	writeBootstrapPointer(dir, ".project");
+	return dir;
 }
 
 function writeAgent(dir: string, name: string, content: string): string {

@@ -647,7 +647,8 @@
         "Migration ceremony for existing `.project/`-using repos (currently this repo): `pi context migrate` renames `.project/` → `<user-chosen-name>/` (or accepts a `--keep .project` flag to preserve location while writing the bootstrap pointer). Default = rename to user-chosen.",
         "All future Pi-runtime tooling outside pi-context (pi-jit-agents contextBlocks injection, pi-workflows substrate reads, pi-behavior-monitors block writes) imports the resolver from pi-context; no parallel resolution logic in any package.",
         "The HANDOFF.md 'Bootstrap exemption: config.json + relations.json continue at <cwd>/.project/' line that surfaced FGAP-026 as LLM hedging is retired by this decision — there is no exemption; bootstrap is itself config-driven via the pointer mechanism.",
-        "DEC-0014 (harness-confined main LLM) gains structural backing: under harness confinement the main LLM cannot work around a hardcoded path via bash/cd/cat fallback, so DEC-0015 is the only mechanism enabling user-chosen substrate locations."
+        "DEC-0014 (harness-confined main LLM) gains structural backing: under harness confinement the main LLM cannot work around a hardcoded path via bash/cd/cat fallback, so DEC-0015 is the only mechanism enabling user-chosen substrate locations.",
+        "Documentation discipline (binding for all phases of FGAP-026 closure + all future tool/primitive additions): the framework-side config-mutability + user-content-prose-staleness dual-nature MUST be surfaced in EVERY documentation layer touching substrate-location: (a) code comments / docstrings at resolveContextDir, context-init, context-migrate, .pi-context.json schema; (b) CLAUDE.md project conventions; (c) root + per-package READMEs; (d) skill-narrative.md files (auto-loaded into LLM substrate consumers via SKILL.md regeneration); (e) any future tool that touches substrate-location resolution. The note states: framework-side rename is parameter-update with zero downstream breakage by design (context-migrate atomically renames dir + updates pointer + updates config.root); user-authored block content MAY contain hardcoded substrate-dir references in prose fields which the framework cannot detect or auto-rewrite — convention recommendation: prefer relative phrasing ('see decisions block entry X') over hardcoded paths ('.context/decisions.json line 47'). Filed as FGAP-027 (P3) for systematic tracking."
       ],
       "options_considered": [
         {
@@ -662,7 +663,8 @@
         }
       ],
       "related_gaps": [
-        "FGAP-026"
+        "FGAP-026",
+        "FGAP-027"
       ],
       "references": [
         {

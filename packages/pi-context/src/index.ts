@@ -33,12 +33,7 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
-import {
-	projectDir as resolveProjectDir,
-	schemasDir as resolveSchemasDir,
-	SCHEMAS_DIR,
-	writeBootstrapPointer,
-} from "./project-dir.js";
+import { projectDir, SCHEMAS_DIR, schemasDir, writeBootstrapPointer } from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { checkForUpdates } from "./update-check.js";
@@ -132,10 +127,10 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
  * items from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
-	const workflowDir = resolveProjectDir(ctx.cwd);
-	const schemasDir = resolveSchemasDir(ctx.cwd);
+	const workflowDir = projectDir(ctx.cwd);
+	const schemasDirPath = schemasDir(ctx.cwd);
 
-	if (!fs.existsSync(schemasDir)) {
+	if (!fs.existsSync(schemasDirPath)) {
 		// User-facing display string keeps the legacy `.project/schemas/` literal —
 		// the resolver-cascade is invisible to users at the prompt surface.
 		ctx.ui.notify(`No .project/schemas/ directory found.`, "warning");
@@ -208,7 +203,7 @@ ${blockInfo.join("\n\n")}
  */
 function initProject(cwd: string): { created: string[]; skipped: string[] } {
 	// FIRST action — write the `.pi-context.json` bootstrap pointer so every
-	// subsequent path-builder call (resolveProjectDir / resolveSchemasDir)
+	// subsequent path-builder call (projectDir / schemasDir)
 	// resolves through the freshly-written pointer rather than throwing
 	// BootstrapNotFoundError. Default substrate-dir name is `.project` (the
 	// legacy convention); future `/context init` ceremony will prompt the
@@ -219,9 +214,9 @@ function initProject(cwd: string): { created: string[]; skipped: string[] } {
 		writeBootstrapPointer(cwd, ".project");
 	}
 
-	const projectDir = resolveProjectDir(cwd);
-	const schemasDir = resolveSchemasDir(cwd);
-	const phasesDir = path.join(projectDir, "phases");
+	const projectDirPath = projectDir(cwd);
+	const schemasDirPath = schemasDir(cwd);
+	const phasesDir = path.join(projectDirPath, "phases");
 
 	const defaultsDir = path.resolve(import.meta.dirname, "..", "defaults");
 	const defaultSchemasDir = path.join(defaultsDir, "schemas");
@@ -231,7 +226,7 @@ function initProject(cwd: string): { created: string[]; skipped: string[] } {
 	const skipped: string[] = [];
 
 	// Create directories
-	for (const dir of [projectDir, schemasDir, phasesDir]) {
+	for (const dir of [projectDirPath, schemasDirPath, phasesDir]) {
 		if (!fs.existsSync(dir)) {
 			fs.mkdirSync(dir, { recursive: true });
 			created.push(`${path.relative(cwd, dir)}/`);
@@ -242,7 +237,7 @@ function initProject(cwd: string): { created: string[]; skipped: string[] } {
 	// (cosmetic; user-facing path display).
 	if (fs.existsSync(defaultSchemasDir)) {
 		for (const file of fs.readdirSync(defaultSchemasDir)) {
-			const dest = path.join(schemasDir, file);
+			const dest = path.join(schemasDirPath, file);
 			if (fs.existsSync(dest)) {
 				skipped.push(`schemas/${file}`);
 			} else {
@@ -255,7 +250,7 @@ function initProject(cwd: string): { created: string[]; skipped: string[] } {
 	// Create default block files
 	if (fs.existsSync(defaultBlocksDir)) {
 		for (const file of fs.readdirSync(defaultBlocksDir)) {
-			const dest = path.join(projectDir, file);
+			const dest = path.join(projectDirPath, file);
 			if (fs.existsSync(dest)) {
 				skipped.push(file);
 			} else {

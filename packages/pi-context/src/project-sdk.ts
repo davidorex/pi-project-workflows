@@ -10,7 +10,7 @@ import path from "node:path";
 import { readBlock, updateItemInBlock } from "./block-api.js";
 import { getLensValidators } from "./lens-validator.js";
 import { type ConfigBlock, loadConfig } from "./project-context.js";
-import { projectDir, schemaPath as resolveSchemaPath, schemasDir as resolveSchemasDir } from "./project-dir.js";
+import { projectDir, schemaPath, schemasDir } from "./project-dir.js";
 
 // Re-export substrate SDK so consumers can keep importing through project-sdk
 // during the migration arc.
@@ -51,14 +51,14 @@ export interface BlockInfo {
 
 export function availableBlocks(cwd: string): BlockInfo[] {
 	const workflowDir = projectDir(cwd);
-	const schemasDir = resolveSchemasDir(cwd);
+	const schemasDirPath = schemasDir(cwd);
 	if (!fs.existsSync(workflowDir)) return [];
 
 	const blocks: BlockInfo[] = [];
 	for (const file of fs.readdirSync(workflowDir)) {
 		if (!file.endsWith(".json")) continue;
 		const name = file.replace(".json", "");
-		const hasSchema = fs.existsSync(path.join(schemasDir, `${name}.schema.json`));
+		const hasSchema = fs.existsSync(path.join(schemasDirPath, `${name}.schema.json`));
 		blocks.push({ name, hasSchema });
 	}
 	return blocks.sort((a, b) => a.name.localeCompare(b.name));
@@ -66,11 +66,11 @@ export function availableBlocks(cwd: string): BlockInfo[] {
 
 /**
  * Discover schemas in the substrate dir's `schemas/` subdirectory (resolved
- * via `resolveSchemasDir(cwd)` per DEC-0015). Returns sorted list of
+ * via `schemasDir(cwd)` per DEC-0015). Returns sorted list of
  * absolute paths to .schema.json files.
  */
 export function availableSchemas(cwd: string): string[] {
-	const dir = resolveSchemasDir(cwd);
+	const dir = schemasDir(cwd);
 	if (!fs.existsSync(dir)) return [];
 	const schemas: string[] = [];
 	for (const file of fs.readdirSync(dir)) {
@@ -83,23 +83,23 @@ export function availableSchemas(cwd: string): string[] {
 
 /**
  * Discover blocks with array properties by scanning the substrate dir's
- * `schemas/` subdirectory (resolved via `resolveSchemasDir(cwd)` per
+ * `schemas/` subdirectory (resolved via `schemasDir(cwd)` per
  * DEC-0015) for schemas whose root type has at least one array property.
  * Returns block name, first array key, and schema path for each.
  */
 export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayKey: string; schemaPath: string }> {
-	const schemasDir = resolveSchemasDir(cwd);
-	if (!fs.existsSync(schemasDir)) return [];
+	const schemasDirPath = schemasDir(cwd);
+	if (!fs.existsSync(schemasDirPath)) return [];
 	const results: Array<{ block: string; arrayKey: string; schemaPath: string }> = [];
-	for (const file of fs.readdirSync(schemasDir)) {
+	for (const file of fs.readdirSync(schemasDirPath)) {
 		if (!file.endsWith(".schema.json")) continue;
 		const blockName = file.replace(".schema.json", "");
 		try {
-			const schema = JSON.parse(fs.readFileSync(path.join(schemasDir, file), "utf-8"));
+			const schema = JSON.parse(fs.readFileSync(path.join(schemasDirPath, file), "utf-8"));
 			if (schema.properties) {
 				for (const [key, prop] of Object.entries(schema.properties)) {
 					if ((prop as Record<string, unknown>).type === "array") {
-						results.push({ block: blockName, arrayKey: key, schemaPath: path.join(schemasDir, file) });
+						results.push({ block: blockName, arrayKey: key, schemaPath: path.join(schemasDirPath, file) });
 						break; // first array property
 					}
 				}
@@ -150,9 +150,9 @@ export interface SchemaInfo {
  * Returns null if the schema file doesn't exist or is unparseable.
  */
 export function schemaInfo(cwd: string, schemaName: string): SchemaInfo | null {
-	const schemaPath = resolveSchemaPath(cwd, schemaName);
+	const schemaPathStr = schemaPath(cwd, schemaName);
 	try {
-		const raw = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
+		const raw = JSON.parse(fs.readFileSync(schemaPathStr, "utf-8")) as Record<string, unknown>;
 		const title = String(raw.title ?? schemaName);
 		const requiredSet = new Set(Array.isArray(raw.required) ? (raw.required as string[]) : []);
 		const properties: SchemaProperty[] = [];
@@ -217,13 +217,13 @@ function extractType(prop: Record<string, unknown>): string {
 /**
  * All schemas with their property metadata.
  * Scans the substrate dir's `schemas/` subdirectory (resolved via
- * `resolveSchemasDir(cwd)` per DEC-0015) and parses each schema.
+ * `schemasDir(cwd)` per DEC-0015) and parses each schema.
  */
 export function schemaVocabulary(cwd: string): SchemaInfo[] {
-	const schemasDir = resolveSchemasDir(cwd);
-	if (!fs.existsSync(schemasDir)) return [];
+	const schemasDirPath = schemasDir(cwd);
+	if (!fs.existsSync(schemasDirPath)) return [];
 	const results: SchemaInfo[] = [];
-	for (const file of fs.readdirSync(schemasDir).sort()) {
+	for (const file of fs.readdirSync(schemasDirPath).sort()) {
 		if (!file.endsWith(".schema.json")) continue;
 		const name = file.replace(".schema.json", "");
 		const info = schemaInfo(cwd, name);

@@ -6,7 +6,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { projectDir as resolveProjectDir, schemasDir as resolveSchemasDir } from "./project-dir.js";
+import { projectDir, schemasDir } from "./project-dir.js";
 import { validateFromFile } from "./schema-validator.js";
 
 export interface BlockFileSnapshot {
@@ -59,14 +59,14 @@ function snapshotDir(dirPath: string, result: BlockSnapshot): void {
  */
 export function snapshotBlockFiles(cwd: string): BlockSnapshot {
 	const result: BlockSnapshot = new Map();
-	const projectDir = resolveProjectDir(cwd);
+	const projectDirPath = projectDir(cwd);
 
 	// Top-level <substrateDir>/*.json
-	snapshotDir(projectDir, result);
+	snapshotDir(projectDirPath, result);
 
 	// Known subdirectories
 	for (const sub of BLOCK_SUBDIRS) {
-		snapshotDir(path.join(projectDir, sub.dir), result);
+		snapshotDir(path.join(projectDirPath, sub.dir), result);
 	}
 
 	return result;
@@ -144,17 +144,17 @@ function validateChangedInDir(
  * @throws Error if any changed block file fails schema validation
  */
 export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void {
-	const projectDir = resolveProjectDir(cwd);
-	const schemasDir = resolveSchemasDir(cwd);
+	const projectDirPath = projectDir(cwd);
+	const schemasDirPath = schemasDir(cwd);
 
 	const errors: string[] = [];
 
 	// Top-level .project/*.json
-	validateChangedInDir(projectDir, schemasDir, before, errors);
+	validateChangedInDir(projectDirPath, schemasDirPath, before, errors);
 
 	// Known subdirectories
 	for (const sub of BLOCK_SUBDIRS) {
-		validateChangedInDir(path.join(projectDir, sub.dir), schemasDir, before, errors, sub.schemaBase);
+		validateChangedInDir(path.join(projectDirPath, sub.dir), schemasDirPath, before, errors, sub.schemaBase);
 	}
 
 	if (errors.length > 0) {
@@ -216,15 +216,15 @@ function rollbackDir(dirPath: string, before: BlockSnapshot, rolledBack: string[
  * Returns list of rolled-back file paths.
  */
 export function rollbackBlockFiles(cwd: string, before: BlockSnapshot): string[] {
-	const projectDir = resolveProjectDir(cwd);
+	const projectDirPath = projectDir(cwd);
 	const rolledBack: string[] = [];
 
 	// Top-level .project/*.json
-	rollbackDir(projectDir, before, rolledBack);
+	rollbackDir(projectDirPath, before, rolledBack);
 
 	// Known subdirectories
 	for (const sub of BLOCK_SUBDIRS) {
-		rollbackDir(path.join(projectDir, sub.dir), before, rolledBack);
+		rollbackDir(path.join(projectDirPath, sub.dir), before, rolledBack);
 	}
 
 	return rolledBack;

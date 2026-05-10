@@ -63,25 +63,38 @@ function loadFeedback(filename: string): FeedbackEntry {
 	};
 }
 
-function parseArgs(argv: string[]): { names?: string[]; all: boolean } {
-	const out: { names?: string[]; all: boolean } = { all: false };
+function parseArgs(argv: string[]): { names?: string[]; all: boolean; full: boolean } {
+	const out: { names?: string[]; all: boolean; full: boolean } = { all: false, full: false };
 	for (let i = 0; i < argv.length; i++) {
 		if (argv[i] === "--names" && argv[i + 1]) {
 			out.names = argv[i + 1].split(",").map((s) => s.trim());
 			i++;
 		} else if (argv[i] === "--all") {
 			out.all = true;
+		} else if (argv[i] === "--full") {
+			out.full = true;
 		}
 	}
 	return out;
 }
 
-function renderFeedback(fb: FeedbackEntry): string {
+function summarizeBody(body: string): string {
+	// Default: emit the description-equivalent summary — first paragraph after frontmatter,
+	// trimmed to first sentence-or-two if very long. Skip "Why:" / "How to apply:" / examples.
+	const paragraphs = body.split(/\n\n+/);
+	if (paragraphs.length === 0) return "";
+	const first = paragraphs[0].trim();
+	// Cap at ~3 lines / 400 chars to preserve signal without elaboration
+	if (first.length > 400) return `${first.slice(0, 400)}…`;
+	return first;
+}
+
+function renderFeedback(fb: FeedbackEntry, full: boolean): string {
 	const lines: string[] = [];
 	lines.push(`### ${fb.name ?? fb.filename}`);
 	if (fb.description) lines.push(`_${fb.description}_`);
 	lines.push("");
-	lines.push(fb.body);
+	lines.push(full ? fb.body : summarizeBody(fb.body));
 	return lines.join("\n");
 }
 
@@ -102,7 +115,7 @@ function main(): void {
 	}
 	for (const filename of selected) {
 		const fb = loadFeedback(filename);
-		console.log(renderFeedback(fb));
+		console.log(renderFeedback(fb, args.full));
 		console.log("");
 	}
 }

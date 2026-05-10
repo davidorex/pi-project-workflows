@@ -24,8 +24,8 @@ interface DecisionItem {
 	references?: Array<{ label: string; path?: string }>;
 }
 
-function parseArgs(argv: string[]): { status?: string; ids?: string[] } {
-	const out: { status?: string; ids?: string[] } = {};
+function parseArgs(argv: string[]): { status?: string; ids?: string[]; full: boolean } {
+	const out: { status?: string; ids?: string[]; full: boolean } = { full: false };
 	for (let i = 0; i < argv.length; i++) {
 		if (argv[i] === "--status" && argv[i + 1]) {
 			out.status = argv[i + 1];
@@ -33,18 +33,18 @@ function parseArgs(argv: string[]): { status?: string; ids?: string[] } {
 		} else if (argv[i] === "--ids" && argv[i + 1]) {
 			out.ids = argv[i + 1].split(",").map((s) => s.trim());
 			i++;
+		} else if (argv[i] === "--full") {
+			out.full = true;
 		}
 	}
 	return out;
 }
 
-function renderDec(dec: DecisionItem): string {
+function renderDec(dec: DecisionItem, full: boolean): string {
 	const lines: string[] = [];
-	lines.push(`### ${dec.id} — ${dec.title}`);
-	lines.push(`**Status**: ${dec.status}`);
-	lines.push("");
+	lines.push(`### ${dec.id} — ${dec.title} (${dec.status})`);
 	lines.push(`**Decision**: ${dec.decision}`);
-	if (dec.consequences && dec.consequences.length > 0) {
+	if (full && dec.consequences && dec.consequences.length > 0) {
 		lines.push("");
 		lines.push("**Consequences**:");
 		for (const c of dec.consequences) lines.push(`- ${c}`);
@@ -59,7 +59,7 @@ function main(): void {
 	if (args.status) decs = decs.filter((d) => d.status === args.status);
 	if (args.ids) decs = decs.filter((d) => args.ids!.includes(d.id));
 	for (const dec of decs) {
-		console.log(renderDec(dec));
+		console.log(renderDec(dec, args.full));
 		console.log("");
 	}
 }

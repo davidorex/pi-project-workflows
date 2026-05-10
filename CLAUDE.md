@@ -55,15 +55,20 @@ Work is not complete until the runtime can load it. Pi loads extensions from `no
 1. **Edit** source files
 2. **Build**: `npm run build`
 3. **Check**: `npm run check` (biome + tsc)
-4. **Test**: `npm test` (must stay at 0 failures)
-5. **Skills**: `npm run skills` (regenerate SKILL.md from built extensions)
-6. **Commit**: forensic commit message per global CLAUDE.md guidelines
-7. **Merge to main**: if on a feature branch
-8. **Release**: `npm run release:patch|minor|major` based on commit type (`fix:` → patch, `feat:` → minor, `feat!:` → major). This bumps versions, commits, and tags.
-9. **Credentialed verification (pre-publish for arc-completion releases)**: for releases that ship new public surface (new SDK exports, new commands, new tools, new schema kinds) or complete a substrate arc, run the canonical verification protocol at `docs/reports/pi-internal-verification-protocol-2026-05-02.md` (or its successor) end-to-end. The protocol uses pi's `auth.json` credentials directly (set up by `pi auth login`); no separate env-var gate. Routine peer-dep bumps and isolated bug-fix releases do not require this gate — the build/check/test sequence catches breakage from there. The previous `jit-runtime.smoke.test.ts` gate was retired in commit `d931dc4` per DEC-0011 (parallel-credential-surface removal); see `feedback_pre_publish_credentialed_smoke.md` for the current rule.
-10. **Publish**: requires interactive `npm login` + OTP — inform user to run `npm publish --workspaces --access public`
+4. **Test**: `npm test` (must stay at 0 failures) — full output inspection, no pipe-to-tail (pipe masks exit code)
+5. **Runtime demonstration** (DEC-0018): exercise the actual feature path end-to-end via real invocation (tsx eval against block-api / pi -p tool dispatch / direct CLI invocation against real substrate). NOT a mocked unit assertion. Capture command + observed output. Tests-pass alone is insufficient.
+6. **Adversarial verification probe** (DEC-0018): fresh-context agent (Explore or general-purpose) reads implementation + runtime demo + probes for false-pass scenarios (assertion exercises right path? bypass via fallback? indirect import chain reaches new surface despite no-cascade classification?). Probe verdict required before commit declared green.
+7. **Skills**: `npm run skills` (regenerate SKILL.md from built extensions)
+8. **Commit**: forensic commit message per global CLAUDE.md guidelines
+9. **Status cascade across 3 layers** (Claude Code Tasks + .project/ blocks + HANDOFF.md): include runtime-demo result + adversarial verdict, not just commit SHA + test exit code
+10. **Merge to main**: if on a feature branch
+11. **Release**: `npm run release:patch|minor|major` based on commit type (`fix:` → patch, `feat:` → minor, `feat!:` → major). This bumps versions, commits, and tags.
+12. **Credentialed verification (pre-publish for arc-completion releases)**: for releases that ship new public surface (new SDK exports, new commands, new tools, new schema kinds) or complete a substrate arc, run the canonical verification protocol at `docs/reports/pi-internal-verification-protocol-2026-05-02.md` (or its successor) end-to-end. The protocol uses pi's `auth.json` credentials directly (set up by `pi auth login`); no separate env-var gate. Routine peer-dep bumps and isolated bug-fix releases do not require this gate — the build/check/test sequence catches breakage from there. The previous `jit-runtime.smoke.test.ts` gate was retired in commit `d931dc4` per DEC-0011 (parallel-credential-surface removal); see `feedback_pre_publish_credentialed_smoke.md` for the current rule.
+13. **Publish**: requires interactive `npm login` + OTP — inform user to run `npm publish --workspaces --access public`
 
-Steps 1-8 are the agent's responsibility. Step 9 applies to arc-completion releases only; user runs the verification protocol when scope warrants. Step 10 requires user action. Declaring work "done" before step 8 is a failure — the changes are unreachable at runtime.
+Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion releases only; user runs the verification protocol when scope warrants. Step 13 requires user action. Declaring work "done" before step 10 is a failure — the changes are unreachable at runtime AND/OR not yet intent-confirmed per DEC-0018.
+
+**Steps 5+6 are LOAD-BEARING** (DEC-0018 enacted 2026-05-10): every implementation step (sub-section / sub-phase / fix / feature commit) requires runtime demonstration + adversarial probe. NOT skippable for "small change" or "obvious correctness." Tests-pass is necessary, not sufficient — LLMs perform; tests can pass for the wrong reason (side-effect masks feature path; assertion no longer tests what it claims; import silently no-ops; fallback swallows failure). The ff13ff2 incident (committed broken code under false-green pipe-mask) is the forcing event.
 
 ## Do Not Touch
 

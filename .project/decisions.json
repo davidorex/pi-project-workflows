@@ -806,6 +806,51 @@
       "created_at": "2026-05-10T04:14:52.901Z",
       "enacted_by": "user",
       "enacted_at": "2026-05-10T04:14:52.901Z"
+    },
+    {
+      "id": "DEC-0018",
+      "title": "Tests-pass alone is insufficient — every implementation step requires runtime demonstration + adversarial verification probe",
+      "status": "enacted",
+      "context": "LLMs perform. Tests passing does not mean the implementation does what it is supposed to do. Tests can pass for the wrong reason: a fixture-write side-effect masks the actual feature path; an assertion no longer tests what it claims; an import silently no-ops; a fallback swallows the failure. Observed concretely at FGAP-026 phase 1.2 ff13ff2 (committed broken code under false-green via pipe-mask exit code) AND at Section C.2 99436c3 (tests passed 150/0/1 but orchestrator could only verify cascade-shape from diff, not intent). User direction 2026-05-10: we cannot open ourselves to spending implementation and testing time only to find things do not work because LLMs do performance. Persisting as substrate-canon DEC because feedback memory alone is insufficient — LLMs choosing not to read memory must not be able to miss this gate.",
+      "decision": "Every implementation step (sub-section commit, sub-phase commit, fix commit, feature commit) requires THREE verification layers, all mandatory, none skippable on grounds of small change or obvious correctness: (1) Tests pass — necessary, not sufficient; run with full output inspection (no pipe-mask). (2) Runtime demonstration — exercise the actual feature path end-to-end via real invocation (tsx eval against block-api / pi -p tool dispatch / direct CLI invocation against real substrate); not a mocked unit assertion. (3) Adversarial verification probe — fresh-context agent (Explore or general-purpose) reads implementation + runtime demo + probes for false-pass scenarios (assertion exercises right path? bypass via fallback? indirect import chain reaches new surface despite no-cascade classification?). Subagent briefs embed runtime-demo requirement; orchestrator dispatches adversarial probe as separate foreground subagent immediately after each implementation; status cascade includes runtime-demo result + adversarial verdict.",
+      "consequences": [
+        "Sub-phase / sub-section completion sequence extends from edit + build + check + test + commit to edit + build + check + test + runtime-demo + adversarial-probe + commit + status-cascade. Per-step time cost increases proportional to demo + probe surface.",
+        "Plan-mode briefs explicitly enumerate the runtime demonstration shape per section. Plans without runtime-demo specs are incomplete.",
+        "Adversarial probe is a separate foreground subagent (general-purpose or Explore depending on probe type), not bundled with the implementation subagent. Per feedback_adversarial_audits_not_self_audits.",
+        "Status-cascade across 3 layers (Claude Code Tasks + .project/ blocks + HANDOFF.md) gains runtime-demo + adversarial-verdict fields, not just commit SHA + test exit code.",
+        "Existing implementations landed without runtime-demo + adversarial probe (Sections A bb2c7d5 / B 9846b90 / C.1 8f33a38 / C.2 99436c3 + audit-fix cluster) are subject to retroactive runtime-demo + adversarial verification when user directs.",
+        "Cross-references feedback_runtime_demo_plus_adversarial_per_step.md (binding doctrine layer) + feedback_pipe_masks_exit_code.md (concrete gate-discipline subset) + feedback_adversarial_audits_not_self_audits.md (probe-must-be-fresh-context).",
+        "Standing tension with implementation velocity: every step takes longer. Accepted as cost of correctness; tests-pass-alone optimization is the false-economy that DEC-0018 forecloses."
+      ],
+      "related_gaps": [
+        "FGAP-028"
+      ],
+      "references": [
+        {
+          "label": "feedback_runtime_demo_plus_adversarial_per_step.md (binding doctrine memory layer)",
+          "path": "memory/feedback_runtime_demo_plus_adversarial_per_step.md"
+        },
+        {
+          "label": "feedback_pipe_masks_exit_code.md (concrete gate-discipline subset)",
+          "path": "memory/feedback_pipe_masks_exit_code.md"
+        },
+        {
+          "label": "feedback_adversarial_audits_not_self_audits.md (probe-must-be-fresh-context)",
+          "path": "memory/feedback_adversarial_audits_not_self_audits.md"
+        },
+        {
+          "label": "ff13ff2 false-green incident (committed broken code under pipe-mask exit code)",
+          "path": "git:ff13ff2"
+        },
+        {
+          "label": "adversarial audit YELLOW verdict for Sections A/B/C.1",
+          "path": "docs/reports/audit-sections-a-b-c1.md"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-10T11:45:50.876Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-10T11:45:50.876Z"
     }
   ]
 }

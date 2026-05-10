@@ -21,7 +21,7 @@ import path from "node:path";
 import _lockfile from "proper-lockfile";
 import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+import { projectDir, schemaPath } from "./project-dir.js";
 import { validateFromFile } from "./schema-validator.js";
 
 // Node16 module resolution + CJS interop: default import may be wrapped
@@ -45,11 +45,11 @@ function withBlockLock<T>(filePath: string, fn: () => T): T {
 }
 
 function blockFilePath(cwd: string, blockName: string): string {
-	return path.join(cwd, PROJECT_DIR, `${blockName}.json`);
+	return path.join(projectDir(cwd), `${blockName}.json`);
 }
 
 function blockSchemaPath(cwd: string, blockName: string): string {
-	return path.join(cwd, PROJECT_DIR, SCHEMAS_DIR, `${blockName}.schema.json`);
+	return schemaPath(cwd, blockName);
 }
 
 // ── Schema introspection cache (DispatchContext support, FGAP-004) ───────────
@@ -1186,7 +1186,7 @@ export function removeFromNestedArray(
  * tool consume this single export.
  */
 export function readBlockDir(cwd: string, subdir: string): unknown[] {
-	const dirPath = path.join(cwd, PROJECT_DIR, subdir);
+	const dirPath = path.join(projectDir(cwd), subdir);
 
 	let entries: string[];
 	try {
@@ -1195,7 +1195,7 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
 			.filter((f) => f.endsWith(".json"))
 			.sort();
 	} catch {
-		// Missing directory = "no items yet" for on-demand .project/ subdirectories
+		// Missing directory = "no items yet" for on-demand substrate-dir subdirectories
 		return [];
 	}
 
@@ -1206,12 +1206,12 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
 		try {
 			content = fs.readFileSync(filePath, "utf-8");
 		} catch {
-			throw new Error(`Cannot read file: ${PROJECT_DIR}/${subdir}/${filename}`);
+			throw new Error(`Cannot read file: .project/${subdir}/${filename}`);
 		}
 		try {
 			results.push(JSON.parse(content));
 		} catch {
-			throw new Error(`Invalid JSON in: ${PROJECT_DIR}/${subdir}/${filename}`);
+			throw new Error(`Invalid JSON in: .project/${subdir}/${filename}`);
 		}
 	}
 	return results;

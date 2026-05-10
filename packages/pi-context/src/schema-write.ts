@@ -32,7 +32,17 @@ import { projectRoot } from "./project-context.js";
 import { SCHEMAS_DIR } from "./project-dir.js";
 import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.js";
 
-/** `<projectRoot>/schemas/<schemaName>.schema.json` — canonical schema path. */
+/**
+ * `<projectRoot>/schemas/<schemaName>.schema.json` — canonical schema path.
+ *
+ * `projectRoot(cwd)` is resolver-aware via the configPath cascade in
+ * `project-context.ts` (which resolves through `resolveContextDir(cwd)` per
+ * DEC-0015); `SCHEMAS_DIR` composes as a bare segment off the resolved root.
+ * No hardcoded substrate-dir literal lives here — `schemas/` is a substrate
+ * internal-layout constant, not the substrate-dir name itself. This is
+ * structurally analogous to `installProject`'s `schemasRoot` composition in
+ * `index.ts`.
+ */
 function schemaWritePath(cwd: string, schemaName: string): string {
 	return path.join(projectRoot(cwd), SCHEMAS_DIR, `${schemaName}.schema.json`);
 }

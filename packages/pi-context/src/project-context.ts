@@ -22,7 +22,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PROJECT_DIR } from "./project-dir.js";
+import { resolveContextDir } from "./project-dir.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
 // ── Type definitions (from plan §"Files to create") ──────────────────────────
@@ -145,33 +145,38 @@ function bundledSchemaPath(name: "config" | "relations"): string {
 	return path.resolve(here, "..", "schemas", `${name}.schema.json`);
 }
 
-// ── Bootstrap-fixed file paths ───────────────────────────────────────────────
+// ── Substrate-dir-relative file paths ────────────────────────────────────────
 
-/** `<cwd>/.project/config.json` — bootstrap exemption: config lives at the
- * fixed location even when `config.root` relocates the rest of the substrate. */
+/** `<resolveContextDir(cwd)>/config.json` — substrate-dir-relative; bootstrap
+ * pointer at `<cwd>/.pi-context.json` declares the substrate dir per DEC-0015.
+ * Previous `.project/`-fixed exemption removed — initProject writes the
+ * bootstrap pointer FIRST so the resolver finds the dir before any path-builder
+ * runs. */
 function configPath(cwd: string): string {
-	return path.join(cwd, PROJECT_DIR, "config.json");
+	return path.join(resolveContextDir(cwd), "config.json");
 }
 
-/** `<cwd>/.project/relations.json` — same bootstrap exemption. */
+/** `<resolveContextDir(cwd)>/relations.json` — same substrate-dir-relative
+ * resolution as configPath; previous `.project/`-fixed exemption removed for
+ * DEC-0015 compliance. */
 function relationsPath(cwd: string): string {
-	return path.join(cwd, PROJECT_DIR, "relations.json");
+	return path.join(resolveContextDir(cwd), "relations.json");
 }
 
 // ── Loaders ─────────────────────────────────────────────────────────────────
 
 /**
- * Resolve the substrate root for `cwd`. Reads the bootstrap-fixed
- * `<cwd>/.project/config.json`, returns `config.root` resolved relative to
- * cwd. Falls back to `<cwd>/.project` when no config is present (bootstrap
- * exemption — the config itself lives there too).
+ * Resolve the substrate root for `cwd`. Reads
+ * `<resolveContextDir(cwd)>/config.json`, returns `config.root` resolved
+ * relative to cwd when set. Falls back to `resolveContextDir(cwd)` when no
+ * config is present (the substrate dir itself).
  */
 export function projectRoot(cwd: string): string {
 	const cfg = loadConfig(cwd);
 	if (cfg && typeof cfg.root === "string" && cfg.root.length > 0) {
 		return path.resolve(cwd, cfg.root);
 	}
-	return path.join(cwd, PROJECT_DIR);
+	return resolveContextDir(cwd);
 }
 
 /**
@@ -228,6 +233,12 @@ export function loadRelations(cwd: string): Edge[] {
 interface CacheEntry {
 	configMtimeMs: number;
 	relationsMtimeMs: number;
+	/** mtime of `<cwd>/.pi-context.json` at cache-population time; cache
+	 * invalidates when the bootstrap pointer's mtime changes so a per-cwd
+	 * substrate-dir relocation (rare; future `/context migrate`) is picked
+	 * up without an explicit cache flush. Tracked as `safeMtimeMs` so a
+	 * transient absence reads as `0` rather than throwing. */
+	bootstrapMtimeMs: number;
 	value: ProjectContext;
 }
 
@@ -252,17 +263,23 @@ function safeMtimeMs(p: string): number {
  */
 export function getProjectContext(cwd: string): ProjectContext {
 	const key = path.resolve(cwd);
+	const bMtime = safeMtimeMs(path.join(cwd, ".pi-context.json"));
 	const cMtime = safeMtimeMs(configPath(cwd));
 	const rMtime = safeMtimeMs(relationsPath(cwd));
 	const hit = contextCache.get(key);
-	if (hit && hit.configMtimeMs === cMtime && hit.relationsMtimeMs === rMtime) {
+	if (hit && hit.bootstrapMtimeMs === bMtime && hit.configMtimeMs === cMtime && hit.relationsMtimeMs === rMtime) {
 		return hit.value;
 	}
 	const value: ProjectContext = {
 		config: loadConfig(cwd),
 		relations: loadRelations(cwd),
 	};
-	contextCache.set(key, { configMtimeMs: cMtime, relationsMtimeMs: rMtime, value });
+	contextCache.set(key, {
+		bootstrapMtimeMs: bMtime,
+		configMtimeMs: cMtime,
+		relationsMtimeMs: rMtime,
+		value,
+	});
 	return value;
 }
 

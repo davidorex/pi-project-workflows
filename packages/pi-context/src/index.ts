@@ -33,7 +33,12 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+import {
+	projectDir as resolveProjectDir,
+	schemasDir as resolveSchemasDir,
+	SCHEMAS_DIR,
+	writeBootstrapPointer,
+} from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { checkForUpdates } from "./update-check.js";
@@ -127,11 +132,13 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
  * items from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
-	const workflowDir = path.join(ctx.cwd, PROJECT_DIR);
-	const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
+	const workflowDir = resolveProjectDir(ctx.cwd);
+	const schemasDir = resolveSchemasDir(ctx.cwd);
 
 	if (!fs.existsSync(schemasDir)) {
-		ctx.ui.notify(`No ${PROJECT_DIR}/${SCHEMAS_DIR}/ directory found.`, "warning");
+		// User-facing display string keeps the legacy `.project/schemas/` literal —
+		// the resolver-cascade is invisible to users at the prompt surface.
+		ctx.ui.notify(`No .project/schemas/ directory found.`, "warning");
 		return;
 	}
 
@@ -200,8 +207,20 @@ ${blockInfo.join("\n\n")}
  * command handler and the project-init tool.
  */
 function initProject(cwd: string): { created: string[]; skipped: string[] } {
-	const projectDir = path.join(cwd, PROJECT_DIR);
-	const schemasDir = path.join(projectDir, SCHEMAS_DIR);
+	// FIRST action — write the `.pi-context.json` bootstrap pointer so every
+	// subsequent path-builder call (resolveProjectDir / resolveSchemasDir)
+	// resolves through the freshly-written pointer rather than throwing
+	// BootstrapNotFoundError. Default substrate-dir name is `.project` (the
+	// legacy convention); future `/context init` ceremony will prompt the
+	// user for a chosen name and pass it explicitly per DEC-0015.
+	// writeBootstrapPointer is idempotent (atomic tmp+rename) so re-running
+	// initProject after a prior init does not corrupt the pointer.
+	if (!fs.existsSync(path.join(cwd, ".pi-context.json"))) {
+		writeBootstrapPointer(cwd, ".project");
+	}
+
+	const projectDir = resolveProjectDir(cwd);
+	const schemasDir = resolveSchemasDir(cwd);
 	const phasesDir = path.join(projectDir, "phases");
 
 	const defaultsDir = path.resolve(import.meta.dirname, "..", "defaults");
@@ -219,15 +238,16 @@ function initProject(cwd: string): { created: string[]; skipped: string[] } {
 		}
 	}
 
-	// Copy default schemas
+	// Copy default schemas — display strings keep the legacy `schemas/` literal
+	// (cosmetic; user-facing path display).
 	if (fs.existsSync(defaultSchemasDir)) {
 		for (const file of fs.readdirSync(defaultSchemasDir)) {
 			const dest = path.join(schemasDir, file);
 			if (fs.existsSync(dest)) {
-				skipped.push(`${SCHEMAS_DIR}/${file}`);
+				skipped.push(`schemas/${file}`);
 			} else {
 				fs.copyFileSync(path.join(defaultSchemasDir, file), dest);
-				created.push(`${SCHEMAS_DIR}/${file}`);
+				created.push(`schemas/${file}`);
 			}
 		}
 	}
@@ -283,6 +303,12 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 
 	const registryRoot = path.resolve(import.meta.dirname, "..", "registry");
 	const destRoot = projectRoot(cwd);
+	// destRoot is resolver-aware via projectRoot(cwd) — it already cascades
+	// through resolveContextDir under the hood (project-context.ts:projectRoot
+	// fallback). SCHEMAS_DIR is composed as a bare segment off that
+	// resolver-aware root; this is intentional and DEC-0015-compliant
+	// (no hardcoded substrate-dir literal here — `schemas/` is a substrate
+	// internal-layout constant, not the substrate-dir name itself).
 	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
 	if (!fs.existsSync(schemasRoot)) fs.mkdirSync(schemasRoot, { recursive: true });
 

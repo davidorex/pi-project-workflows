@@ -10,7 +10,7 @@ import path from "node:path";
 import { readBlock, updateItemInBlock } from "./block-api.js";
 import { getLensValidators } from "./lens-validator.js";
 import { type ConfigBlock, loadConfig } from "./project-context.js";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+import { projectDir, schemaPath as resolveSchemaPath, schemasDir as resolveSchemasDir } from "./project-dir.js";
 
 // Re-export substrate SDK so consumers can keep importing through project-sdk
 // during the migration arc.
@@ -50,8 +50,8 @@ export interface BlockInfo {
 }
 
 export function availableBlocks(cwd: string): BlockInfo[] {
-	const workflowDir = path.join(cwd, PROJECT_DIR);
-	const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
+	const workflowDir = projectDir(cwd);
+	const schemasDir = resolveSchemasDir(cwd);
 	if (!fs.existsSync(workflowDir)) return [];
 
 	const blocks: BlockInfo[] = [];
@@ -65,11 +65,12 @@ export function availableBlocks(cwd: string): BlockInfo[] {
 }
 
 /**
- * Discover schemas in PROJECT_DIR/SCHEMAS_DIR.
- * Returns sorted list of absolute paths to .schema.json files.
+ * Discover schemas in the substrate dir's `schemas/` subdirectory (resolved
+ * via `resolveSchemasDir(cwd)` per DEC-0015). Returns sorted list of
+ * absolute paths to .schema.json files.
  */
 export function availableSchemas(cwd: string): string[] {
-	const dir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
+	const dir = resolveSchemasDir(cwd);
 	if (!fs.existsSync(dir)) return [];
 	const schemas: string[] = [];
 	for (const file of fs.readdirSync(dir)) {
@@ -81,12 +82,13 @@ export function availableSchemas(cwd: string): string[] {
 }
 
 /**
- * Discover blocks with array properties by scanning PROJECT_DIR/SCHEMAS_DIR
- * for schemas whose root type has at least one array property.
+ * Discover blocks with array properties by scanning the substrate dir's
+ * `schemas/` subdirectory (resolved via `resolveSchemasDir(cwd)` per
+ * DEC-0015) for schemas whose root type has at least one array property.
  * Returns block name, first array key, and schema path for each.
  */
 export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayKey: string; schemaPath: string }> {
-	const schemasDir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
+	const schemasDir = resolveSchemasDir(cwd);
 	if (!fs.existsSync(schemasDir)) return [];
 	const results: Array<{ block: string; arrayKey: string; schemaPath: string }> = [];
 	for (const file of fs.readdirSync(schemasDir)) {
@@ -148,7 +150,7 @@ export interface SchemaInfo {
  * Returns null if the schema file doesn't exist or is unparseable.
  */
 export function schemaInfo(cwd: string, schemaName: string): SchemaInfo | null {
-	const schemaPath = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR, `${schemaName}.schema.json`);
+	const schemaPath = resolveSchemaPath(cwd, schemaName);
 	try {
 		const raw = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
 		const title = String(raw.title ?? schemaName);
@@ -214,10 +216,11 @@ function extractType(prop: Record<string, unknown>): string {
 
 /**
  * All schemas with their property metadata.
- * Scans .project/schemas/ and parses each schema.
+ * Scans the substrate dir's `schemas/` subdirectory (resolved via
+ * `resolveSchemasDir(cwd)` per DEC-0015) and parses each schema.
  */
 export function schemaVocabulary(cwd: string): SchemaInfo[] {
-	const schemasDir = path.join(cwd, PROJECT_DIR, SCHEMAS_DIR);
+	const schemasDir = resolveSchemasDir(cwd);
 	if (!fs.existsSync(schemasDir)) return [];
 	const results: SchemaInfo[] = [];
 	for (const file of fs.readdirSync(schemasDir).sort()) {
@@ -241,7 +244,7 @@ export interface BlockStructure {
  * and block summaries into a single queryable function.
  */
 export function blockStructure(cwd: string): BlockStructure[] {
-	const blockDir = path.join(cwd, PROJECT_DIR);
+	const blockDir = projectDir(cwd);
 	const blocks = availableBlocks(cwd);
 	return blocks.map((b) => {
 		const arrays: { key: string; itemCount: number }[] = [];
@@ -401,7 +404,7 @@ export function projectState(cwd: string): ProjectState {
 
 	// Block summaries — scan all blocks, report item counts and status distribution
 	const blockSummaries: Record<string, BlockSummary> = {};
-	const blockDir = path.join(cwd, PROJECT_DIR);
+	const blockDir = projectDir(cwd);
 	try {
 		if (fs.existsSync(blockDir)) {
 			for (const file of fs.readdirSync(blockDir)) {
@@ -437,11 +440,11 @@ export function projectState(cwd: string): ProjectState {
 		/* no block dir */
 	}
 
-	// Phases from PROJECT_DIR/phases/*.json
+	// Phases from <substrateDir>/phases/*.json
 	let phaseTotal = 0;
 	let phaseCurrent = 0;
 	try {
-		const phasesDir = path.join(cwd, PROJECT_DIR, "phases");
+		const phasesDir = path.join(projectDir(cwd), "phases");
 		if (fs.existsSync(phasesDir)) {
 			const files = fs
 				.readdirSync(phasesDir)
@@ -535,7 +538,7 @@ export function projectState(cwd: string): ProjectState {
 
 	// Handoff presence
 	try {
-		const handoffPath = path.join(cwd, PROJECT_DIR, "handoff.json");
+		const handoffPath = path.join(projectDir(cwd), "handoff.json");
 		state.hasHandoff = fs.existsSync(handoffPath);
 	} catch {
 		/* ignore */
@@ -612,7 +615,7 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
  */
 export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
 	const index = new Map<string, ItemLocation>();
-	const blockDir = path.join(cwd, PROJECT_DIR);
+	const blockDir = projectDir(cwd);
 	const cfg = loadConfig(cwd);
 
 	// Phase files — special: synthesized IDs from number + name fields,

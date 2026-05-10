@@ -6,7 +6,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+import { projectDir as resolveProjectDir, schemasDir as resolveSchemasDir } from "./project-dir.js";
 import { validateFromFile } from "./schema-validator.js";
 
 export interface BlockFileSnapshot {
@@ -59,9 +59,9 @@ function snapshotDir(dirPath: string, result: BlockSnapshot): void {
  */
 export function snapshotBlockFiles(cwd: string): BlockSnapshot {
 	const result: BlockSnapshot = new Map();
-	const projectDir = path.join(cwd, PROJECT_DIR);
+	const projectDir = resolveProjectDir(cwd);
 
-	// Top-level .project/*.json
+	// Top-level <substrateDir>/*.json
 	snapshotDir(projectDir, result);
 
 	// Known subdirectories
@@ -144,8 +144,8 @@ function validateChangedInDir(
  * @throws Error if any changed block file fails schema validation
  */
 export function validateChangedBlocks(cwd: string, before: BlockSnapshot): void {
-	const projectDir = path.join(cwd, PROJECT_DIR);
-	const schemasDir = path.join(projectDir, SCHEMAS_DIR);
+	const projectDir = resolveProjectDir(cwd);
+	const schemasDir = resolveSchemasDir(cwd);
 
 	const errors: string[] = [];
 
@@ -216,7 +216,7 @@ function rollbackDir(dirPath: string, before: BlockSnapshot, rolledBack: string[
  * Returns list of rolled-back file paths.
  */
 export function rollbackBlockFiles(cwd: string, before: BlockSnapshot): string[] {
-	const projectDir = path.join(cwd, PROJECT_DIR);
+	const projectDir = resolveProjectDir(cwd);
 	const rolledBack: string[] = [];
 
 	// Top-level .project/*.json

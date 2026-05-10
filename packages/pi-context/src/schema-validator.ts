@@ -34,6 +34,7 @@ addFormats(ajv);
 const FRAMEWORK_SCHEMA_NAMES = [
 	"config",
 	"relations",
+	"bootstrap",
 	"priority",
 	"status",
 	"severity",

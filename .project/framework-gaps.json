@@ -953,6 +953,124 @@
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T03:41:49.494Z"
+    },
+    {
+      "id": "FGAP-029",
+      "title": "Bidirectional scoped traversal primitive missing — walk-ancestors + walk-by-relation tools",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "DEC-0017 (work-unit context composed at dispatch time) requires bidirectional traversal of closure-table edges per relation_type. Today only project-walk-descendants exists; reverse traversal is not exposed. find-references (cross-block reverse-index) gap from the tool-surface audit overlaps this. The gather-execution-context primitive (FGAP-031) cannot exist without bidirectional traversal as foundational layer.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "walkDescendants exists; no walkAncestors. Reverse traversal logic is per-relation_type DFS over relations.json edges; primitive shape is symmetric to walkDescendants but reverse-direction."
+        },
+        {
+          "file": "analysis/2026-05-10-tool-surface-gap-audit.md",
+          "reference": "8-rank consolidated impact ranking position 5: project-walk-ancestors. Position 10: find-references (cross-block reverse-index). Both load-bearing for DEC-0017 work-unit context composition."
+        }
+      ],
+      "impact": "Without bidirectional traversal, work-unit context cannot be gathered — backward edges from a unit to its constraining/motivating context are invisible. Under DEC-0014/0016 dogfood-completeness lens, work-unit dispatch is undispatchable because the orchestrator cannot ask 'what context informs this unit'. Cascades through DEC-0017 dependencies: FGAP-031 (gather primitive) needs FGAP-029; FGAP-032 (contextBlocks item-level selectivity) needs FGAP-031.",
+      "proposed_resolution": "Add walk-ancestors(childId, relationType) tool wrapping a new walkAncestors JS export in project-context.ts (symmetric to walkDescendants; reverse-direction DFS over relations edges of the given relation_type, cycle-safe via visited-set). Add walk-by-relation(itemId, relationType, direction: 'in'|'out'|'both') generalized tool covering both directions in one primitive. Item-level scoping per applicability predicate (FGAP-010) optional at first; can layer in later. Cascades into pi-context's project-context.ts SDK + new tool registrations in index.ts.",
+      "related_decisions": [
+        "DEC-0013",
+        "DEC-0017"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8.6-orchestrator",
+      "created_at": "2026-05-10T04:14:52.901Z"
+    },
+    {
+      "id": "FGAP-030",
+      "title": "Per-work-unit-kind context contract substrate missing — no way to declare which relation_types compose the execution bundle for each unit kind",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "DEC-0017 specifies per-unit-kind context contract: implementation tasks need conventions + acceptance + architecture-touched; decision-making tasks need rationale + alternatives + related-decisions; verification tasks need verification-criteria + evidence-rules + items-under-verification. Today the substrate has NO mechanism to declare per-unit-kind which relation_types compose the execution bundle. gather-execution-context (FGAP-031) cannot dispatch correctly without reading the contract for the unit-kind being executed.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/registry/schemas/",
+          "reference": "No context-contract.schema.json; no schema declaring per-kind bundle composition. Existing schemas (config, tasks, phase, decisions, etc.) carry the unit-kind data but no kind-to-bundle mapping."
+        },
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "ConfigBlock declares lenses[] (composition lens machinery from FGAP-012 closure exists); the context-contract could plausibly encode AS composition lenses keyed by unit-kind, OR as a new context-contract block kind. Decision deferred to FGAP-030 closure work."
+        }
+      ],
+      "impact": "Without per-unit-kind context contract, gather-execution-context cannot know what to gather for a given unit. Either gather returns everything (bundle pollution; defeats relevance scoping) or returns nothing (no contract = nothing to bundle). The substrate has no extensibility path for new unit-kinds without code changes — same antipattern as FGAP-013's pre-DEC-0013 hardcoded status vocabulary.",
+      "proposed_resolution": "Two coherent implementation shapes — closure work decides which: (a) NEW BLOCK KIND: context-contract.json with schema declaring per-kind { unitKind: string, bundle_relation_types: { in: string[], out: string[], depth: number, applicability_predicate?: string }[] }. Authoring contract per unit-kind is opt-in via /context install (default contracts ship in registry/blocks/). (b) COMPOSITION-LENS ENCODING: context contracts encoded in config.lenses[] as kind='execution-context-bundle' lenses keyed by unit-kind. Reuses FGAP-012 closure machinery. Either is DEC-0017 compliant. (b) is simpler but less explicit; (a) is more explicit but adds a block kind. Closure work picks one + documents rationale.",
+      "related_decisions": [
+        "DEC-0013",
+        "DEC-0015",
+        "DEC-0017"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8.6-orchestrator",
+      "created_at": "2026-05-10T04:14:52.901Z"
+    },
+    {
+      "id": "FGAP-031",
+      "title": "Composition-of-views work-unit-driven primitive missing — gather-execution-context(unitId, kind) tool and JS export",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "DEC-0017 specifies a single substrate operation that reads the unit + reads its context contract (FGAP-030) + walks declared relation_types bidirectionally (FGAP-029) + composes the result as one structured bundle returned as one tool return. Today no such primitive exists; orchestrator must do N+1 reads + ad-hoc composition. Under DEC-0014/0016 + FGAP-028 dogfood-completeness, this is the load-bearing primitive between substrate and JIT-agent execution.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/lens-view.ts",
+          "reference": "loadLensView composes lens projection but is lens-driven, not work-unit-driven. resolveComposition (FGAP-012 closure) composes member items but doesn't apply per-unit-kind context contract or work-unit-driven traversal. Closest existing surface; insufficient for work-unit bundling."
+        },
+        {
+          "file": "analysis/2026-05-10-tool-surface-gap-audit.md",
+          "reference": "22-row gap table does not yet enumerate gather-execution-context — DEC-0017 surfaces this as a NEW gap not previously enumerated. Under DEC-0017 it joins as P1 candidate alongside filter-block-items / read-config / read-schema."
+        }
+      ],
+      "impact": "Without gather-execution-context, work-unit dispatch under DEC-0014/0016 requires the orchestrator to: (1) read the unit; (2) read the contract for its kind; (3) walk N relation_types bidirectionally; (4) read each related item; (5) compose the bundle. That's 5+N tool calls per unit dispatch, with hand-rolled composition logic. With the primitive: 1 tool call returns the composed bundle. The N+1 pattern defeats DEC-0014/0016 + FGAP-028 dogfood-dispatchability.",
+      "proposed_resolution": "Author gather-execution-context(unitId: string, kind: string): ContextBundle as JS export in packages/pi-context/src/ (likely new module: execution-context.ts, OR within lens-view.ts as work-unit-driven composition). Pi tool wrapper in index.ts: project-gather-execution-context (or context-gather-execution-context post-rename per FGAP-026 Phase 5). Body composes: (1) readBlock(cwd, unit's block) + filter to unitId; (2) read context contract for kind via FGAP-030 mechanism; (3) for each declared relation_type in contract: walkAncestors + walkDescendants (FGAP-029) within depth bound; (4) resolve each reached itemId to full payload via batch resolve (resolve-items-by-id from gap audit); (5) optionally apply applicability predicate (FGAP-010) for relevance filtering; (6) return ContextBundle = { unit, perRelationType: { [rt]: ItemRecord[] }, traversal_depth, scoped_at }.",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0016",
+        "DEC-0017"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8.6-orchestrator",
+      "created_at": "2026-05-10T04:14:52.901Z"
+    },
+    {
+      "id": "FGAP-032",
+      "title": "Item-level contextBlocks selectivity missing in pi-jit-agents — currently injects whole blocks, not work-unit-driven item selections",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-jit-agents",
+      "layer": "L2",
+      "description": "DEC-0017 specifies dispatch-time injection: agents receive context bundles as composed inputs, not as N whole-block dumps. Today pi-jit-agents' contextBlocks injection mechanism (DEC-0008 typed contextBlocks form) injects WHOLE BLOCKS — agent's compileAgent template gets the entire decisions.json under {{ _decisions }}, not just the decisions reached via gather-execution-context for THIS work-unit. Bundle from FGAP-031 is structured but injection is unstructured-dump.",
+      "evidence": [
+        {
+          "file": "packages/pi-jit-agents/src/compile.ts",
+          "reference": "compileAgent reads contextBlocks declarations + injects whole block content under {{ _<name> }} variables. No mechanism to inject item-level selections driven by a work-unit's gather-execution-context output. Per the runtime-step-context analysis (analysis/2026-04-15-runtime-step-context.md) this gap was named earlier as 'agent spec must declare contextBlocks with item-level selectivity'."
+        },
+        {
+          "file": "packages/pi-jit-agents/src/types.ts",
+          "reference": "AgentSpec.contextBlocks current shape per DEC-0008: typed object form { name, item?, focus?, depth? } — item field exists at type level but is per-block-static, not per-dispatch-derived from a work-unit gather."
+        }
+      ],
+      "impact": "Bundle composition (FGAP-031) returns structured per-relation-type item lists, but injection collapses them back to whole-block dumps in the agent's compiled prompt. Agents receive irrelevant context (sibling items not reached via the work-unit's relation walk) + miss work-unit-specific context (the per-relation-type structure). Defeats DEC-0017's selectivity intent.",
+      "proposed_resolution": "Extend AgentSpec.contextBlocks shape to support work-unit-driven gather: { name, gather_for_unit?: { unitId, kind } } — when gather_for_unit is present, compileAgent calls gather-execution-context(unitId, kind) and injects the bundle as { _<name>_bundle: ContextBundle } variable. Templates reference _<block>_bundle.perRelationType.<relation_type>[] for selective rendering. Existing per-item macros (per the macros-as-prompt-substrate work) consume the bundle's per-relation-type collections. Backward compatible: existing { name, item?, focus?, depth? } usage unchanged; gather_for_unit is additive.",
+      "related_decisions": [
+        "DEC-0008",
+        "DEC-0017"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "agent/post-step-8.6-orchestrator",
+      "created_at": "2026-05-10T04:14:52.901Z"
     }
   ]
 }

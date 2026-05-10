@@ -687,6 +687,125 @@
       "created_at": "2026-05-10T02:49:48.058Z",
       "enacted_by": "user",
       "enacted_at": "2026-05-10T02:49:48.058Z"
+    },
+    {
+      "id": "DEC-0016",
+      "title": "Same extension-tool surface consumed from both pi-runtime (harness-confined per DEC-0014) and Claude Code (instruction-imposed); direct .project/*.json edits forbidden in both surfaces",
+      "status": "enacted",
+      "context": "This session's empirical operating pattern — every FGAP filing + DEC filing + FGAP status transition + .project/ block content alignment (Step 8.5) + this very DEC filing went via npx tsx -e invocations against @davidorex/pi-context block-api primitives (appendToBlock / updateItemInBlock with DispatchContext attestation), not via Edit/Write/sed against .project/*.json files directly. The instruction-imposed convention has been operating throughout the rebuild arc; user direction this turn names it as the future-imposed convention to be substrate canon. DEC-0014 established surface-enforcement for pi-runtime (main LLM tool list excludes default Pi tools); DEC-0016 establishes the equivalent instruction-enforcement for Claude Code such that the SAME extension-tool surface is the consumption pattern from both execution surfaces. Tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) is functional spec for both consumers; closing the 22 enumerated gaps + meta-pattern serves both pi-runtime + Claude Code.",
+      "decision": "Claude Code sessions operating against pi-context substrate use the same extension-tool surface the harness-confined pi-runtime main LLM uses (per DEC-0014). Specifically: NO direct Edit / Write / sed / awk / cat-redirect targeting .project/*.json files. ALL substrate operations route through @davidorex/pi-context block-api primitives (writeBlock / appendToBlock / updateItemInBlock / upsertItemInBlock / removeFromBlock / nested variants / typed-file primitives) invoked via `npx tsx -e` inline scripts OR through future thin script wrappers (e.g. `bin/pi-context` CLI executable) that compose the same primitives. DispatchContext attestation required on every write (writer.kind = 'agent' for orchestrator-driven; writer.kind = 'human' for direct-user-driven; agent_id / user identifies the actor). Schema validation, proper-lockfile contention guard, per-field author stamping all flow through the canonical primitives — same semantics, same enforcement, regardless of which execution surface invoked. Pattern is enforced by instruction for Claude Code (retains bash/read/write/edit by harness design; cannot be surface-confined like pi-runtime under DEC-0014); operational equivalence is established by binding convention. Forbidden patterns explicitly: Edit on `.project/*.json`, Write on `.project/*.json`, Bash invocations using `sed -i` / `awk` / `cat > ` / `echo > ` / `>>` targeting `.project/*.json`. Optional thin script wrappers (`bin/pi-context <subcommand> --arg ...`) ship as ergonomic shell over block-api primitives — same primitives, same semantics, same DispatchContext requirement; no parallel ungated path.",
+      "consequences": [
+        "Tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) serves both consumers — closing the 22 enumerated gaps + meta-pattern unblocks both pi-runtime (DEC-0014 surface-enforced) and Claude Code (DEC-0016 instruction-imposed). Gap closure work is the same; consumer base doubles.",
+        "DispatchContext writer.kind on every block-api invocation: 'agent' for orchestrator-driven Claude Code work (agent_id = session identifier or task slug, e.g. 'post-step-8.6-orchestrator'); 'human' when direct-user-driven (user = david); 'monitor' / 'workflow' as before. Author attribution survives the invocation surface — every write is forensically attributable.",
+        "CLAUDE.md project conventions must surface this binding — DEC-0016 + DEC-0014 + DEC-0015 + DEC-0011 collectively define the substrate operational contract. Step 8.6 successor work or a documentation-discipline phase under FGAP-026 closure plan adds the binding statement: 'Claude Code sessions operate via extension tool surface invoked by `npx tsx -e` against block-api primitives OR future `bin/pi-context` wrappers; direct Edit / Write / sed / cat-redirect targeting .project/*.json is forbidden — same forbidden-pattern as pi-runtime under DEC-0014 surface enforcement'.",
+        "Cross-surface consistency check becomes natural Step 9 (adversarial audit) audit dimension: not just 'could harness-confined main LLM dispatch the arc?' (FGAP-028's dogfood-dispatch gate) but also 'could Claude Code session under DEC-0016's imposed pattern dispatch the arc using only the same extension tool surface?' Likely the same gaps surface in both; one surface check covers both; failure of either = blocking finding for Step 10 release.",
+        "DEC-0015's 9th consequence (documentation discipline for the dual-nature note) extends: code comments / docstrings / READMEs / skill-narratives surface the framework-config-mutability + user-content-prose-staleness caveat for BOTH pi-runtime consumers AND Claude Code consumers. Same documentation; both audiences read it.",
+        "Optional `bin/pi-context` CLI wrapper (NOT in scope for any specific phase yet; user-flagged for future authoring): ships as part of pi-context package; takes subcommand + JSON-shaped args (e.g. `pi-context append-block-item --block issues --array-key issues --item '{...}' --writer agent/<id>`); composes block-api primitives internally with DispatchContext construction; ergonomic alternative to inline tsx scripts. NOT a parallel ungated path because it's the same primitives.",
+        "Bypass under DEC-0016 is technically possible (Claude Code retains bash/read/write/edit) but explicitly forbidden by binding convention + harness-prepended-mandates + CLAUDE.md statement. Empirically: this rebuild arc's session has been dogfooding the convention all session; bypass observed at Step 8.5 origin (the 'Bootstrap exemption' framing as LLM rationalization of unaddressed work) was caught by user critique — instruction-imposed enforcement requires user-vigilance + structural mandate-prepend hooks; not surface-impossible like pi-runtime. The pattern is 'workable but requires the user-feedback loop' for Claude Code; surface-enforced for pi-runtime.",
+        "FGAP-024 (no write-authority enforcement layer beyond schema validation) gains weight from a second angle: under DEC-0016, Claude Code's 'agent' writer-kind has no upstream enforcement preventing writes to inappropriate blocks (e.g. agent writing to decisions.json that should be human-authored). Authority-matrix layer would gate cross-surface inappropriate writes regardless of execution-surface origin.",
+        "DEC-0014 + DEC-0015 + DEC-0016 form the canon trio establishing the substrate operational contract: surface enforcement for pi-runtime (DEC-0014); config drives location (DEC-0015); instruction-imposed equivalent for Claude Code (DEC-0016). All three required for substrate-arc thesis to be structurally complete."
+      ],
+      "options_considered": [
+        {
+          "label": "Claude Code uses Edit / Write / bash freely against .project/*.json; substrate operations as ad-hoc choice",
+          "description": "Permit direct file edits when convenient; rely on instruction discipline (mandates, feedback memory) to prefer block-api primitives.",
+          "tradeoffs": "Empirically rejected — every direct edit observed in this session's history (e.g. early-session attempts to direct-edit .project/*.json before user-corrected) bypassed schema validation, DispatchContext attestation, and proper-lockfile guard. Recreates F-006 trap pattern from the parallel surface. Undermines DEC-0014's substrate-arc thesis at the second consumer. Substrate erosion accelerated whenever direct-edit is faster-by-default than canonical surface."
+        },
+        {
+          "label": "Same extension-tool surface for Claude Code via instruction-imposed convention (this option)",
+          "description": "Claude Code uses npx tsx -e against block-api primitives OR future bin/pi-context wrappers — same primitives the pi-runtime main LLM uses under DEC-0014; same DispatchContext attestation; same schema/lock/stamp semantics. Bypass forbidden by convention + mandate hooks + CLAUDE.md binding statement.",
+          "tradeoffs": "Pro: substrate-arc thesis structurally consistent across both consumers; tool-surface gap closure serves both; DispatchContext attestation works regardless of invocation surface; bypass technically possible but explicitly forbidden. Con: instruction-imposed has weaker teeth than surface-imposed (bypass requires user-vigilance loop to catch + correct); Claude Code retains the technical capability to direct-edit; pattern relies on harness-prepended-mandate reminder + user-feedback enforcement; not as structurally airtight as DEC-0014's surface enforcement."
+        }
+      ],
+      "related_gaps": [
+        "FGAP-024",
+        "FGAP-026",
+        "FGAP-028"
+      ],
+      "references": [
+        {
+          "label": "DEC-0014 harness-confined main LLM (parallel surface; surface-enforced)",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "DEC-0015 config drives substrate location",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "tool-surface gap audit (functional spec for both consumers)",
+          "path": "analysis/2026-05-10-tool-surface-gap-audit.md"
+        }
+      ],
+      "supersedes": [],
+      "created_by": "agent/post-step-8.6-orchestrator",
+      "created_at": "2026-05-10T04:04:46.645Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-10T04:04:46.645Z"
+    },
+    {
+      "id": "DEC-0017",
+      "title": "Work-unit context composed at dispatch time via bidirectional scoped traversal of config-declared relation_types per unit-kind context contract; inline reference arrays on work-units forbidden as DEC-0013 violation",
+      "status": "enacted",
+      "context": "User-surfaced theoretical framing 2026-05-10: a unit-of-work is the convergence point of multiple context streams — intent (requirements, goals, issues being resolved), constraints (decisions, conventions, conformance rules, applicable architectural patterns), rationale, dependencies, touched-surfaces, verification criteria, authority/attribution, position in the larger arc. Forward edges are author-time (decision authored with enacted_by_phase pointer); backward edges are execution-time (task executor needs to walk back to all decisions constraining it). Without bidirectional traversal + composition primitives, work-unit dispatch requires N+1 reads + ad-hoc composition by the orchestrator before the executor can proceed. Under DEC-0014 + DEC-0016 (harness-confined main LLM + Claude Code instruction-imposed) the orchestrator cannot do that ad-hoc composition efficiently — work-unit context bundling must be a substrate primitive, not an orchestrator responsibility.\n\nThe specific articulation user critiqued (inline arrays like `related_requirements: string[]` on the task schema) violates DEC-0013 (edges-only authoring; all inter-item relationships go through config-declared relation_types in relations.json with category dispatch). The theoretical concept is correct (work-unit needs backward visibility to all relevant context streams); the implementation shape is closure-table edges + per-unit-kind context contracts + a composition primitive at gather-time, not inline reference arrays parallel-storing relationship data.",
+      "decision": "Work-unit context (the bundle of items relevant to executing a unit-of-work) is composed at dispatch time by walking config-declared relation_types per a unit-kind-specific context contract. (1) RELATIONSHIPS: every link from a work-unit to context items is a closure-table edge in relations.json with a config-declared relation_type per DEC-0013 — NOT an inline array on the work-unit's schema. Reference-bearing fields like `related_requirements: string[]` on a task schema are forbidden as DEC-0013 violations; the substrate's authoritative reference graph lives in relations.json. (2) CONTEXT CONTRACT: per work-unit-kind, the substrate declares (in a context-contract block kind, OR encoded as composition-lens definitions in config.lenses[]) which relation_types compose the execution bundle. Different unit kinds have different bundles: implementation tasks need conventions + acceptance + architecture-touched; decision-making tasks need rationale + alternatives + related-decisions; verification tasks need verification-criteria + evidence-rules + items-under-verification. (3) GATHER PRIMITIVE: a single substrate operation (gather-execution-context(unitId, kind)) reads the unit + reads its context contract + walks the declared relation_types bidirectionally + composes the result as a single typed bundle returned as one structured payload. (4) DISPATCH-TIME INJECTION: pi-jit-agents' contextBlocks mechanism extends to item-level selectivity driven by gather-execution-context output — agents receive bundle as composed input, not as N whole-block dumps. (5) RELEVANCE SCOPING: traversal scoped per relation_type's category semantics; bounded by depth + applicability predicate (FGAP-010 territory) so reach-but-not-relevant items don't pollute the bundle.",
+      "consequences": [
+        "Work-unit context bundling is a substrate primitive, not orchestrator responsibility — under DEC-0014/0016 the harness-confined main LLM cannot do ad-hoc N+1 reads to compose execution context efficiently; the substrate must deliver the composed bundle as one tool return.",
+        "DEC-0013 enforcement extends: inline reference arrays on ANY work-unit-kind schema (task, plan-item, story, phase, or future kinds) are forbidden. References to other items go through closure-table edges with config-declared relation_types. Migration of any existing schemas violating this (e.g. tasks.schema with inline depends_on, decisions.schema with inline related_findings, etc.) is its own arc — file as relevant FGAP if surfaced.",
+        "Per-unit-kind context contract is itself substrate data — either a new context-contract block kind declaring per-kind which relation_types compose the bundle, OR encoded as kind=execution-context-bundle composition lenses in config.lenses[] keyed by unit-kind. Latter reuses existing composition lens machinery (FGAP-012 closure surface); former adds a new block kind. Decision deferred to FGAP-030 closure work; either implementation satisfies DEC-0017.",
+        "FGAP cluster filed alongside this DEC: FGAP-029 (bidirectional scoped traversal primitive — walk-ancestors / gather-by-relation), FGAP-030 (per-work-unit-kind context contract substrate), FGAP-031 (gather-execution-context composition primitive), FGAP-032 (item-level contextBlocks selectivity in pi-jit-agents driven by gather output). FGAP-010 (applicability predicate language) supplies the relevance-scoping mechanism. FGAP-005 (state-machine validation) gates context-time validity. FGAP-024 (write-authority enforcement) extends to gather-time authority (who can request which bundles for which units).",
+        "Tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) gains gather-execution-context as a P1 candidate alongside filter-block-items / read-config / read-schema. Under DEC-0014/0016 dogfood-completeness lens (FGAP-028) this primitive is required — without it, work-unit dispatch is undispatchable from a tools-only orchestrator.",
+        "Rebuild arc's FGAP-026 closure phase plan extends: a new phase between Phase 2 (high-impact query tools) and Phase 3 (workflow-execute) lands the gather-execution-context primitive + context contract substrate + walk-ancestors/walk-by-relation tools. Without this, Phase 4's arc-tracking-block authoring + Phase 5+ dispatch via dogfooding lacks the context-bundling surface.",
+        "Documentation discipline (DEC-0015 9th consequence) extends to DEC-0017 surface — gather-execution-context tool + context-contract block kind + per-unit-kind bundle semantics surface in code comments, CLAUDE.md, READMEs, skill-narratives.",
+        "DEC-0014 + DEC-0015 + DEC-0016 + DEC-0017 form the four-piece canon establishing the substrate operational contract: (a) surface enforcement for pi-runtime, (b) config drives location, (c) instruction-imposed for Claude Code, (d) work-unit context composed at dispatch time. All four required for substrate-arc thesis to be structurally complete; FGAP-028's dogfood-completeness gate measures all four together."
+      ],
+      "options_considered": [
+        {
+          "label": "Inline reference arrays on work-unit schemas (the user-quoted articulation)",
+          "description": "Add fields like related_requirements: string[], related_decisions: string[], etc. to tasks.schema (and parallel arrays to other work-unit-kind schemas). Each work-unit carries its own list of related-item IDs; reads are local to the unit.",
+          "tradeoffs": "Empirically rejected — violates DEC-0013 (parallel storage of relationship data alongside relations.json). Fragmentation: same relationship now lives in TWO places (the unit's array + relations.json edges) with no atomic write across both. Drift risk: array updated, edge missing, or vice versa. Reverse-traversal still requires reading all units to find inbound references (the array doesn't index in reverse). Cross-block consistency validation impossible because reference vocabulary scattered across N schemas. Same antipattern as FGAP-013's pre-DEC-0013 status-vocabulary-hardcoded-in-TS."
+        },
+        {
+          "label": "Closure-table edges + per-unit-kind context contract + gather-execution-context composition primitive (this option)",
+          "description": "All work-unit→context references are edges in relations.json with config-declared relation_types per DEC-0013. Per-unit-kind context contract declares which relation_types compose the execution bundle. gather-execution-context(unitId, kind) primitive walks contract + bidirectionally traverses declared edges + composes one typed bundle. Substrate primitive serving harness-confined dispatch.",
+          "tradeoffs": "Pro: substrate-arc thesis structurally consistent (single source of truth for relationships per DEC-0013); reverse traversal cheap (closure-table indexed); per-unit-kind contracts make context bundling extensible without schema changes per kind; orchestrator gets composed bundle in one tool call (FGAP-028 dogfood-dispatchable); attribution + state-machine + authority gates layer on naturally. Con: requires bidirectional traversal primitive (FGAP-029), context contract substrate (FGAP-030), composition primitive (FGAP-031), pi-jit-agents item-level injection (FGAP-032) — substantial closure work; relation_type registry must declare ALL the work-unit→context edge kinds (addresses, constrained_by, informed_by, depends_on, touches, verified_by, assigned_to, positioned_in or canonical naming aligned with substrate vocabulary)."
+        }
+      ],
+      "related_gaps": [
+        "FGAP-005",
+        "FGAP-010",
+        "FGAP-024",
+        "FGAP-029",
+        "FGAP-030",
+        "FGAP-031",
+        "FGAP-032"
+      ],
+      "references": [
+        {
+          "label": "DEC-0013 (edges-only authoring; the contract DEC-0017 enforces against inline arrays)",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "DEC-0014 (harness-confined main LLM; substrate primitive needed because orchestrator cannot do N+1 ad-hoc composition)",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "DEC-0016 (Claude Code instruction-imposed equivalent; same primitive needed for Claude Code orchestrator)",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "FGAP-028 (dogfood-completeness criterion measures DEC-0017 surface as part of dispatch capability)",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "tool-surface gap audit (gather-execution-context joins as P1 tool candidate)",
+          "path": "analysis/2026-05-10-tool-surface-gap-audit.md"
+        }
+      ],
+      "supersedes": [],
+      "created_by": "agent/post-step-8.6-orchestrator",
+      "created_at": "2026-05-10T04:14:52.901Z",
+      "enacted_by": "user",
+      "enacted_at": "2026-05-10T04:14:52.901Z"
     }
   ]
 }

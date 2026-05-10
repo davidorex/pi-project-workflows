@@ -283,6 +283,7 @@ describe("validateBlockWithMigration", () => {
 
 	it("throws when schema file is missing on disk", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-mig-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		assert.throws(() => validateBlockWithMigration(tmpDir, "missing", {}), /schema file not found/);
 		fs.rmSync(tmpDir, { recursive: true });
 	});

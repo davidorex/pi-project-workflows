@@ -138,16 +138,15 @@ For each grep result, classify each hit. Don't trust prior classifications witho
 <output_format>
 Write findings to: \`${args.outputPath}\`
 
-Structure (use these section headers verbatim):
-- \`# <Title matching the investigation>\`
-- \`## Executive summary\` — 3-5 bullets of headline findings
-- \`## Site inventory\` — table per category, rows are file:line + classification + action
-- \`## Classification details\` — per-site justification
-- \`## Audit-grep results\` — one subsection per grep with hit count + per-hit classification
-- \`## Cross-references\` — relevant prior arc planning that covers concerns surfaced
-- \`## Recommendations\` — concrete next-action recommendations (no hedging)
+**TABLES-ONLY rule (binding)**: NO prose summary section. NO recommendations narrative. NO "executive summary" / "headline findings" / "key findings" / "tldr" / "in conclusion". Aggregation is the orchestrator's job; agent reports cells, orchestrator runs the math. Prose-summary is the layer where LLM aggregation hallucination contradicts the data — eliminated by structural ban.
 
-Return only: file path + 1-line summary + 1-line "anti-pattern check passed" or named violation.
+Structure (use these section headers verbatim; NO additional sections):
+- \`# <Title matching the investigation>\`
+- \`## Site inventory\` — the full per-site table per output_schema_per_site. EVERY row populated. This is the data; aggregates are computed downstream.
+- \`## Audit-grep results\` — one subsection per grep with exact hit count + per-hit classification (table format; no prose interpretation)
+- \`## Cross-references\` — bullet list, ONE LINE per existing-arc match (e.g. \`- pi-workflows source PROJECT_DIR imports → Phase 7 cascade target\`). NO narrative.
+
+Return only: file path + 1-line "anti-pattern check passed" or named violation. NO summary, NO counts (orchestrator computes from table), NO interpretation.
 </output_format>
 
 <stop_triggers>

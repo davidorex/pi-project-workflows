@@ -33,7 +33,14 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
-import { PROJECT_DIR, SCHEMAS_DIR } from "./project-dir.js";
+// PROJECT_DIR + SCHEMAS_DIR retained for the init/install scaffolding paths
+// only — `/project init` creates the substrate dir from scratch (no bootstrap
+// pointer exists yet at that point), so it cannot route through
+// resolveContextDir. Phase 6 of FGAP-026 closure replaces these with the
+// /context init / install / migrate ceremony that prompts the user for
+// dirName per DEC-0015. All read-paths through this file (handleAddWork)
+// route through projectDir(cwd) / schemasDir(cwd).
+import { PROJECT_DIR, projectDir, SCHEMAS_DIR, schemasDir } from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { checkForUpdates } from "./update-check.js";
@@ -127,11 +134,11 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
  * items from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
-	const workflowDir = path.join(ctx.cwd, PROJECT_DIR);
-	const schemasDir = path.join(workflowDir, SCHEMAS_DIR);
+	const workflowDir = projectDir(ctx.cwd);
+	const schemasRoot = schemasDir(ctx.cwd);
 
-	if (!fs.existsSync(schemasDir)) {
-		ctx.ui.notify(`No ${PROJECT_DIR}/${SCHEMAS_DIR}/ directory found.`, "warning");
+	if (!fs.existsSync(schemasRoot)) {
+		ctx.ui.notify(`No ${path.relative(ctx.cwd, schemasRoot)}/ directory found.`, "warning");
 		return;
 	}
 

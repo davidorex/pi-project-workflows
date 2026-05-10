@@ -10,11 +10,14 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { appendToBlock, readBlock, updateItemInBlock } from "./block-api.js";
+import { writeBootstrapPointer } from "./project-dir.js";
 import { findAppendableBlocks } from "./project-sdk.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "block-tools-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "block-tools-"));
+	writeBootstrapPointer(dir, ".project");
+	return dir;
 }
 
 /** Set up a block with schema and initial data in a temp dir */

@@ -22,7 +22,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PROJECT_DIR } from "./project-dir.js";
+import { resolveContextDir } from "./project-dir.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
 // ── Type definitions (from plan §"Files to create") ──────────────────────────
@@ -145,33 +145,38 @@ function bundledSchemaPath(name: "config" | "relations"): string {
 	return path.resolve(here, "..", "schemas", `${name}.schema.json`);
 }
 
-// ── Bootstrap-fixed file paths ───────────────────────────────────────────────
+// ── Substrate-relative file paths (resolver-driven) ─────────────────────────
 
-/** `<cwd>/.project/config.json` — bootstrap exemption: config lives at the
- * fixed location even when `config.root` relocates the rest of the substrate. */
+/** `<resolveContextDir(cwd)>/config.json` — config lives inside the substrate
+ * dir declared by the bootstrap pointer at `<cwd>/.pi-context.json`
+ * per DEC-0015. The substrate dir is config-driven; only the bootstrap
+ * pointer at the fixed `<cwd>/.pi-context.json` location is hardcoded. */
 function configPath(cwd: string): string {
-	return path.join(cwd, PROJECT_DIR, "config.json");
+	return path.join(resolveContextDir(cwd), "config.json");
 }
 
-/** `<cwd>/.project/relations.json` — same bootstrap exemption. */
+/** `<resolveContextDir(cwd)>/relations.json` — same substrate-relative
+ * resolution as configPath; declared inside the bootstrap-pointer-named
+ * substrate dir per DEC-0015. */
 function relationsPath(cwd: string): string {
-	return path.join(cwd, PROJECT_DIR, "relations.json");
+	return path.join(resolveContextDir(cwd), "relations.json");
 }
 
 // ── Loaders ─────────────────────────────────────────────────────────────────
 
 /**
- * Resolve the substrate root for `cwd`. Reads the bootstrap-fixed
- * `<cwd>/.project/config.json`, returns `config.root` resolved relative to
- * cwd. Falls back to `<cwd>/.project` when no config is present (bootstrap
- * exemption — the config itself lives there too).
+ * Resolve the substrate root for `cwd`. Reads the substrate-dir-relative
+ * config (`<resolveContextDir(cwd)>/config.json`); when present, returns
+ * `config.root` resolved relative to cwd. Falls back to the resolver-derived
+ * substrate dir when no config is present (the config itself lives inside
+ * that dir, so absence-of-config still leaves a valid substrate root).
  */
 export function projectRoot(cwd: string): string {
 	const cfg = loadConfig(cwd);
 	if (cfg && typeof cfg.root === "string" && cfg.root.length > 0) {
 		return path.resolve(cwd, cfg.root);
 	}
-	return path.join(cwd, PROJECT_DIR);
+	return resolveContextDir(cwd);
 }
 
 /**
@@ -228,6 +233,7 @@ export function loadRelations(cwd: string): Edge[] {
 interface CacheEntry {
 	configMtimeMs: number;
 	relationsMtimeMs: number;
+	bootstrapMtimeMs: number;
 	value: ProjectContext;
 }
 
@@ -245,24 +251,34 @@ function safeMtimeMs(p: string): number {
 
 /**
  * Cached `(loadConfig, loadRelations)` pair, keyed by absolute cwd. Cache
- * invalidates when either `config.json` or `relations.json` mtime changes —
- * deleting the file (mtime → 0) also invalidates so a config-removal is
- * picked up. Direct, intentional cache flush is not exposed; tests that
- * need to bypass call `loadConfig`/`loadRelations` directly.
+ * invalidates when ANY of `<cwd>/.pi-context.json` (bootstrap pointer),
+ * `<substrate>/config.json`, or `<substrate>/relations.json` mtime changes.
+ * The bootstrap-mtime check catches the substrate-rename case — Phase 10's
+ * `/context migrate` ceremony rewrites the pointer atomically; cache
+ * invalidates so subsequent reads hit the new substrate dir. Bootstrap-stat
+ * is wrapped in try/catch (via safeMtimeMs) so a transient missing pointer
+ * mid-test reads as mtime=0 and re-runs the load (which then throws
+ * BootstrapNotFoundError if still absent).
  */
 export function getProjectContext(cwd: string): ProjectContext {
 	const key = path.resolve(cwd);
+	const bMtime = safeMtimeMs(path.join(key, ".pi-context.json"));
 	const cMtime = safeMtimeMs(configPath(cwd));
 	const rMtime = safeMtimeMs(relationsPath(cwd));
 	const hit = contextCache.get(key);
-	if (hit && hit.configMtimeMs === cMtime && hit.relationsMtimeMs === rMtime) {
+	if (hit && hit.bootstrapMtimeMs === bMtime && hit.configMtimeMs === cMtime && hit.relationsMtimeMs === rMtime) {
 		return hit.value;
 	}
 	const value: ProjectContext = {
 		config: loadConfig(cwd),
 		relations: loadRelations(cwd),
 	};
-	contextCache.set(key, { configMtimeMs: cMtime, relationsMtimeMs: rMtime, value });
+	contextCache.set(key, {
+		bootstrapMtimeMs: bMtime,
+		configMtimeMs: cMtime,
+		relationsMtimeMs: rMtime,
+		value,
+	});
 	return value;
 }
 

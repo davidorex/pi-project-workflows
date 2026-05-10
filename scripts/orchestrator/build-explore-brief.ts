@@ -164,7 +164,40 @@ Return only: file path + 1-line summary + 1-line "anti-pattern check passed" or 
 - Conditional verdicts forbidden: "could be a real issue if..." / "may not be" / "appears correct" / "likely works". State observed evidence + verdict.
 - Filed-then-closed pattern: cross-check escalation candidates against existing arc planning (Phase 6.3, Phase 7, Phase 1.3, etc.) before flagging. Re-litigating already-planned-fixes is anti-pattern.
 - Pre-DEC-0015 \`.project\`-as-canon language in YOUR OWN report = self-reproduction of the violation. Use \`<contextDir>\` or \`<substrate dir>\` placeholder.
+- **NO BLANKET CLASSIFICATION**: do NOT classify multiple sites with the same verdict for "consistency" / "to be safe" / "uniform application". Each site requires its own per-site trace evidence. The blanket-classification trap is itself a hedge that produces false-pass risk per DEC-0018 (pointer side-effect masks the actual feature being tested).
+- **FORBIDDEN JUSTIFICATION PHRASES**: "for consistency" / "to be safe" / "blanket apply" / "all tests need pointer" / "uniform classification" / "applied across the file". If you find yourself reaching for these, classify as INCONCLUSIVE instead — orchestrator decides.
+- **NO PATTERN CONTINUATION**: if N consecutive rows received the same classification, the N+1 row is NOT thereby presumed same. Trace the N+1 row independently. Pattern-completion is an LLM tendency that contaminates classification.
+- **EXACT INTEGER COUNTS**: report exact counts of mkdtempSync sites, helper functions, etc. Forbidden: "194" when actual is 193; "80+" or "~10" or "approximately N". Exact integers only.
+- **INCONCLUSIVE is a legitimate verdict**: when per-site trace cost exceeds your investigation budget, classify INCONCLUSIVE with one-line reason ("import chain ambiguous via dynamic require at line N"). Orchestrator decides next step. Defaulting to safest classification ("config-required because uncertain") is the hedge this rule forbids.
 </anti_patterns>
+
+<output_schema_per_site>
+**Required columns** for the Site Inventory table — every row MUST populate every column. Empty cells = audit failure:
+
+| File | Line | Helper-or-Inline | Tmpdir-contents | First-resolver-cascading-call (file:line citation) | Classification | One-sentence justification citing the call chain |
+
+**Worked examples** (one per classification):
+
+CONFIG-REQUIRED example (transitive cascade via local import):
+\`\`\`
+| src/step-block.test.ts | 15 | inline | .project/schemas/foo.schema.json + foo.json | step-block.ts:171 schemaPath(cwd, "foo") → project-dir.ts:51 schemasDir → project-dir.ts:43 resolveContextDir | config-required | step-block.ts:171 calls schemaPath which cascades through resolveContextDir at project-dir.ts:43 |
+\`\`\`
+
+NOCONFIG-TEST example (intentional absent-config assertion):
+\`\`\`
+| src/foo.test.ts | 67 | inline (noconfig variant) | .project/ dir only; no config.json | foo.ts:88 loadConfig(cwd) returns null (config.json absent) | noconfig-test | test asserts result.error matches /config\\.json/; pointer-YES + config-NO preserves intent |
+\`\`\`
+
+NO-RESOLVER-REACH example (genuine bypass):
+\`\`\`
+| src/bar.test.ts | 22 | inline | trace JSONL only | bar.ts:42 writeJsonl (pure function; no pi-context import in chain) | no-resolver-reach | bar.ts imports only fs + path; no @davidorex/pi-context/* in import chain (verified file content); test exercises only writeJsonl |
+\`\`\`
+
+INCONCLUSIVE example (audit budget exceeded):
+\`\`\`
+| src/baz.test.ts | 99 | inline | varies per test | baz.ts:55 dynamicRequire(\`./\${var}.js\`) | INCONCLUSIVE | dynamic require at baz.ts:55 prevents static trace of pi-context reach; orchestrator decides whether to write pointer defensively or split into separate audit |
+\`\`\`
+</output_schema_per_site>
 
 <report_back_format>
 Three terse lines:

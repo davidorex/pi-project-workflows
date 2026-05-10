@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/bootstrap",
+  "version": "1.0.0",
+  "title": "pi-context bootstrap pointer",
+  "description": "Per-cwd bootstrap pointer at <cwd>/.pi-context.json declaring the substrate dir name. Read by resolveContextDir(cwd) before any substrate operation; substrate dir is config-driven per DEC-0015 (no hardcoded substrate-dir paths anywhere in pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors). Atomic-safety mechanism per FGAP-026 closure phase 1.1: written for legacy .project/-using repos containing {contextDir: '.project'} so substrate stays reachable when Phase 1.2 lands resolveContextDir replacing PROJECT_DIR + SCHEMAS_DIR constants. For new repos: written by /context init (prompt-required for dirName per DEC-0015; defaulting reintroduces hardcode-dressed-as-default this DEC rejects). Mutable post-init via /context migrate (Phase 10 of FGAP-026 closure) which atomically renames the dir + rewrites this pointer + updates config.root.",
+  "type": "object",
+  "properties": {
+    "contextDir": {
+      "type": "string",
+      "description": "Directory name (relative to cwd) where the substrate lives. User-decided at /context init time per DEC-0015. For pre-existing repos using legacy .project/ convention, value is '.project' until /context migrate runs."
+    },
+    "version": {
+      "type": "string",
+      "description": "Bootstrap pointer format version. '1.0.0' for the initial format. Future format changes increment via semver per FGAP-006 schema versioning discipline; migration registry handles transitions if breaking."
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the bootstrap pointer was first written. Forensic; helps trace when the substrate was bootstrapped for this repo."
+    }
+  },
+  "required": ["contextDir"],
+  "additionalProperties": false
+}

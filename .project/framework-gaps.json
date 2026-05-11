@@ -1341,6 +1341,38 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T07:55:00Z"
+    },
+    {
+      "id": "FGAP-039",
+      "title": "build-explore-brief.ts <output_schema_per_site> section hardcoded to FGAP-026 fixture-cascade audit shape — conflicts with non-FGAP-026 investigation questions",
+      "status": "identified",
+      "priority": "P2",
+      "package": "scripts/orchestrator",
+      "layer": "L1",
+      "description": "scripts/orchestrator/build-explore-brief.ts emits a hardcoded <output_schema_per_site> XML section (lines ~173-200 in the rendered brief) declaring required columns: File / Line / Helper-or-Inline / Tmpdir-contents / First-resolver-cascading-call / Classification / Justification. These columns are FGAP-026-fixture-cascade-specific (mkdtempSync helper-vs-inline + tmpdir-contents + cascading-call trace). When the script is reused for a different investigation (e.g. FGAP-035 cascade-target inventory which wants columns: # / Site / File:line / Current code / Required change / DEC reference), the agent receives contradictory column specs — the per-investigation question vs the hardcoded schema. Surfaced this turn during FGAP-035 Explore re-dispatch via canonical surface.",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/build-explore-brief.ts",
+          "lines": "173-198",
+          "reference": "<output_schema_per_site> section + 4 worked examples all FGAP-026-fixture-cascade-specific"
+        },
+        {
+          "file": "scripts/orchestrator/build-explore-brief.ts",
+          "lines": "162-170",
+          "reference": "<anti_patterns> section also leaks FGAP-026 vocabulary (\"pointer side-effect masks the actual feature\", \"NOCONFIG-TEST\" classification term, \".project mention in production source\" anti-pattern)"
+        }
+      ],
+      "impact": "Agents dispatched via build-explore-brief.ts for non-FGAP-026 investigations receive contradictory instructions. The dispatch this turn (FGAP-035 cascade-target inventory) shows the conflict directly: question specifies one column shape; <output_schema_per_site> specifies another. Agent has to silently choose one (likely follows the more-specific question) but the conflicting schema still pollutes the prompt — token waste + LLM-confusion risk. Future investigations beyond FGAP-026/FGAP-035 will hit the same shape. Script is over-fitted to its first use case.",
+      "canonical_vocabulary": "investigation-shape parameterization — per-question output schema + anti-patterns",
+      "proposed_resolution": "Refactor build-explore-brief.ts to accept --output-schema <path> + --anti-patterns <path> args (file paths to per-investigation schema + anti-patterns markdown fragments). Remove the hardcoded sections OR move them into a default fragment file (default --output-schema scripts/orchestrator/templates/explore-output-schema-default.md) so the FGAP-026 columns are the default but overridable. Each new investigation type files its own per-shape schema + anti-patterns fragment under scripts/orchestrator/templates/. The <anti_patterns> + <output_schema_per_site> sections become per-investigation, not hardcoded.",
+      "related_decisions": [
+        "DEC-0019",
+        "DEC-0020"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-12T08:15:00Z"
     }
   ]
 }

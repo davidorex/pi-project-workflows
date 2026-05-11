@@ -31,6 +31,7 @@ interface Args {
 	outputPath: string;
 	requiredReading?: string[];
 	auditGreps?: Array<{ pattern: string; desc: string }>;
+	contextItems?: string;
 }
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -58,6 +59,9 @@ function parseArgs(argv: string[]): Args {
 				return { pattern: pattern?.trim() ?? "", desc: desc?.trim() ?? "" };
 			});
 			i++;
+		} else if (a === "--context-items" && argv[i + 1]) {
+			out.contextItems = argv[i + 1];
+			i++;
 		}
 	}
 	if (!out.question || !out.target || !out.outputPath) {
@@ -80,6 +84,14 @@ function buildPreamble(): string {
 	}).trim();
 }
 
+function buildContextItems(items: string | undefined): string {
+	if (!items) return "";
+	const rendered = execSync(`tsx ${path.join(SCRIPT_DIR, "inject-context-items.ts")} --items "${items}" --format xml`, {
+		encoding: "utf-8",
+	}).trim();
+	return `\n<context_items>\n${rendered}\n</context_items>\n`;
+}
+
 function buildBrief(args: Args): string {
 	const state = gitState();
 	const preamble = buildPreamble();
@@ -98,7 +110,7 @@ ${preamble}
 - Working tree: ${state.statusShort ? "DIRTY (see below)" : "clean"}
 ${state.statusShort ? `\`\`\`\n${state.statusShort}\n\`\`\`` : ""}
 </substrate_state>
-
+${buildContextItems(args.contextItems)}
 <investigation_question>
 ${args.question}
 </investigation_question>

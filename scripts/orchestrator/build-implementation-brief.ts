@@ -33,6 +33,7 @@ interface Args {
 	sectionSpecSection?: string;
 	sectionSpecFile?: string;
 	taskTemplate: string;
+	contextItems?: string;
 }
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -64,6 +65,9 @@ function parseArgs(argv: string[]): Args {
 		} else if (a === "--task-template" && argv[i + 1]) {
 			const v = argv[i + 1];
 			out.taskTemplate = v.startsWith("@") ? fs.readFileSync(v.slice(1), "utf-8") : v;
+			i++;
+		} else if (a === "--context-items" && argv[i + 1]) {
+			out.contextItems = argv[i + 1];
 			i++;
 		}
 	}
@@ -117,6 +121,9 @@ function buildBrief(args: Args): string {
 	} catch {
 		// optional
 	}
+	const contextItems = args.contextItems
+		? `\n<context_items>\n${runScript("inject-context-items.ts", `--items "${args.contextItems}" --format xml`)}\n</context_items>\n`
+		: "";
 
 	return `<operating_constraints>
 ${preamble}
@@ -137,7 +144,7 @@ ${state.recentCommits}
 **Active task** (${args.taskId}):
 ${taskProgress}
 </substrate_state>
-
+${contextItems}
 <section_spec>
 **Section**: ${args.section}
 **Target package**: ${args.target}

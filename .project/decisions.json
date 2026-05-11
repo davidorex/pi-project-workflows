@@ -957,6 +957,61 @@
       "enacted_by": "human/davidryan@gmail.com",
       "id": "DEC-0020",
       "created_at": "2026-05-10T23:38:01.244Z"
+    },
+    {
+      "title": "Hard-throw substrate primitive cascades per-package atomically — source + absent-substrate-catch + test-fixture cascade land together per consumer package; phase-split-by-concern-type retired",
+      "status": "enacted",
+      "context": "FGAP-026 phase 1.2 Section C.3 (commit d64cb33 — pi-workflows test fixture cascade) demonstrated empirically that splitting per-consumer-package work across phases by concern-type is structurally invalid when the underlying substrate primitive is hard-throw (DEC-0015's resolveContextDir). Plan modeled cascade as: fixture-cascade per package in Phase 1.2 sections C.2/C.3/C.4; source-cascade per package in Phase 7. C.3 implementation cascaded fixtures correctly per the plan (138 sites cascaded + 55 skipped per explore classification) but 20/826 pi-workflows tests still failed because: (a) explore agent misclassified 2 test files (loop.test.ts + resume.test.ts) as no-resolver-reach when they transitively reach resolver via executeWorkflow → readBlock — 16 of the 20 failures; (b) pi-workflows production source (step-shared.ts) hardcodes .project/schemas/<name>.schema.json for block: prefix expansion in resolveSchemaPath — 3 failures that fixture cascade alone CANNOT fix; (c) pi-workflows compileAgentSpec gracefully-skipped block injection when .project/ did not exist (pre-DEC-0015 via loadConfig→null), now throws BootstrapNotFoundError under DEC-0015 strict — 1 failure that fixture cascade alone CANNOT fix. The fixture-vs-source phase split was an LLM-rationalized abstraction; reality is atomic-by-package. C.2 pi-jit-agents (commit 99436c3) lucky-passed because pi-jit-agents source had no hardcoded .project literals AND no absent-substrate-graceful-skip code paths — the principle was wrong but the consequence happened to be invisible. Retroactive C.2 audit + pre-dispatch C.4 audit required to confirm pattern hold.",
+      "decision": "When a hard-throw substrate primitive lands (e.g. resolveContextDir per DEC-0015, OR any future primitive that hard-throws on absent declared state), per-consumer-package cascade is ATOMIC: source-cascade + absent-substrate-catch + test-fixture cascade land together per arc (single commit OR sequential commits within one sub-phase). Splitting these across phases by concern-type is forbidden because hard-throw is atomic across all consumers — there is no fixture-only half-state, no source-only half-state. Specifically per-consumer-package atomic gates: (1) SOURCE CASCADE — hardcoded substrate-dir literals in production source → resolver-cascaded helpers per DEC-0015 strict; (2) ABSENT-SUBSTRATE CATCH — production code paths that gracefully-degraded pre-hard-throw via null-return → catch the typed error (BootstrapNotFoundError / equivalent) + preserve the graceful-skip semantic post-hard-throw, same pattern as audit-fix cluster D-B-3/D-B-4 added at addWork + installProject tool entry points; (3) TEST FIXTURE CASCADE — tests that exercise resolver-cascading paths (direct OR transitive) → write bootstrap pointer / equivalent fixture priming. Pre-dispatch audit for any consumer-package cascade: grep production source for hardcoded substrate-dir literals (gate 1 surface); enumerate absent-substrate-handling code paths from pre-hard-throw era (gate 2 surface); enumerate per-test-file resolver-reach including transitive (gate 3 surface). The canonical sub-phase analysis (analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md) Phase 7 row + Phase 1.2 cascade sections are rewritten per DEC-0021: each C.* section for a consumer package includes all 3 gates; Phase 7 is retired as a separate stage (its concerns are subsumed into C.* atomic units).",
+      "consequences": [
+        "FGAP-026 phase 1.2 C.3 completion requires 3 atomic gates: cascade resolveSchemaPath in step-shared.ts (production source — gate 1) + catch BootstrapNotFoundError in compileAgentSpec (absent-substrate-catch — gate 2) + fixture cascade for misclassified loop.test.ts + resume.test.ts (fixture cascade fix — gate 3). All three land before C.3 declared complete.",
+        "Retroactive C.2 pi-jit-agents source audit: grep production source for hardcoded .project literals + enumerate absent-substrate-handling code paths. If gaps found, file as C.2-followup atomic-gate work; if confirmed clean, file an audit note in the C.2 commit chain.",
+        "Pre-dispatch C.4 pi-behavior-monitors audit: same 3-gate enumeration MUST happen before any C.4 dispatch. Cannot blindly trust the C.2 pattern held; cannot blindly assume fixture-only cascade is sufficient.",
+        "Canonical sub-phase analysis (analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md) updated: Phase 7 row retired as separate stage; Phase 1.2 C.* sections redefined as per-package atomic units encompassing all 3 gates. Phase 8 (comprehensive fixture sweep) retained as Phase-8 territory only for cross-package consistency review post-atomic-unit-landings.",
+        "Pre-dispatch explore briefs for any future consumer-package cascade include: production source `.project` literal grep + absent-substrate-handling enumeration + per-test-file transitive-reach registry (already partially handled by scripts/orchestrator/extract-test-import-chains.ts; needs extension to enumerate gate-2 surface).",
+        "Plan-mode briefs for hard-throw primitive landings (current FGAP-026 + future analogues) declare the per-package atomic boundary as required reading; subagent briefs include the 3-gate enumeration as binding spec.",
+        "DEC-0015's 'NO hardcoded substrate-dir paths anywhere in pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors source' is the canonical principle; DEC-0021 operationalizes WHEN that cascade lands per consumer package (atomically with that package's other gates), not WHERE.",
+        "scripts/orchestrator/extract-test-import-chains.ts (per DEC-0019) gains an extension to enumerate not just test-import chains but also production-source hardcoded-literal sites + absent-substrate-handling code paths per package — pre-dispatch atomic audit surface."
+      ],
+      "related_gaps": [
+        "FGAP-026",
+        "FGAP-033",
+        "FGAP-034"
+      ],
+      "references": [
+        {
+          "label": "C.3 commit (atomic-boundary failure surface)",
+          "path": "git:d64cb33"
+        },
+        {
+          "label": "Pi-workflows test failure analysis at HEAD d64cb33",
+          "path": "/tmp/c3-test.txt"
+        },
+        {
+          "label": "DEC-0015 (config drives substrate location; the strict-hard-throw policy DEC-0021 operationalizes)",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "DEC-0018 (tests-pass-alone insufficient; informs the 3-gate atomic-boundary)",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "DEC-0019 (scripts-as-test-surface; extract-test-import-chains.ts extension target)",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "feedback_per_package_atomic_cascade.md (companion doctrine layer)",
+          "path": "memory/feedback_per_package_atomic_cascade.md"
+        },
+        {
+          "label": "Canonical sub-phase analysis (Phase 7 retired per DEC-0021)",
+          "path": "analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "enacted_by": "human/davidryan@gmail.com",
+      "id": "DEC-0021",
+      "created_at": "2026-05-11T21:28:05.039Z"
     }
   ]
 }

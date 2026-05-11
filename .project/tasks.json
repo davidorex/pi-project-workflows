@@ -11,7 +11,7 @@
         ".pi-context.json written for this repo containing {contextDir: '.project'}"
       ],
       "status": "in-progress",
-      "notes": "FGAP-026 phase 1.2 progress at HEAD 3274466. Steps complete: 1 (DEC-0021 d64a0f3); 2 (C.3 COMPLETION 856e139 + f4dd1a2 — pi-workflows 824/0/2); 3 (C.2 retroactive audit + Gate-2 closure ba58d78 — pi-jit-agents 150/0/1); 4 (C.4 audit + Gate-3 closure 3274466 — pi-behavior-monitors 157/157). All 4 packages green: pi-context 390/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/157. Sequenced ahead: (5) canonical sub-phase analysis update per DEC-0021 (Phase 7 retired as separate stage; C.* sections redefined per-package atomic); (6) status cascade final refresh. Then F (project-dir.test.ts NEW 7 tests) + Section E husky-gate re-roll + Phase 1.3 (read-config + read-schema tools)."
+      "notes": "FGAP-026 phase 1.2 progress at HEAD 9608989. Steps complete: 1 (DEC-0021 d64a0f3); 2 (C.3 COMPLETION 856e139 + f4dd1a2); 3 (C.2 audit + Gate-2 closure ba58d78); 4 (C.4 audit + Gate-3 closure 3274466); 5 (canonical sub-phase analysis update 9608989 — Phase 7 retired; C.* per-package atomic; per-gate completion table added). All 4 packages green. Sequenced ahead: (6) status cascade final refresh. Then F (project-dir.test.ts NEW 7 tests) + Section E husky-gate re-roll + Phase 1.3 (read-config + read-schema tools)."
     },
     {
       "id": "TASK-022",

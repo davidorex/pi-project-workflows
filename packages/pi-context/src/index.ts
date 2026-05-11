@@ -33,9 +33,17 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
-import { BootstrapNotFoundError, projectDir, SCHEMAS_DIR, schemasDir, writeBootstrapPointer } from "./project-dir.js";
+import {
+	BootstrapNotFoundError,
+	projectDir,
+	SCHEMAS_DIR,
+	schemaPath,
+	schemasDir,
+	writeBootstrapPointer,
+} from "./project-dir.js";
 import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
+import { readSchema } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -846,6 +854,73 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: read-config ───────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "read-config",
+		label: "Read Config",
+		description:
+			"Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks.",
+		promptSnippet: "Read project config — vocabulary, lenses, relation_types, status_buckets",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const config = loadConfig(ctx.cwd);
+			const configPath = path.join(projectDir(ctx.cwd), "config.json");
+			const result = { config, configPath };
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit. Full content: ${configPath}]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: read-schema ───────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "read-schema",
+		label: "Read Schema",
+		description: "Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent.",
+		promptSnippet: "Read a block schema as structured JSON",
+		parameters: Type.Object({
+			schemaName: Type.String({
+				description: "Schema name without extension (e.g., 'tasks', 'decisions', 'issues')",
+			}),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { schemaName: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const schema = readSchema(ctx.cwd, params.schemaName);
+			const schemaPathStr = schemaPath(ctx.cwd, params.schemaName);
+			const result = { schema, schemaPath: schemaPathStr };
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit. Full content: ${schemaPathStr}]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
 			};
 		},
 	});

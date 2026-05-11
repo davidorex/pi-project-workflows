@@ -10,9 +10,11 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { appendToBlock, readBlock, updateItemInBlock } from "./block-api.js";
-import { writeBootstrapPointer } from "./project-dir.js";
+import { loadConfig } from "./project-context.js";
+import { projectDir, schemaPath, writeBootstrapPointer } from "./project-dir.js";
 import { findAppendableBlocks } from "./project-sdk.js";
 import { ValidationError } from "./schema-validator.js";
+import { readSchema } from "./schema-write.js";
 
 function makeTmpDir(): string {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "block-tools-"));
@@ -643,5 +645,105 @@ describe("read-block-dir (tool surface)", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		const result = readBlockDir(tmpDir, "nonexistent");
 		assert.deepStrictEqual(result, []);
+	});
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// read-config tool — loadConfig + projectDir cascade through bootstrap pointer
+// (DEC-0015: substrate location is config-driven via .pi-context.json; the
+// computed config path must reflect the pointer-declared contextDir, not a
+// hardcoded ".project" literal).
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("read-config tool — loadConfig + projectDir cascade", () => {
+	it("returns null when config absent and resolves path through pointer-declared contextDir", (t) => {
+		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "read-config-cascade-"));
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		// Non-default contextDir to prove no hardcoded ".project" literal.
+		writeBootstrapPointer(cwd, ".context-test");
+
+		const config = loadConfig(cwd);
+		assert.strictEqual(config, null, "loadConfig returns null when config.json absent");
+
+		const computed = path.join(projectDir(cwd), "config.json");
+		assert.strictEqual(
+			computed,
+			path.join(cwd, ".context-test", "config.json"),
+			"projectDir cascades through bootstrap pointer (.context-test, not .project)",
+		);
+	});
+
+	it("returns parsed ConfigBlock when config present at resolver-correct path", (t) => {
+		const cwd = makeTmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		// makeTmpDir wrote pointer for ".project"; place config there.
+		const configPath = path.join(projectDir(cwd), "config.json");
+		const minimalConfig = {
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [
+				{
+					canonical_id: "tasks",
+					display_name: "Tasks",
+					prefix: "TASK-",
+					schema_path: "schemas/tasks.schema.json",
+					array_key: "tasks",
+					data_path: "tasks.json",
+				},
+			],
+		};
+		fs.mkdirSync(path.dirname(configPath), { recursive: true });
+		fs.writeFileSync(configPath, JSON.stringify(minimalConfig));
+
+		const loaded = loadConfig(cwd);
+		assert.notStrictEqual(loaded, null, "loadConfig returns non-null when file present");
+		assert.strictEqual(loaded?.schema_version, "1.0.0");
+		assert.strictEqual(loaded?.root, ".project");
+		assert.strictEqual(loaded?.block_kinds.length, 1);
+		assert.strictEqual(loaded?.block_kinds[0].canonical_id, "tasks");
+	});
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// read-schema tool — readSchema + schemaPath cascade through bootstrap pointer
+// (DEC-0015: schema location is config-driven; schemaPath must compose
+// pointer-declared contextDir + SCHEMAS_DIR + "<name>.schema.json").
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("read-schema tool — readSchema + schemaPath cascade", () => {
+	it("returns null when schema absent and resolves path through pointer-declared contextDir", (t) => {
+		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "read-schema-cascade-"));
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeBootstrapPointer(cwd, ".context-test");
+
+		const schema = readSchema(cwd, "nonexistent");
+		assert.strictEqual(schema, null, "readSchema returns null when schema absent");
+
+		const computed = schemaPath(cwd, "nonexistent");
+		assert.strictEqual(
+			computed,
+			path.join(cwd, ".context-test", "schemas", "nonexistent.schema.json"),
+			"schemaPath cascades through bootstrap pointer (.context-test/schemas/, not .project/schemas/)",
+		);
+	});
+
+	it("returns parsed schema object when schema present at resolver-correct path", (t) => {
+		const cwd = makeTmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		const sp = schemaPath(cwd, "tasks");
+		const minimalSchema = {
+			$schema: "http://json-schema.org/draft-07/schema#",
+			type: "object",
+			properties: {},
+		};
+		fs.mkdirSync(path.dirname(sp), { recursive: true });
+		fs.writeFileSync(sp, JSON.stringify(minimalSchema));
+
+		const loaded = readSchema(cwd, "tasks") as Record<string, unknown> | null;
+		assert.notStrictEqual(loaded, null, "readSchema returns non-null when file present");
+		assert.strictEqual(loaded?.type, "object");
+		assert.strictEqual(loaded?.$schema, "http://json-schema.org/draft-07/schema#");
 	});
 });

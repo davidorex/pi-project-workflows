@@ -4,7 +4,7 @@ Living design surface for substrate block kinds. Tracks: existing block schemas 
 
 **Not substrate.** Substrate is the enacted state in `.project/*.json`. This doc is the design workspace where ideas are drafted before reification as FGAPs / DECs / schemas.
 
-**Discipline**: when a draft hardens into a decision, file as FGAP/DEC/TASK; remove from the "pending drafts" section and reference its substrate-id. When a draft is rejected, move it to "rejected" with rationale so future-us doesn't re-litigate.
+**Discipline**: when a draft hardens into a decision, file as FGAP/DEC/TASK; remove from the "pending drafts" section and reference its substrate-id.
 
 ---
 
@@ -62,17 +62,6 @@ Per DEC-0009 + DEC-0013 — closure-table is the canonical primitive for ALL int
 ## Pending designs (drafts under consideration; not yet FGAP-filed)
 
 (empty — populate as design ideas surface; each draft below a `### <name>` heading with proposed shape, motivating use-case, open questions, and link to FGAP once filed)
-
----
-
-## Rejected designs
-
-### change-specs (peer block kind)
-
-**Date considered**: 2026-05-12
-**Proposed shape**: peer block kind with items per per-site (file:line, current code, required change, classification, dec_refs); CHG-NNN id namespace.
-**Rejected because**: each Explore agent run produces ONE output. The cascade-target rows are nested array-fields WITHIN the explore-report item, not standalone block items. The unit of substrate is the exploration output, not the individual row.
-**Better path**: not yet decided. Either (a) extend an existing block kind with a `cascade_targets[]` nested array on its items, or (b) introduce an `explore-reports` block kind whose items carry the rows nested. Both await design conversation.
 
 ---
 

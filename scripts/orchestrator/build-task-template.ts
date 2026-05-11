@@ -171,7 +171,7 @@ Anti-pattern check: PASS | FAIL with named violation
 
 function main(): void {
 	const args = parseArgs(process.argv.slice(2));
-	process.stdout.write(buildTemplate(args));
+	console.log(buildTemplate(args));
 }
 
 main();

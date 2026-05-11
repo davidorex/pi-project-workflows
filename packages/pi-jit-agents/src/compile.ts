@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
 import { readBlock } from "@davidorex/pi-context/block-api";
-import { projectDir, schemaPath } from "@davidorex/pi-context/project-dir";
+import { BootstrapNotFoundError, projectDir, schemaPath } from "@davidorex/pi-context/project-dir";
 import type nunjucks from "nunjucks";
 import { type BudgetWarning, enforceBudget } from "./budget-enforcer.js";
 import { dispatchInlineMacro } from "./dispatch-inline.js";
@@ -220,13 +220,42 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	// construction even when no object-form entry needed it.
 	let cachedIdIndex: Map<string, ItemLocation> | undefined = ctx.idIndex;
 	const getIdIndex = (): Map<string, ItemLocation> => {
-		if (!cachedIdIndex) cachedIdIndex = buildIdIndex(ctx.cwd);
+		if (!cachedIdIndex) {
+			try {
+				cachedIdIndex = buildIdIndex(ctx.cwd);
+			} catch (err) {
+				if (err instanceof BootstrapNotFoundError) {
+					// Substrate absent — return empty index. Downstream resolution
+					// fails with the existing AgentCompileError contract rather
+					// than letting the bootstrap exception propagate to template
+					// global callers (resolve / render_recursive). Preserves the
+					// pre-DEC-0015 graceful-skip semantic per DEC-0021 gate-2.
+					cachedIdIndex = new Map();
+				} else {
+					throw err;
+				}
+			}
+		}
 		return cachedIdIndex;
 	};
 
 	if (spec.contextBlocks && spec.contextBlocks.length > 0) {
-		const projectDirPath = projectDir(ctx.cwd);
-		const projectDirExists = fs.existsSync(projectDirPath);
+		let projectDirExists = false;
+		try {
+			const projectDirPath = projectDir(ctx.cwd);
+			projectDirExists = fs.existsSync(projectDirPath);
+		} catch (err) {
+			if (err instanceof BootstrapNotFoundError) {
+				// Substrate absent — projectDirExists stays false. Downstream
+				// per-group logic (lines below) treats !projectDirExists as the
+				// canonical "no substrate" signal and either nulls whole-block
+				// surfaces OR throws AgentCompileError for unresolvable item-form
+				// entries. Preserves pre-DEC-0015 graceful-skip semantic per
+				// DEC-0021 gate-2 closure.
+			} else {
+				throw err;
+			}
+		}
 
 		// Plan 4.1 contract — multi-entry-same-name disambiguation.
 		//

@@ -11,7 +11,7 @@
         ".pi-context.json written for this repo containing {contextDir: '.project'}"
       ],
       "status": "in-progress",
-      "notes": "FGAP-026 phase 1.2 progress at HEAD ba58d78. Steps complete: 1 (DEC-0021 d64a0f3); 2 (C.3 COMPLETION 856e139+f4dd1a2 — pi-workflows 824/826 pass); 3 (C.2 retroactive audit at /tmp/c2-retroactive-audit.md — Gate 1 PASS, Gate 2 FAIL 2 defects, Gate 3 PASS); 3-followup (C.2 Gate-2 closure at ba58d78 — compile.ts:223/228 BootstrapNotFoundError catches added; pi-jit-agents 150/0/1 no regression; C.2 atomic-boundary now closed per DEC-0021). Sequenced ahead: (4) C.4 pi-behavior-monitors pre-dispatch audit per DEC-0021 3-gate enumeration; (5) canonical sub-phase analysis update per DEC-0021 (Phase 7 retired as separate stage); (6) status cascade refresh. Then F (project-dir.test.ts) + Section E husky-gate re-roll + Phase 1.3."
+      "notes": "FGAP-026 phase 1.2 progress at HEAD 9ef2750. Steps complete: 1 (DEC-0021 d64a0f3); 2 (C.3 COMPLETION 856e139 + f4dd1a2 — pi-workflows 824/826); 3 (C.2 retroactive audit + Gate-2 closure ba58d78 — pi-jit-agents 150/0/1); 4 (C.4 pi-behavior-monitors pre-dispatch audit at /tmp/c4-pre-dispatch-audit.md — Gate 1 PASS, Gate 2 PASS, Gate 3 FAIL 4 sites). C.4 atomic-boundary needs only Gate-3 closure (4 fixture sites: setupExecuteWriteFixture index.test.ts:1287-1335 + 3 makeSideCarMonitor sites 1514/1548/1568). Sequenced ahead: (4-followup) apply Gate-3 cascade to 4 fixture sites; (5) canonical sub-phase analysis update per DEC-0021; (6) status cascade refresh. Then F (project-dir.test.ts NEW 7 tests) + Section E husky-gate re-roll + Phase 1.3 (read-config + read-schema tools)."
     },
     {
       "id": "TASK-022",

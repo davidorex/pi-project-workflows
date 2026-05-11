@@ -131,16 +131,22 @@
       ],
       "acceptance_criteria": [
         "writeBootstrapPointer signature has no parameter default — contextDir: string required",
-        "initProject no longer contains '.project' string literal; receives contextDir from caller or prompt",
-        "project-dir.ts JSDoc rewritten to remove default-as-feature framing",
-        "All 168 existing test sites continue to pass without modification (they already pass '.project' explicitly)",
+        "initProject signature changes to initProject(cwd: string, contextDir: string); body replaces .project literal with contextDir parameter",
+        "project-dir.ts JSDoc rewritten to remove default-as-feature framing; no \"Default contextDir is .project\" / \"legacy substrate-dir name\" / \"future /context init ceremony will prompt\" wording remains",
+        "index.ts initProject body comment block (lines 232-237) rewritten to remove same default-as-feature framing",
+        "handleInit subcommand handler signature changes to handleInit(args, ctx): parses positional contextDir via args.trim().split(/\\s+/)[0]; missing arg emits ctx.ui.notify error \"/project init requires a substrate dir name (e.g. '/project init .project' or '/project init .context'). Per DEC-0015, no default.\" and returns; non-empty arg passed to initProject(ctx.cwd, contextDir)",
+        "PROJECT_SUBCOMMANDS init dispatch entry changes from handler: (_args, ctx) => handleInit(ctx) to handler: (args, ctx) => handleInit(args, ctx)",
+        "project-init pi tool parameters schema gains required contextDir field: Type.Object({ contextDir: Type.String({ description: \"Substrate dir name (e.g. .project). Required per DEC-0015 — no default.\" }) })",
+        "project-init pi tool execute body destructures params.contextDir and passes to initProject(ctx.cwd, params.contextDir)",
+        "All 168 existing test sites continue to pass without modification (they already pass .project explicitly)",
         "Full test suite green across all 4 packages",
-        "DEC-0015 grep returns zero hardcoded substrate-dir literals in production source"
+        "Production-source grep returns zero hardcoded substrate-dir literals: grep -rn \"\".project\"\" packages/pi-context/src/ --include=\"*.ts\" | grep -v .test.ts | grep -v project-dir.ts (excluding @deprecated PROJECT_DIR/SCHEMAS_DIR const exports per Phase 7 separation of concerns)",
+        "grep -n \"= PROJECT_DIR\" packages/pi-context/src/ returns 0 matches"
       ],
       "depends_on": [
         "TASK-021"
       ],
-      "notes": "Filed as substrate-canon foundational fix at user direction 2026-05-12 after FGAP-035 audit surfaced the violation. Blocks final closure of TASK-021 (Phase 1 acceptance criteria depend on a non-violating bootstrap surface). Sub-decision deferred-to-implementation: initProject UX — pass contextDir as subcommand arg vs. prompt via pi.sendMessage follow-up turn vs. require explicit /context init phase 6 ceremony first. Decision belongs to plan-mode for this task."
+      "notes": "UX decision RESOLVED 2026-05-12 (recorded as substrate-canon per feedback_plan_mode_step_one_substrate_write): /project init <contextDir> requires positional arg; matches existing pi-context subcommand-arg pattern (5 sites: /project view, /project lens-curate, /project roadmap-view, /project roadmap-validate, /project install --update). Missing arg → ctx.ui.notify error + return (NOT silent default; NOT pi.sendMessage prompt; NOT defer to /context init Phase 6). project-init pi tool gains required contextDir Type.Object param (in-pi agents must pass explicitly). 168 test sites already pass explicit name — signature change is BC-clean for tests. Phase 6 /context init ceremony layers prompting on top of this already-correct foundation."
     },
     {
       "id": "TASK-032",

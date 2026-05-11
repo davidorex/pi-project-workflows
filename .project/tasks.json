@@ -119,6 +119,28 @@
         "Task #11 (Step 9 adversarial audit) unblocked; subsequently Task #12 (Step 10 release)"
       ],
       "status": "planned"
+    },
+    {
+      "id": "TASK-031",
+      "description": "Close FGAP-035 — eliminate writeBootstrapPointer signature default and initProject .project literal. Make contextDir required at the bootstrap-write surface so DEC-0015 enacts at line 1, not as a Phase 6 promise.",
+      "status": "in-progress",
+      "phase": "8.7.1",
+      "files": [
+        "packages/pi-context/src/project-dir.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "writeBootstrapPointer signature has no parameter default — contextDir: string required",
+        "initProject no longer contains '.project' string literal; receives contextDir from caller or prompt",
+        "project-dir.ts JSDoc rewritten to remove default-as-feature framing",
+        "All 168 existing test sites continue to pass without modification (they already pass '.project' explicitly)",
+        "Full test suite green across all 4 packages",
+        "DEC-0015 grep returns zero hardcoded substrate-dir literals in production source"
+      ],
+      "depends_on": [
+        "TASK-021"
+      ],
+      "notes": "Filed as substrate-canon foundational fix at user direction 2026-05-12 after FGAP-035 audit surfaced the violation. Blocks final closure of TASK-021 (Phase 1 acceptance criteria depend on a non-violating bootstrap surface). Sub-decision deferred-to-implementation: initProject UX — pass contextDir as subcommand arg vs. prompt via pi.sendMessage follow-up turn vs. require explicit /context init phase 6 ceremony first. Decision belongs to plan-mode for this task."
     }
   ]
 }

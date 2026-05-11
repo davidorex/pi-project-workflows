@@ -8,6 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { readState } from "./state.js";
 import { makeSpec, mockCtx, mockPi } from "./test-helpers.js";
 import type { StepResult, StepUsage } from "./types.js";
@@ -29,6 +30,7 @@ function mockResult(stepName: string, text: string): StepResult {
 describe("resume: crash recovery", () => {
 	it("skips completed steps when resuming after failure", async (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-resume-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const dispatched: string[] = [];
@@ -108,6 +110,7 @@ describe("resume: crash recovery", () => {
 describe("resume: pause step", () => {
 	it("pauses at a pause step and resumes from the next step", async (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-resume-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const dispatched: string[] = [];
@@ -175,6 +178,7 @@ describe("resume: pause step", () => {
 describe("resume: keybinding-initiated pause", () => {
 	it("pauses between steps when requestPause is called", async (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-resume-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const dispatched: string[] = [];

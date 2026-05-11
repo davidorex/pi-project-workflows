@@ -111,19 +111,33 @@ describe("resolveSchemaPath", () => {
 		assert.strictEqual(result, path.resolve("/project/specs", "../schemas/out.json"));
 	});
 
-	it("resolves block: prefix to .project/schemas/<name>.schema.json from cwd", () => {
-		const result = resolveSchemaPath("block:project", "/any/spec.yaml", "/my/project");
-		assert.strictEqual(result, path.join("/my/project", ".project", "schemas", "project.schema.json"));
+	it("resolves block: prefix to <substrate-dir>/schemas/<name>.schema.json from cwd", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "schemapath-"));
+		writeBootstrapPointer(tmpDir, ".project");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const result = resolveSchemaPath("block:project", "/any/spec.yaml", tmpDir);
+		assert.strictEqual(result, path.join(tmpDir, ".project", "schemas", "project.schema.json"));
 	});
 
-	it("resolves block: prefix with hyphenated name", () => {
-		const result = resolveSchemaPath("block:conformance-reference", "/any/spec.yaml", "/cwd");
-		assert.strictEqual(result, path.join("/cwd", ".project", "schemas", "conformance-reference.schema.json"));
+	it("resolves block: prefix with hyphenated name", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "schemapath-"));
+		writeBootstrapPointer(tmpDir, ".project");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const result = resolveSchemaPath("block:conformance-reference", "/any/spec.yaml", tmpDir);
+		assert.strictEqual(result, path.join(tmpDir, ".project", "schemas", "conformance-reference.schema.json"));
 	});
 
-	it("block: prefix falls back to process.cwd when cwd not provided", () => {
+	it("block: prefix falls back to process.cwd when cwd not provided", (t) => {
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "schemapath-"));
+		writeBootstrapPointer(tmpDir, ".project");
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		t.after(() => {
+			process.chdir(origCwd);
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		});
 		const result = resolveSchemaPath("block:gaps", "/any/spec.yaml");
-		assert.strictEqual(result, path.join(process.cwd(), ".project", "schemas", "gaps.schema.json"));
+		assert.strictEqual(result, path.join(tmpDir, ".project", "schemas", "gaps.schema.json"));
 	});
 
 	it("non-block relative paths are unaffected by cwd parameter", () => {

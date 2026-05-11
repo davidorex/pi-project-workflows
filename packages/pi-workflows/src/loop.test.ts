@@ -3,11 +3,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { makeSpec, mockCtx, mockPi } from "./test-helpers.js";
 import { executeWorkflow } from "./workflow-executor.js";
 
 function defaultOptions(tmpDir?: string) {
 	const cwd = tmpDir ?? fs.mkdtempSync(path.join(os.tmpdir(), "wf-loop-"));
+	if (!tmpDir) writeBootstrapPointer(cwd, ".project");
 	return {
 		ctx: mockCtx(cwd),
 		pi: mockPi(),

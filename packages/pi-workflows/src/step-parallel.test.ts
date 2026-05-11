@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import type { ExecutionLayer } from "./dag.js";
 import type { ParallelOptions, SingleStepExecutor } from "./step-parallel.js";
 import { executeParallelLayer, executeParallelStep } from "./step-parallel.js";
@@ -12,6 +13,7 @@ import type { ExecutionState, StepSpec } from "./types.js";
 
 function makeTmpDir(t: any): string {
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));
+	writeBootstrapPointer(tmpDir, ".project");
 	fs.mkdirSync(path.join(tmpDir, "outputs"), { recursive: true });
 	fs.mkdirSync(path.join(tmpDir, "sessions"), { recursive: true });
 	t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));

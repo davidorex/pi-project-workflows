@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { buildExecutionPlan } from "./dag.js";
 import type { WorkflowSpec } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
@@ -31,6 +32,7 @@ function mockPi() {
 
 function mockOptions(tmpDir?: string) {
 	const cwd = tmpDir ?? fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));
+	writeBootstrapPointer(cwd, ".project");
 	return {
 		ctx: mockCtx(cwd),
 		pi: mockPi(),
@@ -40,6 +42,7 @@ function mockOptions(tmpDir?: string) {
 
 function makeSpec(overrides: Partial<WorkflowSpec> & { steps: WorkflowSpec["steps"] }): WorkflowSpec {
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));
+	writeBootstrapPointer(tmpDir, ".project");
 	return {
 		name: "test-parallel",
 		description: "test",

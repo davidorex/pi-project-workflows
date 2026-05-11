@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import nunjucks from "nunjucks";
 import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { executeAgentStep } from "./step-agent.js";
@@ -188,6 +189,7 @@ function scaffoldMockProject(tmpDir: string): { projectDir: string; templatesDir
 describe("compilation pipeline integration", () => {
 	it("inputSchema rejects missing required field before dispatch", async (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-schema-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const runDir = path.join(tmpDir, ".workflows", "runs", "test", "runs", "run-1");
@@ -235,6 +237,7 @@ describe("compilation pipeline integration", () => {
 
 	it("full pipeline: parseAgentYaml → compileAgentSpec with contextBlocks + inheritance + macros", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const { projectDir, templatesDir } = scaffoldMockProject(tmpDir);
@@ -314,6 +317,7 @@ describe("compilation pipeline integration", () => {
 
 	it("custom block with no bundled support flows through framework", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-custom-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		// Minimal project — only custom-standards
@@ -376,6 +380,7 @@ describe("compilation pipeline integration", () => {
 
 	it("missing block renders gracefully", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-missing-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		// Create .project/ directory but no block file for the declared block
@@ -428,6 +433,7 @@ describe("compilation pipeline integration", () => {
 
 	it("no .project/ directory skips injection entirely", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-noproject-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		// No .project/ directory created — tmpDir is empty
@@ -498,6 +504,7 @@ describe("end-to-end workflow with contextBlocks", {
 		"dispatches agent with contextBlocks, macros, inheritance, inputSchema — validates full pipeline",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-e2e-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const { templatesDir } = scaffoldMockProject(tmpDir);
@@ -596,6 +603,7 @@ describe("end-to-end workflow with contextBlocks", {
 		"rejects workflow when inputSchema required field is missing",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-e2e-reject-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			fs.mkdirSync(path.join(tmpDir, ".workflows"), { recursive: true });

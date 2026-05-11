@@ -8,6 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-context/block-validation";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { mockCtx, mockPi } from "./test-helpers.js";
 import type { WorkflowSpec } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
@@ -17,6 +18,7 @@ import { executeWorkflow } from "./workflow-executor.js";
 describe("snapshotBlockFiles", () => {
 	it("returns empty map when .project/ does not exist", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-snap-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const result = snapshotBlockFiles(tmpDir);
 		assert.strictEqual(result.size, 0);
 		fs.rmSync(tmpDir, { recursive: true });
@@ -24,6 +26,7 @@ describe("snapshotBlockFiles", () => {
 
 	it("snapshots .json files in .project/", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-snap-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(wfDir, { recursive: true });
 		fs.writeFileSync(path.join(wfDir, "gaps.json"), "{}");
@@ -43,6 +46,7 @@ describe("snapshotBlockFiles", () => {
 describe("validateChangedBlocks", () => {
 	it("does nothing when no files changed", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(wfDir, { recursive: true });
 		fs.writeFileSync(path.join(wfDir, "gaps.json"), "{}");
@@ -56,6 +60,7 @@ describe("validateChangedBlocks", () => {
 
 	it("skips changed files with no matching schema", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(wfDir, { recursive: true });
 
@@ -72,6 +77,7 @@ describe("validateChangedBlocks", () => {
 
 	it("validates changed file against its schema — passes", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		const schemasDir = path.join(wfDir, "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
@@ -98,6 +104,7 @@ describe("validateChangedBlocks", () => {
 
 	it("throws on validation failure", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		const schemasDir = path.join(wfDir, "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
@@ -127,6 +134,7 @@ describe("validateChangedBlocks", () => {
 
 	it("detects modified files (not just new files)", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-val-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		const schemasDir = path.join(wfDir, "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
@@ -173,6 +181,7 @@ describe("validateChangedBlocks", () => {
 describe("post-step block validation in executor", () => {
 	it("step that does not modify .project/ passes normally", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "bv-no-change",
 			description: "step without block changes",
@@ -203,6 +212,7 @@ describe("post-step block validation in executor", () => {
 
 	it("step that writes valid data to a .project/ block passes", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		const schemasDir = path.join(wfDir, "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
@@ -248,6 +258,7 @@ describe("post-step block validation in executor", () => {
 
 	it("step that writes invalid data to a .project/ block fails", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		const schemasDir = path.join(wfDir, "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
@@ -299,6 +310,7 @@ describe("post-step block validation in executor", () => {
 
 	it("changed .project/ file with no matching schema is skipped", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(wfDir, { recursive: true });
 		// No schemas directory at all
@@ -334,6 +346,7 @@ describe("post-step block validation in executor", () => {
 
 	it("validates multiple changed block files in one step", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bv-exec-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const wfDir = path.join(tmpDir, ".project");
 		const schemasDir = path.join(wfDir, "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });

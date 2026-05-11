@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { mockCtx, mockPi } from "./test-helpers.js";
 import type { WorkflowSpec } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
@@ -10,6 +11,7 @@ import { executeWorkflow } from "./workflow-executor.js";
 describe("command steps", () => {
 	it("captures stdout as text output on exit 0", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-command",
 			description: "test command step",
@@ -44,6 +46,7 @@ describe("command steps", () => {
 
 	it("parses stdout as JSON when output.format is json", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-command-json",
 			description: "test command JSON output",
@@ -78,6 +81,7 @@ describe("command steps", () => {
 
 	it("fails on non-zero exit code", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-command-fail",
 			description: "test command failure",
@@ -114,6 +118,7 @@ describe("command steps", () => {
 
 	it("captures stderr on failure", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-command-stderr",
 			description: "test command stderr",
@@ -144,6 +149,7 @@ describe("command steps", () => {
 
 	it("resolves ${{ }} expressions in command string", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-command-expr",
 			description: "test command expressions",
@@ -179,6 +185,7 @@ describe("command steps", () => {
 
 	it("persists output to disk", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-command-persist",
 			description: "test command output persistence",
@@ -211,6 +218,7 @@ describe("command steps", () => {
 
 	it("handles empty stdout", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-command-empty",
 			description: "test command empty stdout",
@@ -243,6 +251,7 @@ describe("command steps", () => {
 
 	it("costs nothing (usage.cost === 0)", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-command-cost",
 			description: "test command zero cost",
@@ -276,6 +285,7 @@ describe("command steps", () => {
 		"supports timeout",
 		async () => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			const spec: WorkflowSpec = {
 				name: "test-command-timeout",
 				description: "test command timeout",
@@ -312,6 +322,7 @@ describe("command steps", () => {
 		"supports signal cancellation",
 		async () => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			const spec: WorkflowSpec = {
 				name: "test-command-signal",
 				description: "test command signal",
@@ -348,6 +359,7 @@ describe("command steps", () => {
 
 	it("persists output to custom path", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-cmd-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const outputFile = path.join(tmpDir, "custom-output.json");
 		const spec: WorkflowSpec = {
 			name: "test-command-path",

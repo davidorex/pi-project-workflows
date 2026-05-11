@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { zeroUsage } from "./step-shared.js";
 import { mockCtx, mockPi } from "./test-helpers.js";
 import type { AgentSpec, StepResult, StepSpec, WorkflowSpec } from "./types.js";
@@ -11,6 +12,7 @@ import { executeWorkflow } from "./workflow-executor.js";
 describe("forEach steps", () => {
 	it("iterates over array with transform body", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach",
 			description: "test forEach step",
@@ -57,6 +59,7 @@ describe("forEach steps", () => {
 
 	it("uses custom as binding name", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-as",
 			description: "test forEach with as",
@@ -102,6 +105,7 @@ describe("forEach steps", () => {
 
 	it("returns completed with empty output for empty array", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-empty",
 			description: "test forEach empty array",
@@ -143,6 +147,7 @@ describe("forEach steps", () => {
 
 	it("fails when forEach expression resolves to non-array", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-nonarr",
 			description: "test forEach non-array",
@@ -183,6 +188,7 @@ describe("forEach steps", () => {
 
 	it("fails when one iteration fails", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-fail",
 			description: "test forEach iteration failure",
@@ -226,6 +232,7 @@ describe("forEach steps", () => {
 
 	it("exposes forEach.index and forEach.length in scope", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-meta",
 			description: "test forEach metadata",
@@ -273,6 +280,7 @@ describe("forEach steps", () => {
 
 	it("collects outputs into array", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-collect",
 			description: "test forEach output collection",
@@ -315,6 +323,7 @@ describe("forEach steps", () => {
 
 	it("forEach with gate body", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-gate",
 			description: "test forEach with gate step body",
@@ -356,6 +365,7 @@ describe("forEach steps", () => {
 
 	it("forEach over array of strings", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-strings",
 			description: "test forEach over strings",
@@ -399,6 +409,7 @@ describe("forEach steps", () => {
 
 	it("forEach with when conditional on the forEach step itself", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-when",
 			description: "test forEach with when (global condition)",
@@ -439,6 +450,7 @@ describe("forEach steps", () => {
 
 		// When enabled is true, the forEach step runs
 		const tmpDir2 = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir2, ".project");
 		const spec2 = { ...spec, filePath: path.join(tmpDir2, "test.workflow.yaml") };
 		const resultRan = await executeWorkflow(
 			spec2,
@@ -460,6 +472,7 @@ describe("forEach steps", () => {
 
 	it("forEach downstream step can reference forEach output", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-downstream",
 			description: "test forEach output consumed by next step",
@@ -510,6 +523,7 @@ describe("forEach steps", () => {
 
 	it("forEach with output path", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-outpath",
 			description: "test forEach output path",
@@ -552,6 +566,7 @@ describe("forEach steps", () => {
 
 	it("forEach with command body", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-cmd",
 			description: "test forEach with command body",
@@ -592,6 +607,7 @@ describe("forEach steps", () => {
 
 	it("forEach costs nothing for transform body", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-foreach-cost",
 			description: "test forEach zero cost",
@@ -633,6 +649,7 @@ describe("forEach steps", () => {
 
 	it("as binding is visible in agent step input expressions", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const capture = { calls: [] as any[] };
 
 		const mockDispatchFn = async (

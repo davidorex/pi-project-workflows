@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { zeroUsage } from "./step-shared.js";
 import { executeTransform } from "./step-transform.js";
 
@@ -75,6 +76,7 @@ describe("executeTransform", () => {
 	// Output persistence
 	it("persists output to runDir when runDir is provided", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-transform-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const result = executeTransform({ mapping: { x: 1 } }, "step1", {}, tmpDir);
@@ -86,6 +88,7 @@ describe("executeTransform", () => {
 
 	it("persists output to outputPath when provided", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-transform-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const customPath = path.join(tmpDir, "custom-out.json");

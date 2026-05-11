@@ -18,12 +18,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { schemaPath, schemasDir } from "@davidorex/pi-context/project-dir";
+import { schemaPath, schemasDir, writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import nunjucks from "nunjucks";
 import { registerEnforceBudgetReal, TEMPLATES_DIR } from "./test-helpers.js";
 
 function tmpDir(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "macro-budget-test-"));
+	const __tmp = fs.mkdtempSync(path.join(os.tmpdir(), "macro-budget-test-"));
+	writeBootstrapPointer(__tmp, ".project");
+	return __tmp;
 }
 
 function seedSchema(cwd: string, name: string, schema: object): void {

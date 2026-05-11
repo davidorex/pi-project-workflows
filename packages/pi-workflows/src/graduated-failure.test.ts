@@ -8,13 +8,16 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { rollbackBlockFiles, snapshotBlockFiles } from "@davidorex/pi-context/block-validation";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import type { StepResult, StepUsage } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
 import { parseWorkflowSpec } from "./workflow-spec.js";
 
 /** Create a temp directory for test fixtures. */
 function makeTmpDir(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "retry-test-"));
+	const __tmp = fs.mkdtempSync(path.join(os.tmpdir(), "retry-test-"));
+	writeBootstrapPointer(__tmp, ".project");
+	return __tmp;
 }
 
 /** Clean up temp directory. */

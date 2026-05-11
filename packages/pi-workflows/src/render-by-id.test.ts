@@ -16,10 +16,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { renderItemById } from "./render-by-id.js";
 
 function tmpDir(): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "render-by-id-test-"));
+	const __tmp = fs.mkdtempSync(path.join(os.tmpdir(), "render-by-id-test-"));
+	writeBootstrapPointer(__tmp, ".project");
+	return __tmp;
 }
 
 function seedDecisions(cwd: string, decisions: Array<Record<string, unknown>>): void {

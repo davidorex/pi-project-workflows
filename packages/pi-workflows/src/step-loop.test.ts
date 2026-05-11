@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import type { LoopExecuteOptions } from "./step-loop.js";
 import { executeLoop } from "./step-loop.js";
 import { DEFAULT_MAX_ATTEMPTS, zeroUsage } from "./step-shared.js";
@@ -15,6 +16,7 @@ function makeState(overrides?: Partial<ExecutionState>): ExecutionState {
 
 function makeLoopOptions(t: any, overrides?: Partial<LoopExecuteOptions>): LoopExecuteOptions {
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-loop-"));
+	writeBootstrapPointer(tmpDir, ".project");
 	fs.mkdirSync(path.join(tmpDir, "outputs"), { recursive: true });
 	fs.mkdirSync(path.join(tmpDir, "sessions"), { recursive: true });
 	t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));

@@ -3,12 +3,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import extension from "./index.js";
 
 describe("parseAgentYaml", () => {
 	it("parses YAML agent spec with all fields", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "test.agent.yaml");
@@ -51,6 +53,7 @@ prompt:
 
 	it("uses filename as name when spec has no name field", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "my-agent.agent.yaml");
@@ -69,6 +72,7 @@ prompt:
 
 	it("parses minimal spec", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "minimal.agent.yaml");
@@ -92,6 +96,7 @@ tools: [read]
 describe("createAgentLoader", () => {
 	it("loads agent from project .pi/agents/ directory", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-loader-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const agentDir = path.join(tmpDir, ".pi", "agents");
@@ -116,6 +121,7 @@ prompt:
 
 	it("throws AgentNotFoundError for unknown agents", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-loader-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const loader = createAgentLoader(tmpDir);
@@ -154,7 +160,9 @@ function captureTools(): { tools: Map<string, CapturedTool>; api: unknown } {
 }
 
 function makeTmp(prefix: string): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), `pi-workflows-tool-${prefix}-`));
+	const __tmp = fs.mkdtempSync(path.join(os.tmpdir(), `pi-workflows-tool-${prefix}-`));
+	writeBootstrapPointer(__tmp, ".project");
+	return __tmp;
 }
 
 describe("pi-workflows extension: render-item-by-id tool", () => {

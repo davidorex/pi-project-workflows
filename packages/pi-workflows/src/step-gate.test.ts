@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { executeGate } from "./step-gate.js";
 import { zeroUsage } from "./step-shared.js";
 
@@ -12,6 +13,7 @@ describe("executeGate", () => {
 		"returns completed with passed:true on exit 0",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "echo pass" }, "gate1", { cwd: tmpDir });
@@ -26,6 +28,7 @@ describe("executeGate", () => {
 		"captures stdout in output.output and textOutput",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "echo hello" }, "gate1", { cwd: tmpDir });
@@ -39,6 +42,7 @@ describe("executeGate", () => {
 		"sets agent to 'gate'",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "true" }, "gate1", { cwd: tmpDir });
@@ -51,6 +55,7 @@ describe("executeGate", () => {
 		"has zero usage",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "true" }, "gate1", { cwd: tmpDir });
@@ -63,6 +68,7 @@ describe("executeGate", () => {
 		"records positive durationMs",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "echo test" }, "gate1", { cwd: tmpDir });
@@ -76,6 +82,7 @@ describe("executeGate", () => {
 		"returns completed with passed:false on non-zero exit",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "exit 1" }, "gate1", { cwd: tmpDir });
@@ -90,6 +97,7 @@ describe("executeGate", () => {
 		"captures stderr on failure",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "echo err >&2; exit 1" }, "gate1", { cwd: tmpDir });
@@ -102,6 +110,7 @@ describe("executeGate", () => {
 		"captures stdout when stderr is empty on failure",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "echo stdout-msg; exit 1" }, "gate1", { cwd: tmpDir });
@@ -115,6 +124,7 @@ describe("executeGate", () => {
 		"trims whitespace from stdout",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "echo '  trimmed  '" }, "gate1", { cwd: tmpDir });
@@ -129,6 +139,7 @@ describe("executeGate", () => {
 		"persists output when runDir is provided",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 			fs.mkdirSync(path.join(tmpDir, "outputs"), { recursive: true });
 
@@ -143,6 +154,7 @@ describe("executeGate", () => {
 		"persists to custom outputPath when provided",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const customPath = path.join(tmpDir, "custom-gate.json");
@@ -161,6 +173,7 @@ describe("executeGate", () => {
 		"does not persist when runDir is omitted",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "echo nopersist" }, "gate1", { cwd: tmpDir });
@@ -174,6 +187,7 @@ describe("executeGate", () => {
 		"terminates on abort signal",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const controller = new AbortController();
@@ -192,6 +206,7 @@ describe("executeGate", () => {
 		"terminates on late abort signal",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const controller = new AbortController();
@@ -212,6 +227,7 @@ describe("executeGate", () => {
 		"terminates on timeout",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "sleep 30" }, "gate1", {
@@ -229,6 +245,7 @@ describe("executeGate", () => {
 		"handles command that produces no output",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "true" }, "gate1", { cwd: tmpDir });
@@ -242,6 +259,7 @@ describe("executeGate", () => {
 		"handles command with multi-line stdout",
 		async (t) => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 			const result = await executeGate({ check: "echo line1; echo line2" }, "gate1", { cwd: tmpDir });

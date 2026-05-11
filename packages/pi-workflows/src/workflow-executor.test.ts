@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { makeSpec, mockCtx, mockPi } from "./test-helpers.js";
 import type { WorkflowSpec } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
@@ -22,6 +23,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
 		"runs a single-step workflow",
 		async () => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-exec-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			const spec: WorkflowSpec = {
 				name: "test",
 				description: "test workflow",
@@ -64,6 +66,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
 			// step is marked failed with "Workflow cancelled" and the second step
 			// is never reached.
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-exec-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			const spec: WorkflowSpec = {
 				name: "test",
 				description: "test",
@@ -101,6 +104,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
 
 	it("validates workflow input", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-exec-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test",
 			description: "test",
@@ -138,6 +142,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
 			// Since we can't easily control what pi outputs, we verify the
 			// expression resolution doesn't throw and both steps complete.
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-exec-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			const spec: WorkflowSpec = {
 				name: "test",
 				description: "test",
@@ -174,6 +179,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
 		"persists state to disk",
 		async () => {
 			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-exec-"));
+			writeBootstrapPointer(tmpDir, ".project");
 			const spec: WorkflowSpec = {
 				name: "test",
 				description: "test",
@@ -211,6 +217,7 @@ describe("executeWorkflow", { skip: !hasPi ? "pi not available" : undefined }, (
 describe("when conditionals", () => {
 	it("skips step when condition is falsy", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-when-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-when",
 			description: "test when conditionals",
@@ -260,6 +267,7 @@ describe("when conditionals", () => {
 
 	it("runs step when condition is truthy", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-when-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-when-truthy",
 			description: "test when conditionals truthy",
@@ -305,6 +313,7 @@ describe("when conditionals", () => {
 describe("gate steps", () => {
 	it("passes on exit code 0", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-gate",
 			description: "test gate step",
@@ -342,6 +351,7 @@ describe("gate steps", () => {
 
 	it("fails workflow on gate failure with onFail: fail (default)", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-gate-fail",
 			description: "test gate failure",
@@ -384,6 +394,7 @@ describe("gate steps", () => {
 
 	it("continues on gate failure with onFail: continue", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-gate-continue",
 			description: "test gate failure with continue",
@@ -430,6 +441,7 @@ describe("gate steps", () => {
 
 	it("resolves expressions in gate check", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-gate-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-gate-expr",
 			description: "test gate expression resolution",
@@ -476,6 +488,7 @@ describe("gate steps", () => {
 describe("artifacts", () => {
 	it("writes artifact files after workflow completion", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-artifact",
 			description: "test artifact writing",
@@ -529,6 +542,7 @@ describe("artifacts", () => {
 
 	it("resolves expressions in artifact path", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-artifact-path",
 			description: "test artifact path expression",
@@ -571,6 +585,7 @@ describe("artifacts", () => {
 
 	it("handles relative artifact paths resolved against workflow dir", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-artifact-rel",
 			description: "test relative artifact path",
@@ -615,6 +630,7 @@ describe("artifacts", () => {
 
 	it("artifact failure is non-fatal", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const notifications: Array<{ msg: string; level: string }> = [];
 		const spec: WorkflowSpec = {
 			name: "test-artifact-fail",
@@ -670,6 +686,7 @@ describe("artifacts", () => {
 
 	it("validates artifact targeting .project/ against block schema", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+		writeBootstrapPointer(tmpDir, ".project");
 
 		// Create .project/schemas/ with a schema that requires { items: array }
 		const schemasDir = path.join(tmpDir, ".project", "schemas");
@@ -739,6 +756,7 @@ describe("artifacts", () => {
 
 	it("includes artifacts in formatResult output", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-artifact-format",
 			description: "test artifact in formatResult",
@@ -786,6 +804,7 @@ describe("artifacts", () => {
 describe("transform steps", () => {
 	it("produces output from expression mapping", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-transform-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-transform",
 			description: "test transform step",
@@ -828,6 +847,7 @@ describe("transform steps", () => {
 
 	it("costs nothing (usage.cost === 0, usage.turns === 0)", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-transform-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-transform-cost",
 			description: "test transform zero cost",
@@ -870,6 +890,7 @@ describe("transform steps", () => {
 
 function defaultOptions(tmpDir?: string) {
 	const cwd = tmpDir ?? fs.mkdtempSync(path.join(os.tmpdir(), "wf-p2-"));
+	writeBootstrapPointer(cwd, ".project");
 	return {
 		ctx: mockCtx(cwd),
 		pi: mockPi(),
@@ -962,6 +983,7 @@ describe("phase 2 integration", () => {
 
 	it("combines transform, loop, and artifacts", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-p2-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-combined",
 			description: "combined phase 2 test",
@@ -1037,6 +1059,7 @@ describe("parallel execution (DAG-inferred)", () => {
 	it("runs independent steps in parallel when they have explicit deps", async () => {
 		// Two steps both depend on a source step → they form a parallel layer
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-parallel",
 			description: "test parallel",
@@ -1094,6 +1117,7 @@ describe("parallel execution (DAG-inferred)", () => {
 		// source → (analyzerA, failGate) → merge
 		// failGate fails, so merge should not run
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-parallel-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-parallel-fail",
 			description: "test parallel fail",
@@ -1144,6 +1168,7 @@ describe("parallel execution (DAG-inferred)", () => {
 	it("sequential steps without deps remain sequential", async () => {
 		// Steps without ${{ steps.X }} deps are sequential by declaration order
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-seq-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-seq",
 			description: "test sequential",
@@ -1178,6 +1203,7 @@ describe("parallel execution (DAG-inferred)", () => {
 describe("explicit parallel step", () => {
 	it("runs sub-steps concurrently", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-explpar-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-explicit-parallel",
 			description: "test explicit parallel",
@@ -1233,6 +1259,7 @@ describe("explicit parallel step", () => {
 
 	it("fails if any sub-step fails", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-explpar-fail-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-parallel-subfail",
 			description: "test parallel sub-step failure",
@@ -1303,6 +1330,7 @@ describe("onExhausted error handling", () => {
 describe("verify step as typed agent output", () => {
 	it("mock dispatch returning verifier-output JSON produces typed step output", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-verify-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const verifierOutput = {
 			status: "passed",
 			score: "2/2",
@@ -1356,6 +1384,7 @@ describe("verify step as typed agent output", () => {
 
 	it("downstream step reads verify output via expressions", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-verify-expr-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const spec: WorkflowSpec = {
 			name: "test-verify-expr",
 			description: "test verify expression access",
@@ -1413,6 +1442,7 @@ describe("verify step as typed agent output", () => {
 describe("self-implement workflow", () => {
 	it("parses and executes with mock data — all steps complete, gate passes", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-self-impl-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const planOutput = {
 			plans: [
 				{
@@ -1524,6 +1554,7 @@ describe("self-implement workflow", () => {
 
 	it("fails gate when verification finds gaps", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-self-impl-fail-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const planOutput = {
 			plans: [
 				{
@@ -1600,6 +1631,7 @@ describe("self-implement workflow", () => {
 
 	it("forEach iterates over plans from decomposition", async () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-self-impl-foreach-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const planOutput = {
 			plans: [
 				{ name: "plan-alpha", intent: "Alpha work", tasks: ["A1", "A2"], acceptance_criteria: ["Alpha done"] },

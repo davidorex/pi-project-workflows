@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import nunjucks from "nunjucks";
 import {
 	addUsage,
@@ -202,6 +203,7 @@ describe("buildPrompt", () => {
 describe("persistStep", () => {
 	it("writes result into state.steps[stepName]", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-persist-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
@@ -229,6 +231,7 @@ describe("persistStep", () => {
 
 	it("calls writeState (state.json is written to disk)", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-persist-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
@@ -259,6 +262,7 @@ describe("persistStep", () => {
 
 	it("calls ctx.ui.setWidget when ctx.hasUI is true", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-persist-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
@@ -296,6 +300,7 @@ describe("persistStep", () => {
 
 	it("does not call ctx.ui.setWidget when ctx.hasUI is false", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-persist-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
@@ -348,6 +353,7 @@ describe("compileAgentSpec", () => {
 
 	it("renders promptTemplate file path through Nunjucks (replaces with rendered text, clears promptTemplate)", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-compile-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		fs.writeFileSync(path.join(tmpDir, "system.md"), "System for {{ role }}");
@@ -364,6 +370,7 @@ describe("compileAgentSpec", () => {
 
 	it("renders taskTemplate file path through Nunjucks", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-compile-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		fs.writeFileSync(path.join(tmpDir, "task.md"), "Analyze {{ target }}");
@@ -394,6 +401,7 @@ describe("compileAgentSpec", () => {
 
 	it("injects contextBlocks data into template context", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ctx-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		// Create .project/ with a block file
@@ -417,6 +425,7 @@ describe("compileAgentSpec", () => {
 
 	it("sets missing block to null — template renders without error", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ctx-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
@@ -447,6 +456,7 @@ describe("compileAgentSpec", () => {
 
 	it("hyphenated block names become underscore context keys", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ctx-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");

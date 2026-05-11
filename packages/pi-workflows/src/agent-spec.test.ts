@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { compileAgentSpec } from "./step-shared.js";
 import { createTemplateEnv } from "./template.js";
@@ -10,6 +11,7 @@ import { createTemplateEnv } from "./template.js";
 describe("parseAgentYaml", () => {
 	it("parses YAML agent spec with all fields", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "test.agent.yaml");
@@ -58,6 +60,7 @@ prompt:
 
 	it("uses filename as name when name field is missing", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "my-agent.agent.yaml");
@@ -69,6 +72,7 @@ prompt:
 
 	it("throws AgentParseError for malformed YAML", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "bad.agent.yaml");
@@ -96,6 +100,7 @@ tools: [read
 
 	it("throws AgentParseError for empty file", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "empty.agent.yaml");
@@ -113,6 +118,7 @@ tools: [read
 
 	it("throws AgentParseError for file with only document markers", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "marker.agent.yaml");
@@ -129,6 +135,7 @@ tools: [read
 
 	it("throws AgentParseError for scalar YAML content", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "scalar.agent.yaml");
@@ -148,6 +155,7 @@ tools: [read
 describe("createAgentLoader", () => {
 	it("finds .agent.yaml specs in .pi/agents/", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const agentDir = path.join(tmpDir, ".pi", "agents");
@@ -163,7 +171,9 @@ describe("createAgentLoader", () => {
 
 	it("finds specs in builtin directory", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		const builtinDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-builtin-"));
+		writeBootstrapPointer(builtinDir, ".project");
 		t.after(() => {
 			fs.rmSync(tmpDir, { recursive: true, force: true });
 			fs.rmSync(builtinDir, { recursive: true, force: true });
@@ -179,6 +189,7 @@ describe("createAgentLoader", () => {
 
 	it("throws AgentNotFoundError for missing agent", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const loader = createAgentLoader(tmpDir, tmpDir); // builtinDir also empty
@@ -198,6 +209,7 @@ describe("createAgentLoader", () => {
 
 	it("throws AgentParseError when found file has invalid YAML", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const agentDir = path.join(tmpDir, ".pi", "agents");
@@ -234,6 +246,7 @@ describe("compileAgentSpec", () => {
 
 	it("renders system prompt from file template", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-tmpl-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		fs.writeFileSync(path.join(tmpDir, "system.md"), "You analyze {{ focus }} code.");
@@ -247,6 +260,7 @@ describe("compileAgentSpec", () => {
 
 	it("renders task template from typed input", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-tmpl-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		fs.writeFileSync(path.join(tmpDir, "task.md"), "Fix {{ diagnosis.rootCause }} in {{ diagnosis.file }}.");
@@ -376,6 +390,7 @@ describe("task-verifier agent spec", () => {
 describe("contextBlocks parsing", () => {
 	it("parses contextBlocks array from YAML", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "ctx.agent.yaml");
@@ -396,6 +411,7 @@ prompt:
 
 	it("returns undefined when contextBlocks is absent", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "no-ctx.agent.yaml");
@@ -407,6 +423,7 @@ prompt:
 
 	it("returns undefined when contextBlocks is not an array", (t) => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const specPath = path.join(tmpDir, "bad-ctx.agent.yaml");

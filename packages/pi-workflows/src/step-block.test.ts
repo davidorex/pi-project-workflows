@@ -7,12 +7,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { executeBlock } from "./step-block.js";
 
 let tmpDir: string;
 
 beforeEach(() => {
 	tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "block-step-test-"));
+	writeBootstrapPointer(tmpDir, ".project");
 	// Create .project structure
 	const projectDir = path.join(tmpDir, ".project");
 	const schemasDir = path.join(projectDir, "schemas");

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import type { StepSpec, WorkflowSpec } from "./types.js";
 import {
 	agentContracts,
@@ -26,7 +27,9 @@ import {
 import { parseWorkflowSpec } from "./workflow-spec.js";
 
 function makeTmpDir(prefix: string): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));
+	const __tmp = fs.mkdtempSync(path.join(os.tmpdir(), `sdk-${prefix}-`));
+	writeBootstrapPointer(__tmp, ".project");
+	return __tmp;
 }
 
 // ── Vocabulary ───────────────────────────────────────────────────────────────

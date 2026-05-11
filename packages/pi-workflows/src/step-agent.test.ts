@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import nunjucks from "nunjucks";
 import type { dispatch } from "./dispatch.js";
 import type { AgentStepOptions } from "./step-agent.js";
@@ -32,6 +33,7 @@ function mockDispatch(result: Partial<StepResult> = {}, capture?: { calls: any[]
 
 function makeTmpRunDir(t: any): string {
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-agent-"));
+	writeBootstrapPointer(tmpDir, ".project");
 	fs.mkdirSync(path.join(tmpDir, "outputs"), { recursive: true });
 	fs.mkdirSync(path.join(tmpDir, "sessions"), { recursive: true });
 	t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));

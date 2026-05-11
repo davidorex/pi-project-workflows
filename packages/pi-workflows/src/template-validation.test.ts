@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { extractTemplateVariables, validateTemplateAlignment } from "./template-validation.js";
 import type { WorkflowSpec } from "./types.js";
 
@@ -69,7 +70,9 @@ describe("extractTemplateVariables", () => {
 // ── validateTemplateAlignment ───────────────────────────────────────────────
 
 function makeTmpDir(prefix: string): string {
-	return fs.mkdtempSync(path.join(os.tmpdir(), `tmpl-val-${prefix}-`));
+	const __tmp = fs.mkdtempSync(path.join(os.tmpdir(), `tmpl-val-${prefix}-`));
+	writeBootstrapPointer(__tmp, ".project");
+	return __tmp;
 }
 
 function makeSpec(overrides: Partial<WorkflowSpec> & { steps: Record<string, unknown> }): WorkflowSpec {

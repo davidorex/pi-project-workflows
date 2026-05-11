@@ -141,6 +141,26 @@
         "TASK-021"
       ],
       "notes": "Filed as substrate-canon foundational fix at user direction 2026-05-12 after FGAP-035 audit surfaced the violation. Blocks final closure of TASK-021 (Phase 1 acceptance criteria depend on a non-violating bootstrap surface). Sub-decision deferred-to-implementation: initProject UX — pass contextDir as subcommand arg vs. prompt via pi.sendMessage follow-up turn vs. require explicit /context init phase 6 ceremony first. Decision belongs to plan-mode for this task."
+    },
+    {
+      "id": "TASK-032",
+      "description": "Close FGAP-036 — add scripts/orchestrator/build-task-template.ts. Canonicalizes implementer-task-template composition from substrate inputs (TASK-NNN + explore-report-path + commit-subject-template). Enables FGAP-035 dispatch via canonical brief surface rather than hand-authored /tmp/task-template-*.md.",
+      "status": "in-progress",
+      "phase": "8.7.1",
+      "files": [
+        "scripts/orchestrator/build-task-template.ts"
+      ],
+      "acceptance_criteria": [
+        "scripts/orchestrator/build-task-template.ts exists and is shebang-tsx executable",
+        "Args: --task-id TASK-NNN, --explore-report <path>, --commit-subject <template>, optional --required-reading-extra <comma-separated paths>",
+        "Reads task entry from .project/tasks.json via @davidorex/pi-context/block-api readBlock; fails fast if task id absent",
+        "Extracts cascade-target table from explore-report via inline extract-markdown-section.ts invocation (or shared helper)",
+        "Emits XML-structured task-block to stdout in the shape build-implementation-brief.ts expects via --task-template @file",
+        "Composes: read-list (from task.files + required-reading-extra), apply-order (numbered per cascade-table rows), concrete-edits (per-row from explore-report's Required-change column), commit-spec (subject from template + forensic body skeleton), STOP triggers boilerplate, report-back format tables-only",
+        "FGAP-035 implementation brief dispatched via this script (validates the surface end-to-end)"
+      ],
+      "depends_on": [],
+      "notes": "Blocks TASK-031 dispatch — FGAP-035 fix must route through canonical brief surface, not hand-authored template. Filed at user direction 2026-05-12 after the hand-authored template at /tmp/task-template-fgap035.md surfaced the gap. Per DEC-0019 dual-surface discipline + mandate-005 (no manual implementation as workflow-bypass)."
     }
   ]
 }

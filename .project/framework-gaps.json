@@ -1183,6 +1183,51 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T06:55:00Z"
+    },
+    {
+      "id": "FGAP-036",
+      "title": "Missing canonical script: build-task-template.ts — subagent task-template hand-authored bypasses DEC-0019 dual-surface discipline",
+      "status": "identified",
+      "priority": "P1",
+      "package": "scripts/orchestrator",
+      "layer": "L1",
+      "description": "scripts/orchestrator/ has build-subagent-preamble.ts (mandates + DEC canon + tool-surface preamble), build-explore-brief.ts (composes Explore-agent brief; instructs agent to write report to specified path), and build-implementation-brief.ts (composes implementation brief from preamble + substrate-state + section-spec + cascade-table + task-template). It lacks a build-task-template.ts script that programmatically renders the implementer's task-block (read-list + apply-order + concrete-edits + commit-spec + STOP triggers + report-back format) from substrate inputs (TASK-NNN id, explore-report path, commit-subject-template). Without it, every implementation brief requires hand-authored /tmp/task-template-*.md. Hand-authored briefs (a) drift in shape across dispatches, (b) bypass mandate-005 (no manual implementation as workflow-bypass), (c) violate DEC-0019 dual-surface discipline (scripts/orchestrator/ is the Claude-Code-side ergonomics surface; hand-authoring is the parallel ungated path that DEC-0019 rejects), (d) embed orchestrator-side guesswork rather than reading the canonical TASK-NNN acceptance_criteria from substrate.",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/build-explore-brief.ts",
+          "lines": "1-200",
+          "reference": "exists — Explore brief composer; writes report to --output path via agent"
+        },
+        {
+          "file": "scripts/orchestrator/build-implementation-brief.ts",
+          "lines": "1-207",
+          "reference": "exists — implementation brief composer; takes --task-template as @file (assumed pre-authored)"
+        },
+        {
+          "file": "scripts/orchestrator/build-subagent-preamble.ts",
+          "lines": "exists",
+          "reference": "preamble composer used by both build-*-brief.ts"
+        },
+        {
+          "file": "/tmp/task-template-fgap035.md",
+          "reference": "hand-authored task-template this turn — direct evidence of the gap"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0019 — scripts/orchestrator/* serve as canonical test surface + executable specs of extension surface requirements; hand-authoring per-task templates is the gap-shaped surface DEC-0019 names"
+        }
+      ],
+      "impact": "Every implementation-class subagent dispatch requires hand-authoring the task-template. Across N tasks this means N hand-authored files with no shape canonicalization. Orchestrator-side authoring of task-templates also separates implementation specs from substrate (task acceptance_criteria live in .project/tasks.json; hand-authored templates duplicate them in /tmp/*.md). The duplication is the canon-violation surface — DEC-0019 says scripts/orchestrator/* is the canonical surface and substrate is single-source-of-truth; hand-authored templates contradict both.",
+      "canonical_vocabulary": "programmatic template rendering",
+      "proposed_resolution": "Add scripts/orchestrator/build-task-template.ts. Args: --task-id TASK-NNN (reads from .project/tasks.json) + --explore-report <path> (cascade-target table source) + --commit-subject <template>. Output: XML-structured task-block matching the shape build-implementation-brief.ts expects in its --task-template @file arg. Composition: pulls task description + acceptance_criteria + files[] from substrate via readBlock; extracts cascade-target table from explore-report via extract-markdown-section.ts; renders concrete read-list (required-reading) + apply-order (numbered per cascade-table rows) + concrete-edits (per-row before/after if explore-report carries them) + commit-spec (subject from --commit-subject template + body forensic skeleton) + STOP triggers (boilerplate) + report-back format (tables-only). Subsequent FGAP-035 fix dispatch uses this script.",
+      "related_decisions": [
+        "DEC-0019",
+        "DEC-0020"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-12T07:15:00Z"
     }
   ]
 }

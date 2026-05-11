@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { ValidationError } from "@davidorex/pi-context/schema-validator";
 import nunjucks from "nunjucks";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -1285,6 +1286,7 @@ function setupExecuteWriteFixture(opts: {
 }): WriteActionFixture {
 	const blockName = opts.blockName ?? "issues";
 	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "monitor-write-action-"));
+	writeBootstrapPointer(tmpDir, ".project");
 	const projectDir = path.join(tmpDir, ".project");
 	const schemasDir = path.join(projectDir, "schemas");
 	fs.mkdirSync(schemasDir, { recursive: true });
@@ -1512,6 +1514,7 @@ function makeSideCarMonitor(name: string, dir: string): Monitor {
 describe("saveInstructions (Step 6.1 — routes through writeTypedFile)", () => {
 	it("persists instructions array; AJV validates; missing required `text` field surfaces error", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "monitor-side-car-instr-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		try {
 			const monitor = makeSideCarMonitor("test", tmpDir);
 
@@ -1546,6 +1549,7 @@ describe("learnPattern (Step 6.1 — routes through appendToTypedFile)", () => {
 
 	it("persists pattern; second call with same description is deduped by id", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "monitor-side-car-learn-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		try {
 			const monitor = makeSideCarMonitor("learnme", tmpDir);
 
@@ -1566,6 +1570,7 @@ describe("learnPattern (Step 6.1 — routes through appendToTypedFile)", () => {
 
 	it("AJV catches a pattern entry that violates the list schema; learnPattern returns without throwing and logs to console.error", () => {
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "monitor-side-car-learn-bad-"));
+		writeBootstrapPointer(tmpDir, ".project");
 		try {
 			const monitor = makeSideCarMonitor("bad-learn", tmpDir);
 

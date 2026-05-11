@@ -137,7 +137,7 @@ describe("resolveSchemaPath", () => {
 			fs.rmSync(tmpDir, { recursive: true, force: true });
 		});
 		const result = resolveSchemaPath("block:gaps", "/any/spec.yaml");
-		assert.strictEqual(result, path.join(tmpDir, ".project", "schemas", "gaps.schema.json"));
+		assert.strictEqual(result, path.join(fs.realpathSync(tmpDir), ".project", "schemas", "gaps.schema.json"));
 	});
 
 	it("non-block relative paths are unaffected by cwd parameter", () => {

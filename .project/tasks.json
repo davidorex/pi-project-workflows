@@ -161,6 +161,29 @@
       ],
       "depends_on": [],
       "notes": "Blocks TASK-031 dispatch — FGAP-035 fix must route through canonical brief surface, not hand-authored template. Filed at user direction 2026-05-12 after the hand-authored template at /tmp/task-template-fgap035.md surfaced the gap. Per DEC-0019 dual-surface discipline + mandate-005 (no manual implementation as workflow-bypass)."
+    },
+    {
+      "id": "TASK-033",
+      "description": "Close FGAP-038 — add scripts/orchestrator/inject-context-items.ts. Item-level substrate-item projection into subagent briefs. Selector + projection + format args. Doubles as test surface for block-schema shape discovery: every friction point encountered while writing the script gets filed as a follow-up FGAP, NOT silently worked-around.",
+      "status": "in-progress",
+      "phase": "8.7.1",
+      "files": [
+        "scripts/orchestrator/inject-context-items.ts"
+      ],
+      "acceptance_criteria": [
+        "scripts/orchestrator/inject-context-items.ts exists, shebang-tsx executable",
+        "Args: --items <block:itemId[,block:itemId...]> + --format markdown|json|xml + optional --fields <comma-list> projection",
+        "Reads each (block, itemId) via @davidorex/pi-context/block-api readBlock + filter by id",
+        "json format emits items as JSON array; xml format wraps each item in <item block='X' id='Y'>...</item>; markdown format uses per-block-kind render macros (FGAP-037 dependency — until macros land, markdown emits a minimal fallback projection)",
+        "Fails fast if any block:itemId selector is unresolvable; reports the unresolvable selector verbatim",
+        "build-explore-brief.ts + build-implementation-brief.ts gain a --context-items arg that splices this script's output into the brief at a <context_items> XML block position",
+        "FGAP-035 Explore re-dispatch uses --context-items framework-gaps:FGAP-035,tasks:TASK-031,decisions:DEC-0015 validating the surface end-to-end",
+        "Every friction point encountered while writing the script that surfaces a schema-shape question gets filed as a follow-up FGAP — substrate-canon discipline, not silently worked-around"
+      ],
+      "depends_on": [
+        "TASK-032"
+      ],
+      "notes": "Filed at user direction 2026-05-12 after the FGAP-035 Explore dispatch surfaced OR-hedging due to missing UX-decision context injection. Per the dogfood rationale, the script is canonical-pattern-discovery test surface — by writing it we discover what block schemas need to support to make item-level injection viable. Blocks TASK-031 Explore re-dispatch."
     }
   ]
 }

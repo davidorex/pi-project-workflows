@@ -1228,6 +1228,70 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T07:15:00Z"
+    },
+    {
+      "id": "FGAP-037",
+      "title": "Per-block-kind Nunjucks macros missing for 6 newer block kinds — decisions / spec-reviews / features / framework-gaps / layer-plans / research",
+      "status": "identified",
+      "priority": "P1",
+      "package": "@davidorex/pi-workflows",
+      "layer": "L1",
+      "description": "packages/pi-workflows/templates/shared/macros.md provides one Nunjucks rendering macro per supported block kind (current set is derivable from the file). Six newer block kinds shipped after macros.md was last refreshed do not have per-item rendering macros: decisions, spec-reviews, features, framework-gaps, layer-plans, research. The contextBlocks injection mechanism (compileAgent reads contextBlocks via readBlock + injects with framework anti-injection delimiters into Nunjucks context as `_<name>`) IS implemented and works for any block — but without per-block-kind macros, JIT agent templates cannot render the injected block items as readable markdown in the agent prompt. Symptom: REVIEW-001 (jit-agents-spec.md spec review) sits status: not-started gated on render_decision per CLAUDE.md note; the same gating implicitly blocks any JIT agent that wants to receive decisions / spec-reviews / features / framework-gaps / layer-plans / research as contextBlocks-injected prompt material. No actionable FGAP previously enumerated the macro set as work; only the REVIEW-001 symptom captured one instance.",
+      "evidence": [
+        {
+          "file": "packages/pi-workflows/templates/shared/macros.md",
+          "reference": "single-source of per-block-kind rendering macros; absent macros for the 6 listed kinds"
+        },
+        {
+          "file": "CLAUDE.md",
+          "reference": "Notes: 'Per-item macros for newer block kinds (decisions, spec-reviews, features, framework-gaps, layer-plans, research) are pending — REVIEW-001 is gated on render_decision.' — implicit gap declaration, not actionable FGAP"
+        },
+        {
+          "file": ".project/spec-reviews.json",
+          "reference": "REVIEW-001 status not-started; cannot dispatch as JIT agent without render_decision macro"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/compile.ts",
+          "reference": "contextBlocks injection implemented; injection works for any block; gap is at the macro layer not the injection layer"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/decisions.schema.json",
+          "reference": "block schema defines item shape that the missing render_decision macro would render"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/framework-gaps.schema.json",
+          "reference": "schema defines shape for missing render_framework_gaps macro"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/features.schema.json",
+          "reference": "schema defines shape for missing render_feature macro"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/layer-plans.schema.json",
+          "reference": "schema defines shape for missing render_layer_plan macro"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/research.schema.json",
+          "reference": "schema defines shape for missing render_research macro"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/spec-reviews.schema.json",
+          "reference": "schema defines shape for missing render_spec_review macro"
+        }
+      ],
+      "impact": "Every JIT agent that needs to read substrate block items beyond the original macro-covered kinds is unable to receive those items as rendered prompt material. Concretely: any explore / review / audit / implementation agent that should know the current DEC canon, framework-gaps state, feature arcs, layer-plan structure, research findings, or prior spec reviews cannot be dispatched substrate-natively — those blocks can be injected as raw `_<name>` objects but the template author has no canonical macro to render them. Workaround paths (hand-author inline rendering in each agent template OR copy-paste block content into the system prompt) duplicate the macro logic per agent and defeat the single-source-of-truth principle that macros.md exists to enforce. Blocks REVIEW-001 directly; blocks the dogfood-dispatchability gate (FGAP-028) for any agent that requires the listed blocks; blocks the future canonicalization of orchestrator briefs as JIT-agent specs (which would dispatch with DEC + framework-gaps + feedback substrate injected).",
+      "canonical_vocabulary": "Nunjucks template macro library — per-record-type rendering primitives",
+      "proposed_resolution": "Ship six per-block-kind macros in packages/pi-workflows/templates/shared/macros.md: render_decision, render_spec_review, render_feature, render_framework_gap, render_layer_plan, render_research. Each macro accepts the corresponding block-item record (per the registry schema's array_key item shape) and emits markdown rendering the canonical fields with stable heading levels + field ordering. Authoring discipline: schema-driven field enumeration (every required field rendered; optional fields rendered when present); per-block-kind sample fixtures committed for round-trip golden tests. Per CLAUDE.md authoring convention each schema's per-item macro lands as a single unit of work alongside the schema. Decision deferred: macro testing harness — currently macros.md macros are tested by full-template render tests, no per-macro unit tests; decide whether per-macro unit tests land alongside the new macros OR after as a separate testing-gap FGAP.",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0017"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-12T07:35:00Z"
     }
   ]
 }

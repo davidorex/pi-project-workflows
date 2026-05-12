@@ -12,6 +12,7 @@ import {
 	type CurationSuggestion,
 	type Edge,
 	edgesForLens,
+	findReferences,
 	getProjectContext,
 	groupByLens,
 	type ItemRecord,
@@ -268,4 +269,28 @@ export function walkLensDescendants(cwd: string, parentId: string, relationType:
 export function walkAncestorsByLens(cwd: string, itemId: string, relationType: string): string[] {
 	const ctx = getProjectContext(cwd);
 	return walkAncestors(itemId, relationType, ctx.relations);
+}
+
+/**
+ * Find all closure-table edges incident on itemId under the cwd's substrate —
+ * substrate-reading wrapper around the pure findReferences primitive. Reads
+ * edges via getProjectContext (same mtime-cached path as walkLensDescendants
+ * + walkAncestorsByLens) and delegates filtering to findReferences.
+ *
+ * Returns Edge[] (NOT string[] like walkLensDescendants / walkAncestorsByLens
+ * — intentional surface divergence: this primitive surfaces edge-level
+ * inspection with relation_type + ordinal preserved per record).
+ *
+ * direction defaults to "both"; "inbound" returns edges pointing AT itemId,
+ * "outbound" returns edges FROM itemId, "both" returns the union. Self-loop
+ * edges (parent === child === itemId) match once under "both" — see
+ * findReferences JSDoc for the canonical handling.
+ */
+export function findReferencesInRepo(
+	cwd: string,
+	itemId: string,
+	direction: "inbound" | "outbound" | "both" = "both",
+): Edge[] {
+	const ctx = getProjectContext(cwd);
+	return findReferences(itemId, ctx.relations, direction);
 }

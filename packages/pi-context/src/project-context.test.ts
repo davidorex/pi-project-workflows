@@ -14,6 +14,7 @@ import {
 	displayName,
 	type Edge,
 	edgesForLens,
+	findReferences,
 	getProjectContext,
 	groupByLens,
 	type ItemRecord,
@@ -338,6 +339,87 @@ describe("walkAncestors", () => {
 			{ parent: "b", child: "c", relation_type: "rt-2" },
 		];
 		assert.deepStrictEqual(walkAncestors("c", "rt-1", edges), ["a"]);
+	});
+});
+
+// ── findReferences ──────────────────────────────────────────────────────────
+// Edge-level inspection primitive — returns Edge[] (NOT string[]) for
+// callers that need relation_type + ordinal preserved per record. TASK-037 /
+// Phase 2 sub-phase 2.4. Coexists with walkAncestors/walkDescendants which
+// return projected id chains; semantic divergence is intentional.
+
+describe("findReferences", () => {
+	it("returns only inbound edges (edges where child === itemId) under direction='inbound'", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "x", relation_type: "rt" }, // inbound on x
+			{ parent: "b", child: "x", relation_type: "rt" }, // inbound on x
+			{ parent: "x", child: "c", relation_type: "rt" }, // outbound from x
+		];
+		const result = findReferences("x", edges, "inbound");
+		assert.strictEqual(result.length, 2);
+		assert.ok(result.every((e) => e.child === "x"));
+	});
+
+	it("returns only outbound edges (edges where parent === itemId) under direction='outbound'", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "x", relation_type: "rt" },
+			{ parent: "b", child: "x", relation_type: "rt" },
+			{ parent: "x", child: "c", relation_type: "rt" }, // outbound from x
+		];
+		const result = findReferences("x", edges, "outbound");
+		assert.strictEqual(result.length, 1);
+		assert.strictEqual(result[0].parent, "x");
+		assert.strictEqual(result[0].child, "c");
+	});
+
+	it("returns the union of inbound + outbound under direction='both' (default)", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "x", relation_type: "rt" },
+			{ parent: "b", child: "x", relation_type: "rt" },
+			{ parent: "x", child: "c", relation_type: "rt" },
+		];
+		const result = findReferences("x", edges); // default 'both'
+		assert.strictEqual(result.length, 3);
+		const resultExplicit = findReferences("x", edges, "both");
+		assert.deepStrictEqual(resultExplicit, result);
+	});
+
+	it("returns [] for an item with no incident edges", () => {
+		const edges: Edge[] = [{ parent: "a", child: "b", relation_type: "rt" }];
+		assert.deepStrictEqual(findReferences("z", edges, "both"), []);
+		assert.deepStrictEqual(findReferences("z", edges, "inbound"), []);
+		assert.deepStrictEqual(findReferences("z", edges, "outbound"), []);
+	});
+
+	it("preserves multiple relation_types between the same pair as DISTINCT entries", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "b", relation_type: "decomposes" },
+			{ parent: "a", child: "b", relation_type: "blocks" },
+		];
+		const result = findReferences("b", edges, "inbound");
+		assert.strictEqual(result.length, 2);
+		const rels = result.map((e) => e.relation_type).sort();
+		assert.deepStrictEqual(rels, ["blocks", "decomposes"]);
+	});
+
+	it("returns a self-loop edge EXACTLY ONCE under direction='both' (parent===child===itemId)", () => {
+		// Self-loop semantic: an edge where parent === child === itemId matches
+		// both the inbound and outbound filters. The implementation iterates
+		// once with an OR predicate, so the edge appears exactly once under
+		// 'both' — never duplicated. Cleaner option per JSDoc contract.
+		const edges: Edge[] = [
+			{ parent: "x", child: "x", relation_type: "self" },
+			{ parent: "a", child: "x", relation_type: "rt" },
+		];
+		const bothResult = findReferences("x", edges, "both");
+		const selfLoopMatches = bothResult.filter((e) => e.parent === "x" && e.child === "x");
+		assert.strictEqual(selfLoopMatches.length, 1);
+		// Inbound includes self-loop (child === itemId).
+		const inbound = findReferences("x", edges, "inbound");
+		assert.strictEqual(inbound.filter((e) => e.parent === "x" && e.child === "x").length, 1);
+		// Outbound includes self-loop (parent === itemId).
+		const outbound = findReferences("x", edges, "outbound");
+		assert.strictEqual(outbound.filter((e) => e.parent === "x" && e.child === "x").length, 1);
 	});
 });
 

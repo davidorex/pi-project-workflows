@@ -27,6 +27,7 @@ import {
 import {
 	buildCurationSuggestions,
 	edgesForLensByName,
+	findReferencesInRepo,
 	loadLensView,
 	renderLensView,
 	validateProjectRelations,
@@ -1208,6 +1209,50 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = walkAncestorsByLens(ctx.cwd, params.itemId, params.relationType);
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: find-references ────────────────────────────────────────────
+	// Edge-level inspection of closure-table references incident on an item.
+	// Returns Edge[] (NOT string[]) — distinguishing semantic vs the id-chain
+	// walk-ancestors / project-walk-descendants tools. Coexists with both:
+	// walk-* surfaces serve id-chain traversal; find-references serves
+	// relation-typed edge inspection. TASK-037 / Phase 2 sub-phase 2.4 —
+	// final Phase 2 atomic unit.
+
+	pi.registerTool({
+		name: "find-references",
+		label: "Find References",
+		description:
+			"Find all closure-table edges incident on an item id (inbound, outbound, or both). Returns Edge[] preserving relation_type + ordinal per record — edge-level view, not the id-chain projection that walk-ancestors / project-walk-descendants emit.",
+		promptSnippet: "Find closure-table edges incident on an item id",
+		parameters: Type.Object({
+			itemId: Type.String({ description: "Item id whose incident edges are sought" }),
+			direction: Type.Optional(
+				Type.Union([Type.Literal("inbound"), Type.Literal("outbound"), Type.Literal("both")], {
+					description:
+						"inbound: edges where child === itemId; outbound: edges where parent === itemId; both: union (default).",
+				}),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { itemId: string; direction?: "inbound" | "outbound" | "both" },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = findReferencesInRepo(ctx.cwd, params.itemId, params.direction);
 			const jsonStr = JSON.stringify(result, null, 2);
 			const truncated = truncateHead(jsonStr);
 			let text = truncated.content;

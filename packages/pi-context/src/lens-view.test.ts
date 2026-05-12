@@ -6,6 +6,7 @@ import { afterEach, describe, it } from "node:test";
 import {
 	buildCurationSuggestions,
 	edgesForLensByName,
+	findReferencesInRepo,
 	loadLensView,
 	renderLensView,
 	validateProjectRelations,
@@ -379,6 +380,40 @@ describe("walkAncestorsByLens", () => {
 	it("returns [] when no relations.json exists", () => {
 		tmpRoot = makeProject();
 		const result = walkAncestorsByLens(tmpRoot, "C", "blocks");
+		assert.deepEqual(result, []);
+	});
+});
+
+describe("findReferencesInRepo", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("reads .project/relations.json and returns Edge[] equal to findReferences on the same edges", () => {
+		const relations = [
+			{ parent: "A", child: "B", relation_type: "blocks" },
+			{ parent: "B", child: "C", relation_type: "blocks" },
+			{ parent: "B", child: "D", relation_type: "other" },
+		];
+		tmpRoot = makeProject({ lenses: [], relations });
+		// Inbound edges on B: one (A -> B).
+		const inbound = findReferencesInRepo(tmpRoot, "B", "inbound");
+		assert.strictEqual(inbound.length, 1);
+		assert.deepEqual(inbound[0], { parent: "A", child: "B", relation_type: "blocks" });
+		// Outbound edges from B: two (B -> C, B -> D).
+		const outbound = findReferencesInRepo(tmpRoot, "B", "outbound");
+		assert.strictEqual(outbound.length, 2);
+		// Both: union of the three.
+		const both = findReferencesInRepo(tmpRoot, "B", "both");
+		assert.strictEqual(both.length, 3);
+		// Default direction is 'both'.
+		const defaultDir = findReferencesInRepo(tmpRoot, "B");
+		assert.deepEqual(defaultDir, both);
+	});
+
+	it("returns [] when no relations.json exists", () => {
+		tmpRoot = makeProject();
+		const result = findReferencesInRepo(tmpRoot, "X", "both");
 		assert.deepEqual(result, []);
 	});
 });

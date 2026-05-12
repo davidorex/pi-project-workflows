@@ -375,6 +375,49 @@ export function walkAncestors(itemId: string, relationType: string, edges: Edge[
 }
 
 /**
+ * Find all closure-table edges incident on `itemId`, returning the full
+ * Edge[] records — NOT id arrays. Distinguishing semantic vs walkDescendants
+ * and walkAncestors which return string[] id chains for traversal; this
+ * primitive surfaces edge-level inspection (relation_type + ordinal preserved
+ * per record) for callers that need the relationship-typed view rather than
+ * the projected id set.
+ *
+ * Direction semantics:
+ *   "inbound"  — edges where `e.child === itemId` (edges pointing AT itemId)
+ *   "outbound" — edges where `e.parent === itemId` (edges FROM itemId)
+ *   "both"     — union of inbound + outbound (default).
+ *
+ * Self-loop handling: an edge with `parent === child === itemId` is a
+ * self-loop. Under "both" direction such an edge matches BOTH the inbound
+ * and outbound filters. The implementation iterates edges once with a
+ * single inclusion predicate per direction, so a self-loop is returned
+ * EXACTLY ONCE under "both" — never duplicated. This is the cleaner
+ * option: callers reasoning about reference-uniqueness do not need to
+ * dedup, and an edge identity in relations.json maps to a single result
+ * record.
+ *
+ * Multiple relation_types between the same (parent, child) pair preserve
+ * as DISTINCT result entries — each edge is a separate relationship
+ * record, queries on it must not collapse.
+ *
+ * Pure function — operates on the Edge[] argument; does NOT read substrate.
+ */
+export function findReferences(
+	itemId: string,
+	edges: Edge[],
+	direction: "inbound" | "outbound" | "both" = "both",
+): Edge[] {
+	if (direction === "inbound") {
+		return edges.filter((e) => e.child === itemId);
+	}
+	if (direction === "outbound") {
+		return edges.filter((e) => e.parent === itemId);
+	}
+	// "both": single-pass predicate; self-loop matches once via the OR.
+	return edges.filter((e) => e.child === itemId || e.parent === itemId);
+}
+
+/**
  * Project items into bins under a lens. Items reachable through `lensEdges`
  * with parent ∈ `lens.bins` go to that bin; remaining items go to
  * "(uncategorized)". Caller picks whether to include the uncategorized

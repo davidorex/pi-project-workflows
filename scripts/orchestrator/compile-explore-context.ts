@@ -21,9 +21,9 @@
  *
  * Usage:
  *   tsx scripts/orchestrator/compile-explore-context.ts \
- *       --question @/tmp/c3-question.md \
+ *       --question @compiled-contexts/<question>.md \
  *       --target packages/pi-workflows \
- *       --output /tmp/explore-c3-fixtures.md \
+ *       --output compiled-contexts/<explore-report>.md \
  *       [--required-reading file1,file2] \
  *       [--audit-greps 'pattern1::desc1,pattern2::desc2'] \
  *       [--context-items 'block:itemId,block:itemId'] \

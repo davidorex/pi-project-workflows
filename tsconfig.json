@@ -23,5 +23,5 @@
 			"@davidorex/pi-behavior-monitors/*": ["./packages/pi-behavior-monitors/*"]
 		}
 	},
-	"exclude": ["packages/*/dist", "node_modules", "**/*.test.ts", "packages/pi-workflows/run-tests.ts", "tmp"]
+	"exclude": ["packages/*/dist", "node_modules", "**/*.test.ts", "packages/pi-workflows/run-tests.ts", "tmp", "compiled-contexts"]
 }

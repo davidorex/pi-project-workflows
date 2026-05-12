@@ -17,7 +17,7 @@
  * Usage:
  *   tsx scripts/orchestrator/compile-task-context.ts \
  *       --task-id TASK-031 \
- *       --explore-report /tmp/explore-fgap035.md \
+ *       --explore-report compiled-contexts/<explore-report>.md \
  *       --commit-subject 'feat(pi-context)!: ...' \
  *       [--required-reading-extra path1,path2]
  */

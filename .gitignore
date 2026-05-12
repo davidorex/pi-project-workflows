@@ -15,3 +15,5 @@ packages/*/.project/
 packages/*/.workflows/
 # Interim working files — prompts, helper scripts, candidates, dispatch outputs
 tmp/
+# Compiled agent contexts + agent-written dispatch outputs (mirrors pi-jit-agents compileAgent output)
+compiled-contexts/

@@ -16,10 +16,10 @@
  *   tsx scripts/orchestrator/compile-implementation-context.ts \
  *       --section C.3 \
  *       --target packages/pi-workflows \
- *       --explore-report /tmp/explore-c3-fixtures-v2.md \
+ *       --explore-report compiled-contexts/<explore-report>.md \
  *       --task-id TASK-021 \
  *       --section-spec-section "Phase 1.2" \
- *       --task-template @/tmp/c3-task-template.md
+ *       --task-template @compiled-contexts/<task-block>.md
  */
 import { execSync } from "node:child_process";
 import fs from "node:fs";

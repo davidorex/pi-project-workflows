@@ -4,22 +4,35 @@
  *
  * Mirrors pi-jit-agents compileAgent vocabulary on the Claude Code side.
  * Assembles agent input mechanically: preamble (via compile-preamble-context
- * --type implementation) + substrate state (git + active task) + section spec
- * (phase row + cascade-target table from explore report + audit-grep results) +
- * per-helper edit pattern + verification gates (orchestrator runs) + DEC-0018
- * demo spec + STOP triggers + tables-only report-back format. XML-tag structured.
+ * --type implementation) + substrate state (git + active task) + optional
+ * context_items (via inject-context-items) + section_spec (phase row +
+ * cascade-target table + audit-grep + cross-refs) + task block + four
+ * parameter-supplied per-investigation fragments (verification gates / demo spec
+ * / stop triggers / report-back format). XML-tag structured.
+ *
+ * Per-investigation parameterization: --verification-gates / --demo-spec /
+ * --stop-triggers / --report-back-format point to markdown fragments under
+ * scripts/orchestrator/templates/. Default fragments preserve FGAP-026
+ * fixture-cascade audit behavior; new investigations supply their own.
+ * Removes the hardcode that over-fit the script to its first use case
+ * (extends FGAP-039 root-pattern fix to the implementation composer).
  *
  * Per DEC-0019 (scripts as canonical Claude Code-side composition surface).
  * Per the TABLES-ONLY rule (no prose summary; aggregation is orchestrator's job).
  *
  * Usage:
  *   tsx scripts/orchestrator/compile-implementation-context.ts \
- *       --section C.3 \
- *       --target packages/pi-workflows \
+ *       --section <X.Y> \
+ *       --target packages/<pkg> \
  *       --explore-report compiled-contexts/<explore-report>.md \
- *       --task-id TASK-021 \
- *       --section-spec-section "Phase 1.2" \
- *       --task-template @compiled-contexts/<task-block>.md
+ *       --task-id TASK-NNN \
+ *       --task-template @compiled-contexts/<task-block>.md \
+ *       [--section-spec-section "Phase 1.2"] \
+ *       [--context-items 'block:itemId,block:itemId'] \
+ *       [--verification-gates scripts/orchestrator/templates/implementation-verification-gates-<shape>.md] \
+ *       [--demo-spec scripts/orchestrator/templates/implementation-demo-spec-<shape>.md] \
+ *       [--stop-triggers scripts/orchestrator/templates/implementation-stop-triggers-<shape>.md] \
+ *       [--report-back-format scripts/orchestrator/templates/implementation-report-back-<shape>.md]
  */
 import { execSync } from "node:child_process";
 import fs from "node:fs";
@@ -34,9 +47,21 @@ interface Args {
 	sectionSpecFile?: string;
 	taskTemplate: string;
 	contextItems?: string;
+	verificationGatesPath?: string;
+	demoSpecPath?: string;
+	stopTriggersPath?: string;
+	reportBackFormatPath?: string;
 }
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
+const DEFAULT_VERIFICATION_GATES = path.join(
+	SCRIPT_DIR,
+	"templates",
+	"implementation-verification-gates-fixture-cascade.md",
+);
+const DEFAULT_DEMO_SPEC = path.join(SCRIPT_DIR, "templates", "implementation-demo-spec-fixture-cascade.md");
+const DEFAULT_STOP_TRIGGERS = path.join(SCRIPT_DIR, "templates", "implementation-stop-triggers-fixture-cascade.md");
+const DEFAULT_REPORT_BACK_FORMAT = path.join(SCRIPT_DIR, "templates", "implementation-report-back-fixture-cascade.md");
 
 function parseArgs(argv: string[]): Args {
 	const out: Partial<Args> = {
@@ -69,6 +94,18 @@ function parseArgs(argv: string[]): Args {
 		} else if (a === "--context-items" && argv[i + 1]) {
 			out.contextItems = argv[i + 1];
 			i++;
+		} else if (a === "--verification-gates" && argv[i + 1]) {
+			out.verificationGatesPath = argv[i + 1];
+			i++;
+		} else if (a === "--demo-spec" && argv[i + 1]) {
+			out.demoSpecPath = argv[i + 1];
+			i++;
+		} else if (a === "--stop-triggers" && argv[i + 1]) {
+			out.stopTriggersPath = argv[i + 1];
+			i++;
+		} else if (a === "--report-back-format" && argv[i + 1]) {
+			out.reportBackFormatPath = argv[i + 1];
+			i++;
 		}
 	}
 	if (!out.section || !out.target || !out.exploreReport || !out.taskId || !out.taskTemplate) {
@@ -90,6 +127,15 @@ function gitState(): { head: string; branch: string; statusShort: string; recent
 
 function runScript(name: string, args: string): string {
 	return execSync(`tsx ${path.join(SCRIPT_DIR, name)} ${args}`, { encoding: "utf-8" }).trim();
+}
+
+function readFragment(p: string | undefined, fallback: string): string {
+	const resolved = p ?? fallback;
+	if (!fs.existsSync(resolved)) {
+		console.error(`compile-implementation-context: fragment file not found: ${resolved}`);
+		process.exit(3);
+	}
+	return fs.readFileSync(resolved, "utf-8").trim();
 }
 
 function buildBrief(args: Args): string {
@@ -124,6 +170,11 @@ function buildBrief(args: Args): string {
 	const contextItems = args.contextItems
 		? `\n<context_items>\n${runScript("inject-context-items.ts", `--items "${args.contextItems}" --format xml`)}\n</context_items>\n`
 		: "";
+
+	const verificationGates = readFragment(args.verificationGatesPath, DEFAULT_VERIFICATION_GATES);
+	const demoSpec = readFragment(args.demoSpecPath, DEFAULT_DEMO_SPEC);
+	const stopTriggers = readFragment(args.stopTriggersPath, DEFAULT_STOP_TRIGGERS);
+	const reportBackFormat = readFragment(args.reportBackFormatPath, DEFAULT_REPORT_BACK_FORMAT);
 
 	return `<operating_constraints>
 ${preamble}
@@ -167,40 +218,19 @@ ${args.taskTemplate}
 </task>
 
 <verification_gates_orchestrator_runs>
-After your commit lands, the orchestrator runs (you do NOT run these):
-- \`npm run build; echo "BUILD_EXIT=$?"\` — must exit 0
-- \`npm run check; echo "CHECK_EXIT=$?"\` — must exit 0
-- \`npm test -w @davidorex/pi-workflows 2>&1 > /tmp/test-output.txt; echo "TEST_EXIT=$?"\` — must exit 0; full output read; no pipe-mask
-- Grep audit: zero new \`.project\` literals in production source; classification table sites cascaded as expected
+${verificationGates}
 </verification_gates_orchestrator_runs>
 
 <dec_0018_demo_spec>
-Per DEC-0018 (runtime demonstration + adversarial probe per implementation step):
-
-After commit, orchestrator constructs differential-trap demo for this section:
-- Write fresh tmpdir with non-default contextDir pointer (e.g. \`.context-c3-demo\`)
-- Invoke a representative pi-workflows function (executeWorkflow / readBlock via workflow-executor) against that tmpdir
-- Assert cascade reaches \`.context-c3-demo/\` substrate, NOT hardcoded \`.project/\`
-- This proves cascade is genuinely working post-section, not passing for wrong reason via pointer side-effect
+${demoSpec}
 </dec_0018_demo_spec>
 
 <stop_triggers>
-- Pre-commit hook fails — fix root cause + create NEW commit; NEVER \`--no-verify\`
-- Discovered cascade target NOT in the cascade-target table — cascade it; surface in commit body
-- A test that previously passed now fails — STOP, surface (regression)
-- Site classified config-required in table but cascade would change unrelated test semantics — STOP, surface
-- Site classified no-resolver-reach but adding pointer doesn't break the test — leave it alone (preserves DEC-0018 intent: pointer is load-bearing only where cascade is needed)
+${stopTriggers}
 </stop_triggers>
 
 <report_back_format>
-TABLES-ONLY rule applies. NO prose summary, NO recommendations narrative, NO "executive summary".
-
-Return only:
-1. Commit SHA: \`<sha>\`
-2. Per-row applied-yes/skipped-no count from the cascade-target table (orchestrator will verify by re-counting; agent reports the integers it acted on)
-3. Anti-pattern check: PASS or FAIL with named violation
-
-Optional: write detailed per-row applied/skipped table to \`/tmp/c3-impl-applied.md\`. NO interpretation, NO commentary.
+${reportBackFormat}
 </report_back_format>
 `;
 }

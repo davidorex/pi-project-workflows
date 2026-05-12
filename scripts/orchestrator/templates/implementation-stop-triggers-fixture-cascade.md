@@ -1,0 +1,5 @@
+- Pre-commit hook fails — fix root cause + create NEW commit; NEVER `--no-verify`
+- Discovered cascade target NOT in the cascade-target table — cascade it; surface in commit body
+- A test that previously passed now fails — STOP, surface (regression)
+- Site classified config-required in table but cascade would change unrelated test semantics — STOP, surface
+- Site classified no-resolver-reach but adding pointer doesn't break the test — leave it alone (preserves DEC-0018 intent: pointer is load-bearing only where cascade is needed)

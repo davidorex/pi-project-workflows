@@ -1344,27 +1344,27 @@
     },
     {
       "id": "FGAP-039",
-      "title": "compile-explore-context.ts <output_schema_per_site> section hardcoded to FGAP-026 fixture-cascade audit shape — conflicts with non-FGAP-026 investigation questions",
+      "title": "compile-*-context.ts composers carry hardcoded investigation-specific content in multiple sections — over-fitted to FGAP-026 fixture-cascade audit shape",
       "status": "closed",
       "priority": "P2",
       "package": "scripts/orchestrator",
       "layer": "L1",
-      "description": "scripts/orchestrator/compile-explore-context.ts emits a hardcoded <output_schema_per_site> XML section declaring required columns: File / Line / Helper-or-Inline / Tmpdir-contents / First-resolver-cascading-call / Classification / Justification. These columns are FGAP-026-fixture-cascade-specific. When the script is reused for a different investigation (e.g. FGAP-035 cascade-target inventory which wants columns: # / Site / File:line / Current code / Required change / DEC reference), the agent receives contradictory column specs — the per-investigation question vs the hardcoded schema. Surfaced this turn during FGAP-035 Explore re-dispatch via canonical surface.",
+      "description": "scripts/orchestrator/compile-explore-context.ts AND compile-implementation-context.ts both embed investigation-specific content in hardcoded string literals across multiple XML sections, contradicting the structural-shell intent. Originally filed narrow to compile-explore-context.ts <output_schema_per_site> + <anti_patterns>; user correction surfaced that the pattern applies to (a) the same script in additional sections AND (b) the sibling composer in 4 sections (<verification_gates_orchestrator_runs>, <dec_0018_demo_spec>, <stop_triggers>, <report_back_format>). When the composers are reused for a different investigation (e.g. FGAP-035 cascade-target inventory), the hardcoded sections contradict the per-investigation question. Root pattern: any investigation-specific content baked into a structural composer is the same bug shape, regardless of which section it sits in.",
       "evidence": [
         {
           "file": "scripts/orchestrator/compile-explore-context.ts",
-          "lines": "173-198",
-          "reference": "<output_schema_per_site> section + 4 worked examples all FGAP-026-fixture-cascade-specific"
+          "lines": "173-198 (pre-c7caac8)",
+          "reference": "<output_schema_per_site> + <anti_patterns> sections FGAP-026 fixture-cascade-specific — fixed at c7caac8 via --output-schema + --anti-patterns fragment args"
         },
         {
-          "file": "scripts/orchestrator/compile-explore-context.ts",
-          "lines": "162-170",
-          "reference": "<anti_patterns> section also leaks FGAP-026 vocabulary"
+          "file": "scripts/orchestrator/compile-implementation-context.ts",
+          "lines": "169-204 (pre-refactor)",
+          "reference": "Four sections (<verification_gates_orchestrator_runs>, <dec_0018_demo_spec>, <stop_triggers>, <report_back_format>) carry FGAP-026 C.3 vocabulary (npm test -w @davidorex/pi-workflows, .context-c3-demo, config-required/no-resolver-reach classifications, /tmp/c3-impl-applied.md) — fixed in this commit via --verification-gates + --demo-spec + --stop-triggers + --report-back-format fragment args"
         }
       ],
-      "impact": "Agents dispatched via compile-explore-context.ts for non-FGAP-026 investigations receive contradictory instructions. Script is over-fitted to its first use case.",
+      "impact": "Composers over-fit to first use case; reuse for new investigations propagates contradictory instructions into the agent context. Direct evidence this turn: FGAP-035 implementation context compile carried C.3-specific demo spec + stop triggers + report-back format from compile-implementation-context.ts.",
       "canonical_vocabulary": "investigation-shape parameterization — per-question output schema + anti-patterns",
-      "proposed_resolution": "Refactor compile-explore-context.ts to accept --output-schema <path> + --anti-patterns <path> args (file paths to per-investigation schema + anti-patterns markdown fragments). Default fragment preserves current FGAP-026 behavior; new investigations file their own fragments under scripts/orchestrator/templates/.",
+      "proposed_resolution": "Refactor BOTH composers to pure structural shells; every investigation-specific section becomes a --*-path arg loading a markdown fragment from scripts/orchestrator/templates/<composer>-<section>-<shape>.md. Defaults preserve FGAP-026 fixture-cascade behavior; per-investigation overrides supply <shape> fragments. After: any future hardcoded investigation-specific content in any composer is the same FGAP-039 root pattern; default-fragment-as-hardcode-bridge is the same hardcode-dressed-as-default failure DEC-0015 names.",
       "related_decisions": [
         "DEC-0019",
         "DEC-0020"
@@ -1374,7 +1374,7 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T08:15:00Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-12T10:21:46.878Z"
+      "closed_at": "2026-05-12T11:53:01.933Z"
     }
   ]
 }

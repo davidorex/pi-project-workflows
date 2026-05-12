@@ -208,6 +208,47 @@
           "evidence": "Commits f17efa3 + e88d7ee close FGAP-035 + Q4 follow-up; grep verifications return 0 for `= PROJECT_DIR` / `.project` production literals / forbidden JSDoc phrases across project-dir.ts + index.ts"
         }
       ]
+    },
+    {
+      "id": "VER-005",
+      "target": "TASK-034",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T06:35:00Z",
+      "evidence": "Sub-phase 2.1 (filter-block-items) landed at HEAD 15cd881. Library filterBlockItems exported from project-sdk.ts:612 with FilterPredicate interface. Pi tool filter-block-items registered at index.ts:972. Orchestrator script scripts/orchestrator/filter-block-items.ts shebang-executable. Tests: pi-context 401 → 407 (+6 new tests covering eq/neq/in/matches/empty-result/missing-field). Husky pre-commit gate (npm run check && npm test) green at commit time across all 4 packages. Live-substrate runtime demos all green: `--op eq --field status --value identified` returns FGAP items with status=identified; `--op matches --field id --value '^TASK-03[1-9]$'` returns TASK-031..037; `--op in --field priority --value 'P0,P1'` returns FGAP items with P0/P1 priority.",
+      "criteria_results": [
+        {
+          "criterion": "filterBlockItems(cwd, blockName, predicate) library function exported from project-sdk.ts",
+          "status": "passed",
+          "evidence": "project-sdk.ts:612 export function filterBlockItems(cwd: string, blockName: string, predicate: FilterPredicate): unknown[]"
+        },
+        {
+          "criterion": "filter-block-items pi tool registered in index.ts with Type.Object schema",
+          "status": "passed",
+          "evidence": "index.ts:972 pi.registerTool({name: \"filter-block-items\", ...})"
+        },
+        {
+          "criterion": "scripts/orchestrator/filter-block-items.ts shebang-tsx executable",
+          "status": "passed",
+          "evidence": "-rwxr-xr-x 4372 bytes; manual argv parsing matches extract-decs.ts pattern"
+        },
+        {
+          "criterion": "Tests cover eq / neq / in / matches / empty-result / missing-field",
+          "status": "passed",
+          "evidence": "+6 tests in pi-context test suite (401 → 407)"
+        },
+        {
+          "criterion": "Husky pre-commit gate green at commit time",
+          "status": "passed",
+          "evidence": "Commit 15cd881 landed without --no-verify; husky output confirms check + test passed"
+        },
+        {
+          "criterion": "Live-substrate runtime demo against this repo",
+          "status": "passed",
+          "evidence": "3 demos run post-commit: eq+status, matches+id, in+priority — all return correct JSON-array results from .project/ substrate"
+        }
+      ]
     }
   ]
 }

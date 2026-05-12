@@ -198,7 +198,7 @@
     {
       "id": "TASK-034",
       "description": "Phase 2 sub-phase 2.1: ship filter-block-items — library predicate-filter primitive + pi tool + scripts/orchestrator/filter-block-items.ts. Wraps existing readBlock + caller-side filter into a standalone tool. No closure-table dependency.",
-      "status": "planned",
+      "status": "completed",
       "phase": "8.7.2",
       "files": [
         "packages/pi-context/src/project-sdk.ts",
@@ -215,7 +215,8 @@
       "depends_on": [
         "TASK-022"
       ],
-      "notes": "Parent TASK-022 / Claude Code Task #22 (Phase 2 — high-impact query tools). No closure-table dependency. Substrate-canon: phase field carries free-text \"8.7.2\" per FGAP-040 — migration to PHASE-NNN FK scheduled for Phase 5 (TASK-025)."
+      "notes": "CLOSED at HEAD 15cd881. filterBlockItems library + filter-block-items pi tool + scripts/orchestrator/filter-block-items.ts shipped. Tests: pi-context 401 → 407 (+6). Live-substrate runtime demos green. See VER-005.",
+      "verification": "VER-005"
     },
     {
       "id": "TASK-035",

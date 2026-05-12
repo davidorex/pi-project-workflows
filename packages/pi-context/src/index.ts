@@ -224,17 +224,15 @@ ${blockInfo.join("\n\n")}
  * Idempotent: skips files that already exist. Shared by the /project init
  * command handler and the project-init tool.
  */
-function initProject(cwd: string): { created: string[]; skipped: string[] } {
-	// FIRST action — write the `.pi-context.json` bootstrap pointer so every
-	// subsequent path-builder call (projectDir / schemasDir)
-	// resolves through the freshly-written pointer rather than throwing
-	// BootstrapNotFoundError. Default substrate-dir name is `.project` (the
-	// legacy convention); future `/context init` ceremony will prompt the
-	// user for a chosen name and pass it explicitly per DEC-0015.
+function initProject(cwd: string, contextDir: string): { created: string[]; skipped: string[] } {
+	// FIRST action — write the `.pi-context.json` bootstrap pointer carrying
+	// the caller-supplied `contextDir` (required per DEC-0015) so every
+	// subsequent path-builder call (projectDir / schemasDir) resolves through
+	// the freshly-written pointer rather than throwing BootstrapNotFoundError.
 	// writeBootstrapPointer is idempotent (atomic tmp+rename) so re-running
 	// initProject after a prior init does not corrupt the pointer.
 	if (!fs.existsSync(path.join(cwd, ".pi-context.json"))) {
-		writeBootstrapPointer(cwd, ".project");
+		writeBootstrapPointer(cwd, contextDir);
 	}
 
 	const projectDirPath = projectDir(cwd);
@@ -383,8 +381,17 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
  * /project init — scaffold .project/ directory with default schemas and
  * empty block files. Idempotent: skips files that already exist.
  */
-function handleInit(ctx: ExtensionCommandContext): void {
-	const { created, skipped } = initProject(ctx.cwd);
+function handleInit(args: string, ctx: ExtensionCommandContext): void {
+	const contextDir = args.trim().split(/\s+/)[0];
+	if (!contextDir) {
+		ctx.ui.notify(
+			"/project init requires a substrate dir name (e.g. '/project init .project' or '/project init .context'). Per DEC-0015, no default.",
+			"error",
+		);
+		return;
+	}
+
+	const { created, skipped } = initProject(ctx.cwd, contextDir);
 
 	const lines: string[] = [];
 	lines.push(`Project initialized`);
@@ -932,15 +939,19 @@ const extension = (pi: ExtensionAPI) => {
 		label: "Project Init",
 		description: "Initialize .project/ directory with default schemas and empty block files.",
 		promptSnippet: "Initialize .project/ directory with default schemas and blocks",
-		parameters: Type.Object({}),
+		parameters: Type.Object({
+			contextDir: Type.String({
+				description: "Substrate dir name (e.g. .project). Required per DEC-0015 — no default.",
+			}),
+		}),
 		async execute(
 			_toolCallId: string,
-			_params: Record<string, never>,
+			params: { contextDir: string },
 			_signal: AbortSignal,
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
-			const result = initProject(ctx.cwd);
+			const result = initProject(ctx.cwd, params.contextDir);
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -1234,7 +1245,7 @@ const extension = (pi: ExtensionAPI) => {
 	const PROJECT_SUBCOMMANDS: Record<string, SubcommandEntry> = {
 		init: {
 			description: "Initialize .project/ with schemas and default blocks",
-			handler: (_args, ctx) => handleInit(ctx),
+			handler: (args, ctx) => handleInit(args, ctx),
 		},
 		install: {
 			description: "Copy schemas and starter blocks declared in .project/config.json from the package registry",

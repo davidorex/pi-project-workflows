@@ -11,8 +11,9 @@
  * Hard-throw policy on absent pointer (no graceful fallback to ".project"):
  * a default would be hardcode-dressed-as-default, which DEC-0015 explicitly
  * rejects. Callers needing to bootstrap a fresh repo write the pointer first
- * via `writeBootstrapPointer(cwd, dirName)` (intended for `initProject` and
- * the future `/context init` ceremony) before any path-builder is invoked.
+ * via `writeBootstrapPointer(cwd, contextDir)` before any path-builder is
+ * invoked; `contextDir` is a required parameter chosen by the caller per
+ * DEC-0015.
  *
  * Path-builders (projectDir / schemasDir / schemaPath / agentsDir /
  * projectTemplatesDir) all cascade through `resolveContextDir(cwd)` so the
@@ -94,9 +95,8 @@ const BOOTSTRAP_REF_SCHEMA: Record<string, unknown> = {
  * Hard-throws `BootstrapNotFoundError` when the pointer file is absent —
  * no fallback to `.project`. Per DEC-0015 the substrate dir name is
  * config-driven; defaulting would be hardcode-dressed-as-default. Callers
- * bootstrapping a fresh repo (initProject, future /context init) write the
- * pointer first via `writeBootstrapPointer(cwd, contextDir)` before any
- * path-builder runs.
+ * bootstrapping a fresh repo write the pointer first via
+ * `writeBootstrapPointer(cwd, contextDir)` before any path-builder runs.
  *
  * Throws plain `Error` with file-context message on read/parse failure
  * (mirrors `loadConfig` at project-context.ts:188-196). Throws
@@ -146,10 +146,8 @@ export function resolveContextDir(cwd: string): string {
 
 /**
  * Atomically write a `.pi-context.json` bootstrap pointer at `<cwd>/.pi-context.json`.
- * Default `contextDir` is `.project` to preserve the legacy substrate-dir
- * name for self-bootstrapping callers (initProject); the future
- * `/context init` ceremony will prompt the user for a chosen name and pass
- * it explicitly per DEC-0015.
+ * `contextDir` is a required parameter chosen by the caller per DEC-0015 —
+ * no default, no transitional bridge.
  *
  * Pre-validates the pointer object against the URN-registered bootstrap
  * schema BEFORE write so a malformed pointer never lands on disk. Atomic
@@ -159,7 +157,7 @@ export function resolveContextDir(cwd: string): string {
  * call reads fresh data even if mtime granularity (1s on some filesystems)
  * would otherwise mask the change.
  */
-export function writeBootstrapPointer(cwd: string, contextDir: string = PROJECT_DIR): void {
+export function writeBootstrapPointer(cwd: string, contextDir: string): void {
 	const pointer = {
 		contextDir,
 		version: "1.0.0",

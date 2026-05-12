@@ -1345,7 +1345,7 @@
     {
       "id": "FGAP-039",
       "title": "compile-explore-context.ts <output_schema_per_site> section hardcoded to FGAP-026 fixture-cascade audit shape — conflicts with non-FGAP-026 investigation questions",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "scripts/orchestrator",
       "layer": "L1",
@@ -1372,7 +1372,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-12T08:15:00Z"
+      "created_at": "2026-05-12T08:15:00Z",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-12T10:21:46.878Z"
     }
   ]
 }

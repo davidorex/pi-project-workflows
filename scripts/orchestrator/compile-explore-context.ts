@@ -4,10 +4,17 @@
  *
  * Mirrors pi-jit-agents compileAgent vocabulary: assembles the agent's input
  * context mechanically (no orchestrator-LLM prose authoring). Sections:
- * preamble (mandates + DECs + feedback + tool-surface via compile-preamble-context)
- * + substrate-state + investigation question + required-reading list +
- * audit-grep targets + output-format scaffold + STOP triggers + anti-pattern
- * reminders. XML-tag structured.
+ * preamble (via compile-preamble-context) + substrate-state + optional
+ * context_items (via inject-context-items) + investigation question +
+ * required-reading list + audit-grep targets + output-format scaffold (from
+ * --output-schema fragment) + STOP triggers + anti-patterns (from
+ * --anti-patterns fragment) + report-back format. XML-tag structured.
+ *
+ * Per-investigation parameterization: --output-schema and --anti-patterns
+ * point to markdown fragment files under scripts/orchestrator/templates/.
+ * Default fragments preserve FGAP-026 fixture-cascade audit behavior; new
+ * investigations supply their own fragments. Removes the hardcode that
+ * over-fit the script to its first use case (FGAP-039).
  *
  * Goal: orchestrator-side composition is mechanical; the dispatching LLM
  * never composes agent prompts as prose.
@@ -18,7 +25,10 @@
  *       --target packages/pi-workflows \
  *       --output /tmp/explore-c3-fixtures.md \
  *       [--required-reading file1,file2] \
- *       [--audit-greps 'pattern1::desc1,pattern2::desc2']
+ *       [--audit-greps 'pattern1::desc1,pattern2::desc2'] \
+ *       [--context-items 'block:itemId,block:itemId'] \
+ *       [--output-schema scripts/orchestrator/templates/explore-output-schema-<shape>.md] \
+ *       [--anti-patterns scripts/orchestrator/templates/explore-anti-patterns-<shape>.md]
  *
  * Output goes to stdout — orchestrator captures + embeds in Agent prompt.
  */
@@ -33,9 +43,13 @@ interface Args {
 	requiredReading?: string[];
 	auditGreps?: Array<{ pattern: string; desc: string }>;
 	contextItems?: string;
+	outputSchemaPath?: string;
+	antiPatternsPath?: string;
 }
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
+const DEFAULT_OUTPUT_SCHEMA = path.join(SCRIPT_DIR, "templates", "explore-output-schema-fixture-cascade.md");
+const DEFAULT_ANTI_PATTERNS = path.join(SCRIPT_DIR, "templates", "explore-anti-patterns-fixture-cascade.md");
 
 function parseArgs(argv: string[]): Args {
 	const out: Partial<Args> = {};
@@ -62,6 +76,12 @@ function parseArgs(argv: string[]): Args {
 			i++;
 		} else if (a === "--context-items" && argv[i + 1]) {
 			out.contextItems = argv[i + 1];
+			i++;
+		} else if (a === "--output-schema" && argv[i + 1]) {
+			out.outputSchemaPath = argv[i + 1];
+			i++;
+		} else if (a === "--anti-patterns" && argv[i + 1]) {
+			out.antiPatternsPath = argv[i + 1];
 			i++;
 		}
 	}
@@ -93,12 +113,23 @@ function injectContextItems(items: string | undefined): string {
 	return `\n<context_items>\n${rendered}\n</context_items>\n`;
 }
 
+function readFragment(p: string | undefined, fallback: string): string {
+	const resolved = p ?? fallback;
+	if (!fs.existsSync(resolved)) {
+		console.error(`compile-explore-context: fragment file not found: ${resolved}`);
+		process.exit(3);
+	}
+	return fs.readFileSync(resolved, "utf-8").trim();
+}
+
 function buildBrief(args: Args): string {
 	const state = gitState();
 	const preamble = buildPreamble();
 	const reading = args.requiredReading ?? [];
 	const greps = args.auditGreps ?? [];
 	const cwd = process.cwd();
+	const outputSchema = readFragment(args.outputSchemaPath, DEFAULT_OUTPUT_SCHEMA);
+	const antiPatterns = readFragment(args.antiPatternsPath, DEFAULT_ANTI_PATTERNS);
 
 	return `<operating_constraints>
 ${preamble}
@@ -171,44 +202,11 @@ Return only: file path + 1-line "anti-pattern check passed" or named violation. 
 </stop_triggers>
 
 <anti_patterns>
-- "No-cascade" / "no-resolver-reach" classifications must be independently traced via import chain. Never trust prior audits without re-trace.
-- Any \`.project\` mention in production source = (c)/(d)/(e) violation per DEC-0015 strict. Conversation/documentation prose is OUT of scope (per established convention; code/config IS the focus).
-- Conditional verdicts forbidden: "could be a real issue if..." / "may not be" / "appears correct" / "likely works". State observed evidence + verdict.
-- Filed-then-closed pattern: cross-check escalation candidates against existing arc planning (Phase 6.3, Phase 7, Phase 1.3, etc.) before flagging. Re-litigating already-planned-fixes is anti-pattern.
-- Pre-DEC-0015 \`.project\`-as-canon language in YOUR OWN report = self-reproduction of the violation. Use \`<contextDir>\` or \`<substrate dir>\` placeholder.
-- **NO BLANKET CLASSIFICATION**: do NOT classify multiple sites with the same verdict for "consistency" / "to be safe" / "uniform application". Each site requires its own per-site trace evidence. The blanket-classification trap is itself a hedge that produces false-pass risk per DEC-0018 (pointer side-effect masks the actual feature being tested).
-- **FORBIDDEN JUSTIFICATION PHRASES**: "for consistency" / "to be safe" / "blanket apply" / "all tests need pointer" / "uniform classification" / "applied across the file". If you find yourself reaching for these, classify as INCONCLUSIVE instead — orchestrator decides.
-- **NO PATTERN CONTINUATION**: if N consecutive rows received the same classification, the N+1 row is NOT thereby presumed same. Trace the N+1 row independently. Pattern-completion is an LLM tendency that contaminates classification.
-- **EXACT INTEGER COUNTS**: report exact counts of mkdtempSync sites, helper functions, etc. Forbidden: "194" when actual is 193; "80+" or "~10" or "approximately N". Exact integers only.
-- **INCONCLUSIVE is a legitimate verdict**: when per-site trace cost exceeds your investigation budget, classify INCONCLUSIVE with one-line reason ("import chain ambiguous via dynamic require at line N"). Orchestrator decides next step. Defaulting to safest classification ("config-required because uncertain") is the hedge this rule forbids.
+${antiPatterns}
 </anti_patterns>
 
 <output_schema_per_site>
-**Required columns** for the Site Inventory table — every row MUST populate every column. Empty cells = audit failure:
-
-| File | Line | Helper-or-Inline | Tmpdir-contents | First-resolver-cascading-call (file:line citation) | Classification | One-sentence justification citing the call chain |
-
-**Worked examples** (one per classification):
-
-CONFIG-REQUIRED example (transitive cascade via local import):
-\`\`\`
-| src/step-block.test.ts | 15 | inline | .project/schemas/foo.schema.json + foo.json | step-block.ts:171 schemaPath(cwd, "foo") → project-dir.ts:51 schemasDir → project-dir.ts:43 resolveContextDir | config-required | step-block.ts:171 calls schemaPath which cascades through resolveContextDir at project-dir.ts:43 |
-\`\`\`
-
-NOCONFIG-TEST example (intentional absent-config assertion):
-\`\`\`
-| src/foo.test.ts | 67 | inline (noconfig variant) | .project/ dir only; no config.json | foo.ts:88 loadConfig(cwd) returns null (config.json absent) | noconfig-test | test asserts result.error matches /config\\.json/; pointer-YES + config-NO preserves intent |
-\`\`\`
-
-NO-RESOLVER-REACH example (genuine bypass):
-\`\`\`
-| src/bar.test.ts | 22 | inline | trace JSONL only | bar.ts:42 writeJsonl (pure function; no pi-context import in chain) | no-resolver-reach | bar.ts imports only fs + path; no @davidorex/pi-context/* in import chain (verified file content); test exercises only writeJsonl |
-\`\`\`
-
-INCONCLUSIVE example (audit budget exceeded):
-\`\`\`
-| src/baz.test.ts | 99 | inline | varies per test | baz.ts:55 dynamicRequire(\`./\${var}.js\`) | INCONCLUSIVE | dynamic require at baz.ts:55 prevents static trace of pi-context reach; orchestrator decides whether to write pointer defensively or split into separate audit |
-\`\`\`
+${outputSchema}
 </output_schema_per_site>
 
 <report_back_format>

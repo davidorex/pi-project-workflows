@@ -41,8 +41,7 @@ export const SCHEMAS_DIR = "schemas";
  * callers can surface the absent-pointer site in error messages without
  * re-deriving the path. Per DEC-0015 hard-throw policy — there is no
  * fallback default; callers must materialize the pointer (via
- * `writeBootstrapPointer` or the future `/context init`) before any
- * substrate operation.
+ * `writeBootstrapPointer`) before any substrate operation.
  */
 export class BootstrapNotFoundError extends Error {
 	readonly cwd: string;

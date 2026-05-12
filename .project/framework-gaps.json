@@ -1381,6 +1381,85 @@
       "created_at": "2026-05-12T08:15:00Z",
       "closed_by": "human:davidryan@gmail.com",
       "closed_at": "2026-05-12T11:53:01.933Z"
+    },
+    {
+      "id": "FGAP-040",
+      "title": "tasks[].phase carries free-text sub-phase labels (e.g. \"8.7.1\") instead of FK references to PHASE-NNN phase block items",
+      "status": "identified",
+      "priority": "P3",
+      "package": "@davidorex/pi-context",
+      "layer": "L4",
+      "description": ".project/tasks.json items use task.phase as a free-text string holding sub-phase labels from the canonical FGAP-026 sub-phase decomposition (e.g. TASK-031/032/033 carry phase: \"8.7.1\"). The substrate also defines a phase block kind (PHASE-NNN id pattern via packages/pi-context/registry/schemas/phase.schema.json) whose items would be the canonical FK target. Currently phase block items for the FGAP-026 closure plan are not populated — HANDOFF documents PHASE-006..010 as scheduled for Phase 5 of the FGAP-026 closure plan (the arc-tracking-blocks dogfood deliverable per TASK-025). Until Phase 5 lands the PHASE-006..010 substrate, every task.phase field carrying a sub-phase label is a free-text placeholder rather than a typed reference. Per DEC-0013 (closure-table is canonical primitive for ALL inter-item relationships), the proper representation is either (a) PHASE-NNN id as FK string OR (b) closure-table edge with relation_type = belongs_to_phase. Free-text labels are neither.",
+      "evidence": [
+        {
+          "file": ".project/tasks.json",
+          "reference": "TASK-031/032/033 carry phase: \"8.7.1\" — free-text sub-phase label, not a PHASE-NNN FK; same shape for TASK-021..030 carrying phase: \"8.7.1\" through \"8.7.10\""
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/phase.schema.json",
+          "reference": "Phase block schema exists; PHASE-NNN id pattern; ready to receive the FGAP-026 closure plan phase items"
+        },
+        {
+          "file": "memory/HANDOFF.md",
+          "reference": "HANDOFF documents PHASE-006..010 as scheduled for Phase 5 of FGAP-026 closure (TASK-025 arc-tracking-blocks dogfood deliverable)"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0013 closure-table is canonical primitive for ALL inter-item relationships — free-text phase labels violate this"
+        }
+      ],
+      "impact": "Validators surfacing the gap correctly flag tasks[].phase as unresolvable references; cross-block phase queries (e.g. all tasks in PHASE-007) cannot run; status-by-phase rollup (per roadmap-plan PM-lens semantics) misses these tasks until phase substrate is populated. Live regression: none — sub-phase labels are human-readable + no consumer currently dereferences task.phase as an FK. Architectural debt: every task added during the FGAP-026 closure carries the same free-text-label shape; migration scope grows over time.",
+      "canonical_vocabulary": "foreign-key reference vs free-text label",
+      "proposed_resolution": "Resolves as part of Phase 5 (TASK-025) when the arc-tracking-blocks dogfood substrate is authored: ship PHASE-006..010 phase items + relations.json edges (task → phase via relation_type = belongs_to_phase OR direct phase: \"PHASE-NNN\" FK depending on substrate-canon decision for task→phase representation) + migration via schema-migrations.ts to rewrite existing task.phase free-text labels → typed references. Sub-gap of FGAP-026 phase 5, not a parallel arc; resolution defers to TASK-025 dispatch rather than fixing in isolation.",
+      "related_decisions": [
+        "DEC-0013"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-13T00:00:00Z"
+    },
+    {
+      "id": "FGAP-041",
+      "title": "issues[].resolved_by carries free-text (commit SHAs / commit messages) instead of VER-NNN verification-entry references — substrate-canon evidence layer not adopted for 26 existing resolved issues",
+      "status": "identified",
+      "priority": "P2",
+      "package": "@davidorex/pi-context",
+      "layer": "L4",
+      "description": ".project/issues.json carries 26 resolved issues whose resolved_by field contains free-text (commit SHAs, commit messages, plain-string author identifiers) rather than VER-NNN ids referencing entries in the verification block. Pre-this-turn convention treated resolved_by as a free-text annotation; this turn established the verification block kind (.project/verification.json) as the canonical evidence layer with VER-NNN ids carrying structured fields (target, target_type, status, method, evidence, criteria_results[]). For substrate-canon consistency, resolved_by should reference a VER-NNN id (FK string OR closure-table edge with relation_type = verified_by) so resolution evidence lives in the typed verification block rather than as inline free-text fields on the issue.",
+      "evidence": [
+        {
+          "file": ".project/issues.json",
+          "reference": "26 issues with status=resolved carry resolved_by free-text values (commit SHAs / commit messages / author identifiers); inconsistent shape across issues"
+        },
+        {
+          "file": ".project/verification.json",
+          "reference": "VER-001/002/003/004 filed this turn establish the verification block kind as canonical evidence layer with structured criteria_results[] per VER"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/issues.schema.json",
+          "reference": "resolved_by field shape: free-text string; no FK constraint against VER-NNN"
+        },
+        {
+          "file": "packages/pi-context/registry/schemas/verification.schema.json",
+          "reference": "VER schema requires id, target, target_type, status, method; verification.target_type enum doesn't currently include 'issue' — issues schema would need to enumerate FK target OR verification.target_type would need to extend"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0013 closure-table is canonical for inter-item relationships; FK-as-field is parallel ungated path"
+        }
+      ],
+      "impact": "Validators correctly surface the gap. Live consequence: issue-resolution queries cannot join through to structured evidence (criteria_results / verification.method / verification.evidence); resolution-quality audit (did the closure carry forward evidence per DEC-0018?) is impossible without VER references. 26 existing issues + every future issue-resolution carries the same shape until migrated. Cross-cutting: pattern likely repeats in decisions[].enacted_by, framework-gaps[].closed_by, tasks[].verification — schema-level convention for verification FK is missing in framework canon.",
+      "canonical_vocabulary": "verification-FK convention for resolution evidence",
+      "proposed_resolution": "(1) Add 'issue' to verification.schema.json target_type enum so issues become legal verification targets. (2) Decide substrate-canon shape for issue→verification relation: either (a) FK-as-field on issues[].resolved_by (string referencing VER-NNN) — accepts DEC-0013 minor exception for evidence FKs, OR (b) relations.json edge with relation_type = verified_by — strict DEC-0013 compliance, requires relation_type registration. (3) Migration via schema-migrations.ts: for each resolved issue with free-text resolved_by, either author a retrospective VER-NNN capturing the closure evidence + rewrite resolved_by to reference it, OR mark issues as 'resolution-pre-VER-convention' and accept the historical free-text shape. (4) Extend same convention to decisions[].enacted_by and framework-gaps[].closed_by if substrate-canon shifts toward FK-everywhere. P2 because the gap blocks resolution-quality audits + grows linearly with each new issue closure; not P1 because no live functionality is broken.",
+      "related_decisions": [
+        "DEC-0013",
+        "DEC-0018"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-13T00:00:00Z"
     }
   ]
 }

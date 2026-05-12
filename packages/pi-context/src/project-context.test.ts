@@ -26,6 +26,7 @@ import {
 	type SubstrateValidationIssue,
 	synthesizeFromField,
 	validateRelations,
+	walkAncestors,
 	walkDescendants,
 } from "./project-context.js";
 import { writeBootstrapPointer } from "./project-dir.js";
@@ -287,6 +288,56 @@ describe("walkDescendants", () => {
 			{ parent: "a", child: "c", relation_type: "rt-2" },
 		];
 		assert.deepStrictEqual(walkDescendants("a", "rt-1", edges), ["b"]);
+	});
+});
+
+// ── walkAncestors ───────────────────────────────────────────────────────────
+// Reverse-direction counterpart to walkDescendants; mirrors its cycle-safety
+// and relation-type-filter semantics. Per FGAP-029 partial closure
+// (TASK-036 / sub-phase 2.3) — closure-table parent-direction traversal.
+
+describe("walkAncestors", () => {
+	it("walks a linear ancestor chain (A → B → C → D; ancestors of D = [C, B, A])", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "b", relation_type: "rt" },
+			{ parent: "b", child: "c", relation_type: "rt" },
+			{ parent: "c", child: "d", relation_type: "rt" },
+		];
+		const anc = walkAncestors("d", "rt", edges);
+		assert.deepStrictEqual(anc.sort(), ["a", "b", "c"]);
+	});
+
+	it("walks a branching DAG (C has parents A and B; ancestors include both)", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "c", relation_type: "rt" },
+			{ parent: "b", child: "c", relation_type: "rt" },
+		];
+		const anc = walkAncestors("c", "rt", edges);
+		assert.deepStrictEqual(anc.sort(), ["a", "b"]);
+	});
+
+	it("is cycle-safe (does not loop on back-edges)", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "b", relation_type: "rt" },
+			{ parent: "b", child: "a", relation_type: "rt" }, // cycle
+		];
+		const anc = walkAncestors("b", "rt", edges);
+		// Termination is the property under test; both nodes appear once each.
+		assert.ok(anc.length <= 4);
+		assert.ok(anc.includes("a"));
+	});
+
+	it("returns [] for an item with no ancestors", () => {
+		const edges: Edge[] = [{ parent: "a", child: "b", relation_type: "rt" }];
+		assert.deepStrictEqual(walkAncestors("a", "rt", edges), []);
+	});
+
+	it("ignores edges with mismatched relation_type", () => {
+		const edges: Edge[] = [
+			{ parent: "a", child: "c", relation_type: "rt-1" },
+			{ parent: "b", child: "c", relation_type: "rt-2" },
+		];
+		assert.deepStrictEqual(walkAncestors("c", "rt-1", edges), ["a"]);
 	});
 });
 

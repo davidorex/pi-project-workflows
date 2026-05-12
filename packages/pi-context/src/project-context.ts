@@ -341,6 +341,40 @@ export function walkDescendants(parentId: string, relationType: string, edges: E
 }
 
 /**
+ * Walk ancestors of `itemId` along edges of a given relation_type — the
+ * reverse-direction traversal of walkDescendants. Iterates edges where
+ * `e.child === node && e.relation_type === relationType` and recurses on
+ * `e.parent`. Cycle-safe via a visited-set mirroring walkDescendants:
+ * revisit short-circuits, so a back-edge does not loop, but
+ * `validateRelations` is the surface that flags the cycle.
+ *
+ * Returns the ancestor id list (may include multiple distinct parents
+ * when the closure-table edge set is a DAG with merges). Order is
+ * traversal-order (closest ancestors first) matching walkDescendants'
+ * BFS-like semantic; callers MUST treat the result as a set or sort if
+ * deterministic order is required.
+ *
+ * Pure function — operates on the Edge[] argument; does NOT read substrate.
+ */
+export function walkAncestors(itemId: string, relationType: string, edges: Edge[]): string[] {
+	const out: string[] = [];
+	const visited = new Set<string>();
+	const stack = [itemId];
+	while (stack.length > 0) {
+		const node = stack.pop();
+		if (node === undefined || visited.has(node)) continue;
+		visited.add(node);
+		for (const e of edges) {
+			if (e.child === node && e.relation_type === relationType) {
+				out.push(e.parent);
+				stack.push(e.parent);
+			}
+		}
+	}
+	return out;
+}
+
+/**
  * Project items into bins under a lens. Items reachable through `lensEdges`
  * with parent ∈ `lens.bins` go to that bin; remaining items go to
  * "(uncategorized)". Caller picks whether to include the uncategorized

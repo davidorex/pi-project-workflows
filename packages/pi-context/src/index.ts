@@ -30,6 +30,7 @@ import {
 	loadLensView,
 	renderLensView,
 	validateProjectRelations,
+	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
 import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
@@ -1180,6 +1181,42 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: walk-ancestors ─────────────────────────────────────────────
+	// Reverse-direction counterpart to project-walk-descendants. Coexists
+	// with the descendants tool — this tool is the parent-direction
+	// traversal; FGAP-029 partial closure (TASK-036 / sub-phase 2.3).
+
+	pi.registerTool({
+		name: "walk-ancestors",
+		label: "Walk Ancestors",
+		description:
+			"Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to project-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).",
+		promptSnippet: "Walk closure-table ancestors under a relation_type",
+		parameters: Type.Object({
+			itemId: Type.String({ description: "Child item id whose ancestors are sought" }),
+			relationType: Type.String({ description: "Relation type from config.relation_types[].canonical_id" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { itemId: string; relationType: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = walkAncestorsByLens(ctx.cwd, params.itemId, params.relationType);
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
 			};
 		},
 	});

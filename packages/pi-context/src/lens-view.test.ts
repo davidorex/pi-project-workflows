@@ -9,6 +9,7 @@ import {
 	loadLensView,
 	renderLensView,
 	validateProjectRelations,
+	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
 import { writeBootstrapPointer } from "./project-dir.js";
@@ -352,6 +353,32 @@ describe("walkLensDescendants", () => {
 	it("returns [] when no relations.json exists", () => {
 		tmpRoot = makeProject();
 		const result = walkLensDescendants(tmpRoot, "A", "blocks");
+		assert.deepEqual(result, []);
+	});
+});
+
+describe("walkAncestorsByLens", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("walks ancestors under matching relation_type (reverse of walkLensDescendants)", () => {
+		tmpRoot = makeProject({
+			lenses: [],
+			relations: [
+				{ parent: "A", child: "B", relation_type: "blocks" },
+				{ parent: "B", child: "C", relation_type: "blocks" },
+				{ parent: "B", child: "D", relation_type: "other" },
+			],
+		});
+		const result = walkAncestorsByLens(tmpRoot, "C", "blocks");
+		// Ancestors of C under "blocks" = B and A (B blocks C; A blocks B).
+		assert.deepEqual(result.sort(), ["A", "B"]);
+	});
+
+	it("returns [] when no relations.json exists", () => {
+		tmpRoot = makeProject();
+		const result = walkAncestorsByLens(tmpRoot, "C", "blocks");
 		assert.deepEqual(result, []);
 	});
 });

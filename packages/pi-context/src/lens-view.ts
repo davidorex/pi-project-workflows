@@ -20,6 +20,7 @@ import {
 	resolveComposition,
 	type SubstrateValidationResult,
 	validateRelations,
+	walkAncestors,
 	walkDescendants,
 } from "./project-context.js";
 import { availableBlocks } from "./project-sdk.js";
@@ -255,4 +256,16 @@ export function edgesForLensByName(cwd: string, lensId: string): Edge[] | { erro
 export function walkLensDescendants(cwd: string, parentId: string, relationType: string): string[] {
 	const ctx = getProjectContext(cwd);
 	return walkDescendants(parentId, relationType, ctx.relations);
+}
+
+/**
+ * Walk closure-table ancestors of itemId under the given relation_type —
+ * reverse-direction wrapper mirroring walkLensDescendants. Reads edges via
+ * getProjectContext and delegates to the pure walkAncestors traversal.
+ * Returns the ancestor id list (may be empty if itemId has no parents
+ * under the relation_type, or if relations.json is absent).
+ */
+export function walkAncestorsByLens(cwd: string, itemId: string, relationType: string): string[] {
+	const ctx = getProjectContext(cwd);
+	return walkAncestors(itemId, relationType, ctx.relations);
 }

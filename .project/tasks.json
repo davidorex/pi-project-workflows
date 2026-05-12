@@ -123,7 +123,7 @@
     {
       "id": "TASK-031",
       "description": "Close FGAP-035 — eliminate writeBootstrapPointer signature default and initProject .project literal. Make contextDir required at the bootstrap-write surface so DEC-0015 enacts at line 1, not as a Phase 6 promise.",
-      "status": "in-progress",
+      "status": "completed",
       "phase": "8.7.1",
       "files": [
         "packages/pi-context/src/project-dir.ts",
@@ -146,12 +146,13 @@
       "depends_on": [
         "TASK-021"
       ],
-      "notes": "UX decision RESOLVED 2026-05-12 (recorded as substrate-canon per feedback_plan_mode_step_one_substrate_write): /project init <contextDir> requires positional arg; matches existing pi-context subcommand-arg pattern (5 sites: /project view, /project lens-curate, /project roadmap-view, /project roadmap-validate, /project install --update). Missing arg → ctx.ui.notify error + return (NOT silent default; NOT pi.sendMessage prompt; NOT defer to /context init Phase 6). project-init pi tool gains required contextDir Type.Object param (in-pi agents must pass explicitly). 168 test sites already pass explicit name — signature change is BC-clean for tests. Phase 6 /context init ceremony layers prompting on top of this already-correct foundation."
+      "notes": "CLOSED at HEAD e88d7ee. FGAP-035 implementation: 11 cascade rows applied at f17efa3 + Q4 follow-up site at e88d7ee. All 4 packages green (pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0). Adversarial probe verdict GREEN (8 PASS, 1 PASS-post-fix Q4, 1 PASS-substantively Q10). UX decision (positional arg required; ctx.ui.notify error on missing) preserved verbatim in handleInit. project-init pi tool gains required contextDir Type.Object param. See VER-001 for full criteria_results.",
+      "verification": "VER-001"
     },
     {
       "id": "TASK-032",
       "description": "Close FGAP-036 — add scripts/orchestrator/compile-task-context.ts. Canonicalizes implementer-task-block composition from substrate inputs (TASK-NNN + explore-report-path + commit-subject-template). Enables FGAP-035 dispatch via canonical orchestrator-side context-compilation surface rather than hand-authored /tmp/task-template-*.md.",
-      "status": "in-progress",
+      "status": "completed",
       "phase": "8.7.1",
       "files": [
         "scripts/orchestrator/compile-task-context.ts"
@@ -166,12 +167,13 @@
         "FGAP-035 implementation context compiled via this script (validates the surface end-to-end)"
       ],
       "depends_on": [],
-      "notes": "Renamed from build-task-template.ts to compile-task-context.ts 2026-05-12 to mirror pi-jit-agents compileAgent vocabulary across both consumer surfaces (Claude Code orchestrator + pi-runtime)."
+      "notes": "CLOSED at HEAD e88d7ee. compile-task-context.ts landed at 7883cea (creation) + 5293cca (console.log normalization) + e3a0247 (build-task-template.ts → compile-task-context.ts rename mirroring pi-jit-agents compileAgent vocabulary). Acceptance criterion 7 (FGAP-035 implementation context compiled via this script) validated end-to-end through the FGAP-035 dispatch chain. See VER-002.",
+      "verification": "VER-002"
     },
     {
       "id": "TASK-033",
       "description": "Close FGAP-038 — add scripts/orchestrator/inject-context-items.ts. Item-level substrate-item projection into subagent briefs. Selector + projection + format args. Doubles as test surface for block-schema shape discovery: every friction point encountered while writing the script gets filed as a follow-up FGAP, NOT silently worked-around.",
-      "status": "in-progress",
+      "status": "completed",
       "phase": "8.7.1",
       "files": [
         "scripts/orchestrator/inject-context-items.ts"
@@ -189,7 +191,8 @@
       "depends_on": [
         "TASK-032"
       ],
-      "notes": "Filed at user direction 2026-05-12 after the FGAP-035 Explore dispatch surfaced OR-hedging due to missing UX-decision context injection. Per the dogfood rationale, the script is canonical-pattern-discovery test surface — by writing it we discover what block schemas need to support to make item-level injection viable. Blocks TASK-031 Explore re-dispatch."
+      "notes": "CLOSED at HEAD e88d7ee. inject-context-items.ts landed at 2c3794a; --context-items arg integrated into compile-{explore,implementation}-context.ts at ad02726. Acceptance criterion 7 (FGAP-035 Explore re-dispatch via canonical surface with item-level injection) validated: rendered context embeds <context_items> verbatim; Explore agent produced 11-row cascade table without OR-hedging because TASK-031 UX decision was injected. Friction points (array_key heuristic / id-field assumption / singleton-block shape / colon-escape) filed inline in JSDoc + commit body per dogfood discipline. See VER-003.",
+      "verification": "VER-003"
     }
   ]
 }

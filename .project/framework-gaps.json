@@ -1146,7 +1146,7 @@
     {
       "id": "FGAP-035",
       "title": "DEC-0015 violation: writeBootstrapPointer carries hardcoded .project default; initProject hardcodes .project literal",
-      "status": "identified",
+      "status": "closed",
       "priority": "P0",
       "package": "@davidorex/pi-context",
       "layer": "L1",
@@ -1182,12 +1182,14 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-12T06:55:00Z"
+      "created_at": "2026-05-12T06:55:00Z",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-12T21:37:48.738Z"
     },
     {
       "id": "FGAP-036",
       "title": "Missing canonical script: compile-task-context.ts — implementer task-block hand-authored bypasses DEC-0019 dual-surface discipline",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "scripts/orchestrator",
       "layer": "L1",
@@ -1227,7 +1229,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-12T07:15:00Z"
+      "created_at": "2026-05-12T07:15:00Z",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-12T21:37:48.738Z"
     },
     {
       "id": "FGAP-037",
@@ -1296,7 +1300,7 @@
     {
       "id": "FGAP-038",
       "title": "Missing canonical script: item-level context-block injection for subagent briefs — script doubles as test surface for block-schema shape discovery",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "scripts/orchestrator",
       "layer": "L1",
@@ -1340,7 +1344,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-12T07:55:00Z"
+      "created_at": "2026-05-12T07:55:00Z",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-12T21:37:48.738Z"
     },
     {
       "id": "FGAP-039",

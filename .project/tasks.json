@@ -194,6 +194,98 @@
       ],
       "notes": "CLOSED at HEAD e88d7ee. inject-context-items.ts landed at 2c3794a; --context-items arg integrated into compile-{explore,implementation}-context.ts at ad02726. Acceptance criterion 7 (FGAP-035 Explore re-dispatch via canonical surface with item-level injection) validated: rendered context embeds <context_items> verbatim; Explore agent produced 11-row cascade table without OR-hedging because TASK-031 UX decision was injected. Friction points (array_key heuristic / id-field assumption / singleton-block shape / colon-escape) filed inline in JSDoc + commit body per dogfood discipline. See VER-003.",
       "verification": "VER-003"
+    },
+    {
+      "id": "TASK-034",
+      "description": "Phase 2 sub-phase 2.1: ship filter-block-items — library predicate-filter primitive + pi tool + scripts/orchestrator/filter-block-items.ts. Wraps existing readBlock + caller-side filter into a standalone tool. No closure-table dependency.",
+      "status": "planned",
+      "phase": "8.7.2",
+      "files": [
+        "packages/pi-context/src/project-sdk.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/filter-block-items.ts"
+      ],
+      "acceptance_criteria": [
+        "filterBlockItems(cwd, blockName, predicate) library function exported from project-sdk.ts; signature: (cwd: string, blockName: string, predicate: {field: string, op: 'eq'|'neq'|'in'|'matches', value: unknown}) => unknown[]",
+        "filter-block-items pi tool registered in packages/pi-context/src/index.ts with Type.Object schema {block, field, op, value}",
+        "scripts/orchestrator/filter-block-items.ts shebang-tsx executable; args --block --field --op --value [--format json|table]",
+        "Tests cover: filter by id / by enum field / by partial-string match / empty-result / missing-field; mkdtempSync + writeBootstrapPointer per test",
+        "Husky pre-commit gate (npm run check && npm test) green at commit time"
+      ],
+      "depends_on": [
+        "TASK-022"
+      ],
+      "notes": "Parent TASK-022 / Claude Code Task #22 (Phase 2 — high-impact query tools). No closure-table dependency. Substrate-canon: phase field carries free-text \"8.7.2\" per FGAP-040 — migration to PHASE-NNN FK scheduled for Phase 5 (TASK-025)."
+    },
+    {
+      "id": "TASK-035",
+      "description": "Phase 2 sub-phase 2.2: ship resolve-items-by-id (bulk variant) — library bulk-resolve wrapping buildIdIndex + pi tool + scripts/orchestrator/resolve-items-by-id.ts. Singular resolve-item-by-id tool already exists. No closure-table dependency.",
+      "status": "planned",
+      "phase": "8.7.2",
+      "files": [
+        "packages/pi-context/src/project-sdk.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/resolve-items-by-id.ts"
+      ],
+      "acceptance_criteria": [
+        "resolveItemsByIds(cwd, ids) library function exported from project-sdk.ts; signature: (cwd: string, ids: string[]) => Map<string, ItemLocation | null>; wraps existing buildIdIndex (project-sdk.ts:616)",
+        "resolve-items-by-id pi tool registered in packages/pi-context/src/index.ts with Type.Object({ids: Type.Array(Type.String())}); coexists with existing singular resolve-item-by-id tool",
+        "scripts/orchestrator/resolve-items-by-id.ts shebang-tsx executable; args --ids <csv> [--format json|table]",
+        "Tests cover: all-found / partial-found / none-found / cross-block resolution / prefix-mismatch fail mode",
+        "Husky pre-commit gate green at commit time"
+      ],
+      "depends_on": [
+        "TASK-022"
+      ],
+      "notes": "Parent TASK-022. No closure-table dependency. Bulk variant complements existing singular resolve-item-by-id tool."
+    },
+    {
+      "id": "TASK-036",
+      "description": "Phase 2 sub-phase 2.3: ship walk-ancestors — library parent-direction closure-table traversal + pi tool + scripts/orchestrator/walk-ancestors.ts. Mirrors walkDescendants (project-context.ts:325) inverted. FGAP-029 partial closure.",
+      "status": "planned",
+      "phase": "8.7.2",
+      "files": [
+        "packages/pi-context/src/project-context.ts",
+        "packages/pi-context/src/lens-view.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/walk-ancestors.ts"
+      ],
+      "acceptance_criteria": [
+        "walkAncestors(itemId, relationType, edges) library function exported from project-context.ts; signature: (itemId: string, relationType: string, edges: Edge[]) => string[]; visited-set cycle protection; iterates edges.filter(e => e.child === id) recursing on e.parent",
+        "walkAncestorsByLens(cwd, itemId, relationType) wrapper exported from lens-view.ts mirroring walkLensDescendants pattern",
+        "walk-ancestors pi tool registered in packages/pi-context/src/index.ts with Type.Object({itemId, relationType})",
+        "scripts/orchestrator/walk-ancestors.ts shebang-tsx executable; args --item-id --relation-type [--format json|chain]",
+        "Tests cover: linear DAG ancestor chain / branching DAG / cycle protection / no-ancestors / relation_type filter; per-test fixtures create mkdtempSync + writeBootstrapPointer + .project/relations.json synthetic edges",
+        "Husky pre-commit gate green at commit time"
+      ],
+      "depends_on": [
+        "TASK-035"
+      ],
+      "notes": "Parent TASK-022. Closure-table dependency: per-test fixtures own relations.json; this repo's substrate won't carry relations.json until Phase 5 (TASK-025). FGAP-029 partial closure per HANDOFF #22 description."
+    },
+    {
+      "id": "TASK-037",
+      "description": "Phase 2 sub-phase 2.4: ship find-references — library reverse-edge lookup + pi tool + scripts/orchestrator/find-references.ts. Specialization of walkDescendants/walkAncestors patterns returning Edge[] not string[].",
+      "status": "planned",
+      "phase": "8.7.2",
+      "files": [
+        "packages/pi-context/src/project-context.ts",
+        "packages/pi-context/src/lens-view.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/find-references.ts"
+      ],
+      "acceptance_criteria": [
+        "findReferences(itemId, edges, direction?) library function exported from project-context.ts; returns Edge[] where edge.child === itemId (inbound) OR edge.parent === itemId (outbound); direction param defaults to 'both'",
+        "findReferencesInRepo(cwd, itemId, direction?) wrapper exported from lens-view.ts using existing loadRelations path",
+        "find-references pi tool registered in packages/pi-context/src/index.ts with Type.Object({itemId, direction: Type.Optional(Type.Union([...]))})",
+        "scripts/orchestrator/find-references.ts shebang-tsx executable; args --item-id [--direction inbound|outbound|both] [--format json|table]",
+        "Tests cover: inbound only / outbound only / both / no-references / multiple relation_types between same pair; per-test fixtures",
+        "Husky pre-commit gate green at commit time"
+      ],
+      "depends_on": [
+        "TASK-036"
+      ],
+      "notes": "Parent TASK-022. Closure-table dependency: per-test fixtures own relations.json. Completes Phase 2 sub-phase decomposition (walk-by-relation was originally listed but pre-exists at HEAD bcf2e60 as walkDescendants + project-walk-descendants tool — dropped from Phase 2 scope; canonical sub-phase analysis to be updated)."
     }
   ]
 }

@@ -19,7 +19,9 @@ import {
 	blockStructure,
 	completeTask,
 	filterBlockItems,
+	type ItemLocation,
 	projectState,
+	resolveItemsByIds,
 	schemaInfo,
 	schemaVocabulary,
 	validateProject,
@@ -1466,5 +1468,116 @@ describe("filterBlockItems", () => {
 		assert.strictEqual(neqResult.length, 2);
 		const neqIds = (neqResult.map((r) => (r as Record<string, unknown>).id) as string[]).sort();
 		assert.deepStrictEqual(neqIds, ["TASK-001", "TASK-003"]);
+	});
+});
+
+// ── resolveItemsByIds (bulk) ────────────────────────────────────────────────
+
+/**
+ * Fixture helper for bulk-resolve tests: write a block file + a minimal
+ * permissive schema (mirrors setupFilterBlock). Block content carries
+ * objects with a top-level `id` field — the buildIdIndex contract that
+ * resolveItemsByIds wraps. Schema presence keeps readBlock's substrate
+ * shape intact; no schema-validation pressure here because the resolver
+ * is a pure read-side index over already-on-disk data.
+ */
+function setupResolveBlock(tmpDir: string, blockName: string, arrayKey: string, items: unknown[]): void {
+	const wfDir = path.join(tmpDir, ".project");
+	const schemasDir = path.join(wfDir, "schemas");
+	fs.mkdirSync(schemasDir, { recursive: true });
+	const schema = {
+		type: "object",
+		required: [arrayKey],
+		properties: {
+			[arrayKey]: { type: "array", items: { type: "object" } },
+		},
+	};
+	fs.writeFileSync(path.join(schemasDir, `${blockName}.schema.json`), JSON.stringify(schema));
+	fs.writeFileSync(path.join(wfDir, `${blockName}.json`), JSON.stringify({ [arrayKey]: items }, null, 2));
+}
+
+describe("resolveItemsByIds", () => {
+	it("returns ItemLocation entries for all-found ids across multiple blocks", (t) => {
+		const tmpDir = makeTmpDir("resolve-all-found");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupResolveBlock(tmpDir, "decisions", "decisions", [
+			{ id: "DEC-0001", title: "first" },
+			{ id: "DEC-0002", title: "second" },
+		]);
+		setupResolveBlock(tmpDir, "tasks", "tasks", [{ id: "TASK-001", description: "first task" }]);
+
+		const result = resolveItemsByIds(tmpDir, ["DEC-0001", "DEC-0002", "TASK-001"]);
+		assert.strictEqual(result.size, 3);
+		const decLoc = result.get("DEC-0001") as ItemLocation | null;
+		assert.notStrictEqual(decLoc, null);
+		assert.strictEqual(decLoc?.block, "decisions");
+		assert.strictEqual(decLoc?.arrayKey, "decisions");
+		assert.strictEqual((decLoc?.item as Record<string, unknown>).id, "DEC-0001");
+		const taskLoc = result.get("TASK-001") as ItemLocation | null;
+		assert.notStrictEqual(taskLoc, null);
+		assert.strictEqual(taskLoc?.block, "tasks");
+	});
+
+	it("returns null entries for missing ids while resolving present ones (partial-found)", (t) => {
+		const tmpDir = makeTmpDir("resolve-partial");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupResolveBlock(tmpDir, "decisions", "decisions", [{ id: "DEC-0001", title: "first" }]);
+
+		const result = resolveItemsByIds(tmpDir, ["DEC-0001", "DEC-9999", "FGAP-9999"]);
+		assert.strictEqual(result.size, 3);
+		assert.notStrictEqual(result.get("DEC-0001"), null);
+		assert.strictEqual(result.get("DEC-9999"), null);
+		assert.strictEqual(result.get("FGAP-9999"), null);
+	});
+
+	it("returns null for every id when none exist in the index (none-found)", (t) => {
+		const tmpDir = makeTmpDir("resolve-none");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupResolveBlock(tmpDir, "decisions", "decisions", [{ id: "DEC-0001", title: "first" }]);
+
+		const result = resolveItemsByIds(tmpDir, ["FGAP-001", "TASK-999"]);
+		assert.strictEqual(result.size, 2);
+		assert.strictEqual(result.get("FGAP-001"), null);
+		assert.strictEqual(result.get("TASK-999"), null);
+	});
+
+	it("resolves ids across 3+ block kinds in one call (cross-block)", (t) => {
+		const tmpDir = makeTmpDir("resolve-cross-block");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupResolveBlock(tmpDir, "decisions", "decisions", [{ id: "DEC-0001" }]);
+		setupResolveBlock(tmpDir, "framework-gaps", "gaps", [{ id: "FGAP-001" }]);
+		setupResolveBlock(tmpDir, "tasks", "tasks", [{ id: "TASK-001" }]);
+
+		const result = resolveItemsByIds(tmpDir, ["DEC-0001", "FGAP-001", "TASK-001"]);
+		assert.strictEqual(result.size, 3);
+		const decLoc = result.get("DEC-0001") as ItemLocation | null;
+		const fgapLoc = result.get("FGAP-001") as ItemLocation | null;
+		const taskLoc = result.get("TASK-001") as ItemLocation | null;
+		assert.strictEqual(decLoc?.block, "decisions");
+		assert.strictEqual(fgapLoc?.block, "framework-gaps");
+		assert.strictEqual(taskLoc?.block, "tasks");
+		// arrayKey per fixture
+		assert.strictEqual(decLoc?.arrayKey, "decisions");
+		assert.strictEqual(fgapLoc?.arrayKey, "gaps");
+		assert.strictEqual(taskLoc?.arrayKey, "tasks");
+	});
+
+	it("dedups duplicate input ids per Map semantics — one entry, single resolution", (t) => {
+		const tmpDir = makeTmpDir("resolve-dedup");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupResolveBlock(tmpDir, "decisions", "decisions", [{ id: "DEC-0001", title: "first" }]);
+
+		const result = resolveItemsByIds(tmpDir, ["DEC-0001", "DEC-0001", "DEC-0001"]);
+		assert.strictEqual(result.size, 1);
+		assert.notStrictEqual(result.get("DEC-0001"), null);
+	});
+
+	it("returns an empty Map for empty input ids", (t) => {
+		const tmpDir = makeTmpDir("resolve-empty");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupResolveBlock(tmpDir, "decisions", "decisions", [{ id: "DEC-0001" }]);
+
+		const result = resolveItemsByIds(tmpDir, []);
+		assert.strictEqual(result.size, 0);
 	});
 });

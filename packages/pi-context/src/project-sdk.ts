@@ -778,6 +778,48 @@ export function resolveItemById(cwd: string, id: string): ItemLocation | null {
 	return buildIdIndex(cwd).get(id) ?? null;
 }
 
+/**
+ * Bulk variant of `resolveItemById` — resolve N ids against a single
+ * `buildIdIndex` traversal. Complements the singular form (which remains
+ * available for one-off renderer-driven lookups) by collapsing N independent
+ * `buildIdIndex` rebuilds into one. Coexists with the singular surface;
+ * neither supersedes the other.
+ *
+ * Semantics:
+ *   - Returns a `Map<string, ItemLocation | null>` whose entries are keyed
+ *     by the INPUT ids exactly as supplied (no normalization, no dedup
+ *     beyond Map's intrinsic key-uniqueness). Duplicate input ids therefore
+ *     collapse to one map entry — caller-side responsibility if multiplicity
+ *     matters; the canonical bulk-lookup contract is "set of ids → set of
+ *     resolutions" rather than "list → list".
+ *   - For each input id: present in the index → its `ItemLocation`; absent
+ *     → null entry. Every input id has an entry in the returned map (no
+ *     silent drops); this is the property that distinguishes the bulk
+ *     surface from a partial-result `getMany`.
+ *   - Empty input (`ids: []`) returns an empty Map (no index build cost
+ *     beyond the unavoidable directory existence check inside buildIdIndex).
+ *   - Insertion order matches the first-encounter order of `ids` (standard
+ *     ES Map semantics on `.set`).
+ *
+ * Behavior contract:
+ *   - Single `buildIdIndex(cwd)` invocation regardless of `ids.length`
+ *     (closes the N×singular-call pattern that motivated the bulk surface).
+ *   - Prefix-vs-block invariant violations inside the index build propagate
+ *     out as-is — same surface contract as `resolveItemById`.
+ *
+ * Closes part of the FGAP-026 phase 2 query-surface gap (TASK-035).
+ */
+export function resolveItemsByIds(cwd: string, ids: string[]): Map<string, ItemLocation | null> {
+	const out = new Map<string, ItemLocation | null>();
+	if (ids.length === 0) return out;
+	const index = buildIdIndex(cwd);
+	for (const id of ids) {
+		if (out.has(id)) continue; // duplicate input — Map dedup semantics
+		out.set(id, index.get(id) ?? null);
+	}
+	return out;
+}
+
 // ── Project Validation (cross-block reference integrity) ─────────────────────
 
 export interface ProjectValidationIssue {

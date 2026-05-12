@@ -45,8 +45,10 @@ import {
 	completeTask,
 	filterBlockItems,
 	findAppendableBlocks,
+	type ItemLocation,
 	projectState,
 	resolveItemById,
+	resolveItemsByIds,
 	validateProject,
 } from "./project-sdk.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
@@ -1032,6 +1034,42 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: resolve-items-by-id (bulk) ──────────────────────────────────
+
+	pi.registerTool({
+		name: "resolve-items-by-id",
+		label: "Resolve Items By Id (Bulk)",
+		description:
+			"Bulk variant of resolve-item-by-id — resolve N kind-prefixed ids against a single buildIdIndex traversal. Returns an object mapping each input id to its ItemLocation (block / arrayKey / item) or null when not found. Coexists with the singular resolve-item-by-id tool; bulk collapses the N×singular-call pattern for callers resolving multiple ids in one render pass.",
+		promptSnippet: "Resolve a batch of kind-prefixed ids (DEC-/FGAP-/TASK-/issue-/REQ-/...) in one call",
+		parameters: Type.Object({
+			ids: Type.Array(Type.String(), {
+				description: "Array of kind-prefixed ids (DEC-/FGAP-/TASK-/issue-/REQ-/...) to resolve in one call",
+			}),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { ids: string[] },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const resultMap = resolveItemsByIds(ctx.cwd, params.ids);
+			const obj: Record<string, ItemLocation | null> = {};
+			for (const [id, loc] of resultMap) obj[id] = loc;
+			const jsonStr = JSON.stringify(obj, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
 			};
 		},
 	});

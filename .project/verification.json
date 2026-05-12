@@ -295,6 +295,52 @@
           "evidence": "Bulk resolve of DEC-0015/FGAP-035/TASK-034 returns correct JSON map; each id resolves to its block (decisions/framework-gaps/tasks) with full item payload"
         }
       ]
+    },
+    {
+      "id": "VER-007",
+      "target": "TASK-036",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T06:45:00Z",
+      "evidence": "Sub-phase 2.3 (walk-ancestors / FGAP-029 partial) landed at HEAD 7cb17f0. Library walkAncestors exported from project-context.ts:359 (mirrors walkDescendants at project-context.ts:325 inverted; visited-set cycle protection; filters edges by e.child + e.relation_type and recurses on e.parent). Wrapper walkAncestorsByLens exported from lens-view.ts:268 (mirrors walkLensDescendants at lens-view.ts:255). Pi tool walk-ancestors registered at index.ts:1194; existing project-walk-descendants tool preserved at index.ts:1164 (coexistence). Orchestrator script scripts/orchestrator/walk-ancestors.ts shebang-executable. tsconfig.json gained @davidorex/pi-context/lens-view path mapping (one-line addition mirroring existing project-sdk subpath pattern). Tests: pi-context 413 → 420 (+7 covering linear DAG / branching / cycle protection / no-ancestors / relation-type filter + 2 walkAncestorsByLens wrapper tests). Husky pre-commit gate green at commit time. Closure-table runtime demo deferred to Phase 5 (per-test fixtures own synthetic relations.json; live .project/relations.json doesn't exist until Phase 5).",
+      "criteria_results": [
+        {
+          "criterion": "walkAncestors(itemId, relationType, edges) library exported from project-context.ts; visited-set cycle protection",
+          "status": "passed",
+          "evidence": "project-context.ts:359 export function walkAncestors(...): string[]; cycle protection verified by test #3"
+        },
+        {
+          "criterion": "walkAncestorsByLens(cwd, itemId, relationType) wrapper exported from lens-view.ts",
+          "status": "passed",
+          "evidence": "lens-view.ts:268 export function walkAncestorsByLens(...)"
+        },
+        {
+          "criterion": "walk-ancestors pi tool registered in index.ts with Type.Object({itemId, relationType})",
+          "status": "passed",
+          "evidence": "index.ts:1194 pi.registerTool({name: \"walk-ancestors\", parameters: Type.Object({itemId, relationType}), ...})"
+        },
+        {
+          "criterion": "Existing project-walk-descendants tool preserved unchanged",
+          "status": "passed",
+          "evidence": "index.ts:1164 project-walk-descendants intact; walk-ancestors coexists as separate registration"
+        },
+        {
+          "criterion": "scripts/orchestrator/walk-ancestors.ts shebang-tsx executable",
+          "status": "passed",
+          "evidence": "-rwxr-xr-x 3308 bytes; --item-id + --relation-type + --format json|chain"
+        },
+        {
+          "criterion": "Tests cover linear DAG / branching / cycle protection / no-ancestors / relation-type filter + wrapper",
+          "status": "passed",
+          "evidence": "+7 tests in pi-context (413 → 420); 5 walkAncestors + 2 walkAncestorsByLens"
+        },
+        {
+          "criterion": "Husky pre-commit gate green at commit time",
+          "status": "passed",
+          "evidence": "Commit 7cb17f0 landed without --no-verify across all 4 packages"
+        }
+      ]
     }
   ]
 }

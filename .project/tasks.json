@@ -244,7 +244,7 @@
     {
       "id": "TASK-036",
       "description": "Phase 2 sub-phase 2.3: ship walk-ancestors — library parent-direction closure-table traversal + pi tool + scripts/orchestrator/walk-ancestors.ts. Mirrors walkDescendants (project-context.ts:325) inverted. FGAP-029 partial closure.",
-      "status": "planned",
+      "status": "completed",
       "phase": "8.7.2",
       "files": [
         "packages/pi-context/src/project-context.ts",
@@ -263,7 +263,8 @@
       "depends_on": [
         "TASK-035"
       ],
-      "notes": "Parent TASK-022. Closure-table dependency: per-test fixtures own relations.json; this repo's substrate won't carry relations.json until Phase 5 (TASK-025). FGAP-029 partial closure per HANDOFF #22 description."
+      "notes": "CLOSED at HEAD 7cb17f0. walkAncestors + walkAncestorsByLens + walk-ancestors pi tool + scripts/orchestrator/walk-ancestors.ts shipped. tsconfig.json gained @davidorex/pi-context/lens-view path mapping. Tests: pi-context 413 → 420 (+7). Closure-table runtime demo deferred to Phase 5 (per-test fixtures own synthetic relations.json). See VER-007.",
+      "verification": "VER-007"
     },
     {
       "id": "TASK-037",

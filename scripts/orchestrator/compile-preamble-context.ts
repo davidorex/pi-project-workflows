@@ -93,16 +93,19 @@ const TYPE_TOOL_SURFACE: Record<AgentType, string> = {
 	implementation: `- NEVER run \`npm\`. Orchestrator owns all npm gates. tsx eval is fine.
 - Use canonical surfaces only — no parallel ungated paths. AJV via canonical \`validate()\` from schema-validator.ts:108.
 - Direct Edit/Write of \`.project/*.json\` is FORBIDDEN. Use block-api primitives via tsx eval.
-- File outputs to \`/tmp/<filename>\` for reports.`,
-	explore: `- READ-ONLY. NEVER modify any source / config / substrate file.
+- File outputs to \`compiled-contexts/<filename>\` for reports.`,
+	explore: `- READ-ONLY against the investigation target: NEVER modify any source / config / substrate file.
+- USE Write tool ONLY to emit the findings file at the path declared in <output_format>; no other writes permitted.
 - Use Read + grep + git extensively. tsx for verification only.
-- File outputs to \`/tmp/<filename>.md\`.`,
+- Findings file lives under \`compiled-contexts/<filename>.md\` (project-gitignored dispatch-artifact dir).`,
 	"adversarial-probe": `- NEVER run \`npm\`. Use \`tsx\`, plain \`node --input-type=module\` against dist/, \`grep\`, \`git show\`, \`git log\` only.
 - NO commits. NO source modifications. NO \`.project/*.json\` edits.
-- File output to \`/tmp/<filename>.md\`.`,
+- USE Write tool ONLY to emit the report file at the path declared in <output_format>; no other writes permitted.
+- File output to \`compiled-contexts/<filename>.md\`.`,
 	demo: `- NEVER run \`npm\`. tsx or plain node against dist/ only.
 - NO commits, NO source modifications, NO \`.project/*.json\` edits.
-- File output to \`/tmp/<filename>.md\`.
+- USE Write tool ONLY to emit the report file at the path declared in <output_format>; no other writes permitted.
+- File output to \`compiled-contexts/<filename>.md\`.
 - Demos must invoke production code path end-to-end with verifiable assertion (DEC-0018).`,
 };
 

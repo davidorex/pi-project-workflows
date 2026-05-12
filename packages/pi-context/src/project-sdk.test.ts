@@ -18,6 +18,7 @@ import {
 	availableSchemas,
 	blockStructure,
 	completeTask,
+	filterBlockItems,
 	projectState,
 	schemaInfo,
 	schemaVocabulary,
@@ -1338,5 +1339,132 @@ describe("verification gate — AJV if/then enforcement", () => {
 		const data = JSON.parse(fs.readFileSync(path.join(projectDir, "tasks.json"), "utf-8"));
 		assert.strictEqual(data.tasks[0].status, "completed");
 		assert.strictEqual(data.tasks[0].verification, "v1");
+	});
+});
+
+// ── filterBlockItems ─────────────────────────────────────────────────────────
+
+/**
+ * Fixture helper: write a block file + companion minimal schema. Schema is
+ * intentionally permissive — filterBlockItems is a pure read-side query and
+ * does not exercise write-time schema validation; the schema file's
+ * presence keeps readBlock's normal substrate shape intact.
+ */
+function setupFilterBlock(tmpDir: string, blockName: string, arrayKey: string, items: unknown[]): void {
+	const wfDir = path.join(tmpDir, ".project");
+	const schemasDir = path.join(wfDir, "schemas");
+	fs.mkdirSync(schemasDir, { recursive: true });
+	const schema = {
+		type: "object",
+		required: [arrayKey],
+		properties: {
+			[arrayKey]: { type: "array", items: { type: "object" } },
+		},
+	};
+	fs.writeFileSync(path.join(schemasDir, `${blockName}.schema.json`), JSON.stringify(schema));
+	fs.writeFileSync(path.join(wfDir, `${blockName}.json`), JSON.stringify({ [arrayKey]: items }, null, 2));
+}
+
+describe("filterBlockItems", () => {
+	it("filters by eq on a single field (framework-gaps status=identified)", (t) => {
+		const tmpDir = makeTmpDir("filter-eq");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "framework-gaps", "gaps", [
+			{ id: "FGAP-001", status: "closed", priority: "P1" },
+			{ id: "FGAP-002", status: "identified", priority: "P0" },
+			{ id: "FGAP-003", status: "identified", priority: "P2" },
+		]);
+
+		const result = filterBlockItems(tmpDir, "framework-gaps", { field: "status", op: "eq", value: "identified" });
+		assert.strictEqual(result.length, 2);
+		const ids = result.map((r) => (r as Record<string, unknown>).id);
+		assert.deepStrictEqual(ids.sort(), ["FGAP-002", "FGAP-003"]);
+	});
+
+	it("filters by neq returning all non-matching items (tasks status!=completed)", (t) => {
+		const tmpDir = makeTmpDir("filter-neq");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [
+			{ id: "TASK-001", status: "completed" },
+			{ id: "TASK-002", status: "planned" },
+			{ id: "TASK-003", status: "in_progress" },
+			{ id: "TASK-004", status: "completed" },
+		]);
+
+		const result = filterBlockItems(tmpDir, "tasks", { field: "status", op: "neq", value: "completed" });
+		assert.strictEqual(result.length, 2);
+		const ids = result.map((r) => (r as Record<string, unknown>).id);
+		assert.deepStrictEqual(ids.sort(), ["TASK-002", "TASK-003"]);
+	});
+
+	it("filters by in against an array of values (decisions status in enacted|superseded)", (t) => {
+		const tmpDir = makeTmpDir("filter-in");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "decisions", "decisions", [
+			{ id: "DEC-0001", status: "enacted" },
+			{ id: "DEC-0002", status: "open" },
+			{ id: "DEC-0003", status: "superseded" },
+			{ id: "DEC-0004", status: "open" },
+		]);
+
+		const result = filterBlockItems(tmpDir, "decisions", {
+			field: "status",
+			op: "in",
+			value: ["enacted", "superseded"],
+		});
+		assert.strictEqual(result.length, 2);
+		const ids = (result.map((r) => (r as Record<string, unknown>).id) as string[]).sort();
+		assert.deepStrictEqual(ids, ["DEC-0001", "DEC-0003"]);
+	});
+
+	it("filters by matches via regexp against a string field (description partial match)", (t) => {
+		const tmpDir = makeTmpDir("filter-matches");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [
+			{ id: "TASK-001", description: "filter-block-items library" },
+			{ id: "TASK-002", description: "resolve-items-by-id bulk lookup" },
+			{ id: "TASK-003", description: "walk-ancestors closure-table traversal" },
+		]);
+
+		const result = filterBlockItems(tmpDir, "tasks", { field: "description", op: "matches", value: "block-items" });
+		assert.strictEqual(result.length, 1);
+		assert.strictEqual((result[0] as Record<string, unknown>).id, "TASK-001");
+	});
+
+	it("returns empty array when predicate matches nothing", (t) => {
+		const tmpDir = makeTmpDir("filter-empty");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [
+			{ id: "TASK-001", status: "planned" },
+			{ id: "TASK-002", status: "in_progress" },
+		]);
+
+		const result = filterBlockItems(tmpDir, "tasks", { field: "status", op: "eq", value: "completed" });
+		assert.deepStrictEqual(result, []);
+	});
+
+	it("excludes items missing the predicate field (documented uniform policy — no throw)", (t) => {
+		const tmpDir = makeTmpDir("filter-missing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [
+			{ id: "TASK-001", status: "planned" },
+			{ id: "TASK-002" }, // missing status
+			{ id: "TASK-003", status: "planned" },
+		]);
+
+		// eq against the value the present items carry → only items with the
+		// field present participate; the field-missing item is excluded
+		// regardless of operator (uniform per FilterPredicate docstring).
+		const eqResult = filterBlockItems(tmpDir, "tasks", { field: "status", op: "eq", value: "planned" });
+		assert.strictEqual(eqResult.length, 2);
+		const eqIds = (eqResult.map((r) => (r as Record<string, unknown>).id) as string[]).sort();
+		assert.deepStrictEqual(eqIds, ["TASK-001", "TASK-003"]);
+
+		// neq against a sentinel value: the field-missing item must NOT appear
+		// in the result (would be a true "filter, not schema assertion" violation).
+		const neqResult = filterBlockItems(tmpDir, "tasks", { field: "status", op: "neq", value: "blocked" });
+		assert.strictEqual(neqResult.length, 2);
+		const neqIds = (neqResult.map((r) => (r as Record<string, unknown>).id) as string[]).sort();
+		assert.deepStrictEqual(neqIds, ["TASK-001", "TASK-003"]);
 	});
 });

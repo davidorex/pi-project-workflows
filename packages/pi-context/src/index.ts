@@ -41,7 +41,14 @@ import {
 	schemasDir,
 	writeBootstrapPointer,
 } from "./project-dir.js";
-import { completeTask, findAppendableBlocks, projectState, resolveItemById, validateProject } from "./project-sdk.js";
+import {
+	completeTask,
+	filterBlockItems,
+	findAppendableBlocks,
+	projectState,
+	resolveItemById,
+	validateProject,
+} from "./project-sdk.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { readSchema } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
@@ -955,6 +962,50 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: filter-block-items ──────────────────────────────────────────
+
+	pi.registerTool({
+		name: "filter-block-items",
+		label: "Filter Block Items",
+		description:
+			"Filter the array items of a block by a single-field predicate (eq / neq / in / matches). Discovers the single top-level array property in the block; items missing the predicate field are never matched. Wraps the canonical readBlock + caller-side filter into one queryable surface; never mutates the block.",
+		promptSnippet: "Filter a block's items by a predicate — eq / neq / in / matches against a single field",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'tasks', 'decisions', 'framework-gaps')" }),
+			field: Type.String({ description: "Item field to test (e.g., 'status', 'priority', 'id')" }),
+			op: Type.Union([Type.Literal("eq"), Type.Literal("neq"), Type.Literal("in"), Type.Literal("matches")], {
+				description:
+					"Comparison operator: eq (===), neq (!==), in (value is array, item[field] in it), matches (regexp test on string)",
+			}),
+			value: Type.Unknown({
+				description: "Comparison value — scalar for eq/neq, array for in, regexp pattern string for matches",
+			}),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { block: string; field: string; op: "eq" | "neq" | "in" | "matches"; value: unknown },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = filterBlockItems(ctx.cwd, params.block, {
+				field: params.field,
+				op: params.op,
+				value: params.value,
+			});
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
 			};
 		},
 	});

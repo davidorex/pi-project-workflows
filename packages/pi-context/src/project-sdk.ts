@@ -547,6 +547,95 @@ export function projectState(cwd: string): ProjectState {
 	return state;
 }
 
+// ── Predicate Filter ────────────────────────────────────────────────────────
+
+/**
+ * Predicate operators for filterBlockItems. Each operator carries a
+ * documented semantic against `item[field]`:
+ *   - `eq`      : strict-equality (===) against `value`
+ *   - `neq`     : strict-inequality (!==) against `value`
+ *   - `in`      : `value` must be an array; matches when item[field] is in it
+ *   - `matches` : item[field] must be a string; tested against `new RegExp(value)`
+ *
+ * The match policy for items missing the predicate field is uniform:
+ * `item[field] === undefined` → NOT a match (returns false) for every
+ * operator. Rationale: returning early avoids throwing on heterogeneous
+ * block arrays where some items legitimately lack the field; callers that
+ * want a hard "field must exist" gate compose with `op: "neq", value: undefined`
+ * (still excluded by the undefined branch — current semantic is filter, not
+ * schema assertion). Documented here rather than via throw so callers get a
+ * cleanly-typed empty/partial array rather than a runtime trap.
+ */
+export interface FilterPredicate {
+	field: string;
+	op: "eq" | "neq" | "in" | "matches";
+	value: unknown;
+}
+
+/**
+ * Discover the single top-level array key in a block payload. Returns null
+ * when the block has zero array properties; throws when ambiguous (two or
+ * more array properties), since callers cannot proceed without an explicit
+ * disambiguation policy. Mirrors the heuristic in
+ * scripts/orchestrator/inject-context-items.ts:85-95 — both consumers share
+ * the same single-array-key assumption used across .project/ block writes.
+ */
+function discoverArrayKey(blockData: Record<string, unknown>): string | null {
+	const arrayKeys = Object.entries(blockData).filter(([, v]) => Array.isArray(v));
+	if (arrayKeys.length === 0) return null;
+	if (arrayKeys.length === 1) return arrayKeys[0][0];
+	throw new Error(
+		`filterBlockItems: block has multiple top-level array properties (${arrayKeys
+			.map(([k]) => k)
+			.join(", ")}); array_key per block is not declared in any registry — single-array assumption violated`,
+	);
+}
+
+/**
+ * Filter the array items of a block by a predicate. Reads the block via the
+ * canonical block-api `readBlock`, discovers the single top-level array key,
+ * and returns a new array of items satisfying the predicate. The source
+ * block is never mutated.
+ *
+ * Behavior contract:
+ *   - Block must exist; underlying `readBlock` throw propagates.
+ *   - Block must have exactly one top-level array property (single-array
+ *     assumption — same as inject-context-items.ts).
+ *   - Items missing the predicate field never match (see FilterPredicate
+ *     docstring for rationale).
+ *   - `op: "in"` requires `value` to be an array; otherwise no items match.
+ *   - `op: "matches"` constructs `new RegExp(String(value))`; a malformed
+ *     regex pattern throws synchronously from the RegExp constructor.
+ *
+ * Closes part of the FGAP-026 phase 2 query-surface gap (TASK-034).
+ */
+export function filterBlockItems(cwd: string, blockName: string, predicate: FilterPredicate): unknown[] {
+	const data = readBlock(cwd, blockName) as Record<string, unknown>;
+	const arrayKey = discoverArrayKey(data);
+	if (arrayKey === null) return [];
+	const items = data[arrayKey] as unknown[];
+	const { field, op, value } = predicate;
+	const re = op === "matches" ? new RegExp(String(value)) : null;
+	return items.filter((raw) => {
+		if (!raw || typeof raw !== "object") return false;
+		const item = raw as Record<string, unknown>;
+		const fv = item[field];
+		if (fv === undefined) return false;
+		switch (op) {
+			case "eq":
+				return fv === value;
+			case "neq":
+				return fv !== value;
+			case "in":
+				return Array.isArray(value) && (value as unknown[]).includes(fv);
+			case "matches":
+				return typeof fv === "string" && re!.test(fv);
+			default:
+				return false;
+		}
+	});
+}
+
 // ── Cross-block ID Resolver ─────────────────────────────────────────────────
 
 /**

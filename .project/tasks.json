@@ -23,7 +23,9 @@
         "walkAncestors JS export + walk-ancestors tool symmetric to walkDescendants",
         "find-references cross-block reverse-index"
       ],
-      "status": "planned"
+      "status": "completed",
+      "verification": "VER-009",
+      "notes": "CLOSED at HEAD 680cb1c. Phase 2 (FGAP-026 closure phase 2) complete via 4 atomic sub-phases (2.1 filter-block-items / 2.2 resolve-items-by-id bulk / 2.3 walk-ancestors / 2.4 find-references). walk-by-relation dropped from scope (pre-existing at HEAD bcf2e60 as walkDescendants + project-walk-descendants tool). Test counts: pi-context 401 → 428 (+27 cumulative). All 4 sub-phases shipped DEC-0019 dual-surface (library + pi tool + orchestrator script). See VER-009 + child VER-005/006/007/008."
     },
     {
       "id": "TASK-023",
@@ -269,7 +271,7 @@
     {
       "id": "TASK-037",
       "description": "Phase 2 sub-phase 2.4: ship find-references — library reverse-edge lookup + pi tool + scripts/orchestrator/find-references.ts. Specialization of walkDescendants/walkAncestors patterns returning Edge[] not string[].",
-      "status": "planned",
+      "status": "completed",
       "phase": "8.7.2",
       "files": [
         "packages/pi-context/src/project-context.ts",
@@ -288,7 +290,8 @@
       "depends_on": [
         "TASK-036"
       ],
-      "notes": "Parent TASK-022. Closure-table dependency: per-test fixtures own relations.json. Completes Phase 2 sub-phase decomposition (walk-by-relation was originally listed but pre-exists at HEAD bcf2e60 as walkDescendants + project-walk-descendants tool — dropped from Phase 2 scope; canonical sub-phase analysis to be updated)."
+      "notes": "CLOSED at HEAD 680cb1c. Final atomic unit under TASK-022. findReferences + findReferencesInRepo + find-references pi tool + scripts/orchestrator/find-references.ts shipped. Tests: pi-context 420 → 428 (+8). Edge[] return type intentionally distinct from walkDescendants/walkAncestors string[] semantic. See VER-008.",
+      "verification": "VER-008"
     }
   ]
 }

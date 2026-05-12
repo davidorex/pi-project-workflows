@@ -341,6 +341,98 @@
           "evidence": "Commit 7cb17f0 landed without --no-verify across all 4 packages"
         }
       ]
+    },
+    {
+      "id": "VER-008",
+      "target": "TASK-037",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T07:00:00Z",
+      "evidence": "Sub-phase 2.4 (find-references) — FINAL atomic unit under TASK-022 — landed at HEAD 680cb1c. findReferences library at project-context.ts:405 returns Edge[] (intentionally distinct from walkDescendants/walkAncestors which return string[]); supports inbound/outbound/both directions; self-loop edge returns once. findReferencesInRepo wrapper at lens-view.ts:289. Pi tool find-references at index.ts:1234; siblings walk-ancestors (index.ts:1195) + project-walk-descendants (index.ts:1165) preserved. Orchestrator script scripts/orchestrator/find-references.ts shebang-executable. Tests: pi-context 420 → 428 (+8 covering inbound/outbound/both/no-references/multiple-relation-types/self-loop + 2 wrapper tests). Husky pre-commit gate green.",
+      "criteria_results": [
+        {
+          "criterion": "findReferences(itemId, edges, direction?) library returns Edge[] with inbound/outbound/both directions",
+          "status": "passed",
+          "evidence": "project-context.ts:405 export function findReferences(...): Edge[]"
+        },
+        {
+          "criterion": "findReferencesInRepo(cwd, itemId, direction?) wrapper exported from lens-view.ts",
+          "status": "passed",
+          "evidence": "lens-view.ts:289 export function findReferencesInRepo(...)"
+        },
+        {
+          "criterion": "find-references pi tool registered with direction Type.Optional(Type.Union(...))",
+          "status": "passed",
+          "evidence": "index.ts:1234 pi.registerTool({name: \"find-references\", ...})"
+        },
+        {
+          "criterion": "Sibling tools preserved: walk-ancestors + project-walk-descendants",
+          "status": "passed",
+          "evidence": "index.ts:1195 walk-ancestors + index.ts:1165 project-walk-descendants intact"
+        },
+        {
+          "criterion": "scripts/orchestrator/find-references.ts shebang-tsx executable",
+          "status": "passed",
+          "evidence": "-rwxr-xr-x 3934 bytes"
+        },
+        {
+          "criterion": "Tests cover inbound/outbound/both/no-references/multiple-relation-types/self-loop + wrapper",
+          "status": "passed",
+          "evidence": "+8 tests in pi-context (420 → 428): 6 findReferences + 2 findReferencesInRepo"
+        },
+        {
+          "criterion": "Husky pre-commit gate green at commit time",
+          "status": "passed",
+          "evidence": "Commit 680cb1c landed without --no-verify across all 4 packages"
+        }
+      ]
+    },
+    {
+      "id": "VER-009",
+      "target": "TASK-022",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T07:00:00Z",
+      "evidence": "Phase 2 (FGAP-026 closure phase 2: High-impact query tools) complete at HEAD 680cb1c via 4 atomic sub-phases. Original 5-tool scope reduced to 4 after Explore agent enumeration surfaced walk-by-relation as pre-existing at HEAD bcf2e60 (walkDescendants project-context.ts:325 + walkLensDescendants lens-view.ts:255 + project-walk-descendants pi tool index.ts:1073). Sub-phase chain: 2.1 filter-block-items (TASK-034 / VER-005 / commit 15cd881) → 2.2 resolve-items-by-id bulk (TASK-035 / VER-006 / commit 2ddf85f) → 2.3 walk-ancestors FGAP-029 partial (TASK-036 / VER-007 / commit 7cb17f0) → 2.4 find-references (TASK-037 / VER-008 / commit 680cb1c). Test counts: pi-context 401 → 428 (+27 cumulative); pi-jit-agents 150/0/1 unchanged; pi-workflows 824/0/2 unchanged; pi-behavior-monitors 157/157 unchanged. Every sub-phase commit landed via husky pre-commit gate (npm run check && npm test) without --no-verify.",
+      "criteria_results": [
+        {
+          "criterion": "filter-block-items library + pi tool + orchestrator script (sub-phase 2.1)",
+          "status": "passed",
+          "evidence": "TASK-034 / VER-005 / HEAD 15cd881 + 3afcec1; library project-sdk.ts:612; pi tool index.ts:972; scripts/orchestrator/filter-block-items.ts"
+        },
+        {
+          "criterion": "resolve-items-by-id bulk library + pi tool + orchestrator script (sub-phase 2.2)",
+          "status": "passed",
+          "evidence": "TASK-035 / VER-006 / HEAD 2ddf85f + 1037d59; library project-sdk.ts:812; pi tool index.ts:1044; scripts/orchestrator/resolve-items-by-id.ts"
+        },
+        {
+          "criterion": "walk-ancestors library + wrapper + pi tool + orchestrator script (sub-phase 2.3 / FGAP-029 partial)",
+          "status": "passed",
+          "evidence": "TASK-036 / VER-007 / HEAD 7cb17f0 + 9405d48; library project-context.ts:359; wrapper lens-view.ts:268; pi tool index.ts:1194; scripts/orchestrator/walk-ancestors.ts"
+        },
+        {
+          "criterion": "find-references library + wrapper + pi tool + orchestrator script (sub-phase 2.4)",
+          "status": "passed",
+          "evidence": "TASK-037 / VER-008 / HEAD 680cb1c; library project-context.ts:405; wrapper lens-view.ts:289; pi tool index.ts:1234; scripts/orchestrator/find-references.ts"
+        },
+        {
+          "criterion": "walk-by-relation dropped from scope (pre-existing at HEAD bcf2e60)",
+          "status": "passed",
+          "evidence": "Explore agent enumeration at compiled-contexts/explore-phase2-query-surface.md confirmed walkDescendants + project-walk-descendants pre-exist"
+        },
+        {
+          "criterion": "Test count delta: pi-context +27 (401 → 428)",
+          "status": "passed",
+          "evidence": "6 (2.1) + 6 (2.2) + 7 (2.3) + 8 (2.4) = 27"
+        },
+        {
+          "criterion": "All 4 sub-phases shipped per DEC-0019 dual-surface (library + pi tool + orchestrator script)",
+          "status": "passed",
+          "evidence": "Each VER-005..008 enumerates all three surfaces landed"
+        }
+      ]
     }
   ]
 }

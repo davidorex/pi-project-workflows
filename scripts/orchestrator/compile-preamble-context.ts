@@ -1,7 +1,8 @@
 #!/usr/bin/env tsx
 /**
- * build-subagent-preamble — composer of the heavy preamble per
- * feedback_constraining_subagent_briefs.
+ * compile-preamble-context — composer of the heavy preamble per
+ * feedback_constraining_subagent_briefs. Mirrors pi-jit-agents compileAgent
+ * vocabulary: this fragment is one piece of the compiled agent context.
  *
  * Per-type variants automatically include the right subset of mandates / DECs
  * / feedback. The composer invokes the atomic extractors as child processes
@@ -9,7 +10,7 @@
  * that exist as standalone scripts.
  *
  * Usage:
- *   tsx scripts/orchestrator/build-subagent-preamble.ts \
+ *   tsx scripts/orchestrator/compile-preamble-context.ts \
  *       --type {implementation|explore|adversarial-probe|demo} \
  *       [--decs DEC-0014,DEC-0015,...] [--feedback names,...]
  *

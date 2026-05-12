@@ -1,20 +1,21 @@
 #!/usr/bin/env tsx
 /**
- * build-task-template — canonical implementer task-block composer
+ * compile-task-context — canonical implementer task-block composer
  *
- * Renders the implementation task-block from substrate inputs:
+ * Mirrors pi-jit-agents compileAgent vocabulary: renders the task section of
+ * an implementation agent's compiled context from substrate inputs:
  *   - TASK-NNN id (reads description + acceptance_criteria + files[] from
  *     .project/tasks.json via @davidorex/pi-context/block-api readBlock)
  *   - Explore report path (cascade-target table source via extract-markdown-section)
  *   - Commit subject template (verbatim use as commit subject)
  *
  * Output: XML-structured task-block to stdout in the exact shape
- * build-implementation-brief.ts expects via `--task-template @<file>`.
+ * compile-implementation-context.ts expects via `--task-template @<file>`.
  *
  * Closes FGAP-036 (hand-authored task-templates bypass DEC-0019 dual-surface).
  *
  * Usage:
- *   tsx scripts/orchestrator/build-task-template.ts \
+ *   tsx scripts/orchestrator/compile-task-context.ts \
  *       --task-id TASK-031 \
  *       --explore-report /tmp/explore-fgap035.md \
  *       --commit-subject 'feat(pi-context)!: ...' \

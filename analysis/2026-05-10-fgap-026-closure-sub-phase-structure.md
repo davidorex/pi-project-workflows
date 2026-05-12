@@ -54,7 +54,7 @@ When hard-throw substrate primitive (resolveContextDir) lands, each consumer-pac
 
 Each sub-phase = one plan file iteration (overwriting `~/.claude/plans/idempotent-dancing-wilkes.md`) + ExitPlanMode for approval + foreground subagent dispatch (per `feedback_no_background_subagents.md`) + verify-before-relay + per-sub-phase forensic commit + HANDOFF Active Task Ledger update naming the sub-phase progress under the parent task entry.
 
-Brief composition via `scripts/orchestrator/build-*-brief.ts` per DEC-0019 + DEC-0020. Future Explore briefs use `build-explore-brief.ts` with TABLES-ONLY rule. Implementation briefs use `build-implementation-brief.ts`. Atomic substrate filings use `file-block-item.ts`.
+Agent-context compilation via `scripts/orchestrator/compile-*-context.ts` per DEC-0019 + DEC-0020 (mirrors pi-jit-agents `compileAgent` vocabulary). Explore-agent context via `compile-explore-context.ts` with TABLES-ONLY rule. Implementation-agent context via `compile-implementation-context.ts`. Implementer task-block via `compile-task-context.ts`. Atomic substrate filings via `file-block-item.ts`. Item-level substrate projection via `inject-context-items.ts`.
 
 Where parallel possible: batch parallel agent dispatches in a single Agent-tool-call message; each parallel agent gets its own sub-brief; convergence commit at end of phase OR per-package commits if truly independent (preferred for forensic traceability).
 

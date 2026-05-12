@@ -150,23 +150,23 @@
     },
     {
       "id": "TASK-032",
-      "description": "Close FGAP-036 — add scripts/orchestrator/build-task-template.ts. Canonicalizes implementer-task-template composition from substrate inputs (TASK-NNN + explore-report-path + commit-subject-template). Enables FGAP-035 dispatch via canonical brief surface rather than hand-authored /tmp/task-template-*.md.",
+      "description": "Close FGAP-036 — add scripts/orchestrator/compile-task-context.ts. Canonicalizes implementer-task-block composition from substrate inputs (TASK-NNN + explore-report-path + commit-subject-template). Enables FGAP-035 dispatch via canonical orchestrator-side context-compilation surface rather than hand-authored /tmp/task-template-*.md.",
       "status": "in-progress",
       "phase": "8.7.1",
       "files": [
-        "scripts/orchestrator/build-task-template.ts"
+        "scripts/orchestrator/compile-task-context.ts"
       ],
       "acceptance_criteria": [
-        "scripts/orchestrator/build-task-template.ts exists and is shebang-tsx executable",
+        "scripts/orchestrator/compile-task-context.ts exists and is shebang-tsx executable",
         "Args: --task-id TASK-NNN, --explore-report <path>, --commit-subject <template>, optional --required-reading-extra <comma-separated paths>",
         "Reads task entry from .project/tasks.json via @davidorex/pi-context/block-api readBlock; fails fast if task id absent",
         "Extracts cascade-target table from explore-report via inline extract-markdown-section.ts invocation (or shared helper)",
-        "Emits XML-structured task-block to stdout in the shape build-implementation-brief.ts expects via --task-template @file",
-        "Composes: read-list (from task.files + required-reading-extra), apply-order (numbered per cascade-table rows), concrete-edits (per-row from explore-report's Required-change column), commit-spec (subject from template + forensic body skeleton), STOP triggers boilerplate, report-back format tables-only",
-        "FGAP-035 implementation brief dispatched via this script (validates the surface end-to-end)"
+        "Emits XML-structured task-block to stdout in the shape compile-implementation-context.ts expects via --task-template @file",
+        "Composes: read-list (from task.files + required-reading-extra), apply-order (numbered per cascade-table rows), concrete-edits (per-row from explore-report Required-change column), commit-spec (subject from template + forensic body skeleton), STOP triggers boilerplate, report-back format tables-only",
+        "FGAP-035 implementation context compiled via this script (validates the surface end-to-end)"
       ],
       "depends_on": [],
-      "notes": "Blocks TASK-031 dispatch — FGAP-035 fix must route through canonical brief surface, not hand-authored template. Filed at user direction 2026-05-12 after the hand-authored template at /tmp/task-template-fgap035.md surfaced the gap. Per DEC-0019 dual-surface discipline + mandate-005 (no manual implementation as workflow-bypass)."
+      "notes": "Renamed from build-task-template.ts to compile-task-context.ts 2026-05-12 to mirror pi-jit-agents compileAgent vocabulary across both consumer surfaces (Claude Code orchestrator + pi-runtime)."
     },
     {
       "id": "TASK-033",
@@ -180,9 +180,9 @@
         "scripts/orchestrator/inject-context-items.ts exists, shebang-tsx executable",
         "Args: --items <block:itemId[,block:itemId...]> + --format markdown|json|xml + optional --fields <comma-list> projection",
         "Reads each (block, itemId) via @davidorex/pi-context/block-api readBlock + filter by id",
-        "json format emits items as JSON array; xml format wraps each item in <item block='X' id='Y'>...</item>; markdown format uses per-block-kind render macros (FGAP-037 dependency — until macros land, markdown emits a minimal fallback projection)",
+        "json format emits items as JSON array; xml format wraps each item in <item block=\"X\" id=\"Y\">...</item>; markdown format uses per-block-kind render macros (FGAP-037 dependency — until macros land, markdown emits a minimal fallback projection)",
         "Fails fast if any block:itemId selector is unresolvable; reports the unresolvable selector verbatim",
-        "build-explore-brief.ts + build-implementation-brief.ts gain a --context-items arg that splices this script's output into the brief at a <context_items> XML block position",
+        "compile-explore-context.ts + compile-implementation-context.ts gain a --context-items arg that splices this script output into the context at a <context_items> XML block position",
         "FGAP-035 Explore re-dispatch uses --context-items framework-gaps:FGAP-035,tasks:TASK-031,decisions:DEC-0015 validating the surface end-to-end",
         "Every friction point encountered while writing the script that surfaces a schema-shape question gets filed as a follow-up FGAP — substrate-canon discipline, not silently worked-around"
       ],

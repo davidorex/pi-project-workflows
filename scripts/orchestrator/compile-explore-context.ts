@@ -1,18 +1,19 @@
 #!/usr/bin/env tsx
 /**
- * build-explore-brief — full Explore-agent brief composer
+ * compile-explore-context — full Explore-agent context composer
  *
- * Programmatically assembles the COMPLETE Explore brief: preamble (mandates +
- * DECs + feedback + tool-surface + output discipline via build-subagent-preamble)
- * + substrate-state context + investigation question + required-reading list +
+ * Mirrors pi-jit-agents compileAgent vocabulary: assembles the agent's input
+ * context mechanically (no orchestrator-LLM prose authoring). Sections:
+ * preamble (mandates + DECs + feedback + tool-surface via compile-preamble-context)
+ * + substrate-state + investigation question + required-reading list +
  * audit-grep targets + output-format scaffold + STOP triggers + anti-pattern
- * reminders. XML-tag structured per the prompt-quality dimension.
+ * reminders. XML-tag structured.
  *
- * Goal: dispatch isn't subject to LLM-main-context hedging or laziness.
- * Brief is canonically composed; not hand-typed.
+ * Goal: orchestrator-side composition is mechanical; the dispatching LLM
+ * never composes agent prompts as prose.
  *
  * Usage:
- *   tsx scripts/orchestrator/build-explore-brief.ts \
+ *   tsx scripts/orchestrator/compile-explore-context.ts \
  *       --question @/tmp/c3-question.md \
  *       --target packages/pi-workflows \
  *       --output /tmp/explore-c3-fixtures.md \
@@ -79,12 +80,12 @@ function gitState(): { head: string; branch: string; statusShort: string } {
 }
 
 function buildPreamble(): string {
-	return execSync(`tsx ${path.join(SCRIPT_DIR, "build-subagent-preamble.ts")} --type explore`, {
+	return execSync(`tsx ${path.join(SCRIPT_DIR, "compile-preamble-context.ts")} --type explore`, {
 		encoding: "utf-8",
 	}).trim();
 }
 
-function buildContextItems(items: string | undefined): string {
+function injectContextItems(items: string | undefined): string {
 	if (!items) return "";
 	const rendered = execSync(`tsx ${path.join(SCRIPT_DIR, "inject-context-items.ts")} --items "${items}" --format xml`, {
 		encoding: "utf-8",
@@ -110,7 +111,7 @@ ${preamble}
 - Working tree: ${state.statusShort ? "DIRTY (see below)" : "clean"}
 ${state.statusShort ? `\`\`\`\n${state.statusShort}\n\`\`\`` : ""}
 </substrate_state>
-${buildContextItems(args.contextItems)}
+${injectContextItems(args.contextItems)}
 <investigation_question>
 ${args.question}
 </investigation_question>

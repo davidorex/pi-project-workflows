@@ -1,19 +1,19 @@
 #!/usr/bin/env tsx
 /**
- * build-implementation-brief — full implementation-class subagent brief composer
+ * compile-implementation-context — full implementation-class agent context composer
  *
- * Assembles the COMPLETE implementation brief programmatically: preamble (via
- * build-subagent-preamble --type implementation) + substrate state (git +
- * active task) + section spec (phase row + cascade-target table from explore
- * report + audit-grep results) + per-helper edit pattern + verification gates
- * (orchestrator runs) + DEC-0018 demo spec + STOP triggers + tables-only
- * report-back format. XML-tag structured.
+ * Mirrors pi-jit-agents compileAgent vocabulary on the Claude Code side.
+ * Assembles agent input mechanically: preamble (via compile-preamble-context
+ * --type implementation) + substrate state (git + active task) + section spec
+ * (phase row + cascade-target table from explore report + audit-grep results) +
+ * per-helper edit pattern + verification gates (orchestrator runs) + DEC-0018
+ * demo spec + STOP triggers + tables-only report-back format. XML-tag structured.
  *
- * Per DEC-0019 (scripts surface gaps + serve as test surface). Per the
- * TABLES-ONLY rule (no prose summary; aggregation is orchestrator's job).
+ * Per DEC-0019 (scripts as canonical Claude Code-side composition surface).
+ * Per the TABLES-ONLY rule (no prose summary; aggregation is orchestrator's job).
  *
  * Usage:
- *   tsx scripts/orchestrator/build-implementation-brief.ts \
+ *   tsx scripts/orchestrator/compile-implementation-context.ts \
  *       --section C.3 \
  *       --target packages/pi-workflows \
  *       --explore-report /tmp/explore-c3-fixtures-v2.md \
@@ -94,7 +94,7 @@ function runScript(name: string, args: string): string {
 
 function buildBrief(args: Args): string {
 	const state = gitState();
-	const preamble = runScript("build-subagent-preamble.ts", "--type implementation");
+	const preamble = runScript("compile-preamble-context.ts", "--type implementation");
 	const taskProgress = runScript("extract-task-progress.ts", `--id ${args.taskId}`);
 	const sectionSpec = args.sectionSpecSection
 		? runScript("extract-markdown-section.ts", `--file ${args.sectionSpecFile} --section "${args.sectionSpecSection}"`)

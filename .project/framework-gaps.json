@@ -1186,27 +1186,27 @@
     },
     {
       "id": "FGAP-036",
-      "title": "Missing canonical script: build-task-template.ts — subagent task-template hand-authored bypasses DEC-0019 dual-surface discipline",
+      "title": "Missing canonical script: compile-task-context.ts — implementer task-block hand-authored bypasses DEC-0019 dual-surface discipline",
       "status": "identified",
       "priority": "P1",
       "package": "scripts/orchestrator",
       "layer": "L1",
-      "description": "scripts/orchestrator/ has build-subagent-preamble.ts (mandates + DEC canon + tool-surface preamble), build-explore-brief.ts (composes Explore-agent brief; instructs agent to write report to specified path), and build-implementation-brief.ts (composes implementation brief from preamble + substrate-state + section-spec + cascade-table + task-template). It lacks a build-task-template.ts script that programmatically renders the implementer's task-block (read-list + apply-order + concrete-edits + commit-spec + STOP triggers + report-back format) from substrate inputs (TASK-NNN id, explore-report path, commit-subject-template). Without it, every implementation brief requires hand-authored /tmp/task-template-*.md. Hand-authored briefs (a) drift in shape across dispatches, (b) bypass mandate-005 (no manual implementation as workflow-bypass), (c) violate DEC-0019 dual-surface discipline (scripts/orchestrator/ is the Claude-Code-side ergonomics surface; hand-authoring is the parallel ungated path that DEC-0019 rejects), (d) embed orchestrator-side guesswork rather than reading the canonical TASK-NNN acceptance_criteria from substrate.",
+      "description": "scripts/orchestrator/ has compile-preamble-context.ts (mandates + DEC canon + tool-surface preamble), compile-explore-context.ts (composes Explore-agent context; instructs agent to write report to specified path), and compile-implementation-context.ts (composes implementation-agent context from preamble + substrate-state + section-spec + cascade-table + task-template). It lacks a compile-task-context.ts script that programmatically renders the implementer task-block (read-list + apply-order + concrete-edits + commit-spec + STOP triggers + report-back format) from substrate inputs (TASK-NNN id, explore-report path, commit-subject-template). Without it, every implementation-agent context requires hand-authored /tmp/task-template-*.md. Hand-authored content (a) drifts in shape across dispatches, (b) bypasses mandate-005, (c) violates DEC-0019 dual-surface discipline (scripts/orchestrator/ is the Claude-Code-side ergonomics surface; hand-authoring is the parallel ungated path), (d) embeds orchestrator-side guesswork rather than reading the canonical TASK-NNN acceptance_criteria from substrate.",
       "evidence": [
         {
-          "file": "scripts/orchestrator/build-explore-brief.ts",
+          "file": "scripts/orchestrator/compile-explore-context.ts",
           "lines": "1-200",
-          "reference": "exists — Explore brief composer; writes report to --output path via agent"
+          "reference": "exists — Explore-agent context composer; writes report to --output path via agent"
         },
         {
-          "file": "scripts/orchestrator/build-implementation-brief.ts",
+          "file": "scripts/orchestrator/compile-implementation-context.ts",
           "lines": "1-207",
-          "reference": "exists — implementation brief composer; takes --task-template as @file (assumed pre-authored)"
+          "reference": "exists — implementation-agent context composer; takes --task-template as @file (assumed pre-authored)"
         },
         {
-          "file": "scripts/orchestrator/build-subagent-preamble.ts",
+          "file": "scripts/orchestrator/compile-preamble-context.ts",
           "lines": "exists",
-          "reference": "preamble composer used by both build-*-brief.ts"
+          "reference": "preamble composer used by both compile-*-context.ts"
         },
         {
           "file": "/tmp/task-template-fgap035.md",
@@ -1214,12 +1214,12 @@
         },
         {
           "file": ".project/decisions.json",
-          "reference": "DEC-0019 — scripts/orchestrator/* serve as canonical test surface + executable specs of extension surface requirements; hand-authoring per-task templates is the gap-shaped surface DEC-0019 names"
+          "reference": "DEC-0019 — scripts/orchestrator/* serve as canonical test surface + executable specs; hand-authoring per-task templates is the gap-shaped surface DEC-0019 names"
         }
       ],
       "impact": "Every implementation-class subagent dispatch requires hand-authoring the task-template. Across N tasks this means N hand-authored files with no shape canonicalization. Orchestrator-side authoring of task-templates also separates implementation specs from substrate (task acceptance_criteria live in .project/tasks.json; hand-authored templates duplicate them in /tmp/*.md). The duplication is the canon-violation surface — DEC-0019 says scripts/orchestrator/* is the canonical surface and substrate is single-source-of-truth; hand-authored templates contradict both.",
       "canonical_vocabulary": "programmatic template rendering",
-      "proposed_resolution": "Add scripts/orchestrator/build-task-template.ts. Args: --task-id TASK-NNN (reads from .project/tasks.json) + --explore-report <path> (cascade-target table source) + --commit-subject <template>. Output: XML-structured task-block matching the shape build-implementation-brief.ts expects in its --task-template @file arg. Composition: pulls task description + acceptance_criteria + files[] from substrate via readBlock; extracts cascade-target table from explore-report via extract-markdown-section.ts; renders concrete read-list (required-reading) + apply-order (numbered per cascade-table rows) + concrete-edits (per-row before/after if explore-report carries them) + commit-spec (subject from --commit-subject template + body forensic skeleton) + STOP triggers (boilerplate) + report-back format (tables-only). Subsequent FGAP-035 fix dispatch uses this script.",
+      "proposed_resolution": "Add scripts/orchestrator/compile-task-context.ts. Args: --task-id TASK-NNN (reads from .project/tasks.json) + --explore-report <path> (cascade-target table source) + --commit-subject <template>. Output: XML-structured task-block matching the shape compile-implementation-context.ts expects in its --task-template @file arg.",
       "related_decisions": [
         "DEC-0019",
         "DEC-0020"
@@ -1300,21 +1300,21 @@
       "priority": "P1",
       "package": "scripts/orchestrator",
       "layer": "L1",
-      "description": "scripts/orchestrator/build-explore-brief.ts and build-implementation-brief.ts accept --required-reading <full-file-paths> only — they cannot inject specific substrate items into the brief at item-level granularity. Result: Explore agents see full files (or worse, free-form preamble) but not the specific FGAP-035 record, TASK-031 record, DEC-0015 record that constitute the binding context for the dispatch. In pi-runtime the equivalent is FGAP-032 (item-level contextBlocks selectivity in pi-jit-agents — currently injects whole blocks, not work-unit-driven item selections). Claude Code orchestrator-side has the same shape of gap with no covering FGAP. Per DEC-0019/0020 dual-surface, both layers need item-level injection. Additionally per the dogfooding rationale, building the script IS a test surface: writing it forces decisions on selector syntax (block:id vs structured JSON), projection shape (full item / projected fields / macro-rendered), output format (markdown requires macros — FGAP-037; raw JSON; XML-tagged); each forced decision surfaces friction points that reveal what block schemas need to support to make item-level injection viable. The script is canonical-pattern-discovery dogfood, not just an ergonomics gap.",
+      "description": "scripts/orchestrator/compile-explore-context.ts and compile-implementation-context.ts accept --required-reading <full-file-paths> only — they cannot inject specific substrate items at item-level granularity natively in the composer. Result: Explore agents see full files (or worse, free-form preamble) but not the specific FGAP-035 record, TASK-031 record, DEC-0015 record that constitute the binding context. In pi-runtime the equivalent is FGAP-032 (item-level contextBlocks selectivity in pi-jit-agents). Claude Code orchestrator-side has the same shape of gap with no covering FGAP before this one. Per DEC-0019/0020 dual-surface, both layers need item-level injection. The script doubles as schema-shape discovery test surface: building it forces decisions on selector syntax (block:id vs structured JSON), projection shape (full item / projected fields / macro-rendered), output format (markdown requires macros — FGAP-037; raw JSON; XML-tagged).",
       "evidence": [
         {
-          "file": "scripts/orchestrator/build-explore-brief.ts",
+          "file": "scripts/orchestrator/compile-explore-context.ts",
           "lines": "1-220",
-          "reference": "accepts --required-reading file-paths only; no item-level selector arg"
+          "reference": "accepts --required-reading file-paths only; no item-level selector arg natively (now integrates inject-context-items.ts via --context-items)"
         },
         {
-          "file": "scripts/orchestrator/build-implementation-brief.ts",
+          "file": "scripts/orchestrator/compile-implementation-context.ts",
           "lines": "1-207",
-          "reference": "same constraint"
+          "reference": "same constraint; --context-items integration landed"
         },
         {
           "file": "/tmp/explore-fgap035-canonical.md",
-          "reference": "this turn's Explore dispatch surfaced OR-hedging in cascade-target Required-change cells because the brief omitted TASK-031's UX-decision context (lived in ~/.claude/plans/*.md, not substrate); direct evidence of the missing-context-injection failure mode"
+          "reference": "this turn first Explore dispatch surfaced OR-hedging in cascade-target Required-change cells because the context omitted TASK-031 UX-decision (lived in ~/.claude/plans/*.md, not substrate); direct evidence of the missing-injection failure mode"
         },
         {
           "file": ".project/framework-gaps.json",
@@ -1326,12 +1326,12 @@
         },
         {
           "file": ".project/decisions.json",
-          "reference": "DEC-0014 — substrate IS operating surface; orchestrator-side scripts that can't inject substrate items at granularity break the dogfooding goal"
+          "reference": "DEC-0014 — substrate IS operating surface; orchestrator-side scripts that cannot inject substrate items at granularity break the dogfooding goal"
         }
       ],
       "impact": "Subagent briefs that need specific FGAP/TASK/DEC items injected as binding context currently route via free-form question text or full-file --required-reading. Free-form text propagates orchestrator-side rephrasing (LLM-summarizes-then-summarizes-again drift); full-file reading bloats agent context window with irrelevant content. Both failure modes surface in /tmp/explore-fgap035-canonical.md's row 5+7 OR-hedging — the agent didn't know about TASK-031's resolved UX decision because no clean injection path delivered it. Without the script, every subagent dispatch this turn has gone out under-contextualized; the canonical surface degradation falls back on hand-authored briefs (FGAP-036 root cause). The block-schema shape discovery angle compounds the impact: not having the script means schemas evolve without the constraint-driven-design that item-level injection would impose.",
       "canonical_vocabulary": "item-level context block injection — work-unit-driven substrate projection into agent prompts",
-      "proposed_resolution": "Add scripts/orchestrator/inject-context-items.ts (or similar; name TBD). Args: --items <block:itemId,block:itemId,...> selector list + --format <markdown|json|xml> output mode + optional --fields <fieldList> projection. Output: structured context-block content for inclusion in build-explore-brief.ts / build-implementation-brief.ts via a new --context-items arg, or piped directly into Agent prompt. Per FGAP-037 dependency: markdown format requires per-block-kind render macros (decisions, framework-gaps, features, layer-plans, research, spec-reviews) — those macros must land before the script can fully render. Schema-shape discovery byproducts to surface: per-item id-pattern stability (CHG-/FGAP-/TASK-/DEC- prefix conventions), required-vs-optional field shapes when partially-populated items must still render, item-status-aware rendering (closed FGAPs may render abbreviated; in-progress tasks render full), cross-item reference rendering (FGAP-035's evidence.file references must render with context). Each surfaces a schema-shape decision point.",
+      "proposed_resolution": "Add scripts/orchestrator/inject-context-items.ts. Args: --items <block:itemId,...> selector list + --format <markdown|json|xml> output mode + optional --fields <fieldList> projection. Output: structured context-block content for inclusion in compile-explore-context.ts / compile-implementation-context.ts via a new --context-items arg, or piped directly into Agent prompt. Per FGAP-037 dependency: markdown format requires per-block-kind render macros.",
       "related_decisions": [
         "DEC-0014",
         "DEC-0019",
@@ -1344,27 +1344,27 @@
     },
     {
       "id": "FGAP-039",
-      "title": "build-explore-brief.ts <output_schema_per_site> section hardcoded to FGAP-026 fixture-cascade audit shape — conflicts with non-FGAP-026 investigation questions",
+      "title": "compile-explore-context.ts <output_schema_per_site> section hardcoded to FGAP-026 fixture-cascade audit shape — conflicts with non-FGAP-026 investigation questions",
       "status": "identified",
       "priority": "P2",
       "package": "scripts/orchestrator",
       "layer": "L1",
-      "description": "scripts/orchestrator/build-explore-brief.ts emits a hardcoded <output_schema_per_site> XML section (lines ~173-200 in the rendered brief) declaring required columns: File / Line / Helper-or-Inline / Tmpdir-contents / First-resolver-cascading-call / Classification / Justification. These columns are FGAP-026-fixture-cascade-specific (mkdtempSync helper-vs-inline + tmpdir-contents + cascading-call trace). When the script is reused for a different investigation (e.g. FGAP-035 cascade-target inventory which wants columns: # / Site / File:line / Current code / Required change / DEC reference), the agent receives contradictory column specs — the per-investigation question vs the hardcoded schema. Surfaced this turn during FGAP-035 Explore re-dispatch via canonical surface.",
+      "description": "scripts/orchestrator/compile-explore-context.ts emits a hardcoded <output_schema_per_site> XML section declaring required columns: File / Line / Helper-or-Inline / Tmpdir-contents / First-resolver-cascading-call / Classification / Justification. These columns are FGAP-026-fixture-cascade-specific. When the script is reused for a different investigation (e.g. FGAP-035 cascade-target inventory which wants columns: # / Site / File:line / Current code / Required change / DEC reference), the agent receives contradictory column specs — the per-investigation question vs the hardcoded schema. Surfaced this turn during FGAP-035 Explore re-dispatch via canonical surface.",
       "evidence": [
         {
-          "file": "scripts/orchestrator/build-explore-brief.ts",
+          "file": "scripts/orchestrator/compile-explore-context.ts",
           "lines": "173-198",
           "reference": "<output_schema_per_site> section + 4 worked examples all FGAP-026-fixture-cascade-specific"
         },
         {
-          "file": "scripts/orchestrator/build-explore-brief.ts",
+          "file": "scripts/orchestrator/compile-explore-context.ts",
           "lines": "162-170",
-          "reference": "<anti_patterns> section also leaks FGAP-026 vocabulary (\"pointer side-effect masks the actual feature\", \"NOCONFIG-TEST\" classification term, \".project mention in production source\" anti-pattern)"
+          "reference": "<anti_patterns> section also leaks FGAP-026 vocabulary"
         }
       ],
-      "impact": "Agents dispatched via build-explore-brief.ts for non-FGAP-026 investigations receive contradictory instructions. The dispatch this turn (FGAP-035 cascade-target inventory) shows the conflict directly: question specifies one column shape; <output_schema_per_site> specifies another. Agent has to silently choose one (likely follows the more-specific question) but the conflicting schema still pollutes the prompt — token waste + LLM-confusion risk. Future investigations beyond FGAP-026/FGAP-035 will hit the same shape. Script is over-fitted to its first use case.",
+      "impact": "Agents dispatched via compile-explore-context.ts for non-FGAP-026 investigations receive contradictory instructions. Script is over-fitted to its first use case.",
       "canonical_vocabulary": "investigation-shape parameterization — per-question output schema + anti-patterns",
-      "proposed_resolution": "Refactor build-explore-brief.ts to accept --output-schema <path> + --anti-patterns <path> args (file paths to per-investigation schema + anti-patterns markdown fragments). Remove the hardcoded sections OR move them into a default fragment file (default --output-schema scripts/orchestrator/templates/explore-output-schema-default.md) so the FGAP-026 columns are the default but overridable. Each new investigation type files its own per-shape schema + anti-patterns fragment under scripts/orchestrator/templates/. The <anti_patterns> + <output_schema_per_site> sections become per-investigation, not hardcoded.",
+      "proposed_resolution": "Refactor compile-explore-context.ts to accept --output-schema <path> + --anti-patterns <path> args (file paths to per-investigation schema + anti-patterns markdown fragments). Default fragment preserves current FGAP-026 behavior; new investigations file their own fragments under scripts/orchestrator/templates/.",
       "related_decisions": [
         "DEC-0019",
         "DEC-0020"

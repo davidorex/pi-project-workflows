@@ -221,7 +221,7 @@
     {
       "id": "TASK-035",
       "description": "Phase 2 sub-phase 2.2: ship resolve-items-by-id (bulk variant) — library bulk-resolve wrapping buildIdIndex + pi tool + scripts/orchestrator/resolve-items-by-id.ts. Singular resolve-item-by-id tool already exists. No closure-table dependency.",
-      "status": "planned",
+      "status": "completed",
       "phase": "8.7.2",
       "files": [
         "packages/pi-context/src/project-sdk.ts",
@@ -238,7 +238,8 @@
       "depends_on": [
         "TASK-022"
       ],
-      "notes": "Parent TASK-022. No closure-table dependency. Bulk variant complements existing singular resolve-item-by-id tool."
+      "notes": "CLOSED at HEAD 2ddf85f. resolveItemsByIds library + resolve-items-by-id pi tool (coexists with singular resolve-item-by-id) + scripts/orchestrator/resolve-items-by-id.ts shipped. Tests: pi-context 407 → 413 (+6). Live-substrate runtime demo green. See VER-006.",
+      "verification": "VER-006"
     },
     {
       "id": "TASK-036",

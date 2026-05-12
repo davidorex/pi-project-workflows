@@ -10,8 +10,9 @@
         "read-config + read-schema tools registered",
         ".pi-context.json written for this repo containing {contextDir: '.project'}"
       ],
-      "status": "in-progress",
-      "notes": "FGAP-026 phase 1.2 substantively closed at HEAD 6fb434f. Sections + 6-step plan complete: A bb2c7d5; B 9846b90; C.1 8f33a38; audit-fix cluster 1a98345/e780db0/7cd3c6c/b94264b; DEC-0018 e4ad4aa; E 55a03c2 revert 278b2b8; C.2 99436c3 + Gate-2 closure ba58d78; DEC-0019/0020/0021 + FGAP-033/034 + scripts/orchestrator/ POC bundle; C.3 COMPLETION 856e139 + f4dd1a2; C.4 Gate-3 closure 3274466; sub-phase analysis update 9608989; status cascade final 44b11eb; Section F project-dir.test.ts 7 tests b558d12; Section E husky re-roll 6fb434f (pre-commit now npm run check && npm test; all 4 packages green at gate). FINAL package state: pi-context 397/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/157. Substrate canon: DEC-0014/0015/0017/0018/0019/0020/0021. FGAPs filed: 033, 034. scripts/orchestrator/ POC bundle (10 scripts). TASK-021 status remains in-progress pending Phase 1.3 (read-config + read-schema tools) which is the 4th acceptance criterion. Ahead: Phase 1.3 lands those tools then TASK-021 fully completable."
+      "status": "completed",
+      "notes": "CLOSED at HEAD e88d7ee. FGAP-026 closure phase 1 substantively complete: resolver foundation (Phase 1.1 909a086) + bootstrap.schema.json + per-package atomic resolver cascade (Phase 1.2 sections A-F + Section E husky re-roll 6fb434f) + read-config/read-schema tools (Phase 1.3.A bac1893 + orchestrator scripts 4a24866 / c11ee92) + foundational FGAP-035 fix (f17efa3 + Q4 follow-up e88d7ee). Substrate canon DEC-0014/0015/0017/0018/0019/0020/0021 enacted. Test counts post-cascade: pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0. Adversarial probe verdict GREEN. See VER-004 for criteria_results. Phase 2 (Task #22 high-impact query tools) unblocked.",
+      "verification": "VER-004"
     },
     {
       "id": "TASK-022",

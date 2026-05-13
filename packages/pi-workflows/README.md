@@ -29,8 +29,11 @@ pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orch
 
 Workflows consume project blocks as typed input via `readBlock()` — structured data, not raw files. When workflow agents write back to project blocks, pi-context's schema validation enforces the shape at write time. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
 
-**Tool registered:**
-- `workflow` — run a named workflow with typed input
+**Tools registered:**
+- `workflow-execute` — execute a named workflow with typed input (auto-resumes compatible incomplete runs unless `fresh: "true"`)
+- `workflow-resume` — explicitly resume an incomplete workflow run by name + runId; rejects on no-match or runId mismatch
+- `workflow-list`, `workflow-agents`, `workflow-validate`, `workflow-status`, `workflow-init` — discovery / inspection / scaffolding surfaces
+- `render-item-by-id`, `enforce-budget` — per-item rendering + budget enforcement helpers
 
 **Commands registered:**
 - `/workflow init` — scaffold `.workflows/` directory for run state
@@ -177,7 +180,7 @@ When working with this extension:
 - **Read `src/dag.ts`** to understand how execution order is inferred from expressions
 - **Read agent `.agent.yaml` files** in `agents/` to understand available agent capabilities
 - **Read workflow `.workflow.yaml` files** in `workflows/` for examples of workflow structure
-- Use the `workflow` tool to execute workflows — it handles discovery, input validation, checkpoint detection, and result formatting
+- Use the `workflow-execute` tool to execute workflows — it handles discovery, input validation, checkpoint detection (auto-resume), and result formatting. Use `workflow-resume` for explicit-only resume by runId (rejects on no-match).
 - The `/workflow list` command provides an interactive picker; `/workflow run <name>` runs directly
 
 ## Tests

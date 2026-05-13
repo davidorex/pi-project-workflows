@@ -6,6 +6,8 @@ import { describe, it } from "node:test";
 import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
 import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import extension from "./index.js";
+import { writeState } from "./state.js";
+import type { ExecutionState } from "./types.js";
 
 describe("parseAgentYaml", () => {
 	it("parses YAML agent spec with all fields", (t) => {
@@ -332,5 +334,121 @@ describe("pi-workflows extension: enforce-budget tool", () => {
 				{ cwd },
 			);
 		}, /enforce-budget: schema file not found/);
+	});
+});
+
+describe("pi-workflows extension: workflow-resume tool", () => {
+	/** Seed a one-step transform workflow on disk under .workflows/. */
+	function seedTransformWorkflow(cwd: string, name: string): void {
+		const wfDir = path.join(cwd, ".workflows");
+		fs.mkdirSync(wfDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(wfDir, `${name}.workflow.yaml`),
+			`name: ${name}\ndescription: resume-test workflow\nsteps:\n  s1:\n    transform:\n      mapping:\n        echoed: \${{ input.payload }}\n`,
+		);
+	}
+
+	/** Seed an incomplete-run state on disk at the canonical runId path. */
+	function seedIncompleteRun(cwd: string, workflowName: string, runId: string): string {
+		const runDir = path.join(cwd, ".workflows", "runs", workflowName, "runs", runId);
+		fs.mkdirSync(runDir, { recursive: true });
+		const state: ExecutionState = {
+			input: { payload: "hello" },
+			steps: {},
+			status: "failed",
+		};
+		writeState(runDir, state);
+		return runDir;
+	}
+
+	it("happy path: resumes when name + runId match the incomplete run", async (t) => {
+		const cwd = makeTmp("wf-resume-happy");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		seedTransformWorkflow(cwd, "resume-target");
+		const runId = "resume-target-20260513-120000-aaaa";
+		seedIncompleteRun(cwd, "resume-target", runId);
+
+		const { tools, api } = captureTools();
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("workflow-resume");
+		assert.ok(tool, "workflow-resume must be registered");
+
+		// Full ExtensionContext mock — executor calls ctx.ui.setStatus/setWidget/notify.
+		const mockExtCtx = {
+			cwd,
+			hasUI: false,
+			ui: {
+				setWidget: () => {},
+				setStatus: () => {},
+				notify: () => {},
+				input: async () => null,
+				select: async () => null,
+			},
+		};
+
+		const result = (await tool.execute(
+			"call-1",
+			{ workflow: "resume-target", runId },
+			new AbortController().signal,
+			undefined,
+			mockExtCtx as unknown as { cwd: string },
+		)) as { content: { text: string }[]; details: { resumed: boolean; runId: string; status: string } };
+
+		assert.match(result.content[0]!.text, new RegExp(`resumed from runId ${runId}`));
+		assert.strictEqual(result.details.resumed, true);
+		assert.strictEqual(result.details.runId, runId);
+		// Transform step is pure JS — completes deterministically on resume.
+		assert.strictEqual(result.details.status, "completed");
+	});
+
+	it("rejects when no incomplete runs exist for the workflow", async (t) => {
+		const cwd = makeTmp("wf-resume-none");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		seedTransformWorkflow(cwd, "resume-none");
+
+		const { tools, api } = captureTools();
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("workflow-resume");
+		assert.ok(tool, "workflow-resume must be registered");
+
+		await assert.rejects(
+			async () =>
+				await tool.execute(
+					"call-2",
+					{ workflow: "resume-none", runId: "resume-none-20260513-120000-aaaa" },
+					new AbortController().signal,
+					undefined,
+					{ cwd },
+				),
+			/No incomplete runs found for workflow 'resume-none'/,
+		);
+	});
+
+	it("rejects when runId does not match the most recent incomplete run", async (t) => {
+		const cwd = makeTmp("wf-resume-mismatch");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		seedTransformWorkflow(cwd, "resume-mismatch");
+		const actualRunId = "resume-mismatch-20260513-120000-aaaa";
+		seedIncompleteRun(cwd, "resume-mismatch", actualRunId);
+
+		const { tools, api } = captureTools();
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("workflow-resume");
+		assert.ok(tool, "workflow-resume must be registered");
+
+		await assert.rejects(
+			async () =>
+				await tool.execute(
+					"call-3",
+					{ workflow: "resume-mismatch", runId: "resume-mismatch-20260513-999999-zzzz" },
+					new AbortController().signal,
+					undefined,
+					{ cwd },
+				),
+			/runId mismatch/,
+		);
 	});
 });

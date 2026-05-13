@@ -489,14 +489,14 @@ function handleWorkflowInit(ctx: ExtensionCommandContext): void {
 // ── Extension factory ───────────────────────────────────────────────────────
 
 const extension = (pi: ExtensionAPI) => {
-	// ── Tool: workflow ──────────────────────────────────────────────────────
+	// ── Tool: workflow-execute ──────────────────────────────────────────────
 
 	pi.registerTool({
-		name: "workflow",
-		label: "Workflow",
+		name: "workflow-execute",
+		label: "Workflow Execute",
 		description:
-			"Run a named workflow with typed input. Discovers workflows from .workflows/ and ~/.pi/agent/workflows/.",
-		promptSnippet: "Run a multi-step workflow with typed data flow between agents",
+			"Execute a named workflow with typed input. Discovers workflows from .workflows/ and ~/.pi/agent/workflows/. Auto-resumes the most recent compatible incomplete run unless fresh='true'. Use workflow-resume for explicit-only resume by runId.",
+		promptSnippet: "Execute a multi-step workflow with typed data flow (auto-resumes compatible incomplete runs)",
 		parameters: Type.Object({
 			workflow: Type.String({ description: "Name of the workflow to run" }),
 			input: Type.Optional(
@@ -565,6 +565,83 @@ const extension = (pi: ExtensionAPI) => {
 					},
 				],
 				details: { ...result, resumed },
+			};
+		},
+	});
+
+	// ── Tool: workflow-resume ───────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "workflow-resume",
+		label: "Workflow Resume",
+		description:
+			"Explicitly resume an incomplete workflow run by name + runId. Rejects when no incomplete run exists for the workflow OR when runId does not match the most recent incomplete run. Use workflow-execute for default auto-resume; this surface is for explicit-only scenarios where the caller wants to fail loudly if the run is gone or has been superseded.",
+		promptSnippet: "Explicitly resume an incomplete workflow run by name + runId (rejects on no-match)",
+		parameters: Type.Object({
+			workflow: Type.String({ description: "Workflow name" }),
+			runId: Type.String({ description: "Incomplete run ID — required, no auto-detect" }),
+			input: Type.Optional(
+				Type.Unknown({ description: "Optional input override; defaults to the original run's input" }),
+			),
+		}),
+
+		async execute(
+			_toolCallId: string,
+			params: { workflow: string; runId: string; input?: unknown },
+			signal: AbortSignal | undefined,
+			_onUpdate: AgentToolUpdateCallback | undefined,
+			ctx: ExtensionContext,
+		) {
+			const spec = findWorkflow(params.workflow, ctx.cwd);
+			if (!spec) {
+				throw new Error(`Workflow '${params.workflow}' not found. Available workflows: ${listWorkflowNames(ctx.cwd)}`);
+			}
+
+			const incomplete = findIncompleteRun(ctx.cwd, spec.name);
+			if (!incomplete) {
+				throw new Error(`No incomplete runs found for workflow '${spec.name}'.`);
+			}
+			if (incomplete.runId !== params.runId) {
+				throw new Error(
+					`runId mismatch: requested '${params.runId}' but most recent incomplete run is '${incomplete.runId}'.`,
+				);
+			}
+
+			const compat = validateResumeCompatibility(incomplete.state, spec);
+			if (compat) {
+				throw new Error(`Cannot resume runId '${params.runId}': ${compat}`);
+			}
+
+			// Default to original run input when override absent.
+			let input: unknown = params.input ?? incomplete.state.input;
+			if (typeof input === "string") {
+				try {
+					input = JSON.parse(input);
+				} catch {
+					// leave as string; downstream validation handles shape
+				}
+			}
+
+			const result = await executeWorkflow(spec, input, {
+				ctx,
+				pi,
+				signal,
+				loadAgent: createAgentLoader(ctx.cwd),
+				resume: {
+					runId: incomplete.runId,
+					runDir: incomplete.runDir,
+					state: incomplete.state,
+				},
+			});
+
+			return {
+				content: [
+					{
+						type: "text" as const,
+						text: `${formatToolResult(result)}\n[resumed from runId ${incomplete.runId}]`,
+					},
+				],
+				details: { ...result, resumed: true, runId: incomplete.runId },
 			};
 		},
 	});

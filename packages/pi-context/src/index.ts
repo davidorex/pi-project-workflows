@@ -24,6 +24,7 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "./block-api.js";
+import { gatherExecutionContext } from "./execution-context.js";
 import {
 	buildCurationSuggestions,
 	edgesForLensByName,
@@ -1255,6 +1256,55 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = findReferencesInRepo(ctx.cwd, params.itemId, params.direction);
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: gather-execution-context ───────────────────────────────────
+	// Work-unit-driven context bundling per DEC-0017: read unit + read its
+	// context-contract (by unit_kind) + walk each declared relation_type
+	// bidirectionally per direction semantic + resolve reached ids to full
+	// item payloads via the bulk resolver. Returns ContextBundle as one
+	// structured payload, removing the N+1-read pattern that orchestrators
+	// had to hand-roll before this primitive. Closes FGAP-031.
+	// TASK-039 / Phase 3 sub-phase 3.2.
+
+	pi.registerTool({
+		name: "gather-execution-context",
+		label: "Gather Execution Context",
+		description:
+			"Compose a ContextBundle for a work-unit by reading its context-contract (by unit_kind) and walking declared relation_types bidirectionally per direction semantic. Returns unit + perRelationType buckets of resolved items + traversal_depth + scoped_at. Per DEC-0017 substrate primitive serving harness-confined dispatch.",
+		promptSnippet: "Compose ContextBundle for unit + context-contract-declared bundle_relation_types",
+		parameters: Type.Object({
+			unitId: Type.String({ description: "Work-unit id (e.g. TASK-NNN / DEC-NNNN / FGAP-NNN)" }),
+			kind: Type.String({
+				description:
+					"Unit-kind type tag (e.g. 'task', 'decision', 'verification') matching a context-contract entry's unit_kind",
+			}),
+			maxDepth: Type.Optional(
+				Type.Integer({
+					minimum: 1,
+					description: "Override per-relation-type max_depth via Math.min against each spec.max_depth",
+				}),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { unitId: string; kind: string; maxDepth?: number },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = gatherExecutionContext(ctx.cwd, params);
 			const jsonStr = JSON.stringify(result, null, 2);
 			const truncated = truncateHead(jsonStr);
 			let text = truncated.content;

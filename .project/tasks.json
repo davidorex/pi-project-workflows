@@ -292,6 +292,79 @@
       ],
       "notes": "CLOSED at HEAD 680cb1c. Final atomic unit under TASK-022. findReferences + findReferencesInRepo + find-references pi tool + scripts/orchestrator/find-references.ts shipped. Tests: pi-context 420 → 428 (+8). Edge[] return type intentionally distinct from walkDescendants/walkAncestors string[] semantic. See VER-008.",
       "verification": "VER-008"
+    },
+    {
+      "id": "TASK-038",
+      "description": "Phase 3 sub-phase 3.1: ship context-contracts block kind — schema + registry default (3 starter contracts: task/decision/verification) + block-kind registration. Closes FGAP-030 substrate side. No closure-table dependency.",
+      "status": "planned",
+      "phase": "8.7.3",
+      "files": [
+        "packages/pi-context/registry/schemas/context-contracts.schema.json",
+        "packages/pi-context/registry/blocks/context-contracts.json",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "packages/pi-context/registry/schemas/context-contracts.schema.json exists with $id pi-context://schemas/context-contracts + version 1.0.0",
+        "Schema declares per-item: id (pattern ^CTX-\\d{3,}$), unit_kind (string), bundle_relation_types[] (array of {relation_type, direction in/out/both, max_depth, applicability_predicate?}), created_by, created_at; optional modified_by/at/description/notes",
+        "packages/pi-context/registry/blocks/context-contracts.json seeded with 3 default contracts (CTX-001 task / CTX-002 decision / CTX-003 verification; each with empty bundle_relation_types[])",
+        "Block kind registered in packages/pi-context/src/index.ts following existing pattern",
+        "Schema-validation tests cover: AJV round-trip / required-field rejection / id pattern rejection / bundle_relation_types[] shape rejection",
+        "Husky pre-commit gate green"
+      ],
+      "depends_on": [
+        "TASK-023"
+      ],
+      "notes": "Phase 3 sub-phase 3.1. Resolves FGAP-030 option (a) per plan rationale (substrate-canon alignment + schema validation surface + discoverability + future-proofing for DispatchContext + macros). unit_kind is a type tag NOT a substrate-block-item reference — plain string keyed lookup; documented carve-out from DEC-0013 closure-table-only constraint."
+    },
+    {
+      "id": "TASK-039",
+      "description": "Phase 3 sub-phase 3.2: ship gatherExecutionContext primitive — library + pi tool + orchestrator script + 7 tests. Closes FGAP-031. Closure-table dependency: per-test fixtures own synthetic relations.json.",
+      "status": "planned",
+      "phase": "8.7.3",
+      "files": [
+        "packages/pi-context/src/execution-context.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/gather-execution-context.ts",
+        "tsconfig.json"
+      ],
+      "acceptance_criteria": [
+        "gatherExecutionContext(cwd, args) library function exported from new packages/pi-context/src/execution-context.ts; returns ContextBundle | {error: string}",
+        "ContextBundle / BundleRelationTypeSpec / GatherExecutionContextArgs types exported",
+        "Library body: reads unit via resolveItemById; reads context-contract via filterBlockItems(cwd, 'context-contracts', {field: 'unit_kind', op: 'eq', value: kind}); iterates bundle_relation_types[] walking edges per direction (walkAncestors / walkDescendants / findReferences) within max_depth; resolves reached ids via resolveItemsByIds; returns ContextBundle with unit + perRelationType + traversal_depth + scoped_at",
+        "gather-execution-context pi tool registered in index.ts with Type.Object({unitId, kind, maxDepth?})",
+        "scripts/orchestrator/gather-execution-context.ts shebang-tsx executable; --unit-id --kind [--max-depth N] [--format json|summary]",
+        "tsconfig.json gains @davidorex/pi-context/execution-context path mapping",
+        "7 tests per per-test fixture pattern: happy path / multi-relation / direction semantic / max_depth bound / missing unit / missing contract / empty bundle_relation_types",
+        "Husky pre-commit gate green"
+      ],
+      "depends_on": [
+        "TASK-038"
+      ],
+      "notes": "Phase 3 sub-phase 3.2. Reuses Phase 2 sub-phase primitives (filterBlockItems / resolveItemsByIds) + Phase 2.3/2.4 closure-table primitives (walkAncestors / walkDescendants / findReferences). Live-substrate runtime demo deferred to Phase 5 (per-test fixtures only). FGAP-031 closed via this sub-phase."
+    },
+    {
+      "id": "TASK-040",
+      "description": "Phase 3 sub-phase 3.3: integration test composing 3.1 + 3.2 end-to-end + FGAP cluster closure (FGAP-029 fully / FGAP-030 / FGAP-031). Closure-table dependency: integration fixture authors full synthetic substrate (config.json + relations.json + context-contracts.json + per-block items).",
+      "status": "planned",
+      "phase": "8.7.3",
+      "files": [
+        "packages/pi-context/src/execution-context.integration.test.ts",
+        ".project/framework-gaps.json"
+      ],
+      "acceptance_criteria": [
+        "Integration test composes full synthetic substrate per mkdtempSync + writeBootstrapPointer + .project/config.json + .project/relations.json + .project/context-contracts.json + per-block items (tasks/decisions/requirements)",
+        "Test exercises gather-execution-context against a realistic task unit end-to-end",
+        "Asserts ContextBundle shape matches interface + perRelationType buckets contain expected items + traversal_depth honored",
+        "Verifies substrate-canon: unit via filterBlockItems; relations via loadRelations; ids via resolveItemsByIds; bundle per context-contract",
+        "FGAP-029 transitioned to status: closed in .project/framework-gaps.json",
+        "FGAP-030 transitioned to status: closed",
+        "FGAP-031 transitioned to status: closed",
+        "Husky pre-commit gate green"
+      ],
+      "depends_on": [
+        "TASK-039"
+      ],
+      "notes": "Phase 3 sub-phase 3.3. Final atomic unit under TASK-023. Completes FGAP-029 full closure + FGAP-030 + FGAP-031. After landing: TASK-023 (parent) ready to close; Phase 4 (TASK-024 / workflow-execute + dispatch tools) unblocked."
     }
   ]
 }

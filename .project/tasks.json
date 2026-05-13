@@ -50,7 +50,9 @@
         "subcommand-only /workflow surfaces per audit get tool wrappers",
         "main LLM can dispatch a workflow that runs npm run build via JIT-agent"
       ],
-      "status": "planned"
+      "status": "completed",
+      "verification": "VER-015",
+      "notes": "CLOSED at HEAD 569eec4. Phase 4 complete via single sub-phase 4.1 TASK-041. Original 4-sub-phase scope reduced after Explore surfaced pre-existing surface (workflow-list / workflow-status already shipped; workflow tool semantic match for canonical workflow-execute under non-canonical name). See VER-015 + child VER-014. Phase 5 (TASK-025 arc-tracking-blocks dogfood substrate) unblocked."
     },
     {
       "id": "TASK-025",
@@ -374,7 +376,7 @@
     {
       "id": "TASK-041",
       "description": "Phase 4 sub-phase 4.1: rename pi-workflows `workflow` tool → `workflow-execute` (canonical naming alignment per pi-context verb-noun convention) + add workflow-resume pi tool (explicit-resume-by-runId complement to workflow-execute's auto-resume default). Closes TASK-024 directly (single-sub-phase phase).",
-      "status": "planned",
+      "status": "completed",
       "phase": "8.7.4",
       "files": [
         "packages/pi-workflows/src/index.ts",
@@ -394,7 +396,8 @@
       "depends_on": [
         "TASK-024"
       ],
-      "notes": "Per plan-mode resolution: existing `workflow` tool name is anachronistic; all other pi tool names use verb-noun (read-block / write-block / filter-block-items / walk-ancestors / etc.); sibling workflow-* tools (workflow-list / workflow-validate / workflow-status / workflow-init / workflow-agents) follow the pattern. Rename aligns. workflow-resume complements workflow-execute's auto-resume default with an explicit-only path. Out of scope: workflow-help (→ FGAP-044 tool-discovery), workflow-list-interactive UI (substantively justified subcommand-only)."
+      "notes": "CLOSED at HEAD 569eec4. workflow tool renamed to workflow-execute (index.ts:495); workflow-resume new tool registered (index.ts:575) with no-incomplete-run + runId-mismatch + cross-spec-incompat rejection paths. Tests: pi-workflows 824 to 829 (+5). See VER-014.",
+      "verification": "VER-014"
     }
   ]
 }

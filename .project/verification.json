@@ -597,6 +597,83 @@
           "evidence": "FGAP cluster transition handled in status-cascade commit alongside TASK-023 closure"
         }
       ]
+    },
+    {
+      "id": "VER-014",
+      "target": "TASK-041",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T19:00:00Z",
+      "evidence": "Sub-phase 4.1 (workflow→workflow-execute rename + workflow-resume new tool) landed at HEAD 569eec4. Pi tool name renamed at packages/pi-workflows/src/index.ts:495 (was index.ts:494 before commit; line moved +1 due to surrounding context). workflow-resume new tool registered at index.ts:575 with Type.Object({workflow, runId, input?}) parameters; rejection paths cover no-incomplete-run + runId-mismatch + cross-spec-incompat. Bare-string scan clean: sole remaining `\"workflow\"` literal at index.ts:965 is `pi.registerCommand(\"workflow\", ...)` (slash command name, not tool). README.md + skill-narrative.md updated; SKILL.md is generated artifact (regen via `npm run skills`). Tests: pi-workflows 824 → 829 (+5). Husky pre-commit (check + test) green across all 4 packages.",
+      "criteria_results": [
+        {
+          "criterion": "Pi tool name `workflow` renamed to `workflow-execute`",
+          "status": "passed",
+          "evidence": "packages/pi-workflows/src/index.ts:495 name: \"workflow-execute\""
+        },
+        {
+          "criterion": "New pi tool `workflow-resume` registered with Type.Object({workflow, runId, input?})",
+          "status": "passed",
+          "evidence": "packages/pi-workflows/src/index.ts:575 name: \"workflow-resume\""
+        },
+        {
+          "criterion": "workflow-resume rejects no-incomplete-run + runId-mismatch",
+          "status": "passed",
+          "evidence": "Execute body covers 3 rejection paths (no-incomplete-run / runId-mismatch / cross-spec-incompat) per implementer report"
+        },
+        {
+          "criterion": "Bare-string scan clean",
+          "status": "passed",
+          "evidence": "Sole remaining `\"workflow\"` literal is pi.registerCommand slash command name at index.ts:965 (legitimate)"
+        },
+        {
+          "criterion": "skill-narrative.md + README.md updated",
+          "status": "passed",
+          "evidence": "Implementer report confirms updates"
+        },
+        {
+          "criterion": "5 new tests cover workflow-resume",
+          "status": "passed",
+          "evidence": "pi-workflows 824 → 829 (+5 tests)"
+        },
+        {
+          "criterion": "Husky pre-commit gate green; breaking-change `!` flag in commit subject",
+          "status": "passed",
+          "evidence": "Commit 569eec4 subject carries `!`; landed across all 4 packages without --no-verify"
+        }
+      ]
+    },
+    {
+      "id": "VER-015",
+      "target": "TASK-024",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T19:00:00Z",
+      "evidence": "Phase 4 (FGAP-026 closure phase 4: Workflow-execute + dispatch tools) complete at HEAD 569eec4 via single atomic sub-phase 4.1 (TASK-041 / VER-014). Original 4-sub-phase canonical scope reduced after Explore at compiled-contexts/explore-phase4-workflow-surface.md surfaced existing surface: 4.2 workflow-list + 4.3 workflow-status already shipped pre-Phase-4; `workflow` tool wraps executeWorkflow with auto-resume detection (semantic match for canonical workflow-execute under non-canonical name). Phase 4 reduced to: rename `workflow` → `workflow-execute` (canonical verb-noun alignment) + add workflow-resume (explicit-resume-by-runId complement). Out of scope: workflow-help (→ FGAP-044 tool-discovery), workflow-list-interactive UI (substantively-justified subcommand-only). Test counts: pi-workflows 824 → 829 (+5).",
+      "criteria_results": [
+        {
+          "criterion": "workflow-execute(name, params) tool registered",
+          "status": "passed",
+          "evidence": "Sub-phase 4.1 / VER-014 / HEAD 569eec4 — index.ts:495 workflow-execute (renamed from `workflow`); parameters unchanged from original tool body"
+        },
+        {
+          "criterion": "workflow-list + workflow-status tools registered",
+          "status": "passed",
+          "evidence": "Pre-existing at HEAD c03bc0d (Explore findings); workflow-list index.ts:574; workflow-status index.ts:688 (line numbers per pre-rename state)"
+        },
+        {
+          "criterion": "subcommand-only /workflow surfaces per audit get tool wrappers",
+          "status": "passed",
+          "evidence": "Audit at compiled-contexts/explore-phase4-workflow-surface.md identified 3 subcommand-only surfaces; resume covered by workflow-execute auto-resume default + new workflow-resume explicit-resume tool; list substantively-justified UI loop (covered by workflow-list non-interactive); help punts to FGAP-044 tool-discovery"
+        },
+        {
+          "criterion": "Main LLM can dispatch a workflow that runs npm run build via JIT-agent",
+          "status": "passed",
+          "evidence": "workflow-execute pi tool exposes executeWorkflow; per Phase 3 DEC-0017 gather-execution-context primitive available for step context composition; pipeline harness-confined main LLM → workflow-execute tool → JIT-agent step dispatch satisfies DEC-0014 (main LLM never crosses bash directly)"
+        }
+      ]
     }
   ]
 }

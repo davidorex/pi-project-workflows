@@ -1466,6 +1466,175 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-13T00:00:00Z"
+    },
+    {
+      "id": "FGAP-042",
+      "title": "Precise-diagnostic-without-repair-surface pattern: validators surface unresolvable diagnostics with no repair tool — UX pattern unfiled",
+      "status": "identified",
+      "priority": "P2",
+      "package": "@davidorex/pi-context",
+      "layer": "L4",
+      "description": "Multiple pi-context validator tools emit precise actionable diagnostics that the harness-confined main LLM (DEC-0014) cannot resolve through any registered tool. Surfaced by constrained-harness LLM evaluation under --tools pi-context-only constraint. Specific instances: project-validate-relations returns 'No .project/config.json — cannot validate relations'; project-edges-for-lens returns 'No .project/config.json — run /project init first'; project-validate returns 'tasks[TASK-031].phase references 8.7.1 which does not exist' (×10). None of these conditions has a repair tool — config.json authoring is Phase 5 (TASK-025) substrate-canon work; tasks[].phase free-text labels are FGAP-040 territory. Pattern: substrate exposes diagnostic surface precisely but the repair surface is absent. FGAP-028 names 'subcommand-only surfaces unreachable under DEC-0014' adjacent but doesn't capture the precise-diagnostic-orphan-repair pattern itself.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "project-validate-relations + project-edges-for-lens + project-validate tool error messages name conditions that have no repair-tool counterpart in the registered tool surface"
+        },
+        {
+          "file": ".project/framework-gaps.json",
+          "reference": "FGAP-040 (tasks[].phase free-text) + FGAP-041 (issues[].resolved_by free-text) describe substrate violations whose validator-flagged-but-unrepairable instances surface as this pattern"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0014 (harness-confined main LLM) — diagnostics that can only be repaired by exiting the harness violate the substrate-IS-operating-surface principle"
+        }
+      ],
+      "impact": "Under DEC-0014 a harness-confined main LLM receiving an unresolvable diagnostic has no path forward via the tool surface. The diagnostic surface is precise; the repair surface is absent — substrate-canon-wise the validator surface should pair with repair tools OR the diagnostic should defer with a tool-routable next-step pointer. Live: substrate writes outside the tool surface (e.g. Edit on .project/*.json) are forbidden per F-006 / DEC-0016; so the harness-confined LLM legitimately has no path. Compounds with FGAP-028 (subcommand-only surfaces) as the substrate-surface UX gap.",
+      "canonical_vocabulary": "diagnostic-repair surface symmetry",
+      "proposed_resolution": "(1) Audit all validator / read tools in pi-context that emit error strings naming substrate states the LLM cannot resolve via the tool surface. (2) For each: either pair with a repair tool (e.g. config-init writes a minimal config.json from prompts; task-update-phase rewrites a free-text phase value; relations-add adds a closure-table edge) OR change the diagnostic to point at the canonical repair path that DOES exist (e.g. error includes 'use context-init Phase 6 tool when shipped' OR 'this is Phase 5 substrate-canon work tracked at TASK-025'). (3) Substrate-canon principle: every validator-emitted error string SHOULD identify either a repair tool, an in-progress task, or a known-deferred phase — never a dead-end. Implementation arc: tied to Phase 4 + Phase 5 + Phase 6 of FGAP-026 closure (workflow-execute tools + arc-tracking-blocks + context-init/install/migrate respectively); FGAP-042 closes when validators have repair-tool pairs OR explicit deferred-state pointers.",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0016"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-13T18:30:00Z"
+    },
+    {
+      "id": "FGAP-043",
+      "title": "Composite/join operations across blocks missing at tool surface — N+1 read pattern for natural queries (e.g. tasks × verifications join)",
+      "status": "identified",
+      "priority": "P2",
+      "package": "@davidorex/pi-context",
+      "layer": "L2",
+      "description": "Natural cross-block queries require multiple round-trip tool calls. Example: 'show me all completed tasks with their verifications' requires read-block(tasks) → filter-block-items(tasks, status=completed) → for each completed task: resolve-item-by-id(verification VER-id). Minimum 3 calls (or N+1 if resolved per item) for a single natural query. The closure-table primitives (walkDescendants / walkAncestors / findReferences) traverse edges but don't compose with cross-block resolution at the tool surface; gatherExecutionContext (TASK-039) is unit-driven for the DEC-0017 context-bundle use-case, not a general cross-block join. Surfaced by constrained-harness LLM evaluation: 'show completed tasks with their verifications' couldn't be answered in one tool call.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "Registered tool surface: filter-block-items + resolve-item-by-id + resolve-items-by-id are independent primitives; no compose-join tool wraps them for FK-style block-to-block joins"
+        },
+        {
+          "file": "packages/pi-context/src/execution-context.ts",
+          "reference": "gatherExecutionContext composes per unit-kind context-contract; not a general join primitive for arbitrary block pairs"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0014 — harness-confined main LLM bears the cost of N round-trip calls when one composite call would suffice"
+        }
+      ],
+      "impact": "N+1 round-trip cost on natural cross-block queries when the substrate has the data to satisfy them in one composite call. Under DEC-0014 each tool call is a context-window event; N+1 calls multiply prompt + response tokens proportionally. Substrate is queryable; the tool surface forces decomposition the substrate doesn't require.",
+      "canonical_vocabulary": "block-to-block join primitive",
+      "proposed_resolution": "Add a join-blocks-on-field tool: signature `joinBlocks(cwd, leftBlock: string, rightBlock: string, leftField: string, rightField: string, leftPredicate?: FilterPredicate): Array<{left: ItemRecord, right: ItemRecord | null}>` returning paired records where leftItem[leftField] === rightItem[rightField]. Library function in project-sdk.ts; pi tool + orchestrator script per DEC-0019 dual-surface. Optional leftPredicate parameter filters the left side before join (covers the 'completed tasks × verifications' case via leftPredicate={field:status, op:eq, value:completed}). Out of scope: many-to-many joins (require composite key shape; addressable later via closure-table walks once relations.json has real edges per Phase 5).",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0019"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-13T18:30:00Z"
+    },
+    {
+      "id": "FGAP-044",
+      "title": "No tool discovery mechanism for harness-confined main LLM — list-tools / tool-introspection tool unfiled",
+      "status": "identified",
+      "priority": "P2",
+      "package": "@davidorex/pi-context",
+      "layer": "L2",
+      "description": "Under DEC-0014 the harness-confined main LLM operates only through extension-registered tools. There is no registered tool that lists the available tools, their parameters, descriptions, or surface coverage. Tool discovery happens only via context-window injection (the orchestrator hand-curates which tool names the LLM sees) OR via grep on packages/pi-context/src/index.ts — neither path is available to the harness-confined LLM via its tool surface. As the registered tool count grows (currently 28 in pi-context alone) tool-name discovery via guessing becomes the de facto mechanism. Surfaced by constrained-harness LLM evaluation: 'I know what tools exist because my context says so. An LLM without that context has no list-tools or help surface.'",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "28 pi.registerTool({...}) calls; no list-tools / tools-status / introspect-tools tool registered"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0014 — substrate IS operating surface; tool discovery should itself be a tool, not a side-channel"
+        }
+      ],
+      "impact": "Under DEC-0014 a fresh harness-confined LLM session cannot enumerate its own capabilities. The orchestrator must inject the tool list via context. This contradicts the substrate-IS-operating-surface principle: the LLM's view of available capabilities lives outside the substrate / outside the tool surface. As tools grow the gap compounds.",
+      "canonical_vocabulary": "tool surface introspection / tool registry as queryable substrate",
+      "proposed_resolution": "Add a list-tools (or tools-status) pi tool that returns per-tool: name + label + description + parameters JSON Schema + promptSnippet. Library: read pi.registerTool internal state OR scan packages/*/src/index.ts at runtime to enumerate. Returned shape: `{tools: Array<{name, label, description, parameters, promptSnippet, package}>}`. Pi tool wrapper + orchestrator CLI script per DEC-0019 dual-surface. Companion: every other pi tool's promptSnippet field must be authored as discovery-ready (terse, action-shaped).",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0019"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-13T18:30:00Z"
+    },
+    {
+      "id": "FGAP-045",
+      "title": "No item-level read at tool surface — read-block is all-or-nothing; no read-block-item / paginated read; large blocks force whole-file fetch",
+      "status": "identified",
+      "priority": "P2",
+      "package": "@davidorex/pi-context",
+      "layer": "L2",
+      "description": "read-block returns the entire block's JSON. Large blocks (decisions ~109KB, framework-gaps growing similarly) force whole-file fetch even when the caller wants one item. resolve-item-by-id covers by-ID lookup; filter-block-items covers predicate filter; but there's no read-block-item(block, id) for direct item fetch by ID without the block roundtrip, and no paginated read for blocks too large to inject. Distinct from FGAP-014 (pagination in renderers like renderLensView / renderRoadmap) and FGAP-032 (item-level INJECTION at JIT-agent dispatch via contextBlocks selectivity). This is item-level READ at the tool API surface for harness-confined main LLM consumption.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "read-block tool returns whole block via readBlock from block-api; no item-by-id variant + no paginated variant"
+        },
+        {
+          "file": ".project/framework-gaps.json",
+          "reference": "FGAP-014 (renderer pagination) + FGAP-032 (item-level contextBlocks injection at dispatch) are adjacent but distinct — neither covers tool-API item-level read"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0014 — context-window economy under harness confinement makes whole-block-fetch-when-one-item-wanted a substrate-surface inefficiency"
+        }
+      ],
+      "impact": "Context-window cost when caller wants one item from a large block. read-block-item via filter-block-items + take(1) requires two tool calls (filter then implicit pick); resolve-item-by-id covers when the ID is known but not when discovery + read should compose. No paginated read means large blocks can exceed the truncateHead 50KB threshold (already observed; truncation message surfaces). Under growing substrate this gap compounds.",
+      "canonical_vocabulary": "item-level read at tool surface; paginated block-read",
+      "proposed_resolution": "(1) Add read-block-item(cwd, block, id) tool: equivalent to filter-block-items(block, id, eq) + take(1) but as a single primitive returning the item OR null. (2) Add read-block-page(cwd, block, offset, limit) for paginated reads of large blocks; returns `{items: ItemRecord[], total: number, hasMore: boolean}`. (3) read-block stays for full-block fetches; truncateHead behavior unchanged. Library + pi tool + orchestrator script per DEC-0019 dual-surface.",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0019"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-13T18:30:00Z"
+    },
+    {
+      "id": "FGAP-046",
+      "title": "tasks[].depends_on inline FK array — third instance of FGAP-040/041 DEC-0013 violation pattern; substrate-wide audit needed",
+      "status": "identified",
+      "priority": "P2",
+      "package": "@davidorex/pi-context",
+      "layer": "L4",
+      "description": "tasks schema declares depends_on: array<string> on each task item; TASK-040 carries depends_on: ['TASK-039']; multiple tasks across .project/tasks.json carry such inline FK arrays. Per DEC-0013 closure-table-only-for-inter-item-relationships, depends_on inline arrays are forbidden — references must live as relations.json edges with relation_type=depends_on. Same root pattern as FGAP-040 (tasks[].phase free-text label) + FGAP-041 (issues[].resolved_by free-text). Third instance triggers a substrate-wide audit obligation: every existing schema's array<string> field that references other block items is a DEC-0013 candidate violation. Surfaced by constrained-harness LLM evaluation.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/registry/schemas/tasks.schema.json",
+          "reference": "tasks[].depends_on declared as array<string> — inline FK array shape"
+        },
+        {
+          "file": ".project/tasks.json",
+          "reference": "TASK-040 + others carry depends_on values referencing other TASK-NNN items as inline strings rather than closure-table edges"
+        },
+        {
+          "file": ".project/framework-gaps.json",
+          "reference": "FGAP-040 + FGAP-041 same root pattern; FGAP-046 is the third explicit instance"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0013 — closure-table is canonical primitive for ALL inter-item relationships; FK-as-field forbidden; no carve-out for depends_on"
+        }
+      ],
+      "impact": "Substrate-wide DEC-0013 violation across tasks.json (multiple items carrying depends_on inline) and potentially other schemas. Cross-cutting pattern observation: the substrate audit must enumerate every array<string> field on every schema and classify each as (a) genuine inline data field (not an inter-item reference) OR (b) DEC-0013-violating FK array requiring migration to closure-table. Per pattern in FGAP-040/041 the migration vehicle is Phase 5 (TASK-025 / arc-tracking-blocks dogfood + schema-migrations.ts) — the same migration arc that lands relations.json + config.relation_types[].",
+      "canonical_vocabulary": "inline FK array DEC-0013 violation",
+      "proposed_resolution": "(1) Substrate-wide audit of every registry schema's array<string> fields; classify each as data-field OR FK-array. (2) For each FK-array: migration to relations.json closure-table edges with declared relation_type (depends_on / related / etc.) registered in config.relation_types[]. (3) Schema modifications via schema-migrations.ts version bumps removing the inline array. (4) Existing block items: per-item migration writing the inline values as relations.json edges + removing the inline field. (5) Migration scope tied to Phase 5 + 6 of FGAP-026 closure; FGAP-040/041/046 + future-discovered instances share the same migration arc — file each surfaced instance against this canonical pattern; do not relitigate per-field.",
+      "related_decisions": [
+        "DEC-0013"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-13T18:30:00Z"
     }
   ]
 }

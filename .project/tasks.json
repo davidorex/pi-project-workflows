@@ -320,7 +320,7 @@
     {
       "id": "TASK-039",
       "description": "Phase 3 sub-phase 3.2: ship gatherExecutionContext primitive — library + pi tool + orchestrator script + 7 tests. Closes FGAP-031. Closure-table dependency: per-test fixtures own synthetic relations.json.",
-      "status": "planned",
+      "status": "completed",
       "phase": "8.7.3",
       "files": [
         "packages/pi-context/src/execution-context.ts",
@@ -341,7 +341,8 @@
       "depends_on": [
         "TASK-038"
       ],
-      "notes": "Phase 3 sub-phase 3.2. Reuses Phase 2 sub-phase primitives (filterBlockItems / resolveItemsByIds) + Phase 2.3/2.4 closure-table primitives (walkAncestors / walkDescendants / findReferences). Live-substrate runtime demo deferred to Phase 5 (per-test fixtures only). FGAP-031 closed via this sub-phase."
+      "notes": "CLOSED at HEAD 6bea7e1. gatherExecutionContext library + ContextBundle types + gather-execution-context pi tool + scripts/orchestrator/gather-execution-context.ts + tsconfig path mapping shipped. Tests: pi-context 447 → 454 (+7). FGAP-031 closure pending sub-phase 3.3 (will transition FGAP-031 status to closed in VER-013 cascade). See VER-011.",
+      "verification": "VER-011"
     },
     {
       "id": "TASK-040",

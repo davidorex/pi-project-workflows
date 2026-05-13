@@ -525,6 +525,78 @@
           "evidence": "Commit 6bea7e1 landed without --no-verify across all 4 packages"
         }
       ]
+    },
+    {
+      "id": "VER-012",
+      "target": "TASK-040",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T18:05:00Z",
+      "evidence": "Sub-phase 3.3 (execution-context integration test) landed at HEAD 02acf92 — FINAL atomic unit under TASK-023. Integration test packages/pi-context/src/execution-context.integration.test.ts (18593 bytes) authors per-test full synthetic substrate (mkdtempSync + writeBootstrapPointer + config.json + relations.json + context-contracts.json + tasks.json + decisions.json + registry-copied schemas) and exercises gatherExecutionContext end-to-end through canonical surfaces (no mocks for filterBlockItems / resolveItemsByIds / walkAncestors / walkDescendants / readBlock). 4 scenarios: A single-relation; B multi-relation cross-block (cross-block resolution exercised + decisions-schema payload fields asserted); C deep cross-block chain + maxDepth cap; D missing-edges no-false-pass. Tests: pi-context 454 → 458 (+4). Husky pre-commit gate green (biome 175 files + tsc --noEmit + full workspace tests).",
+      "criteria_results": [
+        {
+          "criterion": "Integration test composes full synthetic substrate per per-test fixture",
+          "status": "passed",
+          "evidence": "execution-context.integration.test.ts authors config.json + relations.json + context-contracts.json + per-block items + schemas in each test's mkdtempSync dir"
+        },
+        {
+          "criterion": "Exercises gather-execution-context against realistic task unit end-to-end",
+          "status": "passed",
+          "evidence": "4 scenarios A/B/C/D all invoke gatherExecutionContext through canonical surfaces"
+        },
+        {
+          "criterion": "Asserts ContextBundle shape matches interface + perRelationType buckets + traversal_depth honored",
+          "status": "passed",
+          "evidence": "Scenario assertions cover bundle.unit + bundle.perRelationType[<rt>] + bundle.traversal_depth bounds"
+        },
+        {
+          "criterion": "Verifies substrate-canon: unit via filterBlockItems; relations via loadRelations; ids via resolveItemsByIds; bundle per context-contract",
+          "status": "passed",
+          "evidence": "No mocks; canonical surfaces exercised"
+        },
+        {
+          "criterion": "Husky pre-commit gate green",
+          "status": "passed",
+          "evidence": "Commit 02acf92 landed without --no-verify across all 4 packages"
+        }
+      ]
+    },
+    {
+      "id": "VER-013",
+      "target": "TASK-023",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T18:05:00Z",
+      "evidence": "Phase 3 (FGAP-026 closure phase 3: Work-unit context composition substrate per DEC-0017) complete at HEAD 02acf92. Three atomic sub-phases shipped: 3.1 context-contracts block kind (TASK-038 / VER-010 / commit 6ddb1ba + 2b6c465); 3.2 gatherExecutionContext primitive (TASK-039 / VER-011 / commit 6bea7e1 + b3a90aa); 3.3 integration test (TASK-040 / VER-012 / commit 02acf92). Test counts: pi-context 428 → 458 (+30 cumulative across 3 sub-phases). DEC-0017 substrate surface satisfied: context-contract block kind (option a per plan) + gatherExecutionContext composition primitive + 4-scenario integration test through canonical surfaces. FGAP-029 fully closed (walkAncestors + walkDescendants + findReferences in Phase 2 + gather composition exercises them in Phase 3). FGAP-030 closed (context-contracts block kind shipped). FGAP-031 closed (gatherExecutionContext + ContextBundle shipped). Phase 4 (TASK-024 / workflow-execute + dispatch tools) unblocked.",
+      "criteria_results": [
+        {
+          "criterion": "context contract substrate in place (block kind chosen)",
+          "status": "passed",
+          "evidence": "Sub-phase 3.1 / VER-010 / option (a) new block kind context-contracts per plan rationale"
+        },
+        {
+          "criterion": "gather-execution-context(unitId, kind) JS export + tool wrapper",
+          "status": "passed",
+          "evidence": "Sub-phase 3.2 / VER-011 / execution-context.ts:143 + index.ts:1282 + scripts/orchestrator/gather-execution-context.ts"
+        },
+        {
+          "criterion": "bidirectional traversal per declared relation_types in contract",
+          "status": "passed",
+          "evidence": "gatherExecutionContext composes via walkAncestors/walkDescendants/findReferences per BundleRelationTypeSpec.direction; integration test scenario B exercises all 3 directions"
+        },
+        {
+          "criterion": "ContextBundle structure returned as one tool call",
+          "status": "passed",
+          "evidence": "execution-context.ts ContextBundle interface; integration test asserts shape match"
+        },
+        {
+          "criterion": "FGAP-030 + FGAP-031 closed; FGAP-029 fully closed",
+          "status": "passed",
+          "evidence": "FGAP cluster transition handled in status-cascade commit alongside TASK-023 closure"
+        }
+      ]
     }
   ]
 }

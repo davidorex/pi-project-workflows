@@ -37,7 +37,9 @@
         "ContextBundle structure returned as one tool call",
         "FGAP-030 + FGAP-031 closed; FGAP-029 fully closed"
       ],
-      "status": "planned"
+      "status": "completed",
+      "verification": "VER-013",
+      "notes": "CLOSED at HEAD 02acf92. Phase 3 (FGAP-026 closure phase 3: Work-unit context composition substrate per DEC-0017) complete via 3 atomic sub-phases (3.1 context-contracts block kind / 3.2 gatherExecutionContext primitive / 3.3 integration test). Test counts: pi-context 428 → 458 (+30 cumulative). DEC-0017 substrate surface satisfied. FGAP-029/030/031 closed in this cascade. Phase 4 unblocked. See VER-013 + child VER-010/011/012."
     },
     {
       "id": "TASK-024",
@@ -347,7 +349,7 @@
     {
       "id": "TASK-040",
       "description": "Phase 3 sub-phase 3.3: integration test composing 3.1 + 3.2 end-to-end + FGAP cluster closure (FGAP-029 fully / FGAP-030 / FGAP-031). Closure-table dependency: integration fixture authors full synthetic substrate (config.json + relations.json + context-contracts.json + per-block items).",
-      "status": "planned",
+      "status": "completed",
       "phase": "8.7.3",
       "files": [
         "packages/pi-context/src/execution-context.integration.test.ts",
@@ -366,7 +368,8 @@
       "depends_on": [
         "TASK-039"
       ],
-      "notes": "Phase 3 sub-phase 3.3. Final atomic unit under TASK-023. Completes FGAP-029 full closure + FGAP-030 + FGAP-031. After landing: TASK-023 (parent) ready to close; Phase 4 (TASK-024 / workflow-execute + dispatch tools) unblocked."
+      "notes": "CLOSED at HEAD 02acf92. Integration test ships 4 scenarios through canonical surfaces (no mocks); pi-context 454 → 458 (+4). Final atomic unit under TASK-023; FGAP cluster transition in this same cascade. See VER-012.",
+      "verification": "VER-012"
     }
   ]
 }

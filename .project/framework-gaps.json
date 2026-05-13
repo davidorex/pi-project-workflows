@@ -957,7 +957,7 @@
     {
       "id": "FGAP-029",
       "title": "Bidirectional scoped traversal primitive missing — walk-ancestors + walk-by-relation tools",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L2",
@@ -981,12 +981,14 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
-      "created_at": "2026-05-10T04:14:52.901Z"
+      "created_at": "2026-05-10T04:14:52.901Z",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-13T10:06:34.001Z"
     },
     {
       "id": "FGAP-030",
       "title": "Per-work-unit-kind context contract substrate missing — no way to declare which relation_types compose the execution bundle for each unit kind",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L1",
@@ -1011,12 +1013,14 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
-      "created_at": "2026-05-10T04:14:52.901Z"
+      "created_at": "2026-05-10T04:14:52.901Z",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-13T10:06:34.001Z"
     },
     {
       "id": "FGAP-031",
       "title": "Composition-of-views work-unit-driven primitive missing — gather-execution-context(unitId, kind) tool and JS export",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L2",
@@ -1041,7 +1045,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
-      "created_at": "2026-05-10T04:14:52.901Z"
+      "created_at": "2026-05-10T04:14:52.901Z",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-13T10:06:34.001Z"
     },
     {
       "id": "FGAP-032",

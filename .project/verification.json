@@ -433,6 +433,47 @@
           "evidence": "Each VER-005..008 enumerates all three surfaces landed"
         }
       ]
+    },
+    {
+      "id": "VER-010",
+      "target": "TASK-038",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-13T07:15:00Z",
+      "evidence": "Sub-phase 3.1 (context-contracts block kind) landed at HEAD 6ddb1ba. Schema packages/pi-context/registry/schemas/context-contracts.schema.json with $id pi-context://schemas/context-contracts + version 1.0.0 (AJV meta-validated). Registry default packages/pi-context/registry/blocks/context-contracts.json seeded with CTX-001 task / CTX-002 decision / CTX-003 verification (empty bundle_relation_types[]). Block-kind registration via auto-discovery from registry/{schemas,blocks}/ — canonical mechanism (no explicit kind-list source); read-block tool descriptor doc-string extended with context-contracts example per existing pattern. Tests: pi-context 428 → 447 (+19 covering valid round-trip / required-field rejection / id pattern / direction enum / negative max_depth / additionalProperties rejection on contract + on bundle_relation_type item). Husky pre-commit gate green.",
+      "criteria_results": [
+        {
+          "criterion": "Schema with $id pi-context://schemas/context-contracts + version 1.0.0",
+          "status": "passed",
+          "evidence": "packages/pi-context/registry/schemas/context-contracts.schema.json exists; AJV meta-valid"
+        },
+        {
+          "criterion": "Schema declares CTX-NNN id pattern + unit_kind + bundle_relation_types[] (relation_type/direction/max_depth/applicability_predicate?) + author attestation fields",
+          "status": "passed",
+          "evidence": "schema file fields match spec; additionalProperties:false on contract + bundle_relation_type item"
+        },
+        {
+          "criterion": "Registry default seeds CTX-001/002/003 (task/decision/verification) with empty bundle_relation_types[]",
+          "status": "passed",
+          "evidence": "registry/blocks/context-contracts.json contains 3 starter contracts"
+        },
+        {
+          "criterion": "Block-kind registered via auto-discovery mechanism",
+          "status": "passed",
+          "evidence": "Auto-discovery from registry/{schemas,blocks}/ confirmed canonical; index.ts read-block doc-string extended"
+        },
+        {
+          "criterion": "Schema validation tests cover round-trip + required-field + id pattern + bundle_relation_types[] shape + additionalProperties",
+          "status": "passed",
+          "evidence": "+19 tests in pi-context (428 → 447)"
+        },
+        {
+          "criterion": "Husky pre-commit gate green",
+          "status": "passed",
+          "evidence": "Commit 6ddb1ba landed without --no-verify across all 4 packages"
+        }
+      ]
     }
   ]
 }

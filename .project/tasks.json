@@ -296,7 +296,7 @@
     {
       "id": "TASK-038",
       "description": "Phase 3 sub-phase 3.1: ship context-contracts block kind — schema + registry default (3 starter contracts: task/decision/verification) + block-kind registration. Closes FGAP-030 substrate side. No closure-table dependency.",
-      "status": "planned",
+      "status": "completed",
       "phase": "8.7.3",
       "files": [
         "packages/pi-context/registry/schemas/context-contracts.schema.json",
@@ -314,7 +314,8 @@
       "depends_on": [
         "TASK-023"
       ],
-      "notes": "Phase 3 sub-phase 3.1. Resolves FGAP-030 option (a) per plan rationale (substrate-canon alignment + schema validation surface + discoverability + future-proofing for DispatchContext + macros). unit_kind is a type tag NOT a substrate-block-item reference — plain string keyed lookup; documented carve-out from DEC-0013 closure-table-only constraint."
+      "notes": "CLOSED at HEAD 6ddb1ba. context-contracts schema + registry default + auto-discovery registration shipped. Tests: pi-context 428 → 447 (+19). See VER-010.",
+      "verification": "VER-010"
     },
     {
       "id": "TASK-039",

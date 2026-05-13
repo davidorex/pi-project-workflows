@@ -370,6 +370,31 @@
       ],
       "notes": "CLOSED at HEAD 02acf92. Integration test ships 4 scenarios through canonical surfaces (no mocks); pi-context 454 → 458 (+4). Final atomic unit under TASK-023; FGAP cluster transition in this same cascade. See VER-012.",
       "verification": "VER-012"
+    },
+    {
+      "id": "TASK-041",
+      "description": "Phase 4 sub-phase 4.1: rename pi-workflows `workflow` tool → `workflow-execute` (canonical naming alignment per pi-context verb-noun convention) + add workflow-resume pi tool (explicit-resume-by-runId complement to workflow-execute's auto-resume default). Closes TASK-024 directly (single-sub-phase phase).",
+      "status": "planned",
+      "phase": "8.7.4",
+      "files": [
+        "packages/pi-workflows/src/index.ts",
+        "packages/pi-workflows/skill-narrative.md",
+        "packages/pi-workflows/README.md"
+      ],
+      "acceptance_criteria": [
+        "Pi tool name `workflow` renamed to `workflow-execute` at packages/pi-workflows/src/index.ts:494; parameters + execute body unchanged",
+        "New pi tool `workflow-resume` registered after workflow-execute; parameters: Type.Object({workflow: Type.String, runId: Type.String, input: Type.Optional(Type.Unknown)}); rejects when no incomplete run matches OR runId mismatch",
+        "Bare-string scan: `grep -wn '\"workflow\"' packages/pi-workflows/src/index.ts` returns only legitimate non-tool-name usages (params.workflow / error strings / JSDoc)",
+        "skill-narrative.md + README.md updated where tool-name references exist",
+        "Existing tests calling tool by name 'workflow' updated to 'workflow-execute'",
+        "New tests cover workflow-resume happy path + no-incomplete-run rejection + runId-mismatch rejection",
+        "Husky pre-commit gate (npm run check && npm test) green",
+        "Breaking change flagged with `!` in commit subject (tool name change affects any in-tree caller)"
+      ],
+      "depends_on": [
+        "TASK-024"
+      ],
+      "notes": "Per plan-mode resolution: existing `workflow` tool name is anachronistic; all other pi tool names use verb-noun (read-block / write-block / filter-block-items / walk-ancestors / etc.); sibling workflow-* tools (workflow-list / workflow-validate / workflow-status / workflow-init / workflow-agents) follow the pattern. Rename aligns. workflow-resume complements workflow-execute's auto-resume default with an explicit-only path. Out of scope: workflow-help (→ FGAP-044 tool-discovery), workflow-list-interactive UI (substantively justified subcommand-only)."
     }
   ]
 }

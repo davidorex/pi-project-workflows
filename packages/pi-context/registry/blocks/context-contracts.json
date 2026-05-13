@@ -1,0 +1,28 @@
+{
+	"contracts": [
+		{
+			"id": "CTX-001",
+			"unit_kind": "task",
+			"bundle_relation_types": [],
+			"description": "Default context contract for task unit-kind. Empty bundle_relation_types — populate per-substrate when user installs and declares their relation_types.",
+			"created_by": "agent/pi-context-registry",
+			"created_at": "2026-05-13T00:00:00Z"
+		},
+		{
+			"id": "CTX-002",
+			"unit_kind": "decision",
+			"bundle_relation_types": [],
+			"description": "Default context contract for decision unit-kind. Empty bundle_relation_types — populate per-substrate when user installs and declares their relation_types.",
+			"created_by": "agent/pi-context-registry",
+			"created_at": "2026-05-13T00:00:00Z"
+		},
+		{
+			"id": "CTX-003",
+			"unit_kind": "verification",
+			"bundle_relation_types": [],
+			"description": "Default context contract for verification unit-kind. Empty bundle_relation_types — populate per-substrate when user installs and declares their relation_types.",
+			"created_by": "agent/pi-context-registry",
+			"created_at": "2026-05-13T00:00:00Z"
+		}
+	]
+}

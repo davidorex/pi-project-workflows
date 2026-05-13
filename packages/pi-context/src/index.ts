@@ -979,7 +979,9 @@ const extension = (pi: ExtensionAPI) => {
 			"Filter the array items of a block by a single-field predicate (eq / neq / in / matches). Discovers the single top-level array property in the block; items missing the predicate field are never matched. Wraps the canonical readBlock + caller-side filter into one queryable surface; never mutates the block.",
 		promptSnippet: "Filter a block's items by a predicate — eq / neq / in / matches against a single field",
 		parameters: Type.Object({
-			block: Type.String({ description: "Block name (e.g., 'tasks', 'decisions', 'framework-gaps')" }),
+			block: Type.String({
+				description: "Block name (e.g., 'tasks', 'decisions', 'framework-gaps', 'context-contracts')",
+			}),
 			field: Type.String({ description: "Item field to test (e.g., 'status', 'priority', 'id')" }),
 			op: Type.Union([Type.Literal("eq"), Type.Literal("neq"), Type.Literal("in"), Type.Literal("matches")], {
 				description:

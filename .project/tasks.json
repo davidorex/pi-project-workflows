@@ -398,6 +398,31 @@
       ],
       "notes": "CLOSED at HEAD 569eec4. workflow tool renamed to workflow-execute (index.ts:495); workflow-resume new tool registered (index.ts:575) with no-incomplete-run + runId-mismatch + cross-spec-incompat rejection paths. Tests: pi-workflows 824 to 829 (+5). See VER-014.",
       "verification": "VER-014"
+    },
+    {
+      "description": "Vocabulary settlement work-unit upstream of TASK-025 Phase 5 sub-phase decomposition — settles display layer, ID conventions, relation_type names, lens ids, layer registry, status-bucket mapping, phase block-kind binding via DEC entries enacted at user direction. Closes FGAP-047 + addresses FGAP-048 / 049 / 050 / 051. Pre-condition for TASK-025 sub-phase 5.1 (config.json) + 5.2 (relations.json) + 5.3 (roadmap.json) + 5.4 (phase.json) + 5.6 (tasks-phase-edges).",
+      "status": "in-progress",
+      "phase": "8.7.5",
+      "acceptance_criteria": [
+        "FGAP-047 closed (vocabulary settlement gap resolved)",
+        "Open DEC entries authored for each vocabulary question surfaced; each enacts at user direction or marks superseded with rationale",
+        "FGAP-048 prefix-convention drift addressed via DEC enacted + migration plan or canon-going-forward declaration",
+        "FGAP-049 phase block-kind pattern divergence addressed via binding DEC",
+        "FGAP-050 framework-shaped schemas installed in .project/schemas/ (config / relations / roadmap / bootstrap)",
+        "FGAP-051 conventions block schema migration plan filed (separate DEC if scope warrants)",
+        "Settlement DECs cascade into convention rules where lint-shaped (conventions[].rules[] entries added per relevant DEC)",
+        "config.json authorable end-to-end without improvisation — all block_kinds[] / relation_types[] / lenses[] / layers[] / status_buckets[] entries reference settled DEC canon"
+      ],
+      "depends_on": [],
+      "files": [
+        ".project/decisions.json",
+        ".project/conventions.json",
+        ".project/framework-gaps.json",
+        ".project/config.json",
+        ".project/schemas/conventions.schema.json"
+      ],
+      "notes": "Filing context: this work-unit emerged from 2026-05-13 → 2026-05-14 dialogue reverse-engineering config from substrate. LLM-filed Phase 5 sub-phase decomposition (analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md line 14) skipped this upstream vocabulary work; FGAP-047 records the skip. Source analysis files: analysis/2026-05-14-arc-tracking-substrate-open-decisions.md (7 open decisions enumerated); analysis/2026-05-14-step-1-config-draft-from-substrate.md (config draft + drift surface); analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md (relation_types / lenses / layers / status patterns); analysis/2026-05-14-arc-tracking-substrate-decision-sharpening.md (cross-doc mapping); analysis/2026-05-14-pm-vocabulary-survey-full-analysis.md (external prior-art); analysis/2026-05-14-substrate-filing-precedents.md (canonical filing-method archaeology). Blocks TASK-025 sub-phases 5.1-5.6 from coherent execution until settled. Already-enacted DECs from this work-unit's substrate authoring: DEC-0022 (features schema simplification, drop Epic-level qualifier) + DEC-0023 (schema title as display_name authority).",
+      "id": "TASK-042"
     }
   ]
 }

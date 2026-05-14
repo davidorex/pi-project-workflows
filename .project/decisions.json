@@ -1012,6 +1012,186 @@
       "enacted_by": "human/davidryan@gmail.com",
       "id": "DEC-0021",
       "created_at": "2026-05-11T21:28:05.039Z"
+    },
+    {
+      "title": "Features schema description drops \"Epic-level\" qualifier; canonical kind name is \"feature\"",
+      "status": "enacted",
+      "context": "PM-vocabulary survey (analysis/2026-05-05-pm-vocabulary-prior-art-survey.md) catalogues \"epic\" as Scrum/SAFe-origin emphasis-on-scale qualifier. User direction 2026-05-14: \"epic\" reads as zero-signal. The features.schema.json description prose carried \"L3 Work layer. Epic-level features with...\" which conflated PM-jargon scale-emphasis with the canonical block name. The structural shape (feature → stories → tasks + scoped findings) is what carries meaning; the \"epic-level\" qualifier adds no machine semantics and reads opaque to non-PM-familiar readers.",
+      "decision": "Drop \"Epic-level\" from features.schema.json description prose. Canonical kind name is \"feature\" (singular) / \"features\" (block array_key). config.block_kinds[].display_name will read \"Features\" (matching schema.title). No PM-scale qualifier in schema prose or display layer.",
+      "consequences": [
+        "Schema prose reads cleanly to non-PM readers.",
+        "Display-name layer can rely on schema.title field directly (see DEC-0023).",
+        "Future block-kind authoring avoids PM-jargon qualifiers in descriptions.",
+        "No code paths or AJV behavior changes (description field is not enforced)."
+      ],
+      "references": [
+        {
+          "label": "features.schema.json edited",
+          "path": ".project/schemas/features.schema.json",
+          "lines": "4"
+        },
+        {
+          "label": "PM-vocabulary prior-art survey",
+          "path": "analysis/2026-05-05-pm-vocabulary-prior-art-survey.md"
+        },
+        {
+          "label": "PM-vocabulary survey full analysis",
+          "path": "analysis/2026-05-14-pm-vocabulary-survey-full-analysis.md"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_gaps": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-14T12:00:00Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-14T12:00:00Z",
+      "id": "DEC-0022"
+    },
+    {
+      "title": "Schema title field is the authoritative source for block-kind display_name",
+      "status": "enacted",
+      "context": "Every .project/schemas/*.schema.json already carries title (e.g. \"Framework Gaps\" / \"Design Decisions\" / \"Features\") + description authored as canonical purpose statements. Authoring config.block_kinds[].display_name from scratch would duplicate this — and worse, drift if the two diverge. Schema title is authored once per block kind alongside required/properties/etc., already AJV-validated through normal schema-write surfaces. Config.block_kinds[].display_name role was ambiguous prior to this decision: amplify schema.title (duplicate) vs override (deviation only). User direction 2026-05-14 surfaced this in dialogue while reverse-engineering config draft.",
+      "decision": "Schema title field is the canonical source for block-kind display_name. config.block_kinds[].display_name is override-only — populate ONLY when prose deviation from schema.title is needed for display context. Default rendering reads schema.title; UI/macros fall back to schema.title when config.block_kinds[].display_name absent. Same authority pattern extends to other block-kind metadata expressible in schema (description / title) before adding parallel config fields.",
+      "consequences": [
+        "Reduces config.json authoring burden — 21 block_kinds[] entries don't each need display_name unless overriding.",
+        "Schema-side title edits propagate to display layer automatically.",
+        "Future display-name divergence requires explicit override entry in config; surfaces deviation as substrate.",
+        "Same principle extends to: schema.description → config.block_kinds[].description (if added); schema.properties[X].description → field-level display strings.",
+        "Phase 5 sub-phase 5.1 (config.json authoring) is reduced in scope — display_name layer mostly omittable."
+      ],
+      "references": [
+        {
+          "label": "framework-gaps schema title=\"Framework Gaps\"",
+          "path": ".project/schemas/framework-gaps.schema.json",
+          "lines": "3"
+        },
+        {
+          "label": "features schema title=\"Features\"",
+          "path": ".project/schemas/features.schema.json",
+          "lines": "3"
+        },
+        {
+          "label": "config schema declares block_kinds[].display_name",
+          "path": "packages/pi-context/registry/schemas/config.schema.json",
+          "lines": "39-56"
+        },
+        {
+          "label": "Step-1 config draft from substrate",
+          "path": "analysis/2026-05-14-step-1-config-draft-from-substrate.md"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-047"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-14T12:15:00Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-14T12:15:00Z",
+      "id": "DEC-0023"
+    },
+    {
+      "title": "Milestones are the primary declarative-organizing anchor; work cascades from + verifies upward to them; aspirational → satisfied → archived lifecycle",
+      "status": "enacted",
+      "context": "User direction 2026-05-14 dialogue articulating the substrate-canon model: a MILESTONE is the aspirational end-state-with-criterion+evidence_query authored declaratively at the top of a roadmap. Everything below it is decomposition: research (R-NNNN) explores what's needed; decisions (DEC-NNNN) settle choices; framework-gaps (FGAP-NNN) capture deficiencies blocking it; features (FEAT-NNN) scope coherent bodies of work toward it; phases group + sequence work-units; stories/tasks decompose features atomically down to atomic Task-1 execution. Verifications (VER-NNN) accumulate upward; when milestone.evidence_query satisfies against VER items, milestone moves from aspirational → satisfied (project history). Milestone is what reveals + organizes the work needing to be done. This decision crystallizes the canon already implicit in roadmap.schema.json + roadmap-plan.ts + DEC-0017 work-unit context composition.",
+      "decision": "Milestones are the primary declarative-organizing anchor of work in pi-context substrate. Milestone authoring is the entry point to a body of work — the milestone names the aspirational end-state + evidence_query that defines satisfaction. All work-altitude blocks (research / decisions / framework-gaps / features / stories / phases / tasks) cascade from milestone authoring as decomposition: a milestone's evidence_query implies what work-units must produce evidence; authoring those work-units is the decomposition. Milestones bear lifecycle: aspirational/planned → active (work in progress) → satisfied (evidence_query passes; becomes project history) → archived. Roadmap is the named, status-bearing curation of an ordered milestone set; once milestones + phases are top-level blocks (FGAP-053 + FGAP-049 cascade), roadmap thins to {id, title, description, status} + lens-spec for grouping + closure-table edges for ordering. Forward verification (milestone evidence_query → satisfaction) is automatic via roadmap-plan; backward decomposition (milestone → required work-units) is human/LLM authored — framework provides scaffold, authoring fills.",
+      "consequences": [
+        "Milestone elevation per FGAP-053 becomes higher-priority — milestone block-kind is the canonical entry surface for the substrate canon, not an inline roadmap detail.",
+        "Roadmap thins to envelope per FGAP-055 — substantive structure migrates to milestones + phases + relations.json.",
+        "Context-contract for unit_kind=milestone needed per FGAP-054 — gather-execution-context becomes the primitive for \"what's the picture around MILESTONE-NNN\".",
+        "Work-altitude tiers (FGAP-052 config.layers consumed-at-runtime gap) cascade from milestones: layer = altitude at which work-units sit; milestones organize across altitudes.",
+        "Forward query \"is MILESTONE-NNN satisfied\" works via existing roadmap-plan evidence_query primitive.",
+        "Backward query \"what must happen before MILESTONE-NNN\" works via walk-ancestors on relations.json edges once edges are authored.",
+        "Auto-decomposition (milestone → required tasks derivation) is NOT enabled by this decision; decomposition remains authoring work. Could be filed as separate framework-gap if desired.",
+        "Project goals (project.json goals[]) sit ABOVE milestones — multi-milestone arcs serve project goals; future cascade rule may make this explicit via project_goal_served_by_milestone relation_type."
+      ],
+      "references": [
+        {
+          "label": "Roadmap schema with milestones[] inline + evidence_query",
+          "path": "packages/pi-context/registry/schemas/roadmap.schema.json",
+          "lines": "milestones[] subschema"
+        },
+        {
+          "label": "roadmap-plan evidence_query satisfaction logic",
+          "path": "packages/pi-context/src/roadmap-plan.ts"
+        },
+        {
+          "label": "FGAP-053 milestone elevation gap",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "DEC-0017 work-unit context composition",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "Step-2 resolution patterns substrate analysis",
+          "path": "analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-053"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-14T13:30:00Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-14T13:30:00Z",
+      "id": "DEC-0024"
+    },
+    {
+      "title": "pi-context substrate canon is vocabulary-neutral; user's block / layer / relation / lens / status conception bootstraps entirely from config + schemas + macros without code changes",
+      "status": "enacted",
+      "context": "User direction 2026-05-14 dialogue articulating the foundational extension goal: the entire substrate apparatus must be bootstrappable + enactable for a wholly different conception of blocks / layers / relations than what pi-context ships defaults for. The memory shape arises from user/LLM use of the tool and needs, not from hardcoded canonical vocabulary in source. This generalizes DEC-0015 (config drives substrate location) + DEC-0011 (schema-install opt-in) to their full extent: pi-context's source is vocabulary-machinery (block-api primitives + closure-table + lens infrastructure + query primitives + DispatchContext attestation + execution-context composition); the canonical vocabulary (block kinds / IDs / relation_types / lenses / layers / status) is config-driven user-authored data, not built-in commitment. Currently pi-context ships defaults (PROJECT_BLOCK_TYPES list of 12 kinds; canonical macros for those kinds; etc.) which are USER-OPTIONAL per DEC-0011 install opt-in pattern but appear as hardcoded literals in source — partial alignment with the principle.",
+      "decision": "pi-context substrate canon is vocabulary-neutral. The framework's source code MUST operate on canonical_id-keyed registries derived purely from config.json + .project/schemas/ + .pi/templates/ macros. Built-in defaults shipped in packages/pi-context/registry/ are user-OPTIONAL; a user with a wholly different substrate conception can clone pi-context, author their own config + schemas + macros + relation_types + lenses + layers, and have a fully-functioning substrate canon for THEIR vocabulary without modifying any pi-context source. Implications: (a) hardcoded vocabulary literals in source (e.g. PROJECT_BLOCK_TYPES const) are gaps to close — vocabulary derives from loaded config; (b) macro library must scaffold user-added block kinds, not assume canonical-kind exclusivity; (c) lens-validator dispatch must be config-registerable, not code-registered; (d) layer registry must be runtime-honored from config.layers[], not symbolic; (e) test suite must exercise pi-context against a fully-different substrate vocabulary as universalization proof.",
+      "consequences": [
+        "PROJECT_BLOCK_TYPES const removal — block kinds derive from loaded config (FGAP-056 filed).",
+        "Macro library bootstrap surface for user-added kinds — drop-in macros + canonical-kind defaults + framework auto-discovery (FGAP-057 filed; cross-decision with FGAP-037).",
+        "Universalization test suite — pi-context exercises against a fully-different substrate vocabulary (FGAP-058 filed); proves the claim.",
+        "Lens-validator dispatch config-registration (covered by FGAP-052 already filed).",
+        "Runtime layer-aware behavior (covered by FGAP-052).",
+        "All future pi-context surface additions checked against vocabulary-neutrality: any new code path that hardcodes a block-kind name / relation_type literal / lens id / layer label is a regression and gets filed as a gap.",
+        "Documentation: 'bring-your-own-substrate' workflow needs explicit documentation in CLAUDE.md + skill-narratives + README — user can adopt pi-context with non-default vocabulary without code changes.",
+        "Implication for the milestone-as-anchor model (DEC-0024): even milestones are user-optional; a user-defined substrate could anchor on different concepts (initiatives / OKRs / projects / etc.); pi-context provides milestone-block-kind as a recommended default, not as a framework-mandate."
+      ],
+      "references": [
+        {
+          "label": "DEC-0015 substrate-location-is-config-driven",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "DEC-0011 schema-install opt-in",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "PROJECT_BLOCK_TYPES const at project-sdk.ts:117",
+          "path": "packages/pi-context/src/project-sdk.ts",
+          "lines": "117-130"
+        },
+        {
+          "label": "Three-tier schema resolution surfacing user-installable schemas",
+          "path": "packages/pi-context/src/project-context.ts"
+        },
+        {
+          "label": "config.schema.json declares block_kinds + relation_types + lenses + layers + status_buckets registries",
+          "path": "packages/pi-context/registry/schemas/config.schema.json"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-026",
+        "FGAP-052"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-14T14:00:00Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-14T14:00:00Z",
+      "id": "DEC-0025"
     }
   ]
 }

@@ -28,6 +28,14 @@ Derive project state at any time:
 npx tsx -e "import{projectState}from'./packages/pi-context/src/project-sdk.js';console.log(JSON.stringify(projectState('.'),null,2))"
 ```
 
+Project substrate to interactive HTML view (Pattern B build-step generation; static-baked output is self-contained + offline-portable + git-trackable):
+```bash
+npx tsx scripts/orchestrator/build-html-views.ts          # writes html-views/substrate-overview.html
+npx tsx scripts/orchestrator/build-html-views.ts --dry-run # validate substrate readability + report stats
+```
+
+Re-run after any `.project/*.json` change to refresh the rendered view.
+
 ## Conventions
 
 - ESM, TypeScript compiled via `tsc` to `dist/`. Pi loads `dist/index.js` from each package — runtime needs the build, not source.
@@ -38,7 +46,7 @@ npx tsx -e "import{projectState}from'./packages/pi-context/src/project-sdk.js';c
 - GitHub Actions CI runs check + build + test on Node 22/23 for push/PR to main
 - SKILL.md is generated build artifact (`npm run skills`) — do not edit by hand. Edit `skill-narrative.md` instead; uses YAML frontmatter + XML-tagged sections (no markdown headings).
 - Lockstep versioning via `npm run release:*` invoking `scripts/bump-versions.js` (direct JSON read/write per package.json; never `npm version -ws` directly — fails 0.x minor/major bumps)
-- **Orchestrator scripts dual-surface** (DEC-0019/0020): `scripts/orchestrator/*.ts` are Claude Code-side ergonomics wrappers over the same block-api / project-sdk library that in-pi harness-confined agents consume via Pi-registered tools. New substrate op = library + Pi tool + CLI script as a unit. Use canonical composer scripts (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`) — hand-authored briefs forbidden.
+- **Orchestrator scripts dual-surface** (DEC-0019/0020): `scripts/orchestrator/*.ts` are Claude Code-side ergonomics wrappers over the same block-api / project-sdk library that in-pi harness-confined agents consume via Pi-registered tools. New substrate op = library + Pi tool + CLI script as a unit. Use canonical composer scripts (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`) — hand-authored briefs forbidden. Substrate-projection script `build-html-views.ts` reads `.project/*.json` via canonical pi-context block-api + emits self-contained HTML view at `html-views/substrate-overview.html`.
 - Dispatch artifacts live under gitignored `compiled-contexts/` (orchestrator-composed agent input + agent-written reports). Project-root `tmp/` is also gitignored for ad-hoc scratch.
 
 ## Completion Sequence (mandatory after every code change)

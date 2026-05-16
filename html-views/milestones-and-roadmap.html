@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Milestones &amp; Roadmap — pi-project-workflows</title>
+<style>
+:root {
+  --bg: #f7f7f5;
+  --bg-elev: #ffffff;
+  --bg-soft: #f0f0ec;
+  --fg: #1a1a1a;
+  --fg-muted: #555;
+  --fg-faint: #888;
+  --border: #e2e2dd;
+  --border-strong: #cfcfc8;
+  --accent: #2563eb;
+  --accent-soft: #dbeafe;
+  --green: #16a34a;
+  --green-dark: #14532d;
+  --green-soft: #dcfce7;
+  --blue: #2563eb;
+  --blue-soft: #dbeafe;
+  --gray: #6b7280;
+  --gray-soft: #e5e7eb;
+  --red: #dc2626;
+  --code-bg: #f4f4ee;
+  --highlight: #fff3a3;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-strong: 0 4px 12px rgba(0,0,0,0.08);
+  --radius: 8px;
+  --radius-sm: 4px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #0f1117;
+  --bg-elev: #181b23;
+  --bg-soft: #1f232c;
+  --fg: #e8e8e3;
+  --fg-muted: #a8a8a0;
+  --fg-faint: #6e6e66;
+  --border: #2a2e38;
+  --border-strong: #3a3f4a;
+  --accent: #60a5fa;
+  --accent-soft: #1e3a8a;
+  --green: #4ade80;
+  --green-dark: #86efac;
+  --green-soft: #14532d;
+  --blue: #60a5fa;
+  --blue-soft: #1e3a8a;
+  --gray: #9ca3af;
+  --gray-soft: #374151;
+  --red: #f87171;
+  --code-bg: #1f232c;
+  --highlight: #5b4a00;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-strong: 0 4px 12px rgba(0,0,0,0.5);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.55;
+  font-size: 15px;
+  transition: background 0.2s, color 0.2s;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 28px 80px;
+}
+header.top {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 22px;
+  margin-bottom: 28px;
+}
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+h1 {
+  font-size: 26px;
+  margin: 0 0 4px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.subtitle {
+  color: var(--fg-muted);
+  font-size: 14px;
+  margin: 0;
+}
+.theme-toggle {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+.theme-toggle:hover { background: var(--bg-soft); }
+
+nav.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+nav.toc a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+}
+nav.toc a:hover { background: var(--accent-soft); }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 28px;
+  padding: 14px 16px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.search-input {
+  flex: 1 1 280px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--fg);
+}
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.status-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.status-pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: lowercase;
+}
+.status-pill[data-on="true"] {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+section {
+  margin-bottom: 44px;
+  scroll-margin-top: 16px;
+}
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.01em;
+}
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+/* Roadmap cards */
+.roadmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 18px;
+}
+.roadmap-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.roadmap-card .rm-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.roadmap-card h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.rm-desc {
+  color: var(--fg-muted);
+  font-size: 14px;
+  margin: 8px 0 14px;
+  white-space: pre-wrap;
+}
+.rm-section-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  color: var(--fg-faint);
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+.ordered-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ordered-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.ordered-list .seq {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--fg-faint);
+  min-width: 18px;
+}
+.dep-edges {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dep-edges li::before {
+  content: "→ ";
+  color: var(--fg-faint);
+}
+
+/* Status pills (per-card) */
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+}
+.status-active   { background: var(--green-soft); color: var(--green-dark); border: 1px solid var(--green); }
+.status-planned  { background: var(--blue-soft);  color: var(--blue);       border: 1px solid var(--blue); }
+.status-aspirational { background: var(--gray-soft); color: var(--gray); border: 1px solid var(--gray); }
+.status-satisfied { background: var(--green-soft); color: var(--green-dark); border: 1px solid var(--green-dark); }
+
+/* Dependency graph */
+.graph-wrap {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+svg.dep-graph {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 720px;
+}
+.dep-graph .node rect {
+  fill: var(--bg-soft);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill 0.15s, stroke 0.15s;
+}
+.dep-graph .node:hover rect,
+.dep-graph .node.hi rect {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.dep-graph .node text {
+  font-family: var(--mono);
+  font-size: 11px;
+  fill: var(--fg);
+  pointer-events: none;
+}
+.dep-graph .node .nname {
+  font-family: var(--sans);
+  font-size: 10px;
+  fill: var(--fg-muted);
+}
+.dep-graph .edge {
+  stroke: var(--fg-faint);
+  stroke-width: 1.4;
+  fill: none;
+  transition: stroke 0.15s, stroke-width 0.15s;
+}
+.dep-graph .edge.hi {
+  stroke: var(--accent);
+  stroke-width: 2.4;
+}
+.dep-graph .edge-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  fill: var(--fg-faint);
+}
+.dep-graph .arrowhead { fill: var(--fg-faint); }
+.dep-graph .edge.hi + .edge-label,
+.dep-graph .edge.hi ~ .arrowhead { fill: var(--accent); }
+
+/* Milestone cards */
+.milestone-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+.milestone {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  scroll-margin-top: 16px;
+}
+.m-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.id-badge {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.m-name {
+  font-size: 17px;
+  font-weight: 600;
+  flex: 1 1 auto;
+}
+details.collapsible {
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+details.collapsible > summary {
+  cursor: pointer;
+  padding: 7px 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+  font-weight: 600;
+  list-style: none;
+  user-select: none;
+}
+details.collapsible > summary::-webkit-details-marker { display: none; }
+details.collapsible > summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 0.15s;
+  color: var(--fg-faint);
+}
+details.collapsible[open] > summary::before { content: "▾ "; }
+details.collapsible .body {
+  padding: 4px 14px 12px;
+  white-space: pre-wrap;
+  font-size: 14px;
+  color: var(--fg);
+  line-height: 1.5;
+}
+pre.code {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--fg);
+  overflow-x: auto;
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+code.inline {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0 4px;
+}
+.field-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  color: var(--fg-faint);
+  font-weight: 600;
+  min-width: 110px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  display: inline-block;
+  padding: 3px 9px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--fg);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.chip.vocab {
+  font-family: var(--sans);
+  font-size: 11px;
+  cursor: default;
+  background: transparent;
+  color: var(--fg-muted);
+}
+.chip[data-id]:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.chip.highlight,
+.id-badge.highlight,
+.dep-edges li.highlight,
+.ordered-list li.highlight {
+  background: var(--highlight) !important;
+  color: var(--fg) !important;
+}
+
+/* Cascade map */
+.cascade-block {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.cascade-block h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cascade-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cascade-list > li {
+  font-size: 13px;
+  color: var(--fg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+.cascade-list .row-label {
+  font-weight: 600;
+  color: var(--fg-muted);
+  min-width: 130px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Open questions */
+.questions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: q;
+}
+.questions-list > li {
+  counter-increment: q;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  padding: 0;
+  box-shadow: var(--shadow);
+}
+.questions-list details > summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  list-style: none;
+  user-select: none;
+}
+.questions-list details > summary::-webkit-details-marker { display: none; }
+.questions-list details > summary::before {
+  content: counter(q) ". ";
+  color: var(--accent);
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.questions-list details[open] > summary { border-bottom: 1px solid var(--border); }
+.questions-list .qbody {
+  padding: 12px 16px 14px;
+  font-size: 14px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+}
+
+/* Sharpening section */
+.sharp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 14px;
+}
+.sharp-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.sharp-card h4 {
+  margin: 0 0 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+}
+.sharp-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--fg);
+}
+.sharp-card li { margin-bottom: 4px; }
+
+/* Footer */
+footer.bottom {
+  margin-top: 60px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--fg-faint);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+footer.bottom code { font-family: var(--mono); }
+
+.hidden-by-search { display: none !important; }
+.hidden-by-status { display: none !important; }
+
+/* Responsive */
+@media (max-width: 720px) {
+  .container { padding: 16px; }
+  h1 { font-size: 22px; }
+  .roadmap-grid { grid-template-columns: 1fr; }
+  .field-label { min-width: auto; }
+}
+
+@media print {
+  .controls, .theme-toggle, nav.toc { display: none; }
+  .graph-wrap { display: none; }
+  details.collapsible[open] > summary::before,
+  details.collapsible > summary::before { display: none; }
+  details.collapsible > summary { background: transparent; }
+  details.collapsible:not([open]) .body { display: block; }
+  .milestone, .roadmap-card, .cascade-block, .sharp-card, .questions-list > li {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  body { background: white; color: black; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="top">
+  <div class="title-row">
+    <div>
+      <h1>Milestones &amp; Roadmap — first draft</h1>
+      <p class="subtitle">pi-project-workflows · drafted 2026-05-14 from <code class="inline">.project/</code> substrate, analysis files, and 2026-05-13/14 dialogue</p>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">Toggle dark mode</button>
+  </div>
+  <nav class="toc" aria-label="Table of contents">
+    <a href="#sources">Source materials</a>
+    <a href="#roadmaps">Roadmaps</a>
+    <a href="#graph">Dependency graph</a>
+    <a href="#milestones">Milestones</a>
+    <a href="#cascade">Cascade map</a>
+    <a href="#open-questions">Open questions</a>
+    <a href="#sharpening">Config.json sharpening</a>
+  </nav>
+</header>
+
+<div class="controls" role="region" aria-label="Filter controls">
+  <input type="search" class="search-input" id="searchInput" placeholder="Filter milestones (id / name / description / vocabulary)…" aria-label="Filter milestones" />
+  <div class="status-pills" id="statusPills" role="group" aria-label="Status filter">
+    <button class="status-pill" data-status="active" data-on="true">active</button>
+    <button class="status-pill" data-status="planned" data-on="true">planned</button>
+    <button class="status-pill" data-status="aspirational" data-on="true">aspirational</button>
+    <button class="status-pill" data-status="satisfied" data-on="true">satisfied</button>
+  </div>
+</div>
+
+<section id="sources">
+  <h2>Source materials</h2>
+  <ul style="margin:0; padding-left: 20px; font-size: 14px; line-height: 1.7;">
+    <li><code class="inline">.project/decisions.json</code> — DEC-0001..0025 (3 open / 22 enacted / 0 superseded)</li>
+    <li><code class="inline">.project/framework-gaps.json</code> — FGAP-001..059 (~30 closed / ~29 identified)</li>
+    <li><code class="inline">.project/tasks.json</code> — TASK-001..042 (active: TASK-042; FGAP-026 arc TASK-021..030)</li>
+    <li><code class="inline">.project/features.json</code> — FEAT-001 (consumer migration arc)</li>
+    <li><code class="inline">.project/verification.json</code> — VER-001..015 (Phase 1-4 evidence)</li>
+    <li><code class="inline">.project/research.json</code> — R-0001..0011</li>
+    <li><code class="inline">.project/layer-plans.json</code> — PLAN-001 (Muni L1-L5 restructure)</li>
+    <li>analysis/2026-04-15 process-articulation + blocks-as-prompt-substrate + runtime-step-context</li>
+    <li>analysis/2026-05-01 substrate-arc-distillation + ceremony-ideas + blocks-schemas-macros-contract-synthesis</li>
+    <li>analysis/2026-05-10 fgap-026-closure-sub-phase-structure + tool-surface-gap-audit</li>
+    <li>analysis/2026-05-14 step-1-config-draft + step-2-resolution-patterns + arc-tracking-substrate-decision-sharpening + pm-vocabulary-survey-full-analysis + substrate-filing-precedents</li>
+    <li>2026-05-14 dialogue — vocabulary settlement direction; milestones-as-anchor model; roadmap thinning</li>
+  </ul>
+</section>
+
+<section id="roadmaps">
+  <h2>Roadmaps</h2>
+  <div class="roadmap-grid" id="roadmapGrid"></div>
+</section>
+
+<section id="graph">
+  <h2>Milestone dependency graph</h2>
+  <div class="graph-wrap">
+    <svg class="dep-graph" id="depGraph" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Milestone dependency graph"></svg>
+  </div>
+  <p style="font-size:12px;color:var(--fg-faint);margin-top:6px;">Hover or click a node to highlight its incoming + outgoing edges. Click an ID badge to highlight every other instance of that ID across the page.</p>
+</section>
+
+<section id="milestones">
+  <h2>Milestones</h2>
+  <main class="milestone-grid" id="milestoneGrid"></main>
+</section>
+
+<section id="cascade">
+  <h2>Cascade map (per milestone, what decomposes from it)</h2>
+  <div id="cascadeContainer"></div>
+</section>
+
+<section id="open-questions">
+  <h2>Open shape questions surfaced by drafting</h2>
+  <ol class="questions-list" id="questionsList"></ol>
+</section>
+
+<section id="sharpening">
+  <h2>How this draft sharpens config.json authoring</h2>
+  <div class="sharp-grid" id="sharpGrid"></div>
+</section>
+
+<footer class="bottom">
+  <span>Source: <code>analysis/2026-05-14-milestones-and-roadmap-draft.md</code></span>
+  <span id="genStamp"></span>
+</footer>
+
+</div>
+
+<script>
+// ---------- Data ----------
+const MILESTONES = [
+  {
+    id: "MILESTONE-001",
+    name: "Substrate canon principles enacted in code",
+    status: "active",
+    description: "DEC-0013 (closure-table canonical primitive) + DEC-0014 (harness-confined main LLM) + DEC-0015 (substrate location is config-driven) + DEC-0017 (work-unit context composition) are not just enacted-as-decisions but enforced-in-source: no .project/ hardcodes anywhere in pi-context / pi-jit-agents / pi-workflows / pi-behavior-monitors; resolveContextDir hard-throws on absent bootstrap pointer; F-006 bypass pattern eliminated; closure-table edges canonical for all inter-item relationships.",
+    criterion: "All FGAP-026 arc Phases 1..10 (Steps 8.7.1..8.7.10) close; substrate canon DECs are source-enforced; main LLM in pi-runtime cannot bash/read/write/edit; .project/ literal appears nowhere except .pi-context.json bootstrap pointer + canonical migration script.",
+    evidence_block: "verification",
+    evidence_query: [
+      { target_in: ["TASK-021","TASK-022","TASK-023","TASK-024","TASK-025","TASK-026","TASK-027","TASK-028","TASK-029","TASK-030"] },
+      { status: "passed" }
+    ],
+    related_decisions: ["DEC-0013","DEC-0014","DEC-0015","DEC-0017","DEC-0021"],
+    related_gaps: ["FGAP-026","FGAP-028","FGAP-035","FGAP-036","FGAP-038","FGAP-039"],
+    canonical_vocabulary: ["substrate-canon-source-enforcement","harness-confined-LLM","config-driven-substrate-dir"]
+  },
+  {
+    id: "MILESTONE-002",
+    name: "Vocabulary settlement complete",
+    status: "active",
+    description: "All vocabulary surfaces (block-kind display names; ID prefix conventions; relation_type canonical_ids; lens IDs; layer registry; status-bucket mapping; phase block-kind binding; conventions schema relational completeness) settled via DEC entries enacted at user direction. config.json authorable end-to-end without improvisation. Drift items (FGAP-048 / FGAP-049 / FGAP-050 / FGAP-051) addressed via DEC enacted + migration plan or canon-going-forward declaration.",
+    criterion: "TASK-042 closes; FGAP-047 closes; config.json authored with all block_kinds[] + relation_types[] + lenses[] + layers[] + status_buckets[] entries referencing settled DEC canon; no improvised vocabulary remains in any block instance.",
+    evidence_block: "verification",
+    evidence_query: [
+      { target: "TASK-042" },
+      { status: "passed" }
+    ],
+    related_decisions: ["DEC-0022","DEC-0023"],
+    related_gaps: ["FGAP-016","FGAP-021","FGAP-047","FGAP-048","FGAP-049","FGAP-050","FGAP-051","FGAP-052"],
+    canonical_vocabulary: ["vocabulary-settlement","config-canon-completeness"]
+  },
+  {
+    id: "MILESTONE-003",
+    name: "Milestone-as-anchor model enacted in framework",
+    status: "planned",
+    description: "Per DEC-0024, milestones are the primary declarative-organizing anchor. Framework delivers milestone block-kind elevation (FGAP-053): MILESTONE-NNN top-level + queryable via filter-block-items / walk-ancestors / find-references. CTX-NNN context-contract for unit_kind=milestone authored (FGAP-054); gatherExecutionContext --unit-id MILESTONE-NNN returns substantive bundle (research + decisions + framework-gaps + features + phases + verifications cascade). Roadmap shape thins post-elevation (FGAP-055) to {id, title, description, status} + relations.json edges + lens spec.",
+    criterion: "FGAP-053 + FGAP-054 + FGAP-055 close; milestone schema installed in .project/schemas/; milestones.json instance authored; CTX-NNN for unit_kind=milestone populated; gatherExecutionContext on MILESTONE-NNN returns non-degenerate bundle; roadmap.schema.json migrated; relations.json carries roadmap_contains_milestone + phase_culminates_at_milestone + milestone_depends_on edges.",
+    evidence_block: "verification",
+    evidence_query: [
+      { related_gaps_includes: ["FGAP-053","FGAP-054","FGAP-055"] },
+      { status: "passed" }
+    ],
+    related_decisions: ["DEC-0024"],
+    related_gaps: ["FGAP-053","FGAP-054","FGAP-055"],
+    canonical_vocabulary: ["milestone-as-anchor","milestone-elevation","milestone-context-contract","roadmap-thinning"]
+  },
+  {
+    id: "MILESTONE-004",
+    name: "Harness-confined LLM dogfood-dispatch dry-run passes",
+    status: "planned",
+    description: "FGAP-028 closure: pi-runtime main LLM, restricted to pi-context's tool surface (no bash/read/write/edit), can author substrate items + query existing substrate + dispatch workflows + handle the seventeen agent roles per analysis/2026-04-15-runtime-step-context.md without falling back to forbidden tools. Tool-discovery surface (FGAP-044) shipped so the harness-confined LLM can introspect available tools without external documentation.",
+    criterion: "Run FGAP-028 dry-run protocol; main LLM completes a substrate authoring + query + workflow-dispatch + monitor-classification cycle entirely through pi-context tool surface; no bash/read/write/edit tool calls; all writes route through DispatchContext-stamped block-api primitives; verdict logged.",
+    evidence_block: "verification",
+    evidence_query: [
+      { target: "TASK-030" },
+      { status: "passed" }
+    ],
+    related_decisions: ["DEC-0014","DEC-0017"],
+    related_gaps: ["FGAP-028","FGAP-044"],
+    canonical_vocabulary: ["harness-confined-dispatch-dry-run","dogfood-completeness"]
+  },
+  {
+    id: "MILESTONE-005",
+    name: "Vocabulary-neutral substrate canon delivered",
+    status: "planned",
+    description: "Per DEC-0025, pi-context substrate canon must operate on canonical_id-keyed registries derived purely from loaded config + schemas + macros — no built-in vocabulary commitments in source. Built-in defaults under packages/pi-context/registry/ remain as user-OPTIONAL shipped examples; user with wholly-different substrate conception (initiatives / OKRs / experiments / hypotheses / etc.) bootstraps + operates without modifying pi-context source. Memory shape arises from user/LLM use, not from hardcoded canon.",
+    criterion: "PROJECT_BLOCK_TYPES const removed from project-sdk.ts (FGAP-056); macro library bootstrap surface lands for user-added kinds with documented authoring + auto-discovery + fallback render (FGAP-057); universalization integration test exercises pi-context against a fully-different substrate vocabulary end-to-end (FGAP-058) — block-api / lens / closure-table / query primitives / execution-context all operate vocabulary-neutrally; runtime layer-aware + lens-validator config-registration land (FGAP-052); 'bring-your-own-substrate' workflow documented in CLAUDE.md + skill-narratives + README.",
+    evidence_block: "verification",
+    evidence_query: [
+      { related_gaps_includes: ["FGAP-052","FGAP-056","FGAP-057","FGAP-058"] },
+      { status: "passed" }
+    ],
+    related_decisions: ["DEC-0025"],
+    related_gaps: ["FGAP-052","FGAP-056","FGAP-057","FGAP-058"],
+    canonical_vocabulary: ["vocabulary-neutral-substrate","bring-your-own-substrate","universalization-evidence"]
+  },
+  {
+    id: "MILESTONE-006",
+    name: "pi-context v1.0.0 publishable",
+    status: "planned",
+    description: "All 4 packages (pi-context / pi-jit-agents / pi-workflows / pi-behavior-monitors) green on Node 22+23 CI; lockstep version 1.0.0 ready; substrate canon arc closed; vocabulary-neutrality delivered; documentation refreshed (Phase 9 / TASK-029); skill-narratives regenerated; canonical verification protocol per docs/reports/pi-internal-verification-protocol-* executed for arc-completion release; pre-publish credentialed smoke test passes.",
+    criterion: "Substrate-canon arc + vocabulary settlement + milestone-as-anchor + dogfood dry-run + vocabulary-neutrality all satisfied; npm run check + npm test green for all 4 packages; release script ready; user-action npm publish gated only by interactive OTP.",
+    evidence_block: "verification",
+    evidence_query: [
+      { milestones_satisfied: ["MILESTONE-001","MILESTONE-002","MILESTONE-003","MILESTONE-004","MILESTONE-005"] }
+    ],
+    related_decisions: ["DEC-0013","DEC-0014","DEC-0015","DEC-0017","DEC-0024","DEC-0025"],
+    related_gaps: [],
+    canonical_vocabulary: ["arc-completion-release","lockstep-versioning","pre-publish-credentialed-smoke"]
+  },
+  {
+    id: "MILESTONE-007",
+    name: "Substrate self-direction operational",
+    status: "planned",
+    description: "Operational evidence of the substrate canon: a single canonical primitive answers \"what should we do next, atomically\" given current substrate state. Composes open DECs (P0 — user enactment gates everything) + blocking framework-gaps (P1) + unblocked planned tasks (P2) + in-progress tasks (P3) into a deterministic FrontierBundle. Harness-confined LLM (DEC-0014) navigates substrate canonically via this primitive without improvisation. HANDOFF refresh + ceremonies (/context status / /context what-next) call it.",
+    criterion: "FGAP-059 closes; nextAtomicWork(cwd) primitive lands in pi-context; pi-registered tool 'next-atomic-work' + orchestrator script scripts/orchestrator/next-atomic-work.ts available; query returns deterministic frontier across runs; derivable purely from substrate (no improvisation); harness-confined LLM dogfood-dispatch (MILESTONE-004) demonstrates navigation via this primitive end-to-end.",
+    evidence_block: "verification",
+    evidence_query: [
+      { related_gaps_includes: ["FGAP-046","FGAP-059"] },
+      { status: "passed" }
+    ],
+    related_decisions: ["DEC-0014","DEC-0017","DEC-0024","DEC-0025"],
+    related_gaps: ["FGAP-046","FGAP-059"],
+    canonical_vocabulary: ["substrate-self-direction","atomic-next-work","frontier-projection","canonical-orchestration-primitive"]
+  },
+  {
+    id: "MILESTONE-008",
+    name: "Consumer migration arc complete (FEAT-001)",
+    status: "planned",
+    description: "FEAT-001's 9 stories close: pi-jit-agents adopted as canonical agent-spec compilation + in-process dispatch surface across pi-workflows / pi-behavior-monitors / consumer projects; legacy workflow-step.dispatch path retired; model-pin policy applied at jit-agents execute boundary; thinking-seam enforcement landed; parseModelSpec ownership at execute boundary.",
+    criterion: "All FEAT-001 stories status=complete; verification entries cite each story's acceptance_criteria satisfaction; legacy dispatch code paths removed.",
+    evidence_block: "verification",
+    evidence_query: [
+      { feature: "FEAT-001" },
+      { story_status_all: "complete" }
+    ],
+    related_decisions: ["DEC-0001","DEC-0002","DEC-0003"],
+    related_gaps: [],
+    canonical_vocabulary: ["consumer-migration-arc","jit-agents-consumer-adoption"]
+  }
+];
+
+const ROADMAPS = [
+  {
+    id: "ROADMAP-001",
+    title: "pi-context substrate canon delivery + first dogfood",
+    status: "active",
+    description: "Deliver pi-context substrate canon (DEC-0013..0024) end-to-end: principles source-enforced; vocabulary settled; milestone-as-anchor model operative; harness-confined LLM dogfood-dispatch passes; v1.0.0 publishable.",
+    ordered_milestones: [
+      { id: "MILESTONE-001", note: "substrate canon principles enacted in code" },
+      { id: "MILESTONE-002", note: "vocabulary settlement complete" },
+      { id: "MILESTONE-003", note: "milestone-as-anchor model enacted" },
+      { id: "MILESTONE-004", note: "harness-confined LLM dogfood-dispatch passes" },
+      { id: "MILESTONE-005", note: "vocabulary-neutral substrate canon delivered" },
+      { id: "MILESTONE-007", note: "substrate self-direction operational (atomic-next-work query)" },
+      { id: "MILESTONE-006", note: "pi-context v1.0.0 publishable" }
+    ],
+    dependencies: [
+      { parent: "MILESTONE-001", child: "MILESTONE-002", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-001", child: "MILESTONE-003", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-002", child: "MILESTONE-003", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-002", child: "MILESTONE-005", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-003", child: "MILESTONE-004", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-003", child: "MILESTONE-005", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-003", child: "MILESTONE-007", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-004", child: "MILESTONE-007", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-005", child: "MILESTONE-007", relation_type: "milestone_depends_on" },
+      { parent: "MILESTONE-007", child: "MILESTONE-006", relation_type: "milestone_depends_on" }
+    ],
+    lens: { id: "lens-roadmap-001-milestones", kind: "composition", members: [{ from: "milestones", where: { roadmap: "ROADMAP-001" } }] }
+  },
+  {
+    id: "ROADMAP-002",
+    title: "pi-jit-agents consumer migration",
+    status: "planned",
+    description: "Migrate all consumers (pi-workflows / pi-behavior-monitors + downstream projects) onto pi-jit-agents as canonical agent-spec + dispatch surface. Retire legacy paths. Lands AFTER ROADMAP-001 (substrate canon stable required for consumer migration to be safe).",
+    ordered_milestones: [
+      { id: "MILESTONE-008", note: "consumer migration arc complete (FEAT-001)" }
+    ],
+    dependencies: [
+      { parent: "MILESTONE-006", child: "MILESTONE-008", relation_type: "milestone_depends_on" }
+    ],
+    lens: { id: "lens-roadmap-002-milestones", kind: "composition", members: [{ from: "milestones", where: { roadmap: "ROADMAP-002" } }] }
+  }
+];
+
+const CASCADES = [
+  {
+    milestone: "MILESTONE-001",
+    rows: [
+      { label: "Decisions",       items: ["DEC-0013","DEC-0014","DEC-0015","DEC-0017","DEC-0021"], suffix: "(enacted)" },
+      { label: "Framework-gaps",  items: ["FGAP-026","FGAP-028","FGAP-035","FGAP-036","FGAP-038","FGAP-039"] },
+      { label: "Tasks",           items: ["TASK-021","TASK-022","TASK-023","TASK-024","TASK-025","TASK-026","TASK-027","TASK-028","TASK-029","TASK-030"], suffix: "(FGAP-026 closure phases 1-10)" },
+      { label: "Verifications",   items: ["VER-001","VER-002","VER-003","VER-004","VER-005","VER-006","VER-007","VER-008","VER-009","VER-010","VER-011","VER-012","VER-013","VER-014","VER-015"], suffix: "(Phase 1-4 evidence; remaining VER per Phase 5-10 closure)" }
+    ]
+  },
+  {
+    milestone: "MILESTONE-002",
+    rows: [
+      { label: "Decisions",       items: ["DEC-0022","DEC-0023"], suffix: "(enacted); +N open DECs per vocabulary question" },
+      { label: "Framework-gaps",  items: ["FGAP-016","FGAP-021","FGAP-047","FGAP-048","FGAP-049","FGAP-050","FGAP-051","FGAP-052"], suffix: "(FGAP-016 closed)" },
+      { label: "Tasks",           items: ["TASK-042"], suffix: "(in-progress)" },
+      { label: "Notes",           text: "Conventions rules added per enacted DEC; config.json authored" }
+    ]
+  },
+  {
+    milestone: "MILESTONE-003",
+    rows: [
+      { label: "Decisions",       items: ["DEC-0024"], suffix: "(enacted)" },
+      { label: "Framework-gaps",  items: ["FGAP-053","FGAP-054","FGAP-055"] },
+      { label: "Notes",           text: "New schema: milestones.schema.json installed; PROJECT_BLOCK_TYPES extended; new block instance .project/milestones.json; roadmap schema migration; roadmap-plan.ts cascade; relations.json populated with milestone-cascade edges" }
+    ]
+  },
+  {
+    milestone: "MILESTONE-004",
+    rows: [
+      { label: "Framework-gaps",  items: ["FGAP-028","FGAP-044"] },
+      { label: "Tasks",           items: ["TASK-030"], suffix: "(Phase 10 final dispatch dry-run)" },
+      { label: "Notes",           text: "Tool-discovery surface shipped in pi-context; documentation: docs/reports/pi-internal-verification-protocol-* updated for milestone-anchored cascade" }
+    ]
+  },
+  {
+    milestone: "MILESTONE-005",
+    rows: [
+      { label: "Decisions",       items: ["DEC-0025"], suffix: "(vocabulary-neutral substrate canon)" },
+      { label: "Framework-gaps",  items: ["FGAP-052","FGAP-056","FGAP-057","FGAP-058"], suffix: "(config-declared-but-unconsumed / PROJECT_BLOCK_TYPES const removal / macro library bootstrap / universalization integration test)" },
+      { label: "Source changes",  text: "project-sdk.ts const removal cascade; macro auto-discovery fallback; runtime layer-aware behavior; lens-validator config-registration" },
+      { label: "Documentation",   text: "'bring-your-own-substrate' workflow in CLAUDE.md + skill-narratives + README" },
+      { label: "Test",            text: "packages/pi-context/src/vocabulary-neutrality.integration.test.ts (new)" }
+    ]
+  },
+  {
+    milestone: "MILESTONE-006",
+    rows: [
+      { label: "Prerequisites",   items: ["MILESTONE-001","MILESTONE-002","MILESTONE-003","MILESTONE-004","MILESTONE-005","MILESTONE-007"], suffix: "(all prior milestones satisfied)" },
+      { label: "Tasks",           items: ["TASK-029","TASK-030"], suffix: "(Phase 9 docs refresh + Phase 10 migration + dry-run + Step 9 + Step 10 release)" },
+      { label: "Notes",           text: "Release protocol per scripts/release.mjs; pre-publish credentialed smoke per docs/reports/" }
+    ]
+  },
+  {
+    milestone: "MILESTONE-007",
+    rows: [
+      { label: "Decisions",       items: ["DEC-0014","DEC-0017","DEC-0024","DEC-0025"], suffix: "(foundations)" },
+      { label: "Framework-gaps",  items: ["FGAP-046","FGAP-059"], suffix: "(depends_on inline → closure-table / atomic-next-work primitive)" },
+      { label: "Source",          text: "pi-context/src/atomic-next.ts new; project-sdk export; Pi tool registration; orchestrator script next-atomic-work.ts" },
+      { label: "Acceptance",      text: "deterministic FrontierBundle returned across runs; harness-confined LLM uses it for navigation" }
+    ]
+  },
+  {
+    milestone: "MILESTONE-008",
+    rows: [
+      { label: "Feature",         items: ["FEAT-001"], suffix: "with 9 stories" },
+      { label: "Decisions",       items: ["DEC-0001","DEC-0002","DEC-0003"], suffix: "(model-pin policy / thinking-seam / parseModelSpec ownership)" },
+      { label: "Stories",         items: ["STORY-001","STORY-002","STORY-003","STORY-004","STORY-005","STORY-006","STORY-007","STORY-008","STORY-009"], suffix: "close; their nested tasks complete" }
+    ]
+  }
+];
+
+const QUESTIONS = [
+  { title: "Milestone status enum", body: '"active" used here for in-progress; canonical lifecycle (aspirational/active/satisfied/archived) needs DEC.' },
+  { title: "Roadmap status enum", body: "Current schema declares draft/active/paused/complete/archived; aligns with milestone? Or differs?" },
+  { title: "Evidence_query DSL", body: "Sketched here as inline objects (target / target_in / status / milestones_satisfied / feature / story_status_all / related_gaps_includes); current schema only declares it as object passthrough, no canonical predicate vocabulary. FGAP-027 territory." },
+  { title: "Cross-roadmap milestone references", body: "MILESTONE-006 depends on MILESTONE-005 from ROADMAP-001; relations.json edge crosses roadmap boundaries cleanly." },
+  { title: "Roadmap.lens mapping", body: "Lens id naming convention (lens-roadmap-001-milestones) is a candidate; alternative shapes exist." },
+  { title: "PHASE binding", body: "These milestones don't reference PHASE-NNN currently because phase block kind is in flux per FGAP-049. Once resolved, phase_culminates_at_milestone edges would tie phases to milestones (likely TASK-021..030 closure becomes phases under MILESTONE-001)." },
+  { title: "Project goals → milestones", body: "project.json has goals[] (workflow-orchestration / behavior-monitoring / etc.). Edge from project_goal → milestone (relation_type: project_goal_served_by_milestone) not yet declared." }
+];
+
+const SHARPENING = [
+  {
+    key: "block_kinds[]",
+    items: [
+      "needs addition: milestones entry (canonical_id / display_name / prefix MILESTONE- / schema_path / array_key / data_path)"
+    ]
+  },
+  {
+    key: "relation_types[]",
+    items: [
+      "needs population with at minimum: milestone_depends_on / roadmap_contains_milestone / phase_culminates_at_milestone / milestone_grounded_by_research / milestone_addressed_by_decision / milestone_blocked_by_gap / milestone_delivered_by_feature / milestone_verified_by / project_goal_served_by_milestone",
+      "(plus task_in_phase / task_depends_on / decision_supersedes / etc. per FGAP-040 / FGAP-046)"
+    ]
+  },
+  {
+    key: "lenses[]",
+    items: [
+      "needs at least: lens-roadmap-001-milestones (composition kind binning milestones for ROADMAP-001) + lens-roadmap-002-milestones",
+      "lens-milestones-by-status (target kind on milestones bin by status)",
+      "plus existing-block lenses (tasks-by-status / decisions-by-status / etc.)"
+    ]
+  },
+  {
+    key: "status_buckets",
+    items: ["map needs the milestone enum normalized too"]
+  },
+  {
+    key: "layers[]",
+    items: [
+      "L1..L5 substrate / query / composition / dispatch / surface (already inferred)",
+      "milestone block-kind layer assignment per FGAP-052 once consumed at runtime"
+    ]
+  },
+  {
+    key: "hierarchy[]",
+    items: [
+      "legal triples: (roadmap, milestone, roadmap_contains_milestone)",
+      "(milestone, phase, phase_culminates_at_milestone)",
+      "(project, milestone, project_goal_served_by_milestone)",
+      "etc."
+    ]
+  }
+];
+
+// ---------- Renderers ----------
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") node.className = v;
+    else if (k === "html") node.innerHTML = v;
+    else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
+    else if (v === true) node.setAttribute(k, "");
+    else if (v !== false && v != null) node.setAttribute(k, v);
+  }
+  for (const child of children.flat()) {
+    if (child == null) continue;
+    if (typeof child === "string") node.appendChild(document.createTextNode(child));
+    else node.appendChild(child);
+  }
+  return node;
+}
+
+function chip(id, opts = {}) {
+  const c = el("button", { class: "chip", "data-id": id, type: "button", "aria-label": "Highlight " + id });
+  c.textContent = id;
+  c.addEventListener("click", () => toggleHighlight(id));
+  return c;
+}
+
+function statusBadge(status) {
+  return el("span", { class: "status-badge status-" + status }, status);
+}
+
+function renderRoadmaps() {
+  const grid = document.getElementById("roadmapGrid");
+  for (const r of ROADMAPS) {
+    const card = el("article", { class: "roadmap-card", id: r.id });
+    const head = el("div", { class: "rm-head" },
+      el("span", { class: "id-badge", "data-id": r.id }, r.id),
+      el("h3", {}, r.title),
+      statusBadge(r.status)
+    );
+    head.querySelector(".id-badge").addEventListener("click", () => toggleHighlight(r.id));
+    card.appendChild(head);
+    card.appendChild(el("p", { class: "rm-desc" }, r.description));
+
+    card.appendChild(el("div", { class: "rm-section-label" }, "Ordered milestones"));
+    const ol = el("ul", { class: "ordered-list" });
+    r.ordered_milestones.forEach((om, i) => {
+      const li = el("li", { "data-id": om.id });
+      li.appendChild(el("span", { class: "seq" }, String(i + 1) + "."));
+      const a = el("a", { href: "#" + om.id, style: "font-family:var(--mono);font-size:12px;color:var(--accent);text-decoration:none;" }, om.id);
+      a.addEventListener("click", () => toggleHighlight(om.id, true));
+      li.appendChild(a);
+      li.appendChild(el("span", { style: "color:var(--fg-muted);font-size:13px;" }, " — " + om.note));
+      ol.appendChild(li);
+    });
+    card.appendChild(ol);
+
+    card.appendChild(el("div", { class: "rm-section-label" }, "Dependencies"));
+    const dep = el("ul", { class: "dep-edges" });
+    r.dependencies.forEach(d => {
+      const li = el("li", {},
+        d.parent + "  ──[" + d.relation_type + "]──>  " + d.child
+      );
+      dep.appendChild(li);
+    });
+    card.appendChild(dep);
+
+    card.appendChild(el("div", { class: "rm-section-label" }, "Lens"));
+    card.appendChild(el("pre", { class: "code" }, JSON.stringify(r.lens, null, 2)));
+
+    grid.appendChild(card);
+  }
+}
+
+function renderMilestones() {
+  const grid = document.getElementById("milestoneGrid");
+  for (const m of MILESTONES) {
+    const card = el("article", { class: "milestone", id: m.id, "data-status": m.status, "data-search": (m.id + " " + m.name + " " + m.description + " " + m.canonical_vocabulary.join(" ")).toLowerCase() });
+
+    const head = el("div", { class: "m-head" },
+      el("span", { class: "id-badge", "data-id": m.id }, m.id),
+      el("span", { class: "m-name" }, m.name),
+      statusBadge(m.status)
+    );
+    head.querySelector(".id-badge").addEventListener("click", () => toggleHighlight(m.id));
+    card.appendChild(head);
+
+    const descD = el("details", { class: "collapsible", open: true });
+    descD.appendChild(el("summary", {}, "Description"));
+    descD.appendChild(el("div", { class: "body" }, m.description));
+    card.appendChild(descD);
+
+    const critD = el("details", { class: "collapsible" });
+    critD.appendChild(el("summary", {}, "Criterion"));
+    critD.appendChild(el("div", { class: "body" }, m.criterion));
+    card.appendChild(critD);
+
+    // evidence
+    card.appendChild(el("div", { class: "field-row" },
+      el("span", { class: "field-label" }, "Evidence block"),
+      el("code", { class: "inline" }, m.evidence_block)
+    ));
+    card.appendChild(el("pre", { class: "code" }, JSON.stringify(m.evidence_query, null, 2)));
+
+    // related decisions
+    if (m.related_decisions.length) {
+      card.appendChild(el("div", { class: "field-row" },
+        el("span", { class: "field-label" }, "Related decisions"),
+        el("aside", { class: "chips" }, m.related_decisions.map(id => chip(id)))
+      ));
+    }
+    // related gaps
+    if (m.related_gaps.length) {
+      card.appendChild(el("div", { class: "field-row" },
+        el("span", { class: "field-label" }, "Related gaps"),
+        el("aside", { class: "chips" }, m.related_gaps.map(id => chip(id)))
+      ));
+    } else {
+      card.appendChild(el("div", { class: "field-row" },
+        el("span", { class: "field-label" }, "Related gaps"),
+        el("span", { style: "font-size:12px;color:var(--fg-faint);" }, "(none)")
+      ));
+    }
+    // canonical_vocabulary
+    card.appendChild(el("div", { class: "field-row" },
+      el("span", { class: "field-label" }, "Canonical vocabulary"),
+      el("aside", { class: "chips" }, m.canonical_vocabulary.map(v => {
+        const s = el("span", { class: "chip vocab" }); s.textContent = v; return s;
+      }))
+    ));
+
+    grid.appendChild(card);
+  }
+}
+
+function renderCascades() {
+  const c = document.getElementById("cascadeContainer");
+  for (const cas of CASCADES) {
+    const block = el("section", { class: "cascade-block" });
+    const m = MILESTONES.find(mm => mm.id === cas.milestone);
+    const h = el("h3", {},
+      el("span", { class: "id-badge", "data-id": cas.milestone }, cas.milestone),
+      el("span", {}, m ? m.name : "")
+    );
+    h.querySelector(".id-badge").addEventListener("click", () => toggleHighlight(cas.milestone));
+    block.appendChild(h);
+
+    const ul = el("ul", { class: "cascade-list" });
+    for (const row of cas.rows) {
+      const li = el("li", {});
+      li.appendChild(el("span", { class: "row-label" }, row.label));
+      if (row.items) {
+        const chips = el("aside", { class: "chips" }, row.items.map(id => chip(id)));
+        li.appendChild(chips);
+      }
+      if (row.suffix) {
+        li.appendChild(el("span", { style: "color:var(--fg-muted);font-size:13px;" }, " " + row.suffix));
+      }
+      if (row.text) {
+        li.appendChild(el("span", { style: "color:var(--fg);font-size:13px;" }, row.text));
+      }
+      ul.appendChild(li);
+    }
+    block.appendChild(ul);
+    c.appendChild(block);
+  }
+}
+
+function renderQuestions() {
+  const ol = document.getElementById("questionsList");
+  for (const q of QUESTIONS) {
+    const li = el("li", {});
+    const det = el("details", {});
+    det.appendChild(el("summary", {}, q.title));
+    det.appendChild(el("div", { class: "qbody" }, q.body));
+    li.appendChild(det);
+    ol.appendChild(li);
+  }
+}
+
+function renderSharpening() {
+  const grid = document.getElementById("sharpGrid");
+  for (const s of SHARPENING) {
+    const card = el("section", { class: "sharp-card" });
+    card.appendChild(el("h4", {}, s.key));
+    const ul = el("ul", {});
+    for (const it of s.items) ul.appendChild(el("li", {}, it));
+    card.appendChild(ul);
+    grid.appendChild(card);
+  }
+}
+
+// ---------- Highlighting ----------
+let activeHighlight = null;
+function toggleHighlight(id, scrollTo = false) {
+  document.querySelectorAll(".chip.highlight, .id-badge.highlight, .ordered-list li.highlight, .dep-edges li.highlight")
+    .forEach(n => n.classList.remove("highlight"));
+  if (activeHighlight === id && !scrollTo) {
+    activeHighlight = null;
+    return;
+  }
+  activeHighlight = id;
+  document.querySelectorAll('[data-id="' + id + '"]').forEach(n => n.classList.add("highlight"));
+  // also dep-edges text-match
+  document.querySelectorAll(".dep-edges li").forEach(li => {
+    if (li.textContent.includes(id)) li.classList.add("highlight");
+  });
+  // ordered-list lis
+  document.querySelectorAll(".ordered-list li").forEach(li => {
+    if (li.getAttribute("data-id") === id) li.classList.add("highlight");
+  });
+  // graph node
+  document.querySelectorAll(".dep-graph .node").forEach(g => {
+    g.classList.toggle("hi", g.getAttribute("data-id") === id);
+  });
+  document.querySelectorAll(".dep-graph .edge").forEach(e => {
+    const p = e.getAttribute("data-parent"), c = e.getAttribute("data-child");
+    e.classList.toggle("hi", p === id || c === id);
+  });
+  if (scrollTo) {
+    const target = document.getElementById(id);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+// ---------- Filter / search ----------
+function applyFilters() {
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const activeStatuses = new Set(
+    Array.from(document.querySelectorAll(".status-pill[data-on='true']")).map(p => p.getAttribute("data-status"))
+  );
+  document.querySelectorAll(".milestone").forEach(card => {
+    const txt = card.getAttribute("data-search") || "";
+    const status = card.getAttribute("data-status");
+    const matchesSearch = !q || txt.includes(q);
+    const matchesStatus = activeStatuses.has(status);
+    card.classList.toggle("hidden-by-search", !matchesSearch);
+    card.classList.toggle("hidden-by-status", !matchesStatus);
+  });
+}
+
+// ---------- Dependency graph ----------
+function buildAllDependencies() {
+  const seen = new Set();
+  const edges = [];
+  for (const r of ROADMAPS) {
+    for (const d of r.dependencies) {
+      const key = d.parent + "→" + d.child + "→" + d.relation_type;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      edges.push(d);
+    }
+  }
+  return edges;
+}
+
+function topoLayers(nodes, edges) {
+  // assign layer = longest path from any root
+  const layer = new Map(nodes.map(n => [n, 0]));
+  let changed = true;
+  let iter = 0;
+  while (changed && iter < 50) {
+    changed = false; iter++;
+    for (const e of edges) {
+      const next = (layer.get(e.parent) || 0) + 1;
+      if (next > (layer.get(e.child) || 0)) {
+        layer.set(e.child, next);
+        changed = true;
+      }
+    }
+  }
+  return layer;
+}
+
+function renderDepGraph() {
+  const svg = document.getElementById("depGraph");
+  const nodes = MILESTONES.map(m => m.id);
+  const edges = buildAllDependencies();
+  const layerMap = topoLayers(nodes, edges);
+  const cols = {};
+  nodes.forEach(n => {
+    const l = layerMap.get(n) || 0;
+    if (!cols[l]) cols[l] = [];
+    cols[l].push(n);
+  });
+  const colKeys = Object.keys(cols).map(Number).sort((a,b)=>a-b);
+  const colW = 200, rowH = 80, padX = 30, padY = 30;
+  const nodeW = 150, nodeH = 50;
+  const totalCols = colKeys.length;
+  const maxRows = Math.max(...colKeys.map(k => cols[k].length));
+  const width = padX * 2 + totalCols * colW;
+  const height = padY * 2 + maxRows * rowH;
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("width", width);
+  svg.setAttribute("height", height);
+
+  // position lookup
+  const pos = {};
+  colKeys.forEach((k, ci) => {
+    const items = cols[k];
+    items.forEach((id, ri) => {
+      const x = padX + ci * colW;
+      const offset = (maxRows - items.length) * rowH / 2;
+      const y = padY + offset + ri * rowH;
+      pos[id] = { x, y, cx: x + nodeW / 2, cy: y + nodeH / 2 };
+    });
+  });
+
+  // arrowhead defs
+  const NS = "http://www.w3.org/2000/svg";
+  const defs = document.createElementNS(NS, "defs");
+  defs.innerHTML = `
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="arrowhead" />
+    </marker>
+    <marker id="arrowHi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)" />
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  // edges
+  edges.forEach(e => {
+    const from = pos[e.parent], to = pos[e.child];
+    if (!from || !to) return;
+    const x1 = from.x + nodeW, y1 = from.cy;
+    const x2 = to.x, y2 = to.cy;
+    const mx = (x1 + x2) / 2;
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+    path.setAttribute("class", "edge");
+    path.setAttribute("data-parent", e.parent);
+    path.setAttribute("data-child", e.child);
+    path.setAttribute("marker-end", "url(#arrow)");
+    svg.appendChild(path);
+  });
+
+  // nodes
+  MILESTONES.forEach(m => {
+    const p = pos[m.id]; if (!p) return;
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "node");
+    g.setAttribute("data-id", m.id);
+    g.setAttribute("transform", `translate(${p.x}, ${p.y})`);
+    const rect = document.createElementNS(NS, "rect");
+    rect.setAttribute("width", nodeW);
+    rect.setAttribute("height", nodeH);
+    rect.setAttribute("rx", 6);
+    g.appendChild(rect);
+    const t1 = document.createElementNS(NS, "text");
+    t1.setAttribute("x", nodeW / 2); t1.setAttribute("y", 18);
+    t1.setAttribute("text-anchor", "middle");
+    t1.textContent = m.id;
+    g.appendChild(t1);
+    const t2 = document.createElementNS(NS, "text");
+    t2.setAttribute("x", nodeW / 2); t2.setAttribute("y", 36);
+    t2.setAttribute("text-anchor", "middle");
+    t2.setAttribute("class", "nname");
+    const shortName = m.name.length > 28 ? m.name.slice(0, 26) + "…" : m.name;
+    t2.textContent = shortName;
+    g.appendChild(t2);
+    g.addEventListener("click", () => toggleHighlight(m.id, true));
+    g.addEventListener("mouseenter", () => {
+      g.classList.add("hi");
+      svg.querySelectorAll(".edge").forEach(e => {
+        if (e.getAttribute("data-parent") === m.id || e.getAttribute("data-child") === m.id) {
+          e.classList.add("hi");
+        }
+      });
+    });
+    g.addEventListener("mouseleave", () => {
+      if (activeHighlight === m.id) return;
+      g.classList.remove("hi");
+      svg.querySelectorAll(".edge.hi").forEach(e => {
+        const p2 = e.getAttribute("data-parent"), c2 = e.getAttribute("data-child");
+        if (activeHighlight && (p2 === activeHighlight || c2 === activeHighlight)) return;
+        e.classList.remove("hi");
+      });
+    });
+    svg.appendChild(g);
+  });
+}
+
+// ---------- Theme ----------
+function initTheme() {
+  const stored = localStorage.getItem("milestones-theme");
+  if (stored === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    const next = cur === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    else document.documentElement.removeAttribute("data-theme");
+    localStorage.setItem("milestones-theme", next);
+  });
+}
+
+// ---------- Init ----------
+document.addEventListener("DOMContentLoaded", () => {
+  initTheme();
+  renderRoadmaps();
+  renderMilestones();
+  renderDepGraph();
+  renderCascades();
+  renderQuestions();
+  renderSharpening();
+  document.getElementById("searchInput").addEventListener("input", applyFilters);
+  document.querySelectorAll(".status-pill").forEach(p => {
+    p.addEventListener("click", () => {
+      const cur = p.getAttribute("data-on") === "true";
+      p.setAttribute("data-on", String(!cur));
+      applyFilters();
+    });
+  });
+  document.getElementById("genStamp").textContent = "Rendered " + new Date().toISOString();
+});
+</script>
+</body>
+</html>

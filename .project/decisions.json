@@ -1192,6 +1192,568 @@
       "enacted_by": "human/davidryan@gmail.com",
       "enacted_at": "2026-05-14T14:00:00Z",
       "id": "DEC-0025"
+    },
+    {
+      "title": "ID-prefix padding convention — 3-digit vs 4-digit zero-padding across block kinds",
+      "status": "open",
+      "context": "Inspection of current .project/*.json items surfaces concrete drift: R- (research) + DEC- (decisions) use 4-digit zero-padding (R-0001 / DEC-0001..0025); FGAP- (3-digit, 59 items, near-rollover at FGAP-100), TASK- (3-digit, 42 items), VER- (3-digit, 15 items), FEAT- (3-digit, 1 item), PLAN- (3-digit, 1 item), REVIEW- (3-digit, 1 item), CTX- (3-digit, 3 items), RAT- (3-digit, 8 items) all use 3-digit zero-padding. Drift surfaced via ls + node enumeration during 2026-05-14 reverse-engineered config draft (analysis/2026-05-14-step-1-config-draft-from-substrate.md). Existing items aren't broken — block-api operates on string ids regardless of padding — but lens binning by id-pattern + LLM ID parsing assumes uniform shape per prefix. Without canonical declaration, future authoring continues drift; future migration becomes harder per existing-id volume.",
+      "decision": "OPEN: padding convention to canonicalize across all block kinds. Mandate-compliant options surfaced in options_considered; user enacts.",
+      "consequences": [
+        "Lens binning by id-pattern becomes uniform per prefix once canonicalized.",
+        "Existing items either preserve historical shape (per-block override) OR migrate forward.",
+        "relations.json edges (when populated) reference canonicalized ids.",
+        "LLM lookups + analysis MD authoring inherit the canonical pattern."
+      ],
+      "options_considered": [
+        {
+          "label": "3-digit canonical + per-block historical exception",
+          "description": "Declare 3-digit canonical universally; R- and DEC- retain 4-digit as historical drift declared via config.block_kinds[].id_width override per block. No migration of existing items.",
+          "tradeoffs": "Drift remains visible as historical-not-canonical; per-block exception cataloged in config; future items per block follow declared width."
+        },
+        {
+          "label": "3-digit canonical + migrate R- and DEC- forward",
+          "description": "Declare 3-digit canonical; renumber R- (11 items, R-0001..0011 → R-001..011) + DEC- (25 items, DEC-0001..0025 → DEC-001..025). No leading-zero conflict.",
+          "tradeoffs": "Lowest-churn migration given current item counts; relations.json edges (when populated) need migration; analysis MDs + commit messages keep historical references but new authoring is canonical."
+        },
+        {
+          "label": "4-digit canonical + migrate 3-digit blocks forward",
+          "description": "Declare 4-digit canonical; renumber FGAP- (59) + TASK- (42) + VER- (15) + others.",
+          "tradeoffs": "Higher churn; accommodates higher per-block count without rollover (FGAP-9999 vs FGAP-999)."
+        },
+        {
+          "label": "Per-block-declared width with no canonical universal rule",
+          "description": "config.block_kinds[].id_width declares per-block width; framework respects per declaration; no canonical universal width.",
+          "tradeoffs": "No migration; persistent inconsistency; LLM lookups must consult config.block_kinds[].id_width before parsing."
+        }
+      ],
+      "references": [
+        {
+          "label": "Drift surfaced in step-1 config draft",
+          "path": "analysis/2026-05-14-step-1-config-draft-from-substrate.md"
+        },
+        {
+          "label": "FGAP-048 forcing artifact",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "config.block_kinds[].prefix declaration site",
+          "path": "packages/pi-context/registry/schemas/config.schema.json",
+          "lines": "39-55"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-047",
+        "FGAP-048"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:00:00Z",
+      "id": "DEC-0026"
+    },
+    {
+      "title": "ID-prefix casing convention — uppercase vs lowercase across block kinds",
+      "status": "open",
+      "context": "Single drift surfaced in 2026-05-14 substrate inspection: issue- (issues block) uses lowercase prefix while DEC- / FGAP- / TASK- / VER- / FEAT- / PLAN- / REVIEW- / CTX- / RAT- all use uppercase. issue- has 91 items (issue-001..091) — largest single-block id population. No technical force for either; visual + grep + cross-reference shape uniformity is the consideration. Issue ids appear in commit messages, analysis MDs, FGAP related_issues fields — every citation site cascades on this decision.",
+      "decision": "OPEN: casing convention to canonicalize. Mandate-compliant options below.",
+      "consequences": [
+        "Cross-block id parsing assumes uniform casing post-canonicalization.",
+        "Citations across analysis + commits + FGAP related_issues all settle on chosen casing.",
+        "If migration required, 91 issue items + every reference site needs sweep."
+      ],
+      "options_considered": [
+        {
+          "label": "Uppercase canonical + migrate issue- → ISSUE-",
+          "description": "Renumber 91 issues; every related_issues citation in FGAPs + analysis + commit references migrates. Uniform with all other block prefixes.",
+          "tradeoffs": "Largest renumber sweep in substrate so far; rg-grep across analysis + .project + commit messages + relations.json (when populated)."
+        },
+        {
+          "label": "Lowercase canonical + migrate all uppercase prefixes",
+          "description": "Inverse migration. Massive churn across DEC- (25) + FGAP- (59) + TASK- (42) + VER- (15) + others.",
+          "tradeoffs": "Inverted-uniformity at far higher cost."
+        },
+        {
+          "label": "Per-block declared casing in config.block_kinds[].prefix preserves drift",
+          "description": "config.block_kinds[].prefix already carries the literal prefix string (e.g. 'issue-' vs 'DEC-'); no migration; framework respects per declaration.",
+          "tradeoffs": "Persistent visual inconsistency; LLM cross-block id-shape parsing must consult config not assume."
+        }
+      ],
+      "references": [
+        {
+          "label": "Drift surfaced in step-1 config draft",
+          "path": "analysis/2026-05-14-step-1-config-draft-from-substrate.md"
+        },
+        {
+          "label": "FGAP-048 forcing artifact",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "issues.json with 91 issue- prefixed items",
+          "path": ".project/issues.json"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-047",
+        "FGAP-048"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:01:00Z",
+      "id": "DEC-0027"
+    },
+    {
+      "title": "Phase block-kind shape — file-per-phase with integer discriminator vs array-block with PHASE-NNN string id",
+      "status": "open",
+      "context": "Two divergent shape declarations exist in source: (1) packages/pi-context/registry/schemas/phase.schema.json requires 'number: integer' as discriminator; file path is .project/phases/{number}.json (file-per-phase). (2) packages/pi-context/registry/schemas/roadmap.schema.json roadmap.phases[].id requires string matching ^PHASE-[A-Z0-9-]+$. Existing .project/phases/{1,2,3,4}.json files (pre-FGAP-026 planning artifacts: 'Make typed composition real' / typed agent specs / template inheritance / etc., status=planned, never closed) use integer discriminator. Code (roadmap-plan.test.ts) uses PHASE-A / PHASE-B / PHASE-C / PHASE-D single-letter suffix. LLM-filed commit body f3d6e41 (TASK-021..030 substrate authoring) uses PHASE-006..010 numeric-suffix zero-padded. No DEC binds them. Phase items don't appear in standard block-item enumeration; can't be filed via file-block-item.ts append surface (which expects array-block shape); resolve-items-by-id won't find PHASE-NNN unless special-cased. FGAP-049 + FGAP-053 (milestone elevation companion) both touch this question.",
+      "decision": "OPEN: phase block shape canonicalization. Mandate-compliant options below.",
+      "consequences": [
+        "Standard query primitives (filter-block-items / resolve-items-by-id / walk-ancestors / find-references) become applicable to phases post-canonicalization (currently invisible to them).",
+        "Lens projections referencing PHASE-NNN as bins resolve to phase items canonically.",
+        "Pre-existing phases/{1..4}.json files either retain integer slot OR migrate to PHASE-NNN ids depending on path chosen.",
+        "TASK-025 sub-phase 5.4 (phase.json authoring) gates on this decision."
+      ],
+      "options_considered": [
+        {
+          "label": "Migrate phase to array-block pattern (single phases.json with phases[] array, items with PHASE-NNN string id)",
+          "description": "Aligns phase with all other block kinds. Drop file-per-phase; consolidate into .project/phases.json (collide-name with directory) OR .project/phase.json. Migrate existing phases/{1..4}.json content into the array. Each item gets a PHASE-NNN id (string).",
+          "tradeoffs": "Most aligned with substrate canon (DEC-0013 + lens infrastructure); query primitives work canonically; existing 4 phases need conversion (low churn — pre-FGAP-026 content; status=planned never advanced)."
+        },
+        {
+          "label": "Retain file-per-phase + add PHASE-NNN id field bound to integer number",
+          "description": "phase.schema.json extends to require both number (integer file discriminator) AND id (PHASE-NNN string canonical), with binding rule e.g. PHASE-${number:03d} ↔ number. Roadmap.phases[].milestone references resolve via id. File paths stay phases/{number}.json.",
+          "tradeoffs": "Preserves existing files at low migration cost; query primitives still need special-casing per file-per-phase shape; persistent divergence from array-block pattern."
+        },
+        {
+          "label": "Decouple entirely — phase block-kind has both shapes coexisting",
+          "description": "Roadmap-internal phases (inline arrays) are one entity; project-wide phase block (top-level) is another; both bear PHASE-NNN ids; binding only at the cite-site.",
+          "tradeoffs": "Maximum flexibility; maximum substrate duplication risk; resolution semantics ambiguous."
+        }
+      ],
+      "references": [
+        {
+          "label": "phase.schema.json integer discriminator",
+          "path": "packages/pi-context/registry/schemas/phase.schema.json",
+          "lines": "5-15"
+        },
+        {
+          "label": "roadmap.schema.json PHASE-NNN string pattern",
+          "path": "packages/pi-context/registry/schemas/roadmap.schema.json",
+          "lines": "phases[].id"
+        },
+        {
+          "label": "Pre-existing phases files",
+          "path": ".project/phases/"
+        },
+        {
+          "label": "FGAP-049 forcing artifact",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "Cross-decision FGAP-053 milestone elevation",
+          "path": ".project/framework-gaps.json"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-047",
+        "FGAP-049",
+        "FGAP-053"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:02:00Z",
+      "id": "DEC-0028"
+    },
+    {
+      "title": "Substrate-dir replacement name — what user-chosen directory name replaces .project/",
+      "status": "open",
+      "context": "FGAP-026 closure (DEC-0015 enacted) requires user choice of substrate-dir name; current literal .project/ is the bootstrap default to be replaced. Resolver (resolveContextDir per Phase 1.1 / TASK-021 commit a98d) reads .pi-context.json bootstrap pointer at repo root, which carries the user-chosen directory name. /context init (Phase 6 / TASK-026) prompts for the name — no default to avoid hardcode-dressed-as-default per FGAP-026 callout. Migration ceremony (Phase 10 / TASK-030) renames this repo's existing .project/ → user-chosen dir + writes .pi-context.json. Cross-tool naming conventions for repo-local config dirs include: .git, .vscode, .claude, .pi, .gh, .npmrc — single-word leading-dot is common. Substrate-canon-dir naming considerations: brevity (frequent typing); semantic (what's inside); collision-risk (other tools); discoverability (alphabetical in ls -a). The substrate is project-context (matches package name pi-context); other candidates align with role: substrate / canon / arc / work / state.",
+      "decision": "OPEN: substrate-dir name. Pure user-choice — pi-context's design forbids LLM defaulting per FGAP-026 callout against hardcode-dressed-as-default. Awaiting user direction.",
+      "consequences": [
+        "Migration script renames .project/ → <chosen-name>/ in this repo (touches every block instance file path; relations.json edges; phase files; schema files).",
+        "/context init scaffold creates <chosen-name>/ + .pi-context.json bootstrap pointer for new projects.",
+        "All analysis MDs + commit messages + CLAUDE.md / HANDOFF.md / MEMORY.md references to .project/ migrate or carry historical-name notation.",
+        "Cross-package consumers (pi-jit-agents / pi-workflows / pi-behavior-monitors) inherit through the resolver — no per-package literal change."
+      ],
+      "options_considered": [
+        {
+          "label": ".context/",
+          "description": "Aligns with pi-context package name + /context subcommand surface (Phase 6).",
+          "tradeoffs": "Clean semantic; short; matches forward-looking branding."
+        },
+        {
+          "label": ".pi/",
+          "description": "Already used by pi-runtime as user's testing directory (forbidden to touch per memory feedback_no_touch_pi_dir.md). Collision.",
+          "tradeoffs": "Cannot use; already taken."
+        },
+        {
+          "label": ".substrate/",
+          "description": "Names what's inside (typed substrate blocks).",
+          "tradeoffs": "Longer; less common; semantic."
+        },
+        {
+          "label": ".canon/",
+          "description": "Names the architectural-canon role.",
+          "tradeoffs": "Short; less obvious to non-pi-context users."
+        },
+        {
+          "label": ".arc/",
+          "description": "Names the work-arc tracking role.",
+          "tradeoffs": "Short; ambiguous (could be 'arc' as in archive)."
+        },
+        {
+          "label": "Other user-chosen",
+          "description": "Free-form user choice not enumerated here.",
+          "tradeoffs": "User's prerogative."
+        }
+      ],
+      "references": [
+        {
+          "label": "FGAP-026 closure plan + DEC-0015 substrate-location-config-driven",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "resolveContextDir Phase 1.1 cascade",
+          "path": "packages/pi-context/src/project-dir.ts"
+        },
+        {
+          "label": "Phase 6 + Phase 10 in canonical sub-phase analysis",
+          "path": "analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-026"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:03:00Z",
+      "id": "DEC-0029"
+    },
+    {
+      "title": "Relation_type canonical_id naming shape — verb-based vs source_verb_target tripartite",
+      "status": "open",
+      "context": "DEC-0013 forces all inter-item relationships into closure-table edges with relation_type field; DEC-0017 declares per-unit-kind context contracts referencing relation_types. config.relation_types[] is the declared registry (currently empty in this repo). Existing test fixtures in packages/pi-context/src/roadmap-plan.test.ts use phase_depends_on + phase_member naming. LLM-filed substrate analysis (analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md) inferred candidates from inline FK violations: task_in_phase / task_depends_on / decision_supersedes / decision_relates_to / decision_addresses_finding / decision_addresses_feature / decision_addresses_gap / gap_addressed_by_decision / gap_addressed_by_feature / gap_addressed_by_issue / feature_resolves_block / feature_depends_on / story_depends_on / finding_resolved_by / issue_resolved_by / rationale_supports_decision / requirement_depends_on / research_supersedes / review_finding_resolved_by / verification_verifies / plan_relates_to_decision / plan_phase_depends_on. Plus milestone-cascade types from DEC-0024 / FGAP-054: milestone_grounded_by_research / milestone_addressed_by_decision / milestone_blocked_by_gap / milestone_delivered_by_feature / phase_culminates_at_milestone / milestone_verified_by / milestone_depends_on / roadmap_contains_milestone / roadmap_contains_phase / project_goal_served_by_milestone. No DEC settles the naming shape.",
+      "decision": "OPEN: relation_type naming shape canonicalization. Mandate-compliant options below.",
+      "consequences": [
+        "Every relation_type canonical_id authored in config.relation_types[] follows chosen shape.",
+        "relations.json edges (when populated) use these canonical_ids in their relation_type field.",
+        "context-contracts bundle_relation_types[] reference these names.",
+        "Lens specs (config.lenses[]) bin by these names.",
+        "DEC-0013 + DEC-0017 enforcement consistency depends on shape uniformity."
+      ],
+      "options_considered": [
+        {
+          "label": "<source>_<verb>_<target> tripartite snake_case",
+          "description": "e.g. milestone_depends_on_milestone / phase_culminates_at_milestone / decision_addresses_gap. Source + target both encoded in name. Direction implicit by position.",
+          "tradeoffs": "Maximum self-documenting; longer names; redundant when source/target obvious from context; aligns with existing test fixtures (phase_depends_on)."
+        },
+        {
+          "label": "<source>_<verb> bipartite (target inferred from edge.child)",
+          "description": "e.g. depends_on / supersedes / addresses / culminates_at / verified_by. Direction encoded only in edge.parent + edge.child. Names are pure verbs.",
+          "tradeoffs": "Concise; reusable across many source/target pairs (e.g. depends_on works for milestone→milestone, task→task, phase→phase); ambiguous when same verb has different semantics per source/target type; loses self-documenting source."
+        },
+        {
+          "label": "<verb>_<modifier> shape",
+          "description": "e.g. depends_on / culminates_at / supersedes_with / verified_by_evidence. Verb-first; modifier optional disambiguator.",
+          "tradeoffs": "Hybrid approach; verb prominence; modifier carves out specific cases without source/target encoding."
+        },
+        {
+          "label": "Hyphenated kebab-case <source>-<verb>-<target>",
+          "description": "e.g. milestone-depends-on-milestone / phase-culminates-at-milestone. Same as tripartite but kebab-cased.",
+          "tradeoffs": "Visually distinct from typical_snake_case identifiers; consistent with config canonical_id casing in other registries; may collide with kebab-cased block-kind canonical_ids (decisions / framework-gaps / spec-reviews)."
+        }
+      ],
+      "references": [
+        {
+          "label": "DEC-0013 closure-table-canonical principle",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "DEC-0017 work-unit context composition",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "DEC-0024 milestone-as-anchor model",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "Test fixtures using phase_depends_on / phase_member",
+          "path": "packages/pi-context/src/roadmap-plan.test.ts"
+        },
+        {
+          "label": "Inferred relation_types from inline FK violations",
+          "path": "analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md"
+        },
+        {
+          "label": "Milestone-cascade relation_types",
+          "path": "analysis/2026-05-14-milestones-and-roadmap-draft.md"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-046",
+        "FGAP-047",
+        "FGAP-054"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:04:00Z",
+      "id": "DEC-0030"
+    },
+    {
+      "title": "Lens id naming convention — lens-prefix vs descriptive vs purpose-tagged",
+      "status": "open",
+      "context": "config.lenses[] currently empty in this repo. Test fixtures (packages/pi-context/src/roadmap-plan.test.ts) use names like 'lens-issues-by-phase'. Drafted milestones+roadmap MD (analysis/2026-05-14-milestones-and-roadmap-draft.md) proposes lens-roadmap-001-milestones / lens-roadmap-002-milestones format for per-roadmap composition lenses. Other proposed lenses for this repo: tasks-by-phase / decisions-by-status / gaps-by-status / issues-by-status / verifications-by-target / features-by-status / decisions-by-layer / arc-rollup-by-phase / decision-context. Lens spec carries id (canonical) + bins[] (canonical bin names) + kind (target | composition) + target or members + relation_type + derived_from_field. Bin names within a lens inherit ID-prefix conventions (DEC-0026 / DEC-0027); lens id itself is freeform per current schema.",
+      "decision": "OPEN: lens id naming convention. Mandate-compliant options below.",
+      "consequences": [
+        "Every lens declared in config.lenses[] follows chosen shape.",
+        "Roadmap.phases[].lens references resolve to these ids.",
+        "Lens cross-reference in code + analysis follows the shape.",
+        "Future ceremony surfaces (e.g. /context view <lens-id>) use these ids in commands."
+      ],
+      "options_considered": [
+        {
+          "label": "lens-<block>-by-<facet> kebab-case",
+          "description": "e.g. lens-tasks-by-phase / lens-decisions-by-status / lens-issues-by-phase. lens- prefix + block-kind canonical_id + by-facet. Self-documenting; matches existing test fixture pattern.",
+          "tradeoffs": "Verbose; lens- prefix is redundant given config.lenses[] context; long when nested in references."
+        },
+        {
+          "label": "<block>-by-<facet> without lens- prefix",
+          "description": "e.g. tasks-by-phase / decisions-by-status. Drops the lens- prefix; relies on context from config.lenses[] section.",
+          "tradeoffs": "Concise; potential collision with future block-kind canonical_ids that include hyphens (e.g. spec-reviews-by-status hits spec-reviews block name); requires disambiguation."
+        },
+        {
+          "label": "<purpose-slug> freeform",
+          "description": "e.g. arc-rollup / decision-context / phase-membership. Names what the lens IS, not what it bins. Composition lenses get scoped names.",
+          "tradeoffs": "Maximum flexibility; less self-documenting; new lens authoring requires a name decision per case; harder to enumerate canonically."
+        },
+        {
+          "label": "LENS-NNN canonical-id pattern matching other block kinds",
+          "description": "Lenses become canonical_id-bearing items like FEAT-001 / PLAN-001. config.lenses[] entries get LENS-001 / LENS-002 / etc. with display_name carrying the human-readable bin description.",
+          "tradeoffs": "Fully canonical; opaque ids must be looked up to know what they are; requires display_name layer; aligns with vocabulary-neutral substrate canon (DEC-0025)."
+        }
+      ],
+      "references": [
+        {
+          "label": "Test fixture lens-issues-by-phase pattern",
+          "path": "packages/pi-context/src/roadmap-plan.test.ts"
+        },
+        {
+          "label": "Drafted lens names in milestones+roadmap MD",
+          "path": "analysis/2026-05-14-milestones-and-roadmap-draft.md"
+        },
+        {
+          "label": "config.lenses[] shape",
+          "path": "packages/pi-context/registry/schemas/config.schema.json",
+          "lines": "99-138"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-047"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:05:00Z",
+      "id": "DEC-0031"
+    },
+    {
+      "title": "Layer registry adoption — declare config.layers[] with L1..L5 substrate/query/composition/dispatch/surface labels",
+      "status": "open",
+      "context": "config.layers[] (declared in config.schema.json lines 25-38: id + display_name + description) is currently empty in this repo. FGAP entries use 'layer' field with values L1 / L2 / L3 / L4 (free-text, no validation against an installed registry). features.schema.json declares 'L3 Work layer' for features (per items.properties.layer enum L1..L5). PLAN-001 (.project/layer-plans.json) uses Muni L1-L5 restructure plans framework. Inferred layer set per analysis/gsd-2-foundational-intelligence.md + analysis/gsd-2-derivability.md + my conversational scaffolding: L1 substrate (block CRUD / schemas / closure-table primitives), L2 query (filter / resolve / walk / find-references), L3 composition (lenses / roadmap-plan / execution-context), L4 dispatch (jit-agents / workflows / monitors), L5 surface (commands / tools / ceremonies / display). FGAP-052 records the runtime-vs-declaration gap: even when declared, no code path consumes layers[]. Adopting the registry settles the labels canonically; consumption is downstream FGAP-052 work.",
+      "decision": "OPEN: layer registry adoption + canonical labels. Mandate-compliant options below.",
+      "consequences": [
+        "Every block_kinds[].layer FK references resolve to declared layers[].id.",
+        "FGAP layer field validates against the registry (currently free-text).",
+        "features.schema.json layer enum aligns with config.layers[].",
+        "Layer-aware lens binning + filtering becomes possible once FGAP-052 closes.",
+        "Documentation (CLAUDE.md / skill-narratives) references canonical layer labels."
+      ],
+      "options_considered": [
+        {
+          "label": "Adopt L1..L5 substrate/query/composition/dispatch/surface",
+          "description": "Five-tier engineering altitude per pi-context's package layering: L1 substrate (block-api / schemas / closure-table), L2 query (filter-block-items / walk-ancestors / find-references / resolve-items-by-id), L3 composition (lens-view / roadmap-plan / execution-context), L4 dispatch (pi-jit-agents / pi-workflows / pi-behavior-monitors), L5 surface (commands / pi tools / orchestrator scripts / ceremonies). Aligns with current FGAP layer field usage + analysis docs.",
+          "tradeoffs": "Captures pi-context's actual code architecture; canonical for engineering reasoning; conflates with work-altitude (where features are 'L3 Work layer' which is different conceptually); user-substrate-arc altitude vs engineering-layer ambiguity."
+        },
+        {
+          "label": "Adopt different layer scheme appropriate to user's project",
+          "description": "User's project may have different layer altitudes (e.g. for a research repo: L1 raw-data / L2 analyses / L3 papers / L4 publications / L5 dissemination). config.layers[] declares whatever the user's project conceives; built-in defaults are advisory.",
+          "tradeoffs": "Aligns with DEC-0025 vocabulary-neutral; user must choose; pi-context ships no canonical default; documentation guides user authoring."
+        },
+        {
+          "label": "Adopt fewer layers (3-tier)",
+          "description": "Simpler scheme: substrate / orchestration / surface. Maps current pi-context less cleanly but reduces conceptual surface.",
+          "tradeoffs": "Easier to reason about; loses granularity that FGAP entries already use."
+        },
+        {
+          "label": "Defer layer registry adoption until consumption (FGAP-052) lands",
+          "description": "Don't declare layers[] now; revisit when runtime-honoring lands so declared-vs-consumed don't drift.",
+          "tradeoffs": "Avoids declared-but-symbolic state; blocks any layer-aware lens authoring; conflicts with mandate-007 (no deferring)."
+        }
+      ],
+      "references": [
+        {
+          "label": "config.schema.json layers[] declaration site",
+          "path": "packages/pi-context/registry/schemas/config.schema.json",
+          "lines": "25-38"
+        },
+        {
+          "label": "FGAP layer field free-text usage",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "features.schema.json L1..L5 enum",
+          "path": ".project/schemas/features.schema.json",
+          "lines": "25"
+        },
+        {
+          "label": "PLAN-001 Muni L1-L5 restructure plans",
+          "path": ".project/layer-plans.json"
+        },
+        {
+          "label": "Analysis grounding for L1-L5 inferred labels",
+          "path": "analysis/gsd-2-foundational-intelligence.md"
+        },
+        {
+          "label": "FGAP-052 runtime-vs-declaration consumption gap",
+          "path": ".project/framework-gaps.json"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-047",
+        "FGAP-052"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:06:00Z",
+      "id": "DEC-0032"
+    },
+    {
+      "title": "Status-bucket normalization mapping — bridge per-block status enums to canonical buckets",
+      "status": "open",
+      "context": "Per current substrate observation across blocks: decisions enum = open / enacted / superseded; framework-gaps = identified / closed; tasks = planned / completed (+ schema permits in-progress / blocked / cancelled); verifications = passed (+ schema permits failed / skipped); issues = open / resolved; roadmap = draft / active / paused / complete / archived; phase = planned / in-progress / completed; research = complete / superseded. Three lifecycle families surface: (a) workflow-state (planned → in-progress → completed → blocked / cancelled — used by tasks / phase / features); (b) gate-state (open → closed; identified → closed — used by issues / framework-gaps); (c) authority-state (open → enacted → superseded — used by decisions / research with supersedes lineage); plus authoring-state (draft → active → paused → complete → archived — used by roadmap). config.status_buckets (declared in config.schema.json as additionalProperties enum complete / in_progress / blocked / todo / unknown) is the bridge: maps any raw status string → bucket, enabling cross-block status rollup. Currently config.status_buckets empty in this repo. FGAP-021 records the reconciliation gap.",
+      "decision": "OPEN: status-bucket normalization mapping. Mandate-compliant options below.",
+      "consequences": [
+        "Cross-block 'is X complete?' queries become uniform regardless of source block's enum vocabulary.",
+        "Lens binning by status uses the bucket layer rather than per-block enum literal.",
+        "roadmap-plan + future status-aware projection primitives consume the bucket map.",
+        "FGAP-021 closes once mapping declared + consumed."
+      ],
+      "options_considered": [
+        {
+          "label": "Per-block-enum mapping declared exhaustively",
+          "description": "config.status_buckets carries every observed enum value mapped to bucket: { 'open': 'todo', 'enacted': 'complete', 'superseded': 'complete', 'identified': 'todo', 'closed': 'complete', 'planned': 'todo', 'in-progress': 'in_progress', 'completed': 'complete', 'blocked': 'blocked', 'cancelled': 'complete', 'passed': 'complete', 'failed': 'blocked', 'skipped': 'unknown', 'resolved': 'complete', 'draft': 'todo', 'active': 'in_progress', 'paused': 'blocked', 'complete': 'complete', 'archived': 'complete', 'aspirational': 'todo', 'satisfied': 'complete' }. Every enum value maps explicitly.",
+          "tradeoffs": "Comprehensive; explicit; requires re-curation when new enum values added; one config map shared across all blocks (collision risk on reused enum strings — e.g. 'open' means todo across decisions/issues but does it mean the same in another future block?)."
+        },
+        {
+          "label": "Per-block scoped mapping",
+          "description": "config.status_buckets becomes nested: { 'decisions': { 'open': 'todo', ... }, 'tasks': { ... }, 'issues': { ... } }. Each block has its own enum-to-bucket map.",
+          "tradeoffs": "Resolves collision risk; more verbose; matches authoring-locality of enums per schema."
+        },
+        {
+          "label": "Schema-declared bucket field per status enum value",
+          "description": "Each block schema's status enum field declares bucket inline: enum: ['planned', 'completed'], x-bucket: { 'planned': 'todo', 'completed': 'complete' }. Config.status_buckets retired; bucket lives with the schema.",
+          "tradeoffs": "Bucket co-located with enum declaration; schema migration required for every block; AJV doesn't validate the x-bucket extension by default."
+        },
+        {
+          "label": "Adopt all default observable enums uniformly with global flat map",
+          "description": "Global flat map per option (a); accept collision risk by ensuring 'open' / 'closed' / 'planned' / etc. always mean the same thing across blocks (enforce at schema-write time).",
+          "tradeoffs": "Simplest; requires discipline in schema authoring; if a future block uses 'open' to mean something else, it's a violation of the canon, not a config issue."
+        }
+      ],
+      "references": [
+        {
+          "label": "config.schema.json status_buckets shape",
+          "path": "packages/pi-context/registry/schemas/config.schema.json",
+          "lines": "57-64"
+        },
+        {
+          "label": "FGAP-021 status-vocabulary reconciliation",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "Per-block status enum observations",
+          "path": "analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-021",
+        "FGAP-047"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:07:00Z",
+      "id": "DEC-0033"
+    },
+    {
+      "title": "Conventions block schema migration — add facets needed for relational/lens/lookup discoverability",
+      "status": "open",
+      "context": "FGAP-051 records that conventions block schema (.project/schemas/conventions.schema.json) is pre-DEC-0013 / pre-lens-infrastructure shape: items have id (freeform slug like 'esm' / 'tsc-build' / 'no-pi-dir') + description (single payload) + enforcement (lint/test/review/manual) + severity (error/warning/info). Missing facets: title separate from description; category / domain (substrate-filing / naming / commit / build / monitoring); applies_to (target surface — substrate / source / tests / commit / specific-package); related_decisions (closure-table edge home); status / lifecycle (active / retired / superseded); source / citation (file path or DEC enacted from); canonical_vocabulary (engineering terminology). 16 existing rules need migration. Same shape questions apply to architecture / domain / requirements (zero-item; authored pre-relational-layer).",
+      "decision": "OPEN: conventions schema migration scope + sequencing. Mandate-compliant options below.",
+      "consequences": [
+        "LLM lookup of 'how to file substrate' / 'what build commands' / 'what naming convention' becomes filter-block-items predicate-driven, not grep-on-description.",
+        "Convention rules emerging from DECs gain closure-table edge home (relations.json with relation_type=convention_emerges_from_decision).",
+        "Lens binning by category becomes possible.",
+        "Status-tracked rule lifecycle records when rules retire.",
+        "Cascade: same migration applicable to architecture / domain / requirements schemas if they remain in current shape."
+      ],
+      "options_considered": [
+        {
+          "label": "Migrate conventions schema in single sweep + populate all 16 existing rules",
+          "description": "Schema-write update conventions.schema.json adding fields (title / category / applies_to / related_decisions / status / source / canonical_vocabulary); migrate all 16 rules to populate new fields with values authored from rule context. Simultaneously audit + propose-migrations for architecture / domain / requirements schemas.",
+          "tradeoffs": "Single coherent migration; larger scope; closes FGAP-051 atomically + surfaces sister-schema gaps."
+        },
+        {
+          "label": "Migrate schema only; populate fields lazy per future authoring",
+          "description": "Update schema with new fields (all optional except title); existing 16 rules left as-is until each touched; new rules require new fields; schema-version migration handles default-population for existing.",
+          "tradeoffs": "Minimal immediate churn; persistent partial-state; LLM lookups partially work depending on which rules migrated."
+        },
+        {
+          "label": "Author parallel block kind 'rules' with the desired facet shape; deprecate conventions",
+          "description": "Don't migrate existing conventions schema; author new 'rules' or 'rule-set' block kind with full facets; migrate convention items into new block; mark conventions block as deprecated.",
+          "tradeoffs": "Cleaner schema-design without legacy-shape constraint; substrate carries deprecated block until full migration; all consumers of conventions block need update."
+        },
+        {
+          "label": "Audit + migrate conventions + architecture + domain + requirements as one work-unit",
+          "description": "Treat all four pre-relational-layer schemas as a coherent migration scope; one DEC enacts; one sweep populates.",
+          "tradeoffs": "Largest scope; addresses cascade comprehensively; aligns with mandate-007 (no deferring discovered issues — sister-schema gaps surfaced in FGAP-051's last paragraph)."
+        }
+      ],
+      "references": [
+        {
+          "label": "Conventions schema current shape",
+          "path": ".project/schemas/conventions.schema.json"
+        },
+        {
+          "label": "16 existing convention rules",
+          "path": ".project/conventions.json"
+        },
+        {
+          "label": "FGAP-051 forcing artifact + sister-schema cascade callout",
+          "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "Comparison: DEC schema with rich facets",
+          "path": ".project/schemas/decisions.schema.json"
+        },
+        {
+          "label": "Comparison: FGAP schema with rich facets",
+          "path": ".project/schemas/framework-gaps.schema.json"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-047",
+        "FGAP-051"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-16T10:08:00Z",
+      "id": "DEC-0034"
     }
   ]
 }

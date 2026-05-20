@@ -2167,11 +2167,11 @@
     },
     {
       "title": "No automatic cross-file value-rename engine for canonical_id changes — schema-migrations handles shape, not canonical_id value renames across relations.json edges + item-id-prefix renumbering",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L1",
-      "description": "The framework foresees + carries SCHEMA-SHAPE migration via schema-migrations.ts (MigrationRegistry + runMigrations + validateBlockWithMigration at schema-validator.ts:204): a block file declaring schema_version 1.0.0 migrates forward to current via registered MigrationFn chain on read. This handles field renames / restructures / add-with-default WITHIN a block's item shape. It does NOT handle canonical_id VALUE renames that span files. Two cases: (1) relation_type canonical_id rename — relations.json edges store the relation_type canonical_id (relations.schema.json: edge.relation_type = 'registered relation_type canonical_id'); renaming a relation_type's canonical_id requires rewriting every edge referencing it; no MigrationFn covers cross-file value rewrites; runMigrations operates per-block-file data shape only. (2) item-ID-prefix renumbering (DEC-0026 padding / DEC-0027 casing) — item canonical_id (e.g. DEC-0001, issue-001) EMBEDS the prefix; unlike relation_types (which split stable canonical_id from mutable display_name per config.relation_types[]), item ids ARE the reference with no id/label split, so renaming the prefix requires renumbering every item + every citation across relations.json edges + related_X fields + analysis MDs + commit messages.\n\nCRITICAL MITIGATION ALREADY DESIGNED: the canonical_id <-> display_name decoupling (config.relation_types[].canonical_id vs display_name; config.block_kinds[].canonical_id vs display_name per DEC-0023) means HUMAN-LABEL renames are FREE — edge/reference holds stable canonical_id; label lives in display_name; relabel = display_name edit = live, zero migration. The value-rename gap applies ONLY to canonical_id-itself changes, which are rare by design (primary-key semantics: set once, treat permanent).",
+      "description": "The framework foresees + carries SCHEMA-SHAPE migration via schema-migrations.ts (MigrationRegistry + runMigrations + validateBlockWithMigration at schema-validator.ts:204): a block file declaring schema_version 1.0.0 migrates forward to current via registered MigrationFn chain on read. This handles field renames / restructures / add-with-default WITHIN a block's item shape. It does NOT handle canonical_id VALUE renames that span files. Two cases: (1) relation_type canonical_id rename — relations.json edges store the relation_type canonical_id (relations.schema.json: edge.relation_type = 'registered relation_type canonical_id'); renaming a relation_type's canonical_id requires rewriting every edge referencing it; no MigrationFn covers cross-file value rewrites; runMigrations operates per-block-file data shape only. (2) item-ID-prefix renumbering (DEC-0026 padding / DEC-0027 casing) — item canonical_id (e.g. DEC-0001, issue-001) EMBEDS the prefix; unlike relation_types (which split stable canonical_id from mutable display_name per config.relation_types[]), item ids ARE the reference with no id/label split, so renaming the prefix requires renumbering every item + every citation across relations.json edges + related_X fields + analysis MDs + commit messages.\n\nCRITICAL MITIGATION ALREADY DESIGNED: the canonical_id <-> display_name decoupling (config.relation_types[].canonical_id vs display_name; config.block_kinds[].canonical_id vs display_name per DEC-0023) means HUMAN-LABEL renames are FREE — edge/reference holds stable canonical_id; label lives in display_name; relabel = display_name edit = live, zero migration. The value-rename gap applies ONLY to canonical_id-itself changes, which are rare by design (primary-key semantics: set once, treat permanent). [2026-05-20 CLOSED — unit 2.3, commit 33b76a7: renameCanonicalId engine landed for 4 canonical_id kinds (item, relation_type, lens, layer) + dual surface (rename-canonical-id Pi tool + scripts/orchestrator/migrate-canonical-id.ts) + writeRelations/writeConfig wrappers + out-of-substrate report (analysis grep + best-effort git log -S, report-only) + dry-run. The two cases this FGAP named — relation_type canonical_id rename + item-id-prefix renumbering — are both delivered, as are lens/layer. block_kind canonical_id rename (the file/data_path/array_key/schema_path cascade) is the one remaining sliver, tracked as FGAP-071.]",
       "evidence": [
         {
           "file": "packages/pi-context/src/schema-migrations.ts",
@@ -2208,7 +2208,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-17T10:00:00Z",
-      "id": "FGAP-060"
+      "id": "FGAP-060",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-20T00:00:00Z"
     },
     {
       "title": "config.block_kinds[] requires single array_key per block — cannot represent mixed-shape blocks (project / architecture / domain / conformance-reference) with multiple arrays + scalar identity fields",
@@ -2594,6 +2596,41 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
       "id": "FGAP-070"
+    },
+    {
+      "title": "block_kind canonical_id rename requires a file/data_path/array_key/schema_path cascade — unsupported by renameCanonicalId (deferred from FGAP-060/unit 2.3)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "The FGAP-060 renameCanonicalId engine (commit 33b76a7, unit 2.3) supports 4 canonical_id kinds (item, relation_type, lens, layer) and THROWS on kind=block_kind. block_kind canonical_id rename is entangled with the block data-file basename, data_path, array_key, and schema_path: buildIdIndex (project-sdk.ts) resolves loc.block by the data-file basename, while config.invariants[].block / lenses[].target / lenses[].targets[] / lenses[].members[].from / hierarchy[].parent_block / hierarchy[].child_block reference the block_kind canonical_id. Renaming the canonical_id alone (config references only) produces canonical_id != basename, breaking buildIdIndex prefix-vs-block invariant + invariant/lens block-resolution. A correct block_kind rename is a coupled filesystem cascade: rename <old>.json -> <new>.json + schemas/<old>.schema.json -> schemas/<new>.schema.json + config.block_kinds[].{canonical_id,data_path,array_key,schema_path} + every config reference, keeping canonical_id == basename. Rare by design (DEC-0023: display_name is the relabel surface; block_kind canonical_id rename is near-never for settled conceptions). Intended outcome: extend renameCanonicalId with a block_kind cascade path (file + schema + array_key + config references, atomic) OR canonicalize block_kind canonical_id immutability post-authoring.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/rename-canonical-id.ts",
+          "reference": "renameCanonicalId throws on kind=block_kind (unsupported — filesystem cascade)"
+        },
+        {
+          "file": "packages/pi-context/src/project-sdk.ts",
+          "reference": "buildIdIndex resolves loc.block by data-file basename, decoupled from config.block_kinds[].canonical_id — the coupling a block_kind rename must keep consistent"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0035 names block_kind canonical_id as a primary-key the engine serves; DEC-0023 makes display_name the cheap relabel surface; DEC-0013 edge model"
+        }
+      ],
+      "impact": "A block_kind canonical_id cannot be renamed through tooling; if ever needed it is a manual multi-file cascade. Low practical impact — display_name handles relabeling and block_kind canonical_id rename is rare for settled conceptions.",
+      "canonical_vocabulary": "block-kind-rename-cascade, canonical-id-basename-coupling, data-path-array-key-rename",
+      "proposed_resolution": "Either extend renameCanonicalId with a block_kind path that performs the data-file + schema-file + array_key + config-reference cascade atomically, OR canonicalize block_kind canonical_id immutability post-authoring (display_name only). Implementation specifics NOT prescribed (outcome-only); survey the data_path/array_key/schema_path/basename coupling first.",
+      "related_decisions": [
+        "DEC-0035",
+        "DEC-0023",
+        "DEC-0013"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-20T00:00:00Z",
+      "id": "FGAP-071"
     }
   ]
 }

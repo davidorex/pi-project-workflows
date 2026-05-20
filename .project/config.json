@@ -89,6 +89,14 @@
       "schema_path": "schemas/context-contracts.schema.json",
       "array_key": "contracts",
       "data_path": "context-contracts.json"
+    },
+    {
+      "canonical_id": "phase",
+      "display_name": "Phases",
+      "prefix": "PHASE-",
+      "schema_path": "schemas/phase.schema.json",
+      "array_key": "phases",
+      "data_path": "phase.json"
     }
   ],
   "relation_types": [
@@ -226,6 +234,7 @@
     "layer-plans",
     "requirements",
     "conventions",
-    "context-contracts"
+    "context-contracts",
+    "phase"
   ]
 }

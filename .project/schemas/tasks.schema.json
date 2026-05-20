@@ -14,7 +14,6 @@
 					"id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
 					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"status": { "type": "string", "enum": ["planned", "in-progress", "completed", "blocked", "cancelled"] },
-					"phase": { "type": ["string", "integer"], "description": "Phase ID or number this task belongs to" },
 					"files": {
 						"type": "array",
 						"items": { "type": "string" },

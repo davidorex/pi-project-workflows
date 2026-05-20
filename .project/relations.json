@@ -1,1 +1,72 @@
-[]
+[
+  {
+    "parent": "PHASE-005",
+    "child": "TASK-031",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-005",
+    "child": "TASK-032",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-005",
+    "child": "TASK-033",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-006",
+    "child": "TASK-034",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-006",
+    "child": "TASK-035",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-006",
+    "child": "TASK-036",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-006",
+    "child": "TASK-037",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-007",
+    "child": "TASK-038",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-007",
+    "child": "TASK-039",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-007",
+    "child": "TASK-040",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-008",
+    "child": "TASK-041",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-009",
+    "child": "TASK-042",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-010",
+    "child": "TASK-043",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-010",
+    "child": "TASK-044",
+    "relation_type": "task_positioned_in_phase"
+  }
+]

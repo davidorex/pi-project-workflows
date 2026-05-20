@@ -8,16 +8,28 @@ description: >
 ---
 
 <tools_reference>
-<tool name="workflow">
-Run a named workflow with typed input. Discovers workflows from .workflows/ and ~/.pi/agent/workflows/.
+<tool name="workflow-execute">
+Execute a named workflow with typed input. Discovers workflows from .workflows/ and ~/.pi/agent/workflows/. Auto-resumes the most recent compatible incomplete run unless fresh='true'. Use workflow-resume for explicit-only resume by runId.
 
-*Run a multi-step workflow with typed data flow between agents*
+*Execute a multi-step workflow with typed data flow (auto-resumes compatible incomplete runs)*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `workflow` | string | yes | Name of the workflow to run |
 | `input` | unknown | no | Input data for the workflow (validated against workflow's input schema) |
 | `fresh` | string | no | Set to 'true' to start a fresh run, ignoring any incomplete prior runs |
+</tool>
+
+<tool name="workflow-resume">
+Explicitly resume an incomplete workflow run by name + runId. Rejects when no incomplete run exists for the workflow OR when runId does not match the most recent incomplete run. Use workflow-execute for default auto-resume; this surface is for explicit-only scenarios where the caller wants to fail loudly if the run is gone or has been superseded.
+
+*Explicitly resume an incomplete workflow run by name + runId (rejects on no-match)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `workflow` | string | yes | Workflow name |
+| `runId` | string | yes | Incomplete run ID — required, no auto-detect |
+| `input` | unknown | no | Optional input override; defaults to the original run's input |
 </tool>
 
 <tool name="workflow-list">

@@ -18,14 +18,14 @@ pi install npm:@davidorex/pi-project-workflows
 <extension name="@davidorex/pi-context">
 Schema-driven project state management for Pi
 
-**Tools:** `append-block-item`, `update-block-item`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `project-status`, `project-validate`, `project-init`, `resolve-item-by-id`, `complete-task`, `project-validate-relations`, `project-edges-for-lens`, `project-walk-descendants`, `project-roadmap-load`, `project-roadmap-render`, `project-roadmap-validate`, `project-roadmap-list`
+**Tools:** `append-block-item`, `update-block-item`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `project-status`, `project-validate`, `read-config`, `read-schema`, `project-init`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `complete-task`, `project-validate-relations`, `project-edges-for-lens`, `project-walk-descendants`, `walk-ancestors`, `find-references`, `gather-execution-context`, `project-roadmap-load`, `project-roadmap-render`, `project-roadmap-validate`, `project-roadmap-list`
 **Commands:** `/project`
 </extension>
 
 <extension name="@davidorex/pi-workflows">
 Workflow orchestration extension for Pi
 
-**Tools:** `workflow`, `workflow-list`, `workflow-agents`, `workflow-validate`, `workflow-status`, `workflow-init`, `render-item-by-id`, `enforce-budget`
+**Tools:** `workflow-execute`, `workflow-resume`, `workflow-list`, `workflow-agents`, `workflow-validate`, `workflow-status`, `workflow-init`, `render-item-by-id`, `enforce-budget`
 **Commands:** `/workflow`
 **Shortcuts:** ctrl+h (Pause running workflow), ctrl+j (Resume paused workflow)
 </extension>

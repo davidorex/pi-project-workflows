@@ -134,11 +134,44 @@ Validate cross-block referential integrity — check that IDs referenced across 
 
 </tool>
 
+<tool name="read-config">
+Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks.
+
+*Read project config — vocabulary, lenses, relation_types, status_buckets*
+
+</tool>
+
+<tool name="read-schema">
+Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent.
+
+*Read a block schema as structured JSON*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `schemaName` | string | yes | Schema name without extension (e.g., 'tasks', 'decisions', 'issues') |
+</tool>
+
 <tool name="project-init">
 Initialize .project/ directory with default schemas and empty block files.
 
 *Initialize .project/ directory with default schemas and blocks*
 
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `contextDir` | string | yes | Substrate dir name (e.g. .project). Required per DEC-0015 — no default. |
+</tool>
+
+<tool name="filter-block-items">
+Filter the array items of a block by a single-field predicate (eq / neq / in / matches). Discovers the single top-level array property in the block; items missing the predicate field are never matched. Wraps the canonical readBlock + caller-side filter into one queryable surface; never mutates the block.
+
+*Filter a block's items by a predicate — eq / neq / in / matches against a single field*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'tasks', 'decisions', 'framework-gaps', 'context-contracts') |
+| `field` | string | yes | Item field to test (e.g., 'status', 'priority', 'id') |
+| `op` | unknown | yes | Comparison operator: eq (===), neq (!==), in (value is array, item[field] in it), matches (regexp test on string) |
+| `value` | unknown | yes | Comparison value — scalar for eq/neq, array for in, regexp pattern string for matches |
 </tool>
 
 <tool name="resolve-item-by-id">
@@ -149,6 +182,16 @@ Look up the block, array key, and item payload for a given ID across all .projec
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `id` | string | yes | Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 / FGAP-003 / issue-064 |
+</tool>
+
+<tool name="resolve-items-by-id">
+Bulk variant of resolve-item-by-id — resolve N kind-prefixed ids against a single buildIdIndex traversal. Returns an object mapping each input id to its ItemLocation (block / arrayKey / item) or null when not found. Coexists with the singular resolve-item-by-id tool; bulk collapses the N×singular-call pattern for callers resolving multiple ids in one render pass.
+
+*Resolve a batch of kind-prefixed ids (DEC-/FGAP-/TASK-/issue-/REQ-/...) in one call*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `ids` | array | yes | Array of kind-prefixed ids (DEC-/FGAP-/TASK-/issue-/REQ-/...) to resolve in one call |
 </tool>
 
 <tool name="complete-task">
@@ -188,6 +231,40 @@ Walk closure-table descendants of a parent id under a given relation_type. Retur
 |-----------|------|----------|-------------|
 | `parentId` | string | yes | Parent id (canonical id or lens bin name) |
 | `relationType` | string | yes | Relation type from config.relation_types[].canonical_id |
+</tool>
+
+<tool name="walk-ancestors">
+Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to project-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).
+
+*Walk closure-table ancestors under a relation_type*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `itemId` | string | yes | Child item id whose ancestors are sought |
+| `relationType` | string | yes | Relation type from config.relation_types[].canonical_id |
+</tool>
+
+<tool name="find-references">
+Find all closure-table edges incident on an item id (inbound, outbound, or both). Returns Edge[] preserving relation_type + ordinal per record — edge-level view, not the id-chain projection that walk-ancestors / project-walk-descendants emit.
+
+*Find closure-table edges incident on an item id*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `itemId` | string | yes | Item id whose incident edges are sought |
+| `direction` | unknown | no | inbound: edges where child === itemId; outbound: edges where parent === itemId; both: union (default). |
+</tool>
+
+<tool name="gather-execution-context">
+Compose a ContextBundle for a work-unit by reading its context-contract (by unit_kind) and walking declared relation_types bidirectionally per direction semantic. Returns unit + perRelationType buckets of resolved items + traversal_depth + scoped_at. Per DEC-0017 substrate primitive serving harness-confined dispatch.
+
+*Compose ContextBundle for unit + context-contract-declared bundle_relation_types*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `unitId` | string | yes | Work-unit id (e.g. TASK-NNN / DEC-NNNN / FGAP-NNN) |
+| `kind` | string | yes | Unit-kind type tag (e.g. 'task', 'decision', 'verification') matching a context-contract entry's unit_kind |
+| `maxDepth` | integer | no | Override per-relation-type max_depth via Math.min against each spec.max_depth |
 </tool>
 
 <tool name="project-roadmap-load">
@@ -243,7 +320,7 @@ Subcommands: `init`, `install`, `view`, `lens-curate`, `roadmap-list`, `roadmap-
 </events>
 
 <bundled_resources>
-8 schemas, 24 registry bundled.
+9 schemas, 27 registry bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 
@@ -254,6 +331,7 @@ Names valid for the `installed_blocks` array in `.project/config.json`. Install 
 | Block | Source File |
 |-------|-------------|
 | `conformance-reference` | `registry/blocks/conformance-reference.json` |
+| `context-contracts` | `registry/blocks/context-contracts.json` |
 | `decisions` | `registry/blocks/decisions.json` |
 | `domain` | `registry/blocks/domain.json` |
 | `issues` | `registry/blocks/issues.json` |
@@ -274,6 +352,7 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 | `architecture` | `registry/schemas/architecture.schema.json` |
 | `audit` | `registry/schemas/audit.schema.json` |
 | `conformance-reference` | `registry/schemas/conformance-reference.schema.json` |
+| `context-contracts` | `registry/schemas/context-contracts.schema.json` |
 | `decisions` | `registry/schemas/decisions.schema.json` |
 | `domain` | `registry/schemas/domain.schema.json` |
 | `handoff` | `registry/schemas/handoff.schema.json` |
@@ -284,6 +363,7 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 | `rationale` | `registry/schemas/rationale.schema.json` |
 | `requirements` | `registry/schemas/requirements.schema.json` |
 | `roadmap` | `registry/schemas/roadmap.schema.json` |
+| `story` | `registry/schemas/story.schema.json` |
 | `tasks` | `registry/schemas/tasks.schema.json` |
 | `verification` | `registry/schemas/verification.schema.json` |
 
@@ -298,16 +378,18 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 | `architecture` | Architecture | `modules` | name, file, responsibility, dependencies? (array), lines? (integer) |
 | `audit` | Audit | `checks` | id, description, status (string (pass|fail|warn|skip)), category?, details? |
 | `conformance-reference` | Conformance Reference | `principles` | id, name, description?, rules (array) |
+| `context-contracts` | Context contracts | `contracts` | id, unit_kind, bundle_relation_types (array), description?, notes?, created_by, created_at, modified_by?, modified_at? |
 | `decisions` | Decisions | `decisions` | id, decision, rationale, phase? (string|integer), status (string (decided|tentative|revisit|superseded)), context?, task? |
 | `domain` | Domain Knowledge | `entries` | id, title, content, category (string (research|reference|domain-rule|prior-art|constraint)), source?, confidence? (string (high|medium|low)), related_requirements? (array), tags? (array) |
 | `handoff` | Handoff | `current_tasks` |  |
 | `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (unknown), resolved_by? |
-| `phase` | Phase | `success_criteria` | criterion, verify_method (string (command|inspect|test)) |
+| `phase` | Phases | `phases` | id, name, intent, goal?, status (string (planned|in-progress|completed)), success_criteria? (array), specs? (array), dependencies? (array), inputs? (array), outputs? (array), artifacts_produced? (array) |
 | `plan` | Project plans | `plans` | id, title, description?, status? (string (draft|active|blocked|complete|archived)), roadmap? (string|null), phase? (string|null), items (array) |
 | `project` | Project Identity | `target_users` |  |
 | `rationale` | Design Rationale | `rationales` | id, title, narrative, related_decisions? (array), phase? (string|integer), context? |
 | `requirements` | Requirements | `requirements` | id, description, type (string (functional|non-functional|constraint|integration)), status (string (proposed|accepted|deferred|implemented|verified)), priority (string (must|should|could|wont)), acceptance_criteria? (array), source? (string (human|agent|analysis)), traces_to? (array), depends_on? (array) |
 | `roadmap` | Project roadmaps | `roadmaps` | id, title, description?, status? (string (draft|active|paused|complete|archived)), phases (array), milestones? (array) |
+| `story` | Stories | `stories` | id, title, status (string (proposed|ready|in-progress|in-review|complete|blocked)), description?, acceptance_criteria? (array), created_by?, created_at?, modified_by?, modified_at? |
 | `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), phase? (string|integer), files? (array), acceptance_criteria? (array), depends_on? (array), assigned_agent?, verification?, notes? |
 | `verification` | Verification | `verifications` | id, target, target_type (string (task|phase|requirement)), status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array) |
 
@@ -323,8 +405,6 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 | `issues` | `category` | primitive, issue, cleanup, capability, composition |
 | `issues` | `priority` | low, medium, high, critical |
 | `phase` | `status` | planned, in-progress, completed |
-| `phase` | `verify_method` | command, inspect, test |
-| `phase` | `status` | planned, in-progress, completed |
 | `plan` | `status` | draft, active, blocked, complete, archived |
 | `project` | `status` | inception, planning, development, maintenance, complete |
 | `requirements` | `type` | functional, non-functional, constraint, integration |
@@ -332,6 +412,7 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 | `requirements` | `priority` | must, should, could, wont |
 | `requirements` | `source` | human, agent, analysis |
 | `roadmap` | `status` | draft, active, paused, complete, archived |
+| `story` | `status` | proposed, ready, in-progress, in-review, complete, blocked |
 | `tasks` | `status` | planned, in-progress, completed, blocked, cancelled |
 | `verification` | `target_type` | task, phase, requirement |
 | `verification` | `status` | passed, failed, partial, skipped |

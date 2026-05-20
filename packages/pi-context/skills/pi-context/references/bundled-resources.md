@@ -1,7 +1,8 @@
 # Bundled Resources
 
-## schemas/ (8 files)
+## schemas/ (9 files)
 
+- `schemas/bootstrap.schema.json`
 - `schemas/config.schema.json`
 - `schemas/layer.schema.json`
 - `schemas/priority.schema.json`
@@ -11,9 +12,10 @@
 - `schemas/status.schema.json`
 - `schemas/verification-method.schema.json`
 
-## registry/ (24 files)
+## registry/ (27 files)
 
 - `registry/blocks/conformance-reference.json`
+- `registry/blocks/context-contracts.json`
 - `registry/blocks/decisions.json`
 - `registry/blocks/domain.json`
 - `registry/blocks/issues.json`
@@ -25,6 +27,7 @@
 - `registry/schemas/architecture.schema.json`
 - `registry/schemas/audit.schema.json`
 - `registry/schemas/conformance-reference.schema.json`
+- `registry/schemas/context-contracts.schema.json`
 - `registry/schemas/decisions.schema.json`
 - `registry/schemas/domain.schema.json`
 - `registry/schemas/handoff.schema.json`
@@ -35,5 +38,6 @@
 - `registry/schemas/rationale.schema.json`
 - `registry/schemas/requirements.schema.json`
 - `registry/schemas/roadmap.schema.json`
+- `registry/schemas/story.schema.json`
 - `registry/schemas/tasks.schema.json`
 - `registry/schemas/verification.schema.json`

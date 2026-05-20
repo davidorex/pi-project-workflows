@@ -141,6 +141,19 @@ Read the substrate config.json as structured JSON — vocabulary, lenses, relati
 
 </tool>
 
+<tool name="rename-canonical-id">
+Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to newId across all substrate surfaces that carry it as DATA — item home block + relations.json edges, or the relevant config registries. Out-of-substrate occurrences (analysis MDs, git history) are REPORTED, never rewritten. block_kind renames are unsupported (filesystem cascade). Use dryRun to preview the would-change counts without writing.
+
+*Rename a canonical_id (item/relation_type/lens/layer) across substrate; dryRun to preview*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `kind` | string | yes | One of: item | relation_type | lens | layer |
+| `oldId` | string | yes | Current canonical_id to rename from |
+| `newId` | string | yes | New canonical_id to rename to |
+| `dryRun` | boolean | no | Compute would-change counts without writing |
+</tool>
+
 <tool name="read-schema">
 Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent.
 

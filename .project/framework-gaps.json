@@ -2370,7 +2370,7 @@
     },
     {
       "title": "validateProject invariants are hardcoded (completed-task-verification, decision-forcing-artifact) — DEC-0025 violation; must be config-declared",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L2",
@@ -2405,7 +2405,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-17T16:00:00Z",
-      "id": "FGAP-065"
+      "id": "FGAP-065",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-20T00:00:00Z"
     }
   ]
 }

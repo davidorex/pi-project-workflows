@@ -38,6 +38,7 @@ export interface ConfigBlock {
 	relation_types?: RelationTypeDecl[];
 	hierarchy?: HierarchyDecl[];
 	lenses?: LensSpec[];
+	invariants?: InvariantDecl[];
 	installed_schemas?: string[];
 	installed_blocks?: string[];
 }
@@ -71,6 +72,24 @@ export interface HierarchyDecl {
 	parent_block: string;
 	child_block: string;
 	relation_type: string;
+}
+
+/**
+ * Config-declared substrate invariant (DEC-0025: vocabulary lives in DATA, not
+ * source). The `requires-edge` class asserts: items in `block` matching the
+ * optional `where` predicate must occupy `direction`'s endpoint on ≥1 edge
+ * whose relation_type ∈ `relation_types`. Enforced generically by
+ * validateProject — no block/status/relation_type literal appears in the loop.
+ */
+export interface InvariantDecl {
+	id: string;
+	class: "requires-edge";
+	block: string;
+	where?: Record<string, string | number | boolean>;
+	relation_types: string[];
+	direction: "as_parent" | "as_child";
+	severity?: "error" | "warning";
+	message?: string;
 }
 
 export interface LensSpec {

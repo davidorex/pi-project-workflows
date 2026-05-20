@@ -32,6 +32,7 @@ export {
 	getProjectContext,
 	groupByLens,
 	type HierarchyDecl,
+	type InvariantDecl,
 	type ItemRecord,
 	type LayerDecl,
 	type LensSpec,
@@ -836,6 +837,18 @@ export interface ProjectValidationResult {
 }
 
 /**
+ * Field-equality predicate for config-declared invariants. Mirrors the
+ * composition-lens `where` semantics (project-context.ts:773-778): the item
+ * qualifies only when EVERY (field, value) pair matches item[field] === value.
+ * Absent predicate → every item qualifies.
+ */
+function matchesWhere(item: Record<string, unknown>, where?: Record<string, string | number | boolean>): boolean {
+	if (!where) return true;
+	for (const [k, v] of Object.entries(where)) if (item[k] !== v) return false;
+	return true;
+}
+
+/**
  * Validate cross-block referential integrity against the EDGE model
  * (DEC-0013: `relations.json` closure-table edges are THE reference surface).
  * Returns structured issues rather than throwing.
@@ -847,12 +860,12 @@ export interface ProjectValidationResult {
  * detection is delegated to `validateRelations` (its `edge_cycle_detected`
  * diagnostics are merged in).
  *
- * Two invariants that previously lived as schema constraints + inline-FK checks
- * are relocated here onto the edge model:
- *   1. completed-task-has-verification — a `verification_verifies_item` edge
- *      whose `child` is the completed task.
- *   2. decision-cites-forcing-artifact — a `decision_addresses_{issue,feature,
- *      gap}` edge whose `parent` is the decision.
+ * Substrate invariants beyond edge integrity are enforced generically from
+ * `config.invariants[]` per the `requires-edge` class — no invariant vocabulary
+ * (block kind / status / relation_type / direction) lives in source (DEC-0025).
+ * The canonical pi-context conception declares two invariants as config DATA:
+ * `completed-task-has-verification` and `decision-cites-forcing-artifact`; a
+ * project ships only the invariants its own conception requires.
  */
 export function validateProject(cwd: string): ProjectValidationResult {
 	const issues: ProjectValidationIssue[] = [];
@@ -931,45 +944,33 @@ export function validateProject(cwd: string): ProjectValidationResult {
 			   must not mask the authoritative edge-integrity issues collected above. */
 		}
 
-		// ── Relocated invariant 1: completed-task-has-verification ───────────
-		// Each completed task requires ≥1 verification_verifies_item edge whose
-		// child is that task (a verification verifies it).
-		const verifiedTasks = new Set<string>();
-		for (const edge of relations) {
-			if (edge.relation_type === "verification_verifies_item") verifiedTasks.add(edge.child);
-		}
-		for (const [id, loc] of idIndex) {
-			if (loc.block !== "tasks") continue;
-			if (loc.item.status === "completed" && !verifiedTasks.has(id)) {
-				issues.push({
-					severity: "error",
-					message: `Completed task '${id}' has no verification edge (verification_verifies_item)`,
-					block: "tasks",
-					field: `${id}.verification`,
-				});
+		// ── Config-declared invariants (DEC-0025: vocabulary-neutral) ─────────
+		// Replaces the two previously-hardcoded invariants (completed-task-has-
+		// verification, decision-cites-forcing-artifact). Every block / status /
+		// relation_type / direction literal comes from config.invariants[] DATA;
+		// this loop contains no vocabulary literal. Each requires-edge invariant:
+		// items in `block` matching `where` must occupy `direction`'s endpoint on
+		// ≥1 edge whose relation_type ∈ relation_types — else a diagnostic.
+		for (const inv of config.invariants ?? []) {
+			if (inv.class !== "requires-edge") continue; // forward-compat: skip unknown classes
+			const relTypeSet = new Set(inv.relation_types);
+			const satisfied = new Set<string>();
+			for (const edge of relations) {
+				if (!relTypeSet.has(edge.relation_type)) continue;
+				satisfied.add(inv.direction === "as_parent" ? edge.parent : edge.child);
 			}
-		}
-
-		// ── Relocated invariant 2: decision-cites-forcing-artifact ───────────
-		// Each decision requires ≥1 decision_addresses_{issue,feature,gap} edge
-		// whose parent is that decision.
-		const forcingRelTypes = new Set([
-			"decision_addresses_issue",
-			"decision_addresses_feature",
-			"decision_addresses_gap",
-		]);
-		const decisionsWithForcingEdge = new Set<string>();
-		for (const edge of relations) {
-			if (forcingRelTypes.has(edge.relation_type)) decisionsWithForcingEdge.add(edge.parent);
-		}
-		for (const [id, loc] of idIndex) {
-			if (loc.block !== "decisions") continue;
-			if (!decisionsWithForcingEdge.has(id)) {
+			for (const [id, loc] of idIndex) {
+				if (loc.block !== inv.block) continue;
+				if (!matchesWhere(loc.item, inv.where)) continue;
+				if (satisfied.has(id)) continue;
 				issues.push({
-					severity: "error",
-					message: `Decision '${id}' cites no forcing artifact (decision_addresses_issue|feature|gap edge)`,
-					block: "decisions",
-					field: `${id}.forcing_artifact`,
+					severity: inv.severity ?? "error",
+					message: (inv.message ?? `Item '{id}' in block '{block}' violates invariant '${inv.id}'`)
+						.replaceAll("{id}", id)
+						.replaceAll("{block}", inv.block),
+					block: inv.block,
+					field: `${id}.${inv.id}`,
+					code: inv.id,
 				});
 			}
 		}

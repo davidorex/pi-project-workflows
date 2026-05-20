@@ -261,5 +261,34 @@
     "context-contracts",
     "phase",
     "story"
+  ],
+  "invariants": [
+    {
+      "id": "completed-task-has-verification",
+      "class": "requires-edge",
+      "block": "tasks",
+      "where": {
+        "status": "completed"
+      },
+      "relation_types": [
+        "verification_verifies_item"
+      ],
+      "direction": "as_child",
+      "severity": "error",
+      "message": "Completed task '{id}' has no verification edge (verification_verifies_item)"
+    },
+    {
+      "id": "decision-cites-forcing-artifact",
+      "class": "requires-edge",
+      "block": "decisions",
+      "relation_types": [
+        "decision_addresses_issue",
+        "decision_addresses_feature",
+        "decision_addresses_gap"
+      ],
+      "direction": "as_parent",
+      "severity": "error",
+      "message": "Decision '{id}' cites no forcing artifact (decision_addresses_issue|feature|gap edge)"
+    }
   ]
 }

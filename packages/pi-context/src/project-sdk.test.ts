@@ -243,16 +243,55 @@ const REL_TYPES = [
 	{ canonical_id: "task_depends_on_task", display_name: "depends on", category: "ordering" as const },
 ];
 
+// Canonical config-declared invariants (DEC-0025): the two previously-hardcoded
+// substrate invariants relocated into config DATA. Default-injected by
+// writeConfig so existing edge-model fixtures fire the SAME invariants as before
+// (regression parity). Messages use the {id} token so rendered text contains the
+// real id string ('t1' / 'd1') the existing assertions match against.
+const CANONICAL_INVARIANTS = [
+	{
+		id: "completed-task-has-verification",
+		class: "requires-edge" as const,
+		block: "tasks",
+		where: { status: "completed" },
+		relation_types: ["verification_verifies_item"],
+		direction: "as_child" as const,
+		severity: "error" as const,
+		message: "Completed task '{id}' has no verification edge (verification_verifies_item)",
+	},
+	{
+		id: "decision-cites-forcing-artifact",
+		class: "requires-edge" as const,
+		block: "decisions",
+		relation_types: ["decision_addresses_issue", "decision_addresses_feature", "decision_addresses_gap"],
+		direction: "as_parent" as const,
+		severity: "error" as const,
+		message: "Decision '{id}' cites no forcing artifact (decision_addresses_issue|feature|gap edge)",
+	},
+];
+
 /**
  * Write a config.json with the canonical relation_types registry. block_kinds is
  * left empty so buildIdIndex's prefix-vs-block invariant does not constrain the
  * fixtures' ad-hoc ids (t1/d1/etc.) — this isolates the edge-integrity surface
- * under test from prefix enforcement.
+ * under test from prefix enforcement. By default declares the two canonical
+ * invariants (DEC-0025) so existing fixtures retain their prior invariant
+ * coverage; pass a custom `invariants` array to exercise other invariant shapes.
  */
-function writeConfig(projectDir: string, relationTypes = REL_TYPES): void {
+function writeConfig(
+	projectDir: string,
+	relationTypes = REL_TYPES,
+	invariants: unknown[] = CANONICAL_INVARIANTS,
+): void {
 	fs.writeFileSync(
 		path.join(projectDir, "config.json"),
-		JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [], relation_types: relationTypes }),
+		JSON.stringify({
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [],
+			relation_types: relationTypes,
+			invariants,
+		}),
 	);
 }
 
@@ -469,6 +508,324 @@ describe("validateProject", () => {
 		// no config → no edge checks, no relocated invariants → clean
 		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
+	});
+});
+
+// ── Config-declared invariants (DEC-0025: vocabulary-neutral generic loop) ────
+// validateProject enforces config.invariants[] generically per the requires-edge
+// class. These tests drive that loop with CUSTOM invariant data — including
+// FOREIGN vocabulary the source has zero literals for — to prove the engine
+// commits to no block/status/relation_type vocabulary itself.
+
+describe("config-declared invariants (requires-edge)", () => {
+	it("ABSENCE fires: completed task with no satisfying edge is flagged", (t) => {
+		const tmpDir = makeTmpDir("inv-absence");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, [
+			{
+				id: "req-x",
+				class: "requires-edge",
+				block: "tasks",
+				where: { status: "completed" },
+				relation_types: ["verification_verifies_item"],
+				direction: "as_child",
+			},
+		]);
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		writeRelations(projectDir, []); // zero satisfying edges
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.status, "invalid");
+		const issue = result.issues.find((i) => i.code === "req-x");
+		assert.ok(issue, "absent required edge must fire a diagnostic (unit-2.1 false-pass lesson)");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "tasks");
+	});
+
+	it("presence clears: satisfying edge removes the diagnostic", (t) => {
+		const tmpDir = makeTmpDir("inv-presence");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, [
+			{
+				id: "req-x",
+				class: "requires-edge",
+				block: "tasks",
+				where: { status: "completed" },
+				relation_types: ["verification_verifies_item"],
+				direction: "as_child",
+			},
+		]);
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "verification.json"),
+			JSON.stringify({
+				verifications: [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }],
+			}),
+		);
+		writeRelations(projectDir, [{ parent: "v1", child: "t1", relation_type: "verification_verifies_item" }]);
+
+		const result = validateProject(tmpDir);
+		assert.ok(!result.issues.some((i) => i.code === "req-x"), "satisfied invariant must produce no diagnostic");
+	});
+
+	it("where-filter excludes non-matching items", (t) => {
+		const tmpDir = makeTmpDir("inv-where");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, [
+			{
+				id: "req-x",
+				class: "requires-edge",
+				block: "tasks",
+				where: { status: "completed" },
+				relation_types: ["verification_verifies_item"],
+				direction: "as_child",
+			},
+		]);
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "t1", status: "completed" },
+					{ id: "t2", status: "planned" },
+				],
+			}),
+		);
+		writeRelations(projectDir, []); // no satisfying edges for either
+
+		const result = validateProject(tmpDir);
+		const flaggedT1 = result.issues.some((i) => i.code === "req-x" && i.field?.startsWith("t1."));
+		const flaggedT2 = result.issues.some((i) => i.code === "req-x" && i.field?.startsWith("t2."));
+		assert.ok(flaggedT1, "completed t1 must be flagged");
+		assert.ok(!flaggedT2, "non-matching (where excludes) t2 must NOT be flagged");
+	});
+
+	it("direction matters: as_parent requires the item to be edge.parent", (t) => {
+		const tmpDir = makeTmpDir("inv-direction");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		const invariants = [
+			{
+				id: "req-parent",
+				class: "requires-edge",
+				block: "decisions",
+				relation_types: ["decision_addresses_gap"],
+				direction: "as_parent",
+			},
+		];
+		writeConfig(projectDir, REL_TYPES, invariants);
+
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({ decisions: [{ id: "d1", status: "decided" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "a gap" }] }),
+		);
+
+		// d1 is the CHILD of the right relation_type → does NOT satisfy as_parent.
+		writeRelations(projectDir, [{ parent: "g1", child: "d1", relation_type: "decision_addresses_gap" }]);
+		const wrong = validateProject(tmpDir);
+		assert.ok(
+			wrong.issues.some((i) => i.code === "req-parent"),
+			"item as child must NOT satisfy as_parent invariant",
+		);
+
+		// d1 is now the PARENT → satisfies.
+		writeRelations(projectDir, [{ parent: "d1", child: "g1", relation_type: "decision_addresses_gap" }]);
+		const right = validateProject(tmpDir);
+		assert.ok(!right.issues.some((i) => i.code === "req-parent"), "item as parent satisfies as_parent invariant");
+	});
+
+	it("multiple relation_types: any-of satisfies", (t) => {
+		const tmpDir = makeTmpDir("inv-anyof");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(
+			projectDir,
+			[
+				{ canonical_id: "ra", display_name: "ra", category: "data_flow" as const },
+				{ canonical_id: "rb", display_name: "rb", category: "data_flow" as const },
+			],
+			[
+				{
+					id: "req-anyof",
+					class: "requires-edge",
+					block: "decisions",
+					relation_types: ["ra", "rb"],
+					direction: "as_parent",
+				},
+			],
+		);
+
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({ decisions: [{ id: "d1", status: "decided" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "a gap" }] }),
+		);
+		// satisfied by an `rb` edge alone (the second of the any-of set)
+		writeRelations(projectDir, [{ parent: "d1", child: "g1", relation_type: "rb" }]);
+
+		const result = validateProject(tmpDir);
+		assert.ok(!result.issues.some((i) => i.code === "req-anyof"), "any one matching relation_type satisfies");
+	});
+
+	it("severity override: warning yields status 'warnings'", (t) => {
+		const tmpDir = makeTmpDir("inv-severity");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, [
+			{
+				id: "req-warn",
+				class: "requires-edge",
+				block: "tasks",
+				where: { status: "completed" },
+				relation_types: ["verification_verifies_item"],
+				direction: "as_child",
+				severity: "warning",
+			},
+		]);
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		writeRelations(projectDir, []);
+
+		const result = validateProject(tmpDir);
+		const issue = result.issues.find((i) => i.code === "req-warn");
+		assert.ok(issue, "violating item must fire");
+		assert.strictEqual(issue!.severity, "warning");
+		assert.strictEqual(result.status, "warnings", "warning-only invariant must not push status to invalid");
+	});
+
+	it("empty invariants: no invariant-sourced issues", (t) => {
+		const tmpDir = makeTmpDir("inv-empty");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, []); // no invariants declared
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		writeRelations(projectDir, []); // no edges → no dangling-edge errors either
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.status, "clean", "no invariants + no edges → clean");
+		assert.deepStrictEqual(result.issues, []);
+	});
+
+	it("DEC-0025 universalization: enforces a conception shipped with zero source literals", (t) => {
+		const tmpDir = makeTmpDir("inv-foreign");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(
+			projectDir,
+			[{ canonical_id: "note_supports_claim", display_name: "supports", category: "data_flow" as const }],
+			[
+				{
+					id: "draft-note-needs-support",
+					class: "requires-edge",
+					block: "notes",
+					where: { kind: "draft" },
+					relation_types: ["note_supports_claim"],
+					direction: "as_parent",
+				},
+			],
+		);
+
+		fs.writeFileSync(
+			path.join(projectDir, "notes.json"),
+			JSON.stringify({
+				notes: [
+					{ id: "n1", kind: "draft" },
+					{ id: "n2", kind: "final" },
+				],
+			}),
+		);
+		fs.writeFileSync(path.join(projectDir, "claims.json"), JSON.stringify({ claims: [{ id: "c1" }] }));
+
+		// No edge → draft note n1 flagged; final note n2 (kind≠draft) NOT flagged.
+		writeRelations(projectDir, []);
+		const before = validateProject(tmpDir);
+		assert.ok(
+			before.issues.some((i) => i.code === "draft-note-needs-support" && i.field?.startsWith("n1.")),
+			"draft note without support must be flagged for a vocabulary the source ships zero literals for",
+		);
+		assert.ok(
+			!before.issues.some((i) => i.code === "draft-note-needs-support" && i.field?.startsWith("n2.")),
+			"final note (where excludes) must NOT be flagged",
+		);
+
+		// Add the supporting edge → n1 clears.
+		writeRelations(projectDir, [{ parent: "n1", child: "c1", relation_type: "note_supports_claim" }]);
+		const after = validateProject(tmpDir);
+		assert.ok(!after.issues.some((i) => i.code === "draft-note-needs-support"), "supported draft note clears");
+	});
+
+	it("code + token substitution: code equals inv.id, message renders the real id", (t) => {
+		const tmpDir = makeTmpDir("inv-token");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, [
+			{
+				id: "needs-ver",
+				class: "requires-edge",
+				block: "tasks",
+				where: { status: "completed" },
+				relation_types: ["verification_verifies_item"],
+				direction: "as_child",
+				message: "Task '{id}' in '{block}' is unverified",
+			},
+		]);
+
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		writeRelations(projectDir, []);
+
+		const result = validateProject(tmpDir);
+		const issue = result.issues.find((i) => i.code === "needs-ver");
+		assert.ok(issue, "must fire");
+		assert.strictEqual(issue!.code, "needs-ver", "code mirrors inv.id");
+		assert.ok(issue!.message.includes("'t1'"), "message renders the real id");
+		assert.ok(!issue!.message.includes("{id}"), "message must not contain the literal token");
+		assert.ok(issue!.message.includes("'tasks'"), "message renders the real block name");
 	});
 });
 

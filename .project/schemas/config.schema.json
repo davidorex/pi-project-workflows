@@ -1,151 +1,344 @@
 {
-	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "pi-context://schemas/config",
-	"version": "1.0.0",
-	"title": "pi-context substrate config",
-	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, and lens specs. Closes FGAP-001 (hierarchical block storage), FGAP-013 (status vocabulary registry), issue-089 class (PLAN- prefix collision) by making registries config-driven from line 1.",
-	"type": "object",
-	"required": ["schema_version", "root", "block_kinds"],
-	"additionalProperties": false,
-	"properties": {
-		"schema_version": {
-			"type": "string",
-			"pattern": "^\\d+\\.\\d+\\.\\d+$",
-			"description": "Semver of this config schema. Surfaces FGAP-006 at the meta-layer."
-		},
-		"root": {
-			"type": "string",
-			"description": "On-disk directory housing the substrate. Default '.project'. Closes GitHub issue #3 surface — relocatable per config."
-		},
-		"naming": {
-			"type": "object",
-			"description": "Canonical-id → user-facing-name alias map. Code references canonical ids; UI/macros render configured names. Decouples terminology from code.",
-			"additionalProperties": { "type": "string" }
-		},
-		"layers": {
-			"type": "array",
-			"description": "Work-altitude tier registry (L1..L5 or user-defined). FGAP-016 layer registry surface.",
-			"items": {
-				"type": "object",
-				"required": ["id", "display_name"],
-				"additionalProperties": false,
-				"properties": {
-					"id": { "type": "string" },
-					"display_name": { "type": "string" },
-					"description": { "type": "string" }
-				}
-			}
-		},
-		"block_kinds": {
-			"type": "array",
-			"description": "Canonical block-kind registry. Replaces the previously hardcoded ID_PREFIX_TO_BLOCK table — prefix conflicts surface at config-registration time, not at fixture-write time.",
-			"items": {
-				"type": "object",
-				"required": ["canonical_id", "display_name", "prefix", "schema_path", "array_key", "data_path"],
-				"additionalProperties": false,
-				"properties": {
-					"canonical_id": { "type": "string", "description": "Opaque identifier (e.g. 'decisions-block')" },
-					"display_name": { "type": "string", "description": "Mutable user-facing label (e.g. 'Design Decisions')" },
-					"prefix": { "type": "string", "description": "Id-prefix token (e.g. 'DEC-')" },
-					"schema_path": { "type": "string", "description": "Relative path to schema file" },
-					"array_key": { "type": "string", "description": "Top-level array property in block JSON" },
-					"data_path": { "type": "string", "description": "Relative path to block data file" },
-					"layer": { "type": "string", "description": "FK to layers[].id (optional)" }
-				}
-			}
-		},
-		"status_buckets": {
-			"type": "object",
-			"description": "Per-project status normalization. Maps raw status string → bucket. FGAP-013 closure surface.",
-			"additionalProperties": {
-				"type": "string",
-				"enum": ["complete", "in_progress", "blocked", "todo", "unknown"]
-			}
-		},
-		"display_strings": {
-			"type": "object",
-			"description": "Validation-code / opaque-slug → display label map.",
-			"additionalProperties": { "type": "string" }
-		},
-		"relation_types": {
-			"type": "array",
-			"description": "Canonical relation_type registry (DEC-0013 single-source-of-truth pattern).",
-			"items": {
-				"type": "object",
-				"required": ["canonical_id", "display_name", "category"],
-				"additionalProperties": false,
-				"properties": {
-					"canonical_id": { "type": "string" },
-					"display_name": { "type": "string" },
-					"category": { "type": "string", "enum": ["ordering", "data_flow", "membership"] },
-					"cycle_allowed": { "type": "boolean" }
-				}
-			}
-		},
-		"hierarchy": {
-			"type": "array",
-			"description": "Constraint declaration: which (parent_block, child_block, relation_type) edges are legal in relations.json.",
-			"items": {
-				"type": "object",
-				"required": ["parent_block", "child_block", "relation_type"],
-				"additionalProperties": false,
-				"properties": {
-					"parent_block": { "type": "string" },
-					"child_block": { "type": "string" },
-					"relation_type": { "type": "string" }
-				}
-			}
-		},
-		"lenses": {
-			"type": "array",
-			"description": "Named projections over a target block (or a composition over multiple). Supports kind=target (single target) and kind=composition (members reference sub-lenses or {from, where} item-filters).",
-			"items": {
-				"type": "object",
-				"required": ["id", "bins"],
-				"additionalProperties": false,
-				"properties": {
-					"id": { "type": "string" },
-					"kind": { "type": "string", "enum": ["target", "composition"] },
-					"target": { "type": "string", "description": "Canonical block id (kind=target)" },
-					"targets": {
-						"type": "array",
-						"description": "Block ids the composition spans (kind=composition)",
-						"items": { "type": "string" }
-					},
-					"members": {
-						"type": "array",
-						"description": "Composition members — sub-lens reference or {from, where} item-filter",
-						"items": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"lens": { "type": "string" },
-								"from": { "type": "string" },
-								"where": {
-									"type": "object",
-									"additionalProperties": {
-										"type": ["string", "number", "boolean"]
-									}
-								}
-							}
-						}
-					},
-					"relation_type": { "type": "string" },
-					"derived_from_field": { "type": ["string", "null"] },
-					"bins": { "type": "array", "items": { "type": "string" } },
-					"render_uncategorized": { "type": "boolean", "default": true }
-				}
-			}
-		},
-		"installed_schemas": {
-			"type": "array",
-			"description": "Schemas the project has opted into via /project install (DEC-0011).",
-			"items": { "type": "string" }
-		},
-		"installed_blocks": {
-			"type": "array",
-			"description": "Blocks the project has opted into via /project install (DEC-0011).",
-			"items": { "type": "string" }
-		}
-	}
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/config",
+  "version": "1.1.0",
+  "title": "pi-context substrate config",
+  "description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, and lens specs. Closes FGAP-001 (hierarchical block storage), FGAP-013 (status vocabulary registry), issue-089 class (PLAN- prefix collision) by making registries config-driven from line 1.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "root",
+    "block_kinds"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semver of this config schema. Surfaces FGAP-006 at the meta-layer."
+    },
+    "root": {
+      "type": "string",
+      "description": "On-disk directory housing the substrate. Default '.project'. Closes GitHub issue #3 surface — relocatable per config."
+    },
+    "naming": {
+      "type": "object",
+      "description": "Canonical-id → user-facing-name alias map. Code references canonical ids; UI/macros render configured names. Decouples terminology from code.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "layers": {
+      "type": "array",
+      "description": "Work-altitude tier registry (L1..L5 or user-defined). FGAP-016 layer registry surface.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "display_name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "block_kinds": {
+      "type": "array",
+      "description": "Canonical block-kind registry. Replaces the previously hardcoded ID_PREFIX_TO_BLOCK table — prefix conflicts surface at config-registration time, not at fixture-write time.",
+      "items": {
+        "type": "object",
+        "required": [
+          "canonical_id",
+          "display_name",
+          "prefix",
+          "schema_path",
+          "array_key",
+          "data_path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "canonical_id": {
+            "type": "string",
+            "description": "Opaque identifier (e.g. 'decisions-block')"
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Mutable user-facing label (e.g. 'Design Decisions')"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Id-prefix token (e.g. 'DEC-')"
+          },
+          "schema_path": {
+            "type": "string",
+            "description": "Relative path to schema file"
+          },
+          "array_key": {
+            "type": "string",
+            "description": "Top-level array property in block JSON"
+          },
+          "data_path": {
+            "type": "string",
+            "description": "Relative path to block data file"
+          },
+          "layer": {
+            "type": "string",
+            "description": "FK to layers[].id (optional)"
+          }
+        }
+      }
+    },
+    "status_buckets": {
+      "type": "object",
+      "description": "Per-project status normalization. Maps raw status string → bucket. FGAP-013 closure surface.",
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "complete",
+          "in_progress",
+          "blocked",
+          "todo",
+          "unknown"
+        ]
+      }
+    },
+    "display_strings": {
+      "type": "object",
+      "description": "Validation-code / opaque-slug → display label map.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "relation_types": {
+      "type": "array",
+      "description": "Canonical relation_type registry (DEC-0013 single-source-of-truth pattern).",
+      "items": {
+        "type": "object",
+        "required": [
+          "canonical_id",
+          "display_name",
+          "category"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "canonical_id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "ordering",
+              "data_flow",
+              "membership"
+            ]
+          },
+          "cycle_allowed": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "invariants": {
+      "type": "array",
+      "description": "Config-declared substrate invariants enforced generically by validateProject. Each names block kinds / relation_types / status values purely as DATA — no vocabulary literal lives in source (DEC-0025). User-overridable: a project ships only the invariants its conception requires.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "class",
+          "block",
+          "relation_types",
+          "direction"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable invariant id, surfaced in diagnostics + the issue code field."
+          },
+          "class": {
+            "type": "string",
+            "enum": [
+              "requires-edge"
+            ],
+            "description": "Invariant class. Only requires-edge today; reserved for additive extension."
+          },
+          "block": {
+            "type": "string",
+            "description": "Data-file basename of the block whose items the invariant ranges over (matched against ItemLocation.block)."
+          },
+          "where": {
+            "type": "object",
+            "description": "Optional field-equality predicate. Item qualifies only when EVERY (field,value) matches item[field] === value. Absent → all items qualify.",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "relation_types": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            },
+            "description": "canonical_ids of relation_types that satisfy the invariant. Qualifying item passes if ≥1 incident edge (in direction) has relation_type in this set."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "as_parent",
+              "as_child"
+            ],
+            "description": "Which endpoint the qualifying item must occupy. as_parent → item.id === edge.parent; as_child → item.id === edge.child."
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warning"
+            ],
+            "default": "error",
+            "description": "Diagnostic severity when unsatisfied."
+          },
+          "message": {
+            "type": "string",
+            "description": "Optional message template. Tokens {id} and {block} substitute. Absent → generic default."
+          }
+        }
+      }
+    },
+    "hierarchy": {
+      "type": "array",
+      "description": "Constraint declaration: which (parent_block, child_block, relation_type) edges are legal in relations.json.",
+      "items": {
+        "type": "object",
+        "required": [
+          "parent_block",
+          "child_block",
+          "relation_type"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "parent_block": {
+            "type": "string"
+          },
+          "child_block": {
+            "type": "string"
+          },
+          "relation_type": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "lenses": {
+      "type": "array",
+      "description": "Named projections over a target block (or a composition over multiple). Supports kind=target (single target) and kind=composition (members reference sub-lenses or {from, where} item-filters).",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "bins"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "target",
+              "composition"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "description": "Canonical block id (kind=target)"
+          },
+          "targets": {
+            "type": "array",
+            "description": "Block ids the composition spans (kind=composition)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "members": {
+            "type": "array",
+            "description": "Composition members — sub-lens reference or {from, where} item-filter",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lens": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": "string"
+                },
+                "where": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number",
+                      "boolean"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "relation_type": {
+            "type": "string"
+          },
+          "derived_from_field": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "render_uncategorized": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
+    "installed_schemas": {
+      "type": "array",
+      "description": "Schemas the project has opted into via /project install (DEC-0011).",
+      "items": {
+        "type": "string"
+      }
+    },
+    "installed_blocks": {
+      "type": "array",
+      "description": "Blocks the project has opted into via /project install (DEC-0011).",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
 }

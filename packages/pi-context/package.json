@@ -61,6 +61,10 @@
 			"types": "./dist/lens-view.d.ts",
 			"default": "./dist/lens-view.js"
 		},
+		"./rename-canonical-id": {
+			"types": "./dist/rename-canonical-id.d.ts",
+			"default": "./dist/rename-canonical-id.js"
+		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
 		"./schemas/relations.schema.json": "./schemas/relations.schema.json",
 		"./schemas/priority.schema.json": "./schemas/priority.schema.json",

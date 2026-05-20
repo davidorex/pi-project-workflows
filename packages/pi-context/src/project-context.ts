@@ -22,6 +22,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeTypedFile } from "./block-api.js";
+import type { DispatchContext } from "./dispatch-context.js";
 import { resolveContextDir } from "./project-dir.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
@@ -245,6 +247,34 @@ export function loadRelations(cwd: string): Edge[] {
 	}
 	validateFromFile(bundledSchemaPath("relations"), data, `relations.json (${p})`);
 	return data as Edge[];
+}
+
+// ── Writers (atomic, AJV-validated against bundled schemas) ──────────────────
+
+/**
+ * Atomic, AJV-validated write of `<resolveContextDir(cwd)>/relations.json`
+ * (top-level `Edge[]` array). Delegates to block-api's `writeTypedFile` against
+ * the bundled relations schema. Importing `writeTypedFile` here is cycle-safe:
+ * block-api imports only `projectRoot`-class path constants and does NOT import
+ * project-context, so this module remains at a strictly lower layer in the read
+ * direction while reaching up to block-api for the shared atomic-write surface.
+ *
+ * `ctx` is threaded through for attestation parity with the rest of the write
+ * surface; the relations schema is a flat array and declares no envelope author
+ * fields, so stamping is a structural no-op today (consistent with the
+ * top-level-array stamping semantics documented in block-api).
+ */
+export function writeRelations(cwd: string, edges: Edge[], ctx?: DispatchContext): void {
+	writeTypedFile(relationsPath(cwd), bundledSchemaPath("relations"), edges, ctx, "relations.json");
+}
+
+/**
+ * Atomic, AJV-validated write of `<resolveContextDir(cwd)>/config.json`.
+ * Delegates to block-api's `writeTypedFile` against the bundled config schema.
+ * Same cycle-safety reasoning as `writeRelations`.
+ */
+export function writeConfig(cwd: string, config: ConfigBlock, ctx?: DispatchContext): void {
+	writeTypedFile(configPath(cwd), bundledSchemaPath("config"), config, ctx, "config.json");
 }
 
 // ── ProjectContext mtime cache ───────────────────────────────────────────────

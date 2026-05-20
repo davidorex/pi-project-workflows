@@ -54,6 +54,7 @@ import {
 	resolveItemsByIds,
 	validateProject,
 } from "./project-sdk.js";
+import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { readSchema } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
@@ -910,6 +911,35 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Tool: rename-canonical-id ─────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "rename-canonical-id",
+		label: "Rename Canonical Id",
+		description:
+			"Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to newId across all substrate surfaces that carry it as DATA — item home block + relations.json edges, or the relevant config registries. Out-of-substrate occurrences (analysis MDs, git history) are REPORTED, never rewritten. block_kind renames are unsupported (filesystem cascade). Use dryRun to preview the would-change counts without writing.",
+		promptSnippet: "Rename a canonical_id (item/relation_type/lens/layer) across substrate; dryRun to preview",
+		parameters: Type.Object({
+			kind: Type.String({ description: "One of: item | relation_type | lens | layer" }),
+			oldId: Type.String({ description: "Current canonical_id to rename from" }),
+			newId: Type.String({ description: "New canonical_id to rename to" }),
+			dryRun: Type.Optional(Type.Boolean({ description: "Compute would-change counts without writing" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { kind: string; oldId: string; newId: string; dryRun?: boolean },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const report = renameCanonicalId(ctx.cwd, params.kind, params.oldId, params.newId, { dryRun: params.dryRun });
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(report, null, 2) }],
+			};
+		},
+	});
+
 	// ── Tool: read-schema ───────────────────────────────────────────────────
 
 	pi.registerTool({
@@ -1710,6 +1740,7 @@ export {
 	schemaInfo,
 	schemaVocabulary,
 } from "./project-sdk.js";
+export { type RenameKind, type RenameReport, renameCanonicalId } from "./rename-canonical-id.js";
 export {
 	listRoadmaps,
 	loadRoadmap,

@@ -249,7 +249,8 @@ function initProject(cwd: string, contextDir: string): { created: string[]; skip
 
 	const projectDirPath = projectDir(cwd);
 	const schemasDirPath = schemasDir(cwd);
-	const phasesDir = path.join(projectDirPath, "phases");
+	// No phases/ subdirectory since DEC-0028: phases are an ordinary array-block
+	// living in phases.json, created on first append like every other block.
 
 	const defaultsDir = path.resolve(import.meta.dirname, "..", "defaults");
 	const defaultSchemasDir = path.join(defaultsDir, "schemas");
@@ -259,7 +260,7 @@ function initProject(cwd: string, contextDir: string): { created: string[]; skip
 	const skipped: string[] = [];
 
 	// Create directories
-	for (const dir of [projectDirPath, schemasDirPath, phasesDir]) {
+	for (const dir of [projectDirPath, schemasDirPath]) {
 		if (!fs.existsSync(dir)) {
 			fs.mkdirSync(dir, { recursive: true });
 			created.push(`${path.relative(cwd, dir)}/`);

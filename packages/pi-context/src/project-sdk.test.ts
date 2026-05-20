@@ -118,12 +118,19 @@ describe("projectState", () => {
 		fs.mkdirSync(schemasDir, { recursive: true });
 		fs.writeFileSync(path.join(schemasDir, "issues.schema.json"), "{}");
 
-		// Set up phases
-		const phasesDir = path.join(wfDir, "phases");
-		fs.mkdirSync(phasesDir, { recursive: true });
-		fs.writeFileSync(path.join(phasesDir, "01-foundation.json"), "{}");
-		fs.writeFileSync(path.join(phasesDir, "02-control.json"), "{}");
-		fs.writeFileSync(path.join(phasesDir, "08-automation.json"), "{}");
+		// Set up phases as an array-block (DEC-0028): single phase.json holding
+		// phases[] with PHASE-NNN ids. Two completed + one in-progress exercises
+		// the completed-count `current` measure.
+		fs.writeFileSync(
+			path.join(wfDir, "phase.json"),
+			JSON.stringify({
+				phases: [
+					{ id: "PHASE-001", name: "foundation", intent: "i", status: "completed" },
+					{ id: "PHASE-002", name: "control", intent: "i", status: "completed" },
+					{ id: "PHASE-008", name: "automation", intent: "i", status: "in-progress" },
+				],
+			}),
+		);
 
 		fs.writeFileSync(
 			path.join(wfDir, "issues.json"),
@@ -197,8 +204,8 @@ describe("projectState", () => {
 		assert.strictEqual(state.blockSummaries.decisions.arrays.decisions.byStatus!.decided, 1);
 		assert.strictEqual(state.blockSummaries.decisions.arrays.decisions.byStatus!.tentative, 1);
 
-		assert.strictEqual(state.phases.total, 3);
-		assert.strictEqual(state.phases.current, 8); // highest number from 08-automation.json
+		assert.strictEqual(state.phases.total, 3); // phases[].length
+		assert.strictEqual(state.phases.current, 2); // count of status==="completed" phases
 		assert.ok(state.schemas >= 1); // at least issues.schema.json
 	});
 
@@ -228,28 +235,32 @@ describe("validateProject", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
-		const phasesDir = path.join(projectDir, "phases");
-		fs.mkdirSync(phasesDir, { recursive: true });
+		fs.mkdirSync(projectDir, { recursive: true });
 
-		// Phase file with number and name
-		fs.writeFileSync(path.join(phasesDir, "01-foundation.json"), JSON.stringify({ number: 1, name: "foundation" }));
+		// Phases as an array-block (DEC-0028): PHASE-NNN ids in phase.json.
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({
+				phases: [{ id: "PHASE-001", name: "foundation", intent: "i", status: "planned" }],
+			}),
+		);
 
-		// Tasks referencing the existing phase
+		// Tasks referencing the existing phase by its PHASE-NNN id
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
 			JSON.stringify({
 				tasks: [
-					{ id: "t1", description: "first task", status: "planned", phase: "foundation" },
-					{ id: "t2", description: "second task", status: "planned", phase: 1 },
+					{ id: "t1", description: "first task", status: "planned", phase: "PHASE-001" },
+					{ id: "t2", description: "second task", status: "planned", phase: "PHASE-001" },
 				],
 			}),
 		);
 
-		// Decisions referencing the existing phase
+		// Decisions referencing the existing phase by its PHASE-NNN id
 		fs.writeFileSync(
 			path.join(projectDir, "decisions.json"),
 			JSON.stringify({
-				decisions: [{ id: "d1", decision: "use X", rationale: "because", phase: 1 }],
+				decisions: [{ id: "d1", decision: "use X", rationale: "because", phase: "PHASE-001" }],
 			}),
 		);
 
@@ -264,7 +275,7 @@ describe("validateProject", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
-		// No phases directory — phase references will be broken
+		// No phase.json — phase references will be broken
 
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
@@ -507,17 +518,21 @@ describe("validation result status field", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
-		const phasesDir = path.join(projectDir, "phases");
-		fs.mkdirSync(phasesDir, { recursive: true });
+		fs.mkdirSync(projectDir, { recursive: true });
 
-		// Phase file
-		fs.writeFileSync(path.join(phasesDir, "01-foundation.json"), JSON.stringify({ number: 1, name: "foundation" }));
+		// Phases array-block (DEC-0028)
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({
+				phases: [{ id: "PHASE-001", name: "foundation", intent: "i", status: "planned" }],
+			}),
+		);
 
-		// Tasks with valid references
+		// Tasks with valid references by PHASE-NNN id
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
 			JSON.stringify({
-				tasks: [{ id: "t1", description: "task", status: "planned", phase: "foundation" }],
+				tasks: [{ id: "t1", description: "task", status: "planned", phase: "PHASE-001" }],
 			}),
 		);
 
@@ -551,7 +566,7 @@ describe("validation result status field", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
-		// No phases directory — phase reference from task will be a warning
+		// No phase.json — phase reference from task will be a warning
 
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),

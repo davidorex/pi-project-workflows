@@ -440,24 +440,22 @@ export function projectState(cwd: string): ProjectState {
 		/* no block dir */
 	}
 
-	// Phases from <substrateDir>/phases/*.json
+	// Phases from the <substrateDir>/phase.json array-block (DEC-0028).
+	// Singular file basename matches phase.schema.json + the verification.json
+	// precedent (singular file + singular schema + plural array_key "phases").
+	// `total` is phases[].length; `current` counts completed phases — a
+	// monotonic progress measure that does not assume contiguous numbering.
+	// Absent phase.json yields total=0/current=0 (graceful).
 	let phaseTotal = 0;
 	let phaseCurrent = 0;
 	try {
-		const phasesDir = path.join(projectDir(cwd), "phases");
-		if (fs.existsSync(phasesDir)) {
-			const files = fs
-				.readdirSync(phasesDir)
-				.filter((f) => f.endsWith(".json"))
-				.sort();
-			phaseTotal = files.length;
-			if (files.length > 0) {
-				const last = files[files.length - 1];
-				phaseCurrent = parseInt(last.split("-")[0], 10) || 0;
-			}
+		const phaseData = readBlock(cwd, "phase") as { phases?: Record<string, unknown>[] };
+		if (Array.isArray(phaseData.phases)) {
+			phaseTotal = phaseData.phases.length;
+			phaseCurrent = phaseData.phases.filter((p) => p.status === "completed").length;
 		}
 	} catch {
-		/* no phases dir */
+		/* no phase.json */
 	}
 
 	// Planning lifecycle derived state
@@ -684,10 +682,10 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
  * Build a map from item-ID to its location across every block in `.project/`.
  *
  * Scan strategy:
- *   1. `.project/phases/*.json` — single-object files contributing both
- *      `String(number)` and `name` as IDs under block "phases".
- *   2. `.project/*.json` — every array property whose items are objects with
- *      a string `id` field becomes an indexed entry.
+ *   - `.project/*.json` — every array property whose items are objects with
+ *     a string `id` field becomes an indexed entry. Phases participate as an
+ *     ordinary array-block since DEC-0028 (PHASE-NNN ids in `phase.json` under
+ *     the plural `phases` array key); there is no dedicated file-per-phase branch.
  *
  * Prefix invariant: when an item ID starts with one of the prefixes registered
  * in `config.block_kinds[]`, the block it was found in must match that
@@ -707,30 +705,14 @@ export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
 	const blockDir = projectDir(cwd);
 	const cfg = loadConfig(cwd);
 
-	// Phase files — special: synthesized IDs from number + name fields,
-	// not from a top-level `id` string. No prefix — exempt from the
-	// prefix-vs-block consistency check.
-	const phasesDir = path.join(blockDir, "phases");
-	if (fs.existsSync(phasesDir)) {
-		try {
-			for (const file of fs.readdirSync(phasesDir).filter((f) => f.endsWith(".json"))) {
-				try {
-					const data = JSON.parse(fs.readFileSync(path.join(phasesDir, file), "utf-8")) as Record<string, unknown>;
-					const phaseLoc: ItemLocation = { block: "phases", arrayKey: file, item: data };
-					if (data.number !== undefined && !index.has(String(data.number))) {
-						index.set(String(data.number), phaseLoc);
-					}
-					if (typeof data.name === "string" && !index.has(data.name)) {
-						index.set(data.name, phaseLoc);
-					}
-				} catch {
-					/* skip malformed phase file */
-				}
-			}
-		} catch {
-			/* phases dir unreadable */
-		}
-	}
+	// Phases are an ordinary array-block since DEC-0028: each phase carries a
+	// PHASE-NNN top-level `id` and lives in `phase.json` under the plural
+	// `phases` array key (singular file basename matches phase.schema.json +
+	// the verification.json precedent). The generic block-file scan below
+	// indexes them by id like any other block. When `PHASE-` is registered in
+	// config.block_kinds (canonical_id "phase"), expectedBlockForId resolves
+	// PHASE-NNN ids to block "phase" — matching the file they are found in, so
+	// the prefix-vs-block invariant passes without a dedicated branch.
 
 	// Top-level block files — scan every array property for items with `id`.
 	if (!fs.existsSync(blockDir)) return index;
@@ -869,7 +851,7 @@ export function validateProject(cwd: string): ProjectValidationResult {
 	const verificationIds = new Set<string>();
 	for (const [id, loc] of idIndex) {
 		switch (loc.block) {
-			case "phases":
+			case "phase":
 				phaseIds.add(id);
 				break;
 			case "tasks":

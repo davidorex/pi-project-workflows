@@ -1513,14 +1513,16 @@ describe("readBlockDir", () => {
 		const tmpDir = makeTmpDir("rdir-happy");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		const wfDir = setupWorkflowDir(tmpDir);
-		const phasesDir = path.join(wfDir, "phases");
-		fs.mkdirSync(phasesDir);
-		fs.writeFileSync(path.join(phasesDir, "02-second.json"), JSON.stringify({ n: 2 }));
-		fs.writeFileSync(path.join(phasesDir, "01-first.json"), JSON.stringify({ n: 1 }));
+		// readBlockDir is a generic subdirectory reader; use a neutral subdir name
+		// (phases are an ordinary array-block since DEC-0028, no longer a subdir).
+		const itemsDir = path.join(wfDir, "items");
+		fs.mkdirSync(itemsDir);
+		fs.writeFileSync(path.join(itemsDir, "02-second.json"), JSON.stringify({ n: 2 }));
+		fs.writeFileSync(path.join(itemsDir, "01-first.json"), JSON.stringify({ n: 1 }));
 		// Non-JSON files should be ignored
-		fs.writeFileSync(path.join(phasesDir, "notes.txt"), "ignored");
+		fs.writeFileSync(path.join(itemsDir, "notes.txt"), "ignored");
 
-		const result = readBlockDir(tmpDir, "phases") as Array<{ n: number }>;
+		const result = readBlockDir(tmpDir, "items") as Array<{ n: number }>;
 		assert.strictEqual(result.length, 2);
 		assert.strictEqual(result[0].n, 1);
 		assert.strictEqual(result[1].n, 2);

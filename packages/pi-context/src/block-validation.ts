@@ -22,7 +22,7 @@ export type BlockSnapshot = Map<string, BlockFileSnapshot>;
  *   audits/*.json → audit.schema.json
  */
 const BLOCK_SUBDIRS: { dir: string; schemaBase: string }[] = [
-	{ dir: "phases", schemaBase: "phase" },
+	// phases/ removed — phase is a top-level array-block (phase.json) since DEC-0028.
 	{ dir: "audits", schemaBase: "audit" },
 ];
 

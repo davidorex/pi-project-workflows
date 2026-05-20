@@ -1304,9 +1304,9 @@
     },
     {
       "title": "Phase block-kind shape — file-per-phase with integer discriminator vs array-block with PHASE-NNN string id",
-      "status": "open",
+      "status": "enacted",
       "context": "Two divergent shape declarations exist in source: (1) packages/pi-context/registry/schemas/phase.schema.json requires 'number: integer' as discriminator; file path is .project/phases/{number}.json (file-per-phase). (2) packages/pi-context/registry/schemas/roadmap.schema.json roadmap.phases[].id requires string matching ^PHASE-[A-Z0-9-]+$. Existing .project/phases/{1,2,3,4}.json files (pre-FGAP-026 planning artifacts: 'Make typed composition real' / typed agent specs / template inheritance / etc., status=planned, never closed) use integer discriminator. Code (roadmap-plan.test.ts) uses PHASE-A / PHASE-B / PHASE-C / PHASE-D single-letter suffix. LLM-filed commit body f3d6e41 (TASK-021..030 substrate authoring) uses PHASE-006..010 numeric-suffix zero-padded. No DEC binds them. Phase items don't appear in standard block-item enumeration; can't be filed via file-block-item.ts append surface (which expects array-block shape); resolve-items-by-id won't find PHASE-NNN unless special-cased. FGAP-049 + FGAP-053 (milestone elevation companion) both touch this question.",
-      "decision": "OPEN: phase block shape canonicalization. Mandate-compliant options below.",
+      "decision": "ENACTED: phase block-kind is an array-block (single phases.json with phases[] array, items carrying PHASE-NNN string ids) — NOT file-per-phase-integer. The file-per-phase shape (phases/{number}.json, number:integer discriminator) is the pre-FGAP-026 legacy outlier. Array-block makes phases query-primitive-compatible (filter-block-items / walk-ancestors / find-references / resolve-items-by-id), edge-referenceable in relations.json (parent/child = PHASE-NNN), and consistent with milestone elevation (FGAP-053) under DEC-0013/0024/0025. Implementation: revise phase.schema.json to array-block; migrate buildIdIndex + ProjectState to read phases.json; convert legacy phases/{1..4}.json → PHASE-001..004 (status preserved); author PHASE entities for distinct tasks.phase values; migrate tasks.phase → task_positioned_in_phase edges; remove tasks.phase field. Closes FGAP-049.",
       "consequences": [
         "Standard query primitives (filter-block-items / resolve-items-by-id / walk-ancestors / find-references) become applicable to phases post-canonicalization (currently invisible to them).",
         "Lens projections referencing PHASE-NNN as bins resolve to phase items canonically.",
@@ -1363,7 +1363,9 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:02:00Z",
-      "id": "DEC-0028"
+      "id": "DEC-0028",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-17T13:00:00Z"
     },
     {
       "title": "Substrate-dir replacement name — what user-chosen directory name replaces .project/",

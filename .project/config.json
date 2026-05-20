@@ -97,6 +97,14 @@
       "schema_path": "schemas/phase.schema.json",
       "array_key": "phases",
       "data_path": "phase.json"
+    },
+    {
+      "canonical_id": "story",
+      "display_name": "Stories",
+      "prefix": "STORY-",
+      "schema_path": "schemas/story.schema.json",
+      "array_key": "stories",
+      "data_path": "story.json"
     }
   ],
   "relation_types": [
@@ -136,8 +144,8 @@
       "category": "data_flow"
     },
     {
-      "canonical_id": "feature_depends_on_feature",
-      "display_name": "depends on feature",
+      "canonical_id": "feature_depends_on_item",
+      "display_name": "depends on item",
       "category": "ordering"
     },
     {
@@ -199,6 +207,21 @@
       "canonical_id": "task_positioned_in_phase",
       "display_name": "positioned in phase",
       "category": "membership"
+    },
+    {
+      "canonical_id": "feature_contains_story",
+      "display_name": "contains story",
+      "category": "membership"
+    },
+    {
+      "canonical_id": "story_contains_task",
+      "display_name": "contains task",
+      "category": "membership"
+    },
+    {
+      "canonical_id": "rationale_supports_decision",
+      "display_name": "supports decision",
+      "category": "data_flow"
     }
   ],
   "lenses": [],
@@ -219,7 +242,8 @@
     "conventions",
     "context-contracts",
     "config",
-    "relations"
+    "relations",
+    "story"
   ],
   "installed_blocks": [
     "decisions",
@@ -235,6 +259,7 @@
     "requirements",
     "conventions",
     "context-contracts",
-    "phase"
+    "phase",
+    "story"
   ]
 }

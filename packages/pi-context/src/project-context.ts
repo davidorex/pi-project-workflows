@@ -78,18 +78,33 @@ export interface HierarchyDecl {
 
 /**
  * Config-declared substrate invariant (DEC-0025: vocabulary lives in DATA, not
- * source). The `requires-edge` class asserts: items in `block` matching the
- * optional `where` predicate must occupy `direction`'s endpoint on ≥1 edge
- * whose relation_type ∈ `relation_types`. Enforced generically by
- * validateProject — no block/status/relation_type literal appears in the loop.
+ * source). Two classes, both enforced generically by validateProject — no
+ * block/status/relation_type literal appears in the consumer loops:
+ *
+ *  - `requires-edge`: items in `block` matching the optional `where` predicate
+ *    must occupy `direction`'s endpoint on ≥1 edge whose relation_type ∈
+ *    `relation_types`.
+ *  - `status-consistency`: for items in `block` (optionally gated by
+ *    `when_bucket` on the item's own status bucket), the related item across an
+ *    edge whose relation_type ∈ `relation_types` (item at `direction`, target at
+ *    the other endpoint) must have status bucket === `require_target_bucket`
+ *    and/or !== `forbid_target_bucket`.
+ *
+ * The status-bucket fields use the inline string-union rather than importing
+ * StatusBucket from status-vocab: status-vocab imports getProjectContext from
+ * THIS module, so importing StatusBucket back would form a cycle. The union is
+ * kept in sync with StatusBucket (project-context.ts:64) by hand.
  */
 export interface InvariantDecl {
 	id: string;
-	class: "requires-edge";
+	class: "requires-edge" | "status-consistency";
 	block: string;
 	where?: Record<string, string | number | boolean>;
 	relation_types: string[];
 	direction: "as_parent" | "as_child";
+	when_bucket?: "complete" | "in_progress" | "blocked" | "todo" | "unknown";
+	require_target_bucket?: "complete" | "in_progress" | "blocked" | "todo" | "unknown";
+	forbid_target_bucket?: "complete" | "in_progress" | "blocked" | "todo" | "unknown";
 	severity?: "error" | "warning";
 	message?: string;
 }

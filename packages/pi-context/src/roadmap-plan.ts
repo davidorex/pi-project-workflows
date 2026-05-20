@@ -33,83 +33,22 @@ import { type LensValidatorIssue, registerLensValidator } from "./lens-validator
 import { type LoadedLensView, loadLensView } from "./lens-view.js";
 import { type Edge, getProjectContext, type ItemRecord, type StatusBucket } from "./project-context.js";
 import { availableBlocks } from "./project-sdk.js";
+import { resolveStatusVocabulary, STATUS_VOCABULARY_DEFAULTS } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
-export type { StatusBucket } from "./project-context.js";
+// StatusBucket, STATUS_VOCABULARY_DEFAULTS, and resolveStatusVocabulary are
+// extracted to ./status-vocab.ts (substrate-light pure module) so project-sdk
+// can consume the vocabulary without a roadmap-plan <-> project-sdk import
+// cycle. Re-exported here to preserve the existing import surface (barrel +
+// roadmap-plan.test). rollupPhaseStatus stays in this module and consumes the
+// vocabulary via the import above.
+export type { StatusBucket } from "./status-vocab.js";
+export { resolveStatusVocabulary, STATUS_VOCABULARY_DEFAULTS };
 
 export interface PhaseStatus {
 	bucket: StatusBucket;
 	counts: Record<StatusBucket, number>;
 	total: number;
-}
-
-/**
- * Hardcoded baseline mapping from per-schema status enum values to
- * StatusBucket. Per-project overrides land via config.status_buckets and
- * shadow these defaults at lookup time (resolveStatusVocabulary spreads
- * the user map over the defaults so user keys win on collision).
- *
- * Mappings derived from the schema enums currently in this repo's
- * .project/schemas/ + packages/pi-context/registry/schemas/:
- *   - issues.status: open | resolved | deferred
- *   - decisions.status: open | enacted | superseded
- *   - tasks.status: todo | in_progress | completed | cancelled
- *   - features.status: proposed | active | complete | archived
- *   - roadmaps.status: draft | active | paused | complete | archived
- *   - plans.status: draft | active | blocked | complete | archived
- *   - spec-reviews.status: not-started | in-progress | complete
- *   - framework-gaps.status: identified | proposed | accepted | in_progress | implemented
- *   - verification.status: passed | failed | pending
- *
- * Values not listed bucket to "unknown" without throwing — caller
- * decides whether unknown statuses are warning-worthy
- * (validateRoadmaps emits roadmap_status_unknown_value when relevant).
- */
-const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
-	// → complete
-	resolved: "complete",
-	completed: "complete",
-	complete: "complete",
-	done: "complete",
-	enacted: "complete",
-	implemented: "complete",
-	passed: "complete",
-	archived: "complete",
-	// → in_progress
-	in_progress: "in_progress",
-	"in-progress": "in_progress",
-	active: "in_progress",
-	accepted: "in_progress",
-	// → blocked
-	blocked: "blocked",
-	paused: "blocked",
-	failed: "blocked",
-	// → todo
-	open: "todo",
-	todo: "todo",
-	proposed: "todo",
-	draft: "todo",
-	identified: "todo",
-	"not-started": "todo",
-	pending: "todo",
-	// superseded / cancelled / deferred bucket to unknown — they're
-	// terminal-but-not-complete states that don't fit the linear
-	// progress narrative. Roadmap/plan rollups treat them as
-	// "doesn't count toward progress" rather than as complete or todo.
-	superseded: "unknown",
-	cancelled: "unknown",
-	deferred: "unknown",
-};
-
-/**
- * Resolve the active status-vocabulary map for `cwd` — defaults shadowed
- * by config.status_buckets entries. Pure: builds a fresh map per call;
- * callers caching for hot paths (rollupPhaseStatus over many phases)
- * should pass the resolved map in directly.
- */
-export function resolveStatusVocabulary(cwd: string): Record<string, StatusBucket> {
-	const ctx = getProjectContext(cwd);
-	return { ...STATUS_VOCABULARY_DEFAULTS, ...(ctx.config?.status_buckets ?? {}) };
 }
 
 /**

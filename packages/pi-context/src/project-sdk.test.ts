@@ -283,6 +283,7 @@ function writeConfig(
 	projectDir: string,
 	relationTypes = REL_TYPES,
 	invariants: unknown[] = CANONICAL_INVARIANTS,
+	statusBuckets?: Record<string, string>,
 ): void {
 	fs.writeFileSync(
 		path.join(projectDir, "config.json"),
@@ -292,6 +293,7 @@ function writeConfig(
 			block_kinds: [],
 			relation_types: relationTypes,
 			invariants,
+			...(statusBuckets ? { status_buckets: statusBuckets } : {}),
 		}),
 	);
 }
@@ -2080,5 +2082,235 @@ describe("currentState", () => {
 		assert.deepStrictEqual(state.nextActions, []);
 		assert.deepStrictEqual(state.blocked, []);
 		assert.strictEqual(state.focus, "no active focus.");
+	});
+});
+
+// ── status-consistency invariants (DEC-0040 / FGAP-073) ───────────────────────
+// validateProject's second config-invariants consumer: cross-block status drift.
+// A qualifying item (block + optional when_bucket gate) whose related item across
+// an edge has a target bucket that violates require_target_bucket /
+// forbid_target_bucket is flagged. Like the requires-edge suite, the SOURCE loop
+// commits to no block/status/relation_type vocabulary — every literal is DATA in
+// the config invariant + status_buckets override. relation_types used here are
+// registered in the fixture so edge-integrity does not error on them.
+describe("status-consistency invariants", () => {
+	// relation_types registry covering the status-consistency edges + a generic
+	// ordering type (kept for parity with edge-model fixtures elsewhere).
+	const SC_REL_TYPES = [
+		{ canonical_id: "task_addresses_gap", display_name: "addresses gap", category: "data_flow" as const },
+		{
+			canonical_id: "task_governed_by_decision",
+			display_name: "governed by decision",
+			category: "data_flow" as const,
+		},
+	];
+
+	function projDir(tmpDir: string): string {
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		return projectDir;
+	}
+
+	it("require fires: completed task addressing a still-open gap is flagged", (t) => {
+		const tmpDir = makeTmpDir("sc-require-fires");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, SC_REL_TYPES, [
+			{
+				id: "completed-task-closes-gap",
+				class: "status-consistency",
+				block: "tasks",
+				relation_types: ["task_addresses_gap"],
+				direction: "as_parent",
+				when_bucket: "complete",
+				require_target_bucket: "complete",
+				severity: "error",
+			},
+		]);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		// gap g1 status "identified" → bucket todo (≠ require complete) → violation.
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "open gap", status: "identified" }] }),
+		);
+		writeRelations(projectDir, [{ parent: "t1", child: "g1", relation_type: "task_addresses_gap" }]);
+
+		const result = validateProject(tmpDir);
+		const issue = result.issues.find((i) => i.code === "completed-task-closes-gap");
+		assert.ok(issue, "completed task + open gap must fire the require invariant");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "tasks");
+		assert.ok(issue!.field?.startsWith("t1."), "field anchors the violating item id");
+	});
+
+	it("require clears: when target gap is closed (bucket complete) no issue", (t) => {
+		const tmpDir = makeTmpDir("sc-require-clears");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, SC_REL_TYPES, [
+			{
+				id: "completed-task-closes-gap",
+				class: "status-consistency",
+				block: "tasks",
+				relation_types: ["task_addresses_gap"],
+				direction: "as_parent",
+				when_bucket: "complete",
+				require_target_bucket: "complete",
+			},
+		]);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		// gap g1 status "implemented" → bucket complete (matches require) → clean.
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "closed gap", status: "implemented" }] }),
+		);
+		writeRelations(projectDir, [{ parent: "t1", child: "g1", relation_type: "task_addresses_gap" }]);
+
+		const result = validateProject(tmpDir);
+		assert.ok(
+			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
+			"satisfied require invariant must produce no diagnostic",
+		);
+	});
+
+	it("forbid fires: task governed by a superseded decision (bucket unknown) is flagged", (t) => {
+		const tmpDir = makeTmpDir("sc-forbid-fires");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, SC_REL_TYPES, [
+			{
+				id: "no-superseded-governance",
+				class: "status-consistency",
+				block: "tasks",
+				relation_types: ["task_governed_by_decision"],
+				direction: "as_parent",
+				forbid_target_bucket: "unknown",
+				severity: "error",
+			},
+		]);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "in-progress" }] }),
+		);
+		// decision d1 status "superseded" → bucket unknown (forbidden) → violation.
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({ decisions: [{ id: "d1", status: "superseded" }] }),
+		);
+		writeRelations(projectDir, [{ parent: "t1", child: "d1", relation_type: "task_governed_by_decision" }]);
+
+		const result = validateProject(tmpDir);
+		const issue = result.issues.find((i) => i.code === "no-superseded-governance");
+		assert.ok(issue, "forbidden target bucket must fire the forbid invariant");
+		assert.strictEqual(issue!.severity, "error");
+	});
+
+	it("edge-gated silent: invariant present but no matching edge → no issue", (t) => {
+		const tmpDir = makeTmpDir("sc-edge-gated");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, SC_REL_TYPES, [
+			{
+				id: "completed-task-closes-gap",
+				class: "status-consistency",
+				block: "tasks",
+				relation_types: ["task_addresses_gap"],
+				direction: "as_parent",
+				when_bucket: "complete",
+				require_target_bucket: "complete",
+			},
+		]);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "open gap", status: "identified" }] }),
+		);
+		writeRelations(projectDir, []); // no edge → invariant cannot inspect a target
+
+		const result = validateProject(tmpDir);
+		assert.ok(
+			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
+			"status-consistency is edge-gated — no edge means no check, no diagnostic",
+		);
+	});
+
+	it("when_bucket filter: non-matching item bucket is not checked", (t) => {
+		const tmpDir = makeTmpDir("sc-when-bucket");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, SC_REL_TYPES, [
+			{
+				id: "completed-task-closes-gap",
+				class: "status-consistency",
+				block: "tasks",
+				relation_types: ["task_addresses_gap"],
+				direction: "as_parent",
+				when_bucket: "complete",
+				require_target_bucket: "complete",
+			},
+		]);
+		// task t1 status "planned" → bucket todo (≠ when_bucket complete) → not checked.
+		fs.writeFileSync(path.join(projectDir, "tasks.json"), JSON.stringify({ tasks: [{ id: "t1", status: "planned" }] }));
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "open gap", status: "identified" }] }),
+		);
+		writeRelations(projectDir, [{ parent: "t1", child: "g1", relation_type: "task_addresses_gap" }]);
+
+		const result = validateProject(tmpDir);
+		assert.ok(
+			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
+			"when_bucket gate excludes the item — no diagnostic despite the open gap",
+		);
+	});
+
+	it("vocabulary-neutral: a config status_buckets override changes the verdict", (t) => {
+		const tmpDir = makeTmpDir("sc-vocab-neutral");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		// Custom status "done2" is unknown to STATUS_VOCABULARY_DEFAULTS; mapped to
+		// "complete" here. If any literal were hardcoded in the consumer, this gap
+		// would still read as not-complete and the require invariant would fire.
+		writeConfig(
+			projectDir,
+			SC_REL_TYPES,
+			[
+				{
+					id: "completed-task-closes-gap",
+					class: "status-consistency",
+					block: "tasks",
+					relation_types: ["task_addresses_gap"],
+					direction: "as_parent",
+					when_bucket: "complete",
+					require_target_bucket: "complete",
+				},
+			],
+			{ done2: "complete" },
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", status: "completed" }] }),
+		);
+		// gap g1 status "done2" → bucket complete ONLY via the config override.
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "custom-closed gap", status: "done2" }] }),
+		);
+		writeRelations(projectDir, [{ parent: "t1", child: "g1", relation_type: "task_addresses_gap" }]);
+
+		const result = validateProject(tmpDir);
+		assert.ok(
+			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
+			"config status_buckets override must bucket 'done2' → complete and clear the require invariant",
+		);
 	});
 });

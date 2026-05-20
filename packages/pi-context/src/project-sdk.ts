@@ -18,6 +18,7 @@ import {
 	validateRelations,
 } from "./project-context.js";
 import { projectDir, schemaPath, schemasDir } from "./project-dir.js";
+import { resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
 // Re-export substrate SDK so consumers can keep importing through project-sdk
@@ -602,11 +603,19 @@ export function currentState(cwd: string): CurrentState {
 		edges = [];
 	}
 
-	// ── inFlight: tasks-block items with status "in-progress" ──────────────────
+	// Resolve the active status-vocabulary ONCE (defaults shadowed by
+	// config.status_buckets). Every status comparison below routes through the
+	// resulting bucket — no raw status literal ("in-progress"/"completed"/etc.)
+	// is compared in source (DEC-0025 vocabulary-neutrality). bucket(item) maps
+	// a raw item.status string to its StatusBucket, defaulting to "unknown".
+	const vocab = resolveStatusVocabulary(cwd);
+	const bucket = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
+
+	// ── inFlight: tasks-block items bucketing to in_progress ───────────────────
 	const inFlight: CurrentState["inFlight"] = [];
 	for (const [id, loc] of idIndex) {
 		if (loc.block !== "tasks") continue;
-		if (loc.item.status !== "in-progress") continue;
+		if (bucket(loc.item) !== "in_progress") continue;
 		inFlight.push({
 			id,
 			block: loc.block,
@@ -621,17 +630,19 @@ export function currentState(cwd: string): CurrentState {
 	// integrity concern surfaced by validateRelations, not a blocker here).
 	const isCompleted = (taskId: string): boolean => {
 		const loc = idIndex.get(taskId);
-		return loc !== undefined && loc.item.status === "completed";
+		return loc !== undefined && bucket(loc.item) === "complete";
 	};
 	const depParentsOf = (taskId: string): string[] =>
 		edges.filter((e) => e.relation_type === "task_depends_on_task" && e.child === taskId).map((e) => e.parent);
 	const incompleteDeps = (taskId: string): string[] =>
 		depParentsOf(taskId).filter((dep) => idIndex.has(dep) && !isCompleted(dep));
 
-	// Collect all planned tasks once — drives both blocked + ready derivations.
+	// Collect all to-do (ready/queued) tasks once — drives both blocked + ready
+	// derivations. "todo" bucket = planned/queued work (raw status "planned"
+	// buckets to todo under STATUS_VOCABULARY_DEFAULTS).
 	const plannedTasks: { id: string; loc: ItemLocation }[] = [];
 	for (const [id, loc] of idIndex) {
-		if (loc.block === "tasks" && loc.item.status === "planned") plannedTasks.push({ id, loc });
+		if (loc.block === "tasks" && bucket(loc.item) === "todo") plannedTasks.push({ id, loc });
 	}
 
 	// ── blocked: planned tasks with at least one incomplete dep parent ─────────
@@ -648,13 +659,14 @@ export function currentState(cwd: string): CurrentState {
 	// ── nextActions (atomic-next, ranked) ──────────────────────────────────────
 	const nextActions: CurrentState["nextActions"] = [];
 
-	// 1. Open framework-gaps (gaps[].status === "identified"), ranked
+	// 1. Open framework-gaps (gaps bucketing to todo — raw status "identified"
+	//    buckets to todo under STATUS_VOCABULARY_DEFAULTS), ranked
 	//    P0 > P1 > P2 > P3 (missing priority sorts last) then by id.
 	const priorityRank: Record<string, number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
 	const openGaps: { id: string; priority?: string }[] = [];
 	for (const [id, loc] of idIndex) {
 		if (loc.block !== "framework-gaps") continue;
-		if (loc.item.status !== "identified") continue;
+		if (bucket(loc.item) !== "todo") continue;
 		openGaps.push({ id, priority: typeof loc.item.priority === "string" ? loc.item.priority : undefined });
 	}
 	openGaps.sort((a, b) => {
@@ -698,11 +710,12 @@ export function currentState(cwd: string): CurrentState {
 	if (inFlight.length > 0) {
 		focus = `in-flight: ${inFlight.map((t) => t.id).join(", ")}`;
 	} else {
-		// Fall back to an in-progress phase (phase.json phases[] array-block).
+		// Fall back to a phase bucketing to in_progress (phase.json phases[]
+		// array-block).
 		let inProgressPhase: { id?: string; name?: string } | null = null;
 		for (const [id, loc] of idIndex) {
 			if (loc.block !== "phase") continue;
-			if (loc.item.status !== "in-progress") continue;
+			if (bucket(loc.item) !== "in_progress") continue;
 			inProgressPhase = { id, name: typeof loc.item.name === "string" ? loc.item.name : undefined };
 			break;
 		}
@@ -1136,6 +1149,48 @@ export function validateProject(cwd: string): ProjectValidationResult {
 					field: `${id}.${inv.id}`,
 					code: inv.id,
 				});
+			}
+		}
+
+		// ── status-consistency invariants (DEC-0040 / FGAP-073) ──────────────
+		// Cross-block status drift: for each item in inv.block (optionally gated
+		// by when_bucket on the item's own status bucket), inspect edges whose
+		// relation_type ∈ inv.relation_types and whose inv.direction endpoint is
+		// the item; the OTHER endpoint is the target. Violation when the target's
+		// status bucket differs from require_target_bucket, or equals
+		// forbid_target_bucket. Vocabulary-free — every literal comes from `inv`
+		// or the config-resolved status vocabulary; no block/status/relation
+		// string is hardcoded. vocab resolved once, outside the loop.
+		const vocab = resolveStatusVocabulary(cwd);
+		const bucketOf = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
+		for (const inv of config.invariants ?? []) {
+			if (inv.class !== "status-consistency") continue;
+			const relSet = new Set(inv.relation_types);
+			for (const [id, loc] of idIndex) {
+				if (loc.block !== inv.block) continue;
+				if (inv.when_bucket && bucketOf(loc.item) !== inv.when_bucket) continue;
+				for (const edge of relations) {
+					if (!relSet.has(edge.relation_type)) continue;
+					const selfIsParent = inv.direction === "as_parent";
+					if ((selfIsParent ? edge.parent : edge.child) !== id) continue;
+					const otherId = selfIsParent ? edge.child : edge.parent;
+					const otherLoc = idIndex.get(otherId);
+					if (!otherLoc) continue; // dangling endpoint handled by edge-integrity above
+					const otherBucket = bucketOf(otherLoc.item);
+					const violateRequire = inv.require_target_bucket !== undefined && otherBucket !== inv.require_target_bucket;
+					const violateForbid = inv.forbid_target_bucket !== undefined && otherBucket === inv.forbid_target_bucket;
+					if (violateRequire || violateForbid) {
+						issues.push({
+							severity: inv.severity ?? "error",
+							message: (inv.message ?? `Item '{id}' (block '{block}') status-consistency '${inv.id}'`)
+								.replaceAll("{id}", id)
+								.replaceAll("{block}", inv.block),
+							block: inv.block,
+							field: `${id}.${inv.id}`,
+							code: inv.id,
+						});
+					}
+				}
 			}
 		}
 	}

@@ -2283,6 +2283,90 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-17T12:25:00Z",
       "id": "FGAP-062"
+    },
+    {
+      "title": "Orchestration / procedural-policy canon has no dedicated substrate block — scattered across decisions (procedural DECs), conventions (coding-only), feedback memories (off-substrate), and the mandate hook",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "Two senses of orchestration land in different places. (1) Orchestration MACHINERY (workflow execution / agent dispatch / monitor steering) is engineering-layer L4 dispatch — pi-workflows + pi-jit-agents + pi-behavior-monitors; that is code, correctly placed. (2) Orchestration as PROCEDURAL POLICY — how work is conducted: the operating pattern (plan → substrate-write → dispatch → verify → commit → status-cascade), verify-before-relay, runtime-demo+adversarial-probe, status-updates-after-each-step, foreground-subagent dispatch, plan-mode-per-phase. This procedural/methodology canon is NOT a work-altitude (roadmap/milestone/phase/task) and NOT an engineering code-layer; it is a cross-cutting concern governing HOW the other layers are operated. It currently has no unified substrate home — it is split across four surfaces: (a) decisions block — procedural DECs (DEC-0018 runtime-demo+adversarial-probe; DEC-0019/0020 dual-surface; DEC-0021 atomic-cascade) conflated with architectural DECs (DEC-0013/0015) in the same block with no facet distinguishing structural-canon from procedural-canon; (b) conventions block — scoped to coding/build policy only (esm / tsc-build / no-pi-dir), does not cover process; (c) feedback memories under ~/.claude/projects/.../memory/feedback_*.md — behavioral mandates (verify-before-relay / no-background-subagents / status-updates-after-each-step) living entirely OFF substrate; (d) the mandate hook (mandate-001..009) — hard procedural constraints enforced at the harness, also off substrate. A reader (human or harness-confined LLM per DEC-0014) asking 'what is the operating procedure for conducting work in this project' has no single queryable substrate surface; they must assemble it from procedural-DECs + off-substrate feedback memories + the mandate hook. This is the FGAP-051 finding (conventions underspecified) at a higher altitude: conventions covers coding policy; orchestration/process policy has no block at all.",
+      "evidence": [
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0018/0019/0020/0021 are procedural/methodology canon filed in the same decisions block as architectural DEC-0013/0015 with no facet separating the two kinds"
+        },
+        {
+          "file": ".project/conventions.json",
+          "reference": "rules are coding/build-scoped (esm / tsc-build / no-pi-dir / lint); no process/dispatch/verification entries"
+        },
+        {
+          "file": "packages/pi-context/.project-memory-pointer",
+          "reference": "feedback memories (verify-before-relay / no-background-subagents / status-updates-after-each-step / plan-mode-step-one-substrate-write) live off-substrate in ~/.claude memory; not queryable via block-api; not part of the dogfood substrate"
+        },
+        {
+          "file": "CLAUDE.md",
+          "reference": "Completion Sequence + operating pattern documented in prose, not as queryable substrate items"
+        },
+        {
+          "file": "analysis/2026-05-01-substrate-arc-distillation.md",
+          "reference": "Tier B methodology canon recognized as a distinct concern; analysis/2026-04-15-process-articulation.md maps the ten-phase unit-of-work lifecycle — process is a known but under-modeled substrate concern"
+        }
+      ],
+      "impact": "The harness-confined main LLM (DEC-0014) operating purely through substrate cannot query the operating procedure — the methodology that governs its own conduct is off-substrate (feedback memories + mandate hook) or buried in undifferentiated DECs. Procedural canon cannot be lensed (process-by-category), edge-linked (which DEC enacts which procedural rule), or version-tracked as a coherent body. New contributors/LLMs reconstruct the operating pattern from scattered prose. The vocabulary-neutral substrate vision (DEC-0025) — user bootstraps their whole conception from config + schemas — is incomplete: a user adopting pi-context gets block kinds for work-content but no surface for their own process/methodology canon. Conflation of procedural + architectural DECs in one block prevents distinguishing 'how the system is built' from 'how work is conducted'.",
+      "canonical_vocabulary": "procedural-policy, methodology-canon, operating-pattern-as-substrate, process-block-kind, orchestration-policy",
+      "proposed_resolution": "Two candidate paths (user decides): (A) New block kind `process` / `protocol` / `methodology` (PROC-NNN) holding procedural-policy items (operating pattern, dispatch discipline, verification protocol, status-cascade) — each with enforcement (hook / review / manual) + applies_to + related_decisions edges; migrate the procedural feedback memories + procedural-DEC content into it as queryable substrate; the mandate hook references PROC-NNN ids. (B) Extend conventions block (DEC-0034, open) with a `category` facet (coding / build / process / dispatch / verification) so conventions spans both coding policy AND procedural policy; procedural feedback memories migrate in as category:process rules. Path B reuses an existing block + aligns with DEC-0034's already-proposed conventions migration; Path A gives process its own first-class block (cleaner separation, more authoring surface). Either path: (1) distinguish procedural canon from architectural canon (a DEC facet `kind: architectural | procedural` on decisions, OR moving procedural DECs to the new surface); (2) bring off-substrate feedback memories on-substrate as queryable items (the mandate hook + feedback_*.md become substrate-derived rather than parallel ungated surfaces — relates to feedback_no_stderr_diagnostics / parallel-ungated-path discipline); (3) edge-link procedural rules to the architectural DECs that force them. Cross-decision with DEC-0034 (conventions schema migration) + FGAP-051 (conventions underspec).",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0018",
+        "DEC-0019",
+        "DEC-0025",
+        "DEC-0034"
+      ],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-17T14:00:00Z",
+      "id": "FGAP-063"
+    },
+    {
+      "title": "No top-level user-story block — stories exist only nested inside features[].stories[]; cannot relate independently to project-goal / milestone / phase / task via closure-table",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "Stories currently exist ONLY as a nested inline array inside features (.project/schemas/features.schema.json definitions.story; features[].stories[]; 9 STORY-NNN instances under FEAT-001). There is no top-level story / user-story block: not a file in .project/, not in config.block_kinds, not independently queryable via filter-block-items / walk-ancestors / find-references / resolve-items-by-id. Consequence: a story cannot be related independently to project-goal (global), milestone, phase, or task — it is locked inside its parent feature. The envisioned flow (a project deliberates and produces N user-stories, then relates them across altitudes — global / milestone / phase / task) is not expressible because the story has no standalone identity to anchor closure-table edges. The framework CAN bear the conception: this is the identical elevation pattern as milestone (FGAP-053, milestone-inline-in-roadmap → top-level block) and phase (DEC-0028, file-per-phase → array-block). A top-level user-story block + relations.json edges expresses all the envisioned cross-altitude relations under DEC-0013 (closure-table allows one story to participate in multiple parallel hierarchies — milestone AND phase AND N tasks simultaneously). Sub-shape (whether the elevated block carries the Agile user-story form role/want/benefit, or stays structural like the current nested story title/status/tasks, or both coexist as distinct kinds) is DELIBERATELY LEFT OPEN here — to be designed when the gap is taken up, not presumed now.",
+      "evidence": [
+        {
+          "file": ".project/schemas/features.schema.json",
+          "reference": "definitions.story nested in features; story id is plain string (no canonical pattern); fields id/title/status/description/acceptance_criteria/depends_on/gates/tasks"
+        },
+        {
+          "file": ".project/features.json",
+          "reference": "FEAT-001 carries 9 stories nested in stories[] (STORY-001..009); no standalone story block"
+        },
+        {
+          "file": ".project/config.json",
+          "reference": "block_kinds has no story/user-story entry"
+        },
+        {
+          "file": ".project/framework-gaps.json",
+          "reference": "FGAP-053 (milestone elevation) is the parallel pattern; same nested-inline → top-level-block + edges shape"
+        }
+      ],
+      "impact": "Stories cannot anchor cross-altitude relations. Project deliberation producing a backlog of user-stories has no substrate home for them as first-class items. Stories cannot be lensed (stories-by-status / stories-by-milestone), edge-linked (story_serves_milestone / phase_contains_story / task_implements_story / project_goal_served_by_story), or context-composed (gather-execution-context unit_kind=story). The feature→story relationship is currently a DEC-0013 violation in waiting (nested inline child) the same way milestone-in-roadmap is — elevating story makes feature_contains_story a closure-table edge. Without elevation, the requirements→user-story→task traceability chain (and any user-story-driven planning) is unrepresentable.",
+      "canonical_vocabulary": "user-story-block, story-elevation, cross-altitude-story-relations, nested-inline-child-elevation",
+      "proposed_resolution": "Elevate story to a top-level array-block (parallel to FGAP-053 milestone elevation + DEC-0028 phase array-block): new block kind (canonical_id + prefix TBD at design time) with STORY-NNN-style ids; register in config.block_kinds; relations.json edges across altitudes via DEC-0030-tripartite relation_types (candidates, named at design time: project_goal_served_by_story / milestone_delivered_by_story / phase_contains_story / feature_contains_story / task_implements_story); migrate FEAT-001's 9 nested stories out of features[].stories[] into the top-level block + feature_contains_story edges; CTX-NNN context-contract for unit_kind=story. SUB-SHAPE NOT PRESUMED: whether the block is the Agile user-story form (role / want / benefit / acceptance_criteria), the current structural story form (title / status / tasks), or two distinct kinds — is an open design decision to resolve when this gap is taken up, gated on user deliberation. Cross-decision with FGAP-053 (milestone) + FGAP-046 (inline-nested elimination) + DEC-0013/0024/0025 — same elevation discipline.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0013",
+        "DEC-0024",
+        "DEC-0025"
+      ],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-17T14:15:00Z",
+      "id": "FGAP-064"
     }
   ]
 }

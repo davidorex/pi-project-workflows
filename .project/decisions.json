@@ -1433,9 +1433,9 @@
     },
     {
       "title": "Relation_type canonical_id naming shape — verb-based vs source_verb_target tripartite",
-      "status": "open",
+      "status": "enacted",
       "context": "DEC-0013 forces all inter-item relationships into closure-table edges with relation_type field; DEC-0017 declares per-unit-kind context contracts referencing relation_types. config.relation_types[] is the declared registry (currently empty in this repo). Existing test fixtures in packages/pi-context/src/roadmap-plan.test.ts use phase_depends_on + phase_member naming. LLM-filed substrate analysis (analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md) inferred candidates from inline FK violations: task_in_phase / task_depends_on / decision_supersedes / decision_relates_to / decision_addresses_finding / decision_addresses_feature / decision_addresses_gap / gap_addressed_by_decision / gap_addressed_by_feature / gap_addressed_by_issue / feature_resolves_block / feature_depends_on / story_depends_on / finding_resolved_by / issue_resolved_by / rationale_supports_decision / requirement_depends_on / research_supersedes / review_finding_resolved_by / verification_verifies / plan_relates_to_decision / plan_phase_depends_on. Plus milestone-cascade types from DEC-0024 / FGAP-054: milestone_grounded_by_research / milestone_addressed_by_decision / milestone_blocked_by_gap / milestone_delivered_by_feature / phase_culminates_at_milestone / milestone_verified_by / milestone_depends_on / roadmap_contains_milestone / roadmap_contains_phase / project_goal_served_by_milestone. No DEC settles the naming shape.",
-      "decision": "OPEN: relation_type naming shape canonicalization. Mandate-compliant options below.",
+      "decision": "ENACTED: relation_type canonical_ids use tripartite source_verb_target snake_case (e.g. decision_supersedes_decision, phase_culminates_at_milestone, task_depends_on_task). Aligns with existing test fixtures (phase_depends_on / phase_member in roadmap-plan.test.ts); self-documenting; under DEC-0035 (canonical_id-permanent) the initial choice persists so clearest-wins. Bipartite loses source-context; kebab collides with kebab block-kind canonical_ids; verb_modifier is a half-measure. Edges store this canonical_id; config.relation_types[].display_name carries the mutable human label.",
       "consequences": [
         "Every relation_type canonical_id authored in config.relation_types[] follows chosen shape.",
         "relations.json edges (when populated) use these canonical_ids in their relation_type field.",
@@ -1500,7 +1500,9 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:04:00Z",
-      "id": "DEC-0030"
+      "id": "DEC-0030",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-17T12:00:00Z"
     },
     {
       "title": "Lens id naming convention — lens-prefix vs descriptive vs purpose-tagged",
@@ -1754,6 +1756,48 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:08:00Z",
       "id": "DEC-0034"
+    },
+    {
+      "title": "canonical_id is permanent (primary-key semantics); display_name is the relabel surface",
+      "status": "enacted",
+      "context": "Investigation 2026-05-17 confirmed via relations.schema.json + config.schema.json that the substrate already separates stable opaque identity from mutable label: relations.json edge.relation_type stores the registered relation_type canonical_id (not the label); config.relation_types[] carries canonical_id + display_name as separate fields; same pattern for config.block_kinds[] (canonical_id + display_name per DEC-0023). This means human-facing relabeling is free — edit display_name, mtime-invalidated config re-read, zero edge migration. The migration-cost cases (FGAP-060) are ONLY canonical_id-itself changes. Without an explicit permanence discipline, LLMs/users may rename canonical_ids casually, triggering cross-file value-rename churn (relations.json edges + item ids embedded with prefix per DEC-0026/0027).",
+      "decision": "ENACTED: canonical_ids carry primary-key semantics — set once, never renamed in normal operation. This applies to relation_type canonical_ids, block_kind canonical_ids, lens ids, layer ids, and item canonical_ids (DEC-NNNN / FGAP-NNN / etc.). All human-facing relabeling goes through display_name (config.*.display_name) + schema.title (DEC-0023), which are freely revisable as live data. Renaming a canonical_id is the rare, deliberate, migration-cost operation that the FGAP-060 renameCanonicalId engine exists to serve — not a routine edit. Consequence for vocabulary settlement (DEC-0026..0034): the INITIAL canonical_id choice matters because it persists; the display label does not lock in. This reduces most rename anxiety to a non-event (relabel via display_name) and isolates true migration to the deliberate canonical_id-change case.",
+      "consequences": [
+        "Vocabulary relabeling (block-kind names, relation_type labels, lens labels, layer labels) is a live config.display_name edit — no migration, no rebuild.",
+        "renameCanonicalId (FGAP-060) is reserved for deliberate canonical_id changes (e.g. ID-prefix renumbering per DEC-0026/0027), not routine relabeling.",
+        "Initial canonical_id choices (DEC-0030 relation_type shape; DEC-0026/0027 prefix conventions) are the permanent decisions; their display_names remain revisable.",
+        "Schema/CLAUDE.md substrate-canon section gains the canonical_id-permanent rule so future authoring honors it.",
+        "Where a canonical_id MUST change, it routes through the FGAP-060 engine (edges + home-id + out-of-substrate report), never hand-edited."
+      ],
+      "references": [
+        {
+          "label": "relations.schema.json edge.relation_type = registered canonical_id",
+          "path": "packages/pi-context/schemas/relations.schema.json"
+        },
+        {
+          "label": "config.schema.json relation_types[] canonical_id + display_name split",
+          "path": "packages/pi-context/schemas/config.schema.json",
+          "lines": "70-84"
+        },
+        {
+          "label": "DEC-0023 schema title as display_name authority",
+          "path": ".project/decisions.json"
+        },
+        {
+          "label": "FGAP-060 value-rename engine this discipline scopes",
+          "path": ".project/framework-gaps.json"
+        }
+      ],
+      "related_findings": [],
+      "related_features": [],
+      "related_gaps": [
+        "FGAP-060"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-17T12:05:00Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-17T12:05:00Z",
+      "id": "DEC-0035"
     }
   ]
 }

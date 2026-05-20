@@ -2163,6 +2163,126 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T14:30:00Z",
       "id": "FGAP-059"
+    },
+    {
+      "title": "No automatic cross-file value-rename engine for canonical_id changes — schema-migrations handles shape, not canonical_id value renames across relations.json edges + item-id-prefix renumbering",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "The framework foresees + carries SCHEMA-SHAPE migration via schema-migrations.ts (MigrationRegistry + runMigrations + validateBlockWithMigration at schema-validator.ts:204): a block file declaring schema_version 1.0.0 migrates forward to current via registered MigrationFn chain on read. This handles field renames / restructures / add-with-default WITHIN a block's item shape. It does NOT handle canonical_id VALUE renames that span files. Two cases: (1) relation_type canonical_id rename — relations.json edges store the relation_type canonical_id (relations.schema.json: edge.relation_type = 'registered relation_type canonical_id'); renaming a relation_type's canonical_id requires rewriting every edge referencing it; no MigrationFn covers cross-file value rewrites; runMigrations operates per-block-file data shape only. (2) item-ID-prefix renumbering (DEC-0026 padding / DEC-0027 casing) — item canonical_id (e.g. DEC-0001, issue-001) EMBEDS the prefix; unlike relation_types (which split stable canonical_id from mutable display_name per config.relation_types[]), item ids ARE the reference with no id/label split, so renaming the prefix requires renumbering every item + every citation across relations.json edges + related_X fields + analysis MDs + commit messages.\n\nCRITICAL MITIGATION ALREADY DESIGNED: the canonical_id <-> display_name decoupling (config.relation_types[].canonical_id vs display_name; config.block_kinds[].canonical_id vs display_name per DEC-0023) means HUMAN-LABEL renames are FREE — edge/reference holds stable canonical_id; label lives in display_name; relabel = display_name edit = live, zero migration. The value-rename gap applies ONLY to canonical_id-itself changes, which are rare by design (primary-key semantics: set once, treat permanent).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/schema-migrations.ts",
+          "reference": "MigrationRegistry + runMigrations operate per-block-file data shape (currentVersion → targetVersion); no cross-file value-rename surface"
+        },
+        {
+          "file": "packages/pi-context/src/schema-validator.ts",
+          "reference": "validateBlockWithMigration:204 — read-time forward migration of one block file's data; does not touch other files' references"
+        },
+        {
+          "file": "packages/pi-context/schemas/relations.schema.json",
+          "reference": "edge.relation_type stores registered relation_type canonical_id — renaming the canonical_id orphans existing edges"
+        },
+        {
+          "file": "packages/pi-context/schemas/config.schema.json",
+          "reference": "relation_types[].canonical_id + display_name split (lines 70-84) — enables free label rename; canonical_id rename is the migration-cost case"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0026 + DEC-0027 flag item-id-prefix renumbering churn; DEC-0030 relation_type naming shape"
+        }
+      ],
+      "impact": "When a vocabulary decision is rethought AFTER substrate is populated: human-label revisions are free (display_name edit) but canonical_id revisions have no automatic engine. relation_type canonical_id rename orphans relations.json edges silently (validateRelations may flag dangling refs but doesn't auto-rewrite). item-id-prefix renumbering (DEC-0026/0027) cascades across every reference site with no tooling. The schema-shape migration foresight (FGAP-006, closed) has no value-rename counterpart. Practically: deciding canonical_ids well initially matters because canonical_id is primary-key-permanent; display_names are the cheap-revision surface. Gap is the absence of a migration primitive for the rare-but-real canonical_id-rename case.",
+      "canonical_vocabulary": "canonical-id-rename-migration, cross-file-value-rename, relation-type-canonical-id-stability, item-id-prefix-renumbering-engine",
+      "proposed_resolution": "Two-part: (a) Document + enforce the canonical_id-is-permanent discipline — canonical_ids (relation_type / block_kind / lens / layer) set once, never renamed; human-facing changes go through display_name. Add to CLAUDE.md substrate canon + schema descriptions. This makes case (1) a non-event by convention. (b) For the genuine canonical_id-rename + item-id-prefix-renumbering cases that remain, author a value-rename migration primitive (e.g. scripts/orchestrator/migrate-canonical-id.ts + library renameCanonicalId(cwd, kind, oldId, newId)) that: rewrites the canonical_id in its home block; rewrites every relations.json edge referencing it (parent + child + relation_type fields); rewrites every related_X field across all blocks that cite it; reports citation sites in analysis MDs + commit messages it cannot auto-rewrite (out-of-substrate). Dry-run mode lists affected sites before write. For item-id-prefix renumbering (DEC-0026/0027), the same primitive batch-renames id prefixes + cascades references. Cross-decision with DEC-0026/0027 (prefix conventions) — settling those AND building this primitive together avoids a second renumbering later.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0013",
+        "DEC-0023",
+        "DEC-0026",
+        "DEC-0027",
+        "DEC-0030"
+      ],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-17T10:00:00Z",
+      "id": "FGAP-060"
+    },
+    {
+      "title": "config.block_kinds[] requires single array_key per block — cannot represent mixed-shape blocks (project / architecture / domain / conformance-reference) with multiple arrays + scalar identity fields",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "config.schema.json block_kinds[] items require [canonical_id, display_name, prefix, schema_path, array_key, data_path] — array_key is a single required string naming THE top-level array property in the block JSON. This models clean array-blocks (decisions.decisions[] / framework-gaps.gaps[] / tasks.tasks[] / etc.) correctly. It cannot represent mixed-shape blocks: project.json (scalar name/description/core_value/status + goals[] + constraints[] + scope_boundaries{}), architecture.json (modules[] + patterns[] + boundaries[] + compilation_pipeline{} + execution_model{} + dispatch_design{}), domain.json (entries[] + possibly scalars), conformance-reference.json (name + scope{} + principles[]). These have ZERO or MULTIPLE top-level arrays + scalar identity fields with no single canonical array_key. Surfaced twice: build-html-views.ts agent hit it (discoverArrayKey picks largest array, discards scalars — lossy); config.json authoring (FGAP-046/060 arc Phase 1) cannot author block_kinds[] entries for these blocks. The step-1 config draft (analysis/2026-05-14-step-1-config-draft-from-substrate.md) papered over it by putting scalar field 'name' as project's array_key, which is incorrect.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/schemas/config.schema.json",
+          "reference": "block_kinds[].array_key required single string (lines 44-52)"
+        },
+        {
+          "file": ".project/project.json",
+          "reference": "scalar name/description/core_value/status + goals[] + constraints[] + scope_boundaries{} — no single array_key"
+        },
+        {
+          "file": ".project/architecture.json",
+          "reference": "modules[] + patterns[] + boundaries[] + 3 object fields — multiple arrays"
+        },
+        {
+          "file": "scripts/orchestrator/build-html-views.ts",
+          "reference": "discoverArrayKey heuristic + identity-panel workaround built precisely because config.block_kinds can't declare mixed-shape"
+        },
+        {
+          "file": "analysis/2026-05-14-step-1-config-draft-from-substrate.md",
+          "reference": "draft put scalar 'name' as project array_key — incorrect, surfaces the gap"
+        }
+      ],
+      "impact": "config.json cannot losslessly declare all installed blocks. Mixed-shape blocks (project / architecture / domain / conformance-reference) are unrepresentable in block_kinds[]. Any consumer iterating config.block_kinds[] for block enumeration misses them OR mis-declares their shape. Forces per-consumer heuristics (build-html-views discoverArrayKey). For the FGAP-046/060 arc: not blocking (cross-reference-bearing blocks are all clean single-array_key array-blocks), but config.block_kinds[] authored for this arc will omit the mixed-shape blocks, leaving config incomplete.",
+      "canonical_vocabulary": "block-shape-declaration, multi-array-block, scalar-identity-fields, array-keys-plural",
+      "proposed_resolution": "Extend config.block_kinds[] schema: replace required single 'array_key' with optional 'array_keys: string[]' (zero or more top-level array properties) + optional 'identity_fields: string[]' (top-level scalar/object fields forming block identity). Single-array blocks declare array_keys: ['decisions']; mixed-shape blocks declare array_keys: ['goals','constraints'] + identity_fields: ['name','description','core_value','status','scope_boundaries']; pure-singleton blocks declare array_keys: []. Migrate existing consumers (project-sdk availableBlocks / blockStructure; build-html-views discoverArrayKey → read config.block_kinds[].array_keys; schema-validator). Schema version bump + MigrationFn (array_key string → array_keys[1-element array]). Cross-decision with the build-html-views identity-panel rendering (already handles multi-array + identity via schemaInfo introspection — config.block_kinds[] should carry the same shape so introspection isn't re-derived per consumer).",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0013",
+        "DEC-0025"
+      ],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-17T12:15:00Z",
+      "id": "FGAP-061"
+    },
+    {
+      "title": "expectedBlockForId treats empty prefix as match-everything — empty-prefix block_kind becomes a catch-all that breaks buildIdIndex invariant",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "expectedBlockForId (project-sdk.ts:670) resolves an item id to its expected block by finding the block_kind whose prefix the id startsWith, longest-prefix-wins. An empty prefix '' matches EVERY id (every string startsWith ''), so a block_kind declaring prefix:'' becomes a catch-all claiming every unprefixed id. buildIdIndex (project-sdk.ts:754) then throws when it encounters a freeform-slug id (e.g. conventions rule 'esm') in its real block: expectedBlockForId returns the empty-prefix block (e.g. requirements) ≠ actual block (conventions) → 'Prefix-vs-block-kind invariant violated' hard throw. Discovered during FGAP-046/060 arc config.json authoring: declaring requirements (empty prefix, zero items) + conventions (freeform-slug ids, empty prefix) in block_kinds[] made requirements a catch-all for conventions' 'esm'/'tsc-build'/'no-pi-dir' ids. Workaround: dropped both empty-prefix blocks from block_kinds. Root: expectedBlockForId should treat empty prefix as 'opt out of prefix-resolution' (return null / never-match), NOT match-all.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/project-sdk.ts",
+          "reference": "expectedBlockForId:670 — `if (id.startsWith(bk.prefix))` with bk.prefix='' matches all ids"
+        },
+        {
+          "file": "packages/pi-context/src/project-sdk.ts",
+          "reference": "buildIdIndex:754-760 — throws on expected!==blockName; empty-prefix catch-all triggers false invariant violation"
+        },
+        {
+          "file": ".project/conventions.json",
+          "reference": "freeform-slug ids esm / tsc-build / no-pi-dir — no prefix scheme; collide with any empty-prefix block"
+        }
+      ],
+      "impact": "Any config.block_kinds[] declaring two or more empty-prefix blocks (or one empty-prefix block alongside a freeform-slug block) hard-throws validateProject / resolveItemById / buildIdIndex. Blocks vocabulary-neutral adoption (DEC-0025) for substrates with freeform-slug-id blocks (conventions-shaped) or prefix-less blocks (project/architecture/domain shaped). Forces dropping such blocks from block_kinds[], leaving them unrepresented (compounds FGAP-061 + FGAP-051).",
+      "canonical_vocabulary": "empty-prefix-catch-all, prefix-resolution-opt-out, freeform-slug-id-block",
+      "proposed_resolution": "expectedBlockForId: skip block_kinds with empty prefix (treat '' as 'no prefix-based resolution declared' → never the expected block; return null when only empty-prefix would match). Add a unit test: freeform-slug id + empty-prefix block in config → expectedBlockForId returns null → buildIdIndex indexes the item under its actual block without throwing. Cross-decision with FGAP-051 (conventions freeform-slug-id) + FGAP-061 (block-shape declaration) — freeform-slug-id blocks may warrant an explicit id_scheme: 'slug' | 'prefixed' declaration in config.block_kinds[] rather than overloading empty-prefix.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0025"
+      ],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-17T12:25:00Z",
+      "id": "FGAP-062"
     }
   ]
 }

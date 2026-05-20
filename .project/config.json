@@ -1,0 +1,231 @@
+{
+  "schema_version": "1.0.0",
+  "root": ".project",
+  "block_kinds": [
+    {
+      "canonical_id": "decisions",
+      "display_name": "Decisions",
+      "prefix": "DEC-",
+      "schema_path": "schemas/decisions.schema.json",
+      "array_key": "decisions",
+      "data_path": "decisions.json"
+    },
+    {
+      "canonical_id": "framework-gaps",
+      "display_name": "Framework Gaps",
+      "prefix": "FGAP-",
+      "schema_path": "schemas/framework-gaps.schema.json",
+      "array_key": "gaps",
+      "data_path": "framework-gaps.json"
+    },
+    {
+      "canonical_id": "tasks",
+      "display_name": "Tasks",
+      "prefix": "TASK-",
+      "schema_path": "schemas/tasks.schema.json",
+      "array_key": "tasks",
+      "data_path": "tasks.json"
+    },
+    {
+      "canonical_id": "verification",
+      "display_name": "Verification",
+      "prefix": "VER-",
+      "schema_path": "schemas/verification.schema.json",
+      "array_key": "verifications",
+      "data_path": "verification.json"
+    },
+    {
+      "canonical_id": "issues",
+      "display_name": "Issues",
+      "prefix": "issue-",
+      "schema_path": "schemas/issues.schema.json",
+      "array_key": "issues",
+      "data_path": "issues.json"
+    },
+    {
+      "canonical_id": "features",
+      "display_name": "Features",
+      "prefix": "FEAT-",
+      "schema_path": "schemas/features.schema.json",
+      "array_key": "features",
+      "data_path": "features.json"
+    },
+    {
+      "canonical_id": "research",
+      "display_name": "Research",
+      "prefix": "R-",
+      "schema_path": "schemas/research.schema.json",
+      "array_key": "research",
+      "data_path": "research.json"
+    },
+    {
+      "canonical_id": "rationale",
+      "display_name": "Design Rationale",
+      "prefix": "RAT-",
+      "schema_path": "schemas/rationale.schema.json",
+      "array_key": "rationales",
+      "data_path": "rationale.json"
+    },
+    {
+      "canonical_id": "spec-reviews",
+      "display_name": "Spec Reviews",
+      "prefix": "REVIEW-",
+      "schema_path": "schemas/spec-reviews.schema.json",
+      "array_key": "reviews",
+      "data_path": "spec-reviews.json"
+    },
+    {
+      "canonical_id": "layer-plans",
+      "display_name": "Layer Restructure Plans",
+      "prefix": "PLAN-",
+      "schema_path": "schemas/layer-plans.schema.json",
+      "array_key": "plans",
+      "data_path": "layer-plans.json"
+    },
+    {
+      "canonical_id": "context-contracts",
+      "display_name": "Context Contracts",
+      "prefix": "CTX-",
+      "schema_path": "schemas/context-contracts.schema.json",
+      "array_key": "contracts",
+      "data_path": "context-contracts.json"
+    }
+  ],
+  "relation_types": [
+    {
+      "canonical_id": "decision_supersedes_decision",
+      "display_name": "supersedes",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "decision_addresses_issue",
+      "display_name": "addresses issue",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "decision_addresses_feature",
+      "display_name": "addresses feature",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "decision_addresses_gap",
+      "display_name": "addresses gap",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "gap_addressed_by_decision",
+      "display_name": "addressed by decision",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "gap_addressed_by_feature",
+      "display_name": "addressed by feature",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "gap_relates_to_issue",
+      "display_name": "relates to issue",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "feature_depends_on_feature",
+      "display_name": "depends on feature",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "feature_gated_by_item",
+      "display_name": "gated by",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "feature_resolves_issue",
+      "display_name": "resolves issue",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "feature_governed_by_decision",
+      "display_name": "governed by decision",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "story_depends_on_story",
+      "display_name": "story depends on story",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "story_gated_by_item",
+      "display_name": "story gated by",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "task_depends_on_task",
+      "display_name": "depends on task",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "requirement_depends_on_requirement",
+      "display_name": "depends on requirement",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "planphase_depends_on_planphase",
+      "display_name": "plan-phase depends on plan-phase",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "research_supersedes_research",
+      "display_name": "research supersedes research",
+      "category": "ordering"
+    },
+    {
+      "canonical_id": "review_targets_item",
+      "display_name": "review targets",
+      "category": "membership"
+    },
+    {
+      "canonical_id": "verification_verifies_item",
+      "display_name": "verifies",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "task_positioned_in_phase",
+      "display_name": "positioned in phase",
+      "category": "membership"
+    }
+  ],
+  "lenses": [],
+  "layers": [],
+  "status_buckets": {},
+  "installed_schemas": [
+    "decisions",
+    "framework-gaps",
+    "tasks",
+    "verification",
+    "issues",
+    "features",
+    "research",
+    "rationale",
+    "spec-reviews",
+    "layer-plans",
+    "requirements",
+    "conventions",
+    "context-contracts",
+    "config",
+    "relations"
+  ],
+  "installed_blocks": [
+    "decisions",
+    "framework-gaps",
+    "tasks",
+    "verification",
+    "issues",
+    "features",
+    "research",
+    "rationale",
+    "spec-reviews",
+    "layer-plans",
+    "requirements",
+    "conventions",
+    "context-contracts"
+  ]
+}

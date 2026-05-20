@@ -423,6 +423,61 @@
       ],
       "notes": "Filing context: this work-unit emerged from 2026-05-13 → 2026-05-14 dialogue reverse-engineering config from substrate. LLM-filed Phase 5 sub-phase decomposition (analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md line 14) skipped this upstream vocabulary work; FGAP-047 records the skip. Source analysis files: analysis/2026-05-14-arc-tracking-substrate-open-decisions.md (7 open decisions enumerated); analysis/2026-05-14-step-1-config-draft-from-substrate.md (config draft + drift surface); analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md (relation_types / lenses / layers / status patterns); analysis/2026-05-14-arc-tracking-substrate-decision-sharpening.md (cross-doc mapping); analysis/2026-05-14-pm-vocabulary-survey-full-analysis.md (external prior-art); analysis/2026-05-14-substrate-filing-precedents.md (canonical filing-method archaeology). Blocks TASK-025 sub-phases 5.1-5.6 from coherent execution until settled. Already-enacted DECs from this work-unit's substrate authoring: DEC-0022 (features schema simplification, drop Epic-level qualifier) + DEC-0023 (schema title as display_name authority).",
       "id": "TASK-042"
+    },
+    {
+      "description": "FGAP-046 closure: migrate all inline FK fields → relations.json closure-table edges (eliminate DEC-0013 violations). Per relation_type canonical_id mapping (DEC-0030 tripartite enacted). Covers decisions.{supersedes,superseded_by,related_findings,related_features,related_gaps} / framework-gaps.{related_decisions,related_features,related_issues} / features.{dependencies,gates,blocks_resolved,decisions} + nested story/task depends_on+gates / requirements.depends_on / layer-plans phases depends_on / research.supersedes / tasks.depends_on / spec-reviews.target / verification.target. Deprecate/remove migrated inline fields in schemas + version bump + MigrationFn. Prerequisite: Phase 1 schema install + config.relation_types authoring. Blocks TASK-044.",
+      "status": "planned",
+      "phase": "fgap-046-060-arc",
+      "acceptance_criteria": [
+        "config.relation_types[] declares all relation_type canonical_ids per DEC-0030 tripartite mapping",
+        ".project/relations.json carries one edge per former inline FK reference",
+        "inline FK fields removed/deprecated from schemas with version bump + drop-field MigrationFn registered",
+        "validateProject clean: no dangling edge refs, no unregistered relation_types",
+        "non-substrate-target fields (issues.resolved_by / spec-reviews.resolved_by commit strings) NOT auto-migrated; surfaced for user decision",
+        "tasks.phase free-text migration gated on DEC-0028 (phase shape) — STOP + surface if unresolved"
+      ],
+      "depends_on": [],
+      "files": [
+        ".project/relations.json",
+        ".project/config.json",
+        ".project/schemas/decisions.schema.json",
+        ".project/schemas/framework-gaps.schema.json",
+        ".project/schemas/features.schema.json",
+        ".project/schemas/tasks.schema.json",
+        ".project/schemas/requirements.schema.json",
+        ".project/schemas/research.schema.json",
+        ".project/schemas/layer-plans.schema.json",
+        ".project/schemas/spec-reviews.schema.json",
+        ".project/schemas/verification.schema.json"
+      ],
+      "notes": "Coordinated arc with TASK-044 per plan ~/.claude/plans/idempotent-dancing-wilkes.md. Root-cause path: eliminate inline FK surface so FGAP-060 engine operates on single canonical edge surface. DEC-0030 + DEC-0035 enacted as prerequisites.",
+      "id": "TASK-043"
+    },
+    {
+      "description": "FGAP-060 closure: build renameCanonicalId engine on canonical edge-only reference surface (after TASK-043 eliminates inline FK). Library packages/pi-context/src/rename-canonical-id.ts + writeRelations wrapper in project-context.ts + Pi tool rename-canonical-id (index.ts) + orchestrator script scripts/orchestrator/migrate-canonical-id.ts + tests. Rewrites home-block item id + relations.json edges (parent/child/relation_type) + reports out-of-substrate citations (analysis MDs, commits — report-only). NO inline-FK sweep (eliminated in TASK-043). DEC-0019/0020 dual-surface unit.",
+      "status": "planned",
+      "phase": "fgap-046-060-arc",
+      "acceptance_criteria": [
+        "renameCanonicalId(cwd, kind, oldId, newId, {dryRun}) rewrites home item id + relations.json edges",
+        "out-of-substrate citations (analysis/ + git log) reported, never auto-rewritten",
+        "no inline-FK sweep code path exists (adversarial probe confirms)",
+        "fails loud on unknown kind/id; dry-run writes nothing",
+        "Pi tool rename-canonical-id registered; orchestrator script migrate-canonical-id.ts present; both thin over library per DEC-0019/0020",
+        "tests cover home-id rewrite + edge rewrite + dry-run inert + out-of-substrate report + no-match error",
+        "build + check + test green; runtime demo + adversarial probe per DEC-0018"
+      ],
+      "depends_on": [
+        "TASK-043"
+      ],
+      "files": [
+        "packages/pi-context/src/rename-canonical-id.ts",
+        "packages/pi-context/src/project-context.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/migrate-canonical-id.ts",
+        "packages/pi-context/src/rename-canonical-id.test.ts"
+      ],
+      "notes": "Coordinated arc with TASK-043. Engine operates on single canonical surface because TASK-043 eliminated inline FK. canonical_id-permanent (DEC-0035) scopes this engine to deliberate rename only.",
+      "id": "TASK-044"
     }
   ]
 }

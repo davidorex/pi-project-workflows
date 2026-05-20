@@ -437,7 +437,7 @@
         ".project/schemas/spec-reviews.schema.json",
         ".project/schemas/verification.schema.json"
       ],
-      "notes": "Coordinated arc with TASK-044 per plan ~/.claude/plans/idempotent-dancing-wilkes.md. Root-cause path: eliminate inline FK surface so FGAP-060 engine operates on single canonical edge surface. DEC-0030 + DEC-0035 enacted as prerequisites.",
+      "notes": "REFRAMED per DEC-0036 (2026-05-17): in-place inline-FK migration of .project superseded by re-derivation. FGAP-046 closure now = author .context references as relations.json edges (conform by construction), not strip .project in place. The in-place attempt hit cascading schema-invariant collisions (tasks completed→VER if-then; decisions ≥1-forcing-artifact anyOf); tmp/migrate-phase2.ts discardable. This work folds into .context re-population (DEC-0036 finishing step 3). Stays in-progress as the inline-FK-elimination concern, now realized via canonical authoring.",
       "id": "TASK-043"
     },
     {
@@ -462,7 +462,7 @@
         "scripts/orchestrator/migrate-canonical-id.ts",
         "packages/pi-context/src/rename-canonical-id.test.ts"
       ],
-      "notes": "Coordinated arc with TASK-043. Engine operates on single canonical surface because TASK-043 eliminated inline FK. canonical_id-permanent (DEC-0035) scopes this engine to deliberate rename only.",
+      "notes": "Coordinated arc with TASK-043. Engine operates on single canonical surface because TASK-043 eliminated inline FK. canonical_id-permanent (DEC-0035) scopes this engine to deliberate rename only. [DEC-0036 reframe: FGAP-060 rename engine is framework machinery for .context (finishing step 2); built against .context schemas + fixtures, not retrofitted to .project.]",
       "id": "TASK-044"
     }
   ]

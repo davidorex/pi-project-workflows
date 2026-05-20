@@ -426,7 +426,7 @@
     },
     {
       "description": "FGAP-046 closure: migrate all inline FK fields → relations.json closure-table edges (eliminate DEC-0013 violations). Per relation_type canonical_id mapping (DEC-0030 tripartite enacted). Covers decisions.{supersedes,superseded_by,related_findings,related_features,related_gaps} / framework-gaps.{related_decisions,related_features,related_issues} / features.{dependencies,gates,blocks_resolved,decisions} + nested story/task depends_on+gates / requirements.depends_on / layer-plans phases depends_on / research.supersedes / tasks.depends_on / spec-reviews.target / verification.target. Deprecate/remove migrated inline fields in schemas + version bump + MigrationFn. Prerequisite: Phase 1 schema install + config.relation_types authoring. Blocks TASK-044.",
-      "status": "planned",
+      "status": "in-progress",
       "phase": "fgap-046-060-arc",
       "acceptance_criteria": [
         "config.relation_types[] declares all relation_type canonical_ids per DEC-0030 tripartite mapping",

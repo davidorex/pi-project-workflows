@@ -18,6 +18,7 @@ import {
 	validateRelations,
 } from "./project-context.js";
 import { projectDir, schemaPath, schemasDir } from "./project-dir.js";
+import { topoSort } from "./topo.js";
 
 // Re-export substrate SDK so consumers can keep importing through project-sdk
 // during the migration arc.
@@ -286,6 +287,25 @@ export interface BlockSummary {
 	arrays: Record<string, ArraySummary>;
 }
 
+/**
+ * Zero-loss derived "where are we + what's next" state (DEC-0040 / FGAP-072 /
+ * FGAP-059). A pure function of `.project` substrate — focus, in-flight units,
+ * atomic-next ranked actions, and blocked tasks are all DERIVED, never
+ * hand-stored. Built to serve `.context` identically once that substrate-dir
+ * lands. Reuses existing primitives (buildIdIndex / loadRelations / topoSort);
+ * introduces no new traversal or status logic.
+ */
+export interface CurrentState {
+	/** one-line: active in-flight ids, else current in-progress phase, else "no active focus." */
+	focus: string;
+	/** tasks with status "in-progress" */
+	inFlight: { id: string; block: string; description: string }[];
+	/** atomic-next, ranked: open framework-gaps (by priority) then unblocked planned tasks (topo order) */
+	nextActions: { id: string; kind: string; priority?: string; reason: string }[];
+	/** planned tasks whose task_depends_on_task dependency parents are not ALL completed */
+	blocked: { id: string; block: string; blockedBy: string[] }[];
+}
+
 export interface ProjectState {
 	testCount: number;
 	sourceFiles: number;
@@ -551,6 +571,150 @@ export function projectState(cwd: string): ProjectState {
 	}
 
 	return state;
+}
+
+/**
+ * Derive {@link CurrentState} ("where are we + what's next") purely from
+ * `.project` substrate. No writes; tolerant of absent optional blocks (every
+ * branch defaults to empty rather than throwing).
+ *
+ * Edge-direction contract for blocked/ready derivation (verified against
+ * roadmap-plan.ts:471 — the topoSort-deps mapping for phase_depends_on uses the
+ * identical convention): a `task_depends_on_task` edge `{parent: D, child: T}`
+ * means task T DEPENDS ON task D, so D must reach status "completed" before T is
+ * unblocked. (relation name source_verb_target = task_depends_on_task ⇒ child is
+ * the source/dependent, parent is the target/prerequisite; config display_name
+ * "depends on task".)
+ */
+export function currentState(cwd: string): CurrentState {
+	// Tolerate any substrate-read failure (no .project, malformed config, etc.)
+	// by collapsing to the empty state — this is a pure read surface.
+	let idIndex: Map<string, ItemLocation>;
+	try {
+		idIndex = buildIdIndex(cwd);
+	} catch {
+		idIndex = new Map();
+	}
+	let edges: Edge[];
+	try {
+		edges = loadRelations(cwd);
+	} catch {
+		edges = [];
+	}
+
+	// ── inFlight: tasks-block items with status "in-progress" ──────────────────
+	const inFlight: CurrentState["inFlight"] = [];
+	for (const [id, loc] of idIndex) {
+		if (loc.block !== "tasks") continue;
+		if (loc.item.status !== "in-progress") continue;
+		inFlight.push({
+			id,
+			block: loc.block,
+			description: typeof loc.item.description === "string" ? loc.item.description : "",
+		});
+	}
+
+	// Task dependency adjacency from task_depends_on_task edges: for task T,
+	// depParents(T) = parents of edges {parent, child:T}. T is unblocked iff
+	// every dep parent that resolves to a known item is completed (deps pointing
+	// at unknown ids are treated as satisfied — a dangling edge is a relations
+	// integrity concern surfaced by validateRelations, not a blocker here).
+	const isCompleted = (taskId: string): boolean => {
+		const loc = idIndex.get(taskId);
+		return loc !== undefined && loc.item.status === "completed";
+	};
+	const depParentsOf = (taskId: string): string[] =>
+		edges.filter((e) => e.relation_type === "task_depends_on_task" && e.child === taskId).map((e) => e.parent);
+	const incompleteDeps = (taskId: string): string[] =>
+		depParentsOf(taskId).filter((dep) => idIndex.has(dep) && !isCompleted(dep));
+
+	// Collect all planned tasks once — drives both blocked + ready derivations.
+	const plannedTasks: { id: string; loc: ItemLocation }[] = [];
+	for (const [id, loc] of idIndex) {
+		if (loc.block === "tasks" && loc.item.status === "planned") plannedTasks.push({ id, loc });
+	}
+
+	// ── blocked: planned tasks with at least one incomplete dep parent ─────────
+	const blocked: CurrentState["blocked"] = [];
+	const blockedIds = new Set<string>();
+	for (const { id, loc } of plannedTasks) {
+		const blockedBy = incompleteDeps(id);
+		if (blockedBy.length > 0) {
+			blocked.push({ id, block: loc.block, blockedBy });
+			blockedIds.add(id);
+		}
+	}
+
+	// ── nextActions (atomic-next, ranked) ──────────────────────────────────────
+	const nextActions: CurrentState["nextActions"] = [];
+
+	// 1. Open framework-gaps (gaps[].status === "identified"), ranked
+	//    P0 > P1 > P2 > P3 (missing priority sorts last) then by id.
+	const priorityRank: Record<string, number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
+	const openGaps: { id: string; priority?: string }[] = [];
+	for (const [id, loc] of idIndex) {
+		if (loc.block !== "framework-gaps") continue;
+		if (loc.item.status !== "identified") continue;
+		openGaps.push({ id, priority: typeof loc.item.priority === "string" ? loc.item.priority : undefined });
+	}
+	openGaps.sort((a, b) => {
+		const ra = a.priority !== undefined ? (priorityRank[a.priority] ?? 99) : 99;
+		const rb = b.priority !== undefined ? (priorityRank[b.priority] ?? 99) : 99;
+		if (ra !== rb) return ra - rb;
+		return a.id.localeCompare(b.id);
+	});
+	for (const g of openGaps) {
+		nextActions.push({
+			id: g.id,
+			kind: "framework-gap",
+			...(g.priority !== undefined ? { priority: g.priority } : {}),
+			reason: `open gap (priority ${g.priority ?? "unset"})`,
+		});
+	}
+
+	// 2. Ready tasks: planned tasks NOT in `blocked`, ordered via topoSort over
+	//    the planned-task nodes with deps = their task_depends_on_task parents.
+	//    topoSort only counts edges between nodes present in the graph, so deps
+	//    pointing outside the planned set (e.g. already-completed prerequisites)
+	//    don't gate the ordering — we then filter the resulting order to the
+	//    ready (unblocked + planned) subset.
+	const { order } = topoSort(
+		plannedTasks,
+		(t) => t.id,
+		(t) => depParentsOf(t.id),
+	);
+	for (const id of order) {
+		if (blockedIds.has(id)) continue;
+		nextActions.push({ id, kind: "task", reason: "unblocked planned task" });
+	}
+
+	// Cap nextActions at a scannable head (first 15) — derivation can surface a
+	// long backlog; the head is the actionable slice for "what's next".
+	const NEXT_ACTIONS_CAP = 15;
+	const cappedNextActions = nextActions.slice(0, NEXT_ACTIONS_CAP);
+
+	// ── focus: single derived string ───────────────────────────────────────────
+	let focus: string;
+	if (inFlight.length > 0) {
+		focus = `in-flight: ${inFlight.map((t) => t.id).join(", ")}`;
+	} else {
+		// Fall back to an in-progress phase (phase.json phases[] array-block).
+		let inProgressPhase: { id?: string; name?: string } | null = null;
+		for (const [id, loc] of idIndex) {
+			if (loc.block !== "phase") continue;
+			if (loc.item.status !== "in-progress") continue;
+			inProgressPhase = { id, name: typeof loc.item.name === "string" ? loc.item.name : undefined };
+			break;
+		}
+		if (inProgressPhase !== null) {
+			const label = inProgressPhase.name ? `${inProgressPhase.id} (${inProgressPhase.name})` : inProgressPhase.id;
+			focus = `phase: ${label}`;
+		} else {
+			focus = "no active focus.";
+		}
+	}
+
+	return { focus, inFlight, nextActions: cappedNextActions, blocked };
 }
 
 // ── Predicate Filter ────────────────────────────────────────────────────────

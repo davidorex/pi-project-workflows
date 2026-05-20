@@ -18,6 +18,7 @@ import {
 	availableSchemas,
 	blockStructure,
 	completeTask,
+	currentState,
 	filterBlockItems,
 	type ItemLocation,
 	projectState,
@@ -1931,5 +1932,153 @@ describe("resolveItemsByIds", () => {
 
 		const result = resolveItemsByIds(tmpDir, []);
 		assert.strictEqual(result.size, 0);
+	});
+});
+
+// ── currentState (zero-loss "where are we + what's next") ─────────────────────
+// Fixtures reuse the writeConfig (empty block_kinds → no prefix-vs-block
+// enforcement on ad-hoc ids) + writeRelations helpers. Block files are written
+// raw via fs.writeFileSync as elsewhere in this suite; buildIdIndex reads them
+// via readBlock and loadRelations AJV-validates the relations array.
+describe("currentState", () => {
+	function setup(tmpDir: string): string {
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
+		return projectDir;
+	}
+
+	it("inFlight contains only in-progress tasks (planned excluded)", (t) => {
+		const tmpDir = makeTmpDir("cs-inflight");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "active one", status: "in-progress" },
+					{ id: "TASK-B", description: "queued one", status: "planned" },
+				],
+			}),
+		);
+
+		const state = currentState(tmpDir);
+		assert.strictEqual(state.inFlight.length, 1);
+		assert.strictEqual(state.inFlight[0].id, "TASK-A");
+		assert.strictEqual(state.inFlight[0].block, "tasks");
+		assert.strictEqual(state.inFlight[0].description, "active one");
+	});
+
+	it("blocked when a task_depends_on_task parent is not completed; ready once it is", (t) => {
+		const tmpDir = makeTmpDir("cs-blocked");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		// edge parent=TASK-A child=TASK-B ⇒ TASK-B depends on TASK-A
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "TASK-A", child: "TASK-B", relation_type: "task_depends_on_task" }]),
+		);
+
+		// Phase 1: TASK-A planned (not completed) → TASK-B blocked by TASK-A.
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "prereq", status: "planned" },
+					{ id: "TASK-B", description: "dependent", status: "planned" },
+				],
+			}),
+		);
+		let state = currentState(tmpDir);
+		const bEntry = state.blocked.find((b) => b.id === "TASK-B");
+		assert.ok(bEntry, "TASK-B should be blocked");
+		assert.deepStrictEqual(bEntry!.blockedBy, ["TASK-A"]);
+		// TASK-B must not appear as a ready next-action while blocked.
+		assert.ok(!state.nextActions.some((a) => a.id === "TASK-B"));
+		// TASK-A has no incomplete deps → it is itself a ready next-action.
+		assert.ok(state.nextActions.some((a) => a.id === "TASK-A" && a.kind === "task"));
+
+		// Phase 2: complete TASK-A → TASK-B unblocked → ready next-action.
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "prereq", status: "completed" },
+					{ id: "TASK-B", description: "dependent", status: "planned" },
+				],
+			}),
+		);
+		state = currentState(tmpDir);
+		assert.ok(!state.blocked.some((b) => b.id === "TASK-B"), "TASK-B should no longer be blocked");
+		assert.ok(
+			state.nextActions.some((a) => a.id === "TASK-B" && a.kind === "task"),
+			"TASK-B should be a ready next-action",
+		);
+	});
+
+	it("nextActions ranks open framework-gaps by priority (P1 before P3)", (t) => {
+		const tmpDir = makeTmpDir("cs-gap-priority");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		// Author P3 first to prove the sort, not file order, decides ranking.
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({
+				gaps: [
+					{ id: "FGAP-LOW", title: "low", status: "identified", priority: "P3" },
+					{ id: "FGAP-HIGH", title: "high", status: "identified", priority: "P1" },
+				],
+			}),
+		);
+
+		const state = currentState(tmpDir);
+		const gapActions = state.nextActions.filter((a) => a.kind === "framework-gap");
+		assert.deepStrictEqual(
+			gapActions.map((a) => a.id),
+			["FGAP-HIGH", "FGAP-LOW"],
+		);
+		assert.strictEqual(gapActions[0].priority, "P1");
+	});
+
+	it("focus reflects in-flight task; falls back to in-progress phase; else 'no active focus.'", (t) => {
+		const tmpDir = makeTmpDir("cs-focus");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+
+		// (a) in-progress task → focus mentions it.
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-A", description: "x", status: "in-progress" }] }),
+		);
+		assert.match(currentState(tmpDir).focus, /TASK-A/);
+
+		// (b) no in-flight task + an in-progress phase → focus mentions the phase.
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-A", description: "x", status: "planned" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "groundwork", intent: "i", status: "in-progress" }] }),
+		);
+		assert.match(currentState(tmpDir).focus, /PHASE-1/);
+
+		// (c) neither → "no active focus."
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "groundwork", intent: "i", status: "planned" }] }),
+		);
+		assert.strictEqual(currentState(tmpDir).focus, "no active focus.");
+	});
+
+	it("empty project (no blocks) → all arrays empty, focus 'no active focus.', no throw", (t) => {
+		const tmpDir = makeTmpDir("cs-empty");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		// No .project dir at all — buildIdIndex returns empty, loadRelations [].
+		const state = currentState(tmpDir);
+		assert.deepStrictEqual(state.inFlight, []);
+		assert.deepStrictEqual(state.nextActions, []);
+		assert.deepStrictEqual(state.blocked, []);
+		assert.strictEqual(state.focus, "no active focus.");
 	});
 });

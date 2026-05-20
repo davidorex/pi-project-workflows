@@ -46,6 +46,7 @@ import {
 } from "./project-dir.js";
 import {
 	completeTask,
+	currentState,
 	filterBlockItems,
 	findAppendableBlocks,
 	type ItemLocation,
@@ -907,6 +908,30 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: context-current-state ───────────────────────────────────────────
+
+	pi.registerTool({
+		name: "context-current-state",
+		label: "Context Current State",
+		description:
+			"Derive 'where are we + what's next' purely from .project substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.",
+		promptSnippet: "Derive current project state — focus, in-flight, next actions, blocked",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const state = currentState(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(state, null, 2) }],
 			};
 		},
 	});

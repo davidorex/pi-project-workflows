@@ -222,6 +222,21 @@
       "canonical_id": "rationale_supports_decision",
       "display_name": "supports decision",
       "category": "data_flow"
+    },
+    {
+      "canonical_id": "task_addresses_gap",
+      "display_name": "addresses gap",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "task_addresses_feature",
+      "display_name": "addresses feature",
+      "category": "data_flow"
+    },
+    {
+      "canonical_id": "task_governed_by_decision",
+      "display_name": "governed by decision",
+      "category": "data_flow"
     }
   ],
   "lenses": [],
@@ -289,6 +304,57 @@
       "direction": "as_parent",
       "severity": "error",
       "message": "Decision '{id}' cites no forcing artifact (decision_addresses_issue|feature|gap edge)"
+    },
+    {
+      "id": "task-completed-gap-closed",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_addresses_gap"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "warning",
+      "message": "Completed task '{id}' addresses a gap that is not closed"
+    },
+    {
+      "id": "task-completed-feature-complete",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_addresses_feature"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "warning",
+      "message": "Completed task '{id}' addresses a feature that is not complete"
+    },
+    {
+      "id": "verification-passed-task-complete",
+      "class": "status-consistency",
+      "block": "verification",
+      "relation_types": [
+        "verification_verifies_item"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "error",
+      "message": "Passed verification '{id}' verifies a task that is not completed"
+    },
+    {
+      "id": "task-not-on-superseded-decision",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_governed_by_decision"
+      ],
+      "direction": "as_parent",
+      "forbid_target_bucket": "unknown",
+      "severity": "warning",
+      "message": "Task '{id}' is governed by a superseded or cancelled decision"
     }
   ]
 }

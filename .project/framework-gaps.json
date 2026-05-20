@@ -2123,7 +2123,7 @@
     },
     {
       "title": "No canonical primitive for \"atomic-next-work-unit\" query — existing filter / walk-ancestors / find-references require caller composition; substrate cannot self-direct",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L3",
@@ -2163,7 +2163,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T14:30:00Z",
-      "id": "FGAP-059"
+      "id": "FGAP-059",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-21T00:00:00Z"
     },
     {
       "title": "No automatic cross-file value-rename engine for canonical_id changes — schema-migrations handles shape, not canonical_id value renames across relations.json edges + item-id-prefix renumbering",
@@ -2634,7 +2636,7 @@
     },
     {
       "title": "Full-state derivation capability (currentState) — derive the project's complete state from the substrate as an extension capability exposed dual-surface; do not hand-maintain it",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L1",
@@ -2665,11 +2667,13 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-072"
+      "id": "FGAP-072",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-21T00:00:00Z"
     },
     {
       "title": "Unit-of-work closure produces no enforced substrate record (DEC-0018/0020 unenforced) + validateProject lacks cross-block status-drift checks",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L1",
@@ -2700,7 +2704,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-073"
+      "id": "FGAP-073",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-21T00:00:00Z"
     },
     {
       "title": "Residual pi-project-era 'project' naming debt across pi-context source/surface — package is pi-context + dir .context (DEC-0029) + surface /context, but source identifiers, files, Pi tools, and the command still say project",

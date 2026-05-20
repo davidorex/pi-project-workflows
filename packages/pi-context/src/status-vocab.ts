@@ -24,21 +24,32 @@ export type { StatusBucket } from "./project-context.js";
  * shadow these defaults at lookup time (resolveStatusVocabulary spreads
  * the user map over the defaults so user keys win on collision).
  *
- * Mappings derived from the schema enums currently in this repo's
- * .project/schemas/ + packages/pi-context/registry/schemas/:
- *   - issues.status: open | resolved | deferred
- *   - decisions.status: open | enacted | superseded
- *   - tasks.status: planned | in-progress | completed | blocked | cancelled
- *   - features.status: proposed | active | complete | archived
- *   - roadmaps.status: draft | active | paused | complete | archived
- *   - plans.status: draft | active | blocked | complete | archived
- *   - spec-reviews.status: not-started | in-progress | complete
- *   - framework-gaps.status: identified | proposed | accepted | in_progress | implemented
- *   - verification.status: passed | failed | pending
+ * Mappings cover the going-forward conception vocabulary — the status enums
+ * of packages/pi-context/samples/schemas/ (the DEC-0037 15-kind canon, all
+ * also live in this repo's .project/ registered block_kinds). Per DEC-0036
+ * (registry/ is retiring in favor of samples/→.context) these defaults track
+ * the conception, NOT the retired registry-only vocab (audit pass/fail/warn/
+ * skip, project inception/planning/development/maintenance, decisions
+ * revisit/tentative) — a substrate needing such vocab declares it via
+ * config.status_buckets (DEC-0025 override surface), never here.
+ *   - decisions.status:      open | enacted | superseded
+ *   - framework-gaps.status: identified | accepted | in-progress | closed | wontfix
+ *   - tasks.status:          planned | in-progress | completed | blocked | cancelled
+ *   - features.status:       proposed | approved | in-progress | in-review | complete | blocked | cancelled
+ *   - story.status:          proposed | ready | in-progress | in-review | complete | blocked
+ *   - research.status:       planned | in-progress | complete | stale | superseded | revised
+ *   - requirements.status:   proposed | accepted | deferred | implemented | verified
+ *   - verification.status:   passed | failed | partial | skipped
+ *   - spec-reviews.status:   not-started | in-progress | complete | abandoned
+ *   - layer-plans.status:    draft | proposed | decided | in-progress | complete | abandoned
+ *   - issues.status:         open | resolved | deferred
+ *   - phase.status:          planned | in-progress | completed
  *
- * Values not listed bucket to "unknown" without throwing — caller
- * decides whether unknown statuses are warning-worthy
- * (validateRoadmaps emits roadmap_status_unknown_value when relevant).
+ * status-vocab.test.ts guards completeness: every samples/schemas status enum
+ * value must resolve here (only the intended terminal-not-complete set may map
+ * to "unknown"). Values still bucket to "unknown" without throwing — caller
+ * decides whether unknown statuses are warning-worthy (validateRoadmaps emits
+ * roadmap_status_unknown_value when relevant).
  */
 export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	// → complete
@@ -50,11 +61,16 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	implemented: "complete",
 	passed: "complete",
 	archived: "complete",
+	closed: "complete", // framework-gaps: gap resolved/done
+	verified: "complete", // requirements: terminal-done, beyond "implemented"
 	// → in_progress
 	in_progress: "in_progress",
 	"in-progress": "in_progress",
 	active: "in_progress",
 	accepted: "in_progress",
+	"in-review": "in_progress", // features/story: under review, still active (not yet complete)
+	revised: "in_progress", // research: transient state during re-investigation
+	partial: "in_progress", // verification: incomplete — NOT a clean pass, must not assert complete
 	// → blocked
 	blocked: "blocked",
 	paused: "blocked",
@@ -68,13 +84,20 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	identified: "todo",
 	"not-started": "todo",
 	pending: "todo",
-	// superseded / cancelled / deferred bucket to unknown — they're
-	// terminal-but-not-complete states that don't fit the linear
-	// progress narrative. Roadmap/plan rollups treat them as
-	// "doesn't count toward progress" rather than as complete or todo.
+	approved: "todo", // features: approved to build, not yet started
+	ready: "todo", // story/features: refined + ready to pick up, not started
+	decided: "todo", // layer-plans: plan decided to execute, before in-progress
+	// superseded / cancelled / deferred / abandoned / wontfix / skipped / stale
+	// bucket to unknown — terminal-but-not-complete states that don't fit the
+	// linear progress narrative. Roadmap/plan rollups treat them as "doesn't
+	// count toward progress" rather than as complete or todo.
 	superseded: "unknown",
 	cancelled: "unknown",
 	deferred: "unknown",
+	abandoned: "unknown", // layer-plans/spec-reviews: work stopped, not completed
+	wontfix: "unknown", // framework-gaps: decided not to address
+	skipped: "unknown", // verification: waived/not run — must not assert complete
+	stale: "unknown", // research: grounding no longer authoritative (degraded-complete)
 };
 
 /**

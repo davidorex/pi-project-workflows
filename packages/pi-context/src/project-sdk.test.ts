@@ -229,127 +229,215 @@ describe("projectState", () => {
 
 // ── validateProject ─────────────────────────────────────────────────────────
 
+// Edge-model validation (DEC-0013 / DEC-0036): validateProject now checks the
+// closure-table edge graph (relations.json) for reference integrity, plus two
+// relocated invariants (completed-task verification edge; decision forcing-artifact
+// edge). The per-block inline-FK reference checks were dropped. Fixtures therefore
+// supply config.json (relation_types registry) + relations.json (edges) + block files.
+
+// Canonical relation_types registry shared across edge-model fixtures. Covers the
+// two relocated invariants plus a generic ordering relation for graph cases.
+const REL_TYPES = [
+	{ canonical_id: "verification_verifies_item", display_name: "verifies", category: "data_flow" as const },
+	{ canonical_id: "decision_addresses_gap", display_name: "addresses gap", category: "data_flow" as const },
+	{ canonical_id: "task_depends_on_task", display_name: "depends on", category: "ordering" as const },
+];
+
+/**
+ * Write a config.json with the canonical relation_types registry. block_kinds is
+ * left empty so buildIdIndex's prefix-vs-block invariant does not constrain the
+ * fixtures' ad-hoc ids (t1/d1/etc.) — this isolates the edge-integrity surface
+ * under test from prefix enforcement.
+ */
+function writeConfig(projectDir: string, relationTypes = REL_TYPES): void {
+	fs.writeFileSync(
+		path.join(projectDir, "config.json"),
+		JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [], relation_types: relationTypes }),
+	);
+}
+
+/** Write relations.json (top-level Edge[] array). */
+function writeRelations(projectDir: string, edges: Record<string, unknown>[]): void {
+	fs.writeFileSync(path.join(projectDir, "relations.json"), JSON.stringify(edges));
+}
+
 describe("validateProject", () => {
-	it("returns valid for a project with consistent cross-references", (t) => {
+	it("returns clean for a valid edge graph (every decision + completed task has its required edge)", (t) => {
 		const tmpDir = makeTmpDir("validate-valid");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
 
-		// Phases as an array-block (DEC-0028): PHASE-NNN ids in phase.json.
-		fs.writeFileSync(
-			path.join(projectDir, "phase.json"),
-			JSON.stringify({
-				phases: [{ id: "PHASE-001", name: "foundation", intent: "i", status: "planned" }],
-			}),
-		);
-
-		// Tasks referencing the existing phase by its PHASE-NNN id
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
 			JSON.stringify({
 				tasks: [
-					{ id: "t1", description: "first task", status: "planned", phase: "PHASE-001" },
-					{ id: "t2", description: "second task", status: "planned", phase: "PHASE-001" },
+					{ id: "t1", description: "first task", status: "completed" },
+					{ id: "t2", description: "second task", status: "planned" },
 				],
 			}),
 		);
-
-		// Decisions referencing the existing phase by its PHASE-NNN id
 		fs.writeFileSync(
-			path.join(projectDir, "decisions.json"),
+			path.join(projectDir, "verification.json"),
 			JSON.stringify({
-				decisions: [{ id: "d1", decision: "use X", rationale: "because", phase: "PHASE-001" }],
+				verifications: [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }],
 			}),
 		);
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({ decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "a gap" }] }),
+		);
+
+		writeRelations(projectDir, [
+			// completed task t1 verified by v1 (child=task)
+			{ parent: "v1", child: "t1", relation_type: "verification_verifies_item" },
+			// decision d1 addresses gap g1 (parent=decision)
+			{ parent: "d1", child: "g1", relation_type: "decision_addresses_gap" },
+			// generic ordering edge between the two tasks
+			{ parent: "t1", child: "t2", relation_type: "task_depends_on_task" },
+		]);
 
 		const result = validateProject(tmpDir);
 		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
 
-	it("reports broken phase reference from tasks", (t) => {
-		const tmpDir = makeTmpDir("validate-phase-ref");
+	it("reports error for an edge with a dangling parent", (t) => {
+		const tmpDir = makeTmpDir("validate-dangling-parent");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
-		// No phase.json — phase references will be broken
+		writeConfig(projectDir);
+
+		fs.writeFileSync(path.join(projectDir, "tasks.json"), JSON.stringify({ tasks: [{ id: "t2", status: "planned" }] }));
+		// parent "t-missing" resolves to nothing
+		writeRelations(projectDir, [{ parent: "t-missing", child: "t2", relation_type: "task_depends_on_task" }]);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.status, "invalid");
+		const issue = result.issues.find((i) => i.message.includes("parent 't-missing'"));
+		assert.ok(issue, "should report dangling-parent edge error");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "relations");
+	});
+
+	it("reports error for an edge with a dangling child", (t) => {
+		const tmpDir = makeTmpDir("validate-dangling-child");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
+
+		fs.writeFileSync(path.join(projectDir, "tasks.json"), JSON.stringify({ tasks: [{ id: "t1", status: "planned" }] }));
+		// child "t-missing" resolves to nothing
+		writeRelations(projectDir, [{ parent: "t1", child: "t-missing", relation_type: "task_depends_on_task" }]);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.status, "invalid");
+		const issue = result.issues.find((i) => i.message.includes("child 't-missing'"));
+		assert.ok(issue, "should report dangling-child edge error");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "relations");
+	});
+
+	it("reports error for an edge with an unregistered relation_type", (t) => {
+		const tmpDir = makeTmpDir("validate-unregistered-rt");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
 
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
 			JSON.stringify({
-				tasks: [{ id: "t1", description: "task with missing phase", status: "planned", phase: "phase-1" }],
-			}),
-		);
-
-		const result = validateProject(tmpDir);
-		// Broken phase references are warnings, so valid may still be true
-		// but there should be an issue about the missing phase
-		assert.ok(result.issues.length > 0);
-		const phaseIssue = result.issues.find((i) => i.message.includes("phase") && i.message.includes("phase-1"));
-		assert.ok(phaseIssue, "should report issue about missing phase reference");
-		assert.strictEqual(phaseIssue!.block, "tasks");
-	});
-
-	it("reports missing task dependency", (t) => {
-		const tmpDir = makeTmpDir("validate-task-dep");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(projectDir, "tasks.json"),
-			JSON.stringify({
-				tasks: [{ id: "task-a", description: "depends on nonexistent", status: "planned", depends_on: ["task-b"] }],
-			}),
-		);
-
-		const result = validateProject(tmpDir);
-		assert.strictEqual(result.status, "invalid", "missing depends_on target should cause error-level issue");
-		const depIssue = result.issues.find((i) => i.message.includes("task-b") && i.message.includes("depends on"));
-		assert.ok(depIssue, "should report issue about missing task dependency");
-		assert.strictEqual(depIssue!.severity, "error");
-		assert.strictEqual(depIssue!.block, "tasks");
-	});
-
-	it("reports issue with broken resolved_by reference", (t) => {
-		const tmpDir = makeTmpDir("validate-issue-ref");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(projectDir, "issues.json"),
-			JSON.stringify({
-				issues: [
-					{
-						id: "g1",
-						title: "resolved issue",
-						body: "resolved issue body",
-						location: "test.ts:1",
-						status: "resolved",
-						category: "issue",
-						priority: "high",
-						package: "test",
-						resolved_by: "nonexistent-spec-42",
-					},
+				tasks: [
+					{ id: "t1", status: "planned" },
+					{ id: "t2", status: "planned" },
 				],
 			}),
 		);
+		// relation_type "task_blocks_task" is not in REL_TYPES
+		writeRelations(projectDir, [{ parent: "t1", child: "t2", relation_type: "task_blocks_task" }]);
 
 		const result = validateProject(tmpDir);
-		const issueRef = result.issues.find(
-			(i) => i.message.includes("resolved_by") && i.message.includes("nonexistent-spec-42"),
-		);
-		assert.ok(issueRef, "should report issue about broken resolved_by reference");
-		assert.strictEqual(issueRef!.block, "issues");
+		assert.strictEqual(result.status, "invalid");
+		const issue = result.issues.find((i) => i.message.includes("relation_type 'task_blocks_task'"));
+		assert.ok(issue, "should report unregistered relation_type error");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "relations");
 	});
 
-	it("returns valid for an empty project directory", (t) => {
+	it("reports error for a decision without a forcing-artifact edge", (t) => {
+		const tmpDir = makeTmpDir("validate-dec-no-forcing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
+
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({ decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "a gap" }] }),
+		);
+		// edge present, but it is NOT a decision_addresses_* edge → invariant fails
+		writeRelations(projectDir, [{ parent: "g1", child: "d1", relation_type: "task_depends_on_task" }]);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.status, "invalid");
+		const issue = result.issues.find(
+			(i) => i.message.includes("Decision 'd1'") && i.message.includes("forcing artifact"),
+		);
+		assert.ok(issue, "should report decision-missing-forcing-artifact error");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "decisions");
+	});
+
+	it("reports error for a completed task without a verification edge", (t) => {
+		const tmpDir = makeTmpDir("validate-task-no-ver");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
+
+		// Two tasks so an edge exists (the edge-check block requires ≥1 edge), but
+		// no verification_verifies_item edge targets the completed task t1.
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "t1", description: "done task", status: "completed" },
+					{ id: "t2", description: "open task", status: "planned" },
+				],
+			}),
+		);
+		writeRelations(projectDir, [{ parent: "t1", child: "t2", relation_type: "task_depends_on_task" }]);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.status, "invalid", "completed task without verification edge should be invalid");
+		const issue = result.issues.find(
+			(i) => i.message.includes("Completed task 't1'") && i.message.includes("verification_verifies_item"),
+		);
+		assert.ok(issue, "should report completed-task-missing-verification-edge error");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "tasks");
+		assert.ok(issue!.field!.includes("verification"));
+	});
+
+	it("returns clean for an empty project directory", (t) => {
 		const tmpDir = makeTmpDir("validate-empty");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
@@ -361,152 +449,26 @@ describe("validateProject", () => {
 		assert.deepStrictEqual(result.issues, []);
 	});
 
-	it("returns valid for partial project with only tasks (no phases or decisions)", (t) => {
-		const tmpDir = makeTmpDir("validate-partial");
+	it("skips edge checks gracefully for a pre-bootstrap project (no config / no relations)", (t) => {
+		const tmpDir = makeTmpDir("validate-pre-bootstrap");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
-
-		// Tasks with no phase reference — no cross-ref to check
+		// blocks present but no config.json + no relations.json → edge model absent
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
-			JSON.stringify({
-				tasks: [
-					{ id: "t1", description: "standalone task", status: "planned" },
-					{ id: "t2", description: "another task", status: "in-progress", depends_on: ["t1"] },
-				],
-			}),
+			JSON.stringify({ tasks: [{ id: "t1", description: "completed but no edges", status: "completed" }] }),
 		);
-
-		const result = validateProject(tmpDir);
-		assert.strictEqual(result.status, "clean", "partial project with valid internal refs should be clean");
-		assert.deepStrictEqual(result.issues, []);
-	});
-
-	it("reports broken task.verification reference", (t) => {
-		const tmpDir = makeTmpDir("validate-task-ver-broken");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(projectDir, "tasks.json"),
-			JSON.stringify({
-				tasks: [
-					{ id: "t1", description: "task with bad verification", status: "completed", verification: "v-nonexistent" },
-				],
-			}),
-		);
-
-		const result = validateProject(tmpDir);
-		assert.ok(result.issues.length > 0);
-		const verIssue = result.issues.find(
-			(i) => i.message.includes("verification") && i.message.includes("v-nonexistent"),
-		);
-		assert.ok(verIssue, "should report issue about broken verification reference");
-		assert.strictEqual(verIssue!.severity, "warning");
-		assert.strictEqual(verIssue!.block, "tasks");
-		assert.ok(verIssue!.field!.includes("verification"));
-	});
-
-	it("accepts valid task.verification reference", (t) => {
-		const tmpDir = makeTmpDir("validate-task-ver-valid");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(projectDir, "verification.json"),
-			JSON.stringify({
-				verifications: [{ id: "v-001", target: "t1", target_type: "task", status: "passed", method: "test" }],
-			}),
-		);
-
-		fs.writeFileSync(
-			path.join(projectDir, "tasks.json"),
-			JSON.stringify({
-				tasks: [{ id: "t1", description: "task with valid verification", status: "completed", verification: "v-001" }],
-			}),
-		);
-
-		const result = validateProject(tmpDir);
-		assert.deepStrictEqual(result.issues, []);
-	});
-
-	it("reports broken decision.task reference", (t) => {
-		const tmpDir = makeTmpDir("validate-dec-task-broken");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-
 		fs.writeFileSync(
 			path.join(projectDir, "decisions.json"),
-			JSON.stringify({
-				decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided", task: "t-nonexistent" }],
-			}),
+			JSON.stringify({ decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided" }] }),
 		);
 
 		const result = validateProject(tmpDir);
-		assert.ok(result.issues.length > 0);
-		const taskIssue = result.issues.find((i) => i.message.includes("task") && i.message.includes("t-nonexistent"));
-		assert.ok(taskIssue, "should report issue about broken task reference in decision");
-		assert.strictEqual(taskIssue!.severity, "warning");
-		assert.strictEqual(taskIssue!.block, "decisions");
-	});
-
-	it("accepts valid decision.task reference", (t) => {
-		const tmpDir = makeTmpDir("validate-dec-task-valid");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(projectDir, "tasks.json"),
-			JSON.stringify({
-				tasks: [{ id: "t1", description: "a task", status: "planned" }],
-			}),
-		);
-
-		fs.writeFileSync(
-			path.join(projectDir, "decisions.json"),
-			JSON.stringify({
-				decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided", task: "t1" }],
-			}),
-		);
-
-		const result = validateProject(tmpDir);
+		// no config → no edge checks, no relocated invariants → clean
+		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
-	});
-
-	it("reports error when completed task has no verification reference", (t) => {
-		const tmpDir = makeTmpDir("validate-task-no-ver");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-
-		fs.writeFileSync(
-			path.join(projectDir, "tasks.json"),
-			JSON.stringify({
-				tasks: [{ id: "t1", description: "done task", status: "completed" }],
-			}),
-		);
-
-		const result = validateProject(tmpDir);
-		assert.strictEqual(result.status, "invalid", "completed task without verification should make project invalid");
-		assert.ok(result.issues.length > 0);
-		const noVerIssue = result.issues.find(
-			(i) => i.message.includes("no verification reference") && i.message.includes("t1"),
-		);
-		assert.ok(noVerIssue, "should report error about completed task without verification reference");
-		assert.strictEqual(noVerIssue!.severity, "error");
-		assert.strictEqual(noVerIssue!.block, "tasks");
-		assert.ok(noVerIssue!.field.includes("verification"));
 	});
 });
 
@@ -519,22 +481,31 @@ describe("validation result status field", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
 
-		// Phases array-block (DEC-0028)
-		fs.writeFileSync(
-			path.join(projectDir, "phase.json"),
-			JSON.stringify({
-				phases: [{ id: "PHASE-001", name: "foundation", intent: "i", status: "planned" }],
-			}),
-		);
-
-		// Tasks with valid references by PHASE-NNN id
+		// Valid graph: completed task verified, decision cites a forcing artifact.
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", description: "task", status: "completed" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "verification.json"),
 			JSON.stringify({
-				tasks: [{ id: "t1", description: "task", status: "planned", phase: "PHASE-001" }],
+				verifications: [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }],
 			}),
 		);
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({ decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "a gap" }] }),
+		);
+		writeRelations(projectDir, [
+			{ parent: "v1", child: "t1", relation_type: "verification_verifies_item" },
+			{ parent: "d1", child: "g1", relation_type: "decision_addresses_gap" },
+		]);
 
 		const result = validateProject(tmpDir);
 		assert.strictEqual(result.status, "clean");
@@ -547,33 +518,40 @@ describe("validation result status field", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
 
-		// Task with broken depends_on — produces an error-severity issue
-		fs.writeFileSync(
-			path.join(projectDir, "tasks.json"),
-			JSON.stringify({
-				tasks: [{ id: "t1", description: "bad dep", status: "planned", depends_on: ["t-nonexistent"] }],
-			}),
-		);
+		// Edge with a dangling child — produces an error-severity issue.
+		fs.writeFileSync(path.join(projectDir, "tasks.json"), JSON.stringify({ tasks: [{ id: "t1", status: "planned" }] }));
+		writeRelations(projectDir, [{ parent: "t1", child: "t-nonexistent", relation_type: "task_depends_on_task" }]);
 
 		const result = validateProject(tmpDir);
 		assert.strictEqual(result.status, "invalid");
 	});
 
 	it("status is 'warnings' when only warnings present", (t) => {
+		// Warning-severity issues no longer arise from the built-in edge checks
+		// (every edge-integrity + relocated-invariant issue is an error). The
+		// remaining warning source is a registered lens-validator; this drives the
+		// warningCount>0 → "warnings" derivation honestly through that surface.
+		const snapshot: LensValidator[] = [...getLensValidators()];
+		t.after(() => {
+			clearLensValidators();
+			for (const v of snapshot) registerLensValidator(v);
+		});
+		clearLensValidators();
+		registerLensValidator({
+			name: "status-warning-validator",
+			validate: () => ({
+				status: "warnings" as const,
+				issues: [
+					{ code: "status_warn", severity: "warning" as const, message: "warn", block: "fake", field: "fake.f" },
+				],
+			}),
+		});
+
 		const tmpDir = makeTmpDir("status-warnings");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-		// No phase.json — phase reference from task will be a warning
-
-		fs.writeFileSync(
-			path.join(projectDir, "tasks.json"),
-			JSON.stringify({
-				tasks: [{ id: "t1", description: "task with missing phase", status: "planned", phase: "phase-1" }],
-			}),
-		);
+		fs.mkdirSync(path.join(tmpDir, ".project"), { recursive: true });
 
 		const result = validateProject(tmpDir);
 		assert.strictEqual(result.status, "warnings");
@@ -1311,7 +1289,11 @@ describe("verification gate — AJV if/then enforcement", () => {
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
 
-		// Write directly via fs.writeFileSync — bypasses schema validation
+		// Write directly via fs.writeFileSync — bypasses schema validation.
+		// Edge-model (DEC-0036): completed task requires a verification_verifies_item
+		// edge (child=task); config + relations present so the relocated invariant runs.
+		writeConfig(projectDir);
+		writeRelations(projectDir, []);
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
 			JSON.stringify({
@@ -1322,10 +1304,8 @@ describe("verification gate — AJV if/then enforcement", () => {
 		const result = validateProject(tmpDir);
 		assert.strictEqual(result.status, "invalid", "validateProject should report invalid for corrupted state");
 
-		const issue = result.issues.find(
-			(i) => i.message.includes("no verification reference") && i.message.includes("t1"),
-		);
-		assert.ok(issue, "should find the completed-without-verification issue");
+		const issue = result.issues.find((i) => i.message.includes("no verification edge") && i.message.includes("t1"));
+		assert.ok(issue, "should find the completed-without-verification-edge issue");
 		assert.strictEqual(issue!.severity, "error", "severity should be error, not warning");
 	});
 

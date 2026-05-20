@@ -9,7 +9,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { readBlock, updateItemInBlock } from "./block-api.js";
 import { getLensValidators } from "./lens-validator.js";
-import { type ConfigBlock, loadConfig } from "./project-context.js";
+import {
+	type ConfigBlock,
+	type Edge,
+	type ItemRecord,
+	loadConfig,
+	loadRelations,
+	validateRelations,
+} from "./project-context.js";
 import { projectDir, schemaPath, schemasDir } from "./project-dir.js";
 
 // Re-export substrate SDK so consumers can keep importing through project-sdk
@@ -829,225 +836,143 @@ export interface ProjectValidationResult {
 }
 
 /**
- * Validate cross-block referential integrity: do IDs referenced across blocks
- * actually exist? Returns structured issues rather than throwing.
+ * Validate cross-block referential integrity against the EDGE model
+ * (DEC-0013: `relations.json` closure-table edges are THE reference surface).
+ * Returns structured issues rather than throwing.
  *
- * ID collection delegates to `buildIdIndex` — per-kind Sets are then derived
- * by filtering the index on `ItemLocation.block`. Behavior preserves the
- * pre-resolver inline scan: same predicates against the same logical Sets.
+ * Edge integrity replaces the pre-DEC-0036 per-block inline-FK reference scan:
+ * each edge's `parent`/`child` must resolve to a known item id (via the unified
+ * `buildIdIndex`), and each edge's `relation_type` must be registered in
+ * `config.relation_types[]` (DEC-0030 tripartite canonical_ids). Cycle
+ * detection is delegated to `validateRelations` (its `edge_cycle_detected`
+ * diagnostics are merged in).
+ *
+ * Two invariants that previously lived as schema constraints + inline-FK checks
+ * are relocated here onto the edge model:
+ *   1. completed-task-has-verification — a `verification_verifies_item` edge
+ *      whose `child` is the completed task.
+ *   2. decision-cites-forcing-artifact — a `decision_addresses_{issue,feature,
+ *      gap}` edge whose `parent` is the decision.
  */
 export function validateProject(cwd: string): ProjectValidationResult {
 	const issues: ProjectValidationIssue[] = [];
 
-	// Build the unified ID index once and partition into per-kind Sets.
+	// Build the unified ID index once — the resolution surface for every edge
+	// endpoint and for the relocated invariants below.
 	// Note: buildIdIndex enforces the prefix-vs-block invariant and may throw
 	// on corrupted state; that surfaces as a hard failure to validateProject
 	// callers (intended — corrupted IDs are not recoverable cross-ref issues).
 	const idIndex = buildIdIndex(cwd);
-	const phaseIds = new Set<string>();
-	const taskIds = new Set<string>();
-	const decisionIds = new Set<string>();
-	const requirementIds = new Set<string>();
-	const verificationIds = new Set<string>();
-	for (const [id, loc] of idIndex) {
-		switch (loc.block) {
-			case "phase":
-				phaseIds.add(id);
-				break;
-			case "tasks":
-				taskIds.add(id);
-				break;
-			case "decisions":
-				decisionIds.add(id);
-				break;
-			case "requirements":
-				requirementIds.add(id);
-				break;
-			case "verification":
-				verificationIds.add(id);
-				break;
-		}
-	}
 
-	// All known IDs for generic resolution — preserves pre-refactor allIds set
-	// (phases + tasks + decisions + requirements + verifications). Other
-	// block IDs are intentionally excluded to keep validateProject's
-	// behavior bit-identical to the pre-refactor implementation.
-	const allIds = new Set([...phaseIds, ...taskIds, ...decisionIds, ...requirementIds, ...verificationIds]);
+	// ── Edge integrity (DEC-0013 closure-table reference surface) ─────────────
+	// Load config + relations; both absent in a pre-bootstrap project, in which
+	// case edge checks (and the relocated invariants, which depend on edges)
+	// are skipped gracefully — there is no edge model to validate yet.
+	const config = loadConfig(cwd);
+	const relations: Edge[] = config ? loadRelations(cwd) : [];
 
-	// Validate task references
-	try {
-		const taskData = readBlock(cwd, "tasks") as { tasks?: Record<string, unknown>[] };
-		if (Array.isArray(taskData.tasks)) {
-			for (const task of taskData.tasks) {
-				// task.phase → valid phase
-				if (task.phase !== undefined && !phaseIds.has(String(task.phase))) {
-					issues.push({
-						severity: "warning",
-						message: `Task '${task.id}' references phase '${task.phase}' which does not exist`,
-						block: "tasks",
-						field: `tasks[${task.id}].phase`,
-					});
-				}
-				// task.depends_on → valid task IDs
-				if (Array.isArray(task.depends_on)) {
-					for (const dep of task.depends_on as string[]) {
-						if (!taskIds.has(dep)) {
-							issues.push({
-								severity: "error",
-								message: `Task '${task.id}' depends on task '${dep}' which does not exist`,
-								block: "tasks",
-								field: `tasks[${task.id}].depends_on`,
-							});
-						}
-					}
-				}
-				// task.verification → valid verification ID
-				if (task.verification && !verificationIds.has(String(task.verification))) {
-					issues.push({
-						severity: "warning",
-						message: `Task '${task.id}' references verification '${task.verification}' which does not exist`,
-						block: "tasks",
-						field: `tasks[${task.id}].verification`,
-					});
-				}
-				// completed task without verification reference
-				if (task.status === "completed" && !task.verification) {
-					issues.push({
-						severity: "error",
-						message: `Task '${task.id}' is completed but has no verification reference`,
-						block: "tasks",
-						field: `tasks[${task.id}].verification`,
-					});
-				}
+	// `config` present → run edge-integrity + the relocated invariants. The
+	// invariants detect MISSING edges (completed task without a verification
+	// edge; decision without a forcing-artifact edge), so they must run even
+	// when relations is empty — gating them on relations.length>0 would
+	// false-pass a zero-edge substrate. The edge-integrity loop below is a
+	// no-op on empty relations, so it needs no separate guard.
+	if (config) {
+		const registeredRelTypes = new Set((config.relation_types ?? []).map((rt) => rt.canonical_id));
+		for (const edge of relations) {
+			if (!idIndex.has(edge.parent)) {
+				issues.push({
+					severity: "error",
+					message: `Edge parent '${edge.parent}' (relation_type '${edge.relation_type}') does not resolve to any item`,
+					block: "relations",
+					field: `${edge.parent}->${edge.child}`,
+				});
+			}
+			if (!idIndex.has(edge.child)) {
+				issues.push({
+					severity: "error",
+					message: `Edge child '${edge.child}' (relation_type '${edge.relation_type}') does not resolve to any item`,
+					block: "relations",
+					field: `${edge.parent}->${edge.child}`,
+				});
+			}
+			if (!registeredRelTypes.has(edge.relation_type)) {
+				issues.push({
+					severity: "error",
+					message: `Edge relation_type '${edge.relation_type}' is not registered in config.relation_types`,
+					block: "relations",
+					field: `${edge.parent}->${edge.child}`,
+				});
 			}
 		}
-	} catch {
-		/* block doesn't exist */
-	}
 
-	// Validate decision references
-	try {
-		const decData = readBlock(cwd, "decisions") as { decisions?: Record<string, unknown>[] };
-		if (Array.isArray(decData.decisions)) {
-			for (const dec of decData.decisions) {
-				if (dec.phase !== undefined && !phaseIds.has(String(dec.phase))) {
-					issues.push({
-						severity: "warning",
-						message: `Decision '${dec.id}' references phase '${dec.phase}' which does not exist`,
-						block: "decisions",
-						field: `decisions[${dec.id}].phase`,
-					});
-				}
-				// decision.task → valid task ID
-				if (dec.task && !taskIds.has(String(dec.task))) {
-					issues.push({
-						severity: "warning",
-						message: `Decision '${dec.id}' references task '${dec.task}' which does not exist`,
-						block: "decisions",
-						field: `decisions[${dec.id}].task`,
-					});
-				}
+		// Cycle detection — delegate to validateRelations. It performs its own
+		// lens/hierarchy/relation_type resolution and emits several edge codes;
+		// only its cycle diagnostics are merged here (the parent/child/relation_type
+		// resolution above is the authoritative reference-integrity surface, so
+		// merging validateRelations' resolution codes too would double-report).
+		const itemsByBlock: Record<string, ItemRecord[]> = {};
+		for (const [id, loc] of idIndex) {
+			(itemsByBlock[loc.block] ??= []).push({ id, ...loc.item });
+		}
+		try {
+			const relResult = validateRelations(config, relations, itemsByBlock);
+			for (const ri of relResult.issues) {
+				if (ri.code !== "edge_cycle_detected") continue;
+				issues.push({
+					severity: "error",
+					message: ri.message,
+					block: "relations",
+					code: ri.code,
+				});
+			}
+		} catch {
+			/* validateRelations is best-effort for cycle detection; a throw here
+			   must not mask the authoritative edge-integrity issues collected above. */
+		}
+
+		// ── Relocated invariant 1: completed-task-has-verification ───────────
+		// Each completed task requires ≥1 verification_verifies_item edge whose
+		// child is that task (a verification verifies it).
+		const verifiedTasks = new Set<string>();
+		for (const edge of relations) {
+			if (edge.relation_type === "verification_verifies_item") verifiedTasks.add(edge.child);
+		}
+		for (const [id, loc] of idIndex) {
+			if (loc.block !== "tasks") continue;
+			if (loc.item.status === "completed" && !verifiedTasks.has(id)) {
+				issues.push({
+					severity: "error",
+					message: `Completed task '${id}' has no verification edge (verification_verifies_item)`,
+					block: "tasks",
+					field: `${id}.verification`,
+				});
 			}
 		}
-	} catch {
-		/* block doesn't exist */
-	}
 
-	// Validate issue references
-	try {
-		const issueData = readBlock(cwd, "issues") as { issues?: Record<string, unknown>[] };
-		if (Array.isArray(issueData.issues)) {
-			for (const issue of issueData.issues) {
-				if (issue.resolved_by && !allIds.has(String(issue.resolved_by))) {
-					issues.push({
-						severity: "warning",
-						message: `Issue '${issue.id}' references resolved_by '${issue.resolved_by}' which does not exist`,
-						block: "issues",
-						field: `issues[${issue.id}].resolved_by`,
-					});
-				}
+		// ── Relocated invariant 2: decision-cites-forcing-artifact ───────────
+		// Each decision requires ≥1 decision_addresses_{issue,feature,gap} edge
+		// whose parent is that decision.
+		const forcingRelTypes = new Set([
+			"decision_addresses_issue",
+			"decision_addresses_feature",
+			"decision_addresses_gap",
+		]);
+		const decisionsWithForcingEdge = new Set<string>();
+		for (const edge of relations) {
+			if (forcingRelTypes.has(edge.relation_type)) decisionsWithForcingEdge.add(edge.parent);
+		}
+		for (const [id, loc] of idIndex) {
+			if (loc.block !== "decisions") continue;
+			if (!decisionsWithForcingEdge.has(id)) {
+				issues.push({
+					severity: "error",
+					message: `Decision '${id}' cites no forcing artifact (decision_addresses_issue|feature|gap edge)`,
+					block: "decisions",
+					field: `${id}.forcing_artifact`,
+				});
 			}
 		}
-	} catch {
-		/* block doesn't exist */
-	}
-
-	// Validate requirement references
-	try {
-		const reqData = readBlock(cwd, "requirements") as { requirements?: Record<string, unknown>[] };
-		if (Array.isArray(reqData.requirements)) {
-			for (const req of reqData.requirements) {
-				if (Array.isArray(req.traces_to)) {
-					for (const ref of req.traces_to as string[]) {
-						if (!allIds.has(ref)) {
-							issues.push({
-								severity: "warning",
-								message: `Requirement '${req.id}' traces to '${ref}' which does not exist`,
-								block: "requirements",
-								field: `requirements[${req.id}].traces_to`,
-							});
-						}
-					}
-				}
-				if (Array.isArray(req.depends_on)) {
-					for (const dep of req.depends_on as string[]) {
-						if (!requirementIds.has(dep)) {
-							issues.push({
-								severity: "error",
-								message: `Requirement '${req.id}' depends on requirement '${dep}' which does not exist`,
-								block: "requirements",
-								field: `requirements[${req.id}].depends_on`,
-							});
-						}
-					}
-				}
-			}
-		}
-	} catch {
-		/* block doesn't exist */
-	}
-
-	// Validate verification references
-	try {
-		const verData = readBlock(cwd, "verification") as { verifications?: Record<string, unknown>[] };
-		if (Array.isArray(verData.verifications)) {
-			for (const ver of verData.verifications) {
-				if (ver.target && !allIds.has(String(ver.target))) {
-					issues.push({
-						severity: "warning",
-						message: `Verification '${ver.id}' targets '${ver.target}' which does not exist`,
-						block: "verification",
-						field: `verifications[${ver.id}].target`,
-					});
-				}
-			}
-		}
-	} catch {
-		/* block doesn't exist */
-	}
-
-	// Validate rationale references
-	try {
-		const ratData = readBlock(cwd, "rationale") as { rationales?: Record<string, unknown>[] };
-		if (Array.isArray(ratData.rationales)) {
-			for (const rat of ratData.rationales) {
-				if (Array.isArray(rat.related_decisions)) {
-					for (const decId of rat.related_decisions as string[]) {
-						if (!decisionIds.has(decId)) {
-							issues.push({
-								severity: "warning",
-								message: `Rationale '${rat.id}' references decision '${decId}' which does not exist`,
-								block: "rationale",
-								field: `rationales[${rat.id}].related_decisions`,
-							});
-						}
-					}
-				}
-			}
-		}
-	} catch {
-		/* block doesn't exist */
 	}
 
 	// Lens-validator dispatch (Step 7 / pi-context Divergence 3): iterate every

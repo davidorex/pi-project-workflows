@@ -2747,6 +2747,127 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-074"
+    },
+    {
+      "title": "No edge-write Pi tool — in-pi agents cannot create DEC-0013 relations through the extension tool surface",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "For any harness-confined in-pi agent (workflow step, monitor, dispatched agent, or a tools-only Pi on a fresh install) restricted to extension-provided tools, there is no registered Pi tool to create a DEC-0013 relation (edge). relations.json is a bare top-level JSON array of {parent, child, relation_type, ordinal?}; the generic append-block-item / update-block-item tools target data[arrayKey] and therefore cannot append to a bare array (empirically: appendToBlock against relations throws 'must be array'). Edge creation exists only as the library writeRelations (project-context.ts) plus the orchestrator CLI (scripts/orchestrator/migrate-canonical-id.ts) plus the rename engine internals — none exposed as a Pi tool. So the foundational primitive of the whole model (an inter-item relationship) is unreachable through the tool surface. Intended outcome: an edge-write Pi tool, the dual-surface twin of writeRelations.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "tool enumeration: relation tools are all read-only (project-validate-relations, project-edges-for-lens, project-walk-descendants, walk-ancestors, find-references); no edge-write / append-relation tool is registered"
+        },
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "writeRelations exists as a library surface (consumed by the rename-canonical-id engine + orchestrator migrate-canonical-id.ts) but has no pi.registerTool twin"
+        },
+        {
+          "file": ".project/relations.json",
+          "reference": "relations is a bare top-level JSON array (no array_key), so generic append/update-block-item (which operate on object[arrayKey]) structurally cannot write edges; empirical probe: appendToBlock on relations fails 'must be array'"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0013 (edges are THE inter-item relationship surface; FK-as-field forbidden) + DEC-0019/0020 (every substrate op = library + Pi tool + CLI script as a unit) — the Pi-tool leg is the missing one"
+        }
+      ],
+      "impact": "In-pi agents cannot author relationships: the .context re-population (DEC-0036 step 3), any tool-only consumer, and any in-pi workflow/monitor that needs to relate items are all blocked from the core primitive. The DEC-0019/0020 dual-surface is broken precisely at DEC-0013, the model's foundation. Sharpest of the three write-twin gaps — not even a degenerate path exists (append-block-item structurally rejects the bare-array shape; only write-block whole-file replace could blind-overwrite relations.json, unvalidated).",
+      "canonical_vocabulary": "edge-write-tool, relations-write, dual-surface-twin, DEC-0013-primitive",
+      "proposed_resolution": "Register an edge-write Pi tool as the dual-surface twin of writeRelations — append a single edge {parent, child, relation_type, ordinal?} (and/or a bulk variant), routed through the canonical write path with the same atomicity (tmp+rename) and DispatchContext attestation as the item-CRUD tools. Guard semantics (relation_type registered in config.relation_types; endpoints resolve via buildIdIndex; cycle detection) either enforced at write or deferred to validateProject — implementer to choose per existing precedent (validateRelations already centralizes these checks). Implementation specifics outcome-only; survey the pi-sdk surface + sibling pi extensions for the canonical tool shape. DEC-0013 + DEC-0019/0020.",
+      "related_decisions": [
+        "DEC-0013",
+        "DEC-0019",
+        "DEC-0020"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-21T00:00:00Z",
+      "id": "FGAP-075"
+    },
+    {
+      "title": "No config-write Pi tool — in-pi agents cannot author or amend config.json (framework vocabulary)",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "There is no registered Pi tool to author or amend config.json — the framework vocabulary: block_kinds, relation_types, lenses, invariants, status_buckets, display_strings, layers, installed_schemas/blocks. read-config is read-only; project-init does not scaffold config.json at all (defaults/ ships neither config.json nor config.schema.json — empirical: a fresh-init read-config returns null and validateProject is vacuously clean because there is nothing to validate). writeConfig exists as a library surface (project-context.ts, consumed by the orchestrator + the rename engine) with no pi.registerTool twin. So a tools-only in-pi agent cannot register a block_kind / relation_type / lens / invariant, nor set a config.status_buckets override (DEC-0025) — the entire config-driven machinery (DEC-0015/0025) is unestablishable and unrevisable from inside Pi.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "884",
+          "reference": "only read-config registered (read-only); no write-config / amend-config tool"
+        },
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "writeConfig library surface exists (orchestrator + rename engine consume it); no Pi-tool twin"
+        },
+        {
+          "file": "packages/pi-context/defaults/",
+          "reference": "project-init scaffold omits config.json + config.schema.json; empirical fresh-init: read-config = null, validateProject vacuously clean"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0015 (config-driven substrate dir + vocabulary) + DEC-0025 (vocabulary-neutral; config.status_buckets override) + DEC-0019/0020 (dual-surface) + DEC-0038 (onboarding) — the Pi-tool twin is missing"
+        }
+      ],
+      "impact": "Framework vocabulary cannot be created or revised via tools; onboarding (DEC-0038) — which must elicit and write config — has no write surface; config-dependent tools (project-validate, context-current-state, lenses, roadmap, gather-execution-context) degrade to empty/vacuous on any substrate an in-pi agent provisioned. Blocks the consumption arc (FGAP-068 onboarding rewire) from completing on the tool side.",
+      "canonical_vocabulary": "config-write-tool, config-amend, framework-vocabulary, dual-surface-twin",
+      "proposed_resolution": "Register a config-write Pi tool, the dual-surface twin of writeConfig — AJV-validated against config.schema.json, supporting scoped amendments (add or replace a single relation_type / block_kind / lens / invariant / status_bucket entry) in addition to whole-config write, with atomic write + DispatchContext attestation. Outcome-only; survey the pi-sdk + sibling pi extensions for the canonical shape; coordinate with the onboarding ceremony (DEC-0038), its primary consumer. DEC-0015 + DEC-0019/0020 + DEC-0025.",
+      "related_decisions": [
+        "DEC-0015",
+        "DEC-0019",
+        "DEC-0020",
+        "DEC-0025",
+        "DEC-0038"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-21T00:00:00Z",
+      "id": "FGAP-076"
+    },
+    {
+      "title": "No schema-write Pi tool — in-pi agents cannot define new block kinds or evolve existing schemas",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "There is no registered Pi tool to define a new block kind's schema or evolve an existing one. read-schema is the only schema tool (read-only). writeSchema / updateSchema / readSchema exist with AJV meta-validation (schema-write.ts) plus a per-schema migration registry (schema-migrations.ts), but have no pi.registerTool twin. So a tools-only in-pi agent cannot extend the substrate's type surface — every new block kind or schema version must be authored through the orchestrator CLI or by hand. project-init scaffolds only the legacy defaults/ schema set; there is no tool path to add a schema beyond it.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "970",
+          "reference": "only read-schema registered; no write-schema / update-schema tool"
+        },
+        {
+          "file": "packages/pi-context/src/schema-write.ts",
+          "reference": "writeSchema/updateSchema/readSchema library surface with AJV meta-validation — no Pi-tool twin"
+        },
+        {
+          "file": "packages/pi-context/src/schema-migrations.ts",
+          "reference": "per-schema version-to-version migration registry exists; a schema-evolution tool must honor it (version bump + MigrationFn registration)"
+        },
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0019/0020 (dual-surface) + DEC-0023 (schema title/display_name) + schema-versioning ($id + version + migration) — Pi-tool twin missing"
+        }
+      ],
+      "impact": "New block-kind definition and schema evolution are orchestrator-CLI-only; in-pi agents and tool-only consumers cannot extend or migrate the type surface. Onboarding a custom block kind (DEC-0038) and any in-pi schema authoring are blocked. Completes the trio of write-twin dual-surface gaps with FGAP-075 (edge-write) + FGAP-076 (config-write). Lower frequency than edge/config operations (hence P2) but required for full tool-side substrate self-definition.",
+      "canonical_vocabulary": "schema-write-tool, schema-evolution, meta-validation, dual-surface-twin",
+      "proposed_resolution": "Register schema-write Pi tool(s) — the dual-surface twin of schema-write.ts (write-schema + update-schema) — with AJV meta-validation and migration-registry awareness (version bump + MigrationFn registration on evolution). Outcome-only; survey the pi-sdk + sibling pi extensions for the canonical shape. DEC-0019/0020 + DEC-0023 + schema-versioning.",
+      "related_decisions": [
+        "DEC-0019",
+        "DEC-0020",
+        "DEC-0023"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-21T00:00:00Z",
+      "id": "FGAP-077"
     }
   ]
 }

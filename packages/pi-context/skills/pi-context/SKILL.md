@@ -141,6 +141,13 @@ Read the substrate config.json as structured JSON — vocabulary, lenses, relati
 
 </tool>
 
+<tool name="context-current-state">
+Derive 'where are we + what's next' purely from .project substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.
+
+*Derive current project state — focus, in-flight, next actions, blocked*
+
+</tool>
+
 <tool name="rename-canonical-id">
 Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to newId across all substrate surfaces that carry it as DATA — item home block + relations.json edges, or the relevant config registries. Out-of-substrate occurrences (analysis MDs, git history) are REPORTED, never rewritten. block_kind renames are unsupported (filesystem cascade). Use dryRun to preview the would-change counts without writing.
 

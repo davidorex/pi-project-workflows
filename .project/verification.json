@@ -674,6 +674,74 @@
           "evidence": "workflow-execute pi tool exposes executeWorkflow; per Phase 3 DEC-0017 gather-execution-context primitive available for step context composition; pipeline harness-confined main LLM → workflow-execute tool → JIT-agent step dispatch satisfies DEC-0014 (main LLM never crosses bash directly)"
         }
       ]
+    },
+    {
+      "id": "VER-016",
+      "target": "TASK-044",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-20T00:00:00Z",
+      "evidence": "Unit 2.3 FGAP-060 rename engine — commit 33b76a7; FGAP-060 closed 1378151. build/check/test green (pi-context 475/475, 0 fail). Runtime demo via built package: item + relation_type rename (home id + edges), dry-run inert, block_kind throws, out-of-substrate reported. Adversarial grep: every write site !dryRun-guarded; single config write.",
+      "criteria_results": [
+        {
+          "criterion": "renameCanonicalId for item/relation_type/lens/layer",
+          "status": "passed",
+          "evidence": "9 test groups + runtime demo via built package"
+        },
+        {
+          "criterion": "block_kind fail-loud",
+          "status": "passed",
+          "evidence": "throws unsupported; FGAP-071 filed for the file-cascade"
+        },
+        {
+          "criterion": "dry-run inert + guards before any write",
+          "status": "passed",
+          "evidence": "runtime demo: zero file change under dryRun; adversarial grep"
+        }
+      ]
+    },
+    {
+      "id": "VER-017",
+      "target": "TASK-045",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-20T00:00:00Z",
+      "evidence": "Unit 2.1b config-declared invariants — commit ff5f3f1; FGAP-065 closed 5bae82f. build/check/test green. Runtime demo: foreign-vocabulary requires-edge invariant fires (draft note) + clears (edge added); {id}/{block} tokens substitute; where-filter + direction honored. Adversarial grep: zero block/status/relation vocabulary literal in the validateProject invariant loop.",
+      "criteria_results": [
+        {
+          "criterion": "config.invariants[] requires-edge generic loop, no hardcoded vocabulary",
+          "status": "passed",
+          "evidence": "grep clean + 9 invariant tests"
+        },
+        {
+          "criterion": "DEC-0025 universalization (foreign conception enforced)",
+          "status": "passed",
+          "evidence": "foreign-vocab runtime demo"
+        }
+      ]
+    },
+    {
+      "id": "VER-018",
+      "target": "TASK-046",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-20T00:00:00Z",
+      "evidence": "Unit 2.2 packaged conception — commits b8a9d7e (B0)..a4c5257 (B4). samples/conception.json (15 block_kinds, 24 relation_types, 2 invariants, 2 status lenses) + 15 clean edge-based schemas + 15 starter blocks. Verified V1 meta-validate all 15, V2 conception validates vs config.schema.json, V4 relation_type endpoints resolve, V5 array_key consistency, V6 title+description, V8 package-derivation demo. build/check/test green; samples/ unimported by src.",
+      "criteria_results": [
+        {
+          "criterion": "15 clean edge-based schemas (FK stripped, nesting eliminated, invariants relocated)",
+          "status": "passed",
+          "evidence": "V1/V3 per kind"
+        },
+        {
+          "criterion": "conception.json validates vs config.schema.json",
+          "status": "passed",
+          "evidence": "V2"
+        }
+      ]
     }
   ]
 }

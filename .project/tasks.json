@@ -413,7 +413,7 @@
       "id": "TASK-042"
     },
     {
-      "description": "FGAP-046 closure: migrate all inline FK fields → relations.json closure-table edges (eliminate DEC-0013 violations). Per relation_type canonical_id mapping (DEC-0030 tripartite enacted). Covers decisions.{supersedes,superseded_by,related_findings,related_features,related_gaps} / framework-gaps.{related_decisions,related_features,related_issues} / features.{dependencies,gates,blocks_resolved,decisions} + nested story/task depends_on+gates / requirements.depends_on / layer-plans phases depends_on / research.supersedes / tasks.depends_on / spec-reviews.target / verification.target. Deprecate/remove migrated inline fields in schemas + version bump + MigrationFn. Prerequisite: Phase 1 schema install + config.relation_types authoring. Blocks TASK-044.",
+      "description": "Re-derivation machinery arc (DEC-0036, step 2): build .context clean via the config-based framework — edge-based validator (units 2.1/2.1b=TASK-045), packaged conception (2.2=TASK-046), rename engine (2.3=TASK-044); remaining units 2.4-2.7 + re-populate .context (step 3) + extension refactor (step 4) + cutover (step 5). SUPERSEDES the original in-place inline-FK migration (abandoned per DEC-0036): the DEC-0013 clean-edge goal is achieved by construction in .context, not by stripping .project.",
       "status": "in-progress",
       "acceptance_criteria": [
         "config.relation_types[] declares all relation_type canonical_ids per DEC-0030 tripartite mapping",
@@ -442,7 +442,7 @@
     },
     {
       "description": "FGAP-060 closure: build renameCanonicalId engine on canonical edge-only reference surface (after TASK-043 eliminates inline FK). Library packages/pi-context/src/rename-canonical-id.ts + writeRelations wrapper in project-context.ts + Pi tool rename-canonical-id (index.ts) + orchestrator script scripts/orchestrator/migrate-canonical-id.ts + tests. Rewrites home-block item id + relations.json edges (parent/child/relation_type) + reports out-of-substrate citations (analysis MDs, commits — report-only). NO inline-FK sweep (eliminated in TASK-043). DEC-0019/0020 dual-surface unit.",
-      "status": "planned",
+      "status": "completed",
       "acceptance_criteria": [
         "renameCanonicalId(cwd, kind, oldId, newId, {dryRun}) rewrites home item id + relations.json edges",
         "out-of-substrate citations (analysis/ + git log) reported, never auto-rewritten",
@@ -463,7 +463,43 @@
         "packages/pi-context/src/rename-canonical-id.test.ts"
       ],
       "notes": "Coordinated arc with TASK-043. Engine operates on single canonical surface because TASK-043 eliminated inline FK. canonical_id-permanent (DEC-0035) scopes this engine to deliberate rename only. [DEC-0036 reframe: FGAP-060 rename engine is framework machinery for .context (finishing step 2); built against .context schemas + fixtures, not retrofitted to .project.]",
-      "id": "TASK-044"
+      "id": "TASK-044",
+      "verification": "VER-016"
+    },
+    {
+      "id": "TASK-045",
+      "status": "completed",
+      "verification": "VER-017",
+      "description": "Re-derivation machinery unit 2.1b (DEC-0036 step 2): config-declared substrate invariants — relocate the two hardcoded validateProject invariants (completed-task-has-verification, decision-cites-forcing-artifact) to config.invariants[] requires-edge class consumed by a vocabulary-free generic loop. Closes FGAP-065 (DEC-0025 violation).",
+      "files": [
+        "packages/pi-context/src/project-sdk.ts",
+        "packages/pi-context/src/project-context.ts",
+        "packages/pi-context/schemas/config.schema.json",
+        "packages/pi-context/src/project-sdk.test.ts",
+        ".project/config.json"
+      ],
+      "acceptance_criteria": [
+        "config.invariants[] requires-edge class + schema version bump",
+        "validateProject generic loop with zero hardcoded block/status/relation literals",
+        "2 canonical invariants declared as config data",
+        "tests incl. ABSENCE case + foreign-vocabulary DEC-0025 universalization"
+      ]
+    },
+    {
+      "id": "TASK-046",
+      "status": "completed",
+      "verification": "VER-018",
+      "description": "Re-derivation machinery unit 2.2 (DEC-0036 step 2): packaged conception (DEC-0037) — author packages/pi-context/samples/ catalog (conception.json: 15 block_kinds incl. new requirements/conventions, 24 relation_types, 2 invariants, 2 status lenses) + 15 clean edge-based schemas (FK->edges, nesting eliminated, invariants relocated, external scalars kept) + 15 starter blocks. Authoring-only alongside frozen registry/.",
+      "files": [
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/samples/schemas/",
+        "packages/pi-context/samples/blocks/"
+      ],
+      "acceptance_criteria": [
+        "15 clean edge-based schemas + conception.json validating vs config.schema.json",
+        "work-rollup composition lens deferred -> FGAP-070",
+        "samples/ unimported by src (build unaffected)"
+      ]
     }
   ]
 }

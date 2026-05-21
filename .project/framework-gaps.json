@@ -3026,6 +3026,108 @@
       "id": "FGAP-081",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-05-21T00:00:00Z"
+    },
+    {
+      "title": "Orchestrator CLIs validate items against the item-subschema FRAGMENT in isolation (losing $ref definitions), not whole-file like block-api",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "file-block-item.ts and append-relation.ts (the dual-surface append CLIs) re-implement pre-write item validation against the block's ITEMS SUBSCHEMA FRAGMENT extracted from the schema (file-block-item.ts:109 itemSchema=properties[arrayKey].items, validated at :270; append-relation.ts:117-139 extracts relations .items, validated at :157), rather than validating the whole file the way the library does (appendToBlock->writeBlock->writeTypedFile->validateFromFile against the WHOLE schema, block-api.ts:401 — proven to resolve $refs). When an items schema is {\"$ref\":\"#/definitions/<kind>\"} (features.schema.json:10, spec-reviews.schema.json:38), the fragment cannot resolve #/definitions/<kind> (parent definitions out of scope) -> --dry-run errors \"can't resolve reference\". ACTIVE on file-block-item filing features/spec-reviews; LATENT in append-relation (relations.schema.json has no $ref today but the same fragment-in-isolation pattern is shipped). NOTE: the REAL (non-dry-run) file-block-item append delegates straight to appendToBlock and is NOT broken — only --dry-run (this gap) + --auto-id (FGAP-083) fail. Conception (samples) + registry schemas use no item $ref, so .context library filing is unaffected. Root: orchestrator-CLI validation is a PARALLEL re-implementation diverging from block-api whole-file validation (feedback_no_parallel_ungated_paths).",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "lines": "109,267-270",
+          "reference": "--dry-run validates item against extracted .items fragment, not whole schema; $ref-to-definitions item fails to resolve"
+        },
+        {
+          "file": "scripts/orchestrator/append-relation.ts",
+          "lines": "117-139,154-157",
+          "reference": "same fragment-in-isolation validation pattern (latent — relations.schema has no $ref yet)"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "401",
+          "reference": "the canonical whole-file validateFromFile path the CLIs should route through (resolves $refs)"
+        },
+        {
+          "file": ".project/schemas/features.schema.json",
+          "lines": "10",
+          "reference": "items {\"$ref\":\"#/definitions/feature\"} — the shape that breaks fragment validation; spec-reviews.schema.json:38 same"
+        }
+      ],
+      "impact": "file-block-item — the canonical append surface (CLAUDE.md filing pattern) — cannot append/preview/auto-id features (or any future $ref-item block kind), forcing a non-canonical raw appendToBlock tsx-eval fallback that bypasses the CLI's --writer/--dry-run/--auto-id ergonomics. Undermines the DEC-0019/0020 canonical-script surface for $ref-using schemas; the conception (samples) schemas may use $ref similarly, so .context filing would hit this too.",
+      "canonical_vocabulary": "fragment-validation, whole-file-validation, $ref-item-schema, parallel-path-divergence, orchestrator-cli",
+      "proposed_resolution": "Both append CLIs should validate the candidate item by composing a whole-block wrapper and running validateFromFile against the FULL schema (mirroring writeBlock/appendToBlock) for --dry-run, NOT the item-fragment in isolation. Best: route --dry-run through the same library validation the real path uses (single path; eliminates the divergence).",
+      "related_decisions": [
+        "DEC-0019",
+        "DEC-0020"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-21T00:00:00Z",
+      "id": "FGAP-082"
+    },
+    {
+      "title": "file-block-item --auto-id cannot read the id pattern from a $ref item schema (reads itemSchema.properties.id.pattern, absent on a $ref fragment)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "file-block-item.ts --auto-id allocates the next id by reading the id PATTERN from the extracted item subschema's properties.id.pattern (file-block-item.ts:110-119 idProp = itemSchema?.properties?.id; pattern at :112). When the items schema is {\"$ref\":\"#/definitions/<kind>\"} (features.schema.json:10), the fragment has NO top-level `properties` (they live in the unresolved definition), so idProp is undefined and :157 throws 'Cannot auto-allocate ID: pattern undefined not parseable'. Distinct fix-surface from FGAP-082 (that is the dry-run VALIDATION fragment bug; this is the AUTO-ID pattern-extraction fragment bug) though same fragment-not-resolved root. Symptom-of-FGAP-082's fragment approach but separable: even with whole-file validation fixed, auto-id must resolve the $ref (or read from the definition) to find the id pattern.",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "lines": "110-119,156-157",
+          "reference": "auto-id reads itemSchema.properties.id.pattern; a $ref fragment has no .properties → 'pattern undefined not parseable'"
+        },
+        {
+          "file": ".project/schemas/features.schema.json",
+          "lines": "10",
+          "reference": "items {\"$ref\":\"#/definitions/feature\"}; the id pattern lives in definitions.feature.properties.id, unreachable from the fragment"
+        }
+      ],
+      "impact": "--auto-id is unusable for any $ref-item block kind (features, spec-reviews); the orchestrator must pass an explicit id (or use raw appendToBlock). Will recur for any conception/.context block kind that adopts $ref item schemas.",
+      "canonical_vocabulary": "auto-id, id-pattern, $ref-resolution, item-fragment",
+      "proposed_resolution": "Resolve the items $ref against the parent schema's definitions before reading properties.id.pattern (or, with FGAP-084, route allocation through a block-api helper that dereferences). One-line-ish once the fragment is dereferenced.",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-21T00:00:00Z",
+      "id": "FGAP-083"
+    },
+    {
+      "title": "No canonical block-api id-allocation helper — orchestrator scripts re-implement next-id allocation",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "block-api exposes read/write primitives but NO id-allocation helper (no nextId/allocateId; verified absent across block-api.ts). file-block-item.ts re-implements id allocation inline (file-block-item.ts:156-174: parse prefix+width from the id pattern, scan existing items, increment) as a parallel path. Any other surface needing auto-id (the in-pi append tools, future CLIs) must re-implement or hand-scan. The missing primitive is the allocation-side analog of the validation divergence in FGAP-082: allocation logic lives in the CLI, not the library, so it can't be shared + diverges (e.g. it doesn't dereference $ref item schemas — FGAP-083).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "no exported id-allocation function (only read/write primitives)"
+        },
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "lines": "156-174",
+          "reference": "inline re-implementation of next-id allocation (prefix/width parse + scan + increment) — the logic that belongs in a shared block-api helper"
+        }
+      ],
+      "impact": "id-allocation is duplicated/divergent and not reusable by the in-pi tool surface (the Pi append tools have no auto-id at all). Extracting a canonical allocateId(cwd, block) helper would let file-block-item, the in-pi tools, and future surfaces share one correct implementation (and fix FGAP-083 once).",
+      "canonical_vocabulary": "id-allocation, allocateId, next-id, block-api-primitive, dual-surface",
+      "proposed_resolution": "Add a block-api id-allocation primitive (e.g. allocateId(cwd, blockName) → next id from the block-kind's resolved id pattern + existing items, dereferencing $ref item schemas) and route file-block-item + any in-pi auto-id through it. DEC-0019/0020 dual-surface: library primitive + CLI + (optionally) Pi tool.",
+      "related_decisions": [
+        "DEC-0019",
+        "DEC-0020"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-21T00:00:00Z",
+      "id": "FGAP-084"
     }
   ]
 }

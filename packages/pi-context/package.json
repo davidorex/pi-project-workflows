@@ -65,6 +65,10 @@
 			"types": "./dist/rename-canonical-id.d.ts",
 			"default": "./dist/rename-canonical-id.js"
 		},
+		"./samples-catalog": {
+			"types": "./dist/samples-catalog.d.ts",
+			"default": "./dist/samples-catalog.js"
+		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
 		"./schemas/relations.schema.json": "./schemas/relations.schema.json",
 		"./schemas/priority.schema.json": "./schemas/priority.schema.json",
@@ -88,6 +92,7 @@
 		"defaults/",
 		"registry/",
 		"schemas/",
+		"samples/",
 		"*.md"
 	],
 	"scripts": {

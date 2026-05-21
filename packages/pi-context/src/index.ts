@@ -65,6 +65,7 @@ import {
 } from "./project-sdk.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
+import { samplesCatalog } from "./samples-catalog.js";
 import { readSchema, writeSchemaChecked } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
 
@@ -986,6 +987,40 @@ const extension = (pi: ExtensionAPI) => {
 			const active = pi.getActiveTools();
 			const result = { tools: all, active, total: all.length, activeCount: active.length };
 			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: read-samples-catalog ────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "read-samples-catalog",
+		label: "Read Samples Catalog",
+		description:
+			"Enumerate installable sample block kinds (DEC-0037 packaged view): per kind — title, description, item shape, applicable relation_types (as source/target), invariants, lenses — plus top-level relation_type/lens/invariant/layer/status_bucket registries. Package-intrinsic: reads the extension's bundled samples catalog, independent of any project. Optional `kind` returns one packaged kind.",
+		promptSnippet: "Discover installable sample block kinds — title, shape, relation_types, invariants, lenses",
+		parameters: Type.Object({
+			kind: Type.Optional(Type.String({ description: "Filter to one block_kind canonical_id (e.g. 'tasks')" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { kind?: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			_ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			// Package-intrinsic: the catalog reads the extension's bundled samples
+			// directory, not the project substrate — `_ctx` (and its cwd) is unused.
+			const catalog = samplesCatalog(params.kind ? { kind: params.kind } : undefined);
+			const jsonStr = JSON.stringify(catalog, null, 2);
 			const truncated = truncateHead(jsonStr);
 			let text = truncated.content;
 			if (truncated.truncated) {

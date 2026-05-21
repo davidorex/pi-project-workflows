@@ -106,6 +106,8 @@ export interface RelationTypeDecl {
 	display_name: string;
 	category: "ordering" | "data_flow" | "membership";
 	cycle_allowed?: boolean;
+	source_kinds?: string[];
+	target_kinds?: string[];
 }
 
 export interface HierarchyDecl {

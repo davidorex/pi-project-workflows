@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "pi-context://schemas/config",
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"title": "pi-context substrate config",
 	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, and lens specs. Closes FGAP-001 (hierarchical block storage), FGAP-013 (status vocabulary registry), issue-089 class (PLAN- prefix collision) by making registries config-driven from line 1.",
 	"type": "object",
@@ -78,7 +78,9 @@
 					"canonical_id": { "type": "string" },
 					"display_name": { "type": "string" },
 					"category": { "type": "string", "enum": ["ordering", "data_flow", "membership"] },
-					"cycle_allowed": { "type": "boolean" }
+					"cycle_allowed": { "type": "boolean" },
+					"source_kinds": { "type": "array", "items": { "type": "string" }, "description": "Block_kind canonical_ids this relation's source (edge.parent) may be; literal \"*\" = any kind. Optional; absence => endpoint-kind unchecked." },
+					"target_kinds": { "type": "array", "items": { "type": "string" }, "description": "Block_kind canonical_ids this relation's target (edge.child) may be; literal \"*\" = any kind. Optional; absence => endpoint-kind unchecked." }
 				}
 			}
 		},

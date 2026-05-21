@@ -2992,6 +2992,38 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-080"
+    },
+    {
+      "title": "Anti-injection contextBlocks delimiters not aligned with pi 0.75.x XML-tag context-boundary convention",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-jit-agents",
+      "layer": "L2",
+      "description": "Pi 0.75.0 introduced new XML-tag context-boundary conventions for system-prompt context injection. Our JIT-agent contextBlocks injection (pi-jit-agents compile.ts:144-212) wraps injected block content in our OWN framework anti-injection delimiter scheme rather than pi's 0.75.x convention. To be canonically pi-sdk (the user's explicit goal), align our delimiters with 0.75.x's context-boundary tags so injected context is demarcated the way the runtime/models expect. Surfaced by the Pi SDK 0.74->0.75.4 investigation (analysis/2026-05-21-pi-sdk-0.74-to-0.75-investigation.md, SHOULD-ADOPT #1). The exact tag names + convention could NOT be pinned from the changelog alone — they require reading the 0.75.x system-prompt / context-assembly source in earendil-works/pi-mono (the investigation's open question section 7). Distinct from + sequenced AFTER the mechanical SDK upgrade (TASK that bumps 0.74.0->0.75.4); this is the best-practice ADOPTION the upgrade enables.",
+      "evidence": [
+        {
+          "file": "packages/pi-jit-agents/src/compile.ts",
+          "lines": "144-212",
+          "reference": "contextBlocks injection wraps block content in our own framework anti-injection delimiters — the site to align with the 0.75.x XML-tag convention"
+        },
+        {
+          "file": "analysis/2026-05-21-pi-sdk-0.74-to-0.75-investigation.md",
+          "reference": "SHOULD-ADOPT #1 + open-question 7: 0.75.0 introduced XML-tag context boundaries; exact tag names need 0.75.x system-prompt source-read"
+        },
+        {
+          "file": "packages/pi-workflows/templates/shared/macros.md",
+          "reference": "per-block-kind Nunjucks render macros also emit injected context — check whether they carry/duplicate delimiters that must align too"
+        }
+      ],
+      "impact": "Our context injection uses a non-canonical delimiter scheme diverging from pi 0.75.x's own context-boundary convention; the framework anti-injection demarcation may not match how 0.75.x-era models are trained/prompted to parse injected context, and it is off the canonical-pi-sdk axis the user is steering toward. Low correctness risk today, real best-practice + future-compat debt.",
+      "canonical_vocabulary": "context-boundary, xml-tag-delimiters, anti-injection, contextBlocks, canonical-pi-sdk",
+      "proposed_resolution": "Outcome-only: read the 0.75.x system-prompt / context-assembly source in earendil-works/pi-mono to determine the exact XML-tag context-boundary convention, then align pi-jit-agents compile.ts contextBlocks delimiters (and pi-workflows macros if they carry delimiters) to it. Sequence AFTER the 0.74->0.75.4 mechanical upgrade.",
+      "related_decisions": [],
+      "related_features": [],
+      "related_issues": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-21T00:00:00Z",
+      "id": "FGAP-081"
     }
   ]
 }

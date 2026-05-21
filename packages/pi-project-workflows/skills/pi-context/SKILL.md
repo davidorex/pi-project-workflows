@@ -154,6 +154,13 @@ Read the substrate config.json as structured JSON — vocabulary, lenses, relati
 
 </tool>
 
+<tool name="list-tools">
+List every tool bound into the current Pi session — name, description, parameter JSON-schema, and source extension — plus which tools are currently active. Self-introspection of the agent's own tool surface (all loaded extensions + builtins).
+
+*Discover available tools — names, params, descriptions, active set*
+
+</tool>
+
 <tool name="context-current-state">
 Derive 'where are we + what's next' purely from .project substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.
 

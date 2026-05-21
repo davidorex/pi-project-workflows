@@ -964,6 +964,40 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Tool: list-tools ──────────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "list-tools",
+		label: "List Tools",
+		description:
+			"List every tool bound into the current Pi session — name, description, parameter JSON-schema, and source extension — plus which tools are currently active. Self-introspection of the agent's own tool surface (all loaded extensions + builtins).",
+		promptSnippet: "Discover available tools — names, params, descriptions, active set",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			_ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			// Closes over the factory `pi` (the introspection surface lives on
+			// ExtensionAPI, not ExtensionContext) — `_ctx` is unused.
+			const all = pi.getAllTools();
+			const active = pi.getActiveTools();
+			const result = { tools: all, active, total: all.length, activeCount: active.length };
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
+			};
+		},
+	});
+
 	// ── Tool: context-current-state ───────────────────────────────────────────
 
 	pi.registerTool({

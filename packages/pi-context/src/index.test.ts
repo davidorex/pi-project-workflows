@@ -34,7 +34,10 @@ interface CapturedTool {
  * Mock the slice of ExtensionAPI the factory uses, capturing every tool
  * registration so individual handlers can be invoked under test.
  */
-function captureTools(): { tools: Map<string, CapturedTool>; api: unknown } {
+function captureTools(opts?: { allTools?: unknown[]; activeTools?: string[] }): {
+	tools: Map<string, CapturedTool>;
+	api: unknown;
+} {
 	const tools = new Map<string, CapturedTool>();
 	const api = {
 		on: () => {},
@@ -45,6 +48,9 @@ function captureTools(): { tools: Map<string, CapturedTool>; api: unknown } {
 		// Added defensively — extension factory may call these in future patches
 		registerShortcut: () => {},
 		sendMessage: () => {},
+		// SDK-native introspection surface the `list-tools` execute closes over.
+		getAllTools: () => opts?.allTools ?? [],
+		getActiveTools: () => opts?.activeTools ?? [],
 	};
 	return { tools, api };
 }
@@ -140,5 +146,86 @@ describe("pi-project extension: resolve-item-by-id tool", () => {
 		const parsed = JSON.parse(result.content[0]!.text);
 		assert.strictEqual(parsed.block, "issues");
 		assert.strictEqual(parsed.item.id, "issue-001");
+	});
+});
+
+describe("pi-project extension: list-tools tool", () => {
+	const sampleTools = [
+		{
+			name: "a",
+			description: "da",
+			parameters: { type: "object", properties: {} },
+			sourceInfo: { path: "p", source: "s", scope: "project", origin: "package" },
+		},
+		{
+			name: "b",
+			description: "db",
+			parameters: { type: "object", properties: {} },
+			sourceInfo: { path: "p2", source: "s2", scope: "user", origin: "top-level" },
+		},
+	];
+
+	it("lists all tools + active set", async () => {
+		const { tools, api } = captureTools({ allTools: sampleTools, activeTools: ["a"] });
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("list-tools");
+		assert.ok(tool, "list-tools must be registered");
+
+		const result = (await tool.execute("call-1", {}, new AbortController().signal, () => {}, {
+			cwd: "/tmp",
+		})) as { content: { text: string }[] };
+
+		const parsed = JSON.parse(result.content[0]!.text);
+		assert.strictEqual(parsed.tools.length, 2);
+		assert.strictEqual(parsed.tools[0].name, "a");
+		assert.deepStrictEqual(parsed.active, ["a"]);
+		assert.strictEqual(parsed.total, 2);
+		assert.strictEqual(parsed.activeCount, 1);
+	});
+
+	it("surfaces description + parameters, not just names", async () => {
+		const { tools, api } = captureTools({ allTools: sampleTools, activeTools: ["a"] });
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("list-tools");
+		assert.ok(tool, "list-tools must be registered");
+
+		const result = (await tool.execute("call-2", {}, new AbortController().signal, () => {}, {
+			cwd: "/tmp",
+		})) as { content: { text: string }[] };
+
+		const parsed = JSON.parse(result.content[0]!.text);
+		assert.strictEqual(parsed.tools[0].description, "da");
+		assert.strictEqual(parsed.tools[0].parameters.type, "object");
+	});
+
+	it("includes sourceInfo", async () => {
+		const { tools, api } = captureTools({ allTools: sampleTools, activeTools: ["a"] });
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("list-tools");
+		assert.ok(tool, "list-tools must be registered");
+
+		const result = (await tool.execute("call-3", {}, new AbortController().signal, () => {}, {
+			cwd: "/tmp",
+		})) as { content: { text: string }[] };
+
+		const parsed = JSON.parse(result.content[0]!.text);
+		assert.strictEqual(parsed.tools[0].sourceInfo.scope, "project");
+		assert.strictEqual(parsed.tools[0].sourceInfo.origin, "package");
+	});
+
+	it("empty getAllTools → empty result, no crash", async () => {
+		const { tools, api } = captureTools({ allTools: [], activeTools: [] });
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("list-tools");
+		assert.ok(tool, "list-tools must be registered");
+
+		const result = (await tool.execute("call-4", {}, new AbortController().signal, () => {}, {
+			cwd: "/tmp",
+		})) as { content: { text: string }[] };
+
+		const parsed = JSON.parse(result.content[0]!.text);
+		assert.deepStrictEqual(parsed.tools, []);
+		assert.deepStrictEqual(parsed.active, []);
+		assert.strictEqual(parsed.total, 0);
 	});
 });

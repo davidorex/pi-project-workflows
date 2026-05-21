@@ -626,7 +626,7 @@
       "verification": "VER-024"
     },
     {
-      "status": "in-progress",
+      "status": "completed",
       "description": "FGAP-044 (B1) tool-discovery — ship the Pi-tool-ONLY unit `list-tools` (deliberate DEC-0019/0020 deviation: runtime introspection lives only in the loaded pi session, so NO library fn + NO CLI twin; orchestrator side already served by grep/skills/status). Wraps SDK-native pi.getAllTools()/getActiveTools() (ExtensionAPI, reached via closure over the extension-factory pi — ctx lacks them). Tool: name list-tools, params Type.Object({}), returns {tools:[{name,description,parameters,sourceInfo}], active:string[], total, activeCount} as JSON via truncateHead. Surfaces the WHOLE loaded surface (builtins + all extensions). EXCLUDES label/promptSnippet (ToolInfo Pick drops them). Tests extend index.test.ts captureTools mock with getAllTools/getActiveTools stubs (4 cases). Runtime demo = the mock-pi test invoking the real registered execute through the factory closure (no library to tsx-eval; pi -p is the user .pi/ check).",
       "files": [
         "packages/pi-context/src/index.ts",
@@ -639,7 +639,8 @@
         "Pi-tool-ONLY rationale recorded (no library/CLI twin — runtime introspection, not a substrate op); build/check/test green + skills regen (list-tools → SKILL.md)",
         "companion FGAP filed: audit ~33 tool descriptions for discovery-readiness (kept OUT of B1)"
       ],
-      "id": "TASK-053"
+      "id": "TASK-053",
+      "verification": "VER-025"
     }
   ]
 }

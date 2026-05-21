@@ -1538,7 +1538,7 @@
     {
       "id": "FGAP-044",
       "title": "No tool discovery mechanism for harness-confined main LLM — list-tools / tool-introspection tool unfiled",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "@davidorex/pi-context",
       "layer": "L2",
@@ -1563,7 +1563,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-13T18:30:00Z"
+      "created_at": "2026-05-13T18:30:00Z",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-21T00:00:00Z"
     },
     {
       "id": "FGAP-045",
@@ -3128,6 +3130,28 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-084"
+    },
+    {
+      "title": "Audit all registered Pi tool description strings for in-pi discovery-readiness",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "FGAP-044 (list-tools) makes the loaded tool surface introspectable by the harness-confined main LLM (DEC-0014): pi.getAllTools() surfaces each tool's `description` as the PRIMARY discovery signal an in-pi agent reads to decide what to call. The descriptions were authored ad-hoc per tool over the project's life with no shared discovery-readiness rubric — they vary in whether they state purpose, parameter semantics, the substrate side-effect, the dual-surface twin (CLI script), and when-to-use vs when-not. A one-pass audit of every pi.registerTool description across packages/*/src/ against a discovery rubric (purpose / params / effect / twin / when-to-use) is its own scoped concern, deliberately kept OUT of B1 (FGAP-044) which only added the introspection mechanism. Spot-check at B1 found existing descriptions adequate for naming but not uniformly self-describing for an agent with no other context.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "list-tools (FGAP-044) returns ToolInfo.description as the in-pi LLM's primary discovery signal — quality of every registered description now load-bearing for discovery"
+        },
+        {
+          "file": "packages/*/src/index.ts",
+          "reference": "pi.registerTool description strings authored ad-hoc per tool over project life; no shared discovery-readiness rubric (purpose/params/effect/twin/when-to-use)"
+        }
+      ],
+      "impact": "An in-pi agent discovering tools via list-tools may mis-select or fail to find the right tool when a description is terse, omits the substrate side-effect, or doesn't name the CLI twin — degrading the autonomy FGAP-044 was meant to enable. Low severity (descriptions are adequate for naming today; this is uniformity hardening), hence P3.",
+      "proposed_resolution": "Define a description rubric (purpose / params / effect / dual-surface twin / when-to-use vs when-not). Enumerate every tool via `grep -rn 'pi.registerTool' packages/*/src/` (canonical census); score each description against the rubric; cross-check SKILL.md (generated). Emit a per-tool gap list + remediated description strings; apply through plan mode per feedback_no_adhoc_dev (each edit is a source change). B-cluster (in-pi tool-surface program) hardening; companion to FGAP-044.",
+      "id": "FGAP-085",
+      "created_at": "2026-05-21T13:32:23.189Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

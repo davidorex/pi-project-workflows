@@ -28,6 +28,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import type { DispatchContext } from "./dispatch-context.js";
 import { projectRoot } from "./project-context.js";
 import { SCHEMAS_DIR } from "./project-dir.js";
 import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.js";
@@ -111,6 +112,88 @@ export function writeSchema(cwd: string, schemaName: string, schema: object): vo
 		const msg = err instanceof Error ? err.message : String(err);
 		throw new Error(`writeSchema: failed to write ${p}: ${msg}`);
 	}
+}
+
+/**
+ * Op-correct create-or-replace of a whole schema body, layered over
+ * `writeSchema` (FGAP-077 — the Pi-tool / CLI-facing schema-write op).
+ *
+ * Where `writeSchema` is an unconditional create-or-overwrite, this surface
+ * adds an explicit operation discriminator so a caller's intent (create a NEW
+ * schema vs. replace an EXISTING one) is enforced rather than silently
+ * coerced:
+ *   - `operation: "create"` requires the schema to be ABSENT — a collision
+ *     with an existing schema throws (use `replace` to overwrite).
+ *   - `operation: "replace"` requires the schema to be PRESENT — a missing
+ *     target throws (use `create` to initialize).
+ *   - any other operation string throws before any disk read.
+ *
+ * The presence check reuses `readSchema` (returns `null` when absent) and the
+ * single private `schemaWritePath` helper so there is one path source. The
+ * actual write delegates to `writeSchema`, which meta-validates against the
+ * draft-07 meta-schema and writes atomically (tmp + rename); this surface adds
+ * no second validation or write path.
+ *
+ * Migration boundary (DECIDED, FGAP-077): this op writes the schema JSON and
+ * meta-validates the schema body. It does NOT migrate existing block items
+ * forward when a `replace` changes the schema's `version`. A breaking
+ * evolution is handled at READ time by `validateBlockWithMigration`, which
+ * throws a version mismatch until a code-level `MigrationFn` is registered via
+ * `createRegistry().register(...)` — and there is no Pi-tool surface for
+ * registering a `MigrationFn`. This surface does not (and must not) emit an
+ * "items exist at old version" warning: that would require reading block files
+ * to assess data-layer impact from inside the schema-write layer, inverting
+ * the read-time / write-time layering.
+ *
+ * `ctx` is accepted and IGNORED: schema files carry no author-attestation
+ * fields, so there is nothing to stamp. The parameter is present for call-site
+ * parity with the attestation-aware block-write / config-write surfaces
+ * (mirrors `amendConfigEntry`'s ctx-forwarding parameter, which forwards to
+ * `writeConfig`; here there is no author-bearing target to forward to).
+ *
+ * `opts.dryRun` runs the SAME meta-validator `writeSchema` uses against the
+ * supplied body and returns `{ written: false }` without touching disk —
+ * keeping ONE validation path (no re-implemented validation for the preview).
+ */
+export function writeSchemaChecked(
+	cwd: string,
+	schemaName: string,
+	schema: object,
+	operation: "create" | "replace",
+	ctx?: DispatchContext,
+	opts?: { dryRun?: boolean },
+): { written: boolean; operation: "create" | "replace"; schemaPath: string } {
+	void ctx; // accepted for call-site parity; schema files carry no author fields.
+
+	const target = schemaWritePath(cwd, schemaName);
+
+	// (1) Operation discriminator — reject unknown ops before any disk read.
+	if (operation !== "create" && operation !== "replace") {
+		throw new Error(`writeSchemaChecked: unknown operation '${operation}' — expected create | replace`);
+	}
+
+	// (2) Presence guard — readSchema returns null when the file is absent.
+	const existing = readSchema(cwd, schemaName);
+	if (operation === "create" && existing !== null) {
+		throw new Error(
+			`writeSchemaChecked: create collision — schema '${schemaName}' already exists at ${target}; use operation 'replace' to overwrite`,
+		);
+	}
+	if (operation === "replace" && existing === null) {
+		throw new Error(
+			`writeSchemaChecked: replace target missing — schema '${schemaName}' does not exist at ${target}; use operation 'create'`,
+		);
+	}
+
+	// (3) Dry-run: meta-validate via the SAME validator writeSchema uses, no write.
+	if (opts?.dryRun) {
+		validateSchemaAgainstMeta(schema, `schema '${schemaName}' (dry-run)`);
+		return { written: false, operation, schemaPath: target };
+	}
+
+	// (4) Commit: writeSchema re-meta-validates + writes atomically (tmp + rename).
+	writeSchema(cwd, schemaName, schema);
+	return { written: true, operation, schemaPath: target };
 }
 
 /**

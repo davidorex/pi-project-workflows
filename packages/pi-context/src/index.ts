@@ -65,7 +65,7 @@ import {
 } from "./project-sdk.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
-import { readSchema } from "./schema-write.js";
+import { readSchema, writeSchemaChecked } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -1111,6 +1111,62 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: write-schema ──────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "write-schema",
+		label: "Write Schema",
+		description:
+			"Create or replace a substrate block-kind JSON Schema. operation 'create' requires the schema absent; " +
+			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. CAVEAT: a " +
+			"'replace' that changes the schema's version does NOT migrate existing block items — read-time " +
+			"validateBlockWithMigration throws a version mismatch until a code-level MigrationFn is registered (no tool " +
+			"surface for that). Registering the block_kind that points at this schema is a separate step (amend-config " +
+			"block_kinds).",
+		promptSnippet: "Create or replace a block-kind JSON Schema (meta-validated, atomic)",
+		parameters: Type.Object({
+			operation: Type.String({ description: "create | replace" }),
+			schemaName: Type.String({ description: "Schema name without extension (e.g., 'tasks')" }),
+			schema: Type.Unknown({
+				description: "The whole JSON Schema object (draft-07). Accepts a JSON string.",
+			}),
+			dryRun: Type.Optional(Type.Boolean({ description: "Meta-validate without writing" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { operation: string; schemaName: string; schema?: unknown; dryRun?: boolean },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			// Type.Unknown() params may arrive as JSON strings. Parse if possible; on
+			// failure KEEP the raw value (meta-validation rejects a non-object body).
+			let schema = params.schema;
+			if (typeof schema === "string") {
+				try {
+					schema = JSON.parse(schema);
+				} catch {
+					/* keep raw string — meta-validation will reject a non-object */
+				}
+			}
+			const result = writeSchemaChecked(
+				ctx.cwd,
+				params.schemaName,
+				schema as object,
+				params.operation as "create" | "replace",
+				undefined,
+				{ dryRun: params.dryRun },
+			);
+			const verb = result.written ? `${result.operation}d` : `would ${result.operation}`;
+			return {
+				details: undefined,
+				content: [
+					{ type: "text", text: `write-schema: ${verb} schema '${params.schemaName}' at ${result.schemaPath}` },
+				],
 			};
 		},
 	});

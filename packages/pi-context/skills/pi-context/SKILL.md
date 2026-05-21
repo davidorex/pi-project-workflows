@@ -198,6 +198,19 @@ Read a substrate schema by name as parsed JSON. Returns null when the schema fil
 | `schemaName` | string | yes | Schema name without extension (e.g., 'tasks', 'decisions', 'issues') |
 </tool>
 
+<tool name="write-schema">
+Create or replace a substrate block-kind JSON Schema. operation 'create' requires the schema absent; 'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. CAVEAT: a 'replace' that changes the schema's version does NOT migrate existing block items — read-time validateBlockWithMigration throws a version mismatch until a code-level MigrationFn is registered (no tool surface for that). Registering the block_kind that points at this schema is a separate step (amend-config block_kinds).
+
+*Create or replace a block-kind JSON Schema (meta-validated, atomic)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `operation` | string | yes | create | replace |
+| `schemaName` | string | yes | Schema name without extension (e.g., 'tasks') |
+| `schema` | unknown | yes | The whole JSON Schema object (draft-07). Accepts a JSON string. |
+| `dryRun` | boolean | no | Meta-validate without writing |
+</tool>
+
 <tool name="project-init">
 Initialize .project/ directory with default schemas and empty block files.
 

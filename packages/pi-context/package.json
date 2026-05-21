@@ -97,7 +97,7 @@
 		"test": "tsx --test src/*.test.ts"
 	},
 	"dependencies": {
-		"@earendil-works/pi-coding-agent": "^0.74.0",
+		"@earendil-works/pi-coding-agent": "^0.75.4",
 		"typebox": "^1.1.24",
 		"ajv": "^8.17.1",
 		"ajv-formats": "^3.0.1",
@@ -105,5 +105,8 @@
 	},
 	"devDependencies": {
 		"@types/proper-lockfile": "^4.1.4"
+	},
+	"engines": {
+		"node": ">=22.19.0"
 	}
 }

@@ -45,12 +45,15 @@
 		"@davidorex/pi-jit-agents": "^0.25.0",
 		"@davidorex/pi-context": "^0.25.0",
 		"@davidorex/pi-workflows": "^0.25.0",
-		"@earendil-works/pi-ai": "^0.74.0",
-		"@earendil-works/pi-coding-agent": "^0.74.0",
-		"@earendil-works/pi-tui": "^0.74.0"
+		"@earendil-works/pi-ai": "^0.75.4",
+		"@earendil-works/pi-coding-agent": "^0.75.4",
+		"@earendil-works/pi-tui": "^0.75.4"
 	},
 	"devDependencies": {
 		"@types/nunjucks": "^3.2.6",
 		"vitest": "^3.2.4"
+	},
+	"engines": {
+		"node": ">=22.19.0"
 	}
 }

@@ -2750,7 +2750,7 @@
     },
     {
       "title": "No edge-write Pi tool — in-pi agents cannot create DEC-0013 relations through the extension tool surface",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L2",
@@ -2785,7 +2785,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-075"
+      "id": "FGAP-075",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-21T00:00:00Z"
     },
     {
       "title": "No config-write Pi tool — in-pi agents cannot author or amend config.json (framework vocabulary)",

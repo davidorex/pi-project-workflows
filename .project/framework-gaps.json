@@ -3152,6 +3152,43 @@
       "id": "FGAP-085",
       "created_at": "2026-05-21T13:32:23.189Z",
       "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "title": "relation_types carry no endpoint-kind metadata — edges can wire wrong-kind endpoints undetected; validateProject checks endpoint existence but never kind",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "config.relation_types[] items carry only {canonical_id, display_name, category, cycle_allowed} (config.schema.json relation_types, additionalProperties:false). There is no declaration of which block_kind(s) a relation_type may connect. Endpoint kinds are resolved at runtime purely from the actual edge (buildIdIndex maps item-id -> {block}); relation_type endpoint metadata is used NOWHERE. Consequently validateProject (project-sdk.ts:1072-1097) verifies an edge's parent/child IDs EXIST but never that their KINDS are legal for the relation_type — e.g. a task_addresses_gap edge whose child resolves to a decision (not a framework-gap) passes validation. The catalog discovery surface (FGAP-068, DEC-0037 packaged view 'schema + its relation_types') also cannot present a kind's applicable relation_types without this metadata; name-token parsing is not viable (task != tasks, gap != framework-gaps, review != spec-reviews, wildcard 'item'). Surfaced during B2/FGAP-068 planning.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/schemas/config.schema.json",
+          "reference": "relation_types items: required [canonical_id,display_name,category]; props [...,cycle_allowed]; additionalProperties:false — no source_kinds/target_kinds"
+        },
+        {
+          "file": "packages/pi-context/src/project-sdk.ts",
+          "lines": "1072-1097",
+          "reference": "validateProject edge-integrity loop asserts parent/child ids resolve in idIndex; never compares their block-kind to the relation_type"
+        },
+        {
+          "file": "packages/pi-context/src/project-sdk.ts",
+          "lines": "888-937",
+          "reference": "buildIdIndex resolves endpoint kind from the item's home block; relation_type metadata is not consulted"
+        }
+      ],
+      "impact": "A structurally wrong edge (legal ids, illegal kinds for the relation) is undetectable by validateProject — a correctness hole in the closure-table model. Blocks DEC-0037 packaged catalog (FGAP-068) from showing per-kind relation_types. Closed jointly with FGAP-068 in B2: add optional source_kinds[]/target_kinds[] (wildcard '*'), author them on conception, and add a presence-gated endpoint-kind check to validateProject (gated so the metadata-less frozen .project stays silent).",
+      "canonical_vocabulary": "endpoint-kind-metadata, source_kinds, target_kinds, edge-endpoint-validation, relation_type-applicability",
+      "proposed_resolution": "Add OPTIONAL source_kinds[]/target_kinds[] to the relation_types schema (wildcard literal '*'=any kind; optional so frozen .project/config.json keeps validating; version bump, no MigrationFn for additive-optional). Author all 27 conception.json relation_types per the B2 mapping table. Add a validateProject loop after edge-integrity: resolve parent/child kind via idIndex, look up the relation_type, assert parent-kind in source_kinds && child-kind in target_kinds honoring '*'; GATE on the relation_type declaring at least one of the fields (silent where absent => no false positives on metadata-less substrate). severity error. Implemented as part of TASK-054 (B2).",
+      "related_decisions": [
+        "DEC-0013",
+        "DEC-0030",
+        "DEC-0037"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "id": "FGAP-086",
+      "created_at": "2026-05-21T21:55:01.988Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

@@ -78,5 +78,10 @@
     "parent": "PHASE-010",
     "child": "TASK-046",
     "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "R-0013",
+    "child": "FEAT-003",
+    "relation_type": "research_informs_item"
   }
 ]

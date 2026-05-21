@@ -237,6 +237,17 @@
       "canonical_id": "task_governed_by_decision",
       "display_name": "governed by decision",
       "category": "data_flow"
+    },
+    {
+      "canonical_id": "research_informs_item",
+      "display_name": "informs item",
+      "category": "data_flow",
+      "source_kinds": [
+        "research"
+      ],
+      "target_kinds": [
+        "*"
+      ]
     }
   ],
   "lenses": [],

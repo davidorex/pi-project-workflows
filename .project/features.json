@@ -511,6 +511,26 @@
       "findings": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z"
+    },
+    {
+      "id": "FEAT-003",
+      "title": "Context plugin — portable, installable third-party context models",
+      "status": "proposed",
+      "layer": "L2",
+      "description": "Let users author a complete context model (config + schemas + starter blocks + relations + rendering macros) against the pi-context SDK, package it as a portable bundle, share it, and install it into any substrate to use immediately — the same way the package's own packaged conception (DEC-0037, samplesCatalog) works, generalized to any third-party conception. A 4th, DATA-ONLY artifact type distinct from Claude Code plugins / Pi extensions / behavior-monitor specs. Builds directly on B2/FGAP-068: samplesCatalog made the package conception queryable; this makes any conception portable + installable. Feasibility + reuse/gaps + the cross-package macro resolution + distribution channels: see R-0013 / analysis/2026-05-22-context-plugin-feasibility.md. Requires a new enacted decision for multi-source onboarding + external acquisition + provenance + conflict-resolution (DEC-0037/0038 are internal-samples-only).",
+      "motivation": "A crafted conception (great block_kinds/relations/schemas/macros) is currently locked inside the package's own samples/. Making it portable turns pi-context into an ecosystem: teams share OKR / research-loop / spec-loop / domain conceptions; onboarding draws from external catalogs, not just the built-in one. Directly extends the value of the config-driven framework (DEC-0015) + the packaged conception (DEC-0037).",
+      "acceptance_criteria": [
+        "installProject + samplesCatalog accept an external bundleSource (path / npm package / git checkout); install-source no longer hardcoded to import.meta.dirname",
+        "validateConception(bundleDir) gates install: manifest well-formed + bundled schemas meta-valid + invariants cite registered relation_types + relation_type source/target_kinds name real block_kinds — BEFORE any copy",
+        "a bundle's rendering macros install into project .pi/templates/items/ (found by the existing 3-tier search) with no pi-workflows refactor; manifest carries a macro/template field so delivery is registered + validatable",
+        "installed conceptions tracked with provenance (author/url/version/timestamp) + an update/migrate path; plugin schemas with custom $id register with AJV so $ref resolves",
+        "a distribution channel (npm primary, git secondary) + a curated conception-catalog.json discovery list; NOT MCP",
+        "a new DEC enacts multi-source onboarding + external acquisition + provenance + conflict-resolution (bundle redefining an existing kind)"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-22T00:00:00Z"
     }
   ]
 }

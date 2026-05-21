@@ -644,7 +644,7 @@
     },
     {
       "description": "B2 / FGAP-068 — samples catalog discovery (SCOPE B). Two coupled parts: (1) add OPTIONAL relation_type endpoint-kind metadata source_kinds[]/target_kinds[] (wildcard '*') to the config relation_types model + author all 27 onto samples/conception.json + presence-gated edge endpoint-kind validation in validateProject (closes the live wrong-kind-edge hole; tracked as FGAP-086); (2) the dual-surface samples-catalog discovery surface — library samplesCatalog() (package-intrinsic, reads bundled samples/, conception ENRICHED per-kind with title/description/shape + applicable relation_types/invariants/lenses + top-level registries) reusing a schemaInfo→schemaInfoFromPath refactor; Pi tool read-samples-catalog; CLI scripts/orchestrator/read-samples-catalog.ts; package.json files +samples/ (publish-bug fix) + ./samples-catalog export (closes FGAP-068). 5-commit sequence per plan. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md ACTIVE section.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/samples-catalog.ts",
         "packages/pi-context/src/samples-catalog.test.ts",
@@ -667,7 +667,8 @@
         "build/check/test green; samples-catalog.test.ts covers wildcard+alias+invariants+lenses+filter+endpoint-check+adversarial(non-existent-kind warning, conception-vs-config AJV guard); runtime demo via CLI; skills regen"
       ],
       "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs all npm/tsx/git. Closes FGAP-068 + FGAP-086. B2 of the in-pi tool-surface program.",
-      "id": "TASK-054"
+      "id": "TASK-054",
+      "verification": "VER-026"
     }
   ]
 }

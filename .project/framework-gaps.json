@@ -2494,7 +2494,7 @@
     },
     {
       "title": "Samples catalog is not an enumerable/described/queryable registry — no tool lists the installable block kinds; discovery is filename-convention only.",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L2",
@@ -2531,7 +2531,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
-      "id": "FGAP-068"
+      "id": "FGAP-068",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-22T00:00:00Z"
     },
     {
       "title": "status_buckets falls back to a hardcoded default status vocabulary (STATUS_VOCABULARY_DEFAULTS) — DEC-0025 smell (source ships vocabulary).",
@@ -3155,7 +3157,7 @@
     },
     {
       "title": "relation_types carry no endpoint-kind metadata — edges can wire wrong-kind endpoints undetected; validateProject checks endpoint existence but never kind",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L2",
@@ -3188,7 +3190,9 @@
       "related_issues": [],
       "id": "FGAP-086",
       "created_at": "2026-05-21T21:55:01.988Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-22T00:00:00Z"
     }
   ]
 }

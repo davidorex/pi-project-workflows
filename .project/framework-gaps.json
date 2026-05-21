@@ -2791,7 +2791,7 @@
     },
     {
       "title": "No config-write Pi tool — in-pi agents cannot author or amend config.json (framework vocabulary)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L2",
@@ -2829,7 +2829,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-076"
+      "id": "FGAP-076",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-21T00:00:00Z"
     },
     {
       "title": "No schema-write Pi tool — in-pi agents cannot define new block kinds or evolve existing schemas",

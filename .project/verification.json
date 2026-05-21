@@ -855,6 +855,42 @@
         }
       ],
       "id": "VER-021"
+    },
+    {
+      "target": "TASK-050",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-21T00:00:00Z",
+      "evidence": "FGAP-077 schema-write dual-surface unit — commit 7ad8fbd. Shipped: schema-write.ts writeSchemaChecked (presence guard + draft-07 meta-validation via writeSchema; dryRun = same validator, no write) + Pi tool write-schema + scripts/orchestrator/write-schema.ts + schema-write-tool.test.ts (8 cases). Completes Cluster A write-twins (edge/config/schema). Verified DEC-0018: build/check/test green (pi-context 524 [+8] / 151 / 157 / 829, 0 fail). Runtime demo: library (create/collision/replace/replace-missing/dry-run-inert/meta-reject all correct) + CLI (dry-run inert / real json / collision exit-5 / missing-schema exit-2 / uninitialized exit-1). Bug found+fixed during verification: the CLI's BootstrapNotFoundError catch used instanceof, which returns FALSE because writeSchemaChecked throws the error transitively via schema-write's own project-dir module instance (a different class object than the CLI's direct project-dir import under tsx/symlink) — uninitialized-cwd wrongly hit exit 5; fixed with a module-instance-proof err.name check. Siblings read-schema/read-config verified correct (direct throw → instanceof works), left unchanged. Migration boundary proven by test 8 (replace-with-version-bump WRITES then validateBlockWithMigration THROWS on old-version item; code MigrationFn closes it). Adversarial: writeSchema is the SOLE schema-file writer (no parallel path). Registration via SKILL.md. Discovered pre-existing flags filed as FGAP-078/079/080.",
+      "criteria_results": [
+        {
+          "criterion": "writeSchemaChecked create/replace presence guard + draft-07 meta-validation via the same validateSchemaAgainstMeta; routes through writeSchema (no parallel path)",
+          "status": "passed",
+          "evidence": "library demo + tests 1-5; adversarial grep"
+        },
+        {
+          "criterion": "Pi tool write-schema + CLI write-schema.ts (--schema @file, --dry-run inert) dual-surface twins",
+          "status": "passed",
+          "evidence": "SKILL.md registration + CLI demo dry-run/real/collision/missing/uninitialized"
+        },
+        {
+          "criterion": "migration-boundary proof: version-bump replace WRITES then validateBlockWithMigration THROWS on old-version item; code MigrationFn closes it",
+          "status": "passed",
+          "evidence": "test 8"
+        },
+        {
+          "criterion": "meta-validation rejects malformed schema (uncreated/byte-unchanged); dry-run inert + still meta-validates",
+          "status": "passed",
+          "evidence": "tests 5/6 + library meta-reject demo"
+        },
+        {
+          "criterion": "build/check/test green + runtime (library+CLI) + adversarial + skills; CLI exit-1 instanceof bug found+fixed; follow-up flags filed FGAP-078/079/080",
+          "status": "passed",
+          "evidence": "524 tests; exit-1 fix verified; FGAP-078/079/080"
+        }
+      ],
+      "id": "VER-022"
     }
   ]
 }

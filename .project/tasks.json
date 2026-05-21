@@ -546,6 +546,24 @@
       ],
       "id": "TASK-048",
       "verification": "VER-020"
+    },
+    {
+      "status": "in-progress",
+      "description": "FGAP-076 config-write op — ship the dual-surface UNIT (DEC-0019/0020) for scoped amend of config.json (the framework vocabulary): library amendConfigEntry(cwd, registry, operation, key, entry?, ctx?, {dryRun?}) -> AmendResult over a REGISTRY-DESCRIPTOR table covering ALL 11 registries (keyed-array block_kinds/relation_types/lenses/layers/invariants by idField; map status_buckets/display_strings/naming by key; string-array installed_schemas/installed_blocks by value; value-array hierarchy by deep-equality) + Pi tool amend-config + CLI scripts/orchestrator/amend-config.ts + config-write.test.ts. Single generic tool (registry+operation discriminators, rename-canonical-id precedent). Resolved: write enforces OP-CORRECTNESS (add=>absent, replace/remove=>present) + SHAPE (free via writeConfig whole-config AJV); cross-registry referential integrity DEFERRED to validateProject (layering-forced + A1-consistent); add=strict (collision is error, not idempotent no-op); string-array replace rejected; empty-after-remove leaves []/{}; ctx no-op (no author fields); mtime cache auto-invalidates. A2 of the in-pi tool-surface program (addresses FGAP-076).",
+      "files": [
+        "packages/pi-context/src/project-context.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/amend-config.ts",
+        "packages/pi-context/src/config-write.test.ts"
+      ],
+      "acceptance_criteria": [
+        "amendConfigEntry covers all 11 registries via a descriptor table (4 keying kinds); add/replace/remove uniform (string-array replace the sole documented exception)",
+        "write enforces op-correctness (add-collision/replace-missing/remove-missing error) + SHAPE via writeConfig AJV; config byte-unchanged on any throw",
+        "Pi tool amend-config + CLI amend-config.ts (--entry @file, --dry-run inert) dual-surface twins of writeConfig",
+        "deferred-cross-ref proof: removing a still-referenced relation_type SUCCEEDS then validateProject flags edge_unknown_relation_type (deferred, not dropped)",
+        "mtime-cache invalidation verified; build/check/test green + runtime demo (library + CLI) + adversarial (writeConfig sole writer) + skills regen"
+      ],
+      "id": "TASK-049"
     }
   ]
 }

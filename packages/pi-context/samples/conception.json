@@ -127,137 +127,191 @@
     {
       "canonical_id": "decision_supersedes_decision",
       "display_name": "supersedes",
-      "category": "ordering"
+      "category": "ordering",
+      "source_kinds": ["decisions"],
+      "target_kinds": ["decisions"]
     },
     {
       "canonical_id": "decision_addresses_issue",
       "display_name": "addresses issue",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["decisions"],
+      "target_kinds": ["issues"]
     },
     {
       "canonical_id": "decision_addresses_feature",
       "display_name": "addresses feature",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["decisions"],
+      "target_kinds": ["features"]
     },
     {
       "canonical_id": "decision_addresses_gap",
       "display_name": "addresses gap",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["decisions"],
+      "target_kinds": ["framework-gaps"]
     },
     {
       "canonical_id": "gap_addressed_by_decision",
       "display_name": "addressed by decision",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["framework-gaps"],
+      "target_kinds": ["decisions"]
     },
     {
       "canonical_id": "gap_addressed_by_feature",
       "display_name": "addressed by feature",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["framework-gaps"],
+      "target_kinds": ["features"]
     },
     {
       "canonical_id": "gap_relates_to_issue",
       "display_name": "relates to issue",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["framework-gaps"],
+      "target_kinds": ["issues"]
     },
     {
       "canonical_id": "feature_depends_on_item",
       "display_name": "depends on item",
-      "category": "ordering"
+      "category": "ordering",
+      "source_kinds": ["features"],
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "feature_gated_by_item",
       "display_name": "gated by",
-      "category": "ordering"
+      "category": "ordering",
+      "source_kinds": ["features"],
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "feature_resolves_issue",
       "display_name": "resolves issue",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["features"],
+      "target_kinds": ["issues"]
     },
     {
       "canonical_id": "feature_governed_by_decision",
       "display_name": "governed by decision",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["features"],
+      "target_kinds": ["decisions"]
     },
     {
       "canonical_id": "story_depends_on_story",
       "display_name": "story depends on story",
-      "category": "ordering"
+      "category": "ordering",
+      "source_kinds": ["story"],
+      "target_kinds": ["story"]
     },
     {
       "canonical_id": "story_gated_by_item",
       "display_name": "story gated by",
-      "category": "ordering"
+      "category": "ordering",
+      "source_kinds": ["story"],
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "task_depends_on_task",
       "display_name": "depends on task",
-      "category": "ordering"
+      "category": "ordering",
+      "source_kinds": ["tasks"],
+      "target_kinds": ["tasks"]
     },
     {
       "canonical_id": "requirement_depends_on_requirement",
       "display_name": "depends on requirement",
-      "category": "ordering"
+      "category": "ordering",
+      "source_kinds": ["requirements"],
+      "target_kinds": ["requirements"]
     },
     {
       "canonical_id": "research_supersedes_research",
       "display_name": "research supersedes research",
-      "category": "ordering"
+      "category": "ordering",
+      "source_kinds": ["research"],
+      "target_kinds": ["research"]
     },
     {
       "canonical_id": "research_informs_item",
       "display_name": "informs item",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["research"],
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "research_relates_to_research",
       "display_name": "relates to research",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["research"],
+      "target_kinds": ["research"]
     },
     {
       "canonical_id": "review_targets_item",
       "display_name": "review targets",
-      "category": "membership"
+      "category": "membership",
+      "source_kinds": ["spec-reviews"],
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "verification_verifies_item",
       "display_name": "verifies",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["verification"],
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "task_positioned_in_phase",
       "display_name": "positioned in phase",
-      "category": "membership"
+      "category": "membership",
+      "source_kinds": ["tasks"],
+      "target_kinds": ["phase"]
     },
     {
       "canonical_id": "feature_contains_story",
       "display_name": "contains story",
-      "category": "membership"
+      "category": "membership",
+      "source_kinds": ["features"],
+      "target_kinds": ["story"]
     },
     {
       "canonical_id": "story_contains_task",
       "display_name": "contains task",
-      "category": "membership"
+      "category": "membership",
+      "source_kinds": ["story"],
+      "target_kinds": ["tasks"]
     },
     {
       "canonical_id": "rationale_supports_decision",
       "display_name": "supports decision",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["rationale"],
+      "target_kinds": ["decisions"]
     },
     {
       "canonical_id": "task_addresses_gap",
       "display_name": "addresses gap",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["tasks"],
+      "target_kinds": ["framework-gaps"]
     },
     {
       "canonical_id": "task_addresses_feature",
       "display_name": "addresses feature",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["tasks"],
+      "target_kinds": ["features"]
     },
     {
       "canonical_id": "task_governed_by_decision",
       "display_name": "governed by decision",
-      "category": "data_flow"
+      "category": "data_flow",
+      "source_kinds": ["tasks"],
+      "target_kinds": ["decisions"]
     }
   ],
   "lenses": [

@@ -526,6 +526,25 @@
         "comprehensive status-bucket completeness (sub-unit D): 12 conception status values mapped (grounded in samples-schema semantics) + enforceable conception-completeness guard test (status-vocab.test.ts)"
       ],
       "id": "TASK-047"
+    },
+    {
+      "status": "in-progress",
+      "description": "FGAP-075 edge-write op — ship the dual-surface UNIT (DEC-0019/0020) for creating a DEC-0013 relation from the tool surface: library appendRelations/appendRelation (project-context.ts) over a NEW lock-held block-api primitive appendManyToTypedFileIfAbsent (read+dedup+push+writeTypedFile inside withBlockLock; bare-array arrayPath=null) + Pi tool append-relation (index.ts) + CLI scripts/orchestrator/append-relation.ts + edge-write.test.ts. Resolved: semantic guards (relation_type registration / endpoint resolution / cycle) DEFERRED to validateProject (forced by layering — project-context cannot import buildIdIndex from project-sdk; matches append-block-item precedent); write enforces AJV shape + exact-duplicate no-op keyed on (parent,child,relation_type), ordinal not part of identity; Pi tool ctx-less (relations schema has no author fields). Cluster A1 of the in-pi tool-surface-completeness program (addresses FGAP-075).",
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/project-context.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/append-relation.ts",
+        "packages/pi-context/src/edge-write.test.ts"
+      ],
+      "acceptance_criteria": [
+        "appendRelations/appendRelation land over a lock-held dedup-append block-api primitive (no TOCTOU); append to absent relations.json creates it",
+        "exact-duplicate (parent,child,relation_type) is a silent no-op; ordinal not part of identity",
+        "Pi tool append-relation + CLI append-relation.ts (--dry-run inert) ship as dual-surface twins of writeRelations",
+        "deferred-guard proof: an unregistered-relation_type / dangling-endpoint / cycle edge WRITES but is then CAUGHT by validateProject (guards deferred, not dropped)",
+        "build/check/test green + runtime demo across library + CLI + pi -p dispatch + adversarial probe + skills regen"
+      ],
+      "id": "TASK-048"
     }
   ]
 }

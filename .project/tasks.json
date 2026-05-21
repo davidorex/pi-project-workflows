@@ -565,6 +565,24 @@
       ],
       "id": "TASK-049",
       "verification": "VER-021"
+    },
+    {
+      "status": "in-progress",
+      "description": "FGAP-077 schema-write op — ship the dual-surface UNIT (DEC-0019/0020) for defining/evolving a block-kind JSON Schema through the tool surface: library writeSchemaChecked(cwd, name, schema, operation:create|replace, ctx?, {dryRun?}) over the existing writeSchema (presence guard + draft-07 meta-validation + atomic write; dryRun = meta-validate only, one validation path) + Pi tool write-schema + CLI scripts/orchestrator/write-schema.ts + schema-write-tool.test.ts. Completes Cluster A write-twins (after A1 append-relation, A2 amend-config). Resolved: migration boundary — tool writes schema JSON + meta-validates; forward-migration of existing block items DEFERRED to read-time validateBlockWithMigration + requires a code-level MigrationFn no Pi tool can register; create|replace presence guard mirrors A2; ctx no-op (schema files have no author fields); framework-schema clobber impossible (different roots). Discovered pre-existing flags to file as follow-up FGAPs: migration-registration gap, schema-path resolver divergence (config.root vs resolveContextDir), no path-traversal sanitization on schemaName.",
+      "files": [
+        "packages/pi-context/src/schema-write.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/write-schema.ts",
+        "packages/pi-context/src/schema-write-tool.test.ts"
+      ],
+      "acceptance_criteria": [
+        "writeSchemaChecked: create (must be absent) / replace (must be present) presence guard + draft-07 meta-validation via the same validateSchemaAgainstMeta writeSchema uses; routes through writeSchema (no parallel write path)",
+        "Pi tool write-schema + CLI write-schema.ts (--schema @file, --dry-run inert) dual-surface twins of the schema-write library",
+        "migration-boundary proof: replace with a bumped version WRITES (tool scope) then validateBlockWithMigration THROWS on an old-version item (deferred, not dropped); a code MigrationFn closes it",
+        "meta-validation rejects a malformed schema (file uncreated/byte-unchanged); dry-run inert + still meta-validates",
+        "build/check/test green + runtime demo (library + CLI) + adversarial (writeSchema sole writer) + skills regen; follow-up FGAPs filed for the discovered pre-existing flags"
+      ],
+      "id": "TASK-050"
     }
   ]
 }

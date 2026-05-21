@@ -160,9 +160,19 @@ export interface SchemaInfo {
  * Returns null if the schema file doesn't exist or is unparseable.
  */
 export function schemaInfo(cwd: string, schemaName: string): SchemaInfo | null {
-	const schemaPathStr = schemaPath(cwd, schemaName);
+	return schemaInfoFromPath(schemaPath(cwd, schemaName), schemaName);
+}
+
+/**
+ * Extract schema property metadata from an ABSOLUTE schema file path.
+ * Identical extraction to `schemaInfo` but addressed by path rather than
+ * (cwd, name) — lets package-intrinsic consumers (e.g. samples-catalog) read
+ * the extension's bundled samples/schemas/*.schema.json without a project
+ * substrate. Returns null if the schema file doesn't exist or is unparseable.
+ */
+export function schemaInfoFromPath(absSchemaPath: string, schemaName: string): SchemaInfo | null {
 	try {
-		const raw = JSON.parse(fs.readFileSync(schemaPathStr, "utf-8")) as Record<string, unknown>;
+		const raw = JSON.parse(fs.readFileSync(absSchemaPath, "utf-8")) as Record<string, unknown>;
 		const title = String(raw.title ?? schemaName);
 		const requiredSet = new Set(Array.isArray(raw.required) ? (raw.required as string[]) : []);
 		const properties: SchemaProperty[] = [];
@@ -1090,6 +1100,44 @@ export function validateProject(cwd: string): ProjectValidationResult {
 				issues.push({
 					severity: "error",
 					message: `Edge relation_type '${edge.relation_type}' is not registered in config.relation_types`,
+					block: "relations",
+					field: `${edge.parent}->${edge.child}`,
+				});
+			}
+		}
+
+		// ── Edge endpoint-kind check (FGAP-086, DEC-0037) ─────────────────────
+		// Presence-gated: a relation_type with neither source_kinds nor
+		// target_kinds is unchecked, so the frozen .project substrate (whose
+		// relation_types carry no endpoint metadata) is not retroactively failed.
+		// When metadata is present, an edge endpoint whose resolved block is not in
+		// the declared kind set (and the set is not the "*" wildcard) is an error.
+		// loc.block is the data-file basename; the source/target_kinds name
+		// block_kind canonical_ids — the loc.block==canonical_id assumption is
+		// inherited from the invariant loop below (~:1140), where inv.block (a
+		// canonical_id) is matched directly against loc.block.
+		for (const edge of relations) {
+			const rt = config.relation_types?.find((r) => r.canonical_id === edge.relation_type);
+			if (!rt) continue; // unregistered relation_type already reported above
+			if (!rt.source_kinds && !rt.target_kinds) continue; // metadata absent → unchecked
+			const parentLoc = idIndex.get(edge.parent);
+			const childLoc = idIndex.get(edge.child);
+			if (
+				parentLoc &&
+				rt.source_kinds &&
+				!(rt.source_kinds.includes("*") || rt.source_kinds.includes(parentLoc.block))
+			) {
+				issues.push({
+					severity: "error",
+					message: `Edge ${edge.parent} -> ${edge.child}: source kind '${parentLoc.block}' not in source_kinds [${rt.source_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
+					block: "relations",
+					field: `${edge.parent}->${edge.child}`,
+				});
+			}
+			if (childLoc && rt.target_kinds && !(rt.target_kinds.includes("*") || rt.target_kinds.includes(childLoc.block))) {
+				issues.push({
+					severity: "error",
+					message: `Edge ${edge.parent} -> ${edge.child}: target kind '${childLoc.block}' not in target_kinds [${rt.target_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
 					block: "relations",
 					field: `${edge.parent}->${edge.child}`,
 				});

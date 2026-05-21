@@ -12,6 +12,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { appendToBlock, updateItemInBlock } from "./block-api.js";
 import { clearLensValidators, getLensValidators, type LensValidator, registerLensValidator } from "./lens-validator.js";
+import type { RelationTypeDecl } from "./project-context.js";
 import { writeBootstrapPointer } from "./project-dir.js";
 import {
 	availableBlocks,
@@ -281,7 +282,7 @@ const CANONICAL_INVARIANTS = [
  */
 function writeConfig(
 	projectDir: string,
-	relationTypes = REL_TYPES,
+	relationTypes: RelationTypeDecl[] = REL_TYPES,
 	invariants: unknown[] = CANONICAL_INVARIANTS,
 	statusBuckets?: Record<string, string>,
 ): void {
@@ -2312,5 +2313,118 @@ describe("status-consistency invariants", () => {
 			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
 			"config status_buckets override must bucket 'done2' → complete and clear the require invariant",
 		);
+	});
+});
+
+// ── Edge endpoint-kind check (FGAP-086 / DEC-0037) ───────────────────────────
+// validateProject flags an edge whose endpoint's resolved block is not in the
+// relation_type's declared source_kinds / target_kinds (unless the set is the
+// "*" wildcard). Presence-gated: a relation_type with neither field is
+// unchecked, so the frozen .project substrate (no endpoint metadata) is never
+// retroactively failed. loc.block is the data-file basename; source/target_kinds
+// name block_kind canonical_ids — fixtures keep block_kinds empty so ad-hoc ids
+// (t1/g1) index by file basename without prefix enforcement.
+describe("edge endpoint-kind check (FGAP-086)", () => {
+	function writeKindFixtures(projectDir: string): void {
+		fs.writeFileSync(path.join(projectDir, "tasks.json"), JSON.stringify({ tasks: [{ id: "t1", status: "planned" }] }));
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "a gap" }] }),
+		);
+	}
+
+	it("flags an edge whose source block is not in source_kinds (metadata present)", (t) => {
+		const tmpDir = makeTmpDir("endpoint-source-mismatch");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeConfig(
+			projectDir,
+			[
+				{
+					canonical_id: "task_addresses_gap",
+					display_name: "addresses gap",
+					category: "data_flow" as const,
+					source_kinds: ["tasks"],
+					target_kinds: ["framework-gaps"],
+				},
+			],
+			[],
+		);
+		writeKindFixtures(projectDir);
+		// parent g1 lives in framework-gaps → source kind 'framework-gaps' ∉ ["tasks"].
+		writeRelations(projectDir, [{ parent: "g1", child: "t1", relation_type: "task_addresses_gap" }]);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.status, "invalid");
+		const issue = result.issues.find((i) => i.message.includes("source kind 'framework-gaps' not in source_kinds"));
+		assert.ok(issue, "should report a source-kind-mismatch issue");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "relations");
+	});
+
+	it("does NOT check endpoint kinds when the relation_type carries no source_kinds/target_kinds (gate)", (t) => {
+		const tmpDir = makeTmpDir("endpoint-gate");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		// Same edge as the mismatch case, but the relation_type has no endpoint
+		// metadata → presence gate skips the check entirely.
+		writeConfig(
+			projectDir,
+			[{ canonical_id: "task_addresses_gap", display_name: "addresses gap", category: "data_flow" as const }],
+			[],
+		);
+		writeKindFixtures(projectDir);
+		writeRelations(projectDir, [{ parent: "g1", child: "t1", relation_type: "task_addresses_gap" }]);
+
+		const result = validateProject(tmpDir);
+		assert.strictEqual(result.status, "clean");
+		assert.ok(
+			!result.issues.some(
+				(i) => i.message.includes("not in source_kinds") || i.message.includes("not in target_kinds"),
+			),
+			"no endpoint-kind issue should fire when metadata is absent",
+		);
+	});
+
+	it("accepts any target block when target_kinds is the '*' wildcard", (t) => {
+		const tmpDir = makeTmpDir("endpoint-wildcard");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+
+		writeConfig(
+			projectDir,
+			[
+				{
+					canonical_id: "verification_verifies_item",
+					display_name: "verifies",
+					category: "data_flow" as const,
+					source_kinds: ["verification"],
+					target_kinds: ["*"],
+				},
+			],
+			[],
+		);
+		// source v1 in verification (matches source_kinds); target g1 in framework-gaps (any kind ok via "*").
+		fs.writeFileSync(
+			path.join(projectDir, "verification.json"),
+			JSON.stringify({ verifications: [{ id: "v1", status: "passed" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "a gap" }] }),
+		);
+		writeRelations(projectDir, [{ parent: "v1", child: "g1", relation_type: "verification_verifies_item" }]);
+
+		const result = validateProject(tmpDir);
+		assert.ok(
+			!result.issues.some((i) => i.message.includes("not in target_kinds")),
+			"'*' target wildcard must accept any child block",
+		);
+		assert.strictEqual(result.status, "clean");
 	});
 });

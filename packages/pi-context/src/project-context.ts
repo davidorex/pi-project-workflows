@@ -22,7 +22,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { writeTypedFile } from "./block-api.js";
+import { appendManyToTypedFileIfAbsent, writeTypedFile } from "./block-api.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { resolveContextDir } from "./project-dir.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
@@ -281,6 +281,68 @@ export function loadRelations(cwd: string): Edge[] {
  */
 export function writeRelations(cwd: string, edges: Edge[], ctx?: DispatchContext): void {
 	writeTypedFile(relationsPath(cwd), bundledSchemaPath("relations"), edges, ctx, "relations.json");
+}
+
+/**
+ * Composite identity of an edge for append-if-absent dedup: the
+ * (parent, child, relation_type) triple. `ordinal` is intentionally NOT part
+ * of identity — two edges differing only in `ordinal` are the same relationship
+ * for dedup purposes (re-filing with a different sibling-order is a no-op, not a
+ * second edge). The space separator is safe because none of the three id
+ * components contains a space in any registered substrate vocabulary.
+ */
+const identityKey = (e: unknown): string => {
+	const r = e as Edge;
+	return `${r.parent} ${r.child} ${r.relation_type}`;
+};
+
+/**
+ * Append closure-table edges to `<resolveContextDir(cwd)>/relations.json`,
+ * skipping any whose (parent, child, relation_type) triple already exists
+ * on-disk OR appears earlier in this same batch. The write-twin of
+ * `writeRelations` (whole-file replace) for the additive case. Creates
+ * relations.json (flat `Edge[]` array) when absent.
+ *
+ * Guards are DEFERRED to `validateProject` by design: this surface performs
+ * only AJV-shape validation (whole-array against the relations schema) and the
+ * exact-duplicate-no-op above. Reference integrity — endpoints resolve,
+ * relation_type is registered, no cycle under hierarchy relation_types — is NOT
+ * checked here. This is forced by the layer graph: `appendRelations` lives in
+ * project-context, which imports only block-api; endpoint resolution needs
+ * `buildIdIndex` from project-sdk, and importing project-sdk here would invert
+ * the dependency direction. Registration / endpoint / cycle violations are
+ * caught later by `validateProject`.
+ *
+ * `ctx` is threaded for attestation parity with `writeRelations`; the relations
+ * schema is a flat array with no envelope author fields, so stamping is a
+ * structural no-op today (consistent with the top-level-array stamping
+ * semantics documented in block-api).
+ */
+export function appendRelations(
+	cwd: string,
+	edges: Edge[],
+	ctx?: DispatchContext,
+): { appended: number; skipped: number } {
+	return appendManyToTypedFileIfAbsent(
+		relationsPath(cwd),
+		bundledSchemaPath("relations"),
+		null,
+		edges,
+		identityKey,
+		ctx,
+		"relations.json",
+	);
+}
+
+/**
+ * Append a single closure-table edge. Convenience over `appendRelations`:
+ * returns `{ appended }` reflecting whether the edge was new (true) or an
+ * exact (parent, child, relation_type) duplicate of an existing edge (false →
+ * no-op). Same deferred-guard semantics as `appendRelations`.
+ */
+export function appendRelation(cwd: string, edge: Edge, ctx?: DispatchContext): { appended: boolean } {
+	const r = appendRelations(cwd, [edge], ctx);
+	return { appended: r.appended > 0 };
 }
 
 /**

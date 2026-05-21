@@ -486,6 +486,107 @@ export function appendToTypedFile(
 	});
 }
 
+/**
+ * Validated atomic bulk append-if-absent to an array within a
+ * `(filePath, schemaPath)` pair. Each candidate in `items` is appended only
+ * when no element already present (on-disk OR earlier in this same batch)
+ * shares its `matchKey`. Dedup is keyed solely on `matchKey(item)` — the
+ * write surface does no semantic validation beyond the whole-array AJV check
+ * and this exact-duplicate-no-op; richer integrity (referential, etc.) is
+ * deferred to callers / downstream validators.
+ *
+ * `arrayPath` mirrors `appendToTypedFile`: `null` ⇒ the file content IS the
+ * array (flat top-level array shape); `string` ⇒ `data[arrayPath]` is the
+ * target array (object-with-array-field shape, the `.project/` convention).
+ * The branching is identical to `appendToTypedFile`'s.
+ *
+ * The whole read-find-write critical section runs inside `withBlockLock`, so
+ * concurrent batches against the same file serialise. When `appended === 0`
+ * nothing is written (the file is left byte-identical). The first write
+ * against an absent file works: `withBlockLock` skips locking when the file is
+ * absent (no contention possible), and the absent file is treated as an empty
+ * array for the flat-array shape — only that shape is creatable from absence;
+ * the object-with-array-field shape requires an existing envelope and so still
+ * throws via `readTypedFile`.
+ *
+ * `ctx` is threaded to `writeTypedFile` for attestation parity; per the
+ * top-level-array stamping semantics documented above, flat-array shapes with
+ * no declared envelope author fields treat it as a structural no-op.
+ */
+export function appendManyToTypedFileIfAbsent(
+	filePath: string,
+	schemaPath: string | null,
+	arrayPath: string | null,
+	items: unknown[],
+	matchKey: (item: unknown) => string,
+	ctx?: DispatchContext,
+	errorLabel?: string,
+): { appended: number; skipped: number } {
+	const label = errorLabel ?? filePath;
+	return withBlockLock(filePath, () => {
+		// Absent file is the empty-array starting point for the flat-array shape
+		// (enables first-write file creation); the object-with-array-field shape
+		// requires an existing envelope, so it reads through and throws below.
+		const data = arrayPath === null && !fs.existsSync(filePath) ? [] : readTypedFile(filePath, label);
+
+		if (arrayPath === null) {
+			// Flat top-level array shape: file content IS the array.
+			if (!Array.isArray(data)) {
+				throw new Error(`${label}: expected top-level array, got ${typeof data}`);
+			}
+			const arr = [...data];
+			const seen = new Set<string>(arr.map((existing) => matchKey(existing)));
+			let appended = 0;
+			let skipped = 0;
+			for (const candidate of items) {
+				const key = matchKey(candidate);
+				if (seen.has(key)) {
+					skipped++;
+					continue;
+				}
+				seen.add(key);
+				arr.push(candidate);
+				appended++;
+			}
+			if (appended > 0) {
+				writeTypedFile(filePath, schemaPath, arr, ctx, label);
+			}
+			return { appended, skipped };
+		}
+
+		// Object-with-array-field shape (the .project/ block convention).
+		if (!data || typeof data !== "object" || Array.isArray(data)) {
+			throw new Error(`${label}: expected object with array field '${arrayPath}'`);
+		}
+		const record = data as Record<string, unknown>;
+		if (!(arrayPath in record)) {
+			throw new Error(`${label} has no key '${arrayPath}'`);
+		}
+		if (!Array.isArray(record[arrayPath])) {
+			throw new Error(`${label} key '${arrayPath}' is not an array`);
+		}
+		const arr = [...(record[arrayPath] as unknown[])];
+		const seen = new Set<string>(arr.map((existing) => matchKey(existing)));
+		let appended = 0;
+		let skipped = 0;
+		for (const candidate of items) {
+			const key = matchKey(candidate);
+			if (seen.has(key)) {
+				skipped++;
+				continue;
+			}
+			seen.add(key);
+			arr.push(candidate);
+			appended++;
+		}
+		if (appended > 0) {
+			record[arrayPath] = arr;
+			writeTypedFile(filePath, schemaPath, record, ctx, label);
+		}
+		return { appended, skipped };
+	});
+}
+
 // ── Internal helpers shared by the typed-file find-or-merge primitives ─────
 
 /**

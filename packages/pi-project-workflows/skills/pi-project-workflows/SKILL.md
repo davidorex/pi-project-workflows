@@ -18,7 +18,7 @@ pi install npm:@davidorex/pi-project-workflows
 <extension name="@davidorex/pi-context">
 Schema-driven project state management for Pi
 
-**Tools:** `append-block-item`, `update-block-item`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `project-status`, `project-validate`, `read-config`, `context-current-state`, `rename-canonical-id`, `read-schema`, `project-init`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `complete-task`, `project-validate-relations`, `project-edges-for-lens`, `project-walk-descendants`, `walk-ancestors`, `find-references`, `gather-execution-context`, `project-roadmap-load`, `project-roadmap-render`, `project-roadmap-validate`, `project-roadmap-list`
+**Tools:** `append-block-item`, `update-block-item`, `append-relation`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `project-status`, `project-validate`, `read-config`, `context-current-state`, `rename-canonical-id`, `read-schema`, `project-init`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `complete-task`, `project-validate-relations`, `project-edges-for-lens`, `project-walk-descendants`, `walk-ancestors`, `find-references`, `gather-execution-context`, `project-roadmap-load`, `project-roadmap-render`, `project-roadmap-validate`, `project-roadmap-list`
 **Commands:** `/project`
 </extension>
 

@@ -35,7 +35,14 @@ import {
 	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
-import { type ConfigBlock, getProjectContext, loadConfig, projectRoot } from "./project-context.js";
+import {
+	appendRelation,
+	type ConfigBlock,
+	type Edge,
+	getProjectContext,
+	loadConfig,
+	projectRoot,
+} from "./project-context.js";
 import {
 	BootstrapNotFoundError,
 	projectDir,
@@ -526,6 +533,50 @@ const extension = (pi: ExtensionAPI) => {
 						text: `Updated item (${matchDesc}) in ${params.block}.${params.arrayKey}: ${Object.keys(params.updates).join(", ")}`,
 					},
 				],
+			};
+		},
+	});
+
+	// ── Tool: append-relation ─────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "append-relation",
+		label: "Append Relation",
+		description:
+			"Append a closure-table relation (edge: parent, child, relation_type, optional ordinal) to relations.json. " +
+			"Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference " +
+			"integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run project-validate " +
+			"after. Creates relations.json if absent.",
+		promptSnippet: "Create a relation/edge between two items (parent→child under a relation_type)",
+		parameters: Type.Object({
+			parent: Type.String({ description: "Canonical id (or lens bin name) of the parent endpoint" }),
+			child: Type.String({ description: "Canonical id of the child endpoint" }),
+			relation_type: Type.String({
+				description: "Registered relation_type canonical_id / hierarchy edge type / lens id",
+			}),
+			ordinal: Type.Optional(Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type)" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { parent: string; child: string; relation_type: string; ordinal?: number },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const edge: Edge = {
+				parent: params.parent,
+				child: params.child,
+				relation_type: params.relation_type,
+				...(params.ordinal !== undefined ? { ordinal: params.ordinal } : {}),
+			};
+			const { appended } = appendRelation(ctx.cwd, edge);
+			const ordinalNote = params.ordinal !== undefined ? ` (ordinal ${params.ordinal})` : "";
+			const text = appended
+				? `Appended relation ${edge.parent} -[${edge.relation_type}]-> ${edge.child}${ordinalNote}`
+				: `Relation ${edge.parent} -[${edge.relation_type}]-> ${edge.child} already exists — no-op`;
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
 			};
 		},
 	});

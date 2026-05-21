@@ -34,6 +34,19 @@ Update fields on an item in a project block array. Finds by predicate field matc
 | `updates` | object | yes | Fields to update (e.g., { status: 'resolved' }) |
 </tool>
 
+<tool name="append-relation">
+Append a closure-table relation (edge: parent, child, relation_type, optional ordinal) to relations.json. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run project-validate after. Creates relations.json if absent.
+
+*Create a relation/edge between two items (parent→child under a relation_type)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `parent` | string | yes | Canonical id (or lens bin name) of the parent endpoint |
+| `child` | string | yes | Canonical id of the child endpoint |
+| `relation_type` | string | yes | Registered relation_type canonical_id / hierarchy edge type / lens id |
+| `ordinal` | integer | no | Optional sibling-ordering within (parent, relation_type) |
+</tool>
+
 <tool name="append-block-nested-item">
 Append an item to a nested array on a parent-array item in a project block. Schema validation is automatic.
 

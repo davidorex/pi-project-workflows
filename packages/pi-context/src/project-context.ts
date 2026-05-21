@@ -45,6 +45,44 @@ export interface ConfigBlock {
 	installed_blocks?: string[];
 }
 
+/**
+ * The eleven config registries `amendConfigEntry` can target. Each name maps to
+ * a top-level `ConfigBlock` property; the scalars `schema_version` / `root` are
+ * intentionally NOT addressable (they are not registries — mutate them via a
+ * whole-config write). The set is kept in sync with `ConfigBlock` by hand.
+ */
+export type AmendRegistry =
+	| "block_kinds"
+	| "relation_types"
+	| "lenses"
+	| "layers"
+	| "invariants"
+	| "status_buckets"
+	| "display_strings"
+	| "naming"
+	| "installed_schemas"
+	| "installed_blocks"
+	| "hierarchy";
+
+/** The scoped amend verbs. `add` requires the key absent; `replace` / `remove`
+ * require it present (OP-CORRECTNESS, decidable from the loaded config alone). */
+export type AmendOperation = "add" | "replace" | "remove";
+
+/**
+ * Outcome of one `amendConfigEntry` call. `modified` is false only for a
+ * structural no-op (none occur today — every op either mutates or throws — but
+ * the field is reserved for future idempotent-replace semantics). `previousValue`
+ * carries the displaced / removed entry for `replace` / `remove` (undefined for
+ * `add`).
+ */
+export interface AmendResult {
+	modified: boolean;
+	operation: AmendOperation;
+	registry: AmendRegistry;
+	key: string;
+	previousValue?: unknown;
+}
+
 export interface LayerDecl {
 	id: string;
 	display_name: string;
@@ -352,6 +390,264 @@ export function appendRelation(cwd: string, edge: Edge, ctx?: DispatchContext): 
  */
 export function writeConfig(cwd: string, config: ConfigBlock, ctx?: DispatchContext): void {
 	writeTypedFile(configPath(cwd), bundledSchemaPath("config"), config, ctx, "config.json");
+}
+
+// ── Scoped config amend (FGAP-076 / DEC-0019/0020 A2) ─────────────────────────
+
+/**
+ * Storage shape of a config registry, dictating how `amendConfigEntry` locates,
+ * guards, and mutates an entry:
+ *  - `keyed-array`: array of objects keyed by an id field (`idField`).
+ *  - `map`: object map (key → value); the entry IS the value.
+ *  - `string-array`: array of strings; the key IS the value (no separate entry).
+ *  - `value-array`: array of objects with no single id field; identity is the
+ *    canonical join of structural fields (only `hierarchy` today).
+ */
+type RegistryKind = "keyed-array" | "map" | "string-array" | "value-array";
+
+interface RegistryDescriptor {
+	kind: RegistryKind;
+	/** id field for `keyed-array` registries; absent for the other kinds. */
+	idField?: string;
+}
+
+/**
+ * Per-registry storage descriptors. Drives the kind-dispatch in
+ * `amendConfigEntry`; the keys enumerate every addressable `AmendRegistry`.
+ */
+const REGISTRY_DESCRIPTORS: Record<AmendRegistry, RegistryDescriptor> = {
+	block_kinds: { kind: "keyed-array", idField: "canonical_id" },
+	relation_types: { kind: "keyed-array", idField: "canonical_id" },
+	lenses: { kind: "keyed-array", idField: "id" },
+	layers: { kind: "keyed-array", idField: "id" },
+	invariants: { kind: "keyed-array", idField: "id" },
+	status_buckets: { kind: "map" },
+	display_strings: { kind: "map" },
+	naming: { kind: "map" },
+	installed_schemas: { kind: "string-array" },
+	installed_blocks: { kind: "string-array" },
+	hierarchy: { kind: "value-array" },
+};
+
+/** Canonical identity join for a hierarchy triple (the `value-array` kind). */
+function hierarchyKey(h: { parent_block: string; child_block: string; relation_type: string }): string {
+	return `${h.parent_block} ${h.child_block} ${h.relation_type}`;
+}
+
+/**
+ * Scoped add / replace / remove of ONE entry in ONE config registry.
+ *
+ * Two guard tiers, both decidable here:
+ *  1. OP-CORRECTNESS (local, in-config invariants — the analog of
+ *     rename-canonical-id's existence/collision guards): `add` requires the key
+ *     ABSENT (collision → throw); `replace` / `remove` require it PRESENT
+ *     (missing → throw). Every such throw fires BEFORE any write, so a guard
+ *     failure leaves config.json byte-untouched.
+ *  2. SHAPE: automatic + free via `writeConfig`'s whole-config AJV validation —
+ *     a malformed entry (e.g. a relation_type missing its required `category`,
+ *     or a status_bucket value outside the enum) fails the write and throws
+ *     ValidationError, again leaving the file unchanged (atomic tmp+rename).
+ *
+ * Cross-registry referential integrity (removing a relation_type / lens / layer
+ * / block_kind that is still referenced by an edge or another registry) is
+ * DEFERRED to `validateProject` by design — the same layer-graph constraint that
+ * defers `appendRelation`'s integrity checks (this module imports only block-api;
+ * referential checks need buildIdIndex from project-sdk, which would invert the
+ * dependency). `remove` therefore emits NO write-time warning.
+ *
+ * Mutation works on a deep clone of the loaded config (the
+ * load → JSON.parse(JSON.stringify(config)) → mutate → writeConfig precedent
+ * from rename-canonical-id); the original is never touched until the single
+ * `writeConfig` at the end (skipped under `dryRun`).
+ *
+ * `ctx` is forwarded to `writeConfig` for attestation parity with the rest of
+ * the write surface; the config schema declares no envelope author fields, so
+ * stamping is a structural no-op today (consistent with `writeConfig`).
+ *
+ * @param registry  one of the eleven `AmendRegistry` names (validated; scalars
+ *                  `schema_version` / `root` are rejected as non-registries).
+ * @param operation `add` | `replace` | `remove` (validated).
+ * @param key       the entry key — id for keyed-array, map key for map, the
+ *                  string value for string-array, a JSON-encoded triple for the
+ *                  hierarchy value-array.
+ * @param entry     the entry payload: object for keyed-array / value-array, the
+ *                  value for map; required for `add` / `replace`, omitted for
+ *                  `remove`. For string-array, when provided it must equal `key`.
+ * @throws Error on unknown registry / operation, missing entry for add/replace,
+ *         absent config, OP-CORRECTNESS violation, or key/entry divergence.
+ * @throws ValidationError (from `writeConfig`) on a SHAPE violation.
+ */
+export function amendConfigEntry(
+	cwd: string,
+	registry: string,
+	operation: string,
+	key: string,
+	entry?: unknown,
+	ctx?: DispatchContext,
+	opts?: { dryRun?: boolean },
+): AmendResult {
+	// (1) Discriminator validation.
+	const descriptor = REGISTRY_DESCRIPTORS[registry as AmendRegistry] as RegistryDescriptor | undefined;
+	if (!descriptor) {
+		const addressable = Object.keys(REGISTRY_DESCRIPTORS).join(" | ");
+		throw new Error(
+			`amendConfigEntry: unknown registry '${registry}' — addressable registries: ${addressable} (scalars schema_version / root are not registries)`,
+		);
+	}
+	if (operation !== "add" && operation !== "replace" && operation !== "remove") {
+		throw new Error(`amendConfigEntry: unknown operation '${operation}' — expected add | replace | remove`);
+	}
+	const op = operation as AmendOperation;
+	const reg = registry as AmendRegistry;
+	// string-array registries (installed_schemas/installed_blocks) carry the value
+	// AS the key, so add needs no separate entry payload; every other kind does.
+	if ((op === "add" || op === "replace") && entry === undefined && descriptor.kind !== "string-array") {
+		throw new Error(`amendConfigEntry: operation '${op}' requires an entry payload`);
+	}
+
+	// (2) Load + (3) deep clone (mutate the clone, write once at the end).
+	const config = loadConfig(cwd);
+	if (!config) {
+		throw new Error("amendConfigEntry: no config.json");
+	}
+	const nextConfig = JSON.parse(JSON.stringify(config)) as ConfigBlock;
+	// `nc` is the untyped view used for dynamic-registry indexing below.
+	const nc = nextConfig as unknown as Record<string, unknown>;
+
+	let modified = false;
+	let previousValue: unknown;
+
+	// (4) Locate + OP-CORRECTNESS-guard + mutate the clone, per descriptor kind.
+	if (descriptor.kind === "keyed-array") {
+		const idField = descriptor.idField as string;
+		const arr = (nc[reg] as Array<Record<string, unknown>> | undefined) ?? [];
+		const idx = arr.findIndex((e) => e[idField] === key);
+		const present = idx !== -1;
+		if (op === "add" || op === "replace") {
+			const obj = entry as Record<string, unknown>;
+			if (!obj || typeof obj !== "object" || obj[idField] !== key) {
+				throw new Error(
+					`amendConfigEntry: entry.${idField} (${
+						obj && typeof obj === "object" ? String(obj[idField]) : "missing"
+					}) must equal key (${key}) for registry '${reg}'`,
+				);
+			}
+		}
+		if (op === "add") {
+			if (present) throw new Error(`amendConfigEntry: add collision — ${reg}[${idField}=${key}] already exists`);
+			if (!Array.isArray(nc[reg])) nc[reg] = [];
+			(nc[reg] as Array<Record<string, unknown>>).push(entry as Record<string, unknown>);
+			modified = true;
+		} else if (op === "replace") {
+			if (!present) throw new Error(`amendConfigEntry: replace target missing — ${reg}[${idField}=${key}] not found`);
+			previousValue = arr[idx];
+			arr.splice(idx, 1, entry as Record<string, unknown>);
+			modified = true;
+		} else {
+			if (!present) throw new Error(`amendConfigEntry: remove target missing — ${reg}[${idField}=${key}] not found`);
+			previousValue = arr[idx];
+			arr.splice(idx, 1);
+			modified = true;
+		}
+	} else if (descriptor.kind === "map") {
+		const m = (nc[reg] as Record<string, unknown> | undefined) ?? {};
+		const present = Object.hasOwn(m, key);
+		if (op === "add" || op === "replace") {
+			if (op === "add" && present) throw new Error(`amendConfigEntry: add collision — ${reg}[${key}] already exists`);
+			if (op === "replace" && !present) {
+				throw new Error(`amendConfigEntry: replace target missing — ${reg}[${key}] not found`);
+			}
+			previousValue = present ? m[key] : undefined;
+			if (!nc[reg]) nc[reg] = {};
+			(nc[reg] as Record<string, unknown>)[key] = entry;
+			modified = true;
+		} else {
+			if (!present) throw new Error(`amendConfigEntry: remove target missing — ${reg}[${key}] not found`);
+			previousValue = m[key];
+			delete (nc[reg] as Record<string, unknown>)[key];
+			modified = true;
+		}
+	} else if (descriptor.kind === "string-array") {
+		const arr = (nc[reg] as string[] | undefined) ?? [];
+		if (entry !== undefined && entry !== key) {
+			throw new Error(`amendConfigEntry: entry (${String(entry)}) must equal key (${key}) for string-array '${reg}'`);
+		}
+		const present = arr.includes(key);
+		if (op === "add") {
+			if (present) throw new Error(`amendConfigEntry: add collision — ${reg} already contains '${key}'`);
+			if (!Array.isArray(nc[reg])) nc[reg] = [];
+			(nc[reg] as string[]).push(key);
+			modified = true;
+		} else if (op === "replace") {
+			throw new Error(
+				`amendConfigEntry: replace is meaningless for string-array '${reg}' (value IS the key) — use remove + add`,
+			);
+		} else {
+			if (!present) throw new Error(`amendConfigEntry: remove target missing — ${reg} does not contain '${key}'`);
+			previousValue = key;
+			nc[reg] = arr.filter((v) => v !== key);
+			modified = true;
+		}
+	} else {
+		// value-array (hierarchy): identity is the canonical (parent,child,relation_type) join.
+		let target: { parent_block: string; child_block: string; relation_type: string };
+		try {
+			target = JSON.parse(key) as { parent_block: string; child_block: string; relation_type: string };
+		} catch (err) {
+			throw new Error(
+				`amendConfigEntry: key for value-array '${reg}' must be a JSON {parent_block, child_block, relation_type}: ${
+					err instanceof Error ? err.message : String(err)
+				}`,
+			);
+		}
+		const arr =
+			(nc[reg] as Array<{ parent_block: string; child_block: string; relation_type: string }> | undefined) ?? [];
+		if (op === "add" || op === "replace") {
+			const obj = entry as { parent_block: string; child_block: string; relation_type: string };
+			if (!obj || typeof obj !== "object" || hierarchyKey(obj) !== hierarchyKey(target)) {
+				throw new Error(`amendConfigEntry: entry must hk-match key (${key}) for value-array '${reg}'`);
+			}
+		}
+		const idx = arr.findIndex((e) => hierarchyKey(e) === hierarchyKey(target));
+		const present = idx !== -1;
+		if (op === "add") {
+			if (present) throw new Error(`amendConfigEntry: add collision — ${reg} already contains ${key}`);
+			if (!Array.isArray(nc[reg])) nc[reg] = [];
+			(nc[reg] as Array<unknown>).push(entry);
+			modified = true;
+		} else if (op === "replace") {
+			if (!present) throw new Error(`amendConfigEntry: replace target missing — ${reg} has no ${key}`);
+			previousValue = arr[idx];
+			arr.splice(idx, 1, entry as { parent_block: string; child_block: string; relation_type: string });
+			modified = true;
+		} else {
+			if (!present) throw new Error(`amendConfigEntry: remove target missing — ${reg} has no ${key}`);
+			previousValue = arr[idx];
+			arr.splice(idx, 1);
+			modified = true;
+		}
+	}
+
+	// (5) SHAPE validation + single config write. Under dryRun we still validate
+	// the would-be-written config against the SAME schema writeConfig uses (so a
+	// dry-run surfaces shape errors), but write nothing — keeping ONE validation
+	// path (no parallel re-implementation of the op for dry-run previews).
+	if (modified) {
+		if (opts?.dryRun) {
+			validateFromFile(bundledSchemaPath("config"), nextConfig, "config.json (dry-run)");
+		} else {
+			writeConfig(cwd, nextConfig, ctx);
+		}
+	}
+
+	// (6) Outcome.
+	return {
+		modified,
+		operation: op,
+		registry: reg,
+		key,
+		...(previousValue !== undefined ? { previousValue } : {}),
+	};
 }
 
 // ── ProjectContext mtime cache ───────────────────────────────────────────────

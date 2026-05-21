@@ -36,6 +36,7 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import {
+	amendConfigEntry,
 	appendRelation,
 	type ConfigBlock,
 	type Edge,
@@ -1012,6 +1013,69 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(report, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: amend-config ────────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "amend-config",
+		label: "Amend Config",
+		description:
+			"Scoped add / replace / remove of ONE entry in ONE config.json registry (block_kinds, relation_types, lenses, " +
+			"layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, hierarchy). " +
+			"The whole resulting config is AJV-validated (SHAPE) and op-correctness is enforced (add ⇒ key absent, " +
+			"replace/remove ⇒ key present). Cross-registry referential integrity (removing a still-referenced " +
+			"relation_type / lens / layer / block_kind) is NOT checked here — run project-validate after. dryRun previews " +
+			"without writing.",
+		promptSnippet:
+			"Add/replace/remove one entry in a config.json registry (vocabulary, lenses, invariants, status_buckets)",
+		parameters: Type.Object({
+			registry: Type.String({
+				description:
+					"One of: block_kinds | relation_types | lenses | layers | invariants | status_buckets | display_strings | naming | installed_schemas | installed_blocks | hierarchy",
+			}),
+			operation: Type.String({ description: "add | replace | remove" }),
+			key: Type.String({
+				description:
+					"Entry key: id for keyed-array (block_kinds/relation_types/lenses/layers/invariants), map key for " +
+					"map (status_buckets/display_strings/naming), the string value for string-array " +
+					"(installed_schemas/installed_blocks), or a JSON {parent_block, child_block, relation_type} for hierarchy",
+			}),
+			entry: Type.Optional(
+				Type.Unknown({
+					description:
+						"Entry payload: object for keyed-array/hierarchy, string for map value; omit for remove. For keyed-array its id field must equal key; for string-array (when given) it must equal key",
+				}),
+			),
+			dryRun: Type.Optional(Type.Boolean({ description: "Preview the op without writing config.json" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { registry: string; operation: string; key: string; entry?: unknown; dryRun?: boolean },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			// Type.Unknown() params may arrive as JSON strings. Parse if possible; on
+			// failure KEEP the raw string (valid for map-value registries whose value
+			// is a bare string, e.g. naming/display_strings/status_buckets).
+			let entry = params.entry;
+			if (typeof entry === "string") {
+				try {
+					entry = JSON.parse(entry);
+				} catch {
+					/* keep raw string — valid for map-value registries */
+				}
+			}
+			const result = amendConfigEntry(ctx.cwd, params.registry, params.operation, params.key, entry, undefined, {
+				dryRun: params.dryRun,
+			});
+			const verb = result.modified ? (params.dryRun ? `would ${result.operation}` : `${result.operation}d`) : "no-op";
+			return {
+				details: undefined,
+				content: [{ type: "text", text: `amend-config: ${verb} ${result.registry}[${result.key}]` }],
 			};
 		},
 	});

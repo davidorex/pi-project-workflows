@@ -174,6 +174,20 @@ Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to 
 | `dryRun` | boolean | no | Compute would-change counts without writing |
 </tool>
 
+<tool name="amend-config">
+Scoped add / replace / remove of ONE entry in ONE config.json registry (block_kinds, relation_types, lenses, layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, hierarchy). The whole resulting config is AJV-validated (SHAPE) and op-correctness is enforced (add ⇒ key absent, replace/remove ⇒ key present). Cross-registry referential integrity (removing a still-referenced relation_type / lens / layer / block_kind) is NOT checked here — run project-validate after. dryRun previews without writing.
+
+*Add/replace/remove one entry in a config.json registry (vocabulary, lenses, invariants, status_buckets)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `registry` | string | yes | One of: block_kinds | relation_types | lenses | layers | invariants | status_buckets | display_strings | naming | installed_schemas | installed_blocks | hierarchy |
+| `operation` | string | yes | add | replace | remove |
+| `key` | string | yes | Entry key: id for keyed-array (block_kinds/relation_types/lenses/layers/invariants), map key for map (status_buckets/display_strings/naming), the string value for string-array (installed_schemas/installed_blocks), or a JSON {parent_block, child_block, relation_type} for hierarchy |
+| `entry` | unknown | no | Entry payload: object for keyed-array/hierarchy, string for map value; omit for remove. For keyed-array its id field must equal key; for string-array (when given) it must equal key |
+| `dryRun` | boolean | no | Preview the op without writing config.json |
+</tool>
+
 <tool name="read-schema">
 Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent.
 

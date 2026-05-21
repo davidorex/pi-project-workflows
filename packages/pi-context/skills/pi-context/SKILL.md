@@ -161,6 +161,16 @@ List every tool bound into the current Pi session — name, description, paramet
 
 </tool>
 
+<tool name="read-samples-catalog">
+Enumerate installable sample block kinds (DEC-0037 packaged view): per kind — title, description, item shape, applicable relation_types (as source/target), invariants, lenses — plus top-level relation_type/lens/invariant/layer/status_bucket registries. Package-intrinsic: reads the extension's bundled samples catalog, independent of any project. Optional `kind` returns one packaged kind.
+
+*Discover installable sample block kinds — title, shape, relation_types, invariants, lenses*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `kind` | string | no | Filter to one block_kind canonical_id (e.g. 'tasks') |
+</tool>
+
 <tool name="context-current-state">
 Derive 'where are we + what's next' purely from .project substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.
 

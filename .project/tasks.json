@@ -763,7 +763,7 @@
     },
     {
       "description": "FGAP-095 Phase 1: deriveBootstrapState — the pure, surface-agnostic 4-state bootstrap deriver (no-pointer | no-config | not-installed | ready) feeding the /context start conductor, the dispatch READY-gate, and the startup-slot hint (DEC-0042). Dual-surface per DEC-0019/0020: library + Pi tool + CLI. Factors a shared materialization detector out of installProject's copy loops so deriver and installer cannot drift. State-derived, nothing stored (DEC-0040). The deriver must NOT throw pre-bootstrap (it is the LLM's unset-substrate detection read).",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/project-context.ts",
         "packages/pi-context/src/project-sdk.ts",
@@ -784,7 +784,8 @@
       ],
       "depends_on": [],
       "notes": "P1 of FGAP-095 (governed by DEC-0042). Surface-agnostic (library+tool+CLI, no command surface) — defers the /project-vs-/context cutover-sequencing question to P2. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md",
-      "id": "TASK-059"
+      "id": "TASK-059",
+      "verification": "VER-031"
     }
   ]
 }

@@ -1774,7 +1774,7 @@
     },
     {
       "title": "Framework-shaped schemas (config / relations / roadmap / bootstrap) authored in pi-context/registry/schemas/ but not installed in .project/schemas/",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L1",
@@ -1799,7 +1799,7 @@
       ],
       "impact": "TASK-025 sub-phases 5.1 (config.json) + 5.2 (relations.json) + 5.3 (roadmap.json) cannot author instances against AJV until schemas installed. Phase 5 sub-phase 5.1 implicitly requires this schema-install step. Current substrate canon cascades (block-api appendToBlock validates against schemas via resolver) silently treat absent schemas as 'no schema available' — falling back to no validation, which violates DEC-0013 + DEC-0017 invariants for the framework-shaped blocks.",
       "canonical_vocabulary": "schema-install, .project/schemas/ provisioning, registry-to-project cascade",
-      "proposed_resolution": "Install the 4 framework-shaped schemas to .project/schemas/ as part of Phase 5 prep (or as a discrete sub-step in TASK-025 / TASK-042). Pattern: cp packages/pi-context/registry/schemas/{config,relations,roadmap,bootstrap}.schema.json .project/schemas/. After install, authoring config.json + relations.json + roadmap.json via file-block-item.ts or canonical block-api routes will AJV-validate. Cross-decision with FGAP-051 (other registry-shipped schemas) for whether to install the supporting enum-shaped schemas (priority / severity / source / status / layer / plan / verification-method) — those are referenced via $ref from user-block schemas but don't require their own data instance.",
+      "proposed_resolution": "Install the 4 framework-shaped schemas to .project/schemas/ as part of Phase 5 prep (or as a discrete sub-step in TASK-025 / TASK-042). Pattern: cp packages/pi-context/registry/schemas/{config,relations,roadmap,bootstrap}.schema.json .project/schemas/. After install, authoring config.json + relations.json + roadmap.json via file-block-item.ts or canonical block-api routes will AJV-validate. Cross-decision with FGAP-051 (other registry-shipped schemas) for whether to install the supporting enum-shaped schemas (priority / severity / source / status / layer / plan / verification-method) — those are referenced via $ref from user-block schemas but don't require their own data instance. [CLOSED 2026-05-23 — DEC-0043 (1d5ee89) + commit 752e7e2: framework schemas (config/relations/roadmap/bootstrap) are bundled-validated, NOT installable; installed_schemas = block-kinds only. The install-the-framework-schemas premise is superseded by bundled validation (loadConfig/loadRelations use bundledSchemaPath). config + relations dropped from the conception installed_schemas.]",
       "related_features": [],
       "related_decisions": [
         "DEC-0013",

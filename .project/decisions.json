@@ -2033,6 +2033,54 @@
       "created_by": "human/davidryan@gmail.com",
       "enacted_by": "davidryan@gmail.com",
       "enacted_at": "2026-05-23"
+    },
+    {
+      "title": "/context start is the sole human bootstrap entry — bootstrap human-only; operational verbs twinned + READY-gated; init/accept-all/install dissolve into start (impossibilization-by-design)",
+      "status": "open",
+      "context": "Substrate bootstrap is today a user-sequenced 3-step DAG: /project init <dir> (pointer+dirs) -> /project accept-all (config from the conception) -> /project install (materialize declared assets). Each step consumes the prior's output, so wrong order has nothing to read and misfires — FGAP-093 (running install before accept-all emits an error that even misnames the remedy). DEC-0038 (enacted) set the onboarding MODEL — standing, incrementally-invokable registry-population surfaces; two modes accept-all|step-through; conducted by the harness-confined LLM; explicitly NOT a one-shot wizard; offer-don't-impose — but it did not fix the ENTRY SHAPE that lets a user run the steps out of order. Two bootstrap inputs are irreducibly human: the substrate dir name (DEC-0015 forbids a default) and accept-all vs step-through (DEC-0038 offer-don't-impose). DEC-0014: the in-pi LLM operates via tools, not slash commands. DEC-0019/0020: every substrate op is dual-surfaced (library + Pi tool + CLI). pi/pi-tui SDK research (analysis/2026-05-23-pi-tui-onboarding-banner-research.md) confirms an extension-owned startup display slot (session_start + ctx.ui.setWidget/setEditorText) exists, while pi's exact update-banner slot is not extension-addressable. The forcing question: what entry-point shape makes out-of-order UNREPRESENTABLE while honoring offer-don't-impose and the irreducibly-human choices.",
+      "decision": "Make /context start the single, always-safe, state-derived human entry point — the only bootstrap verb a user issues. It is impossibilization-by-design: there is no second user-sequenced step to misorder; the ordering lives inside start, derived from filesystem state (DEC-0040, nothing stored). (1) start is a STATE MACHINE that derives bootstrap state and falls through: NO_POINTER -> elicit dir name (suggest .context; never default — DEC-0015) then write pointer+dirs; NO_CONFIG -> elicit accept-all|step-through (DEC-0038 fork) then write config (accept-all=adoptConception; step-through=conversational curation, FGAP-066); NOT_INSTALLED -> materialize declared assets (idempotent); READY -> render the /context status view. Re-running start from any state resumes; it NEVER errors, even when already READY. (2) start does only what is mechanical for the user; it pauses solely for the two irreducibly-human CHOICES (dir name; adopt-mode). (3) start is HUMAN-ONLY: a slash command with NO tool twin — because both choices it gates on are human, the LLM cannot and must not create a substrate; in a fresh repo every LLM tool hard-throws and the LLM's correct behavior is to surface 'run /context start' to the human. (4) init / accept-all / install DISSOLVE into start as internal phases — their standalone command forms AND their tool forms are removed (the project-init and project-accept-all tools are dropped); the underlying library fns (initProject/adoptConception/installProject) remain as start's internals. (5) Every OTHER /context subcommand (status, view, validate, validate-relations, roadmap-*, plus the block CRUD tools) stays TWINNED (command for the human, tool for the LLM) and is uniformly READY-GATED at the dispatch layer: unmet precondition does not run the handler; it emits the one unified remedy 'run /context start'. The gate is state-based, not history-based (no 'did you run start' flag). (6) The unset-substrate remedy is unified to a single string 'run /context start', surfaced at the command dispatch gate (to the human, with editor prefill) AND carried in the tool hard-throw (BootstrapNotFoundError) so the LLM relays the correct human action rather than a raw error. (7) status owns steady-state READ; the standing registry surfaces own steady-state MUTATION; start's READY branch is a thin pass-through that renders status — not a second home. (8) The extension startup slot shows 'pi-context installed — run /context start' only while not-READY (session_start + ctx.ui.setWidget), then goes quiet. Extends DEC-0038 (does not supersede it); the conversational step-through remains FGAP-066.",
+      "consequences": [
+        "NEW: /context start human-only command — state-machine conductor; precondition-free; never errors.",
+        "REMOVED from the surface: standalone init/accept-all/install commands AND the project-init + project-accept-all tools (bootstrap is human-only, folded into start). Library fns initProject/adoptConception/installProject retained as start internals.",
+        "ALL other /context subcommands twinned (command+tool) and READY-gated at the dispatch layer; one unified redirect 'run /context start' on unmet precondition.",
+        "Unset-substrate remedy unified: BootstrapNotFoundError + command gate both name 'run /context start'; the tool throw carries the guidance so the LLM relays the human action.",
+        "SUBSUMES FGAP-093: the misdirecting install error cannot occur — install is not a user verb and there is no misorderable second command.",
+        "The in-pi LLM CANNOT bootstrap a substrate (intentional, not a gap): the two gating choices are human; the LLM surfaces 'run /context start'.",
+        "status remains the steady-state read home; start's READY branch renders status (single projection, no duplicate home).",
+        "Startup slot (session_start + ctx.ui.setWidget) shows the start hint only while not-READY; aimed at the human actor.",
+        "Realizes the not-yet-built half of DEC-0038; the conversational step-through branch is FGAP-066; spec'd as FGAP-095.",
+        "Assumes the /context command surface (FGAP-074 / DEC-0036 step-4 cutover) — buildable on /project first then renamed, or after cutover; sequencing is the user's call."
+      ],
+      "related_gaps": [
+        "FGAP-095",
+        "FGAP-066",
+        "FGAP-093",
+        "FGAP-074"
+      ],
+      "references": [
+        {
+          "label": "SDK research: startup slot mechanism",
+          "path": "analysis/2026-05-23-pi-tui-onboarding-banner-research.md"
+        },
+        {
+          "label": "current session_start startup-notice precedent",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "457-461"
+        },
+        {
+          "label": "current /project subcommand dispatch (to gate)",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "1953-2183"
+        },
+        {
+          "label": "bootstrap-phase library fns to internalize",
+          "path": "packages/pi-context/src/project-context.ts",
+          "lines": "419-445"
+        }
+      ],
+      "id": "DEC-0042",
+      "created_at": "2026-05-22T22:18:44.125Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

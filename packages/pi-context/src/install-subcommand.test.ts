@@ -3,8 +3,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { installProject } from "./index.js";
 import { writeBootstrapPointer } from "./project-dir.js";
+
+const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 
 let tmpRoot: string;
 
@@ -48,7 +51,7 @@ describe("installProject", () => {
 		assert.deepEqual(result.notFound, []);
 	});
 
-	it("installs declared schemas from the registry into .project/schemas/", () => {
+	it("installs declared schemas from the samples catalog into .project/schemas/", () => {
 		tmpRoot = makeProject(["tasks"], []);
 		const result = installProject(tmpRoot);
 		assert.deepEqual(result.installed, ["schemas/tasks.schema.json"]);
@@ -61,7 +64,7 @@ describe("installProject", () => {
 		);
 	});
 
-	it("installs declared starter blocks from the registry into .project/", () => {
+	it("installs declared starter blocks from the samples catalog into .project/", () => {
 		tmpRoot = makeProject([], ["tasks"]);
 		const result = installProject(tmpRoot);
 		assert.deepEqual(result.installed, ["tasks.json"]);
@@ -89,11 +92,11 @@ describe("installProject", () => {
 		assert.notEqual(
 			fs.readFileSync(dest, "utf-8"),
 			"{}",
-			"destination must be replaced with registry content on overwrite",
+			"destination must be replaced with samples-catalog content on overwrite",
 		);
 	});
 
-	it("records notFound when a declared schema is missing from the registry", () => {
+	it("records notFound when a declared schema is missing from the samples catalog", () => {
 		tmpRoot = makeProject(["definitely-not-a-real-schema-name"], []);
 		const result = installProject(tmpRoot);
 		assert.deepEqual(result.installed, []);
@@ -108,5 +111,26 @@ describe("installProject", () => {
 		assert.ok(result.installed.includes("schemas/decisions.schema.json"));
 		assert.ok(result.installed.includes("tasks.json"));
 		assert.ok(result.installed.includes("decisions.json"));
+	});
+
+	it("install copies schema content from samples", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installProject(tmpRoot);
+		const installed = fs.readFileSync(path.join(tmpRoot, ".project", "schemas", "tasks.schema.json"), "utf-8");
+		const source = fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8");
+		assert.equal(installed, source, "installed schema must be byte-equal to the samples-catalog source");
+	});
+
+	it("installs a samples-only kind (framework-gaps)", () => {
+		tmpRoot = makeProject(["framework-gaps"], []);
+		const result = installProject(tmpRoot);
+		assert.deepEqual(result.installed, ["schemas/framework-gaps.schema.json"]);
+	});
+
+	it("config and relations report notFound", () => {
+		tmpRoot = makeProject(["config", "relations"], []);
+		const result = installProject(tmpRoot);
+		assert.deepEqual(result.notFound, ["schemas/config.schema.json", "schemas/relations.schema.json"]);
+		assert.deepEqual(result.installed, []);
 	});
 });

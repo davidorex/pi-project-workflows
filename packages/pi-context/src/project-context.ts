@@ -394,6 +394,56 @@ export function writeConfig(cwd: string, config: ConfigBlock, ctx?: DispatchCont
 	writeTypedFile(configPath(cwd), bundledSchemaPath("config"), config, ctx, "config.json");
 }
 
+/**
+ * Result shape from `adoptConception`. `adopted` is false (no-op) when a config
+ * already exists; `schemaCount` / `blockCount` then report the EXISTING config's
+ * declared counts. `configPath` / `root` are relative-to-cwd display paths.
+ */
+export interface AdoptResult {
+	adopted: boolean;
+	configPath: string;
+	root: string;
+	schemaCount: number;
+	blockCount: number;
+}
+
+/**
+ * accept-all: adopt the package's canonical packaged conception
+ * (samples/conception.json) as this substrate's config.json (DEC-0037 / DEC-0038
+ * accept-all mode). Writes config ONLY (does not install assets — run
+ * installProject after). Idempotent: never clobbers an existing config
+ * (DEC-0011/0038 offer-don't-impose). The conception's hardcoded root is
+ * overridden to the ACTUAL substrate dir name. Validated via writeConfig
+ * (whole-config AJV).
+ */
+export function adoptConception(cwd: string): AdoptResult {
+	const contextDirAbs = resolveContextDir(cwd); // throws BootstrapNotFoundError if no pointer
+	const root = path.relative(cwd, contextDirAbs);
+	const cfgPath = configPath(cwd);
+	const existing = loadConfig(cwd);
+	if (existing) {
+		return {
+			adopted: false,
+			configPath: path.relative(cwd, cfgPath),
+			root,
+			schemaCount: (existing.installed_schemas ?? []).length,
+			blockCount: (existing.installed_blocks ?? []).length,
+		};
+	}
+	const here = path.dirname(fileURLToPath(import.meta.url));
+	const samplesRoot = path.resolve(here, "..", "samples");
+	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as ConfigBlock;
+	conception.root = root; // CRITICAL override — conception ships a hardcoded `.project` root
+	writeConfig(cwd, conception);
+	return {
+		adopted: true,
+		configPath: path.relative(cwd, cfgPath),
+		root,
+		schemaCount: (conception.installed_schemas ?? []).length,
+		blockCount: (conception.installed_blocks ?? []).length,
+	};
+}
+
 // ── Scoped config amend (FGAP-076 / DEC-0019/0020 A2) ─────────────────────────
 
 /**

@@ -36,6 +36,8 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import {
+	type AdoptResult,
+	adoptConception,
 	amendConfigEntry,
 	appendRelation,
 	type ConfigBlock,
@@ -243,9 +245,12 @@ ${blockInfo.join("\n\n")}
 }
 
 /**
- * Initialize .project/ directory with default schemas and empty block files.
- * Idempotent: skips files that already exist. Shared by the /project init
- * command handler and the project-init tool.
+ * Initialize the substrate dir: write the bootstrap pointer and scaffold the
+ * substrate + schemas directories ONLY. No schema/block assets are copied here
+ * (FGAP-067 / DEC-0011: init must not impose a catalog). Run accept-all to adopt
+ * a config + install to materialize the declared assets. Idempotent: skips
+ * directories that already exist. Shared by the /project init command handler
+ * and the project-init tool.
  */
 function initProject(cwd: string, contextDir: string): { created: string[]; skipped: string[] } {
 	// FIRST action — write the `.pi-context.json` bootstrap pointer carrying
@@ -254,57 +259,19 @@ function initProject(cwd: string, contextDir: string): { created: string[]; skip
 	// the freshly-written pointer rather than throwing BootstrapNotFoundError.
 	// writeBootstrapPointer is idempotent (atomic tmp+rename) so re-running
 	// initProject after a prior init does not corrupt the pointer.
-	if (!fs.existsSync(path.join(cwd, ".pi-context.json"))) {
-		writeBootstrapPointer(cwd, contextDir);
-	}
-
+	if (!fs.existsSync(path.join(cwd, ".pi-context.json"))) writeBootstrapPointer(cwd, contextDir);
 	const projectDirPath = projectDir(cwd);
 	const schemasDirPath = schemasDir(cwd);
-	// No phases/ subdirectory since DEC-0028: phases are an ordinary array-block
-	// living in phases.json, created on first append like every other block.
-
-	const defaultsDir = path.resolve(import.meta.dirname, "..", "defaults");
-	const defaultSchemasDir = path.join(defaultsDir, "schemas");
-	const defaultBlocksDir = path.join(defaultsDir, "blocks");
-
 	const created: string[] = [];
 	const skipped: string[] = [];
-
-	// Create directories
 	for (const dir of [projectDirPath, schemasDirPath]) {
 		if (!fs.existsSync(dir)) {
 			fs.mkdirSync(dir, { recursive: true });
 			created.push(`${path.relative(cwd, dir)}/`);
+		} else {
+			skipped.push(`${path.relative(cwd, dir)}/`);
 		}
 	}
-
-	// Copy default schemas — display strings keep the legacy `schemas/` literal
-	// (cosmetic; user-facing path display).
-	if (fs.existsSync(defaultSchemasDir)) {
-		for (const file of fs.readdirSync(defaultSchemasDir)) {
-			const dest = path.join(schemasDirPath, file);
-			if (fs.existsSync(dest)) {
-				skipped.push(`schemas/${file}`);
-			} else {
-				fs.copyFileSync(path.join(defaultSchemasDir, file), dest);
-				created.push(`schemas/${file}`);
-			}
-		}
-	}
-
-	// Create default block files
-	if (fs.existsSync(defaultBlocksDir)) {
-		for (const file of fs.readdirSync(defaultBlocksDir)) {
-			const dest = path.join(projectDirPath, file);
-			if (fs.existsSync(dest)) {
-				skipped.push(file);
-			} else {
-				fs.copyFileSync(path.join(defaultBlocksDir, file), dest);
-				created.push(file);
-			}
-		}
-	}
-
 	return { created, skipped };
 }
 
@@ -324,11 +291,12 @@ export interface InstallResult {
 /**
  * /project install opt-in mechanism (DEC-0011). Reads config.installed_schemas
  * and config.installed_blocks, copies declared assets from the package
- * registry/ catalog into the project's substrate root + schemas dir.
+ * samples catalog (samples/, keyed by conception.json's block_kinds) into the
+ * project's substrate root + schemas dir.
  *
  *   - Default behavior is skip-if-exists. With overwrite=true, replaces the
  *     destination file and reports as "updated" rather than "installed".
- *   - Sources missing from the registry are reported as "notFound".
+ *   - Sources missing from the samples catalog are reported as "notFound".
  *   - Empty install lists are not an error — the result is a clean no-op.
  */
 export function installProject(cwd: string, options: { overwrite?: boolean } = {}): InstallResult {
@@ -352,7 +320,6 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 		throw err;
 	}
 
-	const registryRoot = path.resolve(import.meta.dirname, "..", "registry");
 	// destRoot is resolver-aware via projectRoot(cwd) — it already cascades
 	// through resolveContextDir under the hood (project-context.ts:projectRoot
 	// fallback). SCHEMAS_DIR is composed as a bare segment off that
@@ -362,11 +329,27 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
 	if (!fs.existsSync(schemasRoot)) fs.mkdirSync(schemasRoot, { recursive: true });
 
-	const installedSchemas = (config as ConfigBlock).installed_schemas ?? [];
-	for (const name of installedSchemas) {
-		const sourceFile = path.join(registryRoot, "schemas", `${name}.schema.json`);
-		const destFile = path.join(schemasRoot, `${name}.schema.json`);
+	// lazy import.meta.dirname (inside fn — safe). Read the conception once for
+	// the canonical_id→paths map so install resolves sources by the same
+	// block_kind declarations the accept-all conception ships (DEC-0037/0038).
+	const samplesRoot = path.resolve(import.meta.dirname, "..", "samples");
+	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as {
+		block_kinds?: Array<{ canonical_id: string; schema_path: string; data_path: string }>;
+	};
+	const byId = new Map<string, { schema_path: string; data_path: string }>();
+	for (const bk of conception.block_kinds ?? []) {
+		byId.set(bk.canonical_id, { schema_path: bk.schema_path, data_path: bk.data_path });
+	}
+
+	for (const name of (config as ConfigBlock).installed_schemas ?? []) {
 		const relDest = `${SCHEMAS_DIR}/${name}.schema.json`;
+		const kind = byId.get(name);
+		if (!kind) {
+			result.notFound.push(relDest);
+			continue;
+		}
+		const sourceFile = path.join(samplesRoot, kind.schema_path);
+		const destFile = path.join(schemasRoot, `${name}.schema.json`);
 		if (!fs.existsSync(sourceFile)) {
 			result.notFound.push(relDest);
 			continue;
@@ -380,11 +363,15 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 		(destExists ? result.updated : result.installed).push(relDest);
 	}
 
-	const installedBlocks = (config as ConfigBlock).installed_blocks ?? [];
-	for (const name of installedBlocks) {
-		const sourceFile = path.join(registryRoot, "blocks", `${name}.json`);
-		const destFile = path.join(destRoot, `${name}.json`);
+	for (const name of (config as ConfigBlock).installed_blocks ?? []) {
 		const relDest = `${name}.json`;
+		const kind = byId.get(name);
+		if (!kind) {
+			result.notFound.push(relDest);
+			continue;
+		}
+		const sourceFile = path.join(samplesRoot, "blocks", kind.data_path);
+		const destFile = path.join(destRoot, `${name}.json`);
 		if (!fs.existsSync(sourceFile)) {
 			result.notFound.push(relDest);
 			continue;
@@ -402,8 +389,9 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 }
 
 /**
- * /project init — scaffold .project/ directory with default schemas and
- * empty block files. Idempotent: skips files that already exist.
+ * /project init — scaffold the substrate dir (bootstrap pointer + substrate +
+ * schemas directories only; no asset copying). Run accept-all + install to
+ * populate. Idempotent: skips directories that already exist.
  */
 function handleInit(args: string, ctx: ExtensionCommandContext): void {
 	const contextDir = args.trim().split(/\s+/)[0];
@@ -431,6 +419,34 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 	}
 
 	ctx.ui.notify(lines.join("\n"), "info");
+}
+
+/**
+ * /project accept-all — adopt the canonical packaged conception
+ * (samples/conception.json) as this substrate's config.json. Writes config only
+ * (no asset materialization — run /project install after). Idempotent: never
+ * overwrites an existing config. Requires the substrate to be initialized first
+ * (a bootstrap pointer must exist).
+ */
+function handleAcceptAll(_args: string, ctx: ExtensionCommandContext): void {
+	let r: AdoptResult;
+	try {
+		r = adoptConception(ctx.cwd);
+	} catch (err) {
+		if (err instanceof BootstrapNotFoundError) {
+			ctx.ui.notify("Run /project init <dir> first", "error");
+			return;
+		}
+		throw err;
+	}
+	if (!r.adopted) {
+		ctx.ui.notify("config.json already present — not overwritten.", "info");
+		return;
+	}
+	ctx.ui.notify(
+		`Adopted canonical config (root: ${r.root}, ${r.schemaCount} schemas / ${r.blockCount} blocks declared). Run /project install to materialize them.`,
+		"info",
+	);
 }
 
 // ── Extension factory ───────────────────────────────────────────────────────
@@ -1245,8 +1261,8 @@ const extension = (pi: ExtensionAPI) => {
 	pi.registerTool({
 		name: "project-init",
 		label: "Project Init",
-		description: "Initialize .project/ directory with default schemas and empty block files.",
-		promptSnippet: "Initialize .project/ directory with default schemas and blocks",
+		description: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate).",
+		promptSnippet: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)",
 		parameters: Type.Object({
 			contextDir: Type.String({
 				description: "Substrate dir name (e.g. .project). Required per DEC-0015 — no default.",
@@ -1263,6 +1279,41 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: project-accept-all ──────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "project-accept-all",
+		label: "Accept-All Conception",
+		description:
+			"Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Idempotent: never overwrites an existing config.",
+		promptSnippet: "Adopt the canonical conception as config (accept-all)",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			let result: AdoptResult;
+			try {
+				result = adoptConception(ctx.cwd);
+			} catch (err) {
+				if (err instanceof BootstrapNotFoundError) {
+					return {
+						details: undefined,
+						content: [{ type: "text", text: "substrate not initialized — run project-init first" }],
+					};
+				}
+				throw err;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result) }],
 			};
 		},
 	});
@@ -1763,11 +1814,11 @@ const extension = (pi: ExtensionAPI) => {
 
 	const PROJECT_SUBCOMMANDS: Record<string, SubcommandEntry> = {
 		init: {
-			description: "Initialize .project/ with schemas and default blocks",
+			description: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)",
 			handler: (args, ctx) => handleInit(args, ctx),
 		},
 		install: {
-			description: "Copy schemas and starter blocks declared in .project/config.json from the package registry",
+			description: "Copy schemas and starter blocks declared in .project/config.json from the package samples catalog",
 			handler: (args, ctx) => {
 				const overwrite = /(^|\s)--update(\s|$)/.test(args);
 				const result = installProject(ctx.cwd, { overwrite });
@@ -1788,7 +1839,7 @@ const extension = (pi: ExtensionAPI) => {
 					);
 				}
 				if (result.notFound.length > 0) {
-					lines.push(`Not found in registry (${result.notFound.length}): ${result.notFound.join(", ")}`);
+					lines.push(`Not found in samples catalog (${result.notFound.length}): ${result.notFound.join(", ")}`);
 				}
 				if (lines.length === 0) {
 					lines.push(
@@ -1798,6 +1849,10 @@ const extension = (pi: ExtensionAPI) => {
 				const level = result.notFound.length > 0 ? "warning" : "info";
 				ctx.ui.notify(lines.join("\n"), level);
 			},
+		},
+		"accept-all": {
+			description: "Adopt the canonical packaged conception as config.json (writes config only; run install after)",
+			handler: (args, ctx) => handleAcceptAll(args, ctx),
 		},
 		view: {
 			description: "Render a configured lens view (groupByLens projection) into the conversation",

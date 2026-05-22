@@ -22,7 +22,7 @@ The framework is outcome-agnostic — not a coding agent extension. Blocks can t
 |---------|-----|-------------|
 | [@davidorex/pi-context](packages/pi-context/) | `npm:@davidorex/pi-context` | Schema-driven project state — typed JSON blocks, write-time validation, generic CRUD tools, dynamically derived state. Add a schema, get a new block type with tooling. No code changes. |
 | [@davidorex/pi-jit-agents](packages/pi-jit-agents/) | `npm:@davidorex/pi-jit-agents` | Agent spec compilation and in-process dispatch runtime. Library package (not a Pi extension) that owns loading, compilation, and execution of `.agent.yaml` specs with phantom-tool structured output enforcement. Consumed by pi-workflows and pi-behavior-monitors. |
-| [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, 9 step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
+| [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, typed step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
 | [@davidorex/pi-behavior-monitors](packages/pi-behavior-monitors/) | `npm:@davidorex/pi-behavior-monitors` | Behavior monitors — autonomous watchdogs that classify agent activity against JSON pattern libraries, steer corrections, and write structured findings. |
 
 ## Quick Start
@@ -36,12 +36,13 @@ pi install npm:@davidorex/pi-context
 pi install npm:@davidorex/pi-workflows
 
 # Initialize project structure
-/project init     # writes the substrate skeleton + minimal .project/config.json (no schemas, no blocks)
-/project install  # reconciles .project/ against installed_schemas + installed_blocks declared in config.json
-/workflow init    # creates .workflows/ for run state
+/project init <dir>  # bootstrap pointer + substrate/schemas dirs only (no config, no schemas, no blocks)
+/project accept-all  # adopt the packaged conception (samples/conception.json) as config.json
+/project install     # reconciles the substrate against installed_schemas + installed_blocks in config.json
+/workflow init       # creates .workflows/ for run state
 ```
 
-Block kinds reach `.project/` only by declaring their names in `config.json`'s `installed_*` arrays and running `/project install` against the package-shipped `registry/`. The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
+Block kinds reach the substrate only by declaring their names in `config.json`'s `installed_*` arrays (via `/project accept-all` or by hand) and running `/project install`, which copies them from the package-shipped samples catalog (`samples/`). The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
 
 ## Directory Ownership
 

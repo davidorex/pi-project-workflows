@@ -80,7 +80,7 @@ Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion rel
 
 Each package lives in `packages/<name>/` with source in `src/` (or root for pi-behavior-monitors). Read the package's JSDoc / type definitions / `src/index.ts` re-exports for the current surface — do not rely on enumerated file lists here as they go stale.
 
-- **pi-context**: extension entry in `src/index.ts`; canonical surfaces in `block-api.ts` (writes), `schema-validator.ts` (AJV), `schema-write.ts` (schema-write surface), `schema-migrations.ts` (migration chain), `project-dir.ts` (`resolveContextDir` + path-builders; PROJECT_DIR/SCHEMAS_DIR @deprecated), `project-context.ts` (substrate SDK + closure-table primitives), `lens-view.ts` (lens projections + traversal wrappers), `project-sdk.ts` (state + discovery + validation), `roadmap-plan.ts` (PM lens), `lens-validator.ts` (register/dispatch), `execution-context.ts` (gather-execution-context — Phase 3 in flight). `schemas/` ships framework schemas; `registry/{schemas,blocks}/` ships user-installable defaults
+- **pi-context**: extension entry in `src/index.ts`; canonical surfaces in `block-api.ts` (writes), `schema-validator.ts` (AJV), `schema-write.ts` (schema-write surface), `schema-migrations.ts` (migration chain), `project-dir.ts` (`resolveContextDir` + path-builders; PROJECT_DIR/SCHEMAS_DIR @deprecated), `project-context.ts` (substrate SDK + closure-table primitives), `lens-view.ts` (lens projections + traversal wrappers), `project-sdk.ts` (state + discovery + validation), `roadmap-plan.ts` (PM lens), `lens-validator.ts` (register/dispatch), `execution-context.ts` (gather-execution-context — Phase 3 in flight). `schemas/` ships framework schemas; `samples/` (conception.json + schemas/ + blocks/) ships the packaged conception = the user-installable catalog (DEC-0037; legacy `registry/`+`defaults/` unshipped, on-disk fixtures only per FGAP-087)
 - **pi-jit-agents** (library, not extension): boundary surfaces per `docs/planning/jit-agents-spec.md` — `agent-spec.ts` (load), `compile.ts` (compile + contextBlocks injection), `jit-runtime.ts` (execute + `normalizeToolChoice` provider shape normalization at dispatch boundary), `introspect.ts` (contract projection). `schemas/verdict.schema.json` is the phantom-tool classification contract
 - **pi-workflows**: extension entry in `src/index.ts`; `workflow-sdk.ts` (queryable surface), `workflow-executor.ts` (orchestration), `workflow-spec.ts` (YAML + STEP_TYPES registry), `expression.ts` (`${{ }}` eval + filters), `dispatch.ts` (subprocess spawn), `dag.ts` (planner), `step-*.ts` (one per step type). `templates/shared/macros.md` carries per-block-kind Nunjucks rendering macros (FGAP-037 tracks pending macros)
 - **pi-behavior-monitors**: single-file extension `index.ts`; `agents/*.agent.yaml` (bundled classifiers); `examples/` (monitor specs + Nunjucks prompt templates per monitor)
@@ -133,13 +133,13 @@ Typed JSON files with schemas. Substrate writes via block-api primitives (valida
 - **Separate Bash invocations per operation** — chained heredoc + mutate fails on string-termination (observed 2026-05-13). One write per Bash call.
 - **Per-item dispatch:** each block-api write is one item; loops happen at the orchestrator level, not inside one tsx-eval invocation.
 
-**Install ceremony** (per `/context init` future Phase 6; currently `/project install` legacy):
-- `/project init` — directory scaffold + bootstrap `.pi-context.json` pointer
-- Edit `.project/config.json` to declare `installed_schemas[]` + `installed_blocks[]`
-- `/project install` — copies from `packages/pi-context/registry/{schemas,blocks}/`
-- `/project install --update` — overwrite-mode
+**Install ceremony** (per `/context init` future Phase 6; currently `/project` legacy). The canonical catalog is the packaged conception `packages/pi-context/samples/conception.json` (DEC-0037); legacy `registry/`+`defaults/` were dropped from the shipped `files[]` (retained on disk only as test fixtures, FGAP-087):
+- `/project init <dir>` — bootstrap `.pi-context.json` pointer + substrate/schemas dirs only (no config, no defaults; DEC-0011)
+- `/project accept-all` — adopt `samples/conception.json` as `config.json` (full vocabulary + `installed_*`, root-overridden, idempotent never-clobber); writes config only
+- `/project install` — copies declared `installed_schemas[]`/`installed_blocks[]` from the samples catalog (`samples/schemas/` + `samples/blocks/`); `--update` overwrites
+- Or hand-author `config.json`'s `installed_*` then `/project install`
 
-**Block kinds**: query `packages/pi-context/registry/{schemas,blocks}/` for the canonical set + descriptions. Each schema declares its array_key + required fields + ID pattern.
+**Block kinds**: query the samples catalog via the `read-samples-catalog` tool (or read `samples/conception.json` `block_kinds[]`) for the canonical set + descriptions. Each schema declares its array_key + required fields + ID pattern.
 
 **Closure-table relations** (DEC-0013): `.project/relations.json` carries edges `{ parent, child, relation_type, ordinal? }` for ALL inter-item relationships. Per-edge `relation_type` registered in `config.relation_types[]`. FK-as-field on item schemas is forbidden.
 

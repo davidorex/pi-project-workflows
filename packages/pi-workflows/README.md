@@ -132,9 +132,9 @@ Available filters: `length`, `keys`, `filter`, `json`, `upper`, `lower`, `trim`,
 
 | Directory | Contents |
 |-----------|----------|
-| `agents/` | 13 agent specs (`.agent.yaml`): investigator, decomposer, verifier, synthesizer, etc. |
-| `schemas/` | 11 output schemas (`.schema.json`): investigation-findings, execution-results, etc. |
-| `workflows/` | 10 workflow specs (`.workflow.yaml`): do-gap, create-phase, parallel-analysis, etc. |
+| `agents/` | agent specs (`.agent.yaml`): investigator, decomposer, verifier, synthesizer, … — `ls agents/` or `availableAgents(cwd)` for the current set |
+| `schemas/` | output schemas (`.schema.json`): investigation-findings, execution-results, … — `ls schemas/` for the current set |
+| `workflows/` | workflow specs (`.workflow.yaml`): do-gap, create-phase, parallel-analysis, … — `ls workflows/` or `availableWorkflows(cwd)` for the current set |
 | `templates/` | Nunjucks prompt templates organized by agent role |
 
 ## SDK (`src/workflow-sdk.ts`)
@@ -193,6 +193,6 @@ Runs `tsx --test src/*.test.ts`. 500+ tests covering step types, expressions, DA
 
 ## Development
 
-Part of the [`pi-project-workflows`](../../README.md) monorepo. All four packages (pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors) are versioned in lockstep at 0.25.0.
+Part of the [`pi-project-workflows`](../../README.md) monorepo. All four packages (pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors) are versioned in lockstep (current version in each `package.json`).
 
 `npm run build` compiles TypeScript to `dist/` via `tsc`. The package ships `dist/`, not `src/` — the `pi.extensions` entry point is `./dist/index.js`.

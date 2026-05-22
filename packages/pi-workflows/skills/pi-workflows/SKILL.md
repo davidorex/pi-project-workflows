@@ -274,7 +274,9 @@ Workflows are discovered from three locations (first match wins):
 | loop | `loop: { maxAttempts, steps }` | Repeat sub-steps until gate breaks or max reached |
 | parallel | `parallel: { a: ..., b: ... }` | Run named sub-steps concurrently |
 | pause | `pause: true` or `pause: "message"` | Pause execution, resumable later |
-| forEach | `forEach: "${{ expr }}"` | Iterate over an array, executing the step per element |
+| block | `block: { op: read\|write\|append\|update\|remove\|… }` | Validated in-process `.project` block I/O via the block API — no LLM, no subprocess |
+
+`forEach: "${{ expr }}"` (iterate the step per array element) and `as:` are step MODIFIERS, not step types — they combine with any type above.
 </step_types>
 
 <expression_syntax>

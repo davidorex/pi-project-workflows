@@ -17,55 +17,37 @@ pi install npm:@davidorex/pi-context
 /project install    # reconcile .project/ against installed_* lists in config.json
 ```
 
-`init` is intentionally minimal: it writes the substrate skeleton only — no schemas, no starter blocks. Block kinds reach `.project/` only by declaring their names in `config.json`'s `installed_schemas` / `installed_blocks` arrays and running `/project install` (opt-in install ceremony, idempotent, `--update` overwrites). The package-shipped `registry/blocks/` and `registry/schemas/` directories are the source.
+`init` is intentionally minimal: it writes the bootstrap pointer + substrate/schemas dirs only — no config, no schemas, no starter blocks (DEC-0011 ship-no-defaults). Adopt the packaged conception with `/project accept-all` (writes `config.json` from `samples/conception.json`), or hand-declare `config.json`'s `installed_schemas` / `installed_blocks`, then run `/project install` (opt-in install ceremony, idempotent, `--update` overwrites). The package-shipped samples catalog (`samples/blocks/` and `samples/schemas/`, per DEC-0037) is the source.
 
 ## How It Works
 
 Project data lives under the substrate root (default `.project/`, declared in `config.json`'s `root` field) as typed JSON block files. Each block has a corresponding JSON Schema that defines its shape. All writes — whether from tools, workflows, or agents — are validated against the schema before data hits disk. Invalid data is never persisted.
 
-After `/project init` the substrate skeleton is:
+After `/project init` the substrate skeleton is just the dirs (no config, no schemas, no blocks):
 
 ```
 .project/
-  schemas/                    — JSON Schema files define block types (empty until install)
-  phases/                     — phase specification files (empty until populated)
-  config.json                 — substrate bootstrap: root, naming, hierarchy, lenses, installed_*
+  schemas/                    — empty until accept-all + install
 ```
 
-After `/project install` (with declared entries) and any user authoring, the directory typically grows:
+After `/project accept-all` (writes `config.json` from the packaged conception) + `/project install` (with declared entries) and any user authoring, the directory typically grows:
 
 ```
 .project/
   config.json                 — substrate bootstrap (always at .project/, exempt from root redirection)
   relations.json              — closure-table edges (always at .project/, exempt from root redirection)
-  schemas/<name>.schema.json  — installed from registry/schemas/, plus any user-authored schemas
-  <name>.json                 — installed from registry/blocks/, plus any user-authored blocks
+  schemas/<name>.schema.json  — installed from samples/schemas/, plus any user-authored schemas
+  <name>.json                 — installed from samples/blocks/, plus any user-authored blocks
 ```
 
 The schema is the contract. When pi-workflows agents produce output that writes to project blocks, the schema enforces the shape. When `/project add-work` extracts items from conversation, the schema constrains what gets written. When `projectState()` derives block summaries, it reads the typed data the schemas guarantee.
 
-**Tools registered:**
-- `read-block` — read a single block as parsed JSON
-- `read-block-dir` — enumerate the parsed contents of all `.json` files in a `.project/` subdirectory
-- `write-block` — replace a whole block (schema validation automatic)
-- `append-block-item` — append an item to a top-level block array
-- `update-block-item` — update fields on a top-level item by predicate match
-- `append-block-nested-item` — append to a nested array inside a parent-array item
-- `update-block-nested-item` — update fields on a nested item inside a parent-array item
-- `remove-block-item` — remove top-level array items matching a predicate (idempotent — `{ removed: 0 }` on no-match)
-- `remove-block-nested-item` — remove nested array items matching a predicate (idempotent)
-- `resolve-item-by-id` — look up the block, array key, and item payload for a kind-prefixed ID
-- `project-status` — derived project state (snapshot of source metrics, test counts, block summaries, git state)
-- `project-validate` — cross-block referential integrity checks
-- `project-init` — write the substrate skeleton + minimal `config.json` bootstrap (no default schemas, no starter blocks)
-- `project-validate-relations` — validate closure-table edges in `relations.json` against config + per-block snapshots
-- `project-edges-for-lens` — return the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges)
-- `project-walk-descendants` — return the transitive descendant id list from a parent under a relation_type
-- `complete-task` — gated task completion that requires a passing verification entry
+**Tools registered:** the tool surface grows with the package — read the generated `skills/pi-context/SKILL.md` for the current set, or call the `list-tools` tool at runtime (in-pi) / `grep pi.registerTool packages/pi-context/src/index.ts` (source). Families: block CRUD (read/write/append/update/remove, top-level + nested), item-level read (`read-block-item`, `read-block-page`), query (`filter-block-items`, `resolve-item(s)-by-id`, `find-references`, `walk-ancestors`, `project-walk-descendants`), substrate write (`append-relation`, `amend-config`, `write-schema`, `rename-canonical-id`), discovery/introspection (`read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`), lifecycle (`project-init`, `project-accept-all`, `project-status`, `project-validate`, `project-validate-relations`, `complete-task`).
 
 **Commands registered:**
-- `/project init` — write the substrate skeleton + minimal `config.json` bootstrap
-- `/project install [--update]` — reconcile `.project/` against `installed_schemas` / `installed_blocks` in `config.json` by copying assets from the package registry (skip-if-exists by default; `--update` overwrites)
+- `/project init <dir>` — bootstrap pointer + substrate/schemas dirs only (no config, no defaults)
+- `/project accept-all` — adopt `samples/conception.json` as `config.json` (idempotent; never overwrites an existing config)
+- `/project install [--update]` — reconcile the substrate against `installed_schemas` / `installed_blocks` in `config.json` by copying assets from the samples catalog (skip-if-exists by default; `--update` overwrites)
 - `/project view <lensId>` — render a configured lens (groupByLens projection) into the conversation as markdown
 - `/project lens-curate <lensId>` — surface bin-assignment suggestions for uncategorized items as a follow-up turn; the LLM persists chosen edges via `append-block-item` against `relations.json`
 - `/project status` — derived project state (source metrics, test counts, block summaries, git state)
@@ -211,6 +193,6 @@ Runs `tsx --test src/*.test.ts`. Test files: `block-api.test.ts`, `block-tools.t
 
 ## Development
 
-Part of the [`pi-project-workflows`](../../README.md) monorepo. All four packages (pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors) plus the pi-project-workflows meta-package are versioned in lockstep at 0.25.0.
+Part of the [`pi-project-workflows`](../../README.md) monorepo. All four packages (pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors) plus the pi-project-workflows meta-package are versioned in lockstep (current version in each `package.json`).
 
 `npm run build` compiles TypeScript to `dist/` via `tsc`. The package ships `dist/`, not `src/` — the `pi.extensions` entry point is `./dist/index.js`.

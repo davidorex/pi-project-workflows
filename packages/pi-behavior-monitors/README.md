@@ -67,6 +67,6 @@ Create a `.monitor.json` file in `.pi/monitors/` conforming to `schemas/monitor.
 
 ## Development
 
-Part of the [`pi-project-workflows`](../../README.md) monorepo. All four packages (pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors) are versioned in lockstep at 0.25.0.
+Part of the [`pi-project-workflows`](../../README.md) monorepo. All four packages (pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors) are versioned in lockstep (current version in each `package.json`).
 
 `npm run build` compiles TypeScript to `dist/` via `tsc`. The package ships `dist/`, not `src/`. Tests use `vitest run` (`npm test`).

@@ -737,7 +737,7 @@
     },
     {
       "description": "Implement the FGAP-094 conception-root fix: ship no concrete substrate-dir default. Drop root from the packaged conception, make config.root an optional schema field (pointer is the substrate-dir SoT), stop the samples catalog surfacing a root, and correct the shipped default-'.project' doc claims. No runtime behavior change intended — adoptConception already overwrites root on every adopted config and projectRoot already falls back to resolveContextDir when root is absent.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/samples/conception.json",
         "packages/pi-context/schemas/config.schema.json",
@@ -758,7 +758,8 @@
       ],
       "depends_on": [],
       "notes": "Resolves FGAP-094. DEC-0041 (open) records the config.root-optional contract change. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md",
-      "id": "TASK-058"
+      "id": "TASK-058",
+      "verification": "VER-030"
     }
   ]
 }

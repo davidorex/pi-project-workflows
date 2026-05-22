@@ -68,6 +68,7 @@ Two derived substrate tools complement validation: `project-edges-for-lens` retu
 
 <block_item_reads>
 Item-level reads complement whole-block `read-block` (which is all-or-nothing and caps at the 50KB read limit): `read-block-item` returns one item from a named block by its id (block-scoped — null if absent; distinct from `resolve-item-by-id`, which searches every block by kind-prefixed id). `read-block-page` paginates a block too large to fetch whole — `{ items, total, hasMore }` where `total` is the full item count and pagination uses `offset`/`limit` (defaults 0/50).
+`join-blocks` — one-call cross-block join, EDGE mode (relations.json relation_type, leftEndpoint parent|child) or FIELD mode (shared field value), optional left pre-filter; returns {left, right[]} pairs; replaces N+1 read+resolve.
 </block_item_reads>
 
 <project_status>

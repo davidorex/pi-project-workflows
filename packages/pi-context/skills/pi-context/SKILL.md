@@ -291,6 +291,24 @@ Paginate a block's items: returns { items, total, hasMore }. offset default 0, l
 | `limit` | integer | no | Max items to return (default 50) |
 </tool>
 
+<tool name="join-blocks">
+Join two blocks in one call (FGAP-043). EDGE mode: pass `relationType` — pairs left items with right-block items connected by that relations.json edge (`leftEndpoint` parent|child, default parent). FIELD mode: pass `leftField`+`rightField` — pairs where left[leftField] === right[rightField]. Optional left pre-filter via where{Field,Op,Value}. Returns [{left, right:[]}] (right always an array; one-to-many). Use instead of N+1 read-block + resolve calls.
+
+*Join two blocks in one call — by relation edge or shared field; returns {left,right[]} pairs*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `leftBlock` | string | yes | Left block name (e.g., 'tasks') |
+| `rightBlock` | string | yes | Right block name (e.g., 'verification') |
+| `relationType` | string | no | Edge mode: relations.json relation_type |
+| `leftField` | string | no | Field mode: left item field |
+| `rightField` | string | no | Field mode: right item field |
+| `leftEndpoint` | unknown | no | Edge mode: is the left item the edge parent (default) or child |
+| `whereField` | string | no | Optional left pre-filter field |
+| `whereOp` | unknown | no |  |
+| `whereValue` | unknown | no | Optional left pre-filter value |
+</tool>
+
 <tool name="resolve-items-by-id">
 Bulk variant of resolve-item-by-id — resolve N kind-prefixed ids against a single buildIdIndex traversal. Returns an object mapping each input id to its ItemLocation (block / arrayKey / item) or null when not found. Coexists with the singular resolve-item-by-id tool; bulk collapses the N×singular-call pattern for callers resolving multiple ids in one render pass.
 
@@ -594,6 +612,7 @@ Two derived substrate tools complement validation: `project-edges-for-lens` retu
 
 <block_item_reads>
 Item-level reads complement whole-block `read-block` (which is all-or-nothing and caps at the 50KB read limit): `read-block-item` returns one item from a named block by its id (block-scoped — null if absent; distinct from `resolve-item-by-id`, which searches every block by kind-prefixed id). `read-block-page` paginates a block too large to fetch whole — `{ items, total, hasMore }` where `total` is the full item count and pagination uses `offset`/`limit` (defaults 0/50).
+`join-blocks` — one-call cross-block join, EDGE mode (relations.json relation_type, leftEndpoint parent|child) or FIELD mode (shared field value), optional left pre-filter; returns {left, right[]} pairs; replaces N+1 read+resolve.
 </block_item_reads>
 
 <project_status>

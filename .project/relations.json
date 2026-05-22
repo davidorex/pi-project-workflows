@@ -83,5 +83,30 @@
     "parent": "R-0013",
     "child": "FEAT-003",
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "FGAP-067",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "DEC-0037",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "DEC-0011",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "DEC-0019",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "DEC-0020",
+    "relation_type": "task_governed_by_decision"
   }
 ]

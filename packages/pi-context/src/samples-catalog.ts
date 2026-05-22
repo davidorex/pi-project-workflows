@@ -65,7 +65,6 @@ export interface SampleKind {
 /** The packaged samples catalog (DEC-0037 view). */
 export interface SamplesCatalog {
 	schema_version: string;
-	root: string;
 	kinds: SampleKind[];
 	relationTypes: RelationTypeDecl[];
 	lenses: LensSpec[];
@@ -89,7 +88,6 @@ interface ConceptionBlockKind {
 /** Parsed conception.json (only the fields this catalog consumes). */
 interface Conception {
 	schema_version?: string;
-	root?: string;
 	block_kinds?: ConceptionBlockKind[];
 	relation_types?: RelationTypeDecl[];
 	lenses?: LensSpec[];
@@ -141,7 +139,6 @@ export function samplesCatalog(opts?: { kind?: string }): SamplesCatalog {
 
 	return {
 		schema_version: String(conception.schema_version ?? ""),
-		root: String(conception.root ?? ""),
 		kinds,
 		relationTypes,
 		lenses,

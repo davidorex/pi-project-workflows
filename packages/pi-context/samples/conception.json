@@ -1,6 +1,5 @@
 {
   "schema_version": "1.0.0",
-  "root": ".project",
   "block_kinds": [
     {
       "canonical_id": "decisions",

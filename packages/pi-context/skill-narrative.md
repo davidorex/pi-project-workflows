@@ -13,7 +13,7 @@ pi-context manages structured project state in `.project/` — a directory of JS
 </objective>
 
 <block_files>
-Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root defaults to `.project/` and is declared in `.project/config.json`'s `root` field — block-api routes through `projectRoot(cwd)` so a relocated root reaches every read/write site.
+Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/project accept-all`; the framework ships no default (DEC-0015). block-api routes through `projectRoot(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
 </block_files>
 
 <schema_validation>

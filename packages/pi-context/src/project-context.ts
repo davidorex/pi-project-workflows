@@ -412,9 +412,10 @@ export interface AdoptResult {
  * (samples/conception.json) as this substrate's config.json (DEC-0037 / DEC-0038
  * accept-all mode). Writes config ONLY (does not install assets — run
  * installProject after). Idempotent: never clobbers an existing config
- * (DEC-0011/0038 offer-don't-impose). The conception's hardcoded root is
- * overridden to the ACTUAL substrate dir name. Validated via writeConfig
- * (whole-config AJV).
+ * (DEC-0011/0038 offer-don't-impose). The conception ships NO root (it is a
+ * template, not an instance — DEC-0041/FGAP-094); this function SETS root to the
+ * ACTUAL substrate dir name (resolved from the .pi-context.json pointer) on the
+ * adopted config. Validated via writeConfig (whole-config AJV).
  */
 export function adoptConception(cwd: string): AdoptResult {
 	const contextDirAbs = resolveContextDir(cwd); // throws BootstrapNotFoundError if no pointer
@@ -433,7 +434,7 @@ export function adoptConception(cwd: string): AdoptResult {
 	const here = path.dirname(fileURLToPath(import.meta.url));
 	const samplesRoot = path.resolve(here, "..", "samples");
 	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as ConfigBlock;
-	conception.root = root; // CRITICAL override — conception ships a hardcoded `.project` root
+	conception.root = root; // SET root from the resolved substrate dir — the conception template ships none (DEC-0041)
 	writeConfig(cwd, conception);
 	return {
 		adopted: true,

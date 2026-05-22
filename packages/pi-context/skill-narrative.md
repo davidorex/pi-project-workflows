@@ -4,8 +4,8 @@ description: >
   Schema-driven project state management with typed JSON blocks, schema validation,
   substrate config, lens views, closure-table relations, and cross-block referential
   integrity. Use when managing .project/ blocks, scaffolding project structure,
-  installing block kinds from the registry, validating project state, rendering
-  lens views, or adding work items.
+  installing block kinds from the packaged samples catalog, validating project state,
+  rendering lens views, or adding work items.
 ---
 
 <objective>
@@ -21,13 +21,17 @@ Every block write validates against `<root>/schemas/<blockname>.schema.json`. If
 </schema_validation>
 
 <project_init>
-`/project init` creates the substrate skeleton: `.project/`, `.project/schemas/`, `.project/phases/`, and a minimal `.project/config.json` with `schema_version`, `root: ".project"`, and empty `lenses`, `installed_schemas`, `installed_blocks` arrays. No schemas or starter blocks are copied — the registry is opt-in. Idempotent: existing files are preserved (the config is never overwritten, so user edits survive re-running init).
+`/project init <dir>` creates the substrate skeleton: the `.pi-context.json` bootstrap pointer (declaring the substrate-dir name per DEC-0015) plus the substrate root and its `schemas/` directory. Nothing is imposed — no `config.json`, no schemas, and no starter blocks are written (DEC-0011 ship-no-defaults). Idempotent: re-running preserves existing dirs. Populate the substrate next with `/project accept-all` (adopt the canonical conception) followed by `/project install`.
 </project_init>
 
-<project_install>
-`/project install` reconciles `.project/` against the `installed_schemas` and `installed_blocks` lists declared in `config.json`. For each declared name it copies the matching asset from the package-shipped `registry/schemas/` or `registry/blocks/` directory into the substrate root. Default behavior is skip-if-exists (preserves user edits); pass `--update` to overwrite and report the asset as `updated`. Sources missing from the registry are reported as `notFound`. Empty install lists are not an error — the result is a clean no-op message instructing the user to edit `config.json`.
+<project_accept_all>
+`/project accept-all` adopts the package's canonical packaged conception (`samples/conception.json`) as the substrate's `config.json` — the full vocabulary (`block_kinds`, `relation_types`, `lenses`, `invariants`) plus the `installed_schemas` / `installed_blocks` manifest — with `root` set to the actual substrate dir. It writes `config.json` only (run `/project install` after to materialize the schemas + starter blocks) and is idempotent: it never overwrites an existing `config.json` (offer, don't impose). This is the accept-all path; per-entry step-through curation is a separate surface.
+</project_accept_all>
 
-The registry currently ships nine starter blocks (conformance-reference, decisions, domain, issues, project, rationale, requirements, tasks, verification) and fifteen schemas (the same set plus architecture, audit, handoff, phase, plan, roadmap). Inspect `registry/blocks/` and `registry/schemas/` for the authoritative names — declare any subset in `installed_*` and run `/project install`.
+<project_install>
+`/project install` reconciles the substrate against the `installed_schemas` and `installed_blocks` lists declared in `config.json`. For each declared name it copies the matching asset from the package-shipped samples catalog (`samples/schemas/` for schemas, `samples/blocks/` for starter blocks) into the substrate. Default behavior is skip-if-exists (preserves user edits); pass `--update` to overwrite and report the asset as `updated`. Sources missing from the catalog are reported as `notFound`. Empty install lists are not an error — the result is a clean no-op message instructing the user to edit `config.json`.
+
+The installable catalog IS the packaged conception (`samples/conception.json`): its `block_kinds` enumerate the available kinds, each carrying its schema (`samples/schemas/`) and starter block (`samples/blocks/`). The generated installable-catalog table below lists the authoritative names — declare any subset in `installed_*` and run `/project install`, or take the whole conception via `/project accept-all`.
 </project_install>
 
 <substrate_config>

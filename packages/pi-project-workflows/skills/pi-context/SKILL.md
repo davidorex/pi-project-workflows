@@ -4,8 +4,8 @@ description: >
   Schema-driven project state management with typed JSON blocks, schema
   validation, substrate config, lens views, closure-table relations, and
   cross-block referential integrity. Use when managing .project/ blocks,
-  scaffolding project structure, installing block kinds from the registry,
-  validating project state, rendering lens views, or adding work items.
+  scaffolding project structure, installing block kinds from the packaged samples
+  catalog, validating project state, rendering lens views, or adding work items.
 ---
 
 <tools_reference>
@@ -229,13 +229,20 @@ Create or replace a substrate block-kind JSON Schema. operation 'create' require
 </tool>
 
 <tool name="project-init">
-Initialize .project/ directory with default schemas and empty block files.
+Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate).
 
-*Initialize .project/ directory with default schemas and blocks*
+*Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `contextDir` | string | yes | Substrate dir name (e.g. .project). Required per DEC-0015 — no default. |
+</tool>
+
+<tool name="project-accept-all">
+Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Idempotent: never overwrites an existing config.
+
+*Adopt the canonical conception as config (accept-all)*
+
 </tool>
 
 <tool name="filter-block-items">
@@ -387,7 +394,7 @@ List every roadmap in <config.root>/roadmap.json with id, title, optional status
 <command name="/project">
 Project state management
 
-Subcommands: `init`, `install`, `view`, `lens-curate`, `roadmap-list`, `roadmap-view`, `roadmap-validate`, `status`, `add-work`, `validate`, `help`
+Subcommands: `init`, `install`, `accept-all`, `view`, `lens-curate`, `roadmap-list`, `roadmap-view`, `roadmap-validate`, `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>
@@ -397,7 +404,7 @@ Subcommands: `init`, `install`, `view`, `lens-curate`, `roadmap-list`, `roadmap-
 </events>
 
 <bundled_resources>
-9 schemas, 27 registry bundled.
+9 schemas, 31 samples bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 
@@ -407,16 +414,21 @@ Names valid for the `installed_blocks` array in `.project/config.json`. Install 
 
 | Block | Source File |
 |-------|-------------|
-| `conformance-reference` | `registry/blocks/conformance-reference.json` |
-| `context-contracts` | `registry/blocks/context-contracts.json` |
-| `decisions` | `registry/blocks/decisions.json` |
-| `domain` | `registry/blocks/domain.json` |
-| `issues` | `registry/blocks/issues.json` |
-| `project` | `registry/blocks/project.json` |
-| `rationale` | `registry/blocks/rationale.json` |
-| `requirements` | `registry/blocks/requirements.json` |
-| `tasks` | `registry/blocks/tasks.json` |
-| `verification` | `registry/blocks/verification.json` |
+| `decisions` | `samples/blocks/decisions.json` |
+| `framework-gaps` | `samples/blocks/framework-gaps.json` |
+| `tasks` | `samples/blocks/tasks.json` |
+| `verification` | `samples/blocks/verification.json` |
+| `issues` | `samples/blocks/issues.json` |
+| `features` | `samples/blocks/features.json` |
+| `research` | `samples/blocks/research.json` |
+| `rationale` | `samples/blocks/rationale.json` |
+| `spec-reviews` | `samples/blocks/spec-reviews.json` |
+| `layer-plans` | `samples/blocks/layer-plans.json` |
+| `requirements` | `samples/blocks/requirements.json` |
+| `conventions` | `samples/blocks/conventions.json` |
+| `context-contracts` | `samples/blocks/context-contracts.json` |
+| `phase` | `samples/blocks/phase.json` |
+| `story` | `samples/blocks/story.json` |
 
 </installable_blocks>
 
@@ -426,23 +438,21 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 
 | Schema | Source File |
 |--------|-------------|
-| `architecture` | `registry/schemas/architecture.schema.json` |
-| `audit` | `registry/schemas/audit.schema.json` |
-| `conformance-reference` | `registry/schemas/conformance-reference.schema.json` |
-| `context-contracts` | `registry/schemas/context-contracts.schema.json` |
-| `decisions` | `registry/schemas/decisions.schema.json` |
-| `domain` | `registry/schemas/domain.schema.json` |
-| `handoff` | `registry/schemas/handoff.schema.json` |
-| `issues` | `registry/schemas/issues.schema.json` |
-| `phase` | `registry/schemas/phase.schema.json` |
-| `plan` | `registry/schemas/plan.schema.json` |
-| `project` | `registry/schemas/project.schema.json` |
-| `rationale` | `registry/schemas/rationale.schema.json` |
-| `requirements` | `registry/schemas/requirements.schema.json` |
-| `roadmap` | `registry/schemas/roadmap.schema.json` |
-| `story` | `registry/schemas/story.schema.json` |
-| `tasks` | `registry/schemas/tasks.schema.json` |
-| `verification` | `registry/schemas/verification.schema.json` |
+| `decisions` | `samples/schemas/decisions.schema.json` |
+| `framework-gaps` | `samples/schemas/framework-gaps.schema.json` |
+| `tasks` | `samples/schemas/tasks.schema.json` |
+| `verification` | `samples/schemas/verification.schema.json` |
+| `issues` | `samples/schemas/issues.schema.json` |
+| `features` | `samples/schemas/features.schema.json` |
+| `research` | `samples/schemas/research.schema.json` |
+| `rationale` | `samples/schemas/rationale.schema.json` |
+| `spec-reviews` | `samples/schemas/spec-reviews.schema.json` |
+| `layer-plans` | `samples/schemas/layer-plans.schema.json` |
+| `requirements` | `samples/schemas/requirements.schema.json` |
+| `conventions` | `samples/schemas/conventions.schema.json` |
+| `context-contracts` | `samples/schemas/context-contracts.schema.json` |
+| `phase` | `samples/schemas/phase.schema.json` |
+| `story` | `samples/schemas/story.schema.json` |
 
 </installable_schemas>
 
@@ -452,48 +462,52 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 
 | Block | Title | Array Key | Item Fields |
 |-------|-------|-----------|-------------|
-| `architecture` | Architecture | `modules` | name, file, responsibility, dependencies? (array), lines? (integer) |
-| `audit` | Audit | `checks` | id, description, status (string (pass|fail|warn|skip)), category?, details? |
-| `conformance-reference` | Conformance Reference | `principles` | id, name, description?, rules (array) |
+| `decisions` | Decisions | `decisions` | id, title, status (string (open|enacted|superseded)), context, decision, options_considered? (array), consequences (array), references? (array), created_by, created_at, enacted_by?, enacted_at? |
+| `framework-gaps` | Framework Gaps | `gaps` | id, title, status (string (identified|accepted|in-progress|closed|wontfix)), priority? (string (P0|P1|P2|P3)), package, layer? (string (L1|L2|L3|L4|L5)), description, evidence (array), impact, canonical_vocabulary?, proposed_resolution, created_by, created_at, closed_by?, closed_at? |
+| `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), files? (array), acceptance_criteria? (array), assigned_agent?, notes? |
+| `verification` | Verification | `verifications` | id, status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array) |
+| `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by? |
+| `features` | Features | `features` | id, title, status (string (proposed|approved|in-progress|in-review|complete|blocked|cancelled)), layer (string (L1|L2|L3|L4|L5)), description, motivation?, acceptance_criteria (array), created_by, created_at, modified_by?, modified_at?, approved_by?, approved_at? |
+| `research` | Research | `research` | id, title, status (string (planned|in-progress|complete|stale|superseded|revised)), layer (string (L1|L2|L3|L4|L5)), type (string (investigative|comparative|empirical|historical|audit|landscape|feasibility|curation)), question, method, scope? (array), findings_summary, findings_document?, grounding? (object), grounded_at?, stale_conditions? (array), citations? (array), conducted_by?, conducted_at?, created_by, created_at, modified_by?, modified_at? |
+| `rationale` | Design Rationale | `rationales` | id, title, narrative, phase? (integer) |
+| `spec-reviews` | Spec Reviews | `reviews` | id, target, target_revision?, reviewer?, status (string (not-started|in-progress|complete|abandoned)), scope? (array), method?, clean? (boolean), created_by, created_at, completed_at? |
+| `layer-plans` | Layer Restructure Plans | `plans` | id, title, status (string (draft|proposed|decided|in-progress|complete|abandoned)), model, description?, layers (array), migration_phases (array), created_by, created_at |
+| `requirements` | Requirements | `requirements` | id, description, type (string (functional|non-functional|constraint|integration)), status (string (proposed|accepted|deferred|implemented|verified)), priority (string (must|should|could|wont)), acceptance_criteria? (array), source? (string (human|agent|analysis)) |
+| `conventions` | Conventions | `rules` | id, description, enforcement (string (lint|test|review|manual)), severity (string (error|warning|info)) |
 | `context-contracts` | Context contracts | `contracts` | id, unit_kind, bundle_relation_types (array), description?, notes?, created_by, created_at, modified_by?, modified_at? |
-| `decisions` | Decisions | `decisions` | id, decision, rationale, phase? (string|integer), status (string (decided|tentative|revisit|superseded)), context?, task? |
-| `domain` | Domain Knowledge | `entries` | id, title, content, category (string (research|reference|domain-rule|prior-art|constraint)), source?, confidence? (string (high|medium|low)), related_requirements? (array), tags? (array) |
-| `handoff` | Handoff | `current_tasks` |  |
-| `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (unknown), resolved_by? |
-| `phase` | Phases | `phases` | id, name, intent, goal?, status (string (planned|in-progress|completed)), success_criteria? (array), specs? (array), dependencies? (array), inputs? (array), outputs? (array), artifacts_produced? (array) |
-| `plan` | Project plans | `plans` | id, title, description?, status? (string (draft|active|blocked|complete|archived)), roadmap? (string|null), phase? (string|null), items (array) |
-| `project` | Project Identity | `target_users` |  |
-| `rationale` | Design Rationale | `rationales` | id, title, narrative, related_decisions? (array), phase? (string|integer), context? |
-| `requirements` | Requirements | `requirements` | id, description, type (string (functional|non-functional|constraint|integration)), status (string (proposed|accepted|deferred|implemented|verified)), priority (string (must|should|could|wont)), acceptance_criteria? (array), source? (string (human|agent|analysis)), traces_to? (array), depends_on? (array) |
-| `roadmap` | Project roadmaps | `roadmaps` | id, title, description?, status? (string (draft|active|paused|complete|archived)), phases (array), milestones? (array) |
+| `phase` | Phases | `phases` | id, name, intent, goal?, status (string (planned|in-progress|completed)), success_criteria? (array), specs? (array), artifacts_produced? (array) |
 | `story` | Stories | `stories` | id, title, status (string (proposed|ready|in-progress|in-review|complete|blocked)), description?, acceptance_criteria? (array), created_by?, created_at?, modified_by?, modified_at? |
-| `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), phase? (string|integer), files? (array), acceptance_criteria? (array), depends_on? (array), assigned_agent?, verification?, notes? |
-| `verification` | Verification | `verifications` | id, target, target_type (string (task|phase|requirement)), status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array) |
 
 **Status Enums:**
 
 | Block | Field | Values |
 |-------|-------|--------|
-| `audit` | `status` | pass, fail, warn, skip |
-| `decisions` | `status` | decided, tentative, revisit, superseded |
-| `domain` | `category` | research, reference, domain-rule, prior-art, constraint |
-| `domain` | `confidence` | high, medium, low |
+| `decisions` | `status` | open, enacted, superseded |
+| `framework-gaps` | `status` | identified, accepted, in-progress, closed, wontfix |
+| `framework-gaps` | `priority` | P0, P1, P2, P3 |
+| `framework-gaps` | `layer` | L1, L2, L3, L4, L5 |
+| `tasks` | `status` | planned, in-progress, completed, blocked, cancelled |
+| `verification` | `status` | passed, failed, partial, skipped |
+| `verification` | `method` | command, inspect, test |
 | `issues` | `status` | open, resolved, deferred |
 | `issues` | `category` | primitive, issue, cleanup, capability, composition |
 | `issues` | `priority` | low, medium, high, critical |
-| `phase` | `status` | planned, in-progress, completed |
-| `plan` | `status` | draft, active, blocked, complete, archived |
-| `project` | `status` | inception, planning, development, maintenance, complete |
+| `issues` | `source` | human, agent, monitor, workflow |
+| `features` | `status` | proposed, approved, in-progress, in-review, complete, blocked, cancelled |
+| `features` | `layer` | L1, L2, L3, L4, L5 |
+| `research` | `status` | planned, in-progress, complete, stale, superseded, revised |
+| `research` | `layer` | L1, L2, L3, L4, L5 |
+| `research` | `type` | investigative, comparative, empirical, historical, audit, landscape, feasibility, curation |
+| `spec-reviews` | `status` | not-started, in-progress, complete, abandoned |
+| `layer-plans` | `status` | draft, proposed, decided, in-progress, complete, abandoned |
 | `requirements` | `type` | functional, non-functional, constraint, integration |
 | `requirements` | `status` | proposed, accepted, deferred, implemented, verified |
 | `requirements` | `priority` | must, should, could, wont |
 | `requirements` | `source` | human, agent, analysis |
-| `roadmap` | `status` | draft, active, paused, complete, archived |
+| `conventions` | `enforcement` | lint, test, review, manual |
+| `conventions` | `severity` | error, warning, info |
+| `phase` | `status` | planned, in-progress, completed |
 | `story` | `status` | proposed, ready, in-progress, in-review, complete, blocked |
-| `tasks` | `status` | planned, in-progress, completed, blocked, cancelled |
-| `verification` | `target_type` | task, phase, requirement |
-| `verification` | `status` | passed, failed, partial, skipped |
-| `verification` | `method` | command, inspect, test |
 
 </planning_vocabulary>
 
@@ -510,13 +524,17 @@ Every block write validates against `<root>/schemas/<blockname>.schema.json`. If
 </schema_validation>
 
 <project_init>
-`/project init` creates the substrate skeleton: `.project/`, `.project/schemas/`, `.project/phases/`, and a minimal `.project/config.json` with `schema_version`, `root: ".project"`, and empty `lenses`, `installed_schemas`, `installed_blocks` arrays. No schemas or starter blocks are copied — the registry is opt-in. Idempotent: existing files are preserved (the config is never overwritten, so user edits survive re-running init).
+`/project init <dir>` creates the substrate skeleton: the `.pi-context.json` bootstrap pointer (declaring the substrate-dir name per DEC-0015) plus the substrate root and its `schemas/` directory. Nothing is imposed — no `config.json`, no schemas, and no starter blocks are written (DEC-0011 ship-no-defaults). Idempotent: re-running preserves existing dirs. Populate the substrate next with `/project accept-all` (adopt the canonical conception) followed by `/project install`.
 </project_init>
 
-<project_install>
-`/project install` reconciles `.project/` against the `installed_schemas` and `installed_blocks` lists declared in `config.json`. For each declared name it copies the matching asset from the package-shipped `registry/schemas/` or `registry/blocks/` directory into the substrate root. Default behavior is skip-if-exists (preserves user edits); pass `--update` to overwrite and report the asset as `updated`. Sources missing from the registry are reported as `notFound`. Empty install lists are not an error — the result is a clean no-op message instructing the user to edit `config.json`.
+<project_accept_all>
+`/project accept-all` adopts the package's canonical packaged conception (`samples/conception.json`) as the substrate's `config.json` — the full vocabulary (`block_kinds`, `relation_types`, `lenses`, `invariants`) plus the `installed_schemas` / `installed_blocks` manifest — with `root` set to the actual substrate dir. It writes `config.json` only (run `/project install` after to materialize the schemas + starter blocks) and is idempotent: it never overwrites an existing `config.json` (offer, don't impose). This is the accept-all path; per-entry step-through curation is a separate surface.
+</project_accept_all>
 
-The registry currently ships nine starter blocks (conformance-reference, decisions, domain, issues, project, rationale, requirements, tasks, verification) and fifteen schemas (the same set plus architecture, audit, handoff, phase, plan, roadmap). Inspect `registry/blocks/` and `registry/schemas/` for the authoritative names — declare any subset in `installed_*` and run `/project install`.
+<project_install>
+`/project install` reconciles the substrate against the `installed_schemas` and `installed_blocks` lists declared in `config.json`. For each declared name it copies the matching asset from the package-shipped samples catalog (`samples/schemas/` for schemas, `samples/blocks/` for starter blocks) into the substrate. Default behavior is skip-if-exists (preserves user edits); pass `--update` to overwrite and report the asset as `updated`. Sources missing from the catalog are reported as `notFound`. Empty install lists are not an error — the result is a clean no-op message instructing the user to edit `config.json`.
+
+The installable catalog IS the packaged conception (`samples/conception.json`): its `block_kinds` enumerate the available kinds, each carrying its schema (`samples/schemas/`) and starter block (`samples/blocks/`). The generated installable-catalog table below lists the authoritative names — declare any subset in `installed_*` and run `/project install`, or take the whole conception via `/project accept-all`.
 </project_install>
 
 <substrate_config>

@@ -129,7 +129,7 @@ function extractSubcommands(config) {
 
 function scanResources(packageDir) {
 	const resources = [];
-	const resourceDirs = ["agents", "schemas", "workflows", "templates", "examples", "registry"];
+	const resourceDirs = ["agents", "schemas", "workflows", "templates", "examples", "samples"];
 
 	for (const dir of resourceDirs) {
 		const fullPath = join(packageDir, dir);
@@ -162,31 +162,29 @@ function listFilesRecursive(dir) {
 // ── Installable registry extraction ─────────────────────────────────────────
 
 /**
- * Read `<packageDir>/registry/blocks/` and `<packageDir>/registry/schemas/`
- * listings so SKILL.md can advertise the names valid for `installed_blocks`
- * and `installed_schemas` arrays in `.project/config.json`. Returns null when
- * the registry directory is absent (non-pi-context packages).
+ * Read `<packageDir>/samples/conception.json` `block_kinds[]` so SKILL.md can
+ * advertise the names valid for `installed_blocks` and `installed_schemas`
+ * arrays in `.project/config.json`. The samples/ catalog is the single
+ * canonical source (matching installProject). Returns null when the conception
+ * manifest is absent (non-pi-context packages) or unparseable.
  */
 function extractInstallableRegistry(packageDir) {
-	const registryDir = join(packageDir, "registry");
-	if (!existsSync(registryDir)) return null;
+	const conceptionPath = join(packageDir, "samples", "conception.json");
+	if (!existsSync(conceptionPath)) return null;
 
 	const result = { blocks: [], schemas: [] };
 
-	const blocksDir = join(registryDir, "blocks");
-	if (existsSync(blocksDir)) {
-		for (const file of readdirSync(blocksDir).sort()) {
-			if (!file.endsWith(".json")) continue;
-			result.blocks.push({ name: file.replace(/\.json$/, ""), file });
+	try {
+		const conception = JSON.parse(readFileSync(conceptionPath, "utf-8"));
+		for (const bk of conception.block_kinds ?? []) {
+			// data_path is bare (e.g. "decisions.json"); schema_path carries the
+			// "schemas/" prefix, so strip it to keep `file` as a bare basename
+			// (matching the prior registry-listing shape the emit strings expect).
+			result.blocks.push({ name: bk.canonical_id, file: bk.data_path });
+			result.schemas.push({ name: bk.canonical_id, file: bk.schema_path.replace(/^schemas\//, "") });
 		}
-	}
-
-	const schemasDir = join(registryDir, "schemas");
-	if (existsSync(schemasDir)) {
-		for (const file of readdirSync(schemasDir).sort()) {
-			if (!file.endsWith(".schema.json")) continue;
-			result.schemas.push({ name: file.replace(/\.schema\.json$/, ""), file });
-		}
+	} catch {
+		return null;
 	}
 
 	if (result.blocks.length === 0 && result.schemas.length === 0) return null;
@@ -252,15 +250,23 @@ function parseNarrative(content) {
 // ── Project vocabulary extraction ────────────────────────────────────────────
 
 function extractProjectVocabulary(packageDir) {
-	const schemasDir = join(packageDir, "registry", "schemas");
-	if (!existsSync(schemasDir)) return null;
+	const conceptionPath = join(packageDir, "samples", "conception.json");
+	if (!existsSync(conceptionPath)) return null;
+
+	let conception;
+	try {
+		conception = JSON.parse(readFileSync(conceptionPath, "utf-8"));
+	} catch {
+		return null;
+	}
 
 	const schemas = [];
-	for (const file of readdirSync(schemasDir).sort()) {
-		if (!file.endsWith(".schema.json")) continue;
-		const name = file.replace(".schema.json", "");
+	for (const bk of conception.block_kinds ?? []) {
+		const name = bk.canonical_id;
+		// schema_path carries the "schemas/" prefix → resolves to samples/schemas/<k>.schema.json
+		const schemaFile = join(packageDir, "samples", bk.schema_path);
 		try {
-			const raw = JSON.parse(readFileSync(join(schemasDir, file), "utf-8"));
+			const raw = JSON.parse(readFileSync(schemaFile, "utf-8"));
 			const title = raw.title || name;
 			const required = new Set(raw.required || []);
 			const properties = [];
@@ -522,10 +528,10 @@ function composeSkill(
 		lines.push("");
 	}
 
-	// ── Installable registry (pi-context — registry/blocks + registry/schemas) ──
+	// ── Installable catalog (pi-context — samples/blocks + samples/schemas) ──
 	// These are the names valid for `installed_blocks` / `installed_schemas`
 	// arrays in `.project/config.json`. `/project init` ships an empty skeleton
-	// and `/project install` opts blocks/schemas in by name from this registry.
+	// and `/project install` opts blocks/schemas in by name from this catalog.
 	if (installableRegistry) {
 		if (installableRegistry.blocks.length > 0) {
 			lines.push("<installable_blocks>");
@@ -537,7 +543,7 @@ function composeSkill(
 			lines.push("| Block | Source File |");
 			lines.push("|-------|-------------|");
 			for (const b of installableRegistry.blocks) {
-				lines.push(`| \`${b.name}\` | \`registry/blocks/${b.file}\` |`);
+				lines.push(`| \`${b.name}\` | \`samples/blocks/${b.file}\` |`);
 			}
 			lines.push("");
 			lines.push("</installable_blocks>");
@@ -554,7 +560,7 @@ function composeSkill(
 			lines.push("| Schema | Source File |");
 			lines.push("|--------|-------------|");
 			for (const s of installableRegistry.schemas) {
-				lines.push(`| \`${s.name}\` | \`registry/schemas/${s.file}\` |`);
+				lines.push(`| \`${s.name}\` | \`samples/schemas/${s.file}\` |`);
 			}
 			lines.push("");
 			lines.push("</installable_schemas>");
@@ -562,7 +568,7 @@ function composeSkill(
 		}
 	}
 
-	// ── Planning vocabulary (pi-context — from registry schemas) ──
+	// ── Planning vocabulary (pi-context — from samples schemas) ──
 	if (vocabulary && vocabulary.length > 0) {
 		lines.push("<planning_vocabulary>");
 		lines.push("");
@@ -820,13 +826,13 @@ async function generateForPackage(packageDir) {
 		console.log(`  Narrative: ${narrativePath}`);
 	}
 
-	// Extract project vocabulary (for pi-context only — from registry/schemas/)
+	// Extract project vocabulary (for pi-context only — from samples/schemas/ via conception.json)
 	const vocabulary = extractProjectVocabulary(packageDir);
 	if (vocabulary) {
 		console.log(`  Vocabulary: ${vocabulary.length} schemas`);
 	}
 
-	// Extract installable registry (for pi-context — from registry/blocks + registry/schemas)
+	// Extract installable catalog (for pi-context — from samples/ conception.json block_kinds)
 	const installableRegistry = extractInstallableRegistry(packageDir);
 	if (installableRegistry) {
 		console.log(

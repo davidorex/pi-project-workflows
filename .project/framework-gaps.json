@@ -3373,6 +3373,40 @@
       "id": "FGAP-091",
       "created_at": "2026-05-22T12:58:19.638Z",
       "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "title": "In-pi agent confabulates substrate vocabulary/signatures instead of grounding in the discovery tools — no anti-confabulation directive in the agent-reachable layer",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "Live in-pi agents (2026-05-22) repeatedly ASSERTED substrate specifics from assumption rather than DERIVING them from the queryable surface: (a) used relation_type `phase_depends_on` which is NOT registered in config.relation_types (verified empty) — a confabulated edge type; (b) proposed reconstructing draft-07 schemas from read-samples-catalog SHAPE metadata (it returns arrayKeys/itemProperties, not bodies) instead of knowing install is the materialization path; (c) assumed builtin filesystem read of the npm package (a constrained --tools session has no read builtin); (d) guessed tool signatures (append-block-item arrayKey param, an invented roadmap.json shape) instead of consulting list-tools. The unifying ignorance: the agent does not know that the VOCABULARY (relation_types/block_kinds/lenses via read-config + read-samples-catalog) and its OWN tool signatures (via list-tools) are queryable, so it should ground before asserting and never invent canonical names or schema bodies. The surface compounds it: append-relation DEFERS relation_type-registration validation (FGAP-075), so a confabulated edge writes silently and only fails at project-validate — no write-time correction. This is the CONTENT gap (what the agent must be told), distinct from FGAP-085 (description quality = the channel) and FGAP-090 (skills don't reach the agent = the channel reach). Because skills are unreachable, the cure must live in the always-present layer (tool descriptions + a foundational orientation).",
+      "evidence": [
+        {
+          "file": ".project/config.json",
+          "reference": "relation_types has no `phase_depends_on` (verified empty for phase*) — the agent invented it"
+        },
+        {
+          "file": "packages/pi-context/src/samples-catalog.ts",
+          "reference": "read-samples-catalog returns shape (arrayKeys/itemProperties), NOT raw schema bodies — yet the agent proposed reconstructing schemas from it"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "read-config / read-samples-catalog / list-tools expose the vocabulary + signatures the agent should ground in but didn't; append-relation defers relation_type validation (no write-time confabulation check)"
+        }
+      ],
+      "impact": "A harness-confined agent silently produces invalid substrate (unregistered-relation_type edges, mis-shaped items, reconstructed-wrong schemas) because nothing in its reachable context tells it to ground in the discovery tools or forbids inventing canonical names. Deferred validation means the error surfaces late (project-validate) or never (if validate isn't run). This undermines the DEC-0014 aim: a tools-only agent that operates the substrate CORRECTLY, not just plausibly.",
+      "canonical_vocabulary": "anti-confabulation, ground-before-assert, queryable-vocabulary directive",
+      "proposed_resolution": "Encode an explicit grounding directive in the always-present layer (tool descriptions per FGAP-085, and/or a foundational in-pi orientation surfaced regardless of skills per FGAP-090): (1) vocabulary is queryable — call read-config / read-samples-catalog before referencing any relation_type/block_kind/lens; never invent canonical names; (2) tool signatures are queryable via list-tools — consult, don't guess; (3) bootstrap/materialization is init -> accept-all -> install (FGAP-091), not schema reconstruction. Consider tightening append-relation/amend-config to fail loud on unregistered names at write (reversing the FGAP-075/076 deferral where layering permits) so confabulation can't write silently. Sequence with FGAP-085 (descriptions) + FGAP-090 (skill-reach decision).",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0013"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "id": "FGAP-092",
+      "created_at": "2026-05-22T13:00:02.113Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

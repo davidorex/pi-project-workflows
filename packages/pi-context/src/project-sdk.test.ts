@@ -23,6 +23,8 @@ import {
 	filterBlockItems,
 	type ItemLocation,
 	projectState,
+	readBlockItem,
+	readBlockPage,
 	resolveItemsByIds,
 	schemaInfo,
 	schemaVocabulary,
@@ -1824,6 +1826,158 @@ describe("filterBlockItems", () => {
 		assert.strictEqual(neqResult.length, 2);
 		const neqIds = (neqResult.map((r) => (r as Record<string, unknown>).id) as string[]).sort();
 		assert.deepStrictEqual(neqIds, ["TASK-001", "TASK-003"]);
+	});
+});
+
+// ── readBlockItem / readBlockPage (item-level reads, FGAP-045) ───────────────
+
+/**
+ * Build N items with ids ITEM-001..ITEM-NNN (1-indexed, zero-padded to 3).
+ */
+function makeItems(n: number): { id: string; n: number }[] {
+	return Array.from({ length: n }, (_, i) => ({ id: `ITEM-${String(i + 1).padStart(3, "0")}`, n: i + 1 }));
+}
+
+/**
+ * Write a block whose payload carries TWO top-level array properties — exercises
+ * the discoverArrayKey ambiguity throw shared with filterBlockItems.
+ */
+function setupMultiArrayBlock(tmpDir: string, blockName: string): void {
+	const wfDir = path.join(tmpDir, ".project");
+	const schemasDir = path.join(wfDir, "schemas");
+	fs.mkdirSync(schemasDir, { recursive: true });
+	const schema = { type: "object", properties: { a: { type: "array" }, b: { type: "array" } } };
+	fs.writeFileSync(path.join(schemasDir, `${blockName}.schema.json`), JSON.stringify(schema));
+	fs.writeFileSync(path.join(wfDir, `${blockName}.json`), JSON.stringify({ a: [{ id: "X-1" }], b: [{ id: "Y-1" }] }));
+}
+
+/**
+ * Write a block whose payload carries ZERO top-level array properties.
+ */
+function setupNoArrayBlock(tmpDir: string, blockName: string): void {
+	const wfDir = path.join(tmpDir, ".project");
+	const schemasDir = path.join(wfDir, "schemas");
+	fs.mkdirSync(schemasDir, { recursive: true });
+	const schema = { type: "object", properties: { meta: { type: "object" } } };
+	fs.writeFileSync(path.join(schemasDir, `${blockName}.schema.json`), JSON.stringify(schema));
+	fs.writeFileSync(path.join(wfDir, `${blockName}.json`), JSON.stringify({ meta: { version: 1 } }));
+}
+
+describe("readBlockItem", () => {
+	it("returns the item when its id is present", (t) => {
+		const tmpDir = makeTmpDir("rbi-found");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", makeItems(5));
+
+		const result = readBlockItem(tmpDir, "tasks", "ITEM-003");
+		assert.notStrictEqual(result, null);
+		assert.strictEqual((result as Record<string, unknown>).id, "ITEM-003");
+	});
+
+	it("returns null when no item carries the id", (t) => {
+		const tmpDir = makeTmpDir("rbi-missing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", makeItems(5));
+
+		assert.strictEqual(readBlockItem(tmpDir, "tasks", "ITEM-999"), null);
+	});
+
+	it("throws when the block file is missing (readBlock throw propagates)", (t) => {
+		const tmpDir = makeTmpDir("rbi-no-block");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		assert.throws(() => readBlockItem(tmpDir, "nonexistent", "ITEM-001"));
+	});
+
+	it("returns null for a block with no top-level array property", (t) => {
+		const tmpDir = makeTmpDir("rbi-no-array");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupNoArrayBlock(tmpDir, "config-ish");
+
+		assert.strictEqual(readBlockItem(tmpDir, "config-ish", "ITEM-001"), null);
+	});
+
+	it("throws for a block with multiple top-level array properties", (t) => {
+		const tmpDir = makeTmpDir("rbi-multi-array");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupMultiArrayBlock(tmpDir, "ambiguous");
+
+		assert.throws(() => readBlockItem(tmpDir, "ambiguous", "X-1"));
+	});
+});
+
+describe("readBlockPage", () => {
+	it("returns a window slice with full total and hasMore (offset 10 limit 20 over 100)", (t) => {
+		const tmpDir = makeTmpDir("rbp-window");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "framework-gaps", "gaps", makeItems(100));
+
+		const page = readBlockPage(tmpDir, "framework-gaps", { offset: 10, limit: 20 });
+		assert.strictEqual(page.items.length, 20);
+		assert.strictEqual((page.items[0] as Record<string, unknown>).id, "ITEM-011");
+		assert.strictEqual((page.items[19] as Record<string, unknown>).id, "ITEM-030");
+		assert.strictEqual(page.total, 100);
+		assert.strictEqual(page.hasMore, true);
+	});
+
+	it("applies default limit 50 / offset 0 when opts omitted", (t) => {
+		const tmpDir = makeTmpDir("rbp-default");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "framework-gaps", "gaps", makeItems(100));
+
+		const page = readBlockPage(tmpDir, "framework-gaps");
+		assert.strictEqual(page.items.length, 50);
+		assert.strictEqual((page.items[0] as Record<string, unknown>).id, "ITEM-001");
+		assert.strictEqual(page.total, 100);
+		assert.strictEqual(page.hasMore, true);
+	});
+
+	it("returns a partial last page with hasMore false (offset 95 limit 20 over 100)", (t) => {
+		const tmpDir = makeTmpDir("rbp-last");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "framework-gaps", "gaps", makeItems(100));
+
+		const page = readBlockPage(tmpDir, "framework-gaps", { offset: 95, limit: 20 });
+		assert.strictEqual(page.items.length, 5);
+		assert.strictEqual(page.total, 100);
+		assert.strictEqual(page.hasMore, false);
+		// ADVERSARIAL: total is the FULL item count, not the page length.
+		assert.notStrictEqual(page.total, page.items.length);
+	});
+
+	it("returns empty items with correct total when offset >= total", (t) => {
+		const tmpDir = makeTmpDir("rbp-beyond");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "framework-gaps", "gaps", makeItems(100));
+
+		const page = readBlockPage(tmpDir, "framework-gaps", { offset: 200, limit: 50 });
+		assert.deepStrictEqual(page.items, []);
+		assert.strictEqual(page.total, 100);
+		assert.strictEqual(page.hasMore, false);
+	});
+
+	it("returns {items:[],total:0,hasMore:false} for a block with no top-level array", (t) => {
+		const tmpDir = makeTmpDir("rbp-no-array");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupNoArrayBlock(tmpDir, "config-ish");
+
+		const page = readBlockPage(tmpDir, "config-ish");
+		assert.deepStrictEqual(page, { items: [], total: 0, hasMore: false });
+	});
+
+	it("throws when the block file is missing (readBlock throw propagates)", (t) => {
+		const tmpDir = makeTmpDir("rbp-no-block");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		assert.throws(() => readBlockPage(tmpDir, "nonexistent"));
+	});
+
+	it("throws for a block with multiple top-level array properties", (t) => {
+		const tmpDir = makeTmpDir("rbp-multi-array");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupMultiArrayBlock(tmpDir, "ambiguous");
+
+		assert.throws(() => readBlockPage(tmpDir, "ambiguous"));
 	});
 });
 

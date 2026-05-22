@@ -829,6 +829,44 @@ export function filterBlockItems(cwd: string, blockName: string, predicate: Filt
 	});
 }
 
+export interface BlockPage {
+	items: unknown[];
+	total: number;
+	hasMore: boolean;
+}
+
+/**
+ * Read a single item from ONE named block by its id, or null if absent.
+ * Block-scoped (no cross-substrate idIndex, no prefix-vs-block invariant — that is resolveItemById).
+ * Reuses filterBlockItems(id eq) so it inherits readBlock + discoverArrayKey + edge semantics
+ * (missing block / multiple top-level arrays THROW; no-array block or id-not-found → null). FGAP-045.
+ */
+export function readBlockItem(cwd: string, blockName: string, id: string): unknown | null {
+	const matches = filterBlockItems(cwd, blockName, { field: "id", op: "eq", value: id });
+	return matches.length > 0 ? matches[0] : null;
+}
+
+/**
+ * Paginate a block's items. Reuses readBlock + discoverArrayKey. Returns the FULL count as `total`
+ * (not the page length) and `hasMore = offset + limit < total`. No-array block → {items:[],total:0,
+ * hasMore:false}; offset ≥ total → empty items with correct total. Missing block / multiple top-level
+ * arrays propagate the throw (consistent with filterBlockItems). FGAP-045.
+ */
+export function readBlockPage(
+	cwd: string,
+	blockName: string,
+	opts: { offset?: number; limit?: number } = {},
+): BlockPage {
+	const offset = opts.offset ?? 0;
+	const limit = opts.limit ?? 50;
+	const data = readBlock(cwd, blockName) as Record<string, unknown>;
+	const arrayKey = discoverArrayKey(data);
+	const arr = arrayKey ? (data[arrayKey] as unknown[]) : [];
+	const total = arr.length;
+	const items = arr.slice(offset, offset + limit);
+	return { items, total, hasMore: offset + limit < total };
+}
+
 // ── Cross-block ID Resolver ─────────────────────────────────────────────────
 
 /**

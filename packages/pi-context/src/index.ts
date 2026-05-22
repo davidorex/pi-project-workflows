@@ -61,6 +61,8 @@ import {
 	findAppendableBlocks,
 	type ItemLocation,
 	projectState,
+	readBlockItem,
+	readBlockPage,
 	resolveItemById,
 	resolveItemsByIds,
 	validateProject,
@@ -1386,6 +1388,73 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: read-block-item ─────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "read-block-item",
+		label: "Read Block Item",
+		description:
+			"Read a single item from a named block by its id — returns the item or null. Block-scoped (unlike resolve-item-by-id, which searches all blocks by kind-prefixed id). Avoids fetching a whole large block to get one item.",
+		promptSnippet: "Read one item from a block by id (block-scoped; null if absent)",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'tasks', 'decisions', 'framework-gaps')" }),
+			id: Type.String({ description: "Item id within the block (e.g., 'TASK-001')" }),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { block: string; id: string },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = readBlockItem(ctx.cwd, params.block, params.id);
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: read-block-page ─────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "read-block-page",
+		label: "Read Block Page",
+		description:
+			"Paginate a block's items: returns { items, total, hasMore }. offset default 0, limit default 50. Use for blocks too large to fetch whole (past the 50KB read-block cap). total is the full item count; hasMore signals another page.",
+		promptSnippet: "Paginate a block's items — offset + limit; returns {items,total,hasMore}",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'framework-gaps', 'decisions', 'issues')" }),
+			offset: Type.Optional(Type.Integer({ minimum: 0, description: "Start index (default 0)" })),
+			limit: Type.Optional(Type.Integer({ minimum: 1, description: "Max items to return (default 50)" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { block: string; offset?: number; limit?: number },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const result = readBlockPage(ctx.cwd, params.block, { offset: params.offset, limit: params.limit });
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
 			};
 		},
 	});

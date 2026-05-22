@@ -1570,7 +1570,7 @@
     {
       "id": "FGAP-045",
       "title": "No item-level read at tool surface — read-block is all-or-nothing; no read-block-item / paginated read; large blocks force whole-file fetch",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "@davidorex/pi-context",
       "layer": "L2",
@@ -1599,7 +1599,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-13T18:30:00Z"
+      "created_at": "2026-05-13T18:30:00Z",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-22T00:00:00Z"
     },
     {
       "id": "FGAP-046",

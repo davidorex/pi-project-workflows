@@ -695,7 +695,7 @@
     },
     {
       "description": "B3 / FGAP-045 — item-level read at the tool surface. (1) readBlockItem(cwd, block, id) → ItemRecord|null (block-scoped item-by-id; reuses filterBlockItems id-eq + take-first; additive vs whole-substrate resolve-item-by-id). (2) readBlockPage(cwd, block, {offset=0, limit=50}) → {items, total, hasMore} (reuses readBlock + discoverArrayKey + slice; richer shape per FGAP-045 spec, not a bare array). Both in project-sdk.ts. Dual-surface (DEC-0019/0020): library + Pi tools read-block-item / read-block-page (truncateHead) + CLIs read-block-item.ts / read-block-page.ts + tests. Edge semantics mirror filterBlockItems/readBlock (missing-block throws, no-array → null/{empty}, multiple-arrays throws, not-found → null, offset≥total → empty+total+hasMore:false). Plan: ~/.claude/plans/idempotent-dancing-wilkes.md ACTIVE.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/project-sdk.ts",
         "packages/pi-context/src/index.ts",
@@ -711,7 +711,8 @@
         "build/check/test green; runtime demo via CLI on real .project (framework-gaps page total 88; read-block-item tasks TASK-001); fresh-context adversarial; skills regen surfaces both tools"
       ],
       "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs npm/tsx/git. Closes FGAP-045. B3 of the in-pi tool-surface program; next B4 FGAP-043 (cross-block joins).",
-      "id": "TASK-056"
+      "id": "TASK-056",
+      "verification": "VER-028"
     }
   ]
 }

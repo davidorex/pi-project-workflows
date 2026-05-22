@@ -38,7 +38,7 @@ Husky runs `check && test` on EVERY commit, so each chunk must build+test green.
 - **C2 — pi-jit-agents consumers (6 files).** Migrate old→new subpath+identifiers. Green.
 - **C3 — pi-workflows consumers (29 files).** Migrate. Green. (Largest consumer set; mostly `writeBootstrapPointer`/`schemaPath`/`PROJECT_DIR` import-string changes.)
 - **C4 — pi-behavior-monitors (1) + orchestrator scripts (14).** Migrate. Green.
-- **C5 — tool names + `/project` command (index.ts).** `project-*`→`context-*` tool names; `/project`→`/context` + `PROJECT_SUBCOMMANDS`→`CONTEXT_SUBCOMMANDS`; `installProject`→`installContext`. Rename the DEC-0042 bootstrap trio uniformly (removed later in P4). `npm run skills`. Green.
+- **C5 — tool names + `/project` command (index.ts).** `project-*`→`context-*` tool names; `/project`→`/context` + `PROJECT_SUBCOMMANDS`→`CONTEXT_SUBCOMMANDS`; `installProject`→`installContext`. Rename the DEC-0042 bootstrap trio uniformly (removed later in P4). **Constraint (DEC-0044 / FEAT-004): keep a `/context` dispatch-verb namespace open** — do not foreclose a future agent-dispatch tool/command (agents-as-tools); avoid claiming names that would collide with a `run`/dispatch verb. `npm run skills`. Green.
 - **C6 — docs.** `README.md` + `CLAUDE.md` + `skill-narrative.md` `/project`→`/context` + tool names; any `.agent.yaml`/`.workflow.yaml`/`.monitor.json` referencing `/project` or `project-*` tools; `npm run skills`. Green.
 - **C7 — remove aliases + bare-string sweep.** Drop the dual package.json exports → single `./context-*`; drop tsconfig legacy mappings; remove identifier aliases; scoped + bare-string sweep of residual in-scope `project` in comments/JSDoc/temp-dir prefixes. Green — proves zero legacy-name consumers remain. Closes FGAP-074.
 

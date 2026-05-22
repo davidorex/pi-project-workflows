@@ -2124,6 +2124,56 @@
       "id": "DEC-0043",
       "created_at": "2026-05-22T22:52:25.416Z",
       "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "title": "Agent-dispatch-tool registration home — where the agents-as-tools (FEAT-004) dispatch surface registers; pi-jit-agents is tool-less",
+      "status": "open",
+      "context": "FEAT-004 (agents-as-tools) needs a Pi tool + orchestrator CLI for agent dispatch. pi-jit-agents is a LIBRARY with NO registerTool surface (confirmed: no registerTool in packages/pi-jit-agents/src). pi-workflows owns dispatch today — workflow-execute runs agents via subprocess (pi --mode json), workflow-agents lists them, and the executeAgent normalizer boundary (F-012) lives on the dispatch path — but exposes no standalone agent-dispatch tool. So the FEAT-004 dispatch tool must register inside an EXTENSION. This decision gates FEAT-004 and constrains the in-flight FGAP-074 /context rename: C5 (tool/command surface) must keep a dispatch-verb namespace open in /context regardless of the chosen home.",
+      "decision": "PROPOSED (to settle when FEAT-004 starts): pi-workflows registers the agent-dispatch tool + CLI — it already owns dispatch (workflow-execute subprocess), agent discovery (workflow-agents), and the executeAgent normalizer boundary, so the dispatch verb is layering-coherent there. The agentContract->tool-shape projection (FEAT-004) is supplied by pi-jit-agents' introspect; pi-workflows consumes it to register the tool.",
+      "options_considered": [
+        {
+          "label": "pi-workflows (leaning)",
+          "description": "Register in pi-workflows — owns dispatch + agent discovery + the normalizer boundary.",
+          "tradeoffs": "Layering-coherent; reuses subprocess dispatch + F-012 normalizer. pi-workflows already an extension. Mild: couples ad-hoc dispatch to the workflow extension."
+        },
+        {
+          "label": "pi-context",
+          "description": "Register in pi-context — the tool hub the in-pi LLM already reaches for substrate ops.",
+          "tradeoffs": "Single discovery surface for the LLM; BUT pi-context is substrate, not dispatch — a layering smell (substrate package spawning agents).",
+          "rejected_reason": "Mixes substrate + dispatch concerns; pi-context would depend on pi-jit-agents/dispatch."
+        },
+        {
+          "label": "new thin extension (pi-agents)",
+          "description": "A dedicated extension wrapping pi-jit-agents for the dispatch tool + CLI.",
+          "tradeoffs": "Cleanest separation; BUT adds a 5th extension + install/version surface for one tool family."
+        }
+      ],
+      "consequences": [
+        "Gates FEAT-004 (agents-as-tools) — build cannot start until the home is settled.",
+        "Constrains FGAP-074 C5: keep a /context dispatch-verb namespace open (e.g. /context run / a dispatch tool name) so the rename does not foreclose FEAT-004.",
+        "Whichever home: the tool consumes pi-jit-agents' agentContract (introspect) for the tool-shape projection; dispatch routes through the executeAgent normalizer (F-012) + cost-control (F-006)."
+      ],
+      "related_features": [
+        "FEAT-004"
+      ],
+      "related_gaps": [
+        "FGAP-074",
+        "FGAP-085"
+      ],
+      "references": [
+        {
+          "label": "pi-jit-agents introspect bridge",
+          "path": "packages/pi-jit-agents/src/introspect.ts",
+          "lines": "17"
+        },
+        {
+          "label": "pi-workflows owns dispatch (no standalone agent tool)",
+          "path": "packages/pi-workflows/src/index.ts"
+        }
+      ],
+      "id": "DEC-0044",
+      "created_at": "2026-05-22T23:54:38.362Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

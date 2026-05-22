@@ -268,6 +268,29 @@ Look up the block, array key, and item payload for a given ID across all .projec
 | `id` | string | yes | Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 / FGAP-003 / issue-064 |
 </tool>
 
+<tool name="read-block-item">
+Read a single item from a named block by its id — returns the item or null. Block-scoped (unlike resolve-item-by-id, which searches all blocks by kind-prefixed id). Avoids fetching a whole large block to get one item.
+
+*Read one item from a block by id (block-scoped; null if absent)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'tasks', 'decisions', 'framework-gaps') |
+| `id` | string | yes | Item id within the block (e.g., 'TASK-001') |
+</tool>
+
+<tool name="read-block-page">
+Paginate a block's items: returns { items, total, hasMore }. offset default 0, limit default 50. Use for blocks too large to fetch whole (past the 50KB read-block cap). total is the full item count; hasMore signals another page.
+
+*Paginate a block's items — offset + limit; returns {items,total,hasMore}*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'framework-gaps', 'decisions', 'issues') |
+| `offset` | integer | no | Start index (default 0) |
+| `limit` | integer | no | Max items to return (default 50) |
+</tool>
+
 <tool name="resolve-items-by-id">
 Bulk variant of resolve-item-by-id — resolve N kind-prefixed ids against a single buildIdIndex traversal. Returns an object mapping each input id to its ItemLocation (block / arrayKey / item) or null when not found. Coexists with the singular resolve-item-by-id tool; bulk collapses the N×singular-call pattern for callers resolving multiple ids in one render pass.
 
@@ -568,6 +591,10 @@ The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synt
 
 Two derived substrate tools complement validation: `project-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `project-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
 </substrate_validation>
+
+<block_item_reads>
+Item-level reads complement whole-block `read-block` (which is all-or-nothing and caps at the 50KB read limit): `read-block-item` returns one item from a named block by its id (block-scoped — null if absent; distinct from `resolve-item-by-id`, which searches every block by kind-prefixed id). `read-block-page` paginates a block too large to fetch whole — `{ items, total, hasMore }` where `total` is the full item count and pagination uses `offset`/`limit` (defaults 0/50).
+</block_item_reads>
 
 <project_status>
 `/project status` derives project state dynamically from the filesystem:

@@ -66,6 +66,10 @@ The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synt
 Two derived substrate tools complement validation: `project-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `project-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
 </substrate_validation>
 
+<block_item_reads>
+Item-level reads complement whole-block `read-block` (which is all-or-nothing and caps at the 50KB read limit): `read-block-item` returns one item from a named block by its id (block-scoped — null if absent; distinct from `resolve-item-by-id`, which searches every block by kind-prefixed id). `read-block-page` paginates a block too large to fetch whole — `{ items, total, hasMore }` where `total` is the full item count and pagination uses `offset`/`limit` (defaults 0/50).
+</block_item_reads>
+
 <project_status>
 `/project status` derives project state dynamically from the filesystem:
 - Source file count and line count (`.ts` files excluding tests)

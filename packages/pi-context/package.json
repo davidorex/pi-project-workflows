@@ -89,8 +89,6 @@
 	"files": [
 		"dist/",
 		"skills/",
-		"defaults/",
-		"registry/",
 		"schemas/",
 		"samples/",
 		"*.md"

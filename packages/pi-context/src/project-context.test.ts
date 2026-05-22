@@ -15,9 +15,12 @@ import {
 	type Edge,
 	edgesForLens,
 	findReferences,
+	findUnmaterializedAssets,
 	getProjectContext,
 	groupByLens,
 	type ItemRecord,
+	installedBlockDestPath,
+	installedSchemaDestPath,
 	type LensSpec,
 	listUncategorized,
 	loadConfig,
@@ -64,6 +67,41 @@ const minimalConfig = (): ConfigBlock => ({
 			data_path: "decisions.json",
 		},
 	],
+});
+
+// ── Installed-asset materialization helpers (FGAP-095 P1 / DEC-0042) ─────────
+
+describe("installed-asset materialization helpers", () => {
+	it("dest-path helpers derive projectRoot-relative locations (single source shared with installProject)", () => {
+		const root = path.join(path.sep, "tmp", "x", ".project");
+		assert.strictEqual(installedSchemaDestPath(root, "tasks"), path.join(root, "schemas", "tasks.schema.json"));
+		assert.strictEqual(installedBlockDestPath(root, "tasks"), path.join(root, "tasks.json"));
+	});
+
+	it("findUnmaterializedAssets returns only the declared-but-absent assets", (t) => {
+		const tmp = makeTmpDir("unmaterialized");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg: ConfigBlock = {
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [],
+			installed_schemas: ["foo", "bar"],
+			installed_blocks: ["baz"],
+		};
+		writeConfig(tmp, cfg);
+		const schemas = path.join(tmp, ".project", "schemas");
+		fs.mkdirSync(schemas, { recursive: true });
+		fs.writeFileSync(path.join(schemas, "foo.schema.json"), "{}"); // foo present; bar + baz absent
+		assert.deepStrictEqual(findUnmaterializedAssets(tmp, cfg), { schemas: ["bar"], blocks: ["baz"] });
+	});
+
+	it("findUnmaterializedAssets is empty when nothing is declared", (t) => {
+		const tmp = makeTmpDir("unmaterialized-empty");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const cfg = minimalConfig();
+		writeConfig(tmp, cfg);
+		assert.deepStrictEqual(findUnmaterializedAssets(tmp, cfg), { schemas: [], blocks: [] });
+	});
 });
 
 // ── loadConfig ──────────────────────────────────────────────────────────────

@@ -12,12 +12,13 @@ import { getLensValidators } from "./lens-validator.js";
 import {
 	type ConfigBlock,
 	type Edge,
+	findUnmaterializedAssets,
 	type ItemRecord,
 	loadConfig,
 	loadRelations,
 	validateRelations,
 } from "./project-context.js";
-import { projectDir, schemaPath, schemasDir } from "./project-dir.js";
+import { projectDir, resolveContextDir, schemaPath, schemasDir } from "./project-dir.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
@@ -315,6 +316,50 @@ export interface CurrentState {
 	nextActions: { id: string; kind: string; priority?: string; reason: string }[];
 	/** planned tasks whose task_depends_on_task dependency parents are not ALL completed */
 	blocked: { id: string; block: string; blockedBy: string[] }[];
+}
+
+/**
+ * The four-state bootstrap progression, derived purely from the filesystem
+ * (DEC-0040 — nothing stored). Consumed by the `/context start` conductor, the
+ * dispatch READY-gate, and the startup-slot hint (DEC-0042 / FGAP-095).
+ */
+export type BootstrapState = "no-pointer" | "no-config" | "not-installed" | "ready";
+
+export interface BootstrapStatus {
+	/** which stop in the bootstrap progression `cwd` is at */
+	state: BootstrapState;
+	/** absolute substrate dir once the `.pi-context.json` pointer exists, else null */
+	contextDir: string | null;
+	/** declared-but-unmaterialized installed assets — populated only for "not-installed", else empty */
+	missing: { schemas: string[]; blocks: string[] };
+}
+
+/**
+ * Derive the bootstrap progression for `cwd` from the filesystem, in order:
+ *   no-pointer    — no `.pi-context.json` (checked directly so this NEVER throws
+ *                   pre-bootstrap — it is the unset-substrate detection read the
+ *                   harness-confined LLM uses to redirect the human to `/context start`)
+ *   no-config     — pointer present, no `config.json`
+ *   not-installed — config present, some declared installed_* asset is absent
+ *   ready         — config present, all declared assets materialized (or none declared)
+ *
+ * Does NOT swallow corruption: a malformed `config.json` propagates
+ * `loadConfig`'s ValidationError — the four states are the NORMAL progression;
+ * corruption is a separate error condition, not a bootstrap stop.
+ */
+export function deriveBootstrapState(cwd: string): BootstrapStatus {
+	const empty = { schemas: [] as string[], blocks: [] as string[] };
+	if (!fs.existsSync(path.join(cwd, ".pi-context.json"))) {
+		return { state: "no-pointer", contextDir: null, missing: empty };
+	}
+	const contextDir = resolveContextDir(cwd);
+	const config = loadConfig(cwd);
+	if (config === null) {
+		return { state: "no-config", contextDir, missing: empty };
+	}
+	const missing = findUnmaterializedAssets(cwd, config);
+	const installed = missing.schemas.length === 0 && missing.blocks.length === 0;
+	return { state: installed ? "ready" : "not-installed", contextDir, missing };
 }
 
 export interface ProjectState {

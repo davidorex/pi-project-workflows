@@ -24,7 +24,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { appendManyToTypedFileIfAbsent, writeTypedFile } from "./block-api.js";
 import type { DispatchContext } from "./dispatch-context.js";
-import { resolveContextDir } from "./project-dir.js";
+import { resolveContextDir, SCHEMAS_DIR } from "./project-dir.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
 // ── Type definitions (from plan §"Files to create") ──────────────────────────
@@ -278,6 +278,41 @@ export function loadConfig(cwd: string): ConfigBlock | null {
 	}
 	validateFromFile(bundledSchemaPath("config"), data, `config.json (${p})`);
 	return data as ConfigBlock;
+}
+
+// ── Installed-asset materialization (shared with installProject; DEC-0042 / FGAP-095) ──
+
+/**
+ * Destination path of an installed SCHEMA asset — `<root>/<SCHEMAS_DIR>/<name>.schema.json`.
+ * `root` is the already-resolved substrate root (`projectRoot(cwd)`). This is the
+ * single source of the schema-dest derivation; `installProject` and
+ * `findUnmaterializedAssets` both route through it so installer and detector
+ * cannot drift.
+ */
+export function installedSchemaDestPath(root: string, name: string): string {
+	return path.join(root, SCHEMAS_DIR, `${name}.schema.json`);
+}
+
+/** Destination path of an installed BLOCK asset — `<root>/<name>.json`. `root` is `projectRoot(cwd)`. */
+export function installedBlockDestPath(root: string, name: string): string {
+	return path.join(root, `${name}.json`);
+}
+
+/**
+ * The declared-but-not-materialized installed assets for `config`: the subset of
+ * `config.installed_schemas` / `installed_blocks` whose destination file is
+ * absent on disk. Empty arrays when everything declared is present (or nothing
+ * is declared — vacuously materialized). Pure read, no copy — answers "is the
+ * substrate fully installed?" via the SAME path derivation `installProject`
+ * writes to, so the question and the act cannot diverge.
+ */
+export function findUnmaterializedAssets(cwd: string, config: ConfigBlock): { schemas: string[]; blocks: string[] } {
+	const root = projectRoot(cwd);
+	const schemas = (config.installed_schemas ?? []).filter(
+		(name) => !fs.existsSync(installedSchemaDestPath(root, name)),
+	);
+	const blocks = (config.installed_blocks ?? []).filter((name) => !fs.existsSync(installedBlockDestPath(root, name)));
+	return { schemas, blocks };
 }
 
 /**

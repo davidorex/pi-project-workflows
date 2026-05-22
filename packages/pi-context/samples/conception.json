@@ -358,9 +358,7 @@
     "conventions",
     "context-contracts",
     "phase",
-    "story",
-    "config",
-    "relations"
+    "story"
   ],
   "installed_blocks": [
     "decisions",

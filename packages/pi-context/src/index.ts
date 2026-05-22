@@ -43,6 +43,8 @@ import {
 	type ConfigBlock,
 	type Edge,
 	getProjectContext,
+	installedBlockDestPath,
+	installedSchemaDestPath,
 	loadConfig,
 	projectRoot,
 } from "./project-context.js";
@@ -57,6 +59,7 @@ import {
 import {
 	completeTask,
 	currentState,
+	deriveBootstrapState,
 	filterBlockItems,
 	findAppendableBlocks,
 	type ItemLocation,
@@ -352,7 +355,9 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 			continue;
 		}
 		const sourceFile = path.join(samplesRoot, kind.schema_path);
-		const destFile = path.join(schemasRoot, `${name}.schema.json`);
+		// Single source of the dest derivation, shared with findUnmaterializedAssets
+		// (installedSchemaDestPath(destRoot, name) === path.join(schemasRoot, name+".schema.json")).
+		const destFile = installedSchemaDestPath(destRoot, name);
 		if (!fs.existsSync(sourceFile)) {
 			result.notFound.push(relDest);
 			continue;
@@ -374,7 +379,7 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 			continue;
 		}
 		const sourceFile = path.join(samplesRoot, "blocks", kind.data_path);
-		const destFile = path.join(destRoot, `${name}.json`);
+		const destFile = installedBlockDestPath(destRoot, name);
 		if (!fs.existsSync(sourceFile)) {
 			result.notFound.push(relDest);
 			continue;
@@ -1072,6 +1077,31 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(state, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: context-bootstrap-state ─────────────────────────────────────────
+
+	pi.registerTool({
+		name: "context-bootstrap-state",
+		label: "Context Bootstrap State",
+		description:
+			"Derive the substrate bootstrap state for the cwd, purely from the filesystem (DEC-0040): 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context start (bootstrap is human-only). No writes.",
+		promptSnippet:
+			"Derive substrate bootstrap state — no-pointer | no-config | not-installed | ready (never throws pre-bootstrap)",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const status = deriveBootstrapState(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(status, null, 2) }],
 			};
 		},
 	});

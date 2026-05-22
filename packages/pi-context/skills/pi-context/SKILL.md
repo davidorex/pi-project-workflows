@@ -178,6 +178,13 @@ Derive 'where are we + what's next' purely from .project substrate — focus, in
 
 </tool>
 
+<tool name="context-bootstrap-state">
+Derive the substrate bootstrap state for the cwd, purely from the filesystem (DEC-0040): 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context start (bootstrap is human-only). No writes.
+
+*Derive substrate bootstrap state — no-pointer | no-config | not-installed | ready (never throws pre-bootstrap)*
+
+</tool>
+
 <tool name="rename-canonical-id">
 Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to newId across all substrate surfaces that carry it as DATA — item home block + relations.json edges, or the relevant config registries. Out-of-substrate occurrences (analysis MDs, git history) are REPORTED, never rewritten. block_kind renames are unsupported (filesystem cascade). Use dryRun to preview the would-change counts without writing.
 

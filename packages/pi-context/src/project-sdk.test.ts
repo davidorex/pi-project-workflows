@@ -20,6 +20,7 @@ import {
 	blockStructure,
 	completeTask,
 	currentState,
+	deriveBootstrapState,
 	filterBlockItems,
 	type ItemLocation,
 	joinBlocks,
@@ -38,6 +39,97 @@ function makeTmpDir(prefix: string): string {
 	writeBootstrapPointer(cwd, ".project");
 	return cwd;
 }
+
+// ── Bootstrap state (FGAP-095 P1 / DEC-0042) ─────────────────────────────────
+
+describe("deriveBootstrapState", () => {
+	const ctxDir = ".project";
+	// Direct config write to <tmp>/<ctxDir>/config.json — the location resolveContextDir
+	// resolves under makeTmpDir's pointer. (project-sdk.test.ts's own writeConfig helper
+	// has a different positional signature; deriveBootstrapState only needs valid config JSON.)
+	const writeCfg = (tmp: string, cfg: Record<string, unknown>): void => {
+		fs.writeFileSync(path.join(tmp, ctxDir, "config.json"), JSON.stringify(cfg));
+	};
+	const declaring = {
+		schema_version: "1.0.0",
+		root: ctxDir,
+		block_kinds: [],
+		installed_schemas: ["foo"],
+		installed_blocks: ["bar"],
+	};
+
+	it("no-pointer when there is no .pi-context.json (and never throws)", (t) => {
+		const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sdk-bootstrap-nopointer-"));
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const s = deriveBootstrapState(tmp);
+		assert.strictEqual(s.state, "no-pointer");
+		assert.strictEqual(s.contextDir, null);
+		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [] });
+	});
+
+	it("no-config when the pointer is present but config.json is absent", (t) => {
+		const tmp = makeTmpDir("bootstrap-noconfig");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmp, ctxDir, "schemas"), { recursive: true });
+		const s = deriveBootstrapState(tmp);
+		assert.strictEqual(s.state, "no-config");
+		assert.strictEqual(s.contextDir, path.join(tmp, ctxDir));
+	});
+
+	it("ready when the config declares no installed assets (vacuously materialized)", (t) => {
+		const tmp = makeTmpDir("bootstrap-ready-empty");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmp, ctxDir, "schemas"), { recursive: true });
+		writeCfg(tmp, { schema_version: "1.0.0", root: ctxDir, block_kinds: [] });
+		const s = deriveBootstrapState(tmp);
+		assert.strictEqual(s.state, "ready");
+		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [] });
+	});
+
+	it("not-installed when declared assets are absent, reporting the missing lists", (t) => {
+		const tmp = makeTmpDir("bootstrap-notinstalled");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmp, ctxDir, "schemas"), { recursive: true });
+		writeCfg(tmp, declaring);
+		const s = deriveBootstrapState(tmp);
+		assert.strictEqual(s.state, "not-installed");
+		assert.deepStrictEqual(s.missing, { schemas: ["foo"], blocks: ["bar"] });
+	});
+
+	it("ready once every declared asset is materialized at its projectRoot dest", (t) => {
+		const tmp = makeTmpDir("bootstrap-ready-full");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const schemas = path.join(tmp, ctxDir, "schemas");
+		fs.mkdirSync(schemas, { recursive: true });
+		writeCfg(tmp, declaring);
+		fs.writeFileSync(path.join(schemas, "foo.schema.json"), "{}");
+		fs.writeFileSync(path.join(tmp, ctxDir, "bar.json"), "{}");
+		const s = deriveBootstrapState(tmp);
+		assert.strictEqual(s.state, "ready");
+		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [] });
+	});
+
+	it("partial materialization stays not-installed, listing only the absent asset", (t) => {
+		const tmp = makeTmpDir("bootstrap-partial");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const schemas = path.join(tmp, ctxDir, "schemas");
+		fs.mkdirSync(schemas, { recursive: true });
+		writeCfg(tmp, declaring);
+		fs.writeFileSync(path.join(schemas, "foo.schema.json"), "{}"); // schema present, block absent
+		const s = deriveBootstrapState(tmp);
+		assert.strictEqual(s.state, "not-installed");
+		assert.deepStrictEqual(s.missing, { schemas: [], blocks: ["bar"] });
+	});
+
+	it("propagates (throws) on a corrupt config.json — corruption is not a bootstrap state", (t) => {
+		const tmp = makeTmpDir("bootstrap-corrupt");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		fs.mkdirSync(path.join(tmp, ctxDir, "schemas"), { recursive: true });
+		// schema-invalid config (missing required schema_version + block_kinds), written directly
+		fs.writeFileSync(path.join(tmp, ctxDir, "config.json"), "{}");
+		assert.throws(() => deriveBootstrapState(tmp), ValidationError);
+	});
+});
 
 // ── Discovery ────────────────────────────────────────────────────────────────
 

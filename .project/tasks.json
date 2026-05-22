@@ -760,6 +760,31 @@
       "notes": "Resolves FGAP-094. DEC-0041 (open) records the config.root-optional contract change. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md",
       "id": "TASK-058",
       "verification": "VER-030"
+    },
+    {
+      "description": "FGAP-095 Phase 1: deriveBootstrapState — the pure, surface-agnostic 4-state bootstrap deriver (no-pointer | no-config | not-installed | ready) feeding the /context start conductor, the dispatch READY-gate, and the startup-slot hint (DEC-0042). Dual-surface per DEC-0019/0020: library + Pi tool + CLI. Factors a shared materialization detector out of installProject's copy loops so deriver and installer cannot drift. State-derived, nothing stored (DEC-0040). The deriver must NOT throw pre-bootstrap (it is the LLM's unset-substrate detection read).",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/project-context.ts",
+        "packages/pi-context/src/project-sdk.ts",
+        "packages/pi-context/src/index.ts",
+        "scripts/orchestrator/bootstrap-state.ts",
+        "packages/pi-context/src/project-sdk.test.ts",
+        "packages/pi-context/src/project-context.test.ts"
+      ],
+      "acceptance_criteria": [
+        "project-context.ts: installedSchemaDestPath/installedBlockDestPath/findUnmaterializedAssets added (projectRoot+SCHEMAS_DIR-based, matching installProject exactly)",
+        "project-sdk.ts: BootstrapState union + BootstrapStatus interface + deriveBootstrapState(cwd) — pointer-first order; no-pointer via direct existsSync (no throw); loadConfig null=>no-config; findUnmaterializedAssets=>not-installed|ready; corrupt-config propagates; empty installed_*=>ready",
+        "index.ts: installProject refactored to use the dest-path helpers (behavior-preserving; install-subcommand.test.ts stays green); context-bootstrap-state read tool registered (Type.Object({}), ctx.cwd, JSON text, no pre-bootstrap throw)",
+        "scripts/orchestrator/bootstrap-state.ts: CLI mirroring current-state.ts (--cwd/--format, exit 2/3, JSON stdout, imports @davidorex/pi-context/project-sdk)",
+        "tests: deriveBootstrapState 4 states + edges (empty=>ready, partial=>not-installed+missing, corrupt=>throws) in project-sdk.test.ts; findUnmaterializedAssets + dest-path helpers in project-context.test.ts",
+        "Runtime demo: real writeBootstrapPointer/adoptConception/installProject transitions observe all 4 states; detector matches real installer output (no drift); CLI emits state JSON",
+        "Fresh-context adversarial verdict: no path drift; no pre-bootstrap throw; correct check order; corrupt propagates; installProject refactor behavior-preserving",
+        "npm run skills regenerates SKILL.md with context-bootstrap-state; no package.json exports change (project-sdk + project-context already exported)"
+      ],
+      "depends_on": [],
+      "notes": "P1 of FGAP-095 (governed by DEC-0042). Surface-agnostic (library+tool+CLI, no command surface) — defers the /project-vs-/context cutover-sequencing question to P2. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md",
+      "id": "TASK-059"
     }
   ]
 }

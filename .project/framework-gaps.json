@@ -2724,7 +2724,7 @@
       "priority": "P2",
       "package": "pi-context",
       "layer": "L1",
-      "description": "The 2026-05-08 rebuild renamed the package pi-project -> pi-context; DEC-0029 set the substrate dir to .context and named a forthcoming /context subcommand surface; FGAP-066 designs /context init onboarding. But the SOURCE still carries pi-project-era project naming throughout (~1079 occurrences in packages/pi-context/src): 6 project-*.ts files (project-sdk, project-context, project-dir + tests), 3 package.json subpath exports (./project-sdk, ./project-context, ./project-dir), ~13 Pi tool names + the /project command + customTypes (project-status, project-init, project-validate, project-validate-relations, project-edges-for-lens, project-walk-descendants, project-roadmap-load/render/validate/list, project-add-work, project-lens-curate), 12 exported project* identifiers (projectState, projectRoot, projectDir, validateProject, ...), and cross-package consumers in pi-jit-agents / pi-workflows / pi-behavior-monitors that import the ./project-* subpaths. This is INTERNAL-NAMING inconsistency debt, NOT a DEC-0025 vocabulary-neutrality violation: DEC-0025 governs the user-substrate CONCEPTION vocabulary (block kinds / relation types / statuses, derived from config), whereas project-sdk / projectState / /project are the framework own module + tool identifiers. The substrate-DIR name (.project via config.root) is config-data per DEC-0015 (resolveContextDir; the .project literal already removed from source per FGAP-035) and flips to .context at cutover (DEC-0029) — a separate concern from this source-identifier debt. Intended outcome: rename the project->context source identifier surface (project-sdk.ts -> context-sdk.ts; project-context.ts / project-dir.ts -> context equivalents; projectState/projectRoot/projectDir/validateProject -> context or substrate equivalents; /project -> /context command; project-* -> context-* Pi tools; ./project-* -> ./context-* subpath exports; + every cross-package consumer import + tests) so code matches the package / dir / surface name. OPEN sub-decision (settle first, worth a DEC): the target-naming scheme — e.g. project-context.ts is itself awkward (context-context); candidates context-core / context-substrate; projectRoot/projectDir -> contextRoot/contextDir; validateProject -> validateContext or validateSubstrate. Mechanism: a source-wide codemod across all four packages + tool/command registrations + package.json subpaths + consumer imports + tests — DISTINCT from the FGAP-060 renameCanonicalId engine (which renames SUBSTRATE canonical_ids, not source code). Until this FGAP it was captured only as HANDOFF re-derivation step-4 prose + the plan file (a DEC-0040 single-source violation this filing corrects).",
+      "description": "The 2026-05-08 rebuild renamed the package pi-project -> pi-context; DEC-0029 set the substrate dir to .context and named a forthcoming /context subcommand surface; FGAP-066 designs /context init onboarding. But the SOURCE still carries pi-project-era project naming throughout (~1079 occurrences in packages/pi-context/src): 6 project-*.ts files (project-sdk, project-context, project-dir + tests), 3 package.json subpath exports (./project-sdk, ./project-context, ./project-dir), ~13 Pi tool names + the /project command + customTypes (project-status, project-init, project-validate, project-validate-relations, project-edges-for-lens, project-walk-descendants, project-roadmap-load/render/validate/list, project-add-work, project-lens-curate), 12 exported project* identifiers (projectState, projectRoot, projectDir, validateProject, ...), and cross-package consumers in pi-jit-agents / pi-workflows / pi-behavior-monitors that import the ./project-* subpaths. This is INTERNAL-NAMING inconsistency debt, NOT a DEC-0025 vocabulary-neutrality violation: DEC-0025 governs the user-substrate CONCEPTION vocabulary (block kinds / relation types / statuses, derived from config), whereas project-sdk / projectState / /project are the framework own module + tool identifiers. The substrate-DIR name (.project via config.root) is config-data per DEC-0015 (resolveContextDir; the .project literal already removed from source per FGAP-035) and flips to .context at cutover (DEC-0029) — a separate concern from this source-identifier debt. Intended outcome: rename the project->context source identifier surface (project-sdk.ts -> context-sdk.ts; project-context.ts / project-dir.ts -> context equivalents; projectState/projectRoot/projectDir/validateProject -> context or substrate equivalents; /project -> /context command; project-* -> context-* Pi tools; ./project-* -> ./context-* subpath exports; + every cross-package consumer import + tests) so code matches the package / dir / surface name. OPEN sub-decision (settle first, worth a DEC): the target-naming scheme — e.g. project-context.ts is itself awkward (context-context); candidates context-core / context-substrate; projectRoot/projectDir -> contextRoot/contextDir; validateProject -> validateContext or validateSubstrate. Mechanism: a source-wide codemod across all four packages + tool/command registrations + package.json subpaths + consumer imports + tests — DISTINCT from the FGAP-060 renameCanonicalId engine (which renames SUBSTRATE canonical_ids, not source code). Until this FGAP it was captured only as HANDOFF re-derivation step-4 prose + the plan file (a DEC-0040 single-source violation this filing corrects). [ORGANIZING POINTER 2026-05-22] The substrate-dir-name concern this gap scopes out as a separate concern is now filed as FGAP-094 (shipped .project default in samples/conception.json). Residual-project cluster = FGAP-074 (source/surface identifier naming) + FGAP-094 (shipped substrate-dir default) + DEC-0036 step-4 (/project -> /context command rename, within 074 scope) + DEC-0036 step-5 (.project -> .context dir cutover).",
       "evidence": [
         {
           "file": "packages/pi-context/src/project-sdk.ts",
@@ -3421,6 +3421,73 @@
       "created_by": "human/davidryan@gmail.com",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-05-22T00:00:00Z"
+    },
+    {
+      "title": "/project install 'no config.json' error misdirects to /project init — should name /project accept-all (stale post init/accept-all split)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "After the consumption-MVP split (init scaffolds dirs only; accept-all writes config.json from the conception; install copies assets), installProject's no-config error (index.ts:314) still reads 'No config.json found in substrate dir — run /project init first.' But init does NOT write config.json — accept-all does. A user running the natural-looking init -> install (skipping accept-all) is told to re-run init, which can't resolve it; the actual remedy (accept-all) is never named. Observed live 2026-05-22: '/project init .context' (Created .context/ + .context/schemas/) then '/project install' -> 'No config.json found in substrate dir — run /project init first.' The message names the wrong command.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "314",
+          "reference": "installProject no-config error: 'run /project init first' — but init (post-split) writes no config.json; accept-all does"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "init = bootstrap pointer + mkdir dirs only (FGAP-067); project-accept-all writes config.json — the split that made the message stale"
+        }
+      ],
+      "impact": "A fresh adopter following the apparent init -> install path hits a dead-end whose stated remedy (re-run init) cannot fix it; the resolving command (accept-all) is unnamed. UX trap at the most common first-use path; erodes the 'self-describing surface' aim.",
+      "canonical_vocabulary": "error-remedy accuracy, init/accept-all/install flow",
+      "proposed_resolution": "Change the index.ts:314 message to name the resolving command: 'No config.json in the substrate dir — run /project accept-all to adopt the conception (or author config.json), then /project install.' One-line source fix (plan mode per feedback_no_adhoc_dev).",
+      "related_decisions": [
+        "DEC-0011"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "id": "FGAP-093",
+      "created_at": "2026-05-22T13:20:18.749Z",
+      "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "title": "Ship NO concrete substrate-dir default — samples/conception.json smuggles a hidden root: '.project'; contradicts DEC-0015 (no default dir) + DEC-0011 (ship-no-defaults) + perpetuates legacy 'project' naming",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "DEC-0015 mandates NO default substrate dir (/project init requires an explicit dir name; resolveContextDir hard-throws BootstrapNotFoundError on absent pointer — no fallback). But samples/conception.json — the packaged conception (DEC-0037) a fresh adopter consumes via accept-all — ships root: '.project'. That is a HIDDEN, shipped substrate-dir default. accept-all's adoptConception overrides it to the user's init'd dir (project-context.ts), so it is operationally masked and NOT load-bearing in the normal init -> accept-all -> install flow; but the SHIPPED artifact still imposes '.project': any consumer reading conception.root directly, or any code path that bypasses the override, inherits the legacy default. Triply wrong: (1) a default substrate dir at all (DEC-0015 says none); (2) shipping a default value (DEC-0011 ship-no-defaults); (3) the legacy 'project' name in the going-forward .context-era artifact (the FGAP-074 project-residual cluster — which explicitly SCOPED OUT the substrate-dir-name as 'a separate concern', i.e. THIS gap). Worst because it is hidden inside a config field, not an obvious default. Surfaced 2026-05-22 reviewing install substrate-dir resolution; user directive: 'we should not be shipping anything project as default let alone when it is hidden'.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/conception.json",
+          "reference": "ships root: '.project' — a hidden shipped substrate-dir default (the conception is the packaged template a fresh adopter accepts)"
+        },
+        {
+          "file": "packages/pi-context/src/project-context.ts",
+          "reference": "adoptConception overrides conception.root to the actual contextDir — masks the shipped '.project' but does not remove it from the artifact"
+        },
+        {
+          "file": "packages/pi-context/src/project-dir.ts",
+          "lines": "11,33",
+          "reference": "resolveContextDir hard-throws (no .project fallback) per DEC-0015; PROJECT_DIR='.project' @deprecated constant — the legacy literal"
+        }
+      ],
+      "impact": "The shipped conception imposes/leaks the legacy '.project' default; correctness relies on accept-all's override to mask it, which is fragile — a consumer reading the conception directly, or a future path skipping the override, silently gets '.project'. Perpetuates 'project' naming in the .context-era (DEC-0029) artifact and contradicts the no-default-dir invariant the framework otherwise enforces by hard-throw. This is the organizing instance of the residual-'project' cluster's substrate-dir-name concern (paired with FGAP-074 source/surface naming).",
+      "canonical_vocabulary": "ship-no-defaults, no-default-substrate-dir, conception-as-template",
+      "proposed_resolution": "The shipped conception must not carry a concrete substrate-dir root (least of all '.project'). Options (settle as part of resolution; (a)/(b) preferred over (c) per the ship-no-default principle): (a) treat conception as a TEMPLATE where root is instance-only — set solely at accept-all from the user's init'd dir; if config.schema requires root, ship a clearly-non-default sentinel the schema permits (or omit root and have accept-all always supply it); (b) loosen conception-as-config so root is not a shipped field; (c) minimum stopgap: ship '.context' not '.project' (still a default, so not the end state). Organize under the FGAP-074 residual-'project' cluster; sequence with the DEC-0036 step-5 .project -> .context cutover.",
+      "related_decisions": [
+        "DEC-0015",
+        "DEC-0011",
+        "DEC-0029",
+        "DEC-0037"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "id": "FGAP-094",
+      "created_at": "2026-05-22T13:22:09.443Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

@@ -713,6 +713,26 @@
       "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs npm/tsx/git. Closes FGAP-045. B3 of the in-pi tool-surface program; next B4 FGAP-043 (cross-block joins).",
       "id": "TASK-056",
       "verification": "VER-028"
+    },
+    {
+      "description": "B4 / FGAP-043 — cross-block join tool (HYBRID edge + field). Library joinBlocks(cwd, spec): JoinResult[] in project-sdk.ts where spec={leftBlock,rightBlock,relationType?|leftField?+rightField?,leftEndpoint?,leftPredicate?} and JoinResult={left:ItemRecord, right:ItemRecord[]} (right always array; one-to-many natural). Edge mode: filter left + loadRelations(relationType) + match by leftEndpoint(parent|child) + resolve other endpoint via buildIdIndex scoped to rightBlock (handles wildcard target). Field mode: index rightBlock by rightField, each left → matches by left[leftField]. Mode = exactly-one-of relationType XOR leftField+rightField (else throw). Dual-surface (DEC-0019/0020): library + Pi tool join-blocks (truncateHead; where{Field,Op,Value} left predicate) + CLI scripts/orchestrator/join-blocks.ts + tests. Closes Cluster B. Plan: ~/.claude/plans ACTIVE.",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/project-sdk.ts",
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/project-sdk.test.ts",
+        "packages/pi-context/skill-narrative.md",
+        "scripts/orchestrator/join-blocks.ts"
+      ],
+      "acceptance_criteria": [
+        "joinBlocks edge mode: leftEndpoint parent vs child return correct opposite sides; one-to-many → right[]; rightBlock scoping excludes endpoints in other blocks (wildcard relation); unknown relationType → right:[] (permissive); leftPredicate filters left",
+        "joinBlocks field mode: left[leftField]===right[rightField] pairing; one-to-many → right[]; no match → right:[]; missing field → right:[]",
+        "mode validation: both modes or neither → throw; leftField without rightField → throw; missing block → throw; right ALWAYS an array",
+        "Pi tool join-blocks (mode-validated, truncateHead) + CLI join-blocks.ts (--relation-type | --left-field/--right-field, --left-endpoint, --where, exit 0/2/3)",
+        "build/check/test green; runtime demo on real .project (edge: verification_verifies_item VER-027↔TASK-055; field: tasks.verification===verification.id where completed); fresh-context adversarial; skills regen surfaces join-blocks"
+      ],
+      "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs npm/tsx/git. Closes FGAP-043 → Cluster B (read/query) COMPLETE. Hybrid per user (edge DEC-0013-native + field legacy/general).",
+      "id": "TASK-057"
     }
   ]
 }

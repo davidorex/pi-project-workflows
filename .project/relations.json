@@ -128,5 +128,10 @@
     "parent": "TASK-057",
     "child": "FGAP-043",
     "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "VER-029",
+    "child": "TASK-057",
+    "relation_type": "verification_verifies_item"
   }
 ]

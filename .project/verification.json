@@ -1117,6 +1117,42 @@
         }
       ],
       "id": "VER-028"
+    },
+    {
+      "target": "TASK-057",
+      "target_type": "task",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-22T00:00:00Z",
+      "evidence": "B4/FGAP-043 cross-block join (HYBRID) — commits 337af49 (lib joinBlocks + Pi tool join-blocks + CLI + 13 tests) / skills (2a848df) (+ step-1). Verified DEC-0018: build/check/test green (pi-context 576 [+13], pi-jit-agents 152, pi-behavior-monitors 157, pi-workflows 829, all 0 fail). Runtime demo via CLI on real .project: EDGE mode verification→tasks via verification_verifies_item → VER-027↔[TASK-055], VER-028↔[TASK-056]; leftEndpoint=child (tasks→verifications) returns the MIRROR side (TASK-055↔[VER-027]) — direction data-driven not hardcoded; FIELD mode completed-tasks × verification via inline-FK (tasks.verification===verification.id) → 28 pairs (TASK-021↔VER-004 etc.). Hybrid demonstrated on BOTH edge data + inline-FK data. Fresh-context adversarial probe (Explore, not composer): SAFE-TO-COMMIT — all 8 criteria PASS (mode-XOR throws both/neither/half-field; direction parent vs child mirror via notDeepStrictEqual; rightBlock scoping excludes 3rd-block endpoints; right ALWAYS array no null leak; leftPredicate filters before pairing; tests honest; tool+CLI wired; no stray edits).",
+      "criteria_results": [
+        {
+          "criterion": "EDGE mode: leftEndpoint parent vs child mirror sides; one-to-many → right[]; rightBlock scoping excludes other-block endpoints (wildcard); unknown relationType → right:[]; leftPredicate filters left",
+          "status": "passed",
+          "evidence": "project-sdk.ts joinBlocks edge path; tests + CLI demo (parent VER→TASK, child TASK→VER); adversarial #2/#3/#6"
+        },
+        {
+          "criterion": "FIELD mode: left[leftField]===right[rightField]; one-to-many → right[]; missing field → right:[]",
+          "status": "passed",
+          "evidence": "joinBlocks field path; 28-pair completed-tasks demo; adversarial #4"
+        },
+        {
+          "criterion": "mode = exactly-one XOR (both/neither/half-field throw); missing block throws; right ALWAYS array",
+          "status": "passed",
+          "evidence": "guard lines; 13 tests incl. throws + Array.isArray invariant; adversarial #1/#5"
+        },
+        {
+          "criterion": "Pi tool join-blocks (mode-validated, truncateHead, where-predicate) + CLI join-blocks.ts (mode-XOR exit 2) + SKILL.md",
+          "status": "passed",
+          "evidence": "337af49 + skills; adversarial #8"
+        },
+        {
+          "criterion": "build/check/test green (576); runtime demo both modes on real .project; fresh-context adversarial SAFE-TO-COMMIT",
+          "status": "passed",
+          "evidence": "commit 2a848df; adversarial verdict"
+        }
+      ],
+      "id": "VER-029"
     }
   ]
 }

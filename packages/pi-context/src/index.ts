@@ -60,6 +60,7 @@ import {
 	filterBlockItems,
 	findAppendableBlocks,
 	type ItemLocation,
+	joinBlocks,
 	projectState,
 	readBlockItem,
 	readBlockPage,
@@ -1446,6 +1447,74 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = readBlockPage(ctx.cwd, params.block, { offset: params.offset, limit: params.limit });
+			const jsonStr = JSON.stringify(result, null, 2);
+			const truncated = truncateHead(jsonStr);
+			let text = truncated.content;
+			if (truncated.truncated) {
+				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+			}
+			return {
+				details: undefined,
+				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: join-blocks ─────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "join-blocks",
+		label: "Join Blocks",
+		description:
+			"Join two blocks in one call (FGAP-043). EDGE mode: pass `relationType` — pairs left items with right-block items connected by that relations.json edge (`leftEndpoint` parent|child, default parent). FIELD mode: pass `leftField`+`rightField` — pairs where left[leftField] === right[rightField]. Optional left pre-filter via where{Field,Op,Value}. Returns [{left, right:[]}] (right always an array; one-to-many). Use instead of N+1 read-block + resolve calls.",
+		promptSnippet: "Join two blocks in one call — by relation edge or shared field; returns {left,right[]} pairs",
+		parameters: Type.Object({
+			leftBlock: Type.String({ description: "Left block name (e.g., 'tasks')" }),
+			rightBlock: Type.String({ description: "Right block name (e.g., 'verification')" }),
+			relationType: Type.Optional(Type.String({ description: "Edge mode: relations.json relation_type" })),
+			leftField: Type.Optional(Type.String({ description: "Field mode: left item field" })),
+			rightField: Type.Optional(Type.String({ description: "Field mode: right item field" })),
+			leftEndpoint: Type.Optional(
+				Type.Union([Type.Literal("parent"), Type.Literal("child")], {
+					description: "Edge mode: is the left item the edge parent (default) or child",
+				}),
+			),
+			whereField: Type.Optional(Type.String({ description: "Optional left pre-filter field" })),
+			whereOp: Type.Optional(
+				Type.Union([Type.Literal("eq"), Type.Literal("neq"), Type.Literal("in"), Type.Literal("matches")]),
+			),
+			whereValue: Type.Optional(Type.Unknown({ description: "Optional left pre-filter value" })),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: {
+				leftBlock: string;
+				rightBlock: string;
+				relationType?: string;
+				leftField?: string;
+				rightField?: string;
+				leftEndpoint?: "parent" | "child";
+				whereField?: string;
+				whereOp?: "eq" | "neq" | "in" | "matches";
+				whereValue?: unknown;
+			},
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const leftPredicate =
+				params.whereField !== undefined
+					? { field: params.whereField, op: params.whereOp ?? "eq", value: params.whereValue }
+					: undefined;
+			const result = joinBlocks(ctx.cwd, {
+				leftBlock: params.leftBlock,
+				rightBlock: params.rightBlock,
+				relationType: params.relationType,
+				leftField: params.leftField,
+				rightField: params.rightField,
+				leftEndpoint: params.leftEndpoint,
+				leftPredicate,
+			});
 			const jsonStr = JSON.stringify(result, null, 2);
 			const truncated = truncateHead(jsonStr);
 			let text = truncated.content;

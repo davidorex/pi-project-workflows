@@ -867,6 +867,97 @@ export function readBlockPage(
 	return { items, total, hasMore: offset + limit < total };
 }
 
+/**
+ * Read a block and return its single top-level array of items, or [] when the
+ * block has no array property. Mirrors the read+discover prologue shared by
+ * filterBlockItems / readBlockPage; missing block / multiple top-level arrays
+ * propagate the throw via readBlock + discoverArrayKey. Module-private helper
+ * for joinBlocks' no-predicate left path + field-mode right read.
+ */
+function readBlockArray(cwd: string, blockName: string): Record<string, unknown>[] {
+	const data = readBlock(cwd, blockName) as Record<string, unknown>;
+	const arrayKey = discoverArrayKey(data);
+	if (arrayKey === null) return [];
+	return (data[arrayKey] as unknown[]).filter(
+		(raw): raw is Record<string, unknown> => !!raw && typeof raw === "object",
+	);
+}
+
+// ── Cross-block Join ──────────────────────────────────────────────────────────
+
+export interface JoinSpec {
+	leftBlock: string;
+	rightBlock: string;
+	relationType?: string; // EDGE mode (XOR field mode)
+	leftField?: string; // FIELD mode (with rightField)
+	rightField?: string;
+	leftEndpoint?: "parent" | "child"; // EDGE mode: is the left item the edge parent (default) or child?
+	leftPredicate?: FilterPredicate; // optional pre-filter on the left block
+}
+
+export interface JoinResult {
+	left: Record<string, unknown>;
+	right: Record<string, unknown>[]; // ALWAYS an array (one-to-many; [] = no match)
+}
+
+/**
+ * Cross-block join (FGAP-043, HYBRID). Mode = exactly one of relationType (edge) XOR
+ * leftField+rightField (field). Returns one JoinResult per left item (after leftPredicate),
+ * right always an array. Edge mode is DEC-0013-native (relations.json); field mode joins on a
+ * shared field value (legacy inline-FK + arbitrary shared fields). Reuses filterBlockItems /
+ * readBlock / discoverArrayKey / loadRelations / buildIdIndex.
+ */
+export function joinBlocks(cwd: string, spec: JoinSpec): JoinResult[] {
+	const isEdge = spec.relationType !== undefined;
+	const isField = spec.leftField !== undefined || spec.rightField !== undefined;
+	if (isEdge && isField)
+		throw new Error(
+			"joinBlocks: specify EITHER relationType (edge mode) OR leftField+rightField (field mode), not both",
+		);
+	if (!isEdge && !isField)
+		throw new Error("joinBlocks: specify relationType (edge mode) or leftField+rightField (field mode)");
+	if (isField && (spec.leftField === undefined || spec.rightField === undefined))
+		throw new Error("joinBlocks: field mode requires both leftField and rightField");
+
+	const leftItems = spec.leftPredicate
+		? (filterBlockItems(cwd, spec.leftBlock, spec.leftPredicate) as Record<string, unknown>[])
+		: readBlockArray(cwd, spec.leftBlock);
+
+	if (isField) {
+		const rightItems = readBlockArray(cwd, spec.rightBlock);
+		const rf = spec.rightField as string;
+		const lf = spec.leftField as string;
+		const index = new Map<unknown, Record<string, unknown>[]>();
+		for (const r of rightItems) {
+			const key = r[rf];
+			const bucket = index.get(key);
+			if (bucket) bucket.push(r);
+			else index.set(key, [r]);
+		}
+		return leftItems.map((left) => ({ left, right: left[lf] !== undefined ? (index.get(left[lf]) ?? []) : [] }));
+	}
+
+	// EDGE mode
+	const relationType = spec.relationType as string;
+	const leftEndpoint = spec.leftEndpoint ?? "parent";
+	const edges = loadRelations(cwd).filter((e) => e.relation_type === relationType);
+	const idIndex = buildIdIndex(cwd);
+	return leftItems.map((left) => {
+		const leftId = left.id;
+		const right: Record<string, unknown>[] = [];
+		if (typeof leftId === "string") {
+			for (const e of edges) {
+				const here = leftEndpoint === "parent" ? e.parent : e.child;
+				if (here !== leftId) continue;
+				const otherId = leftEndpoint === "parent" ? e.child : e.parent;
+				const loc = idIndex.get(otherId);
+				if (loc && loc.block === spec.rightBlock) right.push(loc.item);
+			}
+		}
+		return { left, right };
+	});
+}
+
 // ── Cross-block ID Resolver ─────────────────────────────────────────────────
 
 /**

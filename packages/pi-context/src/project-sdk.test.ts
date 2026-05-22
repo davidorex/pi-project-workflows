@@ -22,6 +22,7 @@ import {
 	currentState,
 	filterBlockItems,
 	type ItemLocation,
+	joinBlocks,
 	projectState,
 	readBlockItem,
 	readBlockPage,
@@ -1978,6 +1979,285 @@ describe("readBlockPage", () => {
 		setupMultiArrayBlock(tmpDir, "ambiguous");
 
 		assert.throws(() => readBlockPage(tmpDir, "ambiguous"));
+	});
+});
+
+// ── joinBlocks (cross-block HYBRID join, FGAP-043) ───────────────────────────
+
+/**
+ * relation_types registry for the edge-mode join fixtures. Two relation types so
+ * one fixture can exercise relation-type filtering + a 3rd-block exclusion case.
+ */
+const JOIN_REL_TYPES = [
+	{ canonical_id: "task_verified_by", display_name: "verified by", category: "data_flow" as const },
+	{ canonical_id: "task_depends_on_task", display_name: "depends on", category: "ordering" as const },
+];
+
+describe("joinBlocks", () => {
+	// ── FIELD mode ──────────────────────────────────────────────────────────
+	it("field mode: pairs left items with right items on a shared field value (left pre-filtered)", (t) => {
+		const tmpDir = makeTmpDir("join-field-basic");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [
+			{ id: "t1", status: "completed", verification: "VER-1" },
+			{ id: "t2", status: "completed", verification: "VER-missing" },
+			{ id: "t3", status: "planned", verification: "VER-1" },
+		]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "VER-1", target: "t1" }]);
+
+		const result = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			leftField: "verification",
+			rightField: "id",
+			leftPredicate: { field: "status", op: "eq", value: "completed" },
+		});
+
+		// leftPredicate excludes t3 (planned) → only t1 + t2 participate.
+		assert.strictEqual(result.length, 2);
+		const byId = new Map(result.map((r) => [r.left.id, r]));
+		const t1 = byId.get("t1");
+		assert.strictEqual(t1?.right.length, 1);
+		assert.strictEqual((t1?.right[0] as Record<string, unknown>).id, "VER-1");
+		// t2 references a non-existent verification id → empty array (not null).
+		const t2 = byId.get("t2");
+		assert.deepStrictEqual(t2?.right, []);
+	});
+
+	it("field mode one-to-many: a left value shared by 2 right items → right.length === 2", (t) => {
+		const tmpDir = makeTmpDir("join-field-multi");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1", phase: "P-1" }]);
+		setupFilterBlock(tmpDir, "notes", "notes", [
+			{ id: "n1", phase: "P-1" },
+			{ id: "n2", phase: "P-1" },
+			{ id: "n3", phase: "P-2" },
+		]);
+
+		const result = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "notes",
+			leftField: "phase",
+			rightField: "phase",
+		});
+		assert.strictEqual(result.length, 1);
+		assert.strictEqual(result[0].right.length, 2);
+		const ids = (result[0].right.map((r) => (r as Record<string, unknown>).id) as string[]).sort();
+		assert.deepStrictEqual(ids, ["n1", "n2"]);
+	});
+
+	it("field mode: a left item missing the join field → right:[]", (t) => {
+		const tmpDir = makeTmpDir("join-field-missing");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }]); // no `verification` field
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "VER-1" }]);
+
+		const result = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			leftField: "verification",
+			rightField: "id",
+		});
+		assert.strictEqual(result.length, 1);
+		assert.deepStrictEqual(result[0].right, []);
+	});
+
+	// ── EDGE mode ───────────────────────────────────────────────────────────
+	it("edge mode leftEndpoint=parent: left=parent items, right=resolved child-block items", (t) => {
+		const tmpDir = makeTmpDir("join-edge-parent");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, JOIN_REL_TYPES, []);
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }, { id: "t2" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "v1" }, { id: "v2" }]);
+		// edges: task (parent) → verification (child)
+		writeRelations(projectDir, [
+			{ parent: "t1", child: "v1", relation_type: "task_verified_by" },
+			{ parent: "t2", child: "v2", relation_type: "task_verified_by" },
+		]);
+
+		const result = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			relationType: "task_verified_by",
+			leftEndpoint: "parent",
+		});
+		const byId = new Map(result.map((r) => [r.left.id, r]));
+		assert.strictEqual((byId.get("t1")?.right[0] as Record<string, unknown>).id, "v1");
+		assert.strictEqual((byId.get("t2")?.right[0] as Record<string, unknown>).id, "v2");
+	});
+
+	it("edge mode leftEndpoint=child: same edges but left=child items → right=parent-block items (opposite side)", (t) => {
+		const tmpDir = makeTmpDir("join-edge-child");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, JOIN_REL_TYPES, []);
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "v1" }]);
+		writeRelations(projectDir, [{ parent: "t1", child: "v1", relation_type: "task_verified_by" }]);
+
+		// leftEndpoint=parent: tasks (parent) → verification right
+		const asParent = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			relationType: "task_verified_by",
+			leftEndpoint: "parent",
+		});
+		assert.strictEqual((asParent[0].right[0] as Record<string, unknown>).id, "v1");
+
+		// leftEndpoint=child: verification (child) → tasks right (THE OPPOSITE side)
+		const asChild = joinBlocks(tmpDir, {
+			leftBlock: "verification",
+			rightBlock: "tasks",
+			relationType: "task_verified_by",
+			leftEndpoint: "child",
+		});
+		assert.strictEqual(asChild[0].left.id, "v1");
+		assert.strictEqual((asChild[0].right[0] as Record<string, unknown>).id, "t1");
+		// Adversarial direction proof: parent-side right ids ≠ child-side right ids.
+		assert.notDeepStrictEqual(
+			asParent.map((r) => (r.right[0] as Record<string, unknown>).id),
+			asChild.map((r) => (r.right[0] as Record<string, unknown>).id),
+		);
+	});
+
+	it("edge mode one-to-many: a left with 2 matching edges → right.length === 2", (t) => {
+		const tmpDir = makeTmpDir("join-edge-multi");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, JOIN_REL_TYPES, []);
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "v1" }, { id: "v2" }]);
+		writeRelations(projectDir, [
+			{ parent: "t1", child: "v1", relation_type: "task_verified_by" },
+			{ parent: "t1", child: "v2", relation_type: "task_verified_by" },
+		]);
+
+		const result = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			relationType: "task_verified_by",
+		});
+		assert.strictEqual(result.length, 1);
+		assert.strictEqual(result[0].right.length, 2);
+		const ids = (result[0].right.map((r) => (r as Record<string, unknown>).id) as string[]).sort();
+		assert.deepStrictEqual(ids, ["v1", "v2"]);
+	});
+
+	it("edge mode rightBlock scoping: an edge resolving to a 3rd block is excluded", (t) => {
+		const tmpDir = makeTmpDir("join-edge-scope");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, JOIN_REL_TYPES, []);
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "v1" }]);
+		setupFilterBlock(tmpDir, "notes", "notes", [{ id: "n1" }]);
+		// t1 connects to BOTH a verification (target rightBlock) and a note (3rd block).
+		writeRelations(projectDir, [
+			{ parent: "t1", child: "v1", relation_type: "task_verified_by" },
+			{ parent: "t1", child: "n1", relation_type: "task_verified_by" },
+		]);
+
+		const result = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			relationType: "task_verified_by",
+		});
+		assert.strictEqual(result.length, 1);
+		// n1 (notes block) excluded; only v1 (verification block) survives scoping.
+		assert.strictEqual(result[0].right.length, 1);
+		assert.strictEqual((result[0].right[0] as Record<string, unknown>).id, "v1");
+	});
+
+	it("edge mode unknown relationType: every right:[] (permissive, no throw)", (t) => {
+		const tmpDir = makeTmpDir("join-edge-unknown-rt");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, JOIN_REL_TYPES, []);
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "v1" }]);
+		writeRelations(projectDir, [{ parent: "t1", child: "v1", relation_type: "task_verified_by" }]);
+
+		const result = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			relationType: "no_such_relation",
+		});
+		assert.strictEqual(result.length, 1);
+		assert.deepStrictEqual(result[0].right, []);
+	});
+
+	// ── mode validation ─────────────────────────────────────────────────────
+	it("mode validation: relationType + leftField together throws", (t) => {
+		const tmpDir = makeTmpDir("join-mode-both");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "v1" }]);
+		assert.throws(() =>
+			joinBlocks(tmpDir, {
+				leftBlock: "tasks",
+				rightBlock: "verification",
+				relationType: "task_verified_by",
+				leftField: "verification",
+				rightField: "id",
+			}),
+		);
+	});
+
+	it("mode validation: neither relationType nor field mode throws", (t) => {
+		const tmpDir = makeTmpDir("join-mode-neither");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "v1" }]);
+		assert.throws(() => joinBlocks(tmpDir, { leftBlock: "tasks", rightBlock: "verification" }));
+	});
+
+	it("mode validation: leftField without rightField throws", (t) => {
+		const tmpDir = makeTmpDir("join-mode-half-field");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "v1" }]);
+		assert.throws(() =>
+			joinBlocks(tmpDir, { leftBlock: "tasks", rightBlock: "verification", leftField: "verification" }),
+		);
+	});
+
+	it("missing block throws (readBlock throw propagates)", (t) => {
+		const tmpDir = makeTmpDir("join-missing-block");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		assert.throws(() =>
+			joinBlocks(tmpDir, { leftBlock: "nonexistent", rightBlock: "verification", leftField: "x", rightField: "id" }),
+		);
+	});
+
+	it("invariant: every JoinResult.right is an Array (never null)", (t) => {
+		const tmpDir = makeTmpDir("join-invariant-array");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, JOIN_REL_TYPES, []);
+		setupFilterBlock(tmpDir, "tasks", "tasks", [{ id: "t1" }, { id: "t2", verification: "VER-1" }]);
+		setupFilterBlock(tmpDir, "verification", "verifications", [{ id: "VER-1" }]);
+		writeRelations(projectDir, []);
+
+		const field = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			leftField: "verification",
+			rightField: "id",
+		});
+		for (const pair of field) assert.ok(Array.isArray(pair.right));
+		const edge = joinBlocks(tmpDir, {
+			leftBlock: "tasks",
+			rightBlock: "verification",
+			relationType: "task_verified_by",
+		});
+		for (const pair of edge) assert.ok(Array.isArray(pair.right));
 	});
 });
 

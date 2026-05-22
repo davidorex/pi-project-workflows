@@ -3228,6 +3228,46 @@
       "id": "FGAP-087",
       "created_at": "2026-05-22T07:15:33.675Z",
       "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "title": "Package-relative path resolution uses import.meta.dirname in 3 sites — undefined under tsx-CJS dist-load; normalize to fileURLToPath(import.meta.url)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "import.meta.dirname is undefined when a built dist/*.js (type:module) is loaded under tsx's CJS-interop path (tsx -e / subpath import) — proven during B2 where samples-catalog.ts's module-top import.meta.dirname threw ERR_INVALID_ARG_TYPE and was fixed to path.dirname(fileURLToPath(import.meta.url)) (idiom already at project-context.ts:220/433, samples-catalog.ts:34, schema-validator.ts:47, pi-jit-agents/trace-writer.ts:40). Three sites still use import.meta.dirname: (a) pi-workflows/src/bundled-dirs.ts:14 MODULE-TOP-LEVEL (eager) PACKAGE_ROOT = path.resolve(import.meta.dirname, '..') — same eager pattern that broke samples-catalog (highest risk: throws at import under tsx-CJS); (b) pi-context/src/index.ts:335 installProject samplesRoot (lazy, inside fn); (c) pi-context/src/update-check.ts:20 getInstalledVersion (lazy, inside fn). Lazy sites are prod-ESM-safe but latent under tsx-CJS-if-called; eager bundled-dirs.ts:14 is the genuine risk. Codebase already standardizes on fileURLToPath(import.meta.url) in 5 places.",
+      "evidence": [
+        {
+          "file": "packages/pi-workflows/src/bundled-dirs.ts",
+          "lines": "14",
+          "reference": "PACKAGE_ROOT = path.resolve(import.meta.dirname, '..') EAGER module-top; same pattern that threw in samples-catalog under tsx-CJS"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "335",
+          "reference": "installProject samplesRoot import.meta.dirname — lazy, prod-ESM-safe, latent under tsx-CJS"
+        },
+        {
+          "file": "packages/pi-context/src/update-check.ts",
+          "lines": "20",
+          "reference": "getInstalledVersion import.meta.dirname — lazy, prod-ESM-safe, latent under tsx-CJS"
+        },
+        {
+          "file": "packages/pi-context/src/schema-validator.ts",
+          "lines": "47",
+          "reference": "canonical idiom precedent path.dirname(fileURLToPath(import.meta.url)) — target form"
+        }
+      ],
+      "impact": "No production breakage today (prod loads dist as native ESM; 2 pi-context sites lazy). Risks: bundled-dirs.ts:14 eager-module-top throws if that pi-workflows module loads via any tsx-CJS-interop path (orchestrator tsx -e / some harnesses) — the exact B2 failure class; and inconsistency with the established idiom invites repeating the B2 defect. P3 — no current failing path, cheap to normalize, removes a latent footgun.",
+      "canonical_vocabulary": "import.meta.dirname, fileURLToPath, package-relative-path, tsx-CJS-interop, eager-vs-lazy",
+      "proposed_resolution": "Replace all 3 import.meta.dirname package-relative resolutions with path.dirname(fileURLToPath(import.meta.url)) (idiom in 5 existing sites). Prioritize bundled-dirs.ts:14 (eager = actual risk). Add fileURLToPath import from node:url where absent. Verify each touched module resolves its package-relative dir under native-ESM AND a tsx -e import probe. Mechanical, no prod behavior change; route through plan mode per feedback_no_adhoc_dev. Consider a biome guard to prevent reintroduction.",
+      "related_decisions": [
+        "DEC-0015"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "id": "FGAP-088",
+      "created_at": "2026-05-22T08:21:11.846Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import {
 	agentsDir,
+	assertSubstrateName,
 	BootstrapNotFoundError,
 	projectDir,
 	projectTemplatesDir,
@@ -97,5 +98,31 @@ describe("project-dir resolver + BootstrapNotFoundError + writeBootstrapPointer"
 		);
 		assert.equal(agentsDir(tmpDir), path.join(tmpDir, ".context-builders", "agents"));
 		assert.equal(projectTemplatesDir(tmpDir), path.join(tmpDir, ".context-builders", "templates"));
+	});
+});
+
+describe("assertSubstrateName (FGAP-079 path-traversal guard)", () => {
+	it("accepts canonical_ids ([A-Za-z0-9_-]+)", () => {
+		assert.doesNotThrow(() => assertSubstrateName("framework-gaps"));
+		assert.doesNotThrow(() => assertSubstrateName("spec-reviews"));
+		assert.doesNotThrow(() => assertSubstrateName("tasks"));
+		assert.doesNotThrow(() => assertSubstrateName("layer_plans"));
+	});
+
+	it("rejects traversal segments / path separators / dots / absolutes / empty", () => {
+		const bad = ["../../etc/x", "a/b", "a\\b", "..", ".", "x.schema", "/abs", ""];
+		for (const name of bad) {
+			assert.throws(
+				() => assertSubstrateName(name),
+				/Invalid substrate name/,
+				`expected throw for ${JSON.stringify(name)}`,
+			);
+		}
+	});
+
+	it("schemaPath rejects a traversal name before any path resolution (no substrate needed)", () => {
+		// The guard fires inside schemaPath ahead of resolveContextDir, so a
+		// missing bootstrap pointer at "." never matters — the name is rejected first.
+		assert.throws(() => schemaPath(".", "../../etc/x"), /Invalid substrate name/);
 	});
 });

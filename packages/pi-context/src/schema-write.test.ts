@@ -3,7 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeBootstrapPointer } from "./project-dir.js";
+import { writeConfig } from "./project-context.js";
+import { schemaPath, writeBootstrapPointer } from "./project-dir.js";
 import { ValidationError } from "./schema-validator.js";
 import { readSchema, updateSchema, writeSchema } from "./schema-write.js";
 
@@ -100,6 +101,29 @@ describe("writeSchema", () => {
 		);
 
 		assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "schemas", "demo.schema.json")));
+	});
+
+	it("write-path === read-path under a non-default config.root (FGAP-079 / DEC-0045)", (t) => {
+		const tmpDir = makeTmpDir("write-root-divergence");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupProjectDir(tmpDir);
+
+		// Set config.root to a value DIFFERENT from the pointer dir (.project). Pre
+		// DEC-0045 this would make writeSchema (projectRoot-based) land under
+		// alt-substrate/ while readSchema/schemaPath (pointer-based) look under
+		// .project/ — a divergence. Post-unification both resolve to the pointer dir.
+		writeConfig(tmpDir, { schema_version: "1.0.0", root: "alt-substrate", block_kinds: [] });
+
+		writeSchema(tmpDir, "demo-kind", validSchema);
+
+		// The schema landed where reads look (the read-side schemaPath), NOT under
+		// config.root — proving write resolution == read resolution.
+		const readSidePath = schemaPath(tmpDir, "demo-kind");
+		assert.ok(fs.existsSync(readSidePath), "schema must land at the read-side schemaPath");
+		assert.strictEqual(readSidePath, path.join(tmpDir, ".project", "schemas", "demo-kind.schema.json"));
+		assert.deepStrictEqual(readSchema(tmpDir, "demo-kind"), validSchema);
+		// config.root's alt-substrate/ dir must NOT have received the schema.
+		assert.ok(!fs.existsSync(path.join(tmpDir, "alt-substrate", "schemas", "demo-kind.schema.json")));
 	});
 
 	it("no tmp file remains after successful write", (t) => {

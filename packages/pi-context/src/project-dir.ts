@@ -190,6 +190,30 @@ export function writeBootstrapPointer(cwd: string, contextDir: string): void {
 }
 
 /**
+ * Reject substrate names that are not bare path segments (FGAP-079 / DEC-0045).
+ *
+ * Every name→path builder below (and in block-api / project-context /
+ * schema-write) interpolates a raw `name` into a substrate-relative file path
+ * (`${name}.schema.json`, `${name}.json`). A name containing a path separator
+ * (`/`, `\`), a `..` traversal segment, a `.` (`x.schema`), or an absolute
+ * prefix would escape the substrate dir. This validator constrains names to the
+ * block_kind canonical_id alphabet (`[A-Za-z0-9_-]+`) — which has no separators,
+ * dots, or empty form — so a traversal name throws BEFORE any path resolution.
+ *
+ * Guards BOTH read and write sides (the resolver unification of DEC-0045 routes
+ * `schemaWritePath` through `schemaPath`, so guarding here covers writes too).
+ * Now reachable from the in-pi tool surface — the write-schema tool (FGAP-077)
+ * exposes the schema name directly to in-pi agents.
+ */
+export function assertSubstrateName(name: string): void {
+	if (!/^[A-Za-z0-9_-]+$/.test(name)) {
+		throw new Error(
+			`Invalid substrate name '${name}': only letters, digits, '-', '_' are allowed (no path separators or '..').`,
+		);
+	}
+}
+
+/**
  * Canonical path-builder helpers for the substrate directory (config-driven
  * via `resolveContextDir(cwd)` per DEC-0015). Every site that previously
  * hand-built `path.join(cwd, ".project", ...)` now routes through these so
@@ -205,6 +229,7 @@ export function schemasDir(cwd: string): string {
 }
 
 export function schemaPath(cwd: string, blockName: string): string {
+	assertSubstrateName(blockName);
 	return path.join(resolveContextDir(cwd), SCHEMAS_DIR, `${blockName}.schema.json`);
 }
 

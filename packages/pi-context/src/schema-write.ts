@@ -16,9 +16,11 @@
  *   - Atomic on-disk semantics — writes go to a `<file>.schema-write-<pid>.tmp`
  *     sibling and are renamed into place. A failed write leaves the prior
  *     schema byte-identical.
- *   - Schema files land at `<projectRoot>/schemas/<schemaName>.schema.json`
- *     where `projectRoot` honors `config.root` per the bootstrap-aware
- *     resolver in `project-context.ts`.
+ *   - Schema files land at `<resolveContextDir(cwd)>/schemas/<schemaName>.schema.json`,
+ *     routed through `schemaPath` (project-dir) so write resolution is identical
+ *     to read resolution — pointer-canonical, `config.root` is NOT a path input
+ *     (FGAP-079 / DEC-0045). Previously `projectRoot`-based (config.root-honoring),
+ *     which diverged from the pointer-canonical read side.
  *
  * Out-of-scope for step 3:
  *   - Schema $id + version + $ref + migration registry (FGAP-006, step 4)
@@ -29,23 +31,21 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { DispatchContext } from "./dispatch-context.js";
-import { projectRoot } from "./project-context.js";
-import { SCHEMAS_DIR } from "./project-dir.js";
+import { schemaPath } from "./project-dir.js";
 import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.js";
 
 /**
- * `<projectRoot>/schemas/<schemaName>.schema.json` — canonical schema path.
- *
- * `projectRoot(cwd)` is resolver-aware via the configPath cascade in
- * `project-context.ts` (which resolves through `resolveContextDir(cwd)` per
- * DEC-0015); `SCHEMAS_DIR` composes as a bare segment off the resolved root.
- * No hardcoded substrate-dir literal lives here — `schemas/` is a substrate
- * internal-layout constant, not the substrate-dir name itself. This is
- * structurally analogous to `installProject`'s `schemasRoot` composition in
- * `index.ts`.
+ * `<resolveContextDir(cwd)>/schemas/<schemaName>.schema.json` — canonical schema
+ * path, routed through `schemaPath` (project-dir) so write resolution is
+ * BYTE-IDENTICAL to read resolution (FGAP-079 / DEC-0045). Previously this was
+ * `projectRoot`-based, which honored `config.root` and so diverged from the
+ * pointer-canonical read side (`schemaPath` / `validateBlockWithMigration`) under
+ * a non-default `config.root` — schemas would be written where reads/validation
+ * could not find them. Delegating to `schemaPath` collapses the two paths to one
+ * source AND inherits its `assertSubstrateName` guard (path-traversal rejection).
  */
 function schemaWritePath(cwd: string, schemaName: string): string {
-	return path.join(projectRoot(cwd), SCHEMAS_DIR, `${schemaName}.schema.json`);
+	return schemaPath(cwd, schemaName);
 }
 
 /**

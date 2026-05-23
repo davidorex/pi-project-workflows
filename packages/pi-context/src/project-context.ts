@@ -24,7 +24,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { appendManyToTypedFileIfAbsent, writeTypedFile } from "./block-api.js";
 import type { DispatchContext } from "./dispatch-context.js";
-import { resolveContextDir, SCHEMAS_DIR } from "./project-dir.js";
+import { assertSubstrateName, resolveContextDir, SCHEMAS_DIR } from "./project-dir.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
 // ── Type definitions (from plan §"Files to create") ──────────────────────────
@@ -242,16 +242,26 @@ function relationsPath(cwd: string): string {
 // ── Loaders ─────────────────────────────────────────────────────────────────
 
 /**
- * Resolve the substrate root for `cwd`. Reads
- * `<resolveContextDir(cwd)>/config.json`, returns `config.root` resolved
- * relative to cwd when set. Falls back to `resolveContextDir(cwd)` when no
- * config is present (the substrate dir itself).
+ * Resolve the substrate root for `cwd` — pointer-canonical (DEC-0045 / FGAP-079).
+ *
+ * Returns `resolveContextDir(cwd)` (the `.pi-context.json` pointer dir) for ALL
+ * substrate path resolution. `config.root` is NOT a path-resolution input:
+ * config.json and relations.json are pinned to the pointer dir by necessity
+ * (`projectRoot` must read config.json to learn `config.root`, so config.json
+ * cannot itself relocate), so honoring `config.root` for blocks/schemas would
+ * split the substrate across two dirs (config/relations at the pointer; blocks/
+ * schemas at config.root) — incoherent. Substrate relocation is properly done
+ * by flipping the pointer (future `/context migrate`, DEC-0036 step-5), which
+ * moves the whole substrate coherently.
+ *
+ * `config.root` is retained as optional config DATA (DEC-0041 — config carries
+ * the substrate dir name for display/round-trip) but is unused for resolution.
+ * In practice `adoptConception` sets `config.root` == the pointer dir, so this
+ * is behavior-preserving wherever the two coincide; it removes the latent
+ * divergence (writes honoring config.root while reads/validation use the
+ * pointer) that surfaced under FGAP-077.
  */
 export function projectRoot(cwd: string): string {
-	const cfg = loadConfig(cwd);
-	if (cfg && typeof cfg.root === "string" && cfg.root.length > 0) {
-		return path.resolve(cwd, cfg.root);
-	}
 	return resolveContextDir(cwd);
 }
 
@@ -290,11 +300,13 @@ export function loadConfig(cwd: string): ConfigBlock | null {
  * cannot drift.
  */
 export function installedSchemaDestPath(root: string, name: string): string {
+	assertSubstrateName(name);
 	return path.join(root, SCHEMAS_DIR, `${name}.schema.json`);
 }
 
 /** Destination path of an installed BLOCK asset — `<root>/<name>.json`. `root` is `projectRoot(cwd)`. */
 export function installedBlockDestPath(root: string, name: string): string {
+	assertSubstrateName(name);
 	return path.join(root, `${name}.json`);
 }
 
@@ -1305,6 +1317,7 @@ function resolveCompositionInternal(
  * block-api dependencies — block-api imports projectRoot from here).
  */
 function readBlockItems(cwd: string, blockName: string): ItemRecord[] {
+	assertSubstrateName(blockName);
 	const filePath = path.join(projectRoot(cwd), `${blockName}.json`);
 	if (!fs.existsSync(filePath)) return [];
 	const raw = JSON.parse(fs.readFileSync(filePath, "utf-8")) as Record<string, unknown>;

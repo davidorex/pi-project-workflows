@@ -24,7 +24,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { appendToBlock, nextId, readBlock, resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { schemasDir } from "@davidorex/pi-context/project-dir";
+import { assertSubstrateName, schemasDir } from "@davidorex/pi-context/project-dir";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {
@@ -87,6 +87,7 @@ interface BlockSchemaInfo {
 }
 
 function loadBlockSchema(cwd: string, block: string): BlockSchemaInfo {
+	assertSubstrateName(block);
 	const schemaPath = path.join(schemasDir(cwd), `${block}.schema.json`);
 	if (!fs.existsSync(schemaPath)) {
 		console.error(`Schema not found: ${schemaPath}`);

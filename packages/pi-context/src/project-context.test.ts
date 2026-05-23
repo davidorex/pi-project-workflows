@@ -188,13 +188,15 @@ describe("projectRoot", () => {
 		assert.strictEqual(projectRoot(tmp), path.join(tmp, ".project"));
 	});
 
-	it("respects config.root override", (t) => {
+	it("ignores config.root for resolution — pointer-canonical (DEC-0045 / FGAP-079)", (t) => {
 		const tmp = makeTmpDir("root-override");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		const cfg = minimalConfig();
 		cfg.root = "alt-substrate";
 		writeConfig(tmp, cfg);
-		assert.strictEqual(projectRoot(tmp), path.resolve(tmp, "alt-substrate"));
+		// config.root is NOT a path input — projectRoot returns the .pi-context.json
+		// pointer dir regardless of config.root (honoring it would split the substrate).
+		assert.strictEqual(projectRoot(tmp), path.join(tmp, ".project"));
 	});
 });
 

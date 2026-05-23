@@ -131,6 +131,13 @@
       "target_kinds": ["decisions"]
     },
     {
+      "canonical_id": "decision_relates_to_decision",
+      "display_name": "relates to decision",
+      "category": "data_flow",
+      "source_kinds": ["decisions"],
+      "target_kinds": ["decisions"]
+    },
+    {
       "canonical_id": "decision_addresses_issue",
       "display_name": "addresses issue",
       "category": "data_flow",

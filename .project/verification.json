@@ -1332,6 +1332,37 @@
         }
       ],
       "id": "VER-033"
+    },
+    {
+      "target": "TASK-062",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-23",
+      "evidence": "Unit C. Commit 4fb4d1e. build+check+full test green (pi-context 602, all packages 0 fail) incl. new expectedBlockForId + status-vocabulary tests. FGAP-062: expectedBlockForId skips empty-prefix block_kinds (no catch-all); MID-VERIFY CORRECTION — empty prefix is legitimate (conventions slug-id block, FGAP-051), so the initial config minLength:1 was reverted (broke accept-all+conception-validates); guard alone is the correct fix. FGAP-025: validateProject status_unknown_value warning (vocabulary-neutral, warning-only, skips status-less, doesn't flag unknown-bucket keys). FGAP-096: 3 cross-package instanceof BootstrapNotFoundError -> name-based + imports dropped. Runtime demo on real .project: DEC-0001->decisions, slug->null, buildIdIndex 368 no throw, status_unknown_value count=0, thrown err.name matches name-based check. Fresh-context adversarial PASS on all 4 claims.",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-062 empty-prefix guard; schema allows empty (slug-id blocks); prefixed resolution intact",
+          "status": "passed",
+          "evidence": "expectedBlockForId skip-empty; config.schema 1.4.0 no minLength (reverted); conventions prefix:'' validates; DEC-0001->decisions (adversarial A PASS)"
+        },
+        {
+          "criterion": "FGAP-025 status check vocabulary-neutral, warning-only, skips status-less, distinguishes no-key vs unknown-bucket",
+          "status": "passed",
+          "evidence": "validateProject loop over idIndex; cancelled (key) not flagged, zzz-bogus flagged; .project count=0 (adversarial B PASS)"
+        },
+        {
+          "criterion": "FGAP-096 3 sites name-based + imports dropped; graceful-skip preserved",
+          "status": "passed",
+          "evidence": "compile.ts:242,263 + step-shared.ts:181; thrown err.name===BootstrapNotFoundError (adversarial C PASS)"
+        },
+        {
+          "criterion": "no regression; mid-verify schema revert clean",
+          "status": "passed",
+          "evidence": "602 pi-context 0 fail; no stray minLength/1.5.0; no other cross-package instanceof (adversarial D PASS)"
+        }
+      ],
+      "id": "VER-034"
     }
   ]
 }

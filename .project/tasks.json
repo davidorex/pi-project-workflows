@@ -838,7 +838,7 @@
     },
     {
       "description": "Unit C — standalone small fixes. FGAP-062: expectedBlockForId empty-prefix catch-all -> skip empty-prefix block_kinds (defensive) + config.schema.json prefix minLength:1 (root-cause, version 1.4.0->1.5.0). FGAP-025: validateProject cross-block status-vocab check -> warn when an item's status value isn't a key in resolveStatusVocabulary (vocabulary-neutral, reuses vocab+idIndex). FGAP-096: compile.ts:242,263 + step-shared.ts:181 instanceof BootstrapNotFoundError -> name-based (err.name===) + drop unused imports.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/project-sdk.ts",
         "packages/pi-context/schemas/config.schema.json",
@@ -856,7 +856,8 @@
       ],
       "depends_on": [],
       "notes": "Unit C of A/B/C cluster (+FGAP-096 folded per user). Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-062/025/096.",
-      "id": "TASK-062"
+      "id": "TASK-062",
+      "verification": "VER-034"
     }
   ]
 }

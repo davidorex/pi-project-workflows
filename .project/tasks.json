@@ -786,6 +786,30 @@
       "notes": "P1 of FGAP-095 (governed by DEC-0042). Surface-agnostic (library+tool+CLI, no command surface) — defers the /project-vs-/context cutover-sequencing question to P2. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md",
       "id": "TASK-059",
       "verification": "VER-031"
+    },
+    {
+      "description": "Unit A — block-api write ergonomics (FGAP-083 + FGAP-084 + FGAP-082). One root cause: the items schema can be a $ref (#/definitions/<kind>) and file-block-item/append-relation never dereference it. Add canonical $ref-aware block-api helpers (resolveBlockItemSchema + nextId), repoint the CLI auto-id + auto-stamp + dry-run to resolved-schema + whole-file validation, add the in-pi append-block-item autoId twin (DEC-0019/0020). block-api write path already validates whole-file $ref-aware; only orchestrator-side pre-validation + auto-id were broken (hit filing FEAT-004).",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "scripts/orchestrator/file-block-item.ts",
+        "scripts/orchestrator/append-relation.ts",
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/block-api.test.ts"
+      ],
+      "acceptance_criteria": [
+        "block-api: resolveBlockItemSchema (finds arrayKey + derefs #/definitions|#/$defs items $ref; inline passthrough; throw on unresolvable) + nextId(cwd,block) ($ref-aware pattern read, prefix+width parse, scan-max, pad)",
+        "file-block-item: loadBlockSchema uses resolved item schema (required/properties/id.pattern work for $ref blocks -> created_by/created_at auto-stamp restored); autoAllocateId -> nextId; dry-run -> whole-file validateFromFile (dry-run PASS == write PASS)",
+        "append-relation: dry-run validates prospective whole array, not the items fragment",
+        "index.ts: append-block-item gains optional autoId param -> nextId when id absent (Pi-tool twin of --auto-id)",
+        "block-api.test.ts: resolveBlockItemSchema (inline + $ref + throw) + nextId (inline/$ref blocks, 3/4/variable width, empty=>first, scan-max, no-pattern throw) + $ref-block whole-file append validation",
+        "Runtime demo: nextId features=>FEAT-005, framework-gaps=>FGAP-096, decisions=>DEC-0045; file-block-item --block features --auto-id --dry-run on a feature-without-id allocates + auto-stamps + PASS",
+        "Fresh-context adversarial: deref both shapes, widths, whole-file $ref parity + dry-run==write, in-pi autoId, no inline-block regression, no remaining fragment-validation in CLIs",
+        "build/check/test green; skills regenerated (append-block-item desc changed)"
+      ],
+      "depends_on": [],
+      "notes": "Unit A of the A/B/C operational-friction cluster. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-083/084/082.",
+      "id": "TASK-060"
     }
   ]
 }

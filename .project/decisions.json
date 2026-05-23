@@ -2177,7 +2177,7 @@
     },
     {
       "title": "Substrate path resolution unifies on the .pi-context.json pointer (resolveContextDir); config.root is not a path-resolution input",
-      "status": "open",
+      "status": "enacted",
       "context": "FGAP-079: the schema/block file-path surface diverges — schemas/blocks are WRITTEN via projectRoot(cwd) (honors config.root) but READ via resolveContextDir(cwd) (pointer only). config.json + relations.json are pinned to resolveContextDir by NECESSITY (projectRoot must read config.json to learn config.root, so config.json cannot itself move). Therefore honoring config.root for blocks/schemas while config/relations stay at the pointer would SPLIT the substrate across two dirs — incoherent. config.root coincides with the pointer in practice (adoptConception sets config.root = relative(cwd, resolveContextDir)); the divergence is latent. The 'relocatable per config / GitHub issue #3' feature (projectRoot honoring config.root) is half-wired (writes honor it, reads don't, config/relations can't) and, fully wired, would only split the substrate. DEC-0041 already made the .pi-context.json pointer the substrate-dir SoT and config.root optional; this clarifies/extends it.",
       "decision": "Substrate path resolution unifies on the .pi-context.json pointer (resolveContextDir) for read + write, blocks + schemas + config + relations. config.root is NO LONGER a path-resolution input: projectRoot(cwd) drops its config.root branch and returns resolveContextDir(cwd), auto-unifying every write-side caller with the read side. config.root is retained as optional config DATA (DEC-0041) but does not affect resolution. Substrate relocation is via the pointer (a future /context migrate flips .pi-context.json's contextDir, moving the WHOLE substrate coherently — DEC-0036 step-5), not via config.root. Additionally, a single name validator (assertSubstrateName, /^[A-Za-z0-9_-]+$/) guards every name->path builder so a traversal name (../, /, ..) is rejected on both read and write (now reachable from the in-pi write-schema tool, FGAP-077).",
       "consequences": [
@@ -2215,7 +2215,9 @@
       ],
       "id": "DEC-0045",
       "created_at": "2026-05-23T01:22:24.758Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-23T02:08:10.530Z"
     }
   ]
 }

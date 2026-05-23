@@ -813,7 +813,7 @@
     {
       "id": "FGAP-025",
       "title": "No cross-block status-vocabulary validator surfaces unknown status values",
-      "status": "identified",
+      "status": "in-progress",
       "priority": "P3",
       "package": "pi-context",
       "layer": "L1",
@@ -2264,7 +2264,7 @@
     },
     {
       "title": "expectedBlockForId treats empty prefix as match-everything — empty-prefix block_kind becomes a catch-all that breaks buildIdIndex invariant",
-      "status": "identified",
+      "status": "in-progress",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L2",
@@ -3545,7 +3545,7 @@
     },
     {
       "title": "Cross-package src consumers catch BootstrapNotFoundError via instanceof — same FGAP-080 module-instance pattern, outside the orchestrator-CLI scope",
-      "status": "identified",
+      "status": "in-progress",
       "priority": "P3",
       "package": "pi-jit-agents",
       "layer": "L4",

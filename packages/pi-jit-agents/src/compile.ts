@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
 import { readBlock } from "@davidorex/pi-context/block-api";
-import { BootstrapNotFoundError, projectDir, schemaPath } from "@davidorex/pi-context/project-dir";
+import { projectDir, schemaPath } from "@davidorex/pi-context/project-dir";
 import type nunjucks from "nunjucks";
 import { type BudgetWarning, enforceBudget } from "./budget-enforcer.js";
 import { dispatchInlineMacro } from "./dispatch-inline.js";
@@ -239,7 +239,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 			try {
 				cachedIdIndex = buildIdIndex(ctx.cwd);
 			} catch (err) {
-				if (err instanceof BootstrapNotFoundError) {
+				if (err instanceof Error && err.name === "BootstrapNotFoundError") {
 					// Substrate absent — return empty index. Downstream resolution
 					// fails with the existing AgentCompileError contract rather
 					// than letting the bootstrap exception propagate to template
@@ -260,7 +260,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 			const projectDirPath = projectDir(ctx.cwd);
 			projectDirExists = fs.existsSync(projectDirPath);
 		} catch (err) {
-			if (err instanceof BootstrapNotFoundError) {
+			if (err instanceof Error && err.name === "BootstrapNotFoundError") {
 				// Substrate absent — projectDirExists stays false. Downstream
 				// per-group logic (lines below) treats !projectDirExists as the
 				// canonical "no substrate" signal and either nulls whole-block

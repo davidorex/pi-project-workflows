@@ -1038,6 +1038,13 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
 	if (!cfg) return null;
 	let best: { prefix: string; canonical: string } | null = null;
 	for (const bk of cfg.block_kinds) {
+		// An empty prefix matches every id (startsWith("")) — it must never act as
+		// a catch-all claiming unprefixed ids (FGAP-062). Empty prefix is a LEGITIMATE
+		// signal for slug-id blocks (e.g. conventions, FGAP-051) that don't use
+		// prefix+number ids; such blocks are simply excluded from prefix-based
+		// resolution (their items index under their own block file with no
+		// prefix-vs-block enforcement).
+		if (!bk.prefix) continue;
 		if (id.startsWith(bk.prefix)) {
 			if (!best || bk.prefix.length > best.prefix.length) {
 				best = { prefix: bk.prefix, canonical: bk.canonical_id };
@@ -1413,6 +1420,29 @@ export function validateProject(cwd: string): ProjectValidationResult {
 						});
 					}
 				}
+			}
+		}
+	}
+
+	// Cross-block status-vocabulary check (FGAP-025): an item status value absent
+	// from the declared vocabulary silently buckets to "unknown" in currentState /
+	// status-consistency invariants — surface it. Vocabulary-neutral: reads the
+	// config-driven vocab ("status" is the established item status field, same read
+	// as currentState / bucketOf). A value mapped to the "unknown" BUCKET is still a
+	// key (recognized) and is NOT flagged; only a value with NO key is. Warning-only.
+	{
+		const statusVocab = resolveStatusVocabulary(cwd);
+		for (const [sid, sloc] of idIndex) {
+			const sval = sloc.item.status;
+			if (sval === undefined || sval === null) continue;
+			if (!(String(sval) in statusVocab)) {
+				issues.push({
+					severity: "warning",
+					message: `Item '${sid}' (block '${sloc.block}') status '${String(sval)}' is not in the declared status vocabulary — it silently buckets to 'unknown'.`,
+					block: sloc.block,
+					field: "status",
+					code: "status_unknown_value",
+				});
 			}
 		}
 	}

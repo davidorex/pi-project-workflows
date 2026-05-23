@@ -46,7 +46,7 @@
 				"properties": {
 					"canonical_id": { "type": "string", "description": "Opaque identifier (e.g. 'decisions-block')" },
 					"display_name": { "type": "string", "description": "Mutable user-facing label (e.g. 'Design Decisions')" },
-					"prefix": { "type": "string", "description": "Id-prefix token (e.g. 'DEC-')" },
+					"prefix": { "type": "string", "description": "Id-prefix token (e.g. 'DEC-'). Empty string is valid for slug-id blocks (e.g. conventions) that do not use prefix+number ids — such blocks are excluded from prefix-based id resolution (FGAP-062)." },
 					"schema_path": { "type": "string", "description": "Relative path to schema file" },
 					"array_key": { "type": "string", "description": "Top-level array property in block JSON" },
 					"data_path": { "type": "string", "description": "Relative path to block data file" },

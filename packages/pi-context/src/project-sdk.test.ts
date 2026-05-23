@@ -12,7 +12,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { appendToBlock, updateItemInBlock } from "./block-api.js";
 import { clearLensValidators, getLensValidators, type LensValidator, registerLensValidator } from "./lens-validator.js";
-import type { RelationTypeDecl } from "./project-context.js";
+import type { ConfigBlock, RelationTypeDecl } from "./project-context.js";
 import { writeBootstrapPointer } from "./project-dir.js";
 import {
 	availableBlocks,
@@ -21,6 +21,7 @@ import {
 	completeTask,
 	currentState,
 	deriveBootstrapState,
+	expectedBlockForId,
 	filterBlockItems,
 	type ItemLocation,
 	joinBlocks,
@@ -2952,5 +2953,81 @@ describe("edge endpoint-kind check (FGAP-086)", () => {
 			"'*' target wildcard must accept any child block",
 		);
 		assert.strictEqual(result.status, "clean");
+	});
+});
+
+// ── expectedBlockForId empty-prefix guard (FGAP-062) ─────────────────────────
+
+describe("expectedBlockForId", () => {
+	const bk = (canonical_id: string, prefix: string) => ({
+		canonical_id,
+		display_name: canonical_id,
+		prefix,
+		schema_path: `schemas/${canonical_id}.schema.json`,
+		array_key: canonical_id,
+		data_path: `${canonical_id}.json`,
+	});
+	const cfg = {
+		schema_version: "1.0.0",
+		root: ".project",
+		block_kinds: [bk("empty", ""), bk("decisions", "DEC-")],
+	} as ConfigBlock;
+
+	it("does not let an empty-prefix block_kind act as a catch-all", () => {
+		// "DEC-001" matches the real DEC- prefix, not the empty catch-all
+		assert.strictEqual(expectedBlockForId("DEC-001", cfg), "decisions");
+		// an unprefixed id matches nothing now (empty prefix skipped) instead of "empty"
+		assert.strictEqual(expectedBlockForId("X-999", cfg), null);
+	});
+
+	it("returns null for a null config", () => {
+		assert.strictEqual(expectedBlockForId("DEC-001", null), null);
+	});
+});
+
+// ── validateProject cross-block status-vocabulary check (FGAP-025) ────────────
+
+describe("validateProject status-vocabulary", () => {
+	it("warns on a status value absent from the vocabulary; clean for known statuses", (t) => {
+		const tmpDir = makeTmpDir("validate-status-vocab");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "t1", description: "known status", status: "completed" }, // in vocab -> no warning
+					{ id: "t2", description: "unknown status", status: "zzz-bogus" }, // not a vocab key -> warning
+					{ id: "t3", description: "cancelled maps to unknown BUCKET but is a key", status: "cancelled" }, // key -> no warning
+				],
+			}),
+		);
+		const result = validateProject(tmpDir);
+		const statusIssues = result.issues.filter((i) => i.code === "status_unknown_value");
+		assert.strictEqual(statusIssues.length, 1, "exactly one unknown-status warning");
+		assert.strictEqual(statusIssues[0].block, "tasks");
+		assert.strictEqual(statusIssues[0].field, "status");
+		assert.ok(statusIssues[0].message.includes("t2") && statusIssues[0].message.includes("zzz-bogus"));
+		assert.strictEqual(statusIssues[0].severity, "warning");
+	});
+
+	it("does not flag items that have no status field", (t) => {
+		const tmpDir = makeTmpDir("validate-status-none");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "g1", title: "a gap, no status field" }] }),
+		);
+		const result = validateProject(tmpDir);
+		assert.strictEqual(
+			result.issues.filter((i) => i.code === "status_unknown_value").length,
+			0,
+			"status-less items are skipped",
+		);
 	});
 });

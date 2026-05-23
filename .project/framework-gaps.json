@@ -2966,7 +2966,7 @@
     },
     {
       "title": "Orchestrator CLIs catching transitively-thrown package errors via `instanceof` are module-instance-fragile — prefer name-based checks",
-      "status": "in-progress",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "layer": "L2",
@@ -2992,7 +2992,7 @@
       ],
       "impact": "Silent exit-code / control-flow wrongness in orchestrator CLIs when a package error is caught via instanceof across the package boundary under tsx. Currently only write-schema.ts was affected (fixed); read-schema/read-config are correct today but one refactor of their throw path away from breaking. A cross-cutting convention gap, not a single bug.",
       "canonical_vocabulary": "instanceof-module-instance-hazard, dual-package-error-class, name-based-error-check, tsx-symlink-resolution",
-      "proposed_resolution": "Outcome-only: establish + apply the convention that orchestrator CLIs (and any cross-package consumer) catching a pi-context error class check by `err.name === '<ClassName>'` (or a shared type-guard helper exported from the package) rather than `instanceof`, which is unreliable across module instances under tsx/symlink resolution. Audit existing CLIs (read-schema/read-config already correct but instanceof-based) + add the guard helper or convention doc so future CLIs don't reintroduce the hazard.",
+      "proposed_resolution": "Outcome-only: establish + apply the convention that orchestrator CLIs (and any cross-package consumer) catching a pi-context error class check by `err.name === '<ClassName>'` (or a shared type-guard helper exported from the package) rather than `instanceof`, which is unreliable across module instances under tsx/symlink resolution. Audit existing CLIs (read-schema/read-config already correct but instanceof-based) + add the guard helper or convention doc so future CLIs don't reintroduce the hazard. [CLOSED 2026-05-23 — commit dfa0fc6 / TASK-061 / VER-033: orchestrator-CLI instanceof on pi-context errors -> name-based (read-config/read-schema/file-block-item/append-relation); write-schema/accept-all already done. Residual src-consumer sites filed FGAP-096.]",
       "related_decisions": [
         "DEC-0019",
         "DEC-0020"
@@ -3247,7 +3247,7 @@
     },
     {
       "title": "Package-relative path resolution uses import.meta.dirname in 3 sites — undefined under tsx-CJS dist-load; normalize to fileURLToPath(import.meta.url)",
-      "status": "in-progress",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "description": "import.meta.dirname is undefined when a built dist/*.js (type:module) is loaded under tsx's CJS-interop path (tsx -e / subpath import) — proven during B2 where samples-catalog.ts's module-top import.meta.dirname threw ERR_INVALID_ARG_TYPE and was fixed to path.dirname(fileURLToPath(import.meta.url)) (idiom already at project-context.ts:220/433, samples-catalog.ts:34, schema-validator.ts:47, pi-jit-agents/trace-writer.ts:40). Three sites still use import.meta.dirname: (a) pi-workflows/src/bundled-dirs.ts:14 MODULE-TOP-LEVEL (eager) PACKAGE_ROOT = path.resolve(import.meta.dirname, '..') — same eager pattern that broke samples-catalog (highest risk: throws at import under tsx-CJS); (b) pi-context/src/index.ts:335 installProject samplesRoot (lazy, inside fn); (c) pi-context/src/update-check.ts:20 getInstalledVersion (lazy, inside fn). Lazy sites are prod-ESM-safe but latent under tsx-CJS-if-called; eager bundled-dirs.ts:14 is the genuine risk. Codebase already standardizes on fileURLToPath(import.meta.url) in 5 places.",
@@ -3275,7 +3275,7 @@
       ],
       "impact": "No production breakage today (prod loads dist as native ESM; 2 pi-context sites lazy). Risks: bundled-dirs.ts:14 eager-module-top throws if that pi-workflows module loads via any tsx-CJS-interop path (orchestrator tsx -e / some harnesses) — the exact B2 failure class; and inconsistency with the established idiom invites repeating the B2 defect. P3 — no current failing path, cheap to normalize, removes a latent footgun.",
       "canonical_vocabulary": "import.meta.dirname, fileURLToPath, package-relative-path, tsx-CJS-interop, eager-vs-lazy",
-      "proposed_resolution": "Replace all 3 import.meta.dirname package-relative resolutions with path.dirname(fileURLToPath(import.meta.url)) (idiom in 5 existing sites). Prioritize bundled-dirs.ts:14 (eager = actual risk). Add fileURLToPath import from node:url where absent. Verify each touched module resolves its package-relative dir under native-ESM AND a tsx -e import probe. Mechanical, no prod behavior change; route through plan mode per feedback_no_adhoc_dev. Consider a biome guard to prevent reintroduction.",
+      "proposed_resolution": "Replace all 3 import.meta.dirname package-relative resolutions with path.dirname(fileURLToPath(import.meta.url)) (idiom in 5 existing sites). Prioritize bundled-dirs.ts:14 (eager = actual risk). Add fileURLToPath import from node:url where absent. Verify each touched module resolves its package-relative dir under native-ESM AND a tsx -e import probe. Mechanical, no prod behavior change; route through plan mode per feedback_no_adhoc_dev. Consider a biome guard to prevent reintroduction. [CLOSED 2026-05-23 — commit dfa0fc6 / TASK-061 / VER-033: 3 shipped-src import.meta.dirname sites (update-check, index installProject, pi-workflows bundled-dirs EAGER) converted to path.dirname(fileURLToPath(import.meta.url)).]",
       "related_decisions": [
         "DEC-0015"
       ],
@@ -3541,6 +3541,42 @@
       "related_issues": [],
       "id": "FGAP-095",
       "created_at": "2026-05-22T22:19:16.598Z",
+      "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "title": "Cross-package src consumers catch BootstrapNotFoundError via instanceof — same FGAP-080 module-instance pattern, outside the orchestrator-CLI scope",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-jit-agents",
+      "layer": "L4",
+      "description": "FGAP-080 (closed) converted ORCHESTRATOR-CLI catches of pi-context error classes to name-based, because instanceof across the pi-context package boundary is module-instance-fragile under tsx (a class reached via a subpath import vs a transitive relative import resolves to two different objects). Surfaced during Unit B (FGAP-080) by the fresh-context adversarial probe: the SAME pattern lives in cross-package SRC consumers outside FGAP-080's filed scope — pi-jit-agents/src/compile.ts:242,263 and pi-workflows/src/step-shared.ts:181 catch BootstrapNotFoundError via `instanceof`. These are RUNTIME-SAFE today (pi loads pi-jit-agents/pi-workflows as built dist via node = a single module instance; their tests import fresh under tsx --test = single instance) — so they are NOT in the demonstrated-fragile tsx-CJS-interop path the orchestrator CLIs hit. But the FGAP-080 PRINCIPLE (name-based across the pi-context package boundary) applies, and a future tsx-load or refactor of the throw path could break them silently.",
+      "evidence": [
+        {
+          "file": "packages/pi-jit-agents/src/compile.ts",
+          "lines": "242,263",
+          "reference": "if (err instanceof BootstrapNotFoundError) — cross-package (imports BootstrapNotFoundError from @davidorex/pi-context/project-dir)"
+        },
+        {
+          "file": "packages/pi-workflows/src/step-shared.ts",
+          "lines": "181",
+          "reference": "if (!(err instanceof BootstrapNotFoundError)) throw err — cross-package"
+        },
+        {
+          "file": "scripts/orchestrator/write-schema.ts",
+          "reference": "precedent name-based fix (err.name === 'BootstrapNotFoundError')"
+        }
+      ],
+      "impact": "Low/latent: no live failure (runtime path is single-instance), but the FGAP-080 pattern is not fully eliminated — leaving 3 principle-violating sites that could regress to silent-miss if their load/throw path changes. Closing FGAP-080 for orchestrator scope while these remain is the residual.",
+      "canonical_vocabulary": "name-based error identity across package boundary, module-instance fragility",
+      "proposed_resolution": "Convert the 3 cross-package src-consumer catches to name-based (err instanceof Error && err.name === 'BootstrapNotFoundError'), matching the FGAP-080/077 precedent; drop the now-unused BootstrapNotFoundError imports. Trivial + uniform. Optionally consolidate via a canonical isBootstrapNotFoundError(err) predicate exported from pi-context (would also DRY the orchestrator CLIs + write-schema/accept-all). Batch with a future hygiene pass or Unit C.",
+      "related_decisions": [
+        "DEC-0019",
+        "DEC-0020"
+      ],
+      "related_features": [],
+      "related_issues": [],
+      "id": "FGAP-096",
+      "created_at": "2026-05-23T00:35:14.836Z",
       "created_by": "human/davidryan@gmail.com"
     }
   ]

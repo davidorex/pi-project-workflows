@@ -1296,6 +1296,42 @@
         }
       ],
       "id": "VER-032"
+    },
+    {
+      "target": "TASK-061",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-23",
+      "evidence": "Unit B module hygiene. Commit dfa0fc6. build+check+full test green (pi-context 598, all packages 0 fail). FGAP-088: 3 shipped-src import.meta.dirname sites -> fileURLToPath idiom (update-check, index installProject, pi-workflows bundled-dirs EAGER). FGAP-080: orchestrator CLIs (read-config/read-schema/file-block-item/append-relation) instanceof -> name-based + unused imports dropped. Runtime demo: pi-workflows dist imports clean under tsx (bundled-dirs eager); installProject samplesRoot resolves (installed 30); read-config/read-schema on non-bootstrapped dir -> 'substrate not initialized' exit 1; file-block-item --dry-run on schema-invalid feature -> ValidationError formatted + exit 5. Fresh-context adversarial PASS on all 6 claims; grep zero shipped-src import.meta.dirname + zero orchestrator instanceof. Adjacent finding filed FGAP-096 (src-consumer instanceof, runtime-safe).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-088: 3 shipped-src sites use fileURLToPath idiom; none remain",
+          "status": "passed",
+          "evidence": "update-check/index/bundled-dirs converted + node:url imported; grep clean (adversarial A/B PASS)"
+        },
+        {
+          "criterion": "FGAP-080: 4 orchestrator CLIs name-based + unused imports dropped; names match classes' .name",
+          "status": "passed",
+          "evidence": "read-config/read-schema/file-block-item/append-relation; write-schema/accept-all already done (adversarial C/D/F PASS)"
+        },
+        {
+          "criterion": "no narrowing bug; .errors access compiles",
+          "status": "passed",
+          "evidence": "catch(err:any)+err?.name avoids instanceof-Error narrowing (adversarial E PASS)"
+        },
+        {
+          "criterion": "runtime demo: dist-load clean + name-based catches fire",
+          "status": "passed",
+          "evidence": "pi-workflows import OK; installProject OK; read-config/read-schema exit 1; file-block-item dry-run exit 5"
+        },
+        {
+          "criterion": "adjacent finding surfaced not dropped",
+          "status": "passed",
+          "evidence": "FGAP-096 filed for compile.ts/step-shared.ts src-consumer instanceof"
+        }
+      ],
+      "id": "VER-033"
     }
   ]
 }

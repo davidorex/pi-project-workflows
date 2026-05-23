@@ -814,7 +814,7 @@
     },
     {
       "description": "Unit B — module hygiene sweep (FGAP-088 + FGAP-080). FGAP-088: 3 shipped src modules still use import.meta.dirname (undefined under tsx-CJS dist-load -> ERR_INVALID_ARG_TYPE) -> the path.dirname(fileURLToPath(import.meta.url)) idiom (update-check.ts:20 lazy, index.ts installProject samplesRoot lazy, pi-workflows/src/bundled-dirs.ts:14 EAGER top-level). FGAP-080: orchestrator CLIs catch pi-context error classes via instanceof (module-instance-fragile under tsx) -> uniform name-based err.name=== checks (read-config, read-schema, file-block-item, append-relation; write-schema/accept-all already done) + drop unused error-class imports.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/update-check.ts",
         "packages/pi-context/src/index.ts",
@@ -833,7 +833,8 @@
       ],
       "depends_on": [],
       "notes": "Unit B of A/B/C operational-friction cluster. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-088/080. Agent mislabeled bundled-dirs.ts:14 'safe' — it is EAGER top-level src, in scope.",
-      "id": "TASK-061"
+      "id": "TASK-061",
+      "verification": "VER-033"
     }
   ]
 }

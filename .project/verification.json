@@ -1404,6 +1404,41 @@
         }
       ],
       "id": "VER-035"
+    },
+    {
+      "target": "TASK-064",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "evidence": "Unit E: decision_relates_to_decision relation_type added to samples/conception.json (commit 817cae3). build/check/test green; samples-catalog 14/14 incl. 28-count assertion + no-unknown-kinds + conception-validates-against-config.schema adversarial tests. Runtime demo (samplesCatalog()) surfaces the entry (decisions<->decisions, data_flow), count 28. Fresh-context adversarial probe PASS on all 6 dimensions.",
+      "criteria_results": [
+        {
+          "criterion": "conception relation_types gains decision_relates_to_decision mirroring research_relates_to_research",
+          "status": "passed",
+          "evidence": "conception.json:134-139; samplesCatalog().relationTypes entry {category data_flow, source/target_kinds [decisions]}"
+        },
+        {
+          "criterion": "samples-catalog count 27->28 (comment+test name+assertion); no-unknown-kinds stays green",
+          "status": "passed",
+          "evidence": "samples-catalog.test.ts lines 6/46/48; isolated run 14/14 pass"
+        },
+        {
+          "criterion": "Runtime demo: samplesCatalog().relationTypes includes entry, count 28",
+          "status": "passed",
+          "evidence": "tsx eval against built dist: count 28, entry found, decisions valid kind=true"
+        },
+        {
+          "criterion": "Fresh-context adversarial: well-formed per model+precedent, all 27 refs updated, valid endpoints, net-new, JSON valid",
+          "status": "passed",
+          "evidence": "6/6 PASS; sole hardcoded count consumer is the test (now 28); samplesCatalog + CLI derive counts dynamically; no stale-27"
+        },
+        {
+          "criterion": "Implemented via coding subagent, orchestrator-verified",
+          "status": "passed",
+          "evidence": "general-purpose subagent edited 2 files; orchestrator ran build/check/test + dual demos + commit"
+        }
+      ],
+      "id": "VER-036"
     }
   ]
 }

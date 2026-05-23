@@ -16,6 +16,7 @@ import { Type } from "typebox";
 import {
 	appendToBlock,
 	appendToNestedArray,
+	nextId,
 	readBlock,
 	readBlockDir,
 	removeFromBlock,
@@ -470,16 +471,22 @@ const extension = (pi: ExtensionAPI) => {
 	pi.registerTool({
 		name: "append-block-item",
 		label: "Append Block Item",
-		description: "Append an item to an array in a project block file. Schema validation is automatic.",
+		description:
+			"Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate the next id from the block's id pattern when the item has no id.",
 		promptSnippet: "Append items to project blocks (issues, decisions, or any user-defined block)",
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
 			arrayKey: Type.String({ description: "Array key in the block (e.g., 'issues', 'decisions')" }),
 			item: Type.Unknown({ description: "Item object to append — must conform to block schema" }),
+			autoId: Type.Optional(
+				Type.Boolean({
+					description: "When true and the item has no id, allocate the next id from the block's id pattern",
+				}),
+			),
 		}),
 		async execute(
 			_toolCallId: string,
-			params: { block: string; arrayKey: string; item: Record<string, unknown> },
+			params: { block: string; arrayKey: string; item: Record<string, unknown>; autoId?: boolean },
 			_signal: AbortSignal,
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
@@ -491,6 +498,10 @@ const extension = (pi: ExtensionAPI) => {
 				} catch {
 					throw new Error(`item parameter must be a JSON object, got unparseable string`);
 				}
+			}
+			// Auto-id allocation (FGAP-084 dual-surface twin of file-block-item --auto-id)
+			if (params.autoId && params.item && typeof params.item === "object" && !params.item.id) {
+				params.item.id = nextId(ctx.cwd, params.block);
 			}
 			// Duplicate check if item has an id field
 			if (params.item && typeof params.item === "object" && "id" in params.item) {

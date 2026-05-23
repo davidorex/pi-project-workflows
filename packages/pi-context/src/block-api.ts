@@ -1317,3 +1317,93 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
 	}
 	return results;
 }
+
+// ── Item-schema resolution + id allocation (FGAP-083 / FGAP-084) ──────────────
+
+/**
+ * Resolve the item subschema for a block schema: find the first array property
+ * carrying `items`, dereferencing a single-level `$ref` to `#/definitions/<x>`
+ * or `#/$defs/<x>` (the shape FK-stripped block schemas use, e.g. features /
+ * spec-reviews). Returns the array key + the resolved item schema object (with
+ * its `properties` / `required` / `id`). Throws when no array property is found
+ * or the `$ref` cannot be resolved.
+ *
+ * FGAP-083: callers that read `items.properties.id.pattern` / `items.required`
+ * straight off `props[arrayKey].items` get `undefined` for `$ref` items; this
+ * one dereference is the fix shared by auto-id, author-field auto-stamp, and
+ * whole-file validation.
+ */
+export function resolveBlockItemSchema(schema: Record<string, unknown>): {
+	arrayKey: string;
+	itemSchema: Record<string, unknown>;
+} {
+	const props = (schema.properties ?? {}) as Record<string, Record<string, unknown>>;
+	let arrayKey: string | undefined;
+	for (const [k, v] of Object.entries(props)) {
+		if (v && v.type === "array" && v.items) {
+			arrayKey = k;
+			break;
+		}
+	}
+	if (!arrayKey) {
+		throw new Error("resolveBlockItemSchema: no array property with items found in schema");
+	}
+	let items = (props[arrayKey] as Record<string, unknown>).items as Record<string, unknown>;
+	const ref = typeof items.$ref === "string" ? (items.$ref as string) : undefined;
+	if (ref) {
+		const m = /^#\/(definitions|\$defs)\/(.+)$/.exec(ref);
+		if (!m) {
+			throw new Error(`resolveBlockItemSchema: unsupported $ref '${ref}' (only #/definitions/* or #/$defs/*)`);
+		}
+		const bag = (schema[m[1]] ?? {}) as Record<string, Record<string, unknown>>;
+		const target = bag[m[2]];
+		if (!target) {
+			throw new Error(`resolveBlockItemSchema: $ref '${ref}' does not resolve in schema`);
+		}
+		items = target;
+	}
+	return { arrayKey, itemSchema: items };
+}
+
+/**
+ * Allocate the next id for a block from its schema's id pattern — canonical and
+ * `$ref`-aware (FGAP-084 / FGAP-083). Reads the block schema, resolves the item
+ * subschema, parses the `id` pattern's prefix + minimum digit width
+ * (`^FGAP-\d{3}$` → `FGAP-`/3; `^TASK-\d{3,}$` → `TASK-`/3), scans existing item
+ * ids for the max numeric suffix, and returns `prefix` + zero-padded (maxN+1).
+ * Throws when the schema is missing or the id pattern is absent / not
+ * prefix+width parseable. Orchestrator CLIs + the in-pi append tool route
+ * through this instead of re-implementing allocation.
+ */
+export function nextId(cwd: string, blockName: string): string {
+	const schemaFile = blockSchemaPath(cwd, blockName);
+	if (!fs.existsSync(schemaFile)) {
+		throw new Error(`nextId: schema not found for block '${blockName}' at ${schemaFile}`);
+	}
+	const schema = JSON.parse(fs.readFileSync(schemaFile, "utf-8")) as Record<string, unknown>;
+	const { arrayKey, itemSchema } = resolveBlockItemSchema(schema);
+	const idProp = ((itemSchema.properties ?? {}) as Record<string, Record<string, unknown>>).id;
+	const pattern = idProp && typeof idProp.pattern === "string" ? (idProp.pattern as string) : undefined;
+	if (!pattern) {
+		throw new Error(`nextId: block '${blockName}' item schema has no id.pattern`);
+	}
+	const m = /^\^([A-Za-z_-]+)\\d\{(\d+)(?:,\d*)?\}\$$/.exec(pattern);
+	if (!m) {
+		throw new Error(`nextId: id pattern '${pattern}' for block '${blockName}' is not prefix+width parseable`);
+	}
+	const prefix = m[1];
+	const width = Number.parseInt(m[2], 10);
+	const data = readBlock(cwd, blockName) as Record<string, unknown>;
+	const items = (data[arrayKey] ?? []) as Array<Record<string, unknown>>;
+	const re = new RegExp(`^${prefix}(\\d+)$`);
+	let maxN = 0;
+	for (const it of items) {
+		const id = typeof it.id === "string" ? it.id : "";
+		const mm = re.exec(id);
+		if (mm) {
+			const n = Number.parseInt(mm[1], 10);
+			if (n > maxN) maxN = n;
+		}
+	}
+	return `${prefix}${String(maxN + 1).padStart(width, "0")}`;
+}

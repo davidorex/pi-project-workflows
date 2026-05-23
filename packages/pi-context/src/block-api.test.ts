@@ -8,12 +8,14 @@ import {
 	appendToNestedArray,
 	appendToNestedTypedFile,
 	appendToTypedFile,
+	nextId,
 	readBlock,
 	readBlockDir,
 	removeFromBlock,
 	removeFromNestedArray,
 	removeFromNestedTypedFile,
 	removeFromTypedFile,
+	resolveBlockItemSchema,
 	updateItemInBlock,
 	updateItemInTypedFile,
 	updateNestedArrayItem,
@@ -2848,5 +2850,154 @@ describe("removeFromNestedTypedFile", () => {
 				),
 			(err: unknown) => err instanceof Error && err.message.includes("No matching item"),
 		);
+	});
+});
+
+// ── resolveBlockItemSchema + nextId (FGAP-083 / FGAP-084) ─────────────────────
+
+const inlineGapSchema = {
+	type: "object",
+	required: ["g"],
+	properties: {
+		g: {
+			type: "array",
+			items: { type: "object", required: ["id"], properties: { id: { type: "string", pattern: "^G-\\d{3}$" } } },
+		},
+	},
+};
+const refFeatureSchema = {
+	type: "object",
+	required: ["features"],
+	properties: { features: { type: "array", items: { $ref: "#/definitions/feature" } } },
+	definitions: {
+		feature: { type: "object", required: ["id"], properties: { id: { type: "string", pattern: "^FEAT-\\d{3}$" } } },
+	},
+};
+
+function writeBlockFile(tmp: string, block: string, data: unknown): void {
+	setupWorkflowDir(tmp);
+	fs.writeFileSync(path.join(tmp, ".project", `${block}.json`), JSON.stringify(data, null, 2));
+}
+
+describe("resolveBlockItemSchema", () => {
+	it("returns the inline items schema + array key", () => {
+		const { arrayKey, itemSchema } = resolveBlockItemSchema(inlineGapSchema);
+		assert.strictEqual(arrayKey, "g");
+		assert.strictEqual((itemSchema.properties as any).id.pattern, "^G-\\d{3}$");
+	});
+
+	it("dereferences a #/definitions/<x> $ref items schema", () => {
+		const { arrayKey, itemSchema } = resolveBlockItemSchema(refFeatureSchema);
+		assert.strictEqual(arrayKey, "features");
+		assert.strictEqual((itemSchema.properties as any).id.pattern, "^FEAT-\\d{3}$");
+	});
+
+	it("throws on an unresolvable $ref", () => {
+		const bad = {
+			type: "object",
+			properties: { x: { type: "array", items: { $ref: "#/definitions/missing" } } },
+			definitions: {},
+		};
+		assert.throws(() => resolveBlockItemSchema(bad), /does not resolve/);
+	});
+
+	it("throws when no array property is present", () => {
+		assert.throws(
+			() => resolveBlockItemSchema({ type: "object", properties: { x: { type: "string" } } }),
+			/no array property/,
+		);
+	});
+});
+
+describe("nextId", () => {
+	it("allocates the first id for an empty inline block", (t) => {
+		const tmp = makeTmpDir("nextid-empty");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupSchema(tmp, "g", inlineGapSchema);
+		writeBlockFile(tmp, "g", { g: [] });
+		assert.strictEqual(nextId(tmp, "g"), "G-001");
+	});
+
+	it("scans existing ids for the max suffix (inline)", (t) => {
+		const tmp = makeTmpDir("nextid-scan");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupSchema(tmp, "g", inlineGapSchema);
+		writeBlockFile(tmp, "g", { g: [{ id: "G-001" }, { id: "G-003" }] });
+		assert.strictEqual(nextId(tmp, "g"), "G-004");
+	});
+
+	it("reads the id pattern through a $ref items schema", (t) => {
+		const tmp = makeTmpDir("nextid-ref");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupSchema(tmp, "features", refFeatureSchema);
+		writeBlockFile(tmp, "features", { features: [{ id: "FEAT-002" }] });
+		assert.strictEqual(nextId(tmp, "features"), "FEAT-003");
+	});
+
+	it("honors a 4-digit width", (t) => {
+		const tmp = makeTmpDir("nextid-w4");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const decSchema = {
+			type: "object",
+			required: ["decisions"],
+			properties: {
+				decisions: {
+					type: "array",
+					items: { type: "object", required: ["id"], properties: { id: { type: "string", pattern: "^DEC-\\d{4}$" } } },
+				},
+			},
+		};
+		setupSchema(tmp, "decisions", decSchema);
+		writeBlockFile(tmp, "decisions", { decisions: [] });
+		assert.strictEqual(nextId(tmp, "decisions"), "DEC-0001");
+	});
+
+	it("handles a variable-width pattern (\\d{3,}) using the minimum width", (t) => {
+		const tmp = makeTmpDir("nextid-var");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const taskSchema = {
+			type: "object",
+			required: ["tasks"],
+			properties: {
+				tasks: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id"],
+						properties: { id: { type: "string", pattern: "^TASK-\\d{3,}$" } },
+					},
+				},
+			},
+		};
+		setupSchema(tmp, "tasks", taskSchema);
+		writeBlockFile(tmp, "tasks", { tasks: [{ id: "TASK-007" }] });
+		assert.strictEqual(nextId(tmp, "tasks"), "TASK-008");
+	});
+
+	it("throws when the item schema has no id pattern", (t) => {
+		const tmp = makeTmpDir("nextid-nopat");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const noPat = {
+			type: "object",
+			required: ["x"],
+			properties: { x: { type: "array", items: { type: "object", properties: { id: { type: "string" } } } } },
+		};
+		setupSchema(tmp, "x", noPat);
+		writeBlockFile(tmp, "x", { x: [] });
+		assert.throws(() => nextId(tmp, "x"), /no id\.pattern/);
+	});
+});
+
+describe("$ref block whole-file validation on append", () => {
+	it("appendToBlock validates a $ref item against the resolved definition", (t) => {
+		const tmp = makeTmpDir("ref-append");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupSchema(tmp, "features", refFeatureSchema);
+		writeBlockFile(tmp, "features", { features: [] });
+		// valid (id matches FEAT pattern) passes — proves AJV resolves #/definitions/feature
+		appendToBlock(tmp, "features", "features", { id: "FEAT-001" });
+		assert.strictEqual((readBlock(tmp, "features") as any).features.length, 1);
+		// invalid (id violates the $ref'd pattern) throws ValidationError
+		assert.throws(() => appendToBlock(tmp, "features", "features", { id: "nope" }), ValidationError);
 	});
 });

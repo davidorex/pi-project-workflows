@@ -22,10 +22,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { appendToBlock, readBlock } from "@davidorex/pi-context/block-api";
+import { appendToBlock, nextId, readBlock, resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import { schemasDir } from "@davidorex/pi-context/project-dir";
-import { ValidationError, validate } from "@davidorex/pi-context/schema-validator";
+import { ValidationError, validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {
 	block: string;
@@ -81,9 +81,9 @@ function parseArgs(argv: string[]): Args {
 interface BlockSchemaInfo {
 	arrayKey: string;
 	itemSchema: any;
+	/** absolute path to the block schema — used for whole-file (not fragment) validation */
+	schemaPath: string;
 	idPattern?: string;
-	idLength?: number;
-	idPrefix?: string;
 }
 
 function loadBlockSchema(cwd: string, block: string): BlockSchemaInfo {
@@ -93,31 +93,19 @@ function loadBlockSchema(cwd: string, block: string): BlockSchemaInfo {
 		process.exit(3);
 	}
 	const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
-	const props = schema.properties ?? {};
-	let arrayKey: string | undefined;
-	for (const [k, v] of Object.entries(props)) {
-		const vs = v as any;
-		if (vs?.type === "array" && vs?.items) {
-			arrayKey = k;
-			break;
-		}
-	}
-	if (!arrayKey) {
-		console.error(`No array property found in schema ${block}`);
+	// resolveBlockItemSchema dereferences a `$ref` items subschema (e.g.
+	// features -> #/definitions/feature) so properties/required/id.pattern read
+	// correctly for $ref blocks (FGAP-083), not just inline-items blocks.
+	let resolved: { arrayKey: string; itemSchema: any };
+	try {
+		resolved = resolveBlockItemSchema(schema);
+	} catch (err: any) {
+		console.error(`${err?.message ?? String(err)} (block ${block})`);
 		process.exit(3);
 	}
-	const itemSchema = (props[arrayKey] as any).items;
-	const idProp = itemSchema?.properties?.id;
-	const info: BlockSchemaInfo = { arrayKey, itemSchema };
-	if (idProp?.pattern) {
-		info.idPattern = idProp.pattern;
-		// Try to extract prefix + digit-count from pattern like ^FGAP-\d{3}$
-		const m = /^\^([A-Za-z_-]+)\\d\{(\d+)(?:,\d*)?\}\$$/.exec(idProp.pattern);
-		if (m) {
-			info.idPrefix = m[1];
-			info.idLength = parseInt(m[2], 10);
-		}
-	}
+	const info: BlockSchemaInfo = { arrayKey: resolved.arrayKey, itemSchema: resolved.itemSchema, schemaPath };
+	const idPattern = resolved.itemSchema?.properties?.id?.pattern;
+	if (idPattern) info.idPattern = idPattern;
 	return info;
 }
 
@@ -149,28 +137,7 @@ function showSchema(info: BlockSchemaInfo, block: string): void {
 	if (info.idPattern) {
 		console.log("");
 		console.log(`ID pattern: ${info.idPattern}`);
-		if (info.idPrefix) console.log(`  Prefix: ${info.idPrefix}, length: ${info.idLength}`);
 	}
-}
-
-function autoAllocateId(cwd: string, block: string, info: BlockSchemaInfo): string {
-	if (!info.idPrefix || !info.idLength) {
-		console.error(`Cannot auto-allocate ID: pattern ${info.idPattern} not parseable`);
-		process.exit(4);
-	}
-	const data = readBlock(cwd, block) as Record<string, any>;
-	const items = data[info.arrayKey] ?? [];
-	let maxN = 0;
-	const re = new RegExp(`^${info.idPrefix}(\\d+)$`);
-	for (const it of items) {
-		const m = re.exec(it.id);
-		if (m) {
-			const n = parseInt(m[1], 10);
-			if (n > maxN) maxN = n;
-		}
-	}
-	const nextN = maxN + 1;
-	return `${info.idPrefix}${String(nextN).padStart(info.idLength, "0")}`;
 }
 
 function parseWriter(spec: string): WriterIdentity {
@@ -247,7 +214,12 @@ function main(): void {
 
 	const item = loadItem(args.itemJson!);
 	if (args.autoId && !item.id) {
-		item.id = autoAllocateId(args.cwd, args.block, info);
+		try {
+			item.id = nextId(args.cwd, args.block);
+		} catch (err: any) {
+			console.error(`[auto-id] ${err?.message ?? String(err)}`);
+			process.exit(4);
+		}
 		console.error(`[auto-id] allocated ${item.id}`);
 	}
 	const requiresCreatedAt = info.itemSchema.required?.includes("created_at");
@@ -265,9 +237,21 @@ function main(): void {
 	}
 
 	if (args.dryRun) {
-		console.error("[dry-run] validating item against schema; no write");
+		console.error("[dry-run] validating prospective whole file against schema; no write");
 		try {
-			validate(info.itemSchema, item, `${args.block}.${info.arrayKey}[item]`);
+			// Whole-file validation (FGAP-082): build the prospective file
+			// {...existing, [arrayKey]: [...existing items, item]} and validate it
+			// against the WHOLE schema — resolves $ref/definitions and matches
+			// exactly what appendToBlock validates on write (dry-run PASS == write PASS).
+			let existing: Record<string, any> = {};
+			try {
+				existing = readBlock(args.cwd, args.block) as Record<string, any>;
+			} catch {
+				/* fresh block — no file yet */
+			}
+			const existingItems = Array.isArray(existing[info.arrayKey]) ? existing[info.arrayKey] : [];
+			const prospective = { ...existing, [info.arrayKey]: [...existingItems, item] };
+			validateFromFile(info.schemaPath, prospective, `${args.block}.${info.arrayKey}[item]`);
 			console.error("[dry-run] PASS");
 			console.log(JSON.stringify(item, null, 2));
 			process.exit(0);

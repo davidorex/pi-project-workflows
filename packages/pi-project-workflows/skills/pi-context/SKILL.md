@@ -10,7 +10,7 @@ description: >
 
 <tools_reference>
 <tool name="append-block-item">
-Append an item to an array in a project block file. Schema validation is automatic.
+Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate the next id from the block's id pattern when the item has no id.
 
 *Append items to project blocks (issues, decisions, or any user-defined block)*
 
@@ -19,6 +19,7 @@ Append an item to an array in a project block file. Schema validation is automat
 | `block` | string | yes | Block name (e.g., 'issues', 'decisions') |
 | `arrayKey` | string | yes | Array key in the block (e.g., 'issues', 'decisions') |
 | `item` | unknown | yes | Item object to append — must conform to block schema |
+| `autoId` | boolean | no | When true and the item has no id, allocate the next id from the block's id pattern |
 </tool>
 
 <tool name="update-block-item">

@@ -22,7 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import { appendRelation, type Edge, loadRelations } from "@davidorex/pi-context/project-context";
-import { ValidationError, validate } from "@davidorex/pi-context/schema-validator";
+import { ValidationError, validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {
 	parent: string;
@@ -113,8 +113,8 @@ function parseWriter(spec: string): WriterIdentity {
 	}
 }
 
-/** Resolve the bundled relations schema and return its per-edge `.items` subschema. */
-function loadEdgeItemSchema(): Record<string, unknown> {
+/** Resolve the bundled relations schema file path (top-level `Edge[]` array schema). */
+function relationsSchemaPath(): string {
 	const here = path.dirname(new URL(import.meta.url).pathname);
 	// scripts/orchestrator → repo root → the package's bundled schema file.
 	const schemaPath = path.resolve(here, "..", "..", "packages", "pi-context", "schemas", "relations.schema.json");
@@ -122,20 +122,7 @@ function loadEdgeItemSchema(): Record<string, unknown> {
 		console.error(`Relations schema not found: ${schemaPath}`);
 		process.exit(3);
 	}
-	let schema: Record<string, unknown>;
-	try {
-		schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
-	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
-		console.error(`Failed to parse relations schema (${schemaPath}): ${msg}`);
-		process.exit(3);
-	}
-	const items = schema.items;
-	if (!items || typeof items !== "object") {
-		console.error(`Relations schema has no object 'items' subschema (${schemaPath})`);
-		process.exit(3);
-	}
-	return items as Record<string, unknown>;
+	return schemaPath;
 }
 
 function main(): void {
@@ -151,10 +138,19 @@ function main(): void {
 	};
 
 	if (args.dryRun) {
-		const itemSchema = loadEdgeItemSchema();
-		console.error("[dry-run] validating edge against relations .items subschema; no write");
+		console.error("[dry-run] validating prospective relations file against schema; no write");
+		// Whole-file validation (FGAP-082): validate the prospective Edge[] array
+		// against the WHOLE relations schema — resolves any $ref + matches what the
+		// write validates — rather than the bare `.items` fragment in isolation.
+		let existing: Edge[] = [];
 		try {
-			validate(itemSchema, edge, "relations[edge]");
+			existing = loadRelations(args.cwd);
+		} catch (err) {
+			console.error(`[dry-run] could not read existing relations: ${err instanceof Error ? err.message : String(err)}`);
+			process.exit(3);
+		}
+		try {
+			validateFromFile(relationsSchemaPath(), [...existing, edge], "relations[edge]");
 		} catch (err) {
 			console.error("[dry-run] FAIL");
 			if (err instanceof ValidationError && Array.isArray(err.errors)) {
@@ -166,16 +162,9 @@ function main(): void {
 			}
 			process.exit(5);
 		}
-		let duplicate = false;
-		try {
-			const existing = loadRelations(args.cwd);
-			duplicate = existing.some(
-				(e) => e.parent === edge.parent && e.child === edge.child && e.relation_type === edge.relation_type,
-			);
-		} catch (err) {
-			console.error(`[dry-run] could not read existing relations: ${err instanceof Error ? err.message : String(err)}`);
-			process.exit(3);
-		}
+		const duplicate = existing.some(
+			(e) => e.parent === edge.parent && e.child === edge.child && e.relation_type === edge.relation_type,
+		);
 		console.error("[dry-run] PASS");
 		if (args.format === "json") {
 			console.log(JSON.stringify({ wouldWrite: !duplicate, duplicate, edge }, null, 2));

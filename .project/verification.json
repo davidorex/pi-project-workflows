@@ -1255,6 +1255,47 @@
         }
       ],
       "id": "VER-031"
+    },
+    {
+      "target": "TASK-060",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-23",
+      "evidence": "Unit A block-api write ergonomics. Commit 5ecd7bd. build+check+full test green (pi-context 598, 0 fail) incl. 11 new cases (resolveBlockItemSchema + nextId + $ref-block whole-file append). Runtime demo on REAL .project: nextId features=>FEAT-005 ($ref block), framework-gaps=>FGAP-096, decisions=>DEC-0045 (4-width), tasks=>TASK-061, verification=>VER-032; file-block-item --block features --auto-id --dry-run allocated FEAT-005 + auto-stamped created_by/created_at + whole-file PASS (the FEAT-004 friction, gone); append-relation --dry-run whole-file PASS. This VER itself filed via file-block-item --auto-id (dogfood). Fresh-context adversarial probe PASS on all 8 claims, false-pass hunt clean.",
+      "criteria_results": [
+        {
+          "criterion": "block-api resolveBlockItemSchema + nextId ($ref-aware)",
+          "status": "passed",
+          "evidence": "deref #/definitions + #/$defs, inline passthrough, throw on unresolvable/no-array; nextId 3/4/variable width + scan-max + no-pattern throw (adversarial A/B PASS)"
+        },
+        {
+          "criterion": "file-block-item resolved-schema + nextId + whole-file dry-run",
+          "status": "passed",
+          "evidence": "auto-stamp restored for $ref blocks; autoAllocateId removed; dry-run validateFromFile whole-file == write (adversarial C/G PASS)"
+        },
+        {
+          "criterion": "append-relation whole-file dry-run",
+          "status": "passed",
+          "evidence": "relationsSchemaPath + validateFromFile([...existing,edge]); loadEdgeItemSchema removed (adversarial D PASS)"
+        },
+        {
+          "criterion": "in-pi append-block-item autoId twin",
+          "status": "passed",
+          "evidence": "autoId param -> nextId before dup-check+append; no-autoId path unchanged (adversarial E PASS)"
+        },
+        {
+          "criterion": "no inline-block regression + no leftover re-implementers",
+          "status": "passed",
+          "evidence": "framework-gaps/tasks unchanged; grep clean of fragment-validation + inline id-alloc (adversarial F/H PASS)"
+        },
+        {
+          "criterion": "runtime demo + dogfood",
+          "status": "passed",
+          "evidence": "nextId across 5 blocks; features $ref auto-id+stamp+PASS; this VER filed via --auto-id"
+        }
+      ],
+      "id": "VER-032"
     }
   ]
 }

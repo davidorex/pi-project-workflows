@@ -3039,7 +3039,7 @@
     },
     {
       "title": "Orchestrator CLIs validate items against the item-subschema FRAGMENT in isolation (losing $ref definitions), not whole-file like block-api",
-      "status": "in-progress",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L2",
@@ -3068,7 +3068,7 @@
       ],
       "impact": "file-block-item — the canonical append surface (CLAUDE.md filing pattern) — cannot append/preview/auto-id features (or any future $ref-item block kind), forcing a non-canonical raw appendToBlock tsx-eval fallback that bypasses the CLI's --writer/--dry-run/--auto-id ergonomics. Undermines the DEC-0019/0020 canonical-script surface for $ref-using schemas; the conception (samples) schemas may use $ref similarly, so .context filing would hit this too.",
       "canonical_vocabulary": "fragment-validation, whole-file-validation, $ref-item-schema, parallel-path-divergence, orchestrator-cli",
-      "proposed_resolution": "Both append CLIs should validate the candidate item by composing a whole-block wrapper and running validateFromFile against the FULL schema (mirroring writeBlock/appendToBlock) for --dry-run, NOT the item-fragment in isolation. Best: route --dry-run through the same library validation the real path uses (single path; eliminates the divergence).",
+      "proposed_resolution": "Both append CLIs should validate the candidate item by composing a whole-block wrapper and running validateFromFile against the FULL schema (mirroring writeBlock/appendToBlock) for --dry-run, NOT the item-fragment in isolation. Best: route --dry-run through the same library validation the real path uses (single path; eliminates the divergence). [CLOSED 2026-05-23 — commit 5ecd7bd / TASK-060 / VER-032: file-block-item + append-relation dry-run now validate the prospective WHOLE file (validateFromFile) not the items fragment — resolves $ref + dry-run==write parity.]",
       "related_decisions": [
         "DEC-0019",
         "DEC-0020"
@@ -3081,7 +3081,7 @@
     },
     {
       "title": "file-block-item --auto-id cannot read the id pattern from a $ref item schema (reads itemSchema.properties.id.pattern, absent on a $ref fragment)",
-      "status": "in-progress",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "layer": "L2",
@@ -3100,7 +3100,7 @@
       ],
       "impact": "--auto-id is unusable for any $ref-item block kind (features, spec-reviews); the orchestrator must pass an explicit id (or use raw appendToBlock). Will recur for any conception/.context block kind that adopts $ref item schemas.",
       "canonical_vocabulary": "auto-id, id-pattern, $ref-resolution, item-fragment",
-      "proposed_resolution": "Resolve the items $ref against the parent schema's definitions before reading properties.id.pattern (or, with FGAP-084, route allocation through a block-api helper that dereferences). One-line-ish once the fragment is dereferenced.",
+      "proposed_resolution": "Resolve the items $ref against the parent schema's definitions before reading properties.id.pattern (or, with FGAP-084, route allocation through a block-api helper that dereferences). One-line-ish once the fragment is dereferenced. [CLOSED 2026-05-23 — commit 5ecd7bd / TASK-060 / VER-032: resolveBlockItemSchema dereferences the items $ref so id.pattern reads correctly; nextId is $ref-aware.]",
       "related_decisions": [],
       "related_features": [],
       "related_issues": [],
@@ -3110,7 +3110,7 @@
     },
     {
       "title": "No canonical block-api id-allocation helper — orchestrator scripts re-implement next-id allocation",
-      "status": "in-progress",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "layer": "L2",
@@ -3128,7 +3128,7 @@
       ],
       "impact": "id-allocation is duplicated/divergent and not reusable by the in-pi tool surface (the Pi append tools have no auto-id at all). Extracting a canonical allocateId(cwd, block) helper would let file-block-item, the in-pi tools, and future surfaces share one correct implementation (and fix FGAP-083 once).",
       "canonical_vocabulary": "id-allocation, allocateId, next-id, block-api-primitive, dual-surface",
-      "proposed_resolution": "Add a block-api id-allocation primitive (e.g. allocateId(cwd, blockName) → next id from the block-kind's resolved id pattern + existing items, dereferencing $ref item schemas) and route file-block-item + any in-pi auto-id through it. DEC-0019/0020 dual-surface: library primitive + CLI + (optionally) Pi tool.",
+      "proposed_resolution": "Add a block-api id-allocation primitive (e.g. allocateId(cwd, blockName) → next id from the block-kind's resolved id pattern + existing items, dereferencing $ref item schemas) and route file-block-item + any in-pi auto-id through it. DEC-0019/0020 dual-surface: library primitive + CLI + (optionally) Pi tool. [CLOSED 2026-05-23 — commit 5ecd7bd / TASK-060 / VER-032: canonical block-api nextId(cwd,block) helper; file-block-item + the in-pi append-block-item autoId twin route through it; inline re-implementation removed.]",
       "related_decisions": [
         "DEC-0019",
         "DEC-0020"

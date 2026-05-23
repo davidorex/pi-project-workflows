@@ -789,7 +789,7 @@
     },
     {
       "description": "Unit A — block-api write ergonomics (FGAP-083 + FGAP-084 + FGAP-082). One root cause: the items schema can be a $ref (#/definitions/<kind>) and file-block-item/append-relation never dereference it. Add canonical $ref-aware block-api helpers (resolveBlockItemSchema + nextId), repoint the CLI auto-id + auto-stamp + dry-run to resolved-schema + whole-file validation, add the in-pi append-block-item autoId twin (DEC-0019/0020). block-api write path already validates whole-file $ref-aware; only orchestrator-side pre-validation + auto-id were broken (hit filing FEAT-004).",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/block-api.ts",
         "scripts/orchestrator/file-block-item.ts",
@@ -809,7 +809,8 @@
       ],
       "depends_on": [],
       "notes": "Unit A of the A/B/C operational-friction cluster. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-083/084/082.",
-      "id": "TASK-060"
+      "id": "TASK-060",
+      "verification": "VER-032"
     }
   ]
 }

@@ -2927,7 +2927,7 @@
     },
     {
       "title": "Schema-path surface inconsistency — write/read resolver divergence (config.root) + no path-traversal sanitization on schemaName",
-      "status": "in-progress",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L2",
@@ -2954,7 +2954,7 @@
       ],
       "impact": "(1) A non-default config.root silently splits where schemas are written vs read — write-schema writes a file read-schema/validation cannot find. (2) An unsanitized schemaName can write or read outside the schemas/ dir; now reachable from the tool surface (FGAP-077). Both are latent correctness/safety issues across the whole schema-path surface (read + write together), not isolated to one function.",
       "canonical_vocabulary": "schema-path-resolver, config.root-divergence, path-traversal, schemaName-sanitization, projectRoot-vs-resolveContextDir",
-      "proposed_resolution": "Outcome-only: unify the schema-file path resolver across read + write (one resolution honoring or ignoring config.root consistently — decide which is canonical and route readSchema/writeSchema/schemaPath/validateBlockWithMigration through it) AND add schemaName validation (reject path separators / traversal) at the single resolution point so both read and write are guarded together. Fix the surface as a unit; do not patch one function.",
+      "proposed_resolution": "Outcome-only: unify the schema-file path resolver across read + write (one resolution honoring or ignoring config.root consistently — decide which is canonical and route readSchema/writeSchema/schemaPath/validateBlockWithMigration through it) AND add schemaName validation (reject path separators / traversal) at the single resolution point so both read and write are guarded together. Fix the surface as a unit; do not patch one function. [CLOSED 2026-05-23 — DEC-0045 + commit (TASK-063/VER-035): projectRoot unified on resolveContextDir (config.root not a path input); assertSubstrateName guards every name->path builder (read+write); schemaWritePath routed through schemaPath. Implemented via coding subagent, orchestrator-verified.]",
       "related_decisions": [
         "DEC-0015"
       ],

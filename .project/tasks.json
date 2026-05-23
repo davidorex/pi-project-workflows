@@ -861,7 +861,7 @@
     },
     {
       "description": "Unit D — FGAP-079 schema/block path-surface fix. (1) Resolver unification: projectRoot drops the config.root branch -> returns resolveContextDir; auto-unifies all write-side callers (schema-write, installProject, readBlockItems, findUnmaterializedAssets) with the read side (schemaPath/blockSchemaPath/validateBlockWithMigration). Pointer-canonical (DEC-0045): config.root is not a path input — honoring it would split the substrate since config/relations are pointer-pinned. (2) Path-traversal sanitization: assertSubstrateName(name) in project-dir.ts (/^[A-Za-z0-9_-]+$/), guarding every name->path builder (schemaPath, blockFilePath, installedSchema/BlockDestPath, readBlockItems, schemaWritePath, file-block-item loadBlockSchema).",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/project-context.ts",
         "packages/pi-context/src/project-dir.ts",
@@ -881,7 +881,8 @@
       ],
       "depends_on": [],
       "notes": "Unit D (post A/B/C). Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. DEC-0045 records the pointer-canonical decision. Closes FGAP-079.",
-      "id": "TASK-063"
+      "id": "TASK-063",
+      "verification": "VER-035"
     }
   ]
 }

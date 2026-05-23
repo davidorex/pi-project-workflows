@@ -1363,6 +1363,47 @@
         }
       ],
       "id": "VER-034"
+    },
+    {
+      "target": "TASK-063",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-23",
+      "evidence": "Unit D / FGAP-079. Commit 61b7acd (DEC-0045). IMPLEMENTED VIA CODING SUBAGENT from the approved plan (process correction after prior orchestrator-direct ad-hoc edits were discarded). build+check+full test green (pi-context 606, all packages 0 fail). Runtime demo (orchestrator): non-default config.root -> writeSchema lands at pointer not config.root, readSchema round-trips, projectRoot===resolveContextDir; path-traversal rejected on read (schemaPath) + write (writeSchema); real .project projectRoot===resolveContextDir + unchanged. Fresh-context adversarial PASS on all 6 claims, no residuals.",
+      "criteria_results": [
+        {
+          "criterion": "resolver unified on pointer; projectRoot drops config.root branch; all callers + config/relations consistent",
+          "status": "passed",
+          "evidence": "projectRoot returns resolveContextDir; grep no config.root path-branch (adversarial A PASS)"
+        },
+        {
+          "criterion": "assertSubstrateName guards every name->path builder (read+write); rejects traversal, accepts canonical_ids",
+          "status": "passed",
+          "evidence": "schemaPath/blockFilePath/installedSchema+Block/readBlockItems/loadBlockSchema + schemaWritePath via schemaPath; no bypass (adversarial B/C PASS)"
+        },
+        {
+          "criterion": "schema-write reroute clean; tests inverted + added",
+          "status": "passed",
+          "evidence": "schemaWritePath=schemaPath, imports dropped; config.root test inverted; traversal + divergence tests (adversarial D/E PASS)"
+        },
+        {
+          "criterion": "runtime demo: write==read under non-default config.root; traversal throws; real .project intact",
+          "status": "passed",
+          "evidence": "DEMO PASS (a/b/c)"
+        },
+        {
+          "criterion": "no regression; behavior-preserving where config.root==pointer",
+          "status": "passed",
+          "evidence": "606 pi-context 0 fail; installProject pointer-writes unchanged (adversarial F PASS)"
+        },
+        {
+          "criterion": "process: implemented via coding subagent, orchestrator-verified",
+          "status": "passed",
+          "evidence": "ad-hoc edits discarded; subagent implemented from plan; orchestrator ran build/test/demo + adversarial + commit"
+        }
+      ],
+      "id": "VER-035"
     }
   ]
 }

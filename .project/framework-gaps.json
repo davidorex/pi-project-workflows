@@ -2927,7 +2927,7 @@
     },
     {
       "title": "Schema-path surface inconsistency — write/read resolver divergence (config.root) + no path-traversal sanitization on schemaName",
-      "status": "identified",
+      "status": "in-progress",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L2",

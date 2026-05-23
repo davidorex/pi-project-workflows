@@ -4,6 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type {
 	AgentToolResult,
 	AgentToolUpdateCallback,
@@ -336,10 +337,11 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
 	if (!fs.existsSync(schemasRoot)) fs.mkdirSync(schemasRoot, { recursive: true });
 
-	// lazy import.meta.dirname (inside fn — safe). Read the conception once for
+	// lazy fileURLToPath idiom (FGAP-088): import.meta.dirname is undefined under
+	// tsx's CJS-interop dist-load; import.meta.url is not. Read the conception once for
 	// the canonical_id→paths map so install resolves sources by the same
 	// block_kind declarations the accept-all conception ships (DEC-0037/0038).
-	const samplesRoot = path.resolve(import.meta.dirname, "..", "samples");
+	const samplesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as {
 		block_kinds?: Array<{ canonical_id: string; schema_path: string; data_path: string }>;
 	};

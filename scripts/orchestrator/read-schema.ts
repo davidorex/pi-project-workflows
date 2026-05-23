@@ -30,7 +30,7 @@
  * inline — script invocation against the live `.pi-context.json` pointer
  * + substrate is the demo path.
  */
-import { BootstrapNotFoundError, schemaPath } from "@davidorex/pi-context/project-dir";
+import { schemaPath } from "@davidorex/pi-context/project-dir";
 import { readSchema } from "@davidorex/pi-context/schema-write";
 
 interface Args {
@@ -162,7 +162,7 @@ function main(): void {
 	try {
 		p = schemaPath(args.cwd, args.name);
 	} catch (err) {
-		if (err instanceof BootstrapNotFoundError) {
+		if (err instanceof Error && err.name === "BootstrapNotFoundError") {
 			console.error(`read-schema: substrate not initialized — ${err.message}`);
 			process.exit(1);
 		}
@@ -173,7 +173,7 @@ function main(): void {
 	try {
 		schema = readSchema(args.cwd, args.name);
 	} catch (err) {
-		if (err instanceof BootstrapNotFoundError) {
+		if (err instanceof Error && err.name === "BootstrapNotFoundError") {
 			console.error(`read-schema: substrate not initialized — ${err.message}`);
 			process.exit(1);
 		}

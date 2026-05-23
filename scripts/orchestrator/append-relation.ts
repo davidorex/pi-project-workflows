@@ -22,7 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import { appendRelation, type Edge, loadRelations } from "@davidorex/pi-context/project-context";
-import { ValidationError, validateFromFile } from "@davidorex/pi-context/schema-validator";
+import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {
 	parent: string;
@@ -151,9 +151,9 @@ function main(): void {
 		}
 		try {
 			validateFromFile(relationsSchemaPath(), [...existing, edge], "relations[edge]");
-		} catch (err) {
+		} catch (err: any) {
 			console.error("[dry-run] FAIL");
-			if (err instanceof ValidationError && Array.isArray(err.errors)) {
+			if (err?.name === "ValidationError" && Array.isArray(err.errors)) {
 				for (const e of err.errors) {
 					console.error(`  - ${e.instancePath || "(root)"}: ${e.message}`);
 				}

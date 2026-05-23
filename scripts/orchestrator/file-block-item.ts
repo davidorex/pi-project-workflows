@@ -25,7 +25,7 @@ import path from "node:path";
 import { appendToBlock, nextId, readBlock, resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import { schemasDir } from "@davidorex/pi-context/project-dir";
-import { ValidationError, validateFromFile } from "@davidorex/pi-context/schema-validator";
+import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {
 	block: string;
@@ -257,7 +257,7 @@ function main(): void {
 			process.exit(0);
 		} catch (err: any) {
 			console.error("[dry-run] FAIL");
-			if (err instanceof ValidationError && Array.isArray(err.errors)) {
+			if (err?.name === "ValidationError" && Array.isArray(err.errors)) {
 				for (const e of err.errors) {
 					console.error(`  - ${formatAjvError(e, info)}`);
 				}

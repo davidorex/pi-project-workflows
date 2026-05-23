@@ -10,8 +10,12 @@
  * only when computed against this file's own location.
  */
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..");
+// fileURLToPath idiom (FGAP-088): this is EAGER (module top-level), so an
+// undefined import.meta.dirname under tsx's CJS-interop dist-load would throw at
+// import time; import.meta.url is defined in both load paths.
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export function bundledDir(subdir: "agents" | "templates" | "workflows" | "schemas"): string {
 	return path.join(PACKAGE_ROOT, subdir);

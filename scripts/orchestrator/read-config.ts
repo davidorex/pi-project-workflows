@@ -25,7 +25,7 @@
  */
 import path from "node:path";
 import { loadConfig } from "@davidorex/pi-context/project-context";
-import { BootstrapNotFoundError, projectDir } from "@davidorex/pi-context/project-dir";
+import { projectDir } from "@davidorex/pi-context/project-dir";
 
 interface Args {
 	raw: boolean;
@@ -123,7 +123,9 @@ function main(): void {
 	try {
 		substrateDir = projectDir(args.cwd);
 	} catch (err) {
-		if (err instanceof BootstrapNotFoundError) {
+		// name-based, not instanceof (FGAP-080): the error may be thrown through a
+		// different pi-context module instance under tsx, breaking class identity.
+		if (err instanceof Error && err.name === "BootstrapNotFoundError") {
 			console.error(`read-config: substrate not initialized — ${err.message}`);
 			process.exit(1);
 		}

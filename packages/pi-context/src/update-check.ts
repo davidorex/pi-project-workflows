@@ -5,6 +5,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PACKAGE_NAME = "@davidorex/pi-project-workflows";
 const REGISTRY_URL = `https://registry.npmjs.org/${PACKAGE_NAME}/latest`;
@@ -17,7 +18,9 @@ const TIMEOUT_MS = 10_000;
  */
 function getInstalledVersion(): string | null {
 	try {
-		let dir = path.resolve(import.meta.dirname, "..");
+		// fileURLToPath idiom (FGAP-088): import.meta.dirname is undefined when this
+		// built module loads under tsx's CJS-interop path; import.meta.url is not.
+		let dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 		for (let i = 0; i < 5; i++) {
 			const candidate = path.join(dir, "node_modules", PACKAGE_NAME, "package.json");
 			if (fs.existsSync(candidate)) {

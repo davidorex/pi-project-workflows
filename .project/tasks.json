@@ -924,7 +924,7 @@
     },
     {
       "description": "FGAP-074 C0 — naming DEC (decision-only, no code). Settle target names for the /project->/context surface rename: the 3 src filenames (project-dir.ts / project-context.ts / project-sdk.ts -> new) + their 3 subpath exports; identifier scheme (projectRoot->contextRoot, projectDir->contextDir [collision-scoped per feedback_rename_scope_discipline], projectState->contextState, validateProject->validateContext|validateSubstrate, getProjectContext->getContext, installProject->installContext, projectTemplatesDir->contextTemplatesDir, PROJECT_BLOCK_TYPES->CONTEXT_BLOCK_TYPES, interfaces Project*->Context*/Substrate*, PROJECT_DIR @deprecated -> drop|rename); Pi tool prefix project-* -> context-*; command /project -> /context + PROJECT_SUBCOMMANDS rename. Resolve the project-context.ts target-name hazard (context-context is awkward: choose context-core|context-substrate|context.ts). Gates C1-C7.",
-      "status": "planned",
+      "status": "completed",
       "files": [
         ".project/decisions.json"
       ],
@@ -937,7 +937,8 @@
       ],
       "depends_on": [],
       "notes": "Decomposition: analysis/2026-05-23-fgap-074-rename-decomposition.md (chunk C0). Maps to Claude Code task #59. FGAP-074. Transition-alias-bridged strategy; each subsequent chunk green-per-commit (husky check+test). Independent of DEC-0036 step-3/.context re-population — pure source codemod against the still-.project substrate via the pointer.",
-      "id": "TASK-066"
+      "id": "TASK-066",
+      "verification": "VER-037"
     },
     {
       "description": "FGAP-074 C1 — pi-context internal rename + transition aliases (additive, green). Rename the 3 project-*.ts -> new filenames (+ their tests); update all pi-context-internal relative imports + identifier usages to the C0-settled new names; add DUAL package.json subpath exports (legacy ./project-* AND new ./context-* -> same dist) + DUAL tsconfig path mappings; add @deprecated identifier aliases (export const projectRoot = contextRoot; etc.). After C1 the pi-context package is fully on new names internally while the external world still resolves via the legacy aliases.",

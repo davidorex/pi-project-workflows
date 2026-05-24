@@ -1589,6 +1589,46 @@
         }
       ],
       "id": "VER-040"
+    },
+    {
+      "target": "TASK-070",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "evidence": "FGAP-074 C4 — pi-behavior-monitors + 14 orchestrator scripts migrated off project-* onto context-* (subpath repoints + 1 identifier rename read-config projectDir->resolveContextDir). Pure rename. Verified per DEC-0018: build/check/test green all 4 packages (0 fail); biome organizeImports auto-fixed. Runtime demo: read-config/current-state/read-block-page CLIs run against real .project post-repoint. Fresh-context adversarial PASS 6/6; scope contained to monitors+scripts. After C4 all code consumers are on context-* — only tool-name strings + /project command (C5), docs (C6), alias removal (C7) remain.",
+      "criteria_results": [
+        {
+          "criterion": "monitors + 14 scripts repointed project-*->context-* (subpaths); zero project-* code imports remain",
+          "status": "passed",
+          "evidence": "grep: zero from-import project-* in monitors/scripts; adversarial #1"
+        },
+        {
+          "criterion": "read-config projectDir->resolveContextDir (import+usage); BootstrapNotFoundError catch retained",
+          "status": "passed",
+          "evidence": "read-config.ts:28/124; adversarial #2"
+        },
+        {
+          "criterion": "symbols preserved except the one identifier; non-renamed pi-context imports untouched",
+          "status": "passed",
+          "evidence": "adversarial #3/#4"
+        },
+        {
+          "criterion": "build && check && test green (husky)",
+          "status": "passed",
+          "evidence": "0 failures all 4 packages; format auto-fixed import order"
+        },
+        {
+          "criterion": "runtime demo: migrated CLIs run against real .project",
+          "status": "passed",
+          "evidence": "read-config/current-state/read-block-page produced correct output"
+        },
+        {
+          "criterion": "pure rename, scope contained, no degradation introduced (scripts throw-correct)",
+          "status": "passed",
+          "evidence": "adversarial #5/#6; no PROJECT_DIR in scope; no tryResolveContextDir misuse in CLIs"
+        }
+      ],
+      "id": "VER-041"
     }
   ]
 }

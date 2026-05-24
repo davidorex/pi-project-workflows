@@ -984,7 +984,7 @@
     },
     {
       "description": "FGAP-074 C3 — migrate pi-workflows consumers (29 files). Largest consumer set: workflow-sdk, workflow-executor, step-block, step-shared, index, template-validation, test-helpers + ~22 tests, mostly importing writeBootstrapPointer / schemaPath / PROJECT_DIR. Repoint old project-* subpaths + renamed identifiers to context-* names. Green per commit.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-workflows/src/workflow-sdk.ts",
         "packages/pi-workflows/src/workflow-executor.ts",

@@ -1554,6 +1554,41 @@
         }
       ],
       "id": "VER-039"
+    },
+    {
+      "target": "TASK-069",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "evidence": "FGAP-074 C3 — pi-workflows migration + the tryResolveContextDir pointer-less degradation class fix (folded in). Verified per DEC-0018 over four discovery passes (each gap caught by test/adversarial). build/check/test green all 4 packages (pi-context 624 / pi-jit-agents 153 / pi-workflows 828; 0 fail). Primitive tryResolveContextDir (null on BootstrapNotFoundError, re-throws others) + ~22 degrade-expected read/classify/snapshot consumers routed; write/path-builder/throw-on-missing sites kept throwing. Runtime demos: degraded pointer-less, byte-identical pointer-present. Fresh-context adversarial completeness re-enumeration -> degrade-class CLOSED; the readBlock callers it flagged verified correct-to-throw (readBlock is throw-on-missing by contract).",
+      "criteria_results": [
+        {
+          "criterion": "pi-workflows migrated off project-* (subpath + identifiers + PROJECT_DIR drop, DEC-0015 no literal)",
+          "status": "passed",
+          "evidence": "26 files; commit; grep zero project-* subpath/PROJECT_DIR remain"
+        },
+        {
+          "criterion": "tryResolveContextDir primitive added; degrade-expected read consumers route through it; writes/path-builders throw",
+          "status": "passed",
+          "evidence": "context-dir.ts primitive; ~22 sites routed across pi-context/jit-agents/workflows; adversarial enumeration confirms split"
+        },
+        {
+          "criterion": "No hardcoded substrate-dir literal reintroduced (DEC-0015); pointer-present byte-identical",
+          "status": "passed",
+          "evidence": "runtime demos: pointer-present results unchanged (26 schemas, 19 blocks); paths derived from resolveContextDir"
+        },
+        {
+          "criterion": "build && check && test green incl. new pointer-less regression tests + workflow artifact integration test",
+          "status": "passed",
+          "evidence": "0 failures; new tests: tryResolveContextDir/block-validation/loadConfig-loadRelations/schema-discovery/contextState-validateContext/readBlockDir/jit-agents"
+        },
+        {
+          "criterion": "Fresh-context adversarial: degrade-class fully closed; readBlock callers correct-to-throw",
+          "status": "passed",
+          "evidence": "final re-enumeration; readBlock throw-on-missing contract verified; FGAP-097 filed for optional friendlier in-pi emit"
+        }
+      ],
+      "id": "VER-040"
     }
   ]
 }

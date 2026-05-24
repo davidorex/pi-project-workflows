@@ -984,7 +984,7 @@
     },
     {
       "description": "FGAP-074 C3 — migrate pi-workflows consumers (29 files). Largest consumer set: workflow-sdk, workflow-executor, step-block, step-shared, index, template-validation, test-helpers + ~22 tests, mostly importing writeBootstrapPointer / schemaPath / PROJECT_DIR. Repoint old project-* subpaths + renamed identifiers to context-* names. Green per commit.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-workflows/src/workflow-sdk.ts",
         "packages/pi-workflows/src/workflow-executor.ts",
@@ -1001,7 +1001,8 @@
         "TASK-067"
       ],
       "notes": "Decomposition chunk C3. Maps to Claude task #62. FGAP-074. Parallelizable with C2/C4 but commit serially for green clarity (sequence note).",
-      "id": "TASK-069"
+      "id": "TASK-069",
+      "verification": "VER-040"
     },
     {
       "description": "FGAP-074 C4 — migrate pi-behavior-monitors (1 test) + orchestrator scripts (14). Repoint old project-* subpaths + renamed identifiers to context-* names. Scripts: accept-all, amend-config, append-relation, bootstrap-state, build-html-views, current-state, file-block-item, filter-block-items, join-blocks, read-block-item, read-block-page, read-config, read-schema, resolve-items-by-id. Green per commit.",

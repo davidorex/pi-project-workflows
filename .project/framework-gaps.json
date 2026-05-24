@@ -3578,6 +3578,57 @@
       "id": "FGAP-096",
       "created_at": "2026-05-23T00:35:14.836Z",
       "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "title": "In-pi substrate-read tools should emit an onboarding-actionable message pre-bootstrap instead of a raw BootstrapNotFoundError",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "Block-level read tools that an in-pi LLM may invoke before a substrate is set up (read-block + named-block reads generally) surface the raw resolveContextDir BootstrapNotFoundError when no .pi-context.json pointer exists. The error message IS already actionable (it names 'run /context init'), but it is a thrown error rather than a structured, onboarding-consistent tool response. A friendlier emit ('no substrate yet — run /context start') paired with the write affordance would align with the DEC-0042/FGAP-095 instructional-projection requirement (pair every fact/absence with its remedy). This is a UX/error-shaping improvement, NOT a correctness gap: read-block/readBlock are throw-on-missing by contract, so throwing pointer-less is correct behavior (confirmed during the tryResolveContextDir class fix, TASK-069); degrade-to-empty would mislead and is explicitly NOT wanted here. Relates to FGAP-095 (onboarding conductor) + FGAP-085 (tool description discovery-readiness).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "876",
+          "reference": "read-block tool calls readBlock(ctx.cwd, params.block) directly; pointer-less it throws BootstrapNotFoundError (via blockFilePath->resolveContextDir) rather than returning an onboarding-shaped tool result"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "1290",
+          "reference": "readBlockDir now degrades to [] pointer-less (tryResolveContextDir) — a directory-enumeration read; the named-block read tools intentionally still throw per readBlock's throw-on-missing contract"
+        }
+      ],
+      "impact": "Minor in-pi onboarding friction: an LLM calling a read tool in a fresh repo gets a thrown error (actionable text, but not a structured/consistent onboarding affordance). No correctness or data-integrity impact.",
+      "canonical_vocabulary": "actionable error surfacing (onboarding affordance)",
+      "proposed_resolution": "When a substrate-read tool handler hits a missing-pointer condition, catch BootstrapNotFoundError (name-based, per FGAP-080) at the TOOL boundary (not in readBlock itself — its throw contract stays) and return a structured tool result naming the remedy ('run /context start'), consistent with the FGAP-095 instructional-projection pattern. Scope to the in-pi tool handlers; orchestrator CLIs keep throwing (misuse should fail loudly). Sequence with / fold into FGAP-095 onboarding work.",
+      "related_features": [
+        "FEAT-004"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "id": "FGAP-097",
+      "created_at": "2026-05-24T09:00:38.364Z"
+    },
+    {
+      "title": "No FGAP<->FGAP cross-reference affordance — framework-gaps schema lacks related_gaps; per DEC-0013 the fix is a gap_relates_to_gap relation_type + edges, not an FK field",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "The framework-gaps item schema exposes related_features, related_decisions, and related_issues (inline-FK arrays, legacy .project style) but NO field for linking one FGAP to a sibling FGAP. Filing FGAPs that reference other FGAPs (common — clusters, follow-ups, supersedes) has no structured home; such cross-refs currently live only in prose. Encountered concretely while filing FGAP-097 (a related_gaps key was rejected by AJV additionalProperties:false). Per DEC-0013 (closure-table is THE primitive for ALL inter-item relationships; FK-as-field forbidden) the correct resolution is NOT to add a related_gaps FK array (that would extend the legacy inline-FK pattern the rebuild is removing) but to register a gap_relates_to_gap relation_type in the conception (samples/conception.json) and express links as relations.json edges — mirroring the decision_relates_to_decision precedent added in Unit E (TASK-064). The existing related_features/related_decisions/related_issues inline-FK fields on the frozen .project schemas are themselves DEC-0013-violations slated to become edges in the .context re-derivation; related_gaps should be born as an edge, never added as a field.",
+      "evidence": [
+        {
+          "file": ".project/schemas/framework-gaps.schema.json",
+          "reference": "item schema lists related_features/related_decisions/related_issues but no related_gaps; additionalProperties:false rejects a related_gaps key (observed filing FGAP-097)"
+        },
+        {
+          "file": "packages/pi-context/samples/conception.json",
+          "reference": "relation_types[] — add gap_relates_to_gap (mirror decision_relates_to_decision, Unit E): category data_flow, source_kinds/target_kinds [framework-gaps]"
+        }
+      ],
+      "impact": "FGAP<->FGAP relationships are unstructured (prose-only), unqueryable, and not walkable by the closure-table lens primitives. Low severity (P3) — cross-refs still expressible in description text — but it is a consistency gap in the relation vocabulary and a DEC-0013 cleanliness item for the .context catalog.",
+      "canonical_vocabulary": "self-referential associative relation (closure-table edge)",
+      "proposed_resolution": "Add a gap_relates_to_gap relation_type to samples/conception.json relation_types[] (category data_flow; source_kinds/target_kinds [framework-gaps]; mirror decision_relates_to_decision). Do NOT add a related_gaps FK field to the framework-gaps schema (DEC-0013). FGAP<->FGAP links become relations.json edges. Backfill prose-only cross-refs (incl. FGAP-097->FGAP-095/085) as edges after the .context cutover, alongside the DEC-0045 backfill (TASK-065).",
+      "created_by": "human/davidryan@gmail.com",
+      "id": "FGAP-098",
+      "created_at": "2026-05-24T09:01:21.017Z"
     }
   ]
 }

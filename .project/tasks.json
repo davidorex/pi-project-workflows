@@ -1048,7 +1048,7 @@
     },
     {
       "description": "FGAP-074 C6 — docs rename. README.md (~18) + CLAUDE.md (~5) + packages/pi-context/skill-narrative.md (~26): /project -> /context + tool-name updates; any .agent.yaml / .workflow.yaml / .monitor.json referencing /project or project-* tools. npm run skills regenerates SKILL.md. Green.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "README.md",
         "CLAUDE.md",
@@ -1064,7 +1064,8 @@
         "TASK-071"
       ],
       "notes": "Decomposition chunk C6. Maps to Claude task #65. FGAP-074.",
-      "id": "TASK-072"
+      "id": "TASK-072",
+      "verification": "VER-043"
     },
     {
       "description": "FGAP-074 C7 — remove aliases + bare-string sweep (closes FGAP-074). Drop the dual package.json exports -> single ./context-*; drop tsconfig legacy path mappings; remove all @deprecated identifier aliases; scoped + bare-string sweep of residual in-scope project naming in comments/JSDoc/temp-dir prefixes/test-fixture strings. Green proves zero legacy-name consumers remain.",

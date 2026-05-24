@@ -3306,6 +3306,10 @@
         {
           "file": "packages/pi-context/src/project-sdk.ts",
           "reference": "readBlockPage returns {items,total,hasMore} — the structured completeness signal the truncating reads lack"
+        },
+        {
+          "file": "analysis/2026-05-25-list-tools-truncation-observed-behavior.md",
+          "reference": "Observed live: on the 50KB list-tools truncation the agent treated the partial output as workable-complete ('work with what I have', 'count from what I have and acknowledge the truncation') and filled the dropped tail from a secondary source (its system prompt) rather than re-querying — the partial-as-complete / soft-prose-signal-ignored failure this gap describes, occurring on the discovery surface itself."
         }
       ],
       "impact": "A harness-confined agent (DEC-0014) reading a >50KB block (framework-gaps ~346KB, decisions ~188KB, issues ~129KB) via read-block gets a silent partial + a prose note it may ignore, then acts on incomplete substrate believing it is whole. read-block-page exists but is not signposted from the truncation point, so the escape requires the agent to already know to switch. Under a growing substrate this compounds.",
@@ -3740,6 +3744,10 @@
           "file": "packages/pi-context/src/index.ts",
           "lines": "1463-1486",
           "reference": "read-block-page is the established progressive-disclosure precedent ({items,total,hasMore}, offset/limit) for blocks — the shape list-tools should mirror for the tool catalog (index page + per-tool detail)."
+        },
+        {
+          "file": "analysis/2026-05-25-list-tools-truncation-observed-behavior.md",
+          "reference": "Observed live in a constrained-harness session: list-tools truncated at 50KB (~58KB payload); the agent satisficed on the partial view and explicitly reached for a read-block-page-style index->detail for the tool catalog ('let me try read-block-page approach... no, that's for substrate blocks') before finding it absent — direct confirmation of the missing progressive disclosure this gap describes."
         }
       ],
       "impact": "The agent's primary (and, per FGAP-090, near-sole) discovery channel is also the payload most likely to exceed 50KB, so discovery is silently incomplete: tools past the cap are invisible to the in-pi LLM, which then hand-waves or confabulates signatures (the FGAP-092 confabulation pattern). Compounds FGAP-085 (even well-authored descriptions are dropped past the cap) and instances FGAP-089 (prose-only truncation signal). As the tool count grows, the truncation worsens.",

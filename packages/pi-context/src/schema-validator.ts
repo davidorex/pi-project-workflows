@@ -185,7 +185,7 @@ export function validateFromFile(schemaPath: string, data: unknown, label: strin
  * file on disk.
  *
  * Behaviour:
- *   - `cwd` resolves to `<projectRoot>/schemas/<schemaName>.schema.json` for
+ *   - `cwd` resolves to `<contextDir>/schemas/<schemaName>.schema.json` for
  *     the schema; user-state schemas under `.project/schemas/` win over
  *     framework schemas because that path is computed relative to `cwd`.
  *   - `data.schema_version` is read off the supplied data when present. When

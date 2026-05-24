@@ -7,14 +7,14 @@
  *
  * Closure scope: this module closes FGAP-031 (gather-execution-context
  * primitive) by composing existing pieces:
- *   - filterBlockItems (project-sdk.ts; TASK-034 / Phase 2.1) — locates the
+ *   - filterBlockItems (context-sdk.ts; TASK-034 / Phase 2.1) — locates the
  *     context-contract entry by unit_kind without scanning the whole block.
- *   - resolveItemsByIds (project-sdk.ts; TASK-035 / Phase 2.2) — cross-block
+ *   - resolveItemsByIds (context-sdk.ts; TASK-035 / Phase 2.2) — cross-block
  *     bulk lookup over a single buildIdIndex traversal; used twice (once to
  *     read the unit by id, once to resolve reached ids per relation_type).
- *   - walkAncestors / walkDescendants / findReferences (project-context.ts;
+ *   - walkAncestors / walkDescendants / findReferences (context.ts;
  *     TASK-036/037 / Phase 2.3/2.4) — closure-table traversal primitives.
- *   - loadRelations (project-context.ts existing) — single substrate read of
+ *   - loadRelations (context.ts existing) — single substrate read of
  *     relations.json reused across every declared relation_type's walk; the
  *     traversal primitives operate on the loaded Edge[] in-memory rather
  *     than re-reading disk per relation_type.

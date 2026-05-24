@@ -25,7 +25,7 @@
  *           ├── decisions.schema.json
  *           └── context-contracts.schema.json
  *
- * Exercises the canonical READ path through actual block-api + project-sdk
+ * Exercises the canonical READ path through actual block-api + context-sdk
  * primitives: filterBlockItems → readBlock → JSON parse;
  * resolveItemsByIds → buildIdIndex → loadConfig → expectedBlockForId
  * prefix-vs-block invariant; loadRelations → AJV validate against bundled
@@ -166,7 +166,7 @@ function buildSubstrate(cwd: string, spec: SubstrateSpec): void {
 }
 
 describe("gatherExecutionContext integration: scenario A — single relation_type / full substrate", () => {
-	it("composes ContextBundle from full synthetic substrate via canonical block-api + project-sdk surfaces", (t) => {
+	it("composes ContextBundle from full synthetic substrate via canonical block-api + context-sdk surfaces", (t) => {
 		const tmpDir = makeTmpDir("A-single");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 

@@ -2,16 +2,16 @@
  * Status-vocabulary primitives — pure helpers mapping per-schema status enum
  * values to a normalized StatusBucket, plus the config-override resolver.
  *
- * Extracted here (from roadmap-plan.ts) so both roadmap-plan AND project-sdk
+ * Extracted here (from roadmap-plan.ts) so both roadmap-plan AND context-sdk
  * can consume the vocabulary without forming a module import cycle. This
- * mirrors the topo.ts extraction precedent: project-sdk's currentState +
- * validateProject (status-consistency invariants) and roadmap-plan's
+ * mirrors the topo.ts extraction precedent: context-sdk's currentState +
+ * validateContext (status-consistency invariants) and roadmap-plan's
  * rollupPhaseStatus both bucket statuses; routing both through one
- * substrate-light module (it imports only getProjectContext from
- * project-context, which depends on neither roadmap-plan nor project-sdk)
+ * substrate-light module (it imports only loadContext from
+ * context, which depends on neither roadmap-plan nor context-sdk)
  * keeps the dependency graph acyclic.
  *
- * StatusBucket itself is declared in project-context.ts (the substrate type
+ * StatusBucket itself is declared in context.ts (the substrate type
  * surface) and imported/re-exported here; it is NOT redeclared.
  */
 import { loadContext, type StatusBucket } from "./context.js";

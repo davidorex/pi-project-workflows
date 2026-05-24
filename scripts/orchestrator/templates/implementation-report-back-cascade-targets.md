@@ -14,8 +14,8 @@ Return only:
 | 7 | initProject body literal site | index.ts:237 | YES/SKIPPED |
 | 8 | handleInit signature + body | index.ts:386-403 | YES/SKIPPED |
 | 9 | PROJECT_SUBCOMMANDS init dispatch | index.ts:1237 | YES/SKIPPED |
-| 10 | project-init tool parameters | index.ts:935 | YES/SKIPPED |
-| 11 | project-init tool execute | index.ts:936-948 | YES/SKIPPED |
+| 10 | context-init tool parameters | index.ts:935 | YES/SKIPPED |
+| 11 | context-init tool execute | index.ts:936-948 | YES/SKIPPED |
 
 Commit SHA: <40-char>
 Test counts post-commit: pi-context X/Y/Z; pi-jit-agents X/Y/Z; pi-workflows X/Y/Z; pi-behavior-monitors X/Y/Z

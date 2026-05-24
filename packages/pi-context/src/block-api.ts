@@ -11,8 +11,8 @@
  * validation. When `ctx` is undefined, behavior is byte-identical to the
  * pre-step-3 surface — the parameter is purely additive. The has-author-fields
  * decision is mtime-cached per (cwd, blockName) to avoid re-reading the
- * schema on every write; mirrors the `getProjectContext` cache pattern from
- * `project-context.ts`.
+ * schema on every write; mirrors the `loadContext` cache pattern from
+ * `context.ts`.
  *
  * Future extraction seam for pi-project extension.
  */

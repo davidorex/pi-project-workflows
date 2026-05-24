@@ -1,12 +1,12 @@
 /**
  * Tests for the edge-write surface (FGAP-075): appendRelation / appendRelations
- * in project-context.ts, layered on block-api's appendManyToTypedFileIfAbsent.
+ * in context.ts, layered on block-api's appendManyToTypedFileIfAbsent.
  *
  * Covers the write-surface guarantees in isolation (AJV-shape + exact-duplicate
  * no-op, dedup keyed on (parent,child,relation_type) ignoring ordinal, absent-
  * file creation, ctx structural-no-op parity, bulk dedup) AND the deferred-guard
  * contract: registration / endpoint / cycle violations are NOT caught at write
- * time but ARE surfaced by validateProject (the layer-graph forces this — the
+ * time but ARE surfaced by validateContext (the layer-graph forces this — the
  * write surface cannot reach buildIdIndex without inverting the dependency).
  */
 
@@ -149,9 +149,9 @@ describe("appendRelations (bulk)", () => {
 	});
 });
 
-// ── Deferred-guard proofs: write succeeds; validateProject is the catch ───────
+// ── Deferred-guard proofs: write succeeds; validateContext is the catch ───────
 //
-// Fixture mirrors project-sdk.test.ts:306+ — config.json carries the
+// Fixture mirrors context-sdk.test.ts:306+ — config.json carries the
 // relation_types registry; block_kinds is empty so the prefix-vs-block
 // invariant does not constrain the ad-hoc ids; item blocks provide the
 // endpoints buildIdIndex resolves; no config.invariants are declared so the
@@ -176,8 +176,8 @@ function writeItems(cwd: string, ids: string[]): void {
 	fs.writeFileSync(path.join(cwd, ".project", "items.json"), JSON.stringify({ items: ids.map((id) => ({ id })) }));
 }
 
-describe("deferred guards (write succeeds; validateProject catches)", () => {
-	it("I: unregistered relation_type — append succeeds, validateProject is invalid citing it", (t) => {
+describe("deferred guards (write succeeds; validateContext catches)", () => {
+	it("I: unregistered relation_type — append succeeds, validateContext is invalid citing it", (t) => {
 		const cwd = makeTmpDir("i-unregistered");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
@@ -191,10 +191,10 @@ describe("deferred guards (write succeeds; validateProject catches)", () => {
 		const result = validateContext(cwd);
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("unknown_rel"));
-		assert.ok(issue, "validateProject should flag the unregistered relation_type");
+		assert.ok(issue, "validateContext should flag the unregistered relation_type");
 	});
 
-	it("J: dangling endpoint — append succeeds, validateProject flags unresolved parent/child", (t) => {
+	it("J: dangling endpoint — append succeeds, validateContext flags unresolved parent/child", (t) => {
 		const cwd = makeTmpDir("j-dangling");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
@@ -207,10 +207,10 @@ describe("deferred guards (write succeeds; validateProject catches)", () => {
 		const result = validateContext(cwd);
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("c-missing"));
-		assert.ok(issue, "validateProject should flag the unresolved child endpoint");
+		assert.ok(issue, "validateContext should flag the unresolved child endpoint");
 	});
 
-	it("K: cycle — both edges append, validateProject reports edge_cycle_detected", (t) => {
+	it("K: cycle — both edges append, validateContext reports edge_cycle_detected", (t) => {
 		const cwd = makeTmpDir("k-cycle");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
@@ -223,6 +223,6 @@ describe("deferred guards (write succeeds; validateProject catches)", () => {
 		const result = validateContext(cwd);
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.code === "edge_cycle_detected");
-		assert.ok(issue, "validateProject should report edge_cycle_detected for a→b→a");
+		assert.ok(issue, "validateContext should report edge_cycle_detected for a→b→a");
 	});
 });

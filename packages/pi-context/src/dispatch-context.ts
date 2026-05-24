@@ -24,7 +24,7 @@
  *
  * This module has no external dependencies — pure types + helpers — so it
  * can be imported from block-api.ts, schema-write.ts, or any consumer
- * without forming a cycle through project-context / project-sdk.
+ * without forming a cycle through context / context-sdk.
  */
 
 // ── Type definitions ────────────────────────────────────────────────────────

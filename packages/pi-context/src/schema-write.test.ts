@@ -30,7 +30,7 @@ const validSchema = {
 };
 
 describe("writeSchema", () => {
-	it("writes a valid schema to <projectRoot>/schemas/<name>.schema.json", (t) => {
+	it("writes a valid schema to <contextDir>/schemas/<name>.schema.json", (t) => {
 		const tmpDir = makeTmpDir("write-valid");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupProjectDir(tmpDir);
@@ -109,7 +109,7 @@ describe("writeSchema", () => {
 		setupProjectDir(tmpDir);
 
 		// Set config.root to a value DIFFERENT from the pointer dir (.project). Pre
-		// DEC-0045 this would make writeSchema (projectRoot-based) land under
+		// DEC-0045 this would make writeSchema (a config.root-honoring path-builder) land under
 		// alt-substrate/ while readSchema/schemaPath (pointer-based) look under
 		// .project/ — a divergence. Post-unification both resolve to the pointer dir.
 		writeConfig(tmpDir, { schema_version: "1.0.0", root: "alt-substrate", block_kinds: [] });

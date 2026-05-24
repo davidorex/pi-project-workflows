@@ -16,11 +16,11 @@ import {
 } from "./context-dir.js";
 import { ValidationError } from "./schema-validator.js";
 
-describe("project-dir resolver + BootstrapNotFoundError + writeBootstrapPointer", () => {
+describe("context-dir resolver + BootstrapNotFoundError + writeBootstrapPointer", () => {
 	let tmpDir: string;
 
 	beforeEach(() => {
-		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "project-dir-test-"));
+		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "context-dir-test-"));
 	});
 
 	afterEach(() => {

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * amend-config — ergonomics wrapper around project-context amendConfigEntry
+ * amend-config — ergonomics wrapper around context amendConfigEntry
  *
  * Write-twin of writeConfig for the scoped-amend case: adds / replaces / removes
  * ONE entry in ONE config.json registry (block_kinds, relation_types, lenses,
@@ -8,11 +8,11 @@
  * installed_blocks, hierarchy). OP-CORRECTNESS (add ⇒ key absent, replace/remove
  * ⇒ key present) and SHAPE (whole-config AJV) are enforced by the library.
  * Cross-registry referential integrity (removing a still-referenced
- * relation_type / lens / layer / block_kind) is DEFERRED to project-validate —
+ * relation_type / lens / layer / block_kind) is DEFERRED to context-validate —
  * run it after a remove.
  *
  * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
- * (project-context.amendConfigEntry) through the Pi tool `amend-config`
+ * (context.amendConfigEntry) through the Pi tool `amend-config`
  * registered in pi-context/index.ts. This script is the Claude-Code-side
  * parallel — same library underneath, different consumer wrapper. Both layers
  * thin; business logic in the library.

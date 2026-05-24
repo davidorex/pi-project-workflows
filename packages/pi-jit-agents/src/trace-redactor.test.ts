@@ -5,7 +5,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import {
 	BUILTIN_PATTERNS,
-	loadProjectRedactionConfig,
+	loadContextRedactionConfig,
 	redactLlmResponse,
 	redactSensitiveData,
 } from "./trace-redactor.js";
@@ -303,7 +303,7 @@ describe("redactLlmResponse", () => {
 
 // --- Project config loader -------------------------------------------------------------------
 
-describe("loadProjectRedactionConfig", () => {
+describe("loadContextRedactionConfig", () => {
 	it("loads custom patterns and rehydrates regex strings into RegExp", () => {
 		const dir = mkdtempSync(path.join(tmpdir(), "trace-redactor-test-"));
 		try {
@@ -317,7 +317,7 @@ describe("loadProjectRedactionConfig", () => {
 					],
 				}),
 			);
-			const patterns = loadProjectRedactionConfig(configPath);
+			const patterns = loadContextRedactionConfig(configPath);
 			assert.strictEqual(patterns.length, 2);
 			assert.ok(patterns[0].regex instanceof RegExp);
 			assert.strictEqual(patterns[0].regex.flags, "g");
@@ -332,7 +332,7 @@ describe("loadProjectRedactionConfig", () => {
 	});
 
 	it("throws when the config file does not exist", () => {
-		assert.throws(() => loadProjectRedactionConfig("/nonexistent/path/trace-config.json"), /not found/);
+		assert.throws(() => loadContextRedactionConfig("/nonexistent/path/trace-config.json"), /not found/);
 	});
 
 	it("composes custom patterns with builtin patterns (both apply)", () => {
@@ -346,7 +346,7 @@ describe("loadProjectRedactionConfig", () => {
 					patterns: [{ name: "session_id", regex: "SESS-[a-z0-9]{8}" }],
 				}),
 			);
-			const patterns = loadProjectRedactionConfig(configPath);
+			const patterns = loadContextRedactionConfig(configPath);
 			const input = "key=sk-ant-abcdefghij0123456789ABCDEFG and session=SESS-abcd1234 in transcript";
 			const out = redactSensitiveData(input, { patterns });
 			assert.ok(out.includes("[REDACTED:anthropic_api_key]"));

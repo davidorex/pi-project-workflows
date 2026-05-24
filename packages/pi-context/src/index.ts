@@ -1,6 +1,6 @@
 /**
- * Extension entry point for pi-project — registers block tools and the
- * /project command for project state management.
+ * Extension entry point for pi-context — registers block tools and the
+ * /context command for project state management.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -69,7 +69,7 @@ import {
 	findReferencesInRepo,
 	loadLensView,
 	renderLensView,
-	validateProjectRelations,
+	validateContextRelations,
 	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
@@ -82,7 +82,7 @@ import { checkForUpdates } from "./update-check.js";
 // ── Command handlers ────────────────────────────────────────────────────────
 
 /**
- * /project status — derives project state from authoritative sources and
+ * /context status — derives project state from authoritative sources and
  * sends it as a structured message. Available to human, LLM, and system.
  */
 function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
@@ -163,7 +163,7 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
 }
 
 /**
- * /project add-work — discovers appendable blocks from schemas,
+ * /context add-work — discovers appendable blocks from schemas,
  * returns a structured instruction for main context to extract
  * items from the conversation into typed JSON blocks.
  */
@@ -251,8 +251,8 @@ ${blockInfo.join("\n\n")}
  * substrate + schemas directories ONLY. No schema/block assets are copied here
  * (FGAP-067 / DEC-0011: init must not impose a catalog). Run accept-all to adopt
  * a config + install to materialize the declared assets. Idempotent: skips
- * directories that already exist. Shared by the /project init command handler
- * and the project-init tool.
+ * directories that already exist. Shared by the /context init command handler
+ * and the context-init tool.
  */
 function initProject(cwd: string, contextDir: string): { created: string[]; skipped: string[] } {
 	// FIRST action — write the `.pi-context.json` bootstrap pointer carrying
@@ -278,7 +278,7 @@ function initProject(cwd: string, contextDir: string): { created: string[]; skip
 }
 
 /**
- * Result shape from installProject. installed/updated/skipped/notFound carry
+ * Result shape from installContext. installed/updated/skipped/notFound carry
  * relative-to-project-root destination paths (schemas/<name>.schema.json or
  * <name>.json). error is set only when no .project/config.json exists.
  */
@@ -291,7 +291,7 @@ export interface InstallResult {
 }
 
 /**
- * /project install opt-in mechanism (DEC-0011). Reads config.installed_schemas
+ * /context install opt-in mechanism (DEC-0011). Reads config.installed_schemas
  * and config.installed_blocks, copies declared assets from the package
  * samples catalog (samples/, keyed by conception.json's block_kinds) into the
  * project's substrate root + schemas dir.
@@ -316,9 +316,9 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		return result;
 	}
 
-	// destRoot is resolver-aware via projectRoot(cwd) — it already cascades
-	// through resolveContextDir under the hood (project-context.ts:projectRoot
-	// fallback). SCHEMAS_DIR is composed as a bare segment off that
+	// destRoot is resolver-aware via tryResolveContextDir(cwd) — it already
+	// cascades through resolveContextDir under the hood (context-dir.ts).
+	// SCHEMAS_DIR is composed as a bare segment off that
 	// resolver-aware root; this is intentional and DEC-0015-compliant
 	// (no hardcoded substrate-dir literal here — `schemas/` is a substrate
 	// internal-layout constant, not the substrate-dir name itself).
@@ -386,11 +386,9 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 
 	return result;
 }
-/** @deprecated FGAP-074 — removed in C7; use installContext */
-export const installProject = installContext;
 
 /**
- * /project init — scaffold the substrate dir (bootstrap pointer + substrate +
+ * /context init — scaffold the substrate dir (bootstrap pointer + substrate +
  * schemas directories only; no asset copying). Run accept-all + install to
  * populate. Idempotent: skips directories that already exist.
  */
@@ -423,9 +421,9 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 }
 
 /**
- * /project accept-all — adopt the canonical packaged conception
+ * /context accept-all — adopt the canonical packaged conception
  * (samples/conception.json) as this substrate's config.json. Writes config only
- * (no asset materialization — run /project install after). Idempotent: never
+ * (no asset materialization — run /context install after). Idempotent: never
  * overwrites an existing config. Requires the substrate to be initialized first
  * (a bootstrap pointer must exist).
  */
@@ -914,7 +912,7 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Tool: project-status ────────────────────────────────────────────────
+	// ── Tool: context-status ────────────────────────────────────────────────
 
 	pi.registerTool({
 		name: "context-status",
@@ -937,7 +935,7 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Tool: project-validate ──────────────────────────────────────────────
+	// ── Tool: context-validate ──────────────────────────────────────────────
 
 	pi.registerTool({
 		name: "context-validate",
@@ -1293,7 +1291,7 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Tool: project-init ──────────────────────────────────────────────────
+	// ── Tool: context-init ──────────────────────────────────────────────────
 
 	pi.registerTool({
 		name: "context-init",
@@ -1320,7 +1318,7 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Tool: project-accept-all ──────────────────────────────────────────────
+	// ── Tool: context-accept-all ──────────────────────────────────────────────
 
 	pi.registerTool({
 		name: "context-accept-all",
@@ -1631,7 +1629,7 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Tool: project-validate-relations ──────────────────────────────────
+	// ── Tool: context-validate-relations ──────────────────────────────────
 
 	pi.registerTool({
 		name: "context-validate-relations",
@@ -1647,7 +1645,7 @@ const extension = (pi: ExtensionAPI) => {
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
-			const result = validateProjectRelations(ctx.cwd);
+			const result = validateContextRelations(ctx.cwd);
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -1655,7 +1653,7 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Tool: project-edges-for-lens ──────────────────────────────────────
+	// ── Tool: context-edges-for-lens ──────────────────────────────────────
 
 	pi.registerTool({
 		name: "context-edges-for-lens",
@@ -1681,7 +1679,7 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Tool: project-walk-descendants ────────────────────────────────────
+	// ── Tool: context-walk-descendants ────────────────────────────────────
 
 	pi.registerTool({
 		name: "context-walk-descendants",
@@ -1709,7 +1707,7 @@ const extension = (pi: ExtensionAPI) => {
 	});
 
 	// ── Tool: walk-ancestors ─────────────────────────────────────────────
-	// Reverse-direction counterpart to project-walk-descendants. Coexists
+	// Reverse-direction counterpart to context-walk-descendants. Coexists
 	// with the descendants tool — this tool is the parent-direction
 	// traversal; FGAP-029 partial closure (TASK-036 / sub-phase 2.3).
 
@@ -1747,7 +1745,7 @@ const extension = (pi: ExtensionAPI) => {
 	// ── Tool: find-references ────────────────────────────────────────────
 	// Edge-level inspection of closure-table references incident on an item.
 	// Returns Edge[] (NOT string[]) — distinguishing semantic vs the id-chain
-	// walk-ancestors / project-walk-descendants tools. Coexists with both:
+	// walk-ancestors / context-walk-descendants tools. Coexists with both:
 	// walk-* surfaces serve id-chain traversal; find-references serves
 	// relation-typed edge inspection. TASK-037 / Phase 2 sub-phase 2.4 —
 	// final Phase 2 atomic unit.
@@ -1976,7 +1974,7 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
-	// ── Command: /project ──────────────────────────────────────────────────
+	// ── Command: /context ──────────────────────────────────────────────────
 
 	interface SubcommandEntry {
 		description: string;
@@ -2222,14 +2220,12 @@ export default extension;
 
 export type { CompleteTaskResult, ItemLocation } from "./context-sdk.js";
 // Re-export for consumers
-/** @deprecated FGAP-074 — removed in C7; use CONTEXT_BLOCK_TYPES */
 export {
 	blockStructure,
 	buildIdIndex,
 	CONTEXT_BLOCK_TYPES,
 	completeTask,
 	findAppendableBlocks,
-	PROJECT_BLOCK_TYPES,
 	resolveItemById,
 	schemaInfo,
 	schemaVocabulary,

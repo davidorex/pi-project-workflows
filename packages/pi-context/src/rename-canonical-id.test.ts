@@ -1,7 +1,7 @@
 /**
  * Tests for the FGAP-060 / DEC-0035 canonical_id rename engine.
  *
- * Fixture pattern mirrors project-context.test.ts / project-sdk.test.ts:
+ * Fixture pattern mirrors context.test.ts / context-sdk.test.ts:
  * mkdtemp + writeBootstrapPointer(".project") + raw-write config.json /
  * relations.json / block files. writeConfig / writeRelations (the engine's
  * write path) validate against the BUNDLED config / relations schemas, so

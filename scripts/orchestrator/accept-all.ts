@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * accept-all — ergonomics wrapper around project-context adoptConception
+ * accept-all — ergonomics wrapper around context adoptConception
  *
  * Adopts the package's canonical packaged conception (samples/conception.json)
  * as this substrate's config.json (DEC-0037 / DEC-0038 accept-all mode). Writes
@@ -9,7 +9,7 @@
  * The conception's hardcoded root is overridden to the actual substrate dir name.
  *
  * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
- * (project-context.adoptConception) through the Pi tool `project-accept-all`
+ * (context.adoptConception) through the Pi tool `context-accept-all`
  * registered in pi-context/index.ts. This script is the Claude-Code-side
  * parallel — same library underneath, different consumer wrapper. Both layers
  * thin; business logic in the library.
@@ -58,7 +58,7 @@ function main(): void {
 		// different class identity than a re-imported error constructor (the
 		// write-schema.ts module-instance hazard precedent, FGAP-078/079/080).
 		if (err instanceof Error && err.name === "BootstrapNotFoundError") {
-			console.error("accept-all: substrate not initialized — run project-init first");
+			console.error("accept-all: substrate not initialized — run context-init first");
 			process.exit(4);
 		}
 		console.error(`accept-all: ${err instanceof Error ? err.message : String(err)}`);

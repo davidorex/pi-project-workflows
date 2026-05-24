@@ -23,7 +23,6 @@ import { resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
 // Re-export substrate SDK so consumers can keep importing through context-sdk.
-// @deprecated FGAP-074 — removed in C7; re-exported old names during the migration arc.
 export {
 	type BlockKindDecl,
 	type CompositionMember,
@@ -33,8 +32,6 @@ export {
 	displayName,
 	type Edge,
 	edgesForLens,
-	/** @deprecated FGAP-074 — removed in C7; use loadContext */
-	getProjectContext,
 	groupByLens,
 	type HierarchyDecl,
 	type InvariantDecl,
@@ -45,10 +42,6 @@ export {
 	loadConfig,
 	loadContext,
 	loadRelations,
-	/** @deprecated FGAP-074 — removed in C7; use ContextData */
-	type ProjectContext,
-	/** @deprecated FGAP-074 — removed in C7; use resolveContextDir */
-	projectRoot,
 	type RelationTypeDecl,
 	type StatusBucket,
 	type SubstrateValidationIssue,
@@ -134,7 +127,7 @@ export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayK
 
 // ── Vocabulary (derived from schemas) ─────────────────────────────────────────
 
-/** Default planning lifecycle block types shipped with /project init. */
+/** Default planning lifecycle block types shipped with /context init. */
 export const CONTEXT_BLOCK_TYPES = [
 	"project",
 	"domain",
@@ -149,8 +142,6 @@ export const CONTEXT_BLOCK_TYPES = [
 	"conformance-reference",
 	"audit",
 ] as const;
-/** @deprecated FGAP-074 — removed in C7; use CONTEXT_BLOCK_TYPES */
-export const PROJECT_BLOCK_TYPES = CONTEXT_BLOCK_TYPES;
 
 export interface SchemaProperty {
 	name: string;
@@ -395,8 +386,6 @@ export interface ContextState {
 	verifications?: { total: number; passed: number; failed: number };
 	hasHandoff?: boolean;
 }
-/** @deprecated FGAP-074 — removed in C7; use ContextState */
-export type ProjectState = ContextState;
 
 /**
  * Derive project state from authoritative sources at query time.
@@ -641,8 +630,6 @@ export function contextState(cwd: string): ContextState {
 
 	return state;
 }
-/** @deprecated FGAP-074 — removed in C7; use contextState */
-export const projectState = contextState;
 
 /**
  * Derive {@link CurrentState} ("where are we + what's next") purely from
@@ -1214,19 +1201,15 @@ export interface ContextValidationIssue {
 	 */
 	code?: string;
 }
-/** @deprecated FGAP-074 — removed in C7; use ContextValidationIssue */
-export type ProjectValidationIssue = ContextValidationIssue;
 
 export interface ContextValidationResult {
 	status: "clean" | "warnings" | "invalid";
 	issues: ContextValidationIssue[];
 }
-/** @deprecated FGAP-074 — removed in C7; use ContextValidationResult */
-export type ProjectValidationResult = ContextValidationResult;
 
 /**
  * Field-equality predicate for config-declared invariants. Mirrors the
- * composition-lens `where` semantics (project-context.ts:773-778): the item
+ * composition-lens `where` semantics (context.ts:773-778): the item
  * qualifies only when EVERY (field, value) pair matches item[field] === value.
  * Absent predicate → every item qualifies.
  */
@@ -1261,7 +1244,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 	// Build the unified ID index once — the resolution surface for every edge
 	// endpoint and for the relocated invariants below.
 	// Note: buildIdIndex enforces the prefix-vs-block invariant and may throw
-	// on corrupted state; that surfaces as a hard failure to validateProject
+	// on corrupted state; that surfaces as a hard failure to validateContext
 	// callers (intended — corrupted IDs are not recoverable cross-ref issues).
 	const idIndex = buildIdIndex(cwd);
 
@@ -1501,8 +1484,6 @@ export function validateContext(cwd: string): ContextValidationResult {
 		issues,
 	};
 }
-/** @deprecated FGAP-074 — removed in C7; use validateContext */
-export const validateProject = validateContext;
 
 // ── Verification-Gated Task Completion ─────────────────────────────────────
 

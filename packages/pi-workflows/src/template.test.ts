@@ -129,7 +129,7 @@ describe("renderTemplateFile", () => {
 
 	it("project templates shadow builtin templates", () => {
 		const builtinDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-tmpl-builtin-"));
-		const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-tmpl-project-"));
+		const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-tmpl-context-"));
 
 		const projectTemplates = path.join(projectDir, ".pi", "templates");
 		fs.mkdirSync(projectTemplates, { recursive: true });

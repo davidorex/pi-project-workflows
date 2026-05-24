@@ -212,7 +212,7 @@ export interface DispatchContext {
 	/**
 	 * Optional path to a project-extension trace redaction config
 	 * (`.workflows/monitors/<name>/trace-config.json` shape). When set,
-	 * `loadProjectRedactionConfig` is invoked once per executeAgent call and
+	 * `loadContextRedactionConfig` is invoked once per executeAgent call and
 	 * the resulting custom patterns are layered atop `BUILTIN_PATTERNS` for
 	 * every redacted field. When unset / null, only the builtin pattern set
 	 * applies. Independent of `tracePath` — config loading is a no-op when

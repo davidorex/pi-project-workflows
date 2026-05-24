@@ -37,8 +37,8 @@ import { resolveStatusVocabulary, STATUS_VOCABULARY_DEFAULTS } from "./status-vo
 import { topoSort } from "./topo.js";
 
 // StatusBucket, STATUS_VOCABULARY_DEFAULTS, and resolveStatusVocabulary are
-// extracted to ./status-vocab.ts (substrate-light pure module) so project-sdk
-// can consume the vocabulary without a roadmap-plan <-> project-sdk import
+// extracted to ./status-vocab.ts (substrate-light pure module) so context-sdk
+// can consume the vocabulary without a roadmap-plan <-> context-sdk import
 // cycle. Re-exported here to preserve the existing import surface (barrel +
 // roadmap-plan.test). rollupPhaseStatus stays in this module and consumes the
 // vocabulary via the import above.
@@ -128,8 +128,8 @@ function diagMessage(cwd: string, code: string, fallback: string): string {
  * partial order so renderRoadmap can show what it could and what
  * couldn't be ordered.
  */
-// topoSort is extracted to ./topo.ts (pure generic util) so project-sdk can
-// consume it without a roadmap-plan <-> project-sdk import cycle. Re-exported
+// topoSort is extracted to ./topo.ts (pure generic util) so context-sdk can
+// consume it without a roadmap-plan <-> context-sdk import cycle. Re-exported
 // here to preserve the existing import surface (barrel + roadmap-plan.test).
 export { topoSort };
 
@@ -296,7 +296,7 @@ function evaluateMilestone(cwd: string, m: MilestoneSpec): boolean {
 export function loadRoadmap(cwd: string, roadmapId: string): RoadmapView | { error: string } {
 	const ctx = loadContext(cwd);
 	if (!ctx.config) {
-		return { error: "No .project/config.json — run /project init first, then declare lenses + install assets." };
+		return { error: "No .project/config.json — run /context init first, then declare lenses + install assets." };
 	}
 	const roadmaps = readRoadmaps(cwd);
 	if (roadmaps === null) {
@@ -351,8 +351,8 @@ export function listRoadmaps(cwd: string): Array<{ id: string; title: string; st
  * Validate every roadmap × phase × milestone. Codes are opaque slugs;
  * display strings resolve via diagMessage (config.display_strings →
  * embedded English fallback). The pi-context lens-validator dispatch
- * (registered at module bottom) maps these to ProjectValidationIssue-
- * compatible records and merges them into validateProject's output.
+ * (registered at module bottom) maps these to ContextValidationIssue-
+ * compatible records and merges them into validateContext's output.
  *
  * Roadmap.json absent → { status: "clean", issues: [] } (opt-in block;
  * absence is not a defect).
@@ -681,11 +681,11 @@ export function renderRoadmap(view: RoadmapView, naming: Record<string, string> 
 
 // ── Lens-validator dispatch registration (Divergence 3) ─────────────────────
 //
-// Module-init side-effect: validateProject in project-sdk.ts iterates all
+// Module-init side-effect: validateContext in context-sdk.ts iterates all
 // registered lens-validators and merges their issues into the project-
 // validation result. roadmap-plan registers itself here so import of this
 // module from index.ts wires the dispatch automatically — no hardcoded
-// import in project-sdk.ts.
+// import in context-sdk.ts.
 
 registerLensValidator({
 	name: "roadmap",

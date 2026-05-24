@@ -3,18 +3,18 @@
  *
  * Modules implementing lens-shaped validation (e.g. roadmap-plan) register
  * a LensValidator at module-init time via `registerLensValidator`. The
- * project-sdk's validateProject iterates the registered set and merges
+ * context-sdk's validateContext iterates the registered set and merges
  * each validator's issues into the project-validation result.
  *
- * Aim: keep project-sdk free of hardcoded imports of lens-shaped modules
- * so additional lenses can land without editing project-sdk.ts. The
+ * Aim: keep context-sdk free of hardcoded imports of lens-shaped modules
+ * so additional lenses can land without editing context-sdk.ts. The
  * dispatch is intentionally a global side-effect — modules that want to
  * participate must be importable from the package barrel so their
  * module-init runs at extension load time.
  *
  * Result shape: validators return an array of project-validation-shaped
  * issues (severity + message + block + field) plus a per-issue `code`
- * slug. The slug is opaque to validateProject; resolution to display
+ * slug. The slug is opaque to validateContext; resolution to display
  * strings happens inside the validator (via config.display_strings) so
  * each lens module owns its diagnostic vocabulary end-to-end.
  */

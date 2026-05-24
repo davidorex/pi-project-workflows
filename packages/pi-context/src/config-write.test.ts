@@ -1,6 +1,6 @@
 /**
  * Tests for the config-write surface (FGAP-076): amendConfigEntry in
- * project-context.ts, the scoped add / replace / remove of one config registry
+ * context.ts, the scoped add / replace / remove of one config registry
  * entry layered on writeConfig.
  *
  * Covers each registry kind (keyed-array / map / string-array / value-array),
@@ -9,7 +9,7 @@
  * tier (whole-config AJV via writeConfig), key/entry divergence, mtime-cache
  * invalidation, dry-run inertness, ctx structural-no-op parity, the DEFERRED
  * cross-registry referential integrity (a relation_type remove succeeds even
- * while a relations.json edge still cites it; validateProject is the catch), and
+ * while a relations.json edge still cites it; validateContext is the catch), and
  * empty-after-remove leaving the registry property as [].
  */
 
@@ -392,7 +392,7 @@ describe("amendConfigEntry — ctx structural no-op", () => {
 // ── 13: DEFERRED cross-ref proof ──────────────────────────────────────────────
 
 describe("amendConfigEntry — deferred cross-ref integrity", () => {
-	it("13: remove a still-referenced relation_type SUCCEEDS; validateProject is the catch", (t) => {
+	it("13: remove a still-referenced relation_type SUCCEEDS; validateContext is the catch", (t) => {
 		const cwd = makeTmpDir("13-deferred");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 		const projectDir = path.join(cwd, ".project");
@@ -415,14 +415,14 @@ describe("amendConfigEntry — deferred cross-ref integrity", () => {
 		assert.equal(res.modified, true);
 		assert.deepEqual(loadConfig(cwd)!.relation_types, []);
 
-		// validateProject catches the now-unregistered relation_type on the edge.
-		// (validateProject's own edge-integrity loop emits this as a message-only issue —
+		// validateContext catches the now-unregistered relation_type on the edge.
+		// (validateContext's own edge-integrity loop emits this as a message-only issue —
 		// the `edge_unknown_relation_type` CODE belongs to validateRelations, which
-		// validateProject filters to cycle-detection only; project-sdk.ts:1089-1096.)
+		// validateContext filters to cycle-detection only; context-sdk.ts:1089-1096.)
 		const result = validateContext(cwd);
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("not registered") && i.message.includes("rel"));
-		assert.ok(issue, "validateProject should flag the now-unregistered relation_type 'rel' on the edge");
+		assert.ok(issue, "validateContext should flag the now-unregistered relation_type 'rel' on the edge");
 	});
 });
 

@@ -321,7 +321,7 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 	fs.writeFileSync(path.join(dir, ".project", "config.json"), JSON.stringify(config, null, 2));
 	if (fixture.relations) {
 		// relations.json schema is a bare Edge[] array at the top level (per
-		// loadRelations docs in project-context.ts); the {edges: [...]} shape
+		// loadRelations docs in context.ts); the {edges: [...]} shape
 		// is the lens-view fixture's prior shape and would AJV-fail here.
 		fs.writeFileSync(path.join(dir, ".project", "relations.json"), JSON.stringify(fixture.relations, null, 2));
 	}
@@ -891,7 +891,7 @@ describe("lens-validator dispatch: register + getValidators round-trip; idempote
 	});
 });
 
-describe("validateProject (project-sdk) iterates registered lens-validators and merges issues", () => {
+describe("validateContext (context-sdk) iterates registered lens-validators and merges issues", () => {
 	let snapshot: ReadonlyArray<{ name: string; validate: (cwd: string) => unknown }>;
 
 	afterEach(() => {
@@ -904,7 +904,7 @@ describe("validateProject (project-sdk) iterates registered lens-validators and 
 		}
 	});
 
-	it("merges fake lens-validator's issues into validateProject output; defensive try/catch wraps validator throws", () => {
+	it("merges fake lens-validator's issues into validateContext output; defensive try/catch wraps validator throws", () => {
 		snapshot = [...getLensValidators()];
 		clearLensValidators();
 		registerLensValidator({

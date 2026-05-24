@@ -3,7 +3,7 @@
  * current-state — zero-loss "where are we + what's next" projection
  *
  * Wraps the canonical currentState library function from
- * @davidorex/pi-context/project-sdk. State is DERIVED from `.project`
+ * @davidorex/pi-context/context-sdk. State is DERIVED from `.project`
  * substrate (DEC-0040 / FGAP-072 / FGAP-059) — nothing hand-stored:
  *   focus       — one-line active arc (in-flight tasks > in-progress phase)
  *   inFlight    — tasks with status "in-progress"

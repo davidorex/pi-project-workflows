@@ -1,6 +1,6 @@
 /**
  * Lens-view consumption surface — pure functions that wrap the substrate SDK
- * for use by /project view, /project lens-curate, and the substrate pi tools.
+ * for use by /context view, /context lens-curate, and the substrate pi tools.
  *
  * Pure functions (no ExtensionCommandContext / ExtensionContext required) so
  * tests can call them directly. Subcommand handlers and tool execute() shells
@@ -43,7 +43,7 @@ export interface LoadedLensView {
 export function loadLensView(cwd: string, lensId: string): LoadedLensView | { error: string } {
 	const ctx = loadContext(cwd);
 	if (!ctx.config) {
-		return { error: "No .project/config.json — run /project init first, then declare lenses + install assets." };
+		return { error: "No .project/config.json — run /context init first, then declare lenses + install assets." };
 	}
 	const allLenses = ctx.config.lenses ?? [];
 	const lens = allLenses.find((l) => l.id === lensId);
@@ -189,7 +189,7 @@ export function buildCurationSuggestions(view: LoadedLensView): string {
  * + relations + every available block's items, calls validateRelations.
  * Returns the SubstrateValidationResult unchanged.
  */
-export function validateProjectRelations(cwd: string): SubstrateValidationResult {
+export function validateContextRelations(cwd: string): SubstrateValidationResult {
 	const ctx = loadContext(cwd);
 	if (!ctx.config) {
 		return {
@@ -222,7 +222,7 @@ export function validateProjectRelations(cwd: string): SubstrateValidationResult
  */
 export function edgesForLensByName(cwd: string, lensId: string): Edge[] | { error: string } {
 	const ctx = loadContext(cwd);
-	if (!ctx.config) return { error: "No .project/config.json — run /project init first." };
+	if (!ctx.config) return { error: "No .project/config.json — run /context init first." };
 	const allLenses = ctx.config.lenses ?? [];
 	const lens = allLenses.find((l) => l.id === lensId);
 	if (!lens) {
@@ -262,7 +262,7 @@ export function walkLensDescendants(cwd: string, parentId: string, relationType:
 /**
  * Walk closure-table ancestors of itemId under the given relation_type —
  * reverse-direction wrapper mirroring walkLensDescendants. Reads edges via
- * getProjectContext and delegates to the pure walkAncestors traversal.
+ * loadContext and delegates to the pure walkAncestors traversal.
  * Returns the ancestor id list (may be empty if itemId has no parents
  * under the relation_type, or if relations.json is absent).
  */
@@ -274,7 +274,7 @@ export function walkAncestorsByLens(cwd: string, itemId: string, relationType: s
 /**
  * Find all closure-table edges incident on itemId under the cwd's substrate —
  * substrate-reading wrapper around the pure findReferences primitive. Reads
- * edges via getProjectContext (same mtime-cached path as walkLensDescendants
+ * edges via loadContext (same mtime-cached path as walkLensDescendants
  * + walkAncestorsByLens) and delegates filtering to findReferences.
  *
  * Returns Edge[] (NOT string[] like walkLensDescendants / walkAncestorsByLens

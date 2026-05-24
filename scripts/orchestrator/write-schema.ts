@@ -162,9 +162,9 @@ function main(): void {
 			result = writeSchemaChecked(args.cwd, args.name, schema, operation, ctx, { dryRun: true });
 		} catch (err) {
 			// Name-based check, NOT `instanceof`: writeSchemaChecked throws BootstrapNotFoundError
-			// transitively (schema-write → its own project-dir module instance), which under
+			// transitively (schema-write → its own context-dir module instance), which under
 			// tsx/symlink resolution is a DIFFERENT class object than the one this CLI would import
-			// directly — so `instanceof` returns false. The class sets `name` (project-dir.ts), which
+			// directly — so `instanceof` returns false. The class sets `name` (context-dir.ts), which
 			// survives the module-instance split. (read-schema/read-config throw the class directly, so
 			// their instanceof works; this CLI's throw is transitive.)
 			if (err instanceof Error && err.name === "BootstrapNotFoundError") {

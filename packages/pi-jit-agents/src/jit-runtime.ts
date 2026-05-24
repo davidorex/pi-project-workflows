@@ -22,7 +22,7 @@ import type { Api, AssistantMessage, Model, ProviderStreamOptions, Tool, ToolCal
 import { complete as piAiComplete, Type } from "@earendil-works/pi-ai";
 import { AgentDispatchError } from "./errors.js";
 import {
-	loadProjectRedactionConfig,
+	loadContextRedactionConfig,
 	type RedactionConfig,
 	type RedactionPattern,
 	redactLlmResponse,
@@ -419,7 +419,7 @@ export async function executeAgent(
 	let redactionConfig: RedactionConfig | undefined;
 	if (tracingEnabled && typeof dispatch.redactionConfigPath === "string") {
 		try {
-			const patterns: RedactionPattern[] = loadProjectRedactionConfig(dispatch.redactionConfigPath);
+			const patterns: RedactionPattern[] = loadContextRedactionConfig(dispatch.redactionConfigPath);
 			redactionConfig = { patterns };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);

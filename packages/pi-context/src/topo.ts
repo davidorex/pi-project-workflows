@@ -1,8 +1,8 @@
 /**
  * Generic topological sort + cycle detection — a pure utility with no
  * substrate dependency. Extracted here (from roadmap-plan.ts) so both
- * roadmap-plan and project-sdk can consume it without forming a module
- * import cycle (project-sdk.currentState + roadmap-plan both topo-order).
+ * roadmap-plan and context-sdk can consume it without forming a module
+ * import cycle (context-sdk.currentState + roadmap-plan both topo-order).
  *
  * Returns:
  *   order  — dependency-respecting id order (Kahn's algorithm; stable,

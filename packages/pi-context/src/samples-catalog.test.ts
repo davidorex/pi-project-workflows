@@ -139,7 +139,7 @@ describe("samplesCatalog", () => {
 		// The conception is a template, not an instance. Shipping a concrete root
 		// (e.g. '.project') would be a hidden default — DEC-0015 (no default
 		// substrate dir) + DEC-0011 (ship-no-defaults). adoptConception sets root
-		// at accept-all from the .pi-context.json pointer; projectRoot resolves via
+		// at accept-all from the .pi-context.json pointer; resolveContextDir resolves via
 		// the pointer when root is absent. Regression guard against re-introduction.
 		const conception = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "conception.json"), "utf-8"));
 		assert.ok(!("root" in conception), "conception.json must not ship a 'root' key");

@@ -48,7 +48,7 @@ function makeTmpDir(prefix: string): string {
 describe("deriveBootstrapState", () => {
 	const ctxDir = ".project";
 	// Direct config write to <tmp>/<ctxDir>/config.json — the location resolveContextDir
-	// resolves under makeTmpDir's pointer. (project-sdk.test.ts's own writeConfig helper
+	// resolves under makeTmpDir's pointer. (context-sdk.test.ts's own writeConfig helper
 	// has a different positional signature; deriveBootstrapState only needs valid config JSON.)
 	const writeCfg = (tmp: string, cfg: Record<string, unknown>): void => {
 		fs.writeFileSync(path.join(tmp, ctxDir, "config.json"), JSON.stringify(cfg));
@@ -215,7 +215,7 @@ describe("schema-discovery readers degrade pointer-less", () => {
 
 // ── Derived State ────────────────────────────────────────────────────────────
 
-describe("projectState", () => {
+describe("contextState", () => {
 	it("derives state from blocks and git", (t) => {
 		const tmpDir = makeTmpDir("state");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
@@ -352,9 +352,9 @@ describe("projectState", () => {
 	});
 });
 
-// ── validateProject ─────────────────────────────────────────────────────────
+// ── validateContext ─────────────────────────────────────────────────────────
 
-// Edge-model validation (DEC-0013 / DEC-0036): validateProject now checks the
+// Edge-model validation (DEC-0013 / DEC-0036): validateContext now checks the
 // closure-table edge graph (relations.json) for reference integrity, plus two
 // relocated invariants (completed-task verification edge; decision forcing-artifact
 // edge). The per-block inline-FK reference checks were dropped. Fixtures therefore
@@ -427,7 +427,7 @@ function writeRelations(projectDir: string, edges: Record<string, unknown>[]): v
 	fs.writeFileSync(path.join(projectDir, "relations.json"), JSON.stringify(edges));
 }
 
-describe("validateProject", () => {
+describe("validateContext", () => {
 	it("returns clean for a valid edge graph (every decision + completed task has its required edge)", (t) => {
 		const tmpDir = makeTmpDir("validate-valid");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
@@ -639,7 +639,7 @@ describe("validateProject", () => {
 });
 
 // ── Config-declared invariants (DEC-0025: vocabulary-neutral generic loop) ────
-// validateProject enforces config.invariants[] generically per the requires-edge
+// validateContext enforces config.invariants[] generically per the requires-edge
 // class. These tests drive that loop with CUSTOM invariant data — including
 // FOREIGN vocabulary the source has zero literals for — to prove the engine
 // commits to no block/status/relation_type vocabulary itself.
@@ -1049,11 +1049,11 @@ describe("validation result status field", () => {
 
 // ── lens-validator dispatch (Step 7) ──────────────────────────────────────
 
-describe("validateProject lens-validator dispatch", () => {
+describe("validateContext lens-validator dispatch", () => {
 	// Late-bound import to avoid clearing the registry at this file's top scope
 	// (other test files in the same tsx --test run rely on module-init
 	// registrations). Each test reaches in, snapshots, mutates, restores.
-	it("merges issues from a registered lens-validator into validateProject output", (t) => {
+	it("merges issues from a registered lens-validator into validateContext output", (t) => {
 		// Snapshot the existing registry so we can restore after the test —
 		// must not strand permanent test-only validators in the module-level
 		// registry that other tests would observe.
@@ -1766,7 +1766,7 @@ describe("verification gate — AJV if/then enforcement", () => {
 		assert.strictEqual(afterData.tasks[0].verification, "v1");
 	});
 
-	it("(h) validateProject returns error severity for completed task without verification (bypassed via fs)", (t) => {
+	it("(h) validateContext returns error severity for completed task without verification (bypassed via fs)", (t) => {
 		const tmpDir = makeTmpDir("gate-validate-severity");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
@@ -1786,7 +1786,7 @@ describe("verification gate — AJV if/then enforcement", () => {
 		);
 
 		const result = validateContext(tmpDir);
-		assert.strictEqual(result.status, "invalid", "validateProject should report invalid for corrupted state");
+		assert.strictEqual(result.status, "invalid", "validateContext should report invalid for corrupted state");
 
 		const issue = result.issues.find((i) => i.message.includes("no verification edge") && i.message.includes("t1"));
 		assert.ok(issue, "should find the completed-without-verification-edge issue");
@@ -2641,7 +2641,7 @@ describe("currentState", () => {
 });
 
 // ── status-consistency invariants (DEC-0040 / FGAP-073) ───────────────────────
-// validateProject's second config-invariants consumer: cross-block status drift.
+// validateContext's second config-invariants consumer: cross-block status drift.
 // A qualifying item (block + optional when_bucket gate) whose related item across
 // an edge has a target bucket that violates require_target_bucket /
 // forbid_target_bucket is flagged. Like the requires-edge suite, the SOURCE loop
@@ -2871,7 +2871,7 @@ describe("status-consistency invariants", () => {
 });
 
 // ── Edge endpoint-kind check (FGAP-086 / DEC-0037) ───────────────────────────
-// validateProject flags an edge whose endpoint's resolved block is not in the
+// validateContext flags an edge whose endpoint's resolved block is not in the
 // relation_type's declared source_kinds / target_kinds (unless the set is the
 // "*" wildcard). Presence-gated: a relation_type with neither field is
 // unchecked, so the frozen .project substrate (no endpoint metadata) is never
@@ -3012,9 +3012,9 @@ describe("expectedBlockForId", () => {
 	});
 });
 
-// ── validateProject cross-block status-vocabulary check (FGAP-025) ────────────
+// ── validateContext cross-block status-vocabulary check (FGAP-025) ────────────
 
-describe("validateProject status-vocabulary", () => {
+describe("validateContext status-vocabulary", () => {
 	it("warns on a status value absent from the vocabulary; clean for known statuses", (t) => {
 		const tmpDir = makeTmpDir("validate-status-vocab");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));

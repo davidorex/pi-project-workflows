@@ -7,7 +7,7 @@
  * (never clobbers an existing config); requires a bootstrap pointer.
  *
  * T7 exercises the rewired initProject through its public surface (the
- * `project-init` registered tool, invoked via a minimal ExtensionAPI stub that
+ * `context-init` registered tool, invoked via a minimal ExtensionAPI stub that
  * captures tool registrations) and asserts the new init copies NO schema/block
  * assets — only scaffolds directories (FGAP-067 / DEC-0011).
  */

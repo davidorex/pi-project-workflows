@@ -4,7 +4,7 @@
  * Per per-test-fixture pattern (each test owns its tmp substrate dir +
  * synthetic relations.json + per-block files). Mirrors the fixture
  * shape established by setupFilterBlock / setupResolveBlock in
- * project-sdk.test.ts: minimal permissive schema next to each block
+ * context-sdk.test.ts: minimal permissive schema next to each block
  * file so readBlock's substrate-shape contract holds without exercising
  * write-time schema validation pressure unrelated to the primitive
  * under test.
@@ -45,7 +45,7 @@ function makeTmpDir(prefix: string): string {
 
 /**
  * Write a block file + companion minimal permissive schema. Mirrors
- * setupFilterBlock from project-sdk.test.ts. Permissive schema keeps
+ * setupFilterBlock from context-sdk.test.ts. Permissive schema keeps
  * readBlock's normal substrate shape intact without exercising
  * write-time schema validation unrelated to gatherExecutionContext.
  */

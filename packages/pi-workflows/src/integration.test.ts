@@ -432,7 +432,7 @@ describe("compilation pipeline integration", () => {
 	});
 
 	it("no .project/ directory skips injection entirely", (t) => {
-		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-noproject-"));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-integ-nocontext-"));
 		writeBootstrapPointer(tmpDir, ".project");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 

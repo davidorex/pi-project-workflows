@@ -6,7 +6,7 @@
  *
  * Per CLAUDE.md "Orchestrator scripts dual-surface" (DEC-0019/0020): this is
  * the Claude-Code-side ergonomics wrapper over the same pi-context library
- * surface (project-sdk's availableBlocks + schemaInfo + block-api's readBlock)
+ * surface (context-sdk's availableBlocks + schemaInfo + block-api's readBlock)
  * that in-pi harness-confined agents reach via Pi-registered tools. No direct
  * fs.readFileSync on .project/*.json — all substrate access flows through the
  * canonical SDK surface so substrate-dir resolution (DEC-0015) and

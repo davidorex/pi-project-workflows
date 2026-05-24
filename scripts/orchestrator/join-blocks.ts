@@ -3,7 +3,7 @@
  * join-blocks — one-call HYBRID cross-block join (FGAP-043)
  *
  * Wraps the canonical joinBlocks library function from
- * @davidorex/pi-context/project-sdk. Pairs left-block items with right-block
+ * @davidorex/pi-context/context-sdk. Pairs left-block items with right-block
  * items in a single call instead of N+1 read-block + resolve at each call site.
  *
  *   EDGE mode  : --relation-type <rt>  — pairs via a relations.json edge

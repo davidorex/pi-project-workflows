@@ -3,7 +3,7 @@
  * bootstrap-state — derive the substrate bootstrap state for a dir
  *
  * Wraps the canonical `deriveBootstrapState` library function from
- * @davidorex/pi-context/project-sdk. State is DERIVED purely from the
+ * @davidorex/pi-context/context-sdk. State is DERIVED purely from the
  * filesystem (DEC-0040 — nothing stored): the four-state progression
  *   no-pointer    — no .pi-context.json
  *   no-config     — pointer present, no config.json

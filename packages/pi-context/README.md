@@ -64,7 +64,7 @@ The schema is the contract. When pi-workflows agents produce output that writes 
 | `src/block-validation.ts` | Post-step validation: `snapshotBlockFiles`, `validateChangedBlocks`, `rollbackBlockFiles` |
 | `src/context-sdk.ts` | Derived state + cross-block resolver: `contextState`, `availableBlocks`, `availableSchemas`, `findAppendableBlocks`, `validateContext`, `buildIdIndex`, `resolveItemById`, `completeTask`. Re-exports the substrate API from `context.ts` (config/relations loaders, lens algorithms, validators, `resolveContextDir`) so existing consumers get one import surface. |
 | `src/context.ts` | Substrate bootstrap: `loadConfig`, `loadRelations`, `loadContext` (mtime-keyed cache), `resolveContextDir(cwd)` (the `config.root` resolver every path helper routes through), the lens algorithms (`edgesForLens`, `synthesizeFromField`, `walkDescendants`, `groupByLens`, `listUncategorized`, `displayName`), `validateRelations`. Type exports: `ConfigBlock`, `HierarchyDecl`, `LensSpec`, `Edge`, `ItemRecord`, `ContextData`, `SubstrateValidationIssue`, `SubstrateValidationResult`, `CurationSuggestion`. |
-| `src/lens-view.ts` | Lens-view consumption surface — pure functions for `/context view` + `/context lens-curate`: `loadLensView`, `renderLensView`, `buildCurationSuggestions`, `validateProjectRelations`, `edgesForLensByName`, `walkLensDescendants`. |
+| `src/lens-view.ts` | Lens-view consumption surface — pure functions for `/context view` + `/context lens-curate`: `loadLensView`, `renderLensView`, `buildCurationSuggestions`, `validateContextRelations`, `edgesForLensByName`, `walkLensDescendants`. |
 | `src/context-dir.ts` | Path-builders that route through `resolveContextDir(cwd)`: `schemasDir`, `schemaPath`, `agentsDir`, `contextTemplatesDir`. |
 | `src/update-check.ts` | Checks for updates to `@davidorex/pi-project-workflows` on session start |
 
@@ -139,7 +139,7 @@ displayName(canonicalId: string, naming: Record<string, string> | undefined): st
 loadLensView(cwd: string, lensId: string): LoadedLensView | { error: string }
 renderLensView(view: LoadedLensView, naming: Record<string, string> | undefined): string
 buildCurationSuggestions(view: LoadedLensView): string
-validateProjectRelations(cwd: string): SubstrateValidationResult
+validateContextRelations(cwd: string): SubstrateValidationResult
 edgesForLensByName(cwd: string, lensId: string): Edge[] | { error: string }
 walkLensDescendants(cwd: string, parentId: string, relationType: string): string[]
 ```

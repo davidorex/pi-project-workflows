@@ -15,24 +15,21 @@
  * invoked; `contextDir` is a required parameter chosen by the caller per
  * DEC-0015.
  *
- * Path-builders (projectDir / schemasDir / schemaPath / agentsDir /
- * projectTemplatesDir) all cascade through `resolveContextDir(cwd)` so the
- * literal substrate-dir name lives exactly nowhere in pi-context source after
- * Phase 1.2 of FGAP-026 closure lands.
+ * Path-builders (schemasDir / schemaPath / agentsDir / contextTemplatesDir)
+ * all cascade through `resolveContextDir(cwd)` so the literal substrate-dir
+ * name lives exactly nowhere in pi-context source after Phase 1.2 of FGAP-026
+ * closure lands.
  *
- * `PROJECT_DIR` and `SCHEMAS_DIR` exports are retained as `@deprecated` for
- * transitional cross-package compat (pi-workflows: workflow-sdk.ts,
- * step-block.ts, workflow-executor.ts still import them as bare segments);
- * Phase 7 of FGAP-026 closure cascades those sites and removes the exports.
+ * The `SCHEMAS_DIR` export is retained as `@deprecated` for transitional
+ * cross-package compat (pi-workflows: workflow-sdk.ts, step-block.ts,
+ * workflow-executor.ts still import it as a bare segment); Phase 7 of
+ * FGAP-026 closure cascades those sites and removes the export.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { validate } from "./schema-validator.js";
 
-/** @deprecated Use `resolveContextDir(cwd)` — substrate dir is config-driven per DEC-0015. Retained as bare-segment string for cross-package legacy callers (pi-workflows: workflow-sdk.ts, step-block.ts, workflow-executor.ts); Phase 7 of FGAP-026 closure cascades those sites and removes this export. */
-export const PROJECT_DIR = ".project";
-
-/** @deprecated Same status as PROJECT_DIR — Phase 7 cascade target. */
+/** @deprecated Same status as the removed PROJECT_DIR — Phase 7 cascade target. */
 export const SCHEMAS_DIR = "schemas";
 
 /**
@@ -98,7 +95,7 @@ const BOOTSTRAP_REF_SCHEMA: Record<string, unknown> = {
  * `writeBootstrapPointer(cwd, contextDir)` before any path-builder runs.
  *
  * Throws plain `Error` with file-context message on read/parse failure
- * (mirrors `loadConfig` at project-context.ts:188-196). Throws
+ * (mirrors `loadConfig` at context.ts:188-196). Throws
  * `ValidationError` (re-raised from canonical `validate()`) when the
  * pointer fails AJV validation against the bootstrap schema.
  */
@@ -215,7 +212,7 @@ export function writeBootstrapPointer(cwd: string, contextDir: string): void {
 /**
  * Reject substrate names that are not bare path segments (FGAP-079 / DEC-0045).
  *
- * Every name→path builder below (and in block-api / project-context /
+ * Every name→path builder below (and in block-api / context /
  * schema-write) interpolates a raw `name` into a substrate-relative file path
  * (`${name}.schema.json`, `${name}.json`). A name containing a path separator
  * (`/`, `\`), a `..` traversal segment, a `.` (`x.schema`), or an absolute
@@ -243,11 +240,6 @@ export function assertSubstrateName(name: string): void {
  * the substrate-dir name is read from the bootstrap pointer rather than
  * hardcoded.
  */
-/** @deprecated FGAP-074 — removed in C7; use resolveContextDir */
-export function projectDir(cwd: string): string {
-	return resolveContextDir(cwd);
-}
-
 export function schemasDir(cwd: string): string {
 	return path.join(resolveContextDir(cwd), SCHEMAS_DIR);
 }
@@ -264,5 +256,3 @@ export function agentsDir(cwd: string): string {
 export function contextTemplatesDir(cwd: string): string {
 	return path.join(resolveContextDir(cwd), "templates");
 }
-/** @deprecated FGAP-074 — removed in C7; use contextTemplatesDir */
-export const projectTemplatesDir = contextTemplatesDir;

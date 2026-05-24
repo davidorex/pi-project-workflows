@@ -3,7 +3,7 @@
  * resolve-items-by-id — bulk-resolve kind-prefixed ids to their block locations
  *
  * Wraps the canonical resolveItemsByIds library function from
- * @davidorex/pi-context/project-sdk. Used by Claude-Code-side orchestration
+ * @davidorex/pi-context/context-sdk. Used by Claude-Code-side orchestration
  * to map N input ids → N {block, arrayKey, item}|null entries against a
  * single buildIdIndex traversal, replacing the N×singular-call pattern.
  *

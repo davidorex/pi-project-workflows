@@ -150,7 +150,7 @@ interface RawConfigFile {
  * Compiles each `regex` string to a RegExp with the `g` flag.
  * Throws if the file does not exist, parses to invalid JSON, or contains malformed entries.
  */
-export function loadProjectRedactionConfig(configPath: string): RedactionPattern[] {
+export function loadContextRedactionConfig(configPath: string): RedactionPattern[] {
 	if (!existsSync(configPath)) {
 		throw new Error(`trace redaction config not found: ${configPath}`);
 	}

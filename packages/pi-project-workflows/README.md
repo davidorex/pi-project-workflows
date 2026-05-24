@@ -17,9 +17,9 @@ This installs the four constituent packages:
 ## Getting Started
 
 ```
-/project init     # scaffolds .project/ with schemas and starter blocks
+/context init     # scaffolds .project/ with schemas and starter blocks
 /workflow init    # scaffolds .workflows/ for run state
-/project status   # see derived project state
+/context status   # see derived project state
 /workflow list    # discover and run workflows
 /monitors         # list all monitors, scope, and state
 ```

@@ -5,11 +5,11 @@
  * `analysis/poc-degree-zero-lens/render.ts` and extended with the
  * config-as-canonical-registry shape per the step-2 plan.
  *
- * Design constraint: imports only from `./project-dir` (path constants),
- * `./schema-validator` (AJV bridge), and node builtins. block-api is intended
- * to import `projectRoot` from this module without forming a cycle through
- * project-sdk; this module must therefore stay at a strictly lower layer than
- * block-api.
+ * Design constraint: imports only from `./context-dir` (path constants),
+ * `./schema-validator` (AJV bridge), and node builtins. This module resolves
+ * the substrate dir via `resolveContextDir` from `./context-dir` without
+ * forming a cycle through context-sdk; it must therefore stay at a strictly
+ * lower layer than context-sdk.
  *
  * Closes structurally:
  *   - FGAP-001 (hierarchical block storage via closure-table per DEC-0009)
@@ -118,7 +118,7 @@ export interface HierarchyDecl {
 
 /**
  * Config-declared substrate invariant (DEC-0025: vocabulary lives in DATA, not
- * source). Two classes, both enforced generically by validateProject — no
+ * source). Two classes, both enforced generically by validateContext — no
  * block/status/relation_type literal appears in the consumer loops:
  *
  *  - `requires-edge`: items in `block` matching the optional `where` predicate
@@ -131,9 +131,9 @@ export interface HierarchyDecl {
  *    and/or !== `forbid_target_bucket`.
  *
  * The status-bucket fields use the inline string-union rather than importing
- * StatusBucket from status-vocab: status-vocab imports getProjectContext from
+ * StatusBucket from status-vocab: status-vocab imports loadContext from
  * THIS module, so importing StatusBucket back would form a cycle. The union is
- * kept in sync with StatusBucket (project-context.ts:64) by hand.
+ * kept in sync with StatusBucket (context.ts:64) by hand.
  */
 export interface InvariantDecl {
 	id: string;
@@ -203,8 +203,6 @@ export interface ContextData {
 	config: ConfigBlock | null;
 	relations: Edge[];
 }
-/** @deprecated FGAP-074 — removed in C7; use ContextData */
-export type ProjectContext = ContextData;
 
 export interface CurationSuggestion {
 	payload: Edge;
@@ -263,10 +261,6 @@ function relationsPath(cwd: string): string {
  * divergence (writes honoring config.root while reads/validation use the
  * pointer) that surfaced under FGAP-077.
  */
-/** @deprecated FGAP-074 — removed in C7; use resolveContextDir from context-dir.js */
-export function projectRoot(cwd: string): string {
-	return resolveContextDir(cwd);
-}
 
 /**
  * Load and AJV-validate `<cwd>/.project/config.json` against the bundled
@@ -295,12 +289,12 @@ export function loadConfig(cwd: string): ConfigBlock | null {
 	return data as ConfigBlock;
 }
 
-// ── Installed-asset materialization (shared with installProject; DEC-0042 / FGAP-095) ──
+// ── Installed-asset materialization (shared with installContext; DEC-0042 / FGAP-095) ──
 
 /**
  * Destination path of an installed SCHEMA asset — `<root>/<SCHEMAS_DIR>/<name>.schema.json`.
  * `root` is the already-resolved substrate root (`projectRoot(cwd)`). This is the
- * single source of the schema-dest derivation; `installProject` and
+ * single source of the schema-dest derivation; `installContext` and
  * `findUnmaterializedAssets` both route through it so installer and detector
  * cannot drift.
  */
@@ -320,7 +314,7 @@ export function installedBlockDestPath(root: string, name: string): string {
  * `config.installed_schemas` / `installed_blocks` whose destination file is
  * absent on disk. Empty arrays when everything declared is present (or nothing
  * is declared — vacuously materialized). Pure read, no copy — answers "is the
- * substrate fully installed?" via the SAME path derivation `installProject`
+ * substrate fully installed?" via the SAME path derivation `installContext`
  * writes to, so the question and the act cannot diverge.
  */
 export function findUnmaterializedAssets(cwd: string, config: ConfigBlock): { schemas: string[]; blocks: string[] } {
@@ -365,8 +359,8 @@ export function loadRelations(cwd: string): Edge[] {
  * Atomic, AJV-validated write of `<resolveContextDir(cwd)>/relations.json`
  * (top-level `Edge[]` array). Delegates to block-api's `writeTypedFile` against
  * the bundled relations schema. Importing `writeTypedFile` here is cycle-safe:
- * block-api imports only `projectRoot`-class path constants and does NOT import
- * project-context, so this module remains at a strictly lower layer in the read
+ * block-api imports only `resolveContextDir`-class path constants and does NOT
+ * import context, so this module remains at a strictly lower layer in the read
  * direction while reaching up to block-api for the shared atomic-write surface.
  *
  * `ctx` is threaded through for attestation parity with the rest of the write
@@ -398,15 +392,15 @@ const identityKey = (e: unknown): string => {
  * `writeRelations` (whole-file replace) for the additive case. Creates
  * relations.json (flat `Edge[]` array) when absent.
  *
- * Guards are DEFERRED to `validateProject` by design: this surface performs
+ * Guards are DEFERRED to `validateContext` by design: this surface performs
  * only AJV-shape validation (whole-array against the relations schema) and the
  * exact-duplicate-no-op above. Reference integrity — endpoints resolve,
  * relation_type is registered, no cycle under hierarchy relation_types — is NOT
  * checked here. This is forced by the layer graph: `appendRelations` lives in
- * project-context, which imports only block-api; endpoint resolution needs
- * `buildIdIndex` from project-sdk, and importing project-sdk here would invert
+ * context, which imports only block-api; endpoint resolution needs
+ * `buildIdIndex` from context-sdk, and importing context-sdk here would invert
  * the dependency direction. Registration / endpoint / cycle violations are
- * caught later by `validateProject`.
+ * caught later by `validateContext`.
  *
  * `ctx` is threaded for attestation parity with `writeRelations`; the relations
  * schema is a flat array with no envelope author fields, so stamping is a
@@ -466,7 +460,7 @@ export interface AdoptResult {
  * accept-all: adopt the package's canonical packaged conception
  * (samples/conception.json) as this substrate's config.json (DEC-0037 / DEC-0038
  * accept-all mode). Writes config ONLY (does not install assets — run
- * installProject after). Idempotent: never clobbers an existing config
+ * installContext after). Idempotent: never clobbers an existing config
  * (DEC-0011/0038 offer-don't-impose). The conception ships NO root (it is a
  * template, not an instance — DEC-0041/FGAP-094); this function SETS root to the
  * ACTUAL substrate dir name (resolved from the .pi-context.json pointer) on the
@@ -558,9 +552,9 @@ function hierarchyKey(h: { parent_block: string; child_block: string; relation_t
  *
  * Cross-registry referential integrity (removing a relation_type / lens / layer
  * / block_kind that is still referenced by an edge or another registry) is
- * DEFERRED to `validateProject` by design — the same layer-graph constraint that
+ * DEFERRED to `validateContext` by design — the same layer-graph constraint that
  * defers `appendRelation`'s integrity checks (this module imports only block-api;
- * referential checks need buildIdIndex from project-sdk, which would invert the
+ * referential checks need buildIdIndex from context-sdk, which would invert the
  * dependency). `remove` therefore emits NO write-time warning.
  *
  * Mutation works on a deep clone of the loaded config (the
@@ -758,7 +752,7 @@ export function amendConfigEntry(
 	};
 }
 
-// ── ProjectContext mtime cache ───────────────────────────────────────────────
+// ── ContextData mtime cache ───────────────────────────────────────────────
 
 interface CacheEntry {
 	configMtimeMs: number;
@@ -834,8 +828,6 @@ export function loadContext(cwd: string): ContextData {
 	});
 	return value;
 }
-/** @deprecated FGAP-074 — removed in C7; use loadContext */
-export const getProjectContext = loadContext;
 
 // ── Edge synthesis + lens projection ─────────────────────────────────────────
 
@@ -1303,7 +1295,7 @@ function resolveCompositionInternal(
 			} else {
 				// Target lens: read its target block items directly. Don't
 				// invoke loadLensView here (avoids importing block-api;
-				// project-context.ts is at a lower layer than lens-view).
+				// context.ts is at a lower layer than lens-view).
 				if (!subLens.target) {
 					throw new Error(`resolveComposition: sub-lens '${subLens.id}' is kind=target but missing target field`);
 				}
@@ -1345,8 +1337,8 @@ function resolveCompositionInternal(
 
 /**
  * Inline minimal block read used by resolveComposition. Avoids importing
- * block-api at this layer (project-context.ts must remain free of
- * block-api dependencies — block-api imports projectRoot from here).
+ * block-api at this layer (context.ts must remain free of
+ * block-api dependencies — block-api imports resolveContextDir from context-dir).
  */
 function readBlockItems(cwd: string, blockName: string): ItemRecord[] {
 	assertSubstrateName(blockName);

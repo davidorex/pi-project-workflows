@@ -1,6 +1,6 @@
 /**
  * Canonical schema-write surface — read / write / mutate the JSON Schemas
- * that live alongside project blocks under `<projectRoot>/schemas/`.
+ * that live alongside project blocks under `<contextDir>/schemas/`.
  *
  * Closes structurally:
  *   - FGAP-011 (canonical schema-write surface): every schema mutation that
@@ -17,10 +17,10 @@
  *     sibling and are renamed into place. A failed write leaves the prior
  *     schema byte-identical.
  *   - Schema files land at `<resolveContextDir(cwd)>/schemas/<schemaName>.schema.json`,
- *     routed through `schemaPath` (project-dir) so write resolution is identical
+ *     routed through `schemaPath` (context-dir) so write resolution is identical
  *     to read resolution — pointer-canonical, `config.root` is NOT a path input
- *     (FGAP-079 / DEC-0045). Previously `projectRoot`-based (config.root-honoring),
- *     which diverged from the pointer-canonical read side.
+ *     (FGAP-079 / DEC-0045). Previously based on a config.root-honoring
+ *     path-builder, which diverged from the pointer-canonical read side.
  *
  * Out-of-scope for step 3:
  *   - Schema $id + version + $ref + migration registry (FGAP-006, step 4)
@@ -36,9 +36,9 @@ import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.j
 
 /**
  * `<resolveContextDir(cwd)>/schemas/<schemaName>.schema.json` — canonical schema
- * path, routed through `schemaPath` (project-dir) so write resolution is
+ * path, routed through `schemaPath` (context-dir) so write resolution is
  * BYTE-IDENTICAL to read resolution (FGAP-079 / DEC-0045). Previously this was
- * `projectRoot`-based, which honored `config.root` and so diverged from the
+ * based on a config.root-honoring path-builder, which diverged from the
  * pointer-canonical read side (`schemaPath` / `validateBlockWithMigration`) under
  * a non-default `config.root` — schemas would be written where reads/validation
  * could not find them. Delegating to `schemaPath` collapses the two paths to one
@@ -49,7 +49,7 @@ function schemaWritePath(cwd: string, schemaName: string): string {
 }
 
 /**
- * Read a schema from `<projectRoot>/schemas/<schemaName>.schema.json` and
+ * Read a schema from `<contextDir>/schemas/<schemaName>.schema.json` and
  * return the parsed object. Returns `null` when the file does not exist —
  * absence is a normal pre-write state, not an error. Throws when the file
  * exists but is unreadable or contains invalid JSON.
@@ -77,7 +77,7 @@ export function readSchema(cwd: string, schemaName: string): object | null {
 }
 
 /**
- * Atomically write `schema` to `<projectRoot>/schemas/<schemaName>.schema.json`
+ * Atomically write `schema` to `<contextDir>/schemas/<schemaName>.schema.json`
  * after validating it against the JSON Schema draft-07 meta-schema.
  *
  * Failure modes:
@@ -197,7 +197,7 @@ export function writeSchemaChecked(
 }
 
 /**
- * Read the current schema at `<projectRoot>/schemas/<schemaName>.schema.json`,
+ * Read the current schema at `<contextDir>/schemas/<schemaName>.schema.json`,
  * pass it to `mutator`, meta-validate the result, and atomically write it
  * back. Throws if:
  *   - the schema does not exist (`Error` — caller must initialize first)

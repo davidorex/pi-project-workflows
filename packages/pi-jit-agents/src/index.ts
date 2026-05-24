@@ -26,7 +26,7 @@ export type { RedactionConfig, RedactionPattern } from "./trace-redactor.js";
 // Trace subsystem (issue-023)
 export {
 	BUILTIN_PATTERNS,
-	loadProjectRedactionConfig,
+	loadContextRedactionConfig,
 	redactLlmResponse,
 	redactSensitiveData,
 } from "./trace-redactor.js";

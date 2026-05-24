@@ -3,7 +3,7 @@
  * read-block-item — single-item read over a single block by id
  *
  * Wraps the canonical readBlockItem library function from
- * @davidorex/pi-context/project-sdk. Reads ONE item from a named block by
+ * @davidorex/pi-context/context-sdk. Reads ONE item from a named block by
  * its id (block-scoped — unlike resolve-item-by-id, which searches all
  * blocks by kind-prefixed id). Avoids fetching a whole large block to get
  * one item (FGAP-045: read-block is all-or-nothing + caps at 50KB).

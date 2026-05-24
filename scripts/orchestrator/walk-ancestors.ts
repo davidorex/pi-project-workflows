@@ -13,7 +13,7 @@
  * tool (walk-ancestors) + the underlying walkAncestors / walkAncestorsByLens
  * library functions ship as one unit. The script doubles as executable
  * specification of the ancestor-traversal contract. Coexists with the
- * descendants-direction surface (project-walk-descendants tool /
+ * descendants-direction surface (context-walk-descendants tool /
  * walkLensDescendants library function) — adds the reverse-direction
  * surface, never supersedes the forward variant.
  *

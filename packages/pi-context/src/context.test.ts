@@ -1,5 +1,5 @@
 /**
- * Tests for substrate SDK (project-context.ts) — covers loaders, mtime cache,
+ * Tests for substrate SDK (context.ts) — covers loaders, mtime cache,
  * synthesis, traversal, projection, display-name resolution, curation
  * surface, and the seven validateRelations issue codes.
  */
@@ -71,7 +71,7 @@ const minimalConfig = (): ConfigBlock => ({
 // ── Installed-asset materialization helpers (FGAP-095 P1 / DEC-0042) ─────────
 
 describe("installed-asset materialization helpers", () => {
-	it("dest-path helpers derive projectRoot-relative locations (single source shared with installProject)", () => {
+	it("dest-path helpers derive resolveContextDir-relative locations (single source shared with installContext)", () => {
 		const root = path.join(path.sep, "tmp", "x", ".project");
 		assert.strictEqual(installedSchemaDestPath(root, "tasks"), path.join(root, "schemas", "tasks.schema.json"));
 		assert.strictEqual(installedBlockDestPath(root, "tasks"), path.join(root, "tasks.json"));

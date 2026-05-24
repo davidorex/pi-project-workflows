@@ -3,7 +3,7 @@
  * read-block-page — paginated read over a single block
  *
  * Wraps the canonical readBlockPage library function from
- * @davidorex/pi-context/project-sdk. Returns a page of a block's items as
+ * @davidorex/pi-context/context-sdk. Returns a page of a block's items as
  * { items, total, hasMore } so callers can walk blocks too large to fetch
  * whole (FGAP-045: read-block is all-or-nothing + caps at 50KB; e.g.
  * framework-gaps at 88 items / 346KB blows the cap).

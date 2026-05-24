@@ -1,16 +1,16 @@
 #!/usr/bin/env tsx
 /**
- * append-relation — ergonomics wrapper around project-context appendRelation
+ * append-relation — ergonomics wrapper around context appendRelation
  *
  * Write-twin of writeRelations for the additive case: appends a single
  * closure-table edge (parent, child, relation_type, optional ordinal) to
  * relations.json, skipping an exact (parent, child, relation_type) duplicate.
  * Semantic integrity (endpoints resolve, relation_type registered, no cycle) is
- * DEFERRED to project-validate — this surface does AJV-shape + duplicate-no-op
+ * DEFERRED to context-validate — this surface does AJV-shape + duplicate-no-op
  * only, matching the appendRelation library guarantee.
  *
  * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
- * (project-context.appendRelation) through the Pi tool `append-relation`
+ * (context.appendRelation) through the Pi tool `append-relation`
  * registered in pi-context/index.ts. This script is the Claude-Code-side
  * parallel — same library underneath, different consumer wrapper. Both layers
  * thin; business logic in the library.

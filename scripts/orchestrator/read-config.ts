@@ -3,13 +3,13 @@
  * read-config — terse vocabulary projection of <substrate-dir>/config.json
  *
  * Per DEC-0015 (config drives substrate location): cwd is resolved through
- * `projectDir(cwd)` so the substrate-dir name comes from the bootstrap
+ * `resolveContextDir(cwd)` so the substrate-dir name comes from the bootstrap
  * pointer rather than hardcoded ".project". `BootstrapNotFoundError` from
  * the resolver surfaces as an actionable error (substrate not initialized)
  * rather than a stack trace.
  *
  * Per DEC-0019 (scripts as dual surface): this script is the Claude Code-side
- * ergonomics wrapper over `loadConfig` from @davidorex/pi-context/project-context;
+ * ergonomics wrapper over `loadConfig` from @davidorex/pi-context/context;
  * the in-pi-runtime equivalent is the `read-config` pi tool registered in
  * packages/pi-context/src/index.ts (landed in 1.3.A — commit bac1893). Both
  * surfaces wrap the same shared library; this script is intentionally thin.

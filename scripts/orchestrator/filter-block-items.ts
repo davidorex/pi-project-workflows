@@ -3,7 +3,7 @@
  * filter-block-items — predicate-filter projection over a single block
  *
  * Wraps the canonical filterBlockItems library function from
- * @davidorex/pi-context/project-sdk. Used by Claude-Code-side orchestration
+ * @davidorex/pi-context/context-sdk. Used by Claude-Code-side orchestration
  * to slice a block's items by a one-field predicate (eq / neq / in / matches)
  * without hand-rolling readBlock + Array.filter at each call site.
  *

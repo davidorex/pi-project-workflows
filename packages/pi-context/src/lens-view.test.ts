@@ -10,7 +10,7 @@ import {
 	findReferencesInRepo,
 	loadLensView,
 	renderLensView,
-	validateProjectRelations,
+	validateContextRelations,
 	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
@@ -253,7 +253,7 @@ describe("buildCurationSuggestions", () => {
 	});
 });
 
-describe("validateProjectRelations", () => {
+describe("validateContextRelations", () => {
 	afterEach(() => {
 		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
 	});
@@ -262,14 +262,14 @@ describe("validateProjectRelations", () => {
 		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-validate-noconfig-"));
 		writeBootstrapPointer(tmpRoot, ".project");
 		fs.mkdirSync(path.join(tmpRoot, ".project"), { recursive: true });
-		const result = validateProjectRelations(tmpRoot);
+		const result = validateContextRelations(tmpRoot);
 		assert.equal(result.status, "invalid");
 		assert.equal(result.issues[0]?.code, "edge_unknown_relation_type");
 	});
 
 	it("returns clean when no relations exist and config has no lenses/hierarchy", () => {
 		tmpRoot = makeProject();
-		const result = validateProjectRelations(tmpRoot);
+		const result = validateContextRelations(tmpRoot);
 		assert.equal(result.status, "clean");
 	});
 
@@ -279,7 +279,7 @@ describe("validateProjectRelations", () => {
 			issues: [{ id: "issue-001" }],
 			relations: [{ parent: "a", child: "issue-001", relation_type: "totally-unknown-relation" }],
 		});
-		const result = validateProjectRelations(tmpRoot);
+		const result = validateContextRelations(tmpRoot);
 		assert.equal(result.status, "invalid");
 		assert.ok(result.issues.some((i) => i.code === "edge_unknown_relation_type"));
 	});

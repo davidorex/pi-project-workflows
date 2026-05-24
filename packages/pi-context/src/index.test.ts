@@ -16,8 +16,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "./context-dir.js";
 import extension from "./index.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 
 interface CapturedTool {
 	name: string;

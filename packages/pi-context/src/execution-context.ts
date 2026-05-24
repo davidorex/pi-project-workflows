@@ -50,8 +50,8 @@
  * atomic unit. TASK-039 / Phase 3 sub-phase 3.2.
  */
 
-import { loadRelations, walkAncestors, walkDescendants } from "./project-context.js";
-import { filterBlockItems, resolveItemsByIds } from "./project-sdk.js";
+import { loadRelations, walkAncestors, walkDescendants } from "./context.js";
+import { filterBlockItems, resolveItemsByIds } from "./context-sdk.js";
 
 /**
  * One entry in a context-contract's bundle_relation_types[] — declares a

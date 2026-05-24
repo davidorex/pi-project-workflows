@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeBootstrapPointer } from "./project-dir.js";
+import { writeBootstrapPointer } from "./context-dir.js";
 import { createRegistry } from "./schema-migrations.js";
 import { ValidationError, validateBlockWithMigration } from "./schema-validator.js";
 import { writeSchema, writeSchemaChecked } from "./schema-write.js";

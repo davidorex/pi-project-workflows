@@ -31,8 +31,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { writeBootstrapPointer } from "./context-dir.js";
 import { gatherExecutionContext } from "./execution-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 
 function makeTmpDir(prefix: string): string {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), `exec-ctx-${prefix}-`));

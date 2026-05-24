@@ -26,8 +26,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { InvariantDecl, LensSpec, RelationTypeDecl } from "./project-context.js";
-import { type SchemaProperty, schemaInfoFromPath } from "./project-sdk.js";
+import type { InvariantDecl, LensSpec, RelationTypeDecl } from "./context.js";
+import { type SchemaProperty, schemaInfoFromPath } from "./context-sdk.js";
 
 /** Bundled samples directory — resolved relative to this module so it works from
  * both `src/` (tsx) and `dist/` (built); `samples/` sits one level above either. */

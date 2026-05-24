@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
+import { writeBootstrapPointer } from "./context-dir.js";
 import {
 	buildCurationSuggestions,
 	edgesForLensByName,
@@ -13,7 +14,6 @@ import {
 	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 
 let tmpRoot: string;
 

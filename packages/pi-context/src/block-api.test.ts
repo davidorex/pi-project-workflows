@@ -25,8 +25,8 @@ import {
 	writeBlock,
 	writeTypedFile,
 } from "./block-api.js";
+import { writeBootstrapPointer } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {

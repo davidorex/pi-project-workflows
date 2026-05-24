@@ -13,18 +13,18 @@ import {
 	type Edge,
 	edgesForLens,
 	findReferences,
-	getProjectContext,
 	groupByLens,
 	type ItemRecord,
 	type LensSpec,
 	listUncategorized,
+	loadContext,
 	resolveComposition,
 	type SubstrateValidationResult,
 	validateRelations,
 	walkAncestors,
 	walkDescendants,
-} from "./project-context.js";
-import { availableBlocks } from "./project-sdk.js";
+} from "./context.js";
+import { availableBlocks } from "./context-sdk.js";
 
 export interface LoadedLensView {
 	lens: LensSpec;
@@ -41,7 +41,7 @@ export interface LoadedLensView {
  * surface via ctx.ui.notify or as a tool error result.
  */
 export function loadLensView(cwd: string, lensId: string): LoadedLensView | { error: string } {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	if (!ctx.config) {
 		return { error: "No .project/config.json — run /project init first, then declare lenses + install assets." };
 	}
@@ -190,7 +190,7 @@ export function buildCurationSuggestions(view: LoadedLensView): string {
  * Returns the SubstrateValidationResult unchanged.
  */
 export function validateProjectRelations(cwd: string): SubstrateValidationResult {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	if (!ctx.config) {
 		return {
 			status: "invalid",
@@ -221,7 +221,7 @@ export function validateProjectRelations(cwd: string): SubstrateValidationResult
  * derived_from_field, or filtered authored edges for hand-curated lenses.
  */
 export function edgesForLensByName(cwd: string, lensId: string): Edge[] | { error: string } {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	if (!ctx.config) return { error: "No .project/config.json — run /project init first." };
 	const allLenses = ctx.config.lenses ?? [];
 	const lens = allLenses.find((l) => l.id === lensId);
@@ -255,7 +255,7 @@ export function edgesForLensByName(cwd: string, lensId: string): Edge[] | { erro
  * under the relation_type, or if relations.json is absent).
  */
 export function walkLensDescendants(cwd: string, parentId: string, relationType: string): string[] {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	return walkDescendants(parentId, relationType, ctx.relations);
 }
 
@@ -267,7 +267,7 @@ export function walkLensDescendants(cwd: string, parentId: string, relationType:
  * under the relation_type, or if relations.json is absent).
  */
 export function walkAncestorsByLens(cwd: string, itemId: string, relationType: string): string[] {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	return walkAncestors(itemId, relationType, ctx.relations);
 }
 
@@ -291,6 +291,6 @@ export function findReferencesInRepo(
 	itemId: string,
 	direction: "inbound" | "outbound" | "both" = "both",
 ): Edge[] {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	return findReferences(itemId, ctx.relations, direction);
 }

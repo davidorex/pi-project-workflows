@@ -15,9 +15,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { appendRelation, appendRelations, type Edge, loadRelations } from "./project-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
-import { validateProject } from "./project-sdk.js";
+import { appendRelation, appendRelations, type Edge, loadRelations } from "./context.js";
+import { writeBootstrapPointer } from "./context-dir.js";
+import { validateContext } from "./context-sdk.js";
 import { ValidationError } from "./schema-validator.js";
 
 /** mkdtemp + bootstrap pointer at `.project` + ensure the substrate dir exists. */
@@ -188,7 +188,7 @@ describe("deferred guards (write succeeds; validateProject catches)", () => {
 		const r = appendRelation(cwd, { parent: "p1", child: "c1", relation_type: "unknown_rel" });
 		assert.equal(r.appended, true);
 
-		const result = validateProject(cwd);
+		const result = validateContext(cwd);
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("unknown_rel"));
 		assert.ok(issue, "validateProject should flag the unregistered relation_type");
@@ -204,7 +204,7 @@ describe("deferred guards (write succeeds; validateProject catches)", () => {
 		const r = appendRelation(cwd, { parent: "p1", child: "c-missing", relation_type: "rel" });
 		assert.equal(r.appended, true);
 
-		const result = validateProject(cwd);
+		const result = validateContext(cwd);
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("c-missing"));
 		assert.ok(issue, "validateProject should flag the unresolved child endpoint");
@@ -220,7 +220,7 @@ describe("deferred guards (write succeeds; validateProject catches)", () => {
 		assert.equal(appendRelation(cwd, { parent: "a", child: "b", relation_type: "rel" }).appended, true);
 		assert.equal(appendRelation(cwd, { parent: "b", child: "a", relation_type: "rel" }).appended, true);
 
-		const result = validateProject(cwd);
+		const result = validateContext(cwd);
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.code === "edge_cycle_detected");
 		assert.ok(issue, "validateProject should report edge_cycle_detected for a→b→a");

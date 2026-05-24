@@ -30,8 +30,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { schemaPath } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
-import { schemaPath } from "./project-dir.js";
 import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.js";
 
 /**

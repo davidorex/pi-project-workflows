@@ -8,7 +8,6 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock, updateItemInBlock } from "./block-api.js";
-import { getLensValidators } from "./lens-validator.js";
 import {
 	type ConfigBlock,
 	type Edge,
@@ -17,21 +16,24 @@ import {
 	loadConfig,
 	loadRelations,
 	validateRelations,
-} from "./project-context.js";
-import { projectDir, resolveContextDir, schemaPath, schemasDir } from "./project-dir.js";
+} from "./context.js";
+import { resolveContextDir, schemaPath, schemasDir } from "./context-dir.js";
+import { getLensValidators } from "./lens-validator.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
-// Re-export substrate SDK so consumers can keep importing through project-sdk
-// during the migration arc.
+// Re-export substrate SDK so consumers can keep importing through context-sdk.
+// @deprecated FGAP-074 — removed in C7; re-exported old names during the migration arc.
 export {
 	type BlockKindDecl,
 	type CompositionMember,
 	type ConfigBlock,
+	type ContextData,
 	type CurationSuggestion,
 	displayName,
 	type Edge,
 	edgesForLens,
+	/** @deprecated FGAP-074 — removed in C7; use loadContext */
 	getProjectContext,
 	groupByLens,
 	type HierarchyDecl,
@@ -41,8 +43,11 @@ export {
 	type LensSpec,
 	listUncategorized,
 	loadConfig,
+	loadContext,
 	loadRelations,
+	/** @deprecated FGAP-074 — removed in C7; use ContextData */
 	type ProjectContext,
+	/** @deprecated FGAP-074 — removed in C7; use resolveContextDir */
 	projectRoot,
 	type RelationTypeDecl,
 	type StatusBucket,
@@ -51,7 +56,7 @@ export {
 	synthesizeFromField,
 	validateRelations,
 	walkDescendants,
-} from "./project-context.js";
+} from "./context.js";
 
 // ── Block discovery ──────────────────────────────────────────────────────────
 
@@ -61,7 +66,7 @@ export interface BlockInfo {
 }
 
 export function availableBlocks(cwd: string): BlockInfo[] {
-	const workflowDir = projectDir(cwd);
+	const workflowDir = resolveContextDir(cwd);
 	const schemasDirPath = schemasDir(cwd);
 	if (!fs.existsSync(workflowDir)) return [];
 
@@ -125,7 +130,7 @@ export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayK
 // ── Vocabulary (derived from schemas) ─────────────────────────────────────────
 
 /** Default planning lifecycle block types shipped with /project init. */
-export const PROJECT_BLOCK_TYPES = [
+export const CONTEXT_BLOCK_TYPES = [
 	"project",
 	"domain",
 	"requirements",
@@ -139,6 +144,8 @@ export const PROJECT_BLOCK_TYPES = [
 	"conformance-reference",
 	"audit",
 ] as const;
+/** @deprecated FGAP-074 — removed in C7; use CONTEXT_BLOCK_TYPES */
+export const PROJECT_BLOCK_TYPES = CONTEXT_BLOCK_TYPES;
 
 export interface SchemaProperty {
 	name: string;
@@ -265,7 +272,7 @@ export interface BlockStructure {
  * and block summaries into a single queryable function.
  */
 export function blockStructure(cwd: string): BlockStructure[] {
-	const blockDir = projectDir(cwd);
+	const blockDir = resolveContextDir(cwd);
 	const blocks = availableBlocks(cwd);
 	return blocks.map((b) => {
 		const arrays: { key: string; itemCount: number }[] = [];
@@ -362,7 +369,7 @@ export function deriveBootstrapState(cwd: string): BootstrapStatus {
 	return { state: installed ? "ready" : "not-installed", contextDir, missing };
 }
 
-export interface ProjectState {
+export interface ContextState {
 	testCount: number;
 	sourceFiles: number;
 	sourceLines: number;
@@ -380,12 +387,14 @@ export interface ProjectState {
 	verifications?: { total: number; passed: number; failed: number };
 	hasHandoff?: boolean;
 }
+/** @deprecated FGAP-074 — removed in C7; use ContextState */
+export type ProjectState = ContextState;
 
 /**
  * Derive project state from authoritative sources at query time.
  * No cache, no stale data — computed fresh on every call.
  */
-export function projectState(cwd: string): ProjectState {
+export function contextState(cwd: string): ContextState {
 	// Git state
 	let lastCommit = "unknown";
 	let lastCommitMessage = "";
@@ -488,7 +497,7 @@ export function projectState(cwd: string): ProjectState {
 
 	// Block summaries — scan all blocks, report item counts and status distribution
 	const blockSummaries: Record<string, BlockSummary> = {};
-	const blockDir = projectDir(cwd);
+	const blockDir = resolveContextDir(cwd);
 	try {
 		if (fs.existsSync(blockDir)) {
 			for (const file of fs.readdirSync(blockDir)) {
@@ -543,7 +552,7 @@ export function projectState(cwd: string): ProjectState {
 	}
 
 	// Planning lifecycle derived state
-	const state: ProjectState = {
+	const state: ContextState = {
 		testCount,
 		sourceFiles,
 		sourceLines,
@@ -620,7 +629,7 @@ export function projectState(cwd: string): ProjectState {
 
 	// Handoff presence
 	try {
-		const handoffPath = path.join(projectDir(cwd), "handoff.json");
+		const handoffPath = path.join(resolveContextDir(cwd), "handoff.json");
 		state.hasHandoff = fs.existsSync(handoffPath);
 	} catch {
 		/* ignore */
@@ -628,6 +637,8 @@ export function projectState(cwd: string): ProjectState {
 
 	return state;
 }
+/** @deprecated FGAP-074 — removed in C7; use contextState */
+export const projectState = contextState;
 
 /**
  * Derive {@link CurrentState} ("where are we + what's next") purely from
@@ -1078,7 +1089,7 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
  */
 export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
 	const index = new Map<string, ItemLocation>();
-	const blockDir = projectDir(cwd);
+	const blockDir = resolveContextDir(cwd);
 	const cfg = loadConfig(cwd);
 
 	// Phases are an ordinary array-block since DEC-0028: each phase carries a
@@ -1180,7 +1191,7 @@ export function resolveItemsByIds(cwd: string, ids: string[]): Map<string, ItemL
 
 // ── Project Validation (cross-block reference integrity) ─────────────────────
 
-export interface ProjectValidationIssue {
+export interface ContextValidationIssue {
 	severity: "error" | "warning";
 	message: string;
 	block: string;
@@ -1198,11 +1209,15 @@ export interface ProjectValidationIssue {
 	 */
 	code?: string;
 }
+/** @deprecated FGAP-074 — removed in C7; use ContextValidationIssue */
+export type ProjectValidationIssue = ContextValidationIssue;
 
-export interface ProjectValidationResult {
+export interface ContextValidationResult {
 	status: "clean" | "warnings" | "invalid";
-	issues: ProjectValidationIssue[];
+	issues: ContextValidationIssue[];
 }
+/** @deprecated FGAP-074 — removed in C7; use ContextValidationResult */
+export type ProjectValidationResult = ContextValidationResult;
 
 /**
  * Field-equality predicate for config-declared invariants. Mirrors the
@@ -1235,8 +1250,8 @@ function matchesWhere(item: Record<string, unknown>, where?: Record<string, stri
  * `completed-task-has-verification` and `decision-cites-forcing-artifact`; a
  * project ships only the invariants its own conception requires.
  */
-export function validateProject(cwd: string): ProjectValidationResult {
-	const issues: ProjectValidationIssue[] = [];
+export function validateContext(cwd: string): ContextValidationResult {
+	const issues: ContextValidationIssue[] = [];
 
 	// Build the unified ID index once — the resolution surface for every edge
 	// endpoint and for the relocated invariants below.
@@ -1481,6 +1496,8 @@ export function validateProject(cwd: string): ProjectValidationResult {
 		issues,
 	};
 }
+/** @deprecated FGAP-074 — removed in C7; use validateContext */
+export const validateProject = validateContext;
 
 // ── Verification-Gated Task Completion ─────────────────────────────────────
 

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { writeBootstrapPointer } from "./project-dir.js";
+import { writeBootstrapPointer } from "./context-dir.js";
 import { createRegistry } from "./schema-migrations.js";
 import { ValidationError, validate, validateBlockWithMigration, validateFromFile } from "./schema-validator.js";
 

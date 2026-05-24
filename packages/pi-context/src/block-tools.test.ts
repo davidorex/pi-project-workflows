@@ -10,9 +10,9 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { appendToBlock, readBlock, updateItemInBlock } from "./block-api.js";
-import { loadConfig } from "./project-context.js";
-import { projectDir, schemaPath, writeBootstrapPointer } from "./project-dir.js";
-import { findAppendableBlocks } from "./project-sdk.js";
+import { loadConfig } from "./context.js";
+import { resolveContextDir, schemaPath, writeBootstrapPointer } from "./context-dir.js";
+import { findAppendableBlocks } from "./context-sdk.js";
 import { ValidationError } from "./schema-validator.js";
 import { readSchema } from "./schema-write.js";
 
@@ -649,13 +649,13 @@ describe("read-block-dir (tool surface)", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-// read-config tool — loadConfig + projectDir cascade through bootstrap pointer
+// read-config tool — loadConfig + resolveContextDir cascade through bootstrap pointer
 // (DEC-0015: substrate location is config-driven via .pi-context.json; the
 // computed config path must reflect the pointer-declared contextDir, not a
 // hardcoded ".project" literal).
 // ─────────────────────────────────────────────────────────────────────────
 
-describe("read-config tool — loadConfig + projectDir cascade", () => {
+describe("read-config tool — loadConfig + resolveContextDir cascade", () => {
 	it("returns null when config absent and resolves path through pointer-declared contextDir", (t) => {
 		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "read-config-cascade-"));
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
@@ -665,11 +665,11 @@ describe("read-config tool — loadConfig + projectDir cascade", () => {
 		const config = loadConfig(cwd);
 		assert.strictEqual(config, null, "loadConfig returns null when config.json absent");
 
-		const computed = path.join(projectDir(cwd), "config.json");
+		const computed = path.join(resolveContextDir(cwd), "config.json");
 		assert.strictEqual(
 			computed,
 			path.join(cwd, ".context-test", "config.json"),
-			"projectDir cascades through bootstrap pointer (.context-test, not .project)",
+			"resolveContextDir cascades through bootstrap pointer (.context-test, not .project)",
 		);
 	});
 
@@ -678,7 +678,7 @@ describe("read-config tool — loadConfig + projectDir cascade", () => {
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
 		// makeTmpDir wrote pointer for ".project"; place config there.
-		const configPath = path.join(projectDir(cwd), "config.json");
+		const configPath = path.join(resolveContextDir(cwd), "config.json");
 		const minimalConfig = {
 			schema_version: "1.0.0",
 			root: ".project",

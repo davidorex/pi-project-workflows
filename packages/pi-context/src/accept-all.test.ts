@@ -16,9 +16,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
+import { adoptConception, loadConfig } from "./context.js";
+import { writeBootstrapPointer } from "./context-dir.js";
 import extension from "./index.js";
-import { adoptConception, loadConfig } from "./project-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 
 let tmpRoot: string;
 

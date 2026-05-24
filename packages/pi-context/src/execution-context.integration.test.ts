@@ -59,8 +59,8 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { writeBootstrapPointer } from "./context-dir.js";
 import { gatherExecutionContext } from "./execution-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

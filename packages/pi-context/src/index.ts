@@ -26,6 +26,41 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "./block-api.js";
+import {
+	type AdoptResult,
+	adoptConception,
+	amendConfigEntry,
+	appendRelation,
+	type ConfigBlock,
+	type Edge,
+	installedBlockDestPath,
+	installedSchemaDestPath,
+	loadConfig,
+	loadContext,
+} from "./context.js";
+import {
+	BootstrapNotFoundError,
+	resolveContextDir,
+	SCHEMAS_DIR,
+	schemaPath,
+	schemasDir,
+	writeBootstrapPointer,
+} from "./context-dir.js";
+import {
+	completeTask,
+	contextState,
+	currentState,
+	deriveBootstrapState,
+	filterBlockItems,
+	findAppendableBlocks,
+	type ItemLocation,
+	joinBlocks,
+	readBlockItem,
+	readBlockPage,
+	resolveItemById,
+	resolveItemsByIds,
+	validateContext,
+} from "./context-sdk.js";
 import { gatherExecutionContext } from "./execution-context.js";
 import {
 	buildCurationSuggestions,
@@ -37,42 +72,6 @@ import {
 	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
-import {
-	type AdoptResult,
-	adoptConception,
-	amendConfigEntry,
-	appendRelation,
-	type ConfigBlock,
-	type Edge,
-	getProjectContext,
-	installedBlockDestPath,
-	installedSchemaDestPath,
-	loadConfig,
-	projectRoot,
-} from "./project-context.js";
-import {
-	BootstrapNotFoundError,
-	projectDir,
-	SCHEMAS_DIR,
-	schemaPath,
-	schemasDir,
-	writeBootstrapPointer,
-} from "./project-dir.js";
-import {
-	completeTask,
-	currentState,
-	deriveBootstrapState,
-	filterBlockItems,
-	findAppendableBlocks,
-	type ItemLocation,
-	joinBlocks,
-	projectState,
-	readBlockItem,
-	readBlockPage,
-	resolveItemById,
-	resolveItemsByIds,
-	validateProject,
-} from "./project-sdk.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { samplesCatalog } from "./samples-catalog.js";
@@ -86,7 +85,7 @@ import { checkForUpdates } from "./update-check.js";
  * sends it as a structured message. Available to human, LLM, and system.
  */
 function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
-	const state = projectState(ctx.cwd);
+	const state = contextState(ctx.cwd);
 
 	const lines: string[] = [];
 	lines.push(`## Project Status`);
@@ -171,7 +170,7 @@ async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: Ext
 	let workflowDir: string;
 	let schemasDirPath: string;
 	try {
-		workflowDir = projectDir(ctx.cwd);
+		workflowDir = resolveContextDir(ctx.cwd);
 		schemasDirPath = schemasDir(ctx.cwd);
 	} catch (err) {
 		if (err instanceof BootstrapNotFoundError) {
@@ -268,7 +267,7 @@ function initProject(cwd: string, contextDir: string): { created: string[]; skip
 	// writeBootstrapPointer is idempotent (atomic tmp+rename) so re-running
 	// initProject after a prior init does not corrupt the pointer.
 	if (!fs.existsSync(path.join(cwd, ".pi-context.json"))) writeBootstrapPointer(cwd, contextDir);
-	const projectDirPath = projectDir(cwd);
+	const projectDirPath = resolveContextDir(cwd);
 	const schemasDirPath = schemasDir(cwd);
 	const created: string[] = [];
 	const skipped: string[] = [];
@@ -307,7 +306,7 @@ export interface InstallResult {
  *   - Sources missing from the samples catalog are reported as "notFound".
  *   - Empty install lists are not an error — the result is a clean no-op.
  */
-export function installProject(cwd: string, options: { overwrite?: boolean } = {}): InstallResult {
+export function installContext(cwd: string, options: { overwrite?: boolean } = {}): InstallResult {
 	const result: InstallResult = { installed: [], updated: [], skipped: [], notFound: [] };
 	const overwrite = options.overwrite === true;
 
@@ -319,7 +318,7 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 			result.error = "No config.json found in substrate dir — run /project init first.";
 			return result;
 		}
-		destRoot = projectRoot(cwd);
+		destRoot = resolveContextDir(cwd);
 	} catch (err) {
 		if (err instanceof BootstrapNotFoundError) {
 			result.error = "No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.";
@@ -398,6 +397,8 @@ export function installProject(cwd: string, options: { overwrite?: boolean } = {
 
 	return result;
 }
+/** @deprecated FGAP-074 — removed in C7; use installContext */
+export const installProject = installContext;
 
 /**
  * /project init — scaffold the substrate dir (bootstrap pointer + substrate +
@@ -939,7 +940,7 @@ const extension = (pi: ExtensionAPI) => {
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
-			const result = projectState(ctx.cwd);
+			const result = contextState(ctx.cwd);
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -962,7 +963,7 @@ const extension = (pi: ExtensionAPI) => {
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
-			const result = validateProject(ctx.cwd);
+			const result = validateContext(ctx.cwd);
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -987,7 +988,7 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const config = loadConfig(ctx.cwd);
-			const configPath = path.join(projectDir(ctx.cwd), "config.json");
+			const configPath = path.join(resolveContextDir(ctx.cwd), "config.json");
 			const result = { config, configPath };
 			const jsonStr = JSON.stringify(result, null, 2);
 			const truncated = truncateHead(jsonStr);
@@ -1927,7 +1928,7 @@ const extension = (pi: ExtensionAPI) => {
 					content: [{ type: "text", text: JSON.stringify(view, null, 2) }],
 				};
 			}
-			const naming = getProjectContext(ctx.cwd).config?.naming;
+			const naming = loadContext(ctx.cwd).config?.naming;
 			return {
 				details: undefined,
 				content: [{ type: "text", text: renderRoadmap(view, naming) }],
@@ -2002,7 +2003,7 @@ const extension = (pi: ExtensionAPI) => {
 			description: "Copy schemas and starter blocks declared in .project/config.json from the package samples catalog",
 			handler: (args, ctx) => {
 				const overwrite = /(^|\s)--update(\s|$)/.test(args);
-				const result = installProject(ctx.cwd, { overwrite });
+				const result = installContext(ctx.cwd, { overwrite });
 				if (result.error) {
 					ctx.ui.notify(result.error, "error");
 					return;
@@ -2048,7 +2049,7 @@ const extension = (pi: ExtensionAPI) => {
 					ctx.ui.notify(result.error, "error");
 					return;
 				}
-				const config = getProjectContext(ctx.cwd).config;
+				const config = loadContext(ctx.cwd).config;
 				ctx.ui.notify(renderLensView(result, config?.naming), "info");
 			},
 		},
@@ -2114,7 +2115,7 @@ const extension = (pi: ExtensionAPI) => {
 					ctx.ui.notify(view.error, "error");
 					return;
 				}
-				const naming = getProjectContext(ctx.cwd).config?.naming;
+				const naming = loadContext(ctx.cwd).config?.naming;
 				ctx.ui.notify(renderRoadmap(view, naming), "info");
 			},
 		},
@@ -2152,7 +2153,7 @@ const extension = (pi: ExtensionAPI) => {
 		validate: {
 			description: "Check cross-block referential integrity",
 			handler: (_args, ctx) => {
-				const result = validateProject(ctx.cwd);
+				const result = validateContext(ctx.cwd);
 				const errors = result.issues.filter((i) => i.severity === "error").length;
 				const warnings = result.issues.filter((i) => i.severity === "warning").length;
 				const statusIcon = result.status === "clean" ? "\u2713" : result.status === "warnings" ? "\u26a0" : "\u2717";
@@ -2229,18 +2230,20 @@ const extension = (pi: ExtensionAPI) => {
 
 export default extension;
 
-export type { CompleteTaskResult, ItemLocation } from "./project-sdk.js";
+export type { CompleteTaskResult, ItemLocation } from "./context-sdk.js";
 // Re-export for consumers
+/** @deprecated FGAP-074 — removed in C7; use CONTEXT_BLOCK_TYPES */
 export {
 	blockStructure,
 	buildIdIndex,
+	CONTEXT_BLOCK_TYPES,
 	completeTask,
 	findAppendableBlocks,
 	PROJECT_BLOCK_TYPES,
 	resolveItemById,
 	schemaInfo,
 	schemaVocabulary,
-} from "./project-sdk.js";
+} from "./context-sdk.js";
 export { type RenameKind, type RenameReport, renameCanonicalId } from "./rename-canonical-id.js";
 export {
 	listRoadmaps,

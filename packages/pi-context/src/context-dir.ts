@@ -220,6 +220,7 @@ export function assertSubstrateName(name: string): void {
  * the substrate-dir name is read from the bootstrap pointer rather than
  * hardcoded.
  */
+/** @deprecated FGAP-074 — removed in C7; use resolveContextDir */
 export function projectDir(cwd: string): string {
 	return resolveContextDir(cwd);
 }
@@ -237,6 +238,8 @@ export function agentsDir(cwd: string): string {
 	return path.join(resolveContextDir(cwd), "agents");
 }
 
-export function projectTemplatesDir(cwd: string): string {
+export function contextTemplatesDir(cwd: string): string {
 	return path.join(resolveContextDir(cwd), "templates");
 }
+/** @deprecated FGAP-074 — removed in C7; use contextTemplatesDir */
+export const projectTemplatesDir = contextTemplatesDir;

@@ -3,10 +3,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
+import type { ItemRecord } from "./context.js";
+import { writeBootstrapPointer } from "./context-dir.js";
+import { validateContext } from "./context-sdk.js";
 import { clearLensValidators, getLensValidators, registerLensValidator } from "./lens-validator.js";
-import type { ItemRecord } from "./project-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
-import { validateProject } from "./project-sdk.js";
 import {
 	listRoadmaps,
 	loadRoadmap,
@@ -842,7 +842,7 @@ describe("diagMessage resolves config.display_strings override; falls back to em
 		assert.match(fallbackIssue.message, /references unknown lens 'doesnt-exist'/);
 		fs.rmSync(fallbackDir, { recursive: true, force: true });
 
-		// Second fixture (distinct tmpdir bypasses the getProjectContext mtime cache):
+		// Second fixture (distinct tmpdir bypasses the loadContext mtime cache):
 		// display_strings override.
 		roadmapTmpRoot = makeRoadmapProject({
 			lenses: ACYCLIC_LENSES,
@@ -930,7 +930,7 @@ describe("validateProject (project-sdk) iterates registered lens-validators and 
 		});
 
 		roadmapTmpRoot = makeRoadmapProject({ lenses: [], relations: [] });
-		const result = validateProject(roadmapTmpRoot);
+		const result = validateContext(roadmapTmpRoot);
 
 		// Fake validator's issue surfaces verbatim.
 		const fake = result.issues.find((i) => i.code === "fake_diagnostic");

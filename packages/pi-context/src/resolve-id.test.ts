@@ -14,8 +14,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeBootstrapPointer } from "./project-dir.js";
-import { buildIdIndex, type ItemLocation, resolveItemById } from "./project-sdk.js";
+import { writeBootstrapPointer } from "./context-dir.js";
+import { buildIdIndex, type ItemLocation, resolveItemById } from "./context-sdk.js";
 
 function makeTmpDir(prefix: string): string {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), `resolve-id-${prefix}-`));

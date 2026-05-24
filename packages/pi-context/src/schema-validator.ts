@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { ErrorObject } from "ajv";
 import _Ajv from "ajv";
 import _addFormats from "ajv-formats";
-import { schemaPath as schemaPathHelper } from "./project-dir.js";
+import { schemaPath as schemaPathHelper } from "./context-dir.js";
 import { type MigrationRegistry, runMigrations } from "./schema-migrations.js";
 
 // Node16 module resolution + CJS interop: default import is the module namespace

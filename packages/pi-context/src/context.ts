@@ -23,8 +23,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { appendManyToTypedFileIfAbsent, writeTypedFile } from "./block-api.js";
+import { assertSubstrateName, resolveContextDir, SCHEMAS_DIR } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
-import { assertSubstrateName, resolveContextDir, SCHEMAS_DIR } from "./project-dir.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
 // ── Type definitions (from plan §"Files to create") ──────────────────────────
@@ -199,10 +199,12 @@ export interface SubstrateValidationResult {
 	issues: SubstrateValidationIssue[];
 }
 
-export interface ProjectContext {
+export interface ContextData {
 	config: ConfigBlock | null;
 	relations: Edge[];
 }
+/** @deprecated FGAP-074 — removed in C7; use ContextData */
+export type ProjectContext = ContextData;
 
 export interface CurationSuggestion {
 	payload: Edge;
@@ -261,6 +263,7 @@ function relationsPath(cwd: string): string {
  * divergence (writes honoring config.root while reads/validation use the
  * pointer) that surfaced under FGAP-077.
  */
+/** @deprecated FGAP-074 — removed in C7; use resolveContextDir from context-dir.js */
 export function projectRoot(cwd: string): string {
 	return resolveContextDir(cwd);
 }
@@ -319,7 +322,7 @@ export function installedBlockDestPath(root: string, name: string): string {
  * writes to, so the question and the act cannot diverge.
  */
 export function findUnmaterializedAssets(cwd: string, config: ConfigBlock): { schemas: string[]; blocks: string[] } {
-	const root = projectRoot(cwd);
+	const root = resolveContextDir(cwd);
 	const schemas = (config.installed_schemas ?? []).filter(
 		(name) => !fs.existsSync(installedSchemaDestPath(root, name)),
 	);
@@ -761,7 +764,7 @@ interface CacheEntry {
 	 * up without an explicit cache flush. Tracked as `safeMtimeMs` so a
 	 * transient absence reads as `0` rather than throwing. */
 	bootstrapMtimeMs: number;
-	value: ProjectContext;
+	value: ContextData;
 }
 
 const contextCache = new Map<string, CacheEntry>();
@@ -783,7 +786,7 @@ function safeMtimeMs(p: string): number {
  * picked up. Direct, intentional cache flush is not exposed; tests that
  * need to bypass call `loadConfig`/`loadRelations` directly.
  */
-export function getProjectContext(cwd: string): ProjectContext {
+export function loadContext(cwd: string): ContextData {
 	const key = path.resolve(cwd);
 	const bMtime = safeMtimeMs(path.join(cwd, ".pi-context.json"));
 	const cMtime = safeMtimeMs(configPath(cwd));
@@ -792,7 +795,7 @@ export function getProjectContext(cwd: string): ProjectContext {
 	if (hit && hit.bootstrapMtimeMs === bMtime && hit.configMtimeMs === cMtime && hit.relationsMtimeMs === rMtime) {
 		return hit.value;
 	}
-	const value: ProjectContext = {
+	const value: ContextData = {
 		config: loadConfig(cwd),
 		relations: loadRelations(cwd),
 	};
@@ -804,6 +807,8 @@ export function getProjectContext(cwd: string): ProjectContext {
 	});
 	return value;
 }
+/** @deprecated FGAP-074 — removed in C7; use loadContext */
+export const getProjectContext = loadContext;
 
 // ── Edge synthesis + lens projection ─────────────────────────────────────────
 
@@ -1231,7 +1236,7 @@ export function resolveComposition(cwd: string, lens: LensSpec): ResolvedComposi
 	if (lens.kind !== "composition") {
 		throw new Error(`resolveComposition: lens '${lens.id}' is not kind=composition`);
 	}
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	if (!ctx.config) {
 		throw new Error("resolveComposition: no .project/config.json");
 	}
@@ -1318,7 +1323,7 @@ function resolveCompositionInternal(
  */
 function readBlockItems(cwd: string, blockName: string): ItemRecord[] {
 	assertSubstrateName(blockName);
-	const filePath = path.join(projectRoot(cwd), `${blockName}.json`);
+	const filePath = path.join(resolveContextDir(cwd), `${blockName}.json`);
 	if (!fs.existsSync(filePath)) return [];
 	const raw = JSON.parse(fs.readFileSync(filePath, "utf-8")) as Record<string, unknown>;
 	const arrayKey = Object.keys(raw).find((k) => Array.isArray(raw[k]));

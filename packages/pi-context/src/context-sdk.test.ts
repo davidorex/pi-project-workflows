@@ -1,6 +1,6 @@
 /**
- * Tests for project-sdk: projectState, availableBlocks, availableSchemas,
- * findAppendableBlocks, validateProject, schemaInfo, schemaVocabulary,
+ * Tests for context-sdk: contextState, availableBlocks, availableSchemas,
+ * findAppendableBlocks, validateContext, schemaInfo, schemaVocabulary,
  * blockStructure.
  */
 
@@ -11,28 +11,28 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { appendToBlock, updateItemInBlock } from "./block-api.js";
-import { clearLensValidators, getLensValidators, type LensValidator, registerLensValidator } from "./lens-validator.js";
-import type { ConfigBlock, RelationTypeDecl } from "./project-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
+import type { ConfigBlock, RelationTypeDecl } from "./context.js";
+import { writeBootstrapPointer } from "./context-dir.js";
 import {
 	availableBlocks,
 	availableSchemas,
 	blockStructure,
 	completeTask,
+	contextState,
 	currentState,
 	deriveBootstrapState,
 	expectedBlockForId,
 	filterBlockItems,
 	type ItemLocation,
 	joinBlocks,
-	projectState,
 	readBlockItem,
 	readBlockPage,
 	resolveItemsByIds,
 	schemaInfo,
 	schemaVocabulary,
-	validateProject,
-} from "./project-sdk.js";
+	validateContext,
+} from "./context-sdk.js";
+import { clearLensValidators, getLensValidators, type LensValidator, registerLensValidator } from "./lens-validator.js";
 import { ValidationError, validate } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
@@ -277,7 +277,7 @@ describe("projectState", () => {
 			}),
 		);
 
-		const state = projectState(tmpDir);
+		const state = contextState(tmpDir);
 
 		assert.strictEqual(state.testCount, 3); // 3 it() declarations in example.test.ts
 		assert.strictEqual(state.sourceFiles, 2); // module-a.ts, module-b.ts (not .test.ts)
@@ -311,7 +311,7 @@ describe("projectState", () => {
 		const tmpDir = makeTmpDir("state-empty");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-		const state = projectState(tmpDir);
+		const state = contextState(tmpDir);
 
 		assert.strictEqual(state.testCount, 0);
 		assert.strictEqual(state.sourceFiles, 0);
@@ -442,7 +442,7 @@ describe("validateProject", () => {
 			{ parent: "t1", child: "t2", relation_type: "task_depends_on_task" },
 		]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
@@ -459,7 +459,7 @@ describe("validateProject", () => {
 		// parent "t-missing" resolves to nothing
 		writeRelations(projectDir, [{ parent: "t-missing", child: "t2", relation_type: "task_depends_on_task" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("parent 't-missing'"));
 		assert.ok(issue, "should report dangling-parent edge error");
@@ -479,7 +479,7 @@ describe("validateProject", () => {
 		// child "t-missing" resolves to nothing
 		writeRelations(projectDir, [{ parent: "t1", child: "t-missing", relation_type: "task_depends_on_task" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("child 't-missing'"));
 		assert.ok(issue, "should report dangling-child edge error");
@@ -507,7 +507,7 @@ describe("validateProject", () => {
 		// relation_type "task_blocks_task" is not in REL_TYPES
 		writeRelations(projectDir, [{ parent: "t1", child: "t2", relation_type: "task_blocks_task" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("relation_type 'task_blocks_task'"));
 		assert.ok(issue, "should report unregistered relation_type error");
@@ -534,7 +534,7 @@ describe("validateProject", () => {
 		// edge present, but it is NOT a decision_addresses_* edge → invariant fails
 		writeRelations(projectDir, [{ parent: "g1", child: "d1", relation_type: "task_depends_on_task" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid");
 		const issue = result.issues.find(
 			(i) => i.message.includes("Decision 'd1'") && i.message.includes("forcing artifact"),
@@ -565,7 +565,7 @@ describe("validateProject", () => {
 		);
 		writeRelations(projectDir, [{ parent: "t1", child: "t2", relation_type: "task_depends_on_task" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid", "completed task without verification edge should be invalid");
 		const issue = result.issues.find(
 			(i) => i.message.includes("Completed task 't1'") && i.message.includes("verification_verifies_item"),
@@ -583,7 +583,7 @@ describe("validateProject", () => {
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
@@ -604,7 +604,7 @@ describe("validateProject", () => {
 			JSON.stringify({ decisions: [{ id: "d1", decision: "use X", rationale: "because", status: "decided" }] }),
 		);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		// no config → no edge checks, no relocated invariants → clean
 		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
@@ -641,7 +641,7 @@ describe("config-declared invariants (requires-edge)", () => {
 		);
 		writeRelations(projectDir, []); // zero satisfying edges
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid");
 		const issue = result.issues.find((i) => i.code === "req-x");
 		assert.ok(issue, "absent required edge must fire a diagnostic (unit-2.1 false-pass lesson)");
@@ -678,7 +678,7 @@ describe("config-declared invariants (requires-edge)", () => {
 		);
 		writeRelations(projectDir, [{ parent: "v1", child: "t1", relation_type: "verification_verifies_item" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.ok(!result.issues.some((i) => i.code === "req-x"), "satisfied invariant must produce no diagnostic");
 	});
 
@@ -710,7 +710,7 @@ describe("config-declared invariants (requires-edge)", () => {
 		);
 		writeRelations(projectDir, []); // no satisfying edges for either
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		const flaggedT1 = result.issues.some((i) => i.code === "req-x" && i.field?.startsWith("t1."));
 		const flaggedT2 = result.issues.some((i) => i.code === "req-x" && i.field?.startsWith("t2."));
 		assert.ok(flaggedT1, "completed t1 must be flagged");
@@ -745,7 +745,7 @@ describe("config-declared invariants (requires-edge)", () => {
 
 		// d1 is the CHILD of the right relation_type → does NOT satisfy as_parent.
 		writeRelations(projectDir, [{ parent: "g1", child: "d1", relation_type: "decision_addresses_gap" }]);
-		const wrong = validateProject(tmpDir);
+		const wrong = validateContext(tmpDir);
 		assert.ok(
 			wrong.issues.some((i) => i.code === "req-parent"),
 			"item as child must NOT satisfy as_parent invariant",
@@ -753,7 +753,7 @@ describe("config-declared invariants (requires-edge)", () => {
 
 		// d1 is now the PARENT → satisfies.
 		writeRelations(projectDir, [{ parent: "d1", child: "g1", relation_type: "decision_addresses_gap" }]);
-		const right = validateProject(tmpDir);
+		const right = validateContext(tmpDir);
 		assert.ok(!right.issues.some((i) => i.code === "req-parent"), "item as parent satisfies as_parent invariant");
 	});
 
@@ -791,7 +791,7 @@ describe("config-declared invariants (requires-edge)", () => {
 		// satisfied by an `rb` edge alone (the second of the any-of set)
 		writeRelations(projectDir, [{ parent: "d1", child: "g1", relation_type: "rb" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.ok(!result.issues.some((i) => i.code === "req-anyof"), "any one matching relation_type satisfies");
 	});
 
@@ -819,7 +819,7 @@ describe("config-declared invariants (requires-edge)", () => {
 		);
 		writeRelations(projectDir, []);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		const issue = result.issues.find((i) => i.code === "req-warn");
 		assert.ok(issue, "violating item must fire");
 		assert.strictEqual(issue!.severity, "warning");
@@ -840,7 +840,7 @@ describe("config-declared invariants (requires-edge)", () => {
 		);
 		writeRelations(projectDir, []); // no edges → no dangling-edge errors either
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "clean", "no invariants + no edges → clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
@@ -879,7 +879,7 @@ describe("config-declared invariants (requires-edge)", () => {
 
 		// No edge → draft note n1 flagged; final note n2 (kind≠draft) NOT flagged.
 		writeRelations(projectDir, []);
-		const before = validateProject(tmpDir);
+		const before = validateContext(tmpDir);
 		assert.ok(
 			before.issues.some((i) => i.code === "draft-note-needs-support" && i.field?.startsWith("n1.")),
 			"draft note without support must be flagged for a vocabulary the source ships zero literals for",
@@ -891,7 +891,7 @@ describe("config-declared invariants (requires-edge)", () => {
 
 		// Add the supporting edge → n1 clears.
 		writeRelations(projectDir, [{ parent: "n1", child: "c1", relation_type: "note_supports_claim" }]);
-		const after = validateProject(tmpDir);
+		const after = validateContext(tmpDir);
 		assert.ok(!after.issues.some((i) => i.code === "draft-note-needs-support"), "supported draft note clears");
 	});
 
@@ -919,7 +919,7 @@ describe("config-declared invariants (requires-edge)", () => {
 		);
 		writeRelations(projectDir, []);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		const issue = result.issues.find((i) => i.code === "needs-ver");
 		assert.ok(issue, "must fire");
 		assert.strictEqual(issue!.code, "needs-ver", "code mirrors inv.id");
@@ -964,7 +964,7 @@ describe("validation result status field", () => {
 			{ parent: "d1", child: "g1", relation_type: "decision_addresses_gap" },
 		]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "clean");
 		assert.deepStrictEqual(result.issues, []);
 	});
@@ -981,7 +981,7 @@ describe("validation result status field", () => {
 		fs.writeFileSync(path.join(projectDir, "tasks.json"), JSON.stringify({ tasks: [{ id: "t1", status: "planned" }] }));
 		writeRelations(projectDir, [{ parent: "t1", child: "t-nonexistent", relation_type: "task_depends_on_task" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid");
 	});
 
@@ -1010,7 +1010,7 @@ describe("validation result status field", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		fs.mkdirSync(path.join(tmpDir, ".project"), { recursive: true });
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "warnings");
 		assert.ok(result.issues.length > 0, "should have at least one warning issue");
 		assert.ok(
@@ -1057,7 +1057,7 @@ describe("validateProject lens-validator dispatch", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		fs.mkdirSync(path.join(tmpDir, ".project"), { recursive: true });
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		const merged = result.issues.find((i) => i.code === "sdk_dispatch_diagnostic");
 		assert.ok(merged, "expected sdk_dispatch_diagnostic to surface via dispatch");
 		assert.strictEqual(merged.block, "sdk-fake-block");
@@ -1083,7 +1083,7 @@ describe("validateProject lens-validator dispatch", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		fs.mkdirSync(path.join(tmpDir, ".project"), { recursive: true });
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		const wrapped = result.issues.find((i) => i.code === "lens_validator_failed:sdk-throwing-validator");
 		assert.ok(wrapped, "expected wrapped failure issue from throwing validator");
 		assert.strictEqual(wrapped.severity, "warning");
@@ -1758,7 +1758,7 @@ describe("verification gate — AJV if/then enforcement", () => {
 			}),
 		);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid", "validateProject should report invalid for corrupted state");
 
 		const issue = result.issues.find((i) => i.message.includes("no verification edge") && i.message.includes("t1"));
@@ -2666,7 +2666,7 @@ describe("status-consistency invariants", () => {
 		);
 		writeRelations(projectDir, [{ parent: "t1", child: "g1", relation_type: "task_addresses_gap" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		const issue = result.issues.find((i) => i.code === "completed-task-closes-gap");
 		assert.ok(issue, "completed task + open gap must fire the require invariant");
 		assert.strictEqual(issue!.severity, "error");
@@ -2700,7 +2700,7 @@ describe("status-consistency invariants", () => {
 		);
 		writeRelations(projectDir, [{ parent: "t1", child: "g1", relation_type: "task_addresses_gap" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.ok(
 			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
 			"satisfied require invariant must produce no diagnostic",
@@ -2733,7 +2733,7 @@ describe("status-consistency invariants", () => {
 		);
 		writeRelations(projectDir, [{ parent: "t1", child: "d1", relation_type: "task_governed_by_decision" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		const issue = result.issues.find((i) => i.code === "no-superseded-governance");
 		assert.ok(issue, "forbidden target bucket must fire the forbid invariant");
 		assert.strictEqual(issue!.severity, "error");
@@ -2764,7 +2764,7 @@ describe("status-consistency invariants", () => {
 		);
 		writeRelations(projectDir, []); // no edge → invariant cannot inspect a target
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.ok(
 			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
 			"status-consistency is edge-gated — no edge means no check, no diagnostic",
@@ -2794,7 +2794,7 @@ describe("status-consistency invariants", () => {
 		);
 		writeRelations(projectDir, [{ parent: "t1", child: "g1", relation_type: "task_addresses_gap" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.ok(
 			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
 			"when_bucket gate excludes the item — no diagnostic despite the open gap",
@@ -2835,7 +2835,7 @@ describe("status-consistency invariants", () => {
 		);
 		writeRelations(projectDir, [{ parent: "t1", child: "g1", relation_type: "task_addresses_gap" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.ok(
 			!result.issues.some((i) => i.code === "completed-task-closes-gap"),
 			"config status_buckets override must bucket 'done2' → complete and clear the require invariant",
@@ -2883,7 +2883,7 @@ describe("edge endpoint-kind check (FGAP-086)", () => {
 		// parent g1 lives in framework-gaps → source kind 'framework-gaps' ∉ ["tasks"].
 		writeRelations(projectDir, [{ parent: "g1", child: "t1", relation_type: "task_addresses_gap" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("source kind 'framework-gaps' not in source_kinds"));
 		assert.ok(issue, "should report a source-kind-mismatch issue");
@@ -2907,7 +2907,7 @@ describe("edge endpoint-kind check (FGAP-086)", () => {
 		writeKindFixtures(projectDir);
 		writeRelations(projectDir, [{ parent: "g1", child: "t1", relation_type: "task_addresses_gap" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(result.status, "clean");
 		assert.ok(
 			!result.issues.some(
@@ -2947,7 +2947,7 @@ describe("edge endpoint-kind check (FGAP-086)", () => {
 		);
 		writeRelations(projectDir, [{ parent: "v1", child: "g1", relation_type: "verification_verifies_item" }]);
 
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.ok(
 			!result.issues.some((i) => i.message.includes("not in target_kinds")),
 			"'*' target wildcard must accept any child block",
@@ -3004,7 +3004,7 @@ describe("validateProject status-vocabulary", () => {
 				],
 			}),
 		);
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		const statusIssues = result.issues.filter((i) => i.code === "status_unknown_value");
 		assert.strictEqual(statusIssues.length, 1, "exactly one unknown-status warning");
 		assert.strictEqual(statusIssues[0].block, "tasks");
@@ -3023,7 +3023,7 @@ describe("validateProject status-vocabulary", () => {
 			path.join(projectDir, "framework-gaps.json"),
 			JSON.stringify({ gaps: [{ id: "g1", title: "a gap, no status field" }] }),
 		);
-		const result = validateProject(tmpDir);
+		const result = validateContext(tmpDir);
 		assert.strictEqual(
 			result.issues.filter((i) => i.code === "status_unknown_value").length,
 			0,

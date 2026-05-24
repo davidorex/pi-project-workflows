@@ -29,10 +29,10 @@
  * plan_item_depends_on edges) per DEC-0012's edges-only authoring contract.
  */
 import { readBlock } from "./block-api.js";
+import { type Edge, type ItemRecord, loadContext, type StatusBucket } from "./context.js";
+import { availableBlocks } from "./context-sdk.js";
 import { type LensValidatorIssue, registerLensValidator } from "./lens-validator.js";
 import { type LoadedLensView, loadLensView } from "./lens-view.js";
-import { type Edge, getProjectContext, type ItemRecord, type StatusBucket } from "./project-context.js";
-import { availableBlocks } from "./project-sdk.js";
 import { resolveStatusVocabulary, STATUS_VOCABULARY_DEFAULTS } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
@@ -104,7 +104,7 @@ export function rollupPhaseStatus(items: ItemRecord[], vocabulary?: Record<strin
  * per-locale wording overrides are first-class config (no code edits).
  */
 function diagMessage(cwd: string, code: string, fallback: string): string {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	return ctx.config?.display_strings?.[code] ?? fallback;
 }
 
@@ -294,7 +294,7 @@ function evaluateMilestone(cwd: string, m: MilestoneSpec): boolean {
  * renderer consumes for per-phase adjacency lines.
  */
 export function loadRoadmap(cwd: string, roadmapId: string): RoadmapView | { error: string } {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	if (!ctx.config) {
 		return { error: "No .project/config.json — run /project init first, then declare lenses + install assets." };
 	}
@@ -362,7 +362,7 @@ export function validateRoadmaps(cwd: string): {
 	issues: RoadmapValidationIssue[];
 } {
 	const issues: RoadmapValidationIssue[] = [];
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	if (!ctx.config) return { status: "clean", issues: [] };
 	const roadmaps = readRoadmaps(cwd);
 	if (!roadmaps || roadmaps.length === 0) return { status: "clean", issues: [] };

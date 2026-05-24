@@ -33,17 +33,29 @@
 			"types": "./dist/block-validation.d.ts",
 			"default": "./dist/block-validation.js"
 		},
+		"./context-dir": {
+			"types": "./dist/context-dir.d.ts",
+			"default": "./dist/context-dir.js"
+		},
 		"./project-dir": {
-			"types": "./dist/project-dir.d.ts",
-			"default": "./dist/project-dir.js"
+			"types": "./dist/context-dir.d.ts",
+			"default": "./dist/context-dir.js"
+		},
+		"./context-sdk": {
+			"types": "./dist/context-sdk.d.ts",
+			"default": "./dist/context-sdk.js"
 		},
 		"./project-sdk": {
-			"types": "./dist/project-sdk.d.ts",
-			"default": "./dist/project-sdk.js"
+			"types": "./dist/context-sdk.d.ts",
+			"default": "./dist/context-sdk.js"
+		},
+		"./context": {
+			"types": "./dist/context.d.ts",
+			"default": "./dist/context.js"
 		},
 		"./project-context": {
-			"types": "./dist/project-context.d.ts",
-			"default": "./dist/project-context.js"
+			"types": "./dist/context.d.ts",
+			"default": "./dist/context.js"
 		},
 		"./dispatch-context": {
 			"types": "./dist/dispatch-context.d.ts",

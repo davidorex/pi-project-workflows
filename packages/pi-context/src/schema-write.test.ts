@@ -3,8 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeConfig } from "./project-context.js";
-import { schemaPath, writeBootstrapPointer } from "./project-dir.js";
+import { writeConfig } from "./context.js";
+import { schemaPath, writeBootstrapPointer } from "./context-dir.js";
 import { ValidationError } from "./schema-validator.js";
 import { readSchema, updateSchema, writeSchema } from "./schema-write.js";
 

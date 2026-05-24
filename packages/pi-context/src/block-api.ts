@@ -19,9 +19,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import _lockfile from "proper-lockfile";
+import { assertSubstrateName, resolveContextDir, schemaPath } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
-import { assertSubstrateName, projectDir, schemaPath } from "./project-dir.js";
 import { validateFromFile } from "./schema-validator.js";
 
 // Node16 module resolution + CJS interop: default import may be wrapped
@@ -46,7 +46,7 @@ function withBlockLock<T>(filePath: string, fn: () => T): T {
 
 function blockFilePath(cwd: string, blockName: string): string {
 	assertSubstrateName(blockName);
-	return path.join(projectDir(cwd), `${blockName}.json`);
+	return path.join(resolveContextDir(cwd), `${blockName}.json`);
 }
 
 function blockSchemaPath(cwd: string, blockName: string): string {
@@ -1288,7 +1288,7 @@ export function removeFromNestedArray(
  * tool consume this single export.
  */
 export function readBlockDir(cwd: string, subdir: string): unknown[] {
-	const dirPath = path.join(projectDir(cwd), subdir);
+	const dirPath = path.join(resolveContextDir(cwd), subdir);
 
 	let entries: string[];
 	try {

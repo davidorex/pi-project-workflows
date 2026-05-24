@@ -33,15 +33,8 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
-import {
-	type ConfigBlock,
-	type Edge,
-	loadConfig,
-	loadRelations,
-	writeConfig,
-	writeRelations,
-} from "./project-context.js";
-import { buildIdIndex } from "./project-sdk.js";
+import { type ConfigBlock, type Edge, loadConfig, loadRelations, writeConfig, writeRelations } from "./context.js";
+import { buildIdIndex } from "./context-sdk.js";
 
 export type RenameKind = "item" | "relation_type" | "lens" | "layer";
 

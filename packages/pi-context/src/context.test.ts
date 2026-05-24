@@ -16,7 +16,6 @@ import {
 	edgesForLens,
 	findReferences,
 	findUnmaterializedAssets,
-	getProjectContext,
 	groupByLens,
 	type ItemRecord,
 	installedBlockDestPath,
@@ -24,16 +23,16 @@ import {
 	type LensSpec,
 	listUncategorized,
 	loadConfig,
+	loadContext,
 	loadRelations,
-	projectRoot,
 	resolveComposition,
 	type SubstrateValidationIssue,
 	synthesizeFromField,
 	validateRelations,
 	walkAncestors,
 	walkDescendants,
-} from "./project-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
+} from "./context.js";
+import { resolveContextDir, writeBootstrapPointer } from "./context-dir.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
@@ -179,13 +178,13 @@ describe("loadRelations", () => {
 	});
 });
 
-// ── projectRoot ─────────────────────────────────────────────────────────────
+// ── resolveContextDir ─────────────────────────────────────────────────────────────
 
-describe("projectRoot", () => {
+describe("resolveContextDir", () => {
 	it("falls back to <cwd>/.project when no config", (t) => {
 		const tmp = makeTmpDir("root-fallback");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
-		assert.strictEqual(projectRoot(tmp), path.join(tmp, ".project"));
+		assert.strictEqual(resolveContextDir(tmp), path.join(tmp, ".project"));
 	});
 
 	it("ignores config.root for resolution — pointer-canonical (DEC-0045 / FGAP-079)", (t) => {
@@ -194,21 +193,21 @@ describe("projectRoot", () => {
 		const cfg = minimalConfig();
 		cfg.root = "alt-substrate";
 		writeConfig(tmp, cfg);
-		// config.root is NOT a path input — projectRoot returns the .pi-context.json
+		// config.root is NOT a path input — resolveContextDir returns the .pi-context.json
 		// pointer dir regardless of config.root (honoring it would split the substrate).
-		assert.strictEqual(projectRoot(tmp), path.join(tmp, ".project"));
+		assert.strictEqual(resolveContextDir(tmp), path.join(tmp, ".project"));
 	});
 });
 
-// ── getProjectContext (mtime cache) ─────────────────────────────────────────
+// ── loadContext (mtime cache) ─────────────────────────────────────────
 
-describe("getProjectContext", () => {
+describe("loadContext", () => {
 	it("caches and returns identical reference when files unchanged", (t) => {
 		const tmp = makeTmpDir("ctx-cache-hit");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		writeConfig(tmp, minimalConfig());
-		const a = getProjectContext(tmp);
-		const b = getProjectContext(tmp);
+		const a = loadContext(tmp);
+		const b = loadContext(tmp);
 		assert.strictEqual(a, b, "cache hit returns same reference");
 	});
 
@@ -216,7 +215,7 @@ describe("getProjectContext", () => {
 		const tmp = makeTmpDir("ctx-cache-miss-config");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		writeConfig(tmp, minimalConfig());
-		const a = getProjectContext(tmp);
+		const a = loadContext(tmp);
 
 		// Bump mtime by writing a new config (sleep 10ms to ensure mtime tick on
 		// filesystems that quantize to ms; node test runners run fast).
@@ -225,7 +224,7 @@ describe("getProjectContext", () => {
 		cfg2.naming = { decisions: "Decisions" };
 		writeConfig(tmp, cfg2);
 
-		const b = getProjectContext(tmp);
+		const b = loadContext(tmp);
 		assert.notStrictEqual(a, b, "cache invalidates on config mtime change");
 		assert.deepStrictEqual(b.config?.naming, { decisions: "Decisions" });
 	});
@@ -235,11 +234,11 @@ describe("getProjectContext", () => {
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		writeConfig(tmp, minimalConfig());
 		writeRelations(tmp, []);
-		const a = getProjectContext(tmp);
+		const a = loadContext(tmp);
 
 		await new Promise((res) => setTimeout(res, 15));
 		writeRelations(tmp, [{ parent: "x", child: "y", relation_type: "rt" }]);
-		const b = getProjectContext(tmp);
+		const b = loadContext(tmp);
 		assert.notStrictEqual(a, b);
 		assert.strictEqual(b.relations.length, 1);
 	});

@@ -7,13 +7,12 @@ import {
 	agentsDir,
 	assertSubstrateName,
 	BootstrapNotFoundError,
-	projectDir,
-	projectTemplatesDir,
+	contextTemplatesDir,
 	resolveContextDir,
 	schemaPath,
 	schemasDir,
 	writeBootstrapPointer,
-} from "./project-dir.js";
+} from "./context-dir.js";
 import { ValidationError } from "./schema-validator.js";
 
 describe("project-dir resolver + BootstrapNotFoundError + writeBootstrapPointer", () => {
@@ -86,18 +85,18 @@ describe("project-dir resolver + BootstrapNotFoundError + writeBootstrapPointer"
 		assert.equal(path.basename(resolved), ".substrate-x");
 	});
 
-	it("path-builders (projectDir/schemasDir/schemaPath/agentsDir/projectTemplatesDir) all cascade through resolver", () => {
+	it("path-builders (resolveContextDir/schemasDir/schemaPath/agentsDir/contextTemplatesDir) all cascade through resolver", () => {
 		writeBootstrapPointer(tmpDir, ".context-builders");
 		// Compare raw-to-raw: resolveContextDir does path.join(cwd, contextDir) verbatim;
 		// no realpath canonicalization on either side.
-		assert.equal(projectDir(tmpDir), path.join(tmpDir, ".context-builders"));
+		assert.equal(resolveContextDir(tmpDir), path.join(tmpDir, ".context-builders"));
 		assert.equal(schemasDir(tmpDir), path.join(tmpDir, ".context-builders", "schemas"));
 		assert.equal(
 			schemaPath(tmpDir, "decisions"),
 			path.join(tmpDir, ".context-builders", "schemas", "decisions.schema.json"),
 		);
 		assert.equal(agentsDir(tmpDir), path.join(tmpDir, ".context-builders", "agents"));
-		assert.equal(projectTemplatesDir(tmpDir), path.join(tmpDir, ".context-builders", "templates"));
+		assert.equal(contextTemplatesDir(tmpDir), path.join(tmpDir, ".context-builders", "templates"));
 	});
 });
 

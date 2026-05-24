@@ -19,8 +19,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import type { ConfigBlock, Edge } from "./project-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
+import type { ConfigBlock, Edge } from "./context.js";
+import { writeBootstrapPointer } from "./context-dir.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 
 function makeTmpDir(prefix: string): string {

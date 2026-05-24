@@ -18,9 +18,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { amendConfigEntry, type ConfigBlock, getProjectContext, loadConfig } from "./project-context.js";
-import { writeBootstrapPointer } from "./project-dir.js";
-import { validateProject } from "./project-sdk.js";
+import { amendConfigEntry, type ConfigBlock, loadConfig, loadContext } from "./context.js";
+import { writeBootstrapPointer } from "./context-dir.js";
+import { validateContext } from "./context-sdk.js";
 import { ValidationError } from "./schema-validator.js";
 
 /** mkdtemp + bootstrap pointer at `.project` + ensure the substrate dir exists. */
@@ -337,15 +337,15 @@ describe("amendConfigEntry — SHAPE reject", () => {
 // ── 10: mtime-cache invalidation ──────────────────────────────────────────────
 
 describe("amendConfigEntry — mtime-cache invalidation", () => {
-	it("10: getProjectContext invalidates after an amend; new value reflects the change", async (t) => {
+	it("10: loadContext invalidates after an amend; new value reflects the change", async (t) => {
 		const cwd = makeTmpDir("10-cache");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 		seedConfig(cwd, baseConfig({ naming: {} }));
 
-		const a = getProjectContext(cwd);
+		const a = loadContext(cwd);
 		await new Promise((res) => setTimeout(res, 15));
 		amendConfigEntry(cwd, "naming", "add", "decisions-block", "Design Decisions");
-		const b = getProjectContext(cwd);
+		const b = loadContext(cwd);
 
 		assert.notStrictEqual(a, b, "cache invalidates on config.json mtime change after amend");
 		assert.equal(b.config?.naming?.["decisions-block"], "Design Decisions");
@@ -419,7 +419,7 @@ describe("amendConfigEntry — deferred cross-ref integrity", () => {
 		// (validateProject's own edge-integrity loop emits this as a message-only issue —
 		// the `edge_unknown_relation_type` CODE belongs to validateRelations, which
 		// validateProject filters to cycle-detection only; project-sdk.ts:1089-1096.)
-		const result = validateProject(cwd);
+		const result = validateContext(cwd);
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("not registered") && i.message.includes("rel"));
 		assert.ok(issue, "validateProject should flag the now-unregistered relation_type 'rel' on the edge");

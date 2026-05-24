@@ -14,9 +14,9 @@
  * StatusBucket itself is declared in project-context.ts (the substrate type
  * surface) and imported/re-exported here; it is NOT redeclared.
  */
-import { getProjectContext, type StatusBucket } from "./project-context.js";
+import { loadContext, type StatusBucket } from "./context.js";
 
-export type { StatusBucket } from "./project-context.js";
+export type { StatusBucket } from "./context.js";
 
 /**
  * Hardcoded baseline mapping from per-schema status enum values to
@@ -107,6 +107,6 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
  * should pass the resolved map in directly.
  */
 export function resolveStatusVocabulary(cwd: string): Record<string, StatusBucket> {
-	const ctx = getProjectContext(cwd);
+	const ctx = loadContext(cwd);
 	return { ...STATUS_VOCABULARY_DEFAULTS, ...(ctx.config?.status_buckets ?? {}) };
 }

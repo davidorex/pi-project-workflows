@@ -2720,7 +2720,7 @@
     },
     {
       "title": "Residual pi-project-era 'project' naming debt across pi-context source/surface — package is pi-context + dir .context (DEC-0029) + surface /context, but source identifiers, files, Pi tools, and the command still say project",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L1",
@@ -2756,7 +2756,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-074"
+      "id": "FGAP-074",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-05-24T11:20:05.616Z"
     },
     {
       "title": "No edge-write Pi tool — in-pi agents cannot create DEC-0013 relations through the extension tool surface",

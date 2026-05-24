@@ -1704,6 +1704,41 @@
         }
       ],
       "id": "VER-043"
+    },
+    {
+      "target": "TASK-073",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "evidence": "FGAP-074 C7 (closure) — removed all @deprecated transition aliases + PROJECT_DIR const + dual ./project-* package.json subpaths + stale tsconfig project-* paths; renamed 2 residual public identifiers (validateProjectRelations->validateContextRelations, loadProjectRedactionConfig->loadContextRedactionConfig); swept ~90 comment/JSDoc/test-title/template/README residuals. Verified per DEC-0018: build/check/test green all 4 packages (0 fail) AFTER removal = zero-legacy-consumer proof. Runtime demo: old ./project-sdk subpath ERR_PACKAGE_PATH_NOT_EXPORTED, removed aliases undefined, ./context-sdk + validateContext + validateContextRelations + loadContextRedactionConfig resolve. Adversarial PASS (under-flagged 2 residuals — context.ts:755 + pi-project-workflows README — caught by orchestrator re-grep + fixed). Final closure grep across 5 residual classes = ZERO. Closes the C0-C7 rename cluster.",
+      "criteria_results": [
+        {
+          "criterion": "All FGAP-074 @deprecated aliases removed + PROJECT_DIR dropped (zero consumers); SCHEMAS_DIR kept",
+          "status": "passed",
+          "evidence": "grep @deprecated FGAP-074 = 0; build green proves zero consumers"
+        },
+        {
+          "criterion": "Dual ./project-* package.json subpaths dropped; stale tsconfig project-* paths fixed to context-*",
+          "status": "passed",
+          "evidence": "package.json context-* only; tsconfig context-dir/context-sdk; old ./project-sdk import hard-fails at runtime"
+        },
+        {
+          "criterion": "2 residual renames complete (validateProjectRelations, loadProjectRedactionConfig) incl. tests/re-exports/README",
+          "status": "passed",
+          "evidence": "closure grep class C = 0; runtime demo both new names resolve, old absent"
+        },
+        {
+          "criterion": "Bare-string sweep: zero old module/identifier/command/tool refs in code comments/JSDoc/test-titles/templates/READMEs",
+          "status": "passed",
+          "evidence": "closure grep classes A/B/D/E = 0 (excl. established LEAVE: .project dir, pkg name, historical CHANGELOG/analysis/template-filenames, 2 PROJECT_DIR historical notes, local vars)"
+        },
+        {
+          "criterion": "build && check && test green; runtime demo; adversarial; zero over-rename",
+          "status": "passed",
+          "evidence": "0 failures; runtime demo; .project dir + pi-project-workflows + SCHEMAS_DIR intact"
+        }
+      ],
+      "id": "VER-044"
     }
   ]
 }

@@ -1026,7 +1026,7 @@
     },
     {
       "description": "FGAP-074 C5 — tool names + /project command rename (index.ts). Rename Pi tools project-* -> context-* (project-status/validate/validate-relations/edges-for-lens/walk-descendants/roadmap-{load,render,validate,list}); command /project -> /context + PROJECT_SUBCOMMANDS -> CONTEXT_SUBCOMMANDS; installProject -> installContext. Rename the DEC-0042 bootstrap trio (init/accept-all/install + project-init/project-accept-all tools) UNIFORMLY now (FGAP-095 P4 removes the then-context-named trio when /context start lands). NOT aliased (strings, no code consumers) — renamed atomically. npm run skills. Green.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts"
       ],
@@ -1043,7 +1043,8 @@
         "TASK-070"
       ],
       "notes": "Decomposition chunk C5. Maps to Claude task #64. FGAP-074. Surface rename after all consumers migrated.",
-      "id": "TASK-071"
+      "id": "TASK-071",
+      "verification": "VER-042"
     },
     {
       "description": "FGAP-074 C6 — docs rename. README.md (~18) + CLAUDE.md (~5) + packages/pi-context/skill-narrative.md (~26): /project -> /context + tool-name updates; any .agent.yaml / .workflow.yaml / .monitor.json referencing /project or project-* tools. npm run skills regenerates SKILL.md. Green.",

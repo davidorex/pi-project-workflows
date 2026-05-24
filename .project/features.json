@@ -551,6 +551,36 @@
       "findings": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-23T00:00:00Z"
+    },
+    {
+      "title": "JIT capability composition + sandbox for subagent dispatch — operation-granular tool+perm grants from an empty-state registry",
+      "status": "proposed",
+      "layer": "L4",
+      "description": "The safety/capability layer that sits atop FEAT-004 (agents-as-tools dispatch). FEAT-004 makes a subagent invocable as a typed tool call by the main context agent; THIS feature governs WHAT that subagent may do. Model (user-articulated 2026-05-24): a subagent is a programmatic action — a tool call carrying atomic context chunks composed into prompt shape (already supported: pi-jit-agents compile boundary + contextBlocks + introspect agentContract tool-shape projection). The subagent receives its OWN tools, JIT-composed per invocation, scoped to EXACTLY the operations the task needs and no others — e.g. the right to run a specific command (`npm test`) rather than the `bash` tool wholesale; a specific file path to read/write rather than read/write generally. Default is EMPTY: no perms, no tools; configs + schemas + macros materialize the exact capability grant from empty state (generalizing DEC-0015/0011/0025 empty-state-config-driven philosophy from the substrate dir to the agent/tool/perm surface). Capabilities drawn from a tool+permission REGISTRY, atomically composable into a per-dispatch bundle, and ideally sandboxed (fs/network jail around the subprocess). Pairs with DEC-0047 (constitutional capability model) which makes the registry + its composition human-ratified config (legislative), the main agent's dispatch executive, and validators/monitors judicial.",
+      "motivation": "FEAT-004 bare dispatch is necessary but not sufficient for a tools-constrained autonomous orchestrator: letting the main agent self-orchestrate (dispatch coding/explore/adversarial subagents that edit source, run shell, etc.) is only SAFE if each subagent's authority is exactly scoped, minimal, and human-sanctioned. Operation-granular JIT capability composition + sandboxing is the property that converts 'self-orchestration is possible' into 'self-orchestration is trustworthy'. Today tool restriction is category-granular only (`--tools read`), there is no permission/capability registry, and no per-invocation composition or sandbox.",
+      "acceptance_criteria": [
+        "A capability/permission registry exists (config-declared, empty by default) whose entries are tool grants AND operation-level permissions (e.g. an allowlisted command, a path-scoped read/write), not just tool categories",
+        "Per subagent-dispatch, a capability bundle is composed JUST-IN-TIME from the registry, granting exactly the declared operations and no others; the subagent cannot exceed its bundle",
+        "Empty-state default: a subagent with no declared capabilities can do nothing; all capability arrives via config/schema/macro composition (no ambient tools/perms)",
+        "Dispatch path enforces the bundle (subprocess --tools/perm scoping and/or in-process tool-subset gating via the FEAT-004 execute boundary); enforcement is verifiable",
+        "Sandboxing option: the dispatched subprocess can be confined (fs/network) to its declared scope",
+        "Dual-surface per DEC-0019/0020 (library + Pi tool + CLI) so both the in-pi main agent and the orchestrator-side compose capabilities the same way",
+        "The composition + the registry are config the human ratifies (DEC-0047 constitutional gate); the main agent proposes capability mutations, never self-grants unratified"
+      ],
+      "dependencies": [
+        "FEAT-004",
+        "DEC-0044",
+        "DEC-0047",
+        "FGAP-063"
+      ],
+      "decisions": [
+        "DEC-0047"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human/davidryan@gmail.com",
+      "id": "FEAT-005",
+      "created_at": "2026-05-24T09:42:40.250Z"
     }
   ]
 }

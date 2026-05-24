@@ -2280,6 +2280,58 @@
       "id": "DEC-0046",
       "created_at": "2026-05-23T03:31:08.278Z",
       "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "title": "Constitutional capability model for autonomous in-pi orchestration — config legislative, main-agent executive, validators judicial; capability mutation requires human ratification",
+      "status": "open",
+      "context": "Evaluation (2026-05-24) of whether the orchestrator->subagent operational pipeline (run this session by a Claude-Code orchestrator tasking subagents) is achievable by an extensions-tools-constrained in-pi agent using pi-context + pi-jit-agents. Finding: the declarative pipeline is ~85% expressible today (pi-workflows agent/command/gate/block/monitor/pause steps; shell IS available via command/gate steps; substrate authorship complete via Cluster A+B; introspect.agentContract ALREADY projects an AgentSpec to a tool shape). The genuinely missing pieces for ADAPTIVE self-orchestration are (1) agent-dispatch as a first-class tool (FEAT-004 / DEC-0044, open; pi-jit-agents is tool-less) and (2) operation-granular JIT capability composition + sandbox (FEAT-005). User articulated the governing model: a subagent is a programmatic action (a tool call carrying composed atomic-context chunks) that receives its OWN exactly-scoped tools+perms, JIT-composed from an empty-state registry (no ambient tools/perms; configs+schemas+macros materialize everything — generalizing DEC-0015/0011/0025). The human stays in the loop by AUTHORIZING the config and its mutations proposed by the main agent. Framed as a separation of powers ('constitutional').",
+      "decision": "PROPOSED (to settle when FEAT-004/FEAT-005 work begins): adopt a separation-of-powers capability model for in-pi autonomous orchestration. LEGISLATIVE = the config + schemas + macros (the registry of block kinds, relation_types, agents, tools, permissions, capability bundles, and the procedural-policy/process itself). It is the ratified law; default is EMPTY (DEC-0015/0011 generalized); nothing exists until config materializes it. EXECUTIVE = the main context agent, which acts ONLY within the config: composes atomic-context chunks into subagent prompts (compile boundary), dispatches subagents as typed tool calls (FEAT-004), grants each a JIT-composed exactly-scoped capability bundle from the registry (FEAT-005), and mutates the substrate per the declared vocabulary. JUDICIAL = validators (validateContext, config.invariants, lens-validators) + monitors (phantom-tool classification gates) + the DEC-0018 runtime-demo/adversarial discipline, which verify executive action against the legislative law. CONSTITUTIONAL GATE: the executive may PROPOSE config/capability mutations (amend-config, write-schema) but may NOT self-grant unratified capability; mutations to the legislative layer require HUMAN ratification — making the human-authorization norm (today behavioral: substrate-authorship-semantics + mandate-001) a STRUCTURAL gate. DEC-0014 (tools-only main thread) is the enabling substrate: the executive has no ambient bash/read/write/edit; all authority is config-granted, scoped, and revocable.",
+      "options_considered": [
+        {
+          "label": "Constitutional capability model (CHOSEN direction)",
+          "description": "Config legislative + main-agent executive + validators judicial; empty-state default; capability mutation human-ratified as a structural gate.",
+          "tradeoffs": "Makes self-orchestration TRUSTWORTHY (minimal, exact, sanctioned authority per subagent) rather than merely possible. Cost: requires building FEAT-004 dispatch-as-tool + FEAT-005 capability-composition/sandbox + a structural ratification gate; more upfront machinery than ad-hoc dispatch."
+        },
+        {
+          "label": "Bare FEAT-004 dispatch without a capability layer",
+          "description": "Agents-as-tools with category-granular tool grants only (--tools read), no per-operation perms, no ratification gate.",
+          "tradeoffs": "Simpler; but lets a self-orchestrating main agent grant broad authority to subagents (edit source, run shell) without exact scoping or human sanction.",
+          "rejected_reason": "Necessary but not sufficient — unsafe for autonomous self-orchestration; the capability + constitutional layer is the property that makes it trustworthy."
+        }
+      ],
+      "consequences": [
+        "Gates/shapes FEAT-004 (dispatch-as-tool) and FEAT-005 (JIT capability composition + sandbox) — both must land for the executive branch to function autonomously.",
+        "FGAP-063 (procedural-policy has no substrate block) is the likely legislative home for the process/capability canon — this DEC motivates closing it.",
+        "Converts human-authorization from behavioral norm (mandate-001 / substrate-authorship-semantics) to a structural gate on legislative (config/capability) mutation; the executive proposes, the human ratifies.",
+        "Builds on DEC-0014 (tools-only main thread — no ambient authority), DEC-0015/0011/0025 (empty-state config-driven), DEC-0019/0020 (dual-surface), DEC-0018 (judicial: runtime-demo+adversarial). introspect.agentContract already supplies the agent->tool-shape projection the executive needs.",
+        "The declarative pipeline remains expressible as a pi-workflow today; this model is what enables the ADAPTIVE (replan-on-finding) orchestration a static DAG cannot express, by giving the reasoning main agent safe dispatch + capability tools."
+      ],
+      "related_features": [
+        "FEAT-004",
+        "FEAT-005"
+      ],
+      "related_gaps": [
+        "FGAP-063",
+        "FGAP-044"
+      ],
+      "references": [
+        {
+          "label": "introspect agentContract -> tool-shape projection (executive substrate)",
+          "path": "packages/pi-jit-agents/src/introspect.ts",
+          "lines": "17"
+        },
+        {
+          "label": "workflow shell-capable step types (command/gate) — pipeline expressibility",
+          "path": "packages/pi-workflows/src/step-command.ts"
+        },
+        {
+          "label": "feasibility evaluation source",
+          "path": ".project/decisions.json"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "id": "DEC-0047",
+      "created_at": "2026-05-24T09:43:07.859Z"
     }
   ]
 }

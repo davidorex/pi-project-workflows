@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
-import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { parseAgentYaml } from "./agent-spec.js";
 import { compileAgent } from "./compile.js";
 import { AgentCompileError } from "./errors.js";

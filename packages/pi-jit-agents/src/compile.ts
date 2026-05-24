@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
 import { readBlock } from "@davidorex/pi-context/block-api";
-import { projectDir, schemaPath } from "@davidorex/pi-context/project-dir";
+import { resolveContextDir, schemaPath } from "@davidorex/pi-context/context-dir";
 import type nunjucks from "nunjucks";
 import { type BudgetWarning, enforceBudget } from "./budget-enforcer.js";
 import { dispatchInlineMacro } from "./dispatch-inline.js";
@@ -257,7 +257,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	if (spec.contextBlocks && spec.contextBlocks.length > 0) {
 		let projectDirExists = false;
 		try {
-			const projectDirPath = projectDir(ctx.cwd);
+			const projectDirPath = resolveContextDir(ctx.cwd);
 			projectDirExists = fs.existsSync(projectDirPath);
 		} catch (err) {
 			if (err instanceof Error && err.name === "BootstrapNotFoundError") {

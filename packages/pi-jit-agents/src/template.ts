@@ -18,7 +18,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { projectTemplatesDir } from "@davidorex/pi-context/project-dir";
+import { contextTemplatesDir } from "@davidorex/pi-context/context-dir";
 import nunjucks from "nunjucks";
 
 export interface TemplateEnvContext {
@@ -38,7 +38,7 @@ export interface TemplateEnvContext {
  * inline prompt uses no templates at all.
  */
 export function createTemplateEnv(ctx: TemplateEnvContext): nunjucks.Environment {
-	const projectTemplates = projectTemplatesDir(ctx.cwd);
+	const projectTemplates = contextTemplatesDir(ctx.cwd);
 	const userDir = ctx.userDir ?? path.join(os.homedir(), ".pi", "agent", "templates");
 
 	const searchPaths: string[] = [];

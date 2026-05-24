@@ -144,6 +144,29 @@ export function resolveContextDir(cwd: string): string {
 }
 
 /**
+ * Non-throwing variant of `resolveContextDir` for READ / CLASSIFY / SNAPSHOT
+ * consumers that must degrade gracefully when no `.pi-context.json` bootstrap
+ * pointer exists (DEC-0015) rather than hard-throwing `BootstrapNotFoundError`.
+ *
+ * Returns the resolved substrate dir when the pointer is present (identical to
+ * `resolveContextDir`); returns `null` only on the absent-pointer
+ * `BootstrapNotFoundError` branch. Re-throws every other error — a malformed
+ * pointer / read failure is NOT degradation and must still surface (the
+ * pointer-present error semantics of `resolveContextDir` are preserved).
+ *
+ * Name-based catch per FGAP-080 (instanceof is unreliable across module-instance
+ * boundaries under tsx/dist dual-load).
+ */
+export function tryResolveContextDir(cwd: string): string | null {
+	try {
+		return resolveContextDir(cwd);
+	} catch (err) {
+		if (err instanceof Error && err.name === "BootstrapNotFoundError") return null;
+		throw err;
+	}
+}
+
+/**
  * Atomically write a `.pi-context.json` bootstrap pointer at `<cwd>/.pi-context.json`.
  * `contextDir` is a required parameter chosen by the caller per DEC-0015 —
  * no default, no transitional bridge.

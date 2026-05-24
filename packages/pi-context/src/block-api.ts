@@ -19,7 +19,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import _lockfile from "proper-lockfile";
-import { assertSubstrateName, resolveContextDir, schemaPath } from "./context-dir.js";
+import { assertSubstrateName, resolveContextDir, schemaPath, tryResolveContextDir } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
 import { validateFromFile } from "./schema-validator.js";
@@ -1288,7 +1288,9 @@ export function removeFromNestedArray(
  * tool consume this single export.
  */
 export function readBlockDir(cwd: string, subdir: string): unknown[] {
-	const dirPath = path.join(resolveContextDir(cwd), subdir);
+	const root = tryResolveContextDir(cwd);
+	if (root === null) return []; // no .pi-context.json pointer → no items (consistent with missing-dir → [])
+	const dirPath = path.join(root, subdir);
 
 	let entries: string[];
 	try {

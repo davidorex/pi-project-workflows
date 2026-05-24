@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { readBlock, writeBlock } from "@davidorex/pi-context/block-api";
 import { rollbackBlockFiles, snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-context/block-validation";
-import { PROJECT_DIR } from "@davidorex/pi-context/project-dir";
+import { tryResolveContextDir } from "@davidorex/pi-context/context-dir";
 import { validate, validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { truncateTail } from "@earendil-works/pi-coding-agent";
 import type nunjucks from "nunjucks";
@@ -852,6 +852,14 @@ export async function executeWorkflow(
 			runDir,
 		};
 
+		// Resolve the substrate-dir prefix once for artifact block-target classification.
+		// Graceful on a missing .pi-context.json pointer (DEC-0015): tryResolveContextDir
+		// returns null → no substrate → no artifact is a block target. Only the
+		// missing-pointer case degrades; a malformed pointer / read failure still throws
+		// from within the primitive. Mirrors the absent-substrate path in step-shared.ts.
+		const r = tryResolveContextDir(ctx.cwd);
+		const substratePrefix: string | null = r === null ? null : r + path.sep;
+
 		for (const [name, artifactSpec] of Object.entries(spec.artifacts)) {
 			try {
 				// Resolve the output path (may contain expressions)
@@ -876,8 +884,7 @@ export async function executeWorkflow(
 				}
 
 				// Route project block JSON targets through block-api for block-schema validation
-				const workflowPrefix = path.join(ctx.cwd, PROJECT_DIR) + path.sep;
-				if (absolutePath.startsWith(workflowPrefix) && absolutePath.endsWith(".json")) {
+				if (substratePrefix !== null && absolutePath.startsWith(substratePrefix) && absolutePath.endsWith(".json")) {
 					const blockName = path.basename(absolutePath, ".json");
 					writeBlock(ctx.cwd, blockName, data);
 					writtenArtifacts[name] = absolutePath;
@@ -898,7 +905,7 @@ export async function executeWorkflow(
 				const resolvedPath = String(resolveExpressions(artifactSpec.path, artifactScope));
 				const absolutePath = path.isAbsolute(resolvedPath) ? resolvedPath : path.resolve(workflowDir, resolvedPath);
 				const isBlockTarget =
-					absolutePath.startsWith(path.join(ctx.cwd, PROJECT_DIR) + path.sep) && absolutePath.endsWith(".json");
+					substratePrefix !== null && absolutePath.startsWith(substratePrefix) && absolutePath.endsWith(".json");
 				if (isBlockTarget) {
 					state.status = "failed";
 					if (ctx.hasUI) {

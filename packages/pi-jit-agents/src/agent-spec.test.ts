@@ -247,4 +247,29 @@ describe("createAgentLoader", () => {
 			assert.ok(err.searchPaths[2].startsWith(builtinDir));
 		}
 	});
+
+	it("pointer-less cwd omits the project tier and throws AgentNotFoundError, not BootstrapNotFoundError (FGAP-074 C3)", (t) => {
+		// Deliberately pointer-less mkdtemp — NO writeBootstrapPointer. The project
+		// tier is omitted; the loader still searches user/builtin and ultimately
+		// throws its normal not-found error rather than BootstrapNotFoundError.
+		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "jit-agent-noptr-"));
+		const userDir = tmpProject();
+		t.after(() => {
+			fs.rmSync(cwd, { recursive: true, force: true });
+			fs.rmSync(userDir, { recursive: true, force: true });
+		});
+
+		const load = createAgentLoader({ cwd, userDir });
+		try {
+			load("missing");
+			assert.fail("should have thrown");
+		} catch (err) {
+			assert.ok(err instanceof Error);
+			assert.notStrictEqual(err.name, "BootstrapNotFoundError");
+			assert.ok(err instanceof AgentNotFoundError);
+			// project tier omitted → only the user-tier search path remains
+			assert.strictEqual(err.searchPaths.length, 1);
+			assert.ok(err.searchPaths[0].startsWith(userDir));
+		}
+	});
 });

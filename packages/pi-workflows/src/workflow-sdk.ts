@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { PROJECT_DIR } from "@davidorex/pi-context/project-dir";
+import { tryResolveContextDir } from "@davidorex/pi-context/context-dir";
 import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { bundledDir } from "./bundled-dirs.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
@@ -612,9 +612,13 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		}
 	}
 
-	// 7c. contextBlocks existence — do declared context blocks exist in .project/?
-	const projectDirPath = path.join(cwd, PROJECT_DIR);
-	const projectDirExists = fs.existsSync(projectDirPath);
+	// 7c. contextBlocks existence — do declared context blocks exist in the substrate dir?
+	// No .pi-context.json bootstrap pointer → substrate not set up; tryResolveContextDir
+	// returns null and contextBlocks are treated as absent (restores prior PROJECT_DIR
+	// string behavior, which never threw). Only the missing-pointer case degrades; a
+	// malformed pointer / read failure still throws from within the primitive. DEC-0015.
+	const projectDirPath = tryResolveContextDir(cwd);
+	const projectDirExists = projectDirPath !== null && fs.existsSync(projectDirPath);
 
 	for (const [_stepName, step, fieldPrefix] of walkAllSteps(spec.steps)) {
 		if (!step.agent) continue;
@@ -631,7 +635,8 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		}
 
 		for (const blockName of agentSpec.contextBlocks) {
-			const blockPath = path.join(projectDirPath, `${blockName}.json`);
+			// projectDirExists true ⇒ projectDirPath non-null (asserted for the type narrower).
+			const blockPath = path.join(projectDirPath as string, `${blockName}.json`);
 			if (!fs.existsSync(blockPath)) {
 				issues.push({
 					severity: "warning",

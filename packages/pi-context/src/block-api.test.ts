@@ -1557,6 +1557,21 @@ describe("readBlockDir", () => {
 			},
 		);
 	});
+
+	it("returns [] (no throw) when no .pi-context.json pointer exists", (t) => {
+		// Raw mkdtempSync WITHOUT writeBootstrapPointer (unlike makeTmpDir) — so the
+		// cwd has no .pi-context.json. readBlockDir is a READ reached pointer-less (the
+		// read-dir Pi tool + workflow readDir step); it must degrade to [] rather than
+		// hard-throw BootstrapNotFoundError (consistent with missing-dir → []).
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "block-api-rdir-nopointer-"));
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		let result: unknown[] | undefined;
+		assert.doesNotThrow(() => {
+			result = readBlockDir(tmpDir, "phases");
+		});
+		assert.deepStrictEqual(result, []);
+	});
 });
 
 // ── DispatchContext coverage (FGAP-004) ─────────────────────────────────────

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import type { LoopExecuteOptions } from "./step-loop.js";
 import { executeLoop } from "./step-loop.js";
 import { DEFAULT_MAX_ATTEMPTS, zeroUsage } from "./step-shared.js";

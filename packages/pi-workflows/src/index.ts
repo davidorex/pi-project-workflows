@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { schemaPath } from "@davidorex/pi-context/project-dir";
+import { schemaPath } from "@davidorex/pi-context/context-dir";
 import { enforceBudget } from "@davidorex/pi-jit-agents";
 import { Type } from "@earendil-works/pi-ai";
 import type {

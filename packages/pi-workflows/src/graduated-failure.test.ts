@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { rollbackBlockFiles, snapshotBlockFiles } from "@davidorex/pi-context/block-validation";
-import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import type { StepResult, StepUsage } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
 import { parseWorkflowSpec } from "./workflow-spec.js";

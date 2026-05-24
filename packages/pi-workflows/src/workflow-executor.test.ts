@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { makeSpec, mockCtx, mockPi } from "./test-helpers.js";
 import type { WorkflowSpec } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";
@@ -794,6 +794,55 @@ describe("artifacts", () => {
 		const content = lastMsg.msg.content;
 		assert.ok(content.includes("Artifacts:"));
 		assert.ok(content.includes("report"));
+
+		fs.rmSync(tmpDir, { recursive: true });
+	});
+
+	it("executes a file-artifact workflow with no .pi-context.json pointer (no BootstrapNotFoundError)", async () => {
+		// Deliberately omit writeBootstrapPointer — the temp dir has no .pi-context.json,
+		// so resolveContextDir would HARD-THROW BootstrapNotFoundError. The artifact loop
+		// must degrade gracefully (no substrate → no block target) rather than throw.
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-artifact-nopointer-"));
+		const spec: WorkflowSpec = {
+			name: "test-artifact-no-pointer",
+			description: "file artifact with no bootstrap pointer",
+			steps: {
+				produce: {
+					agent: "transform",
+					transform: {
+						mapping: { report: "no pointer content", count: 7 },
+					},
+				},
+			},
+			artifacts: {
+				fileReport: {
+					path: path.join(tmpDir, "out", "result.json"),
+					from: "steps.produce.output",
+				},
+			},
+			source: "project",
+			filePath: path.join(tmpDir, "test.project.yaml"),
+		};
+
+		const result = await executeWorkflow(
+			spec,
+			{},
+			{
+				ctx: mockCtx(tmpDir),
+				pi: mockPi(),
+				loadAgent: () => ({ name: "default" }),
+			},
+		);
+
+		// Does not throw; workflow completes (not failed); artifact written to disk.
+		assert.strictEqual(result.status, "completed");
+		assert.ok(result.artifacts);
+		assert.ok(result.artifacts!.fileReport);
+		const expectedPath = path.join(tmpDir, "out", "result.json");
+		assert.strictEqual(result.artifacts!.fileReport, expectedPath);
+		assert.ok(fs.existsSync(expectedPath));
+		const written = JSON.parse(fs.readFileSync(expectedPath, "utf-8"));
+		assert.deepStrictEqual(written, { report: "no pointer content", count: 7 });
 
 		fs.rmSync(tmpDir, { recursive: true });
 	});

@@ -41,6 +41,21 @@ describe("createTemplateEnv", () => {
 		assert.strictEqual(env.render("greet.md", {}), "from-project");
 	});
 
+	it("does not throw with no bootstrap pointer (project tier degrades; FGAP-074 C3)", (t) => {
+		// Deliberately pointer-less mkdtemp — NO writeBootstrapPointer. The project
+		// tier must be omitted (not throw BootstrapNotFoundError); user/builtin tiers
+		// are unaffected and the returned env still renders.
+		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "jit-template-noptr-"));
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		let env: ReturnType<typeof createTemplateEnv> | undefined;
+		assert.doesNotThrow(() => {
+			env = createTemplateEnv({ cwd });
+		});
+		assert.ok(env);
+		assert.strictEqual(typeof env!.render, "function");
+		assert.strictEqual(env!.renderString("hi {{ x }}", { x: "y" }), "hi y");
+	});
+
 	it("does NOT search .pi/templates/ per D3", (t) => {
 		const cwd = tmpDir();
 		const userDir = tmpDir();

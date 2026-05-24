@@ -18,7 +18,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { schemaPath, schemasDir, writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
+import { schemaPath, schemasDir, writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import nunjucks from "nunjucks";
 import { registerEnforceBudgetReal, TEMPLATES_DIR } from "./test-helpers.js";
 

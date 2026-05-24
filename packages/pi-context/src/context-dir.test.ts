@@ -11,6 +11,7 @@ import {
 	resolveContextDir,
 	schemaPath,
 	schemasDir,
+	tryResolveContextDir,
 	writeBootstrapPointer,
 } from "./context-dir.js";
 import { ValidationError } from "./schema-validator.js";
@@ -83,6 +84,24 @@ describe("project-dir resolver + BootstrapNotFoundError + writeBootstrapPointer"
 
 		const resolved = resolveContextDir(tmpDir);
 		assert.equal(path.basename(resolved), ".substrate-x");
+	});
+
+	it("tryResolveContextDir returns the joined dir when a pointer is present", () => {
+		writeBootstrapPointer(tmpDir, ".context-try");
+		assert.equal(tryResolveContextDir(tmpDir), path.join(tmpDir, ".context-try"));
+	});
+
+	it("tryResolveContextDir returns null when .pi-context.json is absent", () => {
+		// tmpDir has no bootstrap pointer written — degrades to null, no throw
+		assert.equal(tryResolveContextDir(tmpDir), null);
+	});
+
+	it("tryResolveContextDir re-throws ValidationError on a malformed pointer (does NOT swallow corruption)", () => {
+		// Malformed pointer — contextDir wrong type; the primitive only catches
+		// BootstrapNotFoundError, so validation failure must still surface.
+		const bootstrapPath = path.join(tmpDir, ".pi-context.json");
+		fs.writeFileSync(bootstrapPath, JSON.stringify({ contextDir: 123, version: "1.0.0" }), "utf-8");
+		assert.throws(() => tryResolveContextDir(tmpDir), ValidationError);
 	});
 
 	it("path-builders (resolveContextDir/schemasDir/schemaPath/agentsDir/contextTemplatesDir) all cascade through resolver", () => {

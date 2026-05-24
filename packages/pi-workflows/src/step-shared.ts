@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock } from "@davidorex/pi-context/block-api";
-import { projectDir, schemaPath } from "@davidorex/pi-context/project-dir";
+import { schemaPath, tryResolveContextDir } from "@davidorex/pi-context/context-dir";
 import type nunjucks from "nunjucks";
 import { writeState } from "./state.js";
 import { renderTemplate, renderTemplateFile } from "./template.js";
@@ -160,26 +160,22 @@ export function compileAgentSpec(
 		typeof resolvedInput === "object" && resolvedInput !== null ? (resolvedInput as Record<string, unknown>) : {};
 
 	// Inject block data into template context when contextBlocks is declared.
-	// Wrapped in try/catch for BootstrapNotFoundError — when no .pi-context.json
-	// pointer exists at cwd (DEC-0015 strict resolver), treat as "no substrate,
-	// skip injection" rather than propagating the throw. Same pattern as the
-	// audit-fix cluster D-B-3/D-B-4 absent-substrate-catch at commit 7cd3c6c.
+	// tryResolveContextDir returns null when no .pi-context.json pointer exists at
+	// cwd (DEC-0015 strict resolver) — treat as "no substrate, skip injection"
+	// rather than propagating the throw. A malformed pointer / read failure still
+	// throws from within the primitive. Same intent as the audit-fix cluster
+	// D-B-3/D-B-4 absent-substrate-catch at commit 7cd3c6c.
 	if (agentSpec.contextBlocks && agentSpec.contextBlocks.length > 0 && cwd) {
-		try {
-			const projectDirPath = projectDir(cwd);
-			if (fs.existsSync(projectDirPath)) {
-				for (const name of agentSpec.contextBlocks) {
-					const ctxKey = `_${name.replace(/-/g, "_")}`;
-					try {
-						ctx[ctxKey] = readBlock(cwd, name);
-					} catch {
-						ctx[ctxKey] = null;
-					}
+		const projectDirPath = tryResolveContextDir(cwd);
+		if (projectDirPath !== null && fs.existsSync(projectDirPath)) {
+			for (const name of agentSpec.contextBlocks) {
+				const ctxKey = `_${name.replace(/-/g, "_")}`;
+				try {
+					ctx[ctxKey] = readBlock(cwd, name);
+				} catch {
+					ctx[ctxKey] = null;
 				}
 			}
-		} catch (err) {
-			if (!(err instanceof Error && err.name === "BootstrapNotFoundError")) throw err;
-			// no substrate at cwd — skip block injection silently
 		}
 	}
 

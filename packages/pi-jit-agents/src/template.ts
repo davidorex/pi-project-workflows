@@ -18,7 +18,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { contextTemplatesDir } from "@davidorex/pi-context/context-dir";
+import { tryResolveContextDir } from "@davidorex/pi-context/context-dir";
 import nunjucks from "nunjucks";
 
 export interface TemplateEnvContext {
@@ -38,11 +38,17 @@ export interface TemplateEnvContext {
  * inline prompt uses no templates at all.
  */
 export function createTemplateEnv(ctx: TemplateEnvContext): nunjucks.Environment {
-	const projectTemplates = contextTemplatesDir(ctx.cwd);
 	const userDir = ctx.userDir ?? path.join(os.homedir(), ".pi", "agent", "templates");
 
 	const searchPaths: string[] = [];
-	if (fs.existsSync(projectTemplates)) searchPaths.push(projectTemplates);
+	// Project tier (FGAP-074 C3): pointer-less repos omit it; user/builtin tiers
+	// unaffected. `contextTemplatesDir(cwd)` was `<contextDir>/templates`, so the
+	// inline equivalent is `path.join(base, "templates")`.
+	const base = tryResolveContextDir(ctx.cwd);
+	if (base !== null) {
+		const projectTemplates = path.join(base, "templates");
+		if (fs.existsSync(projectTemplates)) searchPaths.push(projectTemplates);
+	}
 	if (fs.existsSync(userDir)) searchPaths.push(userDir);
 	if (ctx.builtinDir && fs.existsSync(ctx.builtinDir)) searchPaths.push(ctx.builtinDir);
 

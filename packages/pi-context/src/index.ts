@@ -44,6 +44,7 @@ import {
 	SCHEMAS_DIR,
 	schemaPath,
 	schemasDir,
+	tryResolveContextDir,
 	writeBootstrapPointer,
 } from "./context-dir.js";
 import {
@@ -167,21 +168,15 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
  * items from the conversation into typed JSON blocks.
  */
 async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: ExtensionAPI): Promise<void> {
-	let workflowDir: string;
-	let schemasDirPath: string;
-	try {
-		workflowDir = resolveContextDir(ctx.cwd);
-		schemasDirPath = schemasDir(ctx.cwd);
-	} catch (err) {
-		if (err instanceof BootstrapNotFoundError) {
-			ctx.ui.notify(
-				"No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.",
-				"error",
-			);
-			return;
-		}
-		throw err;
+	const workflowDir = tryResolveContextDir(ctx.cwd);
+	if (workflowDir === null) {
+		ctx.ui.notify(
+			"No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.",
+			"error",
+		);
+		return;
 	}
+	const schemasDirPath = schemasDir(ctx.cwd);
 
 	if (!fs.existsSync(schemasDirPath)) {
 		// Reachable only when the bootstrap pointer is present but the substrate
@@ -310,21 +305,15 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	const result: InstallResult = { installed: [], updated: [], skipped: [], notFound: [] };
 	const overwrite = options.overwrite === true;
 
-	let config: ConfigBlock | null;
-	let destRoot: string;
-	try {
-		config = loadConfig(cwd);
-		if (!config) {
-			result.error = "No config.json found in substrate dir — run /project init first.";
-			return result;
-		}
-		destRoot = resolveContextDir(cwd);
-	} catch (err) {
-		if (err instanceof BootstrapNotFoundError) {
-			result.error = "No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.";
-			return result;
-		}
-		throw err;
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) {
+		result.error = "No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.";
+		return result;
+	}
+	const config: ConfigBlock | null = loadConfig(cwd);
+	if (!config) {
+		result.error = "No config.json found in substrate dir — run /project init first.";
+		return result;
 	}
 
 	// destRoot is resolver-aware via projectRoot(cwd) — it already cascades
@@ -988,7 +977,8 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const config = loadConfig(ctx.cwd);
-			const configPath = path.join(resolveContextDir(ctx.cwd), "config.json");
+			const root = tryResolveContextDir(ctx.cwd);
+			const configPath = root === null ? null : path.join(root, "config.json");
 			const result = { config, configPath };
 			const jsonStr = JSON.stringify(result, null, 2);
 			const truncated = truncateHead(jsonStr);

@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-context/block-validation";
-import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { mockCtx, mockPi } from "./test-helpers.js";
 import type { WorkflowSpec } from "./types.js";
 import { executeWorkflow } from "./workflow-executor.js";

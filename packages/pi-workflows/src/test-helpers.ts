@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { schemaPath } from "@davidorex/pi-context/project-dir";
+import { schemaPath } from "@davidorex/pi-context/context-dir";
 import {
 	CANONICAL_MACRO_NAMES,
 	expandFieldPathShorthand,

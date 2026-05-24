@@ -17,7 +17,7 @@ import {
 	loadRelations,
 	validateRelations,
 } from "./context.js";
-import { resolveContextDir, schemaPath, schemasDir } from "./context-dir.js";
+import { resolveContextDir, SCHEMAS_DIR, schemaPath, schemasDir, tryResolveContextDir } from "./context-dir.js";
 import { getLensValidators } from "./lens-validator.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
@@ -66,7 +66,8 @@ export interface BlockInfo {
 }
 
 export function availableBlocks(cwd: string): BlockInfo[] {
-	const workflowDir = resolveContextDir(cwd);
+	const workflowDir = tryResolveContextDir(cwd);
+	if (workflowDir === null) return [];
 	const schemasDirPath = schemasDir(cwd);
 	if (!fs.existsSync(workflowDir)) return [];
 
@@ -86,7 +87,9 @@ export function availableBlocks(cwd: string): BlockInfo[] {
  * absolute paths to .schema.json files.
  */
 export function availableSchemas(cwd: string): string[] {
-	const dir = schemasDir(cwd);
+	const root = tryResolveContextDir(cwd);
+	if (root === null) return [];
+	const dir = path.join(root, SCHEMAS_DIR);
 	if (!fs.existsSync(dir)) return [];
 	const schemas: string[] = [];
 	for (const file of fs.readdirSync(dir)) {
@@ -104,7 +107,9 @@ export function availableSchemas(cwd: string): string[] {
  * Returns block name, first array key, and schema path for each.
  */
 export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayKey: string; schemaPath: string }> {
-	const schemasDirPath = schemasDir(cwd);
+	const root = tryResolveContextDir(cwd);
+	if (root === null) return [];
+	const schemasDirPath = path.join(root, SCHEMAS_DIR);
 	if (!fs.existsSync(schemasDirPath)) return [];
 	const results: Array<{ block: string; arrayKey: string; schemaPath: string }> = [];
 	for (const file of fs.readdirSync(schemasDirPath)) {
@@ -248,7 +253,9 @@ function extractType(prop: Record<string, unknown>): string {
  * `schemasDir(cwd)` per DEC-0015) and parses each schema.
  */
 export function schemaVocabulary(cwd: string): SchemaInfo[] {
-	const schemasDirPath = schemasDir(cwd);
+	const root = tryResolveContextDir(cwd);
+	if (root === null) return [];
+	const schemasDirPath = path.join(root, SCHEMAS_DIR);
 	if (!fs.existsSync(schemasDirPath)) return [];
 	const results: SchemaInfo[] = [];
 	for (const file of fs.readdirSync(schemasDirPath).sort()) {
@@ -272,7 +279,8 @@ export interface BlockStructure {
  * and block summaries into a single queryable function.
  */
 export function blockStructure(cwd: string): BlockStructure[] {
-	const blockDir = resolveContextDir(cwd);
+	const blockDir = tryResolveContextDir(cwd);
+	if (blockDir === null) return [];
 	const blocks = availableBlocks(cwd);
 	return blocks.map((b) => {
 		const arrays: { key: string; itemCount: number }[] = [];
@@ -497,9 +505,9 @@ export function contextState(cwd: string): ContextState {
 
 	// Block summaries — scan all blocks, report item counts and status distribution
 	const blockSummaries: Record<string, BlockSummary> = {};
-	const blockDir = resolveContextDir(cwd);
+	const blockDir = tryResolveContextDir(cwd);
 	try {
-		if (fs.existsSync(blockDir)) {
+		if (blockDir !== null && fs.existsSync(blockDir)) {
 			for (const file of fs.readdirSync(blockDir)) {
 				if (!file.endsWith(".json")) continue;
 				const blockName = file.replace(".json", "");
@@ -628,12 +636,8 @@ export function contextState(cwd: string): ContextState {
 	}
 
 	// Handoff presence
-	try {
-		const handoffPath = path.join(resolveContextDir(cwd), "handoff.json");
-		state.hasHandoff = fs.existsSync(handoffPath);
-	} catch {
-		/* ignore */
-	}
+	const handoffRoot = tryResolveContextDir(cwd);
+	state.hasHandoff = handoffRoot !== null && fs.existsSync(path.join(handoffRoot, "handoff.json"));
 
 	return state;
 }
@@ -1089,7 +1093,8 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
  */
 export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
 	const index = new Map<string, ItemLocation>();
-	const blockDir = resolveContextDir(cwd);
+	const blockDir = tryResolveContextDir(cwd);
+	if (blockDir === null) return index;
 	const cfg = loadConfig(cwd);
 
 	// Phases are an ordinary array-block since DEC-0028: each phase carries a

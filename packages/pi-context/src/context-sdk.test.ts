@@ -17,12 +17,14 @@ import {
 	availableBlocks,
 	availableSchemas,
 	blockStructure,
+	buildIdIndex,
 	completeTask,
 	contextState,
 	currentState,
 	deriveBootstrapState,
 	expectedBlockForId,
 	filterBlockItems,
+	findAppendableBlocks,
 	type ItemLocation,
 	joinBlocks,
 	readBlockItem,
@@ -183,6 +185,31 @@ describe("availableSchemas", () => {
 
 		const schemas = availableSchemas(tmpDir);
 		assert.deepStrictEqual(schemas, []);
+	});
+});
+
+// ── Pointer-less schema-discovery degradation (FGAP-074 C3) ──────────────────
+// These functions reach the throwing resolveContextDir indirectly via the
+// schemasDir path-builder. With no `.pi-context.json` bootstrap pointer they
+// must degrade to [] rather than throwing BootstrapNotFoundError. (NOTE: no
+// writeBootstrapPointer here — deliberately pointer-less.)
+describe("schema-discovery readers degrade pointer-less", () => {
+	it("availableSchemas returns [] with no bootstrap pointer", (t) => {
+		const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sdk-nopointer-schemas-"));
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.deepStrictEqual(availableSchemas(tmp), []);
+	});
+
+	it("findAppendableBlocks returns [] with no bootstrap pointer", (t) => {
+		const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sdk-nopointer-appendable-"));
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.deepStrictEqual(findAppendableBlocks(tmp), []);
+	});
+
+	it("schemaVocabulary returns [] with no bootstrap pointer", (t) => {
+		const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sdk-nopointer-vocab-"));
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.deepStrictEqual(schemaVocabulary(tmp), []);
 	});
 });
 
@@ -3029,5 +3056,67 @@ describe("validateProject status-vocabulary", () => {
 			0,
 			"status-less items are skipped",
 		);
+	});
+});
+
+describe("context-sdk pointer-less degradation (tryResolveContextDir class fix)", () => {
+	// Deliberately NO writeBootstrapPointer — every read/classify surface must
+	// degrade to empty/zero rather than hard-throw BootstrapNotFoundError. The
+	// git/source-derived fields of contextState stay pointer-independent.
+	function makePointerlessDir(prefix: string): string {
+		return fs.mkdtempSync(path.join(os.tmpdir(), `sdk-noptr-${prefix}-`));
+	}
+
+	it("availableBlocks returns [] when no pointer exists", (t) => {
+		const tmp = makePointerlessDir("availableblocks");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.deepEqual(availableBlocks(tmp), []);
+	});
+
+	it("blockStructure returns [] when no pointer exists", (t) => {
+		const tmp = makePointerlessDir("blockstructure");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.deepEqual(blockStructure(tmp), []);
+	});
+
+	it("buildIdIndex returns an empty Map when no pointer exists", (t) => {
+		const tmp = makePointerlessDir("buildidindex");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		const index = buildIdIndex(tmp);
+		assert.ok(index instanceof Map);
+		assert.strictEqual(index.size, 0);
+	});
+
+	it("contextState does not throw and reports blocks===0 while git fields remain populated", (t) => {
+		const tmp = makePointerlessDir("contextstate");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		let state: ReturnType<typeof contextState> | undefined;
+		assert.doesNotThrow(() => {
+			state = contextState(tmp);
+		});
+		assert.ok(state);
+		assert.strictEqual(state.blocks, 0);
+		// git/source-derived fields are pointer-independent — lastCommit is a string
+		// ("unknown" when the tmp dir is not a git repo), proving the non-block
+		// portions still run after the substrate scan degrades.
+		assert.strictEqual(typeof state.lastCommit, "string");
+		assert.strictEqual(state.hasHandoff, false);
+	});
+
+	it("validateContext does not throw and reports status 'clean' when no pointer exists", (t) => {
+		const tmp = makePointerlessDir("validatecontext");
+		// Clear any lens validators a prior test registered so the dispatch loop
+		// cannot inject a warning that flips status off "clean" for an empty substrate.
+		clearLensValidators();
+		t.after(() => {
+			fs.rmSync(tmp, { recursive: true, force: true });
+			clearLensValidators();
+		});
+		let result: ReturnType<typeof validateContext> | undefined;
+		assert.doesNotThrow(() => {
+			result = validateContext(tmp);
+		});
+		assert.ok(result);
+		assert.strictEqual(result.status, "clean");
 	});
 });

@@ -848,3 +848,32 @@ describe("resolveComposition", () => {
 		assert.throws(() => resolveComposition(tmp, cfg.lenses![0]), /is not kind=composition/);
 	});
 });
+
+describe("loaders degrade gracefully when no .pi-context.json pointer exists (tryResolveContextDir class fix)", () => {
+	// Deliberately NO writeBootstrapPointer — the loaders must self-degrade rather
+	// than hard-throw BootstrapNotFoundError on the absent-pointer branch.
+	function makePointerlessDir(prefix: string): string {
+		return fs.mkdtempSync(path.join(os.tmpdir(), `pcx-noptr-${prefix}-`));
+	}
+
+	it("loadConfig returns null when no pointer exists", (t) => {
+		const tmp = makePointerlessDir("loadconfig");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.strictEqual(loadConfig(tmp), null);
+	});
+
+	it("loadRelations returns [] when no pointer exists", (t) => {
+		const tmp = makePointerlessDir("loadrelations");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.deepEqual(loadRelations(tmp), []);
+	});
+
+	// FGAP-074 C3 chokepoint: loadContext calls the throwing configPath/relationsPath
+	// for its mtime cache keys; the top-of-function tryResolveContextDir guard must
+	// degrade to an empty context rather than throw.
+	it("loadContext returns { config: null, relations: [] } when no pointer exists", (t) => {
+		const tmp = makePointerlessDir("loadcontext");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		assert.deepStrictEqual(loadContext(tmp), { config: null, relations: [] });
+	});
+});

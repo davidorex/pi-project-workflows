@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import type { ExecutionLayer } from "./dag.js";
 import type { ParallelOptions, SingleStepExecutor } from "./step-parallel.js";
 import { executeParallelLayer, executeParallelStep } from "./step-parallel.js";

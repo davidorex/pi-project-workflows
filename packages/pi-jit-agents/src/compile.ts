@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
 import { readBlock } from "@davidorex/pi-context/block-api";
-import { resolveContextDir, schemaPath } from "@davidorex/pi-context/context-dir";
+import { schemaPath, tryResolveContextDir } from "@davidorex/pi-context/context-dir";
 import type nunjucks from "nunjucks";
 import { type BudgetWarning, enforceBudget } from "./budget-enforcer.js";
 import { dispatchInlineMacro } from "./dispatch-inline.js";
@@ -255,22 +255,14 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	};
 
 	if (spec.contextBlocks && spec.contextBlocks.length > 0) {
-		let projectDirExists = false;
-		try {
-			const projectDirPath = resolveContextDir(ctx.cwd);
-			projectDirExists = fs.existsSync(projectDirPath);
-		} catch (err) {
-			if (err instanceof Error && err.name === "BootstrapNotFoundError") {
-				// Substrate absent — projectDirExists stays false. Downstream
-				// per-group logic (lines below) treats !projectDirExists as the
-				// canonical "no substrate" signal and either nulls whole-block
-				// surfaces OR throws AgentCompileError for unresolvable item-form
-				// entries. Preserves pre-DEC-0015 graceful-skip semantic per
-				// DEC-0021 gate-2 closure.
-			} else {
-				throw err;
-			}
-		}
+		// tryResolveContextDir returns null when the substrate is absent — projectDirExists
+		// stays false. Downstream per-group logic (lines below) treats !projectDirExists as
+		// the canonical "no substrate" signal and either nulls whole-block surfaces OR throws
+		// AgentCompileError for unresolvable item-form entries. Preserves pre-DEC-0015
+		// graceful-skip semantic per DEC-0021 gate-2 closure. Only the missing-pointer case
+		// degrades; a malformed pointer / read failure still throws from within the primitive.
+		const projectDirPath = tryResolveContextDir(ctx.cwd);
+		const projectDirExists = projectDirPath !== null && fs.existsSync(projectDirPath);
 
 		// Plan 4.1 contract — multi-entry-same-name disambiguation.
 		//

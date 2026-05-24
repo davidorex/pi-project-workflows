@@ -942,7 +942,7 @@
     },
     {
       "description": "FGAP-074 C1 — pi-context internal rename + transition aliases (additive, green). Rename the 3 project-*.ts -> new filenames (+ their tests); update all pi-context-internal relative imports + identifier usages to the C0-settled new names; add DUAL package.json subpath exports (legacy ./project-* AND new ./context-* -> same dist) + DUAL tsconfig path mappings; add @deprecated identifier aliases (export const projectRoot = contextRoot; etc.). After C1 the pi-context package is fully on new names internally while the external world still resolves via the legacy aliases.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/project-dir.ts",
         "packages/pi-context/src/project-context.ts",

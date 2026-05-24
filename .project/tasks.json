@@ -966,7 +966,7 @@
     },
     {
       "description": "FGAP-074 C2 — migrate pi-jit-agents consumers (6 files). Repoint old project-* subpath imports + renamed identifiers to the new context-* names across pi-jit-agents (compile.ts, template module + their tests). Green per commit.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-jit-agents/src/compile.ts"
       ],

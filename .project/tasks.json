@@ -1048,7 +1048,7 @@
     },
     {
       "description": "FGAP-074 C6 — docs rename. README.md (~18) + CLAUDE.md (~5) + packages/pi-context/skill-narrative.md (~26): /project -> /context + tool-name updates; any .agent.yaml / .workflow.yaml / .monitor.json referencing /project or project-* tools. npm run skills regenerates SKILL.md. Green.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "README.md",
         "CLAUDE.md",

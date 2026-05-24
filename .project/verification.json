@@ -1474,6 +1474,46 @@
         }
       ],
       "id": "VER-037"
+    },
+    {
+      "target": "TASK-067",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "evidence": "FGAP-074 C1 pi-context internal rename + transition-alias bridge. 6 files git-mv'd to context vocabulary; ~28 source/test files content-edited; package.json dual subpaths. Verified per DEC-0018: npm build+check+test green all 4 packages (pi-context 606 / pi-jit-agents 151 / pi-workflows 827 / monitors 157; 0 fail); biome organizeImports auto-fixed post-rename. Runtime bridge demo: old (deprecated) + new subpaths/identifiers both resolve, byte-identical results against real .project (validate/state identical; loadContext===getProjectContext; projectRoot/projectDir===resolveContextDir). Fresh-context adversarial PASS 7/7.",
+      "criteria_results": [
+        {
+          "criterion": "3 modules renamed to DEC-0046 names + tests; intra-package imports/usages on new names",
+          "status": "passed",
+          "evidence": "git mv 6 files; grep: zero ./project-*.js imports remain; commit 8a0... C1"
+        },
+        {
+          "criterion": "dual package.json exports (old+new subpaths -> new dist); deprecated identifier aliases",
+          "status": "passed",
+          "evidence": "adversarial probe #3/#4: all 10 aliases present; 6 subpaths point at new dist files"
+        },
+        {
+          "criterion": "projectDir->contextDir collision avoided via resolveContextDir collapse",
+          "status": "passed",
+          "evidence": "no contextDir/contextRoot symbol created; projectRoot/projectDir kept @deprecated, callers repointed to resolveContextDir"
+        },
+        {
+          "criterion": "build && check && test green (husky)",
+          "status": "passed",
+          "evidence": "pre-commit gate green; full suite 0 failures across 4 packages"
+        },
+        {
+          "criterion": "bridge resolves BOTH old and new names identically (pure rename)",
+          "status": "passed",
+          "evidence": "runtime demo: JSON.stringify equality on validate + state; cache identity on loadContext===getProjectContext"
+        },
+        {
+          "criterion": "out-of-scope (tool names, /project command) untouched",
+          "status": "passed",
+          "evidence": "adversarial #5: project-status etc. + registerCommand('project') unchanged (C5 scope)"
+        }
+      ],
+      "id": "VER-038"
     }
   ]
 }

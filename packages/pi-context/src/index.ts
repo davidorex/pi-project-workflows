@@ -156,7 +156,7 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
 	}
 
 	pi.sendMessage({
-		customType: "project-status",
+		customType: "context-status",
 		content: lines.join("\n"),
 		display: true,
 	});
@@ -171,7 +171,7 @@ async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: Ext
 	const workflowDir = tryResolveContextDir(ctx.cwd);
 	if (workflowDir === null) {
 		ctx.ui.notify(
-			"No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.",
+			"No .pi-context.json bootstrap pointer found. Run /context init first to bootstrap the substrate.",
 			"error",
 		);
 		return;
@@ -235,7 +235,7 @@ ${blockInfo.join("\n\n")}
 
 	pi.sendMessage(
 		{
-			customType: "project-add-work",
+			customType: "context-add-work",
 			content: instruction,
 			display: false,
 		},
@@ -307,12 +307,12 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 
 	const destRoot = tryResolveContextDir(cwd);
 	if (destRoot === null) {
-		result.error = "No .pi-context.json bootstrap pointer found. Run /project init first to bootstrap the substrate.";
+		result.error = "No .pi-context.json bootstrap pointer found. Run /context init first to bootstrap the substrate.";
 		return result;
 	}
 	const config: ConfigBlock | null = loadConfig(cwd);
 	if (!config) {
-		result.error = "No config.json found in substrate dir — run /project init first.";
+		result.error = "No config.json found in substrate dir — run /context init first.";
 		return result;
 	}
 
@@ -398,7 +398,7 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 	const contextDir = args.trim().split(/\s+/)[0];
 	if (!contextDir) {
 		ctx.ui.notify(
-			"/project init requires a substrate dir name (e.g. '/project init .project' or '/project init .context'). Per DEC-0015, no default.",
+			"/context init requires a substrate dir name (e.g. '/context init .project' or '/context init .context'). Per DEC-0015, no default.",
 			"error",
 		);
 		return;
@@ -435,7 +435,7 @@ function handleAcceptAll(_args: string, ctx: ExtensionCommandContext): void {
 		r = adoptConception(ctx.cwd);
 	} catch (err) {
 		if (err instanceof BootstrapNotFoundError) {
-			ctx.ui.notify("Run /project init <dir> first", "error");
+			ctx.ui.notify("Run /context init <dir> first", "error");
 			return;
 		}
 		throw err;
@@ -445,7 +445,7 @@ function handleAcceptAll(_args: string, ctx: ExtensionCommandContext): void {
 		return;
 	}
 	ctx.ui.notify(
-		`Adopted canonical config (root: ${r.root}, ${r.schemaCount} schemas / ${r.blockCount} blocks declared). Run /project install to materialize them.`,
+		`Adopted canonical config (root: ${r.root}, ${r.schemaCount} schemas / ${r.blockCount} blocks declared). Run /context install to materialize them.`,
 		"info",
 	);
 }
@@ -574,7 +574,7 @@ const extension = (pi: ExtensionAPI) => {
 		description:
 			"Append a closure-table relation (edge: parent, child, relation_type, optional ordinal) to relations.json. " +
 			"Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference " +
-			"integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run project-validate " +
+			"integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run context-validate " +
 			"after. Creates relations.json if absent.",
 		promptSnippet: "Create a relation/edge between two items (parent→child under a relation_type)",
 		parameters: Type.Object({
@@ -917,10 +917,10 @@ const extension = (pi: ExtensionAPI) => {
 	// ── Tool: project-status ────────────────────────────────────────────────
 
 	pi.registerTool({
-		name: "project-status",
-		label: "Project Status",
-		description: "Get derived project state — source metrics, block summaries, planning lifecycle status.",
-		promptSnippet: "Get project state — source metrics, block summaries, planning lifecycle status",
+		name: "context-status",
+		label: "Context Status",
+		description: "Get derived context state — source metrics, block summaries, planning lifecycle status.",
+		promptSnippet: "Get context state — source metrics, block summaries, planning lifecycle status",
 		parameters: Type.Object({}),
 		async execute(
 			_toolCallId: string,
@@ -940,8 +940,8 @@ const extension = (pi: ExtensionAPI) => {
 	// ── Tool: project-validate ──────────────────────────────────────────────
 
 	pi.registerTool({
-		name: "project-validate",
-		label: "Project Validate",
+		name: "context-validate",
+		label: "Context Validate",
 		description: "Validate cross-block referential integrity — check that IDs referenced across blocks exist.",
 		promptSnippet: "Validate cross-block referential integrity",
 		parameters: Type.Object({}),
@@ -1149,7 +1149,7 @@ const extension = (pi: ExtensionAPI) => {
 			"layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, hierarchy). " +
 			"The whole resulting config is AJV-validated (SHAPE) and op-correctness is enforced (add ⇒ key absent, " +
 			"replace/remove ⇒ key present). Cross-registry referential integrity (removing a still-referenced " +
-			"relation_type / lens / layer / block_kind) is NOT checked here — run project-validate after. dryRun previews " +
+			"relation_type / lens / layer / block_kind) is NOT checked here — run context-validate after. dryRun previews " +
 			"without writing.",
 		promptSnippet:
 			"Add/replace/remove one entry in a config.json registry (vocabulary, lenses, invariants, status_buckets)",
@@ -1296,8 +1296,8 @@ const extension = (pi: ExtensionAPI) => {
 	// ── Tool: project-init ──────────────────────────────────────────────────
 
 	pi.registerTool({
-		name: "project-init",
-		label: "Project Init",
+		name: "context-init",
+		label: "Context Init",
 		description: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate).",
 		promptSnippet: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)",
 		parameters: Type.Object({
@@ -1323,7 +1323,7 @@ const extension = (pi: ExtensionAPI) => {
 	// ── Tool: project-accept-all ──────────────────────────────────────────────
 
 	pi.registerTool({
-		name: "project-accept-all",
+		name: "context-accept-all",
 		label: "Accept-All Conception",
 		description:
 			"Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Idempotent: never overwrites an existing config.",
@@ -1343,7 +1343,7 @@ const extension = (pi: ExtensionAPI) => {
 				if (err instanceof BootstrapNotFoundError) {
 					return {
 						details: undefined,
-						content: [{ type: "text", text: "substrate not initialized — run project-init first" }],
+						content: [{ type: "text", text: "substrate not initialized — run context-init first" }],
 					};
 				}
 				throw err;
@@ -1634,8 +1634,8 @@ const extension = (pi: ExtensionAPI) => {
 	// ── Tool: project-validate-relations ──────────────────────────────────
 
 	pi.registerTool({
-		name: "project-validate-relations",
-		label: "Project Validate Relations",
+		name: "context-validate-relations",
+		label: "Context Validate Relations",
 		description:
 			"Validate substrate relations.json edges against config-declared lenses + hierarchy + relation_types and the cross-block id index. Returns SubstrateValidationResult with status (clean/warnings/invalid) and per-issue diagnostics.",
 		promptSnippet: "Validate substrate relations against config + items",
@@ -1658,8 +1658,8 @@ const extension = (pi: ExtensionAPI) => {
 	// ── Tool: project-edges-for-lens ──────────────────────────────────────
 
 	pi.registerTool({
-		name: "project-edges-for-lens",
-		label: "Project Edges For Lens",
+		name: "context-edges-for-lens",
+		label: "Context Edges For Lens",
 		description:
 			"Materialize the Edge[] for a named lens — synthetic edges from derived_from_field for auto-derived lenses; authored edges filtered by relation_type for hand-curated lenses; unioned items from composition members for kind=composition lenses.",
 		promptSnippet: "Materialize edges for a named lens (auto-derived or hand-curated)",
@@ -1684,8 +1684,8 @@ const extension = (pi: ExtensionAPI) => {
 	// ── Tool: project-walk-descendants ────────────────────────────────────
 
 	pi.registerTool({
-		name: "project-walk-descendants",
-		label: "Project Walk Descendants",
+		name: "context-walk-descendants",
+		label: "Context Walk Descendants",
 		description:
 			"Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent).",
 		promptSnippet: "Walk closure-table descendants under a relation_type",
@@ -1717,7 +1717,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "walk-ancestors",
 		label: "Walk Ancestors",
 		description:
-			"Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to project-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).",
+			"Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to context-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).",
 		promptSnippet: "Walk closure-table ancestors under a relation_type",
 		parameters: Type.Object({
 			itemId: Type.String({ description: "Child item id whose ancestors are sought" }),
@@ -1756,7 +1756,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "find-references",
 		label: "Find References",
 		description:
-			"Find all closure-table edges incident on an item id (inbound, outbound, or both). Returns Edge[] preserving relation_type + ordinal per record — edge-level view, not the id-chain projection that walk-ancestors / project-walk-descendants emit.",
+			"Find all closure-table edges incident on an item id (inbound, outbound, or both). Returns Edge[] preserving relation_type + ordinal per record — edge-level view, not the id-chain projection that walk-ancestors / context-walk-descendants emit.",
 		promptSnippet: "Find closure-table edges incident on an item id",
 		parameters: Type.Object({
 			itemId: Type.String({ description: "Item id whose incident edges are sought" }),
@@ -1866,8 +1866,8 @@ const extension = (pi: ExtensionAPI) => {
 	});
 
 	pi.registerTool({
-		name: "project-roadmap-load",
-		label: "Project: load roadmap",
+		name: "context-roadmap-load",
+		label: "Context: load roadmap",
 		description:
 			"Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Per DEC-0012 phase ordering lives in relations.json with relation_type='phase_depends_on'.",
 		promptSnippet: "Load a roadmap by id",
@@ -1896,8 +1896,8 @@ const extension = (pi: ExtensionAPI) => {
 	});
 
 	pi.registerTool({
-		name: "project-roadmap-render",
-		label: "Project: render roadmap",
+		name: "context-roadmap-render",
+		label: "Context: render roadmap",
 		description:
 			"Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, milestone resolution, exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.",
 		promptSnippet: "Render a roadmap as markdown",
@@ -1927,8 +1927,8 @@ const extension = (pi: ExtensionAPI) => {
 	});
 
 	pi.registerTool({
-		name: "project-roadmap-validate",
-		label: "Project: validate roadmap(s)",
+		name: "context-roadmap-validate",
+		label: "Context: validate roadmap(s)",
 		description:
 			"Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_evidence_block_missing, roadmap_milestone_query_invalid, roadmap_status_unknown_value. Display strings flow through config.display_strings (pi-context divergence). Optional roadmapId filter restricts issue list to a single roadmap.",
 		promptSnippet: "Validate roadmaps",
@@ -1956,8 +1956,8 @@ const extension = (pi: ExtensionAPI) => {
 	});
 
 	pi.registerTool({
-		name: "project-roadmap-list",
-		label: "Project: list roadmaps",
+		name: "context-roadmap-list",
+		label: "Context: list roadmaps",
 		description:
 			"List every roadmap in <config.root>/roadmap.json with id, title, optional status, and phase count. Returns [] when roadmap.json absent (opt-in block; absence is the truthful answer).",
 		promptSnippet: "List roadmaps",
@@ -1984,7 +1984,7 @@ const extension = (pi: ExtensionAPI) => {
 		getCompletions?: (argPrefix: string) => Array<{ value: string; label: string; description?: string }> | null;
 	}
 
-	const PROJECT_SUBCOMMANDS: Record<string, SubcommandEntry> = {
+	const CONTEXT_SUBCOMMANDS: Record<string, SubcommandEntry> = {
 		init: {
 			description: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)",
 			handler: (args, ctx) => handleInit(args, ctx),
@@ -2031,7 +2031,7 @@ const extension = (pi: ExtensionAPI) => {
 			handler: (args, ctx) => {
 				const lensId = args.trim().split(/\s+/)[0];
 				if (!lensId) {
-					ctx.ui.notify("Usage: /project view <lensId>", "error");
+					ctx.ui.notify("Usage: /context view <lensId>", "error");
 					return;
 				}
 				const result = loadLensView(ctx.cwd, lensId);
@@ -2048,7 +2048,7 @@ const extension = (pi: ExtensionAPI) => {
 			handler: (args, ctx) => {
 				const lensId = args.trim().split(/\s+/)[0];
 				if (!lensId) {
-					ctx.ui.notify("Usage: /project lens-curate <lensId>", "error");
+					ctx.ui.notify("Usage: /context lens-curate <lensId>", "error");
 					return;
 				}
 				const result = loadLensView(ctx.cwd, lensId);
@@ -2062,7 +2062,7 @@ const extension = (pi: ExtensionAPI) => {
 				}
 				pi.sendMessage(
 					{
-						customType: "project-lens-curate",
+						customType: "context-lens-curate",
 						content: buildCurationSuggestions(result),
 						display: false,
 					},
@@ -2097,7 +2097,7 @@ const extension = (pi: ExtensionAPI) => {
 			handler: (args, ctx) => {
 				const roadmapId = args.trim().split(/\s+/)[0];
 				if (!roadmapId) {
-					ctx.ui.notify("Usage: /project roadmap-view <ROADMAP-id>", "error");
+					ctx.ui.notify("Usage: /context roadmap-view <ROADMAP-id>", "error");
 					return;
 				}
 				const view = loadRoadmap(ctx.cwd, roadmapId);
@@ -2166,8 +2166,8 @@ const extension = (pi: ExtensionAPI) => {
 		help: {
 			description: "Show available subcommands",
 			handler: (_args, ctx) => {
-				const lines = ["Usage: /project <subcommand> [args]", ""];
-				for (const [name, entry] of Object.entries(PROJECT_SUBCOMMANDS)) {
+				const lines = ["Usage: /context <subcommand> [args]", ""];
+				for (const [name, entry] of Object.entries(CONTEXT_SUBCOMMANDS)) {
 					lines.push(`  ${name.padEnd(12)} ${entry.description}`);
 				}
 				ctx.ui.notify(lines.join("\n"), "info");
@@ -2175,20 +2175,20 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	};
 
-	pi.registerCommand("project", {
-		description: "Project state management",
+	pi.registerCommand("context", {
+		description: "Context state management",
 		getArgumentCompletions: (prefix: string) => {
 			const tokens = prefix.split(/\s+/);
 			const partial = tokens[tokens.length - 1];
 
 			if (tokens.length <= 1) {
-				return Object.entries(PROJECT_SUBCOMMANDS)
+				return Object.entries(CONTEXT_SUBCOMMANDS)
 					.filter(([name]) => name.startsWith(partial))
 					.map(([name, entry]) => ({ value: name, label: name, description: entry.description }));
 			}
 
 			const subName = tokens[0];
-			const sub = PROJECT_SUBCOMMANDS[subName];
+			const sub = CONTEXT_SUBCOMMANDS[subName];
 			if (sub?.getCompletions) {
 				const argPrefix = tokens.slice(1).join(" ");
 				const items = sub.getCompletions(argPrefix);
@@ -2206,9 +2206,9 @@ const extension = (pi: ExtensionAPI) => {
 			const subcommand = spaceIdx === -1 ? trimmed || "status" : trimmed.slice(0, spaceIdx);
 			const rest = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1);
 
-			const entry = PROJECT_SUBCOMMANDS[subcommand];
+			const entry = CONTEXT_SUBCOMMANDS[subcommand];
 			if (!entry) {
-				const names = Object.keys(PROJECT_SUBCOMMANDS).join(", ");
+				const names = Object.keys(CONTEXT_SUBCOMMANDS).join(", ");
 				ctx.ui.notify(`Unknown subcommand: ${subcommand}. Available: ${names}`, "warning");
 				return;
 			}

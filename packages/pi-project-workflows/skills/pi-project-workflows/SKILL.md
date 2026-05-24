@@ -18,8 +18,8 @@ pi install npm:@davidorex/pi-project-workflows
 <extension name="@davidorex/pi-context">
 Schema-driven project state management for Pi
 
-**Tools:** `append-block-item`, `update-block-item`, `append-relation`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `project-status`, `project-validate`, `read-config`, `list-tools`, `read-samples-catalog`, `context-current-state`, `context-bootstrap-state`, `rename-canonical-id`, `amend-config`, `read-schema`, `write-schema`, `project-init`, `project-accept-all`, `filter-block-items`, `resolve-item-by-id`, `read-block-item`, `read-block-page`, `join-blocks`, `resolve-items-by-id`, `complete-task`, `project-validate-relations`, `project-edges-for-lens`, `project-walk-descendants`, `walk-ancestors`, `find-references`, `gather-execution-context`, `project-roadmap-load`, `project-roadmap-render`, `project-roadmap-validate`, `project-roadmap-list`
-**Commands:** `/project`
+**Tools:** `append-block-item`, `update-block-item`, `append-relation`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `read-block-dir`, `read-block`, `write-block`, `context-status`, `context-validate`, `read-config`, `list-tools`, `read-samples-catalog`, `context-current-state`, `context-bootstrap-state`, `rename-canonical-id`, `amend-config`, `read-schema`, `write-schema`, `context-init`, `context-accept-all`, `filter-block-items`, `resolve-item-by-id`, `read-block-item`, `read-block-page`, `join-blocks`, `resolve-items-by-id`, `complete-task`, `context-validate-relations`, `context-edges-for-lens`, `context-walk-descendants`, `walk-ancestors`, `find-references`, `gather-execution-context`, `context-roadmap-load`, `context-roadmap-render`, `context-roadmap-validate`, `context-roadmap-list`
+**Commands:** `/context`
 </extension>
 
 <extension name="@davidorex/pi-workflows">

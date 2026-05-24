@@ -103,8 +103,8 @@ describe("adoptConception (accept-all)", () => {
 		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-accept-init-"));
 		const { tools, api } = captureTools();
 		(extension as unknown as (pi: unknown) => void)(api);
-		const tool = tools.get("project-init");
-		assert.ok(tool, "project-init must be registered");
+		const tool = tools.get("context-init");
+		assert.ok(tool, "context-init must be registered");
 		await tool.execute("call-init", { contextDir: ".context" }, new AbortController().signal, () => {}, {
 			cwd: tmpRoot,
 		});

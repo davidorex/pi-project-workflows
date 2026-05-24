@@ -36,7 +36,7 @@ Update fields on an item in a project block array. Finds by predicate field matc
 </tool>
 
 <tool name="append-relation">
-Append a closure-table relation (edge: parent, child, relation_type, optional ordinal) to relations.json. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run project-validate after. Creates relations.json if absent.
+Append a closure-table relation (edge: parent, child, relation_type, optional ordinal) to relations.json. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run context-validate after. Creates relations.json if absent.
 
 *Create a relation/edge between two items (parent→child under a relation_type)*
 
@@ -134,14 +134,14 @@ Write or replace an entire project block with schema validation.
 | `data` | unknown | yes | Complete block data — must conform to block schema |
 </tool>
 
-<tool name="project-status">
-Get derived project state — source metrics, block summaries, planning lifecycle status.
+<tool name="context-status">
+Get derived context state — source metrics, block summaries, planning lifecycle status.
 
-*Get project state — source metrics, block summaries, planning lifecycle status*
+*Get context state — source metrics, block summaries, planning lifecycle status*
 
 </tool>
 
-<tool name="project-validate">
+<tool name="context-validate">
 Validate cross-block referential integrity — check that IDs referenced across blocks exist.
 
 *Validate cross-block referential integrity*
@@ -200,7 +200,7 @@ Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to 
 </tool>
 
 <tool name="amend-config">
-Scoped add / replace / remove of ONE entry in ONE config.json registry (block_kinds, relation_types, lenses, layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, hierarchy). The whole resulting config is AJV-validated (SHAPE) and op-correctness is enforced (add ⇒ key absent, replace/remove ⇒ key present). Cross-registry referential integrity (removing a still-referenced relation_type / lens / layer / block_kind) is NOT checked here — run project-validate after. dryRun previews without writing.
+Scoped add / replace / remove of ONE entry in ONE config.json registry (block_kinds, relation_types, lenses, layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, hierarchy). The whole resulting config is AJV-validated (SHAPE) and op-correctness is enforced (add ⇒ key absent, replace/remove ⇒ key present). Cross-registry referential integrity (removing a still-referenced relation_type / lens / layer / block_kind) is NOT checked here — run context-validate after. dryRun previews without writing.
 
 *Add/replace/remove one entry in a config.json registry (vocabulary, lenses, invariants, status_buckets)*
 
@@ -236,7 +236,7 @@ Create or replace a substrate block-kind JSON Schema. operation 'create' require
 | `dryRun` | boolean | no | Meta-validate without writing |
 </tool>
 
-<tool name="project-init">
+<tool name="context-init">
 Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate).
 
 *Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)*
@@ -246,7 +246,7 @@ Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + in
 | `contextDir` | string | yes | Substrate dir name (e.g. .project). Required per DEC-0015 — no default. |
 </tool>
 
-<tool name="project-accept-all">
+<tool name="context-accept-all">
 Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Idempotent: never overwrites an existing config.
 
 *Adopt the canonical conception as config (accept-all)*
@@ -338,14 +338,14 @@ Complete a task with verification gate — requires a passing verification entry
 | `verificationId` | string | yes | Verification entry ID (must target this task with status 'passed') |
 </tool>
 
-<tool name="project-validate-relations">
+<tool name="context-validate-relations">
 Validate substrate relations.json edges against config-declared lenses + hierarchy + relation_types and the cross-block id index. Returns SubstrateValidationResult with status (clean/warnings/invalid) and per-issue diagnostics.
 
 *Validate substrate relations against config + items*
 
 </tool>
 
-<tool name="project-edges-for-lens">
+<tool name="context-edges-for-lens">
 Materialize the Edge[] for a named lens — synthetic edges from derived_from_field for auto-derived lenses; authored edges filtered by relation_type for hand-curated lenses; unioned items from composition members for kind=composition lenses.
 
 *Materialize edges for a named lens (auto-derived or hand-curated)*
@@ -355,7 +355,7 @@ Materialize the Edge[] for a named lens — synthetic edges from derived_from_fi
 | `lensId` | string | yes | Lens id from config.lenses[].id |
 </tool>
 
-<tool name="project-walk-descendants">
+<tool name="context-walk-descendants">
 Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent).
 
 *Walk closure-table descendants under a relation_type*
@@ -367,7 +367,7 @@ Walk closure-table descendants of a parent id under a given relation_type. Retur
 </tool>
 
 <tool name="walk-ancestors">
-Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to project-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).
+Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to context-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).
 
 *Walk closure-table ancestors under a relation_type*
 
@@ -378,7 +378,7 @@ Walk closure-table ancestors of an item id under a given relation_type — rever
 </tool>
 
 <tool name="find-references">
-Find all closure-table edges incident on an item id (inbound, outbound, or both). Returns Edge[] preserving relation_type + ordinal per record — edge-level view, not the id-chain projection that walk-ancestors / project-walk-descendants emit.
+Find all closure-table edges incident on an item id (inbound, outbound, or both). Returns Edge[] preserving relation_type + ordinal per record — edge-level view, not the id-chain projection that walk-ancestors / context-walk-descendants emit.
 
 *Find closure-table edges incident on an item id*
 
@@ -400,7 +400,7 @@ Compose a ContextBundle for a work-unit by reading its context-contract (by unit
 | `maxDepth` | integer | no | Override per-relation-type max_depth via Math.min against each spec.max_depth |
 </tool>
 
-<tool name="project-roadmap-load">
+<tool name="context-roadmap-load">
 Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Per DEC-0012 phase ordering lives in relations.json with relation_type='phase_depends_on'.
 
 *Load a roadmap by id*
@@ -410,7 +410,7 @@ Load a roadmap by id and return the materialized RoadmapView (phases, lens-views
 | `roadmapId` | string | yes | ROADMAP-NNN id from <config.root>/roadmap.json |
 </tool>
 
-<tool name="project-roadmap-render">
+<tool name="context-roadmap-render">
 Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, milestone resolution, exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.
 
 *Render a roadmap as markdown*
@@ -420,7 +420,7 @@ Render a roadmap by id as pure-textual markdown — phase order list, per-phase 
 | `roadmapId` | string | yes | ROADMAP-NNN id from <config.root>/roadmap.json |
 </tool>
 
-<tool name="project-roadmap-validate">
+<tool name="context-roadmap-validate">
 Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_evidence_block_missing, roadmap_milestone_query_invalid, roadmap_status_unknown_value. Display strings flow through config.display_strings (pi-context divergence). Optional roadmapId filter restricts issue list to a single roadmap.
 
 *Validate roadmaps*
@@ -430,7 +430,7 @@ Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Code
 | `roadmapId` | string | no | Filter to issues matching this roadmap_id (omit for full-project validation) |
 </tool>
 
-<tool name="project-roadmap-list">
+<tool name="context-roadmap-list">
 List every roadmap in <config.root>/roadmap.json with id, title, optional status, and phase count. Returns [] when roadmap.json absent (opt-in block; absence is the truthful answer).
 
 *List roadmaps*
@@ -440,8 +440,8 @@ List every roadmap in <config.root>/roadmap.json with id, title, optional status
 </tools_reference>
 
 <commands_reference>
-<command name="/project">
-Project state management
+<command name="/context">
+Context state management
 
 Subcommands: `init`, `install`, `accept-all`, `view`, `lens-curate`, `roadmap-list`, `roadmap-view`, `roadmap-validate`, `status`, `add-work`, `validate`, `help`
 </command>

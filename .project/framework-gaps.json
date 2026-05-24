@@ -3676,6 +3676,52 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-24T00:00:00Z",
       "id": "FGAP-099"
+    },
+    {
+      "title": "Canonical credentialed verification protocol is stale post-FGAP-074 — needs a successor before the next arc-completion release",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "docs/reports/pi-internal-verification-protocol-2026-05-02.md is the canonical step-12 (CLAUDE.md completion-sequence) credentialed pre-publish verification gate for arc-completion releases. It was authored for the v0.24.x substrate and cannot be executed verbatim against the current surface: (1) it invokes removed project-* tool names (project-status/project-validate/project-init) renamed to context-* by FGAP-074; (2) it dispatches via a removed bare `workflow` tool — the current dispatch tool is `workflow-execute`; (3) it gates credentialed sections on OPENROUTER_API_KEY, contradicting CLAUDE.md step-12's directive that the protocol uses pi's auth.json directly (no separate env-var gate); (4) it assumes `gtimeout` is on PATH for per-call timeouts (absent on the current machine — neither gtimeout nor timeout present); (5) it asserts on old substrate fixtures (DEC-0001..0005 exact set, REVIEW-001/spec-reviews findings counts) that the pi-context-rebuild re-derivation has moved past. Per the protocol's own 'or successor' clause, a successor is now required. For the v0.26.0 release a SCOPED credentialed smoke was run in lieu (read/derive/validate + write->read->remove round-trip through the renamed context-* and block tools, with real tool_execution events asserted and byte-identical baseline restore verified); the deferred portion is the full agent contextBlocks injection + credentialed agent-dispatch tier.",
+      "evidence": [
+        {
+          "file": "docs/reports/pi-internal-verification-protocol-2026-05-02.md",
+          "lines": "37,50",
+          "reference": "Invokes project-status / project-validate / project-init — removed by FGAP-074 (now context-status/context-validate; init folded toward /context start per DEC-0042)."
+        },
+        {
+          "file": "docs/reports/pi-internal-verification-protocol-2026-05-02.md",
+          "lines": "213",
+          "reference": "Dispatches agents via 'call the workflow tool with workflow X' — no bare `workflow` tool exists on the current surface; the dispatch tool is `workflow-execute`."
+        },
+        {
+          "file": "docs/reports/pi-internal-verification-protocol-2026-05-02.md",
+          "lines": "24,58",
+          "reference": "Gates credentialed sections on OPENROUTER_API_KEY env var; CLAUDE.md step-12 specifies pi's auth.json directly (no env-var gate). Credential source observed at ~/.pi/agent/auth.json."
+        },
+        {
+          "file": "docs/reports/pi-internal-verification-protocol-2026-05-02.md",
+          "lines": "58,69,117",
+          "reference": "Every dispatch wrapped in `gtimeout NN pi -p ...`; gtimeout (and GNU timeout) are not installed on the current machine, so the commands fail with exit 127 as written."
+        },
+        {
+          "file": "docs/reports/pi-internal-verification-protocol-2026-05-02.md",
+          "lines": "41,42",
+          "reference": "Required-state assumptions assert a specific old substrate (DEC-0001..DEC-0005 as the full set; REVIEW-001 findings count) superseded by the pi-context-rebuild re-derivation."
+        }
+      ],
+      "impact": "The mandated step-12 pre-publish credentialed gate cannot be run verbatim for arc-completion releases, so each such release must improvise an ad-hoc scoped smoke (as v0.26.0 did) instead of executing a maintained, comprehensive, repeatable protocol. Without a successor, credentialed verification coverage silently narrows release over release, and the deferred agent-dispatch/contextBlocks injection tier (the deepest end-to-end credentialed path) goes unexercised at release time.",
+      "canonical_vocabulary": "verification-protocol-drift, credentialed-smoke-test, release-gate-staleness, test-surface-rename-debt",
+      "proposed_resolution": "Author a successor protocol (e.g. docs/reports/pi-internal-verification-protocol-<successor-date>.md) that: uses context-* tool names + workflow-execute; sources credentials from pi's auth.json (no OPENROUTER_API_KEY gate); drops the gtimeout dependency (rely on the harness/Bash timeout); asserts against current .project substrate (or a disposable temp substrate it bootstraps via /context start); and includes the full agent contextBlocks injection + credentialed agent-dispatch tier deferred from the v0.26.0 scoped smoke — authoring the required fixtures under .project/agents/*.agent.yaml + .workflows/*.workflow.yaml (NEVER .pi/, per the no-touch rule; agent loader project tier is .project/agents/, workflow discovery is .workflows/), dispatching credentialed via workflow-execute, and asserting the <context_block role=\"data\"> XML boundary + injected item content reach the model. Pin a fast model + restrict --tools per call (F-006 cost discipline). Use the v0.26.0 scoped-smoke transcript (docs/reports/v0.26.0-step12-scoped-credentialed-smoke-2026-05-25.md) as the tier-1 starting point.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0018"
+      ],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25T00:00:00Z",
+      "id": "FGAP-100"
     }
   ]
 }

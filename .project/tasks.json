@@ -1069,7 +1069,7 @@
     },
     {
       "description": "FGAP-074 C7 — remove aliases + bare-string sweep (closes FGAP-074). Drop the dual package.json exports -> single ./context-*; drop tsconfig legacy path mappings; remove all @deprecated identifier aliases; scoped + bare-string sweep of residual in-scope project naming in comments/JSDoc/temp-dir prefixes/test-fixture strings. Green proves zero legacy-name consumers remain.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/package.json",
         "packages/pi-context/tsconfig.json"

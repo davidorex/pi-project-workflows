@@ -162,7 +162,7 @@ See references/bundled-resources.md for full inventory.
 </agent_input>
 
 <agent_input name="handoff-writer">
-- `project_state` [required] — Current project state (from projectState() or /project status — includes phases, blocks, gaps, decisions, recent commits)
+- `project_state` [required] — Current project state (from contextState() or /context status — includes phases, blocks, gaps, decisions, recent commits)
 - `path` string [required] — Root path of the project
 </agent_input>
 

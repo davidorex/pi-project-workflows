@@ -459,7 +459,7 @@ See references/bundled-resources.md for full inventory.
 
 <installable_blocks>
 
-Names valid for the `installed_blocks` array in `.project/config.json`. Install with `/project install <block>`.
+Names valid for the `installed_blocks` array in `.project/config.json`. Install with `/context install <block>`.
 
 | Block | Source File |
 |-------|-------------|
@@ -483,7 +483,7 @@ Names valid for the `installed_blocks` array in `.project/config.json`. Install 
 
 <installable_schemas>
 
-Names valid for the `installed_schemas` array in `.project/config.json`. Schemas back block validation; install with `/project install <schema>`.
+Names valid for the `installed_schemas` array in `.project/config.json`. Schemas back block validation; install with `/context install <schema>`.
 
 | Schema | Source File |
 |--------|-------------|
@@ -565,33 +565,33 @@ pi-context manages structured project state in `.project/` — a directory of JS
 </objective>
 
 <block_files>
-Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/project accept-all`; the framework ships no default (DEC-0015). block-api routes through `projectRoot(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
+Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/context accept-all`; the framework ships no default (DEC-0015). block-api routes through `resolveContextDir(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
 </block_files>
 
 <schema_validation>
 Every block write validates against `<root>/schemas/<blockname>.schema.json`. If the schema file doesn't exist, writes proceed without validation. Validation errors include the specific JSON Schema violations.
 </schema_validation>
 
-<project_init>
-`/project init <dir>` creates the substrate skeleton: the `.pi-context.json` bootstrap pointer (declaring the substrate-dir name per DEC-0015) plus the substrate root and its `schemas/` directory. Nothing is imposed — no `config.json`, no schemas, and no starter blocks are written (DEC-0011 ship-no-defaults). Idempotent: re-running preserves existing dirs. Populate the substrate next with `/project accept-all` (adopt the canonical conception) followed by `/project install`.
-</project_init>
+<context_init>
+`/context init <dir>` creates the substrate skeleton: the `.pi-context.json` bootstrap pointer (declaring the substrate-dir name per DEC-0015) plus the substrate root and its `schemas/` directory. Nothing is imposed — no `config.json`, no schemas, and no starter blocks are written (DEC-0011 ship-no-defaults). Idempotent: re-running preserves existing dirs. Populate the substrate next with `/context accept-all` (adopt the canonical conception) followed by `/context install`.
+</context_init>
 
-<project_accept_all>
-`/project accept-all` adopts the package's canonical packaged conception (`samples/conception.json`) as the substrate's `config.json` — the full vocabulary (`block_kinds`, `relation_types`, `lenses`, `invariants`) plus the `installed_schemas` / `installed_blocks` manifest — with `root` set to the actual substrate dir. It writes `config.json` only (run `/project install` after to materialize the schemas + starter blocks) and is idempotent: it never overwrites an existing `config.json` (offer, don't impose). This is the accept-all path; per-entry step-through curation is a separate surface.
-</project_accept_all>
+<context_accept_all>
+`/context accept-all` adopts the package's canonical packaged conception (`samples/conception.json`) as the substrate's `config.json` — the full vocabulary (`block_kinds`, `relation_types`, `lenses`, `invariants`) plus the `installed_schemas` / `installed_blocks` manifest — with `root` set to the actual substrate dir. It writes `config.json` only (run `/context install` after to materialize the schemas + starter blocks) and is idempotent: it never overwrites an existing `config.json` (offer, don't impose). This is the accept-all path; per-entry step-through curation is a separate surface.
+</context_accept_all>
 
-<project_install>
-`/project install` reconciles the substrate against the `installed_schemas` and `installed_blocks` lists declared in `config.json`. For each declared name it copies the matching asset from the package-shipped samples catalog (`samples/schemas/` for schemas, `samples/blocks/` for starter blocks) into the substrate. Default behavior is skip-if-exists (preserves user edits); pass `--update` to overwrite and report the asset as `updated`. Sources missing from the catalog are reported as `notFound`. Empty install lists are not an error — the result is a clean no-op message instructing the user to edit `config.json`.
+<context_install>
+`/context install` reconciles the substrate against the `installed_schemas` and `installed_blocks` lists declared in `config.json`. For each declared name it copies the matching asset from the package-shipped samples catalog (`samples/schemas/` for schemas, `samples/blocks/` for starter blocks) into the substrate. Default behavior is skip-if-exists (preserves user edits); pass `--update` to overwrite and report the asset as `updated`. Sources missing from the catalog are reported as `notFound`. Empty install lists are not an error — the result is a clean no-op message instructing the user to edit `config.json`.
 
-The installable catalog IS the packaged conception (`samples/conception.json`): its `block_kinds` enumerate the available kinds, each carrying its schema (`samples/schemas/`) and starter block (`samples/blocks/`). The generated installable-catalog table below lists the authoritative names — declare any subset in `installed_*` and run `/project install`, or take the whole conception via `/project accept-all`.
-</project_install>
+The installable catalog IS the packaged conception (`samples/conception.json`): its `block_kinds` enumerate the available kinds, each carrying its schema (`samples/schemas/`) and starter block (`samples/blocks/`). The generated installable-catalog table below lists the authoritative names — declare any subset in `installed_*` and run `/context install`, or take the whole conception via `/context accept-all`.
+</context_install>
 
 <substrate_config>
-`.project/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — closing the GitHub #3 surface where downstream consumers had to assume `.project/`. `naming` aliases canonical block ids to display names (used by `/project view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/project install`.
+`.project/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — closing the GitHub #3 surface where downstream consumers had to assume `.project/`. `naming` aliases canonical block ids to display names (used by `/context view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/context install`.
 
-`config.json` and `relations.json` are exempt from `root` redirection — they always live at `.project/` because they are the substrate that defines `root`. All other state lives under `<config.root>/...` per `projectRoot(cwd)`. The package ships their schemas in `schemas/` (config.schema.json, relations.schema.json) and resolves them via three-tier search: project override > user override > package-shipped.
+`config.json` and `relations.json` are exempt from `root` redirection — they always live at `.project/` because they are the substrate that defines `root`. All other state lives under `<config.root>/...` per `resolveContextDir(cwd)`. The package ships their schemas in `schemas/` (config.schema.json, relations.schema.json) and resolves them via three-tier search: project override > user override > package-shipped.
 
-The `getProjectContext(cwd)` SDK returns an mtime-keyed cached snapshot of `{ config, relations, configMtime, relationsMtime }` for one cwd. Consumers must not mutate.
+The `loadContext(cwd)` SDK returns an mtime-keyed cached snapshot of `{ config, relations, configMtime, relationsMtime }` for one cwd. Consumers must not mutate.
 </substrate_config>
 
 <lens_views>
@@ -601,21 +601,21 @@ Edges live in `.project/relations.json` as a closure table — each row is `{ pa
 
 The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synthetic edges (when `derived_from_field` is set) or filtered authored edges (otherwise). `groupByLens(items, lens, lensEdges)` produces a `Map<binName, ItemRecord[]>`. `walkDescendants(parentId, relationType, edges)` traverses the closure table from any parent.
 
-`/project view <lensId>` loads the lens via `loadLensView(cwd, lensId)`, runs `groupByLens`, and renders the result as markdown headings + bullet lines (id + status + title) into the conversation via `renderLensView`. `lens.render_uncategorized: false` omits the uncategorized bucket.
+`/context view <lensId>` loads the lens via `loadLensView(cwd, lensId)`, runs `groupByLens`, and renders the result as markdown headings + bullet lines (id + status + title) into the conversation via `renderLensView`. `lens.render_uncategorized: false` omits the uncategorized bucket.
 </lens_views>
 
-<project_lens_curate>
-`/project lens-curate <lensId>` walks items in the lens's target block that have no edge in any declared bin and surfaces bin-assignment suggestions (would-be `relations.json` edge appends) as a follow-up turn. The LLM reads the suggestions and persists the chosen edges via `append-block-item` against `relations.json`. The command itself does not write — curation is a follow-up-turn pattern so the model decides which suggestions to enact.
-</project_lens_curate>
+<context_lens_curate>
+`/context lens-curate <lensId>` walks items in the lens's target block that have no edge in any declared bin and surfaces bin-assignment suggestions (would-be `relations.json` edge appends) as a follow-up turn. The LLM reads the suggestions and persists the chosen edges via `append-block-item` against `relations.json`. The command itself does not write — curation is a follow-up-turn pattern so the model decides which suggestions to enact.
+</context_lens_curate>
 
-<project_view>
-`/project view <lensId>` renders a configured lens as markdown into the conversation. Bins become headings, items become bullet lines (id + status + title where present). `naming` aliases from config.json are honored for the target block name. Errors (missing config, unknown lens, unreadable target block, no array property in target) surface via `ctx.ui.notify` with severity `error`.
-</project_view>
+<context_view>
+`/context view <lensId>` renders a configured lens as markdown into the conversation. Bins become headings, items become bullet lines (id + status + title where present). `naming` aliases from config.json are honored for the target block name. Errors (missing config, unknown lens, unreadable target block, no array property in target) surface via `ctx.ui.notify` with severity `error`.
+</context_view>
 
 <substrate_validation>
-`validateRelations(cwd)` (exposed as the `project-validate-relations` tool) checks the closure-table edges in `relations.json` against the config + per-block item snapshots. Diagnostics codes: `edge_unknown_relation_type`, `edge_parent_not_in_bins`, `edge_unresolved_parent`, `edge_unresolved_child`, `edge_parent_wrong_block`, `edge_child_wrong_block`, `edge_cycle_detected`. Returns `{ status: "clean" | "warnings" | "invalid", issues[] }` where each issue carries the offending edge or cycle path.
+`validateRelations(cwd)` (exposed as the `context-validate-relations` tool) checks the closure-table edges in `relations.json` against the config + per-block item snapshots. Diagnostics codes: `edge_unknown_relation_type`, `edge_parent_not_in_bins`, `edge_unresolved_parent`, `edge_unresolved_child`, `edge_parent_wrong_block`, `edge_child_wrong_block`, `edge_cycle_detected`. Returns `{ status: "clean" | "warnings" | "invalid", issues[] }` where each issue carries the offending edge or cycle path.
 
-Two derived substrate tools complement validation: `project-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `project-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
+Two derived substrate tools complement validation: `context-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `context-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
 </substrate_validation>
 
 <block_item_reads>
@@ -623,8 +623,8 @@ Item-level reads complement whole-block `read-block` (which is all-or-nothing an
 `join-blocks` — one-call cross-block join, EDGE mode (relations.json relation_type, leftEndpoint parent|child) or FIELD mode (shared field value), optional left pre-filter; returns {left, right[]} pairs; replaces N+1 read+resolve.
 </block_item_reads>
 
-<project_status>
-`/project status` derives project state dynamically from the filesystem:
+<context_status>
+`/context status` derives project state dynamically from the filesystem:
 - Source file count and line count (`.ts` files excluding tests)
 - Test count and test file count
 - Schema count, block count, phase count
@@ -636,20 +636,20 @@ Item-level reads complement whole-block `read-block` (which is all-or-nothing an
 - Handoff presence — whether handoff.json exists
 - Recent git commits
 - Current phase detection
-</project_status>
+</context_status>
 
-<project_add_work>
-`/project add-work` discovers appendable blocks (blocks with array schemas), reads their schemas, and sends a structured instruction to the LLM to extract items from the conversation into the typed blocks. This is a follow-up message that triggers the LLM to use the `append-block-item` tool.
-</project_add_work>
+<context_add_work>
+`/context add-work` discovers appendable blocks (blocks with array schemas), reads their schemas, and sends a structured instruction to the LLM to extract items from the conversation into the typed blocks. This is a follow-up message that triggers the LLM to use the `append-block-item` tool.
+</context_add_work>
 
 <duplicate_detection>
 `append-block-item` checks for duplicate items by `id` field before appending. If an item with the same `id` already exists in the target array, it returns a message instead of appending.
 </duplicate_detection>
 
-<project_validate>
+<context_validate>
 Two separate validators address two concerns:
 
-`/project validate` (the `project-validate` tool) checks cross-block referential integrity:
+`/context validate` (the `context-validate` tool) checks cross-block referential integrity:
 - task.phase references a valid phase
 - task.depends_on references valid task IDs
 - decision.phase references a valid phase
@@ -661,24 +661,24 @@ Two separate validators address two concerns:
 
 Returns errors (broken dependency references) and warnings (unresolved cross-references).
 
-The `project-validate-relations` tool (see `<substrate_validation>`) validates closure-table edges in `relations.json` — a separate concern from cross-block ID resolution.
-</project_validate>
+The `context-validate-relations` tool (see `<substrate_validation>`) validates closure-table edges in `relations.json` — a separate concern from cross-block ID resolution.
+</context_validate>
 
 <update_check>
 On `session_start`, checks npm registry for newer versions of `@davidorex/pi-project-workflows` and notifies via UI if an update is available. Non-blocking — failures are silently ignored.
 </update_check>
 
 <success_criteria>
-- `.project/`, `.project/schemas/`, `.project/phases/`, and `.project/config.json` exist after `/project init`
-- `installed_schemas` / `installed_blocks` declared in `config.json` are reified by `/project install`; `--update` overwrites
+- `.project/`, `.project/schemas/`, `.project/phases/`, and `.project/config.json` exist after `/context init`
+- `installed_schemas` / `installed_blocks` declared in `config.json` are reified by `/context install`; `--update` overwrites
 - Block writes validate against schemas — invalid data rejected with specific error
-- `/project status` returns current derived state without errors
-- `/project validate` returns no errors for well-formed cross-block references
-- `project-validate-relations` returns no errors for a well-formed `relations.json`
-- `/project view <lensId>` renders the configured projection; `/project lens-curate <lensId>` surfaces suggestions for uncategorized items
+- `/context status` returns current derived state without errors
+- `/context validate` returns no errors for well-formed cross-block references
+- `context-validate-relations` returns no errors for a well-formed `relations.json`
+- `/context view <lensId>` renders the configured projection; `/context lens-curate <lensId>` surfaces suggestions for uncategorized items
 - `append-block-item` rejects duplicate IDs
 - Schema customizations (field additions, enum changes) take effect on next write
-- A relocated `config.root` reaches every read/write because all path construction routes through `projectRoot(cwd)`
+- A relocated `config.root` reaches every read/write because all path construction routes through `resolveContextDir(cwd)`
 </success_criteria>
 
 *Generated from source by `scripts/generate-skills.js` — do not edit by hand.*

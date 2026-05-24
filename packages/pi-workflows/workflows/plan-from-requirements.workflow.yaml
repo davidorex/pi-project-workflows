@@ -44,5 +44,5 @@ completion:
   template: |
     Plan created from requirements. Tasks written to .project/tasks.json.
 
-    Use `/project status` to see the phase and task breakdown.
-    Use `/project validate` to check cross-block references.
+    Use `/context status` to see the phase and task breakdown.
+    Use `/context validate` to check cross-block references.

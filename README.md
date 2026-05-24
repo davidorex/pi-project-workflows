@@ -36,13 +36,13 @@ pi install npm:@davidorex/pi-context
 pi install npm:@davidorex/pi-workflows
 
 # Initialize project structure
-/project init <dir>  # bootstrap pointer + substrate/schemas dirs only (no config, no schemas, no blocks)
-/project accept-all  # adopt the packaged conception (samples/conception.json) as config.json
-/project install     # reconciles the substrate against installed_schemas + installed_blocks in config.json
+/context init <dir>  # bootstrap pointer + substrate/schemas dirs only (no config, no schemas, no blocks)
+/context accept-all  # adopt the packaged conception (samples/conception.json) as config.json
+/context install     # reconciles the substrate against installed_schemas + installed_blocks in config.json
 /workflow init       # creates .workflows/ for run state
 ```
 
-Block kinds reach the substrate only by declaring their names in `config.json`'s `installed_*` arrays (via `/project accept-all` or by hand) and running `/project install`, which copies them from the package-shipped samples catalog (`samples/`). The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
+Block kinds reach the substrate only by declaring their names in `config.json`'s `installed_*` arrays (via `/context accept-all` or by hand) and running `/context install`, which copies them from the package-shipped samples catalog (`samples/`). The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
 
 ## Directory Ownership
 
@@ -50,33 +50,33 @@ After initialization, three directories coexist in a project:
 
 ```
 .pi/            — Pi platform (agents, skills, settings). Managed by Pi itself.
-.project/       — pi-context. Created by /project init (skeleton-only).
+.project/       — pi-context. Created by /context init (skeleton-only).
   config.json   — substrate bootstrap: root, naming, hierarchy, lenses, installed_*
   relations.json — closure-table edges (created on first authored edge)
-  schemas/      — JSON Schema files (empty until /project install reifies declared names)
+  schemas/      — JSON Schema files (empty until /context install reifies declared names)
   phases/       — phase specification files (empty until populated)
-  <name>.json   — block data files (each a /project install target or user-authored)
+  <name>.json   — block data files (each a /context install target or user-authored)
 .workflows/     — pi-workflows (run state). Created by /workflow init.
   runs/         — workflow execution state, session logs, outputs
 ```
 
-`.pi/` is Pi's territory — neither extension writes to it. `.project/` is tracked in git (substrate, schemas, and blocks are source). `.workflows/` is gitignored (runtime state). `config.json` and `relations.json` always live at `.project/` (they define `root`); everything else lives under `<config.root>/...` and a relocated root reaches every read/write because all path construction routes through `projectRoot(cwd)`.
+`.pi/` is Pi's territory — neither extension writes to it. `.project/` is tracked in git (substrate, schemas, and blocks are source). `.workflows/` is gitignored (runtime state). `config.json` and `relations.json` always live at `.project/` (they define `root`); everything else lives under `<config.root>/...` and a relocated root reaches every read/write because all path construction routes through `resolveContextDir(cwd)`.
 
 ## What Each Extension Provides
 
 ### pi-context
 
-**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `read-block-dir`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `resolve-item-by-id`, `project-status`, `project-validate`, `project-init`, `project-validate-relations`, `project-edges-for-lens`, `project-walk-descendants`, `complete-task` — block CRUD (top-level + nested array operations) with automatic schema validation, plus cross-block ID resolution and substrate (closure-table relations + lens) tooling
+**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `read-block-dir`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `resolve-item-by-id`, `context-status`, `context-validate`, `context-init`, `context-validate-relations`, `context-edges-for-lens`, `context-walk-descendants`, `complete-task` — block CRUD (top-level + nested array operations) with automatic schema validation, plus cross-block ID resolution and substrate (closure-table relations + lens) tooling
 
 **Commands:**
-- `/project init` — write the substrate skeleton + minimal `config.json` bootstrap (no schemas, no starter blocks)
-- `/project install [--update]` — reconcile `.project/` against `installed_schemas` / `installed_blocks` declared in `config.json` from the package registry
-- `/project view <lensId>` — render a configured lens (groupByLens projection) into the conversation
-- `/project lens-curate <lensId>` — surface bin-assignment suggestions for uncategorized items as a follow-up turn
-- `/project status` — derived project state (source metrics, test counts, block summaries, git state)
-- `/project add-work` — extract structured items from conversation into typed blocks
-- `/project validate` — cross-block referential integrity checks
-- `/project help` — show available subcommands
+- `/context init` — write the substrate skeleton + minimal `config.json` bootstrap (no schemas, no starter blocks)
+- `/context install [--update]` — reconcile `.project/` against `installed_schemas` / `installed_blocks` declared in `config.json` from the package registry
+- `/context view <lensId>` — render a configured lens (groupByLens projection) into the conversation
+- `/context lens-curate <lensId>` — surface bin-assignment suggestions for uncategorized items as a follow-up turn
+- `/context status` — derived project state (source metrics, test counts, block summaries, git state)
+- `/context add-work` — extract structured items from conversation into typed blocks
+- `/context validate` — cross-block referential integrity checks
+- `/context help` — show available subcommands
 
 **Key concept:** Users define block types by adding JSON Schemas to `.project/schemas/`. Any `.project/*.json` file with a matching schema gets automatic write-time validation. No code changes needed to add new block types.
 
@@ -141,8 +141,8 @@ npm run clean
 
 # Derive project state
 npx tsx -e "
-  import { projectState } from './packages/pi-context/src/project-sdk.js';
-  console.log(JSON.stringify(projectState('.'), null, 2));
+  import { contextState } from './packages/pi-context/src/context-sdk.js';
+  console.log(JSON.stringify(contextState('.'), null, 2));
 "
 ```
 
@@ -173,14 +173,14 @@ npx tsx -e "
 When working in this repository:
 
 - **Read package READMEs** for detailed API docs: [pi-context](packages/pi-context/README.md), [pi-workflows](packages/pi-workflows/README.md), [pi-behavior-monitors](packages/pi-behavior-monitors/README.md)
-- **`packages/pi-context/src/project-sdk.ts`** — derived state, block discovery, the `projectState()` function
+- **`packages/pi-context/src/context-sdk.ts`** — derived state, block discovery, the `contextState()` function
 - **`packages/pi-context/src/block-api.ts`** — block CRUD with schema validation
 - **`packages/pi-workflows/src/workflow-sdk.ts`** — vocabulary, discovery, introspection for workflows
 - **`packages/pi-workflows/src/workflow-spec.ts`** — YAML parsing and `STEP_TYPES` registry
 - **`packages/pi-workflows/src/expression.ts`** — expression evaluator and filter registry
 - **`packages/pi-behavior-monitors/index.ts`** — single-file extension: monitors, classification, steering, `invokeMonitor()` export
 - **`.project/`** contains this project's own block data (issues, decisions, architecture, inventory) — useful for understanding the extension's development state
-- Use `/project status` to see derived metrics. Use `/workflow list` to see available workflows.
+- Use `/context status` to see derived metrics. Use `/workflow list` to see available workflows.
 
 ## Release
 

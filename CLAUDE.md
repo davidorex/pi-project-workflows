@@ -6,7 +6,7 @@ Monorepo: npm packages under `packages/*` with lockstep versioning. Inspect `pac
 
 | Package | Purpose |
 |---------|---------|
-| `@davidorex/pi-context` | Substrate: block CRUD with AJV validation + DispatchContext attestation, schema-write surface, closure-table relations + lens primitives, config-driven substrate-dir resolution (`resolveContextDir`), query primitives (filter / resolve-bulk / walkDescendants / walkAncestors / findReferences), PM-lens module, `/project` command + tool surface |
+| `@davidorex/pi-context` | Substrate: block CRUD with AJV validation + DispatchContext attestation, schema-write surface, closure-table relations + lens primitives, config-driven substrate-dir resolution (`resolveContextDir`), query primitives (filter / resolve-bulk / walkDescendants / walkAncestors / findReferences), PM-lens module, `/context` command + tool surface |
 | `@davidorex/pi-jit-agents` | Library (not extension). Agent spec compilation + in-process dispatch; the four boundary surfaces (load, compile, execute, introspect) per `docs/planning/jit-agents-spec.md` |
 | `@davidorex/pi-workflows` | Workflow orchestration, agent dispatch, `/workflow` command, Nunjucks template + macros for block injection |
 | `@davidorex/pi-behavior-monitors` | Autonomous monitors, classification (via phantom-tool pattern), steering |
@@ -25,7 +25,7 @@ npm run release:patch|minor|major   # lockstep bump + commit + tag
 
 Derive project state at any time:
 ```bash
-npx tsx -e "import{projectState}from'./packages/pi-context/src/project-sdk.js';console.log(JSON.stringify(projectState('.'),null,2))"
+npx tsx -e "import{contextState}from'./packages/pi-context/src/context-sdk.js';console.log(JSON.stringify(contextState('.'),null,2))"
 ```
 
 Project substrate to interactive HTML view (Pattern B build-step generation; static-baked output is self-contained + offline-portable + git-trackable):
@@ -46,7 +46,7 @@ Re-run after any `.project/*.json` change to refresh the rendered view.
 - GitHub Actions CI runs check + build + test on Node 22/23 for push/PR to main
 - SKILL.md is generated build artifact (`npm run skills`) — do not edit by hand. Edit `skill-narrative.md` instead; uses YAML frontmatter + XML-tagged sections (no markdown headings).
 - Lockstep versioning via `npm run release:*` invoking `scripts/bump-versions.js` (direct JSON read/write per package.json; never `npm version -ws` directly — fails 0.x minor/major bumps)
-- **Orchestrator scripts dual-surface** (DEC-0019/0020): `scripts/orchestrator/*.ts` are Claude Code-side ergonomics wrappers over the same block-api / project-sdk library that in-pi harness-confined agents consume via Pi-registered tools. New substrate op = library + Pi tool + CLI script as a unit. Use canonical composer scripts (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`) — hand-authored briefs forbidden. Substrate-projection script `build-html-views.ts` reads `.project/*.json` via canonical pi-context block-api + emits self-contained HTML view at `html-views/substrate-overview.html`.
+- **Orchestrator scripts dual-surface** (DEC-0019/0020): `scripts/orchestrator/*.ts` are Claude Code-side ergonomics wrappers over the same block-api / context-sdk library that in-pi harness-confined agents consume via Pi-registered tools. New substrate op = library + Pi tool + CLI script as a unit. Use canonical composer scripts (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`) — hand-authored briefs forbidden. Substrate-projection script `build-html-views.ts` reads `.project/*.json` via canonical pi-context block-api + emits self-contained HTML view at `html-views/substrate-overview.html`.
 - Dispatch artifacts live under gitignored `compiled-contexts/` (orchestrator-composed agent input + agent-written reports). Project-root `tmp/` is also gitignored for ad-hoc scratch.
 
 ## Completion Sequence (mandatory after every code change)
@@ -80,7 +80,7 @@ Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion rel
 
 Each package lives in `packages/<name>/` with source in `src/` (or root for pi-behavior-monitors). Read the package's JSDoc / type definitions / `src/index.ts` re-exports for the current surface — do not rely on enumerated file lists here as they go stale.
 
-- **pi-context**: extension entry in `src/index.ts`; canonical surfaces in `block-api.ts` (writes), `schema-validator.ts` (AJV), `schema-write.ts` (schema-write surface), `schema-migrations.ts` (migration chain), `project-dir.ts` (`resolveContextDir` + path-builders; PROJECT_DIR/SCHEMAS_DIR @deprecated), `project-context.ts` (substrate SDK + closure-table primitives), `lens-view.ts` (lens projections + traversal wrappers), `project-sdk.ts` (state + discovery + validation), `roadmap-plan.ts` (PM lens), `lens-validator.ts` (register/dispatch), `execution-context.ts` (gather-execution-context — Phase 3 in flight). `schemas/` ships framework schemas; `samples/` (conception.json + schemas/ + blocks/) ships the packaged conception = the user-installable catalog (DEC-0037; legacy `registry/`+`defaults/` unshipped, on-disk fixtures only per FGAP-087)
+- **pi-context**: extension entry in `src/index.ts`; canonical surfaces in `block-api.ts` (writes), `schema-validator.ts` (AJV), `schema-write.ts` (schema-write surface), `schema-migrations.ts` (migration chain), `context-dir.ts` (`resolveContextDir` + path-builders), `context.ts` (substrate SDK + closure-table primitives), `lens-view.ts` (lens projections + traversal wrappers), `context-sdk.ts` (state + discovery + validation), `roadmap-plan.ts` (PM lens), `lens-validator.ts` (register/dispatch), `execution-context.ts` (gather-execution-context — Phase 3 in flight). `schemas/` ships framework schemas; `samples/` (conception.json + schemas/ + blocks/) ships the packaged conception = the user-installable catalog (DEC-0037; legacy `registry/`+`defaults/` unshipped, on-disk fixtures only per FGAP-087)
 - **pi-jit-agents** (library, not extension): boundary surfaces per `docs/planning/jit-agents-spec.md` — `agent-spec.ts` (load), `compile.ts` (compile + contextBlocks injection), `jit-runtime.ts` (execute + `normalizeToolChoice` provider shape normalization at dispatch boundary), `introspect.ts` (contract projection). `schemas/verdict.schema.json` is the phantom-tool classification contract
 - **pi-workflows**: extension entry in `src/index.ts`; `workflow-sdk.ts` (queryable surface), `workflow-executor.ts` (orchestration), `workflow-spec.ts` (YAML + STEP_TYPES registry), `expression.ts` (`${{ }}` eval + filters), `dispatch.ts` (subprocess spawn), `dag.ts` (planner), `step-*.ts` (one per step type). `templates/shared/macros.md` carries per-block-kind Nunjucks rendering macros (FGAP-037 tracks pending macros)
 - **pi-behavior-monitors**: single-file extension `index.ts`; `agents/*.agent.yaml` (bundled classifiers); `examples/` (monitor specs + Nunjucks prompt templates per monitor)
@@ -97,25 +97,25 @@ Single queryable surface for the workflow extension. All functions derive from c
 
 Use `/workflow status` for derived state in conversation.
 
-## Project SDK (`packages/pi-context/src/project-sdk.ts`)
+## Context SDK (`packages/pi-context/src/context-sdk.ts`)
 
 Single queryable surface for project state, block discovery, schema vocabulary, cross-block validation.
 
-- **Vocabulary**: `schemaVocabulary(cwd)`, `schemaInfo(cwd, name)`, `PROJECT_BLOCK_TYPES`
+- **Vocabulary**: `schemaVocabulary(cwd)`, `schemaInfo(cwd, name)`, `CONTEXT_BLOCK_TYPES`
 - **Discovery**: `availableBlocks(cwd)`, `availableSchemas(cwd)`, `findAppendableBlocks(cwd)`, `blockStructure(cwd)`
-- **Derived state**: `projectState(cwd)`
-- **Validation**: `validateProject(cwd)` — cross-block referential integrity + lens-validator dispatch
+- **Derived state**: `contextState(cwd)`
+- **Validation**: `validateContext(cwd)` — cross-block referential integrity + lens-validator dispatch
 - **Query primitives**: `filterBlockItems(cwd, blockName, predicate)`, `resolveItemById(cwd, id)`, `resolveItemsByIds(cwd, ids)`
 - **Lens-view consumption** (via `lens-view.ts`): `loadLensView`, `renderLensView`, `buildCurationSuggestions`, `validateProjectRelations`, `edgesForLensByName`, `walkLensDescendants`, `walkAncestorsByLens`, `findReferencesInRepo`
-- **Closure-table primitives** (via `project-context.ts`): `walkDescendants`, `walkAncestors`, `findReferences`, `loadRelations`, `edgesForLens`, `resolveComposition`
+- **Closure-table primitives** (via `context.ts`): `walkDescendants`, `walkAncestors`, `findReferences`, `loadRelations`, `edgesForLens`, `resolveComposition`
 - **PM-lens** (via `roadmap-plan.ts`): `loadRoadmap`, `listRoadmaps`, `validateRoadmaps`, `renderRoadmap`
 - **Write surfaces** (via `block-api.ts`): 8 `.project/`-targeting primitives wrapping 8 typed-file primitives operating on arbitrary `(filePath, schemaPath)` pairs; all writes accept optional `DispatchContext` for authorship attestation
 - **Schema-write** (via `schema-write.ts`): `writeSchema` / `updateSchema` / `readSchema` with AJV meta-validation
 - **Schema migration** (via `schema-migrations.ts`): per-schema version-to-version transitions
-- **Substrate-dir resolution** (via `project-dir.ts`): `resolveContextDir(cwd)` hard-throws on absent `.pi-context.json`; `writeBootstrapPointer(cwd, contextDir)` for fresh-repo bootstrap; path-builders cascade through resolver
+- **Substrate-dir resolution** (via `context-dir.ts`): `resolveContextDir(cwd)` hard-throws on absent `.pi-context.json`; `writeBootstrapPointer(cwd, contextDir)` for fresh-repo bootstrap; path-builders cascade through resolver
 - **Execution-context** (via `execution-context.ts` — Phase 3 in flight): `gatherExecutionContext(cwd, args)` composes ContextBundle per declared context-contract for the unit-kind
 
-Use `/project status` for derived state in conversation.
+Use `/context status` for derived state in conversation.
 
 ## Project Blocks (`.project/`)
 
@@ -133,11 +133,11 @@ Typed JSON files with schemas. Substrate writes via block-api primitives (valida
 - **Separate Bash invocations per operation** — chained heredoc + mutate fails on string-termination (observed 2026-05-13). One write per Bash call.
 - **Per-item dispatch:** each block-api write is one item; loops happen at the orchestrator level, not inside one tsx-eval invocation.
 
-**Install ceremony** (per `/context init` future Phase 6; currently `/project` legacy). The canonical catalog is the packaged conception `packages/pi-context/samples/conception.json` (DEC-0037); legacy `registry/`+`defaults/` were dropped from the shipped `files[]` (retained on disk only as test fixtures, FGAP-087):
-- `/project init <dir>` — bootstrap `.pi-context.json` pointer + substrate/schemas dirs only (no config, no defaults; DEC-0011)
-- `/project accept-all` — adopt `samples/conception.json` as `config.json` (full vocabulary + `installed_*`, root-overridden, idempotent never-clobber); writes config only
-- `/project install` — copies declared `installed_schemas[]`/`installed_blocks[]` from the samples catalog (`samples/schemas/` + `samples/blocks/`); `--update` overwrites
-- Or hand-author `config.json`'s `installed_*` then `/project install`
+**Install ceremony** (per `/context init`). The canonical catalog is the packaged conception `packages/pi-context/samples/conception.json` (DEC-0037); legacy `registry/`+`defaults/` were dropped from the shipped `files[]` (retained on disk only as test fixtures, FGAP-087):
+- `/context init <dir>` — bootstrap `.pi-context.json` pointer + substrate/schemas dirs only (no config, no defaults; DEC-0011)
+- `/context accept-all` — adopt `samples/conception.json` as `config.json` (full vocabulary + `installed_*`, root-overridden, idempotent never-clobber); writes config only
+- `/context install` — copies declared `installed_schemas[]`/`installed_blocks[]` from the samples catalog (`samples/schemas/` + `samples/blocks/`); `--update` overwrites
+- Or hand-author `config.json`'s `installed_*` then `/context install`
 
 **Block kinds**: query the samples catalog via the `read-samples-catalog` tool (or read `samples/conception.json` `block_kinds[]`) for the canonical set + descriptions. Each schema declares its array_key + required fields + ID pattern.
 
@@ -164,10 +164,10 @@ Load-bearing architectural rules (not change-history):
 - `invokeMonitor(name, context?)` export from pi-behavior-monitors enables programmatic classification without `activate()` side effects.
 - `completion` field controls post-workflow message to main LLM. Fires only on `state.status === "completed"`; failed workflows render via `formatResult()`.
 - DispatchContext attestation: every block-api write accepts optional `ctx?: DispatchContext` with `WriterIdentity` (kinds: human / agent / monitor / workflow). When provided AND the target schema declares author fields, items are stamped per the schema's declared subset (per-field declaration honored; upsert pre-merge preserves attestation across replacement updates).
-- Lens-validator dispatch: project-sdk's `validateProject` iterates `getLensValidators()`; lens modules register at module-init via `registerLensValidator({name, validate})`.
+- Lens-validator dispatch: context-sdk's `validateContext` iterates `getLensValidators()`; lens modules register at module-init via `registerLensValidator({name, validate})`.
 - Composition lens dispatch: LensSpec carries `kind: "target" | "composition"` + `members[]`; `resolveComposition` walks members with cycle detection; emits `composition_cycle_detected` on cycle.
 - Monitor write-action routing through block-api: `executeWriteAction` routes findings via `appendToBlock` / `upsertItemInBlock` with `DispatchContext.writer = { kind: "monitor", monitor_name }`; side-car state via `writeTypedFile` / `appendToTypedFile`.
-- Substrate consumption surface: `/project view <lensId>` renders lens projection as markdown; `/project lens-curate <lensId>` uses `pi.sendMessage` follow-up-turn pattern to surface uncategorized items + suggested calls — LLM curates via existing `append-block-item` tool.
+- Substrate consumption surface: `/context view <lensId>` renders lens projection as markdown; `/context lens-curate <lensId>` uses `pi.sendMessage` follow-up-turn pattern to surface uncategorized items + suggested calls — LLM curates via existing `append-block-item` tool.
 
 ## CLI Access from Other Agents
 
@@ -181,7 +181,7 @@ pi -p "..." --mode json --tools read --no-skills --model openrouter/anthropic/cl
 
 For write tools, restrict to minimum (`--tools read,write` or omit `--tools` if prompt needs broader access); always retain `--model` pin. Wrap long invocations in `gtimeout 120 pi -p ...` so silent loops surface as exit codes.
 
-To enumerate available tools at any time: query `/workflow status` + `/project status` or grep `pi.registerTool` across `packages/*/src/`.
+To enumerate available tools at any time: query `/workflow status` + `/context status` or grep `pi.registerTool` across `packages/*/src/`.
 
 ## Design Decisions & Gaps
 

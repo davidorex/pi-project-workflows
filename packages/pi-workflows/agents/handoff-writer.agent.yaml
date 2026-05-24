@@ -8,7 +8,7 @@ input:
   required: [project_state, path]
   properties:
     project_state:
-      description: Current project state (from projectState() or /project status — includes phases, blocks, gaps, decisions, recent commits)
+      description: Current project state (from contextState() or /context status — includes phases, blocks, gaps, decisions, recent commits)
     path:
       type: string
       description: Root path of the project

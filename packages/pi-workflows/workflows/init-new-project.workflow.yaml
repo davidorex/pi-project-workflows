@@ -78,4 +78,4 @@ completion:
     **Architecture:** ${{ steps.design-architecture.output.modules | length }} modules
     **Plan:** phases and tasks created
 
-    Use `/project status` to see the full state. Use `/project validate` to check cross-block references.
+    Use `/context status` to see the full state. Use `/context validate` to check cross-block references.

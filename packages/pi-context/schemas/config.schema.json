@@ -15,7 +15,7 @@
 		},
 		"root": {
 			"type": "string",
-			"description": "Optional substrate-dir override. The substrate-dir name is set at /context init and recorded in the .pi-context.json bootstrap pointer (DEC-0015 — no shipped default); adoptConception writes this field at /project accept-all from the init-chosen dir. When absent, projectRoot resolves the substrate via the pointer (resolveContextDir). Not shipped by the packaged conception, which is a template. Closes GitHub issue #3 surface — relocatable per config."
+			"description": "Optional substrate-dir override. The substrate-dir name is set at /context init and recorded in the .pi-context.json bootstrap pointer (DEC-0015 — no shipped default); adoptConception writes this field at /context accept-all from the init-chosen dir. When absent, projectRoot resolves the substrate via the pointer (resolveContextDir). Not shipped by the packaged conception, which is a template. Closes GitHub issue #3 surface — relocatable per config."
 		},
 		"naming": {
 			"type": "object",
@@ -181,12 +181,12 @@
 		},
 		"installed_schemas": {
 			"type": "array",
-			"description": "Schemas the project has opted into via /project install (DEC-0011).",
+			"description": "Schemas the project has opted into via /context install (DEC-0011).",
 			"items": { "type": "string" }
 		},
 		"installed_blocks": {
 			"type": "array",
-			"description": "Blocks the project has opted into via /project install (DEC-0011).",
+			"description": "Blocks the project has opted into via /context install (DEC-0011).",
 			"items": { "type": "string" }
 		}
 	}

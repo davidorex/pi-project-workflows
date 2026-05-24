@@ -530,14 +530,14 @@ function composeSkill(
 
 	// ── Installable catalog (pi-context — samples/blocks + samples/schemas) ──
 	// These are the names valid for `installed_blocks` / `installed_schemas`
-	// arrays in `.project/config.json`. `/project init` ships an empty skeleton
-	// and `/project install` opts blocks/schemas in by name from this catalog.
+	// arrays in `.project/config.json`. `/context init` ships an empty skeleton
+	// and `/context install` opts blocks/schemas in by name from this catalog.
 	if (installableRegistry) {
 		if (installableRegistry.blocks.length > 0) {
 			lines.push("<installable_blocks>");
 			lines.push("");
 			lines.push(
-				"Names valid for the `installed_blocks` array in `.project/config.json`. Install with `/project install <block>`.",
+				"Names valid for the `installed_blocks` array in `.project/config.json`. Install with `/context install <block>`.",
 			);
 			lines.push("");
 			lines.push("| Block | Source File |");
@@ -554,7 +554,7 @@ function composeSkill(
 			lines.push("<installable_schemas>");
 			lines.push("");
 			lines.push(
-				"Names valid for the `installed_schemas` array in `.project/config.json`. Schemas back block validation; install with `/project install <schema>`.",
+				"Names valid for the `installed_schemas` array in `.project/config.json`. Schemas back block validation; install with `/context install <schema>`.",
 			);
 			lines.push("");
 			lines.push("| Schema | Source File |");

@@ -24,7 +24,7 @@
  *   --format  : json (default) — JSON-stringified CurrentState
  *               table          — human-scannable markdown sections
  */
-import { type CurrentState, currentState } from "@davidorex/pi-context/project-sdk";
+import { type CurrentState, currentState } from "@davidorex/pi-context/context-sdk";
 
 interface Args {
 	cwd: string;

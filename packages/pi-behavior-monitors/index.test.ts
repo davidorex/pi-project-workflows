@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { writeBootstrapPointer } from "@davidorex/pi-context/project-dir";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { ValidationError } from "@davidorex/pi-context/schema-validator";
 import nunjucks from "nunjucks";
 import { afterEach, describe, expect, it, vi } from "vitest";

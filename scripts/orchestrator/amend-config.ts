@@ -21,8 +21,8 @@
  *   tsx scripts/orchestrator/amend-config.ts --registry <name> --operation add|replace|remove --key <key> [--entry @file.json|<inline-json>] [--writer kind:id] [--dry-run] [--cwd <dir>] [--format json|table]
  */
 import fs from "node:fs";
+import { amendConfigEntry } from "@davidorex/pi-context/context";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { amendConfigEntry } from "@davidorex/pi-context/project-context";
 
 interface Args {
 	registry: string;

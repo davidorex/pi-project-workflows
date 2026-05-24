@@ -19,7 +19,7 @@
  *
  * Exit codes: 0 success; 2 arg error; 4 substrate not initialized; 5 other failure.
  */
-import { adoptConception } from "@davidorex/pi-context/project-context";
+import { adoptConception } from "@davidorex/pi-context/context";
 
 interface Args {
 	cwd: string;

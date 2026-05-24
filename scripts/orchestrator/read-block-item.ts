@@ -18,7 +18,7 @@
  *
  *   --format  : json (default) | table (markdown; id + up to 3 fields)
  */
-import { readBlockItem } from "@davidorex/pi-context/project-sdk";
+import { readBlockItem } from "@davidorex/pi-context/context-sdk";
 
 interface Args {
 	block: string;

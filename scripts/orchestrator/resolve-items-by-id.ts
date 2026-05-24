@@ -28,7 +28,7 @@
  *   --format: json (default) — { id: location|null, ... } object
  *             table          — markdown table | id | block | array_key | found |
  */
-import { resolveItemsByIds } from "@davidorex/pi-context/project-sdk";
+import { resolveItemsByIds } from "@davidorex/pi-context/context-sdk";
 
 interface Args {
 	ids: string[];

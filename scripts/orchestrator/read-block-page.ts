@@ -20,7 +20,7 @@
  *   --limit   : max items to return, >= 1 (default 50)
  *   --format  : json (default) | table (markdown + footer line)
  */
-import { readBlockPage } from "@davidorex/pi-context/project-sdk";
+import { readBlockPage } from "@davidorex/pi-context/context-sdk";
 
 interface Args {
 	block: string;

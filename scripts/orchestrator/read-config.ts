@@ -24,8 +24,8 @@
  * substrate is the demo path.
  */
 import path from "node:path";
-import { loadConfig } from "@davidorex/pi-context/project-context";
-import { projectDir } from "@davidorex/pi-context/project-dir";
+import { loadConfig } from "@davidorex/pi-context/context";
+import { resolveContextDir } from "@davidorex/pi-context/context-dir";
 
 interface Args {
 	raw: boolean;
@@ -121,7 +121,7 @@ function main(): void {
 	const args = parseArgs(process.argv.slice(2));
 	let substrateDir: string;
 	try {
-		substrateDir = projectDir(args.cwd);
+		substrateDir = resolveContextDir(args.cwd);
 	} catch (err) {
 		// name-based, not instanceof (FGAP-080): the error may be thrown through a
 		// different pi-context module instance under tsx, breaking class identity.

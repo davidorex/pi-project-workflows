@@ -30,7 +30,7 @@
  * inline — script invocation against the live `.pi-context.json` pointer
  * + substrate is the demo path.
  */
-import { schemaPath } from "@davidorex/pi-context/project-dir";
+import { schemaPath } from "@davidorex/pi-context/context-dir";
 import { readSchema } from "@davidorex/pi-context/schema-write";
 
 interface Args {

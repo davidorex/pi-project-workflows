@@ -23,8 +23,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { appendToBlock, nextId, readBlock, resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
+import { assertSubstrateName, schemasDir } from "@davidorex/pi-context/context-dir";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { assertSubstrateName, schemasDir } from "@davidorex/pi-context/project-dir";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {

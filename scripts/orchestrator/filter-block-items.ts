@@ -24,7 +24,7 @@
  *   --op in   : --value is parsed as a comma-separated list
  *   --format  : json (default) | table (markdown; id + first 3 non-id fields)
  */
-import { filterBlockItems } from "@davidorex/pi-context/project-sdk";
+import { filterBlockItems } from "@davidorex/pi-context/context-sdk";
 
 interface Args {
 	block: string;

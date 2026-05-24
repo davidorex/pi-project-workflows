@@ -29,7 +29,7 @@
  *   --format  : json (default) — JSON-stringified BootstrapStatus
  *               table          — human-scannable summary
  */
-import { type BootstrapStatus, deriveBootstrapState } from "@davidorex/pi-context/project-sdk";
+import { type BootstrapStatus, deriveBootstrapState } from "@davidorex/pi-context/context-sdk";
 
 interface Args {
 	cwd: string;

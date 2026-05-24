@@ -25,7 +25,7 @@
  *   --where  : optional left pre-filter, parsed as field:op:value (op default eq)
  *   --format : json (default) | table (one line per pair: <left.id> -> [<right.id>, ...])
  */
-import { joinBlocks } from "@davidorex/pi-context/project-sdk";
+import { joinBlocks } from "@davidorex/pi-context/context-sdk";
 
 interface Args {
 	leftBlock: string;

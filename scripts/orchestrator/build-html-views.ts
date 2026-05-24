@@ -38,7 +38,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock } from "@davidorex/pi-context/block-api";
-import { availableBlocks, type SchemaInfo, type SchemaProperty, schemaInfo } from "@davidorex/pi-context/project-sdk";
+import { availableBlocks, type SchemaInfo, type SchemaProperty, schemaInfo } from "@davidorex/pi-context/context-sdk";
 
 interface Args {
 	cwd: string;

@@ -20,8 +20,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { appendRelation, type Edge, loadRelations } from "@davidorex/pi-context/context";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { appendRelation, type Edge, loadRelations } from "@davidorex/pi-context/project-context";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {

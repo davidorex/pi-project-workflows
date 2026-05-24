@@ -966,7 +966,7 @@
     },
     {
       "description": "FGAP-074 C2 — migrate pi-jit-agents consumers (6 files). Repoint old project-* subpath imports + renamed identifiers to the new context-* names across pi-jit-agents (compile.ts, template module + their tests). Green per commit.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-jit-agents/src/compile.ts"
       ],
@@ -979,7 +979,8 @@
         "TASK-067"
       ],
       "notes": "Decomposition chunk C2. Maps to Claude task #61. FGAP-074. Resolves via aliases until C7 removes them.",
-      "id": "TASK-068"
+      "id": "TASK-068",
+      "verification": "VER-039"
     },
     {
       "description": "FGAP-074 C3 — migrate pi-workflows consumers (29 files). Largest consumer set: workflow-sdk, workflow-executor, step-block, step-shared, index, template-validation, test-helpers + ~22 tests, mostly importing writeBootstrapPointer / schemaPath / PROJECT_DIR. Repoint old project-* subpaths + renamed identifiers to context-* names. Green per commit.",

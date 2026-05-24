@@ -3631,6 +3631,51 @@
       "created_by": "human/davidryan@gmail.com",
       "id": "FGAP-098",
       "created_at": "2026-05-24T09:01:21.017Z"
+    },
+    {
+      "title": "Workflow agent-step dispatch does not clamp child tool surface to the parent — spec omission defaults to full privilege (harness sandbox is per-process, not transitive)",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-workflows",
+      "layer": "L1",
+      "description": "The workflow agent-step dispatch path imposes no relationship between a spawned child agent's tool surface and the dispatching parent's. buildArgs derives the child's tools solely from the agent spec: spec tools are split into builtins (-> --tools) and extension paths (-> --extension), with no read of the parent's active tool set. When the spec omits `tools`, NO --tools flag is passed and the child runs pi's default surface (bash/read/write/edit builtins + all loaded extensions). A main agent launched under a restrictive --tools allowlist (e.g. scripts/launch-constrained-pi.sh, the DEC-0014 harness-confined model) is therefore NOT a containing boundary: by invoking workflow-execute on an on-disk workflow whose agent step references a broadly-privileged or tools-unspecified spec, it spawns a fully-capable child (bash + file read/write). The unsafe direction is the default — restriction is opt-in per spec; omission yields maximal privilege.",
+      "evidence": [
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "lines": "87-100",
+          "reference": "Tool filtering applied ONLY `if (agentSpec.tools?.length)`. Spec tools split into builtinTools -> `--tools <list>` and extensionPaths -> `--extension`. Code never reads the parent process's active tool set; no intersection/subset check."
+        },
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "lines": "70-123",
+          "reference": "buildArgs is the sole argv builder; reads only step + agentSpec. Absent agentSpec.tools, no --tools flag is emitted -> child inherits pi's full default surface (builtins + all extensions). Least-privilege is opt-in; omission = maximal privilege."
+        },
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "lines": "162-166",
+          "reference": "spawn(\"pi\", args, { cwd, env: process.env }) — a fresh independent pi process inheriting the full parent environment. The parent's launch-time --tools restriction is a per-process flag and does not propagate to the child."
+        },
+        {
+          "file": "packages/pi-workflows/src/index.ts",
+          "lines": "494-571",
+          "reference": "workflow-execute resolves the workflow by name via findWorkflow(params.workflow, cwd) — on-disk specs only. The constrained surface has no spec-authoring (file-write) tool, so reachability of a privileged child is bounded to specs already on disk; the escalation primitive itself is unconditional."
+        }
+      ],
+      "impact": "The tools-only harness sandbox is per-process, not transitive across dispatch. Confinement of the main agent (DEC-0014) does not confine what it can spawn: child capability is not required to be a subset of parent capability, and no human ratification gates the spawn. This is the privilege-escalation hole underneath the agents-as-tools arc (FEAT-004) and the capability-mutation DEC-0047 proposes to govern. Before agent-dispatch becomes a first-class tool, the dispatch boundary must clamp child tools to a subset of the parent's (or an explicit ratified grant) and default to least-privilege on spec omission. Reachability today is bounded by which on-disk workflow + agent specs exist; the escalation primitive is not.",
+      "canonical_vocabulary": "privilege-escalation, sandbox-escape, capability-confinement, transitive-least-privilege, ambient-authority, fail-closed-default",
+      "proposed_resolution": "At the dispatch boundary (buildArgs/dispatch in pi-workflows — the canonical cross-cutting locus): (1) thread the dispatching context's effective tool set into DispatchOptions; (2) intersect agentSpec.tools with it and fail-closed on any spec tool outside the parent set; (3) on agentSpec.tools omission, default to a least-privilege surface (empty or an explicit safe-read set) rather than pi's full default; (4) gate any capability-broadening beyond the parent set behind the DEC-0047 human-ratification path. Pairs with FEAT-005 (JIT capability composition + sandbox). Requires settling the parent-surface source of truth (launch --tools vs a declared capability manifest) alongside DEC-0044 (agent-dispatch home).",
+      "related_features": [
+        "FEAT-004",
+        "FEAT-005"
+      ],
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0044",
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-24T00:00:00Z",
+      "id": "FGAP-099"
     }
   ]
 }

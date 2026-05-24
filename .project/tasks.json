@@ -1026,7 +1026,7 @@
     },
     {
       "description": "FGAP-074 C5 — tool names + /project command rename (index.ts). Rename Pi tools project-* -> context-* (project-status/validate/validate-relations/edges-for-lens/walk-descendants/roadmap-{load,render,validate,list}); command /project -> /context + PROJECT_SUBCOMMANDS -> CONTEXT_SUBCOMMANDS; installProject -> installContext. Rename the DEC-0042 bootstrap trio (init/accept-all/install + project-init/project-accept-all tools) UNIFORMLY now (FGAP-095 P4 removes the then-context-named trio when /context start lands). NOT aliased (strings, no code consumers) — renamed atomically. npm run skills. Green.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/index.ts"
       ],

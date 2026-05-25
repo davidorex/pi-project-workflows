@@ -223,5 +223,20 @@
     "parent": "TASK-080",
     "child": "DEC-0047",
     "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "DEC-0048",
+    "child": "FEAT-001",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0048",
+    "child": "DEC-0036",
+    "relation_type": "decision_relates_to_decision"
+  },
+  {
+    "parent": "DEC-0048",
+    "child": "DEC-0040",
+    "relation_type": "decision_relates_to_decision"
   }
 ]

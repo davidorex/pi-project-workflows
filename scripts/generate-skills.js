@@ -537,7 +537,7 @@ function composeSkill(
 			lines.push("<installable_blocks>");
 			lines.push("");
 			lines.push(
-				"Names valid for the `installed_blocks` array in `.project/config.json`. Install with `/context install <block>`.",
+				"Names valid for the `installed_blocks` array in `<substrate-dir>/config.json`. Install with `/context install <block>`.",
 			);
 			lines.push("");
 			lines.push("| Block | Source File |");
@@ -554,7 +554,7 @@ function composeSkill(
 			lines.push("<installable_schemas>");
 			lines.push("");
 			lines.push(
-				"Names valid for the `installed_schemas` array in `.project/config.json`. Schemas back block validation; install with `/context install <schema>`.",
+				"Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. Schemas back block validation; install with `/context install <schema>`.",
 			);
 			lines.push("");
 			lines.push("| Schema | Source File |");

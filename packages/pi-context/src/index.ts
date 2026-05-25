@@ -397,7 +397,7 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 	const contextDir = args.trim().split(/\s+/)[0];
 	if (!contextDir) {
 		ctx.ui.notify(
-			"/context init requires a substrate dir name (e.g. '/context init .project' or '/context init .context'). Per DEC-0015, no default.",
+			"/context init requires a substrate dir name (e.g. '/context init .context'). Per DEC-0015, no default — you choose the name.",
 			"error",
 		);
 		return;
@@ -842,10 +842,10 @@ const extension = (pi: ExtensionAPI) => {
 		name: "read-block-dir",
 		label: "Read Block Dir",
 		description:
-			"Enumerate and parse all .json files in a .project/<subdir>/ directory, returned as a sorted array. Missing directories return [].",
+			"Enumerate and parse all .json files in a <substrate-dir>/<subdir>/ directory, returned as a sorted array. Missing directories return [].",
 		promptSnippet: "Enumerate project block subdirectories (phases, schemas, etc.) as parsed JSON",
 		parameters: Type.Object({
-			subdir: Type.String({ description: "Subdirectory under .project/ (e.g., 'phases', 'schemas')" }),
+			subdir: Type.String({ description: "Subdirectory under the substrate dir (e.g., 'phases', 'schemas')" }),
 		}),
 		async execute(
 			_toolCallId: string,
@@ -855,7 +855,7 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = readBlockDir(ctx.cwd, params.subdir);
-			const envelope = serializeForRead(result, { label: `.project/${params.subdir}/` });
+			const envelope = serializeForRead(result, { label: `<substrate-dir>/${params.subdir}/` });
 			return {
 				details: undefined,
 				content: [{ type: "text", text: envelope.content }],
@@ -882,7 +882,7 @@ const extension = (pi: ExtensionAPI) => {
 		): Promise<AgentToolResult<undefined>> {
 			const result = readBlock(ctx.cwd, params.block);
 			const envelope = serializeForRead(result, {
-				label: `.project/${params.block}.json`,
+				label: `<substrate-dir>/${params.block}.json`,
 				overCapDirective: {
 					tool: "read-block-page",
 					params: { block: params.block, offset: 0, limit: 50 },
@@ -1408,7 +1408,7 @@ const extension = (pi: ExtensionAPI) => {
 		promptSnippet: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)",
 		parameters: Type.Object({
 			contextDir: Type.String({
-				description: "Substrate dir name (e.g. .project). Required per DEC-0015 — no default.",
+				description: "Substrate dir name (e.g. .context). Required per DEC-0015 — no default.",
 			}),
 		}),
 		async execute(
@@ -1511,7 +1511,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "resolve-item-by-id",
 		label: "Resolve Item By Id",
 		description:
-			"Look up the block, array key, and item payload for a given ID across all .project/ blocks. Returns null when no item matches. Mirrors the resolveItemById SDK function and shares its prefix-vs-block invariant — IDs whose prefix maps to a known block but live elsewhere throw at index-build time.",
+			"Look up the block, array key, and item payload for a given ID across all blocks in the substrate dir. Returns null when no item matches. Mirrors the resolveItemById SDK function and shares its prefix-vs-block invariant — IDs whose prefix maps to a known block but live elsewhere throw at index-build time.",
 		promptSnippet: "Resolve a kind-prefixed ID (DEC-/FEAT-/FGAP-/issue-/REQ-/TASK-/etc.) to its owning block and item",
 		parameters: Type.Object({
 			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 / FGAP-003 / issue-064" }),
@@ -2081,7 +2081,8 @@ const extension = (pi: ExtensionAPI) => {
 			handler: (args, ctx) => handleInit(args, ctx),
 		},
 		install: {
-			description: "Copy schemas and starter blocks declared in .project/config.json from the package samples catalog",
+			description:
+				"Copy schemas and starter blocks declared in the substrate dir's config.json from the package samples catalog",
 			handler: (args, ctx) => {
 				const overwrite = /(^|\s)--update(\s|$)/.test(args);
 				const result = installContext(ctx.cwd, { overwrite });
@@ -2106,7 +2107,7 @@ const extension = (pi: ExtensionAPI) => {
 				}
 				if (lines.length === 0) {
 					lines.push(
-						"Nothing declared in installed_schemas / installed_blocks — edit .project/config.json to add entries.",
+						"Nothing declared in installed_schemas / installed_blocks — edit the substrate dir's config.json to add entries.",
 					);
 				}
 				const level = result.notFound.length > 0 ? "warning" : "info";
@@ -2170,7 +2171,7 @@ const extension = (pi: ExtensionAPI) => {
 				const list = listRoadmaps(ctx.cwd);
 				if (list.length === 0) {
 					ctx.ui.notify(
-						"No roadmaps found. Install the roadmap block via .project/config.json's installed_blocks, then author roadmap.json.",
+						"No roadmaps found. Install the roadmap block via the substrate dir's config.json installed_blocks, then author roadmap.json.",
 						"info",
 					);
 					return;

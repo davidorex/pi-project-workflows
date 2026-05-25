@@ -85,7 +85,7 @@ const VALIDATION_CHECKS: ValidationCheckDescriptor[] = [
 		id: "contextblocks-existence",
 		name: "contextBlocks existence",
 		severity: "warning",
-		description: "Declared context blocks exist in .project/",
+		description: "Declared context blocks exist in the substrate dir",
 	},
 	{
 		id: "template-alignment",

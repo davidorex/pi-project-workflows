@@ -3935,7 +3935,7 @@
     },
     {
       "title": "Substrate-dir name '.project' is hardcoded in framework-facing tool descriptions + SKILL.md — teaches a fresh agent that state lives in .project, contra DEC-0015 (no default dir; user-chosen)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L2",
@@ -3974,11 +3974,13 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FGAP-106"
+      "id": "FGAP-106",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-25"
     },
     {
       "title": "FGAP-090 orientation block directs the agent to `/context start`, which is NOT a registered subcommand — mis-guides to a non-existent command (conductor is FGAP-095-pending)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L2",
@@ -4004,12 +4006,14 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FGAP-107"
+      "id": "FGAP-107",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-25"
     },
     {
       "id": "FGAP-108",
       "title": "Agent-facing /context init guidance omits or inconsistently names the required <substrate-dir> argument",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L1",
@@ -4059,6 +4063,58 @@
         "FGAP-107",
         "FGAP-095",
         "FGAP-066"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-25"
+    },
+    {
+      "id": "FGAP-109",
+      "title": "Exported-API JSDoc + code-comments assert false .project/ resolution paths, contradicting pointer-resolved code and the FGAP-108-corrected READMEs",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-jit-agents",
+      "layer": "L1",
+      "description": "Surfaced by the FGAP-108 fresh-context audit. Several exported-API JSDoc blocks (and module-level / interface doc-comments) document substrate discovery/resolution paths as literal `.project/...` tier-lists — e.g. agent-spec.ts:210 and types.ts:96 ('1. {cwd}/.project/agents/{name}.agent.yaml'), template.ts:6 ('1. {cwd}/.project/templates/'), behavior-monitors/index.ts:190-192 ('block-api derives the on-disk path as <cwd>/.project/<block>.json'). The runtime code is POINTER-RESOLVED (verified: agent-spec.ts/template.ts use tryResolveContextDir; compile.ts uses schemaPath; both from @davidorex/pi-context/context-dir; no hardcoded `.project`), so the JSDoc is factually wrong AND now directly contradicts the FGAP-108-corrected README (pi-jit-agents/README.md:31 says `{cwd}/<substrate-dir>/agents/...`). This is the developer-API-doc surface (IDE hover / generated API docs), distinct from the agent-facing + end-user-README surfaces FGAP-106/108 fixed (those were deliberately scoped to LEAVE JSDoc). Same .project-as-canonical mis-teaching class, different audience. NOT a code bug — code is correct; only the docs lag.",
+      "evidence": [
+        {
+          "file": "packages/pi-jit-agents/src/agent-spec.ts",
+          "lines": "210",
+          "reference": "createAgentLoader JSDoc tier-list '1. {cwd}/.project/agents/{name}.agent.yaml' — code uses tryResolveContextDir (agent-spec.ts:226)"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/types.ts",
+          "lines": "42,52,96",
+          "reference": "LoadContext JSDoc teaches .project/agents/, .project/<name>.json, .project/schemas/<name>.schema.json — pointer-resolved in reality; contradicts README:31"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/template.ts",
+          "lines": "6",
+          "reference": "module-level JSDoc '1. {cwd}/.project/templates/' — code uses tryResolveContextDir (template.ts:47)"
+        },
+        {
+          "file": "packages/pi-behavior-monitors/index.ts",
+          "lines": "190-192",
+          "reference": "MonitorAction JSDoc 'block-api derives the on-disk path as <cwd>/.project/<block>.json' — block-api is pointer-resolved"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "2,285,337,358,430,470,501,558,1029,1280,1283",
+          "reference": "JSDoc describing block-api as operating on .project/*.json — illustrative/historical; resolution is pointer-driven. Enumerate exhaustively (the audit found a subset; ~30+ .project JSDoc lines across packages)."
+        }
+      ],
+      "impact": "A developer reading the exported pi-jit-agents / pi-behavior-monitors / pi-context API (IDE hover or generated docs) is taught that discovery/writes go to a fixed `.project/` dir — false per DEC-0015 (pointer-resolved, user-chosen dir) and contradicting the corrected READMEs. Low runtime impact (docs only) but a real internal contradiction introduced by FGAP-108's README fixes.",
+      "canonical_vocabulary": "API documentation accuracy / single-source-of-truth for resolution-path docs",
+      "proposed_resolution": "Exhaustively enumerate (partitioned grep, pure enumeration) every JSDoc/code-comment across all packages that asserts a `.project/` resolution or discovery path (tier-lists, 'derives the on-disk path as', 'reads .project/*.json', 'resolves to .project/schemas/...'). Converge to the pointer-resolved truth: reference resolveContextDir / the substrate-dir (e.g. '<substrate-dir>/agents/' or 'the resolved substrate dir') rather than the literal `.project`. Distinguish factually-wrong path-assertions (FIX) from incidental this-repo/historical mentions. Keep code unchanged. Verify: zero JSDoc `.project`-as-resolution-path outside an explicit LEAVE set; no README/JSDoc contradiction remains. Same DEC-0018 gate where applicable (build/check/test; this is comment-only so no runtime demo needed beyond grep + audit).",
+      "related_decisions": [
+        "DEC-0015",
+        "DEC-0011"
+      ],
+      "related_issues": [
+        "FGAP-106",
+        "FGAP-107",
+        "FGAP-108"
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25"

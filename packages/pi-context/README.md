@@ -2,7 +2,7 @@
 
 Schema-driven project state management for [Pi](https://github.com/badlogic/pi-mono).
 
-Schemas are the design language. You define what your project tracks by writing JSON Schemas, and the entire system — tools, validation, derived state, workflow integration — adapts automatically. Drop a new `.schema.json` file into `.project/schemas/` and it instantly becomes an addressable block type with write-time validation, discovery, and generic CRUD tooling. No code changes.
+Schemas are the design language. You define what your project tracks by writing JSON Schemas, and the entire system — tools, validation, derived state, workflow integration — adapts automatically. Drop a new `.schema.json` file into `<substrate-dir>/schemas/` and it instantly becomes an addressable block type with write-time validation, discovery, and generic CRUD tooling. No code changes.
 
 ## Install
 
@@ -13,8 +13,8 @@ pi install npm:@davidorex/pi-context
 ## Getting Started
 
 ```
-/context init       # create the empty substrate skeleton
-/context install    # reconcile .project/ against installed_* lists in config.json
+/context init <substrate-dir>   # create the empty substrate skeleton
+/context install    # reconcile <substrate-dir>/ against installed_* lists in config.json
 ```
 
 `init` is intentionally minimal: it writes the bootstrap pointer + substrate/schemas dirs only — no config, no schemas, no starter blocks (DEC-0011 ship-no-defaults). Adopt the packaged conception with `/context accept-all` (writes `config.json` from `samples/conception.json`), or hand-declare `config.json`'s `installed_schemas` / `installed_blocks`, then run `/context install` (opt-in install ceremony, idempotent, `--update` overwrites). The package-shipped samples catalog (`samples/blocks/` and `samples/schemas/`, per DEC-0037) is the source.
@@ -26,16 +26,16 @@ Project data lives under the substrate root (the dir chosen at init and recorded
 After `/context init` the substrate skeleton is just the dirs (no config, no schemas, no blocks):
 
 ```
-.project/
+<substrate-dir>/
   schemas/                    — empty until accept-all + install
 ```
 
 After `/context accept-all` (writes `config.json` from the packaged conception) + `/context install` (with declared entries) and any user authoring, the directory typically grows:
 
 ```
-.project/
-  config.json                 — substrate bootstrap (always at .project/, exempt from root redirection)
-  relations.json              — closure-table edges (always at .project/, exempt from root redirection)
+<substrate-dir>/
+  config.json                 — substrate bootstrap (always at the substrate-dir root (your chosen dir), exempt from `config.root` redirection)
+  relations.json              — closure-table edges (always at the substrate-dir root (your chosen dir), exempt from `config.root` redirection)
   schemas/<name>.schema.json  — installed from samples/schemas/, plus any user-authored schemas
   <name>.json                 — installed from samples/blocks/, plus any user-authored blocks
 ```
@@ -45,7 +45,7 @@ The schema is the contract. When pi-workflows agents produce output that writes 
 **Tools registered:** the tool surface grows with the package — read the generated `skills/pi-context/SKILL.md` for the current set, or call the `list-tools` tool at runtime (in-pi) / `grep pi.registerTool packages/pi-context/src/index.ts` (source). Families: block CRUD (read/write/append/update/remove, top-level + nested), item-level read (`read-block-item`, `read-block-page`), query (`filter-block-items`, `resolve-item(s)-by-id`, `find-references`, `walk-ancestors`, `context-walk-descendants`), substrate write (`append-relation`, `amend-config`, `write-schema`, `rename-canonical-id`), discovery/introspection (`read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`), lifecycle (`context-init`, `context-accept-all`, `context-status`, `context-validate`, `context-validate-relations`, `complete-task`).
 
 **Commands registered:**
-- `/context init <dir>` — bootstrap pointer + substrate/schemas dirs only (no config, no defaults)
+- `/context init <substrate-dir>` — bootstrap pointer + substrate/schemas dirs only (no config, no defaults)
 - `/context accept-all` — adopt `samples/conception.json` as `config.json` (idempotent; never overwrites an existing config)
 - `/context install [--update]` — reconcile the substrate against `installed_schemas` / `installed_blocks` in `config.json` by copying assets from the samples catalog (skip-if-exists by default; `--update` overwrites)
 - `/context view <lensId>` — render a configured lens (groupByLens projection) into the conversation as markdown
@@ -131,7 +131,7 @@ validateRelations(cwd, options?): SubstrateValidationResult
 displayName(canonicalId: string, naming: Record<string, string> | undefined): string
 ```
 
-`config.root` is the substrate's "where do I live" answer — block-api, schemas-discovery, phase-discovery, and every other path consumer route through `resolveContextDir(cwd)` so a relocated root reaches the runtime instead of being trapped in the SDK. `config.json` and `relations.json` themselves are exempt — they always live at `.project/` because they are the substrate that defines `root`.
+`config.root` is the substrate's "where do I live" answer — block-api, schemas-discovery, phase-discovery, and every other path consumer route through `resolveContextDir(cwd)` so a relocated root reaches the runtime instead of being trapped in the SDK. `config.json` and `relations.json` themselves are exempt — they always live at the substrate-dir root (the bootstrap-chosen dir, pointer-resolved, suggested `.context`) because they are the substrate that defines `root`.
 
 ### Lens View Consumption (`src/lens-view.ts`)
 
@@ -177,7 +177,7 @@ When working with this extension:
 - **Read `src/index.ts`** to see tool parameter schemas and command handler logic
 - Use the `append-block-item` tool to add items — it handles schema validation, duplicate checking, and atomic writes
 - Use the `update-block-item` tool with a `match` predicate (e.g., `{ id: "gap-123" }`) and `updates` object
-- Block schemas define the contract — consult `.project/schemas/*.schema.json` to understand what fields are required
+- Block schemas define the contract — consult `<substrate-dir>/schemas/*.schema.json` to understand what fields are required
 - `contextState(cwd)` is the single source of truth for project metrics — prefer it over manual filesystem inspection
 
 ## Tests

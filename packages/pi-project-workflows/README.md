@@ -17,7 +17,7 @@ This installs the four constituent packages:
 ## Getting Started
 
 ```
-/context init     # scaffolds .project/ with schemas and starter blocks
+/context init <substrate-dir>   # create the empty substrate skeleton (pointer + dirs only; no config/schemas/blocks)
 /workflow init    # scaffolds .workflows/ for run state
 /context status   # see derived project state
 /workflow list    # discover and run workflows

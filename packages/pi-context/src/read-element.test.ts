@@ -46,6 +46,24 @@ describe("read-element: serializeForRead paging", () => {
 		assert.equal(env.total, 40);
 		assert.equal(env.hasMore, true);
 	});
+
+	it("multi-array wrapper falls back to whole-object (no throw, no paging)", () => {
+		const obj = { tools: [{ name: "a" }], active: ["a"], total: 1 };
+		const env = serializeForRead(obj);
+		assert.equal(env.total, undefined, "wrapper with two arrays is not paged");
+		const parsed = JSON.parse(env.content) as Record<string, unknown>;
+		assert.deepEqual(parsed.active, ["a"], "wrapper fields preserved");
+		assert.equal((parsed.tools as unknown[]).length, 1);
+	});
+
+	it("whole:true forces whole-object serialization for an already-paged result", () => {
+		const page = { items: Array.from({ length: 80 }, (_, i) => i), total: 80, hasMore: false };
+		const env = serializeForRead(page, { whole: true });
+		assert.equal(env.total, undefined, "whole skips re-paging");
+		const parsed = JSON.parse(env.content) as Record<string, unknown>;
+		assert.equal((parsed.items as unknown[]).length, 80, "items survive intact");
+		assert.equal(parsed.hasMore, false);
+	});
 });
 
 describe("read-element: serializeForRead truncation", () => {

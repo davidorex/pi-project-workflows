@@ -12,7 +12,6 @@ import type {
 	ExtensionCommandContext,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { truncateHead } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import {
 	appendToBlock,
@@ -74,6 +73,7 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
+import { addressInto, serializeForRead } from "./read-element.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { samplesCatalog } from "./samples-catalog.js";
@@ -855,15 +855,10 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = readBlockDir(ctx.cwd, params.subdir);
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit. Full content: .project/${params.subdir}/]`;
-			}
+			const envelope = serializeForRead(result, { label: `.project/${params.subdir}/` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -886,15 +881,10 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = readBlock(ctx.cwd, params.block);
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit. Full content: .project/${params.block}.json]`;
-			}
+			const envelope = serializeForRead(result, { label: `.project/${params.block}.json` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -978,12 +968,20 @@ const extension = (pi: ExtensionAPI) => {
 		name: "read-config",
 		label: "Read Config",
 		description:
-			"Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks.",
+			"Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks. Address ONE registry/map via `registry` (e.g. relation_types) and ONE entry within it via `id` (canonical_id) instead of reading the whole config.",
 		promptSnippet: "Read project config — vocabulary, lenses, relation_types, status_buckets",
-		parameters: Type.Object({}),
+		parameters: Type.Object({
+			registry: Type.Optional(
+				Type.String({
+					description:
+						"Address ONE config registry/map by key (e.g. 'relation_types', 'lenses', 'block_kinds', 'status_buckets')",
+				}),
+			),
+			id: Type.Optional(Type.String({ description: "With `registry`: address ONE entry within it by canonical_id" })),
+		}),
 		async execute(
 			_toolCallId: string,
-			_params: Record<string, never>,
+			params: { registry?: string; id?: string },
 			_signal: AbortSignal,
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
@@ -991,16 +989,37 @@ const extension = (pi: ExtensionAPI) => {
 			const config = loadConfig(ctx.cwd);
 			const root = tryResolveContextDir(ctx.cwd);
 			const configPath = root === null ? null : path.join(root, "config.json");
-			const result = { config, configPath };
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit. Full content: ${configPath}]`;
+
+			if (params.registry !== undefined) {
+				const reg = addressInto(config, { key: params.registry });
+				if (!reg.found) {
+					return {
+						details: undefined,
+						content: [{ type: "text", text: `read-config: registry not found — ${reg.resolved}` }],
+					};
+				}
+				if (params.id !== undefined) {
+					const entry = addressInto(reg.value, { id: params.id });
+					if (!entry.found) {
+						return {
+							details: undefined,
+							content: [
+								{ type: "text", text: `read-config: entry not found in ${params.registry} — ${entry.resolved}` },
+							],
+						};
+					}
+					const envEntry = serializeForRead(entry.value, { label: `config.${params.registry}.${params.id}` });
+					return { details: undefined, content: [{ type: "text", text: envEntry.content }] };
+				}
+				const envReg = serializeForRead(reg.value, { label: `config.${params.registry}` });
+				return { details: undefined, content: [{ type: "text", text: envReg.content }] };
 			}
+
+			const result = { config, configPath };
+			const envelope = serializeForRead(result, { label: configPath ?? "config.json" });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1011,12 +1030,16 @@ const extension = (pi: ExtensionAPI) => {
 		name: "list-tools",
 		label: "List Tools",
 		description:
-			"List every tool bound into the current Pi session — name, description, parameter JSON-schema, and source extension — plus which tools are currently active. Self-introspection of the agent's own tool surface (all loaded extensions + builtins).",
-		promptSnippet: "Discover available tools — names, params, descriptions, active set",
-		parameters: Type.Object({}),
+			"Discover the agent's own tool surface (all loaded extensions + builtins). Default returns a COMPACT index — one line per tool (name · param-count · one-line description) plus the active set — not the full JSON-schemas. Pass `name` to fetch ONE tool's full descriptor (name + description + parameter JSON-schema + sourceInfo). Index→detail per FGAP-101.",
+		promptSnippet: "Discover available tools — compact index, or one tool's full descriptor via `name`",
+		parameters: Type.Object({
+			name: Type.Optional(
+				Type.String({ description: "Address ONE tool by name → full descriptor (params schema + sourceInfo)" }),
+			),
+		}),
 		async execute(
 			_toolCallId: string,
-			_params: Record<string, never>,
+			params: { name?: string },
 			_signal: AbortSignal,
 			_onUpdate: AgentToolUpdateCallback,
 			_ctx: ExtensionContext,
@@ -1025,16 +1048,43 @@ const extension = (pi: ExtensionAPI) => {
 			// ExtensionAPI, not ExtensionContext) — `_ctx` is unused.
 			const all = pi.getAllTools();
 			const active = pi.getActiveTools();
-			const result = { tools: all, active, total: all.length, activeCount: active.length };
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
+
+			if (params.name !== undefined) {
+				const hit = addressInto(all, { key: params.name });
+				// getAllTools entries are keyed by `.name`, not `.id`/`.canonical_id`;
+				// resolve by name explicitly rather than relying on addressInto's id path.
+				const tool = hit.found ? hit.value : all.find((t) => (t as { name?: string }).name === params.name);
+				if (tool === undefined) {
+					return {
+						details: undefined,
+						content: [{ type: "text", text: `list-tools: tool not found — name=${params.name}` }],
+					};
+				}
+				const envOne = serializeForRead(tool, { label: `tool ${params.name}` });
+				return { details: undefined, content: [{ type: "text", text: envOne.content }] };
 			}
+
+			// Default: compact index (FGAP-101) — name + param count + one-line description.
+			const index = all.map((t) => {
+				const tool = t as {
+					name?: string;
+					description?: string;
+					parameters?: { properties?: Record<string, unknown> };
+				};
+				const paramCount =
+					tool.parameters?.properties && typeof tool.parameters.properties === "object"
+						? Object.keys(tool.parameters.properties).length
+						: 0;
+				const oneLine = (tool.description ?? "").split("\n")[0] ?? "";
+				return { name: tool.name, params: paramCount, description: oneLine };
+			});
+			// The compact index is one line per tool — small enough to serialize whole
+			// (no paging); keep the wrapper fields (active/total) on the result object.
+			const result = { tools: index, active, total: all.length, activeCount: active.length };
+			const envelope = serializeForRead(result, { label: "tool index — pass name= for detail" });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1060,15 +1110,12 @@ const extension = (pi: ExtensionAPI) => {
 			// Package-intrinsic: the catalog reads the extension's bundled samples
 			// directory, not the project substrate — `_ctx` (and its cwd) is unused.
 			const catalog = samplesCatalog(params.kind ? { kind: params.kind } : undefined);
-			const jsonStr = JSON.stringify(catalog, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			const envelope = serializeForRead(catalog, {
+				label: params.kind ? `samples kind=${params.kind}` : "samples catalog",
+			});
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1219,32 +1266,46 @@ const extension = (pi: ExtensionAPI) => {
 	pi.registerTool({
 		name: "read-schema",
 		label: "Read Schema",
-		description: "Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent.",
-		promptSnippet: "Read a block schema as structured JSON",
+		description:
+			"Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent. Address ONE property via `path` (dotted/bracket, e.g. properties.tasks.items.properties.status) instead of reading the whole schema.",
+		promptSnippet: "Read a block schema as structured JSON — optionally address one property via `path`",
 		parameters: Type.Object({
 			schemaName: Type.String({
 				description: "Schema name without extension (e.g., 'tasks', 'decisions', 'issues')",
 			}),
+			path: Type.Optional(
+				Type.String({
+					description: "Address ONE property by dotted/bracket path (e.g. 'properties.tasks.items.properties.status')",
+				}),
+			),
 		}),
 		async execute(
 			_toolCallId: string,
-			params: { schemaName: string },
+			params: { schemaName: string; path?: string },
 			_signal: AbortSignal,
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const schema = readSchema(ctx.cwd, params.schemaName);
 			const schemaPathStr = schemaPath(ctx.cwd, params.schemaName);
-			const result = { schema, schemaPath: schemaPathStr };
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit. Full content: ${schemaPathStr}]`;
+
+			if (params.path !== undefined) {
+				const addr = addressInto(schema, { path: params.path });
+				if (!addr.found) {
+					return {
+						details: undefined,
+						content: [{ type: "text", text: `read-schema: property not found — ${addr.resolved}` }],
+					};
+				}
+				const envProp = serializeForRead(addr.value, { label: `${params.schemaName} ${addr.resolved}` });
+				return { details: undefined, content: [{ type: "text", text: envProp.content }] };
 			}
+
+			const result = { schema, schemaPath: schemaPathStr };
+			const envelope = serializeForRead(result, { label: schemaPathStr });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1400,15 +1461,10 @@ const extension = (pi: ExtensionAPI) => {
 				op: params.op,
 				value: params.value,
 			});
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			const envelope = serializeForRead(result, { label: `${params.block} filtered` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1459,15 +1515,12 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = readBlockItem(ctx.cwd, params.block, params.id);
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			// whole: the item is already the addressed element — don't re-page its
+			// intrinsic arrays; preserve the single-item|null output contract.
+			const envelope = serializeForRead(result, { whole: true, label: `${params.block} ${params.id}` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1493,15 +1546,12 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = readBlockPage(ctx.cwd, params.block, { offset: params.offset, limit: params.limit });
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			// whole: readBlockPage ALREADY paged — preserve the {items,total,hasMore}
+			// output contract; do not let serializeForRead re-page the items array.
+			const envelope = serializeForRead(result, { whole: true, label: `${params.block} page` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1561,15 +1611,10 @@ const extension = (pi: ExtensionAPI) => {
 				leftEndpoint: params.leftEndpoint,
 				leftPredicate,
 			});
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			const envelope = serializeForRead(result, { label: `${params.leftBlock} ⋈ ${params.rightBlock}` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1597,15 +1642,12 @@ const extension = (pi: ExtensionAPI) => {
 			const resultMap = resolveItemsByIds(ctx.cwd, params.ids);
 			const obj: Record<string, ItemLocation | null> = {};
 			for (const [id, loc] of resultMap) obj[id] = loc;
-			const jsonStr = JSON.stringify(obj, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			// whole: an id→location map keyed by arbitrary ids — not a pageable
+			// collection; serialize the map verbatim.
+			const envelope = serializeForRead(obj, { whole: true, label: "resolved ids" });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1686,9 +1728,10 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = edgesForLensByName(ctx.cwd, params.lensId);
+			const envelope = serializeForRead(result, { label: `edges for lens ${params.lensId}` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1743,15 +1786,10 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = walkAncestorsByLens(ctx.cwd, params.itemId, params.relationType);
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			const envelope = serializeForRead(result, { label: `ancestors of ${params.itemId}` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1787,15 +1825,10 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = findReferencesInRepo(ctx.cwd, params.itemId, params.direction);
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			const envelope = serializeForRead(result, { label: `edges on ${params.itemId}` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1836,15 +1869,12 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = gatherExecutionContext(ctx.cwd, params);
-			const jsonStr = JSON.stringify(result, null, 2);
-			const truncated = truncateHead(jsonStr);
-			let text = truncated.content;
-			if (truncated.truncated) {
-				text += `\n\n[Truncated: ${truncated.totalBytes} bytes exceeds 50KB limit.]`;
-			}
+			// whole: a structured ContextBundle (unit + perRelationType buckets) —
+			// preserve the bundle shape rather than paging any single inner array.
+			const envelope = serializeForRead(result, { whole: true, label: `bundle ${params.unitId}` });
 			return {
 				details: undefined,
-				content: [{ type: "text", text }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -1895,14 +1925,21 @@ const extension = (pi: ExtensionAPI) => {
 		): Promise<AgentToolResult<undefined>> {
 			const view = loadRoadmap(ctx.cwd, params.roadmapId);
 			if ("error" in view) {
+				const envErr = serializeForRead(view, { whole: true, label: `roadmap ${params.roadmapId} (error)` });
 				return {
 					details: undefined,
-					content: [{ type: "text", text: JSON.stringify(view, null, 2) }],
+					content: [{ type: "text", text: envErr.content }],
 				};
 			}
+			// whole: a structured RoadmapView (phases + lens-views + rollups) — keep
+			// the view shape intact rather than paging an inner array.
+			const envelope = serializeForRead(serializeRoadmapView(view), {
+				whole: true,
+				label: `roadmap ${params.roadmapId}`,
+			});
 			return {
 				details: undefined,
-				content: [{ type: "text", text: JSON.stringify(serializeRoadmapView(view), null, 2) }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});

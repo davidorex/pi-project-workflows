@@ -69,6 +69,10 @@
 			"types": "./dist/samples-catalog.d.ts",
 			"default": "./dist/samples-catalog.js"
 		},
+		"./read-element": {
+			"types": "./dist/read-element.d.ts",
+			"default": "./dist/read-element.js"
+		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
 		"./schemas/relations.schema.json": "./schemas/relations.schema.json",
 		"./schemas/priority.schema.json": "./schemas/priority.schema.json",

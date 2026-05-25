@@ -74,6 +74,13 @@ export const READ_ELEMENT_FOOTER_PREFIX = "[read-element:";
 export interface SerializeForReadOptions {
 	/** Force a specific array property to page over (else auto-discovered). */
 	itemsKey?: string;
+	/**
+	 * Force whole-object serialization — skip collection discovery/paging even
+	 * when the value is (or contains) an array. For callers handing in an
+	 * ALREADY-paged result (e.g. readBlockPage's {items,total,hasMore}) that must
+	 * not be re-paged, or any value whose array is intrinsic, not a page surface.
+	 */
+	whole?: boolean;
 	/** Page start index (default 0). Only meaningful for collections. */
 	offset?: number;
 	/** Page size (default 50). Only meaningful for collections. */
@@ -103,7 +110,16 @@ function resolveCollection(
 			if (Array.isArray(candidate)) return { collection: true, arr: candidate };
 			return { collection: false };
 		}
-		const key = discoverArrayKey(obj);
+		// A single top-level array → page it; zero or AMBIGUOUS (multiple) arrays →
+		// treat the value as a whole object. serializeForRead must not throw on a
+		// multi-array wrapper (e.g. { tools[], active[] }); whole-object is the
+		// correct fallback there (callers wanting one array pass itemsKey).
+		let key: string | null;
+		try {
+			key = discoverArrayKey(obj);
+		} catch {
+			key = null;
+		}
 		if (key !== null) return { collection: true, arr: obj[key] as unknown[] };
 	}
 	return { collection: false };
@@ -119,7 +135,7 @@ function resolveCollection(
 export function serializeForRead(value: unknown, opts: SerializeForReadOptions = {}): ReadEnvelope {
 	const offset = opts.offset ?? 0;
 	const limit = opts.limit ?? DEFAULT_LIMIT;
-	const resolved = resolveCollection(value, opts.itemsKey);
+	const resolved = opts.whole ? ({ collection: false } as const) : resolveCollection(value, opts.itemsKey);
 
 	let serialized: unknown;
 	let total: number | undefined;
@@ -183,7 +199,14 @@ export interface AddressResult {
 function asArrayOrSingleArray(value: unknown): unknown[] | null {
 	if (Array.isArray(value)) return value;
 	if (value !== null && typeof value === "object") {
-		const key = discoverArrayKey(value as Record<string, unknown>);
+		// Tolerate ambiguity (multiple top-level arrays) → no single addressable
+		// array; the caller's other address forms (key/path) still apply.
+		let key: string | null;
+		try {
+			key = discoverArrayKey(value as Record<string, unknown>);
+		} catch {
+			key = null;
+		}
 		if (key !== null) return (value as Record<string, unknown>)[key] as unknown[];
 	}
 	return null;

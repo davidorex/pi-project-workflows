@@ -171,7 +171,7 @@ describe("pi-project extension: list-tools tool", () => {
 		},
 	];
 
-	it("lists all tools + active set", async () => {
+	it("default returns the COMPACT index (name + param-count + one-line description, not full schemas)", async () => {
 		const { tools, api } = captureTools({ allTools: sampleTools, activeTools: ["a"] });
 		(extension as unknown as (pi: unknown) => void)(api);
 		const tool = tools.get("list-tools");
@@ -184,42 +184,48 @@ describe("pi-project extension: list-tools tool", () => {
 		const parsed = JSON.parse(result.content[0]!.text);
 		assert.strictEqual(parsed.tools.length, 2);
 		assert.strictEqual(parsed.tools[0].name, "a");
+		assert.strictEqual(parsed.tools[0].params, 0, "compact index reports param count");
+		assert.strictEqual(parsed.tools[0].description, "da");
+		// Compact index must NOT carry the full parameter JSON-schema or sourceInfo.
+		assert.strictEqual(parsed.tools[0].parameters, undefined, "index drops full param schema (FGAP-101)");
+		assert.strictEqual(parsed.tools[0].sourceInfo, undefined, "index drops sourceInfo");
 		assert.deepStrictEqual(parsed.active, ["a"]);
 		assert.strictEqual(parsed.total, 2);
 		assert.strictEqual(parsed.activeCount, 1);
 	});
 
-	it("surfaces description + parameters, not just names", async () => {
+	it("addressed by name returns ONE tool's full descriptor (params schema + sourceInfo)", async () => {
 		const { tools, api } = captureTools({ allTools: sampleTools, activeTools: ["a"] });
 		(extension as unknown as (pi: unknown) => void)(api);
 		const tool = tools.get("list-tools");
 		assert.ok(tool, "list-tools must be registered");
 
-		const result = (await tool.execute("call-2", {}, new AbortController().signal, () => {}, {
+		const result = (await tool.execute("call-2", { name: "a" }, new AbortController().signal, () => {}, {
 			cwd: "/tmp",
 		})) as { content: { text: string }[] };
 
 		const parsed = JSON.parse(result.content[0]!.text);
-		assert.strictEqual(parsed.tools[0].description, "da");
-		assert.strictEqual(parsed.tools[0].parameters.type, "object");
+		assert.strictEqual(parsed.name, "a", "returns the single addressed descriptor, not a list");
+		assert.strictEqual(parsed.description, "da");
+		assert.strictEqual(parsed.parameters.type, "object", "full param schema present in detail mode");
+		assert.strictEqual(parsed.sourceInfo.scope, "project");
+		assert.strictEqual(parsed.sourceInfo.origin, "package");
 	});
 
-	it("includes sourceInfo", async () => {
+	it("addressed by an unknown name reports not-found (no crash)", async () => {
 		const { tools, api } = captureTools({ allTools: sampleTools, activeTools: ["a"] });
 		(extension as unknown as (pi: unknown) => void)(api);
 		const tool = tools.get("list-tools");
 		assert.ok(tool, "list-tools must be registered");
 
-		const result = (await tool.execute("call-3", {}, new AbortController().signal, () => {}, {
+		const result = (await tool.execute("call-3", { name: "nope" }, new AbortController().signal, () => {}, {
 			cwd: "/tmp",
 		})) as { content: { text: string }[] };
 
-		const parsed = JSON.parse(result.content[0]!.text);
-		assert.strictEqual(parsed.tools[0].sourceInfo.scope, "project");
-		assert.strictEqual(parsed.tools[0].sourceInfo.origin, "package");
+		assert.match(result.content[0]!.text, /tool not found/);
 	});
 
-	it("empty getAllTools → empty result, no crash", async () => {
+	it("empty getAllTools → empty index, no crash", async () => {
 		const { tools, api } = captureTools({ allTools: [], activeTools: [] });
 		(extension as unknown as (pi: unknown) => void)(api);
 		const tool = tools.get("list-tools");
@@ -233,6 +239,90 @@ describe("pi-project extension: list-tools tool", () => {
 		assert.deepStrictEqual(parsed.tools, []);
 		assert.deepStrictEqual(parsed.active, []);
 		assert.strictEqual(parsed.total, 0);
+	});
+});
+
+describe("FGAP-103: read-config registry addressing", () => {
+	function seedConfig(cwd: string): void {
+		const projectDir = path.join(cwd, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(projectDir, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				relation_types: [
+					{ canonical_id: "task_verified_by", display_name: "verified by", category: "data_flow" },
+					{ canonical_id: "phase_depends_on", display_name: "depends on", category: "ordering" },
+				],
+				block_kinds: [],
+			}),
+		);
+	}
+
+	it("registry param returns only that registry (not the whole config)", async (t) => {
+		const cwd = tmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		seedConfig(cwd);
+
+		const { tools, api } = captureTools();
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("read-config");
+		assert.ok(tool, "read-config must be registered");
+
+		const result = (await tool.execute(
+			"call-1",
+			{ registry: "relation_types" },
+			new AbortController().signal,
+			() => {},
+			{ cwd },
+		)) as { content: { text: string }[] };
+
+		const body = result.content[0]!.text.split("[read-element:")[0]!;
+		const parsed = JSON.parse(body);
+		assert.ok(Array.isArray(parsed), "returns the registry array, not the config wrapper");
+		assert.strictEqual(parsed.length, 2);
+		assert.strictEqual(parsed[0].canonical_id, "task_verified_by");
+	});
+
+	it("registry + id addresses ONE entry by canonical_id", async (t) => {
+		const cwd = tmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		seedConfig(cwd);
+
+		const { tools, api } = captureTools();
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("read-config");
+		assert.ok(tool, "read-config must be registered");
+
+		const result = (await tool.execute(
+			"call-2",
+			{ registry: "relation_types", id: "phase_depends_on" },
+			new AbortController().signal,
+			() => {},
+			{ cwd },
+		)) as { content: { text: string }[] };
+
+		const parsed = JSON.parse(result.content[0]!.text.split("[read-element:")[0]!);
+		assert.strictEqual(parsed.canonical_id, "phase_depends_on");
+		assert.strictEqual(parsed.category, "ordering");
+	});
+
+	it("unknown registry reports not-found (no crash)", async (t) => {
+		const cwd = tmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		seedConfig(cwd);
+
+		const { tools, api } = captureTools();
+		(extension as unknown as (pi: unknown) => void)(api);
+		const tool = tools.get("read-config");
+		assert.ok(tool, "read-config must be registered");
+
+		const result = (await tool.execute("call-3", { registry: "nope" }, new AbortController().signal, () => {}, {
+			cwd,
+		})) as { content: { text: string }[] };
+
+		assert.match(result.content[0]!.text, /registry not found/);
 	});
 });
 

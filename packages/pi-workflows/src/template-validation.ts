@@ -580,7 +580,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 					if (sourceStep?.block && "read" in sourceStep.block) {
 						const blockRead = (sourceStep.block as { read: string | string[] }).read;
 						const blockName = typeof blockRead === "string" ? blockRead : tv.root;
-						suggestion = `. Consider adding output.schema: block:${blockName} to step '${sourceStepName}', or verify .project/schemas/${blockName}.schema.json exists`;
+						suggestion = `. Consider adding output.schema: block:${blockName} to step '${sourceStepName}', or verify <substrate-dir>/schemas/${blockName}.schema.json exists`;
 					} else if (sourceStep && !sourceStep.output?.schema) {
 						suggestion = `. Consider adding output.schema to step '${sourceStepName}' so field access can be verified`;
 					}

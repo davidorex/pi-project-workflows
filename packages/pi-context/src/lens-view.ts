@@ -43,7 +43,10 @@ export interface LoadedLensView {
 export function loadLensView(cwd: string, lensId: string): LoadedLensView | { error: string } {
 	const ctx = loadContext(cwd);
 	if (!ctx.config) {
-		return { error: "No .project/config.json — run /context init first, then declare lenses + install assets." };
+		return {
+			error:
+				"No <substrate-dir>/config.json — run /context init <substrate-dir> first, then declare lenses + install assets.",
+		};
 	}
 	const allLenses = ctx.config.lenses ?? [];
 	const lens = allLenses.find((l) => l.id === lensId);
@@ -197,7 +200,8 @@ export function validateContextRelations(cwd: string): SubstrateValidationResult
 			issues: [
 				{
 					code: "edge_unknown_relation_type",
-					message: "No .project/config.json — cannot validate relations without config (declares hierarchy + lenses).",
+					message:
+						"No <substrate-dir>/config.json — cannot validate relations without config (declares hierarchy + lenses).",
 				},
 			],
 		};
@@ -222,7 +226,7 @@ export function validateContextRelations(cwd: string): SubstrateValidationResult
  */
 export function edgesForLensByName(cwd: string, lensId: string): Edge[] | { error: string } {
 	const ctx = loadContext(cwd);
-	if (!ctx.config) return { error: "No .project/config.json — run /context init first." };
+	if (!ctx.config) return { error: "No <substrate-dir>/config.json — run /context init <substrate-dir> first." };
 	const allLenses = ctx.config.lenses ?? [];
 	const lens = allLenses.find((l) => l.id === lensId);
 	if (!lens) {

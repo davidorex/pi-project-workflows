@@ -147,7 +147,7 @@ function handleStatus(ctx: ExtensionCommandContext, pi: ExtensionAPI): void {
 		lines.push(`- **Verifications:** ${v.total} (${v.passed} passed, ${v.failed} failed)`);
 	}
 	if (state.hasHandoff) {
-		lines.push(`- **Handoff:** active (.project/handoff.json)`);
+		lines.push(`- **Handoff:** active (<substrate-dir>/handoff.json)`);
 	}
 
 	if (state.recentCommits.length > 0) {
@@ -1152,7 +1152,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "context-current-state",
 		label: "Context Current State",
 		description:
-			"Derive 'where are we + what's next' purely from .project substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.",
+			"Derive 'where are we + what's next' purely from the substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.",
 		promptSnippet: "Derive current project state — focus, in-flight, next actions, blocked",
 		parameters: Type.Object({}),
 		async execute(

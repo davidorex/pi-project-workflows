@@ -108,8 +108,8 @@ export const COLLECTOR_DESCRIPTORS: CollectorDescriptor[] = [
 	},
 	{ name: "tool_calls", description: "Tool calls and results interleaved", limits: "Last 20, truncated 2000 chars" },
 	{ name: "custom_messages", description: "Custom extension messages since last user message" },
-	{ name: "project_vision", description: ".project/project.json vision, core_value, name" },
-	{ name: "project_conventions", description: ".project/conformance-reference.json principle names" },
+	{ name: "project_vision", description: "<substrate-dir>/project.json vision, core_value, name" },
+	{ name: "project_conventions", description: "<substrate-dir>/conformance-reference.json principle names" },
 	{ name: "git_status", description: "Output of git status --porcelain", limits: "5s timeout" },
 	{
 		name: "conversation_history",

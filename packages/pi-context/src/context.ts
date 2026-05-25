@@ -1257,7 +1257,7 @@ export function resolveComposition(cwd: string, lens: LensSpec): ResolvedComposi
 	}
 	const ctx = loadContext(cwd);
 	if (!ctx.config) {
-		throw new Error("resolveComposition: no .project/config.json");
+		throw new Error("resolveComposition: no <substrate-dir>/config.json");
 	}
 	return resolveCompositionInternal(cwd, lens, ctx.config, new Set());
 }

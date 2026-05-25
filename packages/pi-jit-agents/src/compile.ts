@@ -433,7 +433,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 					if (!first) continue;
 					throw new AgentCompileError(
 						spec.name,
-						`contextBlocks[${first.index}]: cannot resolve item '${first.ref.item}' in block '${first.ref.name}' — '.project/' directory does not exist at ${ctx.cwd}`,
+						`contextBlocks[${first.index}]: cannot resolve item '${first.ref.item}' in block '${first.ref.name}' — the substrate directory does not exist at ${ctx.cwd}`,
 					);
 				}
 				const idIndex = getIdIndex();
@@ -454,7 +454,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 					if (!loc) {
 						throw new AgentCompileError(
 							spec.name,
-							`contextBlocks[${index}]: item id '${itemId}' not found (declared block '${ref.name}'). Verify the id exists in '.project/${ref.name}.json' and that buildIdIndex covers its host block.`,
+							`contextBlocks[${index}]: item id '${itemId}' not found (declared block '${ref.name}'). Verify the id exists in '<substrate-dir>/${ref.name}.json' and that buildIdIndex covers its host block.`,
 						);
 					}
 					const wrapped = wrapItemContent(ref.name, itemId, loc.item);

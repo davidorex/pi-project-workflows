@@ -807,7 +807,7 @@ describe("contextBlocks validation", () => {
 
 		const spec = makeSpec({ run: { agent: "ctx-agent" } }, { filePath: path.join(tmpDir, "test.workflow.yaml") });
 		const result = validateWorkflow(spec, tmpDir);
-		const ctxIssues = result.issues.filter((i) => i.message.includes(".project"));
+		const ctxIssues = result.issues.filter((i) => i.message.includes("no substrate directory exists"));
 		assert.ok(ctxIssues.length > 0);
 		assert.strictEqual(ctxIssues[0].severity, "warning");
 	});

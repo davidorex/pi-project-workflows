@@ -628,7 +628,7 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 		if (!projectDirExists) {
 			issues.push({
 				severity: "warning",
-				message: `Agent '${step.agent}' declares contextBlocks but no .project/ directory exists`,
+				message: `Agent '${step.agent}' declares contextBlocks but no substrate directory exists`,
 				field: `${fieldPrefix}.agent`,
 			});
 			continue;
@@ -640,7 +640,7 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 			if (!fs.existsSync(blockPath)) {
 				issues.push({
 					severity: "warning",
-					message: `Context block '${blockName}' not found in .project/ (referenced by agent '${step.agent}')`,
+					message: `Context block '${blockName}' not found in the substrate directory (referenced by agent '${step.agent}')`,
 					field: `${fieldPrefix}.agent`,
 				});
 			}

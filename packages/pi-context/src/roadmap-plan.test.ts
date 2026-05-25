@@ -410,7 +410,7 @@ describe("loadRoadmap", () => {
 		fs.mkdirSync(path.join(roadmapTmpRoot, ".project"), { recursive: true });
 		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
 		assert.ok("error" in result);
-		assert.match(result.error, /No \.project\/config\.json/);
+		assert.match(result.error, /No <substrate-dir>\/config\.json/);
 	});
 
 	it("returns error when roadmap.json absent", () => {

@@ -296,11 +296,16 @@ function evaluateMilestone(cwd: string, m: MilestoneSpec): boolean {
 export function loadRoadmap(cwd: string, roadmapId: string): RoadmapView | { error: string } {
 	const ctx = loadContext(cwd);
 	if (!ctx.config) {
-		return { error: "No .project/config.json — run /context init first, then declare lenses + install assets." };
+		return {
+			error:
+				"No <substrate-dir>/config.json — run /context init <substrate-dir> first, then declare lenses + install assets.",
+		};
 	}
 	const roadmaps = readRoadmaps(cwd);
 	if (roadmaps === null) {
-		return { error: "no roadmap.json — install via .project/config.json's installed_blocks then author roadmap.json" };
+		return {
+			error: "no roadmap.json — install via <substrate-dir>/config.json's installed_blocks then author roadmap.json",
+		};
 	}
 	const roadmap = roadmaps.find((r) => r.id === roadmapId);
 	if (!roadmap) {

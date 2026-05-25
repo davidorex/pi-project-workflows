@@ -299,7 +299,7 @@ export function readBlock(
 	try {
 		content = fs.readFileSync(filePath, "utf-8");
 	} catch {
-		throw new Error(`Block file not found: .project/${blockName}.json`);
+		throw new Error(`Block file not found: ${filePath}`);
 	}
 
 	let data: unknown;
@@ -307,7 +307,7 @@ export function readBlock(
 		data = JSON.parse(content);
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
-		throw new Error(`Invalid JSON in block file: .project/${blockName}.json: ${msg}`);
+		throw new Error(`Invalid JSON in block file: ${filePath}: ${msg}`);
 	}
 
 	if (filter) {
@@ -1310,12 +1310,12 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
 		try {
 			content = fs.readFileSync(filePath, "utf-8");
 		} catch {
-			throw new Error(`Cannot read file: .project/${subdir}/${filename}`);
+			throw new Error(`Cannot read file: ${filePath}`);
 		}
 		try {
 			results.push(JSON.parse(content));
 		} catch {
-			throw new Error(`Invalid JSON in: .project/${subdir}/${filename}`);
+			throw new Error(`Invalid JSON in: ${filePath}`);
 		}
 	}
 	return results;

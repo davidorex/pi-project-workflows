@@ -1210,6 +1210,34 @@
       "notes": "Closes FGAP-089 (P1; the structured footer was empirically insufficient — agent skimmed it). Shared serializeForRead is the DRY chokepoint (pi-workflows imports @davidorex/pi-context/read-element). Key insight: the warning must lead (head-first), not trail. User scope: comprehensive/global all over-READS, not just pi-context; output-truncation explicitly out. Verify from scratch cwd; NO RELEASE (held). Audit step mandatory (user-directed).",
       "id": "TASK-078",
       "verification": "VER-049"
+    },
+    {
+      "description": "Fix FGAP-106 + FGAP-107 (agent-facing guidance accuracy). FGAP-106: neutralize '.project/' -> '<substrate-dir>' in agent-facing strings (NOT code path-resolution): pi-context index.ts read-block-dir desc+param-hint (845/848), serializeForRead labels (858/885 — drop .project/ prefix), resolve-item-by-id desc (1514), install desc+notify (2084/2109), roadmap-list notify (2173); pi-workflows workflow-sdk.ts:88 validation-check desc; scripts/generate-skills.js hardcoded .project/config.json (~541/557); switch the init example (index.ts:400 message + 1411 param hint) to lead with .context (suggested) keeping the no-default DEC-0015 framing. FGAP-107: orientation.ts:36 'run /context start' -> the REAL ceremony '/context init <substrate-dir> (suggested .context) -> /context accept-all -> /context install'; index.ts:1179 (context-bootstrap-state desc) repoint off /context start. Update tests in lockstep: index.test.ts (~357) needles /context start -> /context init + accept-all + install; read-element.test.ts (~102) neutralize the .project label assertion. Then npm run skills regen. LEAVE: code path literals, .project dir literal in path-builders, tests fixtures, pi-project-workflows package name, context-sdk JSDoc /context start forward-refs, frozen .project dir, <config.root> placeholders.",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/orientation.ts",
+        "packages/pi-workflows/src/workflow-sdk.ts",
+        "scripts/generate-skills.js",
+        "packages/pi-context/src/index.test.ts",
+        "packages/pi-context/src/read-element.test.ts"
+      ],
+      "acceptance_criteria": [
+        "zero '.project/' in agent-facing guidance (descriptions/param-hints/labels/notify/orientation) across packages/*/src + generate-skills.js + regenerated SKILL.md (excluding LEAVE set)",
+        "zero '/context start' in agent-facing strings (orientation + descriptions); orientation names the real init->accept-all->install ceremony (suggested .context)",
+        "init example switched to .context-led, no-default DEC-0015 framing kept",
+        "tests updated in lockstep (index.test.ts needles, read-element.test.ts label); build/check/test green",
+        "npm run skills regenerated; SKILL.md clean",
+        "LEAVE set untouched (code resolution still pointer/.project-driven; JSDoc; package name; frozen dir)",
+        "live runtime gate (launch-constrained-pi.sh scratch cwd): agent names the real ceremony, not /context start, and does not assert state lives in .project",
+        "fresh-context audit confirms full neutralize + no residue + LEAVE intact; orchestrator re-greps"
+      ],
+      "depends_on": [
+        "TASK-074",
+        "TASK-078"
+      ],
+      "notes": "Interim guidance-accuracy fix (FGAP-106 + FGAP-107). Does NOT build /context start (FGAP-095+066); names the real current ceremony until it lands. Neutral referent <substrate-dir>. SKILL.md generated -> edit source + regen, don't hand-edit. NO RELEASE (held). Audit step mandatory.",
+      "id": "TASK-079"
     }
   ]
 }

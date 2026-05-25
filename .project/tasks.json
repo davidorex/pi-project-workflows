@@ -1252,7 +1252,7 @@
     {
       "id": "TASK-080",
       "description": "FEAT-001 unit 1 — unify the AgentSpec type + agent loader on pi-jit-agents (the foundational dedup of issue-043 'duplicate agent infrastructure'). Today pi-workflows defines its OWN AgentSpec (packages/pi-workflows/src/types.ts:170) + its own agent loader (agent-spec.ts), and pi-behavior-monitors consumes workflow's agent infra (@davidorex/pi-workflows/agent-spec, /step-shared, /types). Make pi-jit-agents' AgentSpec (types.ts) + loader (parseAgentYaml/createAgentLoader) the single source: pi-workflows imports them and deletes its duplicate type + loader; pi-behavior-monitors repoints from pi-workflows to pi-jit-agents. Reconcile the field-name deltas (workflow promptTemplate/taskTemplate vs jit-agents systemPromptTemplate/taskPromptTemplate; + description/loadedFrom). DEFERRED to follow-on units: unify compile (pi-workflows compileAgentSpec/step-shared -> jit-agents compileAgent) = unit 2; the subprocess-vs-in-process execute split = unit 3. Pipeline: plan mode -> explore (exact two-AgentSpec field deltas + all consumers of workflow's AgentSpec/loader + whether jit-agents' loader covers workflow's needs) -> plan -> impl agent -> audit agent. Governed by DEC-0044 (dispatch home) + DEC-0047 (capability model) — both enacted.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-workflows/src/types.ts",
         "packages/pi-workflows/src/agent-spec.ts",

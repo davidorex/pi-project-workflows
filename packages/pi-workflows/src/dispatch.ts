@@ -22,6 +22,12 @@ export interface DispatchOptions {
 	timeoutMs?: number; // timeout in milliseconds — kills subprocess after deadline
 	onEvent?: (event: ProcessEvent) => void; // live event callback for TUI updates
 	modelConfig?: ModelConfig; // project-level model assignments by role
+	/**
+	 * The parent's active tool surface, used to clamp the agent's declared tool
+	 * grant (FGAP-099). A declared grant exceeding this set fails closed. When
+	 * undefined, no clamping is applied — the declared grant passes through.
+	 */
+	parentTools?: string[];
 }
 
 export interface ProcessEvent {
@@ -67,6 +73,65 @@ export function extractToolArgsPreview(args: unknown): string {
 	return "";
 }
 
+/**
+ * Resolved tool grant for a dispatched agent: the builtin tool names that become
+ * the `--tools` allowlist, and any extension paths to load via `--extension`.
+ */
+export type ToolGrant = { toolNames: string[]; extensionPaths: string[] };
+
+/**
+ * Error raised when a JIT agent's declared tool grant exceeds the parent's
+ * active tool surface. Carrying a distinct type lets `dispatch` catch this
+ * specific failure and convert it into a failed StepResult without spawning.
+ */
+export class ToolGrantError extends Error {}
+
+/**
+ * Compose a tool grant from an agent's explicitly-declared tools, clamped to the
+ * parent's active tool surface.
+ *
+ * Design premise (FGAP-099): a JIT agent's tools are granted by EXPLICIT
+ * DECLARATION. An absent/empty declaration grants NOTHING — never the inherited
+ * default. The parent's active surface is a SAFETY GUARD: the declared grant
+ * must be a subset of the parent surface; a name outside it is reported as an
+ * error (fail-closed) rather than silently dropped or passed through.
+ *
+ * Extension paths (heuristic: contains "/" or ends with .ts/.js) are routed to
+ * `--extension`; everything else is a builtin tool name for the `--tools`
+ * allowlist. Loading an extension does NOT itself grant its tools — pi applies
+ * `--tools` as an allowlist after extensions load, so a tool is active in the
+ * child only if its NAME appears in `toolNames`.
+ *
+ * When `parentTools` is undefined (no parent surface available to clamp
+ * against), the grant is returned as-is with no subset check.
+ *
+ * @returns a ToolGrant on success, or `{ error }` when the declared grant
+ *   exceeds the parent surface.
+ */
+export function composeToolGrant(
+	declared: string[] | undefined,
+	parentTools: string[] | undefined,
+): ToolGrant | { error: string } {
+	const toolNames: string[] = [];
+	const extensionPaths: string[] = [];
+	for (const t of declared ?? []) {
+		if (t.includes("/") || t.endsWith(".ts") || t.endsWith(".js")) {
+			extensionPaths.push(t);
+		} else {
+			toolNames.push(t);
+		}
+	}
+	if (parentTools) {
+		const outside = toolNames.filter((n) => !parentTools.includes(n));
+		if (outside.length) {
+			return {
+				error: `agent tool grant exceeds parent surface: [${outside.join(", ")}] not in parent tools [${parentTools.join(", ")}]`,
+			};
+		}
+	}
+	return { toolNames, extensionPaths };
+}
+
 export function buildArgs(step: StepSpec, agentSpec: AgentSpec, prompt: string, options: DispatchOptions): string[] {
 	const args = ["--mode", "json"];
 
@@ -84,20 +149,17 @@ export function buildArgs(step: StepSpec, agentSpec: AgentSpec, prompt: string, 
 		args.push("--models", modelArg);
 	}
 
-	// Tool filtering
-	if (agentSpec.tools?.length) {
-		const builtinTools: string[] = [];
-		const extensionPaths: string[] = [];
-		for (const tool of agentSpec.tools) {
-			if (tool.includes("/") || tool.endsWith(".ts") || tool.endsWith(".js")) {
-				extensionPaths.push(tool);
-			} else {
-				builtinTools.push(tool);
-			}
-		}
-		if (builtinTools.length > 0) args.push("--tools", builtinTools.join(","));
-		for (const ext of extensionPaths) args.push("--extension", ext);
+	// Tool grant (FGAP-099): ALWAYS emit the declared grant, clamped to the
+	// parent surface. An absent/empty declaration grants NOTHING (emits `--tools`
+	// with an empty allowlist) — it never inherits pi's full default surface, so a
+	// `--tools`-confined parent confines its children. A declared name outside the
+	// parent surface fails closed via ToolGrantError (no spawn).
+	const grant = composeToolGrant(agentSpec.tools, options.parentTools);
+	if ("error" in grant) {
+		throw new ToolGrantError(grant.error);
 	}
+	args.push("--tools", grant.toolNames.join(","));
+	for (const ext of grant.extensionPaths) args.push("--extension", ext);
 
 	// Extension scoping
 	if (agentSpec.extensions !== undefined) {
@@ -137,7 +199,29 @@ export async function dispatch(
 	options: DispatchOptions,
 ): Promise<StepResult> {
 	const startTime = Date.now();
-	const args = buildArgs(step, agentSpec, prompt, options);
+
+	// Compose CLI args. A tool grant that exceeds the parent surface (FGAP-099)
+	// throws ToolGrantError here; surface it as a failed StepResult WITHOUT
+	// spawning, so an over-broad grant never reaches a child process.
+	let args: string[];
+	try {
+		args = buildArgs(step, agentSpec, prompt, options);
+	} catch (err) {
+		if (err instanceof ToolGrantError) {
+			return {
+				step: options.stepName,
+				agent: step.agent!,
+				status: "failed",
+				output: undefined,
+				textOutput: "",
+				sessionLog: options.sessionLogDir,
+				usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 },
+				durationMs: Date.now() - startTime,
+				error: err.message,
+			};
+		}
+		throw err;
+	}
 
 	// Handle long prompts: write to temp file
 	let tmpDir: string | null = null;

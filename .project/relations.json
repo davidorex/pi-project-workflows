@@ -208,5 +208,20 @@
     "parent": "DEC-0047",
     "child": "FGAP-102",
     "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "TASK-080",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-080",
+    "child": "DEC-0044",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-080",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
   }
 ]

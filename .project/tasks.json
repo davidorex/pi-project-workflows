@@ -1248,6 +1248,29 @@
       "notes": "EXHAUSTIVE supersession of original enumeration (feedback_class_fix_completeness_reenumeration: re-grep until zero). Scope grew 7->19 code + ~15 narrative after full-tree re-verification. Exhaustive sweep recorded in analysis/2026-05-25-fgap-106-107-exhaustive-sweep.md. Interim guidance-accuracy fix; does NOT build /context start (FGAP-095+066). Neutral referent <substrate-dir>. SKILL.md generated -> edit source + regen. NO RELEASE (held). Audit mandatory.",
       "id": "TASK-079",
       "verification": "VER-050"
+    },
+    {
+      "id": "TASK-080",
+      "description": "FEAT-001 unit 1 — unify the AgentSpec type + agent loader on pi-jit-agents (the foundational dedup of issue-043 'duplicate agent infrastructure'). Today pi-workflows defines its OWN AgentSpec (packages/pi-workflows/src/types.ts:170) + its own agent loader (agent-spec.ts), and pi-behavior-monitors consumes workflow's agent infra (@davidorex/pi-workflows/agent-spec, /step-shared, /types). Make pi-jit-agents' AgentSpec (types.ts) + loader (parseAgentYaml/createAgentLoader) the single source: pi-workflows imports them and deletes its duplicate type + loader; pi-behavior-monitors repoints from pi-workflows to pi-jit-agents. Reconcile the field-name deltas (workflow promptTemplate/taskTemplate vs jit-agents systemPromptTemplate/taskPromptTemplate; + description/loadedFrom). DEFERRED to follow-on units: unify compile (pi-workflows compileAgentSpec/step-shared -> jit-agents compileAgent) = unit 2; the subprocess-vs-in-process execute split = unit 3. Pipeline: plan mode -> explore (exact two-AgentSpec field deltas + all consumers of workflow's AgentSpec/loader + whether jit-agents' loader covers workflow's needs) -> plan -> impl agent -> audit agent. Governed by DEC-0044 (dispatch home) + DEC-0047 (capability model) — both enacted.",
+      "status": "planned",
+      "files": [
+        "packages/pi-workflows/src/types.ts",
+        "packages/pi-workflows/src/agent-spec.ts",
+        "packages/pi-workflows/src/step-shared.ts",
+        "packages/pi-workflows/src/step-agent.ts",
+        "packages/pi-behavior-monitors/index.ts",
+        "packages/pi-jit-agents/src/types.ts",
+        "packages/pi-jit-agents/src/agent-spec.ts"
+      ],
+      "acceptance_criteria": [
+        "pi-jit-agents AgentSpec is the single AgentSpec type; pi-workflows imports it and its duplicate type in types.ts is deleted",
+        "pi-workflows uses jit-agents' loader (parseAgentYaml/createAgentLoader); its duplicate agent-spec loader is removed",
+        "pi-behavior-monitors imports AgentSpec + loader from @davidorex/pi-jit-agents, not @davidorex/pi-workflows",
+        "field-name deltas reconciled (promptTemplate->systemPromptTemplate, taskTemplate->taskPromptTemplate; description/loadedFrom handled) with no behavior change",
+        "compile + execute unification explicitly NOT in this unit (unit 2 / unit 3)",
+        "build/check/test green; runtime demo (load+compile a real .agent.yaml through the unified type); fresh-context adversarial audit; orchestrator re-greps for residual pi-workflows AgentSpec/loader definitions"
+      ],
+      "notes": "First slice of FEAT-001 (consume jit-agents / remove the duplicate agent layer), unblocked by DEC-0044 + DEC-0047 (both enacted 2026-05-26). Foundational: one canonical agent type underpins the downstream new-dispatch-extension + FEAT-005 capability + the FGAP-099 clamp. pi-workflows already imports pi-jit-agents (enforceBudget) so no new package edge. NO RELEASE (held)."
     }
   ]
 }

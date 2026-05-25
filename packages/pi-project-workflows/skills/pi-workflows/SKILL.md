@@ -247,7 +247,7 @@ See references/bundled-resources.md for full inventory.
 | `filter-names` | warning | Expression filters are recognized |
 | `steptype-metadata` | error | retry/input/output declarations match step type capabilities |
 | `inputschema-required` | error | Agent required input keys are provided by step |
-| `contextblocks-existence` | warning | Declared context blocks exist in .project/ |
+| `contextblocks-existence` | warning | Declared context blocks exist in the substrate dir |
 | `template-alignment` | error | Template variables match step inputs and source schemas |
 
 </validation_vocabulary>
@@ -274,7 +274,7 @@ Workflows are discovered from three locations (first match wins):
 | loop | `loop: { maxAttempts, steps }` | Repeat sub-steps until gate breaks or max reached |
 | parallel | `parallel: { a: ..., b: ... }` | Run named sub-steps concurrently |
 | pause | `pause: true` or `pause: "message"` | Pause execution, resumable later |
-| block | `block: { op: read\|write\|append\|update\|remove\|… }` | Validated in-process `.project` block I/O via the block API — no LLM, no subprocess |
+| block | `block: { op: read\|write\|append\|update\|remove\|… }` | Validated in-process substrate block I/O via the block API — no LLM, no subprocess |
 
 `forEach: "${{ expr }}"` (iterate the step per array element) and `as:` are step MODIFIERS, not step types — they combine with any type above.
 </step_types>
@@ -312,7 +312,7 @@ Incomplete runs (failed or paused) are detected on next invocation. If the workf
 <output_validation>
 Steps with `output.schema` validate the agent's JSON output against a JSON Schema file. Validation failure marks the step as failed.
 
-Use `block:<name>` to reference project block schemas portably: `output.schema: block:project` resolves to `.project/schemas/project.schema.json` from cwd. Works across monorepo, npm install, and user-customized schemas. Combined with `retry: { maxAttempts: 2 }`, the agent gets the schema validation error injected into its retry prompt and can self-correct.
+Use `block:<name>` to reference project block schemas portably: `output.schema: block:project` resolves to `<substrate-dir>/schemas/project.schema.json` from cwd. Works across monorepo, npm install, and user-customized schemas. Combined with `retry: { maxAttempts: 2 }`, the agent gets the schema validation error injected into its retry prompt and can self-correct.
 </output_validation>
 
 <retry>
@@ -327,7 +327,7 @@ After execution, the workflow result is injected into the main LLM conversation.
 </completion_messages>
 
 <artifacts>
-Workflows can write post-completion files via the `artifacts` field. Paths may contain `${{ }}` expressions. Artifacts targeting `.project/*.json` are routed through `writeBlock()` for schema validation.
+Workflows can write post-completion files via the `artifacts` field. Paths may contain `${{ }}` expressions. Artifacts targeting `<substrate-dir>/*.json` are routed through `writeBlock()` for schema validation.
 
 Block artifact write failures are fatal — if the data doesn't conform to the block's schema, the workflow fails. Non-block artifact failures remain non-fatal (warning). On resume, all steps are preserved; only artifact processing re-runs, so fixing the schema issue or agent output and resuming avoids re-running expensive LLM steps.
 </artifacts>

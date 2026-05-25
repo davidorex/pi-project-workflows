@@ -3,7 +3,7 @@ name: pi-context
 description: >
   Schema-driven project state management with typed JSON blocks, schema
   validation, substrate config, lens views, closure-table relations, and
-  cross-block referential integrity. Use when managing .project/ blocks,
+  cross-block referential integrity. Use when managing substrate blocks,
   scaffolding project structure, installing block kinds from the packaged samples
   catalog, validating project state, rendering lens views, or adding work items.
 ---
@@ -104,13 +104,13 @@ Remove items matching a predicate from a nested array on a parent-array item in 
 </tool>
 
 <tool name="read-block-dir">
-Enumerate and parse all .json files in a .project/<subdir>/ directory, returned as a sorted array. Missing directories return [].
+Enumerate and parse all .json files in a <substrate-dir>/<subdir>/ directory, returned as a sorted array. Missing directories return [].
 
 *Enumerate project block subdirectories (phases, schemas, etc.) as parsed JSON*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `subdir` | string | yes | Subdirectory under .project/ (e.g., 'phases', 'schemas') |
+| `subdir` | string | yes | Subdirectory under the substrate dir (e.g., 'phases', 'schemas') |
 </tool>
 
 <tool name="read-block">
@@ -180,14 +180,14 @@ Enumerate installable sample block kinds (DEC-0037 packaged view): per kind — 
 </tool>
 
 <tool name="context-current-state">
-Derive 'where are we + what's next' purely from .project substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.
+Derive 'where are we + what's next' purely from the substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.
 
 *Derive current project state — focus, in-flight, next actions, blocked*
 
 </tool>
 
 <tool name="context-bootstrap-state">
-Derive the substrate bootstrap state for the cwd, purely from the filesystem (DEC-0040): 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context start (bootstrap is human-only). No writes.
+Derive the substrate bootstrap state for the cwd, purely from the filesystem (DEC-0040): 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap is human-only). No writes.
 
 *Derive substrate bootstrap state — no-pointer | no-config | not-installed | ready (never throws pre-bootstrap)*
 
@@ -251,7 +251,7 @@ Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + in
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `contextDir` | string | yes | Substrate dir name (e.g. .project). Required per DEC-0015 — no default. |
+| `contextDir` | string | yes | Substrate dir name (e.g. .context). Required per DEC-0015 — no default. |
 </tool>
 
 <tool name="context-accept-all">
@@ -275,7 +275,7 @@ Filter the array items of a block by a single-field predicate (eq / neq / in / m
 </tool>
 
 <tool name="resolve-item-by-id">
-Look up the block, array key, and item payload for a given ID across all .project/ blocks. Returns null when no item matches. Mirrors the resolveItemById SDK function and shares its prefix-vs-block invariant — IDs whose prefix maps to a known block but live elsewhere throw at index-build time.
+Look up the block, array key, and item payload for a given ID across all blocks in the substrate dir. Returns null when no item matches. Mirrors the resolveItemById SDK function and shares its prefix-vs-block invariant — IDs whose prefix maps to a known block but live elsewhere throw at index-build time.
 
 *Resolve a kind-prefixed ID (DEC-/FEAT-/FGAP-/issue-/REQ-/TASK-/etc.) to its owning block and item*
 
@@ -467,7 +467,7 @@ See references/bundled-resources.md for full inventory.
 
 <installable_blocks>
 
-Names valid for the `installed_blocks` array in `.project/config.json`. Install with `/context install <block>`.
+Names valid for the `installed_blocks` array in `<substrate-dir>/config.json`. Install with `/context install <block>`.
 
 | Block | Source File |
 |-------|-------------|
@@ -491,7 +491,7 @@ Names valid for the `installed_blocks` array in `.project/config.json`. Install 
 
 <installable_schemas>
 
-Names valid for the `installed_schemas` array in `.project/config.json`. Schemas back block validation; install with `/context install <schema>`.
+Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. Schemas back block validation; install with `/context install <schema>`.
 
 | Schema | Source File |
 |--------|-------------|
@@ -569,7 +569,7 @@ Names valid for the `installed_schemas` array in `.project/config.json`. Schemas
 </planning_vocabulary>
 
 <objective>
-pi-context manages structured project state in `.project/` — a directory of JSON block files validated against schemas. The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
+pi-context manages structured project state in the substrate directory — a directory of JSON block files validated against schemas. The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
 </objective>
 
 <block_files>
@@ -595,9 +595,9 @@ The installable catalog IS the packaged conception (`samples/conception.json`): 
 </context_install>
 
 <substrate_config>
-`.project/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — closing the GitHub #3 surface where downstream consumers had to assume `.project/`. `naming` aliases canonical block ids to display names (used by `/context view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/context install`.
+`<substrate-dir>/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — consumers resolve that dir via the `.pi-context.json` pointer plus `config.root`, never by assuming a fixed directory name. `naming` aliases canonical block ids to display names (used by `/context view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/context install`.
 
-`config.json` and `relations.json` are exempt from `root` redirection — they always live at `.project/` because they are the substrate that defines `root`. All other state lives under `<config.root>/...` per `resolveContextDir(cwd)`. The package ships their schemas in `schemas/` (config.schema.json, relations.schema.json) and resolves them via three-tier search: project override > user override > package-shipped.
+`config.json` and `relations.json` are exempt from `config.root` redirection — they always live at the substrate-dir root (the dir chosen at bootstrap, resolved via the `.pi-context.json` pointer, suggested `.context`) because they are the substrate that defines `root`. The substrate-dir root is whatever was chosen at bootstrap, not necessarily `.project`. All other state lives under `<config.root>/...` per `resolveContextDir(cwd)`. The package ships their schemas in `schemas/` (config.schema.json, relations.schema.json) and resolves them via three-tier search: project override > user override > package-shipped.
 
 The `loadContext(cwd)` SDK returns an mtime-keyed cached snapshot of `{ config, relations, configMtime, relationsMtime }` for one cwd. Consumers must not mutate.
 </substrate_config>
@@ -605,7 +605,7 @@ The `loadContext(cwd)` SDK returns an mtime-keyed cached snapshot of `{ config, 
 <lens_views>
 Lenses are named projections over a target block. A lens declares `id`, `target` (block name), `relation_type`, `derived_from_field` (optional — synthesizes edges from a per-item field instead of requiring authored edges), `bins` (named groupings), and `render_uncategorized`.
 
-Edges live in `.project/relations.json` as a closure table — each row is `{ parent, child, relation_type }`. `parent` is either a canonical id (hierarchy edges) or a lens.bins value (lens edges); disambiguation lives in `validateRelations`.
+Edges live in `<substrate-dir>/relations.json` as a closure table — each row is `{ parent, child, relation_type }`. `parent` is either a canonical id (hierarchy edges) or a lens.bins value (lens edges); disambiguation lives in `validateRelations`.
 
 The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synthetic edges (when `derived_from_field` is set) or filtered authored edges (otherwise). `groupByLens(items, lens, lensEdges)` produces a `Map<binName, ItemRecord[]>`. `walkDescendants(parentId, relationType, edges)` traverses the closure table from any parent.
 
@@ -677,7 +677,7 @@ On `session_start`, checks npm registry for newer versions of `@davidorex/pi-pro
 </update_check>
 
 <success_criteria>
-- `.project/`, `.project/schemas/`, `.project/phases/`, and `.project/config.json` exist after `/context init`
+- `<substrate-dir>/`, `<substrate-dir>/schemas/`, `<substrate-dir>/phases/`, and `<substrate-dir>/config.json` exist after `/context init <substrate-dir>`
 - `installed_schemas` / `installed_blocks` declared in `config.json` are reified by `/context install`; `--update` overwrites
 - Block writes validate against schemas — invalid data rejected with specific error
 - `/context status` returns current derived state without errors

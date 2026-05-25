@@ -95,8 +95,8 @@ See references/bundled-resources.md for full inventory.
 | `tool_results` | `{tool_results}` / `{{ tool_results }}` | Tool results with tool name and error status | Last 5, truncated 2000 chars |
 | `tool_calls` | `{tool_calls}` / `{{ tool_calls }}` | Tool calls and results interleaved | Last 20, truncated 2000 chars |
 | `custom_messages` | `{custom_messages}` / `{{ custom_messages }}` | Custom extension messages since last user message | — |
-| `project_vision` | `{project_vision}` / `{{ project_vision }}` | .project/project.json vision, core_value, name | — |
-| `project_conventions` | `{project_conventions}` / `{{ project_conventions }}` | .project/conformance-reference.json principle names | — |
+| `project_vision` | `{project_vision}` / `{{ project_vision }}` | <substrate-dir>/project.json vision, core_value, name | — |
+| `project_conventions` | `{project_conventions}` / `{{ project_conventions }}` | <substrate-dir>/conformance-reference.json principle names | — |
 | `git_status` | `{git_status}` / `{{ git_status }}` | Output of git status --porcelain | 5s timeout |
 | `conversation_history` | `{conversation_history}` / `{{ conversation_history }}` | Prior turn summaries (user request + actions + assistant response) | 1-3 turns adaptive, 2000 char max |
 
@@ -209,7 +209,7 @@ A `.monitor.json` file conforms to `schemas/monitor.schema.json`:
     "on_flag": {
       "steer": "Fix the issue.",
       "write": {
-        "path": ".project/issues.json",
+        "path": "<substrate-dir>/issues.json",
         "merge": "append",
         "array_field": "issues",
         "template": {
@@ -475,7 +475,7 @@ acknowledgment support:
 **fragility** (`message_end`, `when: has_tool_results`)
 Watches for unaddressed fragilities after tool use — errors, warnings, or broken state the
 agent noticed but chose not to fix. Steers with "Fix the issue you left behind." Writes
-findings to `.project/issues.json` under `category: "fragility"`. Excludes: none. Ceiling: 5.
+findings to `<substrate-dir>/issues.json` under `category: "fragility"`. Excludes: none. Ceiling: 5.
 12 bundled patterns across categories: avoidance (dismiss-preexisting, not-my-change,
 blame-environment, workaround-over-root-cause, elaborate-workaround-for-fixable),
 error-handling (empty-catch, happy-path-only, early-return-on-unexpected,
@@ -493,7 +493,7 @@ deflection (ask-permission, qualify-yesno, counter-question).
 
 **work-quality** (`command`, `when: always`)
 On-demand work quality analysis invoked via `/work-quality`. Analyzes user request, tool
-calls, and assistant response for quality issues. Writes findings to `.project/issues.json`
+calls, and assistant response for quality issues. Writes findings to `<substrate-dir>/issues.json`
 under `category: "work-quality"`. Ceiling: 3.
 11 bundled patterns across categories: methodology (trial-and-error, symptom-fix,
 double-edit, edit-without-read, insanity-retry, no-plan), verification (no-verify),

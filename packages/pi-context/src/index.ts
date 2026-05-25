@@ -172,7 +172,7 @@ async function handleAddWork(args: string, ctx: ExtensionCommandContext, pi: Ext
 	const workflowDir = tryResolveContextDir(ctx.cwd);
 	if (workflowDir === null) {
 		ctx.ui.notify(
-			"No .pi-context.json bootstrap pointer found. Run /context init first to bootstrap the substrate.",
+			"No .pi-context.json bootstrap pointer found. Run /context init <substrate-dir> first to bootstrap the substrate.",
 			"error",
 		);
 		return;
@@ -308,12 +308,13 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 
 	const destRoot = tryResolveContextDir(cwd);
 	if (destRoot === null) {
-		result.error = "No .pi-context.json bootstrap pointer found. Run /context init first to bootstrap the substrate.";
+		result.error =
+			"No .pi-context.json bootstrap pointer found. Run /context init <substrate-dir> first to bootstrap the substrate.";
 		return result;
 	}
 	const config: ConfigBlock | null = loadConfig(cwd);
 	if (!config) {
-		result.error = "No config.json found in substrate dir — run /context init first.";
+		result.error = "No config.json found in substrate dir — run /context init <substrate-dir> first.";
 		return result;
 	}
 
@@ -434,7 +435,7 @@ function handleAcceptAll(_args: string, ctx: ExtensionCommandContext): void {
 		r = adoptConception(ctx.cwd);
 	} catch (err) {
 		if (err instanceof BootstrapNotFoundError) {
-			ctx.ui.notify("Run /context init <dir> first", "error");
+			ctx.ui.notify("Run /context init <substrate-dir> first", "error");
 			return;
 		}
 		throw err;

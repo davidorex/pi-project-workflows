@@ -45,7 +45,7 @@ export class BootstrapNotFoundError extends Error {
 	readonly bootstrapPath: string;
 	constructor(cwd: string, bootstrapPath: string) {
 		super(
-			`pi-context: no .pi-context.json bootstrap pointer at ${bootstrapPath}; run /context init to declare substrate dir per DEC-0015`,
+			`pi-context: no .pi-context.json bootstrap pointer at ${bootstrapPath}; run /context init <substrate-dir> to declare substrate dir per DEC-0015`,
 		);
 		this.name = "BootstrapNotFoundError";
 		this.cwd = cwd;

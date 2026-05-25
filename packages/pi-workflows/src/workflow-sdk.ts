@@ -484,7 +484,7 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 			issues.push({
 				severity: isBlock ? "warning" : "error",
 				message: isBlock
-					? `Block schema not found: ${schemaPath} (resolved to ${resolved}). Run /context init to scaffold schemas.`
+					? `Block schema not found: ${schemaPath} (resolved to ${resolved}). Bootstrap the substrate: /context init <substrate-dir> → /context accept-all → /context install.`
 					: `Schema file not found: ${schemaPath} (resolved to ${resolved})`,
 				field: findSchemaField(spec, schemaPath),
 			});

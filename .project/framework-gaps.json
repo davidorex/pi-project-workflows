@@ -3901,6 +3901,37 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
       "id": "FGAP-104"
+    },
+    {
+      "title": "Derived-state / computed read tools bypass serializeForRead — uncapped full bodies: no token-budget protection and no fail-closed if a result exceeds the cap",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "FGAP-089/103 routed the DATA reads (read-block/read-config/read-schema/read-samples-catalog/list-tools/join-blocks + block-item/page) through serializeForRead, giving them capping + fail-closed + addressing. But the DERIVED-STATE / computed read tools return their result via a raw `JSON.stringify(result, null, 2)` directly as the tool text, bypassing serializeForRead entirely: context-status, context-current-state, context-validate, context-validate-relations, context-bootstrap-state, resolve-item-by-id, context-walk-descendants, and the roadmap render/validate/list paths (surfaced by the FGAP-089 fresh-context audit, 2026-05-25). Consequence: these results are UNCAPPED. There is NO partial-as-complete risk (they do not truncate — they arrive whole), so this is NOT a fail-closed regression. But (a) a >50KB derived state (e.g. context-status / a deep walk / a large validate issue-list as the substrate grows) arrives whole -> token-budget pressure / context bloat with no signal, and (b) the read surface is INCONSISTENT — some reads cap+fail-closed, these do not. The user's intent was 'all over-reads' uniform; these were missed because they don't currently truncate.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "raw JSON.stringify(result,null,2) returned as tool text (bypassing serializeForRead) at the derived-state read handlers: context-status (~944), context-validate (~967), context-current-state (~1168), context-bootstrap-state (~1193), resolve-item-by-id (~1529), context-validate-relations (~1749), context-walk-descendants (~1803), roadmap render-error/validate/list (~2009/2044/2065). Line numbers approximate (per the FGAP-089 audit grep); the locus is every read handler not using serializeForRead."
+        },
+        {
+          "file": "packages/pi-context/src/read-element.ts",
+          "reference": "serializeForRead is the chokepoint that provides capping + fail-closed (FGAP-089) + the structured envelope; the derived-state reads do not route through it."
+        }
+      ],
+      "impact": "As the substrate grows, a large derived-state result (status/walk/validate-issues) arrives uncapped -> token-budget pressure / context bloat for the in-pi LLM, with no completeness signal. Inconsistent read surface (some reads capped/fail-closed, these not). Completes the 'all over-reads uniform' intent that FGAP-089/103 began.",
+      "canonical_vocabulary": "uniform-read-capping, token-budget-protection, derived-state-read, serializeForRead-routing, read-surface-consistency",
+      "proposed_resolution": "Route the derived-state / computed read tools through serializeForRead too, so capping + fail-closed + the structured envelope are UNIVERSAL across every read result. Most are single computed objects with no natural addressing -> the edge-case head-leading marker applies on over-cap; for the few that are collections (resolve-items map, walk results, validate issue-lists) pass paging/overCapDirective where a narrowing exists. Consider a summary/count mode for inherently-large derived state (intersects FGAP-014 render-pagination). Goal: NO read handler emits a raw uncapped JSON.stringify; every read goes through the one serializer.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0018",
+        "DEC-0019",
+        "DEC-0020"
+      ],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25T00:00:00Z",
+      "id": "FGAP-105"
     }
   ]
 }

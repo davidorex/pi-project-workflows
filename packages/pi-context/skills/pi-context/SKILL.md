@@ -449,7 +449,7 @@ Subcommands: `init`, `install`, `accept-all`, `view`, `lens-curate`, `roadmap-li
 </commands_reference>
 
 <events>
-`session_start`
+`session_start`, `before_agent_start`, `resources_discover`
 </events>
 
 <bundled_resources>

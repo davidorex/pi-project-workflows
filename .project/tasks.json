@@ -1091,7 +1091,7 @@
     },
     {
       "description": "Implement FGAP-090 — wire pi's eager guidance hooks into the pi-context extension so the in-pi LLM receives framework guidance. PRIMARY: a before_agent_start handler that APPENDS a static topic->tool-call pointer/orientation block to event.systemPrompt (append never replace — runtime chains across extensions per dist/core/extensions/runner.js:700-739; returning nothing resets to base per agent-session.js:791-796), mirroring shipped exemplar examples/extensions/claude-rules.ts:64-85 and pi-core's docs-pointer dist/core/system-prompt.js:94-100. Block = a topic->TOOL-CALL map (the constrained agent has no read tool, so route to tools not file paths): vocabulary/relation_types/block_kinds -> read-config / read-samples-catalog (authoritative, never invent canonical names); schema -> read-schema; live tools+signatures -> list-tools; add a block kind -> read-samples-catalog then write-schema + amend-config; bootstrap -> /context start; + grounding directives (queryable, don't confabulate, FGAP-092). ~12-18 lines, STATIC (no substrate I/O, works pre-bootstrap). SECONDARY: a resources_discover handler returning { skillPaths: [abs packages/pi-context/skills/pi-context] } so skills surface as <available_skills> metadata (dist/core/skills.js:258-277), mirroring examples/extensions/dynamic-resources.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/orientation.ts",
@@ -1108,7 +1108,8 @@
       ],
       "depends_on": [],
       "notes": "Resolved decisions: topic->tool-call adaptation (no read in constrained harness); static MVP block (no per-turn substrate I/O); resources_discover surfaces skill METADATA — bodies are read-gated so constrained agent gets metadata-only, full value unconstrained; delivering skill CONTENT to the constrained agent via an element-read tool is FEAT-007 (out of scope). Addresses FGAP-090 (corrected: skills CAN reach via these hooks; cause was unwired hooks). Keystone unblocking FGAP-066/FEAT-007. Exemplars: examples/extensions/claude-rules.ts, dynamic-resources, prompt-customizer.ts. created_by/created_at stamped by orchestrator filing.",
-      "id": "TASK-074"
+      "id": "TASK-074",
+      "verification": "VER-045"
     }
   ]
 }

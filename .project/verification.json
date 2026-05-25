@@ -1739,6 +1739,44 @@
         }
       ],
       "id": "VER-044"
+    },
+    {
+      "target": "TASK-074",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "evidence": "FGAP-090 (wire before_agent_start + resources_discover). Static: npm run build/check/test all exit 0, 4 packages 0-fail; 2 unit tests in index.test.ts ('FGAP-090: guidance hooks') pass. Runtime demo (credentialed, pi 0.75.4, --no-extensions --extension dist/index.js): live agent answered 'add a block kind' with the exact orientation-block routing (read-samples-catalog -> write-schema + amend-config). Adversarial isolation: WITH extension the agent quotes the block verbatim ('typed substrate you operate via tools' / 'never invent canonical names' / 'do not confabulate'); base-pi CONTROL returns only ABSENT -> guidance reaches the agent from the before_agent_start hook specifically, not inference. Transcript: analysis/2026-05-25-fgap-090-runtime-demo.md.",
+      "timestamp": "2026-05-25T00:00:00Z",
+      "criteria_results": [
+        {
+          "criterion": "before_agent_start appends (never replaces) the orientation block to event.systemPrompt",
+          "status": "passed",
+          "evidence": "index.ts:466-468 returns event.systemPrompt + block; unit test asserts startsWith(base); runtime base-prompt preserved"
+        },
+        {
+          "criterion": "orientation block routes to tools (read-config/read-samples-catalog/read-schema/list-tools/write-schema/amend-config/append-relation, /context start) + grounding",
+          "status": "passed",
+          "evidence": "unit test includes-assertions; runtime agent reproduced routing"
+        },
+        {
+          "criterion": "resources_discover returns the absolute skills/pi-context dir (SKILL.md present)",
+          "status": "passed",
+          "evidence": "unit test: isAbsolute + existsSync(SKILL.md)"
+        },
+        {
+          "criterion": "guidance verifiably reaches a live in-pi agent (the FGAP-090 empirical gate)",
+          "status": "passed",
+          "evidence": "block verbatim WITH extension vs ABSENT control"
+        },
+        {
+          "criterion": "build/check/test green",
+          "status": "passed",
+          "evidence": "all exit 0; 4 pkgs 0-fail"
+        }
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25T00:00:00Z",
+      "id": "VER-045"
     }
   ]
 }

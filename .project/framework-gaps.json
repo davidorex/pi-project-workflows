@@ -3785,7 +3785,7 @@
         {
           "file": "packages/pi-workflows/workflows/self-implement.workflow.yaml",
           "lines": "42-54",
-          "reference": "verify step = LLM `verifier` agent emitting output.status; check gate = `echo '${{ steps.verify.output.status }}' | grep -q passed`. Terminal acceptance keys on an LLM's prose verdict, not an external oracle exit code."
+          "reference": "verify step = LLM `verifier` agent emitting output.status; check gate = `echo '${{ steps.verify.output.status }}' | grep -q passed`. Terminal acceptance keys on an LLM's prose verdict, not an real-check exit code."
         },
         {
           "file": "packages/pi-workflows/workflows",
@@ -3798,11 +3798,11 @@
         {
           "file": "packages/pi-workflows/src/step-command.ts",
           "lines": "28",
-          "reference": "command step spawn('sh',['-c',command]) — the external-oracle primitive that exists but is unused for code-change validation (same for step-gate.ts:24)."
+          "reference": "command step spawn('sh',['-c',command]) — the real-check primitive that exists but is unused for code-change validation (same for step-gate.ts:24)."
         }
       ],
       "impact": "The 'validated' in 'validated code changes' is fake: an autonomous (or constrained-agent-dispatched) self-implement run can land — or claim to land — broken code on an LLM's say-so. This is the load-bearing blocker for the north-star loop (FEAT-006): a constrained orchestrator dispatching a privileged code agent without a real-check gate produces unvalidated changes under a validation-shaped wrapper. The fix is low-mechanism (the command/gate real-check primitive already ships) but load-bearing for trust.",
-      "canonical_vocabulary": "external-oracle-validation, judicial-independence, runtime-verification-gate, exit-code-gating, oracle-backed-acceptance, false-pass",
+      "canonical_vocabulary": "real-check-validation, validator-independence, runtime-verification-gate, exit-code-gating, real-check-backed-acceptance, false-pass",
       "proposed_resolution": "Port DEC-0018 into the loop as an executable real-check acceptance tail: (1) replace the LLM-verifier terminal gate with a command step running the real toolchain (npm run build && npm run check && npm test) gated on EXIT CODE, full output / no pipe-masking per the project's own rule; (2) a runtime-demonstration step that executes the actual feature path and gates on emitted facts (events/diffs/exit codes), not a description; (3) an adversarial step that checks EXTERNAL artifacts (git diff, a re-run), not re-grades prose; (4) accept the implementer's edits ONLY when the real checks pass; on fail feed the REAL compiler/test errors back for another implement pass (fix root cause, never bypass); (5) commit through husky (itself the external check) with DispatchContext agent-authorship attestation. ENFORCEMENT INVARIANT: a workflow-validate check (+ config policy) forbidding an LLM-verdict as the TERMINAL acceptance of a code-change workflow — the terminal verdict must key on a real external-command exit code; an LLM verifier may triage/route but may not be the terminal gate. Refines DEC-0047 (the terminal verdict is a real check the executive cannot fake) and realizes DEC-0018 in autonomous loops.",
       "related_features": [
         "FEAT-004",

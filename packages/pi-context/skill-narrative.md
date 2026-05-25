@@ -3,13 +3,13 @@ name: pi-context
 description: >
   Schema-driven project state management with typed JSON blocks, schema validation,
   substrate config, lens views, closure-table relations, and cross-block referential
-  integrity. Use when managing .project/ blocks, scaffolding project structure,
+  integrity. Use when managing substrate blocks, scaffolding project structure,
   installing block kinds from the packaged samples catalog, validating project state,
   rendering lens views, or adding work items.
 ---
 
 <objective>
-pi-context manages structured project state in `.project/` — a directory of JSON block files validated against schemas. The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
+pi-context manages structured project state in the substrate directory — a directory of JSON block files validated against schemas. The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
 </objective>
 
 <block_files>
@@ -35,9 +35,9 @@ The installable catalog IS the packaged conception (`samples/conception.json`): 
 </context_install>
 
 <substrate_config>
-`.project/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — closing the GitHub #3 surface where downstream consumers had to assume `.project/`. `naming` aliases canonical block ids to display names (used by `/context view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/context install`.
+`<substrate-dir>/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — consumers resolve that dir via the `.pi-context.json` pointer plus `config.root`, never by assuming a fixed directory name. `naming` aliases canonical block ids to display names (used by `/context view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/context install`.
 
-`config.json` and `relations.json` are exempt from `root` redirection — they always live at `.project/` because they are the substrate that defines `root`. All other state lives under `<config.root>/...` per `resolveContextDir(cwd)`. The package ships their schemas in `schemas/` (config.schema.json, relations.schema.json) and resolves them via three-tier search: project override > user override > package-shipped.
+`config.json` and `relations.json` are exempt from `config.root` redirection — they always live at the substrate-dir root (the dir chosen at bootstrap, resolved via the `.pi-context.json` pointer, suggested `.context`) because they are the substrate that defines `root`. The substrate-dir root is whatever was chosen at bootstrap, not necessarily `.project`. All other state lives under `<config.root>/...` per `resolveContextDir(cwd)`. The package ships their schemas in `schemas/` (config.schema.json, relations.schema.json) and resolves them via three-tier search: project override > user override > package-shipped.
 
 The `loadContext(cwd)` SDK returns an mtime-keyed cached snapshot of `{ config, relations, configMtime, relationsMtime }` for one cwd. Consumers must not mutate.
 </substrate_config>
@@ -45,7 +45,7 @@ The `loadContext(cwd)` SDK returns an mtime-keyed cached snapshot of `{ config, 
 <lens_views>
 Lenses are named projections over a target block. A lens declares `id`, `target` (block name), `relation_type`, `derived_from_field` (optional — synthesizes edges from a per-item field instead of requiring authored edges), `bins` (named groupings), and `render_uncategorized`.
 
-Edges live in `.project/relations.json` as a closure table — each row is `{ parent, child, relation_type }`. `parent` is either a canonical id (hierarchy edges) or a lens.bins value (lens edges); disambiguation lives in `validateRelations`.
+Edges live in `<substrate-dir>/relations.json` as a closure table — each row is `{ parent, child, relation_type }`. `parent` is either a canonical id (hierarchy edges) or a lens.bins value (lens edges); disambiguation lives in `validateRelations`.
 
 The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synthetic edges (when `derived_from_field` is set) or filtered authored edges (otherwise). `groupByLens(items, lens, lensEdges)` produces a `Map<binName, ItemRecord[]>`. `walkDescendants(parentId, relationType, edges)` traverses the closure table from any parent.
 
@@ -117,7 +117,7 @@ On `session_start`, checks npm registry for newer versions of `@davidorex/pi-pro
 </update_check>
 
 <success_criteria>
-- `.project/`, `.project/schemas/`, `.project/phases/`, and `.project/config.json` exist after `/context init`
+- `<substrate-dir>/`, `<substrate-dir>/schemas/`, `<substrate-dir>/phases/`, and `<substrate-dir>/config.json` exist after `/context init <substrate-dir>`
 - `installed_schemas` / `installed_blocks` declared in `config.json` are reified by `/context install`; `--update` overwrites
 - Block writes validate against schemas — invalid data rejected with specific error
 - `/context status` returns current derived state without errors

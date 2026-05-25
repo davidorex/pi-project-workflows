@@ -17,11 +17,16 @@ META="$REPO/packages/pi-project-workflows"
 
 pi install -l "$META"
 
-TOOLS="$(grep -rhoE '<tool name="[a-z0-9-]+"' "$META"/skills/*/SKILL.md \
+# Derive the --tools list from EVERY package's own generated SKILL.md (repo-absolute —
+# the script runs from a target dir, so the glob must be $REPO-rooted, not cwd-relative).
+# pi-context self-surfaces its skill via resources_discover (not the meta bundle), so we
+# must read each package's own skills/ rather than the meta-bundled copies. sort -u dedups
+# the meta's own + bundled copies; the meta's own SKILL.md has no <tool name=> tags.
+TOOLS="$(grep -rhoE '<tool name="[a-z0-9-]+"' "$REPO"/packages/*/skills/*/SKILL.md \
   | sed -E 's/<tool name="//; s/"//' | sort -u | paste -sd, -)"
 
 if [ -z "$TOOLS" ]; then
-	echo "launch-constrained-pi: no tools derived from $META/skills/*/SKILL.md — is the repo built + skills generated?" >&2
+	echo "launch-constrained-pi: no tools derived from $REPO/packages/*/skills/*/SKILL.md — is the repo built + skills generated?" >&2
 	exit 1
 fi
 

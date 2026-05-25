@@ -15,9 +15,19 @@
  * surfaces wrap the same shared library; this script is intentionally thin.
  *
  * Usage:
- *   tsx scripts/orchestrator/read-config.ts                  # terse projection
- *   tsx scripts/orchestrator/read-config.ts --raw            # full JSON dump
- *   tsx scripts/orchestrator/read-config.ts --cwd <path>     # alternate cwd
+ *   tsx scripts/orchestrator/read-config.ts                          # terse projection
+ *   tsx scripts/orchestrator/read-config.ts --raw                    # full JSON dump
+ *   tsx scripts/orchestrator/read-config.ts --registry relation_types   # ONE registry (FGAP-103)
+ *   tsx scripts/orchestrator/read-config.ts --registry relation_types --id phase_depends_on  # ONE entry
+ *   tsx scripts/orchestrator/read-config.ts --cwd <path>             # alternate cwd
+ *
+ * --registry / --id route through the shared `addressInto` primitive (the same
+ * one the `read-config` pi tool uses) so the CLI + tool address config the same
+ * way (DEC-0019/0020 dual surface). When --registry is absent, behavior is
+ * unchanged (terse projection or --raw whole-config dump).
+ *
+ * Exit codes: 0 ok / 2 arg-error / 3 fn-error (mirrors read-block-page.ts).
+ * `BootstrapNotFoundError` (FGAP-080) → exit 1 (substrate not initialized).
  *
  * Runtime demonstration (DEC-0018) is performed by the orchestrator, not
  * inline — script invocation against the live `.pi-context.json` pointer +
@@ -26,21 +36,34 @@
 import path from "node:path";
 import { loadConfig } from "@davidorex/pi-context/context";
 import { resolveContextDir } from "@davidorex/pi-context/context-dir";
+import { addressInto } from "@davidorex/pi-context/read-element";
 
 interface Args {
 	raw: boolean;
+	registry: string | null;
+	id: string | null;
 	cwd: string;
 }
 
 function parseArgs(argv: string[]): Args {
-	const out: Args = { raw: false, cwd: process.cwd() };
+	const out: Args = { raw: false, registry: null, id: null, cwd: process.cwd() };
 	for (let i = 0; i < argv.length; i++) {
 		if (argv[i] === "--raw") {
 			out.raw = true;
+		} else if (argv[i] === "--registry" && argv[i + 1]) {
+			out.registry = argv[i + 1];
+			i++;
+		} else if (argv[i] === "--id" && argv[i + 1]) {
+			out.id = argv[i + 1];
+			i++;
 		} else if (argv[i] === "--cwd" && argv[i + 1]) {
 			out.cwd = argv[i + 1];
 			i++;
 		}
+	}
+	if (out.id !== null && out.registry === null) {
+		console.error("--id requires --registry <name>");
+		process.exit(2);
 	}
 	return out;
 }
@@ -132,11 +155,38 @@ function main(): void {
 		throw err;
 	}
 	const configPath = path.join(substrateDir, "config.json");
-	const config = loadConfig(args.cwd);
+	let config: ReturnType<typeof loadConfig>;
+	try {
+		config = loadConfig(args.cwd);
+	} catch (err) {
+		console.error(`read-config: ${err instanceof Error ? err.message : String(err)}`);
+		process.exit(3);
+	}
 	if (config === null) {
 		console.log(`config: null (no config.json at ${configPath})`);
 		return;
 	}
+
+	// Element addressing (FGAP-103): one registry, optionally one entry within it.
+	if (args.registry !== null) {
+		const reg = addressInto(config, { key: args.registry });
+		if (!reg.found) {
+			console.error(`read-config: registry not found — ${reg.resolved}`);
+			process.exit(3);
+		}
+		if (args.id !== null) {
+			const entry = addressInto(reg.value, { id: args.id });
+			if (!entry.found) {
+				console.error(`read-config: entry not found in ${args.registry} — ${entry.resolved}`);
+				process.exit(3);
+			}
+			console.log(JSON.stringify(entry.value, null, 2));
+			return;
+		}
+		console.log(JSON.stringify(reg.value, null, 2));
+		return;
+	}
+
 	if (args.raw) {
 		console.log(JSON.stringify(config, null, 2));
 		return;

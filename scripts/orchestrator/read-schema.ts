@@ -18,36 +18,44 @@
  *
  * Usage:
  *   tsx scripts/orchestrator/read-schema.ts --name tasks                                    # terse projection
- *   tsx scripts/orchestrator/read-schema.ts --name tasks --field properties.tasks.items     # walk dot-path
+ *   tsx scripts/orchestrator/read-schema.ts --name tasks --path properties.tasks.items      # address one property
+ *   tsx scripts/orchestrator/read-schema.ts --name tasks --field properties.tasks.items     # --field == --path (alias)
  *   tsx scripts/orchestrator/read-schema.ts --name tasks --raw                              # full JSON dump
  *   tsx scripts/orchestrator/read-schema.ts --name tasks --cwd <path>                       # alternate cwd
  *
- * Precedence: when both --field and --raw are passed, --field wins
- * (projection mode) and --raw is ignored. --name is REQUIRED; absence
- * exits 2.
+ * --path (and its back-compat alias --field) route through the shared
+ * `addressInto` primitive (FGAP-103) — the SAME one the `read-schema` pi tool's
+ * `path` param uses; dotted/bracket addressing (a.b.c / a[0].b). One
+ * implementation, two flag names — no parallel path-walk.
+ *
+ * Precedence: --path (or --field) wins over --raw (projection mode). --name is
+ * REQUIRED; absence exits 2. Exit codes: 0 ok / 2 arg-error / 3 fn-error;
+ * `BootstrapNotFoundError` (FGAP-080) → exit 1 (substrate not initialized).
  *
  * Runtime demonstration (DEC-0018) is performed by the orchestrator, not
  * inline — script invocation against the live `.pi-context.json` pointer
  * + substrate is the demo path.
  */
 import { schemaPath } from "@davidorex/pi-context/context-dir";
+import { addressInto } from "@davidorex/pi-context/read-element";
 import { readSchema } from "@davidorex/pi-context/schema-write";
 
 interface Args {
 	name: string | null;
-	field: string | null;
+	path: string | null;
 	raw: boolean;
 	cwd: string;
 }
 
 function parseArgs(argv: string[]): Args {
-	const out: Args = { name: null, field: null, raw: false, cwd: process.cwd() };
+	const out: Args = { name: null, path: null, raw: false, cwd: process.cwd() };
 	for (let i = 0; i < argv.length; i++) {
 		if (argv[i] === "--name" && argv[i + 1]) {
 			out.name = argv[i + 1];
 			i++;
-		} else if (argv[i] === "--field" && argv[i + 1]) {
-			out.field = argv[i + 1];
+		} else if ((argv[i] === "--path" || argv[i] === "--field") && argv[i + 1]) {
+			// --field is a back-compat alias of --path; both fold onto addressInto.
+			out.path = argv[i + 1];
 			i++;
 		} else if (argv[i] === "--raw") {
 			out.raw = true;
@@ -68,27 +76,6 @@ function typeLabel(value: unknown): string {
 	if ("$ref" in obj && typeof obj.$ref === "string") return `$ref:${obj.$ref}`;
 	if ("enum" in obj && Array.isArray(obj.enum)) return "enum";
 	return "object";
-}
-
-function walkDotPath(
-	root: unknown,
-	dotPath: string,
-): { found: true; value: unknown } | { found: false; lastExisting: string } {
-	const segments = dotPath.split(".");
-	let cursor: unknown = root;
-	const traversed: string[] = [];
-	for (const seg of segments) {
-		if (cursor === null || cursor === undefined || typeof cursor !== "object") {
-			return { found: false, lastExisting: traversed.join(".") || "(root)" };
-		}
-		const obj = cursor as Record<string, unknown>;
-		if (!(seg in obj)) {
-			return { found: false, lastExisting: traversed.join(".") || "(root)" };
-		}
-		cursor = obj[seg];
-		traversed.push(seg);
-	}
-	return { found: true, value: cursor };
 }
 
 function renderTerse(schema: Record<string, unknown>, p: string): string {
@@ -185,13 +172,13 @@ function main(): void {
 		return;
 	}
 
-	if (args.field !== null) {
-		const walked = walkDotPath(schema, args.field);
-		if (!walked.found) {
-			console.log(`field-not-found: ${args.field} (last existing: ${walked.lastExisting})`);
+	if (args.path !== null) {
+		const addr = addressInto(schema, { path: args.path });
+		if (!addr.found) {
+			console.log(`path-not-found: ${addr.resolved}`);
 			return;
 		}
-		console.log(JSON.stringify(walked.value, null, 2));
+		console.log(JSON.stringify(addr.value, null, 2));
 		return;
 	}
 

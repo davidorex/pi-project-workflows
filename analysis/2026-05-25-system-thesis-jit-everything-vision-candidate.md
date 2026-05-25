@@ -25,3 +25,23 @@ The thesis is the meta-principle these all instantiate — it is filed canon dis
 
 ## Why it earns a vision element
 It is the single sentence that predicts the right design for any new surface: when something is static/bespoke (the way skills were before FEAT-007, or reads before FGAP-103), the thesis says make it schema-shaped + macro-rendered + composed-to-need. It is the test a new feature is checked against. That predictive/normative role is what a vision/charter element is for — distinct from any one decision.
+
+## Block-kind taxonomy (2026-05-25 design dialogue)
+
+Emerging project-level context kinds (THIS project's vocabulary, not framework defaults — conception ships no kinds as defaults per DEC-0011/0025). Homed in `.context` (DEC-0036), not frozen `.project`.
+
+- **project-vision** (confirmed) — the aspirational north-star / what the system fundamentally is. Inaugural instance = the system thesis above. Predictive/normative: the test a new surface is checked against.
+- **policies** (candidate) — "that which allows LLMs to make reasoned but constrained decisions": the guardrail/constraint envelope inside which autonomous reasoning is permitted. Distinct in FUNCTION from vision (aim) and from point-decisions (chose X over Y).
+- **decisions** (narrowed) — genuine point-decisions only ("chose X over Y because Z").
+
+**Survey finding — policy-genre is already recorded, distributed (not absent):**
+- `conventions` block (16 items: esm / tsc-build / no-pi-dir / fail-fast / types-in-types-ts / expression-no-eval / bundled-specs-source-of-truth / domain-in-specs …) = ENGINEERING conventions — a narrow policy subset (how-we-code), not decision-bounding policy.
+- `decisions` block: ~23 of 47 are policy-SHAPED standing rules (DEC-0014 tools-only, DEC-0015 config-drives-location, DEC-0018 runtime-demo+adversarial-always, DEC-0020 typed-substrate-outputs, DEC-0021 atomic-cascade, DEC-0025 vocabulary-neutral) vs genuine point-decisions (DEC-0001, DEC-0003). The block conflates two genres.
+- Outside substrate: feedback memories (behavioral mandates) + mandate-001..009 (hook-injected) are also policy-genre.
+
+**Open taxonomy decision (for `.context` re-derivation):**
+1. Split `decisions` → point-decisions vs `policies` (migrate the ~23 standing-rule DECs to `policies` on re-derivation).
+2. Decide `policies` vs `conventions` relationship — conventions as an engineering subset of policies, a sibling, or folded in.
+3. Whether the out-of-substrate behavioral mandates (feedback memories) reify as `policies` instances in `.context` (unifying the policy genre into one home).
+
+Not actioned in frozen `.project`; this is `.context` catalog design. Reify project-vision + policies kinds + this thesis on cutover.

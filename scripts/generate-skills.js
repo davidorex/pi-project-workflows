@@ -17,7 +17,7 @@
  * Run after build: npm run build && npm run skills
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -902,6 +902,11 @@ function generateMetaSkill(subPackageResults) {
 	const metaPkg = JSON.parse(readFileSync(join(metaDir, "package.json"), "utf-8"));
 	const shortName = metaPkg.name.replace("@davidorex/", "");
 
+	const metaSkillsDir = join(metaDir, "skills");
+	// Clean-rebuild the fully-generated meta skills dir so no excluded/renamed
+	// sub-package skill leaves an orphan (which would collide by name in pi's loader).
+	rmSync(metaSkillsDir, { recursive: true, force: true });
+
 	const lines = [];
 
 	// Frontmatter
@@ -960,9 +965,11 @@ function generateMetaSkill(subPackageResults) {
 	// all skills from the single meta-package entry in settings.json.
 	// Pi reads pi.skills from the installed package but does not recurse into
 	// dependencies — without this copy, sub-package skills are invisible.
-	const metaSkillsDir = join(metaDir, "skills");
 	for (const result of subPackageResults) {
 		if (!result) continue;
+		// pi-context self-surfaces its skill via its resources_discover hook (FGAP-090);
+		// copying it here too would collide by name in pi's skill loader.
+		if (result.shortName === "pi-context") continue;
 		const srcSkillDir = join(dirname(dirname(result.skillPath)), result.shortName);
 		const destSkillDir = join(metaSkillsDir, result.shortName);
 		if (srcSkillDir === destSkillDir) continue; // skip self (meta-package)

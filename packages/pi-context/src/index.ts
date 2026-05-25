@@ -73,6 +73,7 @@ import {
 	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
+import { buildOrientationBlock, skillsDir } from "./orientation.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { samplesCatalog } from "./samples-catalog.js";
@@ -455,6 +456,19 @@ const extension = (pi: ExtensionAPI) => {
 	pi.on("session_start", async (_event, ctx) => {
 		checkForUpdates((msg, level) => ctx.ui.notify(msg, level)).catch(() => {});
 	});
+
+	// ── Eager framework guidance (FGAP-090) ────────────────────────────
+	// Append (never replace) the orientation block to the assembled system
+	// prompt so the in-pi agent receives a topic→tool-call map up front.
+	// The runtime chains extensions' systemPrompt outputs; returning the
+	// augmented prompt preserves pi-core's prompt + other extensions, and
+	// returning nothing would reset to base.
+	pi.on("before_agent_start", (event) => ({
+		systemPrompt: `${event.systemPrompt}\n\n${buildOrientationBlock()}`,
+	}));
+
+	// Surface the packaged pi-context skill directory to the runtime.
+	pi.on("resources_discover", () => ({ skillPaths: [skillsDir()] }));
 
 	// ── Tool: append-block-item ─────────────────────────────────────────
 

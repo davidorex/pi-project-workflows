@@ -2127,38 +2127,49 @@
     },
     {
       "title": "Agent-dispatch-tool registration home — where the agents-as-tools (FEAT-004) dispatch surface registers; pi-jit-agents is tool-less",
-      "status": "open",
+      "status": "enacted",
       "context": "FEAT-004 (agents-as-tools) needs a Pi tool + orchestrator CLI for agent dispatch. pi-jit-agents is a LIBRARY with NO registerTool surface (confirmed: no registerTool in packages/pi-jit-agents/src). pi-workflows owns dispatch today — workflow-execute runs agents via subprocess (pi --mode json), workflow-agents lists them, and the executeAgent normalizer boundary (F-012) lives on the dispatch path — but exposes no standalone agent-dispatch tool. So the FEAT-004 dispatch tool must register inside an EXTENSION. This decision gates FEAT-004 and constrains the in-flight FGAP-074 /context rename: C5 (tool/command surface) must keep a dispatch-verb namespace open in /context regardless of the chosen home.",
-      "decision": "PROPOSED (to settle when FEAT-004 starts): pi-workflows registers the agent-dispatch tool + CLI — it already owns dispatch (workflow-execute subprocess), agent discovery (workflow-agents), and the executeAgent normalizer boundary, so the dispatch verb is layering-coherent there. The agentContract->tool-shape projection (FEAT-004) is supplied by pi-jit-agents' introspect; pi-workflows consumes it to register the tool.",
+      "decision": "ENACTED (2026-05-26): the agents-as-tools dispatch surface registers in a NEW dedicated agent-dispatch extension that wraps the pi-jit-agents library. pi-jit-agents stays a pure library (spec/compile/capability/dispatch primitives; tool-less by design — no registerTool); the new extension is the thin tool/CLI layer that registers the FEAT-004 dispatch tool, and is the home for FEAT-005 capability composition + the parent-superset child-tool clamp (the FGAP-099 escalation guard) — so every dispatcher (workflow steps AND agents-as-tools) inherits the clamp from the common agent layer rather than per-caller. introspect's agentContract supplies the tool-shape projection; dispatch routes through the executeAgent normalizer (F-012) + cost-control (F-006). Consumers (pi-workflows orchestration; pi-behavior-monitors) CALL the shared agent layer rather than duplicating it (FEAT-001). Eliminations are hard constraints, not preference: pi-context is OUT — it would close a package cycle (pi-jit-agents already depends on pi-context, so pi-context importing pi-jit-agents to host dispatch is circular; pi-context is the zero-@davidorex-dependency foundation). pi-workflows is OUT — no cycle, but hosting dispatch there re-entrenches the duplicate agent layer FEAT-001 exists to remove (its own AgentSpec/compile/subprocess-dispatch/tool-grant), contradicting the workflow=orchestration / agent=jit-agents detangle. pi-behavior-monitors is OUT — no cycle, but it is the monitoring domain, not agent dispatch. The new dedicated extension is the only home that is cycle-free AND detangle-consistent AND domain-correct. This supersedes the prior proposed resolution (register in pi-workflows because it already owns dispatch): 'pi-workflows already owns dispatch' was itself the duplication, not a reason to keep it.",
       "options_considered": [
         {
-          "label": "pi-workflows (leaning)",
-          "description": "Register in pi-workflows — owns dispatch + agent discovery + the normalizer boundary.",
-          "tradeoffs": "Layering-coherent; reuses subprocess dispatch + F-012 normalizer. pi-workflows already an extension. Mild: couples ad-hoc dispatch to the workflow extension."
+          "label": "new dedicated agent-dispatch extension (CHOSEN)",
+          "description": "A thin extension wrapping pi-jit-agents that registers the FEAT-004 dispatch tool + CLI and hosts FEAT-005 capability composition + the FGAP-099 clamp.",
+          "tradeoffs": "Cleanest separation; cycle-free; jit-agents stays a pure library; common home so every dispatcher inherits the clamp. Accepted cost: a 5th extension + install/version surface for the agent-dispatch tool family — judged correct layering, not overhead."
+        },
+        {
+          "label": "pi-workflows",
+          "description": "Register in pi-workflows — it already owns subprocess dispatch + agent discovery.",
+          "tradeoffs": "No cycle and reuses existing dispatch.",
+          "rejected_reason": "Re-entrenches the duplicate agent layer FEAT-001 exists to remove; 'already owns dispatch' is the duplication itself. Contradicts the workflow=orchestration / agent=jit-agents detangle (2026-05-26)."
         },
         {
           "label": "pi-context",
-          "description": "Register in pi-context — the tool hub the in-pi LLM already reaches for substrate ops.",
-          "tradeoffs": "Single discovery surface for the LLM; BUT pi-context is substrate, not dispatch — a layering smell (substrate package spawning agents).",
-          "rejected_reason": "Mixes substrate + dispatch concerns; pi-context would depend on pi-jit-agents/dispatch."
+          "description": "Register in the substrate tool hub the in-pi LLM already reaches.",
+          "tradeoffs": "Single discovery surface.",
+          "rejected_reason": "PACKAGE CYCLE — pi-jit-agents already depends on pi-context; pi-context importing pi-jit-agents to host dispatch is circular, and pi-context is the zero-@davidorex-dependency foundation. Hard-eliminated."
         },
         {
-          "label": "new thin extension (pi-agents)",
-          "description": "A dedicated extension wrapping pi-jit-agents for the dispatch tool + CLI.",
-          "tradeoffs": "Cleanest separation; BUT adds a 5th extension + install/version surface for one tool family."
+          "label": "pi-behavior-monitors",
+          "description": "Register alongside the monitor tools.",
+          "tradeoffs": "No cycle (already imports all three).",
+          "rejected_reason": "Wrong domain — monitoring, not agent dispatch."
         }
       ],
       "consequences": [
-        "Gates FEAT-004 (agents-as-tools) — build cannot start until the home is settled.",
-        "Constrains FGAP-074 C5: keep a /context dispatch-verb namespace open (e.g. /context run / a dispatch tool name) so the rename does not foreclose FEAT-004.",
-        "Whichever home: the tool consumes pi-jit-agents' agentContract (introspect) for the tool-shape projection; dispatch routes through the executeAgent normalizer (F-012) + cost-control (F-006)."
+        "Gates the detangle arc: FEAT-001 (pi-workflows consumes jit-agents; remove the duplicate agent layer) -> FEAT-005 (capability composition + parent-superset child-tool clamp in the new extension) -> FEAT-004 (the dispatch tool).",
+        "The FGAP-099 escalation guard (child tool surface a subset of the parent's) lands in the new extension's dispatch path, so workflow-step dispatch AND agents-as-tools dispatch both inherit it — the gap is fixed at the common agent layer, not per-caller.",
+        "FGAP-099's prior workflow-local fix was reverted (commit 117b351) as wrong-layer; the FEAT-005-correct design (composeToolGrant / explicit-grant / empty-default / clamp) is preserved in history 7f8f991..7463138 for reuse at the new home.",
+        "The new extension's exact package name + whether it joins the meta pi-project-workflows is a FEAT-004-build detail, not part of this home decision."
       ],
       "related_features": [
-        "FEAT-004"
+        "FEAT-004",
+        "FEAT-001",
+        "FEAT-005"
       ],
       "related_gaps": [
         "FGAP-074",
-        "FGAP-085"
+        "FGAP-085",
+        "FGAP-099"
       ],
       "references": [
         {

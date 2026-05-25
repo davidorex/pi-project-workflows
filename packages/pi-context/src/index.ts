@@ -1176,7 +1176,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "context-bootstrap-state",
 		label: "Context Bootstrap State",
 		description:
-			"Derive the substrate bootstrap state for the cwd, purely from the filesystem (DEC-0040): 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context start (bootstrap is human-only). No writes.",
+			"Derive the substrate bootstrap state for the cwd, purely from the filesystem (DEC-0040): 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap is human-only). No writes.",
 		promptSnippet:
 			"Derive substrate bootstrap state — no-pointer | no-config | not-installed | ready (never throws pre-bootstrap)",
 		parameters: Type.Object({}),

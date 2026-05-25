@@ -33,7 +33,7 @@ This project's state lives in a typed substrate you operate via tools — not fi
 - The tools available to you and their parameters: call \`list-tools\` — do not guess a tool name or signature.
 - Read substrate items: \`read-block\` / \`read-block-item\` / \`read-block-page\`; resolve an id: \`resolve-item-by-id\`.
 - Add a block kind: \`read-samples-catalog\` (see the shape), then \`write-schema\` (define) + \`amend-config\` (register). Add a relationship: \`append-relation\` (relations are edges, never FK fields). Change config: \`amend-config\`.
-- Bootstrap / onboarding: run \`/context start\`.
+- Bootstrap / onboarding: run \`/context init <substrate-dir>\` (suggested \`.context\`), then \`/context accept-all\`, then \`/context install\`.
 
 Grounding: vocabulary and tool signatures are always queryable via the tools above. If you are unsure of a canonical name, schema, or parameter, call the relevant tool — do not confabulate.`;
 }

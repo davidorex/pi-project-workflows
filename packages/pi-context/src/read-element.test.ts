@@ -99,7 +99,7 @@ describe("read-element: serializeForRead over-cap fail-closed (FGAP-089)", () =>
 	it("over-cap directive renders params as key=value pairs", () => {
 		const big = buildBig();
 		const env = serializeForRead(big, {
-			label: ".project/framework-gaps.json",
+			label: "<substrate-dir>/framework-gaps.json",
 			overCapDirective: {
 				tool: "read-block-page",
 				params: { block: "framework-gaps", offset: 0, limit: 50 },

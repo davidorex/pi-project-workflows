@@ -354,7 +354,9 @@ describe("FGAP-090: guidance hooks", () => {
 			"write-schema",
 			"amend-config",
 			"append-relation",
-			"/context start",
+			"/context init",
+			"/context accept-all",
+			"/context install",
 		]) {
 			assert.ok(result.systemPrompt.includes(needle), `orientation block must reference ${needle}`);
 		}

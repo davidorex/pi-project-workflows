@@ -881,7 +881,14 @@ const extension = (pi: ExtensionAPI) => {
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
 			const result = readBlock(ctx.cwd, params.block);
-			const envelope = serializeForRead(result, { label: `.project/${params.block}.json` });
+			const envelope = serializeForRead(result, {
+				label: `.project/${params.block}.json`,
+				overCapDirective: {
+					tool: "read-block-page",
+					params: { block: params.block, offset: 0, limit: 50 },
+					hint: "or read-block-item with id=<id>",
+				},
+			});
 			return {
 				details: undefined,
 				content: [{ type: "text", text: envelope.content }],
@@ -1011,12 +1018,25 @@ const extension = (pi: ExtensionAPI) => {
 					const envEntry = serializeForRead(entry.value, { label: `config.${params.registry}.${params.id}` });
 					return { details: undefined, content: [{ type: "text", text: envEntry.content }] };
 				}
-				const envReg = serializeForRead(reg.value, { label: `config.${params.registry}` });
+				const envReg = serializeForRead(reg.value, {
+					label: `config.${params.registry}`,
+					overCapDirective: {
+						tool: "read-config",
+						params: { registry: params.registry },
+						hint: "add id=<entry canonical_id>",
+					},
+				});
 				return { details: undefined, content: [{ type: "text", text: envReg.content }] };
 			}
 
 			const result = { config, configPath };
-			const envelope = serializeForRead(result, { label: configPath ?? "config.json" });
+			const envelope = serializeForRead(result, {
+				label: configPath ?? "config.json",
+				overCapDirective: {
+					tool: "read-config",
+					hint: "registry=<name> (block_kinds|relation_types|lenses|invariants|…)",
+				},
+			});
 			return {
 				details: undefined,
 				content: [{ type: "text", text: envelope.content }],
@@ -1081,7 +1101,10 @@ const extension = (pi: ExtensionAPI) => {
 			// The compact index is one line per tool — small enough to serialize whole
 			// (no paging); keep the wrapper fields (active/total) on the result object.
 			const result = { tools: index, active, total: all.length, activeCount: active.length };
-			const envelope = serializeForRead(result, { label: "tool index — pass name= for detail" });
+			const envelope = serializeForRead(result, {
+				label: "tool index — pass name= for detail",
+				overCapDirective: { tool: "list-tools", hint: "name=<tool>" },
+			});
 			return {
 				details: undefined,
 				content: [{ type: "text", text: envelope.content }],
@@ -1112,6 +1135,9 @@ const extension = (pi: ExtensionAPI) => {
 			const catalog = samplesCatalog(params.kind ? { kind: params.kind } : undefined);
 			const envelope = serializeForRead(catalog, {
 				label: params.kind ? `samples kind=${params.kind}` : "samples catalog",
+				// Whole catalog → narrow by kind; a single kind has no finer
+				// addressing (edge → head-leading marker, no directive).
+				...(params.kind ? {} : { overCapDirective: { tool: "read-samples-catalog", hint: "kind=<canonical_id>" } }),
 			});
 			return {
 				details: undefined,
@@ -1302,7 +1328,14 @@ const extension = (pi: ExtensionAPI) => {
 			}
 
 			const result = { schema, schemaPath: schemaPathStr };
-			const envelope = serializeForRead(result, { label: schemaPathStr });
+			const envelope = serializeForRead(result, {
+				label: schemaPathStr,
+				overCapDirective: {
+					tool: "read-schema",
+					params: { schemaName: params.schemaName },
+					hint: "path=<dotted json-path>",
+				},
+			});
 			return {
 				details: undefined,
 				content: [{ type: "text", text: envelope.content }],
@@ -1461,7 +1494,10 @@ const extension = (pi: ExtensionAPI) => {
 				op: params.op,
 				value: params.value,
 			});
-			const envelope = serializeForRead(result, { label: `${params.block} filtered` });
+			const envelope = serializeForRead(result, {
+				label: `${params.block} filtered`,
+				overCapDirective: { tool: "read-block-page", hint: "or refine the predicate" },
+			});
 			return {
 				details: undefined,
 				content: [{ type: "text", text: envelope.content }],
@@ -1611,7 +1647,13 @@ const extension = (pi: ExtensionAPI) => {
 				leftEndpoint: params.leftEndpoint,
 				leftPredicate,
 			});
-			const envelope = serializeForRead(result, { label: `${params.leftBlock} ⋈ ${params.rightBlock}` });
+			const envelope = serializeForRead(result, {
+				label: `${params.leftBlock} ⋈ ${params.rightBlock}`,
+				overCapDirective: {
+					tool: "join-blocks",
+					hint: "refine the relation/field or pre-filter the left block",
+				},
+			});
 			return {
 				details: undefined,
 				content: [{ type: "text", text: envelope.content }],

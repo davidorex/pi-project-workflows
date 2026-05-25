@@ -1886,6 +1886,44 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
       "id": "VER-048"
+    },
+    {
+      "target": "TASK-078",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "evidence": "FGAP-089 fail-closed comprehensive. read-element.ts serializeForRead on over-cap: directive-only REFUSAL (no serialized body — directive branch builds content from label/totalBytes/tool/params/hint only, cap.content never referenced; orchestrator-confirmed) when overCapDirective set; UNMISSABLE HEAD-LEADING marked partial for edge surfaces; complete:false on both. Routed: pi-context 21 serializeForRead sites + pi-workflows 5 read tools (0 truncateHead left in read handlers; import @davidorex/pi-context/read-element). Out-of-scope output-truncations untouched (dispatch/workflow-executor truncateTail/jit-runtime/budget/nextActions). build/check/test 0-fail; unit fail-closed + truncate tests pass. LIVE REGRESSION GATE (launch-constrained-pi.sh, scratch cwd, the original failure): 'show full samples catalog' -> read-samples-catalog (no kind) returned READ REFUSED (over 50KB, nothing returned); agent FOLLOWED the directive, re-calling read-samples-catalog with kind= across decisions/framework-gaps/issues/requirements/tasks/verification; NO false-complete claim. FRESH-CONTEXT AUDIT PASS A-F (no in-scope read returns a usable partial; no bad route), orchestrator re-verified (directive no-leak + no other read-truncation path). Record: analysis/2026-05-25-fgap-089-fail-closed-reads.md.",
+      "timestamp": "2026-05-25T00:00:00Z",
+      "criteria_results": [
+        {
+          "criterion": "over-cap + directive: refusal, NO partial body, names tool, complete:false",
+          "status": "passed",
+          "evidence": "directive branch never references cap.content; unit asserts filler absent; runtime hasPayload=false"
+        },
+        {
+          "criterion": "over-cap edge: UNMISSABLE head-leading marker, complete:false",
+          "status": "passed",
+          "evidence": "content startsWith '⚠️ PARTIAL READ' (unit + read of branch)"
+        },
+        {
+          "criterion": "all in-scope reads routed (pi-context 21 + pi-workflows 5); out-of-scope untouched",
+          "status": "passed",
+          "evidence": "grep: 0 truncateHead in pi-workflows read handlers; workflow-executor truncateTail untouched; only read-truncation path = serializeForRead"
+        },
+        {
+          "criterion": "live regression: refusal + agent narrows, no false-complete",
+          "status": "passed",
+          "evidence": "READ REFUSED then read-samples-catalog kind=... iterated"
+        },
+        {
+          "criterion": "fresh-context audit PASS, orchestrator-reverified",
+          "status": "passed",
+          "evidence": "audit A-F pass; re-grep confirms no payload leak + no other truncation path"
+        }
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25T00:00:00Z",
+      "id": "VER-049"
     }
   ]
 }

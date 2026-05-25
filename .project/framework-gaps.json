@@ -3289,7 +3289,7 @@
     },
     {
       "title": "Truncating read tools invite partial-read-as-complete — no machine-checkable completeness signal; >50KB content dropped with a prose-only note",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L2",
@@ -3327,7 +3327,9 @@
       "related_issues": [],
       "id": "FGAP-089",
       "created_at": "2026-05-22T12:52:36.962Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-25T00:00:00Z"
     },
     {
       "title": "In-pi agent receives no skill/guidance content — our extension does not wire pi's eager-injection hooks (before_agent_start / resources_discover)",

@@ -1185,7 +1185,7 @@
     },
     {
       "description": "FGAP-089 comprehensive fix: every over-cap READ across our extensions FAILS CLOSED — no satisficeable partial body. serializeForRead (read-element.ts) on cap.truncated: (a) if overCapDirective provided -> DIRECTIVE-ONLY, no body ('READ REFUSED — <label> is N bytes over the 50KB cap; nothing returned; narrow: call <tool> with <params>'); (b) edge case (no finer addressing) -> UNMISSABLE HEAD-LEADING PARTIAL marker BEFORE the head (the old footer failed because it was at the END, skimmed past). Add overCapDirective{tool,params,hint} to SerializeForReadOptions + complete:boolean to ReadEnvelope. Thread per-surface narrowing at the ~23 pi-context index.ts call sites (read-block->read-block-page/item; read-config->registry/id; read-samples-catalog->kind; read-schema->path; list-tools->name; filter/join->refine; edge cases: read-block-dir/resolve-items-by-id/edges-for-lens/walk-ancestors/find-references/gather-execution-context/roadmap-load + addressed-singles when the single over-caps). ALSO route pi-workflows read tools (workflow-list/agents/status/validate/init, index.ts ~674-808) through the SAME serializeForRead (import @davidorex/pi-context/read-element) instead of direct truncateHead (workflow-agents->name; others edge). OUT-OF-SCOPE (leave): output truncation — dispatch MAX_STDOUT_BYTES, workflow-executor:976 completion truncateTail, jit-runtime verdict/error, budget-enforcer, context-sdk:764 nextActions cap.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/read-element.ts",
         "packages/pi-context/src/read-element.test.ts",
@@ -1208,7 +1208,8 @@
         "TASK-077"
       ],
       "notes": "Closes FGAP-089 (P1; the structured footer was empirically insufficient — agent skimmed it). Shared serializeForRead is the DRY chokepoint (pi-workflows imports @davidorex/pi-context/read-element). Key insight: the warning must lead (head-first), not trail. User scope: comprehensive/global all over-READS, not just pi-context; output-truncation explicitly out. Verify from scratch cwd; NO RELEASE (held). Audit step mandatory (user-directed).",
-      "id": "TASK-078"
+      "id": "TASK-078",
+      "verification": "VER-049"
     }
   ]
 }

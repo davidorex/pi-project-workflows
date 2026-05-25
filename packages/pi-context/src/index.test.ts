@@ -36,11 +36,17 @@ interface CapturedTool {
  */
 function captureTools(opts?: { allTools?: unknown[]; activeTools?: string[] }): {
 	tools: Map<string, CapturedTool>;
+	handlers: Map<string, (...a: unknown[]) => unknown>;
 	api: unknown;
 } {
 	const tools = new Map<string, CapturedTool>();
+	// Capture `pi.on(event, handler)` registrations keyed by event name so
+	// tests can emit synthetic events (FGAP-090 guidance hooks).
+	const handlers = new Map<string, (...a: unknown[]) => unknown>();
 	const api = {
-		on: () => {},
+		on: (evt: string, h: (...a: unknown[]) => unknown) => {
+			handlers.set(evt, h);
+		},
 		registerTool: (def: { name: string; execute: CapturedTool["execute"] }) => {
 			tools.set(def.name, { name: def.name, execute: def.execute });
 		},
@@ -52,7 +58,7 @@ function captureTools(opts?: { allTools?: unknown[]; activeTools?: string[] }): 
 		getAllTools: () => opts?.allTools ?? [],
 		getActiveTools: () => opts?.activeTools ?? [],
 	};
-	return { tools, api };
+	return { tools, handlers, api };
 }
 
 function tmpDir(): string {
@@ -227,5 +233,67 @@ describe("pi-project extension: list-tools tool", () => {
 		assert.deepStrictEqual(parsed.tools, []);
 		assert.deepStrictEqual(parsed.active, []);
 		assert.strictEqual(parsed.total, 0);
+	});
+});
+
+describe("FGAP-090: guidance hooks", () => {
+	it("before_agent_start appends orientation to the system prompt (append-not-replace)", () => {
+		const { handlers, api } = captureTools();
+		(extension as unknown as (pi: unknown) => void)(api);
+
+		const handler = handlers.get("before_agent_start");
+		assert.ok(handler, "before_agent_start handler must be registered");
+
+		const result = handler({
+			type: "before_agent_start",
+			prompt: "",
+			systemPrompt: "BASE_PROMPT",
+			systemPromptOptions: {},
+		}) as { systemPrompt: string };
+
+		assert.ok(
+			result.systemPrompt.startsWith("BASE_PROMPT"),
+			"orientation must be appended after the base prompt, not replace it",
+		);
+
+		for (const needle of [
+			"read-config",
+			"read-samples-catalog",
+			"read-schema",
+			"list-tools",
+			"write-schema",
+			"amend-config",
+			"append-relation",
+			"/context start",
+		]) {
+			assert.ok(result.systemPrompt.includes(needle), `orientation block must reference ${needle}`);
+		}
+
+		// Grounding directive against confabulation.
+		assert.ok(
+			/do not confabulate|never invent/.test(result.systemPrompt),
+			"orientation block must carry a grounding directive against confabulation",
+		);
+	});
+
+	it("resources_discover returns the absolute pi-context skill dir", () => {
+		const { handlers, api } = captureTools();
+		(extension as unknown as (pi: unknown) => void)(api);
+
+		const handler = handlers.get("resources_discover");
+		assert.ok(handler, "resources_discover handler must be registered");
+
+		const result = handler({
+			type: "resources_discover",
+			cwd: ".",
+			reason: "startup",
+		}) as { skillPaths: string[] };
+
+		assert.ok(Array.isArray(result.skillPaths), "result.skillPaths must be an array");
+		assert.strictEqual(result.skillPaths.length, 1, "exactly one skill path expected");
+
+		const p = result.skillPaths[0]!;
+		assert.ok(path.isAbsolute(p), "skill path must be absolute");
+		assert.ok(fs.existsSync(path.join(p, "SKILL.md")), `resolved skill dir must contain SKILL.md (got ${p})`);
 	});
 });

@@ -21,9 +21,9 @@ updates automatically.
 
 ## Bundled Example Monitors
 
-- **fragility** — detects when the agent leaves broken state behind (errors it noticed but didn't fix, TODO comments instead of solutions, empty catch blocks). Writes findings to `.project/issues.json`.
+- **fragility** — detects when the agent leaves broken state behind (errors it noticed but didn't fix, TODO comments instead of solutions, empty catch blocks). Writes findings to `<substrate-dir>/issues.json`.
 - **hedge** — detects when the agent deviates from what the user actually said (rephrasing questions, assuming intent, deflecting with counter-questions)
-- **work-quality** — on-demand audit of work quality (trial-and-error, not reading before editing, fixing symptoms instead of root causes). Invoked via `/work-quality`. Writes findings to `.project/issues.json`.
+- **work-quality** — on-demand audit of work quality (trial-and-error, not reading before editing, fixing symptoms instead of root causes). Invoked via `/work-quality`. Writes findings to `<substrate-dir>/issues.json`.
 
 ## File Structure
 

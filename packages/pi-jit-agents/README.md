@@ -18,7 +18,7 @@ There is one concept of "agent" regardless of whether a workflow step or a monit
 The package owns four public surfaces:
 
 - `loadAgent(name, ctx) → AgentSpec` — resolves spec from discovery tiers, fully resolves all path fields to absolute
-- `compileAgent(spec, ctx) → CompiledAgent` — renders templates, injects `contextBlocks` from `.project/`, composes final prompts
+- `compileAgent(spec, ctx) → CompiledAgent` — renders templates, injects `contextBlocks` from the substrate directory, composes final prompts
 - `executeAgent(compiled, dispatch) → JitAgentResult` — in-process LLM dispatch with phantom tool enforcement
 - `agentContract(spec) → AgentContract` — projection for introspection, no execution
 
@@ -28,7 +28,7 @@ Subprocess dispatch stays in pi-workflows. The package never reads from `.pi/` �
 
 Agent specs are searched in this order:
 
-1. `{cwd}/.project/agents/{name}.agent.yaml` — project-level overrides
+1. `{cwd}/<substrate-dir>/agents/{name}.agent.yaml` — project-level overrides
 2. `{userDir ?? ~/.pi/agent/agents/}/{name}.agent.yaml` — user-global overrides
 3. `{builtinDir}/{name}.agent.yaml` — consumer-supplied builtins
 

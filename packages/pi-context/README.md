@@ -23,7 +23,7 @@ pi install npm:@davidorex/pi-context
 
 Project data lives under the substrate root (the dir chosen at init and recorded in `config.json`'s `root` field by accept-all; no default is shipped — DEC-0015) as typed JSON block files. Each block has a corresponding JSON Schema that defines its shape. All writes — whether from tools, workflows, or agents — are validated against the schema before data hits disk. Invalid data is never persisted.
 
-After `/context init` the substrate skeleton is just the dirs (no config, no schemas, no blocks):
+After `/context init <substrate-dir>` the substrate skeleton is just the dirs (no config, no schemas, no blocks):
 
 ```
 <substrate-dir>/

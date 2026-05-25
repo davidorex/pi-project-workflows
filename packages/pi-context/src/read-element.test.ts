@@ -1,11 +1,13 @@
 /**
  * Unit coverage for the pure read-element primitive (FGAP-103).
  *
- * serializeForRead: pages collections (correct total/hasMore), sets the
- * truncation signal on an over-cap value, and emits the structured greppable
- * footer ONLY when paged and/or truncated (absent otherwise). addressInto:
- * resolves id / key / path and returns a clean found:false on a miss without
- * throwing. No I/O — every assertion operates on inline JS values.
+ * serializeForRead: pages collections (correct total/hasMore), emits the
+ * structured greppable paging footer ONLY when paged (absent otherwise), and
+ * FAILS CLOSED on an over-cap value (FGAP-089) — directive-only refusal with NO
+ * partial body when a narrowing tool is named, else an unmissable head-leading
+ * marked partial; both set complete:false. addressInto: resolves id / key /
+ * path and returns a clean found:false on a miss without throwing. No I/O —
+ * every assertion operates on inline JS values.
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -66,22 +68,82 @@ describe("read-element: serializeForRead paging", () => {
 	});
 });
 
-describe("read-element: serializeForRead truncation", () => {
-	it("sets truncated/totalBytes on an over-cap value and emits the truncation footer", () => {
-		// Build a single object well past the 50KB byte cap (no array → whole-object path).
+describe("read-element: serializeForRead over-cap fail-closed (FGAP-089)", () => {
+	// A single object well past the 50KB byte cap whose values carry a unique,
+	// greppable filler marker; the marker MUST be absent from a refusal body.
+	const FILLER = "FAILCLOSED_FILLER_MARKER_";
+	const buildBig = (): Record<string, string> => {
 		const big: Record<string, string> = {};
-		for (let i = 0; i < 4000; i++) big[`k${i}`] = "x".repeat(40);
-		const env = serializeForRead(big);
+		for (let i = 0; i < 4000; i++) big[`k${i}`] = FILLER + "x".repeat(40);
+		return big;
+	};
+
+	it("over-cap WITH overCapDirective → REFUSAL, NO partial body, names the tool, complete:false", () => {
+		const big = buildBig();
+		const env = serializeForRead(big, {
+			label: "samples catalog",
+			overCapDirective: { tool: "read-samples-catalog", hint: "kind=<canonical_id>" },
+		});
 		assert.equal(env.truncated, true);
+		assert.equal(env.complete, false, "over-cap is not complete");
 		assert.ok(env.totalBytes > 50_000, "totalBytes reflects the un-capped size");
-		assert.ok(env.content.includes(`${READ_ELEMENT_FOOTER_PREFIX} truncated at`), "truncation footer present");
+		assert.ok(env.content.includes("READ REFUSED"), "refusal marker present");
+		assert.ok(env.content.includes("read-samples-catalog"), "names the narrowing tool");
+		// THE load-bearing assertion: no serialized body leaked into the refusal.
+		assert.ok(
+			!env.content.includes(FILLER),
+			"refusal must NOT contain any of the serialized payload (no partial body)",
+		);
 	});
 
-	it("no footer at all for a small whole object", () => {
+	it("over-cap directive renders params as key=value pairs", () => {
+		const big = buildBig();
+		const env = serializeForRead(big, {
+			label: ".project/framework-gaps.json",
+			overCapDirective: {
+				tool: "read-block-page",
+				params: { block: "framework-gaps", offset: 0, limit: 50 },
+				hint: "or read-block-item with id=<id>",
+			},
+		});
+		assert.ok(env.content.includes("block=framework-gaps"), "params rendered as key=value");
+		assert.ok(env.content.includes("offset=0"));
+		assert.ok(env.content.includes("limit=50"));
+		assert.ok(env.content.includes("read-block-item with id=<id>"), "hint appended");
+		assert.ok(!env.content.includes(FILLER), "still no partial body");
+	});
+
+	it("over-cap WITHOUT directive (edge) → head-leading marked partial, complete:false", () => {
+		const big = buildBig();
+		const env = serializeForRead(big, { label: "resolved ids" });
+		assert.equal(env.truncated, true);
+		assert.equal(env.complete, false, "over-cap is not complete");
+		// THE load-bearing assertion: the warning LEADS the content (head-leading,
+		// not a trailing footer that gets skimmed past).
+		assert.ok(env.content.startsWith("⚠️ PARTIAL READ"), "warning marker is head-leading");
+		assert.ok(env.content.includes("INCOMPLETE"), "head explicitly marked incomplete");
+		// The edge case still surfaces the head (structure visibility), so the
+		// filler IS present here — but only AFTER the leading warning.
+		assert.ok(env.content.includes(FILLER), "edge case surfaces the head after the warning");
+	});
+
+	it("under-cap → full content, complete:true, no warning", () => {
 		const env = serializeForRead({ a: 1, b: "two" });
 		assert.equal(env.truncated, false);
+		assert.equal(env.complete, true, "under-cap is complete");
 		assert.equal(env.total, undefined);
 		assert.ok(!env.content.includes(READ_ELEMENT_FOOTER_PREFIX), "no footer when neither paged nor truncated");
+		assert.ok(!env.content.includes("READ REFUSED") && !env.content.includes("PARTIAL READ"), "no warning markers");
+	});
+
+	it("paged-not-truncated → complete:true, paging footer present, hasMore correct", () => {
+		const arr = Array.from({ length: 130 }, (_, i) => ({ id: `P-${i}`, n: i }));
+		const env = serializeForRead(arr, { offset: 0, limit: 50 });
+		assert.equal(env.truncated, false, "a normal page is not over-cap-truncated");
+		assert.equal(env.complete, true, "the page itself is complete");
+		assert.equal(env.hasMore, true, "more pages exist");
+		assert.ok(env.content.includes(READ_ELEMENT_FOOTER_PREFIX), "paging footer present");
+		assert.ok(/showing 1-50 of 130 · hasMore=true/.test(env.content), "footer reports range + hasMore");
 	});
 });
 

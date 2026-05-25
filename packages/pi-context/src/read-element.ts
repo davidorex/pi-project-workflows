@@ -66,6 +66,15 @@ export interface ReadEnvelope {
 	truncated: boolean;
 	/** Total bytes of the un-capped serialized JSON. */
 	totalBytes: number;
+	/**
+	 * Whether the full content was returned (machine-checkable, FGAP-089). True
+	 * for every non-over-cap return — including a paged-but-not-truncated page
+	 * (the page itself is complete; `hasMore` signals more pages). False ONLY on
+	 * the over-CAP fail-closed paths (directive-only refusal, or head-leading
+	 * marked partial) where the serialized value did not fit and was either
+	 * refused or returned as an explicitly-incomplete head.
+	 */
+	complete: boolean;
 }
 
 /** Stable, greppable footer prefix — keep in sync with consumers/tests. */
@@ -87,6 +96,23 @@ export interface SerializeForReadOptions {
 	limit?: number;
 	/** Optional human label included in the footer (e.g. the addressed thing). */
 	label?: string;
+	/**
+	 * Fail-closed narrowing directive (FGAP-089). When set AND the serialized
+	 * value exceeds the read cap, serializeForRead returns the DIRECTIVE ONLY —
+	 * NO partial body — naming the narrowing tool + addressing the caller should
+	 * use instead (a partial read would mislead a constrained agent into
+	 * treating a truncated value as complete). Leave UNSET for edge surfaces
+	 * that have no finer addressing: those get the unmissable head-leading
+	 * marked partial instead.
+	 */
+	overCapDirective?: {
+		/** The tool to call to narrow the read (e.g. "read-block-page"). */
+		tool: string;
+		/** Concrete params to suggest (rendered as `key=value` pairs). */
+		params?: Record<string, string | number>;
+		/** Extra free-text guidance appended after the directive. */
+		hint?: string;
+	};
 }
 
 export const DEFAULT_LIMIT = 50;
@@ -148,9 +174,17 @@ function resolveCollection(
 /**
  * Serialize an already-loaded value for a read tool result. Collections are
  * paged (offset/limit) and report total/hasMore; non-collections serialize
- * whole. JSON text is capped via truncateHead. A structured footer is appended
- * ONLY when paged and/or truncated (prefix `[read-element:`), never as a
- * prose-only note; when neither paged nor truncated there is no footer.
+ * whole. JSON text is capped via truncateHead.
+ *
+ * Over-CAP reads FAIL CLOSED (FGAP-089): a value that exceeds the 50KB read cap
+ * does NOT return a partial body dressed as the whole value. Instead —
+ *   - with `overCapDirective`: a directive-only REFUSAL (no body) naming the
+ *     narrowing tool + addressing;
+ *   - without it (edge surfaces, no finer addressing): an UNMISSABLE
+ *     HEAD-LEADING marked partial (warning FIRST, then the head).
+ * Both set `complete:false`. Under-cap returns set `complete:true`; a paged
+ * (but not over-cap) page is complete and keeps the structured paging footer
+ * (prefix `[read-element:`) since the next page is reachable via offset/limit.
  */
 export function serializeForRead(value: unknown, opts: SerializeForReadOptions = {}): ReadEnvelope {
 	const offset = opts.offset ?? 0;
@@ -175,7 +209,45 @@ export function serializeForRead(value: unknown, opts: SerializeForReadOptions =
 
 	const jsonStr = JSON.stringify(serialized, null, 2);
 	const cap = truncateHead(jsonStr);
+	const label = opts.label ?? "result";
 
+	// ── FGAP-089 over-CAP fail-closed path ──────────────────────────────────
+	// When the serialized value exceeds the read cap, a partial body must NOT be
+	// returned as if it were the whole value — a constrained agent skimmed past
+	// the old trailing `[read-element: truncated …]` footer and treated a
+	// truncated catalog as complete (degraded info). So an over-cap read now
+	// fails closed: either a directive-only REFUSAL (when a narrowing tool
+	// exists) or an UNMISSABLE HEAD-LEADING marked partial (edge surfaces with
+	// no finer addressing). Either way `complete:false`.
+	if (cap.truncated) {
+		if (opts.overCapDirective !== undefined) {
+			// Narrowing available → DIRECTIVE ONLY, no serialized body at all.
+			const { tool, params, hint } = opts.overCapDirective;
+			const paramsString =
+				params && Object.keys(params).length > 0
+					? Object.entries(params)
+							.map(([k, v]) => `${k}=${v}`)
+							.join(" ")
+					: undefined;
+			const content =
+				`⚠️ READ REFUSED — this ${label} is ${cap.totalBytes} bytes, over the 50KB read cap. ` +
+				`Nothing was returned (a partial read would mislead). ` +
+				`Narrow your read: call \`${tool}\`${paramsString ? ` with ${paramsString}` : ""}.${hint ? ` ${hint}` : ""}`;
+			return { content, total, hasMore, truncated: true, totalBytes: cap.totalBytes, complete: false };
+		}
+		// No finer addressing (edge case) → UNMISSABLE HEAD-LEADING marked
+		// partial. The warning goes FIRST (the old footer failed because it sat
+		// at the END, skimmed past); the head follows so the caller can still
+		// see structure, but is explicitly told it is INCOMPLETE.
+		const content =
+			`⚠️ PARTIAL READ — this ${label} is ${cap.totalBytes} bytes, capped at 50KB, and has no finer addressing. ` +
+			`The HEAD below is INCOMPLETE — do NOT treat it as the full value:\n\n${cap.content}`;
+		return { content, total, hasMore, truncated: true, totalBytes: cap.totalBytes, complete: false };
+	}
+
+	// ── Not over-cap: full content (a paged-but-not-truncated page is complete;
+	// `hasMore` signals further pages). Paging footer stays — paging is reachable
+	// via offset/limit, so it does not fail closed.
 	const footers: string[] = [];
 	if (paged && total !== undefined) {
 		// shown range is 1-based inclusive over the served slice
@@ -187,16 +259,14 @@ export function serializeForRead(value: unknown, opts: SerializeForReadOptions =
 			`\n\n${READ_ELEMENT_FOOTER_PREFIX} showing ${from}-${to} of ${total} · hasMore=${hasMore}${labelSuffix} · narrow with an address]`,
 		);
 	}
-	if (cap.truncated) {
-		footers.push(`\n\n${READ_ELEMENT_FOOTER_PREFIX} truncated at ${cap.totalBytes} bytes · address a sub-element]`);
-	}
 
 	return {
 		content: cap.content + footers.join(""),
 		total,
 		hasMore,
-		truncated: cap.truncated,
+		truncated: false,
 		totalBytes: cap.totalBytes,
+		complete: true,
 	};
 }
 

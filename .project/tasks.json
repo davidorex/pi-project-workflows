@@ -1248,35 +1248,6 @@
       "notes": "EXHAUSTIVE supersession of original enumeration (feedback_class_fix_completeness_reenumeration: re-grep until zero). Scope grew 7->19 code + ~15 narrative after full-tree re-verification. Exhaustive sweep recorded in analysis/2026-05-25-fgap-106-107-exhaustive-sweep.md. Interim guidance-accuracy fix; does NOT build /context start (FGAP-095+066). Neutral referent <substrate-dir>. SKILL.md generated -> edit source + regen. NO RELEASE (held). Audit mandatory.",
       "id": "TASK-079",
       "verification": "VER-050"
-    },
-    {
-      "id": "TASK-080",
-      "description": "Fix FGAP-099 — clamp workflow subprocess dispatch to an explicit, declaration-composed, parent-bounded tool grant. Add pure fn composeToolGrant(declared, parentTools) in pi-workflows/src/dispatch.ts: split declared (string[]) by the existing path-heuristic into toolNames (builtin + extension tool NAMES) + extensionPaths (load paths); if parentTools provided, fail-closed ({error}) on any toolName not in parentTools; if parentTools undefined, return the grant without the subset check (core fix unconditional); absent/empty declared -> toolNames:[] (grant nothing). Rewrite buildArgs tool block (dispatch.ts:88-100): ALWAYS emit --tools <toolNames> (incl empty), --extension per path; on compose error surface it so dispatch returns a failed StepResult / throws ToolGrantError (no spawn). Thread parentTools: capture pi.getActiveTools() in the workflow-execute handler (index.ts, full ExtensionAPI in scope) -> ExecuteOptions.parentTools? -> StepExecOptions -> AgentStepOptions -> DispatchOptions -> buildArgs (optional everywhere). Behavior change (intended): loading an extension no longer implicitly grants its tools — a tool is active in the child only if its NAME is in the declared grant; tools-less specs become zero-tool. Out of scope: in-process jit-runtime tool wiring (FEAT-005), DEC-0047 ratified broadening (fail-closed for now).",
-      "status": "in-progress",
-      "files": [
-        "packages/pi-workflows/src/dispatch.ts",
-        "packages/pi-workflows/src/workflow-executor.ts",
-        "packages/pi-workflows/src/step-agent.ts",
-        "packages/pi-workflows/src/index.ts",
-        "packages/pi-workflows/src/dispatch.test.ts",
-        "packages/pi-workflows/src/step-agent.test.ts"
-      ],
-      "acceptance_criteria": [
-        "buildArgs ALWAYS emits --tools (incl empty grant); a child is never spawned without an explicit --tools",
-        "composeToolGrant: declared subset of parent passes; declared name outside parent -> {error} fail-closed; absent/empty -> toolNames:[]; parentTools undefined -> grant returned without subset check",
-        "parentTools captured via pi.getActiveTools() at the workflow-execute handler and threaded ExecuteOptions->StepExecOptions->AgentStepOptions->DispatchOptions->buildArgs (optional field)",
-        "compose error -> failed StepResult / typed error, no spawn",
-        "extensions load via --extension but their tools are active in the child only if named in the grant (load != grant)",
-        "in-process jit-runtime tool path untouched; DEC-0047 broadening not built",
-        "unit tests (composeToolGrant + buildArgs always-emit/clamp/fail-closed/empty) + updated :219-267 assertions; build/check/test green",
-        "runtime demo (constrained parent -> workflow-execute): out-of-parent declaration fails closed; subset declaration -> child clamped (child getActiveTools shows only subset)",
-        "fresh-context adversarial audit: no unclamped child path; guard unbypassable; orchestrator re-greps"
-      ],
-      "depends_on": [
-        "TASK-079"
-      ],
-      "notes": "Resolves FGAP-099. Explicit-grant premise (user-directed): the JIT agent's declaration IS the grant, carried into --tools like compile.ts carries schemas/macros/templates; parent active surface is the safety guard (subset, fail-closed). composeToolGrant is the seam FEAT-005 (in-process capability composition) later absorbs. Blast radius (tools-less specs becoming zero-tool) caught by the test gate, not yaml-grep. Prerequisite for the agents-as-tools loop (FEAT-004/006) + the data-room validator/decomposer (FGAP-110/111). NO RELEASE (held).",
-      "verification": ""
     }
   ]
 }

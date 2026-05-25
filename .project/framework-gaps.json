@@ -3646,7 +3646,7 @@
     },
     {
       "title": "Workflow agent-step dispatch does not clamp child tool surface to the parent — spec omission defaults to full privilege (harness sandbox is per-process, not transitive)",
-      "status": "in-progress",
+      "status": "identified",
       "priority": "P1",
       "package": "pi-workflows",
       "layer": "L1",

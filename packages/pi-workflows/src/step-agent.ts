@@ -29,7 +29,6 @@ export interface AgentStepOptions {
 	templateEnv?: nunjucks.Environment;
 	dispatchFn?: typeof dispatch; // injectable for testing; defaults to real dispatch
 	modelConfig?: import("./dispatch.js").ModelConfig;
-	parentTools?: string[]; // parent's active tool surface (FGAP-099) to clamp the agent's tool grant
 	retryContext?: RetryContext; // set on retry attempts (attempt > 1)
 	onStepActivity?: (activity: { tool: string; preview: string; timestamp: number }) => void;
 	onStepUsageUpdate?: (update: { input: number; output: number; cost: number; turns: number }) => void;
@@ -195,7 +194,6 @@ export async function executeAgentStep(
 			}
 		},
 		modelConfig: options.modelConfig,
-		parentTools: options.parentTools,
 	});
 
 	// Resolve output path from spec (may contain ${{ }} expressions)

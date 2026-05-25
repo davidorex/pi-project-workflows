@@ -159,25 +159,6 @@ describe("executeAgentStep", () => {
 		assert.strictEqual(capture.calls[0].opts.signal, controller.signal);
 	});
 
-	it("threads parentTools to dispatchFn (FGAP-099)", async (t) => {
-		const tmpDir = makeTmpRunDir(t);
-		const stepSpec: StepSpec = { agent: "test-agent" };
-		const state: ExecutionState = { input: {}, steps: {}, status: "running" };
-		const capture = { calls: [] as any[] };
-
-		await executeAgentStep(
-			"step1",
-			stepSpec,
-			state,
-			makeOptions(tmpDir, {
-				parentTools: ["read", "bash"],
-				dispatchFn: mockDispatch({}, capture),
-			}),
-		);
-		assert.ok(capture.calls.length > 0);
-		assert.deepStrictEqual(capture.calls[0].opts.parentTools, ["read", "bash"]);
-	});
-
 	it("passes timeout to dispatchFn when stepSpec.timeout is set", async (t) => {
 		const tmpDir = makeTmpRunDir(t);
 		const stepSpec: StepSpec = { agent: "test-agent", timeout: { seconds: 30 } };

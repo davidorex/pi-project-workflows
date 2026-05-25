@@ -183,5 +183,30 @@
     "parent": "DEC-0044",
     "child": "FGAP-099",
     "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FEAT-004",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FEAT-005",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FEAT-006",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FGAP-099",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FGAP-102",
+    "relation_type": "decision_addresses_gap"
   }
 ]

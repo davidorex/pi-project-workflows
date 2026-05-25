@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { schemaPath } from "@davidorex/pi-context/context-dir";
+import { serializeForRead } from "@davidorex/pi-context/read-element";
 import { enforceBudget } from "@davidorex/pi-jit-agents";
 import { Type } from "@earendil-works/pi-ai";
 import type {
@@ -15,7 +16,6 @@ import type {
 	ExtensionCommandContext,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { truncateHead } from "@earendil-works/pi-coding-agent";
 import { Key } from "@earendil-works/pi-tui";
 import { createAgentLoader } from "./agent-spec.js";
 import type { IncompleteRun } from "./checkpoint.js";
@@ -669,9 +669,13 @@ const extension = (pi: ExtensionAPI) => {
 				source: w.source,
 			}));
 
+			// FGAP-089: route through the shared serializer (no parallel truncation
+			// path). Edge surface — no finer addressing tool → head-leading marked
+			// partial on over-cap.
+			const envelope = serializeForRead(items, { label: "workflows" });
 			return {
 				details: undefined,
-				content: [{ type: "text", text: truncateHead(JSON.stringify(items, null, 2)).content }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -702,9 +706,13 @@ const extension = (pi: ExtensionAPI) => {
 				if (!agent) {
 					throw new Error(`Agent '${params.name}' not found. Available: ${agents.map((a) => a.name).join(", ")}`);
 				}
+				// FGAP-089: a single agent spec is already the addressed element —
+				// whole (don't page intrinsic arrays); over-cap on one agent has no
+				// finer addressing → head-leading marked partial.
+				const envOne = serializeForRead(agent, { whole: true, label: `agent ${params.name}` });
 				return {
 					details: undefined,
-					content: [{ type: "text", text: truncateHead(JSON.stringify(agent, null, 2)).content }],
+					content: [{ type: "text", text: envOne.content }],
 				};
 			}
 
@@ -722,9 +730,14 @@ const extension = (pi: ExtensionAPI) => {
 				taskTemplate: a.taskTemplate,
 			}));
 
+			// FGAP-089: the agent list narrows to one agent via name=<agent>.
+			const envelope = serializeForRead(items, {
+				label: "agents",
+				overCapDirective: { tool: "workflow-agents", hint: "name=<agent>" },
+			});
 			return {
 				details: undefined,
-				content: [{ type: "text", text: truncateHead(JSON.stringify(items, null, 2)).content }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -753,9 +766,12 @@ const extension = (pi: ExtensionAPI) => {
 				throw new Error(`Workflow '${params.name}' not found. Available workflows: ${listWorkflowNames(ctx.cwd)}`);
 			}
 
+			// FGAP-089: validation results — edge surface (no finer addressing) →
+			// head-leading marked partial on over-cap.
+			const envelope = serializeForRead(results, { label: "validation results" });
 			return {
 				details: undefined,
-				content: [{ type: "text", text: truncateHead(JSON.stringify(results, null, 2)).content }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -778,9 +794,12 @@ const extension = (pi: ExtensionAPI) => {
 		): Promise<AgentToolResult<undefined>> {
 			const status = gatherWorkflowStatus(ctx.cwd);
 
+			// FGAP-089: a structured vocabulary object — edge surface (no finer
+			// addressing) → head-leading marked partial on over-cap.
+			const envelope = serializeForRead(status, { whole: true, label: "workflow status" });
 			return {
 				details: undefined,
-				content: [{ type: "text", text: truncateHead(JSON.stringify(status, null, 2)).content }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});
@@ -803,9 +822,12 @@ const extension = (pi: ExtensionAPI) => {
 		): Promise<AgentToolResult<undefined>> {
 			const result = initWorkflowDirs(ctx.cwd);
 
+			// FGAP-089: init result — edge surface (no finer addressing) →
+			// head-leading marked partial on over-cap.
+			const envelope = serializeForRead(result, { whole: true, label: "workflow init" });
 			return {
 				details: undefined,
-				content: [{ type: "text", text: truncateHead(JSON.stringify(result, null, 2)).content }],
+				content: [{ type: "text", text: envelope.content }],
 			};
 		},
 	});

@@ -3314,7 +3314,7 @@
       ],
       "impact": "A harness-confined agent (DEC-0014) reading a >50KB block (framework-gaps ~346KB, decisions ~188KB, issues ~129KB) via read-block gets a silent partial + a prose note it may ignore, then acts on incomplete substrate believing it is whole. read-block-page exists but is not signposted from the truncation point, so the escape requires the agent to already know to switch. Under a growing substrate this compounds.",
       "canonical_vocabulary": "truncation completeness-signal, partial-read-as-complete, structured pagination signal",
-      "proposed_resolution": "Every truncating read tool emits a STRUCTURED completeness signal the agent cannot misread (e.g. truncated:true + total + an explicit 'use read-block-page / filter-block-items to get the rest' directive), mirroring read-block-page's {items,total,hasMore}; on an over-cap block, read-block returns that structured directive rather than a bare prose note. Do not silently drop. The pi builtin read tool is SDK-owned (out of scope); this FGAP scopes OUR tools. Aligns the read surface with the DEC-0018 anti-false-pass discipline.",
+      "proposed_resolution": "PARTLY LANDED via FGAP-103 (serializeForRead): the prose [Truncated: N bytes] note is eliminated repo-wide in the read surface (index.ts: 23 serializeForRead sites, 0 truncateHead/[Truncated:), replaced by a greppable structured footer ([read-element: showing a-b of total · hasMore=<bool> · narrow with an address]) and the ReadEnvelope carries truncated/total/hasMore; element addressing (read-config registry/id, read-schema path, list-tools name) lets the agent fetch the rest precisely. REMAINDER (why still open): the footer rides in the tool-result TEXT (content), greppable but a satisficing agent could still skim past it; the fully-unmissable form is exposing ReadEnvelope {truncated,total,hasMore} as STRUCTURED tool-result fields (AgentToolResult details), not only in-text. Close when the read tools surface those as structured result data. Aligns with DEC-0018 anti-false-pass.",
       "related_decisions": [
         "DEC-0014",
         "DEC-0018"
@@ -3731,7 +3731,7 @@
     },
     {
       "title": "list-tools is a single-shot full-schema dump — no progressive disclosure (names/index -> per-tool detail); the ~54-tool payload exceeds the 50KB cap and truncates, blinding the agent's own discovery surface",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L2",
@@ -3764,7 +3764,9 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FGAP-101"
+      "id": "FGAP-101",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-25T00:00:00Z"
     },
     {
       "title": "Autonomous code-change loop validates via LLM-self-report, not external oracle — DEC-0018 not inherited; no build/check/test gate, runtime-demo, adversarial-against-artifacts, or attested commit",
@@ -3812,7 +3814,7 @@
     },
     {
       "title": "No universal, DRY element-level read across JSON surfaces — config/schema/relations/roadmap/block-dir are read-all-or-nothing; element-read exists only for blocks and is bespoke, not a shared primitive",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "layer": "L1",
@@ -3855,7 +3857,9 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FGAP-103"
+      "id": "FGAP-103",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-25T00:00:00Z"
     }
   ]
 }

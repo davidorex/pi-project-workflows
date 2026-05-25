@@ -1113,7 +1113,7 @@
     },
     {
       "description": "Implement FGAP-103 — one DRY element-read primitive every JSON read surface routes through (subsumes FGAP-101, carries FGAP-089's structured-signal facet). NEW pure module read-element.ts: serializeForRead(value, {itemsKey?,offset?,limit?,label?}) -> ReadEnvelope { content, total?, hasMore?, truncated, totalBytes } (generalizes readBlockPage's {items,total,hasMore} + FGAP-089 truncated/totalBytes; structured machine-parseable+readable footer replacing the ~13x JSON.stringify+truncateHead+prose '[Truncated]' note); addressInto(value, {id?,key?,path?}) -> {found,value,resolved} (hand-rolled — no path/key dep exists). Route 8 whole-blob handlers in index.ts through serializeForRead (read-block/read-block-dir/read-config/read-samples-catalog/read-schema/list-tools/context-roadmap-load/context-edges-for-lens; last two currently lack truncateHead). Add addressing: read-config gains registry?+id?; read-schema gains path?; list-tools gains name? (default = compact paged index — closes FGAP-101); read-samples-catalog already has kind. Refactor readBlockItem/readBlockPage (context-sdk.ts) ONTO the primitive (blocks not special; no parallel path). Dual-surface: read-config.ts + read-schema.ts CLIs gain the optional flags; list-tools stays Pi-tool-only (FGAP-044).",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/read-element.ts",
         "packages/pi-context/src/read-element.test.ts",
@@ -1137,7 +1137,8 @@
         "TASK-074"
       ],
       "notes": "Resolved design (no hedging): one pure read-element module (serializeForRead envelope + addressInto id|key|path); per-surface tools keep discoverability, DRY lives in the shared library they call (NOT a god read-element tool). Closes FGAP-103 + FGAP-101 (subsumed via list-tools index/detail) + FGAP-089 structured-signal facet. Unblocks FEAT-007 (skill-content-via-element-read) + FGAP-066 (read conception untruncated). Builds on FGAP-090 (TASK-074) which routes the agent to these read tools. Exemplars: read-block-page.ts/read-block-item.ts/join-blocks.ts (dual-surface), readBlockPage {items,total,hasMore} (envelope template). NO RELEASE (held).",
-      "id": "TASK-075"
+      "id": "TASK-075",
+      "verification": "VER-046"
     }
   ]
 }

@@ -149,17 +149,24 @@ Validate cross-block referential integrity — check that IDs referenced across 
 </tool>
 
 <tool name="read-config">
-Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks.
+Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks. Address ONE registry/map via `registry` (e.g. relation_types) and ONE entry within it via `id` (canonical_id) instead of reading the whole config.
 
 *Read project config — vocabulary, lenses, relation_types, status_buckets*
 
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `registry` | string | no | Address ONE config registry/map by key (e.g. 'relation_types', 'lenses', 'block_kinds', 'status_buckets') |
+| `id` | string | no | With `registry`: address ONE entry within it by canonical_id |
 </tool>
 
 <tool name="list-tools">
-List every tool bound into the current Pi session — name, description, parameter JSON-schema, and source extension — plus which tools are currently active. Self-introspection of the agent's own tool surface (all loaded extensions + builtins).
+Discover the agent's own tool surface (all loaded extensions + builtins). Default returns a COMPACT index — one line per tool (name · param-count · one-line description) plus the active set — not the full JSON-schemas. Pass `name` to fetch ONE tool's full descriptor (name + description + parameter JSON-schema + sourceInfo). Index→detail per FGAP-101.
 
-*Discover available tools — names, params, descriptions, active set*
+*Discover available tools — compact index, or one tool's full descriptor via `name`*
 
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | no | Address ONE tool by name → full descriptor (params schema + sourceInfo) |
 </tool>
 
 <tool name="read-samples-catalog">
@@ -214,13 +221,14 @@ Scoped add / replace / remove of ONE entry in ONE config.json registry (block_ki
 </tool>
 
 <tool name="read-schema">
-Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent.
+Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent. Address ONE property via `path` (dotted/bracket, e.g. properties.tasks.items.properties.status) instead of reading the whole schema.
 
-*Read a block schema as structured JSON*
+*Read a block schema as structured JSON — optionally address one property via `path`*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `schemaName` | string | yes | Schema name without extension (e.g., 'tasks', 'decisions', 'issues') |
+| `path` | string | no | Address ONE property by dotted/bracket path (e.g. 'properties.tasks.items.properties.status') |
 </tool>
 
 <tool name="write-schema">

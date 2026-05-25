@@ -4147,7 +4147,7 @@
       ],
       "impact": "Without it, 'blocks-not-changelogs' stays a discipline the LLM must follow (and breaks under correction-layering); the constrained agent can read superseded/journey/un-audited content and mistake it for current truth — the exact structural-hallucination failure the data-room pattern exists to prevent. With it, validity/staleness becomes a substrate invariant, the same engine serves any domain via a conception pack (software dev is conception #1), and the constrained agent's context is by construction the curated valid+current projection.",
       "canonical_vocabulary": "validity/recency lifecycle bits + read-time visibility gating (curated-projection-as-read-surface)",
-      "proposed_resolution": "1. Decide the semantics fork: two independent bits (`valid`, `current`) vs one lifecycle enum — and whether the read-gate is a HARD harness boundary or a default-on lens. 2. Add `valid` + `current` (+ provenance: who/when/against-what-raw-span flipped them) as schema-level item fields, settable only via a separate audit (not the authoring write). 3. Extend serializeForRead / the lens read tools with a constrained-agent read mode that returns only valid+current by default; expose valid+superseded ('background') only on explicit request; raw/invalid never. 4. Define the validator JIT-agent contract: read + amend-block perms only (depends on FGAP-099 clamp), grounded flip (cite raw span; depends on FGAP-102 oracle/grounded validation). Depends on the raw tier + raw->block decomposition front-end (file separately). Verify: a constrained agent loaded against a substrate with superseded+invalid items reads ONLY valid+current; cannot reach the journey; round-trip decompose->audit-flip->read demonstrated.",
+      "proposed_resolution": "1. Decide the semantics fork: two independent bits (`valid`, `current`) vs one lifecycle enum — and whether the read-gate is a HARD harness boundary or a default-on lens. 2. Add `valid` + `current` (+ provenance: who/when/against-what-raw-span) as schema-level item fields, settable only via the audit flip (not the authoring write). 3. Extend serializeForRead / the lens read tools with a constrained-agent read mode returning only valid+current by default; valid+superseded (\"background\") only on explicit request; raw/invalid never. 4. FLIP AUTHORITY = HUMAN-IN-THE-LOOP (NOT FINALIZED — needs more thinking; verging into Karpathy LLM-wiki territory): the JIT validator agent PROFFERS a grounded flip (reads raw + block, cites the raw span/evidence) but the HUMAN'S OK is the authority that actually flips valid/current — the agent does not self-certify. The permitted JIT agent (read + amend-block, depends FGAP-099 clamp) prepares + proposes; the human approves; intersects FGAP-102 (grounded/oracle-not-LLM) + DEC-0047 (judiciary). Whether/when this can delegate to an oracle vs always-human is the open question. Depends on the raw tier + decomposition front-end (FGAP-111). Concept source: /Users/david/Projects/data-room-pi-context.md. Verify: a constrained agent loaded against a substrate with superseded+invalid items reads ONLY valid+current, cannot reach the journey; round-trip decompose(FGAP-111) -> agent-proffer -> human-OK flip -> read demonstrated.",
       "related_decisions": [
         "DEC-0040",
         "DEC-0047",
@@ -4161,6 +4161,40 @@
         "FEAT-004",
         "FEAT-005",
         "FEAT-006",
+        "FEAT-007"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25"
+    },
+    {
+      "id": "FGAP-111",
+      "title": "Raw tier + raw->block decomposition front-end — ingest heterogeneous source files, preserve originals, decompose into typed source-blocks (the data-room ingestion step)",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "The one genuinely-missing capability for the data-room generalization (FGAP-110): pi-context operates on already-typed JSON blocks; it has no front-end that walks a folder tree, reads heterogeneous raw source files (PDF / deck / transcript / spreadsheet / email / md), PRESERVES the originals, and DECOMPOSES them into typed source-blocks (inventory rows that point at the preserved original via path + metadata — the block is the inventory row, not the file content). This is the 'build me the room / source inventory' first step of the data-room workflow ('raw: then decompose into blocks'). The decomposition is the constrained agent's 'finds' work: it produces CANDIDATE blocks that enter the RAW tier marked invalid + not-current (un-audited) — they become valid+current only via the separate human-in-the-loop flip in FGAP-110 (agent finds, human decides). Feeds FGAP-110 (provides the raw items the valid/current gate curates) and underpins the data-room artifacts (source inventory, conflict log, missing-context, duplicates) which are then typed blocks + closure-table edges over the decomposed source-blocks.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/data-room-pi-context.md",
+          "reference": "'find the relevant materials, preserve the originals, build me a data inventory... summarize every source before you synthesize. do not write the deliverable yet' — the ingestion/decomposition step; 'raw: then decompose into blocks'"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "appendToBlock / writeBlock are the write target for decomposed source-blocks; the front-end that produces them from raw files does not exist"
+        }
+      ],
+      "impact": "Without ingestion, the data-room generalization (FGAP-110) has nothing to curate — the substrate can only hold hand-authored blocks, not a decomposed source set. The 'first prompt is build the room, not do the thing' workflow (structurally antagonistic to hallucination) is unreachable for general knowledge work; pi-context stays software-project-only in practice even with the valid/current machinery.",
+      "canonical_vocabulary": "source ingestion + provenance-preserving decomposition (raw -> typed inventory blocks)",
+      "proposed_resolution": "Define: (1) a raw tier (preserved originals + a manifest) distinct from the typed-block tier; (2) a decomposition contract for a constrained JIT agent — walk tree, read raw, emit candidate source-blocks (path/type/date/authority-guess/supports/limitations) that point at preserved originals and enter marked invalid+not-current; (3) the source-block kind(s) shipped as a conception pack (intersects the data-room conception, FGAP-110). Agent finds, never auto-promotes; promotion is FGAP-110's human-in-the-loop flip. Open: how much decomposition is in-engine vs a dispatched agent's job; heterogeneous-file reading (the harness/agent reads PDFs/decks, not pi-context core). Needs more thinking alongside FGAP-110.",
+      "related_decisions": [
+        "DEC-0037",
+        "DEC-0040"
+      ],
+      "related_issues": [
+        "FGAP-110",
+        "FGAP-099",
+        "FGAP-102",
         "FEAT-007"
       ],
       "created_by": "human:davidryan@gmail.com",

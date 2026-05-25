@@ -83,6 +83,13 @@ export interface ExecuteOptions {
 	dispatchFn?: typeof dispatch;
 	/** Project-level model config; loaded from .project/model-config.json if not provided. */
 	modelConfig?: import("./dispatch.js").ModelConfig;
+	/**
+	 * The parent's active tool surface (FGAP-099), captured by the tool handler
+	 * via pi.getActiveTools() and threaded to dispatch so each agent's declared
+	 * tool grant is clamped to a subset of it. The executor's narrowed
+	 * WorkflowPI does not expose getActiveTools, so this is passed explicitly.
+	 */
+	parentTools?: string[];
 	/** Resume from an incomplete run instead of starting fresh. */
 	resume?: {
 		runId: string;
@@ -130,6 +137,8 @@ interface StepExecOptions {
 	templateEnv?: nunjucks.Environment;
 	dispatchFn?: typeof dispatch;
 	modelConfig?: import("./dispatch.js").ModelConfig;
+	/** Parent's active tool surface (FGAP-099) to clamp agent tool grants against. */
+	parentTools?: string[];
 }
 
 /**
@@ -639,6 +648,7 @@ async function executeStepByType(
 		templateEnv: options.templateEnv,
 		dispatchFn: options.dispatchFn,
 		modelConfig: options.modelConfig,
+		parentTools: options.parentTools,
 		retryContext,
 		onStepActivity: (activity) => {
 			if (!widgetState.activities) widgetState.activities = new Map();
@@ -785,6 +795,7 @@ export async function executeWorkflow(
 		templateEnv,
 		dispatchFn: options.dispatchFn,
 		modelConfig,
+		parentTools: options.parentTools,
 	};
 
 	for (const layer of plan) {

@@ -547,11 +547,18 @@ const extension = (pi: ExtensionAPI) => {
 				}
 			}
 
+			// Capture the parent's active tool surface (FGAP-099) so each dispatched
+			// agent's declared tool grant is clamped to a subset of it. The `pi`
+			// closure here is the full ExtensionAPI; the executor's narrowed
+			// WorkflowPI cannot reach getActiveTools, so we pass it explicitly.
+			const parentTools = pi.getActiveTools();
+
 			const result = await executeWorkflow(spec, input, {
 				ctx,
 				pi,
 				signal,
 				loadAgent: createAgentLoader(ctx.cwd),
+				parentTools,
 				resume: resumeOpts,
 			});
 

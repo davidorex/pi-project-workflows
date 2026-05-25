@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { buildArgs, dispatch, extractText, extractToolArgsPreview } from "./dispatch.js";
+import { buildArgs, composeToolGrant, dispatch, extractText, extractToolArgsPreview } from "./dispatch.js";
 import type { AgentSpec, StepResult, StepSpec } from "./types.js";
 
 // Skip integration tests unless RUN_INTEGRATION=1 and pi is available
@@ -124,6 +124,44 @@ describe("extractToolArgsPreview", () => {
 
 // ── Unit tests: buildArgs ──
 
+// ── Unit tests: composeToolGrant (FGAP-099) ──
+
+describe("composeToolGrant", () => {
+	it("splits declared into builtin names vs extension paths, all-in-parent", () => {
+		const grant = composeToolGrant(["read", "bash", "./ext/x.ts", "/abs/y.js"], ["read", "bash", "write"]);
+		assert.ok(!("error" in grant));
+		if ("error" in grant) return;
+		assert.deepStrictEqual(grant.toolNames, ["read", "bash"]);
+		assert.deepStrictEqual(grant.extensionPaths, ["./ext/x.ts", "/abs/y.js"]);
+	});
+
+	it("returns {error} when a declared name is not in parentTools (fail-closed)", () => {
+		const grant = composeToolGrant(["read", "write"], ["read"]);
+		assert.ok("error" in grant, "expected an error result for out-of-surface tool");
+		if (!("error" in grant)) return;
+		assert.match(grant.error, /exceeds parent surface/);
+		assert.match(grant.error, /write/);
+	});
+
+	it("absent declared => empty grant (grants nothing)", () => {
+		const grant = composeToolGrant(undefined, ["read", "write"]);
+		assert.deepStrictEqual(grant, { toolNames: [], extensionPaths: [] });
+	});
+
+	it("empty declared => empty grant (grants nothing)", () => {
+		const grant = composeToolGrant([], ["read", "write"]);
+		assert.deepStrictEqual(grant, { toolNames: [], extensionPaths: [] });
+	});
+
+	it("parentTools undefined => no clamp, arbitrary names pass through", () => {
+		const grant = composeToolGrant(["read", "arbitrary-tool"], undefined);
+		assert.ok(!("error" in grant));
+		if ("error" in grant) return;
+		assert.deepStrictEqual(grant.toolNames, ["read", "arbitrary-tool"]);
+		assert.deepStrictEqual(grant.extensionPaths, []);
+	});
+});
+
 describe("buildArgs", () => {
 	const baseOptions = {
 		cwd: "/tmp",
@@ -144,6 +182,11 @@ describe("buildArgs", () => {
 		assert.strictEqual(args[args.length - 1], "hello");
 		// No model args
 		assert.ok(!args.includes("--models"));
+		// FGAP-099: --tools is ALWAYS emitted. With no declared tools the grant is
+		// empty (zero-grant), NOT pi's inherited full default surface.
+		const toolsIdx = args.indexOf("--tools");
+		assert.ok(toolsIdx >= 0, "--tools must be emitted even with no declared tools");
+		assert.strictEqual(args[toolsIdx + 1], "", "empty declaration => empty allowlist");
 	});
 
 	it("includes model from agent spec", () => {
@@ -243,6 +286,51 @@ describe("buildArgs", () => {
 		assert.strictEqual(extIndices.length, 2);
 		assert.strictEqual(args[extIndices[0] + 1], "./ext/my-tool.ts");
 		assert.strictEqual(args[extIndices[1] + 1], "/abs/tool.js");
+	});
+
+	// FGAP-099: always-emit + parent-clamp behavior
+	it("omitted agent.tools => --tools with empty grant (no full default)", () => {
+		const step: StepSpec = { agent: "coder" };
+		const agent: AgentSpec = { name: "coder" }; // tools omitted
+		const args = buildArgs(step, agent, "do it", baseOptions);
+
+		const idx = args.indexOf("--tools");
+		assert.ok(idx >= 0, "--tools must be emitted when tools omitted");
+		assert.strictEqual(args[idx + 1], "", "omitted tools => empty allowlist, not default surface");
+	});
+
+	it("declared names all in parentTools => --tools has exactly those names", () => {
+		const step: StepSpec = { agent: "coder" };
+		const agent: AgentSpec = { name: "coder", tools: ["read", "bash"] };
+		const args = buildArgs(step, agent, "do it", { ...baseOptions, parentTools: ["read", "bash", "write"] });
+
+		const idx = args.indexOf("--tools");
+		assert.ok(idx >= 0);
+		assert.strictEqual(args[idx + 1], "read,bash");
+	});
+
+	it("declared name not in parentTools => buildArgs throws (no spawn)", () => {
+		const step: StepSpec = { agent: "coder" };
+		const agent: AgentSpec = { name: "coder", tools: ["read", "write"] };
+		assert.throws(
+			() => buildArgs(step, agent, "do it", { ...baseOptions, parentTools: ["read"] }),
+			/exceeds parent surface/,
+		);
+	});
+
+	it("dispatch returns failed StepResult (no spawn) when grant exceeds parent", async () => {
+		const step: StepSpec = { agent: "coder" };
+		const agent: AgentSpec = { name: "coder", tools: ["read", "write"] };
+		const result = await dispatch(step, agent, "do it", {
+			cwd: "/tmp",
+			sessionLogDir: "/tmp/sessions",
+			stepName: "clamp-step",
+			parentTools: ["read"],
+		});
+		assert.strictEqual(result.status, "failed");
+		assert.match(result.error ?? "", /exceeds parent surface/);
+		assert.strictEqual(result.usage.turns, 0);
+		assert.strictEqual(result.usage.cost, 0);
 	});
 
 	it("handles extensions scoping", () => {

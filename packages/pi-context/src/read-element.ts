@@ -89,7 +89,27 @@ export interface SerializeForReadOptions {
 	label?: string;
 }
 
-const DEFAULT_LIMIT = 50;
+export const DEFAULT_LIMIT = 50;
+
+/** The single pagination result shape: a slice plus full-count metadata. */
+export interface PageResult<T> {
+	items: T[];
+	total: number;
+	hasMore: boolean;
+}
+
+/**
+ * The ONE pagination implementation. Slices `arr` at offset(0)/limit(50) and
+ * reports the FULL count as `total` plus `hasMore = offset + limit < total`.
+ * Both serializeForRead (text envelope) and readBlockPage (structured page)
+ * route through this so there is no parallel paging math.
+ */
+export function pageArray<T>(arr: T[], opts: { offset?: number; limit?: number } = {}): PageResult<T> {
+	const offset = opts.offset ?? 0;
+	const limit = opts.limit ?? DEFAULT_LIMIT;
+	const total = arr.length;
+	return { items: arr.slice(offset, offset + limit), total, hasMore: offset + limit < total };
+}
 
 /**
  * Resolve the array to page over: the value itself if it is an array, else the
@@ -134,7 +154,6 @@ function resolveCollection(
  */
 export function serializeForRead(value: unknown, opts: SerializeForReadOptions = {}): ReadEnvelope {
 	const offset = opts.offset ?? 0;
-	const limit = opts.limit ?? DEFAULT_LIMIT;
 	const resolved = opts.whole ? ({ collection: false } as const) : resolveCollection(value, opts.itemsKey);
 
 	let serialized: unknown;
@@ -143,10 +162,11 @@ export function serializeForRead(value: unknown, opts: SerializeForReadOptions =
 	let paged = false;
 
 	if (resolved.collection) {
-		total = resolved.arr.length;
-		const slice = resolved.arr.slice(offset, offset + limit);
-		hasMore = offset + limit < total;
-		serialized = slice;
+		// Shared pagination math (pageArray) — no parallel slice/total/hasMore.
+		const page = pageArray(resolved.arr, { offset, limit: opts.limit });
+		total = page.total;
+		hasMore = page.hasMore;
+		serialized = page.items;
 		// Page-footer only when the page does not show the whole collection.
 		paged = offset > 0 || hasMore;
 	} else {

@@ -19,6 +19,7 @@ import {
 } from "./context.js";
 import { resolveContextDir, SCHEMAS_DIR, schemaPath, schemasDir, tryResolveContextDir } from "./context-dir.js";
 import { getLensValidators } from "./lens-validator.js";
+import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
@@ -812,24 +813,10 @@ export interface FilterPredicate {
 	value: unknown;
 }
 
-/**
- * Discover the single top-level array key in a block payload. Returns null
- * when the block has zero array properties; throws when ambiguous (two or
- * more array properties), since callers cannot proceed without an explicit
- * disambiguation policy. Mirrors the heuristic in
- * scripts/orchestrator/inject-context-items.ts:85-95 — both consumers share
- * the same single-array-key assumption used across .project/ block writes.
- */
-function discoverArrayKey(blockData: Record<string, unknown>): string | null {
-	const arrayKeys = Object.entries(blockData).filter(([, v]) => Array.isArray(v));
-	if (arrayKeys.length === 0) return null;
-	if (arrayKeys.length === 1) return arrayKeys[0][0];
-	throw new Error(
-		`filterBlockItems: block has multiple top-level array properties (${arrayKeys
-			.map(([k]) => k)
-			.join(", ")}); array_key per block is not declared in any registry — single-array assumption violated`,
-	);
-}
+// discoverArrayKey lives in read-element.ts (the lowest pure layer) and is
+// imported above — ONE copy of the single-top-level-array heuristic shared by
+// filterBlockItems / readBlockPage / serializeForRead. Mirrors the assumption
+// in scripts/orchestrator/inject-context-items.ts used across .project/ writes.
 
 /**
  * Filter the array items of a block by a predicate. Reads the block via the
@@ -885,33 +872,39 @@ export interface BlockPage {
 /**
  * Read a single item from ONE named block by its id, or null if absent.
  * Block-scoped (no cross-substrate idIndex, no prefix-vs-block invariant — that is resolveItemById).
- * Reuses filterBlockItems(id eq) so it inherits readBlock + discoverArrayKey + edge semantics
- * (missing block / multiple top-level arrays THROW; no-array block or id-not-found → null). FGAP-045.
+ * Reads the block then routes id-resolution through the shared addressInto primitive
+ * (id matches `.id` or `.canonical_id`), so block-item lookup uses the same element
+ * addressing as every other read surface. Missing block / multiple top-level arrays
+ * THROW (readBlock + discoverArrayKey via addressInto); no-array block or id-not-found → null. FGAP-045.
  */
 export function readBlockItem(cwd: string, blockName: string, id: string): unknown | null {
-	const matches = filterBlockItems(cwd, blockName, { field: "id", op: "eq", value: id });
-	return matches.length > 0 ? matches[0] : null;
+	const data = readBlock(cwd, blockName) as Record<string, unknown>;
+	// A block with multiple top-level arrays must throw (single-array assumption);
+	// addressInto tolerates ambiguity, so probe discoverArrayKey directly first to
+	// preserve the documented throw, then address into the resolved array.
+	discoverArrayKey(data);
+	const hit = addressInto(data, { id });
+	return hit.found ? hit.value : null;
 }
 
 /**
- * Paginate a block's items. Reuses readBlock + discoverArrayKey. Returns the FULL count as `total`
- * (not the page length) and `hasMore = offset + limit < total`. No-array block → {items:[],total:0,
- * hasMore:false}; offset ≥ total → empty items with correct total. Missing block / multiple top-level
- * arrays propagate the throw (consistent with filterBlockItems). FGAP-045.
+ * Paginate a block's items. Reads the block, discovers its single top-level array,
+ * then routes the slice/total/hasMore math through the shared `pageArray` primitive
+ * (ONE pagination implementation — serializeForRead uses the same). Returns the FULL
+ * count as `total` (not the page length) and `hasMore = offset + limit < total`.
+ * No-array block → {items:[],total:0,hasMore:false}; offset ≥ total → empty items
+ * with correct total. Missing block / multiple top-level arrays propagate the throw
+ * (consistent with filterBlockItems). FGAP-045.
  */
 export function readBlockPage(
 	cwd: string,
 	blockName: string,
 	opts: { offset?: number; limit?: number } = {},
 ): BlockPage {
-	const offset = opts.offset ?? 0;
-	const limit = opts.limit ?? 50;
 	const data = readBlock(cwd, blockName) as Record<string, unknown>;
 	const arrayKey = discoverArrayKey(data);
 	const arr = arrayKey ? (data[arrayKey] as unknown[]) : [];
-	const total = arr.length;
-	const items = arr.slice(offset, offset + limit);
-	return { items, total, hasMore: offset + limit < total };
+	return pageArray(arr, opts);
 }
 
 /**

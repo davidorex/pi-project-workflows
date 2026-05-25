@@ -9,7 +9,7 @@
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { addressInto, READ_ELEMENT_FOOTER_PREFIX, serializeForRead } from "./read-element.js";
+import { addressInto, pageArray, READ_ELEMENT_FOOTER_PREFIX, serializeForRead } from "./read-element.js";
 
 describe("read-element: serializeForRead paging", () => {
 	it("pages a >limit array: hasMore true, correct total, structured footer", () => {
@@ -82,6 +82,32 @@ describe("read-element: serializeForRead truncation", () => {
 		assert.equal(env.truncated, false);
 		assert.equal(env.total, undefined);
 		assert.ok(!env.content.includes(READ_ELEMENT_FOOTER_PREFIX), "no footer when neither paged nor truncated");
+	});
+});
+
+describe("read-element: pageArray (shared pagination math)", () => {
+	it("windows with full total + hasMore (offset 10 limit 20 over 100)", () => {
+		const arr = Array.from({ length: 100 }, (_, i) => i);
+		const p = pageArray(arr, { offset: 10, limit: 20 });
+		assert.equal(p.total, 100);
+		assert.equal(p.items.length, 20);
+		assert.equal(p.items[0], 10);
+		assert.equal(p.hasMore, true);
+	});
+
+	it("partial last page → hasMore false; defaults offset 0 / limit 50", () => {
+		const arr = Array.from({ length: 30 }, (_, i) => i);
+		const p = pageArray(arr);
+		assert.equal(p.total, 30);
+		assert.equal(p.items.length, 30);
+		assert.equal(p.hasMore, false);
+	});
+
+	it("offset >= total → empty items, correct total", () => {
+		const p = pageArray([1, 2, 3], { offset: 5, limit: 10 });
+		assert.deepEqual(p.items, []);
+		assert.equal(p.total, 3);
+		assert.equal(p.hasMore, false);
 	});
 });
 

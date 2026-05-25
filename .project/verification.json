@@ -1848,6 +1848,44 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
       "id": "VER-047"
+    },
+    {
+      "target": "TASK-077",
+      "target_type": "task",
+      "status": "passed",
+      "method": "command",
+      "evidence": "pi-context skill-collision fix (two-part). generate-skills.js (c0f471a): meta-package no longer bundles pi-context (self-surfaces via resources_discover) + clean-rebuilds the meta skills dir (rmSync; idempotent — 2x run = only the 2 orphan deletions). launch-constrained-pi.sh (c2cf6c6): --tools derived from \"$REPO\"/packages/*/skills/*/SKILL.md (repo-absolute, all packages' own) -> 54 tools incl context-status/read-block/write-schema (pi-context restored). bash -n clean; build/check/test green. RUNTIME via the real load path (launch-constrained-pi.sh from a scratch cwd): -p noop -> EXIT 0, ZERO [Skill conflicts]/collision; -p 'call the context-status tool' -> context-status executed (tool_execution_start+end, returned status JSON) — pi-context tools present + functional in the constrained session, no collision. Record: analysis/2026-05-25-skill-collision-fix-runtime.md.",
+      "timestamp": "2026-05-25T00:00:00Z",
+      "criteria_results": [
+        {
+          "criterion": "generate-skills excludes pi-context from meta bundle + clean-rebuilds (idempotent)",
+          "status": "passed",
+          "evidence": "meta skills = {workflows,monitors,meta-own}; 2x run no churn"
+        },
+        {
+          "criterion": "launch-constrained-pi.sh derives 54 tools incl pi-context (repo-absolute glob)",
+          "status": "passed",
+          "evidence": "derivation count 54; context-status/read-block/write-schema present"
+        },
+        {
+          "criterion": "real-load-path: no [Skill conflicts] collision warning",
+          "status": "passed",
+          "evidence": "launch from scratch cwd, zero collision lines"
+        },
+        {
+          "criterion": "real-load-path: pi-context tools callable in the constrained session",
+          "status": "passed",
+          "evidence": "context-status tool_execution_start+end + returned result"
+        },
+        {
+          "criterion": "build/check/test green; bash -n clean",
+          "status": "passed",
+          "evidence": "all exit 0"
+        }
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25T00:00:00Z",
+      "id": "VER-048"
     }
   ]
 }

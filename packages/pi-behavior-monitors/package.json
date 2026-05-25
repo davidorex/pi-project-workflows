@@ -1,6 +1,6 @@
 {
 	"name": "@davidorex/pi-behavior-monitors",
-	"version": "0.26.0",
+	"version": "0.27.0",
 	"description": "Behavior monitors for pi that watch agent activity and steer corrections",
 	"type": "module",
 	"keywords": [
@@ -42,9 +42,9 @@
 	},
 	"dependencies": {
 		"nunjucks": "^3.2.4",
-		"@davidorex/pi-jit-agents": "^0.26.0",
-		"@davidorex/pi-context": "^0.26.0",
-		"@davidorex/pi-workflows": "^0.26.0",
+		"@davidorex/pi-jit-agents": "^0.27.0",
+		"@davidorex/pi-context": "^0.27.0",
+		"@davidorex/pi-workflows": "^0.27.0",
 		"@earendil-works/pi-ai": "^0.75.4",
 		"@earendil-works/pi-coding-agent": "^0.75.4",
 		"@earendil-works/pi-tui": "^0.75.4"

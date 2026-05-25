@@ -26,7 +26,7 @@
  * context-sdk.ts so there is exactly ONE copy of the single-top-level-array
  * heuristic shared across filterBlockItems / readBlockPage / serializeForRead.
  */
-import { truncateHead } from "@earendil-works/pi-coding-agent";
+import { truncateHead } from "./truncate.js";
 
 /**
  * Discover the single top-level array key in a block/object payload. Returns

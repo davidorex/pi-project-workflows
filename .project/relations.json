@@ -238,5 +238,20 @@
     "parent": "DEC-0048",
     "child": "DEC-0040",
     "relation_type": "decision_relates_to_decision"
+  },
+  {
+    "parent": "DEC-0049",
+    "child": "FEAT-001",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0049",
+    "child": "FEAT-004",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0049",
+    "child": "FGAP-112",
+    "relation_type": "decision_addresses_gap"
   }
 ]

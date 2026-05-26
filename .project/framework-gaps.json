@@ -4199,6 +4199,48 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25"
+    },
+    {
+      "id": "FGAP-112",
+      "title": "DEC-0044 enacted home (a NEW dedicated agent-dispatch extension wrapping pi-jit-agents) diverges from user-stated intent (orchestrator uses jit-agents directly) — EV-001 conflict",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-jit-agents",
+      "layer": "L4",
+      "description": "DEC-0044 (enacted 2026-05-26, commit 1658111) resolved the agents-as-tools dispatch home as 'a NEW dedicated agent-dispatch extension that wraps the pi-jit-agents library.' The intentions eval (analysis/2026-05-26-project-vs-jit-intentions-eval.jsonl, EV-001) flagged this as conflicting with verbatim user-stated intent: JI-021 'the orchestrator using jit-agents directly,' JI-010 'jit-agents owns everything between I have a spec and I have a typed result,' JI-038 'settle DEC-0044 by exploring jit-agents.' A NEW wrapping extension was never user-stated. The conclusion was reasoned to be cycle-free + detangle-consistent + domain-correct given a specific reading of the constraints — but the user-stated FRAME is the orchestrator calling jit-agents directly, with no intermediary. DEC-0044 is therefore LLM-composed-under-authority that drifted from verbatim intent. Currently only narratively persisted in this gap report + TASK-080.notes; without this FGAP it is not a queryable open item. Pairs with substrate-authorship-semantics (filed substrate is working baseline reviewable at action points; this gap IS such a review point).",
+      "evidence": [
+        {
+          "file": ".project/decisions.json",
+          "reference": "DEC-0044.decision (full): 'the agents-as-tools dispatch surface registers in a NEW dedicated agent-dispatch extension that wraps the pi-jit-agents library' — verbatim from the enacted decision."
+        },
+        {
+          "file": "analysis/2026-05-26-jit-agents-user-intentions.jsonl",
+          "reference": "JI-021 user verbatim: orchestrator uses jit-agents directly. JI-010 user verbatim: jit-agents owns 'everything between I have a spec and I have a typed result.' JI-038 user verbatim: settle DEC-0044 by exploring jit-agents."
+        },
+        {
+          "file": "analysis/2026-05-26-project-vs-jit-intentions-eval.jsonl",
+          "reference": "EV-001 conflict — flagged the divergence with JI-010/021/038 as the contradicted intentions."
+        },
+        {
+          "file": ".project/tasks.json",
+          "reference": "TASK-080.notes + TASK-080.acceptance_criteria already encode 'NOTE: this scope assumes the user-intent framing (orchestrator uses jit-agents directly per JI-021/010); DEC-0044 new-extension home (EV-001 conflict) awaits separate re-anchoring and is NOT a target of this task.'"
+        }
+      ],
+      "impact": "Gates the TASK-080 build framing. TASK-080 (re-scoped 15f25f3) assumes the user-intent framing (jit-agents IS what the orchestrator calls; consume the whole agent layer; no intermediary). DEC-0044 as enacted assumes the new-extension intermediary. Both cannot be canon. The build's shape, the FEAT-004 dispatch tool's registration locus, and the FEAT-005 capability-grant's home depend on which canon stands. Until re-anchored, substrate carries a load-bearing canon-vs-intent contradiction.",
+      "canonical_vocabulary": "decision-vs-intent reconciliation / dispatch-home re-anchoring",
+      "proposed_resolution": "User re-anchors DEC-0044. Two coherent paths (user decides; presented as the determinate fork, NOT options to hedge): (a) REAFFIRM the new-extension home with explicit rationale that satisfies JI-021 — e.g. the 'new extension' is the concrete mechanism for 'orchestrator uses jit-agents directly' given jit-agents is a tool-less library + needs an extension to register the dispatch tool; edit DEC-0044 to make that mapping explicit, close this FGAP as addressed. (b) SUPERSEDE DEC-0044 toward orchestrator-direct-use — the dispatch path becomes orchestrator → jit-agents library (no new extension); the registration locus collapses (jit-agents callable directly from orchestrator-side; or registered from an EXISTING extension that already imports jit-agents — pi-workflows-after-FEAT-001-consumption, or a different home that survives the cycle-analysis re-do under the new framing); edit/supersede DEC-0044; close this FGAP. Either path settles canon to match user intent and unblocks TASK-080's terminal framing. Until resolved, TASK-080 proceeds on (b)'s framing per the re-scope note.",
+      "related_decisions": [
+        "DEC-0044",
+        "DEC-0047",
+        "DEC-0048"
+      ],
+      "related_features": [
+        "FEAT-001",
+        "FEAT-004",
+        "FEAT-005"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-26"
     }
   ]
 }

@@ -1977,6 +1977,52 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25"
+    },
+    {
+      "id": "VER-051",
+      "target": "FGAP-112",
+      "target_type": "framework-gap",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-26",
+      "criteria_results": [
+        {
+          "criterion": "Narrowing eliminates B1 (jit-agents grows extension surface) per library-not-extension canon",
+          "status": "passed",
+          "evidence": "FGAP-112 commit 3da9edc body cites CLAUDE.md package table 'Library (not extension)' + docs/planning/jit-agents-spec.md four-boundary-surfaces definition; DEC-0044 commit a71c782 options_considered records B1 as 'rejected — violates CLAUDE.md package table Library (not extension) declaration AND docs/planning/jit-agents-spec.md four-boundary-surfaces definition.'"
+        },
+        {
+          "criterion": "Narrowing eliminates B2a (pi-workflows hosts pi.registerTool('call-agent')) per three-consumer + uniform-agent constraint",
+          "status": "passed",
+          "evidence": "FGAP-112 commit 3da9edc body cites empirical verification of monitor index.ts:25-27 imports being deleted under TASK-080; DEC-0044 commit a71c782 options_considered records B2a as 'rejected — forces monitor subprocesses to runtime-load pi-workflows to gain agent-as-tool capability, recreating directional monitors→workflows runtime-load edge precisely when TASK-080 dismantles source-import edge of same shape; violates DEC-0048 + DEC-0049 sibling-consumer symmetry.'"
+        },
+        {
+          "criterion": "Narrowing eliminates B2b (no agent-as-tool surface) per user-stated FEAT-004 cluster-E delegation",
+          "status": "passed",
+          "evidence": "FGAP-112 commit 3da9edc proposed_resolution lists B2b as dead because it deletes FEAT-004 cluster-E delegation user-stated; FEAT-004 remains in features block as proposed."
+        },
+        {
+          "criterion": "Narrowing honors JI-021 ('orchestrator uses jit-agents directly') literally",
+          "status": "passed",
+          "evidence": "DEC-0044 commit a71c782 decision body: 'Orchestrator + pi-workflows + pi-behavior-monitors continue to consume pi-jit-agents AS A SHARED LIBRARY via direct npm import for their own use of load/compile/execute/introspect — JI-021 (orchestrator uses jit-agents directly) honored literally for orchestrator + JI-010 (jit-agents owns everything between I have a spec and I have a typed result) honored as the library surface.'"
+        },
+        {
+          "criterion": "Narrowing honors JI-010 ('jit-agents owns everything between I have a spec and I have a typed result')",
+          "status": "passed",
+          "evidence": "DEC-0044 commit a71c782 decision body: 'jit-agents stays library, four boundary surfaces (load/compile/execute/introspect), per its spec — NO extension surface added.' jit-agents-spec.md unchanged in scope; load/compile/execute/introspect remain the library surfaces."
+        },
+        {
+          "criterion": "DEC-0044 body edited to match narrowing (the proposed_resolution criterion 'close this FGAP on DEC-0044 edit')",
+          "status": "passed",
+          "evidence": "git log --oneline shows a71c782 'substrate(.project): narrow DEC-0044 to match FGAP-112 — pi-agent-dispatch extension scoped ONLY to sub-agent→sibling-agent pi.registerTool site'; tsx-eval readBlock confirms DEC-0044 carries 6 options (4 prior + 2 added: prior wider framing marked NARROWED AWAY FROM, jit-agents-grows-extension-surface marked eliminated) and 5 consequences including FGAP-099 clamp re-homing to new extension."
+        },
+        {
+          "criterion": "Substrate hygiene cascade: roadmap projection refreshed to match narrowed canon",
+          "status": "passed",
+          "evidence": "Commit be42a27 'analysis: refresh draft roadmap to reflect narrowed DEC-0044 + FGAP-112' — analysis/2026-05-26-roadmap-by-extension.md updated cross-cutting governance line, removed FGAP-112 from pi-jit-agents Decision needs, added pi-agent-dispatch (NEW) section, updated reading order."
+        }
+      ],
+      "evidence": "Canonical closure of FGAP-112 (architectural canon resolution). Three substrate landings: (a) FGAP-112 commit 3da9edc — gap body narrowed to determinate Path A; (b) DEC-0044 commit a71c782 — decision body edited to match the narrowing (the FGAP's stated close criterion); (c) roadmap refresh commit be42a27 — analysis projection updated. This VER required prior schema extension: verification.target_type enum extended with 'framework-gap' (committed same atomic landing as this VER) — pre-existing enum admitted only task|phase|requirement, surfacing a separate substrate-mechanism gap that the close-out exposed; the extension was the prerequisite hygiene before canonical FGAP closure was possible. Verifier inspected: (1) git log --oneline showing the three closing commits in order; (2) tsx-eval readBlock confirming FGAP-112 status=closed + closed_by + closed_at + augmented proposed_resolution; (3) tsx-eval readBlock confirming DEC-0044 carries the narrowed title + 6 options + narrowed decision body; (4) tsx-eval reading verification.schema.json confirming target_type enum extended."
     }
   ]
 }

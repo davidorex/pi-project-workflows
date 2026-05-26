@@ -9,7 +9,7 @@ Status legend: **D** = decision-need (open DEC), **G** = open framework-gap, **F
 ## Cross-cutting (governance / multi-extension)
 
 Enacted this session, framing all per-extension work below:
-- **DEC-0044** — agent-dispatch home = NEW extension wrapping pi-jit-agents (CONFLICTS with JI-021 per FGAP-112 — pending user re-anchor)
+- **DEC-0044** — agent-as-tool dispatch home = NEW dedicated `pi-agent-dispatch` extension whose ONLY scope is the sub-agent→sibling-agent `pi.registerTool` site + dispatch-boundary capability clamp; jit-agents stays library imported directly by orchestrator + workflows + monitors. Narrowed `a71c782` per FGAP-112 working-out (eliminates B1 jit-agents-as-extension + B2a workflows-hosts-registration + B2b no-surface; honors JI-021 + JI-010 literally via direct library import).
 - **DEC-0047** — capability model: spec-declared, default empty, operation-granular, clamped ⊆ parent, terminal verdict = real checks (de-oracled)
 - **DEC-0048** — existing workflows + bundled agents + their tests = disposable legacy, NOT targets
 - **DEC-0049** — uniform-agent axiom (JI-001): ONE agent abstraction across consumers
@@ -110,19 +110,20 @@ Cross-cutting open:
 ## pi-jit-agents (agent layer)
 
 ### Decision needs
-- **D / FGAP-112** — DEC-0044 home conflict vs JI-021 (orchestrator uses jit-agents directly). User re-anchor required: (a) reaffirm new-extension with explicit JI-021 mapping, or (b) supersede toward orchestrator-direct-use. **Gates FEAT-004/005 home selection.**
+- None open at extension level. FGAP-112 narrowed `3da9edc` to determinate Path A and DEC-0044 narrowed `a71c782` to match. FGAP-112 status remains `identified` pending formal close-out, but proposed_resolution is determinate — no live user decision required. FEAT-004/005 home is now settled (new `pi-agent-dispatch` extension); their build is unblocked at the architectural level.
 
 ### Work needs — framework gaps
 - **G / FGAP-032** — item-level `contextBlocks` selectivity missing (currently injects whole blocks)
-- **G / FGAP-099** — workflow agent-step dispatch does not clamp child tool surface (subsumed by FEAT-005; subject to DEC-0044 home)
+- **G / FGAP-099** — workflow agent-step dispatch does not clamp child tool surface (subsumed by FEAT-005; per narrowed DEC-0044, clamp lands in new `pi-agent-dispatch` extension's `pi.registerTool('call-agent')` implementation)
 - **G / FGAP-102** — autonomous code-change loop validates via LLM-self-report, not real deterministic checks (de-oracled)
 - **G / FGAP-109** — exported-API JSDoc + code-comments assert false `.project/` resolution paths
+- **G / FGAP-112** — agent-as-tool dispatch home (NARROWED + addressed by DEC-0044 narrowing `a71c782`; status `identified` pending formal close-out)
 
 ### Work needs — features
 - **F / FEAT-001** (proposed, IN-PROGRESS via TASK-080) — pi-jit-agents consumer migration arc (pi-workflows + pi-behavior-monitors consume jit-agents' WHOLE agent layer; delete duplicates)
 - **F / FEAT-002** (proposed) — in-session jit-agent persona (reshape main pi agent into one of our jit-agents)
-- **F / FEAT-004** (proposed) — agents-as-tools dual-surface typed dispatch (Cluster E delegation) — **home pending FGAP-112**
-- **F / FEAT-005** (proposed) — JIT capability composition + sandbox (operation-granular tool+perm composition) — **home pending FGAP-112**
+- **F / FEAT-004** (proposed) — agents-as-tools dual-surface typed dispatch (Cluster E delegation) — **home settled: new `pi-agent-dispatch` extension** (per narrowed DEC-0044); registers exactly one `pi.registerTool('call-agent', …)` calling jit-agents `executeAgent()`
+- **F / FEAT-005** (proposed) — JIT capability composition + sandbox (operation-granular tool+perm composition) — **home settled: same new `pi-agent-dispatch` extension**; clamp (parent-grant ⊆ child-grant) enforced at dispatch boundary in the `call-agent` tool implementation
 - **F / FEAT-006** (proposed) — end-to-end constrained-orchestrator → spec-block → privileged-agent → real-check-validated loop (north-star)
 
 ### Work needs — tasks
@@ -151,6 +152,22 @@ None purely workflow-owned currently proposed. All in-flight feature work flows 
 
 ---
 
+## pi-agent-dispatch (NEW — per narrowed DEC-0044)
+
+Package does not yet exist. Created as part of FEAT-004 build. Scope (per DEC-0044 narrowing `a71c782`): EXCLUSIVELY hosts `pi.registerTool('call-agent', …)` for sub-agent→sibling-agent dispatch + the parent-grant ⊆ child-grant capability clamp at the dispatch boundary. Does NOT wrap or intermediate jit-agents library use — orchestrator + workflows + monitors continue direct npm import of jit-agents for their own load/compile/execute/introspect needs. Loaded peer-to-peer by any subprocess context whose sub-agents may invoke siblings.
+
+### Decision needs
+- None standing (narrowed DEC-0044 settles the home + scope).
+
+### Work needs — features
+- **F / FEAT-004** (proposed) — co-target with pi-jit-agents above; the `call-agent` tool surface ships here
+- **F / FEAT-005** (proposed) — co-target with pi-jit-agents above; capability composition + clamp implementation ships here
+
+### Work needs — gaps
+- **G / FGAP-099** — re-homes here from prior reverted workflow-local fix (per narrowed DEC-0044 consequence)
+
+---
+
 ## pi-behavior-monitors
 
 No open decisions or FGAPs at extension level beyond:
@@ -169,8 +186,8 @@ Several early FGAPs filed against generic `pi-project` package label that pre-da
 
 ## Reading order for a fresh context
 
-1. **Cross-cutting governance** above — enacted DEC framing
-2. **pi-jit-agents → FGAP-112** — the open architectural decision gating multiple FEATs
-3. **pi-jit-agents → TASK-080** — the in-progress unit
+1. **Cross-cutting governance** above — enacted DEC framing (incl. narrowed DEC-0044 `a71c782` + FGAP-112 `3da9edc`)
+2. **pi-jit-agents → TASK-080** — the in-progress unit (whole agent layer consumption as shared library)
+3. **pi-agent-dispatch (NEW)** — the package narrowed DEC-0044 creates; FEAT-004/005 ship here once TASK-080 lands
 4. **pi-context** — large surface, mostly substrate-evolution work; FGAP-095 + TASK-043 are the in-flight items
 5. Everything else is queryable from substrate at need

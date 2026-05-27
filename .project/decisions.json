@@ -42,7 +42,7 @@
         },
         {
           "label": "DEC-0001 enactment + citation refresh (parseModelSpec line numbers 1091-1097 → 1173)",
-          "commit": "PENDING_THIS_COMMIT"
+          "commit": "bb45880"
         }
       ],
       "created_by": "agent/claude-opus-4-6",

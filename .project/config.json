@@ -105,6 +105,14 @@
       "schema_path": "schemas/story.schema.json",
       "array_key": "stories",
       "data_path": "story.json"
+    },
+    {
+      "canonical_id": "work-orders",
+      "display_name": "Work Orders",
+      "prefix": "WO-",
+      "schema_path": "schemas/work-orders.schema.json",
+      "array_key": "work_orders",
+      "data_path": "work-orders.json"
     }
   ],
   "relation_types": [
@@ -269,7 +277,8 @@
     "context-contracts",
     "config",
     "relations",
-    "story"
+    "story",
+    "work-orders"
   ],
   "installed_blocks": [
     "decisions",
@@ -286,7 +295,8 @@
     "conventions",
     "context-contracts",
     "phase",
-    "story"
+    "story",
+    "work-orders"
   ],
   "invariants": [
     {

@@ -8,6 +8,8 @@ Status legend: **D** = decision-need (open DEC), **G** = open framework-gap, **F
 
 ## Cross-cutting (governance / multi-extension)
 
+**Status note 2026-05-28: this roadmap was authored at FGAP-112 closure (`be42a27`). It now lags reality — significant work since then. Per-extension sections below were correct at filing; an UPDATES section at the end of this file documents post-`be42a27` changes for fresh-context use.**
+
 Enacted this session, framing all per-extension work below:
 - **DEC-0044** — agent-as-tool dispatch home = NEW dedicated `pi-agent-dispatch` extension whose ONLY scope is the sub-agent→sibling-agent `pi.registerTool` site + dispatch-boundary capability clamp; jit-agents stays library imported directly by orchestrator + workflows + monitors. Narrowed `a71c782` per FGAP-112 working-out (eliminates B1 jit-agents-as-extension + B2a workflows-hosts-registration + B2b no-surface; honors JI-021 + JI-010 literally via direct library import).
 - **DEC-0047** — capability model: spec-declared, default empty, operation-granular, clamped ⊆ parent, terminal verdict = real checks (de-oracled)
@@ -16,12 +18,12 @@ Enacted this session, framing all per-extension work below:
 - **DEC-0036** — re-derive `.context` clean (umbrella, in-flight via TASK-043)
 - **DEC-0040** — substrate = single source of truth; state derived
 
-Cross-cutting open:
-- **D / DEC-0001** — agent spec `model:` field semantics
-- **D / DEC-0002** — thinking-seam enforcement for forced-toolChoice dispatch
-- **D / DEC-0003** — `parseModelSpec` ownership at execute boundary
-- **D / DEC-0026** — ID-prefix padding (3-digit vs 4-digit)
-- **D / DEC-0027** — ID-prefix casing (uppercase vs lowercase)
+Cross-cutting (all enacted 2026-05-28):
+- ~~D / DEC-0001 — agent spec `model:` field semantics~~ ENACTED `bb45880`
+- ~~D / DEC-0002 — thinking-seam enforcement for forced-toolChoice dispatch~~ ENACTED `bb1bc27`
+- ~~D / DEC-0003 — `parseModelSpec` ownership at execute boundary~~ ENACTED `7ca1a33`
+- ~~D / DEC-0026 — ID-prefix padding (3-digit vs 4-digit)~~ ENACTED `a20a1c7`
+- ~~D / DEC-0027 — ID-prefix casing (uppercase vs lowercase)~~ ENACTED `a20a1c7`
 
 ---
 
@@ -186,8 +188,57 @@ Several early FGAPs filed against generic `pi-project` package label that pre-da
 
 ## Reading order for a fresh context
 
-1. **Cross-cutting governance** above — enacted DEC framing (incl. narrowed DEC-0044 `a71c782` + FGAP-112 `3da9edc`)
-2. **pi-jit-agents → TASK-080** — the in-progress unit (whole agent layer consumption as shared library)
-3. **pi-agent-dispatch (NEW)** — the package narrowed DEC-0044 creates; FEAT-004/005 ship here once TASK-080 lands
+1. **Cross-cutting governance** above — enacted DEC framing (incl. narrowed DEC-0044 `a71c782` + FGAP-112 closed `71a7ea2`)
+2. **pi-jit-agents → TASK-080 / TASK-081** — TASK-081 done (`66a35dd` VER-052: spec.tools threading + clamp at executeAgent boundary); TASK-080 cancelled-superseded by TASK-081/082/083/084-cancelled/085/086/087
+3. **pi-agent-dispatch (BUILT 2026-05-28)** — TASK-089 done (`babe385` VER-054: call-agent + author-agent-spec + composeToolGrant + operation-vocab + config.tool_operations[]); TASK-090 done (`c46b9dc` VER-055: run-real-checks + commit-attested); FEAT-010/TASK-092 done (`9bc6602` VER-056: composite-tool infrastructure)
 4. **pi-context** — large surface, mostly substrate-evolution work; FGAP-095 + TASK-043 are the in-flight items
 5. Everything else is queryable from substrate at need
+
+---
+
+## UPDATES (2026-05-28; post-`be42a27` refresh)
+
+**FEAT-006 north-star decomposition status (3/4 done):**
+
+| Task | Status | Merge | VER | Outcome |
+|---|---|---|---|---|
+| TASK-088 (work-orders block kind) | completed | `2267d7b` | VER-053 | Substrate canon + ContextBlockRef item-ref handoff demoed |
+| TASK-089 (pi-agent-dispatch extension scaffold + FEAT-004/005 core) | completed | `babe385` | VER-054 | New 5th package; call-agent + author-agent-spec + composeToolGrant + operation-vocab (55 Pi tool names) + config.tool_operations[] |
+| TASK-090 (real-check tail + attested-commit) | completed | `c46b9dc` | VER-055 | run-real-checks (NO LLM self-report) + commit-attested (DEC-0047 attestation footer + husky as backup gate); FGAP-102 impl-level closure |
+| TASK-091 (assembly + end-to-end loop + launch script) | planned | — | — | Next-up; closes FEAT-006 north-star + formal FGAP-102 closure |
+
+**FEAT-010 (composite-tool infrastructure / Hybrid 3 v2) — done 2026-05-28:**
+- Filed @ `ca8f4b5` (FGAP-116 + FEAT-010 + DEC-0052 + 5 edges + design source-of-record at `analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md`)
+- Built via TASK-092 @ `9bc6602` merge (VER-056)
+- 4 initial KINDS per-KIND triples (library + Pi tool + CLI script): read-files / git-log / grep-paths / command-allowlist
+- 5-layer forbidden-wholesale enforcement (L1 framework TS const + L2 engine test + L3 runtime guard + L4 JSDoc + L5 config.tool_operations_forbidden[] for project-specific additions)
+- author-tool-grant Pi tool (writer.kind=human gate for capability registry mutations)
+- composite-loader at extension-load reading config.tool_operations[] + dynamically registering bounded composites
+- Bounded-composite vocabulary realizes JI-023 form: "A bash command. Not bash."
+
+**Substrate-shape revision arcs (filed 2026-05-28; not yet built — scoped under .context greenfield):**
+- DEC-0050 (open) / FEAT-008 (proposed) / FGAP-113 (identified) — decisions-substrate 3-block split + uniform field tightening
+- DEC-0051 (open) / FEAT-009 (proposed) / FGAP-114 (identified) — AC schema revision (object form, AC-id addressability, completion invariant shift)
+
+**executeAgent-boundary canon trilogy enacted 2026-05-28:**
+- DEC-0001 `bb45880` — bare model id resolution against ExtensionContext
+- DEC-0002 `bb1bc27` — thinking=off when forced toolChoice + TraceEntry warning channel
+- DEC-0003 `7ca1a33` — parseModelSpec moves into executeAgent boundary as internal helper (not 5th exported surface)
+
+**TASK-080 split arc (5 successors):**
+- TASK-081 (jit-agents element — done VER-052)
+- TASK-082/083 (workflows + monitors consumer cascade — planned)
+- TASK-084 (POC — cancelled-superseded by FEAT-006 decomposition)
+- TASK-085/086/087 (DEC-0001/0002/0003 implementations — planned; 085+087 blocked on FGAP-115)
+
+**Open architectural debt:**
+- FGAP-115 (P1) — ExtensionContext from pi-coding-agent doesn't expose currentModel/currentProvider as DEC-0001 assumed; blocks TASK-085+087
+- FGAP-095 (in-progress) — `/context start` impossibilized single-entry onboarding conductor
+- TASK-082/083 — consumer cascade
+- TASK-091 — FEAT-006 assembly (next-up)
+
+**In-pi orchestrator capabilities (when pi-agent-dispatch loaded; 5 static + dynamic):**
+- call-agent / author-agent-spec / run-real-checks / commit-attested / author-tool-grant (5 static)
+- + dynamic composite Pi tools per config.tool_operations[] entries (kind-typed; closure-bound instance_params; granted via `--tools <canonical_id>`)
+
+Substrate state at refresh: max TASK-092, max DEC-0052, max FGAP-116, max FEAT-010, max VER-056. Re-derive on substrate change; do not edit standalone canon.

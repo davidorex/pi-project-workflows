@@ -1478,7 +1478,7 @@
     {
       "id": "TASK-089",
       "description": "FEAT-006 decomposition 2/4 — build pi-agent-dispatch extension per narrowed DEC-0044 + implement FEAT-005 (capability composition + sandbox) within it. New extension package whose ONLY scope is the in-pi agent-as-tool registration site: registers pi.registerTool('call-agent', {spec, input, grant}) for the in-pi orchestrator to dispatch a privileged JIT-agent as a typed tool call; registers pi.registerTool('author-agent-spec', {spec}) for orchestrator to author agent specs under writer.kind=human attestation per DEC-0047. Implementation calls pi-jit-agents library underneath (executeAgent direct library import from the extension; orchestrator + workflows + monitors continue consuming jit-agents as shared library directly per narrowed DEC-0044 — the extension does NOT wrap or intermediate library use). Capability composition (FEAT-005): operation-granular tool grants from empty-state registry — define the canonical operation vocabulary (e.g. npm-test, npm-build, file-write-scoped, etc.) in config.tool_operations[]; composeToolGrant(parent, requested) returns the clamped intersection; the dispatch tool calls executeAgent with the composed grant (TASK-081 clamp enforces at executeAgent boundary). Loaded peer-to-peer by any subprocess context needing agent-as-tool (workflow steps, monitor classifies, in-pi orchestrator's pi -p invocations).",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-agent-dispatch/package.json",
         "packages/pi-agent-dispatch/src/index.ts",

@@ -567,6 +567,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		systemPrompt,
 		taskPrompt: taskPrompt ?? "",
 		model: spec.model,
+		tools: spec.tools,
 		outputSchema: resolveOutputSchemaForCompile(spec.outputSchema, ctx.cwd),
 		contextValues,
 		// Surface budget-truncation warnings collected during composition.

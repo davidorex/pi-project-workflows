@@ -448,5 +448,15 @@
     "parent": "FEAT-010",
     "child": "FEAT-006",
     "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "TASK-092",
+    "child": "FEAT-010",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-092",
+    "child": "DEC-0052",
+    "relation_type": "task_governed_by_decision"
   }
 ]

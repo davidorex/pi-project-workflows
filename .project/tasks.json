@@ -1562,6 +1562,54 @@
         "TASK-090"
       ],
       "notes": "Filed 2026-05-26 per user direction. Fourth (final) of four FEAT-006 decomposition tasks. Final assembly + end-to-end runnable loop. Closes FEAT-006 (north-star) when complete + verified. Pattern matches the entire FEAT-006 acceptance criteria set: constrained orchestrator + work-order + privileged dispatch + scoped capability + real-check gate + attested commit + DEC-0047 governance. The 'main harness-constrained agent in pi launched via our script' from the user's stated intent is the launch script in this task. Supersession context: TASK-084 (POC) is cancelled in the same commit-arc as this filing because TASK-091's runtime demonstration IS the end-to-end proof the POC would have been a degraded slice of."
+    },
+    {
+      "id": "TASK-092",
+      "description": "Build FEAT-010 (Hybrid 3 v2 composite-tool infrastructure) per DEC-0052. Implements bounded-composite-vocabulary in pi-agent-dispatch: per-KIND triple (library + Pi tool + CLI script) for 4 initial KINDS (read-files / git-log / grep-paths / command-allowlist); 5-layer forbidden-wholesale enforcement (L1 framework TS const FORBIDDEN_WHOLESALE_OPERATIONS + L2 engine test invariant + L3 runtime guard at extension-load reading L1∪L5 union + L4 JSDoc citation + L5 substrate config.tool_operations_forbidden[]); composite-loader.ts at extension-load reading config.tool_operations[] + dynamically registering Pi tools per entry with closure-bound instance_params; author-tool-grant Pi tool mirroring TASK-089 author-agent-spec pattern (writer.kind=human enforcement via amendConfigEntry wrappers on tool_operations[] + tool_operations_forbidden[]). User-directed Path B per session 2026-05-28 (build FEAT-010 before TASK-091 assembly so the FEAT-006 closing demo can use bounded composites instead of wholesale tool names).",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-agent-dispatch/src/composites/read-files.ts",
+        "packages/pi-agent-dispatch/src/composites/read-files.test.ts",
+        "packages/pi-agent-dispatch/src/composites/git-log.ts",
+        "packages/pi-agent-dispatch/src/composites/git-log.test.ts",
+        "packages/pi-agent-dispatch/src/composites/grep-paths.ts",
+        "packages/pi-agent-dispatch/src/composites/grep-paths.test.ts",
+        "packages/pi-agent-dispatch/src/composites/command-allowlist.ts",
+        "packages/pi-agent-dispatch/src/composites/command-allowlist.test.ts",
+        "packages/pi-agent-dispatch/src/composite-loader.ts",
+        "packages/pi-agent-dispatch/src/composite-loader.test.ts",
+        "packages/pi-agent-dispatch/src/author-tool-grant-tool.ts",
+        "packages/pi-agent-dispatch/src/author-tool-grant-tool.test.ts",
+        "packages/pi-agent-dispatch/src/operation-vocab.ts",
+        "packages/pi-agent-dispatch/src/operation-vocab.test.ts",
+        "packages/pi-agent-dispatch/src/index.ts",
+        "packages/pi-agent-dispatch/src/index.test.ts",
+        "scripts/orchestrator/composite-read-files.ts",
+        "scripts/orchestrator/composite-git-log.ts",
+        "scripts/orchestrator/composite-grep-paths.ts",
+        "scripts/orchestrator/composite-command-allowlist.ts",
+        ".project/schemas/config.schema.json",
+        "packages/pi-context/schemas/config.schema.json",
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/src/context.ts"
+      ],
+      "acceptance_criteria": [
+        "Each of 4 initial composite KINDS (read-files / git-log / grep-paths / command-allowlist) lands as a TRIPLE per DEC-0019/0020: library function in packages/pi-agent-dispatch/src/composites/{kind}.ts + Pi tool registration at extension-load via composite-loader reading config.tool_operations[] + CLI script at scripts/orchestrator/composite-{kind}.ts taking same instance_params as CLI flags",
+        "config.schema.json (.project/ + packaged samples/schemas mirror) + samples/conception.json gain tool_operations_forbidden array property (items: string); AmendRegistry union + REGISTRY_DESCRIPTORS in context.ts include tool_operations_forbidden as kind:string-array; ConfigBlock.tool_operations_forbidden? typed",
+        "author-tool-grant Pi tool registered in pi-agent-dispatch: wraps amendConfigEntry mutations on tool_operations[] + tool_operations_forbidden[]; refuses writer.kind != 'human' per DEC-0047; refuses operations whose canonical_id is in FORBIDDEN_WHOLESALE_OPERATIONS L1 ∪ L5 union",
+        "L1 forbidden-wholesale framework TS const FORBIDDEN_WHOLESALE_OPERATIONS = ['bash', 'write', 'edit', 'shell', 'execute'] in operation-vocab.ts with JSDoc citation referencing feedback_no_parallel_ungated_paths",
+        "L2 engine test invariant in operation-vocab.test.ts asserts TOOL_OPERATION_DEFAULTS contains zero entries whose canonical_id is in FORBIDDEN_WHOLESALE_OPERATIONS; husky pre-commit fails on any addition",
+        "L3 runtime guard at pi-agent-dispatch/src/index.ts extension-load reads L1 ∪ L5 union (TOOL_OPERATION_DEFAULTS' entries + config.tool_operations[] instances + config.tool_operations_forbidden[]); throws extension-load error if any registered op is in the union",
+        "composite-loader.ts: at extension-load reads config.tool_operations[]; for each entry of kind matching a registered KIND, registers a Pi tool wrapping that kind's library function with instance_params closure-bound. Tool name = entry's canonical_id; refuses to register if canonical_id is in L1 ∪ L5 union",
+        "Engine unit tests cover each KIND library function (success + error paths + bounds enforcement per instance_params); composite-loader (loads entries + skips kind-mismatch + refuses forbidden-wholesale); author-tool-grant (refuses non-human writer + refuses forbidden-wholesale + happy path); L2 invariant (defaults-clean); L3 runtime guard (throws on violation)",
+        "Each CLI script under scripts/orchestrator/composite-{kind}.ts invokes the same library function as its Pi tool sibling; CLI tested via runtime-demo (orchestrator-side .ts using tsx)",
+        "Zero new pi-workflows/pi-behavior-monitors deps; per DEC-0048 bundled-artifact tests are not regression gates; engine unit tests + per-KIND library tests + composite-loader tests + author-tool-grant tests + L2/L3 tests are gates",
+        "VALIDATION = real checks per DEC-0018: build/check/test exit codes (engine + new tests all green); 5 runtime demos (schema+amendConfigEntry + per-KIND library + composite-loader dynamic registration + author-tool-grant enforcement + per-KIND CLI scripts); adversarial probe (fresh-context agent verifies zero forbidden-wholesale tokens registered + L3 catches violation + author-tool-grant refuses non-human + composite-loader refuses forbidden + per-KIND triples symmetric + zero forbidden-term hits + zero pi-workflows/monitors/tui imports in new code per sibling-consumer canon)"
+      ],
+      "depends_on": [
+        "TASK-089"
+      ],
+      "notes": "Filed 2026-05-28 per user direction Path B: build FEAT-010 first (before TASK-091 assembly). User's authorization to build FEAT-010 implies enactment authorization for DEC-0052 (open with drafted answer; FEAT-010 depends on DEC-0052 enacted); same canonical-pipeline pass enacts DEC-0052 + files this task. Implementation source-of-record: analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md. Reuses precedents: status-vocab.ts (L1+L4 TS const + JSDoc); status-vocab.test.ts (L2 invariant); author-agent-spec-tool.ts (writer.kind=human enforcement); file-block-item.ts/append-relation.ts (CLI script shape); attested-commit.ts (spawnSync git pattern); loadContext (extension-load config read). One verification-during-implementation point: pi.registerTool dynamic registration at factory-time has no existing precedent; verified empirically during composite-loader smoke test (Phase 2 STEP 4 / Phase 3 runtime demo 3)."
     }
   ]
 }

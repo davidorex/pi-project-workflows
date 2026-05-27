@@ -43,6 +43,19 @@ export interface ConfigBlock {
 	invariants?: InvariantDecl[];
 	installed_schemas?: string[];
 	installed_blocks?: string[];
+	tool_operations?: ToolOperationDecl[];
+}
+
+/**
+ * Operation-granular tool grant vocabulary entry (FEAT-005 / DEC-0047). Each
+ * names a Pi tool (or coarser operation) that can be granted to a privileged
+ * JIT-agent. Default grant is EMPTY per DEC-0047; consumers opt-in operations
+ * per dispatch.
+ */
+export interface ToolOperationDecl {
+	canonical_id: string;
+	display_name?: string;
+	category?: string;
 }
 
 /**
@@ -62,7 +75,8 @@ export type AmendRegistry =
 	| "naming"
 	| "installed_schemas"
 	| "installed_blocks"
-	| "hierarchy";
+	| "hierarchy"
+	| "tool_operations";
 
 /** The scoped amend verbs. `add` requires the key absent; `replace` / `remove`
  * require it present (OP-CORRECTNESS, decidable from the loaded config alone). */
@@ -529,6 +543,7 @@ const REGISTRY_DESCRIPTORS: Record<AmendRegistry, RegistryDescriptor> = {
 	installed_schemas: { kind: "string-array" },
 	installed_blocks: { kind: "string-array" },
 	hierarchy: { kind: "value-array" },
+	tool_operations: { kind: "keyed-array", idField: "canonical_id" },
 };
 
 /** Canonical identity join for a hierarchy triple (the `value-array` kind). */

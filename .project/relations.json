@@ -273,5 +273,40 @@
     "parent": "FGAP-113",
     "child": "FEAT-008",
     "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "TASK-081",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-082",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-083",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-084",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-081",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-082",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-083",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
   }
 ]

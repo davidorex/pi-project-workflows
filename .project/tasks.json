@@ -1252,7 +1252,7 @@
     {
       "id": "TASK-080",
       "description": "FEAT-001 — pi-workflows + pi-behavior-monitors CONSUME pi-jit-agents' WHOLE agent layer; delete pi-workflows' duplicate. Re-scoped 2026-05-26 from the original type+loader-only cut (which was wrong — loader, templates, schemas, compile, and capability are one coupled concern). jit-agents owns AgentSpec + loader + compile (templates/macros/schemas/contextBlocks, spec-dir-relative resolution) + capability composition (spec.tools threaded to the dispatch grant per DEC-0047: operation-granular, default EMPTY, clamped child-subset-of-parent at operation scope). pi-workflows DELETES its duplicate: local AgentSpec type, agent-spec.ts loader, the agent parts of template.ts (the separate .pi/templates + templates/ roots), compileAgentSpec, separate agent-schema resolution. pi-workflows becomes orchestration-only (DAG, state, expressions, gates); a workflow step that needs an agent dispatches a jit-agent directly (per JI-021/010: orchestrator uses jit-agents directly; JI-001: agent is one thing whether monitor or workflow-used; FEAT-001 issue-043 duplication closes). pi-behavior-monitors repoints to jit-agents (drops the synthetic CompiledAgent build). Per DEC-0048: existing .workflow.yaml + bundled agents + their tests are NOT targets (disposable legacy predating pi-context/pi-jit-agents); a broken bundled-artifact test is not a regression gate; engine UNIT tests remain gates. Per DEC-0047 (de-oracled): capability-widening writes require writer.kind=human; dispatch threads spec.tools as the explicit grant and clamps child-subset-of-parent (FGAP-099 subsumed here). Validation throughout = REAL CHECKS (build/check/test exit codes, runtime demo, adversarial on external artifacts) — never LLM self-report (FGAP-102 / DEC-0047 clause 5). Aligns with narrowed DEC-0044 (commit a71c782) + closed FGAP-112 (commit 71a7ea2): the original 'new dedicated agent-dispatch extension wrapping pi-jit-agents' framing was narrowed to 'new pi-agent-dispatch extension whose ONLY scope is the sub-agent→sibling-agent pi.registerTool site; jit-agents stays library imported directly by orchestrator + workflows + monitors.' The user-intent framing this task is built on (JI-021/010: orchestrator uses jit-agents directly) is now CANONICAL via the narrowed DEC-0044, not in conflict with it. The pi-agent-dispatch extension itself is downstream FEAT-004/005 work, not part of this task's scope.",
-      "status": "in-progress",
+      "status": "cancelled",
       "files": [
         "packages/pi-workflows/src/types.ts",
         "packages/pi-workflows/src/agent-spec.ts",
@@ -1281,7 +1281,107 @@
         "engine build/check/test green at every commit (husky); runtime demo + fresh-context adversarial audit per DEC-0018",
         "Aligns with narrowed DEC-0044 (a71c782) + closed FGAP-112 (71a7ea2): orchestrator + workflows + monitors consume pi-jit-agents as shared library directly per the narrowed DEC-0044; the pi-agent-dispatch extension is downstream FEAT-004/005 scope, not this task."
       ],
-      "notes": "Re-scoped 2026-05-26 from the original loader+type-only cut. Authority: analysis/2026-05-26-jit-agents-user-intentions.jsonl (39 verbatim USER intentions — esp. JI-001 uniform-agent definition; JI-002 disposability; JI-010 jit-agents owns spec-to-typed-result; JI-021 orchestrator uses jit-agents directly; JI-023/024/028/029 capability/perms operation-granular from empty; JI-027 \"validate not fake validate\"). Grounding: analysis/2026-05-26-project-vs-jit-intentions-eval.jsonl (conflict EV-001: DEC-0044 new-extension never user-stated; orphan EV-020: \"oracle\" never user-said — de-oracled in 4b8508e/3187ff6). External prior art: analysis/2026-05-26-pi-subagents-eval-vs-jit-intentions.md (the grant mechanism is `pi --tools` at the subprocess boundary — small thread; opt-in-from-empty default; depth-clamp pattern generalizes to tool-clamp). DEC-0044 narrowed + FGAP-112 closed 2026-05-26 (a71c782 / 71a7ea2): canon-vs-intent conflict resolved; orchestrator-direct-use is now canonical. NO RELEASE (held)."
+      "notes": "Re-scoped 2026-05-26 from the original loader+type-only cut. Authority: analysis/2026-05-26-jit-agents-user-intentions.jsonl (39 verbatim USER intentions — esp. JI-001 uniform-agent definition; JI-002 disposability; JI-010 jit-agents owns spec-to-typed-result; JI-021 orchestrator uses jit-agents directly; JI-023/024/028/029 capability/perms operation-granular from empty; JI-027 \"validate not fake validate\"). Grounding: analysis/2026-05-26-project-vs-jit-intentions-eval.jsonl (conflict EV-001: DEC-0044 new-extension never user-stated; orphan EV-020: \"oracle\" never user-said — de-oracled in 4b8508e/3187ff6). External prior art: analysis/2026-05-26-pi-subagents-eval-vs-jit-intentions.md (the grant mechanism is `pi --tools` at the subprocess boundary — small thread; opt-in-from-empty default; depth-clamp pattern generalizes to tool-clamp). DEC-0044 narrowed + FGAP-112 closed 2026-05-26 (a71c782 / 71a7ea2): canon-vs-intent conflict resolved; orchestrator-direct-use is now canonical. NO RELEASE (held). SPLIT 2026-05-26 per user direction (focus is pi-jit-agents element first + POC; consumer cascade follows): TASK-080 is split into three sequenced tasks + the POC. Successors: TASK-081 (pi-jit-agents element — additive build in pi-jit-agents only; spec.tools wired into executeAgent grant + clamp per DEC-0047; no consumer touching), TASK-082 (pi-workflows consume canonical + delete duplicate; depends on TASK-081), TASK-083 (pi-behavior-monitors consume canonical + delete duplicate + drop synthetic-CompiledAgent bridge; depends on TASK-081 + TASK-082). The POC at TASK-084 (orchestrator → pi-jit-agents direct dispatch end-to-end) runs between TASK-081 and TASK-082 to validate the architectural shape before consumer cascade. TASK-080 itself is cancelled as an umbrella — work proceeds through the four successors. All four carry the canon-aligned framing (narrowed DEC-0044 a71c782 + closed FGAP-112 71a7ea2: orchestrator + workflows + monitors consume pi-jit-agents as shared library directly)."
+    },
+    {
+      "id": "TASK-081",
+      "description": "Pi-jit-agents element of FEAT-001 — additive build inside pi-jit-agents only; no consumer touching. Wire spec.tools through the agent layer end-to-end: AgentSpec already carries `tools?: string[]` (types.ts:27, verified); extend compile.ts to thread that tools field into the compiled agent's grant; extend executeAgent (jit-runtime.ts:402) to accept a parent-grant param + enforce parent-grant ⊆ child-grant clamp at the dispatch boundary per DEC-0047 (operation-granular, default EMPTY, no inheritance of full defaults). Per the narrowed DEC-0044, this work happens in the pi-jit-agents library itself; the pi-agent-dispatch extension wraps this surface later for the sub-agent agent-as-tool pi.registerTool site (FEAT-004/005). Per DEC-0003 enacted (a71c782 / 7ca1a33): parseModelSpec moves into executeAgent boundary as an internal helper (not a fifth exported surface — four-boundary-surfaces declaration of jit-agents-spec §2 stands). Per DEC-0001 enacted (bb45880): bare model ids resolve against ExtensionContext at dispatch time; missing binding → explicit error. Per DEC-0002 enacted (bb1bc27): executeAgent enforces thinking=off when toolChoice.type='tool'; warning channel emits TraceEntry via trace-writer pipeline. NO pi-workflows touching. NO pi-behavior-monitors touching. NO consumer cascade. The duplicate AgentSpec/loader/compile in pi-workflows continues unchanged (deleted in TASK-082); monitor synthetic CompiledAgent build continues unchanged (replaced in TASK-083). FGAP-099 (clamp) subsumed here at the library boundary. Split from original TASK-080 (2026-05-26) per user direction: focus is pi-jit-agents element + POC first; consumer cascade follows.",
+      "status": "planned",
+      "files": [
+        "packages/pi-jit-agents/src/types.ts",
+        "packages/pi-jit-agents/src/agent-spec.ts",
+        "packages/pi-jit-agents/src/compile.ts",
+        "packages/pi-jit-agents/src/jit-runtime.ts"
+      ],
+      "acceptance_criteria": [
+        "executeAgent signature accepts a parent-grant (the tool set the caller is allowed to pass down) and clamps child-grant ⊆ parent-grant at dispatch boundary per DEC-0047",
+        "spec.tools threads through compile.ts → compiled agent carries the explicit tool grant (no defaults injected; default EMPTY per DEC-0047)",
+        "parseModelSpec lives at executeAgent boundary as an internal (non-exported) helper per DEC-0003 (a71c782); four-boundary-surfaces declaration of jit-agents-spec §2 stands",
+        "Bare model ids resolve against ExtensionContext per DEC-0001 (bb45880); missing binding → explicit error message naming the missing context",
+        "thinking=off enforced when toolChoice.type='tool' per DEC-0002 (bb1bc27); warning emits as TraceEntry via packages/pi-jit-agents/src/trace-writer.ts pipeline",
+        "pi-jit-agents engine unit tests green at every commit (husky); zero touching of pi-workflows or pi-behavior-monitors source code",
+        "VALIDATION = real checks: build/check/test exit codes (no pipe-masking), runtime demo (tsx-eval invocation of executeAgent on a fresh test spec with bounded tool grant + assertion that child-grant ⊆ parent-grant), adversarial probe (fresh-context agent greps for spec.tools leakage past clamp); never LLM self-report (FGAP-102 / DEC-0047 clause 5)"
+      ],
+      "depends_on": [],
+      "notes": "Split 2026-05-26 from TASK-080 per user direction (pi-jit-agents element first; then POC; then consumer cascade in 082/083). Authority: analysis/2026-05-26-jit-agents-user-intentions.jsonl (JI-010/021/023/024/027/028/029) + analysis/2026-05-26-decisions-substrate-revision-grounding.md (canon-mapping). External prior art: analysis/2026-05-26-pi-subagents-eval-vs-jit-intentions.md (grant mechanism = `pi --tools` at subprocess boundary; depth-clamp generalizes to tool-clamp; opt-in-from-empty default). No release."
+    },
+    {
+      "id": "TASK-082",
+      "description": "Pi-workflows consumer cascade of FEAT-001 — pi-workflows consumes pi-jit-agents' canonical agent layer; deletes its duplicate. Specifically: replace pi-workflows' local AgentSpec type (types.ts:170), agent-spec.ts loader (with its divergent .pi/agents tier), agent parts of template.ts (the separate .pi/templates + templates/ roots), compileAgentSpec (step-shared.ts), separate agent-schema resolution — all repointed to @davidorex/pi-jit-agents canonical surfaces. workflow-step that needs an agent dispatches a jit-agent directly per JI-021 (orchestrator-direct-use). pi-workflows becomes orchestration-only (DAG, state, expressions, gates, step types other than agent — monitor step still uses pi-behavior-monitors integration). Per DEC-0048: bundled .workflow.yaml + bundled agents + their tests are NOT preserved/aligned/fixed; broken bundled-artifact tests are NOT regression gates; engine UNIT tests remain gates. parseModelSpec duplicate at packages/pi-workflows/src/step-monitor.ts:371 (used at line 270) deleted per DEC-0003 (a71c782 enacted): callers redirect to pi-jit-agents' API. Depends on TASK-081 landing first (jit-agents element must provide the canonical surface to consume). Split from original TASK-080 (2026-05-26) per user direction; monitors cascade is separate (TASK-083).",
+      "status": "planned",
+      "files": [
+        "packages/pi-workflows/src/types.ts",
+        "packages/pi-workflows/src/agent-spec.ts",
+        "packages/pi-workflows/src/template.ts",
+        "packages/pi-workflows/src/step-shared.ts",
+        "packages/pi-workflows/src/step-agent.ts",
+        "packages/pi-workflows/src/step-monitor.ts",
+        "packages/pi-workflows/src/dispatch.ts",
+        "packages/pi-workflows/src/workflow-executor.ts",
+        "packages/pi-workflows/src/index.ts",
+        "packages/pi-workflows/src/template-validation.ts",
+        "packages/pi-workflows/src/workflow-sdk.ts"
+      ],
+      "acceptance_criteria": [
+        "pi-workflows DELETES local AgentSpec type (types.ts:170)",
+        "pi-workflows DELETES agent-spec.ts loader; consumers import createAgentLoader from @davidorex/pi-jit-agents",
+        "pi-workflows DELETES the agent parts of template.ts (separate .pi/templates + templates/ roots); agent template resolution flows through jit-agents canonical surfaces",
+        "pi-workflows DELETES compileAgentSpec from step-shared.ts; replaced by calls to jit-agents' compileAgent",
+        "pi-workflows DELETES the duplicate parseModelSpec at step-monitor.ts:371; line 270 redirects to pi-jit-agents API per DEC-0003 enactment",
+        "pi-workflows step-agent dispatches a jit-agent directly via @davidorex/pi-jit-agents executeAgent (orchestrator-direct-use per JI-021)",
+        "pi-workflows is orchestration-only post-cascade: DAG, state, expressions, gates, step types — no local agent layer",
+        "Per DEC-0048: bundled .workflow.yaml + bundled agents + their tests are NOT preserved/aligned/fixed; broken legacy-artifact tests are NOT regression gates; engine UNIT tests (DAG planner, expression evaluation, state machinery, gate machinery) remain gates",
+        "pi-workflows engine unit tests green at every commit (husky)",
+        "VALIDATION = real checks: build/check/test exit codes (no pipe-masking), runtime demo (workflow with an agent step dispatches successfully against jit-agents canonical), adversarial probe (fresh-context agent greps for residual local AgentSpec / agent-spec.ts / compileAgentSpec references); never LLM self-report"
+      ],
+      "depends_on": [
+        "TASK-081"
+      ],
+      "notes": "Split 2026-05-26 from TASK-080. Depends on TASK-081 landing first. Monitors cascade is TASK-083. Aligns with narrowed DEC-0044 (a71c782) + closed FGAP-112 (71a7ea2): pi-workflows consumes pi-jit-agents as shared library directly per canonical."
+    },
+    {
+      "id": "TASK-083",
+      "description": "Pi-behavior-monitors consumer cascade of FEAT-001 — pi-behavior-monitors imports agent infra from pi-jit-agents (not pi-workflows); drops the synthetic CompiledAgent build (currently at index.ts:~1356,1381,1383 building CompiledAgent + mapping compiled.taskTemplate → taskPrompt to bridge the pi-workflows AgentSpec vs pi-jit-agents AgentSpec shape gap). After TASK-082 deletes pi-workflows' duplicate AgentSpec/loader/compile, the synthetic-build bridge becomes unnecessary; monitors call jit-agents canonical surfaces directly. Specifically: repoint index.ts:25-27 imports (createAgentLoader from @davidorex/pi-workflows/agent-spec, compileAgentSpec from @davidorex/pi-workflows/step-shared, AgentSpec type from @davidorex/pi-workflows/types) to @davidorex/pi-jit-agents canonical equivalents. parseModelSpec duplicate at packages/pi-behavior-monitors/index.ts:1173 (used at line 1390) deleted per DEC-0003 (a71c782 enacted): callers redirect to jit-agents API. Depends on TASK-081 (for the canonical surface to consume) + TASK-082 (which deletes the pi-workflows source being depended-on; without 082, the import-repointing alone leaves dead pi-workflows surfaces). Split from original TASK-080 (2026-05-26) per user direction; workflows cascade is TASK-082.",
+      "status": "planned",
+      "files": [
+        "packages/pi-behavior-monitors/index.ts"
+      ],
+      "acceptance_criteria": [
+        "pi-behavior-monitors index.ts:25-27 imports repoint from @davidorex/pi-workflows/* to @davidorex/pi-jit-agents canonical equivalents",
+        "Synthetic CompiledAgent build (the compiled.taskTemplate → taskPrompt bridge at index.ts:~1356,1381,1383) DROPPED; monitors use jit-agents' canonical CompiledAgent directly",
+        "parseModelSpec duplicate at index.ts:1173 (definition) + 1390 (call site) DELETED per DEC-0003 enactment; line 1390 redirects to jit-agents API",
+        "pi-behavior-monitors package.json dep on @davidorex/pi-workflows REMOVED (was originally added for the duplicate-bridge imports; post-cascade only pi-jit-agents + pi-context + pi-ai + nunjucks remain)",
+        "pi-behavior-monitors unit tests green at every commit (husky)",
+        "Per DEC-0048: bundled classifier .agent.yamls + their tests are NOT preserved/aligned/fixed; broken legacy-classifier tests are NOT regression gates; engine UNIT tests (monitor lifecycle, classify dispatch, parseVerdict, etc.) remain gates",
+        "VALIDATION = real checks: build/check/test exit codes (no pipe-masking), runtime demo (monitor classify dispatches successfully against jit-agents canonical), adversarial probe (fresh-context agent greps for residual @davidorex/pi-workflows imports in pi-behavior-monitors source); never LLM self-report"
+      ],
+      "depends_on": [
+        "TASK-081",
+        "TASK-082"
+      ],
+      "notes": "Split 2026-05-26 from TASK-080. Depends on TASK-081 (canonical surface) + TASK-082 (pi-workflows duplicate removal — without 082, repointing alone leaves dead pi-workflows surface intact). monitors becomes a sibling consumer of pi-jit-agents alongside pi-workflows (DEC-0049 uniform-agent axiom)."
+    },
+    {
+      "id": "TASK-084",
+      "description": "POC — prove the context→jit concept end-to-end. The in-pi orchestrator (the main harness-constrained agent in pi, launched via our script) authors a scoped agent spec via pi-context tooling → persists → dispatches via pi-jit-agents library executeAgent → captures typed result → real-check verdict. Demonstrates the architectural shape works on a freshly-authored spec against a real LLM via pi-ai, with the operation-granular tool grant + clamp from TASK-081 in effect. Lightweight scope: NOT the full pi-agent-dispatch extension build (that is downstream FEAT-004/005 work after POC validates the shape). Scope is the smallest end-to-end demonstration: an author surface (scripts/orchestrator/author-agent.ts that writes a .agent.yaml + validates against jit-agents AgentSpec schema), a dispatch invocation (direct call to @davidorex/pi-jit-agents executeAgent — orchestrator-direct-use per JI-021), and a verification path (real-check on emitted artifacts: git diff / event stream / runtime demo). Authored agent uses a bounded tool grant (e.g. read-only — minimal grant proving clamp works); subagent invoked via pi -p with that grant; result captured; clamp empirically verified via attempt to exceed grant + observation of refusal. Depends on TASK-081 landing first (canonical agent layer + executeAgent grant/clamp must exist to dispatch into). Does NOT depend on TASK-082/083 (POC bypasses pi-workflows + pi-behavior-monitors entirely; orchestrator dispatches direct against jit-agents library). Filed 2026-05-26 per user direction (sequence: pi-jit-agents element first → POC → consumer cascade in 082/083).",
+      "status": "planned",
+      "files": [
+        "scripts/orchestrator/author-agent.ts",
+        "analysis/2026-05-26-poc-context-to-jit-runtime-demo.md"
+      ],
+      "acceptance_criteria": [
+        "scripts/orchestrator/author-agent.ts exists; writes a .agent.yaml spec to a target path; validates the written spec against the jit-agents AgentSpec schema before declaring success; CLI signature matches existing scripts/orchestrator pattern (--name, --tools, --target, --writer)",
+        "Orchestrator authors a minimal scoped agent (e.g. read-only tool grant — proves the grant + clamp machinery from TASK-081 works)",
+        "Orchestrator dispatches the authored agent via direct @davidorex/pi-jit-agents executeAgent call (NOT via pi-workflows; NOT via pi-behavior-monitors; NOT via the not-yet-built pi-agent-dispatch extension — direct library import per JI-021)",
+        "Real LLM dispatch through pi-ai succeeds; typed result returned conforms to the agent's declared output schema",
+        "Clamp empirically verified: attempt to author an agent with a tool grant exceeding the orchestrator's own grant → refusal with explicit error per DEC-0047 clause (writer.kind=human required for widening; orchestrator is agent at this layer)",
+        "Real-check verdict: runtime-demo POC report at analysis/2026-05-26-poc-context-to-jit-runtime-demo.md captures (a) the authored spec content, (b) the dispatch invocation command + actual output, (c) the clamp-test outcome, (d) git diff showing the orchestrator-side surface — fresh-context adversarial probe re-verifies all four by reading the report + running the recorded commands",
+        "VALIDATION = real checks: build/check/test exit codes for the script + the runtime demo + adversarial reproduction; never LLM self-report (FGAP-102 / DEC-0047 clause 5)"
+      ],
+      "depends_on": [
+        "TASK-081"
+      ],
+      "notes": "Filed 2026-05-26 per user direction. Sequence: TASK-081 first → THIS POC second → TASK-082/083 cascade third. POC bypasses pi-workflows + pi-behavior-monitors entirely (orchestrator dispatches direct against jit-agents library per JI-021). Validates the context→jit architectural shape before full FEAT-004/005 extension build. Successful POC unblocks the pi-agent-dispatch extension build with confidence."
     }
   ]
 }

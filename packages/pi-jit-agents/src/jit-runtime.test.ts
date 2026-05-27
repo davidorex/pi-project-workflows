@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import type { AssistantMessage, Model } from "@earendil-works/pi-ai";
 import { AgentDispatchError } from "./errors.js";
-import { buildPhantomTool, executeAgent, normalizeToolChoice } from "./jit-runtime.js";
+import { buildPhantomTool, executeAgent, GrantViolationError, normalizeToolChoice } from "./jit-runtime.js";
 import type { CompiledAgent } from "./types.js";
 
 const FIXTURES_DIR = path.resolve(import.meta.dirname, "..", "test-fixtures");
@@ -223,5 +223,106 @@ describe("executeAgent", () => {
 			),
 			(err: unknown) => err instanceof AgentDispatchError && /network down/.test((err as Error).message),
 		);
+	});
+});
+
+describe("executeAgent grant clamp", () => {
+	// DEC-0047: child tool grant must be subset of caller's parentGrant.
+	// Undefined = empty set semantics (default-empty per DEC-0047).
+
+	const fakeText: AssistantMessage = {
+		role: "assistant",
+		content: [{ type: "text", text: "ok" }],
+		stopReason: "stop",
+		timestamp: Date.now(),
+	} as AssistantMessage;
+
+	it("passes when child tools is subset of parent grant", async () => {
+		const compiled: CompiledAgent = {
+			spec: { name: "subset-agent", loadedFrom: "/tmp" },
+			taskPrompt: "hi",
+			model: "anthropic/test",
+			tools: ["t1", "t2"],
+		};
+		const result = await executeAgent(
+			compiled,
+			{
+				model: MOCK_MODEL as unknown as Model<never>,
+				auth: { apiKey: "test", headers: {} },
+				parentGrant: ["t1", "t2", "t3"],
+			},
+			async () => fakeText,
+		);
+		assert.strictEqual(result.output, "ok");
+	});
+
+	it("throws GrantViolationError when child tools not subset of parent grant", async () => {
+		const compiled: CompiledAgent = {
+			spec: { name: "violating-agent", loadedFrom: "/tmp" },
+			taskPrompt: "hi",
+			model: "anthropic/test",
+			tools: ["t1", "x"],
+		};
+		await assert.rejects(
+			executeAgent(
+				compiled,
+				{
+					model: MOCK_MODEL as unknown as Model<never>,
+					auth: { apiKey: "test", headers: {} },
+					parentGrant: ["t1", "t2"],
+				},
+				async () => fakeText,
+			),
+			(err: unknown) => {
+				assert.ok(err instanceof GrantViolationError, "must throw GrantViolationError");
+				assert.strictEqual(err.agentName, "violating-agent");
+				assert.deepStrictEqual(err.violating, ["x"]);
+				return true;
+			},
+		);
+	});
+
+	it("throws GrantViolationError when parent grant undefined and child tools non-empty (default-empty semantics)", async () => {
+		const compiled: CompiledAgent = {
+			spec: { name: "default-empty-agent", loadedFrom: "/tmp" },
+			taskPrompt: "hi",
+			model: "anthropic/test",
+			tools: ["t1"],
+		};
+		await assert.rejects(
+			executeAgent(
+				compiled,
+				{
+					model: MOCK_MODEL as unknown as Model<never>,
+					auth: { apiKey: "test", headers: {} },
+					// parentGrant intentionally absent
+				},
+				async () => fakeText,
+			),
+			(err: unknown) => {
+				assert.ok(err instanceof GrantViolationError, "must throw GrantViolationError");
+				assert.deepStrictEqual(err.violating, ["t1"]);
+				return true;
+			},
+		);
+	});
+
+	it("passes when both child tools and parent grant are undefined/empty", async () => {
+		const compiled: CompiledAgent = {
+			spec: { name: "empty-agent", loadedFrom: "/tmp" },
+			taskPrompt: "hi",
+			model: "anthropic/test",
+			// tools intentionally absent
+		};
+		const result = await executeAgent(
+			compiled,
+			{
+				model: MOCK_MODEL as unknown as Model<never>,
+				auth: { apiKey: "test", headers: {} },
+				// parentGrant intentionally absent
+			},
+			async () => fakeText,
+		);
+		assert.strictEqual(result.output, "ok");
 	});
 });

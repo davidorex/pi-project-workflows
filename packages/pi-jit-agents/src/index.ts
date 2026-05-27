@@ -16,7 +16,7 @@ export * from "./errors.js";
 export { expandFieldPathShorthand } from "./field-path.js";
 export { agentContract } from "./introspect.js";
 export type { CompleteFn, NormalizedToolChoice } from "./jit-runtime.js";
-export { buildPhantomTool, executeAgent, normalizeToolChoice } from "./jit-runtime.js";
+export { buildPhantomTool, executeAgent, GrantViolationError, normalizeToolChoice } from "./jit-runtime.js";
 export { cycleMarker, notFoundMarker, renderErrorMarker, unrenderedMarker } from "./markers.js";
 export type { ItemMacroRef, RendererRegistry } from "./renderer-registry.js";
 export { CANONICAL_MACRO_NAMES, createRendererRegistry } from "./renderer-registry.js";

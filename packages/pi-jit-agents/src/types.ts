@@ -185,6 +185,8 @@ export interface CompiledAgent {
 	 * full warning record for trace / inspection consumers.
 	 */
 	budgetWarnings?: BudgetWarning[];
+	/** Tool grant carried from AgentSpec.tools — operation-granular per DEC-0047; the clamp at executeAgent enforces child ⊆ parent at dispatch boundary. */
+	tools?: string[];
 }
 
 /**
@@ -195,6 +197,8 @@ export interface DispatchContext {
 	model: Model<Api>;
 	/** API auth — apiKey and headers from the consumer's model registry. */
 	auth: JitAgentAuth;
+	/** Parent agent's tool grant (caller-supplied). executeAgent clamps compiled.tools ⊆ parentGrant. Undefined = empty set (default-empty per DEC-0047). */
+	parentGrant?: string[];
 	/** Max tokens for the LLM call. Defaults to 1024. */
 	maxTokens?: number;
 	/** Abort signal for cancellation. */

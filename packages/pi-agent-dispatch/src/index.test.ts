@@ -4,7 +4,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import extension, { assertDefaultsClean } from "./index.js";
 
 describe("pi-agent-dispatch extension", () => {
-	it("registers call-agent, author-agent-spec, run-real-checks, and commit-attested tools", () => {
+	it("registers 5 static tools: call-agent, author-agent-spec, run-real-checks, commit-attested, author-tool-grant", () => {
 		const registered: string[] = [];
 		const pi = {
 			registerTool: (tool: { name: string }) => {
@@ -12,13 +12,15 @@ describe("pi-agent-dispatch extension", () => {
 			},
 		} as unknown as ExtensionAPI;
 		extension(pi);
-		assert.ok(
-			registered.includes("author-agent-spec"),
-			`expected 'author-agent-spec' in ${JSON.stringify(registered)}`,
-		);
-		assert.ok(registered.includes("call-agent"), `expected 'call-agent' in ${JSON.stringify(registered)}`);
-		assert.ok(registered.includes("run-real-checks"), `expected 'run-real-checks' in ${JSON.stringify(registered)}`);
-		assert.ok(registered.includes("commit-attested"), `expected 'commit-attested' in ${JSON.stringify(registered)}`);
+		for (const name of [
+			"author-agent-spec",
+			"call-agent",
+			"run-real-checks",
+			"commit-attested",
+			"author-tool-grant",
+		]) {
+			assert.ok(registered.includes(name), `expected '${name}' in ${JSON.stringify(registered)}`);
+		}
 	});
 
 	it("L3 runtime guard throws when defaults contain a forbidden wholesale token", () => {

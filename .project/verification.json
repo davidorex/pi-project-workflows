@@ -2120,6 +2120,62 @@
         }
       ],
       "evidence": "TASK-088 substrate-only work-order block kind landed on branch task-088-work-order-block-kind. Six commits (one beyond plan due to discovered status-vocab framework invariant; canon-aligned addition): 7d06f61 (canonical schema), 443eb65 (status-vocab mappings real-check-passed → complete + real-check-failed → blocked), b107fad (samples schema mirror), 26d4ceb (samples empty-block seed), 95910ef (.project/config.json registration), 6ab7545 (samples/conception.json registration). Verification: build/check/test 830/830 green; 3/3 runtime demos PASS (schema discovery + author/round-trip + contextBlocks item-ref handoff via compileAgent); adversarial probe 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits. Per DEC-0048: bundled-artifact tests not regression gates; engine unit tests + completeness guards are gates (all green). Per DEC-0037 + FGAP-087: zero touches to defaults/+registry/ (canonical-clean post-DEC-0037). ContextBlockRef item-ref handoff path empirically demonstrated end-to-end (WO content → compileAgent → wrapped in <context_block role=\"data\"> → injected at _work_orders_item template key). NOTE on status-vocab addition: TASK-088 scope expanded by one TS file (status-vocab.ts) beyond pure-substrate because the framework's completeness-guard invariant required mapping the new enum values to canonical buckets; the addition is canon-aligned and is the right mechanism for new status values (FGAP-069 + DEC-0033 territory)."
+    },
+    {
+      "id": "VER-054",
+      "target": "TASK-089",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-28",
+      "criteria_results": [
+        {
+          "criterion": "New pi-agent-dispatch extension package scaffolded with package.json + tsconfig + src/ matching existing extension structure; deps: pi-context + pi-jit-agents + pi-ai + pi-coding-agent + yaml (no workflow/monitor deps — peer-to-peer)",
+          "status": "passed",
+          "evidence": "commit a1d8072. Adversarial CHECK 9 PASS: deps exactly {pi-context, pi-jit-agents, pi-ai, pi-coding-agent, yaml}; no pi-workflows / pi-behavior-monitors / pi-tui. Root package.json build script extended with `-w @davidorex/pi-agent-dispatch`. Workspace + biome auto-discover the new package."
+        },
+        {
+          "criterion": "pi.registerTool('call-agent', …) registered: impl loads agent via jit-agents createAgentLoader, compiles via compileAgent, calls executeAgent with composed grant; returns typed result",
+          "status": "passed",
+          "evidence": "commit d568980 + b0f4983. Tool implementation in src/call-agent-tool.ts; execute() does loader → compileAgent → modelRegistry.find + getApiKeyAndHeaders → composeToolGrant → executeAgent → return JitAgentResult. Adversarial CHECK 4 PASS: no second clamp duplicated in call-agent-tool (clamp delegated to TASK-081 executeAgent boundary). Runtime demo 2 (3/3 PASS): composed grants pass-through to dispatch correctly; bypass-the-composer attempts get caught by executeAgent's clamp throwing GrantViolationError."
+        },
+        {
+          "criterion": "pi.registerTool('author-agent-spec', …) registered: impl validates against jit-agents AgentSpec schema; writes .agent.yaml to canonical agents directory; DispatchContext writer.kind=human enforced",
+          "status": "passed",
+          "evidence": "commit 8532c44 + b0f4983. Tool implementation in src/author-agent-spec-tool.ts. Runtime demo 3 (5/5 PASS): writer.kind=agent rejected; writer.kind=monitor rejected; writer.kind=workflow rejected; writer.kind=human without user rejected; writer.kind=human + user writes file + parseAgentYaml round-trips. Adversarial CHECK 3 PASS: single enforced gate before any file write; no bypass path. Adversarial CHECK 10 PASS: atomic tmp + rename pattern with cleanup on validation failure."
+        },
+        {
+          "criterion": "capability-composer: composeToolGrant(parentGrant, requestedGrant) returns the clamped intersection (matches TASK-081 executeAgent clamp semantics); operation-granular vocabulary lives in config.tool_operations[]; default EMPTY per DEC-0047",
+          "status": "passed",
+          "evidence": "commit 5b84aff + 4394ab6. composeToolGrant in src/capability-composer.ts implements intersection: `requested.filter(t => parentSet.has(t))`; parentGrant/requestedGrant undefined → empty set (default-empty per DEC-0047). resolveOperationVocabulary reads config.tool_operations[] with TS-const TOOL_OPERATION_DEFAULTS as base + config override shadow (status-vocab.ts pattern). Adversarial CHECK 5 PASS: intersection logic correct + default-empty semantics. Adversarial CHECK 8 PASS: REGISTRY_DESCRIPTORS + AmendRegistry union both carry tool_operations."
+        },
+        {
+          "criterion": "Engine unit tests for capability composition + the two registered tools",
+          "status": "passed",
+          "evidence": "commits 5b84aff (7 composer tests: composeToolGrant 5 + resolveOperationVocabulary 2) + 8532c44 (5 author-agent-spec enforcement tests) + d568980 (4 call-agent dispatch tests) + b0f4983 (1 extension smoke test) = 17 total. Direct `tsx --test src/*.test.ts` run: 17/17 pass, 5 suites, 0 fail, 0 skipped. Husky pre-commit (check + workspace tests) green on every commit."
+        },
+        {
+          "criterion": "Loaded by pi -p invocation peer-to-peer with other extensions; in-pi orchestrator sees call-agent + author-agent-spec in its tool surface",
+          "status": "passed",
+          "evidence": "commit b0f4983 wires src/index.ts as default-exported `(pi: ExtensionAPI) => { pi.registerTool(authorAgentSpecTool); pi.registerTool(callAgentTool); }` — matches the loaded-extension pattern of pi-behavior-monitors + pi-workflows. Smoke test (index.test.ts) verifies both tools register on extension invocation. Tools accessible from any subprocess that loads the extension (workflow subprocesses, monitor subprocesses, in-pi orchestrator's pi -p invocations) — sibling-consumer canon per narrowed DEC-0044."
+        },
+        {
+          "criterion": "FEAT-005 capability vocabulary canon documented in config.json (the registered operation set) — distinct from raw pi --tools at subprocess boundary; this is the in-process / in-pi capability registry used by composeToolGrant",
+          "status": "passed",
+          "evidence": "commit 4394ab6. config.schema.json extended with tool_operations[] property (items: {canonical_id required, display_name?, category?}). samples/conception.json mirrors. REGISTRY_DESCRIPTORS entry enables amendConfigEntry mutations. operation-vocab.ts ships 55 canonical defaults covering ALL current Pi tools (40 context + 9 workflow + 5 monitor + 1 enforce-budget) per Adversarial CHECK 2 PASS (vocab list = current tool list, no gaps). Runtime demo 1b: amendConfigEntry add + remove against tool_operations succeeds."
+        },
+        {
+          "criterion": "Per DEC-0048: no consumer cascade (TASK-082/083 separate); existing workflows / bundled agents tests are NOT regression gates",
+          "status": "passed",
+          "evidence": "Zero source changes outside pi-agent-dispatch new package + pi-context (schema + REGISTRY_DESCRIPTORS). pi-workflows / pi-behavior-monitors source untouched. Adversarial CHECK 1 PASS: zero pi-workflows imports in pi-agent-dispatch (sibling-consumer canon). Pre-commit hooks run engine + workspace tests; bundled-artifact failures (if any) not gating per DEC-0048."
+        },
+        {
+          "criterion": "VALIDATION = real checks: build/check/test exit codes; runtime demo; adversarial probe; never LLM self-report",
+          "status": "passed",
+          "evidence": "Build exit 0; check exit 0; pi-agent-dispatch test 17/17; aggregate npm test green (workflows 830/830 sub-suite + new package 17/17 + others unchanged). Runtime demo 1 (schema extension + amendConfigEntry round-trip): PASS. Runtime demo 2 (composeToolGrant + TASK-081 clamp end-to-end): 3/3 PASS. Runtime demo 3 (author-agent-spec writer.kind=human enforcement): 5/5 PASS. Adversarial probe (fresh-context Explore agent): 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits in code AND commit messages. Orchestrator independently verified subagent's claims via direct grep."
+        }
+      ],
+      "evidence": "TASK-089 pi-agent-dispatch extension landed on branch task-089-pi-agent-dispatch-extension. Six commits: 4394ab6 (config schema extension + REGISTRY_DESCRIPTORS), a1d8072 (package scaffold + root build), 5b84aff (operation-vocab 55 entries + capability-composer + 7 tests), 8532c44 (author-agent-spec + 5 tests), d568980 (call-agent + 4 tests + _internals.executeAgent test seam), b0f4983 (extension entry + smoke test). Three verification layers all green: build/check/test (workspace tests + 17 new pi-agent-dispatch tests, 0 fail), 3/3 runtime demos PASS (schema extension; composeToolGrant + clamp; writer.kind=human enforcement), 10/10 adversarial probe PASS (no false-pass scenarios, no forbidden-term hits, sibling-consumer canon upheld). Implements FEAT-004 (agents-as-tools dispatch site) + FEAT-005 (capability composition) per narrowed DEC-0044. Closes FGAP-099 (the clamp ↔ composition pairing canonically homed in pi-agent-dispatch; TASK-081 infrastructure consumed not duplicated). Subagent deviations from brief (documented in commit bodies): (a) extended PACKAGED schema at packages/pi-context/schemas/config.schema.json in addition to .project/schemas (samples-catalog tests gated on it); (b) added ToolOperationDecl interface to ConfigBlock for typing; (c) added _internals.executeAgent test seam for stubbable dispatch in unit tests; (d) auth.ok discriminated-union handling matching pi-behavior-monitors precedent; (e) AgentNotFoundError imported from barrel not subpath. All deviations canon-aligned."
     }
   ]
 }

@@ -12,22 +12,13 @@ describe("pi-agent-dispatch extension", () => {
 			},
 		} as unknown as ExtensionAPI;
 		extension(pi);
-		for (const name of [
-			"author-agent-spec",
-			"call-agent",
-			"run-real-checks",
-			"commit-attested",
-			"author-tool-grant",
-		]) {
+		for (const name of ["author-agent-spec", "call-agent", "run-real-checks", "commit-attested", "author-tool-grant"]) {
 			assert.ok(registered.includes(name), `expected '${name}' in ${JSON.stringify(registered)}`);
 		}
 	});
 
 	it("L3 runtime guard throws when defaults contain a forbidden wholesale token", () => {
-		assert.throws(
-			() => assertDefaultsClean({ bash: { canonical_id: "bash" } }),
-			/L3 runtime guard tripped.*bash/,
-		);
+		assert.throws(() => assertDefaultsClean({ bash: { canonical_id: "bash" } }), /L3 runtime guard tripped.*bash/);
 	});
 
 	it("L3 runtime guard accepts clean defaults", () => {

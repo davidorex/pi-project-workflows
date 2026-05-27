@@ -28,7 +28,10 @@ function parseArgs(argv: string[]): Args {
 			out.cwd = argv[i + 1];
 			i++;
 		} else if (a === "--paths" && argv[i + 1]) {
-			out.paths = argv[i + 1].split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+			out.paths = argv[i + 1]
+				.split(",")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0);
 			i++;
 		} else if (a === "--since" && argv[i + 1]) {
 			out.since = argv[i + 1];
@@ -44,11 +47,7 @@ function parseArgs(argv: string[]): Args {
 function main(): void {
 	const args = parseArgs(process.argv.slice(2));
 	try {
-		const result = runGitLog(
-			args.cwd,
-			{ paths: args.paths, since: args.since },
-			{ limit: args.limit },
-		);
+		const result = runGitLog(args.cwd, { paths: args.paths, since: args.since }, { limit: args.limit });
 		process.stdout.write(JSON.stringify(result, null, 2) + "\n");
 	} catch (err) {
 		console.error((err as Error).message);

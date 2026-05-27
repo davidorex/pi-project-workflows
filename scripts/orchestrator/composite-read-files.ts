@@ -30,7 +30,10 @@ function parseArgs(argv: string[]): Args {
 			out.cwd = argv[i + 1];
 			i++;
 		} else if (a === "--allowed-roots" && argv[i + 1]) {
-			out.allowedRoots = argv[i + 1].split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+			out.allowedRoots = argv[i + 1]
+				.split(",")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0);
 			i++;
 		} else if (a === "--path" && argv[i + 1]) {
 			out.path = argv[i + 1];

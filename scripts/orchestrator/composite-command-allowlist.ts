@@ -28,13 +28,19 @@ function parseArgs(argv: string[]): Args {
 			out.cwd = argv[i + 1];
 			i++;
 		} else if (a === "--allowed-commands" && argv[i + 1]) {
-			out.allowedCommands = argv[i + 1].split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+			out.allowedCommands = argv[i + 1]
+				.split(",")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0);
 			i++;
 		} else if (a === "--command" && argv[i + 1]) {
 			out.command = argv[i + 1];
 			i++;
 		} else if (a === "--args" && argv[i + 1]) {
-			out.args = argv[i + 1].split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+			out.args = argv[i + 1]
+				.split(",")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0);
 			i++;
 		}
 	}

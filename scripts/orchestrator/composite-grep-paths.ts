@@ -31,7 +31,10 @@ function parseArgs(argv: string[]): Args {
 			out.pattern = argv[i + 1];
 			i++;
 		} else if (a === "--allowed-roots" && argv[i + 1]) {
-			out.allowedRoots = argv[i + 1].split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+			out.allowedRoots = argv[i + 1]
+				.split(",")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0);
 			i++;
 		} else if (a === "--glob" && argv[i + 1]) {
 			out.glob = argv[i + 1];

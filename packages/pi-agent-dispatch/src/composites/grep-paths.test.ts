@@ -30,9 +30,6 @@ describe("runGrepPaths", () => {
 
 	it("throws on empty allowed_roots", () => {
 		const dir = makeTmpRoot();
-		assert.throws(
-			() => runGrepPaths(dir, { allowed_roots: [] }, { pattern: "x" }),
-			/allowed_roots is required/,
-		);
+		assert.throws(() => runGrepPaths(dir, { allowed_roots: [] }, { pattern: "x" }), /allowed_roots is required/);
 	});
 });

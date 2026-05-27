@@ -55,8 +55,7 @@ const KIND_REGISTRY: Record<string, KindBinding> = {
 	},
 	"git-log": {
 		argsSchema: gitLogArgsSchema,
-		run: (cwd, instance, args) =>
-			runGitLog(cwd, instance as unknown as GitLogInstance, args as unknown as GitLogArgs),
+		run: (cwd, instance, args) => runGitLog(cwd, instance as unknown as GitLogInstance, args as unknown as GitLogArgs),
 	},
 	"grep-paths": {
 		argsSchema: grepPathsArgsSchema,

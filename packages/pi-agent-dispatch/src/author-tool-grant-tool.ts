@@ -28,10 +28,9 @@ export const authorToolGrantTool = {
 		"Add or remove an entry in config.tool_operations[] or config.tool_operations_forbidden[] under writer.kind=human enforcement (DEC-0047). Refuses any attempt to register a framework-forbidden wholesale token.",
 	promptSnippet: "Author a config tool-grant entry (operation registration or project-forbidden token).",
 	parameters: Type.Object({
-		target: Type.Union(
-			[Type.Literal("tool_operations"), Type.Literal("tool_operations_forbidden")],
-			{ description: "Which config registry to mutate." },
-		),
+		target: Type.Union([Type.Literal("tool_operations"), Type.Literal("tool_operations_forbidden")], {
+			description: "Which config registry to mutate.",
+		}),
 		operation: Type.Union([Type.Literal("add"), Type.Literal("remove")], {
 			description: "amendConfigEntry operation.",
 		}),

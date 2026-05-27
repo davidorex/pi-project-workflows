@@ -12,6 +12,18 @@ export interface OperationDescriptor {
 	category?: string;
 }
 
+/**
+ * Operations forbidden from TOOL_OPERATION_DEFAULTS AND from
+ * config.tool_operations[] AND config.tool_operations_forbidden[]
+ * union. Wholesale tokens that, if granted, dissolve operation-granular
+ * bounds — e.g. granting "bash" makes "git-log-recent" a gated
+ * alternative to an unrestricted original (feedback_no_parallel_ungated_paths).
+ * Extending L1 (this list) requires source change + release (release-
+ * gated, not config-mutable). L5 (config.tool_operations_forbidden[])
+ * admits project-specific additions under writer.kind=human per DEC-0047.
+ */
+export const FORBIDDEN_WHOLESALE_OPERATIONS = ["bash", "write", "edit", "shell", "execute"] as const;
+
 export const TOOL_OPERATION_DEFAULTS: Record<string, OperationDescriptor> = {
 	// pi-context (40)
 	"amend-config": { canonical_id: "amend-config", category: "context" },

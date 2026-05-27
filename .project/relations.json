@@ -323,5 +323,35 @@
     "parent": "FGAP-114",
     "child": "FEAT-009",
     "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "TASK-085",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-086",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-087",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-085",
+    "child": "DEC-0001",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-086",
+    "child": "DEC-0002",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-087",
+    "child": "DEC-0003",
+    "relation_type": "task_governed_by_decision"
   }
 ]

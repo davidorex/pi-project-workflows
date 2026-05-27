@@ -1285,25 +1285,26 @@
     },
     {
       "id": "TASK-081",
-      "description": "Pi-jit-agents element of FEAT-001 — additive build inside pi-jit-agents only; no consumer touching. Wire spec.tools through the agent layer end-to-end: AgentSpec already carries `tools?: string[]` (types.ts:27, verified); extend compile.ts to thread that tools field into the compiled agent's grant; extend executeAgent (jit-runtime.ts:402) to accept a parent-grant param + enforce parent-grant ⊆ child-grant clamp at the dispatch boundary per DEC-0047 (operation-granular, default EMPTY, no inheritance of full defaults). Per the narrowed DEC-0044, this work happens in the pi-jit-agents library itself; the pi-agent-dispatch extension wraps this surface later for the sub-agent agent-as-tool pi.registerTool site (FEAT-004/005). Per DEC-0003 enacted (a71c782 / 7ca1a33): parseModelSpec moves into executeAgent boundary as an internal helper (not a fifth exported surface — four-boundary-surfaces declaration of jit-agents-spec §2 stands). Per DEC-0001 enacted (bb45880): bare model ids resolve against ExtensionContext at dispatch time; missing binding → explicit error. Per DEC-0002 enacted (bb1bc27): executeAgent enforces thinking=off when toolChoice.type='tool'; warning channel emits TraceEntry via trace-writer pipeline. NO pi-workflows touching. NO pi-behavior-monitors touching. NO consumer cascade. The duplicate AgentSpec/loader/compile in pi-workflows continues unchanged (deleted in TASK-082); monitor synthetic CompiledAgent build continues unchanged (replaced in TASK-083). FGAP-099 (clamp) subsumed here at the library boundary. Split from original TASK-080 (2026-05-26) per user direction: focus is pi-jit-agents element + POC first; consumer cascade follows.",
+      "description": "[NARROWED 2026-05-26 per TASK-081 plan-mode discovery — bundled scope split into TASK-085 (DEC-0001 impl, hard-blocked on FGAP-115), TASK-086 (DEC-0002 impl), TASK-087 (DEC-0003 impl, hard-blocked on FGAP-115). This task retains ONLY the structural-additive minimum: spec.tools threading from AgentSpec → CompiledAgent + parentGrant param on DispatchContext + child-grant ⊆ parent-grant clamp enforcement at executeAgent dispatch boundary per DEC-0047. NO model-resolution surface change (DEC-0003 = TASK-087). NO ExtensionContext currentModel resolution (DEC-0001 = TASK-085, blocked on FGAP-115). NO thinking-seam enforcement + warning trace (DEC-0002 = TASK-086). NO actual tool-injection into context.tools (spec.tools → real Tool object translation is FEAT-004/005 territory). The clamp is METADATA enforcement at dispatch boundary; it prevents spec-authoring violations (a sub-agent spec authored with tools beyond its grant gets refused at dispatch) regardless of whether the agent invokes tools at runtime.]\n\n--- ORIGINAL DESCRIPTION (pre-narrowing) ---\n\nPi-jit-agents element of FEAT-001 — additive build inside pi-jit-agents only; no consumer touching. Wire spec.tools through the agent layer end-to-end: AgentSpec already carries `tools?: string[]` (types.ts:27, verified); extend compile.ts to thread that tools field into the compiled agent's grant; extend executeAgent (jit-runtime.ts:402) to accept a parent-grant param + enforce parent-grant ⊆ child-grant clamp at the dispatch boundary per DEC-0047 (operation-granular, default EMPTY, no inheritance of full defaults). Per the narrowed DEC-0044, this work happens in the pi-jit-agents library itself; the pi-agent-dispatch extension wraps this surface later for the sub-agent agent-as-tool pi.registerTool site (FEAT-004/005). Per DEC-0003 enacted (a71c782 / 7ca1a33): parseModelSpec moves into executeAgent boundary as an internal helper (not a fifth exported surface — four-boundary-surfaces declaration of jit-agents-spec §2 stands). Per DEC-0001 enacted (bb45880): bare model ids resolve against ExtensionContext at dispatch time; missing binding → explicit error. Per DEC-0002 enacted (bb1bc27): executeAgent enforces thinking=off when toolChoice.type='tool'; warning channel emits TraceEntry via trace-writer pipeline. NO pi-workflows touching. NO pi-behavior-monitors touching. NO consumer cascade. The duplicate AgentSpec/loader/compile in pi-workflows continues unchanged (deleted in TASK-082); monitor synthetic CompiledAgent build continues unchanged (replaced in TASK-083). FGAP-099 (clamp) subsumed here at the library boundary. Split from original TASK-080 (2026-05-26) per user direction: focus is pi-jit-agents element + POC first; consumer cascade follows.",
       "status": "planned",
       "files": [
         "packages/pi-jit-agents/src/types.ts",
-        "packages/pi-jit-agents/src/agent-spec.ts",
         "packages/pi-jit-agents/src/compile.ts",
-        "packages/pi-jit-agents/src/jit-runtime.ts"
+        "packages/pi-jit-agents/src/jit-runtime.ts",
+        "packages/pi-jit-agents/src/jit-runtime.test.ts"
       ],
       "acceptance_criteria": [
-        "executeAgent signature accepts a parent-grant (the tool set the caller is allowed to pass down) and clamps child-grant ⊆ parent-grant at dispatch boundary per DEC-0047",
-        "spec.tools threads through compile.ts → compiled agent carries the explicit tool grant (no defaults injected; default EMPTY per DEC-0047)",
-        "parseModelSpec lives at executeAgent boundary as an internal (non-exported) helper per DEC-0003 (a71c782); four-boundary-surfaces declaration of jit-agents-spec §2 stands",
-        "Bare model ids resolve against ExtensionContext per DEC-0001 (bb45880); missing binding → explicit error message naming the missing context",
-        "thinking=off enforced when toolChoice.type='tool' per DEC-0002 (bb1bc27); warning emits as TraceEntry via packages/pi-jit-agents/src/trace-writer.ts pipeline",
-        "pi-jit-agents engine unit tests green at every commit (husky); zero touching of pi-workflows or pi-behavior-monitors source code",
-        "VALIDATION = real checks: build/check/test exit codes (no pipe-masking), runtime demo (tsx-eval invocation of executeAgent on a fresh test spec with bounded tool grant + assertion that child-grant ⊆ parent-grant), adversarial probe (fresh-context agent greps for spec.tools leakage past clamp); never LLM self-report (FGAP-102 / DEC-0047 clause 5)"
+        "AgentSpec.tools (already declared at types.ts:27) threads through compile.ts into CompiledAgent.tools (new optional field) — verified gap: compile.ts currently does NOT read spec.tools",
+        "DispatchContext gains parentGrant?: string[] field (default-empty semantics per DEC-0047: undefined = empty set)",
+        "executeAgent enforces clamp BEFORE pi-ai complete() call at jit-runtime.ts:510: compute child-grant \\ parent-grant; non-empty difference throws GrantViolationError (new error type) naming the offending tokens + the agent name",
+        "Engine unit tests added covering: clamp-passes-when-child-subset-of-parent + clamp-throws-when-child-not-subset + default-empty-parent-refuses-non-empty-child + GrantViolationError carries the offending tokens + agent name",
+        "NO surface changes beyond the additive fields named above: executeAgent signature retains existing pre-resolved Model<Api> + auth (no DEC-0003 surface change); no thinking forwarding (no DEC-0002 implementation); no ExtensionContext resolution (no DEC-0001 implementation)",
+        "NO consumer code touched: pi-workflows + pi-behavior-monitors source unchanged (those cascade in TASK-082/083 after POC)",
+        "pi-jit-agents engine unit tests green at every commit (husky); bundled-artifact tests not gates per DEC-0048",
+        "VALIDATION = real checks: build/check/test exit codes (no pipe-masking), runtime demo (tsx-eval direct invocation of executeAgent exercising clamp-pass + clamp-throw paths with concrete grant tokens), adversarial probe (fresh-context Explore agent re-greps: zero spec.tools access in jit-runtime.ts past clamp check; zero context.tools construction from spec.tools at this layer; clamp invoked before any LLM call)"
       ],
       "depends_on": [],
-      "notes": "Split 2026-05-26 from TASK-080 per user direction (pi-jit-agents element first; then POC; then consumer cascade in 082/083). Authority: analysis/2026-05-26-jit-agents-user-intentions.jsonl (JI-010/021/023/024/027/028/029) + analysis/2026-05-26-decisions-substrate-revision-grounding.md (canon-mapping). External prior art: analysis/2026-05-26-pi-subagents-eval-vs-jit-intentions.md (grant mechanism = `pi --tools` at subprocess boundary; depth-clamp generalizes to tool-clamp; opt-in-from-empty default). No release."
+      "notes": "Split 2026-05-26 from TASK-080 per user direction (pi-jit-agents element first; then POC; then consumer cascade in 082/083). Authority: analysis/2026-05-26-jit-agents-user-intentions.jsonl (JI-010/021/023/024/027/028/029) + analysis/2026-05-26-decisions-substrate-revision-grounding.md (canon-mapping). External prior art: analysis/2026-05-26-pi-subagents-eval-vs-jit-intentions.md (grant mechanism = `pi --tools` at subprocess boundary; depth-clamp generalizes to tool-clamp; opt-in-from-empty default). No release. Narrowed 2026-05-26 per plan-mode exploration discovery. The four findings (AgentSpec.tools inert past load; ExtensionContext currentModel gap = FGAP-115; DEC-0003 surface-change scope; DEC-0002 TraceEntry schema extension needed) split the bundled scope: this task retains the additive minimum (spec.tools threading + clamp); the other three implementations become TASK-085 (DEC-0001, blocked on FGAP-115), TASK-086 (DEC-0002), TASK-087 (DEC-0003, blocked on FGAP-115). POC (TASK-084) needs ONLY this narrow scope to validate the context→jit architectural shape — full executeAgent canon implementation (DEC-0001/0002/0003) is downstream and not POC-gating."
     },
     {
       "id": "TASK-082",
@@ -1382,6 +1383,73 @@
         "TASK-081"
       ],
       "notes": "Filed 2026-05-26 per user direction. Sequence: TASK-081 first → THIS POC second → TASK-082/083 cascade third. POC bypasses pi-workflows + pi-behavior-monitors entirely (orchestrator dispatches direct against jit-agents library per JI-021). Validates the context→jit architectural shape before full FEAT-004/005 extension build. Successful POC unblocks the pi-agent-dispatch extension build with confidence."
+    },
+    {
+      "id": "TASK-085",
+      "description": "Implement DEC-0001 (agent spec 'model:' field semantics) — bare model id resolution at the canonical session source. Gated by FGAP-115 resolution: pi-coding-agent ExtensionContext does NOT expose currentModel/currentProvider as DEC-0001's enacted body assumed. Until FGAP-115 resolves the source question (extend pi-coding-agent / read auth.json directly / re-anchor DEC-0001), this task cannot proceed to implementation. Once FGAP-115 resolves, this task implements the resolution mechanism in whichever package owns it (likely pi-jit-agents jit-runtime.ts if source becomes auth.json-readable from jit-agents, OR caller-side in monitors/workflows if DEC-0001 re-anchors to caller-responsibility framing). Split from original TASK-080 (2026-05-26) per the discovered-issue-surfacing discipline established during TASK-081 plan-mode exploration.",
+      "status": "blocked",
+      "files": [
+        "packages/pi-jit-agents/src/jit-runtime.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-115 resolved before this task proceeds — resolution determines the implementation surface + source-of-truth for current-session model+provider",
+        "Bare model ids (e.g. 'claude-sonnet-4-6') resolve to (provider, modelId) tuple against session-canonical source per FGAP-115-determined mechanism",
+        "Missing-binding case: dispatch errors with clear message naming the missing context (per DEC-0001 enacted body)",
+        "Fully-qualified specs (provider/model) continue to pin the provider regardless of session (no behavior change)",
+        "Pinning is explicit, not a default (no silent fallback to 'anthropic' or any other provider)",
+        "Engine unit tests cover: bare-spec-resolves-to-session-provider + missing-binding-throws + fully-qualified-pins + no-silent-default",
+        "VALIDATION = real checks: build/check/test exit codes, runtime demo (tsx-eval call exercising each resolution path against real auth configurations), adversarial probe (fresh-context agent confirms zero residual 'anthropic' static defaults in caller code-paths)"
+      ],
+      "depends_on": [
+        "TASK-081"
+      ],
+      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 plan-mode discovery of FGAP-115 (ExtensionContext currentModel gap). HARD-BLOCKED until FGAP-115 resolves; status:blocked reflects that. Implementation surface determined post-FGAP-115. Authority: DEC-0001 enacted bb45880; FGAP-115 filed alongside this task. Pairs with TASK-086 (DEC-0002 impl) + TASK-087 (DEC-0003 impl) as the three executeAgent-boundary-canon implementations split out from TASK-081 narrow scope."
+    },
+    {
+      "id": "TASK-086",
+      "description": "Implement DEC-0002 (thinking-seam enforcement for forced-toolChoice dispatch) — executeAgent enforces thinking=off when toolChoice.type='tool' is present in dispatch options; spec-declared thinking:on in combination with forced toolChoice triggers a warning naming the agent + the incompatibility + proceeds with thinking disabled; free-form (non-forced) dispatches forward thinking per spec; forced-toolChoice path never silently drops thinking without notification. Per DEC-0002 enacted (bb1bc27), warning channel emits a TraceEntry via the canonical pi-jit-agents trace-writer pipeline (NOT DispatchContext, NOT JitAgentResult). Implementation requires: (a) extending agent-trace.schema.json (strict discriminated union; new entry kind for 'thinking_toolchoice_warning' or similar with type/id/parentId/timestamp + agentName/specPath/warningMessage); (b) translating spec.thinking string field to pi-ai's reasoning: ThinkingLevel option (name + type mismatch — spec field is freeform string per AgentSpec.thinking at types.ts:26; pi-ai enum is 'minimal|low|medium|high|xhigh' on SimpleStreamOptions); (c) wiring spec.thinking through compile.ts to CompiledAgent; (d) executeAgent pre-dispatch check inspecting compiled.thinking + dispatch toolChoice presence; (e) safeWriteTrace emission of the new entry kind when warning triggers. Split from original TASK-080 (2026-05-26) per the TASK-081 narrow-scope discipline.",
+      "status": "planned",
+      "files": [
+        "packages/pi-jit-agents/schemas/agent-trace.schema.json",
+        "packages/pi-jit-agents/src/types.ts",
+        "packages/pi-jit-agents/src/compile.ts",
+        "packages/pi-jit-agents/src/jit-runtime.ts"
+      ],
+      "acceptance_criteria": [
+        "agent-trace.schema.json extended with a new entry kind (e.g. thinking_toolchoice_warning) — new definition block + new $ref in oneOf + per-kind required fields including agentName + warningMessage",
+        "CompiledAgent gains thinking?: string field (spec.thinking threaded through compile.ts to CompiledAgent)",
+        "executeAgent pre-dispatch check: if compiled.thinking present AND toolChoice.type='tool' would be set → emit warning trace entry + proceed with thinking disabled (DO NOT pass reasoning to pi-ai complete())",
+        "Free-form (non-forced-toolChoice) dispatches: translate compiled.thinking → pi-ai reasoning: ThinkingLevel + forward to complete(); name mismatch documented; if spec.thinking carries a string not in ThinkingLevel enum, throw clear error naming the invalid value",
+        "Forced-toolChoice path never silently drops thinking — warning trace is the explicit signal per DEC-0047 no-deception canon",
+        "Engine unit tests: warning-emits-on-forced-toolchoice-with-thinking + free-form-forwards-thinking + invalid-thinking-value-throws + trace-schema-admits-new-kind",
+        "VALIDATION = real checks: build/check/test exit codes (incl. agent-trace schema AJV validation against new kind), runtime demo (tsx-eval invocation exercising both warning-emit + free-form-forward paths against captured trace JSONL), adversarial probe (fresh-context agent verifies zero silent thinking drops + trace pipeline carries the new kind)"
+      ],
+      "depends_on": [
+        "TASK-081"
+      ],
+      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. Depends on TASK-081 landing first (executeAgent surface). Implementation pairs with DEC-0002 enacted bb1bc27 (consequence #4 narrowed to TraceEntry pipeline per feedback_no_stderr_diagnostics). Pi-ai's reasoning option name + ThinkingLevel enum verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 131-135). Trace schema extension scope verified during plan-mode exploration (packages/pi-jit-agents/schemas/agent-trace.schema.json strict discriminated union with additionalProperties:false per kind)."
+    },
+    {
+      "id": "TASK-087",
+      "description": "Implement DEC-0003 (parseModelSpec ownership at executeAgent boundary) — move parseModelSpec into pi-jit-agents as an internal (non-exported) helper at the executeAgent boundary per DEC-0003 enacted 7ca1a33 (consequence #1 narrowed to internal-helper form, NOT a fifth exported surface). Requires executeAgent signature change: currently accepts a pre-resolved Model<Api> in DispatchContext.model; post-implementation accepts a bare model-spec string + auth source and resolves internally. Surface change cascades to the two existing parseModelSpec sites (DEC-0003 widening 2026-05-26 cfbb211: monitors index.ts:1173+1390 + workflows step-monitor.ts:371+270) — both will redirect to the executeAgent-internal path. NOTE the entanglement with FGAP-115: if executeAgent owns model resolution internally, it needs access to the canonical session-source (auth.json / ExtensionContext / re-anchored alternative). The FGAP-115 resolution determines what source the internal helper consumes. Split from original TASK-080 (2026-05-26) per the TASK-081 narrow-scope discipline.",
+      "status": "blocked",
+      "files": [
+        "packages/pi-jit-agents/src/types.ts",
+        "packages/pi-jit-agents/src/jit-runtime.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-115 resolved before this task proceeds — resolution determines the canonical model+provider+auth source the internal parseModelSpec helper consumes",
+        "parseModelSpec lives in pi-jit-agents as a NON-EXPORTED internal helper at the executeAgent boundary per DEC-0003 (a71c782 / 7ca1a33 narrowed) — four-boundary-surfaces declaration of jit-agents-spec §2 stands; no fifth exported surface",
+        "executeAgent signature changes to accept bare model-spec string + auth source (replacing/augmenting current pre-resolved Model<Api> in DispatchContext); internally resolves to Model<Api> via the internal parseModelSpec + auth lookup",
+        "DispatchContext shape updated to reflect new signature (TBD per design: replace .model field with .modelSpec string + .authSource, OR retain .model as optional alongside new .modelSpec, OR overload — design decision deferred to plan-mode of this task)",
+        "Verification by grep: zero parseModelSpec definitions outside pi-jit-agents source (the two caller-site definitions at monitors index.ts:1173 + workflows step-monitor.ts:371 are DELETED in TASK-082/083 as part of consumer cascade — not this task's scope to delete; only to provide the canonical replacement)",
+        "Engine unit tests cover: bare spec resolves correctly + fully-qualified spec pins provider + missing-binding throws + auth-source-resolution correct",
+        "VALIDATION = real checks: build/check/test exit codes, runtime demo (tsx-eval invocation of executeAgent with bare-spec dispatch + verification that internal parseModelSpec + auth resolution produce expected Model<Api>), adversarial probe (fresh-context agent verifies non-exported scope of parseModelSpec + no leakage of the helper as a fifth surface)"
+      ],
+      "depends_on": [
+        "TASK-081"
+      ],
+      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. HARD-BLOCKED on FGAP-115 (canonical source question); status:blocked reflects that. Pairs with TASK-082/083 — those tasks delete the caller-side parseModelSpec duplicates after this task provides the canonical replacement at executeAgent boundary. Implementation pairs with DEC-0003 enacted a71c782 + widened cfbb211 (both monitors + workflows duplicate sites named). Pi-ai Model<Api> shape verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 458-485)."
     }
   ]
 }

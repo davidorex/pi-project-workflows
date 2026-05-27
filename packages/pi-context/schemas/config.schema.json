@@ -202,6 +202,11 @@
 					"category": { "type": "string" }
 				}
 			}
+		},
+		"tool_operations_forbidden": {
+			"type": "array",
+			"items": { "type": "string" },
+			"description": "Project-specific operation tokens forbidden from registration as composite operations (extends framework FORBIDDEN_WHOLESALE_OPERATIONS list per FEAT-010 L5; gated by author-tool-grant Pi tool writer.kind=human per DEC-0047)."
 		}
 	}
 }

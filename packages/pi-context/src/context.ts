@@ -44,6 +44,7 @@ export interface ConfigBlock {
 	installed_schemas?: string[];
 	installed_blocks?: string[];
 	tool_operations?: ToolOperationDecl[];
+	tool_operations_forbidden?: string[];
 }
 
 /**
@@ -76,7 +77,8 @@ export type AmendRegistry =
 	| "installed_schemas"
 	| "installed_blocks"
 	| "hierarchy"
-	| "tool_operations";
+	| "tool_operations"
+	| "tool_operations_forbidden";
 
 /** The scoped amend verbs. `add` requires the key absent; `replace` / `remove`
  * require it present (OP-CORRECTNESS, decidable from the loaded config alone). */
@@ -544,6 +546,7 @@ const REGISTRY_DESCRIPTORS: Record<AmendRegistry, RegistryDescriptor> = {
 	installed_blocks: { kind: "string-array" },
 	hierarchy: { kind: "value-array" },
 	tool_operations: { kind: "keyed-array", idField: "canonical_id" },
+	tool_operations_forbidden: { kind: "string-array" },
 };
 
 /** Canonical identity join for a hierarchy triple (the `value-array` kind). */

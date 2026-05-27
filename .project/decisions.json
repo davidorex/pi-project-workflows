@@ -3,8 +3,8 @@
     {
       "id": "DEC-0001",
       "title": "Agent spec 'model:' field semantics",
-      "status": "open",
-      "context": "Agent spec YAMLs may declare a model field with or without a provider prefix. packages/pi-behavior-monitors/index.ts:1091-1097 implements parseModelSpec such that bare model ids (e.g. 'claude-sonnet-4-6') default to provider='anthropic'. This structural pin means monitor classify calls attempt Anthropic-direct authentication regardless of the main session's configured provider. Under OpenRouter-only auth (the user's current configuration), every monitor's classify call fails with 'Expected either apiKey or authToken'. Issue-062 tracks this as the forcing artifact. All five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) use bare model ids and are all affected. The decision is what 'model:' means in an agent spec at the framework level.",
+      "status": "enacted",
+      "context": "Agent spec YAMLs may declare a model field with or without a provider prefix. packages/pi-behavior-monitors/index.ts:1173-1179 implements parseModelSpec such that bare model ids (e.g. 'claude-sonnet-4-6') default to provider='anthropic'. This structural pin means monitor classify calls attempt Anthropic-direct authentication regardless of the main session's configured provider. Under OpenRouter-only auth (the user's current configuration), every monitor's classify call fails with 'Expected either apiKey or authToken'. Issue-062 tracks this as the forcing artifact. All five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) use bare model ids and are all affected. The decision is what 'model:' means in an agent spec at the framework level.",
       "decision": "Bare model ids in an agent spec resolve against the current session's configured provider via ExtensionContext. If ExtensionContext cannot supply a current-provider/current-model binding, the dispatch errors with a clear message naming the missing context. Fully-qualified model specs (provider/model) continue to pin the provider regardless of session. Pinning is explicit, not a default. Implementation prerequisite: research on ExtensionContext currentModel availability in pi-agent-core must complete first.",
       "consequences": [
         "pi-behavior-monitors' classifyViaAgent must read the current session model from ExtensionContext at dispatch time, not from the agent YAML",
@@ -39,10 +39,16 @@
         {
           "label": "operational incident research",
           "path": "analysis/openrouter-pi-mono-setup.md"
+        },
+        {
+          "label": "DEC-0001 enactment + citation refresh (parseModelSpec line numbers 1091-1097 → 1173)",
+          "commit": "PENDING_THIS_COMMIT"
         }
       ],
       "created_by": "agent/claude-opus-4-6",
-      "created_at": "2026-04-15T00:00:00Z"
+      "created_at": "2026-04-15T00:00:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-26"
     },
     {
       "id": "DEC-0002",

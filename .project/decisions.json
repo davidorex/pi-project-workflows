@@ -1545,14 +1545,15 @@
     },
     {
       "title": "Lens id naming convention — lens-prefix vs descriptive vs purpose-tagged",
-      "status": "open",
+      "status": "enacted",
       "context": "config.lenses[] currently empty in this repo. Test fixtures (packages/pi-context/src/roadmap-plan.test.ts) use names like 'lens-issues-by-phase'. Drafted milestones+roadmap MD (analysis/2026-05-14-milestones-and-roadmap-draft.md) proposes lens-roadmap-001-milestones / lens-roadmap-002-milestones format for per-roadmap composition lenses. Other proposed lenses for this repo: tasks-by-phase / decisions-by-status / gaps-by-status / issues-by-status / verifications-by-target / features-by-status / decisions-by-layer / arc-rollup-by-phase / decision-context. Lens spec carries id (canonical) + bins[] (canonical bin names) + kind (target | composition) + target or members + relation_type + derived_from_field. Bin names within a lens inherit ID-prefix conventions (DEC-0026 / DEC-0027); lens id itself is freeform per current schema.",
-      "decision": "OPEN: lens id naming convention. Mandate-compliant options below.",
+      "decision": "ENACTED: lens-<block>-by-<facet> kebab-case (e.g. lens-tasks-by-phase, lens-decisions-by-status, lens-issues-by-phase, lens-gaps-by-status, lens-verifications-by-target, lens-features-by-status, lens-arc-rollup-by-phase, lens-decision-context). Self-documenting; grep lens- finds every reference across substrate/analysis/code; no collision with kebab block-kind canonical_ids (which don't carry a lens- prefix); aligns with existing test fixture pattern in roadmap-plan.test.ts; discoverability + concision + substrate-uniformity all satisfied with zero functional cost.",
       "consequences": [
-        "Every lens declared in config.lenses[] follows chosen shape.",
+        "Every lens declared in config.lenses[] follows lens-<block>-by-<facet> shape.",
         "Roadmap.phases[].lens references resolve to these ids.",
-        "Lens cross-reference in code + analysis follows the shape.",
-        "Future ceremony surfaces (e.g. /context view <lens-id>) use these ids in commands."
+        "Lens cross-reference in code + analysis + commands (/context view <lens-id>) follows the shape.",
+        "Composition lenses not expressing a block-granularity bin (e.g. lens-decision-context) use lens-<purpose-slug> — lens- prefix preserved, purpose-slug replaces block-by-facet pattern.",
+        "FGAP-047 partial closure: lens-id naming question (DEC-0031) settled."
       ],
       "options_considered": [
         {
@@ -1598,7 +1599,9 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:05:00Z",
-      "id": "DEC-0031"
+      "id": "DEC-0031",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-05-27T00:00:00Z"
     },
     {
       "title": "Layer registry adoption — declare config.layers[] with L1..L5 substrate/query/composition/dispatch/surface labels",

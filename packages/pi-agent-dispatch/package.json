@@ -1,0 +1,50 @@
+{
+	"name": "@davidorex/pi-agent-dispatch",
+	"version": "0.27.0",
+	"description": "In-pi agent-as-tool dispatch + capability composition extension (FEAT-006 north-star; FEAT-004 + FEAT-005 implementation per narrowed DEC-0044)",
+	"type": "module",
+	"keywords": [
+		"pi-package"
+	],
+	"license": "MIT",
+	"author": "David Ryan",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/davidorex/pi-project-workflows.git",
+		"directory": "packages/pi-agent-dispatch"
+	},
+	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-agent-dispatch",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist/",
+		"*.md"
+	],
+	"pi": {
+		"extensions": [
+			"./dist/index.js"
+		]
+	},
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "tsc -p tsconfig.build.json",
+		"prepublishOnly": "npm run clean && npm run build",
+		"test": "tsx --test src/*.test.ts"
+	},
+	"dependencies": {
+		"@davidorex/pi-context": "^0.27.0",
+		"@davidorex/pi-jit-agents": "^0.27.0",
+		"@earendil-works/pi-ai": "^0.75.4",
+		"@earendil-works/pi-coding-agent": "^0.75.4",
+		"yaml": "^2.7.1"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	}
+}

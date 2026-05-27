@@ -188,6 +188,20 @@
 			"type": "array",
 			"description": "Blocks the project has opted into via /context install (DEC-0011).",
 			"items": { "type": "string" }
+		},
+		"tool_operations": {
+			"type": "array",
+			"description": "Operation-granular tool grant vocabulary (FEAT-005). Each entry names a Pi tool (or coarser operation) that can be granted to a privileged JIT-agent per DEC-0047 operation-granular-from-empty canon.",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["canonical_id"],
+				"properties": {
+					"canonical_id": { "type": "string" },
+					"display_name": { "type": "string" },
+					"category": { "type": "string" }
+				}
+			}
 		}
 	}
 }

@@ -116,7 +116,7 @@
         },
         {
           "label": "DEC-0003 enactment + consequence #1 narrowing (or-hedge resolved)",
-          "commit": "PENDING_THIS_COMMIT"
+          "commit": "7ca1a33"
         }
       ],
       "created_by": "agent/claude-opus-4-6",

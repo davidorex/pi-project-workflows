@@ -199,7 +199,15 @@
 				"properties": {
 					"canonical_id": { "type": "string" },
 					"display_name": { "type": "string" },
-					"category": { "type": "string" }
+					"category": { "type": "string" },
+					"kind": {
+						"type": "string",
+						"description": "Composite-tool KIND identifier (FEAT-010). When present, composite-loader binds instance_params to the named KIND library function and registers a per-instance Pi tool."
+					},
+					"instance_params": {
+						"type": "object",
+						"description": "Instance-scoped parameters (FEAT-010) — fixed at registration time, closure-bound by composite-loader. Runtime callsites cannot widen scope."
+					}
 				}
 			}
 		},

@@ -57,6 +57,19 @@ export interface ToolOperationDecl {
 	canonical_id: string;
 	display_name?: string;
 	category?: string;
+	/**
+	 * Composite-tool KIND identifier (FEAT-010). When present, composite-loader
+	 * binds `instance_params` to the named KIND library function and registers
+	 * a per-instance Pi tool. Absent → entry is a static-tool reference only
+	 * (FEAT-005 shape).
+	 */
+	kind?: string;
+	/**
+	 * Instance-scoped parameters (FEAT-010) — fixed at registration; closure-
+	 * bound by composite-loader so the runtime callsite cannot widen scope
+	 * (e.g. read-files.allowed_roots, command-allowlist.allowed_commands).
+	 */
+	instance_params?: Record<string, unknown>;
 }
 
 /**

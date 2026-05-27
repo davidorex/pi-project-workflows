@@ -1,7 +1,10 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { authorAgentSpecTool } from "./author-agent-spec-tool.js";
+import { callAgentTool } from "./call-agent-tool.js";
 
-const extension = (_pi: ExtensionAPI) => {
-	// Tool registrations land in STEPS 4, 5, 6.
+const extension = (pi: ExtensionAPI) => {
+	pi.registerTool(authorAgentSpecTool);
+	pi.registerTool(callAgentTool);
 };
 
 export default extension;

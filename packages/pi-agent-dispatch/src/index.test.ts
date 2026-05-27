@@ -4,7 +4,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import extension from "./index.js";
 
 describe("pi-agent-dispatch extension", () => {
-	it("registers call-agent, author-agent-spec, and run-real-checks tools", () => {
+	it("registers call-agent, author-agent-spec, run-real-checks, and commit-attested tools", () => {
 		const registered: string[] = [];
 		const pi = {
 			registerTool: (tool: { name: string }) => {
@@ -18,5 +18,6 @@ describe("pi-agent-dispatch extension", () => {
 		);
 		assert.ok(registered.includes("call-agent"), `expected 'call-agent' in ${JSON.stringify(registered)}`);
 		assert.ok(registered.includes("run-real-checks"), `expected 'run-real-checks' in ${JSON.stringify(registered)}`);
+		assert.ok(registered.includes("commit-attested"), `expected 'commit-attested' in ${JSON.stringify(registered)}`);
 	});
 });

@@ -378,5 +378,6 @@
       "message": "Task '{id}' is governed by a superseded or cancelled decision"
     }
   ],
-  "tool_operations": []
+  "tool_operations": [],
+  "tool_operations_forbidden": []
 }

@@ -199,9 +199,22 @@
 				"properties": {
 					"canonical_id": { "type": "string" },
 					"display_name": { "type": "string" },
-					"category": { "type": "string" }
+					"category": { "type": "string" },
+					"kind": {
+						"type": "string",
+						"description": "Composite-tool KIND identifier (FEAT-010). When present, composite-loader binds instance_params to the named KIND library function and registers a per-instance Pi tool."
+					},
+					"instance_params": {
+						"type": "object",
+						"description": "Instance-scoped parameters (FEAT-010) — fixed at registration time, closure-bound by composite-loader. Runtime callsites cannot widen scope."
+					}
 				}
 			}
+		},
+		"tool_operations_forbidden": {
+			"type": "array",
+			"items": { "type": "string" },
+			"description": "Project-specific operation tokens forbidden from registration as composite operations (extends framework FORBIDDEN_WHOLESALE_OPERATIONS list per FEAT-010 L5; gated by author-tool-grant Pi tool writer.kind=human per DEC-0047)."
 		}
 	}
 }

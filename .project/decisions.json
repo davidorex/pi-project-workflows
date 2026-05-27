@@ -2531,7 +2531,7 @@
     {
       "id": "DEC-0052",
       "title": "Adopt Hybrid 3 composite-tool design for pi-agent-dispatch — per-KIND triples (library + Pi tool + CLI script) + 5-layer forbidden-wholesale enforcement + author-tool-grant writer.kind=human gate",
-      "status": "open",
+      "status": "enacted",
       "context": "TASK-089 (commit babe385) landed pi-agent-dispatch capability composition with TOOL NAME granularity (composeToolGrant intersection + operation-vocab.ts 55 canonical Pi tool names). JI-023 user verbatim names finer granularity ('A bash command. Not bash.' + 'There can be a registry of them'). FEAT-006 north-star requires bounded-composite scoping (constrained orchestrator + privileged agent + bounded grant). User-directed design exploration 2026-05-28 produced Hybrid 3 candidate: a small set of canonical composite KINDS in framework code + config-declared instances + writer.kind=human authoring gate. Fresh-context canon-eval (analysis/2026-05-28-hybrid-3-composite-tools-canon-eval.md commit 3b4b32d) evaluated v1 against 19 canon items (A-S): 0 fatal conflicts; 9 ALIGN + 3 ALIGN-with-caveat + 7 TANGENTIAL. Two design-completeness items surfaced: (1) DEC-0019/0020 dual-surface canon requires per-KIND triples (library + Pi tool + CLI script as a unit); (2) feedback_no_parallel_ungated_paths requires explicit forbidden-wholesale enforcement so 'bash'/'write'/'edit' cannot silently degrade the design. Plus mandate-007 violation: v1 deferred substrate-canon forbidden-list 'if/when project-specific need emerges' — that is identified-need-deferred. Refined v2 design (analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md) closes all three items with no canon evolution required. This decision adopts v2 as canon.",
       "decision": "ADOPT Hybrid 3 v2 composite-tool design for pi-agent-dispatch. Concretely: (1) per-KIND TRIPLE per DEC-0019/0020 dual-surface — each composite KIND lands as library function in packages/pi-agent-dispatch/src/composites/{kind}.ts + Pi tool registration at extension-load reading config.tool_operations[] entries + CLI script at scripts/orchestrator/composite-{kind}.ts taking same instance_params as CLI flags. Initial 4 KINDS: read-files, git-log, grep-paths, command-allowlist. (2) 5-layer forbidden-wholesale enforcement per feedback_no_parallel_ungated_paths defense-in-depth — L1 framework TS const FORBIDDEN_WHOLESALE_OPERATIONS=['bash','write','edit','shell','execute'] + L2 engine test invariant in operation-vocab.test.ts (TOOL_OPERATION_DEFAULTS contains zero forbidden tokens; husky pre-commit gate) + L3 runtime guard at extension load reading L1 ∪ L5 union (throws extension-load error on violation) + L4 JSDoc citation at operation-vocab.ts + L5 substrate config.tool_operations_forbidden[] (project-specific forbidden additions; AmendRegistry descriptor {kind:'string-array'}; gated by author-tool-grant Pi tool writer.kind=human). (3) NEW author-tool-grant Pi tool mirrors TASK-089 author-agent-spec pattern: wraps amendConfigEntry mutations on tool_operations[] + tool_operations_forbidden[]; refuses writer.kind != 'human' per DEC-0047; refuses ops in L1 ∪ L5 union. (4) NEW composite-loader.ts at extension-load: reads config.tool_operations[]; per entry of kind matching a registered KIND, registers Pi tool wrapping kind's library function with instance_params closure-bound; refuses to register if canonical_id is in L1 ∪ L5 union. (5) Schema extension: config.schema.json + samples/conception.json + packaged samples/schemas mirror gain tool_operations_forbidden array property; AmendRegistry union + REGISTRY_DESCRIPTORS gain tool_operations_forbidden entry. Zero canon evolution required — all elements are concrete enactments of existing canon (DEC-0019/0020 dual-surface; DEC-0040 substrate single source of truth; DEC-0047 capability authoring human-only + default-empty; DEC-0048 engine-tests-are-gates; FEAT-005 operation-granular grant from empty; JI-023 bounded composites; JI-024 empty default; feedback_no_parallel_ungated_paths defense-in-depth). FEAT-010 carries the build. Both addressed-gap FGAP-116 (operation-granular capability vocabulary gap) and addressed-feature FEAT-010 are filed alongside this decision.",
       "consequences": [
@@ -2572,10 +2572,16 @@
         {
           "label": "feedback_no_parallel_ungated_paths",
           "path": "~/.claude/projects/-Users-david-Projects-workflowsPiExtension/memory/feedback_no_parallel_ungated_paths.md"
+        },
+        {
+          "label": "DEC-0052 enactment + TASK-092 build pipeline kickoff (Path B per user direction)",
+          "commit": "a166c36"
         }
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-28"
     }
   ]
 }

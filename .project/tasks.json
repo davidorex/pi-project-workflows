@@ -1365,8 +1365,8 @@
     },
     {
       "id": "TASK-084",
-      "description": "POC — prove the context→jit concept end-to-end. The in-pi orchestrator (the main harness-constrained agent in pi, launched via our script) authors a scoped agent spec via pi-context tooling → persists → dispatches via pi-jit-agents library executeAgent → captures typed result → real-check verdict. Demonstrates the architectural shape works on a freshly-authored spec against a real LLM via pi-ai, with the operation-granular tool grant + clamp from TASK-081 in effect. Lightweight scope: NOT the full pi-agent-dispatch extension build (that is downstream FEAT-004/005 work after POC validates the shape). Scope is the smallest end-to-end demonstration: an author surface (scripts/orchestrator/author-agent.ts that writes a .agent.yaml + validates against jit-agents AgentSpec schema), a dispatch invocation (direct call to @davidorex/pi-jit-agents executeAgent — orchestrator-direct-use per JI-021), and a verification path (real-check on emitted artifacts: git diff / event stream / runtime demo). Authored agent uses a bounded tool grant (e.g. read-only — minimal grant proving clamp works); subagent invoked via pi -p with that grant; result captured; clamp empirically verified via attempt to exceed grant + observation of refusal. Depends on TASK-081 landing first (canonical agent layer + executeAgent grant/clamp must exist to dispatch into). Does NOT depend on TASK-082/083 (POC bypasses pi-workflows + pi-behavior-monitors entirely; orchestrator dispatches direct against jit-agents library). Filed 2026-05-26 per user direction (sequence: pi-jit-agents element first → POC → consumer cascade in 082/083).",
-      "status": "planned",
+      "description": "[SUPERSEDED 2026-05-26 — degraded-slice framing identified by user; FEAT-006 (north-star) carries the actual scope. Superseded by FEAT-006 decomposition: TASK-088 (work-order block kind), TASK-089 (pi-agent-dispatch extension + FEAT-005 capability composition), TASK-090 (real-check tail + attested commit), TASK-091 (assembly + end-to-end loop wiring + runtime demo). The 'lightweight scripts/orchestrator/ POC' framing of this task was LLM-laziness substituting a Claude-Code-side script demo for the user-stated intent of an in-pi-orchestrator end-to-end loop. The in-pi orchestrator (the harness-confined agent in pi launched via our script) cannot use scripts/orchestrator/ because those are Claude-Code-side; the actual intent requires the pi-agent-dispatch extension building pi.registerTool('call-agent',…) so the in-pi orchestrator sees the dispatch surface in its tool registry. status=cancelled (tasks schema has no 'superseded' enum value); the four successor tasks carry the actual scope of what this would have proven and more. Original description preserved below as historical record.]\n\n--- ORIGINAL DESCRIPTION (historical, pre-supersession) ---\n\nPOC — prove the context→jit concept end-to-end. The in-pi orchestrator (the main harness-constrained agent in pi, launched via our script) authors a scoped agent spec via pi-context tooling → persists → dispatches via pi-jit-agents library executeAgent → captures typed result → real-check verdict. Demonstrates the architectural shape works on a freshly-authored spec against a real LLM via pi-ai, with the operation-granular tool grant + clamp from TASK-081 in effect. Lightweight scope: NOT the full pi-agent-dispatch extension build (that is downstream FEAT-004/005 work after POC validates the shape). Scope is the smallest end-to-end demonstration: an author surface (scripts/orchestrator/author-agent.ts that writes a .agent.yaml + validates against jit-agents AgentSpec schema), a dispatch invocation (direct call to @davidorex/pi-jit-agents executeAgent — orchestrator-direct-use per JI-021), and a verification path (real-check on emitted artifacts: git diff / event stream / runtime demo). Authored agent uses a bounded tool grant (e.g. read-only — minimal grant proving clamp works); subagent invoked via pi -p with that grant; result captured; clamp empirically verified via attempt to exceed grant + observation of refusal. Depends on TASK-081 landing first (canonical agent layer + executeAgent grant/clamp must exist to dispatch into). Does NOT depend on TASK-082/083 (POC bypasses pi-workflows + pi-behavior-monitors entirely; orchestrator dispatches direct against jit-agents library). Filed 2026-05-26 per user direction (sequence: pi-jit-agents element first → POC → consumer cascade in 082/083).",
+      "status": "cancelled",
       "files": [
         "scripts/orchestrator/author-agent.ts",
         "analysis/2026-05-26-poc-context-to-jit-runtime-demo.md"
@@ -1451,6 +1451,114 @@
         "TASK-081"
       ],
       "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. HARD-BLOCKED on FGAP-115 (canonical source question); status:blocked reflects that. Pairs with TASK-082/083 — those tasks delete the caller-side parseModelSpec duplicates after this task provides the canonical replacement at executeAgent boundary. Implementation pairs with DEC-0003 enacted a71c782 + widened cfbb211 (both monitors + workflows duplicate sites named). Pi-ai Model<Api> shape verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 458-485)."
+    },
+    {
+      "id": "TASK-088",
+      "description": "FEAT-006 decomposition 1/4 — define the orchestrator-authored executable work-order block kind. Per FEAT-006: 'today the loop passes specs as transient workflow input, not a persisted orchestrator-authored block.' This task defines + registers the canonical block kind for the spec the in-pi orchestrator authors (the spec-block-as-implementation-prompt; specs are self-contained coding prompts per feedback_specs_are_implementation_prompts). Includes: schema for the work-order block (id pattern, fields covering input contract / context-blocks-injected / output contract / privileged-agent target / scope-of-edit / real-check criteria); registration in config.block_kinds[]; sample blocks demonstrating spec authoring shape; contextBlocks handoff pattern (how the privileged JIT-agent consumes the work-order spec via its declared contextBlocks at dispatch time); substrate-write tool surface for in-pi orchestrator to author work-orders (extends or reuses existing append-block-item / file-block-item canonical surface). Filed 2026-05-26 per user direction (supersede TASK-084's degraded POC framing; decompose FEAT-006 into concrete tasks). Substrate-only work; no jit-agents code changes.",
+      "status": "planned",
+      "files": [
+        ".project/schemas/work-orders.schema.json",
+        ".project/config.json",
+        "packages/pi-context/samples/schemas/work-orders.schema.json",
+        "packages/pi-context/samples/blocks/work-orders.json"
+      ],
+      "acceptance_criteria": [
+        "work-orders.schema.json declares the orchestrator-authored spec shape: id (canonical pattern), title, status enum, input_contract (typed schema for what the agent receives), context_blocks (which substrate blocks the privileged agent consumes at dispatch), output_contract (typed return), target_agent (the privileged spec-implementer-class JIT-agent name), scope (file/directory/operation bounds), real_check_criteria (the deterministic checks that gate acceptance — build/check/test exit + runtime-demo + adversarial-against-artifacts per DEC-0018)",
+        "config.json block_kinds[] registers work-orders with canonical_id + prefix (WO- per DEC-0027 uppercase + DEC-0026 3-digit) + schema_path + array_key + data_path",
+        "Sample blocks under packages/pi-context/samples/blocks/work-orders.json demonstrate a complete work-order: a spec that an orchestrator could author + a privileged agent could consume + real-checks could gate",
+        "contextBlocks handoff pattern documented: how the agent.yaml of the spec-implementer-class agent references the work-order block via contextBlocks, how compileAgent injects it, how the agent's prompt consumes it",
+        "In-pi orchestrator can author a work-order via existing append-block-item / file-block-item canonical surface (no new write tool needed if existing surface handles the new block kind generically)",
+        "Engine unit tests cover: schema AJV validation passes on valid samples + rejects malformed; block_kinds discovery picks up the new kind; sample blocks pass validateContext + relations.json cross-reference integrity",
+        "VALIDATION = real checks: build/check/test exit codes; runtime demo (tsx-eval authors a work-order via canonical write tool + reads it back + validates schema); adversarial probe (fresh-context agent confirms zero free-text scaffolding in samples; everything FK-referenced via canonical patterns)"
+      ],
+      "depends_on": [],
+      "notes": "Filed 2026-05-26 per user direction supersede-TASK-084 + decompose-FEAT-006. First of four FEAT-006 decomposition tasks: TASK-088 (work-order block), TASK-089 (pi-agent-dispatch extension), TASK-090 (real-check tail + attested commit), TASK-091 (assembly + orchestrator loop). No dependencies (substrate-only); unblocks TASK-089."
+    },
+    {
+      "id": "TASK-089",
+      "description": "FEAT-006 decomposition 2/4 — build pi-agent-dispatch extension per narrowed DEC-0044 + implement FEAT-005 (capability composition + sandbox) within it. New extension package whose ONLY scope is the in-pi agent-as-tool registration site: registers pi.registerTool('call-agent', {spec, input, grant}) for the in-pi orchestrator to dispatch a privileged JIT-agent as a typed tool call; registers pi.registerTool('author-agent-spec', {spec}) for orchestrator to author agent specs under writer.kind=human attestation per DEC-0047. Implementation calls pi-jit-agents library underneath (executeAgent direct library import from the extension; orchestrator + workflows + monitors continue consuming jit-agents as shared library directly per narrowed DEC-0044 — the extension does NOT wrap or intermediate library use). Capability composition (FEAT-005): operation-granular tool grants from empty-state registry — define the canonical operation vocabulary (e.g. npm-test, npm-build, file-write-scoped, etc.) in config.tool_operations[]; composeToolGrant(parent, requested) returns the clamped intersection; the dispatch tool calls executeAgent with the composed grant (TASK-081 clamp enforces at executeAgent boundary). Loaded peer-to-peer by any subprocess context needing agent-as-tool (workflow steps, monitor classifies, in-pi orchestrator's pi -p invocations).",
+      "status": "planned",
+      "files": [
+        "packages/pi-agent-dispatch/package.json",
+        "packages/pi-agent-dispatch/src/index.ts",
+        "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+        "packages/pi-agent-dispatch/src/author-agent-tool.ts",
+        "packages/pi-agent-dispatch/src/capability-composer.ts",
+        "packages/pi-agent-dispatch/src/capability-composer.test.ts",
+        "packages/pi-agent-dispatch/src/index.test.ts",
+        "packages/pi-agent-dispatch/tsconfig.json",
+        "packages/pi-agent-dispatch/tsconfig.build.json",
+        ".project/config.json"
+      ],
+      "acceptance_criteria": [
+        "New pi-agent-dispatch extension package scaffolded with package.json + tsconfig + src/ matching existing extension structure (model: pi-workflows or pi-behavior-monitors); dependencies: pi-context + pi-jit-agents + pi-ai (no workflow/monitor deps — peer-to-peer)",
+        "pi.registerTool('call-agent', …) registered: parameters include {specName, input, requestedGrant?}; impl loads agent via jit-agents createAgentLoader, compiles via compileAgent, calls executeAgent with the composed grant; returns the typed result",
+        "pi.registerTool('author-agent-spec', …) registered: parameters include {name, agentSpecYaml}; impl validates against jit-agents AgentSpec schema; writes .agent.yaml to the canonical agents directory; DispatchContext writer.kind=human enforced (rejects writer.kind=agent attempts — per DEC-0047 canon: spec/schema authorship is orchestrator-sole; sub-agents have no escalation)",
+        "capability-composer.ts: composeToolGrant(parentGrant, requestedGrant) returns the clamped intersection (matches TASK-081 executeAgent clamp semantics); operation-granular vocabulary lives in config.tool_operations[] (NEW config field, schema-validated); default EMPTY per DEC-0047",
+        "Engine unit tests for capability composition: empty-parent rejects-non-empty-request; subset-request passes-clamped; intersect-non-empty-non-subset returns-intersection",
+        "Engine unit tests for the two registered tools: call-agent dispatches successfully against a fixture .agent.yaml + returns typed result; author-agent-spec writes + validates + refuses writer.kind=agent",
+        "Loaded by pi -p invocation peer-to-peer with other extensions; in-pi orchestrator (the harness-confined agent per DEC-0014) sees call-agent + author-agent-spec in its tool surface and can invoke them",
+        "FEAT-005 capability vocabulary canon documented in config.json (the registered operation set) — distinct from raw pi --tools at subprocess boundary; this is the in-process / in-pi capability registry used by composeToolGrant",
+        "Per DEC-0048: no consumer cascade (TASK-082/083 separate); existing workflows / bundled agents tests are NOT regression gates",
+        "VALIDATION = real checks: build/check/test exit codes; runtime demo (pi -p invocation with pi-agent-dispatch loaded; in-pi orchestrator invokes call-agent + author-agent-spec end-to-end; outputs captured; grant composition verified against composed-grant ⊆ parent-grant invariant); adversarial probe (fresh-context: composeToolGrant cannot return a grant exceeding parent; author-agent-spec refuses writer.kind=agent; clamp at executeAgent fires when child not subset)"
+      ],
+      "depends_on": [
+        "TASK-081",
+        "TASK-088"
+      ],
+      "notes": "Filed 2026-05-26 per user direction. Second of four FEAT-006 decomposition tasks. Builds on TASK-081 clamp infrastructure + TASK-088 work-order block kind. Implements FEAT-004 (agents-as-tools) + FEAT-005 (capability composition) within the pi-agent-dispatch extension per narrowed DEC-0044. The single extension absorbs both FEAT-004 + FEAT-005 because they are one architectural concern (dispatch surface + the capability layer atop it). Unblocks TASK-090 + TASK-091."
+    },
+    {
+      "id": "TASK-090",
+      "description": "FEAT-006 decomposition 3/4 — real-deterministic-check validation tail (FGAP-102) + attested commit through husky. Post-agent-execution gate: after the privileged JIT-agent makes source edits, run the real-checks (build/check/test exit codes + runtime-demo + adversarial-against-artifacts per DEC-0018) — NEVER LLM self-report (FGAP-102). On real-check-pass: commit through husky with DispatchContext writer.kind=agent + agent_id attestation (per DEC-0047 distinction between human-authored canon-widening writes vs agent-authored work-product writes). On real-check-fail: structured fail-report carrying the real compiler/test errors flows back for another implement pass (fix root cause, never bypass per DEC-0040 + feedback_process_is_success_metric). Implementation likely as pi-agent-dispatch extension tool surface (pi.registerTool('run-real-checks', …) + pi.registerTool('commit-attested', …)) OR as inline call from the call-agent tool's post-execution path; design TBD in plan-mode of this task.",
+      "status": "planned",
+      "files": [
+        "packages/pi-agent-dispatch/src/real-check-runner.ts",
+        "packages/pi-agent-dispatch/src/attested-commit.ts",
+        "packages/pi-agent-dispatch/src/real-check-runner.test.ts",
+        "packages/pi-agent-dispatch/src/attested-commit.test.ts"
+      ],
+      "acceptance_criteria": [
+        "real-check-runner runs the three deterministic checks per DEC-0018: (1) build+check+test exit codes (no pipe-masking; full output captured); (2) runtime-demo (tsx-eval invocation of the actual feature path — exact mechanism TBD per the work-order spec's declared real_check_criteria); (3) adversarial probe (fresh-context agent re-greps for false-pass scenarios on external artifacts: git diff / event stream / runtime output)",
+        "real-check-runner returns structured RealCheckResult { passed: boolean, details: per-check exit codes + stdout/stderr/grep evidence }; no LLM self-report at any point in the gate (per FGAP-102 / DEC-0047 clause 5)",
+        "On real-check-fail: RealCheckResult.passed=false carries the structured fail-report (real compiler/test errors); calling code feeds back to the implement pass (loop logic in TASK-091 assembly task)",
+        "attested-commit invokes husky (no --no-verify; never skip hooks per feedback_no_destructive_git_ops + standard discipline); commit message carries DispatchContext attestation footer: writer.kind=agent + agent_id; per DEC-0047, writer.kind=agent cannot be set by the agent itself — the orchestrator (writer.kind=human source) supplies the DispatchContext that the privileged agent inherits at dispatch",
+        "On real-check-pass + attested-commit success: return the commit SHA for the orchestrator's status cascade",
+        "Engine unit tests cover: real-check-runner exits correctly on each check's pass/fail; structured RealCheckResult shape valid; attested-commit invokes husky + carries the attestation footer; refusal-of-writer.kind=agent-set-by-agent",
+        "Per DEC-0048: no consumer cascade; existing workflows / bundled agents tests are NOT regression gates",
+        "VALIDATION = real checks (this gate validates itself with the same pattern): build/check/test exit codes; runtime demo (run real-check-runner against a known-failing fixture + verify it reports failure; against a known-passing fixture + verify it reports pass); adversarial probe (fresh-context: zero LLM self-report paths in the gate; husky bypass impossible)"
+      ],
+      "depends_on": [
+        "TASK-089"
+      ],
+      "notes": "Filed 2026-05-26 per user direction. Third of four FEAT-006 decomposition tasks. Builds on TASK-089 pi-agent-dispatch extension (the tool surface this gate plugs into). Closes FGAP-102 (real-check verdict, not LLM self-report). Pattern matches what TASK-081 itself used for self-verification this session (real-check verdict + adversarial probe + commit attestation). Unblocks TASK-091 final assembly."
+    },
+    {
+      "id": "TASK-091",
+      "description": "FEAT-006 decomposition 4/4 — assembly + end-to-end loop wiring. Ties TASK-088 (work-order block) + TASK-089 (pi-agent-dispatch extension) + TASK-090 (real-check tail + attested commit) into the runnable end-to-end loop: a tools-only constrained in-pi orchestrator authors a work-order block via substrate-write tools; invokes call-agent with the work-order's target_agent + composed grant; the privileged JIT-agent consumes the work-order via contextBlocks + makes real source edits; real-check-runner validates per the work-order's declared real_check_criteria; on pass → attested-commit; on fail → structured fail-report feeds back for another implement pass (loop with bounded iterations or human-decided continuation per DEC-0047 governance). Defines: the orchestrator-side launch script (the 'main harness-constrained agent in pi launched via our script' per user-stated intent); the tool surface restricted to the in-pi orchestrator (substrate-write + call-agent + run-real-checks + commit-attested — no raw bash, no raw file-write); the loop iteration policy (max iterations, human-OK at the iteration boundary per DEC-0047); the runtime demonstration that exercises a complete loop end-to-end against a real LLM via pi-ai with concrete work-order + real source edit + real-check pass + attested commit.",
+      "status": "planned",
+      "files": [
+        "scripts/orchestrator/launch-constrained-orchestrator.ts",
+        "packages/pi-agent-dispatch/src/work-order-loop.ts",
+        "packages/pi-agent-dispatch/src/work-order-loop.test.ts",
+        "analysis/2026-05-XX-feat-006-end-to-end-demo.md"
+      ],
+      "acceptance_criteria": [
+        "scripts/orchestrator/launch-constrained-orchestrator.ts invokes pi -p with: pi-context + pi-jit-agents (library import path) + pi-workflows + pi-behavior-monitors + pi-agent-dispatch extensions loaded; restricts the in-pi orchestrator's tool surface to substrate-write + call-agent + author-agent-spec + run-real-checks + commit-attested (no raw bash, no raw file-write); pinned non-agentic model + cost-control per F-006",
+        "work-order-loop.ts implements the iteration logic: dispatch call-agent → on completion run-real-checks → on pass commit-attested; on fail capture structured fail-report + feed back to next iteration; max iterations bounded (configurable, default 3); each iteration boundary admits a human-OK gate per DEC-0047 (orchestrator pauses for human approval to continue iterating)",
+        "Loop respects DEC-0014: the in-pi orchestrator NEVER holds raw bash or file-write itself — every code change flows through call-agent → privileged agent → real-check gate → attested-commit",
+        "Loop respects DEC-0047: capability widening (granting the privileged agent more operations mid-loop) is human-only via author-agent-spec invocation; the orchestrator (writer.kind=agent at this layer) cannot widen the agent's grant",
+        "Runtime demonstration (committed at analysis/2026-05-XX-feat-006-end-to-end-demo.md) exercises one complete loop iteration end-to-end against a real LLM: orchestrator authors a concrete work-order (e.g. 'add a one-line comment to packages/pi-jit-agents/src/types.ts:1'); dispatches via call-agent with bounded grant (file-write-scoped to that one file); agent makes the edit; real-checks pass (build/check/test exit 0); attested-commit lands with writer.kind=agent footer; report captures the work-order content + dispatch invocation + agent output + real-check result + commit SHA + attestation footer",
+        "Adversarial probe (fresh-context Explore agent): verifies the in-pi orchestrator's tool surface contains zero raw-code-execution surfaces; verifies the agent cannot escape its grant; verifies the real-check gate cannot be bypassed; verifies the attested-commit's writer.kind=agent footer is present + correct; verifies the human-OK gate at iteration boundary is enforced (cannot auto-continue without it)",
+        "Per DEC-0048: bundled .workflow.yaml / bundled agents NOT preserved/aligned/fixed; engine unit tests + the runtime demo + adversarial probe are the gates",
+        "VALIDATION = real checks: build/check/test exit codes; runtime demo as above; adversarial probe as above. NO LLM self-report at any gate (FGAP-102 / DEC-0047 clause 5)"
+      ],
+      "depends_on": [
+        "TASK-088",
+        "TASK-089",
+        "TASK-090"
+      ],
+      "notes": "Filed 2026-05-26 per user direction. Fourth (final) of four FEAT-006 decomposition tasks. Final assembly + end-to-end runnable loop. Closes FEAT-006 (north-star) when complete + verified. Pattern matches the entire FEAT-006 acceptance criteria set: constrained orchestrator + work-order + privileged dispatch + scoped capability + real-check gate + attested commit + DEC-0047 governance. The 'main harness-constrained agent in pi launched via our script' from the user's stated intent is the launch script in this task. Supersession context: TASK-084 (POC) is cancelled in the same commit-arc as this filing because TASK-091's runtime demonstration IS the end-to-end proof the POC would have been a degraded slice of."
     }
   ]
 }

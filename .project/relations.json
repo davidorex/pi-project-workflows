@@ -358,5 +358,55 @@
     "parent": "VER-052",
     "child": "TASK-081",
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "TASK-088",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-089",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-090",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-089",
+    "child": "DEC-0044",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-089",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-090",
+    "child": "DEC-0018",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-090",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "DEC-0014",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
   }
 ]

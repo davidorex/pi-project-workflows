@@ -82,7 +82,7 @@
         },
         {
           "label": "DEC-0002 enactment + consequence #4 narrowing (or-hedge → TraceEntry) + citation refresh",
-          "commit": "PENDING_THIS_COMMIT"
+          "commit": "bb1bc27"
         }
       ],
       "created_by": "agent/claude-opus-4-6",

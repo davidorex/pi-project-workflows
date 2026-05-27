@@ -74,7 +74,7 @@ describe("adoptConception (accept-all)", () => {
 			".context",
 			"root must be overridden to the actual substrate dir, not the conception's .project",
 		);
-		assert.equal(cfg.block_kinds.length, 15);
+		assert.equal(cfg.block_kinds.length, 16);
 	});
 
 	it("idempotent", () => {

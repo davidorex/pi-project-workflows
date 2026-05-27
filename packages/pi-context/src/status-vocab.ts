@@ -44,6 +44,7 @@ export type { StatusBucket } from "./context.js";
  *   - layer-plans.status:    draft | proposed | decided | in-progress | complete | abandoned
  *   - issues.status:         open | resolved | deferred
  *   - phase.status:          planned | in-progress | completed
+ *   - work-orders.status:    proposed | in-progress | real-check-passed | real-check-failed | completed | cancelled
  *
  * status-vocab.test.ts guards completeness: every samples/schemas status enum
  * value must resolve here (only the intended terminal-not-complete set may map
@@ -63,6 +64,7 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	archived: "complete",
 	closed: "complete", // framework-gaps: gap resolved/done
 	verified: "complete", // requirements: terminal-done, beyond "implemented"
+	"real-check-passed": "complete", // work-orders: real-check verdict pass = lifecycle-complete equivalent (DEC-0018)
 	// → in_progress
 	in_progress: "in_progress",
 	"in-progress": "in_progress",
@@ -75,6 +77,7 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	blocked: "blocked",
 	paused: "blocked",
 	failed: "blocked",
+	"real-check-failed": "blocked", // work-orders: real-check verdict fail = lifecycle-blocked equivalent (DEC-0018)
 	// → todo
 	open: "todo",
 	todo: "todo",

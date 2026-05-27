@@ -3,7 +3,7 @@
  *
  * The catalog reads the extension's OWN bundled samples/ — it is
  * package-intrinsic (no cwd). These cases pin the live conception:
- *   - structural completeness (15 kinds; 28 relation_types; registries present)
+ *   - structural completeness (16 kinds; 28 relation_types; registries present)
  *   - DEC-0023 live-data guard (every kind has title + description + shape)
  *   - endpoint-participation semantics (wildcard, alias/split, convergence)
  *   - per-kind invariant / lens attachment
@@ -25,8 +25,8 @@ const SAMPLES_DIR = path.resolve(__dirname, "..", "samples");
 const FRAMEWORK_CONFIG_SCHEMA = path.resolve(__dirname, "..", "schemas", "config.schema.json");
 
 describe("samplesCatalog", () => {
-	it("enumerates all 15 packaged block kinds", () => {
-		assert.strictEqual(samplesCatalog().kinds.length, 15);
+	it("enumerates all 16 packaged block kinds", () => {
+		assert.strictEqual(samplesCatalog().kinds.length, 16);
 	});
 
 	it("every kind carries a non-null title and description (DEC-0023 live-data guard)", () => {

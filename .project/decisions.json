@@ -1218,9 +1218,9 @@
     },
     {
       "title": "ID-prefix padding convention — 3-digit vs 4-digit zero-padding across block kinds",
-      "status": "open",
+      "status": "enacted",
       "context": "Inspection of current .project/*.json items surfaces concrete drift: R- (research) + DEC- (decisions) use 4-digit zero-padding (R-0001 / DEC-0001..0025); FGAP- (3-digit, 59 items, near-rollover at FGAP-100), TASK- (3-digit, 42 items), VER- (3-digit, 15 items), FEAT- (3-digit, 1 item), PLAN- (3-digit, 1 item), REVIEW- (3-digit, 1 item), CTX- (3-digit, 3 items), RAT- (3-digit, 8 items) all use 3-digit zero-padding. Drift surfaced via ls + node enumeration during 2026-05-14 reverse-engineered config draft (analysis/2026-05-14-step-1-config-draft-from-substrate.md). Existing items aren't broken — block-api operates on string ids regardless of padding — but lens binning by id-pattern + LLM ID parsing assumes uniform shape per prefix. Without canonical declaration, future authoring continues drift; future migration becomes harder per existing-id volume.",
-      "decision": "OPEN: padding convention to canonicalize across all block kinds. Mandate-compliant options surfaced in options_considered; user enacts.",
+      "decision": "3-digit zero-padding (e.g. DEC-001, R-001) is canonical across ALL block kinds. The two outliers — R- (research, 4-digit, ~11 items) and DEC- (decisions, 4-digit, 50 items at enactment time) — migrate forward to 3-digit. Net migration scope: ~61 items (4-digit → 3-digit) versus ~170+ items that would have moved under 4-digit-canonical. The 999-id ceiling per block is adequate at current scale (largest 3-digit block today is issue- at ~91 items; second-largest FGAP- at ~113 items). Per-block-declared width (option 4) is explicitly rejected as 'accept the drift FGAP-048 was filed to fix' — it is the non-canonicalization, not a canonical choice. 4-digit-canonical is rejected by asymmetry: 170+ migrate vs 61.",
       "consequences": [
         "Lens binning by id-pattern becomes uniform per prefix once canonicalized.",
         "Existing items either preserve historical shape (per-block override) OR migrate forward.",
@@ -1262,6 +1262,10 @@
           "label": "config.block_kinds[].prefix declaration site",
           "path": "packages/pi-context/registry/schemas/config.schema.json",
           "lines": "39-55"
+        },
+        {
+          "label": "DEC-0026 enactment (3-digit canonical, migrate R-/DEC- forward)",
+          "commit": "PENDING_THIS_COMMIT"
         }
       ],
       "related_findings": [],
@@ -1272,13 +1276,15 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:00:00Z",
-      "id": "DEC-0026"
+      "id": "DEC-0026",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-26"
     },
     {
       "title": "ID-prefix casing convention — uppercase vs lowercase across block kinds",
-      "status": "open",
+      "status": "enacted",
       "context": "Single drift surfaced in 2026-05-14 substrate inspection: issue- (issues block) uses lowercase prefix while DEC- / FGAP- / TASK- / VER- / FEAT- / PLAN- / REVIEW- / CTX- / RAT- all use uppercase. issue- has 91 items (issue-001..091) — largest single-block id population. No technical force for either; visual + grep + cross-reference shape uniformity is the consideration. Issue ids appear in commit messages, analysis MDs, FGAP related_issues fields — every citation site cascades on this decision.",
-      "decision": "OPEN: casing convention to canonicalize. Mandate-compliant options below.",
+      "decision": "Uppercase prefix is canonical across ALL block kinds. The single outlier — issue- (issues block, lowercase, 91 items) — migrates forward to ISSUE-. Direction follows by asymmetry: 12+ uppercase prefixes (DEC-, FGAP-, TASK-, VER-, FEAT-, PLAN-, REVIEW-, CTX-, RAT-, REC-, STORY-, REQ-, R-) versus 1 lowercase (issue-); migrating 1 to match 12+ is the obvious move, not the other direction. Per-block-declared casing (option 3) is rejected as 'accept the drift' — it is non-canonicalization. Lowercase-canonical is rejected by the same asymmetry.",
       "consequences": [
         "Cross-block id parsing assumes uniform casing post-canonicalization.",
         "Citations across analysis + commits + FGAP related_issues all settle on chosen casing.",
@@ -1313,6 +1319,10 @@
         {
           "label": "issues.json with 91 issue- prefixed items",
           "path": ".project/issues.json"
+        },
+        {
+          "label": "DEC-0027 enactment (uppercase canonical, migrate issue- → ISSUE-)",
+          "commit": "PENDING_THIS_COMMIT"
         }
       ],
       "related_findings": [],
@@ -1323,7 +1333,9 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:01:00Z",
-      "id": "DEC-0027"
+      "id": "DEC-0027",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-26"
     },
     {
       "title": "Phase block-kind shape — file-per-phase with integer discriminator vs array-block with PHASE-NNN string id",
@@ -1590,9 +1602,9 @@
     },
     {
       "title": "Layer registry adoption — declare config.layers[] with L1..L5 substrate/query/composition/dispatch/surface labels",
-      "status": "open",
+      "status": "enacted",
       "context": "config.layers[] (declared in config.schema.json lines 25-38: id + display_name + description) is currently empty in this repo. FGAP entries use 'layer' field with values L1 / L2 / L3 / L4 (free-text, no validation against an installed registry). features.schema.json declares 'L3 Work layer' for features (per items.properties.layer enum L1..L5). PLAN-001 (.project/layer-plans.json) uses Muni L1-L5 restructure plans framework. Inferred layer set per analysis/gsd-2-foundational-intelligence.md + analysis/gsd-2-derivability.md + my conversational scaffolding: L1 substrate (block CRUD / schemas / closure-table primitives), L2 query (filter / resolve / walk / find-references), L3 composition (lenses / roadmap-plan / execution-context), L4 dispatch (jit-agents / workflows / monitors), L5 surface (commands / tools / ceremonies / display). FGAP-052 records the runtime-vs-declaration gap: even when declared, no code path consumes layers[]. Adopting the registry settles the labels canonically; consumption is downstream FGAP-052 work.",
-      "decision": "OPEN: layer registry adoption + canonical labels. Mandate-compliant options below.",
+      "decision": "Adopt L1..L5 substrate/query/composition/dispatch/surface as THIS repo's canonical layer registry — declared in config.layers[]. Already in widespread use as free-text across FGAPs (layer: L1/L2/L3/L4), features.schema.json (L3 Work layer enum), PLAN-001 layer-plans.json, and analysis docs. Maps directly to pi-context's own package layering: L1 substrate (block CRUD / schemas / closure-table primitives), L2 query (filter / resolve / walk / find-references), L3 composition (lenses / roadmap-plan / execution-context), L4 dispatch (jit-agents / workflows / monitors), L5 surface (commands / tools / ceremonies / display). The 'user-chosen scheme' option (option 2) remains valid for DOWNSTREAM adopters of pi-context — they declare whatever layer scheme fits their project; this enactment is THIS repo's dogfood declaration and does not foreclose other schemes for other adopters. 'Fewer layers (3-tier)' (option 3) rejected: the existing free-text usage already discriminates five layers and conflating any pair loses signal. 'Defer until FGAP-052 consumption lands' (option 4) rejected: declaration without consumption is still useful for validation; consumption is FGAP-052's separate work and not gated by this enactment.",
       "consequences": [
         "Every block_kinds[].layer FK references resolve to declared layers[].id.",
         "FGAP layer field validates against the registry (currently free-text).",
@@ -1648,6 +1660,10 @@
         {
           "label": "FGAP-052 runtime-vs-declaration consumption gap",
           "path": ".project/framework-gaps.json"
+        },
+        {
+          "label": "DEC-0032 enactment (L1..L5 for THIS repo; downstream-adopter-scheme path preserved as option 2)",
+          "commit": "PENDING_THIS_COMMIT"
         }
       ],
       "related_findings": [],
@@ -1658,7 +1674,9 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:06:00Z",
-      "id": "DEC-0032"
+      "id": "DEC-0032",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-26"
     },
     {
       "title": "Status-bucket normalization mapping — bridge per-block status enums to canonical buckets",

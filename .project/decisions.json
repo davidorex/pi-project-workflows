@@ -1265,7 +1265,7 @@
         },
         {
           "label": "DEC-0026 enactment (3-digit canonical, migrate R-/DEC- forward)",
-          "commit": "PENDING_THIS_COMMIT"
+          "commit": "a20a1c7"
         }
       ],
       "related_findings": [],
@@ -1322,7 +1322,7 @@
         },
         {
           "label": "DEC-0027 enactment (uppercase canonical, migrate issue- → ISSUE-)",
-          "commit": "PENDING_THIS_COMMIT"
+          "commit": "a20a1c7"
         }
       ],
       "related_findings": [],
@@ -1663,7 +1663,7 @@
         },
         {
           "label": "DEC-0032 enactment (L1..L5 for THIS repo; downstream-adopter-scheme path preserved as option 2)",
-          "commit": "PENDING_THIS_COMMIT"
+          "commit": "a20a1c7"
         }
       ],
       "related_findings": [],

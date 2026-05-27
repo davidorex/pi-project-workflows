@@ -258,5 +258,20 @@
     "parent": "VER-051",
     "child": "FGAP-112",
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "DEC-0050",
+    "child": "FEAT-008",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0050",
+    "child": "FGAP-113",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "FGAP-113",
+    "child": "FEAT-008",
+    "relation_type": "gap_addressed_by_feature"
   }
 ]

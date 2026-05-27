@@ -65,6 +65,36 @@ function newUlid(now: number = Date.now()): string {
 }
 
 /**
+ * Thrown by executeAgent when the compiled agent's tool grant is not a subset
+ * of the caller-supplied parent grant. Enforces DEC-0047 capability-clamp at
+ * the dispatch boundary: a child agent cannot acquire tools the parent has
+ * not been granted (default-empty — parentGrant undefined === empty set).
+ */
+export class GrantViolationError extends Error {
+	constructor(
+		public readonly agentName: string,
+		public readonly violating: string[],
+	) {
+		super(
+			`Agent '${agentName}' grant violation: tools [${violating.join(", ")}] not in parent grant (DEC-0047 clamp at executeAgent boundary)`,
+		);
+		this.name = "GrantViolationError";
+	}
+}
+
+/**
+ * Compute the set of child-requested tools that are not present in the parent
+ * grant. Both arguments treat `undefined` as the empty set (default-empty
+ * semantics per DEC-0047 — capability is never implicitly inherited).
+ */
+function computeGrantViolation(childTools: string[] | undefined, parentGrant: string[] | undefined): string[] {
+	const child = childTools ?? [];
+	const parent = parentGrant ?? [];
+	const parentSet = new Set(parent);
+	return child.filter((t) => !parentSet.has(t));
+}
+
+/**
  * Recursively redact string leaves of an arbitrary value. Numbers, booleans,
  * null, and undefined pass through unchanged. Strings run through
  * redactSensitiveData. Arrays and plain objects are walked depth-first.
@@ -448,6 +478,16 @@ export async function executeAgent(
 			},
 			tracePath,
 		);
+	}
+
+	// --- DEC-0047 capability-clamp ------------------------------------------
+	// Child's tool grant must be a subset of caller's parent grant. Undefined
+	// on either side means empty set (default-empty: capability is never
+	// implicitly inherited — it must be explicitly granted at every boundary).
+	// Throws BEFORE any LLM dispatch so violating agents incur no token cost.
+	const violating = computeGrantViolation(compiled.tools, dispatch.parentGrant);
+	if (violating.length > 0) {
+		throw new GrantViolationError(compiled.spec.name, violating);
 	}
 
 	// --- Existing dispatch logic --------------------------------------------

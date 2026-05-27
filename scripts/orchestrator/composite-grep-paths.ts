@@ -60,7 +60,7 @@ function main(): void {
 			{ allowed_roots: args.allowedRoots },
 			{ pattern: args.pattern, glob: args.glob },
 		);
-		process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+		process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 	} catch (err) {
 		console.error((err as Error).message);
 		process.exit(1);

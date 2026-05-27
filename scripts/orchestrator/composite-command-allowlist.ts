@@ -63,7 +63,7 @@ function main(): void {
 			{ allowed_commands: args.allowedCommands },
 			{ command: args.command, args: args.args },
 		);
-		process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+		process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 	} catch (err) {
 		console.error((err as Error).message);
 		process.exit(1);

@@ -48,7 +48,7 @@ function main(): void {
 	const args = parseArgs(process.argv.slice(2));
 	try {
 		const result = runGitLog(args.cwd, { paths: args.paths, since: args.since }, { limit: args.limit });
-		process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+		process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 	} catch (err) {
 		console.error((err as Error).message);
 		process.exit(1);

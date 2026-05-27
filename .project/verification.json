@@ -2023,6 +2023,57 @@
         }
       ],
       "evidence": "Canonical closure of FGAP-112 (architectural canon resolution). Three substrate landings: (a) FGAP-112 commit 3da9edc — gap body narrowed to determinate Path A; (b) DEC-0044 commit a71c782 — decision body edited to match the narrowing (the FGAP's stated close criterion); (c) roadmap refresh commit be42a27 — analysis projection updated. This VER required prior schema extension: verification.target_type enum extended with 'framework-gap' (committed same atomic landing as this VER) — pre-existing enum admitted only task|phase|requirement, surfacing a separate substrate-mechanism gap that the close-out exposed; the extension was the prerequisite hygiene before canonical FGAP closure was possible. Verifier inspected: (1) git log --oneline showing the three closing commits in order; (2) tsx-eval readBlock confirming FGAP-112 status=closed + closed_by + closed_at + augmented proposed_resolution; (3) tsx-eval readBlock confirming DEC-0044 carries the narrowed title + 6 options + narrowed decision body; (4) tsx-eval reading verification.schema.json confirming target_type enum extended."
+    },
+    {
+      "id": "VER-052",
+      "target": "TASK-081",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-26",
+      "criteria_results": [
+        {
+          "criterion": "AgentSpec.tools threads through compile.ts into CompiledAgent.tools (new optional field)",
+          "status": "passed",
+          "evidence": "commit 4e9a866 adds 'tools: spec.tools' to compileAgent return at compile.ts:570; commit dee01a5 adds CompiledAgent.tools?:string[] at types.ts:189 with DEC-0047 JSDoc. Adversarial CHECK 9 verified threading; CHECK 8 verified field+JSDoc."
+        },
+        {
+          "criterion": "DispatchContext gains parentGrant?:string[] field (default-empty semantics per DEC-0047)",
+          "status": "passed",
+          "evidence": "commit dee01a5 adds DispatchContext.parentGrant?:string[] at types.ts:201 with JSDoc 'Undefined = empty set (default-empty per DEC-0047).' Adversarial CHECK 8 verified field+JSDoc; runtime demo path3 verified undefined parent + non-empty child throws."
+        },
+        {
+          "criterion": "executeAgent enforces clamp BEFORE pi-ai complete() call: throws GrantViolationError on child not subset of parent",
+          "status": "passed",
+          "evidence": "commit a273ab9 inserts clamp at jit-runtime.ts:488-491; completeFn call at line 572; clamp at 488 < complete at 572 (orchestrator independently re-verified via grep). GrantViolationError thrown BEFORE the try block at line 551 — propagates without wrapping. Runtime demo path2 verified throw with correct violating[]+agentName."
+        },
+        {
+          "criterion": "Engine unit tests added covering 4 paths: subset-pass + non-subset-throw + default-empty-throws + empty-empty-pass; GrantViolationError carries offending tokens + agent name",
+          "status": "passed",
+          "evidence": "commit d3cf81f adds describe block 'executeAgent grant clamp' at jit-runtime.test.ts:229-328 with 4 tests. Full npm test passed 830/830 (828+2 skipped, 0 fail). Adversarial CHECK 7 verified each test body matches its name + asserts claimed behavior (not stubs)."
+        },
+        {
+          "criterion": "NO surface changes beyond additive fields: executeAgent signature retains pre-resolved Model<Api>+auth; no DEC-0001/0002/0003 implementation surface change",
+          "status": "passed",
+          "evidence": "git diff main..HEAD additive only: 2 new fields on existing interfaces, 1 new error class, 1 private helper, 1 inline clamp check, 4 new tests. executeAgent signature unchanged. No model resolution, no thinking forwarding, no parseModelSpec move. Adversarial CHECK 1+2+3+4 verified clamp is sole gate."
+        },
+        {
+          "criterion": "NO consumer code touched: pi-workflows + pi-behavior-monitors source unchanged",
+          "status": "passed",
+          "evidence": "git diff main..HEAD --stat: changes only under packages/pi-jit-agents/src/. No files under packages/pi-workflows/ or packages/pi-behavior-monitors/ modified."
+        },
+        {
+          "criterion": "pi-jit-agents engine unit tests green at every commit (husky); bundled-artifact tests not gates per DEC-0048",
+          "status": "passed",
+          "evidence": "Husky pre-commit (check+test) green on each of dee01a5/4e9a866/a273ab9/d3cf81f. Final npm test 830/830 green. Engine unit tests are gates per DEC-0048."
+        },
+        {
+          "criterion": "VALIDATION = real checks: build/check/test exit codes (no pipe-masking), runtime demo, adversarial probe (fresh-context); never LLM self-report",
+          "status": "passed",
+          "evidence": "Build exit 0; check exit 0; test exit 0 (830/830). Runtime demo at tmp/runtime-demo-task-081.ts: 3/3 PASS (real executeAgent + real GrantViolationError + real clamp; mock confined to completeFn since clamp throws first). Adversarial probe (fresh-context Explore): 9/9 PASS, no false-pass scenarios. Orchestrator independently re-verified clamp-position via grep (line 488 < 551 < 572)."
+        }
+      ],
+      "evidence": "TASK-081 narrow scope implementation complete on branch task-081-jit-agents-grant-clamp. Four impl commits: dee01a5 (types.ts fields), 4e9a866 (compile.ts thread), a273ab9 (clamp + error class), d3cf81f (4 tests). Three verification layers all green: build/check/test, runtime demo (3/3), adversarial probe (9/9). NOTE on filing: d287b0f attempted to file this VER + status update + edge in one commit but the status-update threw on tasks-schema if/then conditional (status=completed requires verification field which the script omitted); the edge committed but VER + status update did not. This file (committed separately) completes that trio: files VER-052 + updates TASK-081 status with the required verification field. The d287b0f commit message overstated landing; this commit corrects."
     }
   ]
 }

@@ -1566,7 +1566,7 @@
     {
       "id": "TASK-092",
       "description": "Build FEAT-010 (Hybrid 3 v2 composite-tool infrastructure) per DEC-0052. Implements bounded-composite-vocabulary in pi-agent-dispatch: per-KIND triple (library + Pi tool + CLI script) for 4 initial KINDS (read-files / git-log / grep-paths / command-allowlist); 5-layer forbidden-wholesale enforcement (L1 framework TS const FORBIDDEN_WHOLESALE_OPERATIONS + L2 engine test invariant + L3 runtime guard at extension-load reading L1∪L5 union + L4 JSDoc citation + L5 substrate config.tool_operations_forbidden[]); composite-loader.ts at extension-load reading config.tool_operations[] + dynamically registering Pi tools per entry with closure-bound instance_params; author-tool-grant Pi tool mirroring TASK-089 author-agent-spec pattern (writer.kind=human enforcement via amendConfigEntry wrappers on tool_operations[] + tool_operations_forbidden[]). User-directed Path B per session 2026-05-28 (build FEAT-010 before TASK-091 assembly so the FEAT-006 closing demo can use bounded composites instead of wholesale tool names).",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-agent-dispatch/src/composites/read-files.ts",
         "packages/pi-agent-dispatch/src/composites/read-files.test.ts",
@@ -1609,7 +1609,8 @@
       "depends_on": [
         "TASK-089"
       ],
-      "notes": "Filed 2026-05-28 per user direction Path B: build FEAT-010 first (before TASK-091 assembly). User's authorization to build FEAT-010 implies enactment authorization for DEC-0052 (open with drafted answer; FEAT-010 depends on DEC-0052 enacted); same canonical-pipeline pass enacts DEC-0052 + files this task. Implementation source-of-record: analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md. Reuses precedents: status-vocab.ts (L1+L4 TS const + JSDoc); status-vocab.test.ts (L2 invariant); author-agent-spec-tool.ts (writer.kind=human enforcement); file-block-item.ts/append-relation.ts (CLI script shape); attested-commit.ts (spawnSync git pattern); loadContext (extension-load config read). One verification-during-implementation point: pi.registerTool dynamic registration at factory-time has no existing precedent; verified empirically during composite-loader smoke test (Phase 2 STEP 4 / Phase 3 runtime demo 3)."
+      "notes": "Filed 2026-05-28 per user direction Path B: build FEAT-010 first (before TASK-091 assembly). User's authorization to build FEAT-010 implies enactment authorization for DEC-0052 (open with drafted answer; FEAT-010 depends on DEC-0052 enacted); same canonical-pipeline pass enacts DEC-0052 + files this task. Implementation source-of-record: analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md. Reuses precedents: status-vocab.ts (L1+L4 TS const + JSDoc); status-vocab.test.ts (L2 invariant); author-agent-spec-tool.ts (writer.kind=human enforcement); file-block-item.ts/append-relation.ts (CLI script shape); attested-commit.ts (spawnSync git pattern); loadContext (extension-load config read). One verification-during-implementation point: pi.registerTool dynamic registration at factory-time has no existing precedent; verified empirically during composite-loader smoke test (Phase 2 STEP 4 / Phase 3 runtime demo 3).",
+      "verification": "VER-056"
     }
   ]
 }

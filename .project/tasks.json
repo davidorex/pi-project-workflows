@@ -1455,7 +1455,7 @@
     {
       "id": "TASK-088",
       "description": "FEAT-006 decomposition 1/4 — define the orchestrator-authored executable work-order block kind. Per FEAT-006: 'today the loop passes specs as transient workflow input, not a persisted orchestrator-authored block.' This task defines + registers the canonical block kind for the spec the in-pi orchestrator authors (the spec-block-as-implementation-prompt; specs are self-contained coding prompts per feedback_specs_are_implementation_prompts). Includes: schema for the work-order block (id pattern, fields covering input contract / context-blocks-injected / output contract / privileged-agent target / scope-of-edit / real-check criteria); registration in config.block_kinds[]; sample blocks demonstrating spec authoring shape; contextBlocks handoff pattern (how the privileged JIT-agent consumes the work-order spec via its declared contextBlocks at dispatch time); substrate-write tool surface for in-pi orchestrator to author work-orders (extends or reuses existing append-block-item / file-block-item canonical surface). Filed 2026-05-26 per user direction (supersede TASK-084's degraded POC framing; decompose FEAT-006 into concrete tasks). Substrate-only work; no jit-agents code changes.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         ".project/schemas/work-orders.schema.json",
         ".project/config.json",

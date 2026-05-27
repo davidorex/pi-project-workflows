@@ -308,5 +308,20 @@
     "parent": "TASK-083",
     "child": "DEC-0047",
     "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "DEC-0051",
+    "child": "FEAT-009",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0051",
+    "child": "FGAP-114",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "FGAP-114",
+    "child": "FEAT-009",
+    "relation_type": "gap_addressed_by_feature"
   }
 ]

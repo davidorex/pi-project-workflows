@@ -4281,6 +4281,40 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-26"
+    },
+    {
+      "id": "FGAP-114",
+      "title": "task.acceptance_criteria is string[] — no AC-addressability for FK depends_on references; no per-criterion status tracking; completion invariant collapses to 'verification field present' rather than schema-level 'every criterion passed'",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "Current .project/schemas/tasks.schema.json declares acceptance_criteria as string[]. Three gaps follow: (1) no addressability — individual criteria have no canonical id, so depends_on (or any other field that might want to reference a specific criterion) cannot FK-target one; (2) no per-criterion status tracking — task status [planned|in-progress|completed|blocked|cancelled] is task-wide; partial completion (criteria 1/2/4 passed but 3/5 pending) is invisible; (3) completion invariant collapse — the only completion check is 'verification field present,' which says nothing about whether each criterion was actually verified. Surfaced immediately by the TASK-080 split (2026-05-26, commits 4bcab3a + da3ec67 + 0a0dcd0): TASK-082 depends on TASK-081; cannot express finer-grained 'TASK-082 depends on TASK-081's criterion #4' (the executeAgent-grant-wired criterion specifically); coarsening forces serial wait on TASK-081's whole completion when partial-completion sequencing would be cheaper. Same FK-as-free-text anti-pattern documented in FGAP-040/041/046 (tasks[].phase, issues[].resolved_by, tasks[].depends_on inline FK arrays).",
+      "evidence": [
+        {
+          "file": ".project/schemas/tasks.schema.json",
+          "reference": "acceptance_criteria current shape: string[]; no id pattern, no status field, no completion invariant"
+        },
+        {
+          "file": ".project/tasks.json",
+          "reference": "TASK-081/082/083/084 just-filed planned tasks (2026-05-26) — TASK-082 depends_on TASK-081 at task-grain only; cannot express criterion-grain depends_on without AC-addressability"
+        },
+        {
+          "file": ".project/schemas/verification.schema.json",
+          "reference": "verification.criteria_results[].criterion is free-text restating task AC text verbatim (existing duplication this gap's resolution also eliminates via FK linkage)"
+        }
+      ],
+      "impact": "Affects all tasks under active sequencing where finer-grained criterion-based dependencies would enable parallelism or partial-completion handoff. Affects substrate hygiene: VER entries currently duplicate AC text verbatim instead of FK-referencing. Affects completion invariant strength: 'task is completed' currently means 'verification field is populated' (a presence check) rather than 'every criterion is verified passed' (a content check). Substrate carries weaker completion guarantee than canonical-derivable shape would support.",
+      "canonical_vocabulary": "ac-addressability / per-criterion-status / completion-invariant-strength / fk-vs-free-text-restating",
+      "proposed_resolution": "Addressed by FEAT-009 (AC schema revision: object form {id, text, status} with ^TASK-\\d{3,}-AC-\\d+$ pattern, status enum [pending|passed|failed|blocked], depends_on union(task-id|ac-id), completion invariant shift to 'every criterion.status === passed') per DEC-0051 (open, drafted answer canon-derived). Scoped under .context greenfield transition (not .project in-place migration) — pairs with FEAT-008 as same-arc structural-shape revision. .project tasks continue with string[] form during the transition; object form lands in .context schemas from day one. No data migration required.",
+      "related_features": [
+        "FEAT-009"
+      ],
+      "related_decisions": [
+        "DEC-0051"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-26"
     }
   ]
 }

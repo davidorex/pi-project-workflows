@@ -120,7 +120,7 @@
 					"properties": {
 						"block": {
 							"type": "string",
-							"description": "Block name in .project/ to write to (e.g., 'issues'). block-api derives the path .project/<block>.json and the schema .project/schemas/<block>.schema.json. Replaces former 'path' + 'schema' fields per issue-065 closure."
+							"description": "Block name in .project/ to write to (e.g., 'issues'). block-api derives the path .project/<block>.json and the schema .project/schemas/<block>.schema.json. Replaces former 'path' + 'schema' fields."
 						},
 						"merge": {
 							"type": "string",

@@ -46,7 +46,7 @@ export const callAgentTool = {
 		}),
 		input: Type.Unknown({ description: "Typed input passed to the agent's compileAgent context." }),
 		parent_grant: Type.Optional(
-			Type.Array(Type.String(), { description: "The caller's own tool grant. Default-empty per DEC-0047." }),
+			Type.Array(Type.String(), { description: "The caller's own tool grant. Default-empty." }),
 		),
 		requested_grant: Type.Optional(
 			Type.Array(Type.String(), {

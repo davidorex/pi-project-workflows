@@ -45,7 +45,7 @@ export const authorToolGrantTool = {
 		),
 		writer: Type.Object(
 			{
-				kind: Type.String({ description: "Writer kind — MUST be 'human' per DEC-0047." }),
+				kind: Type.String({ description: "Writer kind — MUST be 'human'." }),
 				user: Type.String({ description: "Human writer identity (e.g. 'davidryan@gmail.com')." }),
 			},
 			{ description: "DispatchContext.writer per pi-context/src/dispatch-context.ts." },

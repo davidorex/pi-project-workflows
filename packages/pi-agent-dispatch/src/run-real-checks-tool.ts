@@ -27,11 +27,11 @@ export const runRealChecksTool = {
 	name: "run-real-checks",
 	label: "Run Real Checks",
 	description:
-		"Run the deterministic real-checks declared on a work-order (build/check/test exit + runtime-demo + adversarial-probe per DEC-0018). Returns a structured RealCheckResult. NEVER LLM self-report per FGAP-102 + DEC-0047 clause 5.",
+		"Run the deterministic real-checks declared on a work-order (build/check/test exit + runtime-demo + adversarial-probe). Returns a structured RealCheckResult. NEVER LLM self-report; verdict is the actual exit code.",
 	promptSnippet: "Run a work-order's declared real-checks for verdict gating.",
 	parameters: Type.Object({
 		work_order_id: Type.String({
-			description: "ID of the work-order whose real_check_criteria to run (e.g. 'WO-001').",
+			description: "ID of the work-order whose real_check_criteria to run (e.g. 'WO-NNN').",
 		}),
 		max_check_time_ms: Type.Optional(
 			Type.Number({ description: "Max total time per check in milliseconds. Defaults to 600000 (10 minutes)." }),

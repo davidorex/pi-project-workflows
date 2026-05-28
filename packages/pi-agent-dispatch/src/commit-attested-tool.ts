@@ -22,7 +22,7 @@ export const commitAttestedTool = {
 			description: "Commit message body (the attestation footer is appended automatically).",
 		}),
 		agent_id: Type.String({
-			description: "Agent id for writer.kind=agent attestation per DEC-0047 (e.g. 'spec-implementer-001').",
+			description: "Agent id for writer.kind=agent attestation (e.g. 'spec-implementer-001').",
 		}),
 		work_order_id: Type.Optional(Type.String({ description: "Optional work-order id for the attestation footer." })),
 	}),

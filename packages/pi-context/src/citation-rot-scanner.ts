@@ -54,6 +54,12 @@ const CITATION_RE_G = new RegExp(CITATION_RE.source, "g");
 /**
  * One enumerated citation-rot hit. The `surface` discriminator names the
  * node-kind that surfaced the value; downstream test renders per-hit detail.
+ *
+ * `ast-error-message` (FGAP-133): added 2026-05-29 to capture runtime
+ * error-message string-literals constructed at NewExpression sites where
+ * the constructor identifier ends in `Error`. These flow to the operator
+ * via exception propagation and constitute a separate shipped artifact
+ * surface distinct from tool-description literals.
  */
 export interface ScanResult {
 	/** Package-relative directory (e.g. "packages/pi-agent-dispatch"). */
@@ -63,7 +69,7 @@ export interface ScanResult {
 	/** 1-based line number. */
 	line: number;
 	/** Discriminator naming the AST / JSON / textual surface. */
-	surface: "ast-string-literal" | "json-string-value" | "markdown-body" | "yaml-value";
+	surface: "ast-string-literal" | "ast-error-message" | "json-string-value" | "markdown-body" | "yaml-value";
 	/** JSONPath for json-string-value surface; absent otherwise. */
 	path?: string;
 	/** The full string value containing the matched canonical_id. */
@@ -125,14 +131,41 @@ function isTypeBoxCall(node: ts.CallExpression): boolean {
 }
 
 /**
+ * AST predicate (FGAP-133): identifies NewExpression nodes whose constructor
+ * identifier ends in `Error`. Matches both plain `new Error(...)` and custom
+ * subclasses (e.g. `new CommitAttestedRefusedError(...)`). Constructor first
+ * argument string-literal values flow to the operator surface via exception
+ * propagation when the error is thrown.
+ *
+ * Deliberately narrow: only constructors whose name suffix-matches `Error`.
+ * Non-Error constructors (data classes, builders) emit value objects that do
+ * not necessarily reach an operator-visible surface; including them would
+ * inflate noise without governance benefit.
+ */
+function isErrorConstructorCall(node: ts.NewExpression): boolean {
+	const callee = node.expression;
+	if (ts.isIdentifier(callee)) {
+		return /Error$/.test(callee.text);
+	}
+	if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)) {
+		return /Error$/.test(callee.name.text);
+	}
+	return false;
+}
+
+/**
  * Walk a .ts source file and enumerate every CallExpression whose callee is
  * a tool-registration entry-point or a typebox descriptor; pull description
- * string-literal values out of those subtrees.
+ * string-literal values out of those subtrees. Additionally (FGAP-133)
+ * enumerate NewExpression argument string-literals where the constructor
+ * identifier ends in `Error` — error messages are an operator-visible
+ * surface via exception propagation.
  */
 function scanTsFile(file: string, packageDir: string): ScanResult[] {
 	const text = fs.readFileSync(file, "utf-8");
 	const sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, /* setParentNodes */ true);
 	const descriptionStrings: { line: number; value: string }[] = [];
+	const errorMessageStrings: { line: number; value: string }[] = [];
 	// De-dup string-literal node positions: when an inner Type.X() call sits
 	// inside an outer registerTool({ parameters: Type.Object(...) }) tree,
 	// both the outer registerTool walk + the standalone module-level Type.X
@@ -185,6 +218,23 @@ function scanTsFile(file: string, packageDir: string): ScanResult[] {
 				// parameter schemas — scan their description args too.
 				for (const arg of node.arguments) collect(arg);
 			}
+		} else if (ts.isNewExpression(node) && isErrorConstructorCall(node)) {
+			// FGAP-133: extract first string-literal argument from Error
+			// constructors. Only the first arg is examined — Error subclasses
+			// conventionally place the human-readable reason there. Template
+			// literals with substitutions are not extracted (their static
+			// text fragments would need separate handling; the empirical
+			// audit found zero such hits, so the simpler form suffices).
+			const args = node.arguments;
+			if (args && args.length > 0) {
+				const first = args[0];
+				if (ts.isStringLiteral(first) || ts.isNoSubstitutionTemplateLiteral(first)) {
+					errorMessageStrings.push({
+						line: sourceFile.getLineAndCharacterOfPosition(first.getStart()).line + 1,
+						value: first.text,
+					});
+				}
+			}
 		}
 		ts.forEachChild(node, visit);
 	};
@@ -199,6 +249,19 @@ function scanTsFile(file: string, packageDir: string): ScanResult[] {
 				file,
 				line: entry.line,
 				surface: "ast-string-literal",
+				value: entry.value,
+				matched: m[0],
+			});
+		}
+	}
+	for (const entry of errorMessageStrings) {
+		const matches = entry.value.matchAll(CITATION_RE_G);
+		for (const m of matches) {
+			hits.push({
+				packageDir,
+				file,
+				line: entry.line,
+				surface: "ast-error-message",
 				value: entry.value,
 				matched: m[0],
 			});

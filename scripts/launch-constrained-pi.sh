@@ -60,7 +60,9 @@ if [ -z "$TOOLS" ]; then
 fi
 
 # Per-target composite discovery via the canonical helper (DEC-0019/0020 dual-surface).
-COMPOSITES_JSON="$(npx tsx "$REPO/scripts/orchestrator/read-config-operations.ts" --cwd "$TARGET_CWD" --format json 2>/dev/null || echo '[]')"
+# Run from $REPO so tsx resolves @davidorex/* + @earendil-works/* against the repo's
+# node_modules; helper operates on the target via --cwd.
+COMPOSITES_JSON="$(cd "$REPO" && npx tsx "$REPO/scripts/orchestrator/read-config-operations.ts" --cwd "$TARGET_CWD" --format json 2>/dev/null || echo '[]')"
 COMPOSITES="$(echo "$COMPOSITES_JSON" | python3 -c 'import sys,json
 try:
     print(",".join(json.load(sys.stdin)))
@@ -83,4 +85,4 @@ if [ "$SKILL_COUNT" -lt 4 ]; then
 	echo "launch-constrained-pi: WARNING — only $SKILL_COUNT SKILL.md files found across packages; expected >= 4. Some extensions may be silently absent. Run 'npm run skills' from repo root." >&2
 fi
 
-exec pi --tools "$TOOLS" "${ARGS[@]}"
+exec pi --tools "$TOOLS" "${ARGS[@]+"${ARGS[@]}"}"

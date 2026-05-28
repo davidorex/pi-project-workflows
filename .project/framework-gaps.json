@@ -5085,7 +5085,7 @@
     {
       "id": "FGAP-136",
       "title": "write-schema 'replace' that bumps version has no tool-surface migration path — code-level MigrationFn registration via packages/pi-context/src/schema-migrations.ts is the only mechanism; in-pi LLM customizing schemas mid-project for a downstream substrate cannot evolve a schema's `version` field without out-of-band code edits + recompile + redeploy, defeating the in-pi customization promise the 11-config-registry surface otherwise affords",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L3",
@@ -5120,7 +5120,9 @@
       ],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-29T00:00:00Z"
     }
   ]
 }

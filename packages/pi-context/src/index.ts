@@ -79,6 +79,7 @@ import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoa
 import { samplesCatalog } from "./samples-catalog.js";
 import { readSchema, writeSchemaChecked } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
+import { writeSchemaMigrationExecute } from "./write-schema-migration-tool.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
 
@@ -1351,11 +1352,10 @@ const extension = (pi: ExtensionAPI) => {
 		label: "Write Schema",
 		description:
 			"Create or replace a substrate block-kind JSON Schema. operation 'create' requires the schema absent; " +
-			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. CAVEAT: a " +
-			"'replace' that changes the schema's version does NOT migrate existing block items — read-time " +
-			"validateBlockWithMigration throws a version mismatch until a code-level MigrationFn is registered (no tool " +
-			"surface for that). Registering the block_kind that points at this schema is a separate step (amend-config " +
-			"block_kinds).",
+			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. Schema " +
+			"version bumps require a companion migration declaration via write-schema-migration; without one, " +
+			"read/write of items declaring an older schema_version throws version-mismatch. Registering the block_kind " +
+			"that points at this schema is a separate step (amend-config block_kinds).",
 		promptSnippet: "Create or replace a block-kind JSON Schema (meta-validated, atomic)",
 		parameters: Type.Object({
 			operation: Type.String({ description: "create | replace" }),
@@ -1397,6 +1397,60 @@ const extension = (pi: ExtensionAPI) => {
 					{ type: "text", text: `write-schema: ${verb} schema '${params.schemaName}' at ${result.schemaPath}` },
 				],
 			};
+		},
+	});
+
+	// ── Tool: write-schema-migration ──────────────────────────────────────────
+
+	pi.registerTool({
+		name: "write-schema-migration",
+		label: "Write Schema Migration",
+		description:
+			"Declare a schema version-bump migration into substrate (migrations.json). operation 'create' appends a new declaration; 'replace' overwrites an existing declaration matched by (schemaName, fromVersion); 'remove' drops a declaration. kind='identity' asserts the bump is shape-compatible (no data transform); kind='declarative-transform' carries a TransformSpec of rename/set/delete/coerce operations on dotted JSON paths. The loaded MigrationRegistry resolves the recorded edge at next read/write so block items declaring an older schema_version walk forward without process restart. Capability/migration authoring is human-only; sub-agents have no escalation path.",
+		promptSnippet: "Declare a schema version-bump migration (identity or declarative-transform) into migrations.json",
+		parameters: Type.Object({
+			operation: Type.String({ description: "create | replace | remove" }),
+			schemaName: Type.String({ description: "Schema name without extension (e.g., 'tasks')." }),
+			fromVersion: Type.String({ description: "Source schema semver this migration walks forward FROM." }),
+			toVersion: Type.String({
+				description:
+					"Destination schema semver this migration produces. Must differ from fromVersion. Ignored for operation=remove.",
+			}),
+			kind: Type.Optional(
+				Type.String({
+					description: "identity | declarative-transform. Required for operation=create/replace; ignored for remove.",
+				}),
+			),
+			transform: Type.Optional(
+				Type.Unknown({
+					description:
+						"TransformSpec body — required when kind='declarative-transform'; forbidden when kind='identity'. Accepts a JSON string.",
+				}),
+			),
+			writer: Type.Object(
+				{
+					kind: Type.String({ description: "Writer kind discriminator — MUST be 'human'." }),
+					user: Type.String({ description: "Human writer identity (e.g. 'davidryan@gmail.com')." }),
+				},
+				{ description: "DispatchContext.writer per pi-context/src/dispatch-context.ts." },
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: {
+				operation: string;
+				schemaName: string;
+				fromVersion: string;
+				toVersion: string;
+				kind?: string;
+				transform?: unknown;
+				writer: { kind: string; user: string };
+			},
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			return writeSchemaMigrationExecute(ctx.cwd, params);
 		},
 	});
 

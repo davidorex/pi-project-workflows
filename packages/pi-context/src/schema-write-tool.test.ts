@@ -157,7 +157,7 @@ describe("writeSchemaChecked", () => {
 		assert.equal(withBytes, withoutBytes);
 	});
 
-	it("migration boundary: tool-scope replace succeeds but a version bump leaves read-time validation gapped until a code MigrationFn closes it", (t) => {
+	it("migration boundary: validateBlockWithMigration requires a registry on version-mismatch and succeeds when one is supplied", (t) => {
 		const cwd = makeTmpDir("migration-boundary");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
@@ -188,15 +188,19 @@ describe("writeSchemaChecked", () => {
 		);
 		assert.equal(replaced.written, true);
 
-		// The concern is real + deferred: a v1 block item against the now-v2 schema
-		// fails read-time validation when no MigrationRegistry is supplied.
+		// A v1 block item against the now-v2 schema fails read-time validation when no
+		// MigrationRegistry is supplied — the validator's contract on version-mismatch.
 		assert.throws(
 			() => validateBlockWithMigration(cwd, "thing", { schema_version: "1.0.0", name: "x" }),
 			/MigrationRegistry|migration/i,
 		);
 
-		// Positive bookend: the gap is closable ONLY by a code-level MigrationFn —
-		// no Pi tool / CLI surface can register one. With it, read-time passes.
+		// Positive bookend: supply a registry carrying a MigrationFn for the (schema, from, to)
+		// triple and read-time validation passes, returning the migrated shape. This unit
+		// exercises the validator boundary directly via in-test registry construction; the
+		// substrate-side mechanism that lets operators author and persist such migration
+		// declarations (so they populate the registry at load time) is a companion schema-write
+		// surface alongside the schema-write tool itself.
 		const reg = createRegistry();
 		reg.register({
 			schemaName: "thing",

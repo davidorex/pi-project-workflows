@@ -1,0 +1,123 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/migrations",
+	"version": "1.0.0",
+	"title": "pi-context substrate-persisted schema migration declarations",
+	"description": "Operator-authored declarations describing per-step schema version migrations. The migration-registry-loader reads this file at extension load (per cwd, cached) and converts each MigrationDecl into a MigrationFn registered against the per-process MigrationRegistry. kind='identity' asserts data is shape-compatible across the bump (no transform). kind='declarative-transform' carries a TransformSpec whose operations apply to dotted JSON paths on object-shaped block items.",
+	"type": "object",
+	"required": ["schema_version", "migrations"],
+	"additionalProperties": false,
+	"properties": {
+		"schema_version": {
+			"type": "string",
+			"description": "Schema version of this migrations.json file itself. Decoupled from the schema-version semver of any individual block schema it describes."
+		},
+		"migrations": {
+			"type": "array",
+			"description": "Ordered list of MigrationDecl entries. Order is informational; resolution walks fromVersion→toVersion edges per schemaName via the in-memory registry.",
+			"items": { "$ref": "#/definitions/MigrationDecl" }
+		}
+	},
+	"definitions": {
+		"MigrationDecl": {
+			"type": "object",
+			"required": ["schemaName", "fromVersion", "toVersion", "kind", "created_by", "created_at"],
+			"additionalProperties": false,
+			"properties": {
+				"schemaName": {
+					"type": "string",
+					"description": "Canonical schema id (matches the schema's $id minus the URN prefix). Conforms to assertSubstrateName alphabet (letters, digits, '-', '_')."
+				},
+				"fromVersion": {
+					"type": "string",
+					"description": "Semver string of the source schema version this migration walks forward from."
+				},
+				"toVersion": {
+					"type": "string",
+					"description": "Semver string of the destination schema version this migration produces. Must differ from fromVersion."
+				},
+				"kind": {
+					"type": "string",
+					"enum": ["identity", "declarative-transform"],
+					"description": "identity = operator asserts data shape is unchanged across the bump (no transform). declarative-transform = transform.operations[] applies to the data."
+				},
+				"transform": {
+					"$ref": "#/definitions/TransformSpec",
+					"description": "Required when kind='declarative-transform'; forbidden when kind='identity'. The presence/absence guard is enforced by the write-schema-migration Pi tool prior to AJV validation."
+				},
+				"created_by": {
+					"type": "string",
+					"description": "Operator identity (writer.user) recorded at declaration write."
+				},
+				"created_at": {
+					"type": "string",
+					"format": "date-time",
+					"description": "ISO-8601 timestamp recorded at declaration write."
+				}
+			}
+		},
+		"TransformSpec": {
+			"type": "object",
+			"required": ["operations"],
+			"additionalProperties": false,
+			"properties": {
+				"operations": {
+					"type": "array",
+					"description": "Ordered TransformOp sequence applied in order to the block-item data shape.",
+					"items": { "$ref": "#/definitions/TransformOp" }
+				}
+			}
+		},
+		"TransformOp": {
+			"oneOf": [
+				{
+					"type": "object",
+					"required": ["op", "from", "to"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["rename"] },
+						"from": {
+							"type": "string",
+							"description": "Source JSON path in dotted notation prefixed with '$' (e.g. '$.field' or '$.nested.field')."
+						},
+						"to": { "type": "string" }
+					}
+				},
+				{
+					"type": "object",
+					"required": ["op", "path"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["set"] },
+						"path": { "type": "string" },
+						"value": {
+							"description": "Value to set at path. Any JSON-serializable shape (string / number / boolean / null / array / object)."
+						}
+					}
+				},
+				{
+					"type": "object",
+					"required": ["op", "path"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["delete"] },
+						"path": { "type": "string" }
+					}
+				},
+				{
+					"type": "object",
+					"required": ["op", "path", "type"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["coerce"] },
+						"path": { "type": "string" },
+						"type": {
+							"type": "string",
+							"enum": ["string", "number", "boolean", "array", "object"]
+						}
+					}
+				}
+			]
+		}
+	}
+}

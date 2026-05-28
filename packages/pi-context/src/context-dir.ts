@@ -256,3 +256,15 @@ export function agentsDir(cwd: string): string {
 export function contextTemplatesDir(cwd: string): string {
 	return path.join(resolveContextDir(cwd), "templates");
 }
+
+/**
+ * `<resolveContextDir(cwd)>/migrations.json` — substrate-managed file holding
+ * operator-authored schema version migration declarations. Singleton file per
+ * cwd (no per-name guard); see `migrations-store.ts` for read / write helpers
+ * and `migration-registry-loader.ts` for the loader that converts declarations
+ * into a populated MigrationRegistry. Mirrors the relationsPath / configPath
+ * shape: pointer-resolved, substrate-dir-relative, no fallback default.
+ */
+export function migrationsPath(cwd: string): string {
+	return path.join(resolveContextDir(cwd), "migrations.json");
+}

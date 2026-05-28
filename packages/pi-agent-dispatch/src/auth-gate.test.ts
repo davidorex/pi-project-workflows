@@ -56,15 +56,17 @@ function mockEvent(toolName: string, input: Record<string, unknown> = {}): ToolC
 }
 
 describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
-	it("contains all 14 canonical Bucket-2 tool names (FGAP-134 plan files-table)", () => {
-		// Aim: pin the list verbatim against the FGAP-134 plan so future
-		// substrate evolutions surface as test failures requiring an
-		// explicit canon update rather than a silent membership drift.
+	it("contains all 15 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 extension)", () => {
+		// Aim: pin the list verbatim against the FGAP-134 plan + the
+		// FGAP-136 write-schema-migration extension so future substrate
+		// evolutions surface as test failures requiring an explicit canon
+		// update rather than a silent membership drift.
 		const expected = new Set<string>([
 			"author-agent-spec",
 			"author-tool-grant",
 			"commit-attested",
 			"write-schema",
+			"write-schema-migration",
 			"amend-config",
 			"write-block",
 			"rename-canonical-id",

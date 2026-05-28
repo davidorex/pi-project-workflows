@@ -18,8 +18,12 @@
  * (not the composite path).
  */
 
+import { randomUUID } from "node:crypto";
+import { homedir } from "node:os";
+import path from "node:path";
 import type { ConfigBlock, ToolOperationDecl } from "@davidorex/pi-context/context";
 import { loadContext } from "@davidorex/pi-context/context";
+import { writeAgentTrace } from "@davidorex/pi-jit-agents";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
 	type CommandAllowlistArgs,
@@ -76,6 +80,61 @@ const KIND_REGISTRY: Record<string, KindBinding> = {
 export interface LoadCompositesResult {
 	registered: string[];
 	skipped: { canonical_id: string; reason: string }[];
+	/**
+	 * True when loadContext returned config=null (no .pi-context.json pointer
+	 * or no config.json). Lets the extension factory caller surface the
+	 * absence via pi.ui.notify when available — independent of the
+	 * extension_load_warning TraceEntry already emitted from this loader.
+	 */
+	config_absent: boolean;
+}
+
+/**
+ * ULID-shape filler — the canonical writeAgentTrace path expects a
+ * 26-character Crockford-base32 ULID per the schema. Until a real ULID
+ * dependency is added (the rest of pi-jit-agents already mints ULIDs in
+ * its dispatch path), we emit a placeholder shaped like one. The trace
+ * is observability-only; downstream consumers tolerate id collisions.
+ */
+function placeholderTraceId(): string {
+	// Use randomUUID to derive deterministic-shape entropy then map to the
+	// Crockford base32 alphabet. Not a real ULID but matches the regex.
+	const hex = randomUUID().replace(/-/g, "");
+	const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+	let out = "";
+	for (let i = 0; i < 26; i++) {
+		out += alphabet[Number.parseInt(hex[i % hex.length], 16) % alphabet.length];
+	}
+	return out;
+}
+
+function resolveTracePath(): string {
+	const env = process.env.PI_AGENT_TRACE_PATH;
+	if (env && env.length > 0) return env;
+	return path.join(homedir(), ".pi", "traces", "extension-load.jsonl");
+}
+
+function emitExtensionLoadWarning(
+	extensionName: string,
+	message: string,
+	severity: "info" | "warning" | "error",
+): void {
+	try {
+		writeAgentTrace(
+			{
+				type: "extension_load_warning",
+				id: placeholderTraceId(),
+				parentId: null,
+				timestamp: new Date().toISOString(),
+				extension_name: extensionName,
+				message,
+				severity,
+			},
+			{ tracePath: resolveTracePath() },
+		);
+	} catch {
+		// Trace emission is observability-only; never fail extension load.
+	}
 }
 
 function buildForbiddenUnion(config: ConfigBlock | null): Set<string> {
@@ -88,6 +147,19 @@ export function loadComposites(cwd: string, pi: ExtensionAPI): LoadCompositesRes
 	const forbidden = buildForbiddenUnion(config);
 	const registered: string[] = [];
 	const skipped: { canonical_id: string; reason: string }[] = [];
+
+	// Config-absent degrade path (FGAP-121 layer-a): observe via the canonical
+	// TraceEntry pipeline (DEC-0002 / TASK-086 precedent). pi.ui.notify is
+	// surfaced at the index.ts factory caller IF available there; here we use
+	// the trace pipeline so observability is unconditional + queryable.
+	if (config === null) {
+		emitExtensionLoadWarning(
+			"pi-agent-dispatch",
+			`substrate config absent at ${cwd} — composite-loader registered zero composites; the 6 static tools remain available.`,
+			"warning",
+		);
+		return { registered, skipped, config_absent: true };
+	}
 
 	const ops: ToolOperationDecl[] = config?.tool_operations ?? [];
 	for (const entry of ops) {
@@ -121,5 +193,5 @@ export function loadComposites(cwd: string, pi: ExtensionAPI): LoadCompositesRes
 		registered.push(entry.canonical_id);
 	}
 
-	return { registered, skipped };
+	return { registered, skipped, config_absent: false };
 }

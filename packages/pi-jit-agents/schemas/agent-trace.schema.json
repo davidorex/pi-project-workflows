@@ -8,7 +8,8 @@
 		{ "$ref": "#/definitions/classify_response" },
 		{ "$ref": "#/definitions/context_collection" },
 		{ "$ref": "#/definitions/verdict_decision" },
-		{ "$ref": "#/definitions/trace_end" }
+		{ "$ref": "#/definitions/trace_end" },
+		{ "$ref": "#/definitions/extension_load_warning" }
 	],
 	"definitions": {
 		"traceId": {
@@ -185,6 +186,33 @@
 				"timestamp": { "$ref": "#/definitions/isoTimestamp" },
 				"totalDurationMs": { "type": "number" },
 				"verdict": { "$ref": "#/definitions/verdictResult" }
+			}
+		},
+		"extension_load_warning": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["type", "id", "parentId", "timestamp", "extension_name", "message", "severity"],
+			"properties": {
+				"type": { "const": "extension_load_warning" },
+				"id": { "$ref": "#/definitions/traceId" },
+				"parentId": {
+					"type": ["null", "string"],
+					"description": "Extension-load events are typically root events (no parent classify session); null when emitted at extension factory boundary. May reference a parent trace when emitted from within a dispatched agent's lifecycle."
+				},
+				"timestamp": { "$ref": "#/definitions/isoTimestamp" },
+				"extension_name": {
+					"type": "string",
+					"description": "Name of the Pi extension emitting the warning (e.g., pi-agent-dispatch)."
+				},
+				"message": {
+					"type": "string",
+					"description": "Human-readable description of the observed condition (e.g., 'substrate config absent — composites empty')."
+				},
+				"severity": {
+					"type": "string",
+					"enum": ["info", "warning", "error"],
+					"description": "Severity classification per the canonical pi.ui.notify levels."
+				}
 			}
 		}
 	}

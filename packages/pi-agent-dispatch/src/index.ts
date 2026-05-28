@@ -49,7 +49,17 @@ const extension = (pi: ExtensionAPI) => {
 	// (FEAT-010). loadComposites throws if any entry hits the L1∪L5
 	// forbidden union — refuse to start rather than register a parallel
 	// ungated path.
-	loadComposites(process.cwd(), pi);
+	//
+	// Observability of the config-absent degrade path (FGAP-121 layer-a):
+	// pi.ui.notify is on ExtensionContext (tool-execution time), NOT on
+	// ExtensionAPI (factory time). At factory load the only canonical
+	// observability channel is the TraceEntry pipeline, which
+	// loadComposites already writes via writeAgentTrace per DEC-0002 /
+	// TASK-086 precedent. The returned config_absent flag is kept on the
+	// surface for any future factory-time UI hook upstream may add; today
+	// it is functionally informational + queryable via the trace JSONL.
+	const result = loadComposites(process.cwd(), pi);
+	void result;
 };
 
 export default extension;

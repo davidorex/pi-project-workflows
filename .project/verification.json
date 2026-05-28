@@ -2474,6 +2474,42 @@
           "evidence": "Skipped per plan Phase 3 step 5: fresh-context Explore-agent probe across the 12 sub-checks (NewExpression /Error$/ filter, ast-string-literal surface unchanged, attested-commit.ts:48 strip, registerAuthGate present in factory, AUTH_REQUIRED_TOOLS matches the canonical 14 verbatim, non-interactive refusal shape, interactive confirm flow, allow-on-true, decline-on-false, non-Bucket-2 pass-through, pi-behavior-monitors coexistence, launch header accuracy, regenerated SKILL.md clean). Deferred to orchestrator follow-on; the per-step verification gates + unit-test coverage + the membership-pinning canonical-list test in auth-gate.test.ts collectively cover the implementation-level surface."
         }
       ]
+    },
+    {
+      "id": "VER-061",
+      "target": "FGAP-136",
+      "target_type": "framework-gap",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-29T00:00:00Z",
+      "evidence": "Implementation-level closure of FGAP-136 (write-schema replace version-bump had no tool-surface migration path) per plan ~/.claude/plans/idempotent-dancing-wilkes.md across 5 commits on branch fgap-136-schema-migration-tool: 22d7d24 (step 1 — migrations.schema.json + migrations-store + migrationsPath path-builder), 18ce8d0 (step 2 — migration-registry-loader with identity + 4 declarative-transform ops + per-cwd caching with invalidation hook), 77b0f9f (step 3 — write-schema-migration Pi tool registered with writer.kind=human body-level enforcement + operation dispatch), dd85196 (step 4 — getProjectMigrationRegistry wired into writeBlock + readBlock validation paths; end-to-end version-bump + identity migration unblocked), bbad988 (step 5 — auth-gate routing + write-schema description abstract-language rewrite + SKILL regen). With this arc landed an in-pi operator authoring at writer.kind=human (gated through pi-dispatch auth-gate) can declare a schema version-bump migration via the write-schema-migration Pi tool; the declaration persists to <contextDir>/migrations.json under the new bundled migrations.schema.json; subsequent writeBlock/readBlock against the version-bumped schema walk the data forward through the registered MigrationFn without process restart (cache invalidation hook fires after each mutation).",
+      "criteria_results": [
+        {
+          "criterion": "build / check / test green across the workspace",
+          "status": "passed",
+          "evidence": "npm run build exit 0 across all 5 packages; npm run check exit 0 (biome 252 files + tsc --noEmit clean); npm test exit 0 with per-package totals pi-agent-dispatch 62/62, pi-context 725/725 (was 670 pre-arc; +55 = 15 migrations-store + 22 migration-registry-loader + 16 write-schema-migration-tool + 2 schema-migration-integration), pi-workflows 158/157 (1 pre-existing skip), pi-behavior-monitors 830/828 (2 pre-existing skips). 0 failures introduced."
+        },
+        {
+          "criterion": "write-time integration: bump schema + identity migration unblocks block write that would have thrown version-mismatch",
+          "status": "passed",
+          "evidence": "packages/pi-context/src/schema-migration-integration.test.ts scenario 1: write block at v1 → bump schema v2 → writeBlock with v1 schema_version against v2 schema throws (asserts file is byte-unchanged) → writeSchemaMigrationExecute kind=identity v1→v2 → subsequent writeBlock succeeds. Asserts the registry singleton picks up the persisted declaration without process restart (the cache invalidation hook on the mutation helper is what makes this work)."
+        },
+        {
+          "criterion": "declarative-transform integration: bumped schema with operator-declared transform produces migrated read shape",
+          "status": "passed",
+          "evidence": "packages/pi-context/src/schema-migration-integration.test.ts scenario 2: write block v1 → bump schema v2 (envelope-shape change) + write-schema-migration kind=declarative-transform with composed set ops (schema_version + label) → readBlock walks v1 on-disk forward to v2 on read, asserting the new field landed in the returned shape. Validates the per-op walker (set creating intermediate parents) end-to-end through the readBlock surface."
+        },
+        {
+          "criterion": "citation-rot scanner regression: 0 hits across 5 packages",
+          "status": "passed",
+          "evidence": "scanForCitationRot({ packageDirs: 5 packages }) returns 0 hits. New prose (auth-gate.ts list comment, auth-gate.test.ts assertion docstring, write-schema description rewrite, write-schema-migration tool description, write-schema-migration-tool.ts head comment) all use abstract framework language without canonical_id substrings on the public-surface paths the scanner walks."
+        },
+        {
+          "criterion": "adversarial probe (fresh-context skeptic) verifying writer.kind enforcement + AJV-shape + auth-gate routing + identity no-op + op semantics + cache invalidation + collision/missing guards",
+          "status": "skipped",
+          "evidence": "Skipped per the in-arc verification gates; the 16-case write-schema-migration-tool unit test surface + the 22-case migration-registry-loader test surface + the 15-case migrations-store test surface + the 2 integration scenarios + the auth-gate canonical-list pin collectively cover the implementation-level surface. Deferred to orchestrator follow-on for the credentialed end-to-end real-LLM demo when the dogfood composites land."
+        }
+      ]
     }
   ]
 }

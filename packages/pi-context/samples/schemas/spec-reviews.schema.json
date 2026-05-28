@@ -57,6 +57,6 @@
         { "from": "complete", "to": "in-progress", "required_authority": "user", "note": "reopen for follow-up review" }
       ]
     },
-    "note": "AJV draft-07 cannot enforce transition validity; this block is metadata for future framework-level state-machine validation (FGAP-005)."
+    "note": "AJV draft-07 cannot enforce transition validity; this block is metadata reserved for future framework-level state-machine validation."
   }
 }

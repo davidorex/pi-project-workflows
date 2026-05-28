@@ -3,7 +3,7 @@
   "$id": "pi-context://schemas/phase",
   "version": "2.0.0",
   "title": "Phases",
-  "description": "Array-block of planned implementation phases (DEC-0028). Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
+  "description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
   "type": "object",
   "required": [
     "phases"

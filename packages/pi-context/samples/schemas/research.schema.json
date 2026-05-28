@@ -83,7 +83,7 @@
           "stale_conditions": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "Explicit list of conditions under which the research is no longer authoritative. The future staleness engine (FGAP-007) will read this to transition status from complete to stale automatically."
+            "description": "Explicit list of conditions under which the research is no longer authoritative. A future staleness engine will read this to transition status from complete to stale automatically."
           },
           "citations": {
             "type": "array",
@@ -123,12 +123,12 @@
     "transitions": [
       { "from": "planned", "to": "in-progress", "required_authority": "any" },
       { "from": "in-progress", "to": "complete", "required_authority": "any", "note": "Agent may mark own research complete when findings_summary and citations are finalized." },
-      { "from": "complete", "to": "stale", "required_authority": "any", "note": "Any party marks stale when a stale_condition fires. Future staleness engine (FGAP-007) fires this automatically." },
+      { "from": "complete", "to": "stale", "required_authority": "any", "note": "Any party marks stale when a stale_condition fires. A future staleness engine fires this automatically." },
       { "from": "stale", "to": "in-progress", "required_authority": "user", "note": "Reopening for revision; requires user authority if the research is currently cited by an enacted decision because revising may invalidate the decision's grounding." },
       { "from": "complete", "to": "superseded", "required_authority": "any", "precondition": "superseding entry exists and points to this one via a research_supersedes_research edge" },
       { "from": "in-progress", "to": "revised", "required_authority": "any" },
       { "from": "revised", "to": "complete", "required_authority": "any" }
     ],
-    "note": "AJV draft-07 cannot enforce transition validity or required_authority; this block is metadata for future framework-level state-machine validation (FGAP-005) and authorship attestation (FGAP-004). The staleness engine (FGAP-007) reads stale_conditions and fires the complete→stale transition automatically when conditions are met."
+    "note": "AJV draft-07 cannot enforce transition validity or required_authority; this block is metadata reserved for future framework-level state-machine validation and authorship attestation. A future staleness engine reads stale_conditions and fires the complete→stale transition automatically when conditions are met."
   }
 }

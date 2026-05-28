@@ -5081,6 +5081,46 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-136",
+      "title": "write-schema 'replace' that bumps version has no tool-surface migration path — code-level MigrationFn registration via packages/pi-context/src/schema-migrations.ts is the only mechanism; in-pi LLM customizing schemas mid-project for a downstream substrate cannot evolve a schema's `version` field without out-of-band code edits + recompile + redeploy, defeating the in-pi customization promise the 11-config-registry surface otherwise affords",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L3",
+      "description": "Surfaced 2026-05-29 by an in-pi LLM working in the clock-menu-app substrate (per `/Users/david/Projects/Pi-Context-May 29 2026 LLM Perspective.md`, the section enumerating 11 customization surfaces). Verified by direct read of `packages/pi-context/src/schema-write.ts:139-144` (writeSchemaChecked docstring) + the `write-schema` tool description at `packages/pi-context/src/index.ts` (caveat verbatim: 'a replace that changes the schema's version does NOT migrate existing block items — read-time validateBlockWithMigration throws a version mismatch until a code-level MigrationFn is registered (no tool surface for that)'). The MigrationFn registry mechanism at `packages/pi-context/src/schema-migrations.ts` exposes `MigrationFn = (data: unknown) => unknown` + `MigrationRegistry { register, resolve }` populated by import-time `register()` calls — pure in-memory; no on-disk persistence; no tool surface. Asymmetric capability surface: `create` (no prior version) works cleanly via tools; `replace` works for non-version-bumping edits (field-shape tweaks that keep the same `version` value); but the moment a schema needs a version bump (the canonical signal for a breaking change requiring data transformation), the in-pi agent is stuck — the only path forward is out-of-band: edit MigrationFn TypeScript in pi-context source + npm run build + redeploy. This defeats the in-pi customization promise that the LLM Perspective doc enumerates across 11 registries. Particularly meaningful for downstream projects (like clock-menu-app) whose domain entities don't match the shipped 16 block kinds — schema iteration is the natural workflow as the operator refines the substrate vocabulary; version bumps will happen.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/schema-write.ts",
+          "lines": "139-144",
+          "reference": "writeSchemaChecked docstring: 'forward when a `replace` changes the schema's `version`. A breaking ... throws a version mismatch until a code-level MigrationFn is registered via [the registry]'"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "write-schema tool description: 'CAVEAT: a replace that changes the schema's version does NOT migrate existing block items ... no tool surface for that'"
+        },
+        {
+          "file": "packages/pi-context/src/schema-migrations.ts",
+          "lines": "45, 66, 76",
+          "reference": "MigrationFn = (data: unknown) => unknown; MigrationRegistry { register, resolve }; createRegistry() — pure in-memory; no persistence; populated by import-time `register()` calls in source files"
+        },
+        {
+          "file": "/Users/david/Projects/Pi-Context-May 29 2026 LLM Perspective.md",
+          "lines": "37-38, 149",
+          "reference": "in-pi LLM observation 2026-05-29: 'schema `replace` that changes the version number requires a code-level MigrationFn — no tool surface for migration. Plan schemas carefully or version-lock early.' + 'The limitation is not the harness — it's that schema replace with version bumps has no tool-surface migration path. But create from scratch (no prior version) has no such constraint.'"
+        }
+      ],
+      "impact": "Downstream projects adopting pi-context cannot iterate their custom schemas through breaking-change version bumps using only the in-pi tool surface. The natural workflow — author schema v1.0.0 → realize a field needs a different shape → bump to v2.0.0 → transform existing items — requires either (a) extending pi-context's TypeScript source out-of-band and rebuilding (which the downstream project may not own), or (b) avoiding version bumps entirely and accreting non-breaking edits (which lies about backwards-incompatibility and breaks the version field's semantic contract), or (c) pretending versions don't matter (which defeats validateBlockWithMigration's purpose). The 11-registry customization surface enumerated in the LLM Perspective doc is incomplete without this; the gap is most acute exactly when the substrate is most malleable (early project customization with empty or sparse block data).",
+      "canonical_vocabulary": "MigrationFn registration; substrate-persisted migration spec; tool-surface schema-evolution; version-bump with operator-asserted data shape (no-op migration); declarative transform DSL for cross-version data shape",
+      "proposed_resolution": "Primary path (narrow + implementable now): add a `write-schema-migration` Pi tool registered in pi-context that accepts `schemaName + fromVersion + toVersion + kind: \"identity\" | \"declarative-transform\"` parameters. For `kind: \"identity\"`: persist a migration declaration to `<contextDir>/migrations.json` (new substrate-managed file with its own schema) recording an identity (no-op) MigrationFn — the operator explicitly asserts no data transformation needed, only the version field updates. The migration registry initialization path at packages/pi-context/src/schema-migrations.ts is extended to read `<contextDir>/migrations.json` at registry init + register the persisted entries alongside any compile-time-registered MigrationFns. This unblocks the common case (in-progress schema iteration with empty or compatible existing data) entirely. For `kind: \"declarative-transform\"`: accept a transform spec (JSONPath-based field-rename / default-insert / field-delete operations as a structured DSL) — handler builds the corresponding MigrationFn at registry-init time. Same persistence file. Both kinds are writer.kind=human enforced (same DEC-0047 governance precedent as author-agent-spec / author-tool-grant — schema migrations are capability-widening for substrate semantics). Also passes through FGAP-134 auth-gate (add to AUTH_REQUIRED_TOOLS) since migration registration is a sensitive operation. Re-verifies write-schema tool description caveat text post-resolution (substrate-tool-surface now COVERS the migration registration; caveat updated). Future iteration (separate FGAP if surfaces): richer transform DSL (computed defaults, type coercion, conditional logic) — initial scope is identity + simple structural transforms.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0047"
+      ],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
     }
   ]
 }

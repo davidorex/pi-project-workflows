@@ -1,6 +1,6 @@
 # @davidorex/pi-project-workflows
 
-Convenience meta-package that re-exports FOUR [Pi](https://github.com/badlogic/pi-mono) extensions plus the shared pi-jit-agents library. The four: pi-context (substrate), pi-workflows (orchestration), pi-behavior-monitors (classification/steering), pi-agent-dispatch (in-pi agent-as-tool dispatch + capability composition + the FEAT-006 north-star loop). pi-jit-agents is a library consumed directly by pi-workflows and pi-agent-dispatch per narrowed DEC-0044 (no separate extension registration).
+Convenience meta-package that re-exports FOUR [Pi](https://github.com/badlogic/pi-mono) extensions plus the shared pi-jit-agents library. The four: pi-context (substrate), pi-workflows (orchestration), pi-behavior-monitors (classification/steering), pi-agent-dispatch (in-pi agent-as-tool dispatch + capability composition + the bounded north-star work-order loop). pi-jit-agents is a library consumed directly by pi-workflows and pi-agent-dispatch (no separate extension registration).
 
 ## Install
 
@@ -13,7 +13,7 @@ This installs the five constituent packages (four Pi extensions plus the shared 
 - **[@davidorex/pi-jit-agents](https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-jit-agents)** — agent spec compilation and in-process dispatch runtime (library, not a Pi extension)
 - **[@davidorex/pi-workflows](https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-workflows)** — workflow orchestration (YAML specs, DAG execution, checkpoint/resume)
 - **[@davidorex/pi-behavior-monitors](https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-behavior-monitors)** — behavior monitors (autonomous watchdogs, pattern classification, steering corrections)
-- **[@davidorex/pi-agent-dispatch](https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-agent-dispatch)** — in-pi agent-as-tool dispatch + capability composition + FEAT-006 work-order loop (call-agent / author-agent-spec / run-real-checks / commit-attested / author-tool-grant / run-work-order-loop; dynamic composite-loader)
+- **[@davidorex/pi-agent-dispatch](https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-agent-dispatch)** — in-pi agent-as-tool dispatch + capability composition + bounded work-order loop (call-agent / author-agent-spec / run-real-checks / commit-attested / author-tool-grant / run-work-order-loop; dynamic composite-loader)
 
 ## Getting Started
 

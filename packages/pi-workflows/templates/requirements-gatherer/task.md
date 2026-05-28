@@ -45,7 +45,7 @@ Derive requirements from the project identity above. Produce a comprehensive but
 
 ### For each requirement, provide:
 
-1. **id** — unique, formatted as REQ-001, REQ-002, etc.
+1. **id** — unique, formatted as REQ-NNN (zero-padded three-digit suffix)
 2. **description** — clear statement of what is required
 3. **type** — one of: `functional`, `non-functional`, `constraint`, `integration`
 4. **status** — set to `"proposed"` for all
@@ -76,7 +76,7 @@ Produce a single JSON object with a `requirements` array:
 {
   "requirements": [
     {
-      "id": "REQ-001",
+      "id": "REQ-NNN",
       "description": "string",
       "type": "functional",
       "status": "proposed",

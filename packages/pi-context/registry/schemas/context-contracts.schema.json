@@ -3,7 +3,7 @@
 	"$id": "pi-context://schemas/context-contracts",
 	"version": "1.0.0",
 	"title": "Context contracts",
-	"description": "Per-work-unit-kind context contracts declaring which relation_types compose the execution bundle (DEC-0017 surface; FGAP-030 closure). Each contract is keyed by a plain-string unit_kind type tag (carve-out from DEC-0013's edges-only constraint — unit_kind is a type marker, not a reference to a substrate item).",
+	"description": "Per-work-unit-kind context contracts declaring which relation_types compose the execution bundle. Each contract is keyed by a plain-string unit_kind type tag (carve-out from the edges-only constraint — unit_kind is a type marker, not a reference to a substrate item).",
 	"type": "object",
 	"required": [
 		"contracts"
@@ -29,7 +29,7 @@
 					},
 					"unit_kind": {
 						"type": "string",
-						"description": "Type tag for the unit kind this contract composes context for (e.g. 'task', 'decision', 'verification'). Plain-string keyed lookup — NOT a substrate-block-item reference (DEC-0013 carve-out for type tags)."
+						"description": "Type tag for the unit kind this contract composes context for (e.g. 'task', 'decision', 'verification'). Plain-string keyed lookup — NOT a substrate-block-item reference."
 					},
 					"bundle_relation_types": {
 						"type": "array",
@@ -59,7 +59,7 @@
 								},
 								"applicability_predicate": {
 									"type": "string",
-									"description": "Optional FGAP-010 territory; reserved for relevance-scoping language."
+									"description": "Optional; reserved for relevance-scoping language."
 								}
 							}
 						}

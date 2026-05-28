@@ -3,7 +3,7 @@
 	"$id": "pi-context://schemas/story",
 	"version": "1.0.0",
 	"title": "Stories",
-	"description": "Top-level user-story / story array-block (FGAP-064 elevation). Stories are a work-altitude between feature and task: a feature decomposes into stories, a story decomposes into tasks. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item, story→milestone/phase/project-goal) live in relations.json closure-table edges per DEC-0013 — NOT as inline arrays on the story. Sub-shape is structural (id/title/status/description/acceptance_criteria); the Agile user-story form (role/want/benefit) is a future optional enrichment, not imposed (DEC-deferred per FGAP-064 — no role/want/benefit present in current data, none fabricated).",
+	"description": "Top-level user-story / story array-block. Stories are a work-altitude between feature and task: a feature decomposes into stories, a story decomposes into tasks. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item, story→milestone/phase/project-goal) live in relations.json closure-table edges — NOT as inline arrays on the story. Sub-shape is structural (id/title/status/description/acceptance_criteria); the Agile user-story form (role/want/benefit) is a future optional enrichment, not imposed (DEC-deferred — no role/want/benefit present in current data, none fabricated).",
 	"type": "object",
 	"required": ["stories"],
 	"additionalProperties": false,
@@ -24,7 +24,7 @@
 					"status": {
 						"type": "string",
 						"enum": ["proposed", "ready", "in-progress", "in-review", "complete", "blocked"],
-						"description": "Story lifecycle. Intentionally divergent from pi-context://schemas/status; reconciliation tracked in FGAP-021."
+						"description": "Story lifecycle. Intentionally divergent from pi-context://schemas/status; reconciliation."
 					},
 					"description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
 					"acceptance_criteria": {

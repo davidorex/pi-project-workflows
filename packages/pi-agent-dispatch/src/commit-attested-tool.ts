@@ -14,7 +14,7 @@ export const commitAttestedTool = {
 	name: "commit-attested",
 	label: "Commit Attested",
 	description:
-		"Stage declared files + invoke git commit with DispatchContext writer.kind=agent attestation footer (DEC-0047). Husky pre-commit runs as backup gate; never bypass (--no-verify forbidden per feedback_no_destructive_git_ops). The primary gate is run-real-checks (TASK-090) called BEFORE this tool.",
+		"Stage declared files + invoke git commit with DispatchContext writer.kind=agent attestation footer. Husky pre-commit runs as backup gate; never bypass (--no-verify forbidden per feedback_no_destructive_git_ops). The primary gate is run-real-checks called BEFORE this tool.",
 	promptSnippet: "Commit agent-authored work-product files with attestation footer.",
 	parameters: Type.Object({
 		files: Type.Array(Type.String(), { description: "Files to stage + commit. Empty array refused." }),
@@ -22,7 +22,7 @@ export const commitAttestedTool = {
 			description: "Commit message body (the attestation footer is appended automatically).",
 		}),
 		agent_id: Type.String({
-			description: "Agent id for writer.kind=agent attestation per DEC-0047 (e.g. 'spec-implementer-001').",
+			description: "Agent id for writer.kind=agent attestation (e.g. 'spec-implementer-001').",
 		}),
 		work_order_id: Type.Optional(Type.String({ description: "Optional work-order id for the attestation footer." })),
 	}),

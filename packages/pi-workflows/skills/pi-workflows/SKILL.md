@@ -80,7 +80,7 @@ Render a project block item by ID through its registered per-item macro. Resolve
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | string | yes | Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 |
+| `id` | string | yes | Kind-prefixed ID, e.g., DEC-NNNN / FEAT-NNN |
 | `depth` | number | no | 0 = bare-ID refs (default), 1 = inline direct cross-references, 2+ = recurse further |
 </tool>
 

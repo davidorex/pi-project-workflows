@@ -21,18 +21,18 @@
 					"status": {
 						"type": "string",
 						"enum": ["open", "resolved", "deferred"],
-						"description": "Issue lifecycle. Intentionally divergent from pi-context://schemas/status (which uses workflow-shaped todo/in_progress/blocked/complete/unknown); issues use issue-tracker semantics (open/resolved/deferred). Reconciliation tracked in FGAP-021."
+						"description": "Issue lifecycle. Intentionally divergent from pi-context://schemas/status (which uses workflow-shaped todo/in_progress/blocked/complete/unknown); issues use issue-tracker semantics (open/resolved/deferred). Reconciliation."
 					},
 					"category": { "type": "string", "enum": ["primitive", "issue", "cleanup", "capability", "composition"] },
 					"priority": {
 						"type": "string",
 						"enum": ["low", "medium", "high", "critical"],
-						"description": "Issue priority. Intentionally divergent from pi-context://schemas/priority (which uses p- prefix for workflow-vocabulary fragility classification). Reconciliation tracked in FGAP-021."
+						"description": "Issue priority. Intentionally divergent from pi-context://schemas/priority (which uses p- prefix for workflow-vocabulary fragility classification). Reconciliation."
 					},
 					"package": { "type": "string", "description": "Which monorepo package this issue touches (e.g. pi-workflows, pi-context, pi-behavior-monitors)" },
 					"source": {
 						"$ref": "pi-context://schemas/source",
-						"description": "How this issue was created. Vocabulary $ref'd from pi-context://schemas/source (FGAP-017 closure)."
+						"description": "How this issue was created. Vocabulary $ref'd from pi-context://schemas/source."
 					},
 					"resolved_by": { "type": "string", "description": "Commit message or reference if resolved" }
 				}

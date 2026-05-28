@@ -38,7 +38,7 @@ export const callAgentTool = {
 	name: "call-agent",
 	label: "Call Agent",
 	description:
-		"Dispatch a privileged JIT-agent as a typed tool call (FEAT-004 / narrowed DEC-0044). Loads the named .agent.yaml, compiles with input, composes the tool grant (intersection of caller's parentGrant and the agent's requestedGrant per FEAT-005), and executes via pi-jit-agents executeAgent (TASK-081 clamp enforces child ⊆ parent at dispatch boundary).",
+		"Dispatch a privileged JIT-agent as a typed tool call. Loads the named .agent.yaml, compiles with input, composes the tool grant (intersection of caller's parentGrant and the agent's requestedGrant), and executes via pi-jit-agents executeAgent (clamp enforces child ⊆ parent at dispatch boundary).",
 	promptSnippet: "Dispatch a typed sub-agent with scoped capability grant.",
 	parameters: Type.Object({
 		spec_name: Type.String({
@@ -46,7 +46,7 @@ export const callAgentTool = {
 		}),
 		input: Type.Unknown({ description: "Typed input passed to the agent's compileAgent context." }),
 		parent_grant: Type.Optional(
-			Type.Array(Type.String(), { description: "The caller's own tool grant. Default-empty per DEC-0047." }),
+			Type.Array(Type.String(), { description: "The caller's own tool grant. Default-empty." }),
 		),
 		requested_grant: Type.Optional(
 			Type.Array(Type.String(), {

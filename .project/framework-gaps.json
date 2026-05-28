@@ -4893,7 +4893,7 @@
     {
       "id": "FGAP-131",
       "title": "Sibling-package citation rot un-audited and ungated — pi-workflows + pi-behavior-monitors + pi-agent-dispatch + pi-jit-agents shipped artifacts (skill-narrative.md / SKILL.md / bundled agents / schemas / docs / src description strings) carry unknown count of pi-project-workflows substrate canonical_id citations that downstream consumers cannot resolve; FGAP-130 closure explicitly scoped to pi-context only",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "all-extension-packages",
       "layer": "L1",
@@ -4918,17 +4918,19 @@
       ],
       "impact": "FGAP-130's resolution is partial: in-pi agent launched against any target dir that loads any extension other than pi-context can still cite unresolvable canonical_ids sourced from sibling-package shipped surfaces. The FGAP-130 regression test gates only pi-context; the same regex pattern violated in a sibling package's shipped artifact escapes detection. Downstream consumers experience the same citation-rot failure mode FGAP-130 catalogued but via a different package. The 'paramount canonical pipeline' completion-claim from FGAP-130 has a known-gap; closing FGAP-131 closes the actual user-facing problem completely.",
       "canonical_vocabulary": "framework-canon vs project-substrate separation; portable-canonical-artifacts; cross-package regression-gate uniformity",
-      "proposed_resolution": "Audit every shipped artifact in packages/pi-workflows + packages/pi-behavior-monitors + packages/pi-agent-dispatch + packages/pi-jit-agents for the canonical_id regex pattern from FGAP-130: /\\b(FGAP-\\d{3}|DEC-\\d{4}|FEAT-\\d{3}|TASK-\\d{3}|VER-\\d{3}|REVIEW-\\d+|RAT-\\d+|CTX-\\d+|WO-\\d+|STORY-\\d+|PLAN-\\d+|REQ-\\d+|R-\\d+)\\b/. For each hit, apply the same Pattern A/B/C/D rewrite template from the FGAP-130 plan. Then extend the regression test (or create per-package equivalents per the package's test runner) to cover all 4 sibling packages' shipped surfaces with the same gate. The gate MUST run on every commit (husky pre-commit). On completion: one merged commit per package OR one umbrella merge covering all 4; status closure attests across all packages. Closes the actual downstream-consumer-facing problem completely, not just the pi-context slice.",
+      "proposed_resolution": "CLOSED: implemented via FGAP-131/132 arc on branch fgap-131-132-rigorous-citation-gate (10 commits). Rigorous AST + JSON + markdown/YAML scanner introduced in packages/pi-context/src/citation-rot-scanner.ts replaced the FGAP-130 naive line-by-line scan. All 5 sibling packages stripped of operator-facing canonical_id citations (pi-workflows + pi-behavior-monitors + pi-agent-dispatch + pi-jit-agents + pi-project-workflows META). SKILL.md regen via npm run skills produced clean outputs. Single workspace-wide regression gate in samples-catalog.test.ts asserts 0 hits across all packages — runs in husky pre-commit + CI. Attested by VER-059. Original proposed_resolution preserved below for archaeology: Audit every shipped artifact in packages/pi-workflows + packages/pi-behavior-monitors + packages/pi-agent-dispatch + packages/pi-jit-agents for the canonical_id regex pattern from FGAP-130 (the original text — full audit + Pattern A/B/C/D rewrite + per-package gate).",
       "related_features": [],
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-28"
     },
     {
       "id": "FGAP-132",
       "title": "FGAP-130 citation-rot regression test is naive-text-scan-based with heuristic exclusions deferring rigor — mandate-007 violation in plan text 'is sufficient — pick complexity later if false-positives surface'; AST-based traversal foreclosing both false-positive and false-negative classes never built",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "layer": "L2",
@@ -4945,12 +4947,14 @@
       ],
       "impact": "Two failure-mode classes unresolved by the naive gate. False-positive class: future legitimate canonical-id-vocabulary changes (e.g. shipping a registry of canonical_id form examples; expanding ID-format-illustration coverage) will trip the test and force either test-disablement OR ad-hoc exclusion accretion — both negative outcomes. False-negative class: citations that escape via multi-line strings or unusual formatting silently land in shipped artifacts post-FGAP-130 closure without the gate catching them; the gate's apparent green becomes a false-confidence signal. Both classes mean the FGAP-130 closure is not as robust as the VER-058 attestation implies. Combined with FGAP-131 (sibling-package scope gap), the overall citation-rot-foreclosure story is weaker than the merge message claims.",
       "canonical_vocabulary": "AST-based string-literal extraction; rigorous-gate vs heuristic-gate; mandate-007 deferred-fragility-foreclosure",
-      "proposed_resolution": "Replace the naive line-by-line text scan with AST-based traversal using the typescript compiler API: (1) parse each candidate .ts file via ts.createSourceFile; (2) walk the AST identifying string-literal nodes that are arguments to specific call patterns (pi.registerTool description fields, parameter description fields per Type.String + Type.Object property descriptions); (3) apply canonical_id regex ONLY to those identified strings; (4) ignore all comment / JSDoc / non-description string literals. Replace the recursive JSON walk's heuristic exclusion with explicit JSONPath carve-outs declared as a known list (e.g. exclude $..id at item-array elements; exclude $..pattern at schema-property descriptors that are regex source). Build into the same samples-catalog.test.ts (or a new co-located citation-rot.test.ts) so it remains pi-context-package-scoped at landing time; extending to siblings is FGAP-131's territory. After replacement: re-run the synthetic-injection test from the FGAP-130 adversarial probe to confirm the gate still trips on every real-violation class while ceasing to false-positive on the legitimate-edge-cases enumerated above. The mandate-007-compliant outcome: rigor foreclosed at landing time, not deferred.",
+      "proposed_resolution": "CLOSED: implemented via FGAP-131/132 arc on branch fgap-131-132-rigorous-citation-gate (10 commits). The naive line-by-line CITATION_RE scan from FGAP-130 (commit 4fd28a6) has been deleted and replaced by packages/pi-context/src/citation-rot-scanner.ts — a rigorous AST + JSON + markdown/YAML body scanner. The six fragility classes the FGAP-132 body enumerated are each foreclosed: (1) multi-line strings — full-text scan with newline-counting line attribution catches multi-line straddle; (2) JSDoc / comment-exclusion ambiguity — TypeScript compiler API SyntaxKind discrimination ensures comment trivia is never visited by ts.forEachChild over CallExpression argument subtrees; (3) e.g.+NNN heuristic — heuristic removed entirely; format-illustration NNN-placeholders applied uniformly per Pattern C across all packages; (4) schema enum false-positive — JSON walker carves out enum string values inside *.schema.json explicitly; (5) path-suffix coarseness — JSONPath-aware carve-out narrows to top-level id under samples/blocks + registry/blocks + defaults/blocks + .project rather than whole-file suffix-exclusion; (6) JSDoc-vs-tool-description ambiguity — only string literals reachable through registerTool / Type.X CallExpression subtrees are flagged. 13/13 scanner unit tests pass including synthetic-injection probes per surface type. Attested by VER-059.",
       "related_features": [],
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-28"
     }
   ]
 }

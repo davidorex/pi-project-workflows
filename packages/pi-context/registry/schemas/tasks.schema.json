@@ -34,7 +34,7 @@
 							"blocked",
 							"cancelled"
 						],
-						"description": "Task lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped todo/in_progress/blocked/complete/unknown); tasks use a 5-state operational lifecycle with cancellation. Reconciliation tracked in FGAP-021."
+						"description": "Task lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped todo/in_progress/blocked/complete/unknown); tasks use a 5-state operational lifecycle with cancellation. Reconciliation."
 					},
 					"phase": {
 						"type": [

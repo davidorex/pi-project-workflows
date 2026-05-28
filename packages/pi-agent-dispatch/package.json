@@ -1,7 +1,7 @@
 {
 	"name": "@davidorex/pi-agent-dispatch",
 	"version": "0.27.0",
-	"description": "In-pi agent-as-tool dispatch + capability composition extension (FEAT-006 north-star; FEAT-004 + FEAT-005 implementation per narrowed DEC-0044)",
+	"description": "In-pi agent-as-tool dispatch + capability composition extension",
 	"type": "module",
 	"keywords": [
 		"pi-package"

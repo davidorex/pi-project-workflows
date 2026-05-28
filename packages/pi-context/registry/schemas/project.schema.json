@@ -103,7 +103,7 @@
 				"maintenance",
 				"complete"
 			],
-			"description": "Project lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); project uses product-lifecycle stages. Reconciliation tracked in FGAP-021."
+			"description": "Project lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); project uses product-lifecycle stages. Reconciliation."
 		},
 		"repository": {
 			"type": "string"

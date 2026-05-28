@@ -44,7 +44,7 @@
 							"partial",
 							"skipped"
 						],
-						"description": "Verification outcome. Intentionally divergent from pi-context://schemas/status (workflow-shaped); verifications use evidence-shaped outcome semantics (passed/failed/partial/skipped). Reconciliation tracked in FGAP-021."
+						"description": "Verification outcome. Intentionally divergent from pi-context://schemas/status (workflow-shaped); verifications use evidence-shaped outcome semantics (passed/failed/partial/skipped). Reconciliation."
 					},
 					"method": {
 						"type": "string",
@@ -53,7 +53,7 @@
 							"inspect",
 							"test"
 						],
-						"description": "Verification method. Intentionally narrower subset of pi-context://schemas/verification-method (which is command/grep/ast/inspect/human/test); verifications support only the 3 most common methods. Reconciliation tracked in FGAP-021."
+						"description": "Verification method. Intentionally narrower subset of pi-context://schemas/verification-method (which is command/grep/ast/inspect/human/test); verifications support only the 3 most common methods. Reconciliation."
 					},
 					"evidence": {
 						"type": "string",

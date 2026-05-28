@@ -842,7 +842,7 @@ const extension = (pi: ExtensionAPI) => {
 		promptSnippet:
 			"Render a project block item as prompt text via its per-item macro (with depth-controlled cross-ref recursion)",
 		parameters: Type.Object({
-			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-0001 / FEAT-001" }),
+			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-NNNN / FEAT-NNN" }),
 			depth: Type.Optional(
 				Type.Number({
 					description: "0 = bare-ID refs (default), 1 = inline direct cross-references, 2+ = recurse further",

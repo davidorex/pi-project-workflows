@@ -25,7 +25,7 @@ export const authorToolGrantTool = {
 	name: "author-tool-grant",
 	label: "Author Tool Grant",
 	description:
-		"Add or remove an entry in config.tool_operations[] or config.tool_operations_forbidden[] under writer.kind=human enforcement (DEC-0047). Refuses any attempt to register a framework-forbidden wholesale token.",
+		"Add or remove an entry in config.tool_operations[] or config.tool_operations_forbidden[] under writer.kind=human enforcement. Refuses any attempt to register a framework-forbidden wholesale token.",
 	promptSnippet: "Author a config tool-grant entry (operation registration or project-forbidden token).",
 	parameters: Type.Object({
 		target: Type.Union([Type.Literal("tool_operations"), Type.Literal("tool_operations_forbidden")], {
@@ -45,7 +45,7 @@ export const authorToolGrantTool = {
 		),
 		writer: Type.Object(
 			{
-				kind: Type.String({ description: "Writer kind — MUST be 'human' per DEC-0047." }),
+				kind: Type.String({ description: "Writer kind — MUST be 'human'." }),
 				user: Type.String({ description: "Human writer identity (e.g. 'davidryan@gmail.com')." }),
 			},
 			{ description: "DispatchContext.writer per pi-context/src/dispatch-context.ts." },

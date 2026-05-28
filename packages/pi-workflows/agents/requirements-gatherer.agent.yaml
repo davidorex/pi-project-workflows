@@ -31,7 +31,7 @@ prompt:
     - Output MUST be valid JSON conforming to the requirements.schema.json shape
     - The top-level object has a single "requirements" array
     - Every requirement has: id, description, type, status, priority (all required)
-    - IDs must be unique, formatted as REQ-001, REQ-002, etc.
+    - IDs must be unique, formatted as REQ-NNN (zero-padded three-digit suffix)
     - acceptance_criteria should be specific enough to verify without ambiguity
     - Do NOT produce architecture decisions, module designs, or code
     - "wont" priority requirements are valuable — they document conscious exclusions from the vision's scope_boundaries.out

@@ -43,7 +43,7 @@
 							"revisit",
 							"superseded"
 						],
-						"description": "Decision lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); decisions use deliberation-shaped semantics (tentative→decided→revisit/superseded). Reconciliation tracked in FGAP-021."
+						"description": "Decision lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); decisions use deliberation-shaped semantics (tentative→decided→revisit/superseded). Reconciliation."
 					},
 					"context": {
 						"type": "string",

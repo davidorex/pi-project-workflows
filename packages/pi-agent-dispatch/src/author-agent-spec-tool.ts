@@ -16,7 +16,7 @@ export const authorAgentSpecTool = {
 	name: "author-agent-spec",
 	label: "Author Agent Spec",
 	description:
-		"Write a new .agent.yaml spec to the agents tier under writer.kind=human enforcement (DEC-0047: capability/spec authoring is human-only). The written file is AJV-validated against AgentSpec before persisting.",
+		"Write a new .agent.yaml spec to the agents tier under writer.kind=human enforcement (capability/spec authoring is human-only). The written file is AJV-validated against AgentSpec before persisting.",
 	promptSnippet:
 		"Author a privileged JIT-agent spec — declares input, prompts, tools grant, output schema, contextBlocks.",
 	parameters: Type.Object({
@@ -26,7 +26,7 @@ export const authorAgentSpecTool = {
 		}),
 		writer: Type.Object(
 			{
-				kind: Type.String({ description: "Writer kind discriminator — MUST be 'human' per DEC-0047." }),
+				kind: Type.String({ description: "Writer kind discriminator — MUST be 'human'." }),
 				user: Type.String({ description: "Human writer identity (e.g. 'davidryan@gmail.com')." }),
 			},
 			{ description: "DispatchContext.writer per pi-context/src/dispatch-context.ts." },

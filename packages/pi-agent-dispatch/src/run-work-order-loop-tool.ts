@@ -22,17 +22,16 @@ export const runWorkOrderLoopTool = {
 	name: "run-work-order-loop",
 	label: "Run Work-Order Loop",
 	description:
-		"Execute the bounded FEAT-006 loop for a work-order: dispatch target_agent (via direct pi-jit-agents library per DEC-0044 narrowed / JI-021) → run-real-checks (deterministic verdict per DEC-0018 + DEC-0047 clause 5) → on-pass commit-attested → on-fail human-OK retry at the iteration boundary. Bounded iterations (default 3); human-OK gate per DEC-0047 governance.",
+		"Execute the bounded work-order loop: dispatch target_agent (via direct pi-jit-agents library) → run-real-checks (deterministic verdict — the actual exit code, never an LLM self-report) → on-pass commit-attested → on-fail human-OK retry at the iteration boundary. Bounded iterations (default 3); human-OK gate governs retry.",
 	promptSnippet: "Execute the end-to-end work-order loop for a declared spec.",
 	parameters: Type.Object({
 		work_order_id: Type.String({
-			description: "ID of the work-order to execute (loads from .project/work-orders.json per TASK-088 schema).",
+			description: "ID of the work-order to execute (loads from .project/work-orders.json schema).",
 		}),
 		max_iterations: Type.Optional(Type.Number({ description: "Max iteration count before fail-final. Default 3." })),
 		agent_grant: Type.Optional(
 			Type.Array(Type.String(), {
-				description:
-					"Tool grant for the dispatched privileged agent (per FEAT-005 capability composition). Default empty.",
+				description: "Tool grant for the dispatched privileged agent (capability composition). Default empty.",
 			}),
 		),
 	}),

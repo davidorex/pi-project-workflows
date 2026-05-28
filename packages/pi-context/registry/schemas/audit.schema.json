@@ -116,7 +116,7 @@
 					},
 					"severity": {
 						"$ref": "pi-context://schemas/severity",
-						"description": "Finding severity. Vocabulary $ref'd from pi-context://schemas/severity (FGAP-017 closure)."
+						"description": "Finding severity. Vocabulary $ref'd from pi-context://schemas/severity."
 					},
 					"principle": {
 						"type": "string",
@@ -173,7 +173,7 @@
 									"grep",
 									"inspect"
 								],
-								"description": "How to verify the fix was applied correctly. Intentionally narrower subset of pi-context://schemas/verification-method (which adds 'ast', 'human', 'test'); audit-fix verification supports only 3 lightweight methods. Reconciliation tracked in FGAP-021."
+								"description": "How to verify the fix was applied correctly. Intentionally narrower subset of pi-context://schemas/verification-method (which adds 'ast', 'human', 'test'); audit-fix verification supports only 3 lightweight methods. Reconciliation."
 							},
 							"verify_command": {
 								"type": "string",

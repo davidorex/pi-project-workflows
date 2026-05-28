@@ -38,7 +38,7 @@ Behavior monitors for pi that watch agent activity and steer corrections
 </extension>
 
 <extension name="@davidorex/pi-agent-dispatch">
-In-pi agent-as-tool dispatch + capability composition extension (FEAT-006 north-star; FEAT-004 + FEAT-005 implementation per narrowed DEC-0044)
+In-pi agent-as-tool dispatch + capability composition extension
 
 **Tools:** `author-agent-spec`, `call-agent`, `run-real-checks`, `commit-attested`, `author-tool-grant`, `run-work-order-loop`
 </extension>

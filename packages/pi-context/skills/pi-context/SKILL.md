@@ -461,7 +461,7 @@ Subcommands: `init`, `install`, `accept-all`, `view`, `lens-curate`, `roadmap-li
 </events>
 
 <bundled_resources>
-9 schemas, 31 samples bundled.
+9 schemas, 33 samples bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 
@@ -486,6 +486,7 @@ Names valid for the `installed_blocks` array in `<substrate-dir>/config.json`. I
 | `context-contracts` | `samples/blocks/context-contracts.json` |
 | `phase` | `samples/blocks/phase.json` |
 | `story` | `samples/blocks/story.json` |
+| `work-orders` | `samples/blocks/work-orders.json` |
 
 </installable_blocks>
 
@@ -510,6 +511,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `context-contracts` | `samples/schemas/context-contracts.schema.json` |
 | `phase` | `samples/schemas/phase.schema.json` |
 | `story` | `samples/schemas/story.schema.json` |
+| `work-orders` | `samples/schemas/work-orders.schema.json` |
 
 </installable_schemas>
 
@@ -534,6 +536,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `context-contracts` | Context contracts | `contracts` | id, unit_kind, bundle_relation_types (array), description?, notes?, created_by, created_at, modified_by?, modified_at? |
 | `phase` | Phases | `phases` | id, name, intent, goal?, status (string (planned|in-progress|completed)), success_criteria? (array), specs? (array), artifacts_produced? (array) |
 | `story` | Stories | `stories` | id, title, status (string (proposed|ready|in-progress|in-review|complete|blocked)), description?, acceptance_criteria? (array), created_by?, created_at?, modified_by?, modified_at? |
+| `work-orders` | Work Orders | `work_orders` | id, title, status (string (proposed|in-progress|real-check-passed|real-check-failed|completed|cancelled)), target_agent, input_contract (object), context_blocks (array), output_contract (object), scope (object), real_check_criteria (object), description?, created_by?, created_at?, modified_by?, modified_at? |
 
 **Status Enums:**
 
@@ -565,6 +568,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `conventions` | `severity` | error, warning, info |
 | `phase` | `status` | planned, in-progress, completed |
 | `story` | `status` | proposed, ready, in-progress, in-review, complete, blocked |
+| `work-orders` | `status` | proposed, in-progress, real-check-passed, real-check-failed, completed, cancelled |
 
 </planning_vocabulary>
 

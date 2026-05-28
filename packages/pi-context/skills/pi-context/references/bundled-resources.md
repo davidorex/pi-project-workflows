@@ -12,7 +12,7 @@
 - `schemas/status.schema.json`
 - `schemas/verification-method.schema.json`
 
-## samples/ (31 files)
+## samples/ (33 files)
 
 - `samples/blocks/context-contracts.json`
 - `samples/blocks/conventions.json`
@@ -29,6 +29,7 @@
 - `samples/blocks/story.json`
 - `samples/blocks/tasks.json`
 - `samples/blocks/verification.json`
+- `samples/blocks/work-orders.json`
 - `samples/conception.json`
 - `samples/schemas/context-contracts.schema.json`
 - `samples/schemas/conventions.schema.json`
@@ -45,3 +46,4 @@
 - `samples/schemas/story.schema.json`
 - `samples/schemas/tasks.schema.json`
 - `samples/schemas/verification.schema.json`
+- `samples/schemas/work-orders.schema.json`

@@ -6,12 +6,25 @@ import extension, { assertDefaultsClean } from "./index.js";
 describe("pi-agent-dispatch extension", () => {
 	it("registers 6 static tools: call-agent, author-agent-spec, run-real-checks, commit-attested, author-tool-grant, run-work-order-loop", () => {
 		const registered: string[] = [];
+		const events: string[] = [];
 		const pi = {
 			registerTool: (tool: { name: string }) => {
 				registered.push(tool.name);
 			},
+			// FGAP-134: registerAuthGate calls pi.on('tool_call', ...); the
+			// extension factory now performs this registration so the smoke
+			// test must mock the event-listener surface to avoid a
+			// TypeError. The handler is exercised in dedicated coverage at
+			// auth-gate.test.ts; this mock only captures registration shape.
+			on: (event: string) => {
+				events.push(event);
+			},
 		} as unknown as ExtensionAPI;
 		extension(pi);
+		assert.ok(
+			events.includes("tool_call"),
+			`expected 'tool_call' handler registered; got events ${JSON.stringify(events)}`,
+		);
 		for (const name of [
 			"author-agent-spec",
 			"call-agent",

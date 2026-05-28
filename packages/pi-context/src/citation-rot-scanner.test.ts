@@ -82,7 +82,7 @@ describe("citation-rot-scanner — AST .ts surface", () => {
 		assert.strictEqual(hits.length, 0, `JSDoc + line comments must not be flagged; got: ${JSON.stringify(hits)}`);
 	});
 
-	it("does NOT flag string-literals OUTSIDE registerTool or Type.X call trees", () => {
+	it("does NOT flag string-literals OUTSIDE registerTool / Type.X / Error-constructor call trees", () => {
 		const dir = mkScratch();
 		const pkgDir = path.join(dir, "fake-pkg");
 		fs.mkdirSync(pkgDir, { recursive: true });
@@ -90,21 +90,64 @@ describe("citation-rot-scanner — AST .ts surface", () => {
 			path.join(pkgDir, "src.ts"),
 			[
 				// Arbitrary string outside an operator-surface call tree — not
-				// flagged. This protects against false-positives in internal
-				// helper code that happens to mention canonical_ids in logic
-				// (e.g. constants, error messages).
+				// flagged. Protects against false-positives in internal helper
+				// code that happens to mention canonical_ids in literal-bound
+				// constants. NOTE: error-constructor messages ARE flagged per
+				// FGAP-133; that case is covered in the ast-error-message
+				// surface tests above.
 				`const internalConstant = "DEC-0047";`,
-				`function helper() { throw new Error("FGAP-102 internal"); }`,
+				`const arr = ["FGAP-102 inside array literal"];`,
 			].join("\n"),
 		);
 		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
 		// Aim: AST surface narrowly targets the tool-registration + typebox
-		// description fields that ship to the operator surface; other string
-		// literals are out of scope for the gate.
+		// description fields + Error-constructor messages that ship to the
+		// operator surface; other string literals are out of scope.
 		assert.strictEqual(
 			hits.length,
 			0,
-			`non-tool-tree string literals must not be flagged; got: ${JSON.stringify(hits)}`,
+			`non-operator-surface string literals must not be flagged; got: ${JSON.stringify(hits)}`,
+		);
+	});
+});
+
+describe("citation-rot-scanner — AST error-message surface (FGAP-133)", () => {
+	it("flags NewExpression on /Error$/ constructor with citation-bearing string-literal arg", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(path.join(pkgDir, "src.ts"), `function f() { throw new SomeError("per FGAP-999"); }`);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 1, `expected 1 hit; got: ${JSON.stringify(hits)}`);
+		assert.strictEqual(hits[0].surface, "ast-error-message");
+		assert.strictEqual(hits[0].matched, "FGAP-999");
+	});
+
+	it("does NOT flag NewExpression on /Error$/ constructor with non-citation message", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(path.join(pkgDir, "src.ts"), `function f() { throw new SomeError("hello world"); }`);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 0, `expected 0 hits; got: ${JSON.stringify(hits)}`);
+	});
+
+	it("does NOT flag NewExpression on constructor NOT ending in Error (even with citation)", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			// Constructor name `Widget` does NOT end in `Error`; FGAP-133 visitor
+			// must skip. Data classes / builders / value objects must not pollute
+			// the operator-surface gate.
+			`function f() { return new Widget("per FGAP-999"); }`,
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(
+			hits.length,
+			0,
+			`non-/Error$/ constructor args must not be flagged; got: ${JSON.stringify(hits)}`,
 		);
 	});
 });

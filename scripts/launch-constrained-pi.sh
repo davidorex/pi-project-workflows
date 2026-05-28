@@ -11,6 +11,21 @@
 # Per FEAT-006 the run-work-order-loop tool closes the end-to-end loop; per FEAT-010 the
 # bounded-composite vocabulary is read from the target dir's config.tool_operations[].
 #
+# Per FGAP-134 (closed 2026-05-29) the pi-agent-dispatch extension factory registers a
+# pi.on('tool_call') auth-gate handler. The 14 Bucket-2 sensitive tools below require an
+# affirmative ctx.ui.confirm in interactive sessions, and are refused unconditionally in
+# non-interactive contexts (ctx.hasUI=false). The gate operates at the pi-dispatch boundary
+# regardless of caller-supplied writer.kind field values — the writer.kind spoof closed at
+# the dispatch layer rather than at each tool's execute() body. Operators launching this
+# script will see confirm prompts the first time any of these tools is invoked per session:
+#   - author-agent-spec / author-tool-grant / commit-attested        (pi-agent-dispatch)
+#   - write-schema / amend-config / write-block / rename-canonical-id
+#   - context-init / context-accept-all                              (pi-context)
+#   - workflow-execute / workflow-resume / workflow-init             (pi-workflows)
+#   - monitors-control / monitors-rules                              (pi-behavior-monitors)
+# Non-Bucket-2 tools (read-block, call-agent, run-real-checks, composites, bash, ...) pass
+# through without prompting.
+#
 # Run from the target dir, e.g.:
 #   cd /Users/david/Projects/may-22-2026 && /path/to/repo/scripts/launch-constrained-pi.sh
 #

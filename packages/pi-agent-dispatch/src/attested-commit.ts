@@ -45,7 +45,9 @@ function composeMessage(message: string, agent_id: string, work_order_id?: strin
 
 export async function attestedCommit(cwd: string, options: AttestedCommitOptions): Promise<AttestedCommitResult> {
 	if (!options.agent_id || options.agent_id.trim() === "") {
-		throw new CommitAttestedRefusedError("agent_id is required for writer.kind=agent attestation per DEC-0047");
+		throw new CommitAttestedRefusedError(
+			"agent_id is required for writer.kind=agent attestation (human-only authoring enforced)",
+		);
 	}
 	if (!options.files || options.files.length === 0) {
 		throw new CommitAttestedRefusedError("files[] is required (at least one staged file)");

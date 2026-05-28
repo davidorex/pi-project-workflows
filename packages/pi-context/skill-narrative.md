@@ -13,7 +13,7 @@ pi-context manages structured project state in the substrate directory — a dir
 </objective>
 
 <block_files>
-Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/context accept-all`; the framework ships no default (DEC-0015). block-api routes through `resolveContextDir(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
+Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/context accept-all`; the framework ships no default substrate-dir name. block-api routes through `resolveContextDir(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
 </block_files>
 
 <schema_validation>
@@ -21,7 +21,7 @@ Every block write validates against `<root>/schemas/<blockname>.schema.json`. If
 </schema_validation>
 
 <context_init>
-`/context init <substrate-dir>` creates the substrate skeleton: the `.pi-context.json` bootstrap pointer (declaring the substrate-dir name per DEC-0015) plus the substrate root and its `schemas/` directory. Nothing is imposed — no `config.json`, no schemas, and no starter blocks are written (DEC-0011 ship-no-defaults). Idempotent: re-running preserves existing dirs. Populate the substrate next with `/context accept-all` (adopt the canonical conception) followed by `/context install`.
+`/context init <substrate-dir>` creates the substrate skeleton: the `.pi-context.json` bootstrap pointer (declaring the chosen substrate-dir name) plus the substrate root and its `schemas/` directory. Nothing is imposed — no `config.json`, no schemas, and no starter blocks are written (ship-no-defaults). Idempotent: re-running preserves existing dirs. Populate the substrate next with `/context accept-all` (adopt the canonical conception) followed by `/context install`.
 </context_init>
 
 <context_accept_all>

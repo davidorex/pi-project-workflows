@@ -483,5 +483,20 @@
     "parent": "FGAP-123",
     "child": "FEAT-011",
     "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FGAP-118",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FGAP-120",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FGAP-121",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
   }
 ]

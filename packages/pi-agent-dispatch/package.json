@@ -24,11 +24,15 @@
 	},
 	"files": [
 		"dist/",
-		"*.md"
+		"*.md",
+		"skills/"
 	],
 	"pi": {
 		"extensions": [
 			"./dist/index.js"
+		],
+		"skills": [
+			"./skills"
 		]
 	},
 	"scripts": {

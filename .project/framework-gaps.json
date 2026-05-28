@@ -5039,6 +5039,48 @@
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
       "closed_at": "2026-05-29T00:00:00Z"
+    },
+    {
+      "id": "FGAP-135",
+      "title": "pi's built-in `read` tool truncates at 2000 lines / 50KB hardcoded + appends a trivially-skimmable text marker at end of content; structured `details.truncation` IS present but unused at the LLM-facing surface; in-pi agents blithely proceed as if content is complete after partial read — no extension-side gate detects truncation + replaces output with a hard-refusal directive analogous to pi-context's existing overCapDirective canon",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-agent-dispatch",
+      "layer": "L3",
+      "description": "Surfaced 2026-05-29 after commit af682c4 granted pi's built-in `read,ls,grep,find` to the constrained orchestrator (Bucket-1 default-grant per user directive). Recon of `node_modules/@earendil-works/pi-coding-agent/dist/core/tools/read.js` (lines 143-272) + `truncate.d.ts` confirms: pi's read tool applies `truncateHead()` with hardcoded DEFAULT_MAX_LINES=2000 OR DEFAULT_MAX_BYTES=50*1024, keeps file HEAD, drops tail. Truncation signal: a single text marker appended at END of content (`[Truncated: showing N of M lines (2000 line limit)]` OR `[Truncated: N lines shown (50KB limit)]`). This is structurally weak — end-of-content position is trivially skimmable by an LLM scanning content for the substantive bit it wanted to find. Structured `details.truncation` object IS present in the tool result (`{ truncated: boolean, truncatedBy, totalLines, totalBytes, outputLines, outputBytes }`) but never exposed to the LLM — only the marker text is. Result: in-pi agents reading large files routinely proceed as if they have full content + reach wrong conclusions / miss relevant content past the truncation boundary. The harness's own typed-read canon does the right thing here (pi-context's `serializeForRead` + `overCapDirective` emits hard-refusal text `⚠️ READ REFUSED — ... Nothing was returned (a partial read would mislead). Narrow your read: call <tool> with <params>` and returns NO body) — pi's built-in read lags this canon. We cannot modify canonical pi but pi exposes `pi.on('tool_result', handler)` (verified at `node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:629-669,726-730`) which fires AFTER tool execution + BEFORE the LLM sees the result + returns `ToolResultEventResult { content?, details?, isError? }` allowing the handler to replace the content entirely. The extension-side gate would detect truncation via the structured details field + replace content with a directive mirroring pi-context's overCapDirective phrasing canon.",
+      "evidence": [
+        {
+          "file": "node_modules/@earendil-works/pi-coding-agent/dist/core/tools/read.js",
+          "lines": "143-272",
+          "reference": "truncation invocation at line 227 (`truncateHead(selectedContent)`); end-of-content marker construction at lines 120-129; constants in `truncate.js` (DEFAULT_MAX_LINES=2000, DEFAULT_MAX_BYTES=50*1024); no env-var override available"
+        },
+        {
+          "file": "node_modules/@earendil-works/pi-coding-agent/dist/core/tools/truncate.d.ts",
+          "reference": "TruncationResult shape exposes the full truncation metadata that pi.on('tool_result') handlers can inspect"
+        },
+        {
+          "file": "node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts",
+          "lines": "629-669, 726-730, 810",
+          "reference": "ToolResultEvent (incl ReadToolResultEvent with `details: ReadToolDetails | undefined` carrying `{ truncation?: TruncationResult }`); ToolResultEventResult shape `{ content?, details?, isError? }`; pi.on('tool_result', handler) registration"
+        },
+        {
+          "file": "packages/pi-context/src/read-element.ts",
+          "lines": "58-116",
+          "reference": "serializeForRead + READ_ELEMENT_FOOTER_PREFIX + ReadEnvelope + the canonical overCapDirective phrasing pattern we already use across read-block-page / read-schema / read-samples-catalog"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/auth-gate.ts",
+          "reference": "structural precedent — single-handler tool-call gate in pi-agent-dispatch's extension factory; same pattern shape for tool-result gate"
+        }
+      ],
+      "impact": "In-pi agents granted the read tool (per af682c4) routinely reach incorrect conclusions when reading files >2000 lines or >50KB because they treat truncated content as complete. Compounds with FGAP-124 (`SKILL.md doesn't anchor canonical vocabulary; agent enumerates from priors`) — agent reads a file head + extrapolates the rest from priors rather than acknowledging the missing content. Bigger blast radius post-af682c4 because the agent now reads ARBITRARY files, not only substrate-typed reads which have proper overCapDirective protection. The capability we just granted has a known-weak guardrail upstream + our harness has the canon to repair it without upstream changes.",
+      "canonical_vocabulary": "tool_result event interception; hard-refusal directive vs end-of-content marker; serializeForRead overCapDirective phrasing canon; fail-closed vs fail-soft truncation semantics",
+      "proposed_resolution": "Register a single `pi.on('tool_result', handler)` in pi-agent-dispatch's extension factory (alongside the existing FGAP-134 auth-gate which uses tool_call — orthogonal events; no coexistence concern). New file `packages/pi-agent-dispatch/src/read-truncation-gate.ts` exports `registerReadTruncationGate(pi: ExtensionAPI): void`. Handler: filter on `event.toolName === 'read'`; if `!event.details?.truncation?.truncated` return void (pass through). Else replace `event.content` with a single text content item carrying a structured directive following pi-context's canonical phrasing: \"⚠️ READ TRUNCATED — file <path> is <totalLines> lines / <totalBytes> bytes; only the first <outputLines> lines / <outputBytes> bytes were returned. The content is INCOMPLETE. Do NOT proceed as if you have the full file. To continue from where the read stopped: call `read` again with `offset=<outputLines>` (and `limit=...` if desired). To find specific content without reading the rest of the file: use `grep` with a pattern + path. The truncated head is NOT returned — re-issue the read with `offset` or use `grep`.\" Return shape `{ content: [{ type: 'text', text: <directive> }], isError: false }`. Hard refusal — no head content returned — mirrors pi-context overCapDirective pattern + forces the agent to either narrow via grep or paginate via offset. Wire into pi-agent-dispatch's extension factory at `packages/pi-agent-dispatch/src/index.ts` (one-line call after `registerAuthGate(pi)`). Unit tests at `packages/pi-agent-dispatch/src/read-truncation-gate.test.ts` covering: (a) truncated read replaced with directive; (b) non-truncated read passes through (handler returns void); (c) non-read tools pass through; (d) directive contains canonical phrases ('TRUNCATED', 'INCOMPLETE', 'Do NOT proceed', 'offset=', 'grep'); (e) directive includes exact line/byte counts from event.details.truncation. Coexists with FGAP-134's tool_call auth-gate (orthogonal events). No change to canonical pi.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
     }
   ]
 }

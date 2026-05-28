@@ -82,6 +82,6 @@
       { "from": "enacted", "to": "open", "required_authority": "user", "note": "Reopening for revision; creates a new open state on the existing entry rather than a new entry. Alternative pattern: create a new decision entry with a decision_supersedes_decision edge referencing this one." },
       { "from": "open", "to": "superseded", "required_authority": "user", "note": "Withdrawal of an entry that was filed under proliferation pressure or on incorrect framing. Reasoning lives in consequences. Used when the entry is acknowledged as not-a-real-decision rather than enacted." }
     ],
-    "note": "Three-state lifecycle. AJV draft-07 cannot enforce transition validity or required_authority; this block is metadata for future framework-level state-machine validation (FGAP-005) and authorship attestation (FGAP-004)."
+    "note": "Three-state lifecycle. AJV draft-07 cannot enforce transition validity or required_authority; this block is metadata reserved for future framework-level state-machine validation and authorship attestation."
   }
 }

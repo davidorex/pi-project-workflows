@@ -398,7 +398,7 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 	const contextDir = args.trim().split(/\s+/)[0];
 	if (!contextDir) {
 		ctx.ui.notify(
-			"/context init requires a substrate dir name (e.g. '/context init .context'). Per DEC-0015, no default — you choose the name.",
+			"/context init requires a substrate dir name (e.g. '/context init .context'). No default — you choose the name.",
 			"error",
 		);
 		return;
@@ -541,7 +541,7 @@ const extension = (pi: ExtensionAPI) => {
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
 			arrayKey: Type.String({ description: "Array key in the block" }),
-			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'issue-123' })" }),
+			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'ISSUE-NNN' })" }),
 			updates: Type.Record(Type.String(), Type.Unknown(), {
 				description: "Fields to update (e.g., { status: 'resolved' })",
 			}),
@@ -635,7 +635,7 @@ const extension = (pi: ExtensionAPI) => {
 			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
 			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
 			match: Type.Record(Type.String(), Type.Unknown(), {
-				description: "Fields to match the parent item (e.g., { id: 'REVIEW-001' })",
+				description: "Fields to match the parent item (e.g., { id: 'REVIEW-NNN' })",
 			}),
 			nestedKey: Type.String({ description: "Nested array key on the matched parent (e.g., 'findings')" }),
 			item: Type.Unknown({ description: "Item object to append to the nested array — must conform to schema" }),
@@ -689,7 +689,7 @@ const extension = (pi: ExtensionAPI) => {
 			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
 			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
 			match: Type.Record(Type.String(), Type.Unknown(), {
-				description: "Fields to match the parent item (e.g., { id: 'REVIEW-001' })",
+				description: "Fields to match the parent item (e.g., { id: 'REVIEW-NNN' })",
 			}),
 			nestedKey: Type.String({ description: "Nested array key on the matched parent (e.g., 'findings')" }),
 			nestedMatch: Type.Record(Type.String(), Type.Unknown(), {
@@ -754,7 +754,7 @@ const extension = (pi: ExtensionAPI) => {
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues')" }),
 			arrayKey: Type.String({ description: "Top-level array key (e.g., 'issues')" }),
-			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'issue-123' })" }),
+			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'ISSUE-NNN' })" }),
 		}),
 		async execute(
 			_toolCallId: string,
@@ -791,7 +791,7 @@ const extension = (pi: ExtensionAPI) => {
 			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
 			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
 			match: Type.Record(Type.String(), Type.Unknown(), {
-				description: "Fields to match the parent item (e.g., { id: 'REVIEW-001' })",
+				description: "Fields to match the parent item (e.g., { id: 'REVIEW-NNN' })",
 			}),
 			nestedKey: Type.String({ description: "Nested array key on the matched parent (e.g., 'findings')" }),
 			nestedMatch: Type.Record(Type.String(), Type.Unknown(), {
@@ -1051,7 +1051,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "list-tools",
 		label: "List Tools",
 		description:
-			"Discover the agent's own tool surface (all loaded extensions + builtins). Default returns a COMPACT index — one line per tool (name · param-count · one-line description) plus the active set — not the full JSON-schemas. Pass `name` to fetch ONE tool's full descriptor (name + description + parameter JSON-schema + sourceInfo). Index→detail per FGAP-101.",
+			"Discover the agent's own tool surface (all loaded extensions + builtins). Default returns a COMPACT index — one line per tool (name · param-count · one-line description) plus the active set — not the full JSON-schemas. Pass `name` to fetch ONE tool's full descriptor (name + description + parameter JSON-schema + sourceInfo). Index-then-detail pattern.",
 		promptSnippet: "Discover available tools — compact index, or one tool's full descriptor via `name`",
 		parameters: Type.Object({
 			name: Type.Optional(
@@ -1119,7 +1119,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "read-samples-catalog",
 		label: "Read Samples Catalog",
 		description:
-			"Enumerate installable sample block kinds (DEC-0037 packaged view): per kind — title, description, item shape, applicable relation_types (as source/target), invariants, lenses — plus top-level relation_type/lens/invariant/layer/status_bucket registries. Package-intrinsic: reads the extension's bundled samples catalog, independent of any project. Optional `kind` returns one packaged kind.",
+			"Enumerate installable sample block kinds (packaged view): per kind — title, description, item shape, applicable relation_types (as source/target), invariants, lenses — plus top-level relation_type/lens/invariant/layer/status_bucket registries. Package-intrinsic: reads the extension's bundled samples catalog, independent of any project. Optional `kind` returns one packaged kind.",
 		promptSnippet: "Discover installable sample block kinds — title, shape, relation_types, invariants, lenses",
 		parameters: Type.Object({
 			kind: Type.Optional(Type.String({ description: "Filter to one block_kind canonical_id (e.g. 'tasks')" })),
@@ -1177,7 +1177,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "context-bootstrap-state",
 		label: "Context Bootstrap State",
 		description:
-			"Derive the substrate bootstrap state for the cwd, purely from the filesystem (DEC-0040): 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap is human-only). No writes.",
+			"Derive the substrate bootstrap state for the cwd, purely from the filesystem: 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap is human-only). No writes.",
 		promptSnippet:
 			"Derive substrate bootstrap state — no-pointer | no-config | not-installed | ready (never throws pre-bootstrap)",
 		parameters: Type.Object({}),
@@ -1409,7 +1409,7 @@ const extension = (pi: ExtensionAPI) => {
 		promptSnippet: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)",
 		parameters: Type.Object({
 			contextDir: Type.String({
-				description: "Substrate dir name (e.g. .context). Required per DEC-0015 — no default.",
+				description: "Substrate dir name (e.g. .context). Required — no default.",
 			}),
 		}),
 		async execute(
@@ -1515,7 +1515,7 @@ const extension = (pi: ExtensionAPI) => {
 			"Look up the block, array key, and item payload for a given ID across all blocks in the substrate dir. Returns null when no item matches. Mirrors the resolveItemById SDK function and shares its prefix-vs-block invariant — IDs whose prefix maps to a known block but live elsewhere throw at index-build time.",
 		promptSnippet: "Resolve a kind-prefixed ID (DEC-/FEAT-/FGAP-/issue-/REQ-/TASK-/etc.) to its owning block and item",
 		parameters: Type.Object({
-			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 / FGAP-003 / issue-064" }),
+			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-NNNN / FEAT-NNN / FGAP-NNN / ISSUE-NNN" }),
 		}),
 		async execute(
 			_toolCallId: string,
@@ -1542,7 +1542,7 @@ const extension = (pi: ExtensionAPI) => {
 		promptSnippet: "Read one item from a block by id (block-scoped; null if absent)",
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'tasks', 'decisions', 'framework-gaps')" }),
-			id: Type.String({ description: "Item id within the block (e.g., 'TASK-001')" }),
+			id: Type.String({ description: "Item id within the block (e.g., 'TASK-NNN')" }),
 		}),
 		async execute(
 			_toolCallId: string,
@@ -1599,7 +1599,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "join-blocks",
 		label: "Join Blocks",
 		description:
-			"Join two blocks in one call (FGAP-043). EDGE mode: pass `relationType` — pairs left items with right-block items connected by that relations.json edge (`leftEndpoint` parent|child, default parent). FIELD mode: pass `leftField`+`rightField` — pairs where left[leftField] === right[rightField]. Optional left pre-filter via where{Field,Op,Value}. Returns [{left, right:[]}] (right always an array; one-to-many). Use instead of N+1 read-block + resolve calls.",
+			"Join two blocks in one call. EDGE mode: pass `relationType` — pairs left items with right-block items connected by that relations.json edge (`leftEndpoint` parent|child, default parent). FIELD mode: pass `leftField`+`rightField` — pairs where left[leftField] === right[rightField]. Optional left pre-filter via where{Field,Op,Value}. Returns [{left, right:[]}] (right always an array; one-to-many). Use instead of N+1 read-block + resolve calls.",
 		promptSnippet: "Join two blocks in one call — by relation edge or shared field; returns {left,right[]} pairs",
 		parameters: Type.Object({
 			leftBlock: Type.String({ description: "Left block name (e.g., 'tasks')" }),
@@ -1889,7 +1889,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "gather-execution-context",
 		label: "Gather Execution Context",
 		description:
-			"Compose a ContextBundle for a work-unit by reading its context-contract (by unit_kind) and walking declared relation_types bidirectionally per direction semantic. Returns unit + perRelationType buckets of resolved items + traversal_depth + scoped_at. Per DEC-0017 substrate primitive serving harness-confined dispatch.",
+			"Compose a ContextBundle for a work-unit by reading its context-contract (by unit_kind) and walking declared relation_types bidirectionally per direction semantic. Returns unit + perRelationType buckets of resolved items + traversal_depth + scoped_at. Substrate primitive serving harness-confined dispatch.",
 		promptSnippet: "Compose ContextBundle for unit + context-contract-declared bundle_relation_types",
 		parameters: Type.Object({
 			unitId: Type.String({ description: "Work-unit id (e.g. TASK-NNN / DEC-NNNN / FGAP-NNN)" }),
@@ -1954,7 +1954,7 @@ const extension = (pi: ExtensionAPI) => {
 		name: "context-roadmap-load",
 		label: "Context: load roadmap",
 		description:
-			"Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Per DEC-0012 phase ordering lives in relations.json with relation_type='phase_depends_on'.",
+			"Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Phase ordering lives in relations.json with relation_type='phase_depends_on'.",
 		promptSnippet: "Load a roadmap by id",
 		parameters: Type.Object({
 			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),

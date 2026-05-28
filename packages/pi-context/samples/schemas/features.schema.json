@@ -48,6 +48,6 @@
         { "from": "proposed", "to": "cancelled", "required_authority": "user" }
       ]
     },
-    "note": "AJV draft-07 cannot enforce transition validity; this block is metadata for future framework-level state-machine validation (FGAP-005)."
+    "note": "AJV draft-07 cannot enforce transition validity; this block is metadata reserved for future framework-level state-machine validation."
   }
 }

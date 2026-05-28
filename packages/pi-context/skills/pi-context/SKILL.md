@@ -31,7 +31,7 @@ Update fields on an item in a project block array. Finds by predicate field matc
 |-----------|------|----------|-------------|
 | `block` | string | yes | Block name (e.g., 'issues', 'decisions') |
 | `arrayKey` | string | yes | Array key in the block |
-| `match` | object | yes | Fields to match (e.g., { id: 'issue-123' }) |
+| `match` | object | yes | Fields to match (e.g., { id: 'ISSUE-NNN' }) |
 | `updates` | object | yes | Fields to update (e.g., { status: 'resolved' }) |
 </tool>
 
@@ -57,7 +57,7 @@ Append an item to a nested array on a parent-array item in a project block. Sche
 |-----------|------|----------|-------------|
 | `block` | string | yes | Block name (e.g., 'spec-reviews') |
 | `arrayKey` | string | yes | Parent array key (e.g., 'reviews') |
-| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-001' }) |
+| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-NNN' }) |
 | `nestedKey` | string | yes | Nested array key on the matched parent (e.g., 'findings') |
 | `item` | unknown | yes | Item object to append to the nested array — must conform to schema |
 </tool>
@@ -71,7 +71,7 @@ Update fields on a nested-array item inside a parent-array item in a project blo
 |-----------|------|----------|-------------|
 | `block` | string | yes | Block name (e.g., 'spec-reviews') |
 | `arrayKey` | string | yes | Parent array key (e.g., 'reviews') |
-| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-001' }) |
+| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-NNN' }) |
 | `nestedKey` | string | yes | Nested array key on the matched parent (e.g., 'findings') |
 | `nestedMatch` | object | yes | Fields to match the nested item (e.g., { id: 'F-001' }) |
 | `updates` | object | yes | Fields to update on the nested item (e.g., { state: 'resolved' }) |
@@ -86,7 +86,7 @@ Remove items matching a predicate from a top-level array in a project block. Ide
 |-----------|------|----------|-------------|
 | `block` | string | yes | Block name (e.g., 'issues') |
 | `arrayKey` | string | yes | Top-level array key (e.g., 'issues') |
-| `match` | object | yes | Fields to match (e.g., { id: 'issue-123' }) |
+| `match` | object | yes | Fields to match (e.g., { id: 'ISSUE-NNN' }) |
 </tool>
 
 <tool name="remove-block-nested-item">
@@ -98,7 +98,7 @@ Remove items matching a predicate from a nested array on a parent-array item in 
 |-----------|------|----------|-------------|
 | `block` | string | yes | Block name (e.g., 'spec-reviews') |
 | `arrayKey` | string | yes | Parent array key (e.g., 'reviews') |
-| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-001' }) |
+| `match` | object | yes | Fields to match the parent item (e.g., { id: 'REVIEW-NNN' }) |
 | `nestedKey` | string | yes | Nested array key on the matched parent (e.g., 'findings') |
 | `nestedMatch` | object | yes | Fields to match the nested items to remove (e.g., { id: 'F-001' }) |
 </tool>
@@ -160,7 +160,7 @@ Read the substrate config.json as structured JSON — vocabulary, lenses, relati
 </tool>
 
 <tool name="list-tools">
-Discover the agent's own tool surface (all loaded extensions + builtins). Default returns a COMPACT index — one line per tool (name · param-count · one-line description) plus the active set — not the full JSON-schemas. Pass `name` to fetch ONE tool's full descriptor (name + description + parameter JSON-schema + sourceInfo). Index→detail per FGAP-101.
+Discover the agent's own tool surface (all loaded extensions + builtins). Default returns a COMPACT index — one line per tool (name · param-count · one-line description) plus the active set — not the full JSON-schemas. Pass `name` to fetch ONE tool's full descriptor (name + description + parameter JSON-schema + sourceInfo). Index-then-detail pattern.
 
 *Discover available tools — compact index, or one tool's full descriptor via `name`*
 
@@ -170,7 +170,7 @@ Discover the agent's own tool surface (all loaded extensions + builtins). Defaul
 </tool>
 
 <tool name="read-samples-catalog">
-Enumerate installable sample block kinds (DEC-0037 packaged view): per kind — title, description, item shape, applicable relation_types (as source/target), invariants, lenses — plus top-level relation_type/lens/invariant/layer/status_bucket registries. Package-intrinsic: reads the extension's bundled samples catalog, independent of any project. Optional `kind` returns one packaged kind.
+Enumerate installable sample block kinds (packaged view): per kind — title, description, item shape, applicable relation_types (as source/target), invariants, lenses — plus top-level relation_type/lens/invariant/layer/status_bucket registries. Package-intrinsic: reads the extension's bundled samples catalog, independent of any project. Optional `kind` returns one packaged kind.
 
 *Discover installable sample block kinds — title, shape, relation_types, invariants, lenses*
 
@@ -187,7 +187,7 @@ Derive 'where are we + what's next' purely from the substrate — focus, in-flig
 </tool>
 
 <tool name="context-bootstrap-state">
-Derive the substrate bootstrap state for the cwd, purely from the filesystem (DEC-0040): 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap is human-only). No writes.
+Derive the substrate bootstrap state for the cwd, purely from the filesystem: 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the human to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap is human-only). No writes.
 
 *Derive substrate bootstrap state — no-pointer | no-config | not-installed | ready (never throws pre-bootstrap)*
 
@@ -251,7 +251,7 @@ Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + in
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `contextDir` | string | yes | Substrate dir name (e.g. .context). Required per DEC-0015 — no default. |
+| `contextDir` | string | yes | Substrate dir name (e.g. .context). Required — no default. |
 </tool>
 
 <tool name="context-accept-all">
@@ -281,7 +281,7 @@ Look up the block, array key, and item payload for a given ID across all blocks 
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | string | yes | Kind-prefixed ID, e.g., DEC-0001 / FEAT-001 / FGAP-003 / issue-064 |
+| `id` | string | yes | Kind-prefixed ID, e.g., DEC-NNNN / FEAT-NNN / FGAP-NNN / ISSUE-NNN |
 </tool>
 
 <tool name="read-block-item">
@@ -292,7 +292,7 @@ Read a single item from a named block by its id — returns the item or null. Bl
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `block` | string | yes | Block name (e.g., 'tasks', 'decisions', 'framework-gaps') |
-| `id` | string | yes | Item id within the block (e.g., 'TASK-001') |
+| `id` | string | yes | Item id within the block (e.g., 'TASK-NNN') |
 </tool>
 
 <tool name="read-block-page">
@@ -308,7 +308,7 @@ Paginate a block's items: returns { items, total, hasMore }. offset default 0, l
 </tool>
 
 <tool name="join-blocks">
-Join two blocks in one call (FGAP-043). EDGE mode: pass `relationType` — pairs left items with right-block items connected by that relations.json edge (`leftEndpoint` parent|child, default parent). FIELD mode: pass `leftField`+`rightField` — pairs where left[leftField] === right[rightField]. Optional left pre-filter via where{Field,Op,Value}. Returns [{left, right:[]}] (right always an array; one-to-many). Use instead of N+1 read-block + resolve calls.
+Join two blocks in one call. EDGE mode: pass `relationType` — pairs left items with right-block items connected by that relations.json edge (`leftEndpoint` parent|child, default parent). FIELD mode: pass `leftField`+`rightField` — pairs where left[leftField] === right[rightField]. Optional left pre-filter via where{Field,Op,Value}. Returns [{left, right:[]}] (right always an array; one-to-many). Use instead of N+1 read-block + resolve calls.
 
 *Join two blocks in one call — by relation edge or shared field; returns {left,right[]} pairs*
 
@@ -397,7 +397,7 @@ Find all closure-table edges incident on an item id (inbound, outbound, or both)
 </tool>
 
 <tool name="gather-execution-context">
-Compose a ContextBundle for a work-unit by reading its context-contract (by unit_kind) and walking declared relation_types bidirectionally per direction semantic. Returns unit + perRelationType buckets of resolved items + traversal_depth + scoped_at. Per DEC-0017 substrate primitive serving harness-confined dispatch.
+Compose a ContextBundle for a work-unit by reading its context-contract (by unit_kind) and walking declared relation_types bidirectionally per direction semantic. Returns unit + perRelationType buckets of resolved items + traversal_depth + scoped_at. Substrate primitive serving harness-confined dispatch.
 
 *Compose ContextBundle for unit + context-contract-declared bundle_relation_types*
 
@@ -409,7 +409,7 @@ Compose a ContextBundle for a work-unit by reading its context-contract (by unit
 </tool>
 
 <tool name="context-roadmap-load">
-Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Per DEC-0012 phase ordering lives in relations.json with relation_type='phase_depends_on'.
+Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Phase ordering lives in relations.json with relation_type='phase_depends_on'.
 
 *Load a roadmap by id*
 
@@ -577,7 +577,7 @@ pi-context manages structured project state in the substrate directory — a dir
 </objective>
 
 <block_files>
-Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/context accept-all`; the framework ships no default (DEC-0015). block-api routes through `resolveContextDir(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
+Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/context accept-all`; the framework ships no default substrate-dir name. block-api routes through `resolveContextDir(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
 </block_files>
 
 <schema_validation>
@@ -585,7 +585,7 @@ Every block write validates against `<root>/schemas/<blockname>.schema.json`. If
 </schema_validation>
 
 <context_init>
-`/context init <substrate-dir>` creates the substrate skeleton: the `.pi-context.json` bootstrap pointer (declaring the substrate-dir name per DEC-0015) plus the substrate root and its `schemas/` directory. Nothing is imposed — no `config.json`, no schemas, and no starter blocks are written (DEC-0011 ship-no-defaults). Idempotent: re-running preserves existing dirs. Populate the substrate next with `/context accept-all` (adopt the canonical conception) followed by `/context install`.
+`/context init <substrate-dir>` creates the substrate skeleton: the `.pi-context.json` bootstrap pointer (declaring the chosen substrate-dir name) plus the substrate root and its `schemas/` directory. Nothing is imposed — no `config.json`, no schemas, and no starter blocks are written (ship-no-defaults). Idempotent: re-running preserves existing dirs. Populate the substrate next with `/context accept-all` (adopt the canonical conception) followed by `/context install`.
 </context_init>
 
 <context_accept_all>

@@ -21,11 +21,13 @@
  *   - removeMigrationDecl requires the pair to be PRESENT; a missing target
  *     throws.
  *
- * Loader-cache invalidation (so subsequent registry consumers read fresh
- * declarations without process restart) is the per-cwd loader's
- * `invalidateMigrationRegistry(cwd)` hook wired in step 2
- * (migration-registry-loader.ts). Step 1 leaves the wiring stubbed-out;
- * step 2 introduces the import + injection at each mutation call site.
+ * After each successful mutation the helper invokes
+ * `invalidateMigrationRegistry(cwd)` (migration-registry-loader.ts) so the
+ * next `getProjectMigrationRegistry(cwd)` consumer reads the fresh
+ * declarations without process restart. The store↔loader edge is mutually
+ * cyclic (loader reads from store; store writes invalidate loader cache);
+ * ESM tolerates the cycle because both imports are function-level uses, not
+ * top-level evaluations.
  *
  * MigrationDecl + TransformSpec + TransformOp types mirror the on-disk schema
  * shape one-for-one. They live here (rather than schema-migrations.ts) because
@@ -40,6 +42,7 @@ import { fileURLToPath } from "node:url";
 import { writeTypedFile } from "./block-api.js";
 import { migrationsPath } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
+import { invalidateMigrationRegistry } from "./migration-registry-loader.js";
 import { validateFromFile } from "./schema-validator.js";
 
 /**
@@ -169,9 +172,7 @@ export function appendMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: Disp
 	const next: MigrationsFile = clone(current);
 	next.migrations.push(decl);
 	writeMigrationsFile(cwd, next, ctx);
-	// Loader-cache invalidation is wired in step 2 (migration-registry-loader.ts);
-	// step 1 leaves the call site stubbed-out to keep the registry/store split
-	// uncoupled within this commit.
+	invalidateMigrationRegistry(cwd);
 }
 
 /**
@@ -196,9 +197,7 @@ export function replaceMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: Dis
 	const next: MigrationsFile = clone(current);
 	next.migrations[idx] = decl;
 	writeMigrationsFile(cwd, next, ctx);
-	// Loader-cache invalidation is wired in step 2 (migration-registry-loader.ts);
-	// step 1 leaves the call site stubbed-out to keep the registry/store split
-	// uncoupled within this commit.
+	invalidateMigrationRegistry(cwd);
 }
 
 /**
@@ -220,7 +219,5 @@ export function removeMigrationDecl(cwd: string, schemaName: string, fromVersion
 	const next: MigrationsFile = clone(current);
 	next.migrations.splice(idx, 1);
 	writeMigrationsFile(cwd, next, ctx);
-	// Loader-cache invalidation is wired in step 2 (migration-registry-loader.ts);
-	// step 1 leaves the call site stubbed-out to keep the registry/store split
-	// uncoupled within this commit.
+	invalidateMigrationRegistry(cwd);
 }

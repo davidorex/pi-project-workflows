@@ -3,7 +3,7 @@
 	"$id": "pi-context://schemas/plan",
 	"version": "1.0.0",
 	"title": "Project plans",
-	"description": "Ordered work sequences referencing existing block items. Item ordering lives in relations.json with relation_type='plan_item_depends_on' per DEC-0012 (edges-only authoring; no inline depends_on field on plan items). Plan-membership beyond the items[] array is authored via relations.json with relation_type='plan_member'. Plans reside under <config.root>/plan.json and are opt-in via config.json's installed_blocks.",
+	"description": "Ordered work sequences referencing existing block items. Item ordering lives in relations.json with relation_type='plan_item_depends_on' (edges-only authoring; no inline depends_on field on plan items). Plan-membership beyond the items[] array is authored via relations.json with relation_type='plan_member'. Plans reside under <config.root>/plan.json and are opt-in via config.json's installed_blocks.",
 	"type": "object",
 	"required": ["plans"],
 	"additionalProperties": false,
@@ -25,7 +25,7 @@
 					"status": {
 						"type": "string",
 						"enum": ["draft", "active", "blocked", "complete", "archived"],
-						"description": "Plan lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); plans use authoring lifecycle (draft→active→complete with blocked/archived states). Reconciliation tracked in FGAP-021."
+						"description": "Plan lifecycle. Intentionally divergent from pi-context://schemas/status (workflow-shaped); plans use authoring lifecycle (draft→active→complete with blocked/archived states). Reconciliation."
 					},
 					"roadmap": {
 						"type": ["string", "null"],
@@ -45,7 +45,7 @@
 							"properties": {
 								"ref": {
 									"type": "string",
-									"description": "Canonical id of an existing block item (issue-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, FEAT-NNN, ...). Resolved at load time via resolveItemById."
+									"description": "Canonical id of an existing block item (issue-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, FEAT-NNN, etc.). Resolved at load time via resolveItemById."
 								},
 								"assignee": { "type": "string" },
 								"note": { "type": "string" }

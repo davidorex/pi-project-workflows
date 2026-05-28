@@ -45,7 +45,7 @@
 							"implemented",
 							"verified"
 						],
-						"description": "Requirement lifecycle. Intentionally divergent from pi-context://schemas/status (which uses workflow-shaped todo/in_progress/blocked/complete/unknown); requirements use a 5-state proposed→verified flow. Reconciliation tracked in FGAP-021."
+						"description": "Requirement lifecycle. Intentionally divergent from pi-context://schemas/status (which uses workflow-shaped todo/in_progress/blocked/complete/unknown); requirements use a 5-state proposed→verified flow. Reconciliation."
 					},
 					"priority": {
 						"type": "string",
@@ -55,7 +55,7 @@
 							"could",
 							"wont"
 						],
-						"description": "MoSCoW priority. Intentionally divergent from pi-context://schemas/priority (which uses p- prefix for workflow-vocabulary fragility classification). Reconciliation tracked in FGAP-021."
+						"description": "MoSCoW priority. Intentionally divergent from pi-context://schemas/priority (which uses p- prefix for workflow-vocabulary fragility classification). Reconciliation."
 					},
 					"acceptance_criteria": {
 						"type": "array",
@@ -70,7 +70,7 @@
 							"agent",
 							"analysis"
 						],
-						"description": "How this requirement was created. Intentionally divergent subset/variant of pi-context://schemas/source (which is human/agent/monitor/workflow); requirements substitute 'analysis' for monitor/workflow because requirements originate from analytical work products, not runtime emitters. Reconciliation tracked in FGAP-021."
+						"description": "How this requirement was created. Intentionally divergent subset/variant of pi-context://schemas/source (which is human/agent/monitor/workflow); requirements substitute 'analysis' for monitor/workflow because requirements originate from analytical work products, not runtime emitters. Reconciliation."
 					},
 					"traces_to": {
 						"type": "array",

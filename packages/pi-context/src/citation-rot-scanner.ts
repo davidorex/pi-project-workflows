@@ -220,11 +220,21 @@ function isSchemaFile(file: string): boolean {
 /**
  * Heuristic: is this JSON file an array-of-items seed-data file (carves out
  * top-level `id` string values that legitimately encode each item's
- * canonical_id)?
+ * canonical_id)? Covers:
+ *   - samples/blocks/ — packaged conception seed data
+ *   - .project/ — live substrate
+ *   - registry/blocks/ + defaults/blocks/ — legacy on-disk fixtures
+ *     (structurally identical to samples/blocks/; the scanner gates them
+ *     defensively per FGAP-131 plan step 3 scope)
  */
 function isItemsFile(file: string): boolean {
 	const norm = file.replace(/\\/g, "/");
-	return norm.includes("/samples/blocks/") || norm.includes("/.project/");
+	return (
+		norm.includes("/samples/blocks/") ||
+		norm.includes("/.project/") ||
+		norm.includes("/registry/blocks/") ||
+		norm.includes("/defaults/blocks/")
+	);
 }
 
 /**

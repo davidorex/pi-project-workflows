@@ -3,7 +3,7 @@
 	"$id": "pi-context://schemas/phase",
 	"version": "2.0.0",
 	"title": "Phases",
-	"description": "Array-block of planned implementation phases (DEC-0028). Each phase carries a PHASE-NNN string id, intent, success criteria, decomposed specs, status lifecycle (planned, in-progress, completed), and dependency tracking. Replaces the file-per-phase form (integer `number` discriminator under .project/phases/) with a single .project/phases.json holding phases[].",
+	"description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, success criteria, decomposed specs, status lifecycle (planned, in-progress, completed), and dependency tracking. Replaces the file-per-phase form (integer `number` discriminator under.project/phases/) with a single.project/phases.json holding phases[].",
 	"type": "object",
 	"required": [
 		"phases"
@@ -25,7 +25,7 @@
 					"id": {
 						"type": "string",
 						"pattern": "^PHASE-[A-Z0-9-]+$",
-						"description": "Canonical phase id (e.g. PHASE-001). Replaces the integer `number` discriminator of the file-per-phase form."
+						"description": "Canonical phase id (e.g.). Replaces the integer `number` discriminator of the file-per-phase form."
 					},
 					"name": {
 						"type": "string"

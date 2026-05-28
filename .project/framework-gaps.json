@@ -4889,6 +4889,68 @@
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
       "closed_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-131",
+      "title": "Sibling-package citation rot un-audited and ungated — pi-workflows + pi-behavior-monitors + pi-agent-dispatch + pi-jit-agents shipped artifacts (skill-narrative.md / SKILL.md / bundled agents / schemas / docs / src description strings) carry unknown count of pi-project-workflows substrate canonical_id citations that downstream consumers cannot resolve; FGAP-130 closure explicitly scoped to pi-context only",
+      "status": "identified",
+      "priority": "P1",
+      "package": "all-extension-packages",
+      "layer": "L1",
+      "description": "FGAP-130 resolution (merge 9b65e4c 2026-05-28) stripped citation rot from packages/pi-context/* and added a samples-catalog.test.ts regression gate scoped to pi-context's samples/ + src/. By explicit plan scope (in approved plan + in FGAP-130 body), sibling packages were OUT OF SCOPE. They remain unaudited and ungated. Same root cause exists in their shipped surfaces if present: skill-narrative.md files regenerated into SKILL.md (operator-facing); bundled .agent.yaml specs (operator-facing prompt text + descriptions); bundled .workflow.yaml specs (likewise); bundled .monitor.json specs (likewise); src/*.ts files with description strings on pi.registerTool calls and parameter descriptions that surface to operators via SKILL.md generation; README.md files inside each package (if shipped via files[]); JSDoc comments that get pulled into description strings via doc-generation scripts. Empirically: the FGAP-130 adversarial probe CHECK 11 already flagged one known sibling-package leak — packages/pi-project-workflows/skills/pi-project-workflows/SKILL.md line 41 contains a citation sourced from pi-agent-dispatch/skill-narrative.md. Unknown how many more across 4 packages. Downstream consumers running `pi install -l <META>` followed by reading any sibling-package SKILL.md or bundled-spec description will encounter the same unresolvable references.",
+      "evidence": [
+        {
+          "file": "packages/pi-agent-dispatch/skill-narrative.md",
+          "reference": "FGAP-130 adversarial probe CHECK 11 (2026-05-28) identified one citation here that leaks to packages/pi-project-workflows/skills/pi-project-workflows/SKILL.md line 41 after meta-skills regeneration"
+        },
+        {
+          "file": "packages/pi-workflows/",
+          "reference": "shipped artifacts unaudited — bundled .workflow.yaml + .agent.yaml + skill-narrative.md + src/*.ts description strings all candidates"
+        },
+        {
+          "file": "packages/pi-behavior-monitors/",
+          "reference": "shipped artifacts unaudited — bundled .monitor.json + bundled .agent.yaml classifier specs + Nunjucks prompt templates + skill-narrative.md + src/*.ts all candidates"
+        },
+        {
+          "file": "packages/pi-jit-agents/",
+          "reference": "library (not extension) but ships docs/planning/jit-agents-spec.md + README.md + src/*.ts JSDoc — unaudited"
+        }
+      ],
+      "impact": "FGAP-130's resolution is partial: in-pi agent launched against any target dir that loads any extension other than pi-context can still cite unresolvable canonical_ids sourced from sibling-package shipped surfaces. The FGAP-130 regression test gates only pi-context; the same regex pattern violated in a sibling package's shipped artifact escapes detection. Downstream consumers experience the same citation-rot failure mode FGAP-130 catalogued but via a different package. The 'paramount canonical pipeline' completion-claim from FGAP-130 has a known-gap; closing FGAP-131 closes the actual user-facing problem completely.",
+      "canonical_vocabulary": "framework-canon vs project-substrate separation; portable-canonical-artifacts; cross-package regression-gate uniformity",
+      "proposed_resolution": "Audit every shipped artifact in packages/pi-workflows + packages/pi-behavior-monitors + packages/pi-agent-dispatch + packages/pi-jit-agents for the canonical_id regex pattern from FGAP-130: /\\b(FGAP-\\d{3}|DEC-\\d{4}|FEAT-\\d{3}|TASK-\\d{3}|VER-\\d{3}|REVIEW-\\d+|RAT-\\d+|CTX-\\d+|WO-\\d+|STORY-\\d+|PLAN-\\d+|REQ-\\d+|R-\\d+)\\b/. For each hit, apply the same Pattern A/B/C/D rewrite template from the FGAP-130 plan. Then extend the regression test (or create per-package equivalents per the package's test runner) to cover all 4 sibling packages' shipped surfaces with the same gate. The gate MUST run on every commit (husky pre-commit). On completion: one merged commit per package OR one umbrella merge covering all 4; status closure attests across all packages. Closes the actual downstream-consumer-facing problem completely, not just the pi-context slice.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-132",
+      "title": "FGAP-130 citation-rot regression test is naive-text-scan-based with heuristic exclusions deferring rigor — mandate-007 violation in plan text 'is sufficient — pick complexity later if false-positives surface'; AST-based traversal foreclosing both false-positive and false-negative classes never built",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "FGAP-130 plan step 3 + implementation landed a regression test in packages/pi-context/src/samples-catalog.test.ts that: (a) does naive recursive JSON walk for samples/**/*.json — every string value; (b) does line-by-line raw text scan of src/index.ts + src/orientation.ts; (c) uses heuristic exclusions ('property named id at item level' for JSON, 'comment-only line OR line containing both e.g. and NNN' for source). The plan text explicitly deferred rigor with the phrase 'pick complexity later only if false-positives surface' — a mandate-007 anti-pattern (don't favor deferring discovered issues; if a known-fragility-possibility exists, surface and foreclose it now). Specific known fragility classes the naive scan misses or risks: (1) MULTI-LINE STRINGS in TypeScript — template literals or split-across-newlines string concatenation where a canonical_id straddles the line break escapes the line-by-line scan; (2) COMMENT-EXCLUSION FALSE NEGATIVE — line with code + trailing inline comment containing a citation (`const x = 'y'; // see TASK-088`) is NOT excluded but the citation is dev-internal; not currently a leak path but the exclusion logic isn't doing what its phrasing implies; (3) e.g.+NNN HEURISTIC FALSE POSITIVE — a legitimate sentence containing 'e.g.' and the digits 'NNN' in unrelated contexts collides with the exclusion; conversely, a real citation in a sentence that happens to contain both substrings escapes detection; (4) JSON enum-value FALSE POSITIVE — a schema enum like ['FGAP-001', 'FGAP-002'] would trip the test even though enums of canonical_ids may be legitimate substrate-vocabulary declarations (none ship today but could land); (5) STRUCTURAL ID EXCLUSION is path-suffix-based ('samples/blocks/*.json') and key-name-based ('property named id') — does not distinguish item-level id from nested id (e.g. an object {someField: {id: 'TASK-001'}} nested in a description-context); (6) JSDoc-comment dev-internal IDs in TypeScript are not scanned at all (current scope) but the line-by-line exclusion is unaware whether a string literal IS in JSDoc context vs in a tool-description string — if a JSDoc-style block contains a string literal with a citation, it's still in source text and the test may flag or miss inconsistently. The AST-based alternative: parse TS via tsc/typescript compiler API, identify all string-literal nodes inside pi.registerTool({description: ...}) calls + parameter description fields specifically, and scan only those — eliminates JSDoc + comment confusion entirely. Parse JSON via deep visitor with full JSONPath tracking + carve out exact paths (e.g. /properties/id, /enum at registry-block-paths) — eliminates heuristic exclusion. The plan acknowledged the AST option as the rigor-foreclosing path but chose naive-now-rigorous-later — exactly the mandate-007 deferral.",
+      "evidence": [
+        {
+          "file": "/Users/david/.claude/plans/idempotent-dancing-wilkes.md",
+          "reference": "'Naive recursive JSON walk + regex per Implementation step 3 is sufficient — pick complexity later only if false-positives surface' — verbatim mandate-007 deferral; the plan was approved and the test built per the naive form"
+        },
+        {
+          "file": "packages/pi-context/src/samples-catalog.test.ts",
+          "reference": "the newly-landed citation-rot regression test (commit 4fd28a6) implements the naive form documented in the plan"
+        }
+      ],
+      "impact": "Two failure-mode classes unresolved by the naive gate. False-positive class: future legitimate canonical-id-vocabulary changes (e.g. shipping a registry of canonical_id form examples; expanding ID-format-illustration coverage) will trip the test and force either test-disablement OR ad-hoc exclusion accretion — both negative outcomes. False-negative class: citations that escape via multi-line strings or unusual formatting silently land in shipped artifacts post-FGAP-130 closure without the gate catching them; the gate's apparent green becomes a false-confidence signal. Both classes mean the FGAP-130 closure is not as robust as the VER-058 attestation implies. Combined with FGAP-131 (sibling-package scope gap), the overall citation-rot-foreclosure story is weaker than the merge message claims.",
+      "canonical_vocabulary": "AST-based string-literal extraction; rigorous-gate vs heuristic-gate; mandate-007 deferred-fragility-foreclosure",
+      "proposed_resolution": "Replace the naive line-by-line text scan with AST-based traversal using the typescript compiler API: (1) parse each candidate .ts file via ts.createSourceFile; (2) walk the AST identifying string-literal nodes that are arguments to specific call patterns (pi.registerTool description fields, parameter description fields per Type.String + Type.Object property descriptions); (3) apply canonical_id regex ONLY to those identified strings; (4) ignore all comment / JSDoc / non-description string literals. Replace the recursive JSON walk's heuristic exclusion with explicit JSONPath carve-outs declared as a known list (e.g. exclude $..id at item-array elements; exclude $..pattern at schema-property descriptors that are regex source). Build into the same samples-catalog.test.ts (or a new co-located citation-rot.test.ts) so it remains pi-context-package-scoped at landing time; extending to siblings is FGAP-131's territory. After replacement: re-run the synthetic-injection test from the FGAP-130 adversarial probe to confirm the gate still trips on every real-violation class while ceasing to false-positive on the legitimate-edge-cases enumerated above. The mandate-007-compliant outcome: rigor foreclosed at landing time, not deferred.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
     }
   ]
 }

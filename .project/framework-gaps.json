@@ -4398,6 +4398,272 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-117",
+      "title": "pi-agent-dispatch launch-chain invisibility — META package + generate-skills.js + package self-registration ALL omit the 5th extension; 5 static tools + entire FEAT-006 loop unreachable from launch-constrained-pi.sh",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-project-workflows",
+      "layer": "L5",
+      "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gaps 1-5 CRITICAL) empirically established that pi-agent-dispatch is INVISIBLE to the launch chain through three coordinated absences: (1) META `packages/pi-project-workflows/package.json` `dependencies[]` (lines 32-34) + `pi.extensions[]` (lines 22-26) list only the 3 prior extensions; pi-agent-dispatch is in neither; no `agent-dispatch-extension.ts` shim parallel to the existing project/workflows/monitors shims. Therefore `pi install -l $META` step 1 of the launch script does not install pi-agent-dispatch. (2) `scripts/generate-skills.js:999` hardcodes `packageDirs = ['pi-context', 'pi-workflows', 'pi-behavior-monitors']`; pi-agent-dispatch is absent. Therefore no SKILL.md is emitted for it under `packages/pi-agent-dispatch/skills/`. (3) pi-agent-dispatch's own `package.json` has no `pi.skills` field, no `skills/` directory, no `skill-narrative.md`, no `skills/` in `files[]` — diverges from the parity pattern of the other 3 extensions. Net effect: empirical grep of `packages/*/skills/*/SKILL.md` returns 53 tool names; ZERO of pi-agent-dispatch's 5 static tools (call-agent, author-agent-spec, run-real-checks, commit-attested, author-tool-grant) appear. The launch script's --tools derivation therefore cannot include them. Launching the current script produces a session where the entire FEAT-006 north-star loop (orchestrator → author spec → dispatch agent → run-real-checks → commit-attested) is unreachable; JI-021 (orchestrator uses jit-agents directly) is violated because call-agent is absent; DEC-0044 (pi-agent-dispatch loaded peer-to-peer) is violated.",
+      "evidence": [
+        {
+          "file": "packages/pi-project-workflows/package.json",
+          "reference": "lines 22-26 (pi.extensions[] omits agent-dispatch shim); lines 32-34 (dependencies[] omits @davidorex/pi-agent-dispatch)"
+        },
+        {
+          "file": "scripts/generate-skills.js",
+          "reference": "line 999 hardcoded packageDirs list omits pi-agent-dispatch"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/package.json",
+          "reference": "no pi.skills field; files[] omits skills/; whole package omits skill-narrative.md + skills/ dir"
+        },
+        {
+          "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+          "reference": "Audit commit 945dc93 gaps 1-5 CRITICAL; per-gap evidence + canon-violated columns"
+        }
+      ],
+      "impact": "Launching the canonical `scripts/launch-constrained-pi.sh` today produces a session that cannot execute the FEAT-006 north-star loop. DEC-0014 negative clause (no bash/read/write/edit) is honored; positive clause (the canonical tool surface) is violated by omission. JI-021 + DEC-0044 + FEAT-005 + FEAT-010 + FEAT-006 all blocked at the surface where they were meant to manifest.",
+      "canonical_vocabulary": "launch-chain-invisibility / META-package-omission / skills-generation-hardcoded-list / extension-self-registration-parity",
+      "proposed_resolution": "Addressed by FEAT-011 (pi-agent-dispatch launch-chain integration). Four file edits + 1 new file per audit's resolution scope: (a) packages/pi-project-workflows/package.json adds @davidorex/pi-agent-dispatch dep + agent-dispatch-extension.ts to pi.extensions[]; (b) NEW packages/pi-project-workflows/agent-dispatch-extension.ts one-line re-export shim mirroring the existing 3 shims; (c) packages/pi-agent-dispatch/package.json adds pi.skills field + skills/ to files[]; (d) NEW packages/pi-agent-dispatch/skill-narrative.md hand-authored narrative source (YAML frontmatter + XML-tagged sections per pi skill standard); (e) scripts/generate-skills.js packageDirs list adds 'pi-agent-dispatch'. After: npm run skills regenerates → pi-agent-dispatch SKILL.md exists with 5 static tool tags → launch script grep picks them up → launched session sees all 5. Closes via canonical-symmetry, no canon evolution required.",
+      "related_features": [
+        "FEAT-011",
+        "FEAT-006"
+      ],
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0044",
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-118",
+      "title": "Dynamic composite tools have no skills-generation pathway by construction — composite-loader reads loadContext(process.cwd()) which at build-time = repo root (config:null degrade), while per-project composite instances live in target launch dir; skill-discovery vs runtime-discovery split unreconciled",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-agent-dispatch",
+      "layer": "L5",
+      "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gap 6 HIGH + F.1) empirically established: scripts/generate-skills.js:803 invokes factory(mockPi) with process.cwd() = repo root at npm run skills time. Repo root has .project/ (not .pi-context.json pointer). loadContext() graceful-degrades to {config: null}. composite-loader registers ZERO composite Pi tools under this condition. Therefore even after FGAP-117 closure (pi-agent-dispatch wired into META + skills-gen + own package self-reg), the DYNAMIC composite tools (config.tool_operations[] entries registered at extension-load) would NEVER appear in any generated SKILL.md. The launch script's --tools grep-from-static-SKILLs derivation cannot capture them. The architectural mismatch: skill discovery is build-time (per-repo), composite registration is runtime (per-target-dir). Closing FGAP-117 establishes the skills-gen path for STATIC tools but does not address dynamic composites' invisibility. Two coherent resolution paths surface: (a) launch script reads target-dir config.tool_operations[] at launch time + extends --tools allowlist with derived names (per-target-dir discovery, separate from skills-gen); (b) generate-skills.js gains a target-dir-aware mode that reads composite vocabulary from a designated source then emits a 'composites' SKILL.md (build-time per-target — adds complexity); (c) accept that composites can only be granted via flag-driven launch script extension (FGAP-120 territory) and skills-gen captures only the static surface.",
+      "evidence": [
+        {
+          "file": "scripts/generate-skills.js",
+          "reference": "line 803 factory(mockPi) call site; process.cwd() = repo root at npm run skills"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/composite-loader.ts",
+          "reference": "reads loadContext(cwd) which graceful-degrades to config:null when .pi-context.json pointer absent — repo root in our case has .project/ but no pointer for npm run skills cwd"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/index.ts",
+          "reference": "extension factory calls loadComposites(process.cwd(), pi) at lines 51-52"
+        },
+        {
+          "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+          "reference": "Audit commit 945dc93 Dimension B (gap 6 HIGH); F.1 (HIGH)"
+        }
+      ],
+      "impact": "Even after FGAP-117 (launch-chain integration) closes, the bounded-composite capability vocabulary FEAT-010 ships is unreachable from a launched session UNLESS one of the resolution paths is chosen. User-stated intent (2026-05-28: 'I'd like to add some flags to give select additional tool use perms') maps to a/c above; canon doesn't yet dictate which.",
+      "canonical_vocabulary": "skills-gen-vs-runtime-discovery / per-target-dir-composite-invisibility / launch-time-vs-build-time-tool-derivation",
+      "proposed_resolution": "User decision on resolution path (a/b/c above). Each path has different scope: (a) launch-script enhancement = minimal, in-script; (b) generate-skills.js refactor = larger, build-time; (c) flag-only = surfaces FGAP-120 as the single path forward. Recommend filing the user's choice as a sibling DEC and a follow-on TASK once decided. Pending decision; do not preempt.",
+      "related_features": [
+        "FEAT-010"
+      ],
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0044",
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-119",
+      "title": ".project/config.json tool_operations + tool_operations_forbidden both null/empty in this repo — even after FGAP-117 closure, ZERO composite instances exist for FEAT-010 bounded-composite vocabulary to operate on",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-project-workflows",
+      "layer": "L1",
+      "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gap 7 HIGH) empirically established: .project/config.json has tool_operations: [] (empty array seed from TASK-089/092 runtime demos) + tool_operations_forbidden: [] (empty seed from TASK-092). Zero composite instances declared. Even after FGAP-117 wires pi-agent-dispatch into the launch chain + FGAP-118 resolves dynamic-composite discovery, the in-pi orchestrator will see NO bounded composites because none are declared in this repo's config. The mechanism (FEAT-010 + composite-loader + author-tool-grant) ships complete; the data layer (composite instances) is empty. Authoring composite instances requires either: (a) human writer using author-tool-grant Pi tool (currently unreachable per FGAP-117) or amendConfigEntry directly via tsx-eval; (b) defining a default set of canonical composites that ship in samples/conception.json's tool_operations[] (analogous to status-vocab defaults); (c) leaving the seed empty as canon-correct (composites are project-specific; this repo is a framework workspace not an end-user project; end-user projects would author their own).",
+      "evidence": [
+        {
+          "file": ".project/config.json",
+          "reference": "tool_operations: [] + tool_operations_forbidden: [] empty seeds (committed at TASK-089 a1764ca + TASK-092 a1764ca)"
+        },
+        {
+          "file": "packages/pi-context/samples/conception.json",
+          "reference": "tool_operations: [] + tool_operations_forbidden: [] canonical default catalog also empty"
+        },
+        {
+          "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+          "reference": "Audit commit 945dc93 Dimension C.3 + gap 7 HIGH"
+        }
+      ],
+      "impact": "Bounded-composite capability vocabulary is DEMONSTRABLY available only in test fixtures (per pi-agent-dispatch tests); production-launch surface has no composite instances. The FEAT-005 'composed from empty' intent is honored literally, but 'composed to need' has no path to need-declaration. End-user projects adopting pi-agent-dispatch would face the same: zero composites until they declare some.",
+      "canonical_vocabulary": "composite-instances-empty-seed / framework-vs-project-vocabulary-distinction / sample-composites-defaults-question",
+      "proposed_resolution": "User decision: (a) accept empty seed as canon-correct (composites are project-specific) and document this in the pi-agent-dispatch README so end-user projects know to author their own; (b) ship a small default set of canonical composites in samples/conception.json (e.g. a baseline 'read-files-project-scoped' + 'git-log-recent' as starter set that adopting projects can extend); (c) for THIS repo specifically, author a small set of composites for dogfooding FEAT-006 demos (e.g. read-files scoped to analysis/+docs/, git-log limited to last week). Each path has different scope. Pending decision.",
+      "related_features": [
+        "FEAT-010",
+        "FEAT-006"
+      ],
+      "related_decisions": [
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-120",
+      "title": "launch-constrained-pi.sh has no flag surface for ad-hoc bounded grants — user-stated need 2026-05-28 ('flags to give select additional tool use perms') unwired; relationship to FEAT-010 config.tool_operations[] mechanism unresolved",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-project-workflows",
+      "layer": "L5",
+      "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gap 8 HIGH + Dimension D) empirically established: scripts/launch-constrained-pi.sh accepts only \"$@\" passthrough to pi; no --allow-read <dir>, --composite <name>:<params>, or similar flags. User stated 2026-05-28: 'I'd like to add some flags to it so I can give select additional tool use perms to the main agent; e.g., read files; but i want to think it out first. can we constrain that to particular dirs?' The thinking-out concluded: FEAT-010 IS the canonical mechanism (config.tool_operations[] bounded composites + author-tool-grant). But the per-target-dir config-driven path requires the target dir to have a .pi-context.json pointer + config.json with composite instances pre-launch — that's a launch prerequisite, not a launch flag. The user-stated 'flag surface' framing remains unresolved against: (a) FEAT-010 config-driven path (canonical; per-target-dir state must exist pre-launch); (b) FGAP-118 skills-gen-vs-runtime split (composites must be discoverable somehow); (c) a NEW launch-script flag layer that translates --grant <composite-id> into runtime --tools allowlist additions, bypassing the static-SKILL-grep entirely.",
+      "evidence": [
+        {
+          "file": "scripts/launch-constrained-pi.sh",
+          "reference": "line 33 exec pi --tools \"$TOOLS\" \"$@\" — no per-grant flag parsing"
+        },
+        {
+          "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+          "reference": "Audit commit 945dc93 Dimension D + gap 8 HIGH"
+        }
+      ],
+      "impact": "User intent (operator ad-hoc bounded-grant at launch) unaddressed. The FEAT-010 mechanism (config-driven) handles the canonical case where bounded composites are declared in advance + persist across launches; FGAP-120 territory is the EPHEMERAL case (operator wants a one-time grant for a single session). Two distinct use cases with two coherent mechanisms; canon hasn't resolved which (or both).",
+      "canonical_vocabulary": "ad-hoc-bounded-grant / launch-time-flag-vs-config-persistence / ephemeral-vs-persistent-capability-grant",
+      "proposed_resolution": "User decision: (a) accept FEAT-010 config-driven as the only canonical path; document that ad-hoc grants require amendConfigEntry (or author-tool-grant via in-pi tool) before launch — no separate flag surface; (b) add a launch-script flag layer that translates --grant <composite-id-from-config> into runtime --tools extension at launch time (still requires composite to be declared in some config; flag selects which to expose); (c) full ephemeral mode: --composite <kind>:<json-params> on launch that registers the composite in-process without persisting to config (operator-only grant, evaporates after session). Each path has different scope. Pending decision; FGAP-118 + FGAP-120 are closely coupled (both touch the dynamic-composite discovery path).",
+      "related_features": [
+        "FEAT-010",
+        "FEAT-005"
+      ],
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-121",
+      "title": "composite-loader silently registers nothing in pointerless target dirs (loadContext graceful-degrade) + launch script lacks pointer-presence pre-flight check — operator gets a 'constrained' session with zero composites and no signal",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-agent-dispatch",
+      "layer": "L5",
+      "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gap 9 HIGH + F.4) empirically established: packages/pi-context/src/context.ts loadContext gracefully returns {config: null} when .pi-context.json pointer is absent. packages/pi-agent-dispatch/src/composite-loader.ts:82 buildForbiddenUnion(null) returns the framework-only FORBIDDEN_WHOLESALE_OPERATIONS set; composite-loader's iteration of config.tool_operations[] returns []. composite-loader.ts:103 returns {registered: [], skipped: []}. NO ERROR. The launched session sees: the 5 static pi-agent-dispatch tools (post-FGAP-117 closure) + zero composites — operator has no signal that composites are 'missing' vs 'none declared.' Symmetric concern at the launch-script layer: scripts/launch-constrained-pi.sh has no pre-flight that checks .pi-context.json existence + asserts config.tool_operations[] population matches operator intent. Operator launches against a fresh project + gets a session with vastly reduced capability + no warning.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "reference": "loadContext graceful-degrade path when .pi-context.json absent → returns {config: null}"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/composite-loader.ts",
+          "reference": "lines 82-104 — buildForbiddenUnion + iteration silently produce empty registered[] under config:null"
+        },
+        {
+          "file": "scripts/launch-constrained-pi.sh",
+          "reference": "no pointer-presence pre-flight; no observability around composite-loader's silent no-op"
+        },
+        {
+          "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+          "reference": "Audit commit 945dc93 gap 9 HIGH + F.4"
+        }
+      ],
+      "impact": "Operator observability gap. Launching against a pointerless target dir produces a session indistinguishable (from the operator's perspective) from a properly-configured launch with zero declared composites. Silent no-op is anti-canon per DEC-0047 no-deception clause + feedback_no_stderr_diagnostics (silent behavior drops violate canon).",
+      "canonical_vocabulary": "silent-no-op / operator-signal-gap / pointer-presence-pre-flight",
+      "proposed_resolution": "Two-layer enforcement: (a) composite-loader emits a TraceEntry warning (or returns an additional 'config_absent' marker in its return shape) when loadContext returns config:null AND the call-site (extension factory) emits a startup notice via pi.ui.notify (or equivalent observable surface) — matches the DEC-0047 no-deception canon + the TraceEntry pattern established for DEC-0002; (b) launch-constrained-pi.sh adds a pre-flight `test -f \"$TARGET/.pi-context.json\" || warn` step before exec-ing pi — operator gets explicit notification + can decide whether to proceed or run /context init first. Neither requires canon evolution; both apply existing patterns (TraceEntry observability + pre-flight ceremony).",
+      "related_features": [
+        "FEAT-010"
+      ],
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-122",
+      "title": "launch-chain documentation drift — launch script header says 'three extensions' (post-DEC-0044 there are 4); META README lists 3 + library (omits pi-agent-dispatch); no canonical-anchor citations in launch script; no docs/launching-the-orchestrator.md orientation doc",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-project-workflows",
+      "layer": "L5",
+      "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gaps 10+11+12+15 MEDIUM + F.2) empirically established: (1) scripts/launch-constrained-pi.sh:2-12 header describes 'three extensions' + 'all three'; stale post-FEAT-010 (4 extensions now). (2) packages/pi-project-workflows/README.md:6 reads 'Convenience meta-package that re-exports three Pi extensions plus a shared agent-runtime library' — pre-pi-agent-dispatch framing; lists 4 constituent packages (3 extensions + jit-agents library) without pi-agent-dispatch. (3) launch script body cites no canonical anchors (DEC-0014/0044/0047/FEAT-006) — operator has no in-script orientation to the harness intention. (4) No docs/launching-the-orchestrator.md or equivalent orientation doc exists; F-006 mitigation surface absent. (5) Launch script's pi install -l step 1 writes/mutates the target dir's .pi/ settings; feedback_no_touch_pi_dir applies but the .pi/-touching behavior isn't in-script-documented as required-by-design vs avoidable. Net: documentation drift accumulated since FEAT-010 + the existing pre-pi-agent-dispatch framings never updated to absorb the new extension.",
+      "evidence": [
+        {
+          "file": "scripts/launch-constrained-pi.sh",
+          "reference": "lines 2-12 header — 'three extensions' / 'all three'"
+        },
+        {
+          "file": "packages/pi-project-workflows/README.md",
+          "reference": "line 6 'three Pi extensions plus a shared agent-runtime library'"
+        },
+        {
+          "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+          "reference": "Audit commit 945dc93 Dimension E + gaps 10/11/12/15 MEDIUM + F.2"
+        }
+      ],
+      "impact": "Operator orientation degraded. Fresh-context operators reading the launch-script header + META README form a 3-extension mental model; the 5th tool surface they'd expect from FEAT-010 is unexplained. No canonical-anchor citations means operator cannot trace harness intention back to canon for context.",
+      "canonical_vocabulary": "extension-count-stale / canonical-anchor-citations-absent / orientation-doc-missing / .pi-touching-undocumented",
+      "proposed_resolution": "Addressed as part of FEAT-011 cascade (launch-chain integration): (a) update scripts/launch-constrained-pi.sh header to reference 4 extensions + cite DEC-0014/0044/0047/FEAT-006 anchors; (b) update packages/pi-project-workflows/README.md to absorb pi-agent-dispatch; (c) author docs/launching-the-orchestrator.md (gitignored per docs/ rule but tracked-as-non-substrate is fine) covering: prerequisites, the .pi/-touching behavior, FEAT-006 loop topology, FEAT-010 composite vocabulary author cadence; (d) launch script in-script comment naming the .pi/-touching as required-by-design (cites the pi install mechanism). Closes via documentation passes; no canon evolution.",
+      "related_features": [
+        "FEAT-011",
+        "FEAT-006"
+      ],
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0044",
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-123",
+      "title": "launch-chain hygiene + symmetry — no verification that all extensions emitted SKILL.md (silent partial-set launch); pi-agent-dispatch package.json lacks pi.skills field (asymmetric with peers); FEAT-004/005/006 status=proposed while FEAT-010=complete (arc-readiness asymmetry obscures roadmap)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-project-workflows",
+      "layer": "L5",
+      "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gaps 13+14+16 MEDIUM + F.3+F.5+F.6) clusters three symmetry/hygiene gaps: (1) launch script greps for `<tool name=>` tags across packages/*/skills/*/SKILL.md; if pi-agent-dispatch's SKILL.md is silently missing (e.g., generate-skills.js failure or unrun), launch proceeds with a partial allowlist + no warning — no pre-launch verification step asserts the 4-extension symmetry post-cascade; (2) pi-context / pi-workflows / pi-behavior-monitors all have pi.skills field in package.json for pi's own skill discovery; pi-agent-dispatch's package.json omits this field, so even if pi installs it the skill won't auto-load via pi's own discovery (separate from the meta-bundled copy mechanism); (3) FEAT-004/005/006 currently status=proposed while FEAT-010 status=complete — the proposed-vs-complete asymmetry in the features block obscures arc readiness for fresh-context readers (FEAT-010 ships FEAT-005's infrastructure but FEAT-005 is still proposed). Each is independently small; clustered here because they all touch launch-chain symmetry hygiene.",
+      "evidence": [
+        {
+          "file": "scripts/launch-constrained-pi.sh",
+          "reference": "no pre-launch symmetry verification; grep-only derivation trusts file presence"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/package.json",
+          "reference": "lines 26-29 pi.skills field absent (asymmetric with other 3 extensions)"
+        },
+        {
+          "file": ".project/features.json",
+          "reference": "FEAT-004 status=proposed + FEAT-005 status=proposed + FEAT-006 status=proposed + FEAT-010 status=complete — arc-readiness asymmetry"
+        },
+        {
+          "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+          "reference": "Audit commit 945dc93 gaps 13/14/16 MEDIUM + F.3+F.5+F.6"
+        }
+      ],
+      "impact": "Symmetry hygiene gaps that don't block functionality but accumulate operator confusion + arc-state opacity. Gap 13 (no verification) means a silent-partial-launch is possible; gap 14 (pi.skills asymmetry) means pi-agent-dispatch's skill self-discovery is non-canonical post-meta-bundle; gap 16 (FEAT proposed/complete asymmetry) makes fresh-context arc-state reading require knowing the project history.",
+      "canonical_vocabulary": "launch-symmetry-verification / pi-skills-field-asymmetry / feat-status-arc-readiness-asymmetry",
+      "proposed_resolution": "Addressed as part of FEAT-011 cascade (launch-chain integration) + a separate substrate-status cleanup pass: (a) launch script adds pre-launch symmetry check (count of SKILL.mds emitted ≥ 4 OR explicit warning to operator); (b) pi-agent-dispatch package.json adds pi.skills field once skills/ dir exists (per FGAP-117 closure); (c) features.json status flips: FEAT-005 (proposed → complete, since FEAT-010 closure covers it) + FEAT-004 (proposed → in-progress, since pi-agent-dispatch ships the agents-as-tools dispatch surface via call-agent) — separate from FEAT-011's scope but in the same status-cascade pass. Pure hygiene; no canon evolution.",
+      "related_features": [
+        "FEAT-011",
+        "FEAT-004",
+        "FEAT-005",
+        "FEAT-006"
+      ],
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0044"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
     }
   ]
 }

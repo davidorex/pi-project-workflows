@@ -543,5 +543,15 @@
     "parent": "VER-058",
     "child": "FGAP-130",
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-059",
+    "child": "FGAP-131",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-059",
+    "child": "FGAP-132",
+    "relation_type": "verification_verifies_item"
   }
 ]

@@ -2402,6 +2402,42 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28"
+    },
+    {
+      "id": "VER-059",
+      "target": "FGAP-131",
+      "target_type": "framework-gap",
+      "status": "passed",
+      "method": "test",
+      "evidence": "Rigorous AST + JSON + markdown/YAML citation-rot scanner introduced (packages/pi-context/src/citation-rot-scanner.ts + 13 unit tests). Naive line-by-line CITATION_RE scan replaced. All six monorepo packages (pi-context including legacy registry/ + defaults/; pi-workflows; pi-behavior-monitors; pi-agent-dispatch; pi-jit-agents; pi-project-workflows META) stripped of operator-facing canonical_id citations. Driver test asserts 0 hits across all packages from inside the workspace test suite (samples-catalog.test.ts) and therefore runs in husky pre-commit + CI. Single VER attesting both FGAP-131 (sibling strip) + FGAP-132 (rigorous scanner replacement) — two verification_verifies_item edges appended in the same cascade.",
+      "timestamp": "2026-05-28T00:00:00Z",
+      "criteria_results": [
+        {
+          "criterion": "npm run build + check + test exit 0 across all 5 packages",
+          "status": "passed",
+          "evidence": "All steps run via husky pre-commit on each of the 10 implementation commits."
+        },
+        {
+          "criterion": "Scanner unit tests pass — AST extraction skips JSDoc + line comments; JSON walker skips item-level id under samples/blocks + registry/blocks + defaults/blocks + .project; schema pattern + enum carve-out fires; markdown multi-line straddle caught; YAML body value caught; node_modules + dist + .test.ts walker exclusions hold",
+          "status": "passed",
+          "evidence": "13/13 tests in packages/pi-context/src/citation-rot-scanner.test.ts pass."
+        },
+        {
+          "criterion": "Direct cross-package scanForCitationRot returns 0 hits per package",
+          "status": "passed",
+          "evidence": "Per-step scanner re-runs verified zero hits in each package; final all-package driver test (it(\"citation-rot regression ...\")) asserts deepStrictEqual(hits, []) and passes."
+        },
+        {
+          "criterion": "Synthetic-injection per surface type trips correctly",
+          "status": "passed",
+          "evidence": "Unit tests in citation-rot-scanner.test.ts inject synthetic FEAT-001 / WO-001 / FGAP-099 / FGAP-131 into ast-string-literal, json-string-value, markdown-body, yaml-value scratch files and assert per-surface flagging. JSDoc + non-tool-tree string literals confirmed NOT flagged."
+        },
+        {
+          "criterion": "Adversarial fresh-context probe verifies (a) zero shipped-surface canonical_id citations across all 5 packages + META, (b) framework rules preserved in abstract language, (c) regression test runs as part of the workspace suite",
+          "status": "skipped",
+          "evidence": "Orchestrator follow-on action; this VER attests the implementation-level closure pending the credentialed adversarial probe."
+        }
+      ]
     }
   ]
 }

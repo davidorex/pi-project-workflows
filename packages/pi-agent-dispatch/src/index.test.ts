@@ -4,7 +4,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import extension, { assertDefaultsClean } from "./index.js";
 
 describe("pi-agent-dispatch extension", () => {
-	it("registers 5 static tools: call-agent, author-agent-spec, run-real-checks, commit-attested, author-tool-grant", () => {
+	it("registers 6 static tools: call-agent, author-agent-spec, run-real-checks, commit-attested, author-tool-grant, run-work-order-loop", () => {
 		const registered: string[] = [];
 		const pi = {
 			registerTool: (tool: { name: string }) => {
@@ -12,7 +12,14 @@ describe("pi-agent-dispatch extension", () => {
 			},
 		} as unknown as ExtensionAPI;
 		extension(pi);
-		for (const name of ["author-agent-spec", "call-agent", "run-real-checks", "commit-attested", "author-tool-grant"]) {
+		for (const name of [
+			"author-agent-spec",
+			"call-agent",
+			"run-real-checks",
+			"commit-attested",
+			"author-tool-grant",
+			"run-work-order-loop",
+		]) {
 			assert.ok(registered.includes(name), `expected '${name}' in ${JSON.stringify(registered)}`);
 		}
 	});

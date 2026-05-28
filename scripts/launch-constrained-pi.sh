@@ -1,23 +1,52 @@
 #!/usr/bin/env bash
 # launch-constrained-pi.sh — launch an interactive pi session whose agent tool surface is
-# WHOLLY constrained to the tools our extensions expose (no pi builtins, no other extensions).
+# WHOLLY constrained to the canonical 5-extension surface (pi-context, pi-workflows,
+# pi-behavior-monitors, pi-agent-dispatch as registered extensions; pi-jit-agents as a
+# library consumed directly by the other consumers per narrowed DEC-0044).
+#
+# Per DEC-0014 the harness-confined orchestrator's positive clause is substrate-write +
+# call-agent + author-agent-spec + run-real-checks + commit-attested + author-tool-grant +
+# run-work-order-loop + declared composites; the negative clause forbids bash/edit/write.
+# Per DEC-0047 capability widening goes through writer.kind=human via author-tool-grant.
+# Per FEAT-006 the run-work-order-loop tool closes the end-to-end loop; per FEAT-010 the
+# bounded-composite vocabulary is read from the target dir's config.tool_operations[].
 #
 # Run from the target dir, e.g.:
 #   cd /Users/david/Projects/may-22-2026 && /path/to/repo/scripts/launch-constrained-pi.sh
 #
-# Presumes the repo is already built (pi loads extensions from dist/). Does two things:
-#   1. pi install -l <meta-package>   — registers all three extensions into the cwd's .pi/
-#   2. pi --tools <our tools>         — interactive session restricted to exactly our tools
-# The --tools list is derived from the generated SKILL.md (not hardcoded) so it tracks the
-# current tool set. Extra args ("$@") pass through to pi (e.g. an initial prompt or --model).
+# Optional flags:
+#   --grant <canonical_id>   — scope the dynamic composite surface to a subset of declared
+#                              tool_operations[]. May be repeated. Default (no --grant) is
+#                              all declared composites.
+#
+# Presumes the repo is already built (pi loads extensions from dist/). Does:
+#   1. pi install -l <meta-package>   — registers the 4 extensions into the target dir's .pi/
+#   2. derive static --tools from SKILL.md + per-target composites from config.tool_operations[]
+#   3. exec pi --tools <union> "$@"   — interactive session restricted to the composed surface
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 META="$REPO/packages/pi-project-workflows"
+TARGET_CWD="$(pwd)"
+
+# Pre-flight pointer check — composites + substrate ops require a bootstrapped substrate.
+if [ ! -f "$TARGET_CWD/.pi-context.json" ]; then
+	echo "launch-constrained-pi: WARNING — no .pi-context.json pointer in $TARGET_CWD; composites will be empty + substrate ops unavailable. Run /context init <substrate-dir> first OR proceed with limited capability." >&2
+fi
+
+# Parse --grant flags out before passing the remainder to pi
+GRANTS=()
+ARGS=()
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--grant) GRANTS+=("$2"); shift 2 ;;
+		*) ARGS+=("$1"); shift ;;
+	esac
+done
 
 pi install -l "$META"
 
-# Derive the --tools list from EVERY package's own generated SKILL.md (repo-absolute —
+# Derive the static --tools list from EVERY package's own generated SKILL.md (repo-absolute —
 # the script runs from a target dir, so the glob must be $REPO-rooted, not cwd-relative).
 # pi-context self-surfaces its skill via resources_discover (not the meta bundle), so we
 # must read each package's own skills/ rather than the meta-bundled copies. sort -u dedups
@@ -30,4 +59,30 @@ if [ -z "$TOOLS" ]; then
 	exit 1
 fi
 
-exec pi --tools "$TOOLS" "$@"
+# Per-target composite discovery via the canonical helper (DEC-0019/0020 dual-surface).
+# Run from $REPO so tsx resolves @davidorex/* + @earendil-works/* against the repo's
+# node_modules; helper operates on the target via --cwd.
+COMPOSITES_JSON="$(cd "$REPO" && npx tsx "$REPO/scripts/orchestrator/read-config-operations.ts" --cwd "$TARGET_CWD" --format json 2>/dev/null || echo '[]')"
+COMPOSITES="$(echo "$COMPOSITES_JSON" | python3 -c 'import sys,json
+try:
+    print(",".join(json.load(sys.stdin)))
+except Exception:
+    pass' 2>/dev/null || echo '')"
+
+# --grant <id> filters to the named subset; default (no --grant) keeps all declared.
+if [ ${#GRANTS[@]} -gt 0 ]; then
+	SELECTED="$(printf '%s\n' "${GRANTS[@]}" | tr '\n' ',' | sed 's/,$//')"
+	COMPOSITES="$SELECTED"
+fi
+
+if [ -n "$COMPOSITES" ]; then
+	TOOLS="$TOOLS,$COMPOSITES"
+fi
+
+# 4-extension symmetry verification — surfaces silently-absent extensions early.
+SKILL_COUNT="$(ls "$REPO"/packages/*/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
+if [ "$SKILL_COUNT" -lt 4 ]; then
+	echo "launch-constrained-pi: WARNING — only $SKILL_COUNT SKILL.md files found across packages; expected >= 4. Some extensions may be silently absent. Run 'npm run skills' from repo root." >&2
+fi
+
+exec pi --tools "$TOOLS" "${ARGS[@]+"${ARGS[@]}"}"

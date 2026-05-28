@@ -4402,7 +4402,7 @@
     {
       "id": "FGAP-117",
       "title": "pi-agent-dispatch launch-chain invisibility — META package + generate-skills.js + package self-registration ALL omit the 5th extension; 5 static tools + entire FEAT-006 loop unreachable from launch-constrained-pi.sh",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-project-workflows",
       "layer": "L5",
@@ -4427,7 +4427,7 @@
       ],
       "impact": "Launching the canonical `scripts/launch-constrained-pi.sh` today produces a session that cannot execute the FEAT-006 north-star loop. DEC-0014 negative clause (no bash/read/write/edit) is honored; positive clause (the canonical tool surface) is violated by omission. JI-021 + DEC-0044 + FEAT-005 + FEAT-010 + FEAT-006 all blocked at the surface where they were meant to manifest.",
       "canonical_vocabulary": "launch-chain-invisibility / META-package-omission / skills-generation-hardcoded-list / extension-self-registration-parity",
-      "proposed_resolution": "Addressed by FEAT-011 (pi-agent-dispatch launch-chain integration). Four file edits + 1 new file per audit's resolution scope: (a) packages/pi-project-workflows/package.json adds @davidorex/pi-agent-dispatch dep + agent-dispatch-extension.ts to pi.extensions[]; (b) NEW packages/pi-project-workflows/agent-dispatch-extension.ts one-line re-export shim mirroring the existing 3 shims; (c) packages/pi-agent-dispatch/package.json adds pi.skills field + skills/ to files[]; (d) NEW packages/pi-agent-dispatch/skill-narrative.md hand-authored narrative source (YAML frontmatter + XML-tagged sections per pi skill standard); (e) scripts/generate-skills.js packageDirs list adds 'pi-agent-dispatch'. After: npm run skills regenerates → pi-agent-dispatch SKILL.md exists with 5 static tool tags → launch script grep picks them up → launched session sees all 5. Closes via canonical-symmetry, no canon evolution required.",
+      "proposed_resolution": "Addressed by FEAT-011 (pi-agent-dispatch launch-chain integration). Four file edits + 1 new file per audit's resolution scope: (a) packages/pi-project-workflows/package.json adds @davidorex/pi-agent-dispatch dep + agent-dispatch-extension.ts to pi.extensions[]; (b) NEW packages/pi-project-workflows/agent-dispatch-extension.ts one-line re-export shim mirroring the existing 3 shims; (c) packages/pi-agent-dispatch/package.json adds pi.skills field + skills/ to files[]; (d) NEW packages/pi-agent-dispatch/skill-narrative.md hand-authored narrative source (YAML frontmatter + XML-tagged sections per pi skill standard); (e) scripts/generate-skills.js packageDirs list adds 'pi-agent-dispatch'. After: npm run skills regenerates → pi-agent-dispatch SKILL.md exists with 5 static tool tags → launch script grep picks them up → launched session sees all 5. Closes via canonical-symmetry, no canon evolution required. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
       "related_features": [
         "FEAT-011",
         "FEAT-006"
@@ -4438,12 +4438,14 @@
         "DEC-0047"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-28"
     },
     {
       "id": "FGAP-118",
       "title": "Dynamic composite tools have no skills-generation pathway by construction — composite-loader reads loadContext(process.cwd()) which at build-time = repo root (config:null degrade), while per-project composite instances live in target launch dir; skill-discovery vs runtime-discovery split unreconciled",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-agent-dispatch",
       "layer": "L5",
@@ -4468,7 +4470,7 @@
       ],
       "impact": "Even after FGAP-117 (launch-chain integration) closes, the bounded-composite capability vocabulary FEAT-010 ships is unreachable from a launched session UNLESS one of the resolution paths is chosen. User-stated intent (2026-05-28: 'I'd like to add some flags to give select additional tool use perms') maps to a/c above; canon doesn't yet dictate which.",
       "canonical_vocabulary": "skills-gen-vs-runtime-discovery / per-target-dir-composite-invisibility / launch-time-vs-build-time-tool-derivation",
-      "proposed_resolution": "Launch script reads the target dir's `config.tool_operations[]` at launch time (post-installContext or pre-exec pi) and extends the --tools allowlist with derived composite canonical_ids. Per-target persistence + per-launch surfacing match FEAT-010 design literally: config is the per-project capability registry (writer.kind=human authored via author-tool-grant per DEC-0047); the launch script consumes it at launch. Skills-gen continues to capture only the 5 static pi-agent-dispatch tools via the existing canonical pipeline (resolved separately by FGAP-117 / FEAT-011). FGAP-118 + FGAP-120 collapse to one implementation: launch script reads config at launch + --grant flag (FGAP-120) selects which declared composites to surface in --tools.",
+      "proposed_resolution": "Launch script reads the target dir's `config.tool_operations[]` at launch time (post-installContext or pre-exec pi) and extends the --tools allowlist with derived composite canonical_ids. Per-target persistence + per-launch surfacing match FEAT-010 design literally: config is the per-project capability registry (writer.kind=human authored via author-tool-grant per DEC-0047); the launch script consumes it at launch. Skills-gen continues to capture only the 5 static pi-agent-dispatch tools via the existing canonical pipeline (resolved separately by FGAP-117 / FEAT-011). FGAP-118 + FGAP-120 collapse to one implementation: launch script reads config at launch + --grant flag (FGAP-120) selects which declared composites to surface in --tools. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
       "related_features": [
         "FEAT-010"
       ],
@@ -4478,7 +4480,9 @@
         "DEC-0047"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-28"
     },
     {
       "id": "FGAP-119",
@@ -4518,7 +4522,7 @@
     {
       "id": "FGAP-120",
       "title": "launch-constrained-pi.sh has no flag surface for ad-hoc bounded grants — user-stated need 2026-05-28 ('flags to give select additional tool use perms') unwired; relationship to FEAT-010 config.tool_operations[] mechanism unresolved",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-project-workflows",
       "layer": "L5",
@@ -4535,7 +4539,7 @@
       ],
       "impact": "User intent (operator ad-hoc bounded-grant at launch) unaddressed. The FEAT-010 mechanism (config-driven) handles the canonical case where bounded composites are declared in advance + persist across launches; FGAP-120 territory is the EPHEMERAL case (operator wants a one-time grant for a single session). Two distinct use cases with two coherent mechanisms; canon hasn't resolved which (or both).",
       "canonical_vocabulary": "ad-hoc-bounded-grant / launch-time-flag-vs-config-persistence / ephemeral-vs-persistent-capability-grant",
-      "proposed_resolution": "Launch script gains `--grant <composite-id>` flag (repeatable) that selects from composites already declared in target dir's `config.tool_operations[]` and extends the --tools allowlist with the selected ids. Composites stay config-mediated: writer.kind=human enforcement preserved (per DEC-0047); persistence preserved (composite declarations survive across launches); flag is purely per-launch scoping of which declared composites to expose. Honors user-stated 2026-05-28 intent (flag surface for ad-hoc grants) within canon (no ephemeral bypass that would violate writer.kind=human gate or feedback_no_parallel_ungated_paths). Coupled with FGAP-118: same launch-script enhancement closes both — read target config + offer --grant selector. Default behavior when --grant omitted: extend allowlist with ALL declared composites (operator gets full granted vocabulary; --grant scopes to a subset).",
+      "proposed_resolution": "Launch script gains `--grant <composite-id>` flag (repeatable) that selects from composites already declared in target dir's `config.tool_operations[]` and extends the --tools allowlist with the selected ids. Composites stay config-mediated: writer.kind=human enforcement preserved (per DEC-0047); persistence preserved (composite declarations survive across launches); flag is purely per-launch scoping of which declared composites to expose. Honors user-stated 2026-05-28 intent (flag surface for ad-hoc grants) within canon (no ephemeral bypass that would violate writer.kind=human gate or feedback_no_parallel_ungated_paths). Coupled with FGAP-118: same launch-script enhancement closes both — read target config + offer --grant selector. Default behavior when --grant omitted: extend allowlist with ALL declared composites (operator gets full granted vocabulary; --grant scopes to a subset). [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
       "related_features": [
         "FEAT-010",
         "FEAT-005"
@@ -4545,12 +4549,14 @@
         "DEC-0047"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-28"
     },
     {
       "id": "FGAP-121",
       "title": "composite-loader silently registers nothing in pointerless target dirs (loadContext graceful-degrade) + launch script lacks pointer-presence pre-flight check — operator gets a 'constrained' session with zero composites and no signal",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-agent-dispatch",
       "layer": "L5",
@@ -4575,7 +4581,7 @@
       ],
       "impact": "Operator observability gap. Launching against a pointerless target dir produces a session indistinguishable (from the operator's perspective) from a properly-configured launch with zero declared composites. Silent no-op is anti-canon per DEC-0047 no-deception clause + feedback_no_stderr_diagnostics (silent behavior drops violate canon).",
       "canonical_vocabulary": "silent-no-op / operator-signal-gap / pointer-presence-pre-flight",
-      "proposed_resolution": "Two-layer enforcement per existing canon patterns: (a) composite-loader emits a TraceEntry warning (or returns a 'config_absent' marker in its return shape) when loadContext returns config:null; the extension factory surfaces this via pi.ui.notify (or equivalent observable surface) at startup — matches DEC-0047 no-deception clause + the TraceEntry pattern established for DEC-0002 thinking-seam warning; (b) scripts/launch-constrained-pi.sh adds a pre-flight `test -f \"$TARGET/.pi-context.json\" || warn` step before exec-ing pi — operator gets explicit notification + can decide whether to proceed or run /context init first. Neither layer requires canon evolution; both apply existing patterns (TraceEntry observability + pre-flight ceremony). Lands as part of FEAT-011 implementation cascade.",
+      "proposed_resolution": "Two-layer enforcement per existing canon patterns: (a) composite-loader emits a TraceEntry warning (or returns a 'config_absent' marker in its return shape) when loadContext returns config:null; the extension factory surfaces this via pi.ui.notify (or equivalent observable surface) at startup — matches DEC-0047 no-deception clause + the TraceEntry pattern established for DEC-0002 thinking-seam warning; (b) scripts/launch-constrained-pi.sh adds a pre-flight `test -f \"$TARGET/.pi-context.json\" || warn` step before exec-ing pi — operator gets explicit notification + can decide whether to proceed or run /context init first. Neither layer requires canon evolution; both apply existing patterns (TraceEntry observability + pre-flight ceremony). Lands as part of FEAT-011 implementation cascade. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
       "related_features": [
         "FEAT-010"
       ],
@@ -4584,12 +4590,14 @@
         "DEC-0047"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-28"
     },
     {
       "id": "FGAP-122",
       "title": "launch-chain documentation drift — launch script header says 'three extensions' (post-DEC-0044 there are 4); META README lists 3 + library (omits pi-agent-dispatch); no canonical-anchor citations in launch script; no docs/launching-the-orchestrator.md orientation doc",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-project-workflows",
       "layer": "L5",
@@ -4610,7 +4618,7 @@
       ],
       "impact": "Operator orientation degraded. Fresh-context operators reading the launch-script header + META README form a 3-extension mental model; the 5th tool surface they'd expect from FEAT-010 is unexplained. No canonical-anchor citations means operator cannot trace harness intention back to canon for context.",
       "canonical_vocabulary": "extension-count-stale / canonical-anchor-citations-absent / orientation-doc-missing / .pi-touching-undocumented",
-      "proposed_resolution": "Addressed as part of FEAT-011 cascade (launch-chain integration): (a) update scripts/launch-constrained-pi.sh header to reference 4 extensions + cite DEC-0014/0044/0047/FEAT-006 anchors; (b) update packages/pi-project-workflows/README.md to absorb pi-agent-dispatch; (c) author docs/launching-the-orchestrator.md (gitignored per docs/ rule but tracked-as-non-substrate is fine) covering: prerequisites, the .pi/-touching behavior, FEAT-006 loop topology, FEAT-010 composite vocabulary author cadence; (d) launch script in-script comment naming the .pi/-touching as required-by-design (cites the pi install mechanism). Closes via documentation passes; no canon evolution.",
+      "proposed_resolution": "Addressed as part of FEAT-011 cascade (launch-chain integration): (a) update scripts/launch-constrained-pi.sh header to reference 4 extensions + cite DEC-0014/0044/0047/FEAT-006 anchors; (b) update packages/pi-project-workflows/README.md to absorb pi-agent-dispatch; (c) author docs/launching-the-orchestrator.md (gitignored per docs/ rule but tracked-as-non-substrate is fine) covering: prerequisites, the .pi/-touching behavior, FEAT-006 loop topology, FEAT-010 composite vocabulary author cadence; (d) launch script in-script comment naming the .pi/-touching as required-by-design (cites the pi install mechanism). Closes via documentation passes; no canon evolution. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
       "related_features": [
         "FEAT-011",
         "FEAT-006"
@@ -4621,12 +4629,14 @@
         "DEC-0047"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-28"
     },
     {
       "id": "FGAP-123",
       "title": "launch-chain hygiene + symmetry — no verification that all extensions emitted SKILL.md (silent partial-set launch); pi-agent-dispatch package.json lacks pi.skills field (asymmetric with peers); FEAT-004/005/006 status=proposed while FEAT-010=complete (arc-readiness asymmetry obscures roadmap)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-project-workflows",
       "layer": "L5",
@@ -4651,7 +4661,7 @@
       ],
       "impact": "Symmetry hygiene gaps that don't block functionality but accumulate operator confusion + arc-state opacity. Gap 13 (no verification) means a silent-partial-launch is possible; gap 14 (pi.skills asymmetry) means pi-agent-dispatch's skill self-discovery is non-canonical post-meta-bundle; gap 16 (FEAT proposed/complete asymmetry) makes fresh-context arc-state reading require knowing the project history.",
       "canonical_vocabulary": "launch-symmetry-verification / pi-skills-field-asymmetry / feat-status-arc-readiness-asymmetry",
-      "proposed_resolution": "Addressed as part of FEAT-011 cascade (launch-chain integration) + a separate substrate-status cleanup pass: (a) launch script adds pre-launch symmetry check (count of SKILL.mds emitted ≥ 4 OR explicit warning to operator); (b) pi-agent-dispatch package.json adds pi.skills field once skills/ dir exists (per FGAP-117 closure); (c) features.json status flips: FEAT-005 (proposed → complete, since FEAT-010 closure covers it) + FEAT-004 (proposed → in-progress, since pi-agent-dispatch ships the agents-as-tools dispatch surface via call-agent) — separate from FEAT-011's scope but in the same status-cascade pass. Pure hygiene; no canon evolution.",
+      "proposed_resolution": "Addressed as part of FEAT-011 cascade (launch-chain integration) + a separate substrate-status cleanup pass: (a) launch script adds pre-launch symmetry check (count of SKILL.mds emitted ≥ 4 OR explicit warning to operator); (b) pi-agent-dispatch package.json adds pi.skills field once skills/ dir exists (per FGAP-117 closure); (c) features.json status flips: FEAT-005 (proposed → complete, since FEAT-010 closure covers it) + FEAT-004 (proposed → in-progress, since pi-agent-dispatch ships the agents-as-tools dispatch surface via call-agent) — separate from FEAT-011's scope but in the same status-cascade pass. Pure hygiene; no canon evolution. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
       "related_features": [
         "FEAT-011",
         "FEAT-004",
@@ -4663,7 +4673,9 @@
         "DEC-0044"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-28"
     }
   ]
 }

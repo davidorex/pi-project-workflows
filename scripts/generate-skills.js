@@ -996,7 +996,7 @@ function copyDirRecursive(src, dest) {
 async function main() {
 	console.log("=== Generating SKILL.md files from built extensions ===");
 
-	const packageDirs = ["pi-context", "pi-workflows", "pi-behavior-monitors"];
+	const packageDirs = ["pi-context", "pi-workflows", "pi-behavior-monitors", "pi-agent-dispatch"];
 	const results = [];
 
 	for (const dir of packageDirs) {

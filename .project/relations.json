@@ -498,5 +498,45 @@
     "parent": "FGAP-121",
     "child": "FEAT-011",
     "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FEAT-011",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-117",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-118",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-120",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-121",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-122",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-123",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "VER-057",
+    "child": "TASK-091",
+    "relation_type": "verification_verifies_item"
   }
 ]

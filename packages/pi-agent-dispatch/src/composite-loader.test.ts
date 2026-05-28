@@ -48,6 +48,17 @@ describe("loadComposites", () => {
 		assert.equal(registered.length, 0);
 	});
 
+	it("config_absent flag flips when loadContext returns config:null (FGAP-121 layer-a)", () => {
+		// no .pi-context.json pointer at all → loadContext degrades to config=null
+		const dir = mkdtempSync(join(tmpdir(), "composite-loader-no-pointer-"));
+		const { pi, registered } = makeStubPi();
+		const result = loadComposites(dir, pi);
+		assert.equal(result.config_absent, true);
+		assert.deepEqual(result.registered, []);
+		assert.deepEqual(result.skipped, []);
+		assert.equal(registered.length, 0);
+	});
+
 	it("registers known KIND from config.tool_operations[]", () => {
 		const dir = makeProject({
 			...MINIMAL_CONFIG,

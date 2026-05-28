@@ -10,6 +10,7 @@ import {
 	TOOL_OPERATION_DEFAULTS,
 } from "./operation-vocab.js";
 import { runRealChecksTool } from "./run-real-checks-tool.js";
+import { runWorkOrderLoopTool } from "./run-work-order-loop-tool.js";
 
 /**
  * L3 runtime guard (FEAT-010): on extension load, assert defaults
@@ -38,12 +39,13 @@ const extension = (pi: ExtensionAPI) => {
 	// L3: assert framework defaults clean of forbidden-wholesale tokens
 	assertDefaultsClean();
 
-	// Static tools (FEAT-005 / DEC-0047 / TASK-088-090)
+	// Static tools (FEAT-005 / DEC-0047 / TASK-088-090; run-work-order-loop FEAT-006 / TASK-091)
 	pi.registerTool(authorAgentSpecTool);
 	pi.registerTool(callAgentTool);
 	pi.registerTool(runRealChecksTool);
 	pi.registerTool(commitAttestedTool);
 	pi.registerTool(authorToolGrantTool);
+	pi.registerTool(runWorkOrderLoopTool);
 
 	// Dynamic composite-tool registration from config.tool_operations[]
 	// (FEAT-010). loadComposites throws if any entry hits the L1∪L5

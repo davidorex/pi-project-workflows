@@ -22,7 +22,8 @@
 		"extensions": [
 			"./project-extension.ts",
 			"./workflows-extension.ts",
-			"./monitors-extension.ts"
+			"./monitors-extension.ts",
+			"./dispatch-extension.ts"
 		],
 		"skills": [
 			"./skills"
@@ -31,6 +32,7 @@
 	"dependencies": {
 		"@davidorex/pi-context": "^0.27.0",
 		"@davidorex/pi-workflows": "^0.27.0",
-		"@davidorex/pi-behavior-monitors": "^0.27.0"
+		"@davidorex/pi-behavior-monitors": "^0.27.0",
+		"@davidorex/pi-agent-dispatch": "^0.27.0"
 	}
 }

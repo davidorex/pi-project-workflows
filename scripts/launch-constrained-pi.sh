@@ -7,6 +7,8 @@
 # Per DEC-0014 the harness-confined orchestrator's positive clause is substrate-write +
 # call-agent + author-agent-spec + run-real-checks + commit-attested + author-tool-grant +
 # run-work-order-loop + declared composites; the negative clause forbids bash/edit/write.
+# Per user directive 2026-05-29 the positive clause also includes pi's built-in read-only
+# file-system tools (read / ls / grep / find) as Bucket-1 default-grant (no auth prompt).
 # Per DEC-0047 capability widening goes through writer.kind=human via author-tool-grant.
 # Per FEAT-006 the run-work-order-loop tool closes the end-to-end loop; per FEAT-010 the
 # bounded-composite vocabulary is read from the target dir's config.tool_operations[].
@@ -73,6 +75,10 @@ if [ -z "$TOOLS" ]; then
 	echo "launch-constrained-pi: no tools derived from $REPO/packages/*/skills/*/SKILL.md — is the repo built + skills generated?" >&2
 	exit 1
 fi
+
+# Bucket-1 default-grant: pi built-in read-only file-system tools (per user directive 2026-05-29).
+# These pass through the FGAP-134 auth-gate as non-Bucket-2 tokens (no confirm prompt).
+TOOLS="$TOOLS,read,ls,grep,find"
 
 # Per-target composite discovery via the canonical helper (DEC-0019/0020 dual-surface).
 # Run from $REPO so tsx resolves @davidorex/* + @earendil-works/* against the repo's

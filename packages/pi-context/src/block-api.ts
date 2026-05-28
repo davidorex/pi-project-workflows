@@ -22,7 +22,8 @@ import _lockfile from "proper-lockfile";
 import { assertSubstrateName, resolveContextDir, schemaPath, tryResolveContextDir } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
-import { validateFromFile } from "./schema-validator.js";
+import { getProjectMigrationRegistry } from "./migration-registry-loader.js";
+import { validateBlockWithMigration, validateFromFile } from "./schema-validator.js";
 
 // Node16 module resolution + CJS interop: default import may be wrapped
 const lockfile = (_lockfile as any).default ?? _lockfile;
@@ -308,6 +309,24 @@ export function readBlock(
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		throw new Error(`Invalid JSON in block file: ${filePath}: ${msg}`);
+	}
+
+	// Version-aware validation hook (FGAP-136 plan step 4). When the block has
+	// an existing schema AND the parsed data carries a schema_version field,
+	// route through validateBlockWithMigration with the substrate-loaded
+	// project MigrationRegistry. The hook is conditional on schema_version
+	// presence so pre-versioned blocks (no schema_version field on items)
+	// pass through unchanged — the migration boundary only fires when there
+	// IS a version assertion to compare against. Whole-block validation
+	// uses the parsed `data` as-is; per-array-item migration is out of
+	// scope today (the block envelope is what carries schema_version, not
+	// each item).
+	if (existingBlockSchemaPath(cwd, blockName) !== null) {
+		const envelope = data as Record<string, unknown> | null;
+		if (envelope && typeof envelope === "object" && typeof envelope.schema_version === "string") {
+			const registry = getProjectMigrationRegistry(cwd);
+			data = validateBlockWithMigration(cwd, blockName, envelope, registry);
+		}
 	}
 
 	if (filter) {
@@ -1037,7 +1056,26 @@ export function removeFromNestedTypedFile(
 export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: DispatchContext): void {
 	const filePath = blockFilePath(cwd, blockName);
 	const schemaPath = existingBlockSchemaPath(cwd, blockName);
-	writeTypedFile(filePath, schemaPath, data, ctx, `block file '${blockName}.json'`);
+
+	// Version-aware pre-write validation (FGAP-136 plan step 4). When a
+	// schema is present AND the data envelope carries a schema_version,
+	// run validateBlockWithMigration with the substrate-loaded
+	// MigrationRegistry. A version-mismatch with no declared migration
+	// throws upstream of writeTypedFile so the file never lands; a
+	// declared migration walks the data forward before AJV runs. The
+	// migrated form is what writeTypedFile receives.
+	let toWrite: unknown = data;
+	if (
+		schemaPath !== null &&
+		data &&
+		typeof data === "object" &&
+		typeof (data as Record<string, unknown>).schema_version === "string"
+	) {
+		const registry = getProjectMigrationRegistry(cwd);
+		toWrite = validateBlockWithMigration(cwd, blockName, data, registry);
+	}
+
+	writeTypedFile(filePath, schemaPath, toWrite, ctx, `block file '${blockName}.json'`);
 }
 
 /**

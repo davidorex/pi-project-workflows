@@ -146,4 +146,109 @@ describe("samplesCatalog", () => {
 		// The catalog projection of the template must not surface a root either.
 		assert.ok(!("root" in samplesCatalog()), "samplesCatalog() must not surface a 'root'");
 	});
+
+	it("citation-rot regression — shipped artifacts contain zero pi-project-workflows canonical_id references", () => {
+		// Aim: shipped pi-context artifacts (samples/**/*.json description text
+		// + user-facing strings in src/index.ts and src/orientation.ts) carry no
+		// references to this repo's substrate canonical_ids (FGAP-NNN, DEC-NNNN,
+		// FEAT-NNN, TASK-NNN, VER-NNN, REVIEW-NNN, RAT-NNN, CTX-NNN, WO-NNN,
+		// STORY-NNN, PLAN-NNN, REQ-NNN, R-NNNN, ISSUE-NNN, PHASE-NNN+). Such ids
+		// are meaningful only in pi-project-workflows' own .project/ substrate;
+		// downstream consumers cannot resolve them.
+		//
+		// Exclusions:
+		//   - samples/blocks/*.json: seed-data item id fields are STRUCTURAL
+		//     (each block's own id like {"id":"FGAP-001"}); whole-file path-suffix
+		//     exclude.
+		//   - any string-valued property at key 'id': structural ID values, not
+		//     citations.
+		//   - in source-file text scan: comment-only lines (leading // or *) and
+		//     strings containing both 'e.g.' and 'NNN' (ID-format placeholder
+		//     illustrations).
+		const CITATION_RE =
+			/\b(FGAP-\d{3}|DEC-\d{4}|FEAT-\d{3}|TASK-\d{3}|VER-\d{3}|REVIEW-\d+|RAT-\d+|CTX-\d+|WO-\d+|STORY-\d+|PLAN-\d+|REQ-\d+|R-\d{4}|ISSUE-\d+|issue-\d+|PHASE-\d{3,})\b/;
+
+		const walk = (dir: string, acc: string[] = []): string[] => {
+			for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+				const full = path.join(dir, entry.name);
+				if (entry.isDirectory()) walk(full, acc);
+				else if (entry.isFile() && full.endsWith(".json")) acc.push(full);
+			}
+			return acc;
+		};
+
+		// Path-suffix exclude: samples/blocks/*.json carries structural seed-data
+		// item IDs as legitimate content.
+		const blocksPrefix = path.join(SAMPLES_DIR, "blocks") + path.sep;
+		const jsonFiles = walk(SAMPLES_DIR).filter((p) => !p.startsWith(blocksPrefix));
+
+		const samplesHits: Array<{ file: string; jsonPath: string; value: string; matched: string }> = [];
+
+		const visit = (node: unknown, jsonPath: string, file: string, parentKey: string | null) => {
+			if (typeof node === "string") {
+				// Property name 'id' at any depth: structural ID value (allowed).
+				if (parentKey === "id") return;
+				const m = node.match(CITATION_RE);
+				if (!m) return;
+				// ID-format illustration carve-out: a string carrying "e.g." that
+				// then names a canonical_id-shaped token is illustrative format
+				// documentation, not a citation to a specific substrate item. This
+				// preserves the documented PHASE-NNN / WO-NNN pattern in schema
+				// description fields. Same shape as the source-file scan exclusion.
+				if (node.includes("e.g.") && node.indexOf("e.g.") < (m.index ?? 0)) return;
+				samplesHits.push({ file, jsonPath, value: node, matched: m[0] });
+				return;
+			}
+			if (Array.isArray(node)) {
+				node.forEach((v, i) => {
+					visit(v, `${jsonPath}[${i}]`, file, null);
+				});
+				return;
+			}
+			if (node && typeof node === "object") {
+				for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+					visit(v, jsonPath ? `${jsonPath}.${k}` : k, file, k);
+				}
+			}
+		};
+
+		for (const f of jsonFiles) {
+			const parsed = JSON.parse(fs.readFileSync(f, "utf-8"));
+			visit(parsed, "", path.relative(SAMPLES_DIR, f), null);
+		}
+
+		assert.deepStrictEqual(
+			samplesHits,
+			[],
+			`citation-rot in shipped samples — ${samplesHits.length} hit(s):\n${samplesHits
+				.map((h) => `  ${h.file} :: ${h.jsonPath} :: ${h.matched} (in: ${h.value.slice(0, 120)})`)
+				.join("\n")}`,
+		);
+
+		// Source-file scan: line-by-line, exclude pure comment lines (leading //
+		// or *) and lines whose string content carries both 'e.g.' and 'NNN'
+		// (ID-format placeholder illustration).
+		const SRC_DIR = path.resolve(__dirname);
+		const sourceFiles = [path.join(SRC_DIR, "index.ts"), path.join(SRC_DIR, "orientation.ts")];
+		const srcHits: Array<{ file: string; line: number; text: string; matched: string }> = [];
+		for (const f of sourceFiles) {
+			const lines = fs.readFileSync(f, "utf-8").split("\n");
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i];
+				const trimmed = line.trimStart();
+				if (trimmed.startsWith("//") || trimmed.startsWith("*")) continue;
+				if (line.includes("e.g.") && line.includes("NNN")) continue;
+				const m = line.match(CITATION_RE);
+				if (m) srcHits.push({ file: path.basename(f), line: i + 1, text: line.trim(), matched: m[0] });
+			}
+		}
+
+		assert.deepStrictEqual(
+			srcHits,
+			[],
+			`citation-rot in user-facing source strings — ${srcHits.length} hit(s):\n${srcHits
+				.map((h) => `  ${h.file}:${h.line} :: ${h.matched} :: ${h.text.slice(0, 160)}`)
+				.join("\n")}`,
+		);
+	});
 });

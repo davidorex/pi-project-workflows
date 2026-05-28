@@ -4856,6 +4856,37 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-130",
+      "title": "Citation rot at install time — bundled pi-context samples/schemas carry self-referential canonical_id citations (FGAP-NNN / DEC-NNNN / FEAT-NNN / TASK-NNN) that reference this repo's development history; downstream /context accept-all consumers inherit unresolvable references in operator-facing description text",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L1",
+      "description": "Surfaced empirically 2026-05-28: in-pi agent launched against a foreign target dir (clock-menu-app, no substrate) cited 'NEVER LLM self-report per FGAP-102 + DEC-0047 clause 5' in its FEAT-006 walkthrough. Investigation traced the citation to bundled schema field-description text in packages/pi-context/samples/schemas/work-orders.schema.json (and likely siblings): the agent read read-samples-catalog --kind=work-orders, which returned package-intrinsic descriptions containing pi-project-workflows-substrate canonical_ids verbatim. The agent parroted IDs that are MEANINGFUL ONLY in this repo's .project/ substrate and that no downstream consumer will ever resolve locally. The shipped conception artifacts mix framework canon (vocabulary + schemas + invariants — legitimately shipped) with this repo's own development-substrate state (FGAP / DEC / FEAT / TASK canonical_ids — illegitimately leaked into operator-facing descriptions). Concrete instances surfaced: work-orders schema status field cites DEC-0018; real_check_criteria field cites FGAP-102 + DEC-0047 clause 5 + DEC-0018; id field cites DEC-0026/0027; scope field cites FEAT-005 / TASK-089; target_agent field references 'the agents tier' (less concrete but same pattern). Likely-affected: other sample schemas + sample blocks + conception.json description strings (full audit needed).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
+          "reference": "field descriptions contain 'per DEC-0018', 'per FGAP-102 + DEC-0047 clause 5', 'per DEC-0026/0027 enacted', 'FEAT-005 / TASK-089' — pi-project-workflows-internal canonical_ids"
+        },
+        {
+          "file": "packages/pi-context/samples/conception.json",
+          "reference": "candidate site for additional citation rot in block_kind description fields, relation_type descriptions, etc. (full audit pending)"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/",
+          "reference": "all 16 shipped schemas are candidates for the same audit"
+        }
+      ],
+      "impact": "Two distinct downstream failure modes. (1) Citation rot at install time: downstream operator running /context accept-all + /context install materializes schemas containing references to FGAP-102 / DEC-0047 / etc., none of which exist in their .project/ or .context/ — references are opaque, unresolvable by resolve-item-by-id, unverifiable by the operator. (2) Apparent-confidence-from-bundled-text: in-pi agent reading bundled descriptions appears to cite project-deep canonical_ids; operator cannot tell that the citations are sourced from package-intrinsic strings (vs from the operator's own substrate) and therefore cannot tell that they reference foreign canon. Compounds with FGAP-124 (SKILL.md doesn't anchor canonical vocabulary): together, agents present unsourced authoritative-sounding citations from bundled text without operator-visible provenance.",
+      "canonical_vocabulary": "framework-canon vs project-substrate separation; conception-as-shipped-artifact vs development-history-as-internal-state; portable-canonical-artifacts",
+      "proposed_resolution": "Audit all shipped pi-context artifacts (samples/conception.json + samples/schemas/*.json + samples/blocks/*.json) for embedded references to this repo's substrate canonical_ids (regex: FGAP-\\d{3}|DEC-\\d{4}|FEAT-\\d{3}|TASK-\\d{3}|VER-\\d{3}|R-\\d+|REQ-\\d+|REVIEW-\\d+|RAT-\\d+|PHASE-\\d+|CTX-\\d+|WO-\\d+|STORY-\\d+|PLAN-\\d+). For each hit, rewrite the description string to use abstract framework-level language that self-describes without citing originating canonical_ids. Example: 'NEVER LLM self-report per FGAP-102 + DEC-0047 clause 5' → 'NEVER LLM self-report; verification verdict comes from deterministic real-checks the agent cannot fake'. 'DEC-0026/0027 enacted' on id fields → 'uppercase canonical_id, 3-digit zero-padded suffix'. 'FEAT-005 / TASK-089' on scope field → 'the capability composer uses scope to clamp the agent's grant at dispatch'. The framework canon survives; the development-history reference is stripped. Add a lint / test to packages/pi-context that fails CI if any shipped sample artifact contains pi-project-workflows canonical_id patterns — prevents regression.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
     }
   ]
 }

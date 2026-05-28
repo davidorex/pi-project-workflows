@@ -149,21 +149,17 @@ describe("samplesCatalog", () => {
 	});
 
 	// FGAP-131 + FGAP-132: rigorous AST + JSON + markdown/YAML scanner replaces
-	// the FGAP-130 naive line-by-line CITATION_RE scan (commit 4fd28a6). The
-	// driver test is SKIPPED at this commit + un-skipped at plan step 9 after
-	// every sibling package has been stripped of operator-facing canonical_id
-	// references. The skip-state lets husky pass during the per-package strip
-	// steps without rolling forward to a full assertion that would fail.
+	// the FGAP-130 naive line-by-line CITATION_RE scan (commit 4fd28a6).
 	//
 	// Scope: scans every monorepo package (pi-context including its legacy
 	// registry/ + defaults/ fixtures; pi-workflows; pi-behavior-monitors;
 	// pi-agent-dispatch; pi-jit-agents; pi-project-workflows META). Carve-outs
-	// (item-level structural id under samples/blocks/ + .project/; schema
-	// pattern + enum string values in *.schema.json; JSDoc + line-comment
-	// trivia in .ts files; node_modules + dist + .test.ts files) are coded
-	// inside the scanner per its failure-mode contract — the call site here
-	// supplies no exclusion list.
-	it.skip("citation-rot regression — AST scanner across all monorepo packages (un-skipped at plan step 9)", () => {
+	// (item-level structural id under samples/blocks/ + registry/blocks/ +
+	// defaults/blocks/ + .project/; schema pattern + enum string values in
+	// *.schema.json; JSDoc + line-comment trivia in .ts files; node_modules +
+	// dist + .test.ts files) are coded inside the scanner per its failure-mode
+	// contract — the call site here supplies no exclusion list.
+	it("citation-rot regression — AST scanner across all monorepo packages (FGAP-131/132)", () => {
 		const projectRoot = path.resolve(__dirname, "..", "..", "..");
 		const hits = scanForCitationRot({
 			projectRoot,

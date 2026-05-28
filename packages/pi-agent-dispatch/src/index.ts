@@ -1,4 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { registerAuthGate } from "./auth-gate.js";
 import { authorAgentSpecTool } from "./author-agent-spec-tool.js";
 import { authorToolGrantTool } from "./author-tool-grant-tool.js";
 import { callAgentTool } from "./call-agent-tool.js";
@@ -62,6 +63,18 @@ const extension = (pi: ExtensionAPI) => {
 	// it is functionally informational + queryable via the trace JSONL.
 	const result = loadComposites(process.cwd(), pi);
 	void result;
+
+	// FGAP-134: per-tool user-auth gate at pi-dispatch layer. Registered
+	// AFTER static + composite tools so the handler sees the full surface
+	// (registration order does not affect handler-invocation behavior —
+	// pi.on('tool_call') fires for every tool regardless of registration
+	// sequence — but placing the registration last preserves a readable
+	// 'tools first, gates last' factory shape). Closes the writer.kind
+	// spoof at the dispatch boundary regardless of caller-supplied field
+	// values. Bucket-2 vocabulary + handler semantics live in auth-gate.ts;
+	// see that module's header for the governance rationale + Bucket-2
+	// member list.
+	registerAuthGate(pi);
 };
 
 export default extension;

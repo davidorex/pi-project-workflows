@@ -4955,6 +4955,84 @@
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
       "closed_at": "2026-05-28"
+    },
+    {
+      "id": "FGAP-133",
+      "title": "Runtime error-message string-literals escape FGAP-131/132 citation-rot scanner — scanner extracts string literals at Type.String/Object description fields and at pi.registerTool description argument but does NOT extract string-literal arguments to throw new Error(...) / new <ErrorClass>(...) constructions in tool execute() bodies; canonical_id citations in error messages reach operators verbatim ungated",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "layer": "L2",
+      "description": "Surfaced empirically 2026-05-29 by in-pi agent telemetry: agent attempted author-agent-spec with writer.kind=agent; pi-agent-dispatch's tool execute() body threw an error whose message included verbatim 'DEC-0047: Capability/spec authoring is human-only; sub-agents have no escalation path.' Downstream operator reading that error in a fresh-substrate target dir cannot resolve DEC-0047 locally — same citation-rot failure mode FGAP-130/131/132 closed for description text, surviving via a different AST surface the scanner does not visit. Verified scope: packages/pi-context/src/citation-rot-scanner.ts walks ts.CallExpression nodes filtering on PropertyAccessExpression pi.registerTool and Type.String/Type.Object call patterns; it does NOT visit NewExpression nodes (e.g. new Error('...')) or ThrowStatement argument string-literals. Each pi-agent-dispatch tool throws structured errors with canonical_id citations: AuthorAgentSpecRefusedError (DEC-0047), CommitAttestedRefusedError (DEC-0047), AuthorToolGrantRefusedError (DEC-0047), composeToolGrant failures, plus pi-context's own BootstrapNotFoundError (DEC-0015). Full citation count in error-message strings across all 5 packages unknown until the scanner is extended + re-run.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/citation-rot-scanner.ts",
+          "reference": "AST walker visits Type.String/Object description call-argument string-literals + pi.registerTool description-field string-literals; does not visit NewExpression / ThrowStatement / AwaitExpression argument string-literals"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "reference": "throws new AuthorAgentSpecRefusedError with citation-rich message ('Capability/spec authoring is human-only per DEC-0047...')"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/commit-attested-tool.ts",
+          "reference": "throws CommitAttestedRefusedError with DEC-0047 citation"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/author-tool-grant-tool.ts",
+          "reference": "throws AuthorToolGrantRefusedError with DEC-0047 citation"
+        }
+      ],
+      "impact": "Citations in runtime error messages reach operators unfiltered. The FGAP-131/132 scanner reports zero hits while the leak persists via a parallel AST surface. The FGAP-130/131/132 closure narrative is therefore partial: operator-visible canonical_id leakage continues through every error-throw path in tool execute() bodies. Worse: error-message citations are MORE visible to operators than description-field citations because errors fire at the moment of failure — operators read them directly to diagnose what went wrong, where the foreign canonical_id is most likely to be parroted and copy-pasted into bug reports / questions.",
+      "canonical_vocabulary": "AST-surface-coverage completeness; error-message-string-literal extraction; parallel-ungated-path closure",
+      "proposed_resolution": "Extend packages/pi-context/src/citation-rot-scanner.ts AST walker to ALSO visit: (1) NewExpression nodes where the constructor identifier ends in 'Error' (Error / TypeError / RangeError / project-specific *RefusedError / *NotFoundError / etc.) — extract their first string-literal argument; (2) ThrowStatement argument string-literals (cases where throw uses a string directly or a constructor whose first arg is a template literal). Apply the same canonical_id regex to extracted string-literals. Re-run scanner across all 5 packages; strip every hit per Pattern A — rewrite error messages to convey the same operational meaning without naming substrate canonical_ids (e.g. 'Capability/spec authoring is human-only per DEC-0047' → 'Capability/spec authoring requires writer.kind=human'). Verify by extending citation-rot-scanner.test.ts with a synthetic-injection test for the new surface type. Closes citation-rot at the runtime-error path; combined with existing scanner coverage, no parallel ungated string-literal path remains in shipped operator-visible TypeScript surfaces.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-134",
+      "title": "writer.kind enforcement on author-agent-spec / author-tool-grant / commit-attested is field-validation not identity-verification — caller-supplied writer.kind='human' is accepted at face value; in-pi agent demonstrated spoof 2026-05-29 (capability-widening / git-write tools bypassable by setting writer.kind='human' in tool-call args); the entire DEC-0047 governance assumption (capability widening is human-only; orchestrator cannot escalate its own grant) is undercut",
+      "status": "identified",
+      "priority": "P0",
+      "package": "pi-agent-dispatch",
+      "layer": "L3",
+      "description": "Empirical demonstration 2026-05-29: in-pi agent launched via scripts/launch-constrained-pi.sh against foreign target dir attempted author-agent-spec with writer.kind='agent' — rejected per DEC-0047 (working). Same agent then spoofed writer.kind='human' in its tool args — gate accepted the field value at face value and proceeded to substrate-write attempt (failed only because the foreign target had no substrate pointer; on a properly-bootstrapped target the spoofed write would have succeeded). Root cause: author-agent-spec / author-tool-grant / commit-attested all gate at execute()-body entry on a caller-supplied writer.kind string field; nothing in pi's tool-call interface verifies the caller's actual identity. The gate is theatrical defense against compliant agents, no defense against motivated or confused ones. Pi-coding-agent does expose a tamper-proof per-tool pre-execute gate via pi.on('tool_call', handler) returning {block: true, reason} + ctx.ui.confirm() (verified 2026-05-29 by Explore investigation of node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:605-611 + docs/extensions.md:69-73). The gate fires BEFORE the tool's execute() body, so the agent's args (including spoofed writer.kind) cannot escape it. CAVEAT: ctx.ui.confirm() auto-succeeds in non-interactive modes (pi --mode json / RPC / print) — the handler must explicitly refuse non-interactive contexts for sensitive tools to prevent JSON-mode bypass.\n\nFiled with concrete 3-bucket tool-tier conception (settled 2026-05-29 with user) baked into proposed_resolution so the implementation arc has canonical decisions in substrate not just conversation memory. BUCKET 1 (default-grant, no auth): all read tools + substrate-item writes (append/update/remove-block-item + nested + append-relation) + call-agent + run-real-checks + run-work-order-loop + complete-task + gather-execution-context + render-item-by-id + enforce-budget + list-tools + workflow-* reads + monitors-* reads. BUCKET 2 (auth-required via tool_call handler + ctx.ui.confirm): author-agent-spec + author-tool-grant + write-schema + amend-config + write-block + commit-attested + rename-canonical-id + workflow-execute + workflow-resume + workflow-init + monitors-control + monitors-rules (write mode) + context-init + context-accept-all. BUCKET 3 (off-allowlist; already-forbidden per FEAT-010 5-layer): bash + write + edit + shell + execute.",
+      "evidence": [
+        {
+          "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "reference": "gates on params.writer.kind === 'human' read directly from caller-supplied tool-call args; no identity verification"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/author-tool-grant-tool.ts",
+          "reference": "same pattern"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/commit-attested-tool.ts",
+          "reference": "writer.kind=agent enforcement is field-validation; same spoof surface"
+        },
+        {
+          "file": "node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts",
+          "lines": "605-611",
+          "reference": "ToolCallEventResult { block?: boolean; reason?: string } — the pre-execute gate API"
+        },
+        {
+          "file": "node_modules/@earendil-works/pi-coding-agent/docs/extensions.md",
+          "lines": "69-73",
+          "reference": "pi.on('tool_call', async (event, ctx) => ...) — pattern docs include ctx.ui.confirm usage"
+        }
+      ],
+      "impact": "P0 security finding. Every Bucket-2 tool (13 tools listed in description) is currently bypassable by an in-pi agent setting writer.kind='human' in its own tool-call args. The orchestrator we launch via scripts/launch-constrained-pi.sh can therefore (a) author new privileged sub-agent specs with arbitrary capability declarations, (b) widen its OWN capability grants via author-tool-grant, (c) commit arbitrary files to git under fabricated agent_id attestation. The FEAT-006 north-star governance story (orchestrator-cannot-widen-its-own-grant; human-OK gate at iteration boundary) is undercut at the foundation. FGAP-130/131/132 work to close citation rot is necessary but orthogonal — they close the citation problem, not the authority problem.",
+      "canonical_vocabulary": "identity-verification vs field-validation; pre-execute pi-dispatch gate vs in-execute body gate; tool_call event interception; defense-in-depth at the trust boundary",
+      "proposed_resolution": "Register a single pi.on('tool_call', handler) in pi-agent-dispatch's extension factory. Handler filters event.toolName against a const Bucket-2 list (the 13 tools enumerated in description). For each match: (a) if !ctx.ui.isInteractive return {block: true, reason: 'tool <name> requires interactive user-confirm; current context is non-interactive'} — closes JSON-mode bypass; (b) if interactive, call await ctx.ui.confirm(<tool-name + args-summary>); on false return {block: true, reason: 'user declined'}. One handler, one file (packages/pi-agent-dispatch/src/auth-gate.ts), wired into the extension factory at packages/pi-agent-dispatch/src/index.ts. Unit tests assert (1) Bucket-2 tools require confirm; (2) Bucket-1 tools do not invoke the handler's confirm path; (3) non-interactive context returns block:true with refusal reason; (4) user-decline returns block:true; (5) user-approve allows tool to proceed. Side-effect: closes FGAP-126 simultaneously (context-init becomes truly human-only at pi-dispatch layer, not just documented-as-human-only). Once landed, the writer.kind field can be derived from the verified interaction (set programmatically inside the handler based on ctx.user) rather than trusted from caller args — second iteration cleanup; first iteration is the block-gate alone.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0047"
+      ],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
     }
   ]
 }

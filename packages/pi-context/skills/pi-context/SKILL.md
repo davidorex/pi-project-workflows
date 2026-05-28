@@ -232,7 +232,7 @@ Read a substrate schema by name as parsed JSON. Returns null when the schema fil
 </tool>
 
 <tool name="write-schema">
-Create or replace a substrate block-kind JSON Schema. operation 'create' requires the schema absent; 'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. CAVEAT: a 'replace' that changes the schema's version does NOT migrate existing block items — read-time validateBlockWithMigration throws a version mismatch until a code-level MigrationFn is registered (no tool surface for that). Registering the block_kind that points at this schema is a separate step (amend-config block_kinds).
+Create or replace a substrate block-kind JSON Schema. operation 'create' requires the schema absent; 'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. Schema version bumps require a companion migration declaration via write-schema-migration; without one, read/write of items declaring an older schema_version throws version-mismatch. Registering the block_kind that points at this schema is a separate step (amend-config block_kinds).
 
 *Create or replace a block-kind JSON Schema (meta-validated, atomic)*
 
@@ -242,6 +242,22 @@ Create or replace a substrate block-kind JSON Schema. operation 'create' require
 | `schemaName` | string | yes | Schema name without extension (e.g., 'tasks') |
 | `schema` | unknown | yes | The whole JSON Schema object (draft-07). Accepts a JSON string. |
 | `dryRun` | boolean | no | Meta-validate without writing |
+</tool>
+
+<tool name="write-schema-migration">
+Declare a schema version-bump migration into substrate (migrations.json). operation 'create' appends a new declaration; 'replace' overwrites an existing declaration matched by (schemaName, fromVersion); 'remove' drops a declaration. kind='identity' asserts the bump is shape-compatible (no data transform); kind='declarative-transform' carries a TransformSpec of rename/set/delete/coerce operations on dotted JSON paths. The loaded MigrationRegistry resolves the recorded edge at next read/write so block items declaring an older schema_version walk forward without process restart. Capability/migration authoring is human-only; sub-agents have no escalation path.
+
+*Declare a schema version-bump migration (identity or declarative-transform) into migrations.json*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `operation` | string | yes | create | replace | remove |
+| `schemaName` | string | yes | Schema name without extension (e.g., 'tasks'). |
+| `fromVersion` | string | yes | Source schema semver this migration walks forward FROM. |
+| `toVersion` | string | yes | Destination schema semver this migration produces. Must differ from fromVersion. Ignored for operation=remove. |
+| `kind` | string | no | identity | declarative-transform. Required for operation=create/replace; ignored for remove. |
+| `transform` | unknown | no | TransformSpec body — required when kind='declarative-transform'; forbidden when kind='identity'. Accepts a JSON string. |
+| `writer` | object | yes | DispatchContext.writer per pi-context/src/dispatch-context.ts. |
 </tool>
 
 <tool name="context-init">
@@ -461,7 +477,7 @@ Subcommands: `init`, `install`, `accept-all`, `view`, `lens-curate`, `roadmap-li
 </events>
 
 <bundled_resources>
-9 schemas, 33 samples bundled.
+10 schemas, 33 samples bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 

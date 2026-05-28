@@ -50,14 +50,17 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 
 /**
- * The 14 Bucket-2 canonical tool names whose execution requires an
- * affirmative user-confirm. Sourced verbatim from FGAP-134 plan
- * files-table (registration-site column anchors each name in source).
+ * The 15 Bucket-2 canonical tool names whose execution requires an
+ * affirmative user-confirm. Originally sourced verbatim from FGAP-134
+ * plan files-table (registration-site column anchors each name in
+ * source); extended with write-schema-migration per FGAP-136 (the
+ * substrate-persisted schema-version migration declaration surface is
+ * capability/migration authoring on the human-only path).
  *
  * Frozen + typed `as const` so accidental mutation at runtime is
  * caught by the type system; consumers should never reach into this
  * list to add/remove entries — vocabulary changes require a source
- * edit + release per DEC-0047 governance-as-code precedent.
+ * edit + release per the human-only-authoring governance precedent.
  */
 export const AUTH_REQUIRED_TOOLS = [
 	// pi-agent-dispatch
@@ -66,6 +69,7 @@ export const AUTH_REQUIRED_TOOLS = [
 	"commit-attested",
 	// pi-context
 	"write-schema",
+	"write-schema-migration",
 	"amend-config",
 	"write-block",
 	"rename-canonical-id",

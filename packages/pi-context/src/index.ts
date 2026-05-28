@@ -1352,11 +1352,10 @@ const extension = (pi: ExtensionAPI) => {
 		label: "Write Schema",
 		description:
 			"Create or replace a substrate block-kind JSON Schema. operation 'create' requires the schema absent; " +
-			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. CAVEAT: a " +
-			"'replace' that changes the schema's version does NOT migrate existing block items — read-time " +
-			"validateBlockWithMigration throws a version mismatch until a code-level MigrationFn is registered (no tool " +
-			"surface for that). Registering the block_kind that points at this schema is a separate step (amend-config " +
-			"block_kinds).",
+			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. Schema " +
+			"version bumps require a companion migration declaration via write-schema-migration; without one, " +
+			"read/write of items declaring an older schema_version throws version-mismatch. Registering the block_kind " +
+			"that points at this schema is a separate step (amend-config block_kinds).",
 		promptSnippet: "Create or replace a block-kind JSON Schema (meta-validated, atomic)",
 		parameters: Type.Object({
 			operation: Type.String({ description: "create | replace" }),

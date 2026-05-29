@@ -5988,6 +5988,40 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-161"
+    },
+    {
+      "title": "contextBlocks single-item object form depth field is stored but render_recursive is not auto-applied",
+      "status": "identified",
+      "package": "@davidorex/pi-jit-agents",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "Object-form contextBlocks entries `{ name, item, depth }` at packages/pi-jit-agents/src/compile.ts line 460 wrap the referenced item via wrapItemContent (line 180+) — raw JSON inside a context_block XML tag. The depth field is preserved on the injected array element (compile.ts line 469: `depth: ref.depth ?? 0`) as metadata but does NOT auto-trigger render_recursive. Template authors must explicitly call `render_recursive(resolve(id), _<name>_depth)` to get the per-item-macro rendered view that the depth field promises. The depth metadata exists but is plumbing-only; rendering still requires explicit author action.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "228-251",
+          "reference": "FB-011 'contextBlocks single-item injection is raw JSON — render_recursive must be called explicitly'; actual_behavior: _requirements_item contains raw JSON wrapped in context_block XML; _requirements_depth contains the specified depth; template must call render_recursive to get macro-rendered output"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-substrate-surfaces.md",
+          "lines": "36-77",
+          "reference": "Investigation report FB-011 section confirms both surfaces verbatim (compile.ts:460 wrapItemContent invocation; compile.ts:469 depth metadata storage; compile.ts:180-187 wrapItemContent raw-JSON wrapping); verdict 'Tool surface' — modify compile.ts to detect depth > 0 on object-form entries and wrap returned item with render_recursive invocation"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/compile.ts",
+          "lines": "460-469",
+          "reference": "wrapItemContent wraps as raw JSON; depth: ref.depth ?? 0 stored as metadata only — no render_recursive auto-application"
+        }
+      ],
+      "impact": "Authors expecting depth > 0 to produce a pre-rendered, macro-formatted view receive raw JSON instead. The per-item rendering infrastructure (FEAT-001 array_key column, CANONICAL_MACRO_NAMES registry) is built but the most natural ergonomic — 'I asked for depth 2, I expect a 2-deep recursive render' — requires manual template glue.",
+      "proposed_resolution": "Tool surface at packages/pi-jit-agents/src/compile.ts line 460 (wrapItemContent invocation site) and line 469 (array element shape): when ref.depth > 0, wrap the returned item with a render_recursive call invoking the kind's per-item macro at the declared depth, instead of storing raw JSON with depth as unused metadata. Bare-string contextBlocks form remains unchanged (no item, no depth semantic). Sibling to FGAP-161 fix for FB-010 — the auto-render behavior would also be available to bare-string projection per FGAP-161's `depth` extension.",
+      "canonical_vocabulary": "auto-render at injection depth",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-162"
     }
   ]
 }

@@ -6348,6 +6348,38 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-172"
+    },
+    {
+      "title": "author-agent-spec in-body writer.kind=='human' check is redundant with FGAP-134/138 auth-gate at pi-dispatch layer",
+      "status": "identified",
+      "package": "@davidorex/pi-agent-dispatch",
+      "priority": "P3",
+      "layer": "L1",
+      "description": "author-agent-spec at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts performs an in-body `if writer.kind !== 'human' throw` check. Per FGAP-134 (closed 2026-05-29) the canonical per-tool user-auth gate is at the pi-dispatch layer (auth-gate.ts intercepting 14+ Bucket-2 tools); per FGAP-138 (closed 2026-05-29) the auth-gate mutates event.input.writer to the verified terminal-operator identity on confirm. The in-body check is now structural redundancy — the auth-gate already enforces human-authorized invocation and verifies operator identity. The redundant check predates FGAP-134/138 and lingers with docstring framing that still describes it as the primary enforcement.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+          "lines": "307",
+          "reference": "Discovered-gap (secondary) #4: 'author-agent-spec writer.kind enforcement: Per FGAP-134 (closed 2026-05-29), author-agent-spec performs an in-body if writer.kind !== human throw check that is now redundant with the canonical auth-gate at pi-dispatch layer. The gate is moved but the redundant in-body check remains, and its docstring still describes it as the primary enforcement (misleading per FGAP-136 closure). Cleanup: remove in-body check or clarify it as defense-in-depth only.'"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "lines": "1-100",
+          "reference": "author-agent-spec-tool source contains the in-body writer.kind enforcement; FGAP-134/138 closure moved the canonical enforcement to packages/pi-agent-dispatch/src/auth-gate.ts"
+        }
+      ],
+      "impact": "Structural redundancy and misleading docstrings. Two enforcement layers exist for the same human-authorization concern; the canonical one (auth-gate) is what actually fires the user-confirm prompt. The in-body check is now a no-op for any invocation that already passed the gate, and is misleading reading for agents debugging authorization behavior — they see the in-body check and may infer it is primary.",
+      "proposed_resolution": "Code at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts: strip the in-body writer.kind=='human' check (the auth-gate at packages/pi-agent-dispatch/src/auth-gate.ts is the canonical enforcement per FGAP-134/138 closure). Tool body trusts the (now-verified) writer field stamped by the auth-gate. Equivalent cleanup precedent landed at FGAP-138 closure (commit 3c9e8e4) for author-agent-spec / author-tool-grant / write-schema-migration; this gap is the inverse cleanup-not-yet-applied audit covering whether the cleanup at FGAP-138 actually stripped all sites or if any in-body check remains.",
+      "canonical_vocabulary": "redundant in-body auth check cleanup",
+      "related_decisions": [
+        "DEC-0047"
+      ],
+      "related_features": [
+        "FEAT-006"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-173"
     }
   ]
 }

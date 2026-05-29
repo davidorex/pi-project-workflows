@@ -201,7 +201,7 @@ export function makeRendererTestEnv(
 			return `[unrendered: ${blockName}/${idStr}]`;
 		}
 
-		const macroName = CANONICAL_MACRO_NAMES[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
+		const macroName = CANONICAL_MACRO_NAMES[blockName]?.macro_name ?? `render_${blockName.replace(/-/g, "_")}`;
 		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
 		if (idStr.length > 0) visited.add(idStr);
 		try {
@@ -239,7 +239,7 @@ export function renderItemMacro(
 	depth: number = 0,
 	templateBase?: string,
 ): string {
-	const macroName = CANONICAL_MACRO_NAMES[kind] ?? `render_${kind.replace(/-/g, "_")}`;
+	const macroName = CANONICAL_MACRO_NAMES[kind]?.macro_name ?? `render_${kind.replace(/-/g, "_")}`;
 	const tpl = `{% from "items/${templateBase ?? kind}.md" import ${macroName} %}{{ ${macroName}(item, depth) }}`;
 	return env.renderString(tpl, { item, depth });
 }

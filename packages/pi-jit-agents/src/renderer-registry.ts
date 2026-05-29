@@ -77,30 +77,45 @@ export interface CreateRendererRegistryOptions {
 }
 
 /**
- * Canonical per-item macro names for the block kinds shipped by
- * pi-workflows' templates/items/. Encodes the semantic granularity each
+ * Canonical per-item macro names + schema array_keys for the block kinds
+ * shipped by templates/items/. Encodes both the semantic granularity each
  * macro renders (one architecture record, one principle inside a
- * conformance-reference, one decision, etc.). Exposed read-only so consumers
- * (and tests) can mirror the registry's name-resolution rules without
- * re-deriving them. Adding a new shipped block kind requires adding its
- * entry here in the same change.
+ * conformance-reference, one decision, etc.) AND the schema's actual data
+ * key under which the array of items lives — block_kind ≠ array_key for
+ * several conception entries (framework-gaps→gaps, layer-plans→plans,
+ * spec-reviews→reviews, work-orders→work_orders, verification→verifications,
+ * conventions→rules, context-contracts→contracts, phase→phases,
+ * story→stories, rationale→rationales).
+ *
+ * array_key values match packages/pi-context/samples/conception.json
+ * block_kinds[] verbatim for every entry present there. Entries not in the
+ * conception (architecture / conformance-reference / domain / project —
+ * historical block kinds without a conception counterpart) carry array_key
+ * equal to the block_kind for consistency with the algorithmic-derivation
+ * fallback in resolveMacroName.
+ *
+ * Exposed read-only so consumers (and tests) can mirror the registry's
+ * resolution rules without re-deriving them. Adding a new shipped block
+ * kind requires adding its entry here in the same change.
  */
-export const CANONICAL_MACRO_NAMES: Readonly<Record<string, string>> = Object.freeze({
-	architecture: "render_architecture_item",
-	"conformance-reference": "render_conformance_principle",
-	conventions: "render_convention",
-	decisions: "render_decision",
-	domain: "render_domain_entry",
-	features: "render_feature",
-	"framework-gaps": "render_framework_gap",
-	issues: "render_issue",
-	"layer-plans": "render_layer_plan",
-	project: "render_project_item",
-	requirements: "render_requirement",
-	research: "render_research",
-	"spec-reviews": "render_spec_review",
-	tasks: "render_task",
-});
+export const CANONICAL_MACRO_NAMES: Readonly<Record<string, { macro_name: string; array_key: string }>> = Object.freeze(
+	{
+		architecture: { macro_name: "render_architecture_item", array_key: "architecture" },
+		"conformance-reference": { macro_name: "render_conformance_principle", array_key: "conformance-reference" },
+		conventions: { macro_name: "render_convention", array_key: "rules" },
+		decisions: { macro_name: "render_decision", array_key: "decisions" },
+		domain: { macro_name: "render_domain_entry", array_key: "domain" },
+		features: { macro_name: "render_feature", array_key: "features" },
+		"framework-gaps": { macro_name: "render_framework_gap", array_key: "gaps" },
+		issues: { macro_name: "render_issue", array_key: "issues" },
+		"layer-plans": { macro_name: "render_layer_plan", array_key: "plans" },
+		project: { macro_name: "render_project_item", array_key: "project" },
+		requirements: { macro_name: "render_requirement", array_key: "requirements" },
+		research: { macro_name: "render_research", array_key: "research" },
+		"spec-reviews": { macro_name: "render_spec_review", array_key: "reviews" },
+		tasks: { macro_name: "render_task", array_key: "tasks" },
+	},
+);
 
 /**
  * Resolve the macro name for a block kind. Returns the canonical name from
@@ -109,7 +124,7 @@ export const CANONICAL_MACRO_NAMES: Readonly<Record<string, string>> = Object.fr
  * not shipped by this package still resolve to a predictable name.
  */
 function resolveMacroName(blockKind: string): string {
-	return CANONICAL_MACRO_NAMES[blockKind] ?? `render_${blockKind.replace(/-/g, "_")}`;
+	return CANONICAL_MACRO_NAMES[blockKind]?.macro_name ?? `render_${blockKind.replace(/-/g, "_")}`;
 }
 
 /**

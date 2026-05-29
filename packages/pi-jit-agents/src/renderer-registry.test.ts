@@ -106,12 +106,12 @@ describe("createRendererRegistry", () => {
 		}
 
 		const registry = createRendererRegistry({ cwd, userDir, builtinDir });
-		for (const [kind, expectedMacroName] of Object.entries(CANONICAL_MACRO_NAMES)) {
+		for (const [kind, expectedEntry] of Object.entries(CANONICAL_MACRO_NAMES)) {
 			const ref = registry.lookup(kind);
 			assert.ok(ref, `expected non-null ref for shipped kind ${kind}`);
 			assert.strictEqual(
 				ref.macroName,
-				expectedMacroName,
+				expectedEntry.macro_name,
 				`canonical macro name mismatch for ${kind}: got ${ref.macroName}`,
 			);
 		}

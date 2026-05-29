@@ -53,13 +53,13 @@ export async function writeSchemaMigrationExecute(
 		throw new Error(`write-schema-migration: unknown operation '${op}' — expected create | replace | remove`);
 	}
 
-	if (params.writer?.kind !== "human") {
-		throw new Error(
-			`write-schema-migration: writer.kind must be 'human' (got '${params.writer?.kind}'). Capability/migration authoring is human-only; sub-agents have no escalation path.`,
-		);
-	}
-	if (!params.writer.user) {
-		throw new Error("write-schema-migration: writer.user is required when writer.kind=human.");
+	// Identity check has moved to the pi-dispatch auth-gate (registered
+	// by pi-agent-dispatch). By the time this body runs, the auth-gate
+	// has prompted the operator and — on confirm=true with a verifiable
+	// identity — stamped event.input.writer with the verified terminal-
+	// operator identity. The body trusts the writer field as-is.
+	if (!params.writer?.user) {
+		throw new Error("write-schema-migration: writer.user is required.");
 	}
 
 	if (op === "remove") {

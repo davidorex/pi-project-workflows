@@ -44,61 +44,28 @@ describe("authorToolGrantTool", () => {
 		fs.rmSync(tmpDir, { recursive: true, force: true });
 	});
 
-	it("rejects writer.kind=agent (DEC-0047 human-only)", async () => {
-		await assert.rejects(
-			authorToolGrantTool.execute(
-				"c1",
-				{
-					target: "tool_operations",
-					operation: "add",
-					key: "x",
-					entry: { canonical_id: "x" },
-					writer: { kind: "agent", user: "irrelevant" },
-				},
-				signal,
-				noopUpdate,
-				mockCtx(tmpDir),
-			),
-			/DEC-0047/,
+	it("body trusts writer field as-is (auth-gate at pi-dispatch is the canonical identity check); writer.kind=agent passes through to the persistence path without throwing", async () => {
+		// Canonical model post-FGAP-134: tool body does NOT re-check
+		// writer.kind. The auth-gate handler is the structural identity
+		// check; once the operator has authorized, the body trusts the
+		// (possibly auth-gate-mutated) writer field. In production the
+		// auth-gate overwrites writer to the verified-operator identity;
+		// in this unit test we bypass the gate to confirm the body does
+		// not impose its own kind check.
+		const result = await authorToolGrantTool.execute(
+			"body-trusts-writer",
+			{
+				target: "tool_operations",
+				operation: "add",
+				key: "read-trusted",
+				entry: { canonical_id: "read-trusted", kind: "read-files", instance_params: { allowed_roots: ["src"] } },
+				writer: { kind: "agent", user: "agent-id-1" },
+			},
+			signal,
+			noopUpdate,
+			mockCtx(tmpDir),
 		);
-	});
-
-	it("rejects writer.kind=monitor", async () => {
-		await assert.rejects(
-			authorToolGrantTool.execute(
-				"c1",
-				{
-					target: "tool_operations",
-					operation: "add",
-					key: "x",
-					entry: { canonical_id: "x" },
-					writer: { kind: "monitor", user: "" },
-				},
-				signal,
-				noopUpdate,
-				mockCtx(tmpDir),
-			),
-			/DEC-0047/,
-		);
-	});
-
-	it("rejects writer.kind=workflow", async () => {
-		await assert.rejects(
-			authorToolGrantTool.execute(
-				"c1",
-				{
-					target: "tool_operations",
-					operation: "add",
-					key: "x",
-					entry: { canonical_id: "x" },
-					writer: { kind: "workflow", user: "" },
-				},
-				signal,
-				noopUpdate,
-				mockCtx(tmpDir),
-			),
-			/DEC-0047/,
-		);
+		assert.match(result.content[0].text as string, /add tool_operations\[read-trusted\]/);
 	});
 
 	it("happy path: tool_operations add via human writer", async () => {

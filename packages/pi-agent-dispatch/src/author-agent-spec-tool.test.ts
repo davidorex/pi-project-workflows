@@ -41,49 +41,31 @@ describe("authorAgentSpecTool", () => {
 		fs.rmSync(tmpDir, { recursive: true, force: true });
 	});
 
-	it("throws when writer.kind=agent (DEC-0047 human-only)", async () => {
-		await assert.rejects(
-			authorAgentSpecTool.execute(
-				"call-1",
-				{ name: "test", spec: validSpec(), writer: { kind: "agent", user: "x" } },
-				signal,
-				noopUpdate,
-				mockCtx(tmpDir),
-			),
-			/writer\.kind must be 'human' per DEC-0047/,
+	it("body trusts writer field as-is (auth-gate at pi-dispatch is the canonical identity check); writer.kind=agent passes through to the persistence path without throwing", async () => {
+		// This assertion encodes the canonical model post-FGAP-134: the
+		// tool body does not re-check writer.kind. The auth-gate handler
+		// on pi.on('tool_call') is the structural identity check; once
+		// the operator has authorized, the body trusts whatever writer
+		// the (possibly auth-gate-mutated) input carries. In production
+		// the auth-gate overwrites writer to the verified-operator
+		// identity; in this unit test we bypass the gate and supply a
+		// non-human writer directly. The body must not throw.
+		const result = await authorAgentSpecTool.execute(
+			"body-trusts-writer",
+			{ name: "trusted", spec: validSpec(), writer: { kind: "agent", user: "agent-id-1" } },
+			signal,
+			noopUpdate,
+			mockCtx(tmpDir),
 		);
+		const expectedPath = path.join(tmpDir, "substrate", "agents", "trusted.agent.yaml");
+		assert.ok(fs.existsSync(expectedPath), `expected ${expectedPath} to exist`);
+		assert.match(result.content[0].text, /Wrote .*trusted\.agent\.yaml/);
 	});
 
-	it("throws when writer.kind=monitor (DEC-0047 human-only)", async () => {
+	it("throws when writer.user is missing (only structural precondition for DispatchContext construction)", async () => {
 		await assert.rejects(
 			authorAgentSpecTool.execute(
-				"call-2",
-				{ name: "test", spec: validSpec(), writer: { kind: "monitor", user: "x" } },
-				signal,
-				noopUpdate,
-				mockCtx(tmpDir),
-			),
-			/writer\.kind must be 'human' per DEC-0047/,
-		);
-	});
-
-	it("throws when writer.kind=workflow (DEC-0047 human-only)", async () => {
-		await assert.rejects(
-			authorAgentSpecTool.execute(
-				"call-3",
-				{ name: "test", spec: validSpec(), writer: { kind: "workflow", user: "x" } },
-				signal,
-				noopUpdate,
-				mockCtx(tmpDir),
-			),
-			/writer\.kind must be 'human' per DEC-0047/,
-		);
-	});
-
-	it("throws when writer.kind=human but user is missing", async () => {
-		await assert.rejects(
-			authorAgentSpecTool.execute(
-				"call-4",
+				"call-missing-user",
 				{ name: "test", spec: validSpec(), writer: { kind: "human", user: "" } },
 				signal,
 				noopUpdate,

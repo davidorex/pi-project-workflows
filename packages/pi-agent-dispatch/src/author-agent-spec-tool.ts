@@ -39,14 +39,16 @@ export const authorAgentSpecTool = {
 		_onUpdate: AgentToolUpdateCallback,
 		ctx: ExtensionContext,
 	): Promise<AgentToolResult<undefined>> {
-		// Writer.kind=human enforcement (DEC-0047)
-		if (params.writer?.kind !== "human") {
-			throw new Error(
-				`author-agent-spec: writer.kind must be 'human' per DEC-0047 (got '${params.writer?.kind}'). Capability/spec authoring is human-only; sub-agents have no escalation path.`,
-			);
-		}
-		if (!params.writer.user) {
-			throw new Error("author-agent-spec: writer.user is required when writer.kind=human.");
+		// Identity check has moved to the pi-dispatch auth-gate
+		// (pi.on('tool_call') handler in this same package). By the time
+		// the execute body runs, the auth-gate has already prompted the
+		// operator and — on confirm=true with a verifiable identity —
+		// stamped event.input.writer with the verified terminal-operator
+		// identity. The body trusts the writer field as-is and uses
+		// writer.user to construct the DispatchContext for substrate
+		// stamping.
+		if (!params.writer?.user) {
+			throw new Error("author-agent-spec: writer.user is required.");
 		}
 
 		// Parse spec if string (defensive — Type.Unknown may arrive as JSON string)

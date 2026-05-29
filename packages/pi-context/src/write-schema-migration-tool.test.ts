@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { migrationsPath, writeBootstrapPointer } from "./context-dir.js";
+import { writeBootstrapPointer } from "./context-dir.js";
 import { loadMigrationsFile } from "./migrations-store.js";
 import { type WriteSchemaMigrationParams, writeSchemaMigrationExecute } from "./write-schema-migration-tool.js";
 
@@ -96,26 +96,24 @@ describe("writeSchemaMigrationExecute", () => {
 		assert.equal(file!.migrations.length, 0);
 	});
 
-	it("rejects writer.kind=agent with descriptive message", async () => {
-		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ writer: { kind: "agent", user: "spec-impl-1" } })),
-			/writer\.kind must be 'human'/,
+	it("body trusts writer field as-is (auth-gate at pi-dispatch is the canonical identity check); writer.kind=agent passes through to the persistence path without throwing", async () => {
+		// Canonical model post-FGAP-134: tool body does NOT re-check
+		// writer.kind. The auth-gate handler registered by pi-agent-
+		// dispatch is the structural identity check; once the operator
+		// has authorized, the body trusts the (possibly auth-gate-
+		// mutated) writer field. In production the auth-gate overwrites
+		// writer to the verified-operator identity; here we bypass the
+		// gate to confirm the body imposes no in-body kind check.
+		const result = await writeSchemaMigrationExecute(
+			tmpDir,
+			baseParams({ writer: { kind: "agent", user: "agent-id-1" } }),
 		);
-		assert.ok(!fs.existsSync(migrationsPath(tmpDir)));
+		assert.match(result.content[0]!.text, /created identity migration/);
+		const file = loadMigrationsFile(tmpDir);
+		assert.equal(file!.migrations.length, 1);
 	});
 
-	it("rejects writer.kind=monitor / workflow with descriptive message", async () => {
-		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ writer: { kind: "monitor", user: "x" } })),
-			/writer\.kind must be 'human'/,
-		);
-		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ writer: { kind: "workflow", user: "x" } })),
-			/writer\.kind must be 'human'/,
-		);
-	});
-
-	it("rejects writer.kind=human but missing user", async () => {
+	it("rejects when writer.user is missing (only structural precondition for DispatchContext construction)", async () => {
 		await assert.rejects(
 			writeSchemaMigrationExecute(tmpDir, baseParams({ writer: { kind: "human", user: "" } })),
 			/writer\.user is required/,

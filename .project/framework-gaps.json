@@ -5127,7 +5127,7 @@
     {
       "id": "FGAP-137",
       "title": "scripts/launch-constrained-pi.sh does not explicitly support --continue (pi's canonical resume-last-session flag); operators invoking the script with --continue get the pre-flight install + composite-discovery + symmetry-verification steps re-run unconditionally on each resume, which is at minimum wasted overhead and at worst interferes with pi's session-resume semantics",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "scripts",
       "layer": "L4",
@@ -5150,14 +5150,16 @@
       ],
       "impact": "Operators wanting to resume their last constrained-pi session experience either (a) the cumulative latency of the pre-flight install + composite-discovery + symmetry-verification on every resume (operationally heavy), or (b) silent failure / unexpected session reset if any pre-flight step interferes with --continue semantics. Either way the operator-promised parity with canonical pi --continue is not met. The script's positive clause (DEC-0014 harness-confined orchestrator) was designed for fresh-launch flows; resume was not a design consideration.",
       "canonical_vocabulary": "session-resume; --continue flag passthrough; idempotent vs side-effecting pre-flight; harness-confined session lifecycle",
-      "proposed_resolution": "Recon canonical pi --continue behavior FIRST (single Explore agent over node_modules/@earendil-works/pi-coding-agent/) to verify: (a) what state --continue reads from + writes to; (b) whether pi install -l <META> is idempotent against an already-installed target; (c) whether the --tools allowlist needs to match the resumed-session's allowlist or is re-derivable; (d) whether composite-discovery runs again on resume or relies on cached state. Then update scripts/launch-constrained-pi.sh: detect --continue presence in ARGS (parse alongside --grant); when present + the target's .pi/ already shows a prior install, skip the pi install step + skip composite-discovery + skip symmetry-verification (the prior launch did these; resume inherits the same surface). Pre-flight pointer check still fires (cheap; informational). --tools allowlist still derived + passed (pi may require it on resume regardless). exec pi --continue + other args. Verification: runtime demo invokes the script with --continue against a tmpdir + fake-pi capturing whether install ran (it should NOT) + whether --tools was passed (it should). Documentation refresh in script JSDoc header explaining the --continue special-casing.",
+      "proposed_resolution": "Recon canonical pi --continue behavior FIRST (single Explore agent over node_modules/@earendil-works/pi-coding-agent/) to verify: (a) what state --continue reads from + writes to; (b) whether pi install -l <META> is idempotent against an already-installed target; (c) whether the --tools allowlist needs to match the resumed-session's allowlist or is re-derivable; (d) whether composite-discovery runs again on resume or relies on cached state. Then update scripts/launch-constrained-pi.sh: detect --continue presence in ARGS (parse alongside --grant); when present + the target's .pi/ already shows a prior install, skip the pi install step + skip composite-discovery + skip symmetry-verification (the prior launch did these; resume inherits the same surface). Pre-flight pointer check still fires (cheap; informational). --tools allowlist still derived + passed (pi may require it on resume regardless). exec pi --continue + other args. Verification: runtime demo invokes the script with --continue against a tmpdir + fake-pi capturing whether install ran (it should NOT) + whether --tools was passed (it should). Documentation refresh in script JSDoc header explaining the --continue special-casing. [CLOSED 2026-05-29 via FGAP-137 arc + VER-062 attestation at commit dcdcae7. Header-only edit + runtime-demo extension; install + --tools allowlist + composite discovery + symmetry verification all unchanged per user direction. --continue / -c now first-class documented passthrough flags; mechanical correctness was already in place.]",
       "related_features": [],
       "related_decisions": [
         "DEC-0014"
       ],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-29"
     }
   ]
 }

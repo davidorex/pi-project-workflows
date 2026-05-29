@@ -6022,6 +6022,43 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-162"
+    },
+    {
+      "title": "No tool to author per-item macros for custom block kinds — custom-field rendering requires manual filesystem access outside substrate",
+      "status": "identified",
+      "package": "@davidorex/pi-jit-agents",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "Per-item macros live at .pi/templates/items/<kind>.md, discovered by the renderer registry at packages/pi-jit-agents/src/renderer-registry.ts line 134 via the three-tier search (project / user / builtin). Builtin macros ship for the 14 canonical block kinds (requirements, decisions, tasks, etc.). Custom block kinds with custom fields — for example a requirements schema extended with `hour_system` and `traces_to_spec_doc` — have no per-item macro authoring tool. Authors must create the macro file by direct filesystem write outside the substrate's tool surface. The renderer registry exposes a programmatic register() API but no Pi tool wraps it. There is no symmetric counterpart to author-agent-spec / write-schema for macros.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "253-272",
+          "reference": "FB-012 'No tool to author per-item macros for custom block kinds'; actual_behavior: render-item-by-id(REQ-001) produces output using builtin render_requirement macro which ignores custom fields hour_system and traces_to_spec_doc; no way to create project-level override via tools"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-substrate-surfaces.md",
+          "lines": "79-108",
+          "reference": "Investigation report FB-012 section confirms renderer-registry.ts:134 three-tier discovery verbatim; verdict 'Tool surface (new tool)' — author-macro symmetric to author-agent-spec / write-schema; reads block schema, generates default macro covering all fields, writes to .pi/templates/items/<kind>.md; FGAP-119 (dogfood composites) blocks on this capability"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/renderer-registry.ts",
+          "lines": "134",
+          "reference": "const projectDir = path.join(cwd, '.pi', 'templates'); — three-tier search root, but no tool to write to it"
+        }
+      ],
+      "impact": "Custom block kinds (any schema extension beyond the 14 builtin kinds) lose canonical rendering. The substrate appears to support custom kinds at the schema layer but downgrades them to raw-JSON rendering at the per-item macro layer. Dogfood arc FGAP-119 (composite-tool authoring) is blocked because custom-field rendering is required for the composites' substrates to render usefully.",
+      "proposed_resolution": "Tool surface — new Pi tool `author-macro` in packages/pi-jit-agents/src/ (or in pi-agent-dispatch following the author-* convention). Tool reads the target block kind's schema, generates a default macro body iterating all schema fields, writes to .pi/templates/items/<kind>.md. Human can then edit to customize rendering. Per the investigation verdict, FGAP-119 (dogfood composites) should be re-scoped to depend on this tool's completion since custom macros are required to render custom-field substrates correctly.",
+      "canonical_vocabulary": "per-item macro authoring tool",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "related_decisions": [
+        "DEC-0049"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-163"
     }
   ]
 }

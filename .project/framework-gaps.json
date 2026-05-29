@@ -5729,6 +5729,40 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-154"
+    },
+    {
+      "title": "author-agent-spec round-trip validation does not catch resolvePromptField misclassification — false positive at author-time",
+      "status": "identified",
+      "package": "@davidorex/pi-agent-dispatch",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "author-agent-spec validates its written spec by round-tripping through parseAgentYaml at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts line 76 (the investigation report cites line 93 in its read; line numbers vary by file version). When a prompt is misclassified by resolvePromptField (per FGAP-153/FB-001), parseAgentYaml succeeds — the value is stored in systemPromptTemplate / taskPromptTemplate (a string field), which is structurally valid AgentSpec content. Validation reports success. The failure surfaces only later at compileAgent's renderTemplateFile call as ENOENT. The validation gate is shape-only — no semantic check that template-path values resolve to existing files or to `block:` sentinels.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "49-68",
+          "reference": "FB-003 'author-agent-spec validation is a false positive for misclassified prompts'; actual_behavior: spec with 'Read docs/03-solar-engine.md' as inline task prompt passes author-agent-spec validation; call-agent fails with ENOENT trying to open the prompt as a file"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+          "lines": "115-152",
+          "reference": "Investigation report FB-003 section confirms validation call site verbatim; verdict 'Code + Validation (dual-layer)' — code fix per FB-001 eliminates the misclassification; validation layer adds semantic check that template paths exist or are `block:` sentinels"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/agent-spec.ts",
+          "lines": "169-179",
+          "reference": "parseAgentYaml entry point invoking resolvePromptField on spec.prompt.system and spec.prompt.task — no semantic validation after field resolution"
+        }
+      ],
+      "impact": "Authors receive author-agent-spec success messages for specs that will hard-fail at first dispatch. The corrupted state persists in the substrate until call-agent surfaces ENOENT. The validation gate's promise (round-trip succeeds = spec is dispatchable) is broken by the heuristic-classification chain in FGAP-153/154. Closing FGAP-153 (the heuristic) eliminates the misclassification entirely and makes this gap moot for the inline-prompt case; this gap stands separately as the structural absence of semantic validation in author-agent-spec for any template-path field.",
+      "proposed_resolution": "Code at packages/pi-jit-agents/src/agent-spec.ts (resolvePromptField narrowing per FGAP-153 closure) eliminates the heuristic-driven misclassification. Defense-in-depth at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts: after parseAgentYaml round-trip, verify that any template-path field (systemPromptTemplate, taskPromptTemplate) either resolves to an existing file or matches a `block:` sentinel. Throw at author-time when neither condition holds. The semantic-check layer also catches user-authored template paths that point to genuinely-missing files.",
+      "canonical_vocabulary": "semantic validation at author-time",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-155"
     }
   ]
 }

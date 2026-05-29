@@ -1,7 +1,10 @@
 /**
- * author-agent-spec Pi tool — writes .agent.yaml under the agents tier
- * with writer.kind=human enforcement (DEC-0047: capability/spec authoring
- * is human-only; sub-agents have no escalation path).
+ * author-agent-spec Pi tool — writes .agent.yaml under the agents tier.
+ * Capability/spec authoring is human-authorized via the auth-gate confirm
+ * at the pi-dispatch layer: the agent may issue the call, the operator
+ * authorizes at the terminal, and the auth-gate stamps event.input.writer
+ * with the verified terminal-operator identity before the body runs. The
+ * body itself trusts the writer field as-is.
  */
 
 import fs from "node:fs";
@@ -16,7 +19,7 @@ export const authorAgentSpecTool = {
 	name: "author-agent-spec",
 	label: "Author Agent Spec",
 	description:
-		"Write a new .agent.yaml spec to the agents tier under writer.kind=human enforcement (capability/spec authoring is human-only). The written file is AJV-validated against AgentSpec before persisting.",
+		"Write a new .agent.yaml spec to the agents tier. Requires user authorization via interactive confirmation at the pi-dispatch auth-gate; on confirm, the verified terminal-operator identity is stamped as writer. The written file is AJV-validated against AgentSpec before persisting.",
 	promptSnippet:
 		"Author a privileged JIT-agent spec — declares input, prompts, tools grant, output schema, contextBlocks.",
 	parameters: Type.Object({
@@ -26,10 +29,19 @@ export const authorAgentSpecTool = {
 		}),
 		writer: Type.Object(
 			{
-				kind: Type.String({ description: "Writer kind discriminator — MUST be 'human'." }),
-				user: Type.String({ description: "Human writer identity (e.g. 'davidryan@gmail.com')." }),
+				kind: Type.String({
+					description:
+						"Writer kind discriminator (human / agent / monitor / workflow). The pi-dispatch auth-gate overrides this with 'human' on confirm when a verified terminal-operator identity is discoverable.",
+				}),
+				user: Type.String({
+					description:
+						"Writer identity (e.g. 'davidryan@gmail.com'). Overwritten by the auth-gate with the verified terminal-operator identity when one is discoverable on confirm=true.",
+				}),
 			},
-			{ description: "DispatchContext.writer per pi-context/src/dispatch-context.ts." },
+			{
+				description:
+					"DispatchContext.writer payload; see pi-context/src/dispatch-context.ts for the discriminated union.",
+			},
 		),
 	}),
 	async execute(

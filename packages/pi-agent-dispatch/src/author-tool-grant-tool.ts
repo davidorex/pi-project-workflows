@@ -1,8 +1,10 @@
 /**
  * author-tool-grant Pi tool — writes config.tool_operations[] /
- * config.tool_operations_forbidden[] entries under writer.kind=human
- * enforcement (DEC-0047: capability authoring is human-only; sub-agents
- * have no escalation path).
+ * config.tool_operations_forbidden[] entries. Capability authoring is
+ * human-authorized via the auth-gate confirm at the pi-dispatch layer:
+ * the agent may issue the call, the operator authorizes at the terminal,
+ * and the auth-gate stamps event.input.writer with the verified terminal-
+ * operator identity before the body runs.
  *
  * Two-arm target: `tool_operations` (the grant registry) or
  * `tool_operations_forbidden` (the L5 project-forbidden list). Both arms
@@ -25,7 +27,7 @@ export const authorToolGrantTool = {
 	name: "author-tool-grant",
 	label: "Author Tool Grant",
 	description:
-		"Add or remove an entry in config.tool_operations[] or config.tool_operations_forbidden[] under writer.kind=human enforcement. Refuses any attempt to register a framework-forbidden wholesale token.",
+		"Add or remove an entry in config.tool_operations[] or config.tool_operations_forbidden[]. Requires user authorization via interactive confirmation at the pi-dispatch auth-gate; on confirm, the verified terminal-operator identity is stamped as writer. Refuses any attempt to register a framework-forbidden wholesale token.",
 	promptSnippet: "Author a config tool-grant entry (operation registration or project-forbidden token).",
 	parameters: Type.Object({
 		target: Type.Union([Type.Literal("tool_operations"), Type.Literal("tool_operations_forbidden")], {
@@ -45,10 +47,19 @@ export const authorToolGrantTool = {
 		),
 		writer: Type.Object(
 			{
-				kind: Type.String({ description: "Writer kind — MUST be 'human'." }),
-				user: Type.String({ description: "Human writer identity (e.g. 'davidryan@gmail.com')." }),
+				kind: Type.String({
+					description:
+						"Writer kind discriminator (human / agent / monitor / workflow). The pi-dispatch auth-gate overrides this with 'human' on confirm when a verified terminal-operator identity is discoverable.",
+				}),
+				user: Type.String({
+					description:
+						"Writer identity (e.g. 'davidryan@gmail.com'). Overwritten by the auth-gate with the verified terminal-operator identity when one is discoverable on confirm=true.",
+				}),
 			},
-			{ description: "DispatchContext.writer per pi-context/src/dispatch-context.ts." },
+			{
+				description:
+					"DispatchContext.writer payload; see pi-context/src/dispatch-context.ts for the discriminated union.",
+			},
 		),
 	}),
 	async execute(

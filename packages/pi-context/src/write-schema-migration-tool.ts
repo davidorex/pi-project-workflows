@@ -6,12 +6,17 @@
  *
  * Mirrors the author-agent-spec-tool pattern in pi-agent-dispatch: tool
  * implementation in its own module, tool registration site is a thin
- * wrapper. Lets the tool's writer.kind enforcement + operation discriminator
- * + transform presence/absence guard be exercised in isolation.
+ * wrapper. Lets the tool's operation discriminator + transform
+ * presence/absence guards be exercised in isolation.
  *
- * The Pi tool description in index.ts uses abstract framework language (no
- * canonical_id citations like 'per DEC-0047') per the FGAP-130 rule for
- * abstract framework descriptions on tool surfaces.
+ * Capability/migration authoring is human-authorized via the auth-gate
+ * confirm at the pi-dispatch layer: the agent may issue the call, the
+ * operator authorizes at the terminal, and the auth-gate stamps
+ * event.input.writer with the verified terminal-operator identity before
+ * the body runs.
+ *
+ * The Pi tool description in index.ts uses abstract framework language
+ * (no canonical-id citations) per the operator-facing string convention.
  */
 
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
@@ -36,10 +41,10 @@ export interface WriteSchemaMigrationParams {
 /**
  * Execute body for the write-schema-migration tool. Dispatches the three
  * substrate operations (create / replace / remove) over the migrations.json
- * write surface; enforces writer.kind=human (capability/migration authoring
- * is human-only; the pi-dispatch auth-gate is the structural enforcement
- * layer, this body-level check is the belt-and-braces defensive line);
- * enforces TransformSpec presence/absence per kind.
+ * write surface; the auth-gate at the pi-dispatch layer is the canonical
+ * identity check (this body trusts the writer field as-is, only requiring
+ * writer.user as a structural precondition for DispatchContext
+ * construction); enforces TransformSpec presence/absence per kind.
  *
  * Returns an AgentToolResult naming the verb + persisted migrations.json
  * path so the caller's content array surfaces the on-disk effect.

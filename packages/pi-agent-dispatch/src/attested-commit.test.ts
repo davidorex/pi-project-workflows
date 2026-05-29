@@ -17,14 +17,14 @@ function makeRepo(): string {
 }
 
 describe("attestedCommit", () => {
-	it("missing agent_id throws CommitAttestedRefusedError with human-only-authoring message (FGAP-133 strip)", async () => {
+	it("missing agent_id throws CommitAttestedRefusedError naming the Attested-by footer concern", async () => {
 		const dir = makeRepo();
 		await assert.rejects(
 			attestedCommit(dir, { files: ["file.txt"], message: "msg", agent_id: "" }),
 			(err: Error) =>
 				err instanceof CommitAttestedRefusedError &&
 				/agent_id is required/.test(err.message) &&
-				/human-only authoring enforced/.test(err.message),
+				/Attested-by/.test(err.message),
 		);
 	});
 

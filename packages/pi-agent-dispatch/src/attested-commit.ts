@@ -46,7 +46,7 @@ function composeMessage(message: string, agent_id: string, work_order_id?: strin
 export async function attestedCommit(cwd: string, options: AttestedCommitOptions): Promise<AttestedCommitResult> {
 	if (!options.agent_id || options.agent_id.trim() === "") {
 		throw new CommitAttestedRefusedError(
-			"agent_id is required for writer.kind=agent attestation (human-only authoring enforced)",
+			"agent_id is required to construct the 'Attested-by: agent/<id>' commit footer",
 		);
 	}
 	if (!options.files || options.files.length === 0) {

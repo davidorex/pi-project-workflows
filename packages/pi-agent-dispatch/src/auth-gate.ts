@@ -2,35 +2,38 @@
  * auth-gate — per-tool user-authorization handler registered on
  * `pi.on("tool_call", ...)` from the pi-agent-dispatch extension factory.
  *
- * Aim (FGAP-134): close the writer.kind spoof at the pi-dispatch layer.
- * Prior to this gate, tools like author-agent-spec / commit-attested /
- * author-tool-grant enforced human-only authoring by inspecting a
- * caller-supplied `writer.kind="human"` field — empirically spoofable by
- * an in-pi agent (demonstrated 2026-05-29 against clock-menu-app). The
- * pi.on('tool_call') event fires at the pi-dispatch boundary regardless
- * of the tool's execute() body, regardless of which extension registered
- * the tool, and regardless of caller-supplied argument shapes. Returning
- * `{ block: true, reason }` from the handler prevents the tool from
- * executing at all; the writer.kind field becomes derived-from-verified-
- * interaction rather than caller-trusted.
+ * Canonical model: the pi.on('tool_call') boundary is the structural
+ * identity check for sensitive substrate-write surfaces. Tools like
+ * author-agent-spec / commit-attested / author-tool-grant are
+ * human-authorized via auth-gate confirm — the agent may issue the call,
+ * the operator authorizes at the terminal, and on confirm=true the
+ * handler stamps event.input.writer with a verified terminal-operator
+ * identity (overriding whatever the caller supplied). Caller-supplied
+ * writer.kind fields are not trusted as the identity check; the
+ * pi-dispatch event fires regardless of the tool's execute() body,
+ * regardless of which extension registered the tool, and regardless of
+ * caller-supplied argument shapes. Returning `{ block: true, reason }`
+ * prevents execution entirely.
  *
- * Surface: 14 canonical Bucket-2 tools (per FGAP-134 plan files-table)
- * declared in `AUTH_REQUIRED_TOOLS`. The handler enforces:
+ * Surface: 15 canonical Bucket-2 tools declared in `AUTH_REQUIRED_TOOLS`.
+ * The handler enforces:
  *   - non-interactive context (ctx.hasUI === false) → unconditional
  *     refusal with a structured reason naming the missing interactivity.
  *     This closes the JSON-mode / workflow-subprocess bypass: a step
  *     that auto-invokes a Bucket-2 tool without an attached operator
- *     cannot proceed (intended governance per FGAP-134 plan side-effects
- *     section).
+ *     cannot proceed.
  *   - interactive context (ctx.hasUI === true) → ctx.ui.confirm(title,
  *     message) where message renders the tool name + sanitized arg
- *     summary; on operator decline returns block:true; on accept returns
- *     void (allow).
+ *     summary; on operator decline returns block:true; on accept the
+ *     handler mutates event.input.writer to the verified-operator
+ *     identity (when discoverable) then returns void (allow). Tool
+ *     bodies subsequently read the mutated input and persist the
+ *     verified identity through DispatchContext stamping.
  *
  * Non-Bucket-2 tools (read-block, call-agent, run-real-checks, the SDK
  * built-ins bash/read/edit/write/grep/find/ls, dynamic composite tools,
  * etc.) pass through unconditionally — the gate is narrowly targeted at
- * the sensitive-substrate-write surface DEC-0047 governs.
+ * the sensitive-substrate-write surface.
  *
  * Co-existence: pi-behavior-monitors registers its own tool_call handler
  * (packages/pi-behavior-monitors/index.ts) for the deviation-monitor
@@ -48,19 +51,19 @@ import type {
 	ToolCallEvent,
 	ToolCallEventResult,
 } from "@earendil-works/pi-coding-agent";
+import { getVerifiedOperatorIdentity } from "./verified-identity.js";
 
 /**
  * The 15 Bucket-2 canonical tool names whose execution requires an
- * affirmative user-confirm. Originally sourced verbatim from FGAP-134
- * plan files-table (registration-site column anchors each name in
- * source); extended with write-schema-migration per FGAP-136 (the
- * substrate-persisted schema-version migration declaration surface is
- * capability/migration authoring on the human-only path).
+ * affirmative user-confirm. The substrate-persisted schema-version
+ * migration declaration surface (write-schema-migration) is included
+ * because capability/migration authoring is on the human-authorized
+ * authorization path.
  *
  * Frozen + typed `as const` so accidental mutation at runtime is
  * caught by the type system; consumers should never reach into this
  * list to add/remove entries — vocabulary changes require a source
- * edit + release per the human-only-authoring governance precedent.
+ * edit + release per the canonical human-authorized governance model.
  */
 export const AUTH_REQUIRED_TOOLS = [
 	// pi-agent-dispatch
@@ -154,6 +157,24 @@ export async function authGateHandler(
 	const ok = await ctx.ui.confirm(`Authorize ${event.toolName}?`, message);
 	if (ok === false) {
 		return { block: true, reason: "user declined" };
+	}
+
+	// Canonical identity stamp: the auth-gate is the structural identity
+	// check, so once the operator has affirmed, the writer field on the
+	// pending tool input is overwritten with the verified terminal-
+	// operator identity. This mutates event.input in place per pi's
+	// documented tool_call mutation contract; downstream tool bodies read
+	// the mutated input and persist the verified identity through
+	// DispatchContext stamping. When no identity can be verified (both
+	// resolution sources absent — surfaced via a structured warning),
+	// caller-supplied writer is left untouched as a last-resort
+	// fall-through.
+	const verifiedIdentity = getVerifiedOperatorIdentity();
+	if (verifiedIdentity !== null) {
+		const input = event.input as Record<string, unknown> | undefined;
+		if (input && typeof input === "object") {
+			input.writer = { kind: "human", user: verifiedIdentity };
+		}
 	}
 	return;
 }

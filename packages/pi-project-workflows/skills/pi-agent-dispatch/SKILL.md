@@ -11,7 +11,7 @@ description: >
 
 <tools_reference>
 <tool name="author-agent-spec">
-Write a new .agent.yaml spec to the agents tier under writer.kind=human enforcement (capability/spec authoring is human-only). The written file is AJV-validated against AgentSpec before persisting.
+Write a new .agent.yaml spec to the agents tier. Requires user authorization via interactive confirmation at the pi-dispatch auth-gate; on confirm, the verified terminal-operator identity is stamped as writer. The written file is AJV-validated against AgentSpec before persisting.
 
 *Author a privileged JIT-agent spec — declares input, prompts, tools grant, output schema, contextBlocks.*
 
@@ -19,7 +19,7 @@ Write a new .agent.yaml spec to the agents tier under writer.kind=human enforcem
 |-----------|------|----------|-------------|
 | `name` | string | yes | Agent name (becomes <name>.agent.yaml filename + AgentSpec.name). |
 | `spec` | unknown | yes | AgentSpec object body (will be serialized to YAML). Must conform to AgentSpec shape. |
-| `writer` | object | yes | DispatchContext.writer per pi-context/src/dispatch-context.ts. |
+| `writer` | object | yes | DispatchContext.writer payload; see pi-context/src/dispatch-context.ts for the discriminated union. |
 </tool>
 
 <tool name="call-agent">
@@ -61,7 +61,7 @@ Stage declared files + invoke git commit with DispatchContext writer.kind=agent 
 </tool>
 
 <tool name="author-tool-grant">
-Add or remove an entry in config.tool_operations[] or config.tool_operations_forbidden[] under writer.kind=human enforcement. Refuses any attempt to register a framework-forbidden wholesale token.
+Add or remove an entry in config.tool_operations[] or config.tool_operations_forbidden[]. Requires user authorization via interactive confirmation at the pi-dispatch auth-gate; on confirm, the verified terminal-operator identity is stamped as writer. Refuses any attempt to register a framework-forbidden wholesale token.
 
 *Author a config tool-grant entry (operation registration or project-forbidden token).*
 
@@ -71,7 +71,7 @@ Add or remove an entry in config.tool_operations[] or config.tool_operations_for
 | `operation` | unknown | yes | amendConfigEntry operation. |
 | `key` | string | yes | For tool_operations: the canonical_id (must match entry.canonical_id). For tool_operations_forbidden: the token string. |
 | `entry` | unknown | no | ToolOperationDecl object — required for target=tool_operations + operation=add. |
-| `writer` | object | yes | DispatchContext.writer per pi-context/src/dispatch-context.ts. |
+| `writer` | object | yes | DispatchContext.writer payload; see pi-context/src/dispatch-context.ts for the discriminated union. |
 </tool>
 
 <tool name="run-work-order-loop">
@@ -100,7 +100,7 @@ pi-agent-dispatch is the harness-confined orchestrator's in-pi surface. It regis
 | Tool | Purpose |
 |------|---------|
 | `call-agent` | Dispatch a declared agent spec with a composed tool grant (parent ∩ requested ∩ spec.tools). |
-| `author-agent-spec` | Write an `.agent.yaml` spec to the substrate. writer.kind=human enforced. |
+| `author-agent-spec` | Write an `.agent.yaml` spec to the substrate. Human-authorized via auth-gate confirm at the pi-dispatch layer; the verified terminal-operator identity is stamped as writer on confirm. |
 | `run-work-order-loop` | Execute the bounded work-order loop: dispatch → run-real-checks → on-pass commit-attested → on-fail human-OK retry. |
 </dispatch_tools>
 
@@ -112,7 +112,7 @@ pi-agent-dispatch is the harness-confined orchestrator's in-pi surface. It regis
 </real_check_tools>
 
 <capability_authoring>
-Tool grants are config-declared (bounded composites) and authored only via the `author-tool-grant` Pi tool with writer.kind=human enforcement. Default grant is empty; widening goes through the human writer gate. The FORBIDDEN_WHOLESALE_OPERATIONS set blocks shipping wholesale L1 surfaces (bash, write, edit) as a single composite token; the L1 ∪ L5 forbidden union check refuses tokens that already appear on the L1 wholesale-forbidden list.
+Tool grants are config-declared (bounded composites) and authored only via the `author-tool-grant` Pi tool, which is human-authorized at the pi-dispatch auth-gate (interactive confirmation; on confirm the verified terminal-operator identity is stamped as writer). Default grant is empty; widening goes through the auth-gate. The FORBIDDEN_WHOLESALE_OPERATIONS set blocks shipping wholesale L1 surfaces (bash, write, edit) as a single composite token; the L1 ∪ L5 forbidden union check refuses tokens that already appear on the L1 wholesale-forbidden list.
 </capability_authoring>
 
 <composite_loader>
@@ -123,7 +123,7 @@ On extension load, `composite-loader` reads the active substrate's `config.tool_
 Anchors:
 - Harness-confined orchestrator (positive clause: substrate-write + call-agent + author-agent-spec + run-real-checks + commit-attested + author-tool-grant + run-work-order-loop + declared composites; negative clause: NO bash/edit/write).
 - Sibling-consumer scope; pi-jit-agents stays a library.
-- writer.kind=human authoring; default empty; terminal verdict = real deterministic checks.
+- Human-authorized authoring at the pi-dispatch auth-gate; default empty; terminal verdict = real deterministic checks.
 - Capability composition + end-to-end work-order loop + bounded-composite vocabulary + launch-chain integration.
 - Orchestrator uses jit-agents directly; capability composition lives in the dispatch layer.
 </canonical_intention>
@@ -131,7 +131,7 @@ Anchors:
 <success_criteria>
 - 6 static tools register on every load: call-agent, author-agent-spec, author-tool-grant, run-real-checks, commit-attested, run-work-order-loop.
 - Composite tools register from config.tool_operations[] when present; load proceeds with warning when absent.
-- Every write-bearing tool refuses non-human writers.
+- Every write-bearing tool routes through the pi-dispatch auth-gate; the verified terminal-operator identity is stamped as writer on confirm.
 - Work-order loop honors max_iterations + human-OK retry gate + on-pass attested commit.
 </success_criteria>
 

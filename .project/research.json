@@ -815,6 +815,73 @@
       "created_by": "human/davidryan@gmail.com",
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-05-21T22:40:28.643Z"
+    },
+    {
+      "id": "R-0014",
+      "title": "Claude Code dynamic workflows vs pi-workflows — comparative recon of orchestration patterns + concrete adoption opportunities",
+      "status": "complete",
+      "layer": "L2",
+      "type": "comparative",
+      "question": "What patterns, primitives, quality mechanisms, and API affordances does the Claude Code dynamic-workflows (research-preview) surface offer that pi-workflows could ADOPT or be INSPIRED by, given that both solve multi-agent orchestration at different layers (Claude-Code-side vs Pi-side)?",
+      "method": "code-inspection of pi-workflows source at packages/pi-workflows/ (workflow-sdk.ts, workflow-executor.ts, workflow-spec.ts, expression.ts, dispatch.ts, dag.ts, step-*.ts, agents/*.agent.yaml, examples/*.workflow.yaml); web-fetch of Claude Code workflows documentation at https://code.claude.com/docs/en/workflows; direct schema-read of Workflow tool definition surfaced in this session for the in-script hook API + globals + concurrency limits + resume mechanics",
+      "scope": [
+        "Claude Code dynamic workflows research-preview (v2.1.154+)",
+        "pi-workflows package at packages/pi-workflows/ at HEAD a6c6ee0 (post-FGAP-135 merge)",
+        "Workflow tool API surface as exposed in Claude Code session (hooks: agent, pipeline, parallel, phase, log, workflow; globals: args, budget)",
+        "Quality patterns documented in Claude Code workflows docs (adversarial-verify, perspective-diverse, judge-panel, loop-until-dry, multi-modal-sweep, completeness-critic)",
+        "Resume mechanics + concurrency limits (16 concurrent, 1000 total per run) + isolation: worktree semantics"
+      ],
+      "findings_summary": "Two systems solve the same architectural problem (multi-agent orchestration with quality patterns) at DIFFERENT layers and for DIFFERENT consumers — Claude Code dynamic workflows orchestrate Claude-Code-side subagents; pi-workflows orchestrates Pi-side step DAGs as subprocess dispatch. 13 axes evaluated; 6 verdicts of ADOPT (do-soon, low-effort, high-value), 7 verdicts of INSPIRE (medium-term), 0 N/A.\n\nHIGH-PRIORITY ADOPT items:\n(3) Quality-pattern bundled-template gap — Claude docs explicitly enumerate 6 patterns (adversarial-verify, perspective-diverse, judge-panel, loop-until-dry, multi-modal-sweep, completeness-critic); pi-workflows can express most via existing step types but lacks templates + pattern guidance + voting/scoring primitives. This is the SAME failure mode that surfaced in this session's FGAP-135 CHECK 11 PARTIAL: a single-Explore adversarial probe self-categorized findings as 'low-risk'; orchestrator accepted without challenge; user caught the violation. With a bundled adversarial-verify.workflow.yaml running N independent skeptics + structured findings-schema vote-aggregation, the hand-wave would have been mechanically refuted by N-1 of N skeptics — no orchestrator-judgment-call surface. Low-effort, high-leverage.\n(4) Loop termination predicates — Claude's loop-until-dry pattern uses arbitrary expression gates; pi-workflows loop step is hardcoded maxAttempts/attempts. Add 'until' / 'untilBudgetRemaining' fields to LoopSpec.\n(5) Schema pre-execution forcing — Claude's agent(prompt, {schema}) forces StructuredOutput tool BEFORE the agent runs; pi-workflows validates output.schema AFTER agent completes (wasted tokens on schema-violating outputs). Pass schema to dispatch + enforce tool-use upfront.\n(7) Global token budget tracking — Claude exposes budget.total / budget.spent() / budget.remaining() shared across all spawned agents; pi-workflows has per-step usage but no aggregate. Add budget.maxTokens to WorkflowSpec + runtime enforcement.\n(8) Worktree isolation as step opt — Claude's isolation: 'worktree' provides per-agent filesystem isolation; pi-workflows dispatch is subprocess + cwd-scoped, no worktree mode. Surface as step field for parallel-mutation-risk scenarios.\n(10) workflow: step type (currently phase-6, rejected at parse) — Claude's workflow() hook is the canonical sub-workflow composition primitive (1-level only); pi-workflows declares but rejects. Implement to enable audit-codebase → forEach file → audit-file workflow composition.\n\nINSPIRE items (medium-term, surfaced in research doc but lower priority): (1) streaming pipeline no-barrier between stages; (2) thunk-parallel lazy eval; (6) content-identity caching via SHA256(prompt+opts); (9) agentType dispatch hint; (11) CLI/TUI slash-command discoverability; (12) determinism enforcement (warn on Date.now()/Math.random() in expressions).\n\nBIDIRECTIONAL — pi-workflows has primitives Claude Code workflows DON'T: typed YAML specs with authoring-time AJV validation; substrate contextBlocks auto-injection; Nunjucks templating + macro library; monitor step type for deterministic LLM-free classification gates; block step type for transactional schema-validated file I/O; post-execution output.schema validation (complements Claude's pre-execution forcing — not mutually exclusive). The research argues against unidirectional knowledge flow.\n\nLOAD-BEARING SESSION EVIDENCE: today's FGAP-135 CHECK 11 PARTIAL → orchestrator 'low-risk' hand-wave → user correction → re-dispatch loop happened with a human-in-loop catching the orchestrator's mandate violation. A naive workflow that runs end-to-end-auto would have merged broken behavior. Mitigation pattern for adopted workflows: STOP at probe-result with structured findings list + wait for user; do NOT decide 'X out of N PASS = merge OK' autonomously. The merge gate stays human.",
+      "findings_document": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "stale_conditions": [
+        "Claude Code workflows leaves research-preview status and the API surface evolves materially",
+        "pi-workflows adds workflow: step type implementation (closes adoption axis 10)",
+        "pi-workflows adds bundled quality-pattern templates under examples/patterns/ (closes adoption axis 3)",
+        "Claude Code workflows documentation at https://code.claude.com/docs/en/workflows substantively revised",
+        "Resume mechanics or concurrency limits change in Claude Code workflows"
+      ],
+      "citations": [
+        {
+          "label": "Claude Code dynamic workflows documentation",
+          "url": "https://code.claude.com/docs/en/workflows",
+          "retrieved_at": "2026-05-29"
+        },
+        {
+          "label": "Workflow tool API surface (in-Claude-Code-session schema)",
+          "path": "session-derived",
+          "retrieved_at": "2026-05-29"
+        },
+        {
+          "label": "pi-workflows source",
+          "path": "packages/pi-workflows/src/"
+        },
+        {
+          "label": "pi-workflows step types registry",
+          "path": "packages/pi-workflows/src/workflow-spec.ts"
+        },
+        {
+          "label": "pi-workflows DAG planner",
+          "path": "packages/pi-workflows/src/dag.ts"
+        },
+        {
+          "label": "pi-workflows expression evaluator",
+          "path": "packages/pi-workflows/src/expression.ts"
+        },
+        {
+          "label": "Today's session evidence (FGAP-135 adversarial probe CHECK 11 PARTIAL load-bearing example)",
+          "path": ".project/framework-gaps.json#FGAP-135"
+        }
+      ],
+      "informs": [
+        "FGAP-135"
+      ],
+      "related_research": [],
+      "conducted_by": "human:davidryan@gmail.com",
+      "conducted_at": "2026-05-29",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-29T08:26:04.285Z"
     }
   ]
 }

@@ -5220,6 +5220,189 @@
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
       "closed_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-139",
+      "title": "pi-workflows lacks bundled quality-pattern templates (adversarial-verify / perspective-diverse / judge-panel / loop-until-dry / multi-modal-sweep / completeness-critic) — pi-workflows can express most via existing step types but lacks templates + pattern guidance + voting/scoring primitives; load-bearing evidence is today's FGAP-135 CHECK 11 PARTIAL where a single-Explore adversarial probe self-categorized findings as 'low-risk' that the orchestrator accepted without challenge",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 3: Claude Code dynamic workflows docs explicitly enumerate 6 quality patterns (adversarial-verify / perspective-diverse / judge-panel / loop-until-dry / multi-modal-sweep / completeness-critic) with concrete script-snippet templates. pi-workflows can express most via existing step types (parallel + agent + transform + gate) but lacks: (a) bundled .workflow.yaml templates under examples/patterns/; (b) Nunjucks macro library for boilerplate (vote-aggregation; majority-survives filter); (c) SDK documentation referencing patterns + when to use each. Load-bearing session evidence: FGAP-135 CHECK 11 PARTIAL surfaced operational ambiguity in 3 TruncationResult edge-case variants; single-Explore adversarial probe self-categorized as 'low-risk'; orchestrator hand-waved past + user caught the violation. With a bundled adversarial-verify pattern (N independent skeptics + structured findings-schema vote-aggregation), the hand-wave would have been mechanically refuted by N-1 of N skeptics rather than depending on orchestrator judgment.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "319-335",
+          "reference": "Part 3 axis 3 — Quality Patterns Enumerated in Docs — ADOPT verdict with concrete bundled-template addition spec"
+        },
+        {
+          "file": ".project/framework-gaps.json",
+          "reference": "FGAP-135 closing-citation describes the CHECK 11 PARTIAL load-bearing evidence"
+        },
+        {
+          "file": "packages/pi-workflows/examples/",
+          "reference": "directory exists but no patterns/ subdir + no bundled quality-pattern workflows today"
+        }
+      ],
+      "impact": "Orchestrators improvise quality-verification patterns instead of running canonical templates. Each improvisation re-creates the adversarial-verify or judge-panel logic with risk of judgment-call hand-waves (today's CHECK 11 evidence). N-skeptic vote aggregation, perspective-diverse-lens review, loop-until-dry discovery — each implemented inconsistently across orchestrator runs without reusable + auditable substrate. The framework's quality-pattern story is partial: primitives exist but the canonical compositions don't ship.",
+      "canonical_vocabulary": "quality-pattern templates; bundled-workflow library; vote-aggregation primitive; majority-survives filter; pattern-composition macros",
+      "proposed_resolution": "Add packages/pi-workflows/examples/patterns/ subdirectory with 6 starter .workflow.yaml templates (adversarial-verify / perspective-diverse / judge-panel / loop-until-dry / multi-modal-sweep / completeness-critic) per R-0014 axis 3 specs. Add Nunjucks macro library (templates/shared/quality-patterns.macros.md) for boilerplate (vote-aggregation across N findings sets; majority-survives filter; per-lens-perspective dispatch). Update pi-workflows skill-narrative + SDK docs to reference each pattern + when canonical. Workflow validation gates ensure patterns load cleanly. No source-code-language changes; YAML + macros + docs.",
+      "related_features": [
+        "FEAT-007"
+      ],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-140",
+      "title": "pi-workflows LoopSpec lacks expression-based termination predicates (until / untilBudgetRemaining); maxAttempts hardcoding cannot express loop-until-dry / loop-until-condition canonical patterns without manual gate+break shims inside the loop body",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 4: Claude Code workflows let the script body express loop-until-dry via arbitrary expression gates (while loop with break on condition). pi-workflows loop step is hardcoded to maxAttempts (number) or attempts (expression evaluating to number) — both terminate by COUNT, not CONDITION. Loop-until-dry (terminate when no new issues found across iterations) requires a manual gate+break shim inside the loop body that's brittle + verbose + doesn't express the operator's intent at the spec level. Loop-until-budget-remaining (terminate when token budget drops below threshold) cannot be expressed at all — pi-workflows has no aggregate budget surface (see FGAP-141).",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "337-365",
+          "reference": "Part 3 axis 4 — Loop-Until-Dry / Loop-Until-Budget / Loop-Until-Count — ADOPT verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/step-loop.ts",
+          "reference": "LoopSpec definition + execution — currently only maxAttempts / attempts; no until / untilBudgetRemaining"
+        }
+      ],
+      "impact": "Operators expressing iterative-refinement workflows (review → improve → check → repeat-until-clean) must hardcode iteration counts that either over-iterate (waste tokens after convergence) or under-iterate (terminate before convergence). The canonical loop-until-dry pattern from Claude Code workflows docs cannot be expressed natively; requires manual nested gate+break shims that defeat the spec's declarative intent.",
+      "canonical_vocabulary": "expression-based loop termination; until-condition predicates; budget-aware termination",
+      "proposed_resolution": "Extend LoopSpec with optional fields: 'until: <expression>' (terminate when expression evaluates truthy AFTER each iteration; supersedes maxAttempts when both are set OR runs alongside as 'either-first' termination per executor decision); 'untilBudgetRemaining: <number>' (terminate when global budget.remaining() < threshold; depends on FGAP-141 budget surface). Updates: packages/pi-workflows/src/workflow-spec.ts (LoopSpec interface + AJV schema); packages/pi-workflows/src/step-loop.ts (executor short-circuits when until evaluates truthy); packages/pi-workflows/src/expression.ts (expression context exposes loop.iteration + loop.priorAttempts for predicate access).",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-141",
+      "title": "pi-workflows has no aggregate token-budget surface — each step tracks per-step usage but no WorkflowSpec-level budget.maxTokens / budget.spent() / budget.remaining() across all steps; cannot express budget-aware termination or fail-on-overspend semantics",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 7: Claude Code workflows expose budget.total / budget.spent() / budget.remaining() globals shared across the main script + all spawned agents; decrements as agents run; HARD ceiling — agent() throws once total reached. pi-workflows has per-step usage tracking (input/output tokens, cache, cost via dispatch.ts) but no aggregate across steps + no enforcement at the WorkflowSpec level. Operators cannot cap runaway loops by budget; cannot route by remaining-budget (e.g. fast-path when low; thorough-path when ample); cannot fail-with-structured-error on overspend.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "412-438",
+          "reference": "Part 3 axis 7 — Token Budget Tracking — ADOPT verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "reference": "per-step usage capture; no aggregate sink"
+        },
+        {
+          "file": "packages/pi-workflows/src/workflow-spec.ts",
+          "reference": "WorkflowSpec interface — no budget field"
+        }
+      ],
+      "impact": "Runaway loops + accidental overspend on long-running workflows are not contained at the framework layer. Operators must manually track aggregate spend via post-hoc inspection of per-step usage. Budget-aware termination (loop-until-budget-remaining; see FGAP-140) cannot be implemented without this surface. Composability with Claude Code workflows' budget model (when pi-workflows are invoked from Claude-Code-side) is poor — the two budget models don't speak the same language.",
+      "canonical_vocabulary": "workflow-level token budget; budget.maxTokens; budget.spent; budget.remaining; budget-aware termination; aggregate usage sink",
+      "proposed_resolution": "Extend WorkflowSpec with optional budget object: { maxTokens?: number, maxCost?: number, alertThreshold?: number (0-1 fraction; default 0.8) }. Extend ExecutionState with budgetSpent: { tokens: number, cost: number, byStep: Record<string, {tokens, cost}> }. Executor accumulates per-step usage into budgetSpent after each step completes. Pre-step check: if budget exhausted → throw BudgetExhaustedError with structured payload. Expose to expression scope as budget.spent / budget.remaining for use in transform / gate / until predicates. Updates: types.ts (WorkflowSpec + ExecutionState), workflow-executor.ts (accumulation + check), expression.ts (budget. scope).",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-142",
+      "title": "pi-workflows agent step validates output.schema POST-execution (wasted tokens on schema-violating output); no pre-execution forcing via StructuredOutput-tool dispatch — agents can ignore declared output contract until validation fails at completion",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 5: Claude Code workflows' agent(prompt, { schema }) opt FORCES the agent to use StructuredOutput tool before execution begins — schema-violating output is impossible by construction. pi-workflows agent step declares output.schema (validated via AJV against the agent's textOutput POST-completion) — if the agent's output violates schema, the workflow surfaces a validation error AFTER paying full token cost. Operators paying for schema-violating outputs in 'agent confused, returned markdown when JSON was required' scenarios is preventable. Pi-workflows DOES have an output.format: json directive that hints intent but does not force tool-use at dispatch.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "370-389",
+          "reference": "Part 3 axis 5 — Structured-Output Forcing (JSON Schema Pre-Execution) — ADOPT verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/step-agent.ts",
+          "reference": "agent dispatch + post-completion output.schema validation"
+        },
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "reference": "buildArgs + spawn flow — no --schema-enforce or equivalent flag passed to pi CLI"
+        }
+      ],
+      "impact": "Token waste on schema-violating outputs that the workflow then rejects. The cost ratio is unfavorable: full-prompt + full-output cost paid to produce text that the workflow discards. Operators relying on output.schema validation as a contract are paying for the contract violation rather than preventing it.",
+      "canonical_vocabulary": "pre-execution schema forcing; StructuredOutput-tool dispatch; output-contract enforcement at dispatch boundary",
+      "proposed_resolution": "Extend dispatch.ts buildArgs: when step.output.schema is set, pass schema to pi CLI via new --schema-enforce flag (assumes pi CLI supports it; verify upstream surface) OR inject schema into the system prompt with explicit StructuredOutput-tool-use directive. Pre-execution forcing complements the existing post-execution validation (don't remove the post-check — defense-in-depth). Updates: step-agent.ts (thread schema through to dispatch options); dispatch.ts (build the --schema-enforce arg or system-prompt injection). If pi CLI surface doesn't support pre-execution forcing today, file a follow-on FGAP for the upstream change OR implement system-prompt-injection as the pi-workflows-side fallback.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-143",
+      "title": "pi-workflows dispatch does not surface worktree isolation as a step opt — parallel agent steps that mutate shared files have no framework-provided isolation mechanism; today's subprocess + cwd-scoped dispatch leaves parallel-mutation conflicts to operator discipline",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-workflows",
+      "layer": "L3",
+      "description": "Per R-0014 recon axis 8: Claude Code workflows expose isolation: 'worktree' on agent() opt — each agent runs in a freshly-cloned git worktree with auto-cleanup if no changes; concurrent agents mutating the same files cannot conflict. pi-workflows agent step dispatches as subprocess in the same cwd; concurrent parallel agents have no isolation. Today's pattern: when operators need worktree-isolated parallel work, they hand-implement worktree-spawn in shell command steps + manage cleanup themselves. Expensive operationally + error-prone (cleanup-on-failure paths).",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "441-461",
+          "reference": "Part 3 axis 8 — Worktree Isolation per-Agent — ADOPT verdict (partial support already in dispatch; surface not exposed)"
+        },
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "reference": "subprocess spawn in cwd; no worktree spawn / cleanup path"
+        }
+      ],
+      "impact": "Parallel agent steps that mutate shared files race + corrupt each other's edits. Operators avoid the parallel pattern entirely or hand-build worktree spawn in command step shims that bypass framework lifecycle management (cleanup-on-error not handled). Worktree-spawning cost (~200-500ms + disk per agent per Claude docs) is justified only when parallel mutation is the threat — but operators have no framework hook to opt into it per-step.",
+      "canonical_vocabulary": "worktree isolation; per-agent filesystem sandbox; parallel-mutation safety",
+      "proposed_resolution": "Add 'isolation' field to agent StepSpec: 'isolation?: 'worktree' | { type: 'worktree', cleanup?: boolean, branch?: string }'. dispatch.ts checks step.isolation: if 'worktree', spawn agent in `git worktree add <tmpdir> HEAD` + execute subprocess with cwd=tmpdir + on completion: if no changes, remove worktree; else preserve + report path + branch (per Claude docs cleanup semantics). Cost surfaced in step output (worktree-creation latency added to step duration). Documentation: only enable when concurrent mutation risk exists; do NOT default-on (cost overhead).",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-144",
+      "title": "pi-workflows workflow: step type is declared in spec but REJECTED at parse time (phase-6, not yet implemented) — operators cannot compose workflows from workflows; audit-codebase → forEach file → audit-file workflow pattern is inexpressible at the spec level today; manual subprocess chaining is the only workaround",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 10: Claude Code workflows expose workflow(name, args) hook as the canonical sub-workflow composition primitive (1-level only — child cannot recurse). pi-workflows declares a workflow step type in spec definitions but the validator REJECTS it at workflow-spec.ts:~291 (phase-6 not-yet-implemented marker). High-value composition patterns are blocked: (a) audit-codebase top-level workflow that fans out to per-file sub-workflow invocations; (b) canonical-pipeline meta-workflow that calls plan-mode + recon + implementation + verification sub-workflows in sequence; (c) batch-FGAP-closure that calls per-FGAP closure-workflow N times with different IDs. All inexpressible today; require manual subprocess chaining outside the framework.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "491-525",
+          "reference": "Part 3 axis 10 — Sub-Workflow Invocation — ADOPT verdict (rejection at parse currently)"
+        },
+        {
+          "file": "packages/pi-workflows/src/workflow-spec.ts",
+          "lines": "~291",
+          "reference": "validator rejection of workflow step type at parse time (phase-6 marker)"
+        }
+      ],
+      "impact": "Composition is blocked. Operators wanting to reuse a workflow as a step in another workflow are forced to hand-chain pi -p subprocess calls outside the framework — losing state-persistence, resume, validation, expression evaluation, all the affordances pi-workflows provides. Today's session pattern (multiple FGAP closures, each through identical canonical-pipeline) cannot be batched as a single parent-workflow invoking per-FGAP-closure sub-workflow. Pattern adoption from Claude Code (workflow() hook is 1-level) is direct + the prior phase-6 design work is wasted as long as the rejection stays.",
+      "canonical_vocabulary": "sub-workflow composition; workflow-as-step; 1-level composition; recursive workflow invocation (forbidden); state-hierarchy under parent runId",
+      "proposed_resolution": "Implement workflow step type: (1) workflow-spec.ts: remove the parse-time rejection at line ~291; add WorkflowStepSpec interface with required 'workflow: <name>' field + optional 'input: <expression>' + optional 'forEach: <expression>' for iteration; (2) validation: validateWorkflow checks target workflow exists + target's inputSchema matches step's input expression shape + DETECTS recursion (target.name === current workflow OR target transitively invokes current → reject at validation per Claude Code's 1-level limit); (3) workflow-executor.ts: implement execution — recursive call to executeWorkflow with runDir hierarchical (parent-runId/subflows/<workflow-name>-N/); forEach iterates with item context; sub-workflow result lands at steps.<step-name>.output; (4) expression scope: parent workflow can reference sub-workflow output via standard ${{ steps.X.output }}; (5) nesting depth: enforce 2-level limit (parent + 1 sub-workflow level; sub-workflow cannot itself invoke workflow step) per Claude Code's 1-level constraint. Tests: composition smoke + forEach + recursion-detection. No changes to other step types.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
     }
   ]
 }

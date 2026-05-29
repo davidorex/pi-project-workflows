@@ -242,6 +242,28 @@ describe("read-truncation-gate — TruncationResult variant: truncatedBy='bytes'
 		// On a bytes-variant truncation, outputLines reflects whole lines that fit; the
 		// directive's continuation hint still uses that value.
 		assert.match(text, /offset=50/, "nextOffset (=outputLines=50) rendered in continuation hint");
+		// Corrected behavior (FGAP-135 CHECK 11 PARTIAL fix): truncatedBy='bytes'
+		// surfaces an explicit BYTES-cap signal + warns that paginating-by-lines
+		// may again exceed the byte cap on the next page. Without this, the agent
+		// can loop offset=50 -> offset=100 -> ... hitting the same byte ceiling
+		// silently. Match case-sensitively on BYTES to ensure the discriminating
+		// uppercase token is present (not the generic lowercase 'bytes' from numeric
+		// counts).
+		assert.match(text, /BYTES cap/, "bytes-variant surfaces explicit 'BYTES cap' signal");
+		assert.match(
+			text,
+			/paginating by line offset may again exceed the byte cap/,
+			"bytes-variant warns paginating-by-lines may again exceed byte cap on next page",
+		);
+		// lastLinePartial=true: corrected directive also surfaces the partial-line
+		// warning since this variant sets it. See the lastLinePartial test below
+		// for the dedicated assertion; here we confirm the bytes-variant directive
+		// also carries the partial-line clause when both signals are set.
+		assert.match(
+			text,
+			/last returned line was cut mid-content/,
+			"lastLinePartial=true clause present on combined-signal variant",
+		);
 	});
 });
 
@@ -268,25 +290,41 @@ describe("read-truncation-gate — TruncationResult variant: firstLineExceedsLim
 		assert.ok(result, "handler returns non-undefined result on firstLineExceedsLimit variant");
 		assert.ok(Array.isArray(result?.content), "content array present");
 		const text = (result?.content?.[0] as { type: "text"; text: string }).text;
-		// All 6 canonical strings present.
+		// Canonical strings present (offset= clause IS suppressed for this variant —
+		// see explicit assertion below — so it is excluded from this canonical-set check).
 		assert.ok(text.includes("⚠️"), "directive includes ⚠️ prefix");
 		assert.ok(text.includes("TRUNCATED"), "directive includes TRUNCATED");
 		assert.ok(text.includes("INCOMPLETE"), "directive includes INCOMPLETE");
 		assert.ok(text.includes("do NOT"), "directive includes 'do NOT'");
-		assert.ok(text.includes("offset="), "directive includes offset= continuation hint");
 		assert.ok(text.includes("grep"), "directive includes grep alternative");
 		// Numeric counts surface; outputLines=0 + outputBytes=0 are the discriminator.
 		assert.match(text, /0 lines/, "outputLines=0 rendered");
 		assert.match(text, /1 lines/, "totalLines=1 rendered");
 		assert.match(text, /0 bytes/, "outputBytes=0 rendered");
 		assert.match(text, /95000 bytes/, "totalBytes=95000 rendered");
-		// nextOffset := outputLines=0; directive renders `offset=0`. This is technically
-		// a valid pi read offset (read from start) but operationally meaningless here —
-		// re-issuing read with offset=0 would yield the same truncation. The directive
-		// also surfaces grep as the alternative, which is the operationally-useful path
-		// for this variant. See OBSERVATIONS in the commit body for the orchestrator-
-		// reportable ambiguity.
-		assert.match(text, /offset=0/, "nextOffset (=outputLines=0) rendered verbatim — see OBSERVATIONS");
+		// Corrected behavior (FGAP-135 CHECK 11 PARTIAL fix): when firstLineExceedsLimit=true,
+		// pagination via `offset=N` is operationally meaningless (offset=0 re-fires the
+		// same truncation; offset>=1 jumps past the unreadable line losing its content).
+		// The directive MUST NOT surface an `offset=...` continuation hint for this
+		// variant — its presence would send the agent into a no-op retry loop.
+		assert.ok(!text.includes("offset=0"), "firstLineExceedsLimit suppresses the meaningless `offset=0` clause");
+		assert.ok(
+			!/offset=\d+/.test(text),
+			"firstLineExceedsLimit suppresses any `offset=N` continuation hint (operationally meaningless)",
+		);
+		// Directive instead names the two operationally-useful next actions: grep
+		// for targeted search within the over-long line, and bash sed+head for
+		// byte-range slicing of the single line.
+		assert.match(
+			text,
+			/first line ALONE exceeds the read byte cap/,
+			"firstLineExceedsLimit surfaces the explicit single-line-too-long signal",
+		);
+		assert.match(
+			text,
+			/sed -n '1p' \/repo\/minified\.bundle\.js \| head -c 51200/,
+			"firstLineExceedsLimit surfaces the bash sed | head -c byte-range-slicing alternative for the over-long line",
+		);
 		// The directive does not crash and produces well-formed text (length > 200 chars
 		// is a coarse smoke-check that the template was fully rendered, not aborted).
 		assert.ok(text.length > 200, "directive is well-formed even with zero-value numeric fields");
@@ -326,11 +364,20 @@ describe("read-truncation-gate — TruncationResult variant: lastLinePartial=tru
 		assert.match(text, /2000 lines/, "outputLines=2000 rendered");
 		assert.match(text, /5000 lines/, "totalLines=5000 rendered");
 		assert.match(text, /offset=2000/, "nextOffset (=outputLines=2000) rendered in continuation hint");
-		// NOTE: the current directive does not surface lastLinePartial=true to the
-		// agent. The last returned line being partial means the agent should not
-		// trust its terminal content (e.g., a half-truncated JSON line, half-cut
-		// log entry). See OBSERVATIONS in the commit body for the orchestrator-
-		// reportable ambiguity.
+		// Corrected behavior (FGAP-135 CHECK 11 PARTIAL fix): lastLinePartial=true
+		// signals the last returned line was cut mid-content (mid-JSON-object, mid-
+		// source-expression, mid-log-entry). The directive MUST surface this so the
+		// agent does not trust the terminal characters of the returned content.
+		assert.match(
+			text,
+			/last returned line was cut mid-content/,
+			"lastLinePartial=true surfaces the partial-last-line warning to the agent",
+		);
+		assert.match(
+			text,
+			/do not trust its trailing characters/,
+			"lastLinePartial=true names the do-not-trust-trailing-characters guidance",
+		);
 	});
 });
 

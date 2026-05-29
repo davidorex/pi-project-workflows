@@ -91,10 +91,24 @@ export interface TruncationProjection {
  *     outputBytes / totalBytes; numeric fields rendered with a default
  *     of "?" if absent so a partial TruncationResult still produces a
  *     readable directive);
- *   - the continuation hint (`offset=<nextOffset>` where nextOffset is
- *     outputLines per pi's read.js marker convention);
- *   - explicit guidance to use `grep` for targeted search as an
- *     alternative to paginated re-read.
+ *   - variant-conditional next-action guidance:
+ *       * firstLineExceedsLimit=true: pagination via `offset=N` is
+ *         operationally meaningless (offset=0 re-fires the same
+ *         truncation; offset>=1 jumps past the unreadable line losing
+ *         content); the directive instead names `grep` for targeted
+ *         search + bash `sed -n '<line>p' <path> | head -c <bytes>`
+ *         for byte-range slicing of the over-long single line.
+ *       * truncatedBy='bytes' (without firstLineExceedsLimit): the
+ *         byte cap fired (not line cap); paginating by line offset may
+ *         again exceed the byte cap on the next page with no agent
+ *         signal — directive surfaces this risk + prefers `grep`.
+ *       * truncatedBy='lines' (default): line cap fired; offset-by-
+ *         outputLines pagination works predictably.
+ *   - lastLinePartial=true clause (when set): warns the agent the
+ *     terminal characters of the returned content were cut mid-content
+ *     and should not be trusted (mid-JSON-object, mid-source-
+ *     expression, mid-log-entry); placed AFTER the truncation summary
+ *     + BEFORE the next-action clauses.
  *
  * The "The truncated head is NOT returned" sentence enforces the
  * hard-refusal semantic at the language level — it signals the agent
@@ -110,22 +124,61 @@ export function buildTruncationDirective(
 	const totalBytes = truncation.totalBytes ?? "?";
 	const outputLines = truncation.outputLines ?? "?";
 	const outputBytes = truncation.outputBytes ?? "?";
+	const maxBytes = truncation.maxBytes ?? "?";
 	// pi's read.js builds its end-of-content marker with `Use offset=${nextOffset}`
 	// where nextOffset equals the count of complete lines emitted (outputLines).
 	// Mirror that convention so the directive's continuation hint matches the
 	// canonical semantics consumers may already expect from pi.
 	const nextOffset = truncation.outputLines ?? "?";
 
-	return (
+	const summary =
 		`⚠️ READ TRUNCATED — file \`${path}\` is ${totalLines} lines / ${totalBytes} bytes total; ` +
 		`only the first ${outputLines} lines / ${outputBytes} bytes were returned. ` +
-		`The content below is INCOMPLETE; do NOT proceed as if you have the full file.\n\n` +
-		`To continue from where the read stopped: call \`read\` again with \`offset=${nextOffset}\` ` +
-		`(and \`limit=...\` if desired).\n` +
-		`To find specific content without reading the rest of the file: use \`grep\` with a pattern + path.\n\n` +
-		`The truncated head is NOT returned in this response — re-issue the read with ` +
-		`\`offset=${nextOffset}\` or use \`grep\` for targeted search.`
-	);
+		`The content below is INCOMPLETE; do NOT proceed as if you have the full file.`;
+
+	// Discrete partial-last-line clause inserted between summary + next-actions.
+	// Placed before next-actions so the agent sees the integrity warning before
+	// composing a follow-up read.
+	const partialLineClause = truncation.lastLinePartial
+		? `\n\nWARNING: the last returned line was cut mid-content; do not trust its trailing ` +
+			`characters. The next read with \`offset=${nextOffset}\` should start at the line AFTER ` +
+			`the partial one OR re-read the partial line in full via a smaller \`limit=\`.`
+		: "";
+
+	// Variant-conditional next-action block. firstLineExceedsLimit is the
+	// dominant signal (suppresses pagination clause entirely); otherwise
+	// truncatedBy discriminates between bytes-cap (pagination risk) and
+	// lines-cap (predictable pagination).
+	let nextActions: string;
+	if (truncation.firstLineExceedsLimit === true) {
+		nextActions =
+			`\n\nThe file's first line ALONE exceeds the read byte cap (${outputBytes} of ${maxBytes} ` +
+			`bytes returned; \`firstLineExceedsLimit=true\`). Pagination via the read tool cannot help: ` +
+			`re-issuing with a zero line offset re-fires this same truncation, and any positive line ` +
+			`offset jumps past the unreadable line losing its content entirely. Useful next actions:\n` +
+			`  - use \`grep\` with a pattern + path to find specific content within the over-long line;\n` +
+			`  - use \`bash\` to byte-slice the single line, e.g. \`sed -n '1p' ${path} | head -c ${maxBytes}\`, ` +
+			`adjusting the line number + byte count as needed.\n\n` +
+			`The truncated head is NOT returned in this response — use \`grep\` or byte-range slicing as above.`;
+	} else if (truncation.truncatedBy === "bytes") {
+		nextActions =
+			`\n\nTruncation fired on the BYTES cap (not line count); paginating by line offset may again ` +
+			`exceed the byte cap on the next page. If the lines are long, prefer \`grep\` for targeted search.\n` +
+			`To continue from where the read stopped: call \`read\` again with \`offset=${nextOffset}\` ` +
+			`(and \`limit=...\` if desired).\n` +
+			`To find specific content without reading the rest of the file: use \`grep\` with a pattern + path.\n\n` +
+			`The truncated head is NOT returned in this response — re-issue the read with ` +
+			`\`offset=${nextOffset}\` or use \`grep\` for targeted search.`;
+	} else {
+		nextActions =
+			`\n\nTo continue from where the read stopped: call \`read\` again with \`offset=${nextOffset}\` ` +
+			`(and \`limit=...\` if desired).\n` +
+			`To find specific content without reading the rest of the file: use \`grep\` with a pattern + path.\n\n` +
+			`The truncated head is NOT returned in this response — re-issue the read with ` +
+			`\`offset=${nextOffset}\` or use \`grep\` for targeted search.`;
+	}
+
+	return summary + partialLineClause + nextActions;
 }
 
 /**

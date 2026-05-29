@@ -1287,6 +1287,10 @@
         {
           "file": "packages/pi-context/registry/schemas/spec-reviews.schema.json",
           "reference": "schema defines shape for missing render_spec_review macro"
+        },
+        {
+          "file": "analysis/2026-05-29-macros-statements-audit.md",
+          "reference": "Exhaustive verbatim enumeration of 463 macros-related statements across .project substrate (decisions, framework-gaps, features, tasks, issues, research, verification) + analysis md files + CLAUDE.md; pure enumeration, no synthesis. Reference for canonical scope-grounding when acting on FGAP-037."
         }
       ],
       "impact": "Every JIT agent that needs to read substrate block items beyond the original macro-covered kinds is unable to receive those items as rendered prompt material. Concretely: any explore / review / audit / implementation agent that should know the current DEC canon, framework-gaps state, feature arcs, layer-plan structure, research findings, or prior spec reviews cannot be dispatched substrate-natively — those blocks can be injected as raw `_<name>` objects but the template author has no canonical macro to render them. Workaround paths (hand-author inline rendering in each agent template OR copy-paste block content into the system prompt) duplicate the macro logic per agent and defeat the single-source-of-truth principle that macros.md exists to enforce. Blocks REVIEW-001 directly; blocks the dogfood-dispatchability gate (FGAP-028) for any agent that requires the listed blocks; blocks the future canonicalization of orchestrator briefs as JIT-agent specs (which would dispatch with DEC + framework-gaps + feedback substrate injected).",

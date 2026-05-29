@@ -5164,7 +5164,7 @@
     {
       "id": "FGAP-138",
       "title": "Post-FGAP-134 canonical reframing: in-body writer.kind=='human' checks are redundant with the pi-dispatch auth-gate that is now the canonical identity check; 'human-only' framing in docstrings + error messages + test narratives is leftover from the pre-FGAP-134 spoofable model + misleads agents into refusing to issue calls the canonical model expects them to issue (under user authorization); identity-stamping is conflated with auth-verification — writer.user in caller-supplied args becomes the substrate attestation stamp but the auth-gate verifies SOMEONE confirmed at the terminal without verifying the supplied identity matches; surfaced 2026-05-29 by an in-pi agent's telemetry claiming 'a human must issue the write-schema-migration call' (false — agent issues call, user authorizes via auth-gate prompt)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-agent-dispatch",
       "layer": "L3",

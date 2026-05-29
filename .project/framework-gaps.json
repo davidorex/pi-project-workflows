@@ -5123,6 +5123,41 @@
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
       "closed_at": "2026-05-29T00:00:00Z"
+    },
+    {
+      "id": "FGAP-137",
+      "title": "scripts/launch-constrained-pi.sh does not explicitly support --continue (pi's canonical resume-last-session flag); operators invoking the script with --continue get the pre-flight install + composite-discovery + symmetry-verification steps re-run unconditionally on each resume, which is at minimum wasted overhead and at worst interferes with pi's session-resume semantics",
+      "status": "identified",
+      "priority": "P2",
+      "package": "scripts",
+      "layer": "L4",
+      "description": "Empirically: scripts/launch-constrained-pi.sh parses --grant flags out at lines 38-45 + passes the remaining ARGS through to pi at line 88 (`exec pi --tools \"$TOOLS\" \"${ARGS[@]+\"${ARGS[@]}\"}\"`). So --continue mechanically reaches pi as a regular arg today. BUT the script's pre-flight sequence runs unconditionally regardless of whether the invocation is a fresh-launch or a resume: (a) pre-flight pointer check (lines 33-36), (b) pi install -l <META> (line 47 — writes to target's .pi/), (c) per-target composite discovery via read-config-operations.ts helper (lines 62-78), (d) 4-extension symmetry verification (lines 80-84), (e) SKILL.md grep for --tools allowlist derivation (lines 54-55 + 81 read-grant append). On a resume invocation, steps (b)-(d) are at minimum wasted overhead (the install was done on first launch; the composites + symmetry don't change between fresh-launch and resume); at worst, the install step may interfere with pi's session-resume semantics (untested — pi install may reset / refresh state pi --continue depends on). The script needs explicit --continue handling that either skips or short-circuits the redundant pre-flight steps on resume. User directive 2026-05-29: 'a user can use --continue with our script and just as in canonical pi --continue it continues the last active session.'",
+      "evidence": [
+        {
+          "file": "scripts/launch-constrained-pi.sh",
+          "lines": "33-88",
+          "reference": "pre-flight sequence runs unconditionally; --continue not detected or special-cased in the ARGS parser at lines 38-45; passes through to pi at line 88 alongside the still-derived --tools allowlist"
+        },
+        {
+          "file": "scripts/launch-constrained-pi.sh",
+          "lines": "47",
+          "reference": "pi install -l \"$META\" runs every launch invocation; on --continue this is redundant + potentially state-disruptive"
+        },
+        {
+          "file": "node_modules/@earendil-works/pi-coding-agent/",
+          "reference": "canonical pi --continue behavior: resumes the last active session for the cwd; exact session-state expectations + interaction with --tools allowlist + extension install state not yet recon'd"
+        }
+      ],
+      "impact": "Operators wanting to resume their last constrained-pi session experience either (a) the cumulative latency of the pre-flight install + composite-discovery + symmetry-verification on every resume (operationally heavy), or (b) silent failure / unexpected session reset if any pre-flight step interferes with --continue semantics. Either way the operator-promised parity with canonical pi --continue is not met. The script's positive clause (DEC-0014 harness-confined orchestrator) was designed for fresh-launch flows; resume was not a design consideration.",
+      "canonical_vocabulary": "session-resume; --continue flag passthrough; idempotent vs side-effecting pre-flight; harness-confined session lifecycle",
+      "proposed_resolution": "Recon canonical pi --continue behavior FIRST (single Explore agent over node_modules/@earendil-works/pi-coding-agent/) to verify: (a) what state --continue reads from + writes to; (b) whether pi install -l <META> is idempotent against an already-installed target; (c) whether the --tools allowlist needs to match the resumed-session's allowlist or is re-derivable; (d) whether composite-discovery runs again on resume or relies on cached state. Then update scripts/launch-constrained-pi.sh: detect --continue presence in ARGS (parse alongside --grant); when present + the target's .pi/ already shows a prior install, skip the pi install step + skip composite-discovery + skip symmetry-verification (the prior launch did these; resume inherits the same surface). Pre-flight pointer check still fires (cheap; informational). --tools allowlist still derived + passed (pi may require it on resume regardless). exec pi --continue + other args. Verification: runtime demo invokes the script with --continue against a tmpdir + fake-pi capturing whether install ran (it should NOT) + whether --tools was passed (it should). Documentation refresh in script JSDoc header explaining the --continue special-casing.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0014"
+      ],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
     }
   ]
 }

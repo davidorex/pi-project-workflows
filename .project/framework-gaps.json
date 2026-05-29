@@ -6258,6 +6258,35 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-169"
+    },
+    {
+      "title": "No JSON Schema file for AgentSpec — round-trip parseAgentYaml validation does not enforce semantic correctness or enable schema-driven tooling",
+      "status": "identified",
+      "package": "@davidorex/pi-jit-agents",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "author-agent-spec validates by round-tripping written YAML through parseAgentYaml at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts. No explicit JSON Schema file for AgentSpec exists in the pi-jit-agents package (no agent-spec.schema.json bundled alongside the verdict.schema.json for monitor classification). The TypeScript AgentSpec interface at packages/pi-jit-agents/src/types.ts is the only canonical-shape declaration. Without a schema artifact: (a) semantic validation (does the template path exist; is the output schema reference valid; are the contextBlocks block-kind names registered) has no declarative source; (b) external tooling (UI scaffolds, form generation, schema browsers) has nothing to consume; (c) the type and the parser can drift (FGAP-156) with no schema-level reconciliation.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+          "lines": "302",
+          "reference": "Discovered-gap #2: 'Absence of agent-spec.schema.json: Author-agent-spec round-trips through parseAgentYaml for validation, but no explicit JSON Schema file for AgentSpec is registered in the codebase. The type exists (types.ts) but the schema is implicit or missing. This blocks semantic validation (does template path exist?) and schema-driven tooling (UI, form generation, schema browsers).'"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/types.ts",
+          "lines": "21-60",
+          "reference": "AgentSpec TypeScript interface is the only canonical-shape declaration; no parallel JSON Schema file in the package"
+        }
+      ],
+      "impact": "AgentSpec authoring, validation, and tooling all rely on the TypeScript type as implicit truth. The substrate's other surfaces (block kinds, framework schemas) ship JSON Schemas that validate written data; AgentSpec does not. The asymmetry blocks schema-aware tooling, prevents declarative semantic checks, and lets type-vs-parser divergence (FGAP-156) persist without a schema-level reconciliation point.",
+      "proposed_resolution": "Author a JSON Schema file `packages/pi-jit-agents/schemas/agent-spec.schema.json` declaring the canonical AgentSpec shape (post-FGAP-156 decision on top-level vs nested prompt fields). Bundle alongside verdict.schema.json. Wire AJV validation through parseAgentYaml (or as a pre-validation step in author-agent-spec). The schema becomes the canonical source for: tooling consumers; field-level semantic validation (FGAP-155 closure depends on this for templatePath existence checks); FGAP-156 canonical-shape parity enforcement.",
+      "canonical_vocabulary": "AgentSpec JSON Schema artifact",
+      "related_decisions": [
+        "DEC-0049"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-170"
     }
   ]
 }

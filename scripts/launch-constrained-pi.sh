@@ -36,6 +36,24 @@
 #                              tool_operations[]. May be repeated. Default (no --grant) is
 #                              all declared composites.
 #
+# Passthrough flags (anything not matching --grant is forwarded to pi via the ARGS catch-all):
+#   --continue / -c          — pi's canonical resume-last-session flag, honored as
+#                              first-class behavior of this script. pi's session manager
+#                              resolves the most-recent session for the current working
+#                              directory and resumes it; when none exists a new session
+#                              begins. Note that pi does NOT persist per-session --tools
+#                              restrictions: the allowlist this script composes (static
+#                              SKILL.md-derived surface ∪ built-in read-only ∪ per-target
+#                              composites, optionally scoped by --grant) must be re-derived
+#                              and re-passed on every invocation, including resumes, to
+#                              preserve the orchestrator's constrained tool surface across
+#                              session continuations. Accordingly all pre-flight steps —
+#                              `pi install -l <meta-package>`, composite discovery from
+#                              the target's config.tool_operations[], --tools allowlist
+#                              derivation, and the 4-extension symmetry verification —
+#                              run unconditionally on every launch (resume or fresh).
+#   <any other pi flag>      — likewise passed through unchanged.
+#
 # Presumes the repo is already built (pi loads extensions from dist/). Does:
 #   1. pi install -l <meta-package>   — registers the 4 extensions into the target dir's .pi/
 #   2. derive static --tools from SKILL.md + per-target composites from config.tool_operations[]

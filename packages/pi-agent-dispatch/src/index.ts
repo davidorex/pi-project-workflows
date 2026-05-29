@@ -10,6 +10,7 @@ import {
 	type OperationDescriptor,
 	TOOL_OPERATION_DEFAULTS,
 } from "./operation-vocab.js";
+import { registerReadTruncationGate } from "./read-truncation-gate.js";
 import { runRealChecksTool } from "./run-real-checks-tool.js";
 import { runWorkOrderLoopTool } from "./run-work-order-loop-tool.js";
 
@@ -75,6 +76,17 @@ const extension = (pi: ExtensionAPI) => {
 	// see that module's header for the governance rationale + Bucket-2
 	// member list.
 	registerAuthGate(pi);
+
+	// FGAP-135: pi.on('tool_result') gate intercepts pi's built-in `read`
+	// tool responses when the structured details.truncation field signals
+	// truncation, and REPLACES the content payload with a hard-refusal
+	// directive. Mirrors pi-context serializeForRead overCapDirective
+	// canon — the directive IS the response so the agent cannot skim past
+	// it. Coexists with the tool_call auth-gate above on the orthogonal
+	// tool_result event; multi-handler composition is the SDK contract.
+	// See read-truncation-gate.ts header for the full canonical-model
+	// docstring.
+	registerReadTruncationGate(pi);
 };
 
 export default extension;

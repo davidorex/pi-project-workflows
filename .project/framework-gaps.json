@@ -5763,6 +5763,49 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-155"
+    },
+    {
+      "title": "AgentSpec TypeScript type uses top-level prompt fields while YAML parser reads nested prompt.system/prompt.task — silent data loss across the shape divergence",
+      "status": "identified",
+      "package": "@davidorex/pi-jit-agents",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "The TypeScript AgentSpec interface at packages/pi-jit-agents/src/types.ts lines 21-37 declares top-level fields: `systemPrompt?: string`, `systemPromptTemplate?: string`, `taskPrompt?: string`, `taskPromptTemplate?: string`. The YAML parser at packages/pi-jit-agents/src/agent-spec.ts lines 178-179 reads `spec.prompt?.system` and `spec.prompt?.task` (nested under a `prompt` object). The two shapes do not agree. An author serializing a spec object that matches the TypeScript type to YAML produces `systemPrompt: ...` / `taskPrompt: ...` at the top level — and parseAgentYaml ignores both keys because it looks under `prompt.*`. The author receives no warning; the parsed spec has empty prompt fields; compileAgent reports 'no prompt content produced'.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "70-96",
+          "reference": "FB-004 'Two competing AgentSpec shapes: TypeScript type vs YAML input'; actual_behavior: writing {systemPrompt, taskPrompt} produces YAML with top-level keys; parseAgentYaml reads spec.prompt?.system and spec.prompt?.task — both undefined; no prompt content is produced"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+          "lines": "155-253",
+          "reference": "Investigation report FB-004 section confirms both surfaces verbatim; verdict 'Schema (canonical format definition)' — pick one shape (Option A: nested prompt; Option B: top-level fields) and enforce across TypeScript type + YAML schema + YAML parser + author-agent-spec serializer"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/types.ts",
+          "lines": "21-37",
+          "reference": "AgentSpec interface declaring top-level systemPrompt / systemPromptTemplate / taskPrompt / taskPromptTemplate"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/agent-spec.ts",
+          "lines": "169-179",
+          "reference": "parseAgentYaml reads spec.prompt?.system and spec.prompt?.task — nested under a prompt object, not top-level"
+        }
+      ],
+      "impact": "Author-side tooling that constructs AgentSpec objects from the TypeScript type and serializes them to YAML produces specs that the parser cannot read. The divergence is structural — not a transient code drift — and persists across every author surface that consumes the TypeScript type as the authoring contract. Without canonical-shape enforcement, the divergence will recur whenever new prompt-shape fields are added to either side.",
+      "proposed_resolution": "Schema decision — pick ONE canonical shape: Option A (nested `prompt: { system?: string, task?: string }`) or Option B (top-level `systemPrompt: string, taskPrompt: string`) per the investigation-report verdict. After decision: update TypeScript type at packages/pi-jit-agents/src/types.ts to match the chosen shape; update YAML parser at packages/pi-jit-agents/src/agent-spec.ts to read the chosen shape; author or extend a JSON schema (AgentSpec.schema.json) declaring the canonical shape so the divergence cannot recur silently. Bundled author-agent-spec serializer must write the same shape it parses.",
+      "canonical_vocabulary": "AgentSpec canonical-shape parity",
+      "related_decisions": [
+        "DEC-0044",
+        "DEC-0049"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-156"
     }
   ]
 }

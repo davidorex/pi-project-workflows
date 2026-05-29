@@ -6154,6 +6154,37 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-166"
+    },
+    {
+      "title": "Substrate schema validation errors reference array indices, not item ids — debugging requires manual cross-reference",
+      "status": "identified",
+      "package": "@davidorex/pi-context",
+      "priority": "P3",
+      "layer": "L1",
+      "description": "ValidationError at packages/pi-context/src/schema-validator.ts lines 82-93 formats AJV errors as `${e.instancePath || ''}: ${e.message}`. The instancePath is a JSON Pointer (e.g. `/feedback/10`) referencing the array index of the violating item, not its semantic id. For blocks with many items, locating the offending entry requires counting array elements. The schema validator does not enrich the error path with the item's `id` field when present (which all canonical block schemas declare).",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "329-341",
+          "reference": "FB-017 'Substrate schema validation rejects items missing optional fields'; actual_behavior: append-block-item rejected FB-011 with '/feedback/10: must have required property status' — requires counting items to identify the offending entry; expected_behavior: errors should include item's id field when present like '/feedback/FB-011: must have required property status'"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-substrate-surfaces.md",
+          "lines": "171-200",
+          "reference": "Investigation report FB-017 section confirms ValidationError constructor at schema-validator.ts:82-93 verbatim; verdict 'Tool surface / error formatting' — enhance ValidationError to include item id when the violated item has an id field; AJV reports JSON Pointer paths per JSON Schema spec, no enrichment layer currently maps index back to semantic id"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-context/src/schema-validator.ts",
+          "lines": "82-93",
+          "reference": "ValidationError constructor; details map formats `${e.instancePath}: ${e.message}` without item-id enrichment"
+        }
+      ],
+      "impact": "Authors writing blocks with schema-required fields receive correct but unergonomic error messages. The error points to the right structural location (the array index) but not to the semantic identifier (the item id) that authors actually search for. Debugging cost scales with block size — locating the offending entry in a 50-item block requires manual counting.",
+      "proposed_resolution": "Code at packages/pi-context/src/schema-validator.ts lines 82-93: enhance ValidationError constructor to inspect the data structure at the failing instancePath, extract the item's `id` field when present, and substitute it in the error message. Concrete shape: when instancePath matches `/<arrayKey>/<index>(/.*)?`, look up the item at the index in the validated data, read its `id` field, replace `/<arrayKey>/<index>` with `/<arrayKey>/<id>` in the rendered message. Existing JSON Pointer form retained on the ErrorObject for programmatic consumers.",
+      "canonical_vocabulary": "schema-error item-id enrichment",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-167"
     }
   ]
 }

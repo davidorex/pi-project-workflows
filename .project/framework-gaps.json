@@ -6094,6 +6094,37 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-164"
+    },
+    {
+      "title": "Zero-token agent dispatches report as success — silent empty output with no framework-level error",
+      "status": "identified",
+      "package": "@davidorex/pi-jit-agents",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "executeAgent at packages/pi-jit-agents/src/jit-runtime.ts calls completeFn (pi-ai complete) once and extracts the response. usageFromMessage at lines 404-417 extracts usage.input/usage.output but does not check whether either is zero. If the pi-ai complete call returns an empty AssistantMessage (zero tokens, empty content array) — for example when the model is in the registry but unavailable at the provider, or the provider quota is exhausted, or the API silently rejects the request — the framework returns the empty result as a successful dispatch. call-agent at packages/pi-agent-dispatch/src/call-agent-tool.ts reports 'result.output type=string' with empty content. The orchestrator cannot distinguish 'agent intentionally produced no output' from 'API failed silently'.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "302-314",
+          "reference": "FB-015 'Zero-token dispatches with wrong model produce no error — silent empty output'; actual_behavior: dispatch with model 'claude-sonnet-4-20250514' (no provider prefix) → anthropic/claude-sonnet-4-20250514 → model not found → zero tokens, empty output, reported as success"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+          "lines": "99-148",
+          "reference": "Investigation report FB-015 section confirms usageFromMessage at jit-runtime.ts:404-417 verbatim; verdict 'Runtime boundary (jit-runtime.ts)' — after extracting usage, check `usage.totalTokens === 0` and throw AgentDispatchError with stopReason and model details; partial confirmation noted because the modelRegistry.find path at call-agent-tool.ts:87 errors before dispatch when model is missing — the zero-token path applies when model IS in registry but the API returns empty"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/jit-runtime.ts",
+          "lines": "404-417",
+          "reference": "usageFromMessage extracts usage.input/output/cost; no zero-token check on the returned message"
+        }
+      ],
+      "impact": "Orchestrators relying on agent output for downstream decisions cannot detect when the agent produced nothing. Silent API failures (model unavailable, quota exhausted, provider rejection) are indistinguishable from successful empty dispatches. Compounds with FGAP for FB-009 (output not surfaced in content) and FGAP for FB-016 (no dispatch-history query tool): even the workaround of inspecting details or session logs requires the orchestrator to first know that something is wrong.",
+      "proposed_resolution": "Runtime boundary at packages/pi-jit-agents/src/jit-runtime.ts after the response is extracted: check `usageFromMessage(response).input + .output === 0` (or `usage.totalTokens === 0`); throw AgentDispatchError with the model identifier and the response.stopReason instead of returning success. Concrete shape from investigation verdict: `throw new AgentDispatchError(compiled.spec.name, 'zero-token response from model ' + modelToString(dispatch.model) + ' — possible API failure or model unavailability', { stopReason: response.stopReason })`.",
+      "canonical_vocabulary": "zero-token detection",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-165"
     }
   ]
 }

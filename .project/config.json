@@ -256,6 +256,11 @@
       "target_kinds": [
         "*"
       ]
+    },
+    {
+      "canonical_id": "gap_superseded_by_task",
+      "display_name": "gap superseded by task",
+      "category": "ordering"
     }
   ],
   "lenses": [],

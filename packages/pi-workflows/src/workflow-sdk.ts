@@ -8,6 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { tryResolveContextDir } from "@davidorex/pi-context/context-dir";
+import { bundledTemplateDir } from "@davidorex/pi-jit-agents/template";
 import { AgentNotFoundError, createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { bundledDir } from "./bundled-dirs.js";
 import { EXPRESSION_ROOTS, FILTER_NAMES } from "./expression.js";
@@ -142,7 +143,7 @@ export function availableAgents(cwd: string, builtinDir?: string): AgentSpec[] {
 }
 
 export function availableTemplates(cwd: string, builtinDir?: string): string[] {
-	const defaultBuiltinDir = builtinDir ?? bundledDir("templates");
+	const defaultBuiltinDir = builtinDir ?? bundledTemplateDir();
 	const searchDirs = [
 		path.join(cwd, ".pi", "templates"),
 		path.join(os.homedir(), ".pi", "agent", "templates"),

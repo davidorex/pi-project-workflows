@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/framework-gaps",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Framework Gaps",
-  "description": "Capability gaps in the framework — pieces that must exist natively for the target model to be expressible as configuration rather than hand-enactment.",
+  "description": "Capability gaps in the pi-project-workflows framework — pieces that must exist natively for the target artifact-ownership model to be expressible as configuration rather than hand-enactment. Each gap carries evidence (file + line references), impact, canonical engineering vocabulary for the missing capability, proposed resolution, and lifecycle state. Framework gaps are distinct from feature-level defects: they describe what the framework cannot yet express at all, not bugs in expressible functionality.",
   "type": "object",
   "required": ["gaps"],
   "properties": {
@@ -18,7 +18,7 @@
           "title": { "type": "string" },
           "status": {
             "type": "string",
-            "enum": ["identified", "accepted", "in-progress", "closed", "wontfix"]
+            "enum": ["identified", "accepted", "in-progress", "closed", "wontfix", "superseded_by"]
           },
           "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
           "package": { "type": "string" },
@@ -43,6 +43,9 @@
             "description": "The established engineering term for the capability that is missing"
           },
           "proposed_resolution": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
+          "related_features": { "type": "array", "items": { "type": "string" } },
+          "related_decisions": { "type": "array", "items": { "type": "string" } },
+          "related_issues": { "type": "array", "items": { "type": "string" } },
           "created_by": { "type": "string" },
           "created_at": { "type": "string" },
           "closed_by": { "type": "string" },
@@ -53,12 +56,13 @@
   },
   "x-lifecycle": {
     "field": "status",
-    "states": ["identified", "accepted", "in-progress", "closed", "wontfix"],
+    "states": ["identified", "accepted", "in-progress", "closed", "wontfix", "superseded_by"],
     "transitions": [
       { "from": "identified", "to": "accepted", "required_authority": "user" },
       { "from": "identified", "to": "wontfix", "required_authority": "user" },
       { "from": "accepted", "to": "in-progress", "required_authority": "any" },
-      { "from": "in-progress", "to": "closed", "required_authority": "any" }
+      { "from": "in-progress", "to": "closed", "required_authority": "any" },
+      { "from": "identified", "to": "superseded_by", "required_authority": "user" }
     ]
   }
 }

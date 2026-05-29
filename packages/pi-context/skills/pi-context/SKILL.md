@@ -538,7 +538,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | Block | Title | Array Key | Item Fields |
 |-------|-------|-----------|-------------|
 | `decisions` | Decisions | `decisions` | id, title, status (string (open|enacted|superseded)), context, decision, options_considered? (array), consequences (array), references? (array), created_by, created_at, enacted_by?, enacted_at? |
-| `framework-gaps` | Framework Gaps | `gaps` | id, title, status (string (identified|accepted|in-progress|closed|wontfix)), priority? (string (P0|P1|P2|P3)), package, layer? (string (L1|L2|L3|L4|L5)), description, evidence (array), impact, canonical_vocabulary?, proposed_resolution, created_by, created_at, closed_by?, closed_at? |
+| `framework-gaps` | Framework Gaps | `gaps` | id, title, status (string (identified|accepted|in-progress|closed|wontfix|superseded_by)), priority? (string (P0|P1|P2|P3)), package, layer? (string (L1|L2|L3|L4|L5)), description, evidence (array), impact, canonical_vocabulary?, proposed_resolution, related_features? (array), related_decisions? (array), related_issues? (array), created_by, created_at, closed_by?, closed_at? |
 | `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), files? (array), acceptance_criteria? (array), assigned_agent?, notes? |
 | `verification` | Verification | `verifications` | id, status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array) |
 | `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by? |
@@ -559,7 +559,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | Block | Field | Values |
 |-------|-------|--------|
 | `decisions` | `status` | open, enacted, superseded |
-| `framework-gaps` | `status` | identified, accepted, in-progress, closed, wontfix |
+| `framework-gaps` | `status` | identified, accepted, in-progress, closed, wontfix, superseded_by |
 | `framework-gaps` | `priority` | P0, P1, P2, P3 |
 | `framework-gaps` | `layer` | L1, L2, L3, L4, L5 |
 | `tasks` | `status` | planned, in-progress, completed, blocked, cancelled |

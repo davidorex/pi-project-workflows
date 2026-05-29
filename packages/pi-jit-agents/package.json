@@ -49,6 +49,7 @@
 	"files": [
 		"dist/",
 		"schemas/",
+		"templates/",
 		"*.md"
 	],
 	"scripts": {

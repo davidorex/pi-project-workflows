@@ -7,12 +7,12 @@ import os from "node:os";
 import path from "node:path";
 import { schemaPath } from "@davidorex/pi-context/context-dir";
 import {
+	bundledTemplateDir,
 	CANONICAL_MACRO_NAMES,
 	expandFieldPathShorthand,
 	enforceBudget as realEnforceBudget,
 } from "@davidorex/pi-jit-agents";
 import nunjucks from "nunjucks";
-import { bundledDir } from "./bundled-dirs.js";
 import type { StepSpec, WorkflowSpec } from "./types.js";
 
 /**
@@ -123,7 +123,7 @@ export function makeSpec(overrides: Partial<WorkflowSpec> & { steps: Record<stri
  * resolves to. Re-exported as a constant so tests can drop the
  * `path.resolve(import.meta.dirname, "..", "templates")` literal.
  */
-export const TEMPLATES_DIR = bundledDir("templates");
+export const TEMPLATES_DIR = bundledTemplateDir();
 
 /**
  * In-memory mirror of the `ItemLocation` shape `buildIdIndex` produces in
@@ -201,7 +201,7 @@ export function makeRendererTestEnv(
 			return `[unrendered: ${blockName}/${idStr}]`;
 		}
 
-		const macroName = CANONICAL_MACRO_NAMES[blockName] ?? `render_${blockName.replace(/-/g, "_")}`;
+		const macroName = CANONICAL_MACRO_NAMES[blockName]?.macro_name ?? `render_${blockName.replace(/-/g, "_")}`;
 		const depthNum = typeof depth === "number" && Number.isFinite(depth) ? depth : 0;
 		if (idStr.length > 0) visited.add(idStr);
 		try {
@@ -239,7 +239,7 @@ export function renderItemMacro(
 	depth: number = 0,
 	templateBase?: string,
 ): string {
-	const macroName = CANONICAL_MACRO_NAMES[kind] ?? `render_${kind.replace(/-/g, "_")}`;
+	const macroName = CANONICAL_MACRO_NAMES[kind]?.macro_name ?? `render_${kind.replace(/-/g, "_")}`;
 	const tpl = `{% from "items/${templateBase ?? kind}.md" import ${macroName} %}{{ ${macroName}(item, depth) }}`;
 	return env.renderString(tpl, { item, depth });
 }

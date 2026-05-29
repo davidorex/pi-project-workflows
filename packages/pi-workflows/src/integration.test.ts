@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
+import { bundledTemplateDir } from "@davidorex/pi-jit-agents/template";
 import nunjucks from "nunjucks";
 import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
 import { executeAgentStep } from "./step-agent.js";
@@ -42,9 +43,12 @@ const REQUIREMENTS_SCHEMA_SRC = path.resolve(
 	"requirements.schema.json",
 );
 
-const MACROS_SRC = path.resolve(import.meta.dirname, "..", "templates", "shared", "macros.md");
-const RENDER_HELPERS_SRC = path.resolve(import.meta.dirname, "..", "templates", "shared", "render-helpers.md");
-const ITEMS_DIR_SRC = path.resolve(import.meta.dirname, "..", "templates", "items");
+// Templates relocated to pi-jit-agents per DEC-0049; resolve via package-layer
+// bundledTemplateDir() rather than hand-built ../templates/ arithmetic.
+const TEMPLATES_ROOT = bundledTemplateDir();
+const MACROS_SRC = path.join(TEMPLATES_ROOT, "shared", "macros.md");
+const RENDER_HELPERS_SRC = path.join(TEMPLATES_ROOT, "shared", "render-helpers.md");
+const ITEMS_DIR_SRC = path.join(TEMPLATES_ROOT, "items");
 
 /** Conformance-reference block data. */
 const CONFORMANCE_BLOCK = {

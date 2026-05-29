@@ -82,6 +82,38 @@
 {% from "items/issues.md" import render_issue %}
 {% macro render_issues(data) %}{% call(i) render_whole_block_truthy("Issues", data.issues if data else None) %}{{ render_issue(i) }}{% endcall %}{% endmacro %}
 
+{#- 6 whole-block delegators landed via the template-relocation arc. Each
+    delegates to the per-item macro from items/<kind>.md through
+    render_whole_block_truthy. Names follow the plural convention
+    (render_<plural-kind>). The display_name string and array_key are
+    sourced from packages/pi-context/samples/conception.json verbatim;
+    array_key diverges from block_kind for 3 of these 6 (framework-gaps→
+    gaps, layer-plans→plans, spec-reviews→reviews). The canonical macro
+    name + the array_key are also encoded in CANONICAL_MACRO_NAMES at
+    packages/pi-jit-agents/src/renderer-registry.ts for programmatic
+    resolution. Alphabetical by block_kind. -#}
+
+{% from "items/decisions.md" import render_decision %}
+{% macro render_decisions(data) %}{% call(d) render_whole_block_truthy("Decisions", data.decisions if data else None) %}{{ render_decision(d) }}{% endcall %}{% endmacro %}
+
+{% from "items/features.md" import render_feature %}
+{% macro render_features(data) %}{% call(f) render_whole_block_truthy("Features", data.features if data else None) %}{{ render_feature(f) }}{% endcall %}{% endmacro %}
+
+{% from "items/framework-gaps.md" import render_framework_gap %}
+{% macro render_framework_gaps(data) %}{% call(g) render_whole_block_truthy("Framework Gaps", data.gaps if data else None) %}{{ render_framework_gap(g) }}{% endcall %}{% endmacro %}
+
+{% from "items/layer-plans.md" import render_layer_plan %}
+{% macro render_layer_plans(data) %}{% call(p) render_whole_block_truthy("Layer Restructure Plans", data.plans if data else None) %}{{ render_layer_plan(p) }}{% endcall %}{% endmacro %}
+
+{#- research per-item macro is itself named render_research (the canonical
+    per-item name in CANONICAL_MACRO_NAMES); alias on import to avoid the
+    name collision with the whole-block delegator declared just below. -#}
+{% from "items/research.md" import render_research as render_research_item %}
+{% macro render_research(data) %}{% call(r) render_whole_block_truthy("Research", data.research if data else None) %}{{ render_research_item(r) }}{% endcall %}{% endmacro %}
+
+{% from "items/spec-reviews.md" import render_spec_review %}
+{% macro render_spec_reviews(data) %}{% call(rev) render_whole_block_truthy("Spec Reviews", data.reviews if data else None) %}{{ render_spec_review(rev) }}{% endcall %}{% endmacro %}
+
 {#- Authored fresh in Plan 8: render_conventions did not previously exist in
     macros.md despite README references implying it did. The block-level
     header surfaces test_conventions, lint_command, and lint_scope (all

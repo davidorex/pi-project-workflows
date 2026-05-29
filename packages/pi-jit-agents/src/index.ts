@@ -21,7 +21,7 @@ export { cycleMarker, notFoundMarker, renderErrorMarker, unrenderedMarker } from
 export type { ItemMacroRef, RendererRegistry } from "./renderer-registry.js";
 export { CANONICAL_MACRO_NAMES, createRendererRegistry } from "./renderer-registry.js";
 export type { TemplateEnvContext } from "./template.js";
-export { createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.js";
+export { bundledTemplateDir, createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.js";
 export type { RedactionConfig, RedactionPattern } from "./trace-redactor.js";
 // Trace subsystem (issue-023)
 export {

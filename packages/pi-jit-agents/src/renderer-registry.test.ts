@@ -106,12 +106,12 @@ describe("createRendererRegistry", () => {
 		}
 
 		const registry = createRendererRegistry({ cwd, userDir, builtinDir });
-		for (const [kind, expectedMacroName] of Object.entries(CANONICAL_MACRO_NAMES)) {
+		for (const [kind, expectedEntry] of Object.entries(CANONICAL_MACRO_NAMES)) {
 			const ref = registry.lookup(kind);
 			assert.ok(ref, `expected non-null ref for shipped kind ${kind}`);
 			assert.strictEqual(
 				ref.macroName,
-				expectedMacroName,
+				expectedEntry.macro_name,
 				`canonical macro name mismatch for ${kind}: got ${ref.macroName}`,
 			);
 		}
@@ -171,5 +171,49 @@ describe("createRendererRegistry", () => {
 		const ref = registry.lookup("decisions");
 		assert.ok(ref);
 		assert.strictEqual(ref.templatePath, added);
+	});
+});
+
+describe("CANONICAL_MACRO_NAMES array_key column (FEAT-001 template-relocation arc)", () => {
+	it("every entry carries both macro_name + array_key (registry shape extension)", () => {
+		for (const [kind, entry] of Object.entries(CANONICAL_MACRO_NAMES)) {
+			assert.strictEqual(typeof entry.macro_name, "string", `kind ${kind}: macro_name must be string`);
+			assert.ok(entry.macro_name.length > 0, `kind ${kind}: macro_name must be non-empty`);
+			assert.strictEqual(typeof entry.array_key, "string", `kind ${kind}: array_key must be string`);
+			assert.ok(entry.array_key.length > 0, `kind ${kind}: array_key must be non-empty`);
+		}
+	});
+
+	it("array_key values match conception.json verbatim for the 3 divergent kinds", () => {
+		// Verbatim from packages/pi-context/samples/conception.json
+		// block_kinds[]: framework-gaps→gaps, layer-plans→plans, spec-reviews→
+		// reviews. These three are the load-bearing divergence the
+		// original FGAP body never surfaced.
+		assert.strictEqual(CANONICAL_MACRO_NAMES["framework-gaps"]?.array_key, "gaps");
+		assert.strictEqual(CANONICAL_MACRO_NAMES["layer-plans"]?.array_key, "plans");
+		assert.strictEqual(CANONICAL_MACRO_NAMES["spec-reviews"]?.array_key, "reviews");
+	});
+
+	it("array_key values match block_kind for the same-as-key entries", () => {
+		// Per conception.json: decisions / features / issues / requirements /
+		// research / tasks all use the block_kind as array_key. Asserting at
+		// least the four named here (the four most-used in this repo's
+		// substrate) — adding entries to the registry without sourcing
+		// array_key from conception risks the divergence pattern recurring.
+		assert.strictEqual(CANONICAL_MACRO_NAMES.decisions?.array_key, "decisions");
+		assert.strictEqual(CANONICAL_MACRO_NAMES.features?.array_key, "features");
+		assert.strictEqual(CANONICAL_MACRO_NAMES.research?.array_key, "research");
+		assert.strictEqual(CANONICAL_MACRO_NAMES.tasks?.array_key, "tasks");
+	});
+
+	it("conventions entry uses array_key=rules per conception.json (additional divergence beyond the original-FGAP-named 3)", () => {
+		// conventions schema's array_key is "rules" per
+		// packages/pi-context/samples/conception.json — also divergent
+		// from block_kind. Not in the original FGAP-named 6 (which were
+		// the 6 new whole-block delegators landing in this arc), but
+		// caught by the registry shape extension; asserting it here
+		// guards against drift on the conventions delegator which already
+		// existed in macros.md prior to this arc.
+		assert.strictEqual(CANONICAL_MACRO_NAMES.conventions?.array_key, "rules");
 	});
 });

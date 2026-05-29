@@ -1,9 +1,11 @@
 import assert from "node:assert";
-import path from "node:path";
 import { describe, it } from "node:test";
+import { bundledTemplateDir } from "@davidorex/pi-jit-agents/template";
 import nunjucks from "nunjucks";
 
-const templatesDir = path.resolve(import.meta.dirname, "..", "templates");
+// Templates relocated to pi-jit-agents per DEC-0049; resolve via canonical
+// package-layer bundledTemplateDir() rather than hand-built ../templates/ path.
+const templatesDir = bundledTemplateDir();
 const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(templatesDir), {
 	autoescape: false,
 	throwOnUndefined: false,

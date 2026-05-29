@@ -113,7 +113,7 @@ Subcommands: `init`, `list`, `run`, `resume`, `validate`, `status`, `help`
 </keyboard_shortcuts>
 
 <bundled_resources>
-26 agents, 15 schemas, 15 workflows, 48 templates bundled.
+26 agents, 15 schemas, 15 workflows bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 

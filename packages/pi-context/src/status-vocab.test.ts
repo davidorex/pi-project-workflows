@@ -25,7 +25,16 @@ const SAMPLES_SCHEMAS_DIR = path.resolve(__dirname, "..", "samples", "schemas");
 /** The ONLY status values permitted to bucket to "unknown" — terminal-but-not-
  * complete states that intentionally don't count toward progress. Any other
  * conception status mapping to "unknown" is a defect. */
-const INTENDED_UNKNOWN = new Set(["superseded", "cancelled", "deferred", "abandoned", "wontfix", "skipped", "stale"]);
+const INTENDED_UNKNOWN = new Set([
+	"superseded",
+	"superseded_by",
+	"cancelled",
+	"deferred",
+	"abandoned",
+	"wontfix",
+	"skipped",
+	"stale",
+]);
 
 /** Recursively collect every `properties.status.enum` value found anywhere in a
  * schema object (top-level item status + any nested status enums). */

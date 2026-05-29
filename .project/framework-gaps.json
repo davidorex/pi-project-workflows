@@ -6380,6 +6380,35 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-173"
+    },
+    {
+      "title": "author-agent-spec has no semantic-validation surface for template-path existence, schema-referenced files, or contextBlocks block-kind existence",
+      "status": "identified",
+      "package": "@davidorex/pi-agent-dispatch",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "author-agent-spec at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts validates by round-tripping written YAML through parseAgentYaml. The round-trip catches structural malformedness (missing required fields, wrong types) but does NOT verify semantic correctness of cross-reference fields: (a) systemPromptTemplate / taskPromptTemplate file existence (or `block:` sentinel validity); (b) output.schema reference resolution (existence of the bundled schema file or the cross-package schema reference); (c) contextBlocks block-kind name existence in the project's installed block-kind catalog. Configuration errors in any of these surface at dispatch-time (ENOENT for missing templates, AJV schema-not-found for invalid schema refs, runtime error for unknown block kinds) instead of at author-time.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+          "lines": "309",
+          "reference": "Discovered-gap (secondary) #5: 'Validation surface for agent specs at author-agent-spec: The tool validates by round-tripping but does NOT verify semantic correctness (template-path existence, schema-referenced files, output schema files, contextBlocks block-kind existence). A richer validation surface (similar to the real-checks pattern in FGAP-102) would catch configuration errors at author-time rather than dispatch-time.'"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "lines": "1-110",
+          "reference": "author-agent-spec entry point; round-trip validation via parseAgentYaml only; no cross-reference semantic checks"
+        }
+      ],
+      "impact": "Authors receive author-time success for specs that will hard-fail on first dispatch. The validation gate's promise (round-trip success = dispatchable spec) is structurally weaker than authors assume. Each cross-reference field is a separate failure-mode; without a semantic-validation surface, authors learn each one only by hitting the dispatch-time error.",
+      "proposed_resolution": "Tool surface at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts: after parseAgentYaml round-trip succeeds, run a semantic-validation pass per cross-reference field: (a) for each template path that is not a `block:` sentinel, verify the file exists on disk via fs.existsSync; (b) for output.schema, resolve the reference (bundled schema path or block: sentinel) and verify the target exists; (c) for each contextBlocks entry, verify the named block kind exists in the project's installed block-kind catalog (queryable via pi-context's availableBlocks(cwd) or schemaVocabulary(cwd)). On any failure, throw at author-time with a message naming the failing field + the resolution attempt. Pattern analog: the FGAP-102 real-checks pattern that surfaces deterministic failures pre-dispatch.",
+      "canonical_vocabulary": "author-time semantic validation",
+      "related_decisions": [
+        "DEC-0049"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-174"
     }
   ]
 }

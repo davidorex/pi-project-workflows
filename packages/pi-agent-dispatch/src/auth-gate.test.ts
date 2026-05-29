@@ -20,9 +20,27 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import type { ExtensionContext, ToolCallEvent } from "@earendil-works/pi-coding-agent";
 import { AUTH_REQUIRED_TOOLS, authGateHandler } from "./auth-gate.js";
+import { _resetVerifiedIdentityCache, getVerifiedOperatorIdentity } from "./verified-identity.js";
+
+/**
+ * The auth-gate calls getVerifiedOperatorIdentity() with no deps, so its
+ * resolution path runs against real git config + real process.env in
+ * tests too. To make the identity-stamp behavioral tests deterministic
+ * the suite primes the module-level cache via a fixture call that
+ * supplies dep stubs, then resets it after each test so behavior is not
+ * leaked between tests.
+ */
+function primeIdentityCache(value: string | null): void {
+	_resetVerifiedIdentityCache();
+	getVerifiedOperatorIdentity({
+		runGitConfig: () => (value === null ? null : value),
+		getEnvUser: () => null,
+		emitWarning: () => {},
+	});
+}
 
 interface ConfirmCall {
 	title: string;
@@ -54,6 +72,19 @@ function mockEvent(toolName: string, input: Record<string, unknown> = {}): ToolC
 		input,
 	} as unknown as ToolCallEvent;
 }
+
+// Reset the verified-identity cache before each test so the absence of an
+// explicit prime cannot leak a value from an earlier test. The existing 5
+// behavioral suites do not consult event.input.writer post-handler so they
+// are unaffected by what (if anything) was stamped; the new mutation suite
+// primes the cache explicitly.
+beforeEach(() => {
+	_resetVerifiedIdentityCache();
+});
+
+afterEach(() => {
+	_resetVerifiedIdentityCache();
+});
 
 describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
 	it("contains all 15 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 extension)", () => {
@@ -167,5 +198,74 @@ describe("auth-gate — confirm message rendering", () => {
 		assert.match(message, /nested=\{\.\.\.\}/, "nested objects rendered as opaque placeholder");
 		// Array rendered as length-tagged placeholder
 		assert.match(message, /tags=\[3 item\(s\)\]/, "arrays rendered as length-tagged placeholder");
+	});
+});
+
+describe("auth-gate — identity-stamp mutation on confirm=true", () => {
+	it("Bucket-2 tool + confirm=true + verified identity present → event.input.writer overwritten to verified value (agent-supplied user REPLACED)", async () => {
+		primeIdentityCache("verified@example.com");
+		const { ctx } = mockCtx({ hasUI: true, confirmAnswer: true });
+		const input: Record<string, unknown> = {
+			name: "agent-x",
+			spec: { role: "sensor" },
+			writer: { kind: "agent", user: "alice@bogus.com" },
+		};
+		const event = mockEvent("author-agent-spec", input);
+		const result = await authGateHandler(event, ctx);
+		assert.strictEqual(result, undefined, "expected void/allow");
+		assert.deepStrictEqual(
+			input.writer,
+			{ kind: "human", user: "verified@example.com" },
+			"input.writer must be overwritten to the verified terminal-operator identity",
+		);
+	});
+
+	it("Bucket-2 tool + confirm=false → event.input.writer UNCHANGED (no mutation on decline)", async () => {
+		primeIdentityCache("verified@example.com");
+		const { ctx } = mockCtx({ hasUI: true, confirmAnswer: false });
+		const originalWriter = { kind: "agent", user: "alice@bogus.com" };
+		const input: Record<string, unknown> = {
+			target: "tool_operations",
+			operation: "add",
+			key: "x",
+			writer: originalWriter,
+		};
+		const event = mockEvent("author-tool-grant", input);
+		const result = await authGateHandler(event, ctx);
+		assert.deepStrictEqual(result, { block: true, reason: "user declined" });
+		assert.deepStrictEqual(input.writer, originalWriter, "writer must NOT be mutated when operator declines");
+	});
+
+	it("non-Bucket-2 tool → event.input.writer UNCHANGED (handler pass-through; no mutation)", async () => {
+		primeIdentityCache("verified@example.com");
+		const { ctx } = mockCtx({ hasUI: true, confirmAnswer: true });
+		const originalWriter = { kind: "agent", user: "alice@bogus.com" };
+		const input: Record<string, unknown> = { name: "tasks", writer: originalWriter };
+		const event = mockEvent("read-block", input);
+		const result = await authGateHandler(event, ctx);
+		assert.strictEqual(result, undefined, "pass-through for non-Bucket-2 tools");
+		assert.deepStrictEqual(input.writer, originalWriter, "non-gated tools must never have writer mutated");
+	});
+
+	it("Bucket-2 tool + confirm=true + verified identity null → event.input.writer UNCHANGED (caller-supplied identity remains)", async () => {
+		primeIdentityCache(null);
+		const { ctx } = mockCtx({ hasUI: true, confirmAnswer: true });
+		const originalWriter = { kind: "agent", user: "alice@bogus.com" };
+		const input: Record<string, unknown> = {
+			operation: "create",
+			schemaName: "thing",
+			fromVersion: "1.0.0",
+			toVersion: "2.0.0",
+			kind: "identity",
+			writer: originalWriter,
+		};
+		const event = mockEvent("write-schema-migration", input);
+		const result = await authGateHandler(event, ctx);
+		assert.strictEqual(result, undefined, "expected void/allow");
+		assert.deepStrictEqual(
+			input.writer,
+			originalWriter,
+			"with no verifiable identity, the auth-gate leaves caller-supplied writer in place (warning surfaces the unverified state separately)",
+		);
 	});
 });

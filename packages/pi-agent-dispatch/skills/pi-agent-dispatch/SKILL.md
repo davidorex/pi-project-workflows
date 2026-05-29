@@ -89,7 +89,7 @@ Execute the bounded work-order loop: dispatch target_agent (via direct pi-jit-ag
 </tools_reference>
 
 <events>
-`tool_call`
+`tool_call`, `tool_result`
 </events>
 
 <objective>

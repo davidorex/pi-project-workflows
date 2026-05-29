@@ -5698,6 +5698,37 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-153"
+    },
+    {
+      "title": "author-agent-spec YAML serializer folds multi-line prompts to a single line, destroying newlines",
+      "status": "identified",
+      "package": "@davidorex/pi-agent-dispatch",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "author-agent-spec at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts line 72 (or line 88 per the investigation report's read) calls `yamlStringify(specObj)` with no options. The yaml package's default scalar style for multi-line strings is folded block scalar (`>-`), which collapses embedded `\\n` characters to spaces. A prompt authored as `'line1\\nline2'` becomes a single folded line in the written YAML. The author has no control over scalar style at the call site; no options are threaded through the tool surface to force literal block scalar (`|`) preservation of newlines.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "27-47",
+          "reference": "FB-002 'author-agent-spec YAML serializer uses folded block scalar, destroying newlines'; actual_behavior: prompt 'Read doc.\\nPath is X.' becomes single folded line 'Read doc. Path is X.'; after folding the '/' triggers the FB-001 template-path heuristic"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+          "lines": "69-112",
+          "reference": "Investigation report FB-002 section confirms yamlStringify call site verbatim; verdict 'Code (tool parameter)' — pass `{lineWidth: -1, blockQuote: 'literal'}` options to yamlStringify to force literal block scalar preserving newlines"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "lines": "72",
+          "reference": "const yamlContent = yamlStringify(specObj); — no options passed, yaml package default folded-scalar style applies"
+        }
+      ],
+      "impact": "Multi-line prompts authored via author-agent-spec lose their newline structure at the serialization boundary. Multi-paragraph instructions, numbered workflows, and explicit blank-line separations are collapsed to single folded lines. Compounds with FGAP for FB-001: the author cannot use embedded newlines as an escape from the resolvePromptField '/' heuristic because the serializer strips the newlines before the YAML reaches disk. Authors have no diagnostic indication that their newline structure was lost.",
+      "proposed_resolution": "Code at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts line 72: pass options to yamlStringify to control scalar style — `yamlStringify(specObj, { lineWidth: -1, blockQuote: 'literal' })` per the investigation-report verdict. Exact option-name verification requires runtime check of the installed yaml package version; if option names differ, the fix shape stays the same — force literal-block-scalar serialization for multi-line strings, disable line wrapping.",
+      "canonical_vocabulary": "literal block scalar serialization",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-154"
     }
   ]
 }

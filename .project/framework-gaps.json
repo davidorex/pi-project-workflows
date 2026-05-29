@@ -5160,6 +5160,62 @@
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
       "closed_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-138",
+      "title": "Post-FGAP-134 canonical reframing: in-body writer.kind=='human' checks are redundant with the pi-dispatch auth-gate that is now the canonical identity check; 'human-only' framing in docstrings + error messages + test narratives is leftover from the pre-FGAP-134 spoofable model + misleads agents into refusing to issue calls the canonical model expects them to issue (under user authorization); identity-stamping is conflated with auth-verification — writer.user in caller-supplied args becomes the substrate attestation stamp but the auth-gate verifies SOMEONE confirmed at the terminal without verifying the supplied identity matches; surfaced 2026-05-29 by an in-pi agent's telemetry claiming 'a human must issue the write-schema-migration call' (false — agent issues call, user authorizes via auth-gate prompt)",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-agent-dispatch",
+      "layer": "L3",
+      "description": "Three coupled gaps revealed by in-pi agent telemetry 2026-05-29 + verified by reading the canonical pi-dispatch auth-gate (FGAP-134) + the affected tool bodies. (1) IN-BODY WRITER.KIND CHECKS ARE REDUNDANT: author-agent-spec, author-tool-grant, commit-attested, write-schema-migration each carry an in-execute-body 'if writer.kind !== human: throw' check. Pre-FGAP-134 these were the actual gate (spoofable, hence FGAP-134). Post-FGAP-134 the auth-gate at pi-dispatch is the canonical identity check (operator confirms via ctx.ui.confirm before tool body runs). The in-body check now exists only as defense-in-depth + backward-compat with existing tests, but its docstrings + error messages still describe it as the primary 'human-only enforcement.' The other 11 Bucket-2 tools (write-schema, amend-config, write-block, rename-canonical-id, context-init, context-accept-all, workflow-execute, workflow-resume, workflow-init, monitors-control, monitors-rules) are gated ONLY by auth-gate without an in-body check — inconsistent model across Bucket-2. (2) FRAMING IS MISLEADING: 'human-only authoring enforced' in error messages + 'capability authoring is human-only; sub-agents have no escalation path' in author-spec refusals + similar in docstrings + test narratives implies the agent is AGENT-BLOCKED from even attempting the call. Canonical reality is AGENT-ISSUES-CALL + USER-AUTHORIZES-VIA-AUTH-GATE-PROMPT. The misleading framing observably caused the in-pi agent on 2026-05-29 to incorrectly claim 'I can propose a migration but a human must issue the write-schema-migration call' — the agent SHOULD have issued the call and let auth-gate prompt the user. The framing actively misdirects orchestrator behavior. (3) IDENTITY-STAMPING VS AUTH-VERIFICATION CONFLATION: writer.user in caller-supplied tool args becomes the substrate attestation stamp via DispatchContext.writer.identity persisted into block items + the migrations.json items. The auth-gate verifies SOMEONE pressed Y at the terminal but does NOT verify the supplied writer.user identity matches the confirming-user identity (which pi knows internally from session state / env / git config). An agent could stamp 'alice@example.com' on a substrate item that 'davidryan@gmail.com' actually confirmed; substrate attestation lies; auth-gate is unaware. The writer-supplied-identity field is trust-on-claim despite the auth-gate being the actual identity verifier.",
+      "evidence": [
+        {
+          "file": "packages/pi-agent-dispatch/src/auth-gate.ts",
+          "lines": "65-85, 130-160",
+          "reference": "AUTH_REQUIRED_TOOLS const includes all 4 in-body-checked tools (author-agent-spec, author-tool-grant, commit-attested, write-schema-migration) AND the 11 no-in-body-check Bucket-2 tools. Auth-gate handler is the canonical identity verifier post-FGAP-134."
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "reference": "in-body writer.kind=='human' enforcement + 'capability authoring is human-only' error message — redundant with auth-gate + misleading framing"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/author-tool-grant-tool.ts",
+          "reference": "same in-body check + framing as author-agent-spec"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/commit-attested-tool.ts",
+          "reference": "in-body check on writer.kind=='agent' branch requiring agent_id; the misframing here is asymmetric since commit-attested writes WITH writer.kind=agent for the attested-commit-by-agent semantic — yet the FGAP-133 strip rewrote the error to 'human-only authoring enforced' which is now wrong on multiple axes"
+        },
+        {
+          "file": "packages/pi-context/src/write-schema-migration-tool.ts",
+          "lines": "56-59",
+          "reference": "in-body writer.kind=='human' enforcement + 'Capability/migration authoring is human-only; sub-agents have no escalation path' error message — the message that prompted the 2026-05-29 in-pi agent to refuse to issue the call"
+        },
+        {
+          "file": "packages/pi-context/src/schema-write-tool.test.ts",
+          "lines": "160-213",
+          "reference": "test narrative was refreshed at commit 18d510c (FGAP-136 CHECK 13 follow-up) but still frames the boundary as 'human-authored migration' rather than 'human-authorized agent-issued migration' — partial fix"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "DispatchContext.writer.identity persists into block items + migrations.json items as authorship attestation; field is sourced from caller-supplied args; no cross-check against the actual user-at-the-terminal identity from ctx"
+        },
+        {
+          "file": "node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts",
+          "reference": "ExtensionContext exposes ctx.hasUI but not (in the surface we've audited) a verified-user-identity field that the auth-gate could thread to the tool body to overwrite caller-supplied writer.user"
+        }
+      ],
+      "impact": "P1 because three coupled fragilities compound: (a) agents read 'human-only' framing + REFUSE to issue calls they should issue (empirically observed 2026-05-29), reducing operator efficacy in the very flow FEAT-006 north-star + the 11-registry customization promise depend on; (b) the inconsistent in-body model across Bucket-2 tools means future maintainers reading the codebase get a non-uniform picture of how authorization actually works; (c) identity-stamping trust-on-claim means audit trails (DispatchContext attestation persisted into substrate items) can be misleading without the operator or any reviewer being able to detect the divergence. The whole point of post-FGAP-134 governance was identity-verification-at-trust-boundary; this gap restores the verification at the gate but leaves the identity-stamp on the lie.",
+      "canonical_vocabulary": "human-authorized vs human-authored; trust-boundary vs trust-on-claim; auth-gate canonical identity check; identity-stamping verified at terminal vs supplied in args",
+      "proposed_resolution": "Three-part coordinated reframing under a single arc: (1) STRIP IN-BODY writer.kind=='human' CHECKS from author-agent-spec, author-tool-grant, commit-attested, write-schema-migration. The auth-gate is the canonical identity check; in-body duplication confuses the model + invites the misframing that produced this FGAP. Tool bodies trust that the auth-gate fired (it always does for Bucket-2 tools — guaranteed by AUTH_REQUIRED_TOOLS membership). Tests for these tools that asserted in-body refusal of writer.kind='agent' get removed or refactored to assert auth-gate behavior instead. (2) RENAME FRAMING ACROSS ALL DOCSTRINGS + ERROR MESSAGES + TEST NARRATIVES from 'human-only' / 'human-only authoring' / 'sub-agents have no escalation path' to 'human-authorized' / 'requires user authorization via auth-gate' / 'agent issues; user authorizes'. Specific sites: each of the 4 affected tool source files' description + error strings; auth-gate.ts header + error-reason strings; schema-write-tool.test.ts narrative (already partially refreshed at 18d510c — complete the reframe). Cite the canonical model in the auth-gate.ts top-of-file docstring + reference it from each Bucket-2 tool's description. (3) IDENTITY-STAMP VERIFICATION: extend the auth-gate handler to mutate event.input.writer.user (or .writer.identity) to the actual confirming-user identity drawn from pi's session/env/git-config before passing through to the tool body. The handler runs BEFORE the tool body per ToolCallEventResult contract — mutating event.input is the documented mechanism (per node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:605-611 'To modify arguments, mutate event.input in place instead'). Source for the verified-identity: investigate which ctx field carries the launched-pi-process operator identity (likely from $USER env or pi config). On confirm: overwrite event.input.writer.user to that verified value. On decline: still return {block: true}. Tool bodies + substrate attestation now reflect actually-confirming-user rather than agent-supplied claim. Tests verify the overwrite happens + the persisted DispatchContext.writer.identity matches the verified value not the caller-supplied value.",
+      "related_features": [],
+      "related_decisions": [
+        "DEC-0047"
+      ],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
     }
   ]
 }

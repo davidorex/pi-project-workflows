@@ -5581,6 +5581,46 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29"
+    },
+    {
+      "title": "run-work-order-loop hard-dep on work-orders block kind is undocumented at tool surface + install ceremony",
+      "status": "identified",
+      "priority": "P2",
+      "package": "@davidorex/pi-agent-dispatch",
+      "layer": "L2",
+      "description": "The run-work-order-loop Pi tool (packages/pi-agent-dispatch/src/run-work-order-loop-tool.ts + work-order-loop.ts) calls readBlock(cwd, 'work-orders') as its first operation; the block kind is hard-required for the tool to function. The dependency is by-design per TASK-088 (which defined work-orders as the canonical source-of-truth for orchestrator work-iteration with attestation + iteration semantics + human-OK gate per DEC-0047). However, the dependency is not surfaced in the tool description, and the /context install ceremony does not warn substrate authors that pruning the work-orders block kind also loses access to run-work-order-loop. Discovered via clock-menu-app usage-feedback FB-014 (2026-05-29T13:37Z): the user intentionally pruned work-orders from their substrate during initial setup and only discovered the lost capability when attempting to invoke the tool. This is the inverse of FGAP-137 (which surfaced the same kind of contract-clarity gap for scripts/launch-constrained-pi.sh --continue / -c documentation) — both surfaces have load-bearing behavior that wasn't visible to operators making install / launch choices.",
+      "evidence": [
+        {
+          "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+          "lines": "46-50",
+          "reference": "Hard-coded readBlock(cwd, 'work-orders') call; throws WorkOrderNotFoundError naming the work-orders block when absent. No fallback path; no inline-input alternative."
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/run-work-order-loop-tool.ts",
+          "lines": "1-15",
+          "reference": "Tool description names 'the work-orders block' as the source but does not state that the block kind MUST be installed in the consuming substrate. Operator reading the description without prior context can install pi-agent-dispatch + grant the tool to a subagent + discover the dependency only at first invocation."
+        },
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "287-300",
+          "reference": "FB-014 verbatim filing by clock-menu-app author 2026-05-29T13:37Z: 'After removing the work-orders block kind from our substrate during pruning, run-work-order-loop cannot be used.' Workaround: none — tool is inaccessible. Note included: 'this dependency is not obvious when choosing which blocks to keep.'"
+        },
+        {
+          "file": "analysis/2026-05-30-clock-menu-app-fb-substrate-surfaces.md",
+          "lines": "141-167",
+          "reference": "Substrate-surfaces investigation report 2026-05-30 verdict: 'intentional coupling, not framework bug' for the readBlock dependency; documentation gap is the separable fix; coupling-itself stays per TASK-088 design."
+        }
+      ],
+      "impact": "Substrate authors making install-time decisions about which block kinds to keep cannot anticipate that pruning work-orders also loses run-work-order-loop. The cliff surfaces only at tool-invocation time. For minimal substrates (project-local micro-substrates, learning examples, demo configurations) the loss may be acceptable but should be a known cost, not a surprise. For users attempting to pair pi-agent-dispatch with a non-orchestrator substrate shape, the tool's value-proposition collapses without warning.",
+      "canonical_vocabulary": "tool-contract documentation; install-ceremony dependency disclosure",
+      "proposed_resolution": "Two-part documentation fix: (1) extend run-work-order-loop-tool.ts tool description to state explicitly 'requires the work-orders block kind installed in the consuming substrate per TASK-088 canonical schema; pruning the block kind during /context install renders this tool inaccessible'; (2) extend the /context install ceremony output (or the install-related skill narratives) to surface a 'tools that depend on this block kind' mapping per kind, so substrate authors making install choices see the downstream tool-availability consequences. Companion FGAP-152 captures the separate question of whether a tool variant accepting work-order JSON inline (without requiring the block) is itself worth adding.",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T07:30:00Z",
+      "id": "FGAP-151"
     }
   ]
 }

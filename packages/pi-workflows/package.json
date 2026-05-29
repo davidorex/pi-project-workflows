@@ -52,7 +52,6 @@
 		"agents/",
 		"schemas/",
 		"workflows/",
-		"templates/",
 		"*.md"
 	],
 	"scripts": {

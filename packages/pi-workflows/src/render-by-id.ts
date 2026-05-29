@@ -37,6 +37,7 @@
 import { buildIdIndex, type ItemLocation } from "@davidorex/pi-context";
 import type { BudgetWarning } from "@davidorex/pi-jit-agents";
 import {
+	bundledTemplateDir,
 	createRendererRegistry,
 	createTemplateEnv,
 	dispatchInlineMacro,
@@ -44,7 +45,6 @@ import {
 	registerCompositionGlobals,
 	unrenderedMarker,
 } from "@davidorex/pi-jit-agents";
-import { bundledDir } from "./bundled-dirs.js";
 
 /**
  * Render the item identified by `id` via its registered per-item macro.
@@ -76,7 +76,7 @@ export function renderItemById(cwd: string, id: string, depth: number = 0): stri
 		return notFoundMarker(id);
 	}
 
-	const builtinDir = bundledDir("templates");
+	const builtinDir = bundledTemplateDir();
 	const registry = createRendererRegistry({ cwd, builtinDir });
 	const macroRef = registry.lookup(loc.block);
 	if (!macroRef) {

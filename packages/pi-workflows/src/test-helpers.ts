@@ -7,12 +7,12 @@ import os from "node:os";
 import path from "node:path";
 import { schemaPath } from "@davidorex/pi-context/context-dir";
 import {
+	bundledTemplateDir,
 	CANONICAL_MACRO_NAMES,
 	expandFieldPathShorthand,
 	enforceBudget as realEnforceBudget,
 } from "@davidorex/pi-jit-agents";
 import nunjucks from "nunjucks";
-import { bundledDir } from "./bundled-dirs.js";
 import type { StepSpec, WorkflowSpec } from "./types.js";
 
 /**
@@ -123,7 +123,7 @@ export function makeSpec(overrides: Partial<WorkflowSpec> & { steps: Record<stri
  * resolves to. Re-exported as a constant so tests can drop the
  * `path.resolve(import.meta.dirname, "..", "templates")` literal.
  */
-export const TEMPLATES_DIR = bundledDir("templates");
+export const TEMPLATES_DIR = bundledTemplateDir();
 
 /**
  * In-memory mirror of the `ItemLocation` shape `buildIdIndex` produces in

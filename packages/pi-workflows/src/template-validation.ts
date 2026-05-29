@@ -8,8 +8,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { schemaPath } from "@davidorex/pi-context/context-dir";
+import { bundledTemplateDir } from "@davidorex/pi-jit-agents/template";
 import { createAgentLoader } from "./agent-spec.js";
-import { bundledDir } from "./bundled-dirs.js";
 import { resolveSchemaPath } from "./step-shared.js";
 import type { StepSpec, WorkflowSpec } from "./types.js";
 import type { ValidationIssue } from "./workflow-sdk.js";
@@ -459,7 +459,7 @@ export function validateTemplateAlignment(spec: WorkflowSpec, cwd: string, built
 	}
 
 	// Template search mirrors createTemplateEnv() — project, user, builtin
-	const builtinTemplateDir = builtinDir ? path.resolve(builtinDir, "..", "templates") : bundledDir("templates");
+	const builtinTemplateDir = builtinDir ? path.resolve(builtinDir, "..", "templates") : bundledTemplateDir();
 	const templateSearchPaths = [
 		path.join(cwd, ".pi", "templates"),
 		path.join(process.env.HOME ?? "", ".pi", "agent", "templates"),

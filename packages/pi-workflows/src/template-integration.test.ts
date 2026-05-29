@@ -3,10 +3,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { bundledTemplateDir } from "@davidorex/pi-jit-agents/template";
 import { createTemplateEnv, renderTemplateFile } from "./template.js";
 
 describe("analyzer template inheritance", () => {
-	const builtinDir = path.resolve(import.meta.dirname, "..", "templates");
+	// Templates relocated to pi-jit-agents per DEC-0049; resolve via
+	// canonical package-layer bundledTemplateDir() rather than hand-built
+	// ../templates/ path.
+	const builtinDir = bundledTemplateDir();
 
 	it("structure analyzer inherits base and overrides blocks", () => {
 		const env = createTemplateEnv("/nonexistent", builtinDir);

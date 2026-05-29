@@ -18,8 +18,28 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { tryResolveContextDir } from "@davidorex/pi-context/context-dir";
 import nunjucks from "nunjucks";
+
+/**
+ * Absolute path to this package's bundled `templates/` directory — the canonical
+ * package-layer root for the 3-tier template search (tier 3 / builtinDir).
+ *
+ * Per DEC-0049 uniform-agent axiom, agent-prompt rendering assets (per-item
+ * macros + whole-block delegators + per-agent template directories) live in
+ * pi-jit-agents. Consumers (pi-workflows, pi-behavior-monitors, pi-agent-
+ * dispatch) import this function rather than computing their own
+ * package-relative paths.
+ *
+ * Resolves via `import.meta.url` so the path works under both source and
+ * built (dist) modes — the dist/ directory and the src/ directory sit at the
+ * same depth relative to the package root.
+ */
+export function bundledTemplateDir(): string {
+	const here = path.dirname(fileURLToPath(import.meta.url));
+	return path.resolve(here, "..", "templates");
+}
 
 export interface TemplateEnvContext {
 	/** Project root. Resolves the project-level tier. */

@@ -204,6 +204,136 @@ describe("read-truncation-gate — directive contains canonical-model phrases", 
 	});
 });
 
+describe("read-truncation-gate — TruncationResult variant: truncatedBy='bytes'", () => {
+	it("handler + directive correctly handle a bytes-cap truncation (file exceeded maxBytes before maxLines)", async () => {
+		// Synthetic shape per truncate.d.ts:13-36: a file whose first 50 lines
+		// already exceeded the 51200-byte cap; truncation triggered on bytes,
+		// not lines. outputLines=totalLines=50 means all lines that fit were
+		// returned; the file continues for many more bytes worth of content
+		// (totalBytes=120000) that the line accounting alone does not surface.
+		const truncation: TruncationProjection = {
+			truncated: true,
+			truncatedBy: "bytes",
+			outputLines: 50,
+			totalLines: 50,
+			outputBytes: 51200,
+			totalBytes: 120000,
+			maxLines: 2000,
+			maxBytes: 51200,
+			lastLinePartial: true,
+			firstLineExceedsLimit: false,
+		};
+		const event = mockReadResultEvent({ path: "/repo/wide-lines.txt", truncation });
+		const result = await readTruncationGateHandler(event, mockCtx());
+		assert.ok(result, "handler returns non-undefined result on truncated bytes-variant read");
+		assert.ok(Array.isArray(result?.content), "content array present");
+		const text = (result?.content?.[0] as { type: "text"; text: string }).text;
+		// All 6 canonical strings present (per existing canonical-phrases test pattern).
+		assert.ok(text.includes("⚠️"), "directive includes ⚠️ prefix");
+		assert.ok(text.includes("TRUNCATED"), "directive includes TRUNCATED");
+		assert.ok(text.includes("INCOMPLETE"), "directive includes INCOMPLETE");
+		assert.ok(text.includes("do NOT"), "directive includes 'do NOT'");
+		assert.ok(text.includes("offset="), "directive includes offset= continuation hint");
+		assert.ok(text.includes("grep"), "directive includes grep alternative");
+		// Byte counts surfaced numerically (bytes-variant is the discriminating signal).
+		assert.match(text, /51200 bytes/, "outputBytes=51200 rendered");
+		assert.match(text, /120000 bytes/, "totalBytes=120000 rendered");
+		// nextOffset := outputLines per the existing convention in buildTruncationDirective.
+		// On a bytes-variant truncation, outputLines reflects whole lines that fit; the
+		// directive's continuation hint still uses that value.
+		assert.match(text, /offset=50/, "nextOffset (=outputLines=50) rendered in continuation hint");
+	});
+});
+
+describe("read-truncation-gate — TruncationResult variant: firstLineExceedsLimit=true", () => {
+	it("handler + directive handle single-line file whose first line alone exceeds the byte cap (outputLines=0)", async () => {
+		// Synthetic shape per truncate.d.ts: a 95000-byte single-line file
+		// where the first (only) line exceeds maxBytes=51200, so the truncator
+		// returned 0 complete lines + 0 bytes of usable line-aligned content.
+		// firstLineExceedsLimit=true is the discriminating signal.
+		const truncation: TruncationProjection = {
+			truncated: true,
+			truncatedBy: "bytes",
+			outputLines: 0,
+			totalLines: 1,
+			outputBytes: 0,
+			totalBytes: 95000,
+			maxLines: 2000,
+			maxBytes: 51200,
+			lastLinePartial: false,
+			firstLineExceedsLimit: true,
+		};
+		const event = mockReadResultEvent({ path: "/repo/minified.bundle.js", truncation });
+		const result = await readTruncationGateHandler(event, mockCtx());
+		assert.ok(result, "handler returns non-undefined result on firstLineExceedsLimit variant");
+		assert.ok(Array.isArray(result?.content), "content array present");
+		const text = (result?.content?.[0] as { type: "text"; text: string }).text;
+		// All 6 canonical strings present.
+		assert.ok(text.includes("⚠️"), "directive includes ⚠️ prefix");
+		assert.ok(text.includes("TRUNCATED"), "directive includes TRUNCATED");
+		assert.ok(text.includes("INCOMPLETE"), "directive includes INCOMPLETE");
+		assert.ok(text.includes("do NOT"), "directive includes 'do NOT'");
+		assert.ok(text.includes("offset="), "directive includes offset= continuation hint");
+		assert.ok(text.includes("grep"), "directive includes grep alternative");
+		// Numeric counts surface; outputLines=0 + outputBytes=0 are the discriminator.
+		assert.match(text, /0 lines/, "outputLines=0 rendered");
+		assert.match(text, /1 lines/, "totalLines=1 rendered");
+		assert.match(text, /0 bytes/, "outputBytes=0 rendered");
+		assert.match(text, /95000 bytes/, "totalBytes=95000 rendered");
+		// nextOffset := outputLines=0; directive renders `offset=0`. This is technically
+		// a valid pi read offset (read from start) but operationally meaningless here —
+		// re-issuing read with offset=0 would yield the same truncation. The directive
+		// also surfaces grep as the alternative, which is the operationally-useful path
+		// for this variant. See OBSERVATIONS in the commit body for the orchestrator-
+		// reportable ambiguity.
+		assert.match(text, /offset=0/, "nextOffset (=outputLines=0) rendered verbatim — see OBSERVATIONS");
+		// The directive does not crash and produces well-formed text (length > 200 chars
+		// is a coarse smoke-check that the template was fully rendered, not aborted).
+		assert.ok(text.length > 200, "directive is well-formed even with zero-value numeric fields");
+	});
+});
+
+describe("read-truncation-gate — TruncationResult variant: lastLinePartial=true", () => {
+	it("handler + directive handle lines-cap truncation where the last returned line is partial", async () => {
+		// Synthetic shape per truncate.d.ts: 2000 lines emitted (the line cap),
+		// but the 2000th line itself was cut mid-content because the byte cap
+		// landed inside it. lastLinePartial=true is the discriminating signal.
+		const truncation: TruncationProjection = {
+			truncated: true,
+			truncatedBy: "lines",
+			outputLines: 2000,
+			totalLines: 5000,
+			outputBytes: 48000,
+			totalBytes: 120000,
+			maxLines: 2000,
+			maxBytes: 51200,
+			lastLinePartial: true,
+			firstLineExceedsLimit: false,
+		};
+		const event = mockReadResultEvent({ path: "/repo/log.txt", truncation });
+		const result = await readTruncationGateHandler(event, mockCtx());
+		assert.ok(result, "handler returns non-undefined result on lastLinePartial variant");
+		assert.ok(Array.isArray(result?.content), "content array present");
+		const text = (result?.content?.[0] as { type: "text"; text: string }).text;
+		// All 6 canonical strings present.
+		assert.ok(text.includes("⚠️"), "directive includes ⚠️ prefix");
+		assert.ok(text.includes("TRUNCATED"), "directive includes TRUNCATED");
+		assert.ok(text.includes("INCOMPLETE"), "directive includes INCOMPLETE");
+		assert.ok(text.includes("do NOT"), "directive includes 'do NOT'");
+		assert.ok(text.includes("offset="), "directive includes offset= continuation hint");
+		assert.ok(text.includes("grep"), "directive includes grep alternative");
+		// Line counts + offset surface.
+		assert.match(text, /2000 lines/, "outputLines=2000 rendered");
+		assert.match(text, /5000 lines/, "totalLines=5000 rendered");
+		assert.match(text, /offset=2000/, "nextOffset (=outputLines=2000) rendered in continuation hint");
+		// NOTE: the current directive does not surface lastLinePartial=true to the
+		// agent. The last returned line being partial means the agent should not
+		// trust its terminal content (e.g., a half-truncated JSON line, half-cut
+		// log entry). See OBSERVATIONS in the commit body for the orchestrator-
+		// reportable ambiguity.
+	});
+});
+
 describe("read-truncation-gate — buildTruncationDirective is a pure function", () => {
 	it("identical inputs yield identical output across repeated calls (no I/O, no hidden state)", () => {
 		const input = { path: "/repo/pure.ts" };

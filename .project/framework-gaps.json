@@ -5954,6 +5954,40 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-160"
+    },
+    {
+      "title": "contextBlocks whole-block injection is all-or-nothing raw JSON — no field projection, filtering, or pagination",
+      "status": "identified",
+      "package": "@davidorex/pi-jit-agents",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "wrapBlockContent at packages/pi-jit-agents/src/compile.ts line 162 stringifies the entire block content via `JSON.stringify(content, null, 2)` and wraps it in a context_block XML tag. The bare-string contextBlocks entry form (`contextBlocks: ['requirements']`) injects every field of every item in the block. There is no projection (select specific fields), no filtering (where-clause across items), no pagination (limit/offset), and no per-item macro-rendered option. Template authors can prune in Nunjucks at template-render time, but the full block JSON is read and stringified into the template context regardless of agent needs.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "206-226",
+          "reference": "FB-010 'contextBlocks whole-block injection is all-or-nothing raw JSON'; actual_behavior: contextBlocks: ['requirements'] injects all fields of all items as JSON; even if agent only needs IDs, it receives descriptions, acceptance criteria, status, priority etc for every item"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-substrate-surfaces.md",
+          "lines": "8-33",
+          "reference": "Investigation report FB-010 section confirms wrapBlockContent at compile.ts:162 verbatim; verdict 'Schema + tool surface' — extend bare-string entry to support optional fields[] projection and depth (triggers auto-render); compileAgent auto-applies render_recursive when depth > 0"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/compile.ts",
+          "lines": "162",
+          "reference": "wrapBlockContent stringifies the entire block via JSON.stringify(content, null, 2) — no projection or filtering applied"
+        }
+      ],
+      "impact": "Agent dispatches injecting large blocks (40-60 items with rich field schemas) pay substantial token cost on every invocation. The cost is paid even when the agent only needs a thin view (e.g. IDs to avoid duplicates). Template-level Nunjucks pruning trims rendered output but does not avoid reading the full block into the template context.",
+      "proposed_resolution": "Schema + tool surface per investigation verdict. Schema: extend the contextBlocks entry to accept an object form with optional fields — `{ name: string, fields?: string[], depth?: number }` — with bare-string remaining as sugar for `{ name }`. Tool surface at packages/pi-jit-agents/src/compile.ts line 162: wrapBlockContent reads the optional fields array and projects the block content to those fields before stringify. compileAgent auto-applies render_recursive when depth > 0. Documentation in tool description + schema comment clarifies that contextBlocks accepts bare-string (whole block, no projection) or object form (projected fields, optional auto-render).",
+      "canonical_vocabulary": "contextBlocks projection",
+      "related_features": [
+        "FEAT-001"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-161"
     }
   ]
 }

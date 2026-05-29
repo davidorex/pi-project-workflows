@@ -5621,6 +5621,46 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T07:30:00Z",
       "id": "FGAP-151"
+    },
+    {
+      "title": "run-work-order-loop has no alternative entry point for substrates that legitimately prune the work-orders block kind",
+      "status": "identified",
+      "priority": "P3",
+      "package": "@davidorex/pi-agent-dispatch",
+      "layer": "L2",
+      "description": "FGAP-151 (companion) documents the immediate fix path — surface the work-orders-block-kind dependency in the tool description + install ceremony so substrate authors do not encounter it by surprise. This FGAP captures the separate scope-decision: whether to add an alternative entry point (e.g. a --inline work-order JSON parameter to run-work-order-loop, or a sibling tool run-inline-work-order accepting one work-order record directly) for substrates that legitimately prune work-orders. Discovered by clock-menu-app usage-feedback FB-014 (2026-05-29T13:37Z): the user's substrate setup is minimal-by-intent (10 standard block kinds + 1 custom usage-feedback kind, work-orders pruned); under FGAP-151 documentation alone, the user knows what they are losing but still has no path to invoke the orchestrator iteration semantics (attestation + human-OK gate per DEC-0047) without re-installing the block kind. The user-hit-it dimension persists past the documentation fix.",
+      "evidence": [
+        {
+          "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+          "lines": "46-100",
+          "reference": "work-order-loop core implementation is fully parameterized over a single WorkOrderRecord — the iteration mechanics + attestation pipeline + human-OK gate do not structurally require the record to come from a block read. The block-read is a single layer at the entry point."
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/run-work-order-loop-tool.ts",
+          "lines": "1-57",
+          "reference": "Tool surface accepts a work_order_id parameter; substituting (or augmenting with) a work_order parameter accepting an inline WorkOrderRecord JSON would expose the same iteration mechanics without the block-kind prerequisite."
+        },
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "287-300",
+          "reference": "FB-014 verbatim: substrate pruned work-orders intentionally; tool became inaccessible; no workaround. Expected-behavior section names exactly this alternative: 'Or work orders could be stored in a different block or passed inline.'"
+        },
+        {
+          "file": "analysis/2026-05-30-clock-menu-app-fb-substrate-surfaces.md",
+          "lines": "286-296",
+          "reference": "Substrate-surfaces investigation report verdict separating documentation-fix (FGAP-151 scope) from alternative-entry-point gap (this FGAP scope). Per feedback_intentional_doesnt_close_gap.md: by-design verdict on coupling does not close the user-hit-it gap on alternative entry."
+        }
+      ],
+      "impact": "Substrates that minimize installed block kinds (project-local micro-substrates; demo configurations; learning examples; substrates with non-orchestrator shape) have no path to invoke the run-work-order-loop iteration + attestation + human-OK gate semantics without re-installing work-orders. The tool's design pattern (canonical iteration semantics) is valuable independent of the block-storage choice, but the only entry point ties it to block storage. Result: a usable iteration primitive is gated behind a substrate-shape choice that may be unrelated to the iteration use case.",
+      "canonical_vocabulary": "alternative entry point; tool variant; inline-input parameter",
+      "proposed_resolution": "Scope-decision required from user (operator decides whether to build): (a) add --inline / --work-order JSON parameter to run-work-order-loop accepting a WorkOrderRecord directly, bypassing the readBlock call when present; (b) add sibling Pi tool run-inline-work-order accepting the same record type without a loop wrapper; (c) leave as-is and rely on FGAP-151 documentation to clarify install-time choice. Implementation cost (a) is low — the work-order-loop core function is already parameterized over WorkOrderRecord; entry point would dispatch to either readBlock or the inline param. Trade-off: option (a) increases the tool surface (more parameters; precedence rule between work_order_id and work_order); option (c) keeps the surface minimal at the cost of usability cliff for pruned substrates.",
+      "related_decisions": [
+        "DEC-0014",
+        "DEC-0047"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T07:35:00Z",
+      "id": "FGAP-152"
     }
   ]
 }

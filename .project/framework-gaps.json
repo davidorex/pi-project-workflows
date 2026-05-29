@@ -6220,6 +6220,44 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-168"
+    },
+    {
+      "title": "Agent-spec tools[] is purely declarative — executeAgent does not wire declared tools to the model; multi-turn agentic loops are orchestrator-owned",
+      "status": "identified",
+      "package": "@davidorex/pi-jit-agents",
+      "priority": "P1",
+      "layer": "L1",
+      "description": "executeAgent at packages/pi-jit-agents/src/jit-runtime.ts lines 432-738 contains NO loop over tool calls and results. Structure verified by the investigation report: single try block (lines 551-617) with ONE call to completeFn (pi-ai complete); ONE classify_response trace emission; ONE-shot output extraction (lines 642-695: phantom-tool toolCall arguments or single-pass text extraction); verdict_decision and trace_end emission; return. No while/for iteration over tool calls. The `tools` array declared in an agent spec is purely declarative metadata — it documents the agent's intended capability surface but executeAgent does NOT pass those tools into the model's tool registry. The model emits one response. If outputSchema is set, the phantom-tool forced toolChoice constrains the response to a structured payload — but the phantom tool is the framework's, not the spec's declared tools. Multi-turn agentic behavior (call model → execute returned tool calls → append results → call model again) is the responsibility of the orchestrator that calls executeAgent, not of executeAgent itself.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+          "lines": "229-303",
+          "reference": "Single-Turn Dispatch (No Tool-Result Loop) section; verdict 'CONFIRMED (with architectural context)'; verbatim: 'executeAgent contains NO LOOP over tool calls and results'; 'grep confirms no while, for, or iteration over tool calls'; 'Tool invocation is the responsibility of the ORCHESTRATOR (the caller of executeAgent), not executeAgent itself'; 'the declared tools array in the spec is purely declarative — it declares what tools the agent intends to use, but executeAgent does NOT wire them to the model'"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/jit-runtime.ts",
+          "lines": "550-617",
+          "reference": "Single try block with ONE completeFn invocation; no iteration; ONE response extracted and returned"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/jit-runtime.ts",
+          "lines": "566-570",
+          "reference": "Phantom-tool registration when outputSchema is set; the phantom tool is the framework's structured-output constraint, not the spec's declared tools"
+        }
+      ],
+      "impact": "This is the load-bearing architectural fact behind FB-018 and any author confusion about why declared tools are not invoked. Authors expecting a spec with `tools: [read, append-block-item]` to dispatch into a multi-turn loop that actually invokes read and append-block-item receive a single-turn prose response instead. The axiom is correct per the phantom-tool architecture (which exists precisely to constrain output to a single predetermined tool); the axiom is undocumented in author-facing surfaces. Every tool-using agent author must internalize: tools are declarative, executeAgent is single-turn, the orchestrator owns the loop. Existing in-pi orchestrator surfaces (run-work-order-loop per TASK-091) implement this loop pattern explicitly.",
+      "proposed_resolution": "Documentation + framework convention. Layer one: explicit docstring in packages/pi-jit-agents/src/jit-runtime.ts executeAgent function stating the single-turn-dispatch axiom verbatim; the spec's `tools` array is declarative; multi-turn agentic loops must be implemented by the calling orchestrator. Layer two: AgentSpec schema field documentation for `tools[]` clarifies declarative-not-wired semantic. Layer three: AgentSpec field-level validation per FGAP-168 (FB-018 closure) warns when `tools: [...]` is declared without an outputSchema (the only declared-tools usage path the framework constrains is via phantom-tool forced toolChoice — and that wires only the phantom tool, not the declared tools). A framework-level multi-turn loop surface in pi-jit-agents would be a separate decision; current canon places loop ownership in orchestrator extensions (pi-agent-dispatch's run-work-order-loop).",
+      "canonical_vocabulary": "single-turn dispatch axiom / orchestrator-owns-the-loop",
+      "related_decisions": [
+        "DEC-0049"
+      ],
+      "related_features": [
+        "FEAT-001",
+        "FEAT-006"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-169"
     }
   ]
 }

@@ -2623,6 +2623,69 @@
         }
       ],
       "evidence": "FGAP-135 (filed at commit c5f0010 2026-05-29) closed via 3 implementation-step commits on branch fgap-135-read-truncation-gate: 38ad48e (step 1: read-truncation-gate.ts library + read-truncation-gate.test.ts 13 unit tests; buildTruncationDirective pure function + readTruncationGateHandler ToolResultEvent handler + registerReadTruncationGate one-line registration wrapper; module created but NOT yet wired into factory); 7a09a27 (step 2: single-line wiring in packages/pi-agent-dispatch/src/index.ts adds registerReadTruncationGate(pi) after registerAuthGate(pi); behavioral effect at extension load — pi-dispatch now fires readTruncationGateHandler for every tool_result event); 0703bc5 (step 3: npm run skills regen captures the new pi.on('tool_result') call in both packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md and the meta packages/pi-project-workflows/skills/pi-agent-dispatch/SKILL.md mirror; events section now reads 'tool_call, tool_result'; citation-rot scanner verify clean). The canonical post-FGAP-135 model: pi-dispatch-layer tool_result intercept mirrors the tool_call auth-gate boundary; the directive IS the response so the agent cannot skim past it (no head returned); phrasing mirrors pi-context serializeForRead overCapDirective canon at packages/pi-context/src/read-element.ts:222-245. Coexists orthogonally with auth-gate (tool_call event); no canonical-pi changes; no release; no push; tree clean modulo pre-existing hedge.patterns.json mod."
+    },
+    {
+      "target": "TASK-093",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-29T14:11:18.034Z",
+      "evidence": "Step 10 build/check/test/skills+scan green: npm run build clean (5 packages tsc); npm run check clean (biome 257 files; tsc --noEmit clean); npm test green (830 workspace tests / 828 pass / 0 fail / 2 skipped); npm run skills clean (5 packages SKILL.md regenerated); citation-rot AST scanner 15/15 PASS at packages/pi-context/src/samples-catalog.test.ts. Step 11 runtime demo via scripts/orchestrator/runtime-demo-whole-block-delegators.ts exit 0 — all 6 newly-added whole-block delegators rendered against real .project/ substrate; display-name headers present; item-id substrings present for all 6 kinds (DEC-/FEAT-/FGAP-/PLAN-/R-/REVIEW-); zero Nunjucks failure markers. Step 12 adversarial probe at /tmp/fgap-037-adversarial-probe.md returned 4/4 PASS across Lens 1 (relocation completeness via git log --follow), Lens 2 (consumer rewire zero remaining bundledDir templates), Lens 3 (6 delegators + array_key registry shape), Lens 4 (rendering smoke).",
+      "criteria_results": [
+        {
+          "criterion": "all template files relocated via git mv with history preserved",
+          "status": "passed",
+          "evidence": "Lens 1 PASS — git log --follow traced history for items/ + shared/ + per-agent files across the relocation commit"
+        },
+        {
+          "criterion": "6 whole-block delegators landed in shared/macros.md with correct array_key handling",
+          "status": "passed",
+          "evidence": "Lens 3 PASS — all 6 delegators grep'd in packages/pi-jit-agents/templates/shared/macros.md; array_key matches conception.json verbatim for divergent 3 (gaps/plans/reviews) + same-as-kind 3 (decisions/features/research)"
+        },
+        {
+          "criterion": "CANONICAL_MACRO_NAMES registry extended to carry array_key column with all 14 entries",
+          "status": "passed",
+          "evidence": "Lens 3 PASS — registry type now Record<string, {macro_name, array_key}>; all 14 entries populated"
+        },
+        {
+          "criterion": "5 pi-workflows consumer call-sites rewired to bundledTemplateDir",
+          "status": "passed",
+          "evidence": "Lens 2 PASS — zero remaining bundledDir('templates') references; all 5 sites import bundledTemplateDir from @davidorex/pi-jit-agents/template"
+        },
+        {
+          "criterion": "pi-workflows package.json drops templates/ from files",
+          "status": "passed",
+          "evidence": "Lens 2 PASS — pi-workflows files array verified absent templates/"
+        },
+        {
+          "criterion": "pi-jit-agents package.json adds templates/ to files + ./template export",
+          "status": "passed",
+          "evidence": "Lens 2 PASS — pi-jit-agents files includes templates/; exports map has ./template subpath"
+        },
+        {
+          "criterion": "new whole-block delegator tests pass against real substrate",
+          "status": "passed",
+          "evidence": "Step 10 npm test green — packages/pi-jit-agents/src/macros.test.ts + renderer-registry.test.ts pass"
+        },
+        {
+          "criterion": "build/check/test green workspace-wide",
+          "status": "passed",
+          "evidence": "Step 10 — npm run build, npm run check, npm test all green"
+        },
+        {
+          "criterion": "adversarial probe 4/4 lenses PASS",
+          "status": "passed",
+          "evidence": "Step 12 — /tmp/fgap-037-adversarial-probe.md 4/4 PASS"
+        },
+        {
+          "criterion": "status cascade complete (FGAP-037→superseded_by + DEC-0049 consequence + VER filed + 2 edges)",
+          "status": "passed",
+          "evidence": "This VER attests the cascade itself; FGAP-037 mutated in 13a; DEC-0049 mutated in 13b; this VER files in 13d; edges in 13e"
+        }
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29T14:11:18.034Z",
+      "id": "VER-065"
     }
   ]
 }

@@ -5920,6 +5920,40 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-159"
+    },
+    {
+      "title": "call-agent returns only status summary — agent output buried in details metadata, not surfaced to orchestrator content",
+      "status": "identified",
+      "package": "@davidorex/pi-agent-dispatch",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "callAgentTool.execute at packages/pi-agent-dispatch/src/call-agent-tool.ts lines 105-117 returns `{ details: result, content: [{ type: 'text', text: 'Dispatched agent X (grant=[...]); result.output type=string' }] }`. The agent's actual output text is held in `details.output` (a pi-ai AgentToolResult convention) but is not transcribed into the content array. Pi's tool-result rendering surface shows `content` to the orchestrator; `details` is treated as metadata and is not auto-rendered. The orchestrator receives the type of result.output but not its value — to read the agent's response the orchestrator must inspect session logs at .pi/agent/sessions/<project>/<timestamp>.jsonl.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "184-204",
+          "reference": "FB-009 'call-agent returns only a status summary — agent output not surfaced to orchestrator'; actual_behavior: tool returns text/plain status; the agent output 'I will start by reading...' exists in details.output in the session log but is not in the tool result content"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+          "lines": "55-95",
+          "reference": "Investigation report FB-009 section confirms return shape at call-agent-tool.ts:109-117 verbatim; verdict 'Tool surface (call-agent-tool.ts line 114)' — include agent output in content as additional text block; concrete fix-code shown using `typeof result.output === 'string' ? result.output : JSON.stringify(result.output, null, 2)`"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "lines": "105-117",
+          "reference": "return { details: result, content: [{ type: 'text', text: 'Dispatched agent X; result.output type=string' }] }"
+        }
+      ],
+      "impact": "Orchestrators dispatching agents and expecting to consume their output cannot do so via the tool result. Workflows that chain agent invocations (output of agent A becomes input of agent B) must implement out-of-band reading (session-log inspection, substrate side-effects). Compounds with FGAP for FB-016 (no dispatch-history query tool) — the only path to the output requires manual log inspection.",
+      "proposed_resolution": "Code at packages/pi-agent-dispatch/src/call-agent-tool.ts lines 105-117: append agent output to the content array. Concrete shape per investigation verdict: `const outputText = typeof result.output === 'string' ? result.output : JSON.stringify(result.output, null, 2); content: [{type: 'text', text: 'Dispatched agent X (grant=...):\\n\\n' + outputText}]`. The change is purely additive at the dispatch boundary; `details` continues to carry the structured result for downstream consumers that want the typed shape.",
+      "canonical_vocabulary": "dispatch output surfacing",
+      "related_decisions": [
+        "DEC-0049"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-160"
     }
   ]
 }

@@ -5403,6 +5403,174 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-145",
+      "title": "pi-workflows DAG planner inserts strict layer-barriers between dependency tiers; cannot express streaming-pipeline-no-barrier semantics where item A is in stage 2 while item B is still in stage 1; asymmetric work (50 slow + 50 fast checks) loses parallelism waiting for slowest item in each layer",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 1: Claude Code workflows' pipeline(items, ...stages) lets each item flow through stages asynchronously — item A can be in stage 3 while item B is still in stage 1; asymmetric per-stage latency does not block fast items behind slow ones. pi-workflows DAG planner (dag.ts buildPlanFromDeps) builds topological-sort layers + REQUIRES all steps in layer N to complete before layer N+1 starts. For forEach-style work (per-file analysis), this means 50 slow + 50 fast checks all wait on the slowest item in each layer; wall-clock = sum of (slowest item in each layer) instead of max of (slowest item-chain end-to-end). Significant wall-clock loss on heterogeneous work.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "254-282",
+          "reference": "Part 3 axis 1 — Pipeline-No-Barrier vs DAG-with-Barriers — INSPIRE verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/dag.ts",
+          "reference": "buildPlanFromDeps → topological layers + buildConservativePlan implicit sequencing"
+        }
+      ],
+      "impact": "Wall-clock loss on heterogeneous workflows (per-file audits, per-FGAP closures, per-package scans). The pattern Claude Code calls 'streaming pipeline' is canonical for fan-out-with-per-item-progression but inexpressible in pi-workflows spec today.",
+      "canonical_vocabulary": "streaming pipeline; per-item asynchronous stage progression; soft-barrier between stages; asymmetric concurrency",
+      "proposed_resolution": "Add a 'stream' step type OR a 'streaming: true' flag on the existing parallel step type. Spec example: steps.analyze-all: { stream: { stages: [read-file, check-syntax, report], forEach: <expression> } }. Executor implementation: collect per-item per-stage promises; resolution polls for ready-items in stage N+1 rather than waiting for layer N completion. Risk: spec semantics now include two parallelism models (DAG-layered + streaming) — operator must choose. Documentation must clarify when each is canonical. Significant refactor in dag.ts + workflow-executor.ts; lower-priority than ADOPT items but not deferred.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-146",
+      "title": "pi-workflows parallel step creates all sub-steps eagerly at parse; Claude Code parallel(thunks) defers execution until each thunk is invoked allowing conditional branching where some thunks never run; pi cannot express conditional-fan-out without per-sub-step 'when' fields",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 2: Claude Code workflows' parallel(thunks: Array<() => Promise<T>>) takes lazy thunks; some thunks may never execute based on prior-stage results. pi-workflows parallel step declares all sub-steps upfront in the YAML spec; all are created eagerly (even unreachable ones via gate breaks). Operators wanting conditional fan-out (e.g., 'run fast-path or thorough-path based on input.mode') must hand-build with gate routing rather than declaring naturally.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "284-317",
+          "reference": "Part 3 axis 2 — parallel() with Thunks vs parallel Step Type — INSPIRE verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/step-parallel.ts",
+          "reference": "parallel sub-step eager declaration; no per-sub-step conditional"
+        }
+      ],
+      "impact": "Operators expressing conditional fan-out patterns add complexity via gate steps + multiple parallel blocks. Simple lazy-thunk semantics from Claude Code workflows are inexpressible at the spec level. Spec becomes verbose for what should be a single 'parallel + when' construct.",
+      "canonical_vocabulary": "thunk-parallel; lazy sub-step evaluation; conditional fan-out; per-sub-step 'when' field",
+      "proposed_resolution": "Add 'when: <expression>' field to parallel sub-step definitions. Executor evaluates each sub-step's 'when' before dispatch; skips false-when sub-steps without creating their subprocess. Alternative: new 'thunk-parallel' step type that takes an array of step definitions each with optional 'when'. Simpler addition: extend existing parallel sub-step grammar with optional 'when' — matches the 'when' surface already used at top-level step + on transform/gate/loop steps.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-147",
+      "title": "pi-workflows agent dispatch has no content-identity cache (SHA256 of prompt+opts → cached result); each agent dispatch re-runs even on identical input across invocations + sessions; persistent cache could massively speedup repeated runs (nightly audits with same code)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-workflows",
+      "layer": "L3",
+      "description": "Per R-0014 recon axis 6: Claude Code workflows cache (prompt, opts) → result; longest unchanged prefix returns cached results instantly; survives resume within session. pi-workflows has per-step state persistence (re-runs un-completed steps on resume) but no content-identity cache — identical agent dispatches across invocations or sessions re-run + re-spend tokens. For workflows run repeatedly with same input (nightly audits, idempotent verifications, replay of stable test scenarios), the wasted token cost is significant + the wall-clock latency is unnecessary.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "391-410",
+          "reference": "Part 3 axis 6 — Resume Cache by (Prompt, Opts) Identity — INSPIRE verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "reference": "no cache check before subprocess spawn"
+        }
+      ],
+      "impact": "Token waste on repeated runs of identical workflows. Cache invalidation puzzles (changed agent behavior → stale cached result) are real risk but mitigatable by explicit cache-clear flag + content-hash including agent.yaml hash + tool-surface hash. Operators running nightly verifications pay for re-computation that yields identical results.",
+      "canonical_vocabulary": "content-identity caching; SHA256(prompt+opts+agent-spec-hash); persistent agent cache; cache-by-input not cache-by-step-id",
+      "proposed_resolution": "Optional opt-in cache mode on agent step: 'cache: true | { ttl?: duration, key?: <expression> }'. Compute cache key = SHA256(prompt + JSON.stringify(opts) + agent-spec-content-hash + tool-surface-hash). Store cache in ~/.pi/agent-cache/<hash>.json with metadata (timestamp, agent-spec-version, expires). On dispatch, check cache before spawn; return cached result if hit + not expired. Configuration: 'pi cache clear' / 'pi cache list' / 'pi cache stats' CLI surface. Spec example: steps.audit-file: { agent: file-auditor, cache: true, input: { file: ${{ item }} } }. Risk + mitigation: explicit opt-in only (default off); cache key includes agent-spec hash so spec changes auto-invalidate; ttl bounds staleness; cache-clear command + per-invocation --no-cache flag for forced re-run.",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-148",
+      "title": "pi-workflows agent step has no agentType dispatch hint — operators cannot request a specialized subagent type (Explore / code-reviewer / etc. analog) from the agent step; pi-workflows agents reference .agent.yaml specs by name only with no subagent-type routing surface",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 9: Claude Code workflows' agent(prompt, { agentType: 'Explore' | 'code-reviewer' }) lets the script invoke specialized subagent types from the same registry the Agent tool uses. pi-workflows agent step references agents by name (agent: code-explorer) which maps to a .agent.yaml file; no subagent-type field. Two different mechanisms with similar intent — type-routing vs name-routing. Pi's name-routing is more explicit but less composable (no way to say 'I want an Explore-type agent dispatched against any agent spec').",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "464-490",
+          "reference": "Part 3 axis 9 — agentType Opt — INSPIRE verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/step-agent.ts",
+          "reference": "agent step references agent by name only; no agentType field on StepSpec"
+        }
+      ],
+      "impact": "Operators wanting to compose 'Explore-type-agent runs against this agent spec' cannot express it at the spec level. Mapping to Claude Code workflows surface for cross-system invocation is lossy. Pi's agent specs themselves could declare their type but no current convention captures it.",
+      "canonical_vocabulary": "subagent-type routing; agent-spec + agent-type composition; dispatch-hint surface",
+      "proposed_resolution": "Add 'agentType: <string>' opt to agent step OR add 'agent_type: <string>' top-level field to .agent.yaml specs. dispatch.ts passes agentType to pi CLI via new flag (assumes pi CLI supports subagent-type dispatch; verify upstream surface). If pi CLI does not support: implement pi-workflows-side dispatch routing where agentType selects from a registry of dispatch-strategy implementations. Simpler shape: agent_type as advisory metadata on the agent spec consumed by dispatch + by introspection tools (workflow-validate could check agent_type compatibility with step.agentType).",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-149",
+      "title": "pi-workflows discoverability surface is weak — workflows live in ~/.pi/workflows/ or .pi/workflows/ + execute via workflow-execute tool or TUI picker; Claude Code workflows auto-register as /<name> slash commands + appear in / autocomplete; pi has no equivalent runtime-discovery / autocomplete / slash-command-shorthand surface",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-workflows",
+      "layer": "L4",
+      "description": "Per R-0014 recon axis 11: Claude Code workflows registered at .claude/workflows/<name>.js appear as /<name> slash commands in / autocomplete; discoverable via /workflows list. pi-workflows lives in directories but execution requires either workflow-execute tool invocation (with explicit name argument) or TUI picker navigation. No slash-command-shorthand registration; no auto-complete-in-conversation surface; no /workflows-list-style command on the pi side. Operators running frequently-used workflows incur friction every time.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "528-543",
+          "reference": "Part 3 axis 11 — Bundled / Discoverable Workflows — INSPIRE verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/index.ts",
+          "reference": "workflow-execute / workflow-list / workflow-status tools but no slash-command auto-registration"
+        }
+      ],
+      "impact": "Operator friction on frequently-used workflows. Workflow discovery requires explicit knowledge of names + invocation conventions. Mapping to Claude-Code-side parity for cross-system operator UX is poor — slash-command-shorthand is the canonical pi-extension command surface but not extended to workflows.",
+      "canonical_vocabulary": "slash-command registration; workflow autocomplete; pi-side / autocomplete equivalent; bundled-workflow surface parity",
+      "proposed_resolution": "Extend pi-agent-dispatch or pi-workflows extension to register each discovered workflow as a pi slash command. Auto-discovery from bundled (packages/*/workflows/) + project (.pi/workflows/) + user (~/.pi/workflows/) directories at extension load. Slash command shape: /<workflow-name> invokes workflow-execute with that name + parses args per the workflow's inputSchema. TUI: add workflow picker to main menu (alongside other actions). Documentation refresh for discoverability + invocation. Verify pi CLI supports dynamic slash-command registration (may require upstream surface; if not, file follow-on FGAP).",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
+    },
+    {
+      "id": "FGAP-150",
+      "title": "pi-workflows expression evaluator has no determinism enforcement — expressions evaluated at dispatch time can include non-deterministic patterns (current-time / random / uuid) that break resume semantics silently; Claude Code workflows reject Date.now() / Math.random() / argless new Date() at validation time to maintain cache + resume integrity",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-workflows",
+      "layer": "L2",
+      "description": "Per R-0014 recon axis 12: Claude Code workflows throw at script-validation time on Date.now() / Math.random() / argless new Date() — would break the (prompt, opts) cache + resume semantics (same script + same args must produce identical agent results). pi-workflows expression evaluator (${{ }} syntax) lets operators reference any value at dispatch time; if expression evaluates to current time / random number / uuid / etc., resume re-evaluates → different value → resume cache (when added per FGAP-147) would never hit. Today no enforcement; no warning; silent non-determinism breaks resume idempotence.",
+      "evidence": [
+        {
+          "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+          "lines": "545-559",
+          "reference": "Part 3 axis 12 — Resume-Incompatible API Enforcement — INSPIRE verdict"
+        },
+        {
+          "file": "packages/pi-workflows/src/expression.ts",
+          "reference": "expression evaluator with no determinism enforcement"
+        }
+      ],
+      "impact": "Resume semantics silently break when operators include non-deterministic expressions. Cache-by-input (FGAP-147) would never hit. State persistence + resume produce different agent dispatches than original run. Operators discover the gap only when resume yields different results — late + diagnostic-poor.",
+      "canonical_vocabulary": "determinism enforcement; resume-cache integrity; non-deterministic-expression detection; pre-flight expression validation",
+      "proposed_resolution": "Add pre-flight expression validator to validateWorkflow: scan all ${{ }} expressions for disallowed patterns (Date.now, new Date() with no args, Math.random, crypto.randomUUID, uuid(), or any user-registered non-deterministic filter). Issue warning at validation-time (status: warning) OR error under --strict-determinism flag. Documentation: enumerate which built-in filters are deterministic vs non-deterministic + which expression patterns to avoid. Optional: provide deterministic alternatives (e.g., 'workflow.startTime' filter that captures startup-time once + returns same value across resumes).",
+      "related_features": [],
+      "related_decisions": [],
+      "related_issues": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-29"
     }
   ]
 }

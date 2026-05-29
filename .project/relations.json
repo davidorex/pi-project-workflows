@@ -628,5 +628,35 @@
     "parent": "R-0014",
     "child": "FEAT-007",
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-145",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-146",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-147",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-148",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-149",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-150",
+    "relation_type": "research_informs_item"
   }
 ]

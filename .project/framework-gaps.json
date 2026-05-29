@@ -6125,6 +6125,35 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-165"
+    },
+    {
+      "title": "No tool to query agent dispatch history — session logs are the only audit trail",
+      "status": "identified",
+      "package": "@davidorex/pi-agent-dispatch",
+      "priority": "P2",
+      "layer": "L1",
+      "description": "Agent dispatch details (model, provider, token usage, raw API response, agent output, stopReason) are persisted via safeWriteTrace at packages/pi-jit-agents/src/jit-runtime.ts lines 204-212 to .pi/agent/sessions/<project>/<timestamp>.jsonl files. No Pi tool reads or queries these traces. The trace pipeline is write-only audit storage. Orchestrators wanting to inspect recent dispatches must shell out to grep the JSONL files, parse them manually, and filter by agent name or timestamp.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "316-327",
+          "reference": "FB-016 'Session logs are the only place to see agent dispatch details — no tool to query them'; actual_behavior: after call-agent returns status summary, the only way to see agent's output (e.g. 'I will start by reading...') is to grep the session log for toolName call-agent entries and manually parse the JSONL"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+          "lines": "151-183",
+          "reference": "Investigation report FB-016 section confirms safeWriteTrace at jit-runtime.ts:204-212 verbatim and the absence of a query surface; verdict 'Tool surface (pi-agent-dispatch)' — new tool query-agent-dispatch(agent_name?, limit?, offset?) returning {dispatches: [{timestamp, agent, model, output, usage, stopReason}]} by scanning .pi/agent/sessions/, parsing JSONL, filtering, sorting by timestamp desc, paginating"
+        }
+      ],
+      "impact": "Orchestrators have no in-band way to inspect what recently dispatched agents produced, which models they used, what their token costs were, or whether they completed normally. Debugging agent behavior requires manual filesystem operations outside the substrate / tool surface. Compounds with FGAP-160 (FB-009 output not surfaced) and FGAP-165 (FB-015 zero-token silent success) — without a query tool there is no recovery path from those gaps.",
+      "proposed_resolution": "Tool surface — new Pi tool `query-agent-dispatch` in packages/pi-agent-dispatch/src/ with signature `(agent_name?: string, limit?: number = 10, offset?: number = 0) -> { dispatches: [{timestamp, agent, model, output, usage, stopReason}] }`. Implementation: scan .pi/agent/sessions/<project>/ directories, parse JSONL entries, filter by agent_name when provided, sort by timestamp descending, return paginated results. Per DEC-0019/0020 dual-surface canon, also add scripts/orchestrator/query-agent-dispatch.ts CLI script.",
+      "canonical_vocabulary": "dispatch history query tool",
+      "related_decisions": [
+        "DEC-0019"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-166"
     }
   ]
 }

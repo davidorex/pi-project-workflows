@@ -95,6 +95,7 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	// linear progress narrative. Roadmap/plan rollups treat them as "doesn't
 	// count toward progress" rather than as complete or todo.
 	superseded: "unknown",
+	superseded_by: "unknown", // framework-gaps: gap absorbed by a TASK that lands canonical resolution (mis-scoped FGAP closure pattern; v1.1.0 enum extension)
 	cancelled: "unknown",
 	deferred: "unknown",
 	abandoned: "unknown", // layer-plans/spec-reviews: work stopped, not completed

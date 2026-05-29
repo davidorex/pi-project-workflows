@@ -5806,6 +5806,49 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
       "id": "FGAP-156"
+    },
+    {
+      "title": "AgentSpec.model is type-optional but dispatch-required — call-agent throws 'no model specified' with no fallback",
+      "status": "identified",
+      "package": "@davidorex/pi-jit-agents",
+      "priority": "P0",
+      "layer": "L1",
+      "description": "AgentSpec at packages/pi-jit-agents/src/types.ts line 25 declares `model?: string` (optional). callAgentTool.execute at packages/pi-agent-dispatch/src/call-agent-tool.ts line 83 rejects dispatch when modelSpec is absent: `if (!modelSpec) { throw new Error('call-agent: agent X has no model specified.'); }`. A spec passing TypeScript validation with no model field fails at runtime. There is no fallback path — call-agent does not defer to an orchestration-agent default, an ExtensionContext binding, or any other source. The optional-type framing suggests model may be supplied elsewhere; the runtime contradicts that framing.",
+      "evidence": [
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+          "lines": "98-124",
+          "reference": "FB-005 'model field required at dispatch but optional in AgentSpec type'; actual_behavior: dispatch fails 'call-agent: agent X has no model specified.'"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-model-resolution.md",
+          "lines": "3-51",
+          "reference": "Investigation report FB-005 section confirms type at types.ts:25 and runtime reject at call-agent-tool.ts:83 verbatim; verdict 'Code' — either make model required in the AgentSpec type (Option A, breaking change cascading to all existing .agent.yaml specs without model) or add fallback resolution in call-agent (Option B, deferring to orchestration-agent default); explicitly NET-NEW relative to DEC-0001/0002/0003 and FGAP-115"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/types.ts",
+          "lines": "25",
+          "reference": "model?: string; — declares model as optional in the canonical TypeScript type"
+        },
+        {
+          "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "lines": "83",
+          "reference": "if (!modelSpec) throw new Error 'call-agent: agent X has no model specified.' — runtime reject with no fallback"
+        }
+      ],
+      "impact": "Agent authors writing minimal specs (per the TypeScript type contract) ship specs that fail at dispatch with a runtime error. The type's optional-marker promises a flexibility the runtime does not honor. Distinct from FGAP-115 (which addresses bare-model-id resolution against session provider) — FGAP-115 assumes model is present; this gap is the absence-of-field case.",
+      "proposed_resolution": "Code decision required between two options per the investigation-report verdict. Option A: change AgentSpec.model from `model?: string` to `model: string` (required in type) at packages/pi-jit-agents/src/types.ts:25 — breaking change cascading to every existing spec without a model field. Option B: add fallback resolution at packages/pi-agent-dispatch/src/call-agent-tool.ts:83 — defer to the orchestration-agent's default model when modelSpec is absent — keeps the type optional but honors the semantics. Pick one and document the contract in the AgentSpec schema (FGAP-156 dependency for canonical-shape parity).",
+      "canonical_vocabulary": "type-runtime contract parity",
+      "related_decisions": [
+        "DEC-0001",
+        "DEC-0003"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T00:00:00Z",
+      "id": "FGAP-157"
     }
   ]
 }

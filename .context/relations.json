@@ -173,5 +173,15 @@
     "parent": "SESSION-004",
     "child": "TASK-095",
     "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-005",
+    "child": "FGAP-181",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-005",
+    "child": "FGAP-182",
+    "relation_type": "session_touches_item"
   }
 ]

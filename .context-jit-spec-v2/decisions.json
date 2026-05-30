@@ -1,3 +1,197 @@
 {
-	"decisions": []
+  "decisions": [
+    {
+      "id": "DEC-0001",
+      "title": "Specs leave jit-agents fully resolved",
+      "status": "enacted",
+      "context": "Relative paths in agent specs require consumers to know the directory context the spec was loaded from. That context belongs inside the jit-agents boundary. Leaking relative paths forces every consumer to reimplement resolution logic with mismatched assumptions (disclarity audit found 2 independent resolution strategies on main).",
+      "decision": "AgentSpec returned by loadAgent() has all path fields resolved to absolute paths. Consumers never see relative paths. Once an AgentSpec leaves the jit-agents boundary, every path it references is absolute.",
+      "consequences": [
+        "Consumers contain zero path resolution logic for agent specs",
+        "loadedFrom field on AgentSpec populated by parseAgentYaml",
+        "Template and schema paths resolved to absolute at load time"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "references": [
+        {
+          "label": "v1 §4 D1"
+        }
+      ]
+    },
+    {
+      "id": "DEC-0002",
+      "title": "Framework package contains only framework",
+      "status": "enacted",
+      "context": "The runtime is generic; the domain lives in specs users author. Existing development-era specs (31 .agent.yaml) are disposable per AX-002. The framework package should not conflate framework code with example specs.",
+      "decision": "@davidorex/pi-jit-agents package contains only framework code: agent-spec.ts, template.ts, compile.ts, jit-runtime.ts, types.ts, and schemas that are part of the framework contract itself (e.g. verdict.schema.json for the phantom-tool pattern). No production agent artifacts shipped. Minimal test-fixtures only.",
+      "consequences": [
+        "Existing 31 .agent.yaml specs stay in consumer packages or get deleted per P2 disposability",
+        "Framework package ships with zero production agent artifacts",
+        "Test fixtures under test-fixtures/ excluded from dist/"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "references": [
+        {
+          "label": "v1 §4 D2"
+        }
+      ]
+    },
+    {
+      "id": "DEC-0003",
+      "title": "jit-agents does not read .pi/",
+      "status": "enacted",
+      "context": ".pi/ is Pi platform territory per the declared architecture. Current createAgentLoader's three-tier search reading from .pi/agents/ contradicts the declaration and was written before directory ownership was stated.",
+      "decision": "jit-agents does not read from .pi/agents/, .pi/templates/, or .pi/monitors/. User overrides for agents are provided by the consumer package's territory (e.g. .project/agents/ for project-tier, ~/.pi/agent/agents/ for user-tier per the 3-tier discovery in DEC-0007).",
+      "consequences": [
+        "createAgentLoader + createTemplateEnv have explicit negative tests pinning the no-.pi/ behavior",
+        "Specific discovery paths per consumer remain in scope of DEC-0007"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "references": [
+        {
+          "label": "v1 §4 D3"
+        }
+      ]
+    },
+    {
+      "id": "DEC-0004",
+      "title": "executeAgent is dual-mode in-process dispatch primitive",
+      "status": "enacted",
+      "context": "v1's D4 framed executeAgent as phantom-tool-only single-turn dispatch (classifier-mode). The canonical body (AX-001 uniformity, FEAT-005 capability composition, FEAT-006 north-star, DEC-0047 capability-grant model, TASK-091 'agent does the work', JI-029 'jit agent with perms for read/amend blocks') commits jit-agents to tool-using-agent semantics that the classifier-pattern alone cannot deliver. Implementation has been hedging by clamping declared tools[] at jit-runtime.ts:488 then discarding them; LLM receives only the phantom tool at line 568 (when outputSchema set) or nothing. compiled.tools is structurally unreachable from LLM under the v1 framing.",
+      "decision": "executeAgent supports TWO dispatch modes selected per spec shape via DEC-0009 algorithm. (a) Classifier-mode: triggered when outputSchema is set; forced phantom-tool toolChoice; single LLM call; output extracted and validated against outputSchema; returns typed result; used by monitors. (b) Agentic-mode: triggered when tools[] is non-empty and outputSchema is absent (or both set per DEC-0009 precedence); declared tools[] intersected with dispatch.parentGrant per DEC-0047 clamp becomes the LLM's tool registry; multi-turn dispatch loop with tool-call iteration through ExtensionContext per DEC-0008; thread results into message history; loop termination on end_turn / max-turns / tool-failure; returns final assistant message.",
+      "consequences": [
+        "Both modes share spec loading + template compilation + contextBlocks injection + model resolution + attestation + tracing; differ only in dispatch surface",
+        "Replaces v1's D4 phantom-tool-only framing — the implementation hedge that capability-grant infrastructure (FEAT-004/005 + TASK-089/092) made dormant at agent dispatch tier",
+        "Closes FGAP-169 (compiled.tools structurally unreachable) + FGAP-178 (capability-grant infrastructure dormancy) at the spec layer",
+        "Implementation work pending: jit-runtime.ts:432-738 needs multi-tool dispatch loop; ExtensionContext.dispatchTool surface per DEC-0010 interlocks with FGAP-115"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "references": [
+        {
+          "label": "v1 §4 D4 [REWRITTEN]"
+        }
+      ]
+    },
+    {
+      "id": "DEC-0005",
+      "title": "Subprocess dispatch stays in pi-workflows",
+      "status": "enacted",
+      "context": "pi --mode json subprocess invocation is workflow-specific orchestration, not agent infrastructure. Extracting it into jit-agents would conflate the agent abstraction with workflow-step execution mechanics.",
+      "decision": "pi --mode json subprocess invocation stays in pi-workflows' dispatch.ts. Does not move to jit-agents.",
+      "consequences": [
+        "Step executors that use subprocess dispatch continue to call dispatch.ts directly",
+        "jit-agents owns only in-process dispatch (executeAgent per DEC-0004)"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "references": [
+        {
+          "label": "v1 §4 D5"
+        }
+      ]
+    },
+    {
+      "id": "DEC-0006",
+      "title": "step-monitor.ts becomes thin wrapper over jit-agents + monitor discovery",
+      "status": "enacted",
+      "context": "Current step-monitor.ts reimplements monitor classification with text parsing and ignores classify.agent. Two classify code paths exist across the project (workflow step-monitor + pi-behavior-monitors classifyViaAgent).",
+      "decision": "After extraction, step-monitor.ts delegates to pi-behavior-monitors' classify pathway, which in turn calls executeAgent (classifier-mode per DEC-0004). One classify code path across the project, not two.",
+      "consequences": [
+        "Monitor classify-specific logic (which collectors to run, how to assemble input, how to interpret verdict) stays in pi-behavior-monitors",
+        "LLM call + phantom tool + result extraction delegates to executeAgent"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "references": [
+        {
+          "label": "v1 §4 D6"
+        }
+      ]
+    },
+    {
+      "id": "DEC-0007",
+      "title": "Agent discovery tier structure",
+      "status": "enacted",
+      "context": "Per AX-001 uniformity, agent discovery should apply uniformly to all agents regardless of consumer. Per DEC-0003, .pi/ is not part of any tier.",
+      "decision": "Three-tier search, first match wins: (1) resolveContextDir(cwd)/agents/ — project-level overrides (substrate-tracked); (2) ~/.pi/agent/agents/ — user-global overrides (Pi home convention); (3) consumer-package/agents/ — builtins. Per AX-001 this single tier structure applies to all agents regardless of which consumer invokes them. Per DEC-0003 none of these tiers touch .pi/.",
+      "consequences": [
+        "Per AX-002 most existing builtin agents are disposable; what ships as a builtin must earn its place",
+        "Agents authored at project level have natural access to project state via contextBlocks (substrate-tracked path matches substrate-tracked blocks)",
+        "Framework package has no agents/ directory (DEC-0002 corollary)"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "references": [
+        {
+          "label": "v1 §4 D7 [DECIDED, was provisional]"
+        }
+      ]
+    },
+    {
+      "id": "DEC-0008",
+      "title": "Agentic-mode tool execution dispatches through ExtensionContext",
+      "status": "enacted",
+      "context": "DEC-0004 establishes agentic-mode where compiled.tools (clamped per DEC-0047) becomes the LLM's tool registry. The framework needs a canonical surface for dispatching tool invocations the LLM emits. Direct tool imports in jit-agents would couple it to specific tool implementations and violate the consumer-agnostic boundary contract.",
+      "decision": "In agentic-mode, when the LLM emits a tool call, executeAgent looks up the tool in ExtensionContext's tool registry and dispatches the invocation through it. Tool results are threaded into the LLM's message history; the loop continues with enriched history.",
+      "consequences": [
+        "Realizes FEAT-005 ('subagent receives its OWN tools, JIT-composed per invocation, scoped to EXACTLY the operations the task needs') at the agent-tier dispatch boundary",
+        "Closes the gap FGAP-169 named at the agent-tier (compiled.tools structurally unreachable from LLM in v1 implementation)",
+        "Interlocks with FGAP-115 (ExtensionContext.currentModel/currentProvider absence) which needs resolution so ExtensionContext can be relied upon at executeAgent for both model resolution AND tool-execution surface routing"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z"
+    },
+    {
+      "id": "DEC-0009",
+      "title": "Mode selection algorithm",
+      "status": "enacted",
+      "context": "DEC-0004 establishes dual-mode dispatch. The framework needs a deterministic algorithm for selecting which mode applies per spec shape. Per AX-001 uniformity, the selection should be structural (predictable from spec alone), not behavioral (per-invocation choice).",
+      "decision": "Mode selection at compile time from spec shape: outputSchema set + tools[] empty/absent → classifier-mode. outputSchema set + tools[] non-empty → agentic-mode; outputSchema becomes post-hoc validation on final assistant message after loop. outputSchema absent + tools[] empty/absent → classifier-mode with text-format output (no phantom tool; raw text return). outputSchema absent + tools[] non-empty → agentic-mode. The output.format field is informational about expected output shape; does not alter mode selection. An agent declaring tools: [read, append-block-item] with output.format: text runs in agentic-mode and produces a final assistant message after the tool-execution loop — closes the prior anti-pattern of declaring tools[] alongside text-format without expecting tool execution.",
+      "consequences": [
+        "Per AX-001 the selection is structural: same spec shape always selects same mode regardless of consumer",
+        "No per-invocation mode override; spec authors determine dispatch shape at authorship time",
+        "output.format becomes purely informational at the framework level (consumer-side validation may use it)"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z"
+    },
+    {
+      "id": "DEC-0010",
+      "title": "ExtensionContext is the canonical tool-execution surface",
+      "status": "enacted",
+      "context": "DEC-0008 routes agentic-mode tool execution through ExtensionContext. The framework needs to commit to ExtensionContext as THE canonical tool-execution surface (not a temporary mechanism) to prevent consumer-specific tool dispatch surfaces from proliferating.",
+      "decision": "Agentic-mode tool execution dispatches through ExtensionContext.dispatchTool(toolName, params) or equivalent surface. Tools are not directly imported by jit-agents; resolved at runtime per the ExtensionContext registry the dispatch carries. Keeps jit-agents tool-agnostic; matches DEC-0005's separation-of-concerns discipline; enables consumer-supplied tool surfaces (workflows route through workflow-specific routing; monitor agents have restricted tool sets; pi-agent-dispatch composite tools per FEAT-010 register naturally).",
+      "consequences": [
+        "Interlocks with FGAP-115 (ExtensionContext gap) — the gap blocks both DEC-0001 model resolution AND DEC-0008/0010 tool-execution dispatch; both close together",
+        "Interlocks with TASK-089/092 (composite tool infrastructure already landed) — needs the dispatch surface this decision names",
+        "No per-tool imports in jit-agents source; consumer agnosticism preserved"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:50:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-30T13:50:00Z"
+    }
+  ]
 }

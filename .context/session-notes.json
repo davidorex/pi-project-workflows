@@ -157,6 +157,30 @@
         "Implementation arc per FGAP-169 multi-tool dispatch loop in executeAgent — load-bearing for realizing DEC-0004/0008/0009/0010 at runtime; interlocks with FGAP-115 ExtensionContext gap",
         "Spec-v2 entity-graph is substantively-wired-enough that work resuming on the implementation arc can substrate-cite spec decisions canonically rather than markdown-cite"
       ]
+    },
+    {
+      "id": "SESSION-008",
+      "timestamp": "2026-05-30T16:00:00-06:00",
+      "focus": "Spec-v2 substrate phase 3 finalized (5 concepts + 1 open-question FGAP + 10 edges + full-spec-render composition lens). Orientation surfaces refreshed (MEMORY.md 37.3KB → 19.3KB under cap; HANDOFF.md re-set to current; README.md to 4-extension shape + /context switch family + per-arc engagement pattern). FGAP-183 filed in .project (MigrationRegistry doesn't honor readBlock contextDir override; P1; discovered + reproduced this turn). Spec-v2 substrate extended with authority + friction layer: 2 new schemas (friction-items + authority-docs) + 2 new block_kinds + 6 new relation_types + 18 FB items verbatim from clock-menu-app/.context/usage-feedback.json + 2 REF docs (REF-001 LLM Perspective JIT Agent UX + REF-002 Pi-Context May 29 LLM Perspective) + 52 edges (18 FB→cross-substrate FGAP via sentinel form + FB→DEC + FB→CONCEPT + REF→DEC + REF→CONCEPT + REF→MODE). Spec-v2 substrate PM decomposition landed: 5 FEAT + 6 TASK + 37 edges wiring features to decisions + modes + friction items; tasks to features + cross-substrate FGAPs + ordering.",
+      "discoveries": [
+        "MEMORY.md cap is 24.4KB bytes (system load truncation); inline FGAP-closure narratives in 'Current Focus' section consumed ~20KB duplicating substrate (status=closed FGAPs + VER entries); stripping to thin pointer-only index fits cap with room to spare",
+        "config.json block_kinds requires display_name + rejects description; relation_types category enum is ordering|data_flow|membership only (cross_substrate/grounding/authority not accepted; data_flow is the existing canonical category for grounding-class relations per axiom_grounds_decision precedent)",
+        "Block files need empty-shell seed (echo '{\"items\":[]}' > foo.json) before first appendToBlock; appendToBlock calls readBlock pre-write which throws on absent file",
+        "Upstream-authored FB severity enum includes 'friction' + 'observation' (not just blocking/major/minor/cosmetic); upstream status includes 'resolved' (not just open/addressed/wontfix/duplicate); initial-fit schema widened in-place at v1.0.0 since no items existed yet",
+        "MigrationRegistry caches per-cwd, not per-resolved-substrate-dir; readBlock's contextDir override flows to the file read but not to the registry lookup; cross-substrate reads of versioned-schema blocks throw — filed as FGAP-183 (P1)"
+      ],
+      "decisions_made": [
+        "Per-arc substrate engagement pattern extends to authority + friction layer: REF authority-docs + FB friction-items are first-class block kinds in the per-arc substrate, not external analysis/ pointers. Walking from FB → FGAP → DEC → CONCEPT → MODE renders friction-to-implementation trace as queryable canon.",
+        "Cross-substrate FB↔FGAP references use sentinel form 'project:FGAP-NNN' in the child field (no programmatic cross-substrate resolution tool yet; manual /context switch traversal works today)",
+        "PM decomposition (FEAT + TASK) uses packaged relation_types (feature_depends_on_item + task_depends_on_task) per canonical purpose; no new relation_type needed for the work-management layer",
+        "Schema-widening at v1.0.0 (no version bump) when initial-fit pass surfaces upstream enum values not anticipated; documented in commit body; future ingest passes from upstream remain shape-compatible"
+      ],
+      "current_status": ".context-jit-spec-v2 substrate now carries: 22 block_kinds (16 packaged + 6 custom: axioms / concepts / dispatch-modes / v1-supersessions / friction-items / authority-docs) + 41 relation_types (28 packaged + 13 custom) + 3 lenses (full-spec-render composition unchanged from SESSION-007) + 58 substrate items (3 AX + 10 DEC + 5 CONCEPT + 2 MODE + 6 VSUP + 1 FGAP + 18 FB + 2 REF + 5 FEAT + 6 TASK) + 128 inter-entity edges. 14 of 22 block kinds carry content; 8 standard PM blocks remain seeded-empty (verification / issues / research / rationale / spec-reviews / layer-plans / requirements / conventions / context-contracts / phase / story / work-orders — operator-scope to fill as the arc progresses). Branch main at 9ee4db2 (with FGAP-183 filing at e835c80 + spec-v2 authority/friction layer at b8a0422 + spec-v2 PM decomposition at 9ee4db2 + README refresh at 87afbbd + MEMORY/HANDOFF refresh at user-memory-dir non-git surfaces). Tree clean. Pointer at .context (round-tripped from .context-jit-spec-v2 post each filing pass). Release HELD. Push HELD.",
+      "next_steps": [
+        "TASK-001 (in .context-jit-spec-v2/tasks.json) is the precondition: resolve FGAP-115 (ExtensionContext currentModel/currentProvider gap) — collapse a/b/c options to canonical choice. Then TASK-002 (agentic-mode dispatch loop in jit-runtime.ts:432-738 realizing MODE-002 per DEC-0004/0008/0010) becomes unblocked.",
+        "TASK-003 (list-dispatch-models) and TASK-005 (introspection surface) are parallel-eligible — no dep on TASK-002.",
+        "FGAP-183 closure (MigrationRegistry contextDir override) is independent of the spec-v2 arc; landing it unblocks programmatic cross-substrate consultation, which in turn enables a future cross-substrate-tool that replaces the manual /context switch round-trips this session uses for cross-substrate filing."
+      ]
     }
   ]
 }

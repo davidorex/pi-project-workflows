@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/phase",
+  "version": "2.0.0",
+ "title": "Phases",
+ "description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
+  "type": "object",
+  "required": [
+    "phases"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "intent",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^PHASE-[A-Z0-9-]+$",
+ "description": "Canonical phase id (e.g.). Replaces the integer `number` discriminator of the file-per-phase form."
+          },
+          "name": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string"
+          },
+          "goal": {
+            "type": "string",
+ "description": "What is true after this phase that was not true before"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "in-progress",
+              "completed"
+            ]
+          },
+          "success_criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "criterion",
+                "verify_method"
+              ],
+              "properties": {
+                "criterion": {
+                  "type": "string"
+                },
+                "verify_method": {
+                  "type": "string",
+                  "enum": [
+                    "command",
+                    "inspect",
+                    "human"
+                  ]
+                }
+              }
+            }
+          },
+          "specs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "number",
+                "name",
+                "intent",
+                "status"
+              ],
+              "properties": {
+                "number": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "intent": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "planned",
+                    "in-progress",
+                    "completed"
+                  ]
+                },
+                "acceptance_criteria": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "artifacts_produced": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/rationale",
+  "version": "1.0.0",
+  "title": "Design Rationale",
+  "description": "The deeper reasoning behind decisions — why this approach over others, what constraints drove the choice, what tradeoffs were accepted.",
+  "type": "object",
+  "required": ["rationales"],
+  "properties": {
+    "rationales": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "narrative"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^RAT-\\d{3}$" },
+          "title": { "type": "string" },
+          "narrative": { "type": "string" },
+          "phase": { "type": "integer" }
+        }
+      }
+    }
+  }
+}

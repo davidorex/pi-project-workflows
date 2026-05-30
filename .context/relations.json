@@ -1,0 +1,177 @@
+[
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-151",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-152",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-153",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-154",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-155",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-156",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-157",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-158",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-159",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-160",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-161",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-162",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-163",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-164",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-165",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-166",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-167",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-168",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-169",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-170",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-171",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-172",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-173",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-174",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-175",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-001",
+    "child": "FGAP-176",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-002",
+    "child": "FGAP-169",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-002",
+    "child": "FGAP-177",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-002",
+    "child": "FGAP-178",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-003",
+    "child": "FGAP-179",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-003",
+    "child": "TASK-094",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-003",
+    "child": "VER-066",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-003",
+    "child": "DEC-0049",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-004",
+    "child": "FGAP-180",
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": "SESSION-004",
+    "child": "TASK-095",
+    "relation_type": "session_touches_item"
+  }
+]

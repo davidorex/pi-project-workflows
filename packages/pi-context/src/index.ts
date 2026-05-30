@@ -294,7 +294,7 @@ export class ContextInitMismatchError extends Error {
  * is idempotent re-init (dir-scaffolding loop skips existing dirs). When no
  * pointer exists, the caller's arg writes a fresh pointer.
  */
-function initProject(cwd: string, contextDir: string): { created: string[]; skipped: string[] } {
+export function initProject(cwd: string, contextDir: string): { created: string[]; skipped: string[] } {
 	const bootstrapPath = path.join(cwd, ".pi-context.json");
 	if (fs.existsSync(bootstrapPath)) {
 		// Existing pointer — check for divergence with caller's arg before
@@ -593,7 +593,7 @@ function resolveSlashCommandWriter(ctx: ExtensionCommandContext): string {
  *    scaffold the new dir's structure. flipBootstrapPointer does the pointer
  *    work; this helper then mkdir's the substrate root + schemas subdir.
  */
-function switchAndCreate(cwd: string, newContextDir: string, writerIdentity: string): { created: string[] } {
+export function switchAndCreate(cwd: string, newContextDir: string, writerIdentity: string): { created: string[] } {
 	// Validation: allow a leading '.' in the dir name (project convention) but
 	// require the rest to match the substrate-name discipline.
 	const nameBody = newContextDir.startsWith(".") ? newContextDir.slice(1) : newContextDir;
@@ -633,7 +633,7 @@ function switchAndCreate(cwd: string, newContextDir: string, writerIdentity: str
  * The check is a fail-fast; the flip itself is performed by
  * flipBootstrapPointer.
  */
-function switchToExisting(cwd: string, targetDir: string, writerIdentity: string): void {
+export function switchToExisting(cwd: string, targetDir: string, writerIdentity: string): void {
 	const targetConfigPath = path.join(cwd, targetDir, "config.json");
 	if (!fs.existsSync(targetConfigPath)) {
 		throw new Error(
@@ -651,7 +651,7 @@ function switchToExisting(cwd: string, targetDir: string, writerIdentity: string
  * Reads the existing pointer's `previous_contextDir`; if absent (the pointer
  * was never switched), throws a structured error naming the precondition.
  */
-function switchToPrevious(cwd: string, writerIdentity: string): { from: string; to: string } {
+export function switchToPrevious(cwd: string, writerIdentity: string): { from: string; to: string } {
 	const bootstrapPath = path.join(cwd, ".pi-context.json");
 	if (!fs.existsSync(bootstrapPath)) {
 		throw new BootstrapNotFoundError(cwd, bootstrapPath);
@@ -681,7 +681,7 @@ function switchToPrevious(cwd: string, writerIdentity: string): { from: string; 
  * current bootstrap pointer's contextDir. Shared engine behind `/context list`
  * and the `context-list` Pi tool.
  */
-function listSubstrates(cwd: string): Array<{ name: string; isActive: boolean }> {
+export function listSubstrates(cwd: string): Array<{ name: string; isActive: boolean }> {
 	let activeContextDir: string | null = null;
 	try {
 		const bootstrapPath = path.join(cwd, ".pi-context.json");
@@ -736,7 +736,7 @@ function listSubstrates(cwd: string): Array<{ name: string; isActive: boolean }>
  * Creates `archive/` if absent. Uses `fs.renameSync` for atomicity on the
  * same filesystem.
  */
-function archiveSubstrate(cwd: string, targetDir: string): { from: string; to: string } {
+export function archiveSubstrate(cwd: string, targetDir: string): { from: string; to: string } {
 	const bootstrapPath = path.join(cwd, ".pi-context.json");
 	if (fs.existsSync(bootstrapPath)) {
 		try {

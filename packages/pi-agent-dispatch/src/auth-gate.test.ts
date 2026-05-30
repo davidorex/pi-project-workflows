@@ -117,6 +117,17 @@ describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
 		const actual = new Set<string>(AUTH_REQUIRED_TOOLS);
 		assert.deepStrictEqual(actual, expected, `AUTH_REQUIRED_TOOLS drift; got: ${[...actual].sort().join(", ")}`);
 	});
+
+	it("context-switch + context-archive are in the gated set; context-list is NOT (TASK-094 read-only exception)", () => {
+		// Targeted assertion on the TASK-094 additions so a regression that
+		// inadvertently flips context-list into the gated set (or drops the
+		// mutation tools out of it) surfaces as a focused failure rather than
+		// only through the deepStrictEqual canon pin.
+		const set = new Set<string>(AUTH_REQUIRED_TOOLS);
+		assert.ok(set.has("context-switch"), "context-switch must be gated (mutates .pi-context.json)");
+		assert.ok(set.has("context-archive"), "context-archive must be gated (renames substrate dir)");
+		assert.equal(set.has("context-list"), false, "context-list must NOT be gated (read-only enumeration)");
+	});
 });
 
 describe("auth-gate — Bucket-2 tool with hasUI=false (non-interactive refusal)", () => {

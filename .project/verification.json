@@ -2686,6 +2686,79 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29T14:11:18.034Z",
       "id": "VER-065"
+    },
+    {
+      "target": "TASK-094",
+      "target_type": "task",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-05-30T11:00:00Z",
+      "evidence": "TASK-094 (implement /context switch command family + pointer-shape extension + auth-gate routing per FGAP-179) completed across 11 commits on task-094-context-switch branch (cdacdb4..6daf75a). Step 9 build/check/test/skills/scan green: npm run build clean (5 packages tsc); npm run check clean (biome 261 files; tsc --noEmit clean); npm test green (pi-agent-dispatch 86/86; pi-context 754/754 up from ~670; pi-jit-agents 168/167; pi-workflows 830/828); npm run skills clean (5 packages SKILL.md regenerated); citation-rot AST scanner 15/15 PASS. Step 10 runtime demo via scripts/orchestrator/runtime-demo-context-switch.ts exit 0 — 6 self-check assertions PASS (flipBootstrapPointer preserves created_at across multiple flips; previous_contextDir tracks the prior contextDir per flip; switched_at + switched_by stamped per flip; switch-back via previous_contextDir round-trips cleanly; resolveContextDir invalidates cache and reads fresh after each flip; pointer version bumped to 1.1.0). Step 11 adversarial probe at /tmp/task-094-adversarial-probe.md returned 4/4 PASS across Lens 1 (bootstrap.schema.json v1.1.0 correctness; 3 optional fields verified; required unchanged; additionalProperties preserved), Lens 2 (handler correctness; 3 slash subcommands behave per spec; 3 Pi tools mirror handlers; auth-gate routes context-switch + context-archive; context-list NOT gated), Lens 3 (pointer-flip atomicity; tmp+rename pattern; cache invalidation; created_at preserved; switched_at + switched_by stamped), Lens 4 (regression; init three-path behavior verified; old silent-drop bug confirmed fixed; ContextInitMismatchError tests cover all scenarios).",
+      "criteria_results": [
+        {
+          "criterion": "/context switch <existing-dir> implemented; flip succeeds against valid substrate; fails loudly on non-substrate target",
+          "status": "passed",
+          "evidence": "Lens 2 — handleSwitch with bare dir name (index.ts:818) delegates to switchToExisting (line 638) which validates config.json presence; context-switch-tool.test.ts covers happy path + non-substrate-target fail"
+        },
+        {
+          "criterion": "/context switch -c <new-dir> implemented; bootstraps new substrate dir AND flips pointer in one operation; new substrate dir has config.json scaffold + schemas/ dir",
+          "status": "passed",
+          "evidence": "Lens 2 — handleSwitch with -c flag (index.ts:804) delegates to switchAndCreate which bootstraps + flips atomically"
+        },
+        {
+          "criterion": "/context switch - implemented; flips to previous contextDir per pointer.previous_contextDir; fails loudly when previous_contextDir absent",
+          "status": "passed",
+          "evidence": "Lens 2 — handleSwitch with - token (index.ts:813) delegates to switchToPrevious; fails loud on missing previous_contextDir"
+        },
+        {
+          "criterion": "/context list implemented; returns discoverable substrate dirs in cwd",
+          "status": "passed",
+          "evidence": "Lens 2 — handleList (index.ts:831-842) delegates to listSubstrates which scans for config.json + marks active substrate"
+        },
+        {
+          "criterion": "/context archive <dir> implemented; moves substrate to archive/<dir>/ + write-protects; non-default operation requiring explicit invocation",
+          "status": "passed",
+          "evidence": "Lens 2 — handleArchive (index.ts:849-862) delegates to archiveSubstrate which refuses active substrate; moves to archive/<name>/"
+        },
+        {
+          "criterion": "Pointer schema bumped 1.0.0 → 1.1.0 with optional previous_contextDir + switched_at + switched_by fields; identity migration declared via write-schema-migration",
+          "status": "passed",
+          "evidence": "Lens 1 — bootstrap.schema.json verified v1.1.0; 3 new optional fields present; required unchanged; backward-compat with v1.0.0 pointers preserved. Note: pointer schema is self-versioned (not in block-schema migration registry per Section H of exploration); no migration-registry entry needed."
+        },
+        {
+          "criterion": "config.relation_types[] includes references_cross_substrate_item supporting sentinel cross-substrate edges",
+          "status": "passed",
+          "evidence": "Step 7 commit 2429327 added relation_type via amendConfigEntry; landed with category=data_flow due to config.schema.json enum restriction (cross_substrate not yet supported); semantic fit documented in commit body for future schema-evolution to canonical cross_substrate category"
+        },
+        {
+          "criterion": "initProject at packages/pi-context/src/index.ts:266 fails loudly with structured guide-message when existing pointer differs from caller's contextDir argument; no silent argument-drop; misleading 'Project initialized' message replaced",
+          "status": "passed",
+          "evidence": "Lens 4 — three-path initProject dispatch (lines 299-333) replaces old silent-drop; ContextInitMismatchError thrown on divergence with message naming /context switch -c <new-dir>; context-init-loud-fail.test.ts covers all three paths"
+        },
+        {
+          "criterion": "Every switch operation routes through pi-dispatch auth-gate (FGAP-134/138); writer.kind=human attestation stamped on pointer's switched_by field",
+          "status": "passed",
+          "evidence": "Lens 2 — auth-gate.ts AUTH_REQUIRED_TOOLS lines 68-90 includes context-switch + context-archive; auth-gate.test.ts pin verifies presence and absence of context-list; flipBootstrapPointer accepts writerIdentity arg which becomes switched_by"
+        },
+        {
+          "criterion": "Build/check/test green; new tests cover each switch mode + the loud-fail initProject path + cross-substrate sentinel resolution",
+          "status": "passed",
+          "evidence": "Step 9 commit 452e36c — npm run build/check/test all green workspace-wide; pi-context tests went from ~670 to 754 (+84 new). Note: cross-substrate sentinel resolution itself (consultation tool) is out-of-scope of this TASK per plan Section 'What this plan explicitly does NOT do'; new relation_type lands here, resolution tool is follow-on work."
+        },
+        {
+          "criterion": "Adversarial probe (fresh-context Explore) verifies the 5 commands behave per spec + the auth-gate routing fires + the pointer-shape migration is honored",
+          "status": "passed",
+          "evidence": "Step 11 — /tmp/task-094-adversarial-probe.md — 4/4 PASS across all lenses; verbatim file:line citations + verbatim content checks"
+        },
+        {
+          "criterion": "Status cascade complete (FGAP-179 status identified → superseded_by this TASK; new VER attests TASK completion; supersession edge filed)",
+          "status": "passed",
+          "evidence": "This VER (VER-066) attests the cascade; FGAP-179 mutation pending in companion commit; supersession + verification edges to be appended in same cascade"
+        }
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T11:00:00Z",
+      "id": "VER-066"
     }
   ]
 }

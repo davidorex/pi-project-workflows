@@ -249,21 +249,86 @@ ${blockInfo.join("\n\n")}
 }
 
 /**
+ * Thrown by `initProject` when an existing `.pi-context.json` bootstrap pointer
+ * declares a different `contextDir` than the caller is requesting. Pre-FGAP-179
+ * the divergence was silent — `initProject` only wrote the pointer when absent
+ * and then operated against the EXISTING pointer's contextDir, completely
+ * dropping the caller's argument and emitting a misleading "Project
+ * initialized" message that scaffolded directories in the EXISTING substrate.
+ * The loud-fail surfaces the divergence and names `/context switch -c <new-dir>`
+ * as the correct command for changing the pointer to a new substrate dir.
+ *
+ * Carries `existing` (the pointer's current contextDir) and `requested` (the
+ * caller's arg) so callers can format diagnostic messages without re-deriving.
+ * Idempotent re-init (existing === requested) is preserved (no throw — falls
+ * through to the dir-scaffolding loop which is itself idempotent).
+ */
+export class ContextInitMismatchError extends Error {
+	readonly existing: string;
+	readonly requested: string;
+	constructor(existing: string, requested: string) {
+		super(
+			`/context init: .pi-context.json already declares contextDir='${existing}' but caller requested '${requested}'. ` +
+				`Re-init with a different substrate dir is rejected — use '/context switch -c ${requested}' to bootstrap '${requested}' as a new substrate AND flip the bootstrap pointer to it in one operation. ` +
+				`To re-scaffold the existing '${existing}' substrate idempotently, re-run /context init with no argument change.`,
+		);
+		this.name = "ContextInitMismatchError";
+		this.existing = existing;
+		this.requested = requested;
+	}
+}
+
+/**
  * Initialize the substrate dir: write the bootstrap pointer and scaffold the
  * substrate + schemas directories ONLY. No schema/block assets are copied here
  * (FGAP-067 / DEC-0011: init must not impose a catalog). Run accept-all to adopt
- * a config + install to materialize the declared assets. Idempotent: skips
- * directories that already exist. Shared by the /context init command handler
- * and the context-init tool.
+ * a config + install to materialize the declared assets. Shared by the /context
+ * init command handler and the context-init tool.
+ *
+ * Hard-fail-on-mismatch (post-FGAP-179): when `.pi-context.json` already exists
+ * AND its declared contextDir differs from the caller's `contextDir` argument,
+ * throws ContextInitMismatchError naming `/context switch -c <new-dir>` as the
+ * correct command. When the existing pointer matches the caller's arg, behavior
+ * is idempotent re-init (dir-scaffolding loop skips existing dirs). When no
+ * pointer exists, the caller's arg writes a fresh pointer.
  */
 function initProject(cwd: string, contextDir: string): { created: string[]; skipped: string[] } {
-	// FIRST action — write the `.pi-context.json` bootstrap pointer carrying
-	// the caller-supplied `contextDir` (required per DEC-0015) so every
-	// subsequent path-builder call (projectDir / schemasDir) resolves through
-	// the freshly-written pointer rather than throwing BootstrapNotFoundError.
-	// writeBootstrapPointer is idempotent (atomic tmp+rename) so re-running
-	// initProject after a prior init does not corrupt the pointer.
-	if (!fs.existsSync(path.join(cwd, ".pi-context.json"))) writeBootstrapPointer(cwd, contextDir);
+	const bootstrapPath = path.join(cwd, ".pi-context.json");
+	if (fs.existsSync(bootstrapPath)) {
+		// Existing pointer — check for divergence with caller's arg before
+		// touching anything. Read the pointer directly (not via the cached
+		// resolveContextDir) so the error message reflects the actual on-disk
+		// state and is not masked by a stale cache entry.
+		let existingContextDir: string;
+		try {
+			const raw = fs.readFileSync(bootstrapPath, "utf-8");
+			const parsed = JSON.parse(raw) as { contextDir?: unknown };
+			if (typeof parsed.contextDir !== "string") {
+				throw new Error(
+					`initProject: existing ${bootstrapPath} lacks a string contextDir; refuses to proceed against a malformed pointer`,
+				);
+			}
+			existingContextDir = parsed.contextDir;
+		} catch (err) {
+			if (err instanceof Error && err.name === "ContextInitMismatchError") throw err;
+			throw new Error(
+				`initProject: failed to read existing ${bootstrapPath}: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		}
+		if (existingContextDir !== contextDir) {
+			throw new ContextInitMismatchError(existingContextDir, contextDir);
+		}
+		// Matching pointer — fall through to idempotent dir scaffolding without
+		// re-writing the pointer (writeBootstrapPointer would stamp fresh
+		// created_at on every init, corrupting the bootstrap-timestamp
+		// forensic).
+	} else {
+		// No pointer — write a fresh one carrying the caller's contextDir
+		// (required per DEC-0015). writeBootstrapPointer is atomic + invalidates
+		// the bootstrapCache so the immediate-next resolveContextDir call reads
+		// the freshly-written value.
+		writeBootstrapPointer(cwd, contextDir);
+	}
 	const projectDirPath = resolveContextDir(cwd);
 	const schemasDirPath = schemasDir(cwd);
 	const created: string[] = [];
@@ -405,7 +470,19 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 		return;
 	}
 
-	const { created, skipped } = initProject(ctx.cwd, contextDir);
+	let result: { created: string[]; skipped: string[] };
+	try {
+		result = initProject(ctx.cwd, contextDir);
+	} catch (err) {
+		// Name-based catch per the cross-module-instance-instanceof-unreliable
+		// discipline used elsewhere in this file (tryResolveContextDir pattern).
+		if (err instanceof Error && err.name === "ContextInitMismatchError") {
+			ctx.ui.notify(err.message, "error");
+			return;
+		}
+		throw err;
+	}
+	const { created, skipped } = result;
 
 	const lines: string[] = [];
 	lines.push(`Project initialized`);

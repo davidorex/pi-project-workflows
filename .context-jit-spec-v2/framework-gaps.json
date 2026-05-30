@@ -3,7 +3,7 @@
     {
       "id": "FGAP-001",
       "title": "Schema path resolution after pi-jit-agents extraction — how do agent YAMLs reference schemas when 15 workflow output schemas stay in pi-workflows and agent YAMLs stay in their origin packages",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "@davidorex/pi-jit-agents",
       "layer": "L2",
@@ -16,9 +16,11 @@
       ],
       "impact": "Schema reference resolution determines whether agent YAMLs are package-portable (option c) or registry-routed (option b) or load-directory-rooted (option a). Affects how 15 workflow output schemas relocate during FEAT-001 consumer cascade + how downstream operators author new agent specs.",
       "canonical_vocabulary": "schema path resolution; tier-aware schema lookup",
-      "proposed_resolution": "Operator scope-decision among options a/b/c. Recommend: option (b) prefixed references (block:name + workflow-schema:name + agent-schema:name namespaces) — most consistent with the pi-context block: sentinel pattern already used for contextBlocks; package-portability via registry resolution; no per-package absolute paths needed.",
+      "proposed_resolution": "RESOLVED: option (b) selected — prefixed references (block: + workflow-schema: + agent-schema: namespaces) resolved by jit-agents against known registries. Rationale: (1) consistent with pi-context block: sentinel pattern already used for contextBlocks (uniformity per AX-001); (2) package-portable via registry resolution (no per-package absolute paths needed); (3) decouples consumer-package directory layout from jit-agents resolution logic (DEC-0001 boundary contract preserved). Implementation: loadAgent normalizes all schema references through resolveSchemaReference(refToken, loaderContext) which dispatches on prefix (block: → resolveContextDir(cwd)/schemas/<name>.schema.json; workflow-schema: → pi-workflows/schemas/<name>.schema.json; agent-schema: → jit-agents/schemas/<name>.schema.json). After loadAgent returns, every schema reference on AgentSpec is an absolute resolved path per DEC-0001 invariant.\n\nORIGINAL CONTEXT: Agent YAMLs reference output schemas + contextBlocks schemas via relative paths that must resolve correctly from each package directory layout. With consumer migration per FEAT-001/TASK-082/TASK-083 in flight + the canonical body realization per DEC-0004 dual-mode dispatch landing, the schema resolution path needs canonical specification. Three options were surfaced in v1 Q2: (a) resolveSchemaPath accepts the agent load directory as base — fully tier-aware; (b) prefixed references resolved against known registries [SELECTED]; (c) absolute paths within the package.",
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T14:15:00Z"
+      "created_at": "2026-05-30T14:15:00Z",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-30T16:30:00Z"
     }
   ]
 }

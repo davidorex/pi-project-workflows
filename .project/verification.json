@@ -2759,6 +2759,44 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T11:00:00Z",
       "id": "VER-066"
+    },
+    {
+      "id": "VER-067",
+      "target": "FGAP-115",
+      "target_type": "framework-gap",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-05-30T17:00:00Z",
+      "evidence": "Verification arc executed 2026-05-30: dispatched Explore subagent against pi-coding-agent latest published version (0.78.0; 3 ahead of installed 0.75.4) for changelog impact + ExtensionContext shape. Report at analysis/2026-05-30-fgap-115-pi-latest-impact.md. Subagent finding verified directly by orchestrator at node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:217-219 — ExtensionContext.model: Model<any> | undefined is exposed (with JSDoc 'Current model (may be undefined)') AND ExtensionContext.modelRegistry: ModelRegistry is exposed. FGAP-115's 2026-05-26 plan-mode-exploration grepped for the wrong field name (currentModel vs the actual field name model), reported zero hits, and concluded the canonical source did not exist where DEC-0001 assumed it did. The canonical source DOES exist and has since at least 0.75.4. Resolution path (d) emerged: DEC-0001 as-written is implementable via ctx.model + ctx.modelRegistry — no upstream PR (option a unnecessary), no auth.json side-channel (option b unnecessary), no DEC narrative re-anchor (option c not needed). Verification spans: changelog read for 0.76/0.77/0.78 (no ExtensionContext changes); direct dist/.d.ts read at the cited line range; mapping of consumer call-sites (packages/pi-behavior-monitors/index.ts:1388-1391; packages/pi-jit-agents/src/types.ts:197) confirming the existing pre-resolve pattern works alongside the now-discovered ctx.model surface.",
+      "criteria_results": [
+        {
+          "criterion": "Latest pi-coding-agent version checked + changelog deltas surveyed",
+          "status": "passed",
+          "evidence": "0.78.0 latest; 0.76.0/0.77.0/0.78.0 changelogs surveyed; zero ExtensionContext API changes across the three versions"
+        },
+        {
+          "criterion": "ExtensionContext shape verified directly from installed dist/.d.ts",
+          "status": "passed",
+          "evidence": "node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:217-219 exposes modelRegistry: ModelRegistry + model: Model<any> | undefined"
+        },
+        {
+          "criterion": "Subagent finding independently re-verified by orchestrator (per FGAP-184 orchestrator-owns-subagent-output discipline)",
+          "status": "passed",
+          "evidence": "grep on the file performed in main orchestrator; lines 217-219 confirmed verbatim; agent's claim that 'model is exposed' is accurate"
+        },
+        {
+          "criterion": "Option (d) resolution surfaced + characterized vs original a/b/c",
+          "status": "passed",
+          "evidence": "Closure cascade in FGAP-115 proposed_resolution body amends with option (d): consume ctx.model + ctx.modelRegistry; DEC-0001 implementable as-written; cost near-zero (no upstream PR, no side-channel, no DEC change)"
+        },
+        {
+          "criterion": "FGAP-115's empirical premise re-examined + acknowledged as wrong",
+          "status": "passed",
+          "evidence": "Original 2026-05-26 grep for 'currentModel' / 'currentProvider' returned zero hits correctly — but the field is named 'model', not 'currentModel'. The empirical conclusion 'canonical source does not exist' was a consequence of the wrong-field-name search. The substrate decomposition + canon citation was based on this inaccurate premise."
+        }
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T17:00:00Z"
     }
   ]
 }

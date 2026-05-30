@@ -4329,7 +4329,7 @@
     {
       "id": "FGAP-115",
       "title": "ExtensionContext from @earendil-works/pi-coding-agent does not expose currentModel / currentProvider — DEC-0001's enacted resolution mechanism has no canonical source",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-jit-agents",
       "layer": "L4",
@@ -4354,13 +4354,15 @@
       ],
       "impact": "Blocks DEC-0001 implementation (TASK-085). The enacted decision body cannot be implemented as written — no ExtensionContext path to current-session model exists. Either pi-coding-agent extends, or jit-agents sources differently, or DEC-0001 re-anchors. Until resolved, the original bug (monitor classify defaulting to anthropic provider regardless of session) remains in code; agents using bare model ids continue to mis-route under non-anthropic auth configurations.",
       "canonical_vocabulary": "extension-context-current-model-gap / dec-0001-implementation-blocker / canonical-source-not-where-canon-thought",
-      "proposed_resolution": "User decision on resolution path: (a) pi-coding-agent upstream extension to expose currentModel/currentProvider on ExtensionContext (canonical-source-restoration); (b) jit-agents reads auth.json + env directly without ExtensionContext dependency (canonical-source-relocation); (c) DEC-0001 re-anchor to acknowledge that model resolution happens BEFORE jit-agents' executeAgent receives the dispatch (caller's responsibility, not executeAgent's) — the 'bare model id' problem moves to the caller surface, addressed by caller-side fix (e.g. monitors classifyViaAgent reads session-canonical source itself + constructs Model<Api>). Implementation surfaces in TASK-085 (DEC-0001 impl) post-FGAP-115 resolution.",
+      "proposed_resolution": "User decision on resolution path: (a) pi-coding-agent upstream extension to expose currentModel/currentProvider on ExtensionContext (canonical-source-restoration); (b) jit-agents reads auth.json + env directly without ExtensionContext dependency (canonical-source-relocation); (c) DEC-0001 re-anchor to acknowledge that model resolution happens BEFORE jit-agents' executeAgent receives the dispatch (caller's responsibility, not executeAgent's) — the 'bare model id' problem moves to the caller surface, addressed by caller-side fix (e.g. monitors classifyViaAgent reads session-canonical source itself + constructs Model<Api>). Implementation surfaces in TASK-085 (DEC-0001 impl) post-FGAP-115 resolution.\n\nRESOLUTION (2026-05-30, option d emerged from verification arc): The empirical premise of this FGAP was wrong. Plan-mode 2026-05-26 grep for 'currentModel' / 'currentProvider' returned zero hits correctly — but the field is named 'model' (not 'currentModel') and IS exposed on ExtensionContext at node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:217-219:\n\n  modelRegistry: ModelRegistry;\n  /** Current model (may be undefined) */\n  model: Model<any> | undefined;\n\nBoth surfaces exist in installed 0.75.4 + remain unchanged through latest 0.78.0 (verified via changelog survey 0.76/0.77/0.78). The canonical source DEC-0001 assumed IS where canon thought — just under a different name than the original investigation searched for.\n\nOPTION (d) — DEC-0001 as-written is implementable via ctx.model + ctx.modelRegistry. Cost near-zero: jit-agents consumes ctx.model where DEC-0001 implementations need current-session model + ctx.modelRegistry.find(provider, modelId) where bare-model-id resolution needs the registry-lookup mechanism. No upstream PR (option a unnecessary); no auth.json side-channel (option b unnecessary); no DEC-0001 narrative re-anchor (option c not needed). The original gap dissolves: the canonical source exists; the implementation path is \"use the field that is there.\"\n\nVerification arc: subagent dispatched 2026-05-30 against pi latest version + changelog impact; report at analysis/2026-05-30-fgap-115-pi-latest-impact.md; subagent finding independently re-verified by orchestrator at the cited file:line; finding is accurate. VER-067 attests.\n\nUNBLOCKS: DEC-0001 implementation work (TASK-085 in .project; TASK-002 in .context-jit-spec-v2 agentic-mode dispatch loop). Both were blocked on this FGAP's resolution; option (d) collapses the precondition to a small consumption-site code change (\"use ctx.model + ctx.modelRegistry where appropriate\").",
       "related_features": [],
       "related_decisions": [
         "DEC-0001"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26"
+      "created_at": "2026-05-26",
+      "closed_by": "human:davidryan@gmail.com",
+      "closed_at": "2026-05-30T17:00:00Z"
     },
     {
       "id": "FGAP-116",

@@ -2,8 +2,8 @@
   "tasks": [
     {
       "id": "TASK-001",
-      "description": "Resolve FGAP-115: ExtensionContext.currentModel / currentProvider gap. Three options surfaced in FGAP-115 body need to collapse to one canonical choice before agentic-mode dispatch (FEAT-001) can land. Precondition for the entire implementation arc.",
-      "status": "planned",
+      "description": "Resolve FGAP-115: ExtensionContext.currentModel / currentProvider gap. Three options surfaced in FGAP-115 body need to collapse to one canonical choice before agentic-mode dispatch (FEAT-001) can land. Precondition for the entire implementation arc.\n\nRESOLVED 2026-05-30: collapse to canonical resolution = option (d) — DEC-0001 as-written is implementable via ctx.model + ctx.modelRegistry exposed at node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:217-219. FGAP-115's empirical premise was wrong; the field exists under name 'model' (not 'currentModel' as the original grep searched for). FGAP-115 closed in .project with closing-citation + VER-067 attests (project:VER-067). TASK-002 (agentic-mode dispatch loop in jit-runtime.ts) unblocked: precondition was illusory; the dispatch loop can consume ctx.model + ctx.modelRegistry directly per DEC-0001.",
+      "status": "completed",
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T15:45:00Z"
     },

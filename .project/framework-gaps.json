@@ -6756,6 +6756,38 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T12:05:00Z",
       "id": "FGAP-182"
+    },
+    {
+      "id": "FGAP-183",
+      "title": "MigrationRegistry doesn't honor readBlock contextDir override — cross-substrate reads of versioned-schema blocks throw 'no migrations registered'",
+      "status": "identified",
+      "priority": "P1",
+      "package": "@davidorex/pi-context",
+      "layer": "L2",
+      "description": "readBlock(cwd, name, { contextDir: '<override>' }) correctly routes the file read through the override (block-api.ts loads .project/framework-gaps.json when contextDir='.project' regardless of active pointer). But before returning, readBlock calls validateBlockWithMigration (schema-validator.ts:237), which fetches the per-cwd MigrationRegistry via getProjectMigrationRegistry(cwd). That helper resolves its migration-source path through the ACTIVE bootstrap pointer (.pi-context.json → e.g. .context), NOT through the contextDir argument that was passed to readBlock. Result: the file is read from .project/, but the migration-registry is loaded from .context/migrations.json. When .project/framework-gaps.json declares schema_version 1.0.0 but the live schema at .project/schemas/framework-gaps.schema.json is 1.1.0 (TASK-093 added superseded_by status enum), the migration declaration that bridges the two lives in .project/migrations.json — invisible to a registry loaded from .context/migrations.json. The migration-resolver throws 'MigrationRegistry: no migrations registered for schema framework-gaps (need 1.0.0 → 1.1.0)' at packages/pi-context/src/schema-migrations.ts:101. Discovered 2026-05-30 this turn during a cross-substrate query for open work (readBlock from .project while active pointer is .context).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/block-api.ts:328",
+          "reference": "readBlock invokes validateBlockWithMigration after loading the JSON; the contextDir option threads to the file read but not to the migration-registry lookup"
+        },
+        {
+          "file": "packages/pi-context/src/schema-validator.ts:237",
+          "reference": "validateBlockWithMigration calls getProjectMigrationRegistry(cwd) without forwarding the contextDir override"
+        },
+        {
+          "file": "packages/pi-context/src/schema-migrations.ts:101",
+          "reference": "MigrationRegistry.resolve throws when no migrations registered for the schema version transition"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts (getProjectMigrationRegistry definition site)",
+          "reference": "Cache keyed on cwd alone; loads migrations.json from resolveContextDir(cwd) which honors the active pointer, not any per-call override"
+        }
+      ],
+      "impact": "Any cross-substrate read where the off-pointer substrate has versioned schemas with migration declarations the active-pointer substrate doesn't have throws. Concrete cases blocked: (a) querying .project state from a session where .pi-context.json points to .context (common post-DEC-0036 cutover); (b) querying any per-arc substrate (.context-jit-spec-v2, future arcs) from a different active pointer; (c) the cross-substrate consultation tool (FGAP territory) becomes harder than necessary because the contextDir-override surface is already half-broken. /context switch family was specifically designed to enable per-arc + cross-substrate work; this fragility undercuts the consultation half.",
+      "canonical_vocabulary": "MigrationRegistry; readBlock contextDir override; cross-substrate read; getProjectMigrationRegistry",
+      "proposed_resolution": "Extend getProjectMigrationRegistry to accept an optional contextDir override: getProjectMigrationRegistry(cwd, contextDir?). Uses override when provided; falls back to active-pointer resolution otherwise. Cache key becomes (cwd, resolved-substrate-dir) instead of cwd alone, since a single process can legitimately want both .context and .project migration registries cached simultaneously. validateBlockWithMigration accepts + threads contextDir to the loader. readBlock passes its options.contextDir through. Three call-sites change; one root-cause site (the loader) determines the contract. Reason for fixing at the loader (not at the call-site of validateBlockWithMigration): the registry is per-cwd-per-substrate-dir; the cache key has to discriminate by resolved substrate-dir; that property belongs to the loader, not its callers. Threading the override only at validateBlockWithMigration would still leak the active-pointer assumption into the loader's cache.",
+      "created_at": "2026-05-30T06:46:45.266Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

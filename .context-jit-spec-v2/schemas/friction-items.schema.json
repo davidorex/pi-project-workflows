@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/friction-items",
+  "version": "1.0.0",
+  "title": "Friction Items",
+  "description": "Lived-use friction items from downstream consumers of the framework. Authority for the implementation arc this per-arc substrate drives. Each item is a verbatim user-story-class artifact carrying the severity + reproduction + workaround + code-references of the surface failure as observed by the consumer.",
+  "type": "object",
+  "required": [
+    "items"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "severity",
+          "status",
+          "source",
+          "created_by",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^FB-\\d{3}$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "description": "Free-form category as authored upstream (prompt-heuristic / serializer / validation / dispatch / discovery / etc.)"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "major",
+              "minor",
+              "cosmetic"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "actual_behavior": {
+            "type": "string"
+          },
+          "expected_behavior": {
+            "type": "string"
+          },
+          "reproduction": {
+            "type": "string"
+          },
+          "workaround": {
+            "type": "string"
+          },
+          "code_references": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "file": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "number"
+                },
+                "symbol": {
+                  "type": "string"
+                },
+                "snippet": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "addressed",
+              "wontfix",
+              "duplicate"
+            ]
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "repo",
+              "file"
+            ],
+            "properties": {
+              "repo": {
+                "type": "string",
+                "description": "Origin repo identifier (e.g. clock-menu-app)"
+              },
+              "file": {
+                "type": "string",
+                "description": "Path within the origin repo (e.g. .context/usage-feedback.json)"
+              },
+              "discovered_at": {
+                "type": "string"
+              },
+              "discovered_by": {
+                "type": "string",
+                "enum": [
+                  "agent",
+                  "human",
+                  "monitor"
+                ]
+              }
+            }
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

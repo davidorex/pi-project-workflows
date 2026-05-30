@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/authority-docs",
+  "version": "1.0.0",
+  "title": "Authority Docs",
+  "description": "External-to-substrate authority documents that drive design + implementation decisions for this arc. Filed as substrate citations so a session can traverse from an authority doc to the decisions / concepts / dispatch-modes / friction-items it grounds. Body is summary + pointer; full content stays at file_path (which may be inside or outside this repo).",
+  "type": "object",
+  "required": [
+    "docs"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "docs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "file_path",
+          "authority_kind",
+          "summary",
+          "created_by",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^REF-\\d{3}$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "file_path": {
+            "type": "string",
+            "description": "Absolute or repo-relative path to the doc file"
+          },
+          "authority_kind": {
+            "type": "string",
+            "enum": [
+              "user-story",
+              "perspective",
+              "design",
+              "investigation",
+              "external-prior-art",
+              "user-direction"
+            ],
+            "description": "Class of authority — user-story carries the most weight for what-to-build prioritization; perspective documents the lived experience of a class of consumer"
+          },
+          "summary": {
+            "type": "string",
+            "description": "1-3 sentence summary of what this doc establishes"
+          },
+          "key_claims": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Atomic claims the doc makes that ground decisions"
+          },
+          "scope": {
+            "type": "string",
+            "description": "What the doc is authoritative about (e.g. 'jit-agents tool surface UX'); bounds the doc's grounding power"
+          },
+          "authored_by": {
+            "type": "string",
+            "description": "Author identity (human:email / agent:role / collective)"
+          },
+          "authored_at": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

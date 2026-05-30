@@ -46,7 +46,7 @@ Re-run after any `.project/*.json` change to refresh the rendered view.
 - GitHub Actions CI runs check + build + test on Node 22/23 for push/PR to main
 - SKILL.md is generated build artifact (`npm run skills`) — do not edit by hand. Edit `skill-narrative.md` instead; uses YAML frontmatter + XML-tagged sections (no markdown headings).
 - Lockstep versioning via `npm run release:*` invoking `scripts/bump-versions.js` (direct JSON read/write per package.json; never `npm version -ws` directly — fails 0.x minor/major bumps)
-- **Orchestrator scripts dual-surface** (DEC-0019/0020): `scripts/orchestrator/*.ts` are Claude Code-side ergonomics wrappers over the same block-api / context-sdk library that in-pi harness-confined agents consume via Pi-registered tools. New substrate op = library + Pi tool + CLI script as a unit. Use canonical composer scripts (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`) — hand-authored briefs forbidden. Substrate-projection script `build-html-views.ts` reads `.project/*.json` via canonical pi-context block-api + emits self-contained HTML view at `html-views/substrate-overview.html`.
+- **Orchestrator scripts dual-surface**: `scripts/orchestrator/*.ts` are Claude Code-side ergonomics wrappers over the same block-api / context-sdk library that in-pi harness-confined agents consume via Pi-registered tools. New substrate op = library + Pi tool + CLI script as a unit. Use canonical composer scripts (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`) — hand-authored briefs forbidden. Substrate-projection script `build-html-views.ts` reads `.project/*.json` via canonical pi-context block-api + emits self-contained HTML view at `html-views/substrate-overview.html`.
 - Dispatch artifacts live under gitignored `compiled-contexts/` (orchestrator-composed agent input + agent-written reports). Project-root `tmp/` is also gitignored for ad-hoc scratch.
 
 ## Completion Sequence (mandatory after every code change)
@@ -57,8 +57,8 @@ Work is not complete until the runtime can load it. Pi loads from `dist/`, not s
 2. **Build**: `npm run build`
 3. **Check**: `npm run check` (biome + tsc)
 4. **Test**: `npm test` — full output inspection, no pipe-to-tail (pipe masks exit code)
-5. **Runtime demonstration** (DEC-0018): exercise the actual feature path end-to-end via real invocation (tsx eval against block-api / pi -p tool dispatch / direct CLI invocation against real substrate). NOT a mocked unit assertion. Tests-pass alone is insufficient.
-6. **Adversarial verification probe** (DEC-0018): fresh-context agent (or grep when sufficient) probes for false-pass scenarios. Probe verdict required before commit declared green.
+5. **Runtime demonstration**: exercise the actual feature path end-to-end via real invocation (tsx eval against block-api / pi -p tool dispatch / direct CLI invocation against real substrate). NOT a mocked unit assertion. Tests-pass alone is insufficient.
+6. **Adversarial verification probe**: fresh-context agent (or grep when sufficient) probes for false-pass scenarios. Probe verdict required before commit declared green.
 7. **Skills**: `npm run skills` (regen SKILL.md)
 8. **Commit**: forensic message per global CLAUDE.md guidelines
 9. **Status cascade across 3 layers**: Claude Code Tasks + `.project/` blocks (TASK/FGAP/VER) + HANDOFF.md
@@ -69,7 +69,7 @@ Work is not complete until the runtime can load it. Pi loads from `dist/`, not s
 
 Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion releases only. Step 13 requires user action. Declaring work "done" before step 10 is a failure.
 
-**Steps 5+6 are LOAD-BEARING** (DEC-0018): every implementation step requires runtime demo + adversarial probe. Tests-pass is necessary, not sufficient — LLMs perform; tests pass for the wrong reason (side-effect masks feature; assertion no longer tests what it claims; import silently no-ops; fallback swallows failure).
+**Steps 5+6 are LOAD-BEARING**: every implementation step requires runtime demo + adversarial probe. Tests-pass is necessary, not sufficient — LLMs perform; tests pass for the wrong reason (side-effect masks feature; assertion no longer tests what it claims; import silently no-ops; fallback swallows failure).
 
 ## Do Not Touch
 
@@ -80,9 +80,9 @@ Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion rel
 
 Each package lives in `packages/<name>/` with source in `src/` (or root for pi-behavior-monitors). Read the package's JSDoc / type definitions / `src/index.ts` re-exports for the current surface — do not rely on enumerated file lists here as they go stale.
 
-- **pi-context**: extension entry in `src/index.ts`; canonical surfaces in `block-api.ts` (writes), `schema-validator.ts` (AJV), `schema-write.ts` (schema-write surface), `schema-migrations.ts` (migration chain), `context-dir.ts` (`resolveContextDir` + path-builders), `context.ts` (substrate SDK + closure-table primitives), `lens-view.ts` (lens projections + traversal wrappers), `context-sdk.ts` (state + discovery + validation), `roadmap-plan.ts` (PM lens), `lens-validator.ts` (register/dispatch), `execution-context.ts` (gather-execution-context — Phase 3 in flight). `schemas/` ships framework schemas; `samples/` (conception.json + schemas/ + blocks/) ships the packaged conception = the user-installable catalog (DEC-0037; legacy `registry/`+`defaults/` unshipped, on-disk fixtures only per FGAP-087)
+- **pi-context**: extension entry in `src/index.ts`; canonical surfaces in `block-api.ts` (writes), `schema-validator.ts` (AJV), `schema-write.ts` (schema-write surface), `schema-migrations.ts` (migration chain), `context-dir.ts` (`resolveContextDir` + path-builders), `context.ts` (substrate SDK + closure-table primitives), `lens-view.ts` (lens projections + traversal wrappers), `context-sdk.ts` (state + discovery + validation), `roadmap-plan.ts` (PM lens), `lens-validator.ts` (register/dispatch), `execution-context.ts` (gather-execution-context). `schemas/` ships framework schemas; `samples/` (conception.json + schemas/ + blocks/) ships the packaged conception = the user-installable catalog; legacy `registry/`+`defaults/` are on-disk fixtures only, unshipped.
 - **pi-jit-agents** (library, not extension): boundary surfaces per `docs/planning/jit-agents-spec.md` — `agent-spec.ts` (load), `compile.ts` (compile + contextBlocks injection), `jit-runtime.ts` (execute + `normalizeToolChoice` provider shape normalization at dispatch boundary), `introspect.ts` (contract projection). `schemas/verdict.schema.json` is the phantom-tool classification contract
-- **pi-workflows**: extension entry in `src/index.ts`; `workflow-sdk.ts` (queryable surface), `workflow-executor.ts` (orchestration), `workflow-spec.ts` (YAML + STEP_TYPES registry), `expression.ts` (`${{ }}` eval + filters), `dispatch.ts` (subprocess spawn), `dag.ts` (planner), `step-*.ts` (one per step type). `templates/shared/macros.md` carries per-block-kind Nunjucks rendering macros (FGAP-037 tracks pending macros)
+- **pi-workflows**: extension entry in `src/index.ts`; `workflow-sdk.ts` (queryable surface), `workflow-executor.ts` (orchestration), `workflow-spec.ts` (YAML + STEP_TYPES registry), `expression.ts` (`${{ }}` eval + filters), `dispatch.ts` (subprocess spawn), `dag.ts` (planner), `step-*.ts` (one per step type). `templates/shared/macros.md` carries per-block-kind Nunjucks rendering macros.
 - **pi-behavior-monitors**: single-file extension `index.ts`; `agents/*.agent.yaml` (bundled classifiers); `examples/` (monitor specs + Nunjucks prompt templates per monitor)
 
 ## Workflow SDK (`packages/pi-workflows/src/workflow-sdk.ts`)
@@ -113,15 +113,15 @@ Single queryable surface for project state, block discovery, schema vocabulary, 
 - **Schema-write** (via `schema-write.ts`): `writeSchema` / `updateSchema` / `readSchema` with AJV meta-validation
 - **Schema migration** (via `schema-migrations.ts`): per-schema version-to-version transitions
 - **Substrate-dir resolution** (via `context-dir.ts`): `resolveContextDir(cwd)` hard-throws on absent `.pi-context.json`; `writeBootstrapPointer(cwd, contextDir)` for fresh-repo bootstrap; path-builders cascade through resolver
-- **Execution-context** (via `execution-context.ts` — Phase 3 in flight): `gatherExecutionContext(cwd, args)` composes ContextBundle per declared context-contract for the unit-kind
+- **Execution-context** (via `execution-context.ts`): `gatherExecutionContext(cwd, args)` composes ContextBundle per declared context-contract for the unit-kind
 
 Use `/context status` for derived state in conversation.
 
 ## Project Blocks (`.project/`)
 
-Typed JSON files with schemas. Substrate writes via block-api primitives (validated + DispatchContext-stamped). Direct `Edit` / `Write` on `.project/*.json` is forbidden (F-006). `pi -p "call append-block-item"` is registered but effectively retired (last 2026-04-25); do not use.
+Typed JSON files with schemas. Substrate writes via block-api primitives (validated + DispatchContext-stamped). Direct `Edit` / `Write` on `.project/*.json` is forbidden. `pi -p "call append-block-item"` is retired; do not use.
 
-**Canonical filing patterns** (per precedent archaeology `analysis/2026-05-14-substrate-filing-precedents.md`):
+**Canonical filing patterns**:
 
 - **Append** (new item): write JSON to `/tmp/<id>.json` heredoc, then
   ```bash
@@ -130,18 +130,18 @@ Typed JSON files with schemas. Substrate writes via block-api primitives (valida
   ```
   Use `--show-schema` first when unfamiliar with the block's required fields; `--dry-run` to validate without writing.
 - **Status mutation / field update**: `npx tsx -e` with `updateItemInBlock` from `@davidorex/pi-context/block-api`. Pass `DispatchContext` for attestation stamping.
-- **Separate Bash invocations per operation** — chained heredoc + mutate fails on string-termination (observed 2026-05-13). One write per Bash call.
+- **Separate Bash invocations per operation** — one write per Bash call (chained heredoc + mutate fails on string-termination).
 - **Per-item dispatch:** each block-api write is one item; loops happen at the orchestrator level, not inside one tsx-eval invocation.
 
-**Install ceremony** (per `/context init`). The canonical catalog is the packaged conception `packages/pi-context/samples/conception.json` (DEC-0037); legacy `registry/`+`defaults/` were dropped from the shipped `files[]` (retained on disk only as test fixtures, FGAP-087):
-- `/context init <dir>` — bootstrap `.pi-context.json` pointer + substrate/schemas dirs only (no config, no defaults; DEC-0011)
+**Install ceremony** (per `/context init`). The canonical catalog is the packaged conception `packages/pi-context/samples/conception.json`; legacy `registry/`+`defaults/` are unshipped on-disk test fixtures only:
+- `/context init <dir>` — bootstrap `.pi-context.json` pointer + substrate/schemas dirs only (no config, no defaults)
 - `/context accept-all` — adopt `samples/conception.json` as `config.json` (full vocabulary + `installed_*`, root-overridden, idempotent never-clobber); writes config only
 - `/context install` — copies declared `installed_schemas[]`/`installed_blocks[]` from the samples catalog (`samples/schemas/` + `samples/blocks/`); `--update` overwrites
 - Or hand-author `config.json`'s `installed_*` then `/context install`
 
 **Block kinds**: query the samples catalog via the `read-samples-catalog` tool (or read `samples/conception.json` `block_kinds[]`) for the canonical set + descriptions. Each schema declares its array_key + required fields + ID pattern.
 
-**Closure-table relations** (DEC-0013): `.project/relations.json` carries edges `{ parent, child, relation_type, ordinal? }` for ALL inter-item relationships. Per-edge `relation_type` registered in `config.relation_types[]`. FK-as-field on item schemas is forbidden.
+**Closure-table relations**: `.project/relations.json` carries edges `{ parent, child, relation_type, ordinal? }` for ALL inter-item relationships. Per-edge `relation_type` registered in `config.relation_types[]`. FK-as-field on item schemas is forbidden.
 
 **Schema versioning** ($id + version + $ref + migration registry): per-schema evolution; `validateBlockWithMigration` runs migrations when block file's `schema_version` differs from current.
 
@@ -153,7 +153,7 @@ Load-bearing architectural rules (not change-history):
 - DAG planner infers parallelism from `${{ steps.X }}` references and `context: [stepName]` declarations.
 - Agent specs are `.agent.yaml` only (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time. Specs declare `inputSchema` (validated pre-spawn), `contextBlocks` (block names injected as `_<name>` into template context with framework anti-injection delimiters), `output.format`/`output.schema` (validated post-completion).
 - `templates/shared/macros.md` provides one rendering macro per block kind. Agents import via `{% from "shared/macros.md" import render_<kind> %}`. Three-tier template search: project `.pi/templates/` > user `~/.pi/agent/monitors/` > package `examples/`.
-- Monitor specs are `.monitor.json` with required `classify.agent` → `.agent.yaml` spec. Classify enforces structured output via the phantom tool pattern: forced `toolChoice` on a `VERDICT_TOOL` whose params match `verdict.schema.json` (CLEAN/FLAG/NEW). Forced-toolChoice shape is provider-specific; route through `normalizeToolChoice(api, toolName)` from `@davidorex/pi-jit-agents` — no hardcoded toolChoice shapes at consumer call sites. Forced tool-use unenforceable on `openai-responses` family + google providers (F-012).
+- Monitor specs are `.monitor.json` with required `classify.agent` → `.agent.yaml` spec. Classify enforces structured output via the phantom tool pattern: forced `toolChoice` on a `VERDICT_TOOL` whose params match `verdict.schema.json` (CLEAN/FLAG/NEW). Forced-toolChoice shape is provider-specific; route through `normalizeToolChoice(api, toolName)` from `@davidorex/pi-jit-agents` — no hardcoded toolChoice shapes at consumer call sites. Forced tool-use unenforceable on `openai-responses` family + google providers.
 - Monitor step type: workflows invoke monitors as verification gates via `monitor: <name>`. CLEAN → completed; FLAG/NEW → failed.
 - `block:<name>` schema references resolve to `<contextDir>/schemas/<name>.schema.json` per the resolver — portable across substrate-dir names.
 - State persisted atomically (tmp + rename) after each step. State write failure is fatal.
@@ -173,13 +173,13 @@ Load-bearing architectural rules (not change-history):
 
 Pi tools accessible from any LLM with shell access via `pi -p "prompt" --mode json`. Subprocess loads all extensions, executes tool calls, returns newline-delimited JSON events. Same mechanism the workflow executor uses for step dispatch.
 
-**Cost-control discipline** (F-006 mitigation, mandatory for write tools): the default openrouter model in pi config is agentic; unrestricted `pi -p "..." --no-skills` produces tool-call loops (observed: 15+ min silent hang on 6KB prompt). Always pin a fast non-agentic model + restrict tool surface unless write is required:
+**Cost-control discipline**: always pin a fast non-agentic model + restrict tool surface unless write is required:
 
 ```bash
 pi -p "..." --mode json --tools read --no-skills --model openrouter/anthropic/claude-haiku-4.5
 ```
 
-For write tools, restrict to minimum (`--tools read,write` or omit `--tools` if prompt needs broader access); always retain `--model` pin. Wrap long invocations in `gtimeout 120 pi -p ...` so silent loops surface as exit codes.
+For write tools, restrict to minimum (`--tools read,write` or omit `--tools` if prompt needs broader access); always retain `--model` pin. Wrap long invocations in `gtimeout 120 pi -p ...`.
 
 To enumerate available tools at any time: query `/workflow status` + `/context status` or grep `pi.registerTool` across `packages/*/src/`.
 

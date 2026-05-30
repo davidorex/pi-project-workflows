@@ -164,6 +164,28 @@ export function tryResolveContextDir(cwd: string): string | null {
 }
 
 /**
+ * Optional pointer-history fields stamped onto the bootstrap pointer by
+ * `flipBootstrapPointer` (the /context switch family's mutation surface).
+ * Pre-fresh-init pointers carry NONE of these; switched pointers carry ALL
+ * three. The bootstrap schema declares each as optional so existing v1.0.0
+ * pointers remain valid against v1.1.0 — missing optional fields resolve to
+ * undefined in-process.
+ *
+ * `previous_contextDir` is the contextDir value the pointer held IMMEDIATELY
+ * BEFORE the most-recent flip; consumed by `/context switch -` to flip back.
+ *
+ * `switched_at` is the ISO 8601 timestamp of the most-recent flip.
+ *
+ * `switched_by` is the verified terminal-operator identity stamped by auth-gate
+ * on confirm; forensic attribution for the flip.
+ */
+export interface BootstrapPointerExtras {
+	previous_contextDir?: string;
+	switched_at?: string;
+	switched_by?: string;
+}
+
+/**
  * Atomically write a `.pi-context.json` bootstrap pointer at `<cwd>/.pi-context.json`.
  * `contextDir` is a required parameter chosen by the caller per DEC-0015 —
  * no default, no transitional bridge.
@@ -175,13 +197,31 @@ export function tryResolveContextDir(cwd: string): string | null {
  * `bootstrapCache` entry for this cwd so the next `resolveContextDir(cwd)`
  * call reads fresh data even if mtime granularity (1s on some filesystems)
  * would otherwise mask the change.
+ *
+ * Backwards-compatible signature evolution: the optional `extras` parameter
+ * carries the v1.1.0 pointer-history fields. When `extras` is omitted (default,
+ * existing call sites) the writer behaves identically to its v1.0.0 form —
+ * pointer carries only `{contextDir, version, created_at}` and `version` stays
+ * at "1.0.0". When `extras` is provided, the pointer-history fields are
+ * merged in and `version` bumps to "1.1.0" so the on-disk pointer self-declares
+ * the format it carries. `created_at` is FRESH on every call (this primitive
+ * does not preserve created_at across writes — see `flipBootstrapPointer` for
+ * the preservation contract).
  */
-export function writeBootstrapPointer(cwd: string, contextDir: string): void {
-	const pointer = {
+export function writeBootstrapPointer(cwd: string, contextDir: string, extras?: BootstrapPointerExtras): void {
+	const hasExtras =
+		extras !== undefined &&
+		(extras.previous_contextDir !== undefined || extras.switched_at !== undefined || extras.switched_by !== undefined);
+
+	const pointer: Record<string, string> = {
 		contextDir,
-		version: "1.0.0",
+		version: hasExtras ? "1.1.0" : "1.0.0",
 		created_at: new Date().toISOString(),
 	};
+
+	if (extras?.previous_contextDir !== undefined) pointer.previous_contextDir = extras.previous_contextDir;
+	if (extras?.switched_at !== undefined) pointer.switched_at = extras.switched_at;
+	if (extras?.switched_by !== undefined) pointer.switched_by = extras.switched_by;
 
 	// Validate before write — AJV via canonical `validate()` against
 	// pre-registered bootstrap schema URN.
@@ -206,6 +246,96 @@ export function writeBootstrapPointer(cwd: string, contextDir: string): void {
 
 	// Invalidate cache for this cwd so next resolveContextDir picks up the
 	// fresh pointer regardless of mtime-granularity edge cases.
+	bootstrapCache.delete(path.resolve(cwd));
+}
+
+/**
+ * Flip the bootstrap pointer to a new contextDir while preserving the original
+ * `created_at` timestamp and stamping pointer-history fields (previous_contextDir,
+ * switched_at, switched_by). The mutation surface for `/context switch` family
+ * + `context-switch` Pi tool.
+ *
+ * Behavior:
+ * 1. Reads the existing pointer (throws BootstrapNotFoundError when absent —
+ *    flipping a pointer that does not exist is a programming error; callers
+ *    bootstrapping a fresh substrate use `writeBootstrapPointer` directly).
+ * 2. Constructs the new pointer:
+ *    - contextDir: `newContextDir` (the flip target)
+ *    - version: "1.1.0" (pointer-history-bearing)
+ *    - created_at: PRESERVED from the existing pointer (or stamped fresh when
+ *      the existing pointer lacks created_at, which only happens for hand-
+ *      authored pointers that omit the field)
+ *    - previous_contextDir: the existing pointer's contextDir (so subsequent
+ *      `/context switch -` can flip back)
+ *    - switched_at: current ISO 8601 timestamp
+ *    - switched_by: caller-supplied `writerIdentity` (auth-gate-verified
+ *      terminal-operator identity at the Pi tool boundary)
+ * 3. AJV-validates against the URN-registered bootstrap schema.
+ * 4. Atomic tmp + rename write.
+ * 5. Invalidates `bootstrapCache` for the cwd.
+ *
+ * Does NOT validate that `newContextDir` exists / has a config.json — that is
+ * the caller's read-side check (slash command handler + Pi tool body each
+ * perform target-dir-shape validation appropriate to their mode).
+ */
+export function flipBootstrapPointer(cwd: string, newContextDir: string, writerIdentity: string): void {
+	const bootstrapPath = path.join(cwd, ".pi-context.json");
+	if (!fs.existsSync(bootstrapPath)) {
+		throw new BootstrapNotFoundError(cwd, bootstrapPath);
+	}
+
+	let existingRaw: string;
+	try {
+		existingRaw = fs.readFileSync(bootstrapPath, "utf-8");
+	} catch (err) {
+		throw new Error(
+			`flipBootstrapPointer: failed to read existing ${bootstrapPath}: ${err instanceof Error ? err.message : String(err)}`,
+		);
+	}
+	let existing: Record<string, unknown>;
+	try {
+		existing = JSON.parse(existingRaw) as Record<string, unknown>;
+	} catch (err) {
+		throw new Error(
+			`flipBootstrapPointer: invalid JSON in existing ${bootstrapPath}: ${err instanceof Error ? err.message : String(err)}`,
+		);
+	}
+
+	const previousContextDir = existing.contextDir as string | undefined;
+	if (typeof previousContextDir !== "string") {
+		throw new Error(
+			`flipBootstrapPointer: existing pointer at ${bootstrapPath} lacks a string contextDir; refuses to flip an unreadable pointer`,
+		);
+	}
+
+	const preservedCreatedAt =
+		typeof existing.created_at === "string" ? (existing.created_at as string) : new Date().toISOString();
+
+	const pointer: Record<string, string> = {
+		contextDir: newContextDir,
+		version: "1.1.0",
+		created_at: preservedCreatedAt,
+		previous_contextDir: previousContextDir,
+		switched_at: new Date().toISOString(),
+		switched_by: writerIdentity,
+	};
+
+	validate(BOOTSTRAP_REF_SCHEMA, pointer, `bootstrap pointer (flipBootstrapPointer for ${cwd})`);
+
+	const tmpPath = `${bootstrapPath}.bootstrap-${process.pid}.tmp`;
+	try {
+		fs.writeFileSync(tmpPath, JSON.stringify(pointer, null, 2), "utf-8");
+		fs.renameSync(tmpPath, bootstrapPath);
+	} catch (err) {
+		try {
+			fs.unlinkSync(tmpPath);
+		} catch {
+			/* ignore cleanup failure */
+		}
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(`flipBootstrapPointer: failed to write ${bootstrapPath}: ${msg}`);
+	}
+
 	bootstrapCache.delete(path.resolve(cwd));
 }
 

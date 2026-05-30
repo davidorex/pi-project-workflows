@@ -1,0 +1,127 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/work-orders",
+	"version": "1.0.0",
+	"title": "Work Orders",
+	"description": "Orchestrator-authored work-order spec for the privileged JIT-agent that drives the in-pi bounded code-change loop. A work-order names the target agent, the typed input/output contracts, the substrate-block context handoff, the bounded scope within which the agent may operate, and the deterministic real-check criteria gating acceptance (deterministic verification; never LLM self-report — verdict comes from real checks the agent cannot fake). Substrate-block handoff to the consuming agent uses the ContextBlockRef shape: each context_blocks entry is either a string for whole-block injection, or an object { name, item?, depth?, focus? } for item-specific injection. To handoff a single work-order item to the consuming agent, the agent's .agent.yaml contextBlocks declares { name: \"work-orders\", item: \"WO-NNN\" }; the compiler injects the resolved item under template key _work_orders_item (with companion _work_orders_raw / _work_orders_depth / _work_orders_focus). Authorship: orchestrator is sole spec author; capability-widening edits are writer.kind=human.",
+	"type": "object",
+	"required": ["work_orders"],
+	"additionalProperties": false,
+	"properties": {
+		"work_orders": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": [
+					"id",
+					"title",
+					"status",
+					"target_agent",
+					"input_contract",
+					"context_blocks",
+					"output_contract",
+					"scope",
+					"real_check_criteria"
+				],
+				"properties": {
+					"id": {
+						"type": "string",
+						"pattern": "^WO-\\d{3,}$",
+						"description": "Canonical work-order id; WO-NNN uppercase + 3-digit zero-padded suffix."
+					},
+					"title": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": [
+							"proposed",
+							"in-progress",
+							"real-check-passed",
+							"real-check-failed",
+							"completed",
+							"cancelled"
+						],
+						"description": "Work-order lifecycle. Includes the real-check verdict states (real-check-passed / real-check-failed) — deterministic verification, never LLM self-report."
+					},
+					"target_agent": {
+						"type": "string",
+						"description": "Name of the privileged JIT-agent that consumes this work-order; resolves to <name>.agent.yaml in the agents tier."
+					},
+					"input_contract": {
+						"type": "object",
+						"description": "Typed JSON Schema describing what the agent receives as input at dispatch time."
+					},
+					"context_blocks": {
+						"type": "array",
+						"description": "Substrate-block references the privileged agent's .agent.yaml will consume via contextBlocks. Each entry: string for whole-block injection (_<name>), OR object { name, item?, depth?, focus? } for item-specific injection (per the existing ContextBlockRef shape in packages/pi-jit-agents/src/types.ts).",
+						"items": {
+							"oneOf": [
+								{ "type": "string" },
+								{
+									"type": "object",
+									"additionalProperties": false,
+									"required": ["name"],
+									"properties": {
+										"name": { "type": "string" },
+										"item": { "type": "string" },
+										"depth": { "type": "integer", "minimum": 0 },
+										"focus": {
+											"type": "object",
+											"additionalProperties": { "type": "string" }
+										}
+									}
+								}
+							]
+						}
+					},
+					"output_contract": {
+						"type": "object",
+						"description": "Typed JSON Schema describing the agent's return contract."
+					},
+					"scope": {
+						"type": "object",
+						"additionalProperties": false,
+						"description": "Bounds within which the agent may make edits / run commands. Used by the capability composer to clamp the agent's grant at dispatch.",
+						"properties": {
+							"files": { "type": "array", "items": { "type": "string" } },
+							"directories": { "type": "array", "items": { "type": "string" } },
+							"operations": { "type": "array", "items": { "type": "string" } }
+						}
+					},
+					"real_check_criteria": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["build_check_test"],
+						"description": "Deterministic real-check criteria gating acceptance. NEVER LLM self-report; verdict comes from deterministic real checks the agent cannot fake.",
+						"properties": {
+							"build_check_test": {
+								"type": "boolean",
+								"description": "Whether build+check+test exit-code gate applies (typically true)."
+							},
+							"runtime_demo": {
+								"type": "object",
+								"description": "Runtime demonstration command + expected outcome string-match.",
+								"properties": {
+									"invocation": { "type": "string" },
+									"expected": { "type": "string" }
+								}
+							},
+							"adversarial_probe": {
+								"type": "object",
+								"description": "Adversarial-probe target list — what artifacts a fresh-context agent should re-verify (deterministic real checks; never LLM self-report).",
+								"properties": {
+									"targets": { "type": "array", "items": { "type": "string" } }
+								}
+							}
+						}
+					},
+					"description": { "type": "string" },
+					"created_by": { "type": "string" },
+					"created_at": { "type": "string" },
+					"modified_by": { "type": "string" },
+					"modified_at": { "type": "string" }
+				}
+			}
+		}
+	}
+}

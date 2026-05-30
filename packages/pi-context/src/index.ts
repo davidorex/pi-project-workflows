@@ -1926,6 +1926,200 @@ const extension = (pi: ExtensionAPI) => {
 		},
 	});
 
+	// ── Tool: context-switch ──────────────────────────────────────────────
+	//
+	// Mirror of /context switch slash command for in-pi agent dispatch. Routed
+	// through the auth-gate at the pi-agent-dispatch layer (the tool name lands
+	// in AUTH_REQUIRED_TOOLS in step 6), so the auth-gate stamps
+	// event.input.writer to the verified terminal-operator identity on operator
+	// confirm; the tool body trusts the stamped writer field. Three modes
+	// declared via params shape: default (flip to existing target_dir),
+	// create_new=true (bootstrap new + flip), to_previous=true (flip back to
+	// previous_contextDir; target_dir ignored in this mode).
+
+	pi.registerTool({
+		name: "context-switch",
+		label: "Context Switch",
+		description:
+			"Flip the bootstrap pointer to a different substrate dir (parallel to git switch). Default: flip to an existing substrate at target_dir (requires config.json present). create_new=true: bootstrap a fresh substrate at target_dir AND flip in one operation. to_previous=true: flip back to the pointer's previous_contextDir (target_dir ignored).",
+		promptSnippet: "Switch the bootstrap pointer to a different substrate dir",
+		parameters: Type.Object({
+			target_dir: Type.String({
+				description:
+					"Substrate dir name to switch to (e.g. '.context'). Required for default + create_new modes; ignored for to_previous mode.",
+			}),
+			create_new: Type.Optional(
+				Type.Boolean({
+					description:
+						"When true, bootstrap target_dir as a fresh substrate AND flip the pointer in one operation (parallel to 'git switch -c <branch>'). Default false (flip to existing substrate; fails if target_dir lacks config.json).",
+				}),
+			),
+			to_previous: Type.Optional(
+				Type.Boolean({
+					description:
+						"When true, flip the pointer back to its previous_contextDir (parallel to 'git switch -'). Requires the pointer to carry a previous_contextDir (a prior switch must have populated it). When true, target_dir is ignored.",
+				}),
+			),
+			writer: Type.Optional(
+				Type.Object(
+					{
+						kind: Type.String({
+							description: "Writer kind discriminator — overwritten by auth-gate to 'human' on confirm.",
+						}),
+						user: Type.String({
+							description:
+								"Writer user — overwritten by auth-gate to the verified terminal-operator identity on confirm.",
+						}),
+					},
+					{
+						description:
+							"DispatchContext.writer — stamped by auth-gate on operator confirm; in-body trusts the stamped value.",
+					},
+				),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: {
+				target_dir: string;
+				create_new?: boolean;
+				to_previous?: boolean;
+				writer?: { kind: string; user: string };
+			},
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			// The auth-gate stamps event.input.writer to verified identity on
+			// confirm; the body trusts the stamped writer (auth-gate is the
+			// canonical identity check per FGAP-134 / FGAP-138 model). When the
+			// gate is bypassed (e.g., test harness), fall back to 'operator'
+			// rather than throwing — the same fallback policy the slash command
+			// path uses.
+			const writerIdentity = params.writer?.user ?? "operator";
+
+			try {
+				if (params.to_previous === true) {
+					const { from, to } = switchToPrevious(ctx.cwd, writerIdentity);
+					return {
+						details: undefined,
+						content: [{ type: "text", text: JSON.stringify({ mode: "to_previous", from, to }, null, 2) }],
+					};
+				}
+				if (params.create_new === true) {
+					const { created } = switchAndCreate(ctx.cwd, params.target_dir, writerIdentity);
+					return {
+						details: undefined,
+						content: [
+							{
+								type: "text",
+								text: JSON.stringify({ mode: "create_new", target_dir: params.target_dir, created }, null, 2),
+							},
+						],
+					};
+				}
+				switchToExisting(ctx.cwd, params.target_dir, writerIdentity);
+				return {
+					details: undefined,
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({ mode: "existing", target_dir: params.target_dir }, null, 2),
+						},
+					],
+				};
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				return {
+					details: undefined,
+					content: [{ type: "text", text: `context-switch failed: ${msg}` }],
+				};
+			}
+		},
+	});
+
+	// ── Tool: context-list ────────────────────────────────────────────────
+	//
+	// Read-only enumeration of switchable substrates. NOT routed through the
+	// auth-gate (no mutation; no auth required) — explicitly omitted from
+	// AUTH_REQUIRED_TOOLS in step 6.
+
+	pi.registerTool({
+		name: "context-list",
+		label: "Context List",
+		description:
+			"Enumerate top-level dirs under cwd containing a config.json (switchable substrates). Marks the active one with isActive=true. Read-only.",
+		promptSnippet: "List switchable substrate dirs under cwd",
+		parameters: Type.Object({}),
+		async execute(
+			_toolCallId: string,
+			_params: Record<string, never>,
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const subs = listSubstrates(ctx.cwd);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(subs, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: context-archive ─────────────────────────────────────────────
+	//
+	// Mirror of /context archive slash command for in-pi agent dispatch.
+	// Routed through the auth-gate (lands in AUTH_REQUIRED_TOOLS in step 6) —
+	// dir-rename is a structural change requiring writer.kind=human attestation.
+
+	pi.registerTool({
+		name: "context-archive",
+		label: "Context Archive",
+		description:
+			"Move a non-active substrate dir to archive/<dir>/. Refuses to archive the active substrate (the dir the bootstrap pointer currently names) or to clobber an existing archive/<dir>/.",
+		promptSnippet: "Archive a non-active substrate dir to archive/<dir>/",
+		parameters: Type.Object({
+			target_dir: Type.String({
+				description: "Substrate dir name to archive (e.g. '.project'). Refused if it is the active substrate.",
+			}),
+			writer: Type.Optional(
+				Type.Object(
+					{
+						kind: Type.String({
+							description: "Writer kind discriminator — overwritten by auth-gate to 'human' on confirm.",
+						}),
+						user: Type.String({
+							description:
+								"Writer user — overwritten by auth-gate to the verified terminal-operator identity on confirm.",
+						}),
+					},
+					{ description: "DispatchContext.writer — stamped by auth-gate on operator confirm." },
+				),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { target_dir: string; writer?: { kind: string; user: string } },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			try {
+				const { from, to } = archiveSubstrate(ctx.cwd, params.target_dir);
+				return {
+					details: undefined,
+					content: [{ type: "text", text: JSON.stringify({ from, to }, null, 2) }],
+				};
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				return {
+					details: undefined,
+					content: [{ type: "text", text: `context-archive failed: ${msg}` }],
+				};
+			}
+		},
+	});
+
 	// ── Tool: filter-block-items ──────────────────────────────────────────
 
 	pi.registerTool({

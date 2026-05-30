@@ -6788,6 +6788,38 @@
       "proposed_resolution": "Extend getProjectMigrationRegistry to accept an optional contextDir override: getProjectMigrationRegistry(cwd, contextDir?). Uses override when provided; falls back to active-pointer resolution otherwise. Cache key becomes (cwd, resolved-substrate-dir) instead of cwd alone, since a single process can legitimately want both .context and .project migration registries cached simultaneously. validateBlockWithMigration accepts + threads contextDir to the loader. readBlock passes its options.contextDir through. Three call-sites change; one root-cause site (the loader) determines the contract. Reason for fixing at the loader (not at the call-site of validateBlockWithMigration): the registry is per-cwd-per-substrate-dir; the cache key has to discriminate by resolved substrate-dir; that property belongs to the loader, not its callers. Threading the override only at validateBlockWithMigration would still leak the active-pointer assumption into the loader's cache.",
       "created_at": "2026-05-30T06:46:45.266Z",
       "created_by": "human/davidryan@gmail.com"
+    },
+    {
+      "id": "FGAP-184",
+      "title": "Truncation regime non-uniform across paginated/large read surfaces — LLMs hand-wave soft truncation signals + infer completeness from partial views (lived: in-pi coder reported absent FB→FGAP edge twice based on page-1-of-128-view)",
+      "status": "identified",
+      "priority": "P1",
+      "package": "@davidorex/pi-context",
+      "layer": "L2",
+      "description": "FGAP-135 closed the truncation-handwave class for pi's built-in `read` tool by injecting a HARD-REFUSAL directive at the pi-dispatch layer (read-truncation-gate intercepts truncated read events + replaces content with a single-text-item refusal directing the agent to paginate or grep). The same hard-refusal pattern is NOT uniformly applied across pi-context's own read surfaces. Lived evidence 2026-05-30 this session: an in-pi coding agent evaluating the spec-v2 substrate reported 'FB-018 has no FGAP edge' as a finding TWO TURNS IN A ROW. Verification: FB-018 has three matching outgoing edges in relations.json (→ project:FGAP-168 via friction_item_files_to_gap + → DEC-0009 + → CONCEPT-003); the invariant friction-item-files-to-gap-or-addressed is satisfied; no gap. Agent's own post-hoc admission (verbatim): 'I read page 1 of 128 relations edges (the first 50, ending at FB-011). FB-018's edges were on a later page I never fetched. I inferred absence from a partial view and stated it as fact.' Pattern: agent asserts → real-check disproves → agent should not have asserted without checking. Same class as FGAP-135 (pi `read` truncation handwave) but at a DIFFERENT call-site (paginated/large read surface that doesn't route through pi's `read` tool → not covered by FGAP-135's auth-gate-style interception).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts (context-walk-descendants tool body)",
+          "reference": "Returns content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] — raw JSON.stringify with NO serializeForRead, NO overCapDirective, NO truncation handling. Large result gets full body OR gets outer-pi truncated with no in-band signal."
+        },
+        {
+          "file": "packages/pi-context/src/read-element.ts:53-108 (serializeForRead + overCapDirective)",
+          "reference": "Framework HAS the truncation-refusal machinery: serializeForRead with overCapDirective produces a directive-only REFUSAL (no body) naming the appropriate paginate/grep next-call. Pattern proven in pi-context/src/index.ts at read-block (line 1296) + read-config (lines 1430 + 1445). 23 serializeForRead call-sites in index.ts; not all set overCapDirective."
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/read-truncation-gate.ts (FGAP-135 closure)",
+          "reference": "Hard-refusal pattern at the pi-dispatch tool_result event handler — intercepts ONLY pi built-in `read` truncation. Does not cover pi-context's own paginated tool surfaces (read-block / context-walk-descendants / context-find-references / context-edges-for-lens / etc.)."
+        },
+        {
+          "file": "session transcript 2026-05-30 (this session)",
+          "reference": "Two-turn-repeated false claim 'FB-018 has no FGAP edge' from in-pi coding agent. Verification in main-orchestrator showed 3 satisfying edges + invariant-passing state. Agent's self-attribution to non-paginated read confirms the pattern category."
+        }
+      ],
+      "impact": "Class-of-tools: any pi-context read surface returning a paginatable/large result without serializeForRead-with-overCapDirective will produce a partial-view that LLMs can hand-wave as complete. Concrete consequences: (a) in-pi agents misreport substrate state as absent when paginated past visible window (lived evidence: this session); (b) coding agents working from partial substrate make incorrect implementation decisions; (c) audit / adversarial probe agents declare CLEAN based on partial enumeration; (d) the orchestration-contract assumption that real-check disproves wrong assertions is undercut when the assertion ITSELF derives from a partial-view artifact the agent treated as complete. Compounds with the broader pattern named by FGAP-135 — pi's `read` is hard-refusal-protected but pi-context's own paginated surfaces aren't, so the in-pi LLM has uneven truncation protection across the tool surfaces it routes through.",
+      "canonical_vocabulary": "truncation regime; overCapDirective uniformity; hard-refusal vs soft-truncation signal; paginated read surfaces; serializeForRead call-sites; FGAP-135 companion",
+      "proposed_resolution": "Audit all paginated / large-result returning Pi tool registrations in pi-context (and pi-agent-dispatch / pi-workflows / pi-behavior-monitors) for serializeForRead + overCapDirective usage. Apply uniformly: every Pi tool that can return a paginatable/large result MUST route through serializeForRead with an overCapDirective naming the appropriate paginate/grep next-call. Concrete sites to fix from initial survey: context-walk-descendants (line 1XXX) uses raw JSON.stringify — wrap in serializeForRead + add overCapDirective routing to paginated walk variant (or a documented offset/limit walk tool). Same survey for context-find-references / context-edges-for-lens / any other JSON.stringify-direct return. Add a tsx --test lens (test file in packages/pi-context/src/) that enumerates all Pi tool registrations + asserts each returning a list/array/large-object goes through serializeForRead. Out-of-scope alternative considered: route ALL pi-context tool outputs through a pi-dispatch-layer truncation gate (like FGAP-135 does for pi's `read`) — rejected because the per-tool overCapDirective contains tool-specific paginate hints (read-block-page vs grep vs walk-descendants offset) that the generic gate cannot produce; per-tool serializeForRead-with-overCapDirective preserves the hint specificity.",
+      "created_at": "2026-05-30T09:52:04.167Z",
+      "created_by": "human/davidryan@gmail.com"
     }
   ]
 }

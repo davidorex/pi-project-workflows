@@ -6584,6 +6584,54 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T09:05:00Z",
       "id": "FGAP-178"
+    },
+    {
+      "title": "/context init <dir> silently ignores the dir argument when a .pi-context.json pointer already exists; bootstrap-pointer flip operation has no canonical surface; blocks DEC-0036 cutover",
+      "status": "identified",
+      "priority": "P0",
+      "package": "@davidorex/pi-context",
+      "layer": "L2",
+      "description": "initProject at packages/pi-context/src/index.ts:266 writes the bootstrap pointer ONLY when .pi-context.json does NOT exist (condition: `if (!fs.existsSync(path.join(cwd, '.pi-context.json'))) writeBootstrapPointer(cwd, contextDir);`). When an existing pointer is present, the caller-supplied contextDir argument is completely discarded. The function then proceeds to call resolveContextDir(cwd) which reads the EXISTING pointer (line 267) and operates against the existing substrate dir, not the user's intended new dir. The result message reports skipped against the existing dir (e.g. '.project/, .project/schemas/') while the user's argument named a different dir (e.g. '.context'). The 'Project initialized' message is misleading — the project was already initialized for the existing dir; the user's explicit request to initialize a new dir was silently dropped. DEC-0036 (enacted 2026-05-17) declares the canonical re-derivation path: '.project/ is frozen as the ad-hoc historical source' + '.context/ is authored fresh + entirely THROUGH the config-based canonical surfaces' + consequence #7 'Cutover (bootstrap-pointer flip + .project archive) is a bootstrap-pointer flip + .project archive, not a data migration.' There is currently NO canonical surface for that bootstrap-pointer flip — /context init refuses to perform it; no /context switch or /context cutover command exists; the only path is direct .pi-context.json edit (bypassing canonical authoring and the auth-gate at pi-dispatch layer).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "266",
+          "reference": "initProject body: `if (!fs.existsSync(path.join(cwd, '.pi-context.json'))) writeBootstrapPointer(cwd, contextDir);` — pointer write is conditional on absence; with existing pointer, caller's contextDir argument is ignored"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "267-279",
+          "reference": "Function body after the conditional pointer-write proceeds with resolveContextDir(cwd) which reads existing pointer; dir creation operates against resolved path not against the user-supplied argument; returns created/skipped lists against the wrong dir"
+        },
+        {
+          "file": ".project/decisions.json",
+          "lines": "DEC-0036",
+          "reference": "Enacted 2026-05-17, consequence #7 verbatim: 'Cutover (FGAP-026 Phase 10) is a bootstrap-pointer flip + .project archive, not a data migration.' The cutover step depends on a canonical surface for the pointer flip that does not exist."
+        },
+        {
+          "file": ".pi-context.json",
+          "reference": "Current state: {\"contextDir\": \".project\", \"version\": \"1.0.0\", \"created_at\": \"2026-05-10T05:27:24.196Z\"} — pointer dates from 2026-05-10; pre-dates DEC-0036; no surface to flip it canonically"
+        },
+        {
+          "file": "analysis/2026-05-30-LLM-perspective JIT Agent UX.md",
+          "reference": "Operator-experience target: 'I never guess. I see the agent's health at a glance.' Same discipline applies to substrate operations: an init command that silently ignores its argument and reports success under a no-op violates the same operator-experience contract — the operator can't tell the framework did the wrong thing"
+        },
+        {
+          "file": "/tmp/clock-menu-app-context-init-history",
+          "reference": "Re-survey of /Users/david/Projects/clock-menu-app/.context shows init works correctly there because clock-menu-app's .pi-context.json was created at the same time as .context/ (no pre-existing pointer); the bug surfaces only when an existing pointer is being replaced — the exact DEC-0036 cutover scenario"
+        }
+      ],
+      "impact": "Blocks DEC-0036-mandated .context/ cutover for any project that already has a .pi-context.json pointer (every existing pi-context user-substrate). Operators following the DEC-0036-directed path get silent no-op + misleading success message. Workaround paths violate canonical-authoring discipline: direct .pi-context.json edit bypasses the auth-gate (per FGAP-134/138) + bypasses the dispatch attestation; manual .context/ scaffolding bypasses the install-ceremony invariants. The 'Project already initialized — nothing to do' message reads as informational but is actually a refusal of the operator's explicit argument. Operators discover the no-op only by inspecting filesystem state post-invocation. The discovery cost is high (LLM dispatched init, parsed success message, proceeded to next step under false-positive assumption of new substrate existing).",
+      "canonical_vocabulary": "bootstrap-pointer flip; substrate dir switch; cutover canonical surface",
+      "proposed_resolution": "Two-part fix at packages/pi-context/src/index.ts. Part 1: initProject argument-honoring — when an existing .pi-context.json is present AND the caller-supplied contextDir argument differs from the pointer's current contextDir, fail loudly with structured guide-message naming the situation ('pointer at <existing> differs from requested <argument>; use <new-command-name> to flip') rather than silently dropping the argument. The current behavior of returning a misleading success message is the bug regardless of the substantive flip-or-refuse decision. Part 2: add /context switch <new-dir> (or /context cutover <new-dir>) as a canonical surface for the bootstrap-pointer-flip operation. Behavior: bootstrap the new substrate dir + write its pointer + archive (or fail-loud-if-non-empty) the old substrate dir per operator direction; route through the pi-dispatch auth-gate for writer.kind=human attestation (FGAP-134/138 pattern). Closes DEC-0036's cutover step at the framework surface; gives operators a single canonical operation for the substrate-dir transition the substrate itself directs them to perform.",
+      "related_decisions": [
+        "DEC-0011",
+        "DEC-0015",
+        "DEC-0036"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T10:30:00Z",
+      "id": "FGAP-179"
     }
   ]
 }

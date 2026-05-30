@@ -453,5 +453,190 @@
     "parent": "REF-001",
     "child": "MODE-002",
     "relation_type": "authority_doc_names_dispatch_mode"
+  },
+  {
+    "parent": "FEAT-001",
+    "child": "DEC-0004",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-001",
+    "child": "DEC-0008",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-001",
+    "child": "DEC-0010",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-002",
+    "child": "DEC-0010",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-003",
+    "child": "DEC-0004",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-005",
+    "child": "DEC-0001",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-001",
+    "child": "MODE-002",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-002",
+    "child": "FB-007",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-003",
+    "child": "FB-009",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-003",
+    "child": "FB-015",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-004",
+    "child": "FB-016",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-005",
+    "child": "FB-001",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-005",
+    "child": "FB-002",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-005",
+    "child": "FB-003",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-005",
+    "child": "FB-004",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-005",
+    "child": "FB-005",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-005",
+    "child": "FB-006",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "TASK-002",
+    "child": "FEAT-001",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-003",
+    "child": "FEAT-002",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-004",
+    "child": "FEAT-003",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-005",
+    "child": "FEAT-004",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-006",
+    "child": "FEAT-005",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-001",
+    "child": "project:FGAP-115",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-002",
+    "child": "project:FGAP-169",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-002",
+    "child": "project:FGAP-178",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-003",
+    "child": "project:FGAP-158",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-004",
+    "child": "project:FGAP-160",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-004",
+    "child": "project:FGAP-165",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-005",
+    "child": "project:FGAP-166",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-006",
+    "child": "project:FGAP-153",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-006",
+    "child": "project:FGAP-154",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-006",
+    "child": "project:FGAP-155",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-006",
+    "child": "project:FGAP-156",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-006",
+    "child": "project:FGAP-157",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-002",
+    "child": "TASK-001",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-004",
+    "child": "TASK-002",
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "TASK-006",
+    "child": "TASK-003",
+    "relation_type": "task_depends_on_task"
   }
 ]

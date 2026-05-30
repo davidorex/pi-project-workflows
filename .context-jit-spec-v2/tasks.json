@@ -1,3 +1,46 @@
 {
-	"tasks": []
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "description": "Resolve FGAP-115: ExtensionContext.currentModel / currentProvider gap. Three options surfaced in FGAP-115 body need to collapse to one canonical choice before agentic-mode dispatch (FEAT-001) can land. Precondition for the entire implementation arc.",
+      "status": "planned",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z"
+    },
+    {
+      "id": "TASK-002",
+      "description": "Implement FEAT-001 agentic-mode dispatch loop in jit-runtime.ts:432-738 per MODE-002 spec. Depends on TASK-001 (FGAP-115 resolved). Closes FGAP-169 + FGAP-178; enables formal closure of FGAP-102 via real-LLM demo.",
+      "status": "planned",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z"
+    },
+    {
+      "id": "TASK-003",
+      "description": "Implement FEAT-002 list-dispatch-models Pi tool + CLI dual-surface. Independent of TASK-002 (can land in parallel; no dep on agentic-mode). Closes FB-007 / FGAP-158.",
+      "status": "planned",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z"
+    },
+    {
+      "id": "TASK-004",
+      "description": "Implement FEAT-003 call-agent structured-return + zero-token detection. Depends on TASK-002 (agentic-mode dispatch contract defines structured-return semantics). Closes FB-009 + FB-015 / FGAP-160 + FGAP-165.",
+      "status": "planned",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z"
+    },
+    {
+      "id": "TASK-005",
+      "description": "Implement FEAT-004 agent-trace + inspect-agent + query-agent-dispatch Pi tools. Independent of TASK-002/004 (read-only introspection). Closes FB-016 / FGAP-166.",
+      "status": "planned",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z"
+    },
+    {
+      "id": "TASK-006",
+      "description": "Implement FEAT-005 author-agent-spec correctness arc (resolvePromptField narrowed + YAML newline preservation + round-trip validation + oneOf discriminator + model-registry pre-validation). Depends on TASK-003 (list-dispatch-models exists for FB-005 model pre-validation). Closes FB-001..006 / FGAPs 153/154/155/156/157.",
+      "status": "planned",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z"
+    }
+  ]
 }

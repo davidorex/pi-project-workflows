@@ -1,3 +1,92 @@
 {
-	"features": []
+  "features": [
+    {
+      "id": "FEAT-001",
+      "title": "Agentic-mode dispatch loop",
+      "status": "proposed",
+      "layer": "L2",
+      "description": "Multi-turn dispatch loop in executeAgent realizing MODE-002 per DEC-0004 + DEC-0008 + DEC-0010. Declared tools[] (clamped per DEC-0047) become the LLM's tool registry; LLM emits tool calls; framework dispatches each through ExtensionContext; threads results into message history; loop terminates on end_turn / max-turns / tool-failure. Returns final assistant message. Closes FGAP-169 + FGAP-178 + (via formal demo) FGAP-102.",
+      "acceptance_criteria": [
+        "executeAgent in agentic-mode dispatches a multi-turn loop wiring compiled.tools to LLM tool registry",
+        "Each LLM-emitted tool call dispatches through ExtensionContext per DEC-0010 (tool-agnostic; no jit-agents imports tool implementations)",
+        "Loop terminates correctly on end_turn / max-turns / tool-failure",
+        "Capability grant per DEC-0047 clamps the LLM tool registry to parent_grant ∩ declared tools[]",
+        "Final assistant message returned as TypedResult with usage metadata",
+        "Integration test exercises full loop with a real tool (e.g. read-file) end-to-end"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:23:35.219Z"
+    },
+    {
+      "id": "FEAT-002",
+      "title": "Dispatch-model discovery tool surface",
+      "status": "proposed",
+      "layer": "L4",
+      "description": "list-dispatch-models / discover-agent-models Pi tool querying ExtensionContext's model registry returning {provider, modelId, contextWindow, capabilities}. scripts/orchestrator/list-dispatch-models.ts CLI dual-surface per DEC-0019/0020. Closes FB-007 (FGAP-158).",
+      "acceptance_criteria": [
+        "Pi tool list-dispatch-models registered in pi-agent-dispatch (or pi-jit-agents per DEC scope)",
+        "Returns structured list of valid provider/modelId combinations sourced from ExtensionContext",
+        "Companion scripts/orchestrator/list-dispatch-models.ts CLI dual-surface",
+        "Orchestrator can resolve model strings without trial-and-error"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:23:35.223Z"
+    },
+    {
+      "id": "FEAT-003",
+      "title": "call-agent structured-return surface",
+      "status": "proposed",
+      "layer": "L4",
+      "description": "call-agent returns agent output as structured content (parsed JSON if outputSchema, text otherwise) + usage + model + duration in AgentToolResult.content, NOT buried in details metadata. Orchestrators consume output without session-log inspection. Closes FB-009 (FGAP-160).",
+      "acceptance_criteria": [
+        "AgentToolResult.content carries the agent output verbatim, parsed if outputSchema set",
+        "Usage / model / duration accessible on the result without manual log inspection",
+        "Zero-token-output detection per FB-015 (FGAP-165) — throw AgentDispatchError with stopReason + model on zero-token dispatches",
+        "Workflow chaining (output of agent A → input of agent B) works without out-of-band log read"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:23:35.223Z"
+    },
+    {
+      "id": "FEAT-004",
+      "title": "Agent introspection + dispatch-history surface",
+      "status": "proposed",
+      "layer": "L4",
+      "description": "Pi tools agent-trace + inspect-agent + query-agent-dispatch — orchestrator can query dispatch history (per-agent or session-wide) with input / output / usage / model / stopReason / duration, plus inspect any single agent's full spec + last-dispatch state + cumulative usage. Closes FB-016 (FGAP-166).",
+      "acceptance_criteria": [
+        "agent-trace Pi tool returns last N dispatches for an agent",
+        "inspect-agent Pi tool returns full spec + health snapshot",
+        "query-agent-dispatch Pi tool scans .pi/agent/sessions/ JSONL filtered + paginated",
+        "All three surface in pi-agent-dispatch with companion scripts/orchestrator/ CLI dual-surfaces"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:23:35.224Z"
+    },
+    {
+      "id": "FEAT-005",
+      "title": "author-agent-spec correctness arc",
+      "status": "proposed",
+      "layer": "L2",
+      "description": "Fixes to author-agent-spec eliminating the FB-001..006 friction cluster: resolvePromptField heuristic narrowed to .md/.txt-extension-only template detection; YAML serializer preserves newlines (no folded block scalar); round-trip validation surfaces semantic errors (template path doesn't resolve / schema not registered / model not in registry); explicit inline-vs-template discriminator in AgentSpec shape. Closes FB-001/002/003/004/005/006 (FGAPs 153/154/155/156/157/158).",
+      "acceptance_criteria": [
+        "resolvePromptField only classifies as template when value ends with .md or .txt extension",
+        "YAML serializer uses literal block scalar for multi-line prompts (preserves newlines)",
+        "Round-trip validation surfaces template-path resolution failure before disk write",
+        "AgentSpec shape enforces oneOf inline/template per prompt slot (no parallel optional ambiguity)",
+        "author-agent-spec invokes list-dispatch-models to validate model field at write time (FB-005)"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:45:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:23:35.224Z"
+    }
+  ]
 }

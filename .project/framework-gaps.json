@@ -6634,6 +6634,49 @@
       "id": "FGAP-179",
       "closed_by": "human:davidryan@gmail.com",
       "closed_at": "2026-05-30T11:05:00Z"
+    },
+    {
+      "title": "Orchestrator scripts (39 dual-surface wrappers at scripts/orchestrator/*) are not portable beyond this repo; downstream Claude Code sessions on pi-context-consuming projects cannot use the Claude-Code-side canonical-surface convenience without copying scripts or operating against this repo's filesystem path",
+      "status": "identified",
+      "priority": "P1",
+      "package": "@davidorex/pi-context",
+      "layer": "L4",
+      "description": "Per the dual-surface canon ([[feedback_orchestrator_scripts_dual_surface]] + DEC-0019/0020): scripts/orchestrator/*.ts are the Claude-Code-side wrappers paired with pi-context's Pi tool surfaces (registered in packages/pi-context/src/index.ts). The 39 current scripts cover the full canonical-surface space (file-block-item / amend-config / append-relation / find-references / write-schema / current-state / accept-all / etc.). Their CONTENTS are portable in the sense that each imports from @davidorex/pi-context published subpath exports (block-api / schema-write / context.ts / etc.) — no dependency on this repo's internals. Their LAUNCH MECHANISM is non-portable: invocation requires `npx tsx scripts/orchestrator/<name>.ts --args` against a checked-out copy of THIS repo. Downstream Claude Code sessions working on pi-context-consuming projects (clock-menu-app today; any future consuming project) have no installable surface for the dual-surface convenience this project enjoys. They must either (a) reimplement the scripts in their own scripts/ dir, (b) copy them, or (c) operate from this repo's path. None scale.\n\nThe consequence: the pattern-portability that pi-context's substrate-vocabulary-extension model promises (clock-menu-app authored session-notes block kind; this project transcribed the schema unchanged into session-logs) is structurally blocked at the orchestrator-surface layer. Pi tool surfaces are portable (any pi installation can dispatch them via pi -p). Claude-Code-side orchestrator surfaces are not. The framework presents a complete dual-surface dogfood at the in-monorepo tier and a half-surface (Pi-tool-only) at the downstream-consumer tier.\n\nThis interlocks with the self-documenting substrate design possibility (analysis/2026-05-30-self-documenting-substrate-design.md) and the session-logs block kind design (just designed this session): both depend on downstream consumers having canonical access to substrate-management commands. Without the CLI elevation, downstream operators cannot exercise the substrate-management primitives that this session sharpened (/context switch family, file-block-item, amend-config, etc.) without scaffolding gymnastics.",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/",
+          "reference": "39 .ts files (accept-all, amend-config, append-relation, bootstrap-state, build-html-views, compile-*-context, composite-*, current-state, extract-*, file-block-item, filter-block-items, find-references, gather-execution-context, inject-context-items, join-blocks, migrate-canonical-id, read-*, resolve-items-by-id, runtime-demo-*, walk-ancestors, write-schema) plus templates/ subdir. Verified via `ls scripts/orchestrator/`"
+        },
+        {
+          "file": "MEMORY.md feedback_orchestrator_scripts_dual_surface.md",
+          "reference": "Canonical pattern verbatim: 'scripts/orchestrator/ for Claude Code; Pi tools (index.ts) for in-pi agents; both wrappers thin over shared block-api library; new substrate ops add library + Pi tool + CLI script as a unit'. Pattern enforced for in-monorepo work; not enforced for downstream consumers because the CLI side is not packaged."
+        },
+        {
+          "file": "/Users/david/Projects/clock-menu-app/.context/",
+          "reference": "Working consumer-side example. clock-menu-app uses Pi tools (via /context slash commands + auth-gate-confirmed flows) for substrate work. No Claude-Code-side orchestrator scripts exist there because the CLI surface this project has is not installable. Operator-experience asymmetry between in-monorepo and downstream-consumer tiers."
+        },
+        {
+          "file": "analysis/2026-05-30-self-documenting-substrate-design.md",
+          "reference": "Design possibility filed at commit 62f9114. Depends on downstream consumers having canonical access to substrate-management commands — currently structurally blocked at the orchestrator-script tier."
+        },
+        {
+          "file": "packages/pi-context/package.json",
+          "reference": "Currently publishes the library surfaces (block-api, schema-write, context-dir, etc.) — the substrate that orchestrator scripts wrap. No bin entry; no CLI surface; no installable command-line for downstream consumers."
+        }
+      ],
+      "impact": "Pi-context's substrate-vocabulary-extension promise is half-delivered at the downstream-consumer tier. Other projects can adopt pi-context as a dependency and dispatch Pi tools via pi -p, but cannot use the Claude-Code-side orchestrator surfaces that this project's operators use routinely. The dual-surface canon (DEC-0019/0020) is enforced in-monorepo but not as a public-installable surface. Operator-experience parity between in-monorepo and downstream is broken. The pattern-portability the framework's substrate-vocabulary-customization model promises (clock-menu-app's session-notes transcribed unchanged for this project's session-logs) is structurally limited to substrate-vocabulary; orchestrator-vocabulary stays per-project until each operator reimplements or copies. Every additional orchestrator script added to scripts/orchestrator/ (39 today; growing) increases the asymmetry between in-monorepo and downstream operator-experience.",
+      "canonical_vocabulary": "orchestrator CLI elevation; package portability; dual-surface canonical-surface parity",
+      "proposed_resolution": "Elevate scripts/orchestrator/ to a published monorepo package providing a single CLI binary with subcommands per the established `gh` / `kubectl` / `docker` / `gcloud` convention. Package name TBD per operator direction. Implementation scope: (a) new packages/<pkg-name>/ directory; (b) src/cli.ts dispatching to subcommand implementations (either inlined from existing scripts/orchestrator/*.ts OR imported from a shared helper module — minimal duplication); (c) tsc compilation to dist/JS so downstream consumers don't need tsx; (d) bin entry in package.json registering the CLI binary name; (e) lockstep-version with rest of monorepo per existing release pipeline; (f) SKILL.md regen; (g) cross-reference from @davidorex/pi-context README / SKILL.md naming the CLI as the Claude-Code-side install path. Carried by TASK-095 under FEAT-001. Each of the 39 scripts becomes a subcommand of the unified CLI. Portability achieved when downstream consumer can `npm install -g <pkg-name>` and invoke any of the 39 surfaces from any cwd against that cwd's pi-context substrate.",
+      "related_decisions": [
+        "DEC-0019",
+        "DEC-0020"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T11:35:00Z",
+      "id": "FGAP-180"
     }
   ]
 }

@@ -1664,6 +1664,30 @@
       "created_at": "2026-05-30T10:45:00Z",
       "id": "TASK-094",
       "verification": "VER-066"
+    },
+    {
+      "status": "planned",
+      "depends_on": [],
+      "description": "Elevate scripts/orchestrator/ (39 dual-surface Claude-Code-side wrappers) to a published monorepo package providing a single CLI binary with subcommands per the established convention (gh / kubectl / docker / gcloud). Closes FGAP-180 (orchestrator portability gap). Package name TBD per operator direction. Scope: (a) new packages/<pkg-name>/ directory; (b) src/cli.ts dispatching to subcommand implementations (inlined from existing scripts/orchestrator/*.ts OR imported from a shared helper module — minimal duplication); (c) tsc compilation to dist/JS so downstream consumers don't need tsx; (d) bin entry in package.json registering the CLI binary; (e) lockstep-version with rest of monorepo per existing release pipeline; (f) SKILL.md regen; (g) cross-reference from @davidorex/pi-context README + SKILL.md naming the CLI as the canonical Claude-Code-side install path; (h) runtime demo + adversarial probe per the established pipeline. The 39 existing scripts become subcommands of the unified CLI. Portability achieved when downstream consumer can install the CLI globally + invoke any subcommand from any cwd against that cwd's pi-context substrate. Realizes the full dual-surface canon (DEC-0019/0020) at the downstream-consumer tier — currently enforced only in-monorepo. Unblocks pattern-portability for downstream pi-context consumers (clock-menu-app + future projects). Closing-citation pattern (branch + commits + VER attestation + adversarial probe path) appended at TASK closure per canonical pipeline.",
+      "acceptance_criteria": [
+        "New monorepo package packages/<pkg-name>/ created with package.json declaring name + version + bin entry + dependencies (pi-context library surfaces) + lockstep-version inclusion in scripts/bump-versions.js",
+        "src/cli.ts dispatches to subcommand implementations covering all 39 current scripts/orchestrator/*.ts surfaces",
+        "tsc build produces dist/cli.js + per-subcommand .js outputs invokable directly + via the bin entry",
+        "Subcommand body source: shared helper module imported by both packages/<pkg-name>/src/ AND scripts/orchestrator/*.ts retained for in-monorepo invocation parity — single source of truth per dual-surface canon",
+        "bin entry registers the CLI binary name (TBD per operator direction); npm install -g <pkg-name> makes <bin-name> invokable globally",
+        "Each subcommand operates against cwd (or --cwd flag) — no hardcoded path assumptions; works from any project containing a .pi-context.json pointer",
+        "SKILL.md regen covers the new package + cross-reference from pi-context's SKILL.md naming the CLI install path",
+        "Runtime demo end-to-end: install CLI globally; invoke representative subcommand (file-block-item or current-state) from a downstream pi-context-consuming project; verify substrate write or read succeeds against that project's substrate",
+        "Adversarial probe verifies: (1) all 39 subcommands behave per their script-equivalent; (2) bin entry works post-install; (3) cwd handling correct; (4) auth-gate routing fires for substrate-mutating subcommands when invoked against substrates whose pi-context-version registers them as Bucket-2",
+        "Build / check / test green workspace-wide; new package tests cover CLI dispatch + subcommand routing + cwd resolution",
+        "Status cascade complete: FGAP-180 status identified → superseded_by this TASK; new VER attests with criteria_results enumerated; supersession + verification edges filed"
+      ],
+      "related_features": [
+        "FEAT-001"
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T11:40:00Z",
+      "id": "TASK-095"
     }
   ]
 }

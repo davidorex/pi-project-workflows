@@ -1,22 +1,34 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/bootstrap",
-  "version": "1.0.0",
+  "version": "1.1.0",
  "title": "pi-context bootstrap pointer",
- "description": "Per-cwd bootstrap pointer at <cwd>/.pi-context.json declaring the substrate dir name. Read by resolveContextDir(cwd) before any substrate operation; substrate dir is config-driven (no hardcoded substrate-dir paths anywhere in pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors). Written for legacy .project/-using repos containing {contextDir: '.project'} so substrate stays reachable across the resolver-replacement migration. For new repos: written by /context init (prompt-required for dirName; defaulting reintroduces hardcode-dressed-as-default). Mutable post-init via /context migrate which atomically renames the dir + rewrites this pointer + updates config.root.",
+ "description": "Per-cwd bootstrap pointer at <cwd>/.pi-context.json declaring the substrate dir name. Read by resolveContextDir(cwd) before any substrate operation; substrate dir is config-driven (no hardcoded substrate-dir paths anywhere in pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors). Written for legacy .project/-using repos containing {contextDir: '.project'} so substrate stays reachable across the resolver-replacement migration. For new repos: written by /context init (prompt-required for dirName; defaulting reintroduces hardcode-dressed-as-default). Mutable post-init via /context switch which atomically rewrites this pointer + stamps previous_contextDir + switched_at + switched_by supporting bidirectional pointer-flip (parallel to git switch). Schema bump 1.0.0 -> 1.1.0 adds three optional pointer-history fields; older 1.0.0 pointers remain valid (required: ['contextDir'] unchanged; missing optional fields resolve to undefined in-process).",
   "type": "object",
   "properties": {
     "contextDir": {
       "type": "string",
- "description": "Directory name (relative to cwd) where the substrate lives. User-decided at /context init time. For pre-existing repos using legacy .project/ convention, value is '.project' until /context migrate runs."
+ "description": "Directory name (relative to cwd) where the substrate lives. User-decided at /context init time. For pre-existing repos using legacy .project/ convention, value is '.project' until /context switch -c <new-dir> runs."
     },
     "version": {
       "type": "string",
- "description": "Bootstrap pointer format version. '1.0.0' for the initial format. Future format changes increment via semver schema versioning discipline; migration registry handles transitions if breaking."
+ "description": "Bootstrap pointer format version. '1.0.0' for the initial format; '1.1.0' once the pointer-history fields (previous_contextDir, switched_at, switched_by) are populated by /context switch family. Future format changes increment via semver schema versioning discipline; migration registry handles transitions if breaking."
     },
     "created_at": {
       "type": "string",
- "description": "ISO 8601 timestamp when the bootstrap pointer was first written. Forensic; helps trace when the substrate was bootstrapped for this repo."
+ "description": "ISO 8601 timestamp when the bootstrap pointer was first written. Forensic; helps trace when the substrate was bootstrapped for this repo. Preserved across /context switch operations (only switched_at + switched_by + previous_contextDir mutate on pointer-flip)."
+    },
+    "previous_contextDir": {
+      "type": "string",
+ "description": "ISO 8601 sibling: the contextDir value that this pointer carried IMMEDIATELY BEFORE the most-recent /context switch operation. Populated by flipBootstrapPointer; absent on freshly-bootstrapped pointers that have never been switched. Read by /context switch - to flip back to the prior substrate (parallel to git switch -)."
+    },
+    "switched_at": {
+      "type": "string",
+ "description": "ISO 8601 timestamp of the most-recent /context switch invocation that produced the current contextDir. Absent on freshly-bootstrapped pointers; populated by flipBootstrapPointer on every flip."
+    },
+    "switched_by": {
+      "type": "string",
+ "description": "Writer identity (verified terminal-operator stamped by auth-gate on confirm) attached to the most-recent /context switch invocation. Forensic; pairs with switched_at to attribute the pointer-flip. Absent on freshly-bootstrapped pointers."
     }
   },
   "required": ["contextDir"],

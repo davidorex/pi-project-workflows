@@ -277,6 +277,37 @@ Adopt the canonical packaged conception (samples/conception.json) as this substr
 
 </tool>
 
+<tool name="context-switch">
+Flip the bootstrap pointer to a different substrate dir (parallel to git switch). Default: flip to an existing substrate at target_dir (requires config.json present). create_new=true: bootstrap a fresh substrate at target_dir AND flip in one operation. to_previous=true: flip back to the pointer's previous_contextDir (target_dir ignored).
+
+*Switch the bootstrap pointer to a different substrate dir*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `target_dir` | string | yes | Substrate dir name to switch to (e.g. '.context'). Required for default + create_new modes; ignored for to_previous mode. |
+| `create_new` | boolean | no | When true, bootstrap target_dir as a fresh substrate AND flip the pointer in one operation (parallel to 'git switch -c <branch>'). Default false (flip to existing substrate; fails if target_dir lacks config.json). |
+| `to_previous` | boolean | no | When true, flip the pointer back to its previous_contextDir (parallel to 'git switch -'). Requires the pointer to carry a previous_contextDir (a prior switch must have populated it). When true, target_dir is ignored. |
+| `writer` | object | no | DispatchContext.writer — stamped by auth-gate on operator confirm; in-body trusts the stamped value. |
+</tool>
+
+<tool name="context-list">
+Enumerate top-level dirs under cwd containing a config.json (switchable substrates). Marks the active one with isActive=true. Read-only.
+
+*List switchable substrate dirs under cwd*
+
+</tool>
+
+<tool name="context-archive">
+Move a non-active substrate dir to archive/<dir>/. Refuses to archive the active substrate (the dir the bootstrap pointer currently names) or to clobber an existing archive/<dir>/.
+
+*Archive a non-active substrate dir to archive/<dir>/*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `target_dir` | string | yes | Substrate dir name to archive (e.g. '.project'). Refused if it is the active substrate. |
+| `writer` | object | no | DispatchContext.writer — stamped by auth-gate on operator confirm. |
+</tool>
+
 <tool name="filter-block-items">
 Filter the array items of a block by a single-field predicate (eq / neq / in / matches). Discovers the single top-level array property in the block; items missing the predicate field are never matched. Wraps the canonical readBlock + caller-side filter into one queryable surface; never mutates the block.
 
@@ -467,7 +498,7 @@ List every roadmap in <config.root>/roadmap.json with id, title, optional status
 <command name="/context">
 Context state management
 
-Subcommands: `init`, `install`, `accept-all`, `view`, `lens-curate`, `roadmap-list`, `roadmap-view`, `roadmap-validate`, `status`, `add-work`, `validate`, `help`
+Subcommands: `init`, `switch`, `list`, `archive`, `install`, `accept-all`, `view`, `lens-curate`, `roadmap-list`, `roadmap-view`, `roadmap-validate`, `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>

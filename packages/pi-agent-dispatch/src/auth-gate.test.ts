@@ -87,11 +87,13 @@ afterEach(() => {
 });
 
 describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
-	it("contains all 15 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 extension)", () => {
+	it("contains all 17 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 + TASK-094 extensions)", () => {
 		// Aim: pin the list verbatim against the FGAP-134 plan + the
-		// FGAP-136 write-schema-migration extension so future substrate
-		// evolutions surface as test failures requiring an explicit canon
-		// update rather than a silent membership drift.
+		// FGAP-136 write-schema-migration extension + the TASK-094
+		// /context switch family extension (context-switch + context-archive;
+		// context-list is read-only and intentionally NOT in the gated set)
+		// so future substrate evolutions surface as test failures requiring
+		// an explicit canon update rather than a silent membership drift.
 		const expected = new Set<string>([
 			"author-agent-spec",
 			"author-tool-grant",
@@ -103,6 +105,8 @@ describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
 			"rename-canonical-id",
 			"context-init",
 			"context-accept-all",
+			"context-switch",
+			"context-archive",
 			"workflow-execute",
 			"workflow-resume",
 			"workflow-init",
@@ -112,6 +116,17 @@ describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
 		assert.strictEqual(AUTH_REQUIRED_TOOLS.length, expected.size);
 		const actual = new Set<string>(AUTH_REQUIRED_TOOLS);
 		assert.deepStrictEqual(actual, expected, `AUTH_REQUIRED_TOOLS drift; got: ${[...actual].sort().join(", ")}`);
+	});
+
+	it("context-switch + context-archive are in the gated set; context-list is NOT (TASK-094 read-only exception)", () => {
+		// Targeted assertion on the TASK-094 additions so a regression that
+		// inadvertently flips context-list into the gated set (or drops the
+		// mutation tools out of it) surfaces as a focused failure rather than
+		// only through the deepStrictEqual canon pin.
+		const set = new Set<string>(AUTH_REQUIRED_TOOLS);
+		assert.ok(set.has("context-switch"), "context-switch must be gated (mutates .pi-context.json)");
+		assert.ok(set.has("context-archive"), "context-archive must be gated (renames substrate dir)");
+		assert.equal(set.has("context-list"), false, "context-list must NOT be gated (read-only enumeration)");
 	});
 });
 

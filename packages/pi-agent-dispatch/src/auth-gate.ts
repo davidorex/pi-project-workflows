@@ -78,6 +78,8 @@ export const AUTH_REQUIRED_TOOLS = [
 	"rename-canonical-id",
 	"context-init",
 	"context-accept-all",
+	"context-switch",
+	"context-archive",
 	// pi-workflows
 	"workflow-execute",
 	"workflow-resume",

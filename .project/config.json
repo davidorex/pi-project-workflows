@@ -261,6 +261,11 @@
       "canonical_id": "gap_superseded_by_task",
       "display_name": "gap superseded by task",
       "category": "ordering"
+    },
+    {
+      "canonical_id": "references_cross_substrate_item",
+      "display_name": "references (cross-substrate)",
+      "category": "data_flow"
     }
   ],
   "lenses": [],

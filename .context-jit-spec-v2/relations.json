@@ -526,11 +526,6 @@
   },
   {
     "parent": "FEAT-005",
-    "child": "FB-004",
-    "relation_type": "feature_depends_on_item"
-  },
-  {
-    "parent": "FEAT-005",
     "child": "FB-005",
     "relation_type": "feature_depends_on_item"
   },

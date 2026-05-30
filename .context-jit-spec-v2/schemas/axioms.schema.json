@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/axioms",
+  "version": "1.0.0",
+  "title": "Axioms",
+  "description": "Load-bearing framework commitments grounding spec decisions. Distinct from tactical DECs by carrying foundational principle weight.",
+  "type": "object",
+  "required": ["axioms"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string" },
+    "axioms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "statement", "status", "created_by", "created_at"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^AX-\\d{3}$" },
+          "title": { "type": "string" },
+          "statement": { "type": "string", "description": "The axiom verbatim" },
+          "rationale": { "type": "string", "description": "Why this is load-bearing" },
+          "status": { "type": "string", "enum": ["proposed", "enacted", "superseded"] },
+          "v1_origin": { "type": "string", "description": "Reference to v1 spec section if carried forward (e.g. 'v1 §0 P1')" },
+          "created_by": { "type": "string" },
+          "created_at": { "type": "string" },
+          "enacted_at": { "type": "string" }
+        }
+      }
+    }
+  }
+}

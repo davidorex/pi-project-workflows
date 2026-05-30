@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/dispatch-modes",
+  "version": "1.0.0",
+  "title": "Dispatch Modes",
+  "description": "The dispatch modes executeAgent supports. Mode selection per the spec's D9 algorithm. Each mode is a distinct execution shape (single-call vs multi-turn-loop).",
+  "type": "object",
+  "required": ["modes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string" },
+    "modes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "triggered_when", "dispatch_shape", "output_form", "created_by", "created_at"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^MODE-\\d{3}$" },
+          "name": { "type": "string", "description": "e.g. classifier-mode | agentic-mode" },
+          "triggered_when": { "type": "string", "description": "Spec-shape predicate that selects this mode" },
+          "dispatch_shape": { "type": "string", "description": "How executeAgent invokes the LLM (single call / multi-turn loop / tool registry etc.)" },
+          "output_form": { "type": "string", "description": "What the dispatch returns" },
+          "use_cases": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "implementation_status": { "type": "string", "enum": ["landed", "pending", "partial"] },
+          "created_by": { "type": "string" },
+          "created_at": { "type": "string" }
+        }
+      }
+    }
+  }
+}

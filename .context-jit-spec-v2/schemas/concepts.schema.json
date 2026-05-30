@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/concepts",
+  "version": "1.0.0",
+  "title": "Concepts",
+  "description": "Vocabulary + definitions surfaced by the spec — boundary contract elements, agent signature, dispatch modes, scope ownership. Referenced from decisions.",
+  "type": "object",
+  "required": ["concepts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string" },
+    "concepts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "definition", "created_by", "created_at"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^CONCEPT-\\d{3}$" },
+          "name": { "type": "string" },
+          "definition": { "type": "string", "description": "Concept body — definition + boundary clarifications" },
+          "v1_origin": { "type": "string", "description": "Reference to v1 spec section if carried forward" },
+          "created_by": { "type": "string" },
+          "created_at": { "type": "string" }
+        }
+      }
+    }
+  }
+}

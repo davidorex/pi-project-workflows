@@ -128,6 +128,38 @@
       "schema_path": "schemas/work-orders.schema.json",
       "array_key": "work_orders",
       "data_path": "work-orders.json"
+    },
+    {
+      "canonical_id": "axioms",
+      "display_name": "Axioms",
+      "prefix": "AX-",
+      "array_key": "axioms",
+      "data_path": "axioms.json",
+      "schema_path": "schemas/axioms.schema.json"
+    },
+    {
+      "canonical_id": "concepts",
+      "display_name": "Concepts",
+      "prefix": "CONCEPT-",
+      "array_key": "concepts",
+      "data_path": "concepts.json",
+      "schema_path": "schemas/concepts.schema.json"
+    },
+    {
+      "canonical_id": "dispatch-modes",
+      "display_name": "Dispatch Modes",
+      "prefix": "MODE-",
+      "array_key": "modes",
+      "data_path": "dispatch-modes.json",
+      "schema_path": "schemas/dispatch-modes.schema.json"
+    },
+    {
+      "canonical_id": "v1-supersessions",
+      "display_name": "V1 Supersessions",
+      "prefix": "VSUP-",
+      "array_key": "supersessions",
+      "data_path": "v1-supersessions.json",
+      "schema_path": "schemas/v1-supersessions.schema.json"
     }
   ],
   "relation_types": [
@@ -434,6 +466,83 @@
       "category": "data_flow",
       "source_kinds": [
         "tasks"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "axiom_grounds_decision",
+      "display_name": "grounds decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "axioms"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "concept_referenced_in_decision",
+      "display_name": "referenced in decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "concepts"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "dispatch_mode_realizes_decision",
+      "display_name": "realizes decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "dispatch-modes"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "v1_section_superseded_by_v2_item",
+      "display_name": "superseded by v2 item",
+      "category": "data_flow",
+      "source_kinds": [
+        "v1-supersessions"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "open_question_blocks_decision",
+      "display_name": "blocks decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "framework-gaps"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "impl_task_implements_decision",
+      "display_name": "implements decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "verification_attests_decision",
+      "display_name": "attests decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "verification"
       ],
       "target_kinds": [
         "decisions"

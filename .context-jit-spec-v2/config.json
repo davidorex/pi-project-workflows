@@ -629,6 +629,17 @@
       "target_kinds": [
         "dispatch-modes"
       ]
+    },
+    {
+      "canonical_id": "verification_kills_friction_item",
+      "display_name": "kills friction",
+      "category": "data_flow",
+      "source_kinds": [
+        "verification"
+      ],
+      "target_kinds": [
+        "friction-items"
+      ]
     }
   ],
   "lenses": [
@@ -912,6 +923,20 @@
       "direction": "as_parent",
       "severity": "warning",
       "message": "Task {id} has no outgoing task_depends_on_task edge (no FEAT implemented, no FGAP closed, no precondition); tasks without scaffolding are unanchored work"
+    },
+    {
+      "id": "resolved-friction-has-verification-edge",
+      "class": "requires-edge",
+      "block": "friction-items",
+      "where": {
+        "status": "resolved"
+      },
+      "relation_types": [
+        "verification_kills_friction_item"
+      ],
+      "direction": "as_child",
+      "severity": "error",
+      "message": "Friction item {id} is status=resolved but has no verification_kills_friction_item edge from a VER attesting the kill — resolution claim without testable proof"
     }
   ],
   "tool_operations": [],

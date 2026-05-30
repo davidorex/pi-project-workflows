@@ -16,7 +16,54 @@
       "authored_by": "agent:claude (composed under user direction)",
       "authored_at": "2026-05-30",
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T15:30:00Z"
+      "created_at": "2026-05-30T15:30:00Z",
+      "surface_kills_mapping": [
+        {
+          "surface_name": "list-dispatch-models",
+          "source_file": "analysis/2026-05-30-LLM-perspective JIT Agent UX.md",
+          "source_line": 15,
+          "claim_text": "Like `read-config` for models. Returns every `provider/modelId` pair available for dispatch with context windows and capabilities. I never guess a model string. Kills FB-007.",
+          "killed_friction_ids": [
+            "FB-007"
+          ],
+          "implementing_feature_id": "FEAT-002"
+        },
+        {
+          "surface_name": "author-agent-spec (fixed)",
+          "source_file": "analysis/2026-05-30-LLM-perspective JIT Agent UX.md",
+          "source_line": 29,
+          "claim_text": "Like `write-schema`. I pass a spec object. It validates against the canonical schema. It dry-runs compile. It checks the model exists. If it writes, the spec is dispatchable. Kills FB-001, FB-002, FB-003, FB-005, FB-006.",
+          "killed_friction_ids": [
+            "FB-001",
+            "FB-002",
+            "FB-003",
+            "FB-005",
+            "FB-006"
+          ],
+          "implementing_feature_id": "FEAT-005"
+        },
+        {
+          "surface_name": "call-agent (fixed)",
+          "source_file": "analysis/2026-05-30-LLM-perspective JIT Agent UX.md",
+          "source_line": 46,
+          "claim_text": "Returns the agent's output as structured content, not a status summary. If the agent produces JSON with an output schema, I get parsed JSON. If text, I get the text. I also get token usage, model used, duration. I can process the output without grepping session logs. Kills FB-009, FB-015.",
+          "killed_friction_ids": [
+            "FB-009",
+            "FB-015"
+          ],
+          "implementing_feature_id": "FEAT-003"
+        },
+        {
+          "surface_name": "agent-trace <name> [limit]",
+          "source_file": "analysis/2026-05-30-LLM-perspective JIT Agent UX.md",
+          "source_line": 49,
+          "claim_text": "Like reading a session log but tool-native. Returns last N dispatches for an agent with input, output, token usage, model, duration, errors. I see the history without leaving the tool surface. Kills FB-016.",
+          "killed_friction_ids": [
+            "FB-016"
+          ],
+          "implementing_feature_id": "FEAT-004"
+        }
+      ]
     },
     {
       "id": "REF-002",

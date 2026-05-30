@@ -143,5 +143,55 @@
     "parent": "VSUP-006",
     "child": "DEC-0004",
     "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "CONCEPT-001",
+    "child": "DEC-0001",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "CONCEPT-002",
+    "child": "DEC-0004",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "CONCEPT-002",
+    "child": "DEC-0009",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "CONCEPT-003",
+    "child": "DEC-0004",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "CONCEPT-003",
+    "child": "DEC-0008",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "CONCEPT-004",
+    "child": "DEC-0002",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "CONCEPT-004",
+    "child": "DEC-0004",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "CONCEPT-005",
+    "child": "DEC-0005",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "CONCEPT-005",
+    "child": "DEC-0006",
+    "relation_type": "concept_referenced_in_decision"
+  },
+  {
+    "parent": "FGAP-001",
+    "child": "DEC-0001",
+    "relation_type": "open_question_blocks_decision"
   }
 ]

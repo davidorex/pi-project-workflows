@@ -575,6 +575,47 @@
         "closed",
         "wontfix"
       ]
+    },
+    {
+      "id": "full-spec-render",
+      "kind": "composition",
+      "targets": [
+        "axioms",
+        "decisions",
+        "concepts",
+        "dispatch-modes",
+        "framework-gaps",
+        "v1-supersessions"
+      ],
+      "members": [
+        {
+          "from": "axioms"
+        },
+        {
+          "from": "decisions"
+        },
+        {
+          "from": "concepts"
+        },
+        {
+          "from": "dispatch-modes"
+        },
+        {
+          "from": "framework-gaps"
+        },
+        {
+          "from": "v1-supersessions"
+        }
+      ],
+      "bins": [
+        "foundational-principles",
+        "tactical-decisions",
+        "concepts",
+        "dispatch-modes",
+        "open-questions",
+        "v1-supersessions"
+      ],
+      "render_uncategorized": true
     }
   ],
   "layers": [],

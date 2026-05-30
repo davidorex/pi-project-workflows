@@ -137,6 +137,26 @@
         "Design invariants + conventions + context-contracts encoding spec-v2 operational patterns",
         "File initial spec items decomposed from the markdown"
       ]
+    },
+    {
+      "id": "SESSION-007",
+      "timestamp": "2026-05-30T14:00:00-06:00",
+      "focus": "Per-arc substrate .context-jit-spec-v2 bootstrapped + populated with spec-v2 entity-graph. 4 custom block kinds (axioms / concepts / dispatch-modes / v1-supersessions) + 7 custom relation_types registered. 3 axioms + 10 decisions + 2 dispatch-modes + 6 v1-supersessions + 29 inter-entity edges filed. Markdown spec at analysis/2026-05-30-jit-agents-spec-v2.md is source-of-content; substrate is source-of-structure + cross-references.",
+      "discoveries": [
+        "Per-arc substrate engagement: 4 phase boundaries fit naturally (1 bootstrap; 2a vocabulary register; 2b lens design pending; 3 item filing). Each phase commits independently per per-step discipline",
+        "Packaged decisions schema accommodates spec-v2 D1-D10 cleanly; v1_origin stashed in references[] field since packaged schema lacks dedicated v1-origin slot",
+        "amendConfigEntry import path is @davidorex/pi-context/context (not block-api); both exports valid, different surfaces"
+      ],
+      "decisions_made": [
+        "Spec-v2 entity-graph: 4 custom kinds + packaged decisions/framework-gaps/tasks/verification covers the spec's natural structure",
+        "29 inter-entity edges authored across axiom_grounds_decision + dispatch_mode_realizes_decision + v1_section_superseded_by_v2_item — substrate-canonical cross-reference shape, not denormalized arrays in item bodies"
+      ],
+      "current_status": ".context-jit-spec-v2 substrate populated: 20 block_kinds (16 packaged + 4 custom) + 35 relation_types (28 packaged + 7 custom) + 2 lenses (unchanged); 3 AX + 10 DEC + 2 MODE + 6 VSUP + 29 edges. Markdown spec at analysis/2026-05-30-jit-agents-spec-v2.md (commit 4fc05e8) is the source-of-content; substrate is queryable structure. Pointer flipped back to .context for this session-notes filing; .context-jit-spec-v2 stays as the per-arc workspace for spec-v2 evolution. Branch main at 0f26306. Tree clean.",
+      "next_steps": [
+        "Remaining phase 3 (when prioritized): concepts items (boundary contract + agent signature + scope ownership as ~5 CONCEPT-NNN items) + any v1 Q-OPEN still-open → FGAPs in spec substrate + composition lens (full-spec-render walking the kinds in spec-section order)",
+        "Implementation arc per FGAP-169 multi-tool dispatch loop in executeAgent — load-bearing for realizing DEC-0004/0008/0009/0010 at runtime; interlocks with FGAP-115 ExtensionContext gap",
+        "Spec-v2 entity-graph is substantively-wired-enough that work resuming on the implementation arc can substrate-cite spec decisions canonically rather than markdown-cite"
+      ]
     }
   ]
 }

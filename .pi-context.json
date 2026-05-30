@@ -1,8 +1,8 @@
 {
-  "contextDir": ".context-jit-spec-v2",
+  "contextDir": ".context",
   "version": "1.1.0",
   "created_at": "2026-05-10T05:27:24.196Z",
-  "previous_contextDir": ".context",
-  "switched_at": "2026-05-30T05:41:21.889Z",
+  "previous_contextDir": ".context-jit-spec-v2",
+  "switched_at": "2026-05-30T05:52:18.277Z",
   "switched_by": "human:davidryan@gmail.com"
 }

@@ -193,5 +193,265 @@
     "parent": "FGAP-001",
     "child": "DEC-0001",
     "relation_type": "open_question_blocks_decision"
+  },
+  {
+    "parent": "FB-001",
+    "child": "project:FGAP-153",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-002",
+    "child": "project:FGAP-154",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-003",
+    "child": "project:FGAP-155",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-004",
+    "child": "project:FGAP-156",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-005",
+    "child": "project:FGAP-157",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-006",
+    "child": "project:FGAP-158",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-007",
+    "child": "project:FGAP-158",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-008",
+    "child": "project:FGAP-159",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-009",
+    "child": "project:FGAP-160",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-010",
+    "child": "project:FGAP-161",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-011",
+    "child": "project:FGAP-162",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-012",
+    "child": "project:FGAP-163",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-013",
+    "child": "project:FGAP-164",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-014",
+    "child": "project:FGAP-151",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-015",
+    "child": "project:FGAP-165",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-016",
+    "child": "project:FGAP-166",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-017",
+    "child": "project:FGAP-167",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-018",
+    "child": "project:FGAP-168",
+    "relation_type": "friction_item_files_to_gap"
+  },
+  {
+    "parent": "FB-001",
+    "child": "DEC-0001",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-004",
+    "child": "DEC-0001",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-005",
+    "child": "DEC-0001",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-006",
+    "child": "DEC-0001",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-007",
+    "child": "DEC-0010",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-008",
+    "child": "DEC-0004",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-009",
+    "child": "DEC-0004",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-010",
+    "child": "DEC-0002",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-011",
+    "child": "DEC-0002",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-015",
+    "child": "DEC-0004",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-018",
+    "child": "DEC-0009",
+    "relation_type": "friction_item_addressed_by_decision"
+  },
+  {
+    "parent": "FB-001",
+    "child": "CONCEPT-001",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-002",
+    "child": "CONCEPT-001",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-003",
+    "child": "CONCEPT-001",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-004",
+    "child": "CONCEPT-002",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-005",
+    "child": "CONCEPT-002",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-008",
+    "child": "CONCEPT-002",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-009",
+    "child": "CONCEPT-003",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-010",
+    "child": "CONCEPT-004",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-011",
+    "child": "CONCEPT-004",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-015",
+    "child": "CONCEPT-003",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "FB-018",
+    "child": "CONCEPT-003",
+    "relation_type": "friction_item_addressed_by_concept"
+  },
+  {
+    "parent": "REF-001",
+    "child": "DEC-0001",
+    "relation_type": "authority_doc_grounds_decision"
+  },
+  {
+    "parent": "REF-001",
+    "child": "DEC-0004",
+    "relation_type": "authority_doc_grounds_decision"
+  },
+  {
+    "parent": "REF-001",
+    "child": "DEC-0008",
+    "relation_type": "authority_doc_grounds_decision"
+  },
+  {
+    "parent": "REF-001",
+    "child": "DEC-0009",
+    "relation_type": "authority_doc_grounds_decision"
+  },
+  {
+    "parent": "REF-001",
+    "child": "DEC-0010",
+    "relation_type": "authority_doc_grounds_decision"
+  },
+  {
+    "parent": "REF-002",
+    "child": "DEC-0002",
+    "relation_type": "authority_doc_grounds_decision"
+  },
+  {
+    "parent": "REF-001",
+    "child": "CONCEPT-001",
+    "relation_type": "authority_doc_grounds_concept"
+  },
+  {
+    "parent": "REF-001",
+    "child": "CONCEPT-002",
+    "relation_type": "authority_doc_grounds_concept"
+  },
+  {
+    "parent": "REF-001",
+    "child": "CONCEPT-003",
+    "relation_type": "authority_doc_grounds_concept"
+  },
+  {
+    "parent": "REF-001",
+    "child": "CONCEPT-004",
+    "relation_type": "authority_doc_grounds_concept"
+  },
+  {
+    "parent": "REF-001",
+    "child": "MODE-001",
+    "relation_type": "authority_doc_names_dispatch_mode"
+  },
+  {
+    "parent": "REF-001",
+    "child": "MODE-002",
+    "relation_type": "authority_doc_names_dispatch_mode"
   }
 ]

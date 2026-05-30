@@ -2,6 +2,7 @@
  * Extension entry point for pi-context — registers block tools and the
  * /context command for project state management.
  */
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -39,6 +40,7 @@ import {
 } from "./context.js";
 import {
 	BootstrapNotFoundError,
+	flipBootstrapPointer,
 	resolveContextDir,
 	SCHEMAS_DIR,
 	schemaPath,
@@ -526,6 +528,337 @@ function handleAcceptAll(_args: string, ctx: ExtensionCommandContext): void {
 		`Adopted canonical config (root: ${r.root}, ${r.schemaCount} schemas / ${r.blockCount} blocks declared). Run /context install to materialize them.`,
 		"info",
 	);
+}
+
+// ── /context switch + list + archive — substrate-management primitives ─────
+
+/**
+ * Resolve a writer identity for the slash command path. Slash commands run
+ * inside the operator's interactive Pi session and the user IS the terminal
+ * operator; the auth-gate identity-stamp at the Pi tool boundary does not
+ * apply here. Falls back to "operator" (plus an operator-visible warning via
+ * ctx.ui.notify) when neither git config user.email nor process.env.USER
+ * yields a value, so the pointer-history switched_by field always carries
+ * a non-empty string.
+ *
+ * NOTE: inlined locally rather than imported from pi-agent-dispatch's
+ * verified-identity.ts to avoid a circular dep (pi-agent-dispatch depends
+ * on pi-context). The discovery cascade matches the canonical resolver:
+ * git config user.email → process.env.USER → null+warning.
+ */
+function resolveSlashCommandWriter(ctx: ExtensionCommandContext): string {
+	let fromGit: string | null = null;
+	try {
+		const out = execSync("git config user.email", {
+			encoding: "utf8",
+			stdio: ["ignore", "pipe", "ignore"],
+			cwd: ctx.cwd,
+		}).trim();
+		fromGit = out.length > 0 ? out : null;
+	} catch {
+		fromGit = null;
+	}
+	if (fromGit !== null) return fromGit;
+	const fromEnv = process.env.USER;
+	if (fromEnv && fromEnv.length > 0) return fromEnv;
+	ctx.ui.notify(
+		"slash command writer-identity: neither git config user.email nor process.env.USER yielded a value; switched_by will be stamped 'operator' (unverified).",
+		"warning",
+	);
+	return "operator";
+}
+
+/**
+ * Bootstrap a new substrate dir + flip the pointer in one operation. The
+ * shared engine behind `/context switch -c <new-dir>` and the
+ * `context-switch` Pi tool with `create_new=true`.
+ *
+ * Sequence:
+ * 1. Caller-supplied target dir name validated (assertSubstrateName — same
+ *    discipline as schema names; rejects path separators / dots / '..').
+ *    NOTE: a leading-dot dir like '.context' fails assertSubstrateName, so
+ *    target dirs that start with '.' bypass that check by stripping the dot
+ *    before validation and re-prepending — preserves the existing convention
+ *    in this repo (`.project` / `.context` style) while keeping the substrate-
+ *    name discipline for the body of the name.
+ * 2. Writes a fresh bootstrap pointer FOR THE NEW DIR via the v1.0.0 single-
+ *    arg writeBootstrapPointer overload — pointer carries the new dir as
+ *    contextDir + a fresh created_at. This OVERWRITES the existing pointer
+ *    intentionally because we then immediately flip; the flip preserves the
+ *    new-dir's created_at since the freshly-written pointer's created_at is
+ *    the only one in scope.
+ *    Wait: this would lose the original substrate's created_at. The correct
+ *    sequence is to flip FIRST (which preserves existing created_at into
+ *    the new pointer + stamps previous_contextDir from existing), then
+ *    scaffold the new dir's structure. flipBootstrapPointer does the pointer
+ *    work; this helper then mkdir's the substrate root + schemas subdir.
+ */
+function switchAndCreate(cwd: string, newContextDir: string, writerIdentity: string): { created: string[] } {
+	// Validation: allow a leading '.' in the dir name (project convention) but
+	// require the rest to match the substrate-name discipline.
+	const nameBody = newContextDir.startsWith(".") ? newContextDir.slice(1) : newContextDir;
+	if (!/^[A-Za-z0-9_-]+$/.test(nameBody)) {
+		throw new Error(
+			`/context switch -c: invalid target dir name '${newContextDir}' (only letters, digits, '-', '_' after an optional leading '.' are allowed; no path separators or '..')`,
+		);
+	}
+
+	// Require an existing pointer so we have something to flip FROM. The
+	// existence check + read live inside flipBootstrapPointer.
+	flipBootstrapPointer(cwd, newContextDir, writerIdentity);
+
+	// Scaffold the new substrate dir's structure (substrate root + schemas
+	// subdir). Mirrors initProject's dir-creation loop without writing the
+	// pointer again (flip already did that).
+	const projectDirPath = resolveContextDir(cwd);
+	const schemasDirPath = schemasDir(cwd);
+	const created: string[] = [];
+	for (const dir of [projectDirPath, schemasDirPath]) {
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true });
+			created.push(`${path.relative(cwd, dir)}/`);
+		}
+	}
+	return { created };
+}
+
+/**
+ * Flip the bootstrap pointer to an existing substrate dir. Shared engine
+ * behind `/context switch <existing-dir>` and the `context-switch` Pi tool
+ * default mode.
+ *
+ * Read-side safety check: verifies `<cwd>/<targetDir>/config.json` exists
+ * before flipping (the substrate must already be initialized; flipping to
+ * a non-substrate dir would leave the resolver pointing at an empty path).
+ * The check is a fail-fast; the flip itself is performed by
+ * flipBootstrapPointer.
+ */
+function switchToExisting(cwd: string, targetDir: string, writerIdentity: string): void {
+	const targetConfigPath = path.join(cwd, targetDir, "config.json");
+	if (!fs.existsSync(targetConfigPath)) {
+		throw new Error(
+			`/context switch: target dir '${targetDir}' has no config.json at ${targetConfigPath} — refusing to flip the bootstrap pointer to a non-substrate dir. Use '/context switch -c ${targetDir}' to bootstrap a fresh substrate at that dir AND flip the pointer.`,
+		);
+	}
+	flipBootstrapPointer(cwd, targetDir, writerIdentity);
+}
+
+/**
+ * Flip the bootstrap pointer back to the previous_contextDir (parallel to
+ * `git switch -`). Shared engine behind `/context switch -` and the
+ * `context-switch` Pi tool with `to_previous=true`.
+ *
+ * Reads the existing pointer's `previous_contextDir`; if absent (the pointer
+ * was never switched), throws a structured error naming the precondition.
+ */
+function switchToPrevious(cwd: string, writerIdentity: string): { from: string; to: string } {
+	const bootstrapPath = path.join(cwd, ".pi-context.json");
+	if (!fs.existsSync(bootstrapPath)) {
+		throw new BootstrapNotFoundError(cwd, bootstrapPath);
+	}
+	const raw = fs.readFileSync(bootstrapPath, "utf-8");
+	const pointer = JSON.parse(raw) as { contextDir?: unknown; previous_contextDir?: unknown };
+	const previous = pointer.previous_contextDir;
+	const current = pointer.contextDir;
+	if (typeof previous !== "string" || previous.length === 0) {
+		throw new Error(
+			`/context switch -: pointer has no previous_contextDir to flip back to (substrate has never been switched). The /context switch - form requires a prior /context switch invocation to populate the previous_contextDir field.`,
+		);
+	}
+	if (typeof current !== "string") {
+		throw new Error(
+			`/context switch -: existing pointer at ${bootstrapPath} lacks a string contextDir; refuses to flip an unreadable pointer`,
+		);
+	}
+	flipBootstrapPointer(cwd, previous, writerIdentity);
+	return { from: current, to: previous };
+}
+
+/**
+ * Enumerate top-level dirs under `cwd` that contain a `config.json` — i.e.,
+ * dirs that could be the target of `/context switch`. Returns an array of
+ * `{name, isActive}` entries; `isActive` flips true for the dir matching the
+ * current bootstrap pointer's contextDir. Shared engine behind `/context list`
+ * and the `context-list` Pi tool.
+ */
+function listSubstrates(cwd: string): Array<{ name: string; isActive: boolean }> {
+	let activeContextDir: string | null = null;
+	try {
+		const bootstrapPath = path.join(cwd, ".pi-context.json");
+		if (fs.existsSync(bootstrapPath)) {
+			const raw = fs.readFileSync(bootstrapPath, "utf-8");
+			const pointer = JSON.parse(raw) as { contextDir?: unknown };
+			if (typeof pointer.contextDir === "string") activeContextDir = pointer.contextDir;
+		}
+	} catch {
+		// Malformed pointer: list still works, no dir flagged active.
+		activeContextDir = null;
+	}
+
+	const out: Array<{ name: string; isActive: boolean }> = [];
+	let entries: string[];
+	try {
+		entries = fs.readdirSync(cwd);
+	} catch {
+		return out;
+	}
+	for (const name of entries.sort()) {
+		const fullPath = path.join(cwd, name);
+		let stat: fs.Stats;
+		try {
+			stat = fs.statSync(fullPath);
+		} catch {
+			continue;
+		}
+		if (!stat.isDirectory()) continue;
+		// archive/ is itself a directory but holds archived substrates; skip
+		// the wrapper dir itself (the items inside are not directly switchable).
+		if (name === "archive") continue;
+		if (!fs.existsSync(path.join(fullPath, "config.json"))) continue;
+		out.push({ name, isActive: activeContextDir === name });
+	}
+	return out;
+}
+
+/**
+ * Move a substrate dir to `archive/<name>/`. Shared engine behind
+ * `/context archive <dir>` and the `context-archive` Pi tool.
+ *
+ * Safety preconditions:
+ * 1. Target dir must NOT be the active substrate (the dir the bootstrap
+ *    pointer currently names). Archiving the active substrate would leave
+ *    the resolver pointing at a non-existent path.
+ * 2. Target dir must exist + must have a config.json (refuses to archive a
+ *    non-substrate dir).
+ * 3. `archive/<name>/` must not already exist (refuses to clobber a prior
+ *    archive of the same name).
+ *
+ * Creates `archive/` if absent. Uses `fs.renameSync` for atomicity on the
+ * same filesystem.
+ */
+function archiveSubstrate(cwd: string, targetDir: string): { from: string; to: string } {
+	const bootstrapPath = path.join(cwd, ".pi-context.json");
+	if (fs.existsSync(bootstrapPath)) {
+		try {
+			const raw = fs.readFileSync(bootstrapPath, "utf-8");
+			const pointer = JSON.parse(raw) as { contextDir?: unknown };
+			if (pointer.contextDir === targetDir) {
+				throw new Error(
+					`/context archive: refuses to archive '${targetDir}' — it is the ACTIVE substrate (the bootstrap pointer names it). Switch to a different substrate first with '/context switch <other-dir>' or '/context switch -c <new-dir>' before archiving '${targetDir}'.`,
+				);
+			}
+		} catch (err) {
+			// Propagate the structural-refuse error verbatim; tolerate other
+			// read-errors (a malformed pointer should not block archival of an
+			// unrelated dir).
+			if (err instanceof Error && err.message.startsWith("/context archive: refuses")) throw err;
+		}
+	}
+
+	const sourcePath = path.join(cwd, targetDir);
+	if (!fs.existsSync(sourcePath) || !fs.statSync(sourcePath).isDirectory()) {
+		throw new Error(`/context archive: target dir '${targetDir}' does not exist at ${sourcePath}`);
+	}
+	if (!fs.existsSync(path.join(sourcePath, "config.json"))) {
+		throw new Error(
+			`/context archive: target dir '${targetDir}' has no config.json — refuses to archive a non-substrate dir (use rm or git mv directly for non-substrate cleanup)`,
+		);
+	}
+
+	const archiveRoot = path.join(cwd, "archive");
+	if (!fs.existsSync(archiveRoot)) fs.mkdirSync(archiveRoot, { recursive: true });
+
+	const destPath = path.join(archiveRoot, targetDir);
+	if (fs.existsSync(destPath)) {
+		throw new Error(
+			`/context archive: archive/${targetDir} already exists at ${destPath} — refuses to clobber a prior archive of the same name. Rename or remove the prior archive first.`,
+		);
+	}
+
+	fs.renameSync(sourcePath, destPath);
+	return { from: path.relative(cwd, sourcePath), to: path.relative(cwd, destPath) };
+}
+
+/**
+ * /context switch — handler for the slash command surface. Parses args for
+ * the three subforms: `-c <new-dir>` (bootstrap new + flip), `-` (flip to
+ * previous_contextDir), bare `<existing-dir>` (flip to existing substrate).
+ */
+function handleSwitch(args: string, ctx: ExtensionCommandContext): void {
+	const trimmed = args.trim();
+	if (trimmed.length === 0) {
+		ctx.ui.notify("Usage: /context switch <existing-dir> | /context switch -c <new-dir> | /context switch -", "error");
+		return;
+	}
+
+	const tokens = trimmed.split(/\s+/);
+	const writerIdentity = resolveSlashCommandWriter(ctx);
+
+	try {
+		if (tokens[0] === "-c") {
+			const target = tokens[1];
+			if (!target) {
+				ctx.ui.notify("Usage: /context switch -c <new-dir>", "error");
+				return;
+			}
+			const { created } = switchAndCreate(ctx.cwd, target, writerIdentity);
+			const createdLine = created.length > 0 ? ` (created ${created.length} dirs: ${created.join(", ")})` : "";
+			ctx.ui.notify(
+				`Switched bootstrap pointer to new substrate '${target}'${createdLine}. Run /context accept-all + /context install to populate.`,
+				"info",
+			);
+			return;
+		}
+		if (tokens[0] === "-") {
+			const { from, to } = switchToPrevious(ctx.cwd, writerIdentity);
+			ctx.ui.notify(`Switched bootstrap pointer from '${from}' back to '${to}' (previous_contextDir).`, "info");
+			return;
+		}
+		// Bare dir name — flip to an existing substrate.
+		switchToExisting(ctx.cwd, tokens[0], writerIdentity);
+		ctx.ui.notify(`Switched bootstrap pointer to existing substrate '${tokens[0]}'.`, "info");
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		ctx.ui.notify(msg, "error");
+	}
+}
+
+/**
+ * /context list — enumerate substrate dirs in the cwd (top-level dirs
+ * containing a config.json). Marks the active one (the dir the bootstrap
+ * pointer names).
+ */
+function handleList(_args: string, ctx: ExtensionCommandContext): void {
+	const subs = listSubstrates(ctx.cwd);
+	if (subs.length === 0) {
+		ctx.ui.notify(
+			"No substrate dirs found under cwd (no top-level dir contains config.json). Run /context init <dir> + /context accept-all to bootstrap one.",
+			"info",
+		);
+		return;
+	}
+	const lines = subs.map((s) => (s.isActive ? `* ${s.name} (active)` : `  ${s.name}`));
+	ctx.ui.notify(lines.join("\n"), "info");
+}
+
+/**
+ * /context archive — move a substrate dir to archive/<dir>/. Refuses to
+ * archive the active substrate; refuses to clobber a prior archive of the
+ * same name.
+ */
+function handleArchive(args: string, ctx: ExtensionCommandContext): void {
+	const targetDir = args.trim().split(/\s+/)[0];
+	if (!targetDir) {
+		ctx.ui.notify("Usage: /context archive <dir>", "error");
+		return;
+	}
+	try {
+		const { from, to } = archiveSubstrate(ctx.cwd, targetDir);
+		ctx.ui.notify(`Archived substrate '${from}' to '${to}'.`, "info");
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		ctx.ui.notify(msg, "error");
+	}
 }
 
 // ── Extension factory ───────────────────────────────────────────────────────
@@ -2211,6 +2544,20 @@ const extension = (pi: ExtensionAPI) => {
 		init: {
 			description: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)",
 			handler: (args, ctx) => handleInit(args, ctx),
+		},
+		switch: {
+			description:
+				"Flip the bootstrap pointer (parallel to git switch). Forms: '<existing-dir>' (flip to existing substrate) | '-c <new-dir>' (bootstrap new + flip) | '-' (flip back to previous_contextDir)",
+			handler: (args, ctx) => handleSwitch(args, ctx),
+		},
+		list: {
+			description: "Enumerate top-level dirs containing config.json (switchable substrates); marks the active one",
+			handler: (args, ctx) => handleList(args, ctx),
+		},
+		archive: {
+			description:
+				"Move a non-active substrate dir to archive/<dir>/ (refuses to archive the active substrate or clobber an existing archive)",
+			handler: (args, ctx) => handleArchive(args, ctx),
 		},
 		install: {
 			description:

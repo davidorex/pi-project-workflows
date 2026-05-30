@@ -1,8 +1,8 @@
 # pi-project-workflows
 
-Three [Pi](https://github.com/badlogic/pi-mono) extensions plus a shared agent-runtime library: typed, multi-step workflow execution via `.workflow.yaml` specs; schema-driven project state in the substrate directory; behavior monitors that classify agent activity and steer corrections; and a library package that owns everything between "I have a spec" and "I have a typed result."
+Four [Pi](https://github.com/badlogic/pi-mono) extensions plus a shared agent-runtime library: typed, multi-step workflow execution via `.workflow.yaml` specs; schema-driven project state in the substrate directory; behavior monitors that classify agent activity and steer corrections; in-pi orchestrator surface for bounded-composite agent-as-tool dispatch with operation-granular capability composition; and a library package that owns everything between "I have a spec" and "I have a typed result."
 
-Schemas are the contract layer. In pi-context, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. In pi-jit-agents, agent specs are compiled to typed results with phantom-tool structured output enforcement. The three extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
+Schemas are the contract layer. In pi-context, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. In pi-jit-agents, agent specs are compiled to typed results with phantom-tool structured output enforcement (classifier-mode) and (per the v2 spec arc) multi-turn agentic-mode dispatch. In pi-agent-dispatch, an in-pi orchestrator authors agent specs + composes operation-granular tool grants + dispatches privileged sub-agents under per-tool human-authorization at the dispatch boundary. The four extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
 
 ## Philosophy
 
@@ -24,16 +24,19 @@ The framework is outcome-agnostic — not a coding agent extension. Blocks can t
 | [@davidorex/pi-jit-agents](packages/pi-jit-agents/) | `npm:@davidorex/pi-jit-agents` | Agent spec compilation and in-process dispatch runtime. Library package (not a Pi extension) that owns loading, compilation, and execution of `.agent.yaml` specs with phantom-tool structured output enforcement. Consumed by pi-workflows and pi-behavior-monitors. |
 | [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, typed step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
 | [@davidorex/pi-behavior-monitors](packages/pi-behavior-monitors/) | `npm:@davidorex/pi-behavior-monitors` | Behavior monitors — autonomous watchdogs that classify agent activity against JSON pattern libraries, steer corrections, and write structured findings. |
+| [@davidorex/pi-agent-dispatch](packages/pi-agent-dispatch/) | `npm:@davidorex/pi-agent-dispatch` | In-pi orchestrator surface — privileged agent-as-tool dispatch via `call-agent`, capability-grant authoring via `author-tool-grant`, real-check gate via `run-real-checks`, attested commit via `commit-attested`, bounded loop via `run-work-order-loop`, dynamic composite tools per `config.tool_operations[]`. Per-tool human-authorization gate at the pi-dispatch layer (auth-gate intercepts canonical write-class tools + prompts via `ctx.ui.confirm` + stamps verified operator identity). |
 
 ## Quick Start
 
 ```bash
-# Install both extensions in any Pi project (one command)
+# Install all four extensions in any Pi project (one command)
 pi install npm:@davidorex/pi-project-workflows
 
 # Or install individually
 pi install npm:@davidorex/pi-context
 pi install npm:@davidorex/pi-workflows
+pi install npm:@davidorex/pi-behavior-monitors
+pi install npm:@davidorex/pi-agent-dispatch
 
 # Initialize project structure
 /context init <substrate-dir>  # bootstrap pointer + substrate/schemas dirs only (no config, no schemas, no blocks)
@@ -43,6 +46,22 @@ pi install npm:@davidorex/pi-workflows
 ```
 
 Block kinds reach the substrate only by declaring their names in `config.json`'s `installed_*` arrays (via `/context accept-all` or by hand) and running `/context install`, which copies them from the package-shipped samples catalog (`samples/`). The substrate (config + lenses + closure-table relations) is degree-zero state that defines where the rest lives and how items group into views.
+
+### Substrate-management primitive (`/context switch` family)
+
+A substrate-dir is selected by the `.pi-context.json` pointer (`contextDir` field). `/context switch` is the substrate-management primitive parallel to `git switch`:
+
+```bash
+/context switch <existing-dir>    # flip pointer to an existing substrate dir
+/context switch -c <new-dir>      # bootstrap a fresh substrate dir + flip pointer in one operation
+/context switch -                 # round-trip to previous_contextDir
+/context list                     # enumerate substrate dirs with config.json (active marked)
+/context archive <dir>            # move a (non-active) substrate dir to archive/
+```
+
+Pointer-flip mutations (`context-switch` / `context-archive` / `context-init` / `context-accept-all` and other write-class tools) route through the pi-agent-dispatch auth-gate, which prompts via `ctx.ui.confirm` and stamps the verified operator identity on the substrate write — agent-issued tool calls become human-authorized at the pi-dispatch boundary regardless of caller-supplied writer fields.
+
+This enables the **per-arc substrate engagement pattern**: significant design/spec arcs (multi-step feature work, spec drafting, dependency migrations) get their own `.context-<arc-name>/` substrate dir with bespoke vocabulary (custom block kinds + relation_types + lenses) decomposing the design space. The substrate IS the spec; the markdown form at `analysis/*.md` is source-of-content; the substrate is source-of-structure + cross-references.
 
 ## Directory Ownership
 
@@ -69,8 +88,12 @@ After initialization, three directories coexist in a project:
 **Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `read-block-dir`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `resolve-item-by-id`, `context-status`, `context-validate`, `context-init`, `context-validate-relations`, `context-edges-for-lens`, `context-walk-descendants`, `complete-task` — block CRUD (top-level + nested array operations) with automatic schema validation, plus cross-block ID resolution and substrate (closure-table relations + lens) tooling
 
 **Commands:**
-- `/context init <substrate-dir>` — write the substrate skeleton (bootstrap pointer + dirs; no config, no schemas, no blocks)
+- `/context init <substrate-dir>` — write the substrate skeleton (bootstrap pointer + dirs; no config, no schemas, no blocks); refuses with loud error when the existing pointer's `contextDir` differs from the caller's argument (points to `/context switch -c <new-dir>` as the correct command for that operation)
+- `/context accept-all` — adopt the packaged conception (samples/conception.json) as config.json
 - `/context install [--update]` — reconcile `<substrate-dir>/` against `installed_schemas` / `installed_blocks` declared in `config.json` from the package registry
+- `/context switch <dir> | -c <new-dir> | -` — substrate-management primitive: flip pointer to existing dir, bootstrap-and-flip in one op, or round-trip to `previous_contextDir`
+- `/context list` — enumerate substrate dirs with `config.json` (active marked)
+- `/context archive <dir>` — move a (non-active) substrate dir to `archive/`
 - `/context view <lensId>` — render a configured lens (groupByLens projection) into the conversation
 - `/context lens-curate <lensId>` — surface bin-assignment suggestions for uncategorized items as a follow-up turn
 - `/context status` — derived project state (source metrics, test counts, block summaries, git state)
@@ -110,6 +133,18 @@ After initialization, three directories coexist in a project:
 **Programmatic API:** `invokeMonitor(name, context?)` — exported function for synchronous classification without event-handler side effects. Returns `ClassifyResult` directly.
 
 **Key concept:** Monitors are `.monitor.json` specs with Nunjucks classify templates. They observe agent activity via Pi event handlers (`message_end`, `turn_end`, `agent_end`), classify against JSON pattern libraries using side-channel LLM calls, and steer corrections or write structured findings. Verdicts: CLEAN (no issue), FLAG (known pattern), NEW (unknown pattern, optionally learned).
+
+### pi-agent-dispatch
+
+**Tools (static):** `call-agent`, `author-agent-spec`, `author-tool-grant`, `run-real-checks`, `commit-attested`, `run-work-order-loop`, `write-schema-migration`
+
+**Tools (dynamic):** composite Pi tools registered per `config.tool_operations[]` entries (kind-typed: read-files / git-log / grep-paths / command-allowlist). Each closure-binds its `instance_params` and is granted via `--tools <canonical_id>` like any built-in.
+
+**Dispatch-layer event handlers:**
+- **auth-gate** (`tool_call` handler) — intercepts canonical write-class tools (`author-agent-spec` / `author-tool-grant` / `commit-attested` / `write-schema` / `write-schema-migration` / `amend-config` / `write-block` / `rename-canonical-id` / `context-init` / `context-accept-all` / `context-switch` / `context-archive` / `workflow-execute` / `workflow-resume` / `workflow-init` / `monitors-control` / `monitors-rules`); refuses non-interactive contexts unconditionally; calls `ctx.ui.confirm` interactively; on confirm, stamps verified operator identity (git config user.email → process.env.USER cascade) onto `event.input.writer`. Substrate attestation reflects actually-confirming-user, not agent-supplied claim.
+- **read-truncation-gate** (`tool_result` handler) — hard-refuses pi built-in `read` truncation by replacing `event.content` with single-text-item carrying canonical directive (paginate / grep / sed byte-range as appropriate per `TruncationResult` shape).
+
+**Key concept:** an in-pi orchestrator authors agent specs + composes operation-granular capability grants, dispatches a privileged sub-agent under a bounded grant clamped to the parent's grant at dispatch, runs deterministic real-checks (build / typecheck / test / runtime demo / adversarial probe) as the terminal verdict (no LLM in the gate loop), and commits the agent's per-file changes with an `Attested-by: agent/<id>` footer. `run-work-order-loop` provides bounded iteration with a human-OK gate at iteration boundaries.
 
 ## Development
 
@@ -166,13 +201,13 @@ npx tsx -e "
 - **ESM, TypeScript** compiled via `tsc` to `dist/`. Pi loads compiled JS from each package's `dist/index.js`. Cross-package imports use `.js` extensions for Node16 module resolution.
 - **Skill self-install** — each extension copies its `skills/` directory to `~/.pi/agent/skills/` on activation, ensuring skills are discoverable regardless of install method.
 - **Pre-commit hook** (husky) runs `npm run check` before every commit. **CI** (GitHub Actions) runs check + build + test on Node 22/23.
-- All four packages use **direct dependencies**. pi-jit-agents depends on pi-context for block-api reads during contextBlocks injection. pi-workflows and pi-behavior-monitors depend on pi-context for block state; consumer migration to adopt pi-jit-agents as their agent runtime is tracked in `docs/planning/jit-agents-spec.md`. pi-context has no knowledge of workflows, monitors, or jit-agents.
+- All packages use **direct dependencies**. pi-jit-agents depends on pi-context for block-api reads during contextBlocks injection. pi-workflows and pi-behavior-monitors depend on pi-context for block state; consumer migration to adopt pi-jit-agents as their agent runtime is tracked in the jit-agents v2 spec at `analysis/2026-05-30-jit-agents-spec-v2.md` (markdown source-of-content) + `.context-jit-spec-v2/` (substrate source-of-structure: 3 axioms + 10 decisions + 5 concepts + 2 dispatch-modes + 6 v1-supersessions + open-question FGAPs + inter-entity edges + `full-spec-render` composition lens). pi-agent-dispatch depends on pi-context + pi-jit-agents. pi-context has no knowledge of workflows, monitors, jit-agents, or agent-dispatch.
 
 ## For LLMs
 
 When working in this repository:
 
-- **Read package READMEs** for detailed API docs: [pi-context](packages/pi-context/README.md), [pi-workflows](packages/pi-workflows/README.md), [pi-behavior-monitors](packages/pi-behavior-monitors/README.md)
+- **Read package READMEs** for detailed API docs: [pi-context](packages/pi-context/README.md), [pi-jit-agents](packages/pi-jit-agents/README.md), [pi-workflows](packages/pi-workflows/README.md), [pi-behavior-monitors](packages/pi-behavior-monitors/README.md), [pi-agent-dispatch](packages/pi-agent-dispatch/README.md)
 - **`packages/pi-context/src/context-sdk.ts`** — derived state, block discovery, the `contextState()` function
 - **`packages/pi-context/src/block-api.ts`** — block CRUD with schema validation
 - **`packages/pi-workflows/src/workflow-sdk.ts`** — vocabulary, discovery, introspection for workflows

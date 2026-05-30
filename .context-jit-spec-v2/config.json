@@ -160,6 +160,22 @@
       "array_key": "supersessions",
       "data_path": "v1-supersessions.json",
       "schema_path": "schemas/v1-supersessions.schema.json"
+    },
+    {
+      "canonical_id": "friction-items",
+      "display_name": "Friction Items",
+      "prefix": "FB-",
+      "schema_path": "schemas/friction-items.schema.json",
+      "data_path": "friction-items.json",
+      "array_key": "items"
+    },
+    {
+      "canonical_id": "authority-docs",
+      "display_name": "Authority Docs",
+      "prefix": "REF-",
+      "schema_path": "schemas/authority-docs.schema.json",
+      "data_path": "authority-docs.json",
+      "array_key": "docs"
     }
   ],
   "relation_types": [
@@ -546,6 +562,72 @@
       ],
       "target_kinds": [
         "decisions"
+      ]
+    },
+    {
+      "canonical_id": "friction_item_files_to_gap",
+      "display_name": "files to gap",
+      "category": "data_flow",
+      "source_kinds": [
+        "friction-items"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
+    },
+    {
+      "canonical_id": "friction_item_addressed_by_decision",
+      "display_name": "addressed by decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "friction-items"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "friction_item_addressed_by_concept",
+      "display_name": "addressed by concept",
+      "category": "data_flow",
+      "source_kinds": [
+        "friction-items"
+      ],
+      "target_kinds": [
+        "concepts"
+      ]
+    },
+    {
+      "canonical_id": "authority_doc_grounds_decision",
+      "display_name": "grounds decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "authority-docs"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "authority_doc_grounds_concept",
+      "display_name": "grounds concept",
+      "category": "data_flow",
+      "source_kinds": [
+        "authority-docs"
+      ],
+      "target_kinds": [
+        "concepts"
+      ]
+    },
+    {
+      "canonical_id": "authority_doc_names_dispatch_mode",
+      "display_name": "names dispatch mode",
+      "category": "data_flow",
+      "source_kinds": [
+        "authority-docs"
+      ],
+      "target_kinds": [
+        "dispatch-modes"
       ]
     }
   ],

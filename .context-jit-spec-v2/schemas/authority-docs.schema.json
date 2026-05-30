@@ -73,6 +73,53 @@
           "authored_at": {
             "type": "string"
           },
+          "surface_kills_mapping": {
+            "type": "array",
+            "description": "Structured capture of 'kills FB-X' claims the authority document makes in prose. Each entry pins a single named surface to the friction items the doc claims it eliminates, with exact source file + line + verbatim claim text for audit. The implementing_feature_id links the authority claim to the planning unit responsible for realizing it; per-arc invariants compare authority's claimed kills against the implementing FEAT's actual planning edges and against verification-attested resolutions.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "surface_name",
+                "source_file",
+                "source_line",
+                "claim_text",
+                "killed_friction_ids"
+              ],
+              "properties": {
+                "surface_name": {
+                  "type": "string",
+                  "description": "Exact name of the surface as written in the authority doc (e.g. 'list-dispatch-models', 'author-agent-spec (fixed)')"
+                },
+                "source_file": {
+                  "type": "string",
+                  "description": "Repo-relative or absolute path to the authority doc file the claim appears in (typically matches the parent doc's file_path)"
+                },
+                "source_line": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Line number within source_file where the verbatim kills claim appears"
+                },
+                "claim_text": {
+                  "type": "string",
+                  "description": "Verbatim text of the kills claim from the source (e.g. 'Kills FB-001, FB-002, FB-003, FB-005, FB-006.')"
+                },
+                "killed_friction_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^FB-\\d{3}$"
+                  },
+                  "description": "Friction item IDs the surface claims to eliminate (parsed from claim_text)"
+                },
+                "implementing_feature_id": {
+                  "type": "string",
+                  "pattern": "^FEAT-\\d{3}$",
+                  "description": "Optional. The FEAT in this substrate that implements this authority surface. When set, per-arc invariants assert that FEAT.feature_depends_on_item edges to FB items match killed_friction_ids exactly; on TASK completion + VER attestation, each FB flips to status=resolved and a verification_kills_friction_item edge from VER to FB is required."
+                }
+              }
+            }
+          },
           "created_by": {
             "type": "string"
           },

@@ -1,0 +1,147 @@
+[
+  {
+    "parent": "AX-001",
+    "child": "DEC-0004",
+    "relation_type": "axiom_grounds_decision"
+  },
+  {
+    "parent": "AX-001",
+    "child": "DEC-0006",
+    "relation_type": "axiom_grounds_decision"
+  },
+  {
+    "parent": "AX-001",
+    "child": "DEC-0007",
+    "relation_type": "axiom_grounds_decision"
+  },
+  {
+    "parent": "AX-001",
+    "child": "DEC-0009",
+    "relation_type": "axiom_grounds_decision"
+  },
+  {
+    "parent": "AX-002",
+    "child": "DEC-0002",
+    "relation_type": "axiom_grounds_decision"
+  },
+  {
+    "parent": "AX-003",
+    "child": "DEC-0001",
+    "relation_type": "axiom_grounds_decision"
+  },
+  {
+    "parent": "AX-003",
+    "child": "DEC-0002",
+    "relation_type": "axiom_grounds_decision"
+  },
+  {
+    "parent": "MODE-001",
+    "child": "DEC-0004",
+    "relation_type": "dispatch_mode_realizes_decision"
+  },
+  {
+    "parent": "MODE-002",
+    "child": "DEC-0004",
+    "relation_type": "dispatch_mode_realizes_decision"
+  },
+  {
+    "parent": "MODE-002",
+    "child": "DEC-0008",
+    "relation_type": "dispatch_mode_realizes_decision"
+  },
+  {
+    "parent": "MODE-002",
+    "child": "DEC-0010",
+    "relation_type": "dispatch_mode_realizes_decision"
+  },
+  {
+    "parent": "MODE-001",
+    "child": "DEC-0009",
+    "relation_type": "dispatch_mode_realizes_decision"
+  },
+  {
+    "parent": "MODE-002",
+    "child": "DEC-0009",
+    "relation_type": "dispatch_mode_realizes_decision"
+  },
+  {
+    "parent": "VSUP-001",
+    "child": "AX-001",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-002",
+    "child": "AX-002",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-003",
+    "child": "AX-003",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-004",
+    "child": "DEC-0004",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-004",
+    "child": "DEC-0008",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-004",
+    "child": "DEC-0009",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-004",
+    "child": "DEC-0010",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-004",
+    "child": "MODE-001",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-004",
+    "child": "MODE-002",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-005",
+    "child": "DEC-0001",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-005",
+    "child": "DEC-0002",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-005",
+    "child": "DEC-0003",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-005",
+    "child": "DEC-0005",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-005",
+    "child": "DEC-0006",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-005",
+    "child": "DEC-0007",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  },
+  {
+    "parent": "VSUP-006",
+    "child": "DEC-0004",
+    "relation_type": "v1_section_superseded_by_v2_item"
+  }
+]

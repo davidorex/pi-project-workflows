@@ -1,4 +1,35 @@
 {
   "schema_version": "1.0.0",
-  "modes": []
+  "modes": [
+    {
+      "id": "MODE-001",
+      "name": "classifier-mode",
+      "triggered_when": "spec.outputSchema set AND tools[] empty/absent; OR outputSchema absent AND tools[] empty/absent (text-format variant — no phantom tool; raw text return)",
+      "dispatch_shape": "Single LLM call. When outputSchema set: forced phantom-tool toolChoice constrains output to structured payload per the verdict-shaped schema. When outputSchema absent: free-form text output; no phantom tool registered.",
+      "output_form": "Schema-validated typed result (when outputSchema set) OR raw text return. Returned as TypedResult.",
+      "use_cases": [
+        "Monitor classify calls (CLEAN / FLAG / NEW verdict-shaped output)",
+        "Workflow agent steps requiring structured output",
+        "Any agent dispatch where the operator-direction is 'transform input X into structured output Y'"
+      ],
+      "implementation_status": "landed",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:55:00Z"
+    },
+    {
+      "id": "MODE-002",
+      "name": "agentic-mode",
+      "triggered_when": "spec.tools[] non-empty AND outputSchema absent (DEC-0009); OR tools[] non-empty AND outputSchema set (agentic-mode wins; outputSchema becomes post-hoc validation). output.format is informational; does not alter mode selection.",
+      "dispatch_shape": "Multi-turn dispatch loop. Declared tools[] (intersected with dispatch.parentGrant per DEC-0047 clamp) becomes LLM's tool registry. Loop: (1) call LLM; (2) if response contains tool calls dispatch each through ExtensionContext per DEC-0008/DEC-0010 append results to message history; (3) call LLM again with enriched history; (4) repeat until end_turn or max-turns or tool-failure. Phantom-tool not used.",
+      "output_form": "Final assistant message after the tool-execution loop terminates. When outputSchema is also set, the final message is validated against it post-hoc.",
+      "use_cases": [
+        "Privileged-agent dispatch via pi-agent-dispatch (FEAT-006 north-star)",
+        "clock-menu-app's spec-requirements-miner / spec-issues-miner / spec-decisions-drafter (tool-using agents authored against tools: [read, append-block-item])",
+        "Any agent dispatch where the operator-direction is 'do the work using these tools'"
+      ],
+      "implementation_status": "pending",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:55:00Z"
+    }
+  ]
 }

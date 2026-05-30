@@ -1,4 +1,81 @@
 {
   "schema_version": "1.0.0",
-  "supersessions": []
+  "supersessions": [
+    {
+      "id": "VSUP-001",
+      "v1_section_reference": "v1 §0 P1",
+      "supersession_kind": "carried_forward_unchanged",
+      "superseded_by_v2_items": [
+        "AX-001"
+      ],
+      "notes": "Uniformity principle carried forward unchanged; statement remains load-bearing.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:55:00Z"
+    },
+    {
+      "id": "VSUP-002",
+      "v1_section_reference": "v1 §0 P2",
+      "supersession_kind": "carried_forward_unchanged",
+      "superseded_by_v2_items": [
+        "AX-002"
+      ],
+      "notes": "Disposability principle carried forward unchanged.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:55:00Z"
+    },
+    {
+      "id": "VSUP-003",
+      "v1_section_reference": "v1 §0 P3",
+      "supersession_kind": "carried_forward_unchanged",
+      "superseded_by_v2_items": [
+        "AX-003"
+      ],
+      "notes": "Recreatability principle carried forward unchanged.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:55:00Z"
+    },
+    {
+      "id": "VSUP-004",
+      "v1_section_reference": "v1 §4 D4",
+      "supersession_kind": "rewritten",
+      "superseded_by_v2_items": [
+        "DEC-0004",
+        "DEC-0008",
+        "DEC-0009",
+        "DEC-0010",
+        "MODE-001",
+        "MODE-002"
+      ],
+      "notes": "v1 D4 framed executeAgent as phantom-tool-only single-turn dispatch. v2 rewrites to dual-mode dispatch (DEC-0004) with mode selection algorithm (DEC-0009) + agentic-mode tool execution through ExtensionContext (DEC-0008) + ExtensionContext as canonical tool-execution surface (DEC-0010). Both modes formally captured as MODE-001 (classifier) and MODE-002 (agentic). Replaces the implementation-hedge framing that capability-grant infrastructure (FEAT-004/005 + TASK-089/092) made dormant at agent dispatch tier.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:55:00Z"
+    },
+    {
+      "id": "VSUP-005",
+      "v1_section_reference": "v1 §4 D1-D3 + D5-D7",
+      "supersession_kind": "carried_forward_unchanged",
+      "superseded_by_v2_items": [
+        "DEC-0001",
+        "DEC-0002",
+        "DEC-0003",
+        "DEC-0005",
+        "DEC-0006",
+        "DEC-0007"
+      ],
+      "notes": "v1 D1/D2/D3/D5/D6/D7 carried forward; D7 promoted from provisional to enacted. No substantive changes to the decisions themselves.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:55:00Z"
+    },
+    {
+      "id": "VSUP-006",
+      "v1_section_reference": "v1 §6 Non-Goals 'add new features — only reorganizes and unifies existing capabilities'",
+      "supersession_kind": "replaced_by_new_decision",
+      "superseded_by_v2_items": [
+        "DEC-0004"
+      ],
+      "notes": "v1 §6's 'no new features' framing was the framing under which the implementation hedge happened (extraction-only scope, no multi-tool dispatch). v2 §6 replaces with 'realizes the canonical body's commitments (FEAT-005/006/DEC-0047/TASK-091/JI-029) at the agent layer.' DEC-0004's dual-mode dispatch IS new framework capability relative to v1's extraction-only scope; explicitly so per canonical-body alignment.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:55:00Z"
+    }
+  ]
 }

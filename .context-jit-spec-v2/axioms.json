@@ -1,4 +1,38 @@
 {
   "schema_version": "1.0.0",
-  "axioms": []
+  "axioms": [
+    {
+      "id": "AX-001",
+      "title": "One concept of agent (uniformity)",
+      "statement": "An agent is a single uniform concept — a named callable unit with typed inputs, typed outputs, context-parametric implementation, and capability-granted tool execution when declared. There is no distinction between monitor agent / workflow agent / privileged agent at the framework level. The same spec format, compilation pipeline, dispatch runtime, and output-validation contract apply to every agent regardless of consumer.",
+      "rationale": "Uniformity is the framework correctness criterion. Special-casing per consumer multiplies code paths and contradicts P3 (recreatability via framework alone).",
+      "status": "enacted",
+      "v1_origin": "v1 §0 P1",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:45:00Z",
+      "enacted_at": "2026-05-30T13:45:00Z"
+    },
+    {
+      "id": "AX-002",
+      "title": "Existing agents are disposable development artifacts",
+      "statement": "All agent specs in the codebase carry fossilized assumptions from the archaeological strata where they were authored. None are durable assets. If the framework is correct every agent can be recreated. Replacing, deleting, or starting over is permissible.",
+      "rationale": "Treating existing specs as requirements forces framework to accommodate legacy shapes. The discipline runs the other way: framework is canonical; specs are disposable.",
+      "status": "enacted",
+      "v1_origin": "v1 §0 P2",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:45:00Z",
+      "enacted_at": "2026-05-30T13:45:00Z"
+    },
+    {
+      "id": "AX-003",
+      "title": "Framework correctness implies agent recreatability",
+      "statement": "The test of framework correctness: can any agent be written against the framework purely by authoring an agent spec YAML + a template + optionally an output schema + a capability declaration — with no framework code changes? If a new agent requires touching framework code, the framework is insufficiently generalized.",
+      "rationale": "Recreatability is the operational definition of canonical framework. If specs are durable artifacts, the framework is leaking implementation into the consumer surface.",
+      "status": "enacted",
+      "v1_origin": "v1 §0 P3",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T13:45:00Z",
+      "enacted_at": "2026-05-30T13:45:00Z"
+    }
+  ]
 }

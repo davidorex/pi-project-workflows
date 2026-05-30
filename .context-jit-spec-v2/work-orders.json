@@ -1,3 +1,458 @@
 {
-	"work_orders": []
+  "work_orders": [
+    {
+      "id": "WO-001",
+      "title": "Resolve FGAP-115 ExtensionContext currentModel/currentProvider gap",
+      "status": "proposed",
+      "target_agent": "spec-resolution-agent",
+      "input_contract": {
+        "type": "object",
+        "required": [
+          "fgap_id",
+          "options_summary"
+        ],
+        "properties": {
+          "fgap_id": {
+            "type": "string",
+            "const": "FGAP-115"
+          },
+          "options_summary": {
+            "type": "string",
+            "description": "Three options from FGAP-115 body"
+          }
+        }
+      },
+      "context_blocks": [
+        {
+          "name": "framework-gaps",
+          "item": "FGAP-115"
+        },
+        "decisions",
+        "concepts"
+      ],
+      "output_contract": {
+        "type": "object",
+        "required": [
+          "selected_option",
+          "rationale",
+          "fgap_resolution_text"
+        ],
+        "properties": {
+          "selected_option": {
+            "type": "string",
+            "enum": [
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "fgap_resolution_text": {
+            "type": "string",
+            "description": "Text to append to FGAP-115 proposed_resolution"
+          }
+        }
+      },
+      "scope": {
+        "files": [
+          "packages/pi-jit-agents/src/**"
+        ],
+        "operations": []
+      },
+      "real_check_criteria": {
+        "build_check_test": false,
+        "runtime_demo": {
+          "invocation": "npx tsx -e 'import {readBlock} from \"@davidorex/pi-context/block-api\"; const fg = readBlock(\".\", \"framework-gaps\").gaps.find(g => g.id === \"FGAP-115\"); console.log(fg.status);'",
+          "expected": "closed"
+        },
+        "adversarial_probe": {
+          "targets": [
+            ".project/framework-gaps.json FGAP-115 status + closed_by + closed_at + proposed_resolution text"
+          ]
+        }
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:40:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:41:49.207Z"
+    },
+    {
+      "id": "WO-002",
+      "title": "Implement agentic-mode dispatch loop in jit-runtime.ts (FEAT-001)",
+      "status": "proposed",
+      "target_agent": "jit-agents-implementation-agent",
+      "input_contract": {
+        "type": "object",
+        "required": [
+          "target_file",
+          "feature_id",
+          "mode_id"
+        ],
+        "properties": {
+          "target_file": {
+            "type": "string",
+            "const": "packages/pi-jit-agents/src/jit-runtime.ts"
+          },
+          "feature_id": {
+            "type": "string",
+            "const": "FEAT-001"
+          },
+          "mode_id": {
+            "type": "string",
+            "const": "MODE-002"
+          }
+        }
+      },
+      "context_blocks": [
+        {
+          "name": "features",
+          "item": "FEAT-001"
+        },
+        {
+          "name": "dispatch-modes",
+          "item": "MODE-002"
+        },
+        {
+          "name": "decisions",
+          "item": "DEC-0004"
+        },
+        {
+          "name": "decisions",
+          "item": "DEC-0008"
+        },
+        {
+          "name": "decisions",
+          "item": "DEC-0010"
+        },
+        "concepts"
+      ],
+      "output_contract": {
+        "type": "object",
+        "required": [
+          "implementation_summary",
+          "test_summary",
+          "runtime_demo_output"
+        ],
+        "properties": {
+          "implementation_summary": {
+            "type": "string"
+          },
+          "test_summary": {
+            "type": "string"
+          },
+          "runtime_demo_output": {
+            "type": "string"
+          }
+        }
+      },
+      "scope": {
+        "files": [
+          "packages/pi-jit-agents/src/jit-runtime.ts",
+          "packages/pi-jit-agents/src/*.test.ts"
+        ],
+        "operations": []
+      },
+      "real_check_criteria": {
+        "build_check_test": true,
+        "runtime_demo": {
+          "invocation": "npx tsx packages/pi-jit-agents/scripts/runtime-demo-agentic-dispatch.ts",
+          "expected": "agentic dispatch loop end-to-end success"
+        },
+        "adversarial_probe": {
+          "targets": [
+            "jit-runtime.ts executeAgent boundary",
+            "compiled.tools threading to LLM tool registry",
+            "ExtensionContext.dispatchTool routing",
+            "loop termination on end_turn/max-turns/tool-failure",
+            "capability grant clamp per DEC-0047"
+          ]
+        }
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:40:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:41:49.211Z"
+    },
+    {
+      "id": "WO-003",
+      "title": "Implement list-dispatch-models Pi tool + CLI dual-surface (FEAT-002)",
+      "status": "proposed",
+      "target_agent": "pi-tool-implementation-agent",
+      "input_contract": {
+        "type": "object",
+        "required": [
+          "feature_id"
+        ],
+        "properties": {
+          "feature_id": {
+            "type": "string",
+            "const": "FEAT-002"
+          }
+        }
+      },
+      "context_blocks": [
+        {
+          "name": "features",
+          "item": "FEAT-002"
+        },
+        {
+          "name": "friction-items",
+          "item": "FB-007"
+        }
+      ],
+      "output_contract": {
+        "type": "object",
+        "required": [
+          "pi_tool_summary",
+          "cli_script_summary"
+        ],
+        "properties": {
+          "pi_tool_summary": {
+            "type": "string"
+          },
+          "cli_script_summary": {
+            "type": "string"
+          }
+        }
+      },
+      "scope": {
+        "files": [
+          "packages/pi-agent-dispatch/src/list-dispatch-models-tool.ts",
+          "scripts/orchestrator/list-dispatch-models.ts"
+        ],
+        "operations": []
+      },
+      "real_check_criteria": {
+        "build_check_test": true,
+        "runtime_demo": {
+          "invocation": "pi -p 'call list-dispatch-models' --mode json | jq '.models | length > 0'",
+          "expected": "true"
+        },
+        "adversarial_probe": {
+          "targets": [
+            "Pi tool registration + ExtensionContext model registry traversal",
+            "scripts/orchestrator/ CLI output matches Pi tool output"
+          ]
+        }
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:40:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:41:49.213Z"
+    },
+    {
+      "id": "WO-004",
+      "title": "Implement call-agent structured-return + zero-token detection (FEAT-003)",
+      "status": "proposed",
+      "target_agent": "jit-agents-implementation-agent",
+      "input_contract": {
+        "type": "object",
+        "required": [
+          "feature_id"
+        ],
+        "properties": {
+          "feature_id": {
+            "type": "string",
+            "const": "FEAT-003"
+          }
+        }
+      },
+      "context_blocks": [
+        {
+          "name": "features",
+          "item": "FEAT-003"
+        },
+        {
+          "name": "friction-items",
+          "item": "FB-009"
+        },
+        {
+          "name": "friction-items",
+          "item": "FB-015"
+        }
+      ],
+      "output_contract": {
+        "type": "object",
+        "required": [
+          "call_agent_changes",
+          "zero_token_detection_summary"
+        ],
+        "properties": {
+          "call_agent_changes": {
+            "type": "string"
+          },
+          "zero_token_detection_summary": {
+            "type": "string"
+          }
+        }
+      },
+      "scope": {
+        "files": [
+          "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "packages/pi-jit-agents/src/jit-runtime.ts"
+        ],
+        "operations": []
+      },
+      "real_check_criteria": {
+        "build_check_test": true,
+        "runtime_demo": {
+          "invocation": "pi -p 'call call-agent with valid agent' --mode json | jq '.content[0]'",
+          "expected": "non-empty structured output"
+        },
+        "adversarial_probe": {
+          "targets": [
+            "AgentToolResult.content carries verbatim output",
+            "zero-token throws AgentDispatchError",
+            "workflow chaining input→output works"
+          ]
+        }
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:40:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:41:49.213Z"
+    },
+    {
+      "id": "WO-005",
+      "title": "Implement agent introspection + dispatch-history surface (FEAT-004)",
+      "status": "proposed",
+      "target_agent": "pi-tool-implementation-agent",
+      "input_contract": {
+        "type": "object",
+        "required": [
+          "feature_id"
+        ],
+        "properties": {
+          "feature_id": {
+            "type": "string",
+            "const": "FEAT-004"
+          }
+        }
+      },
+      "context_blocks": [
+        {
+          "name": "features",
+          "item": "FEAT-004"
+        },
+        {
+          "name": "friction-items",
+          "item": "FB-016"
+        }
+      ],
+      "output_contract": {
+        "type": "object",
+        "required": [
+          "tools_implemented"
+        ],
+        "properties": {
+          "tools_implemented": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "scope": {
+        "files": [
+          "packages/pi-agent-dispatch/src/agent-trace-tool.ts",
+          "packages/pi-agent-dispatch/src/inspect-agent-tool.ts",
+          "packages/pi-agent-dispatch/src/query-agent-dispatch-tool.ts",
+          "scripts/orchestrator/*.ts"
+        ],
+        "operations": []
+      },
+      "real_check_criteria": {
+        "build_check_test": true,
+        "runtime_demo": {
+          "invocation": "pi -p 'call agent-trace --limit 5' --mode json | jq '.dispatches | length'",
+          "expected": "number"
+        },
+        "adversarial_probe": {
+          "targets": [
+            "3 Pi tools registered",
+            "session JSONL parsing correct",
+            "pagination + filtering"
+          ]
+        }
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:40:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:41:49.214Z"
+    },
+    {
+      "id": "WO-006",
+      "title": "Implement author-agent-spec correctness arc (FEAT-005; FB-001..006)",
+      "status": "proposed",
+      "target_agent": "jit-agents-implementation-agent",
+      "input_contract": {
+        "type": "object",
+        "required": [
+          "feature_id"
+        ],
+        "properties": {
+          "feature_id": {
+            "type": "string",
+            "const": "FEAT-005"
+          }
+        }
+      },
+      "context_blocks": [
+        {
+          "name": "features",
+          "item": "FEAT-005"
+        },
+        "friction-items",
+        {
+          "name": "decisions",
+          "item": "DEC-0001"
+        }
+      ],
+      "output_contract": {
+        "type": "object",
+        "required": [
+          "fixes_landed"
+        ],
+        "properties": {
+          "fixes_landed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "scope": {
+        "files": [
+          "packages/pi-jit-agents/src/agent-spec.ts",
+          "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "packages/pi-jit-agents/src/types.ts"
+        ],
+        "operations": []
+      },
+      "real_check_criteria": {
+        "build_check_test": true,
+        "runtime_demo": {
+          "invocation": "npx tsx packages/pi-agent-dispatch/scripts/runtime-demo-author-agent-spec-correctness.ts",
+          "expected": "FB-001..006 reproducers all pass"
+        },
+        "adversarial_probe": {
+          "targets": [
+            "resolvePromptField narrowed to .md/.txt extensions",
+            "YAML serializer preserves newlines (literal block scalar)",
+            "round-trip validation surfaces template-path-not-found / schema-not-registered / model-not-in-registry",
+            "AgentSpec oneOf discriminator",
+            "FB-005 model pre-validation via list-dispatch-models"
+          ]
+        }
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:40:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:41:49.214Z"
+    }
+  ]
 }

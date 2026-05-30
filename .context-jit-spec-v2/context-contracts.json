@@ -1,3 +1,134 @@
 {
-	"contracts": []
+  "contracts": [
+    {
+      "id": "CTX-001",
+      "unit_kind": "task",
+      "bundle_relation_types": [
+        {
+          "relation_type": "task_depends_on_task",
+          "direction": "out",
+          "max_depth": 2
+        },
+        {
+          "relation_type": "feature_depends_on_item",
+          "direction": "in",
+          "max_depth": 1
+        }
+      ],
+      "notes": "TASK execution context: outbound task_depends_on_task at depth 2 surfaces the precondition chain + cross-substrate FGAPs the task closes (via the same relation_type carrying TASK→project:FGAP sentinel edges); inbound feature_depends_on_item at depth 1 surfaces the FEAT this TASK implements + (via the same relation_type) the DEC/MODE/FB items the FEAT depends on. Composes the bundle a coder needs at TASK-002 dispatch time: which TASK precedes me, which FEAT I serve, which FGAPs I close, which DECs the FEAT realizes.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:35:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:40:18.461Z"
+    },
+    {
+      "id": "CTX-002",
+      "unit_kind": "feature",
+      "bundle_relation_types": [
+        {
+          "relation_type": "feature_depends_on_item",
+          "direction": "out",
+          "max_depth": 2
+        },
+        {
+          "relation_type": "task_depends_on_task",
+          "direction": "in",
+          "max_depth": 1
+        }
+      ],
+      "notes": "FEAT execution context: outbound feature_depends_on_item at depth 2 surfaces the DECs realized + FB items addressed + MODE (since FEAT→MODE uses same relation_type); inbound task_depends_on_task at depth 1 surfaces the TASKs implementing this FEAT. Composes the bundle a planner needs: what does this FEAT cover, what FB friction does it close, what TASKs implement it, what decisions ground it.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:35:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:40:18.464Z"
+    },
+    {
+      "id": "CTX-003",
+      "unit_kind": "decision",
+      "bundle_relation_types": [
+        {
+          "relation_type": "axiom_grounds_decision",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "concept_referenced_in_decision",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "dispatch_mode_realizes_decision",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "authority_doc_grounds_decision",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "friction_item_addressed_by_decision",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "v1_section_superseded_by_v2_item",
+          "direction": "in",
+          "max_depth": 1
+        }
+      ],
+      "notes": "DEC execution context: inbound from 6 relation types — axiom (foundational ground), concept (referenced surface), dispatch-mode (mode realizing the decision), authority-doc (external grounding), friction-item (FB addressed by the decision class), v1-supersession (v1 section being superseded). Composes the bundle a reader needs to understand WHY the decision says what it says + WHAT it addresses.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:35:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:40:18.465Z"
+    },
+    {
+      "id": "CTX-004",
+      "unit_kind": "framework-gap",
+      "bundle_relation_types": [
+        {
+          "relation_type": "open_question_blocks_decision",
+          "direction": "out",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "friction_item_files_to_gap",
+          "direction": "in",
+          "max_depth": 1
+        }
+      ],
+      "notes": "FGAP execution context: outbound open_question_blocks_decision at depth 1 surfaces which DEC this gap blocks; inbound friction_item_files_to_gap at depth 1 surfaces FB items grounding the gap (cross-substrate sentinel form receives FB→project:FGAP edges; in-substrate FGAP-NNN receives the in-substrate FB→FGAP-NNN form). Composes the bundle a coder needs at FGAP closure time: what decision unblocks, what friction grounds the closure.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:35:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:40:18.465Z"
+    },
+    {
+      "id": "CTX-005",
+      "unit_kind": "concept",
+      "bundle_relation_types": [
+        {
+          "relation_type": "concept_referenced_in_decision",
+          "direction": "out",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "friction_item_addressed_by_concept",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "authority_doc_grounds_concept",
+          "direction": "in",
+          "max_depth": 1
+        }
+      ],
+      "notes": "CONCEPT execution context: outbound to decisions citing it; inbound from FB items addressed at the concept layer + authority docs grounding the concept. Composes the bundle a reader/coder needs when the concept is referenced as the surface a fix targets.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T16:35:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-05-30T09:40:18.466Z"
+    }
+  ]
 }

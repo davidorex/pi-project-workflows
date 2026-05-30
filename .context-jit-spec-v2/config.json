@@ -816,6 +816,102 @@
       "forbid_target_bucket": "unknown",
       "severity": "warning",
       "message": "Task '{id}' is governed by a superseded or cancelled decision"
+    },
+    {
+      "id": "decision-grounded-by-axiom-or-friction-or-authority",
+      "class": "requires-edge",
+      "block": "decisions",
+      "relation_types": [
+        "axiom_grounds_decision",
+        "friction_item_addressed_by_decision",
+        "authority_doc_grounds_decision"
+      ],
+      "direction": "as_child",
+      "severity": "warning",
+      "message": "Decision {id} has no grounding edge (axiom / friction-item / authority-doc); ungrounded decisions risk drifting from arc canon"
+    },
+    {
+      "id": "concept-referenced-by-decision-or-grounded",
+      "class": "requires-edge",
+      "block": "concepts",
+      "relation_types": [
+        "concept_referenced_in_decision",
+        "authority_doc_grounds_concept",
+        "friction_item_addressed_by_concept"
+      ],
+      "direction": "as_child",
+      "severity": "warning",
+      "message": "Concept {id} has no incoming edge (no decision references it; no authority-doc grounds it; no friction-item addresses it); orphan concepts are arc noise"
+    },
+    {
+      "id": "dispatch-mode-realizes-decision",
+      "class": "requires-edge",
+      "block": "dispatch-modes",
+      "relation_types": [
+        "dispatch_mode_realizes_decision"
+      ],
+      "direction": "as_parent",
+      "severity": "error",
+      "message": "Dispatch mode {id} realizes no decision (dispatch_mode_realizes_decision edge required); mode without decision-grounding is undefined"
+    },
+    {
+      "id": "friction-item-files-to-gap-or-addressed",
+      "class": "requires-edge",
+      "block": "friction-items",
+      "relation_types": [
+        "friction_item_files_to_gap",
+        "friction_item_addressed_by_decision",
+        "friction_item_addressed_by_concept"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Friction item {id} has no outgoing edge (no FGAP filed, no decision addressing, no concept addressing); lost-friction items have no implementation path"
+    },
+    {
+      "id": "authority-doc-grounds-something",
+      "class": "requires-edge",
+      "block": "authority-docs",
+      "relation_types": [
+        "authority_doc_grounds_decision",
+        "authority_doc_grounds_concept",
+        "authority_doc_names_dispatch_mode"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Authority doc {id} grounds nothing (no decision / concept / dispatch-mode edge); orphan authority does not drive the arc"
+    },
+    {
+      "id": "v1-supersession-targets-v2-item",
+      "class": "requires-edge",
+      "block": "v1-supersessions",
+      "relation_types": [
+        "v1_section_superseded_by_v2_item"
+      ],
+      "direction": "as_parent",
+      "severity": "error",
+      "message": "V1 supersession {id} has no target v2 item edge; supersession without target loses the v1→v2 trace"
+    },
+    {
+      "id": "feature-realizes-or-addresses",
+      "class": "requires-edge",
+      "block": "features",
+      "relation_types": [
+        "feature_depends_on_item"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Feature {id} has no outgoing edge (no DEC realized, no FB addressed); features without grounding are floating deliverables"
+    },
+    {
+      "id": "task-implements-feature-or-closes-gap",
+      "class": "requires-edge",
+      "block": "tasks",
+      "relation_types": [
+        "task_depends_on_task"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Task {id} has no outgoing task_depends_on_task edge (no FEAT implemented, no FGAP closed, no precondition); tasks without scaffolding are unanchored work"
     }
   ],
   "tool_operations": [],

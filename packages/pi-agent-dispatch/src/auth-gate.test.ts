@@ -87,11 +87,13 @@ afterEach(() => {
 });
 
 describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
-	it("contains all 15 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 extension)", () => {
+	it("contains all 17 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 + TASK-094 extensions)", () => {
 		// Aim: pin the list verbatim against the FGAP-134 plan + the
-		// FGAP-136 write-schema-migration extension so future substrate
-		// evolutions surface as test failures requiring an explicit canon
-		// update rather than a silent membership drift.
+		// FGAP-136 write-schema-migration extension + the TASK-094
+		// /context switch family extension (context-switch + context-archive;
+		// context-list is read-only and intentionally NOT in the gated set)
+		// so future substrate evolutions surface as test failures requiring
+		// an explicit canon update rather than a silent membership drift.
 		const expected = new Set<string>([
 			"author-agent-spec",
 			"author-tool-grant",
@@ -103,6 +105,8 @@ describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
 			"rename-canonical-id",
 			"context-init",
 			"context-accept-all",
+			"context-switch",
+			"context-archive",
 			"workflow-execute",
 			"workflow-resume",
 			"workflow-init",

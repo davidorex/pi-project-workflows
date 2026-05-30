@@ -1,0 +1,484 @@
+{
+  "items": [
+    {
+      "id": "FB-001",
+      "title": "resolvePromptField heuristic misclassifies inline prompts as template file paths",
+      "severity": "blocking",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T12:52:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "prompt-heuristic",
+      "description": "When an inline prompt string (prompt.system or prompt.task) is a single line containing any '/' character, resolvePromptField classifies it as a template file path instead of inline text. The condition `value.includes('/') && !value.includes('\\n')` triggers on natural-language prompts that mention directories (e.g. 'docs/03-solar-engine.md'), URLs, or any path-like string. There is no explicit 'inline:' discriminator in the YAML shape — only 'template:' exists as an explicit key. The inline path is heuristic-only, and the heuristic is wrong.",
+      "actual_behavior": "Prompt text like 'Read docs/03-solar-engine.md' is stored as taskPromptTemplate instead of taskPrompt. compileAgent calls renderTemplateFile with the prompt text as a file path, resulting in ENOENT. The compile fails with 'no prompt content produced' when both prompts are misclassified.",
+      "expected_behavior": "Inline prompts containing natural language that happens to mention paths should be treated as inline text, not template file paths. A conservative heuristic would only treat a value as a template path if it ENDS with a known template extension (.md, .txt) and does not contain natural-language markers (spaces, punctuation outside path characters). Alternatively, an explicit 'inline:' key should exist alongside 'template:' in the YAML shape.",
+      "reproduction": "1. author-agent-spec with prompt.task set to any string containing '/' and no newlines (e.g. 'Read the docs at /Users/me/project/docs/'). 2. call-agent on that spec. 3. Observe ENOENT trying to open the prompt text as a file path.",
+      "workaround": "Remove all '/' characters from inline prompts. Use template variables like {{ input.doc }} to pass paths instead of hardcoding them.",
+      "code_references": [
+        {
+          "file": "packages/pi-jit-agents/src/agent-spec.ts",
+          "line": 30,
+          "symbol": "resolvePromptField",
+          "snippet": "(value.includes('/') && !value.includes('\\n'))"
+        }
+      ]
+    },
+    {
+      "id": "FB-001",
+      "title": "resolvePromptField heuristic misclassifies inline prompts as template file paths",
+      "severity": "blocking",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T12:52:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "prompt-heuristic",
+      "description": "When an inline prompt string (prompt.system or prompt.task) is a single line containing any '/' character, resolvePromptField classifies it as a template file path instead of inline text. The condition `value.includes('/') && !value.includes('\\n')` triggers on natural-language prompts that mention directories (e.g. 'docs/03-solar-engine.md'), URLs, or any path-like string. There is no explicit 'inline:' discriminator in the YAML shape — only 'template:' exists as an explicit key. The inline path is heuristic-only, and the heuristic is wrong.",
+      "actual_behavior": "Prompt text like 'Read docs/03-solar-engine.md' is stored as taskPromptTemplate instead of taskPrompt. compileAgent calls renderTemplateFile with the prompt text as a file path, resulting in ENOENT. The compile fails with 'no prompt content produced' when both prompts are misclassified.",
+      "expected_behavior": "Inline prompts containing natural language that happens to mention paths should be treated as inline text, not template file paths. A conservative heuristic would only treat a value as a template path if it ENDS with a known template extension (.md, .txt) and does not contain natural-language markers (spaces, punctuation outside path characters). Alternatively, an explicit 'inline:' key should exist alongside 'template:' in the YAML shape.",
+      "reproduction": "1. author-agent-spec with prompt.task set to any string containing '/' and no newlines (e.g. 'Read the docs at /Users/me/project/docs/'). 2. call-agent on that spec. 3. Observe ENOENT trying to open the prompt text as a file path.",
+      "workaround": "Remove all '/' characters from inline prompts. Use template variables like {{ input.doc }} to pass paths instead of hardcoding them.",
+      "code_references": [
+        {
+          "file": "packages/pi-jit-agents/src/agent-spec.ts",
+          "line": 30,
+          "symbol": "resolvePromptField",
+          "snippet": "(value.includes('/') && !value.includes('\\n'))"
+        }
+      ]
+    },
+    {
+      "id": "FB-002",
+      "title": "author-agent-spec YAML serializer uses folded block scalar, destroying newlines",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:01:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "yaml-serialization",
+      "description": "author-agent-spec serializes the spec object to YAML using yamlStringify. Multi-line strings with embedded newlines are serialized with '>-' (folded block scalar), which collapses newlines to spaces. This destroys the only escape from the resolvePromptField heuristic — making the string multi-line (containing '\\n') would bypass the '/' check, but the serializer strips the newlines. The author has no control over YAML scalar style (cannot force '|' literal block scalar).",
+      "actual_behavior": "A task prompt with embedded '\\n' characters like 'Read doc.\\nPath is X.' becomes a single folded line: 'Read doc. Path is X.' After folding, the '/' in the path triggers the template-path heuristic.",
+      "expected_behavior": "The author should be able to produce '|' (literal block scalar) YAML output for multi-line prompt content, preserving newlines.",
+      "reproduction": "1. author-agent-spec with prompt.task containing embedded newlines (e.g. 'line1\\nline2'). 2. Read the resulting YAML file. 3. Observe '>-' (folded) instead of '|' (literal).",
+      "code_references": [
+        {
+          "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "line": 72,
+          "symbol": "yamlStringify",
+          "snippet": "const yamlContent = yamlStringify(specObj);"
+        }
+      ]
+    },
+    {
+      "id": "FB-003",
+      "title": "author-agent-spec validation is a false positive for misclassified prompts",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T12:52:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "agent-authoring",
+      "description": "author-agent-spec validates specs by round-tripping through parseAgentYaml. When a prompt is misclassified as a template path (FB-001), parseAgentYaml succeeds — it stores the value in taskPromptTemplate instead of taskPrompt. The validation sees a valid AgentSpec and passes. The failure only surfaces later in compileAgent when it tries to open the prompt text as a file. This means author-agent-spec reports success for specs that will fail at dispatch.",
+      "actual_behavior": "Spec with 'Read docs/03-solar-engine.md' as inline task prompt passes author-agent-spec validation. call-agent fails with ENOENT trying to open the prompt as a file.",
+      "expected_behavior": "Validation should catch that the prompt is misclassified, or the dispatcher should handle missing template files gracefully (fall back to inline interpretation when template file doesn't exist).",
+      "reproduction": "Same as FB-001. author-agent-spec succeeds, call-agent fails.",
+      "code_references": [
+        {
+          "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+          "line": 76,
+          "symbol": "parseAgentYaml",
+          "snippet": "const parsed = parseAgentYaml(tmpPath);"
+        }
+      ]
+    },
+    {
+      "id": "FB-004",
+      "title": "Two competing AgentSpec shapes: TypeScript type vs YAML input",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T12:54:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "agent-authoring",
+      "description": "The TypeScript AgentSpec type defines systemPrompt/taskPrompt as top-level fields. The YAML parser (parseAgentYaml) reads prompt.system/prompt.task. These are two different shapes for the same concept. An author writing to the TypeScript shape produces YAML with top-level systemPrompt/taskPrompt keys — which parseAgentYaml ignores because it reads from the prompt.* namespace. The parser's output shape differs from the YAML input shape.",
+      "actual_behavior": "Writing { systemPrompt: '...', taskPrompt: '...' } to author-agent-spec produces YAML with top-level systemPrompt/taskPrompt keys. parseAgentYaml reads spec.prompt?.system and spec.prompt?.task — both undefined. No prompt content is produced.",
+      "expected_behavior": "A single canonical shape for both the TypeScript type and the YAML input. If the TypeScript type is the truth, parseAgentYaml should read top-level fields. If the YAML input is the truth, the TypeScript type should reflect the nested shape.",
+      "reproduction": "1. author-agent-spec with { systemPrompt: 'test', taskPrompt: 'test' }. 2. call-agent. 3. Observe compile failure: no prompt content.",
+      "workaround": "Use prompt.system and prompt.task in the spec object.",
+      "code_references": [
+        {
+          "file": "packages/pi-jit-agents/src/types.ts",
+          "line": 21,
+          "symbol": "AgentSpec",
+          "snippet": "systemPrompt?: string; taskPrompt?: string;"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/agent-spec.ts",
+          "line": 169,
+          "symbol": "parseAgentYaml",
+          "snippet": "const systemField = resolvePromptField(spec.prompt?.system);"
+        }
+      ]
+    },
+    {
+      "id": "FB-005",
+      "title": "model field required at dispatch but optional in AgentSpec type",
+      "severity": "blocking",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:33:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "model-resolution",
+      "description": "The AgentSpec TypeScript type declares model as optional (model?: string). call-agent rejects dispatch when model is absent with error 'no model specified'. The field is effectively required for dispatch but the type says optional.",
+      "actual_behavior": "dispatch fails: 'call-agent: agent X has no model specified.'",
+      "expected_behavior": "Either model should be required in the type, or call-agent should default to the orchestration agent's model when absent.",
+      "reproduction": "1. author-agent-spec without a model field. 2. call-agent. 3. Observe error.",
+      "workaround": "Always include a model field in agent specs.",
+      "code_references": [
+        {
+          "file": "packages/pi-jit-agents/src/types.ts",
+          "line": 25,
+          "symbol": "AgentSpec",
+          "snippet": "model?: string;"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "line": 83,
+          "symbol": "callAgentTool.execute",
+          "snippet": "if (!modelSpec) { throw new Error(`call-agent: agent '${params.spec_name}' has no model specified.`); }"
+        }
+      ]
+    },
+    {
+      "id": "FB-006",
+      "title": "Model string requires provider prefix — no default from orchestration agent settings",
+      "severity": "blocking",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:47:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "model-resolution",
+      "description": "parseModelSpec splits the model string on '/' to separate provider from modelId. Without a '/', the provider defaults to 'anthropic'. So 'deepseek-v4-pro' resolves to anthropic/deepseek-v4-pro — which doesn't exist. The correct format is 'deepseek/deepseek-v4-pro'. The orchestration agent's defaultProvider from settings.json is not consulted for dispatch. The model string format is not documented.",
+      "actual_behavior": "model 'deepseek-v4-pro' → parseModelSpec → { provider: 'anthropic', modelId: 'deepseek-v4-pro' } → not found in modelRegistry. model 'kimi-k2.6:cloud' → { provider: 'anthropic', modelId: 'kimi-k2.6:cloud' } → not found. model 'deepseek/deepseek-v4-pro' → { provider: 'deepseek', modelId: 'deepseek-v4-pro' } → found, dispatch succeeds.",
+      "expected_behavior": "Either: (a) parseModelSpec should fall back to the orchestration agent's defaultProvider from settings when no '/' is present, or (b) the provider/ prefix requirement should be documented in the AgentSpec tool description and the call-agent error message should suggest the correct format.",
+      "reproduction": "1. author-agent-spec with model 'deepseek-v4-pro'. 2. call-agent. 3. Observe 'not found in modelRegistry'. 4. Change to 'deepseek/deepseek-v4-pro'. 5. Dispatch succeeds.",
+      "workaround": "Use provider/modelId format in the model field: 'deepseek/deepseek-v4-pro', 'anthropic/claude-sonnet-4-20250514', 'ollama/kimi-k2.6:cloud'.",
+      "code_references": [
+        {
+          "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "line": 22,
+          "symbol": "parseModelSpec",
+          "snippet": "if (slashIndex !== -1) return { provider: spec.slice(0, slashIndex), modelId: spec.slice(slashIndex + 1) }; return { provider: 'anthropic', modelId: spec };"
+        }
+      ]
+    },
+    {
+      "id": "FB-007",
+      "title": "No tool to discover available dispatch models",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:48:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "model-resolution",
+      "description": "There is no tool or command to list which models are available in the dispatch model registry. The orchestration agent's models.json contains models, but those are rejected by the dispatch modelRegistry (kimi-k2.6:cloud was in models.json but 'not found in modelRegistry'). The actual contents and population mechanism of the dispatch model registry are undiscoverable via tools. Authors must guess or read source to find valid model strings.",
+      "actual_behavior": "Two models were attempted and rejected ('deepseek-v4-pro' → wrong format but also wrong registry; 'kimi-k2.6:cloud' → wrong format). The correct format 'deepseek/deepseek-v4-pro' worked. No tool exists to show what provider/modelId combinations are valid.",
+      "expected_behavior": "A tool or command to list models available for agent dispatch, showing provider, modelId, and the provider/modelId string format to use in agent specs.",
+      "reproduction": "Attempt to discover valid dispatch models. No tool available."
+    },
+    {
+      "id": "FB-008",
+      "title": "call-agent requires explicit parent_grant and requested_grant",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:34:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "tool-surface",
+      "description": "call-agent's parent_grant and requested_grant parameters default to empty. Dispatching an agent with tools without explicitly passing these grants results in 'grant violation: tools [X] not in parent grant'. The parameters are Type.Optional in the tool schema but effectively required when the agent spec declares tools.",
+      "actual_behavior": "Agent with tools: [read] dispatched without parent_grant → 'Agent X grant violation: tools [read] not in parent grant (DEC-0047 clamp at executeAgent boundary)'",
+      "expected_behavior": "parent_grant should default to the caller's full tool set rather than empty. Or the error message should explicitly state that parent_grant and requested_grant are required when the agent declares tools.",
+      "reproduction": "1. author-agent-spec with tools: [read]. 2. call-agent without parent_grant or requested_grant. 3. Observe grant violation.",
+      "workaround": "Always pass parent_grant and requested_grant explicitly.",
+      "code_references": [
+        {
+          "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "line": 58,
+          "symbol": "callAgentTool.parameters",
+          "snippet": "parent_grant: Type.Optional(Type.Array(Type.String()))"
+        }
+      ]
+    },
+    {
+      "id": "FB-009",
+      "title": "call-agent returns only a status summary — agent output not surfaced to orchestrator",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:35:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "dispatch-runtime",
+      "description": "call-agent returns a success message like 'Dispatched agent X (grant=[...]); result.output type=string' but does not include the agent's actual output content. The output is available in the session log (details.output) but is not returned to the orchestrator. This means the orchestrator cannot capture and process agent output — it must check the substrate for side effects or read session logs.",
+      "actual_behavior": "call-agent returns text/plain content with a status summary. The agent output ('I will start by reading...') exists in details.output in the session log but is not included in the tool result content.",
+      "expected_behavior": "call-agent should include the agent's output in the tool result, either as the primary content or as a separate content block. The orchestrator should be able to read the agent's response without inspecting session logs.",
+      "reproduction": "1. Dispatch an agent via call-agent. 2. Observe the result contains only a status summary. 3. Inspect session log to find the actual agent output in details.output.",
+      "code_references": [
+        {
+          "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "line": 105,
+          "symbol": "callAgentTool.execute return",
+          "snippet": "content: [{ type: 'text', text: `Dispatched agent...` }]"
+        }
+      ]
+    },
+    {
+      "id": "FB-010",
+      "title": "contextBlocks whole-block injection is all-or-nothing raw JSON",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:26:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "context-blocks",
+      "description": "contextBlocks bare-string entries inject the entire block as raw JSON wrapped in XML boundary tags. There is no filtering, pagination, field projection, or macro-rendered option. For blocks that grow large (40-60 requirements), this injects significant token cost into every agent dispatch. The template can prune with Nunjucks but the full block JSON is read and stringified into the template context regardless.",
+      "actual_behavior": "contextBlocks: ['requirements'] injects all fields of all items as JSON. Even if the agent only needs IDs to avoid duplicates, it receives descriptions, acceptance criteria, status, priority, and all other fields for every item.",
+      "expected_behavior": "Optional field projection or filtering on context block entries. For example: contextBlocks: [{ name: 'requirements', fields: ['id', 'description'] }] or a where clause to filter items. Alternatively, per-item macro rendering could be auto-applied at a specified depth.",
+      "reproduction": "1. Create 50 requirements. 2. Dispatch an agent with contextBlocks: ['requirements']. 3. Observe full block JSON in the template context.",
+      "workaround": "Template author manually prunes in Nunjucks: {% for req in _requirements.requirements %} {{ req.id }}: {{ req.description | truncate(120) }} {% endfor %}. Still reads full block into context.",
+      "code_references": [
+        {
+          "file": "packages/pi-jit-agents/src/compile.ts",
+          "line": 162,
+          "symbol": "wrapBlockContent",
+          "snippet": "JSON.stringify(content, null, 2)"
+        }
+      ]
+    },
+    {
+      "id": "FB-011",
+      "title": "contextBlocks single-item injection is raw JSON — render_recursive must be called explicitly",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:23:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "context-blocks",
+      "description": "Object-form context block entries { name, item, depth } inject the item as raw JSON wrapped in XML. The depth field is stored as metadata on the injected array element but render_recursive is NOT auto-applied. The template must explicitly call render_recursive(resolve(id), depth). This means the agent receives unrendered JSON rather than the formatted view that per-item macros produce.",
+      "actual_behavior": "_requirements_item contains raw JSON wrapped in context_block XML. _requirements_depth contains the specified depth. The template author must call render_recursive to get macro-rendered output.",
+      "expected_behavior": "The depth field should auto-trigger render_recursive during injection, producing the rendered view directly in _requirements_item. Or there should be an explicit flag to opt into auto-rendering.",
+      "workaround": "Template author must call render_recursive(resolve(id), _requirements_depth) explicitly.",
+      "code_references": [
+        {
+          "file": "packages/pi-jit-agents/src/compile.ts",
+          "line": 460,
+          "snippet": "const wrapped = wrapItemContent(ref.name, itemId, loc.item);"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/compile.ts",
+          "line": 469,
+          "snippet": "depth: ref.depth ?? 0"
+        }
+      ]
+    },
+    {
+      "id": "FB-012",
+      "title": "No tool to author per-item macros for custom block kinds",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:31:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "macros",
+      "description": "Per-item macros live at .pi/templates/items/<kind>.md, outside the substrate directory. Builtin macros exist for 14 shipped block kinds (requirements, decisions, tasks, issues, etc.) but not for custom block kinds with custom fields. For example, our requirements schema has hour_system and traces_to_spec_doc fields that the builtin render_requirement macro does not render. There is no tool (equivalent to author-agent-spec or write-schema) to create or register per-item macros. The macro files must be created manually with file-system access.",
+      "actual_behavior": "render-item-by-id(REQ-001) produces output using the builtin render_requirement macro, which ignores custom fields hour_system and traces_to_spec_doc. There is no way to create a project-level override via tools.",
+      "expected_behavior": "A tool like author-macro or write-macro that creates per-item macro files at .pi/templates/items/<kind>.md with schema-aware defaults and validation.",
+      "reproduction": "1. Create a custom schema with extra fields. 2. Add an item. 3. Call render-item-by-id. 4. Observe custom fields are not rendered. 5. No tool exists to create a project-level macro override.",
+      "code_references": [
+        {
+          "file": "packages/pi-jit-agents/src/renderer-registry.ts",
+          "line": 134,
+          "snippet": "const projectDir = path.join(cwd, '.pi', 'templates');"
+        }
+      ]
+    },
+    {
+      "id": "FB-013",
+      "title": "gather-execution-context requires a context-contract entry",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:22:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "contracts",
+      "description": "gather-execution-context requires a context-contract entry for the unit kind. Without one, it returns 'no context-contract for kind: requirement'. Context contracts are not auto-generated. The author must manually create a CTX-NNN entry for each unit kind they want to gather context for.",
+      "actual_behavior": "gather-execution-context with unitId REQ-001 and kind requirement returns: { error: 'no context-contract for kind: requirement' }",
+      "expected_behavior": "A default context contract could be inferred from the block kind schema (all relation types the kind participates in, with default depth 1). Or an auto-generate tool.",
+      "reproduction": "1. Create a requirement. 2. Call gather-execution-context with kind=requirement without first creating a context-contract. 3. Observe error.",
+      "workaround": "Manually create a CTX-NNN entry in the context-contracts block before calling gather-execution-context."
+    },
+    {
+      "id": "FB-014",
+      "title": "run-work-order-loop requires work-orders block — inaccessible after substrate pruning",
+      "severity": "observation",
+      "status": "resolved",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:37:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "substrate-tools",
+      "description": "run-work-order-loop hard-depends on the work-orders block kind. The tool was authored after TASK-088 specifically to consume that schema — the dependency is by-design, not accidental. Substrates that prune work-orders (as clock-menu-app did) sacrifice access to the loop. This is the cost of substrate minimalism — the framework doesn't promise every tool works against every substrate shape, it promises tools work against their declared block dependencies.",
+      "actual_behavior": "After removing the work-orders block kind from our substrate during pruning, run-work-order-loop cannot be used.",
+      "expected_behavior": "The dependency is correct and intentional. The improvement would be: the tool description (and error message when the block is absent) should explicitly name the required block kind so the orchestrator understands why the tool is unavailable, rather than failing with a generic 'block not found' error.",
+      "reproduction": "1. Set up a substrate without work-orders block. 2. Attempt run-work-order-loop. 3. Observe failure."
+    },
+    {
+      "id": "FB-015",
+      "title": "Zero-token dispatches with wrong model produce no error — silent empty output",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:34:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "dispatch-runtime",
+      "description": "When call-agent dispatches with a model string that parseModelSpec resolves incorrectly (e.g., no '/' defaults to anthropic), the dispatch 'succeeds' but the API returns zero tokens with empty content. The tool reports 'Dispatched agent X; result.output type=string' — no error is raised. The session log shows content: [], usage: { input: 0, output: 0 }. The orchestrator has no indication that the agent produced nothing.",
+      "actual_behavior": "Dispatch with model 'claude-sonnet-4-20250514' (no provider prefix) → anthropic/claude-sonnet-4-20250514 → model not found → zero tokens, empty output, reported as success.",
+      "expected_behavior": "Zero-token responses should be reported as errors or warnings. The tool result should indicate when the agent produced no output.",
+      "reproduction": "1. author-agent-spec with model 'nonexistent-model'. 2. call-agent. 3. Observe success message with zero tokens in session log."
+    },
+    {
+      "id": "FB-016",
+      "title": "Session logs are the only place to see agent dispatch details — no tool to query them",
+      "severity": "friction",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T13:42:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "dispatch-runtime",
+      "description": "Agent dispatch details (model, provider, token usage, raw API response, actual agent output) are only available in .pi/agent/sessions/<project>/<timestamp>.jsonl files. There is no tool to query or inspect recent dispatch results. The orchestrator must grep session logs manually to find what an agent produced.",
+      "actual_behavior": "After call-agent returns a status summary, the only way to see the agent's output (e.g., 'I will start by reading...') is to grep the session log for the toolName call-agent entries and manually parse the JSONL.",
+      "expected_behavior": "A tool like dispatch-history or agent-traces that returns recent agent dispatch results with their outputs, models, and token usage. Or call-agent should include the output in its result.",
+      "reproduction": "1. Dispatch an agent. 2. Try to see what it produced. 3. No tool available — must read session logs."
+    },
+    {
+      "id": "FB-017",
+      "title": "Substrate schema validation rejects items missing optional fields",
+      "severity": "observation",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T14:30:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "schema-validation",
+      "description": "When writing a block with schema validation, fields declared as required in the schema are enforced. This is correct. However, the error messages reference array indices (e.g., '/feedback/10: must have required property status') rather than the item's id field. For blocks with many items, debugging which item failed requires cross-referencing the index.",
+      "actual_behavior": "append-block-item rejected FB-011 with '/feedback/10: must have required property status' — useful but requires counting items to identify the offending entry.",
+      "expected_behavior": "Error messages should include the item's id field when present: '/feedback/FB-011: must have required property status'.",
+      "reproduction": "1. append-block-item with missing required field. 2. Observe error references array index, not item id."
+    },
+    {
+      "id": "FB-018",
+      "title": "output.format: text combined with tools biases model toward prose description instead of tool invocation",
+      "severity": "blocking",
+      "status": "open",
+      "source": {
+        "repo": "clock-menu-app",
+        "file": ".context/usage-feedback.json",
+        "discovered_at": "2026-05-29T14:13:00Z",
+        "discovered_by": "agent"
+      },
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-30T15:00:00Z",
+      "category": "agent-authoring",
+      "description": "When an agent spec declares both output.format: text AND tools: [...], the model emits prose describing what it would do rather than actually invoking the tools. The text format biases against tool-invocation — the model treats its job as producing text output, not executing actions. This is a configuration interaction: text format + tools is the failure shape.",
+      "actual_behavior": "Agent spec-requirements-miner with output.format: text, tools: [read, append-block-item] produced: 'I will start by reading the specification document to extract requirements. Let me first check what's in the context to understand the existing state.' Zero tool calls. The model described its plan instead of executing it.",
+      "expected_behavior": "Either: (a) output.format: text should be rejected or warned when tools are declared, (b) the format should not bias against tool use, or (c) the documentation should state that json format is required for tool-using agents.",
+      "reproduction": "1. Dispatch spec-requirements-miner with tools: [read, append-block-item], model: deepseek/deepseek-v4-pro, output.format: text. 2. Observe agent describes plan instead of using tools."
+    }
+  ]
+}

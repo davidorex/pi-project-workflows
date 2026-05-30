@@ -45,7 +45,9 @@
               "blocking",
               "major",
               "minor",
-              "cosmetic"
+              "cosmetic",
+              "friction",
+              "observation"
             ]
           },
           "description": {
@@ -90,7 +92,8 @@
               "open",
               "addressed",
               "wontfix",
-              "duplicate"
+              "duplicate",
+              "resolved"
             ]
           },
           "source": {

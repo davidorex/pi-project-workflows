@@ -20,7 +20,7 @@
       "id": "MODE-002",
       "name": "agentic-mode",
       "triggered_when": "spec.tools[] non-empty AND outputSchema absent (DEC-0009); OR tools[] non-empty AND outputSchema set (agentic-mode wins; outputSchema becomes post-hoc validation). output.format is informational; does not alter mode selection.",
-      "dispatch_shape": "Multi-turn dispatch loop. Declared tools[] (intersected with dispatch.parentGrant per DEC-0047 clamp) becomes LLM's tool registry. Loop: (1) call LLM; (2) if response contains tool calls dispatch each through ExtensionContext per DEC-0008/DEC-0010 append results to message history; (3) call LLM again with enriched history; (4) repeat until end_turn or max-turns or tool-failure. Phantom-tool not used.",
+      "dispatch_shape": "Multi-turn dispatch loop. Declared tools[] must be a subset of dispatch.parentGrant per DEC-0011; otherwise executeAgent throws GrantViolationError before LLM dispatch. The allowed compiled ToolDefinitions become the LLM's tool registry. Loop: (1) call LLM; (2) if response contains tool calls, execute each by invoking the matching compiled ToolDefinition.execute(toolCallId, params, signal, onUpdate, ctx) per DEC-0008/DEC-0010, passing ExtensionContext as ctx, and append results to message history; (3) call LLM again with enriched history; (4) repeat until end_turn or max-turns or tool-failure. Phantom-tool not used.",
       "output_form": "Final assistant message after the tool-execution loop terminates. When outputSchema is also set, the final message is validated against it post-hoc.",
       "use_cases": [
         "Privileged-agent dispatch via pi-agent-dispatch (FEAT-006 north-star)",

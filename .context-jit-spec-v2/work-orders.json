@@ -126,6 +126,10 @@
           "name": "decisions",
           "item": "DEC-0010"
         },
+        {
+          "name": "decisions",
+          "item": "DEC-0011"
+        },
         "concepts"
       ],
       "output_contract": {
@@ -164,9 +168,9 @@
           "targets": [
             "jit-runtime.ts executeAgent boundary",
             "compiled.tools threading to LLM tool registry",
-            "ExtensionContext.dispatchTool routing",
+            "ToolDefinition.execute(...) invocation with ExtensionContext passed as ctx",
             "loop termination on end_turn/max-turns/tool-failure",
-            "capability grant clamp per DEC-0047"
+            "GrantViolationError thrown before LLM dispatch when compiled.tools is not a subset of dispatch.parentGrant per DEC-0011"
           ]
         }
       },

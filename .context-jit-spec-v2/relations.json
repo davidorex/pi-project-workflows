@@ -663,5 +663,15 @@
     "parent": "WO-006",
     "child": "TASK-006",
     "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": "DEC-0011",
+    "child": "FEAT-001",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "FB-008",
+    "child": "DEC-0011",
+    "relation_type": "friction_item_addressed_by_decision"
   }
 ]

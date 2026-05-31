@@ -66,13 +66,13 @@
       "id": "DEC-0004",
       "title": "executeAgent is dual-mode in-process dispatch primitive",
       "status": "enacted",
-      "context": "v1's D4 framed executeAgent as phantom-tool-only single-turn dispatch (classifier-mode). The canonical body (AX-001 uniformity, FEAT-005 capability composition, FEAT-006 north-star, DEC-0047 capability-grant model, TASK-091 'agent does the work', JI-029 'jit agent with perms for read/amend blocks') commits jit-agents to tool-using-agent semantics that the classifier-pattern alone cannot deliver. Implementation has been hedging by clamping declared tools[] at jit-runtime.ts:488 then discarding them; LLM receives only the phantom tool at line 568 (when outputSchema set) or nothing. compiled.tools is structurally unreachable from LLM under the v1 framing.",
-      "decision": "executeAgent supports TWO dispatch modes selected per spec shape via DEC-0009 algorithm. (a) Classifier-mode: triggered when outputSchema is set; forced phantom-tool toolChoice; single LLM call; output extracted and validated against outputSchema; returns typed result; used by monitors. (b) Agentic-mode: triggered when tools[] is non-empty and outputSchema is absent (or both set per DEC-0009 precedence); declared tools[] intersected with dispatch.parentGrant per DEC-0047 clamp becomes the LLM's tool registry; multi-turn dispatch loop with tool-call iteration through ExtensionContext per DEC-0008; thread results into message history; loop termination on end_turn / max-turns / tool-failure; returns final assistant message.",
+      "context": "v1's D4 framed executeAgent as phantom-tool-only single-turn dispatch (classifier-mode). The canonical body (AX-001 uniformity, FEAT-005 capability composition, FEAT-006 north-star, DEC-0011 local capability-grant model, TASK-091 'agent does the work', JI-029 'jit agent with perms for read/amend blocks') commits jit-agents to tool-using-agent semantics that the classifier-pattern alone cannot deliver. Implementation has been hedging by clamping declared tools[] at jit-runtime.ts:488 then discarding them; LLM receives only the phantom tool at line 568 (when outputSchema set) or nothing. compiled.tools is structurally unreachable from LLM under the v1 framing.",
+      "decision": "executeAgent supports TWO dispatch modes selected per spec shape via DEC-0009 algorithm. (a) Classifier-mode: triggered when outputSchema is set; forced phantom-tool toolChoice; single LLM call; output extracted and validated against outputSchema; returns typed result; used by monitors. (b) Agentic-mode: triggered when tools[] is non-empty and outputSchema is absent (or both set per DEC-0009 precedence); declared tools[] must be a subset of dispatch.parentGrant per DEC-0011, with violations throwing GrantViolationError before LLM dispatch; allowed compiled ToolDefinitions become the LLM's tool registry; multi-turn dispatch loop with tool-call iteration through ToolDefinition.execute(toolCallId, params, signal, onUpdate, ctx) per DEC-0008/DEC-0010, passing ExtensionContext as ctx; thread results into message history; loop termination on end_turn / max-turns / tool-failure; returns final assistant message.",
       "consequences": [
         "Both modes share spec loading + template compilation + contextBlocks injection + model resolution + attestation + tracing; differ only in dispatch surface",
         "Replaces v1's D4 phantom-tool-only framing — the implementation hedge that capability-grant infrastructure (FEAT-004/005 + TASK-089/092) made dormant at agent dispatch tier",
         "Closes FGAP-169 (compiled.tools structurally unreachable) + FGAP-178 (capability-grant infrastructure dormancy) at the spec layer",
-        "Implementation work pending: jit-runtime.ts:432-738 needs multi-tool dispatch loop; ExtensionContext.dispatchTool surface per DEC-0010 interlocks with FGAP-115"
+        "Implementation work pending: jit-runtime.ts:432-738 needs multi-tool dispatch loop; ToolDefinition.execute(...) per DEC-0010 is the tool-execution surface, with ExtensionContext passed as ctx rather than used as a dispatcher"
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T13:50:00Z",
@@ -147,14 +147,14 @@
     },
     {
       "id": "DEC-0008",
-      "title": "Agentic-mode tool execution dispatches through ExtensionContext",
+      "title": "Agentic-mode tool execution invokes ToolDefinition.execute",
       "status": "enacted",
-      "context": "DEC-0004 establishes agentic-mode where compiled.tools (clamped per DEC-0047) becomes the LLM's tool registry. The framework needs a defined mechanism for executing the tool invocations the LLM emits. Direct tool imports in jit-agents would couple it to specific tool implementations and violate the consumer-agnostic boundary contract. The earlier form of this decision assumed pi's ExtensionContext exposes a by-name tool dispatcher; verified investigation (analysis/2026-05-30-tool-execution-answer.md) against @earendil-works/pi-coding-agent 0.75.4 establishes it does not — ExtensionContext is the per-call ctx argument passed INTO a tool's execute, not an executor of other tools.",
+      "context": "DEC-0004 establishes agentic-mode where compiled.tools, after DEC-0011 reject-on-non-subset grant enforcement, become the LLM's tool registry. The framework needs a defined mechanism for executing the tool invocations the LLM emits. Direct tool imports in jit-agents would couple it to specific tool implementations and violate the consumer-agnostic boundary contract. The earlier form of this decision assumed pi's ExtensionContext exposes a by-name tool dispatcher; verified investigation (analysis/2026-05-30-tool-execution-answer.md) against @earendil-works/pi-coding-agent 0.75.4 establishes it does not — ExtensionContext is the per-call ctx argument passed INTO a tool's execute, not an executor of other tools.",
       "decision": "In agentic-mode, when the LLM emits a tool call, executeAgent executes it by calling the tool's own execute method on the compiled ToolDefinition object the loop already holds: toolDefinition.execute(toolCallId, params, signal, onUpdate, ctx) (signature at node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:354). jit-agents authors/compiles the agent's tools, so it holds them as compiled.tools — the loop keeps a name->ToolDefinition map and invokes the matching object's execute. The ExtensionContext the dispatch carries is passed AS the ctx argument to execute (not used as a dispatcher). The loop constructs a toolCallId per call. Tool results (AgentToolResult) are threaded into the LLM's message history; the loop continues with enriched history. pi exposes no central by-name tool executor (ExtensionAPI has registerTool/getActiveTools/getAllTools/setActiveTools only — types.d.ts:32,73,75,77); the agent session runs tools only when the model calls them, so the agentic loop owns its own execution path.",
       "consequences": [
         "Realizes FEAT-005 ('subagent receives its OWN tools, JIT-composed per invocation, scoped to EXACTLY the operations the task needs') at the agent-tier dispatch boundary",
         "Closes the gap FGAP-169 named at the agent-tier (compiled.tools structurally unreachable from LLM in v1 implementation)",
-        "Capability clamp per DEC-0047 is applied by restricting which ToolDefinitions are in the loop's map + offered to the LLM, not by intercepting execute",
+        "Capability enforcement per DEC-0011 happens before LLM dispatch: non-subset child grants throw GrantViolationError; only validated compiled ToolDefinitions are offered to the LLM and kept in the loop's tool map",
         "Re-anchored 2026-05-30: prior form assumed ExtensionContext exposes a tool dispatcher (ExtensionContext.dispatchTool / tool registry); verified false against pi-coding-agent 0.75.4 (analysis/2026-05-30-tool-execution-answer.md). Mechanism is toolDefinition.execute on the held compiled-tool objects; ExtensionContext is execute's ctx argument. Same correction pattern as DEC-0001/FGAP-115 (named surface that did not work as assumed)"
       ],
       "created_by": "human:davidryan@gmail.com",
@@ -193,6 +193,50 @@
       "created_at": "2026-05-30T13:50:00Z",
       "enacted_by": "human:davidryan@gmail.com",
       "enacted_at": "2026-05-30T13:50:00Z"
+    },
+    {
+      "id": "DEC-0011",
+      "title": "Local capability grant model for agentic dispatch — child tools must be declared, parent-granted, and enforced before LLM dispatch",
+      "status": "enacted",
+      "context": "This .context-jit-spec-v2 arc cites .project/DEC-0047 for the capability-grant model, but DEC-0047 is not a decision item in this substrate. WO-002 dispatches against this active substrate and injects local context_blocks only, so the capability model must be locally reachable. Source decision .project/DEC-0047 establishes the constitutional model: agents receive only declared, exactly-scoped tools/perms drawn from a default-empty registry; a child can never exceed the dispatching parent's grant; capability-registry widening requires human ratification; terminal acceptance is deterministic real checks, never LLM self-assessment. Current jit-runtime.ts implements the dispatch-boundary grant check with computeGrantViolation(...) and GrantViolationError before any LLM call.",
+      "decision": "For this substrate's agentic-dispatch work, DEC-0011 is the local capability-grant decision derived from .project/DEC-0047. A dispatched agent's tools are declared in its .agent.yaml spec; default is empty. At executeAgent dispatch, the compiled agent's declared tools must be a subset of dispatch.parentGrant. Undefined compiled.tools and undefined dispatch.parentGrant are treated as empty sets. If any declared tool is not present in the parent grant, executeAgent throws GrantViolationError before LLM dispatch. Agentic-mode offers the LLM only compiled ToolDefinitions that pass this dispatch-boundary check; it does not silently intersect away undelegated tools. Capability-registry widening remains human-ratified, and executable acceptance remains grounded in deterministic real checks.",
+      "options_considered": [
+        {
+          "label": "Reference .project/DEC-0047 only",
+          "description": "Leave DEC-0047 as a textual cross-substrate citation.",
+          "tradeoffs": "Preserves original numbering but leaves WO-002's injected context unable to resolve the cited decision from the active substrate.",
+          "rejected_reason": "WO-002 dispatch context resolves against .context-jit-spec-v2, not .project."
+        },
+        {
+          "label": "Copy DEC-0047 into .context-jit-spec-v2 with the same id",
+          "description": "Add a local DEC-0047 item copied from .project.",
+          "tradeoffs": "Makes the citation resolvable but creates a misleading local decision-number gap from DEC-0011 through DEC-0046.",
+          "rejected_reason": "The active substrate's decisions end at DEC-0010; the local imported decision is DEC-0011."
+        }
+      ],
+      "consequences": [
+        "WO-002 can inject DEC-0011 directly and no longer requires cross-substrate lookup to understand the capability model.",
+        "Substrate references in the WO-002 dispatch path should cite DEC-0011, not DEC-0047.",
+        "Grant semantics for this arc are reject-on-non-subset via GrantViolationError before LLM dispatch, matching current jit-runtime.ts behavior.",
+        "Agentic-mode tool registry construction must happen only after the grant boundary passes.",
+        "Capability mutation remains human-ratified; implementation agents may work within existing grants but must not widen the grant registry."
+      ],
+      "references": [
+        {
+          "label": "Source decision in canonical project substrate",
+          "path": ".project/decisions.json",
+          "lines": "DEC-0047"
+        },
+        {
+          "label": "Current grant enforcement implementation",
+          "path": "packages/pi-jit-agents/src/jit-runtime.ts",
+          "lines": "68-94,483-491"
+        }
+      ],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-31T00:00:00Z",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-05-31T00:00:00Z"
     }
   ]
 }

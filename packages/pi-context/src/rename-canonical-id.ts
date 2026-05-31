@@ -33,7 +33,15 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readBlock, updateItemInBlock, writeBlock } from "./block-api.js";
-import { type ConfigBlock, type Edge, loadConfig, loadRelations, writeConfig, writeRelations } from "./context.js";
+import {
+	type ConfigBlock,
+	type Edge,
+	loadConfig,
+	loadRelations,
+	type RawEndpoint,
+	writeConfig,
+	writeRelations,
+} from "./context.js";
 import { buildIdIndex } from "./context-sdk.js";
 
 export type RenameKind = "item" | "relation_type" | "lens" | "layer";
@@ -112,19 +120,26 @@ export function renameCanonicalId(
 		// counts as 2).
 		const edges = loadRelations(cwd);
 		let n = 0;
-		const next: Edge[] = edges.map((e) => {
-			let p = e.parent;
-			let c = e.child;
-			if (p === oldId) {
-				p = newId;
-				n++;
+		// Rename keys on REFNAME (the consumer node identity), never oid. A legacy
+		// bare string === oldId is rewritten to newId; a SAME-substrate structured
+		// item (no substrate_id) whose refname === oldId gets a new refname (oid is
+		// immutable and untouched). A lens_bin endpoint, a foreign item, or any
+		// endpoint not matching oldId is left byte-identical.
+		const renameEndpoint = (ep: RawEndpoint): RawEndpoint => {
+			if (typeof ep === "string") {
+				if (ep === oldId) {
+					n++;
+					return newId;
+				}
+				return ep;
 			}
-			if (c === oldId) {
-				c = newId;
+			if (ep.kind === "item" && ep.substrate_id === undefined && ep.refname === oldId) {
 				n++;
+				return { ...ep, refname: newId };
 			}
-			return { ...e, parent: p, child: c };
-		});
+			return ep;
+		};
+		const next: Edge[] = edges.map((e) => ({ ...e, parent: renameEndpoint(e.parent), child: renameEndpoint(e.child) }));
 		if (n > 0) {
 			if (!dryRun) writeRelations(cwd, next);
 			report.substrateRewrites.push({ file: "relations.json", field: "parent/child", count: n });

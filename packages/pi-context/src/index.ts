@@ -30,9 +30,7 @@ import {
 	type AdoptResult,
 	adoptConception,
 	amendConfigEntry,
-	appendRelation,
 	type ConfigBlock,
-	type Edge,
 	installedBlockDestPath,
 	installedSchemaDestPath,
 	loadConfig,
@@ -49,6 +47,7 @@ import {
 	writeBootstrapPointer,
 } from "./context-dir.js";
 import {
+	appendRelationByRef,
 	completeTask,
 	contextState,
 	currentState,
@@ -1016,17 +1015,20 @@ const extension = (pi: ExtensionAPI) => {
 			_onUpdate: AgentToolUpdateCallback,
 			ctx: ExtensionContext,
 		): Promise<AgentToolResult<undefined>> {
-			const edge: Edge = {
+			// Cycle-5 porcelain: STRING selectors (bare refname / <alias>:<refname> /
+			// lens-bin) are resolved to structured EdgeEndpoints and written via the
+			// raw plumbing. The param surface stays string-typed; messaging uses the
+			// raw selectors (params.*), not the resolved structured endpoints.
+			const { appended } = appendRelationByRef(ctx.cwd, {
 				parent: params.parent,
 				child: params.child,
 				relation_type: params.relation_type,
 				...(params.ordinal !== undefined ? { ordinal: params.ordinal } : {}),
-			};
-			const { appended } = appendRelation(ctx.cwd, edge);
+			});
 			const ordinalNote = params.ordinal !== undefined ? ` (ordinal ${params.ordinal})` : "";
 			const text = appended
-				? `Appended relation ${edge.parent} -[${edge.relation_type}]-> ${edge.child}${ordinalNote}`
-				: `Relation ${edge.parent} -[${edge.relation_type}]-> ${edge.child} already exists — no-op`;
+				? `Appended relation ${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`
+				: `Relation ${params.parent} -[${params.relation_type}]-> ${params.child} already exists — no-op`;
 			return {
 				details: undefined,
 				content: [{ type: "text", text }],

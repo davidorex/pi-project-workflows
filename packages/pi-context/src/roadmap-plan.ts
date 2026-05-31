@@ -29,7 +29,7 @@
  * plan_item_depends_on edges) per DEC-0012's edges-only authoring contract.
  */
 import { readBlock } from "./block-api.js";
-import { type Edge, type ItemRecord, loadContext, type StatusBucket } from "./context.js";
+import { type Edge, endpointKey, type ItemRecord, loadContext, type StatusBucket } from "./context.js";
 import { availableBlocks } from "./context-sdk.js";
 import { type LensValidatorIssue, registerLensValidator } from "./lens-validator.js";
 import { type LoadedLensView, loadLensView } from "./lens-view.js";
@@ -325,12 +325,15 @@ export function loadRoadmap(cwd: string, roadmapId: string): RoadmapView | { err
 
 	const inRoadmap = new Set(roadmap.phases.map((p) => p.id));
 	const edges = ctx.relations.filter(
-		(e) => e.relation_type === "phase_depends_on" && inRoadmap.has(e.parent) && inRoadmap.has(e.child),
+		(e) =>
+			e.relation_type === "phase_depends_on" &&
+			inRoadmap.has(endpointKey(e.parent)) &&
+			inRoadmap.has(endpointKey(e.child)),
 	);
 	const { order, cycles } = topoSort(
 		roadmap.phases,
 		(p) => p.id,
-		(p) => edges.filter((e) => e.child === p.id).map((e) => e.parent),
+		(p) => edges.filter((e) => endpointKey(e.child) === p.id).map((e) => endpointKey(e.parent)),
 	);
 
 	return { roadmap, phases, phaseOrder: order, cycles, edges };
@@ -500,16 +503,18 @@ export function validateRoadmaps(cwd: string): {
 		// to a different roadmap.)
 		for (const e of ctx.relations) {
 			if (e.relation_type !== "phase_depends_on") continue;
-			const parentIn = inRoadmap.has(e.parent);
-			const childIn = inRoadmap.has(e.child);
+			const pKey = endpointKey(e.parent);
+			const cKey = endpointKey(e.child);
+			const parentIn = inRoadmap.has(pKey);
+			const childIn = inRoadmap.has(cKey);
 			if (parentIn !== childIn) {
-				const dangling = parentIn ? e.child : e.parent;
+				const dangling = parentIn ? cKey : pKey;
 				issues.push({
 					code: "roadmap_phase_dep_missing",
 					message: diagMessage(
 						cwd,
 						"roadmap_phase_dep_missing",
-						`phase_depends_on edge {parent:${e.parent}, child:${e.child}} in roadmap '${roadmap.id}' references phase '${dangling}' that is not declared in this roadmap.`,
+						`phase_depends_on edge {parent:${pKey}, child:${cKey}} in roadmap '${roadmap.id}' references phase '${dangling}' that is not declared in this roadmap.`,
 					),
 					roadmap_id: roadmap.id,
 					phase_id: dangling,
@@ -519,12 +524,15 @@ export function validateRoadmaps(cwd: string): {
 
 		// Phase cycles — re-run topoSort over the in-roadmap edge subset.
 		const scopedEdges = ctx.relations.filter(
-			(e) => e.relation_type === "phase_depends_on" && inRoadmap.has(e.parent) && inRoadmap.has(e.child),
+			(e) =>
+				e.relation_type === "phase_depends_on" &&
+				inRoadmap.has(endpointKey(e.parent)) &&
+				inRoadmap.has(endpointKey(e.child)),
 		);
 		const { cycles } = topoSort(
 			roadmap.phases,
 			(p) => p.id,
-			(p) => scopedEdges.filter((e) => e.child === p.id).map((e) => e.parent),
+			(p) => scopedEdges.filter((e) => endpointKey(e.child) === p.id).map((e) => endpointKey(e.parent)),
 		);
 		for (const cycle of cycles) {
 			issues.push({
@@ -641,8 +649,8 @@ export function renderRoadmap(view: RoadmapView, naming: Record<string, string> 
 		lines.push(`**Lens:** ${p.lens}${lensTargetLabel !== p.lens ? ` (${lensTargetLabel})` : ""}`);
 
 		const incoming = view.edges
-			.filter((e) => e.child === p.id)
-			.map((e) => e.parent)
+			.filter((e) => endpointKey(e.child) === p.id)
+			.map((e) => endpointKey(e.parent))
 			.sort();
 		lines.push(`**Depends on:** ${incoming.length > 0 ? incoming.join(", ") : "—"}`);
 

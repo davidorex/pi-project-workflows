@@ -212,11 +212,107 @@ export interface CompositionMember {
 	where?: Record<string, string | number | boolean>;
 }
 
+/**
+ * Structured edge endpoint (content-addressed-substrate-identity arc, Cycle 5).
+ *
+ * Two kinds:
+ *  - `item`: an item endpoint. `oid` is the content-addressed object id (Cycle 3)
+ *    and is the dedup identity (see `endpointIdentity`); `refname` is the legacy
+ *    canonical id (FGAP-NNN, DEC-NNNN, …) and is the CONSUMER-LAYER node identity
+ *    (see `normalizeEndpoint` / the load-bearing pivot). `substrate_id` present →
+ *    a FOREIGN endpoint (points into another substrate); resolution of foreign
+ *    endpoints is Cycle 8 (F2) — this cycle treats them as unresolved sentinels.
+ *    `content_hash` is carried for Cycle-8 drift detection, inert here.
+ *  - `lens_bin`: a virtual lens-bin parent node (`bin` is the bin label). A
+ *    lens_bin endpoint NEVER resolves to an item — it is matched against
+ *    `lens.bins` only (the corruption-risk surface, Constraint 4).
+ */
+export type EdgeEndpoint =
+	| { kind: "item"; substrate_id?: string; oid: string; refname?: string; content_hash?: string }
+	| { kind: "lens_bin"; bin: string };
+
+/**
+ * The persisted / accepted endpoint form on `Edge.parent` / `Edge.child`. The
+ * relations.json data stays string-form until Phase H (Cycle 10) migrates it;
+ * the porcelain writes structured `EdgeEndpoint` objects. Every consumer accepts
+ * BOTH via the `normalizeEndpoint` / `endpointKey` / `endpointBin` helpers below.
+ */
+export type RawEndpoint = string | EdgeEndpoint;
+
 export interface Edge {
-	parent: string;
-	child: string;
+	parent: RawEndpoint;
+	child: RawEndpoint;
 	relation_type: string;
 	ordinal?: number;
+}
+
+/**
+ * Normalized endpoint view — the single derivation that every consumer site
+ * routes through. NO resolution, NO imports, NO registry consultation: pure
+ * shape-normalization, so `context.ts` stays at its layer (it may not import
+ * `context-sdk`).
+ *
+ * Mapping (the load-bearing pivot — consumer node identity = refname, NOT oid):
+ *  - string `s`                              → `{kind:"item", key:s, foreign:false}`
+ *  - `{kind:"item", oid, refname?, substrate_id?}` → `{kind:"item", key: refname ?? oid, foreign: !!substrate_id}`
+ *  - `{kind:"lens_bin", bin}`                → `{kind:"lens_bin", key:bin, bin}`
+ *
+ * A same-substrate structured item therefore normalizes to its `refname`, so it
+ * lands on the IDENTICAL node as a legacy bare-refname string for the same item
+ * — byte-identical behavior on existing string data. A foreign structured item
+ * (or a legacy `project:`/`<alias>:` string) keys on its foreign string → an
+ * `idIndex` miss → the same unresolved/dangling outcome as today's sentinels.
+ */
+export type NormalizedEndpoint =
+	| { kind: "item"; key: string; foreign: boolean }
+	| { kind: "lens_bin"; key: string; bin: string };
+
+export function normalizeEndpoint(e: RawEndpoint): NormalizedEndpoint {
+	if (typeof e === "string") {
+		return { kind: "item", key: e, foreign: false };
+	}
+	if (e.kind === "lens_bin") {
+		return { kind: "lens_bin", key: e.bin, bin: e.bin };
+	}
+	return { kind: "item", key: e.refname ?? e.oid, foreign: !!e.substrate_id };
+}
+
+/**
+ * The consumer-layer node key for an endpoint — the string that joins against
+ * `idIndex` (keyed by item refname) or is compared to `lens.bins` labels. This
+ * is the normalize-to-string shim every walker / validator / grouping site reads
+ * in place of the bare `edge.parent`/`edge.child`. Returns byte-identical results
+ * for legacy string endpoints.
+ */
+export function endpointKey(e: RawEndpoint): string {
+	return normalizeEndpoint(e).key;
+}
+
+/**
+ * The bin label for a `{kind:"lens_bin"}` endpoint; `null` for any item endpoint
+ * (string or structured). Lens sites test this so a lens_bin endpoint can never
+ * reach an `idIndex.get` path (Constraint 4). A legacy STRING parent is `null`
+ * here too — it stays bin-or-item ambiguous and is resolved by
+ * `lens.bins.includes(endpointKey(e))` exactly as before this cycle.
+ */
+export function endpointBin(e: RawEndpoint): string | null {
+	const n = normalizeEndpoint(e);
+	return n.kind === "lens_bin" ? n.bin : null;
+}
+
+/**
+ * The DEDUP identity of an endpoint (the deliberate asymmetry vs the consumer
+ * node key): string → the string; structured item → `${substrate_id ?? ""}:${oid}`
+ * (content-addressed, so two items with the same oid but different refnames dedup
+ * together); lens_bin → `bin:${bin}`. This is what `identityKey` keys on for the
+ * append-if-absent no-op. A bare-refname STRING and a structured same-item with
+ * the SAME refname do NOT dedup-merge here (string key `"FGAP-1"` vs item key
+ * `":<oid>"`) — the documented, probed asymmetry.
+ */
+export function endpointIdentity(e: RawEndpoint): string {
+	if (typeof e === "string") return e;
+	if (e.kind === "lens_bin") return `bin:${e.bin}`;
+	return `${e.substrate_id ?? ""}:${e.oid}`;
 }
 
 export interface ItemRecord {
@@ -427,7 +523,7 @@ export function writeRelations(cwd: string, edges: Edge[], ctx?: DispatchContext
  */
 const identityKey = (e: unknown): string => {
 	const r = e as Edge;
-	return `${r.parent} ${r.child} ${r.relation_type}`;
+	return `${endpointIdentity(r.parent)} ${endpointIdentity(r.child)} ${r.relation_type}`;
 };
 
 /**
@@ -939,9 +1035,10 @@ export function walkDescendants(parentId: string, relationType: string, edges: E
 		if (node === undefined || visited.has(node)) continue;
 		visited.add(node);
 		for (const e of edges) {
-			if (e.parent === node && e.relation_type === relationType) {
-				out.push(e.child);
-				stack.push(e.child);
+			if (endpointKey(e.parent) === node && e.relation_type === relationType) {
+				const childKey = endpointKey(e.child);
+				out.push(childKey);
+				stack.push(childKey);
 			}
 		}
 	}
@@ -973,9 +1070,10 @@ export function walkAncestors(itemId: string, relationType: string, edges: Edge[
 		if (node === undefined || visited.has(node)) continue;
 		visited.add(node);
 		for (const e of edges) {
-			if (e.child === node && e.relation_type === relationType) {
-				out.push(e.parent);
-				stack.push(e.parent);
+			if (endpointKey(e.child) === node && e.relation_type === relationType) {
+				const parentKey = endpointKey(e.parent);
+				out.push(parentKey);
+				stack.push(parentKey);
 			}
 		}
 	}
@@ -1016,13 +1114,13 @@ export function findReferences(
 	direction: "inbound" | "outbound" | "both" = "both",
 ): Edge[] {
 	if (direction === "inbound") {
-		return edges.filter((e) => e.child === itemId);
+		return edges.filter((e) => endpointKey(e.child) === itemId);
 	}
 	if (direction === "outbound") {
-		return edges.filter((e) => e.parent === itemId);
+		return edges.filter((e) => endpointKey(e.parent) === itemId);
 	}
 	// "both": single-pass predicate; self-loop matches once via the OR.
-	return edges.filter((e) => e.child === itemId || e.parent === itemId);
+	return edges.filter((e) => endpointKey(e.child) === itemId || endpointKey(e.parent) === itemId);
 }
 
 /**
@@ -1039,9 +1137,15 @@ export function groupByLens(items: ItemRecord[], lens: LensSpec, lensEdges: Edge
 	const itemById = new Map(items.map((i) => [i.id, i]));
 	const placedIds = new Set<string>();
 	for (const e of lensEdges) {
-		const item = itemById.get(e.child);
-		if (item && lens.bins.includes(e.parent)) {
-			grouped.get(e.parent)?.push(item);
+		const item = itemById.get(endpointKey(e.child));
+		// Parent bin label: a structured {kind:"lens_bin"} contributes its bin; a
+		// legacy string parent stays bin-or-item-ambiguous and is resolved by
+		// `lens.bins.includes` (endpointBin is null for strings → fall back to the
+		// string key). A structured ITEM parent (endpointBin null, non-bin key)
+		// simply fails the includes test and is left for the (uncategorized) pass.
+		const binLabel = endpointBin(e.parent) ?? endpointKey(e.parent);
+		if (item && lens.bins.includes(binLabel)) {
+			grouped.get(binLabel)?.push(item);
 			placedIds.add(item.id);
 		}
 	}
@@ -1137,6 +1241,12 @@ export function validateRelations(
 	for (const edge of relations) {
 		const lens = lensesByRelType.get(edge.relation_type);
 		const hier = hierarchyByRelType.get(edge.relation_type);
+		// Consumer-layer node keys (the load-bearing pivot): string-typed for
+		// byte-identical diagnostics. A structured same-substrate item normalizes
+		// to its refname; a foreign item / project: string keys on its foreign
+		// string → idIndex miss → unresolved, exactly as today's sentinels.
+		const parentKey = endpointKey(edge.parent);
+		const childKey = endpointKey(edge.child);
 
 		if (!declaredRelTypes.has(edge.relation_type)) {
 			issues.push({
@@ -1149,55 +1259,60 @@ export function validateRelations(
 		}
 
 		if (lens) {
-			if (!lens.bins.includes(edge.parent)) {
+			// Bin label: a structured {kind:"lens_bin"} parent contributes its bin;
+			// a legacy string parent is bin-or-item ambiguous, resolved by includes.
+			// A structured ITEM parent (endpointBin null) keys on its refname/oid and
+			// fails the includes test → edge_parent_not_in_bins (never an idIndex.get).
+			const parentBin = endpointBin(edge.parent) ?? parentKey;
+			if (!lens.bins.includes(parentBin)) {
 				issues.push({
 					code: "edge_parent_not_in_bins",
-					message: `lens-edge parent '${edge.parent}' is not in lens '${lens.id}' bins`,
+					message: `lens-edge parent '${parentBin}' is not in lens '${lens.id}' bins`,
 					edge,
 				});
 			}
-			const childBlock = idIndex.get(edge.child);
+			const childBlock = idIndex.get(childKey);
 			if (!childBlock) {
 				issues.push({
 					code: "edge_unresolved_child",
-					message: `lens-edge child '${edge.child}' not found in any loaded block`,
+					message: `lens-edge child '${childKey}' not found in any loaded block`,
 					edge,
 				});
 			} else if (lens.target && childBlock !== lens.target) {
 				issues.push({
 					code: "edge_child_wrong_block",
-					message: `lens-edge child '${edge.child}' in block '${childBlock}', expected lens.target '${lens.target}'`,
+					message: `lens-edge child '${childKey}' in block '${childBlock}', expected lens.target '${lens.target}'`,
 					edge,
 				});
 			}
 		}
 
 		if (hier) {
-			const parentBlock = idIndex.get(edge.parent);
+			const parentBlock = idIndex.get(parentKey);
 			if (!parentBlock) {
 				issues.push({
 					code: "edge_unresolved_parent",
-					message: `hierarchy-edge parent '${edge.parent}' not found in any loaded block`,
+					message: `hierarchy-edge parent '${parentKey}' not found in any loaded block`,
 					edge,
 				});
 			} else if (parentBlock !== hier.parent_block) {
 				issues.push({
 					code: "edge_parent_wrong_block",
-					message: `hierarchy-edge parent '${edge.parent}' in block '${parentBlock}', expected '${hier.parent_block}'`,
+					message: `hierarchy-edge parent '${parentKey}' in block '${parentBlock}', expected '${hier.parent_block}'`,
 					edge,
 				});
 			}
-			const childBlock = idIndex.get(edge.child);
+			const childBlock = idIndex.get(childKey);
 			if (!childBlock) {
 				issues.push({
 					code: "edge_unresolved_child",
-					message: `hierarchy-edge child '${edge.child}' not found in any loaded block`,
+					message: `hierarchy-edge child '${childKey}' not found in any loaded block`,
 					edge,
 				});
 			} else if (childBlock !== hier.child_block) {
 				issues.push({
 					code: "edge_child_wrong_block",
-					message: `hierarchy-edge child '${edge.child}' in block '${childBlock}', expected '${hier.child_block}'`,
+					message: `hierarchy-edge child '${childKey}' in block '${childBlock}', expected '${hier.child_block}'`,
 					edge,
 				});
 			}
@@ -1223,9 +1338,13 @@ export function validateRelations(
 		const adj = new Map<string, string[]>();
 		for (const e of relations) {
 			if (e.relation_type !== rt) continue;
-			const arr = adj.get(e.parent) ?? [];
-			arr.push(e.child);
-			adj.set(e.parent, arr);
+			// Cycle adjacency is keyed on the consumer node key (refname for items)
+			// so a structured item and a legacy same-refname string collapse to one
+			// graph node — byte-identical cycle diagnostics on string data.
+			const pk = endpointKey(e.parent);
+			const arr = adj.get(pk) ?? [];
+			arr.push(endpointKey(e.child));
+			adj.set(pk, arr);
 		}
 		const visited = new Set<string>();
 		const onStack = new Set<string>();

@@ -7,10 +7,13 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { readBlock, updateItemInBlock } from "./block-api.js";
+import { readBlock, readBlockForDir, updateItemInBlock } from "./block-api.js";
 import {
+	appendRelation,
 	type ConfigBlock,
 	type Edge,
+	type EdgeEndpoint,
+	endpointKey,
 	findUnmaterializedAssets,
 	type ItemRecord,
 	loadConfig,
@@ -18,7 +21,8 @@ import {
 	validateRelations,
 } from "./context.js";
 import { resolveContextDir, SCHEMAS_DIR, schemaPath, schemasDir, tryResolveContextDir } from "./context-dir.js";
-import { loadRegistry } from "./context-registry.js";
+import { loadRegistry, resolveAlias, resolveSubstrateDir } from "./context-registry.js";
+import type { DispatchContext } from "./dispatch-context.js";
 import { getLensValidators } from "./lens-validator.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
@@ -33,7 +37,11 @@ export {
 	type CurationSuggestion,
 	displayName,
 	type Edge,
+	type EdgeEndpoint,
 	edgesForLens,
+	endpointBin,
+	endpointIdentity,
+	endpointKey,
 	groupByLens,
 	type HierarchyDecl,
 	type InvariantDecl,
@@ -44,6 +52,9 @@ export {
 	loadConfig,
 	loadContext,
 	loadRelations,
+	type NormalizedEndpoint,
+	normalizeEndpoint,
+	type RawEndpoint,
 	type RelationTypeDecl,
 	type StatusBucket,
 	type SubstrateValidationIssue,
@@ -692,7 +703,9 @@ export function currentState(cwd: string): CurrentState {
 		return loc !== undefined && bucket(loc.item) === "complete";
 	};
 	const depParentsOf = (taskId: string): string[] =>
-		edges.filter((e) => e.relation_type === "task_depends_on_task" && e.child === taskId).map((e) => e.parent);
+		edges
+			.filter((e) => e.relation_type === "task_depends_on_task" && endpointKey(e.child) === taskId)
+			.map((e) => endpointKey(e.parent));
 	const incompleteDeps = (taskId: string): string[] =>
 		depParentsOf(taskId).filter((dep) => idIndex.has(dep) && !isCompleted(dep));
 
@@ -988,9 +1001,9 @@ export function joinBlocks(cwd: string, spec: JoinSpec): JoinResult[] {
 		const right: Record<string, unknown>[] = [];
 		if (typeof leftId === "string") {
 			for (const e of edges) {
-				const here = leftEndpoint === "parent" ? e.parent : e.child;
+				const here = leftEndpoint === "parent" ? endpointKey(e.parent) : endpointKey(e.child);
 				if (here !== leftId) continue;
-				const otherId = leftEndpoint === "parent" ? e.child : e.parent;
+				const otherId = leftEndpoint === "parent" ? endpointKey(e.child) : endpointKey(e.parent);
 				const loc = idIndex.get(otherId);
 				if (loc && loc.block === spec.rightBlock) right.push(loc.item);
 			}
@@ -1073,28 +1086,35 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
  * the resolver deterministic without allocating warning channels here.
  */
 export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
-	const index = new Map<string, ItemLocation>();
 	const blockDir = tryResolveContextDir(cwd);
-	if (blockDir === null) return index;
-	const cfg = loadConfig(cwd);
+	if (blockDir === null) return new Map<string, ItemLocation>();
+	return buildIdIndexForDir(blockDir, loadConfig(cwd));
+}
 
-	// Phases are an ordinary array-block since DEC-0028: each phase carries a
-	// PHASE-NNN top-level `id` and lives in `phase.json` under the plural
-	// `phases` array key (singular file basename matches phase.schema.json +
-	// the verification.json precedent). The generic block-file scan below
-	// indexes them by id like any other block. When `PHASE-` is registered in
-	// config.block_kinds (canonical_id "phase"), expectedBlockForId resolves
-	// PHASE-NNN ids to block "phase" — matching the file they are found in, so
-	// the prefix-vs-block invariant passes without a dedicated branch.
+/**
+ * Build the item-id → location index for an ARBITRARY substrate directory
+ * (the dir-targeted twin of `buildIdIndex`, which resolves the active pointer
+ * dir). Used by the relation porcelain to index a FOREIGN substrate (resolved
+ * via the registry from a `<alias>:` selector) as well as the active substrate.
+ *
+ * `substrateDir` is the absolute substrate directory to scan; `cfg` is that
+ * dir's config (drives the prefix-vs-block invariant via `expectedBlockForId`),
+ * passed by the caller so this function performs no pointer resolution. Reads
+ * each block file via `readBlockForDir` so the version-aware validation hook
+ * fires identically to the active-dir path. Same first-writer-wins collision
+ * semantics + prefix-invariant throw as `buildIdIndex`.
+ */
+export function buildIdIndexForDir(substrateDir: string, cfg: ConfigBlock | null): Map<string, ItemLocation> {
+	const index = new Map<string, ItemLocation>();
+	if (!fs.existsSync(substrateDir)) return index;
 
 	// Top-level block files — scan every array property for items with `id`.
-	if (!fs.existsSync(blockDir)) return index;
-	for (const file of fs.readdirSync(blockDir)) {
+	for (const file of fs.readdirSync(substrateDir)) {
 		if (!file.endsWith(".json")) continue;
 		const blockName = file.replace(".json", "");
 		let data: Record<string, unknown>;
 		try {
-			data = readBlock(cwd, blockName) as Record<string, unknown>;
+			data = readBlockForDir(substrateDir, blockName) as Record<string, unknown>;
 		} catch {
 			continue; // unreadable / malformed block — skip
 		}
@@ -1173,6 +1193,116 @@ export function resolveItemsByIds(cwd: string, ids: string[]): Map<string, ItemL
 		out.set(id, index.get(id) ?? null);
 	}
 	return out;
+}
+
+// ── Relation porcelain (selector → structured EdgeEndpoint → raw append) ─────
+
+/**
+ * Load + JSON-parse a foreign substrate dir's config.json WITHOUT pointer
+ * resolution or AJV validation — best-effort, returns null on absence/parse
+ * failure. Used only to feed `expectedBlockForId`'s prefix invariant when
+ * indexing a foreign substrate in the porcelain; the foreign substrate's own
+ * write path already AJV-validated its config, so a re-validate here would only
+ * add a failure mode to a read.
+ */
+function loadConfigForDirBestEffort(substrateDir: string): ConfigBlock | null {
+	const p = path.join(substrateDir, "config.json");
+	if (!fs.existsSync(p)) return null;
+	try {
+		return JSON.parse(fs.readFileSync(p, "utf-8")) as ConfigBlock;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Is `selector` a declared lens bin in the active config? Scans every
+ * `config.lenses[].bins[]`. Disambiguates a bare selector that names a bin
+ * (→ `{kind:"lens_bin"}`) from one that names an item refname (→ `{kind:"item"}`).
+ */
+function selectorIsLensBin(cwd: string, selector: string): boolean {
+	const cfg = loadConfig(cwd);
+	if (!cfg) return false;
+	for (const lens of cfg.lenses ?? []) {
+		if (lens.bins.includes(selector)) return true;
+	}
+	return false;
+}
+
+/**
+ * Resolve one friendly relation selector to a structured `EdgeEndpoint`:
+ *  - `<alias>:<refname>` (alias is a registered substrate alias) → FOREIGN item
+ *    `{kind:"item", substrate_id, oid, refname}` (oid from the foreign index;
+ *    when the foreign refname does not resolve, oid is left as the refname so the
+ *    endpoint round-trips — Cycle 8 resolves foreign endpoints, this cycle only
+ *    forms them; an unresolved foreign endpoint validates as a sentinel).
+ *  - a selector matching a declared lens bin → `{kind:"lens_bin", bin}`.
+ *  - a bare `refname` → SAME-substrate item `{kind:"item", oid, refname}` (oid
+ *    from the active index; falls back to refname when unresolved so an
+ *    edge to a not-yet-filed item is still expressible).
+ *
+ * NOTE: the `<alias>:` branch is tried first so an alias-prefixed selector is
+ * never misread as a bare refname containing a colon.
+ */
+export function resolveRelationSelector(cwd: string, selector: string): EdgeEndpoint {
+	// `<alias>:<refname>` — only when the prefix is a REGISTERED alias (a bare
+	// refname that happens to contain a colon is not an alias selector).
+	const colon = selector.indexOf(":");
+	if (colon > 0) {
+		const alias = selector.slice(0, colon);
+		const refname = selector.slice(colon + 1);
+		const substrate_id = resolveAlias(cwd, alias);
+		if (substrate_id !== null) {
+			const dir = resolveSubstrateDir(cwd, substrate_id);
+			let oid = refname;
+			if (dir !== null) {
+				const abs = path.isAbsolute(dir) ? dir : path.resolve(cwd, dir);
+				const foreignIndex = buildIdIndexForDir(abs, loadConfigForDirBestEffort(abs));
+				const loc = foreignIndex.get(refname);
+				if (loc && typeof loc.item.oid === "string") oid = loc.item.oid;
+			}
+			return { kind: "item", substrate_id, oid, refname };
+		}
+	}
+
+	// A declared lens bin → lens_bin endpoint (never an item).
+	if (selectorIsLensBin(cwd, selector)) {
+		return { kind: "lens_bin", bin: selector };
+	}
+
+	// Bare refname → same-substrate item. oid from the active index; falls back
+	// to the refname itself when the item is not yet filed.
+	const index = buildIdIndex(cwd);
+	const loc = index.get(selector);
+	const oid = loc && typeof loc.item.oid === "string" ? loc.item.oid : selector;
+	return { kind: "item", oid, refname: selector };
+}
+
+/**
+ * Friendly-selector relation append (Cycle 5 porcelain). Resolves `parent` /
+ * `child` STRING selectors to structured `EdgeEndpoint`s via
+ * `resolveRelationSelector`, then delegates to the raw `appendRelation` plumbing
+ * (atomic, AJV-validated, exact-duplicate no-op — same deferred-integrity
+ * semantics). Keeps the string param surface its callers (the append-relation
+ * Pi tool + the orchestrator CLI) already expose.
+ *
+ * Returns `{ appended, edge }` where `edge` is the RESOLVED structured edge
+ * actually written (so callers can report / dry-run-validate the structured
+ * form).
+ */
+export function appendRelationByRef(
+	cwd: string,
+	rel: { parent: string; child: string; relation_type: string; ordinal?: number },
+	ctx?: DispatchContext,
+): { appended: boolean; edge: Edge } {
+	const edge: Edge = {
+		parent: resolveRelationSelector(cwd, rel.parent),
+		child: resolveRelationSelector(cwd, rel.child),
+		relation_type: rel.relation_type,
+		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
+	};
+	const { appended } = appendRelation(cwd, edge, ctx);
+	return { appended, edge };
 }
 
 // ── Project Validation (cross-block reference integrity) ─────────────────────
@@ -1300,20 +1430,28 @@ export function validateContext(cwd: string): ContextValidationResult {
 	if (config) {
 		const registeredRelTypes = new Set((config.relation_types ?? []).map((rt) => rt.canonical_id));
 		for (const edge of relations) {
-			if (!idIndex.has(edge.parent)) {
+			// Consumer node keys (the load-bearing pivot): structured same-substrate
+			// items normalize to refname (same node as a legacy string); foreign
+			// items / project: strings key on their foreign string → idIndex miss →
+			// unresolved, identical to today's sentinels. Messages are string-typed
+			// via the keys for byte-identical diagnostics — no F2 resolution, no
+			// registry consultation here (Constraint 1/3).
+			const parentKey = endpointKey(edge.parent);
+			const childKey = endpointKey(edge.child);
+			if (!idIndex.has(parentKey)) {
 				issues.push({
 					severity: "error",
-					message: `Edge parent '${edge.parent}' (relation_type '${edge.relation_type}') does not resolve to any item`,
+					message: `Edge parent '${parentKey}' (relation_type '${edge.relation_type}') does not resolve to any item`,
 					block: "relations",
-					field: `${edge.parent}->${edge.child}`,
+					field: `${parentKey}->${childKey}`,
 				});
 			}
-			if (!idIndex.has(edge.child)) {
+			if (!idIndex.has(childKey)) {
 				issues.push({
 					severity: "error",
-					message: `Edge child '${edge.child}' (relation_type '${edge.relation_type}') does not resolve to any item`,
+					message: `Edge child '${childKey}' (relation_type '${edge.relation_type}') does not resolve to any item`,
 					block: "relations",
-					field: `${edge.parent}->${edge.child}`,
+					field: `${parentKey}->${childKey}`,
 				});
 			}
 			if (!registeredRelTypes.has(edge.relation_type)) {
@@ -1321,7 +1459,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 					severity: "error",
 					message: `Edge relation_type '${edge.relation_type}' is not registered in config.relation_types`,
 					block: "relations",
-					field: `${edge.parent}->${edge.child}`,
+					field: `${parentKey}->${childKey}`,
 				});
 			}
 		}
@@ -1340,8 +1478,10 @@ export function validateContext(cwd: string): ContextValidationResult {
 			const rt = config.relation_types?.find((r) => r.canonical_id === edge.relation_type);
 			if (!rt) continue; // unregistered relation_type already reported above
 			if (!rt.source_kinds && !rt.target_kinds) continue; // metadata absent → unchecked
-			const parentLoc = idIndex.get(edge.parent);
-			const childLoc = idIndex.get(edge.child);
+			const parentKey = endpointKey(edge.parent);
+			const childKey = endpointKey(edge.child);
+			const parentLoc = idIndex.get(parentKey);
+			const childLoc = idIndex.get(childKey);
 			if (
 				parentLoc &&
 				rt.source_kinds &&
@@ -1349,17 +1489,17 @@ export function validateContext(cwd: string): ContextValidationResult {
 			) {
 				issues.push({
 					severity: "error",
-					message: `Edge ${edge.parent} -> ${edge.child}: source kind '${parentLoc.block}' not in source_kinds [${rt.source_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
+					message: `Edge ${parentKey} -> ${childKey}: source kind '${parentLoc.block}' not in source_kinds [${rt.source_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
 					block: "relations",
-					field: `${edge.parent}->${edge.child}`,
+					field: `${parentKey}->${childKey}`,
 				});
 			}
 			if (childLoc && rt.target_kinds && !(rt.target_kinds.includes("*") || rt.target_kinds.includes(childLoc.block))) {
 				issues.push({
 					severity: "error",
-					message: `Edge ${edge.parent} -> ${edge.child}: target kind '${childLoc.block}' not in target_kinds [${rt.target_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
+					message: `Edge ${parentKey} -> ${childKey}: target kind '${childLoc.block}' not in target_kinds [${rt.target_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
 					block: "relations",
-					field: `${edge.parent}->${edge.child}`,
+					field: `${parentKey}->${childKey}`,
 				});
 			}
 		}
@@ -1402,7 +1542,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 			const satisfied = new Set<string>();
 			for (const edge of relations) {
 				if (!relTypeSet.has(edge.relation_type)) continue;
-				satisfied.add(inv.direction === "as_parent" ? edge.parent : edge.child);
+				satisfied.add(inv.direction === "as_parent" ? endpointKey(edge.parent) : endpointKey(edge.child));
 			}
 			for (const [id, loc] of idIndex) {
 				if (loc.block !== inv.block) continue;
@@ -1440,8 +1580,8 @@ export function validateContext(cwd: string): ContextValidationResult {
 				for (const edge of relations) {
 					if (!relSet.has(edge.relation_type)) continue;
 					const selfIsParent = inv.direction === "as_parent";
-					if ((selfIsParent ? edge.parent : edge.child) !== id) continue;
-					const otherId = selfIsParent ? edge.child : edge.parent;
+					if ((selfIsParent ? endpointKey(edge.parent) : endpointKey(edge.child)) !== id) continue;
+					const otherId = selfIsParent ? endpointKey(edge.child) : endpointKey(edge.parent);
 					const otherLoc = idIndex.get(otherId);
 					if (!otherLoc) continue; // dangling endpoint handled by edge-integrity above
 					const otherBucket = bucketOf(otherLoc.item);

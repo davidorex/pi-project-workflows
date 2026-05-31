@@ -1,23 +1,54 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "pi-context://schemas/relations",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"title": "pi-context closure-table relations",
-	"description": "Generic closure-table substrate. One row per (parent, child, relation_type) edge. Multiple parallel hierarchies coexist as different relation_type values. Reassignment is a single field write. The schema is intentionally permissive on edge.parent's namespace — disambiguation between hierarchy edges (parent ∈ canonical ids) and lens edges (parent ∈ lens.bins) is cross-document and lives at substrate-SDK validateRelations(). Cycle detection lives at SDK traversal primitives.",
+	"description": "Generic closure-table substrate. One row per (parent, child, relation_type) edge. Multiple parallel hierarchies coexist as different relation_type values. Reassignment is a single field write. Endpoints are DUAL-FORM (content-addressed-substrate-identity arc, Cycle 5): a LEGACY string (canonical id OR lens bin name — disambiguated cross-document at validateRelations), OR a structured EdgeEndpoint object — {kind:'item', oid, refname?, substrate_id?, content_hash?} for an item endpoint, or {kind:'lens_bin', bin} for a virtual lens-bin parent. Existing string data validates against the string branch unchanged. Disambiguation between hierarchy edges (parent ∈ canonical ids) and lens edges (parent ∈ lens.bins) is cross-document and lives at substrate-SDK validateRelations(). Cycle detection lives at SDK traversal primitives. Cross-substrate RESOLUTION of foreign (substrate_id-bearing) endpoints is Cycle 8 — this schema only accepts the FORM.",
+	"$defs": {
+		"endpoint": {
+			"description": "An edge endpoint. Dual-form: a legacy string, or a structured EdgeEndpoint object.",
+			"oneOf": [
+				{
+					"type": "string",
+					"description": "LEGACY form. Either a canonical id (DEC-NNNN, FGAP-NNN, issue-NNN) or a bin name from a lens definition. Mixing is intentional — a lens bin acts as a virtual parent node. A 'project:'/'<alias>:'-prefixed string is a cross-substrate sentinel treated as unresolved until Cycle 8."
+				},
+				{
+					"type": "object",
+					"description": "Structured ITEM endpoint. oid is the content-addressed object id (dedup identity); refname is the legacy canonical id (consumer node identity). substrate_id present → foreign endpoint (Cycle-8 resolution). content_hash carried for drift detection.",
+					"required": ["kind", "oid"],
+					"additionalProperties": false,
+					"properties": {
+						"kind": { "const": "item" },
+						"oid": { "type": "string", "description": "Content-addressed object id." },
+						"refname": { "type": "string", "description": "Legacy canonical id / human-readable refname." },
+						"substrate_id": {
+							"type": "string",
+							"description": "Owning substrate id when the endpoint is FOREIGN; absent for same-substrate."
+						},
+						"content_hash": { "type": "string", "description": "Content hash carried for Cycle-8 drift detection." }
+					}
+				},
+				{
+					"type": "object",
+					"description": "Structured LENS_BIN endpoint — a virtual lens-bin parent node. NEVER resolves to an item.",
+					"required": ["kind", "bin"],
+					"additionalProperties": false,
+					"properties": {
+						"kind": { "const": "lens_bin" },
+						"bin": { "type": "string", "description": "Lens bin label." }
+					}
+				}
+			]
+		}
+	},
 	"type": "array",
 	"items": {
 		"type": "object",
 		"required": ["parent", "child", "relation_type"],
 		"additionalProperties": false,
 		"properties": {
-			"parent": {
-				"type": "string",
-				"description": "Either a canonical id (DEC-NNNN, FGAP-NNN, issue-NNN) or a bin name from a lens definition. Mixing is intentional — a lens bin acts as a virtual parent node."
-			},
-			"child": {
-				"type": "string",
-				"description": "Canonical id of the member item."
-			},
+			"parent": { "$ref": "#/$defs/endpoint" },
+			"child": { "$ref": "#/$defs/endpoint" },
 			"relation_type": {
 				"type": "string",
 				"description": "Lens id, hierarchy edge type, or registered relation_type canonical_id. Allows multiple parallel hierarchies over the same items."

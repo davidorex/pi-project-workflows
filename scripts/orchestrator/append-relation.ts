@@ -20,7 +20,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { appendRelation, type Edge, loadRelations } from "@davidorex/pi-context/context";
+import { type Edge, endpointIdentity, loadRelations } from "@davidorex/pi-context/context";
+import { appendRelationByRef, resolveRelationSelector } from "@davidorex/pi-context/context-sdk";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 
@@ -130,13 +131,10 @@ function main(): void {
 	const writer = parseWriter(args.writer);
 	const ctx: DispatchContext = { writer };
 
-	const edge: Edge = {
-		parent: args.parent,
-		child: args.child,
-		relation_type: args.relationType,
-		...(args.ordinal !== undefined ? { ordinal: args.ordinal } : {}),
-	};
-
+	// Cycle-5 porcelain: STRING --parent / --child selectors (bare refname /
+	// <alias>:<refname> / lens-bin) are RESOLVED to structured EdgeEndpoints. The
+	// CLI param surface is unchanged. The dry-run path validates the RESOLVED
+	// structured edge; messaging uses the original string selectors.
 	if (args.dryRun) {
 		console.error("[dry-run] validating prospective relations file against schema; no write");
 		// Whole-file validation (FGAP-082): validate the prospective Edge[] array
@@ -149,8 +147,15 @@ function main(): void {
 			console.error(`[dry-run] could not read existing relations: ${err instanceof Error ? err.message : String(err)}`);
 			process.exit(3);
 		}
+		// Resolve the selectors to the structured form that would be written.
+		const resolvedEdge: Edge = {
+			parent: resolveRelationSelector(args.cwd, args.parent),
+			child: resolveRelationSelector(args.cwd, args.child),
+			relation_type: args.relationType,
+			...(args.ordinal !== undefined ? { ordinal: args.ordinal } : {}),
+		};
 		try {
-			validateFromFile(relationsSchemaPath(), [...existing, edge], "relations[edge]");
+			validateFromFile(relationsSchemaPath(), [...existing, resolvedEdge], "relations[edge]");
 		} catch (err: any) {
 			console.error("[dry-run] FAIL");
 			if (err?.name === "ValidationError" && Array.isArray(err.errors)) {
@@ -162,33 +167,45 @@ function main(): void {
 			}
 			process.exit(5);
 		}
+		// Duplicate detection on the dedup identity (string→string, item→oid,
+		// lens_bin→bin) — same identityKey the raw append uses.
+		const newId = `${endpointIdentity(resolvedEdge.parent)} ${endpointIdentity(resolvedEdge.child)} ${args.relationType}`;
 		const duplicate = existing.some(
-			(e) => e.parent === edge.parent && e.child === edge.child && e.relation_type === edge.relation_type,
+			(e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` === newId,
 		);
 		console.error("[dry-run] PASS");
 		if (args.format === "json") {
-			console.log(JSON.stringify({ wouldWrite: !duplicate, duplicate, edge }, null, 2));
+			console.log(JSON.stringify({ wouldWrite: !duplicate, duplicate, edge: resolvedEdge }, null, 2));
 		} else {
 			const verb = duplicate ? "NO-OP (duplicate)" : "append";
-			console.log(`would ${verb}: ${edge.parent} -[${edge.relation_type}]-> ${edge.child}`);
+			console.log(`would ${verb}: ${args.parent} -[${args.relationType}]-> ${args.child}`);
 		}
 		process.exit(0);
 	}
 
-	let result: { appended: boolean };
+	let result: { appended: boolean; edge: Edge };
 	try {
-		result = appendRelation(args.cwd, edge, ctx);
+		result = appendRelationByRef(
+			args.cwd,
+			{
+				parent: args.parent,
+				child: args.child,
+				relation_type: args.relationType,
+				...(args.ordinal !== undefined ? { ordinal: args.ordinal } : {}),
+			},
+			ctx,
+		);
 	} catch (err) {
 		console.error(`FAILED to append relation: ${err instanceof Error ? err.message : String(err)}`);
 		process.exit(5);
 	}
 
 	if (args.format === "json") {
-		console.log(JSON.stringify({ appended: result.appended, edge }, null, 2));
+		console.log(JSON.stringify({ appended: result.appended, edge: result.edge }, null, 2));
 	} else if (result.appended) {
-		console.log(`Appended relation: ${edge.parent} -[${edge.relation_type}]-> ${edge.child}`);
+		console.log(`Appended relation: ${args.parent} -[${args.relationType}]-> ${args.child}`);
 	} else {
-		console.log(`No-op (duplicate): ${edge.parent} -[${edge.relation_type}]-> ${edge.child}`);
+		console.log(`No-op (duplicate): ${args.parent} -[${args.relationType}]-> ${args.child}`);
 	}
 	process.exit(0);
 }

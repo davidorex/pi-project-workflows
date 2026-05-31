@@ -35,6 +35,7 @@
  *   --format    : json (default) — JSON-stringified Edge[]
  *                 table          — markdown table | parent | child | relation_type | ordinal |
  */
+import { endpointKey } from "@davidorex/pi-context/context";
 import { findReferencesInRepo } from "@davidorex/pi-context/lens-view";
 
 interface Args {
@@ -79,7 +80,7 @@ function parseArgs(argv: string[]): Args {
 
 function main(): void {
 	const args = parseArgs(process.argv.slice(2));
-	let result: Array<{ parent: string; child: string; relation_type: string; ordinal?: number }>;
+	let result: ReturnType<typeof findReferencesInRepo>;
 	try {
 		result = findReferencesInRepo(process.cwd(), args.itemId, args.direction);
 	} catch (err) {
@@ -98,7 +99,10 @@ function main(): void {
 	console.log("| parent | child | relation_type | ordinal |");
 	console.log("| --- | --- | --- | --- |");
 	for (const e of result) {
-		console.log(`| ${e.parent} | ${e.child} | ${e.relation_type} | ${e.ordinal ?? ""} |`);
+		// Endpoints are dual-form (Cycle 5): render the consumer node key (refname
+		// for items, bin label for lens_bin) so a structured endpoint prints its
+		// string identity rather than [object Object].
+		console.log(`| ${endpointKey(e.parent)} | ${endpointKey(e.child)} | ${e.relation_type} | ${e.ordinal ?? ""} |`);
 	}
 }
 

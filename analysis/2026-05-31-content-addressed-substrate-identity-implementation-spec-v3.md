@@ -164,15 +164,26 @@ export function computeContentHash(content: Record<string,unknown>): string; // 
 - Runtime demo: `npx tsx -e "import {computeContentHash} from '@davidorex/pi-context/content-hash'; console.log(computeContentHash({status:'open',title:'x'})===computeContentHash({title:'x',status:'open'}))"` → `true`.
 - Adversarial probe: `grep -n "computeContentHash(" packages/pi-context/src/` — every call site passes `contentProjection(...)` output, never a raw item.
 
-**A2. Content/metadata partition.** Excluded metadata set: `id`, `oid`, `content_hash`, `content_parent`, `AUTHOR_FIELDS` (`block-api.ts:66`: `created_by, created_at, modified_by, modified_at`), `closed_by`, `closed_at`. **Consequence:** renaming a refname does NOT change `content_hash`; two items identical-but-for-refname have EQUAL `content_hash`, DISTINCT `oid`.
-- Mechanism: optional schema annotation `"x-identity": { "metadata_fields": [...] }` at item-schema level; DEFAULT to the union above when absent (mirrors `x-prompt-budget`/`x-lifecycle` extension-keyword convention).
-- Extend `block-api.ts` cache: ADD `metadataFields: ReadonlySet<string>` to `SchemaCacheEntry` (`:68`), populate in `getSchemaCacheEntry` (`:189`). ADD:
+**A2. Content/metadata partition.** The excluded-from-hashing set is split into two tiers:
+- **MANDATORY floor (non-overridable):** `id`, `oid`, `content_hash`, `content_parent`. These are identity/version machinery, never content, and MUST always be excluded — each for a structural reason: `id` (refname) is mutable, so a rename must not move the hash (rename-stability); `oid` is entity identity, so two items with identical content but distinct OIDs must share one content hash (content-equality / dedup / pinning); `content_hash` cannot hash itself; `content_parent` is version-graph ancestry, not content, so including it would make identical content with different histories hash differently.
+- **DISCRETIONARY default (override-replaceable):** `AUTHOR_FIELDS` (`block-api.ts:66`: `created_by, created_at, modified_by, modified_at`), `closed_by`, `closed_at` — convention metadata a schema may legitimately re-specify.
+- `DEFAULT_METADATA_FIELDS` = MANDATORY ∪ DISCRETIONARY (the 10).
+- **Consequence:** renaming a refname does NOT change `content_hash`; two items identical-but-for-refname have EQUAL `content_hash`, DISTINCT `oid`.
+
+Mechanism: optional schema annotation `"x-identity": { "metadata_fields": [...] }` at item-schema level (mirrors the `x-prompt-budget`/`x-lifecycle` extension-keyword convention). The override REPLACES only the discretionary tier and is UNIONED with the mandatory floor:
+```
+metadataFieldsForSchema(schema, arrayKey) = MANDATORY ∪ (x-identity.metadata_fields ?? DISCRETIONARY)
+```
+An override can therefore never un-exclude an identity/version field — an `x-identity` that omits `id` cannot make a rename move the content hash. (Implementation status: Cycle 2 shipped the simpler `override ?? DEFAULT_METADATA_FIELDS` whole-set-replace form — DORMANT, no overrides authored, no live caller. **Cycle 3 MUST implement the mandatory-floor union below before any `x-identity` override is authored or `contentProjection` is wired into a write path.**)
+
+- Extend `block-api.ts` cache: `metadataFields`/`metadataFieldsByArrayKey` on `SchemaCacheEntry` (`:68`), populated in `getSchemaCacheEntry` (`:189`) via the single `metadataFieldsForSchema` reader. ADD:
 ```ts
 export function contentProjection(schema: Record<string,unknown>, arrayKey: string, item: Record<string,unknown>): Record<string,unknown>;
 ```
-returning a shallow copy with metadata keys deleted.
+returning a shallow copy with the resolved metadata keys deleted (must not mutate input).
 - Test: changing `created_at`/`modified_by`/`oid`/`id` → `contentProjection` identical → hash unchanged; changing `status` → hash changes.
-- Adversarial probe: assert `id` IS in the deleted set; a fixture with two items identical-but-for-`id` yields equal `computeContentHash(contentProjection(...))`.
+- **Binding mandatory-floor test (Cycle 3):** a schema whose `x-identity.metadata_fields` OMITS `id`/`oid`/`content_hash`/`content_parent` still excludes all four; two items identical-but-for-`id` under that override still yield EQUAL `computeContentHash(contentProjection(...))`. A green run of this test is required before the override surface is considered live.
+- Adversarial probe: assert `id` IS in the deleted set under both the default and an `id`-omitting override.
 
 ### Phase B — content object store
 

@@ -132,12 +132,10 @@ describe("installContext", () => {
 	// layer-plans carrier still installs cleanly — confirm no throw + present.
 	it("installs the nested-id carrier layer-plans (fs copy bypasses the writeSchema guard)", () => {
 		tmpRoot = makeProject(["layer-plans"], []);
-		let result: ReturnType<typeof installContext>;
-		assert.doesNotThrow(() => {
-			result = installContext(tmpRoot);
-		});
-		// biome-ignore lint/style/noNonNullAssertion: assigned in the doesNotThrow callback above.
-		assert.deepEqual(result!.installed, ["schemas/layer-plans.schema.json"]);
+		// The guard lives on writeSchema; install copies the catalog via fs, so this
+		// call must not throw (a throw would fail the test directly).
+		const result = installContext(tmpRoot);
+		assert.deepEqual(result.installed, ["schemas/layer-plans.schema.json"]);
 		assert.ok(fs.existsSync(path.join(tmpRoot, ".project", "schemas", "layer-plans.schema.json")));
 	});
 

@@ -1214,10 +1214,24 @@ export function listUncategorized(
  * `LensSpec.target` for lens checks. Callers supply the index — this
  * module does not read blocks itself, keeping it independent of block-api.
  */
+/**
+ * Minimal structural view of an F2 resolver result consumed by
+ * {@link validateRelations}. Mirrors `context-sdk`'s `ResolvedRef` for the two
+ * fields this module reads (`status` + `loc.block`) WITHOUT importing
+ * context-sdk (the layering constraint: context.ts may not import context-sdk).
+ * The caller (validateContext) passes a closure returning the full ResolvedRef,
+ * which is structurally assignable to this view.
+ */
+export interface RelationResolveView {
+	status: "active" | "foreign" | "dangling" | "unregistered";
+	loc?: { block: string };
+}
+
 export function validateRelations(
 	config: ConfigBlock,
 	relations: Edge[],
 	itemsByBlock: Record<string, ItemRecord[]>,
+	resolve?: (ref: RawEndpoint) => RelationResolveView,
 ): SubstrateValidationResult {
 	const issues: SubstrateValidationIssue[] = [];
 
@@ -1248,6 +1262,20 @@ export function validateRelations(
 		const parentKey = endpointKey(edge.parent);
 		const childKey = endpointKey(edge.child);
 
+		// Block-resolution for the parent/child item endpoints. When a `resolve`
+		// hook is supplied (validateContext's F2 resolver), a resolved active OR
+		// foreign item contributes its `loc.block` — so a cross-substrate child
+		// under a lens/hierarchy relation_type resolves to its foreign block rather
+		// than missing the active-only `idIndex`. When OMITTED (test callers /
+		// standalone use), this falls back to the inline `idIndex.get(key)` —
+		// byte-identical to the pre-F2 behavior. (`undefined` from either path means
+		// "not found in any loaded block", exactly as before.)
+		const resolveBlock = (endpoint: RawEndpoint, key: string): string | undefined => {
+			if (!resolve) return idIndex.get(key);
+			const r = resolve(endpoint);
+			return r.status === "active" || r.status === "foreign" ? r.loc?.block : undefined;
+		};
+
 		if (!declaredRelTypes.has(edge.relation_type)) {
 			issues.push({
 				code: "edge_unknown_relation_type",
@@ -1271,7 +1299,7 @@ export function validateRelations(
 					edge,
 				});
 			}
-			const childBlock = idIndex.get(childKey);
+			const childBlock = resolveBlock(edge.child, childKey);
 			if (!childBlock) {
 				issues.push({
 					code: "edge_unresolved_child",
@@ -1288,7 +1316,7 @@ export function validateRelations(
 		}
 
 		if (hier) {
-			const parentBlock = idIndex.get(parentKey);
+			const parentBlock = resolveBlock(edge.parent, parentKey);
 			if (!parentBlock) {
 				issues.push({
 					code: "edge_unresolved_parent",
@@ -1302,7 +1330,7 @@ export function validateRelations(
 					edge,
 				});
 			}
-			const childBlock = idIndex.get(childKey);
+			const childBlock = resolveBlock(edge.child, childKey);
 			if (!childBlock) {
 				issues.push({
 					code: "edge_unresolved_child",

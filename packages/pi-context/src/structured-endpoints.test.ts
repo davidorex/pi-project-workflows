@@ -11,8 +11,9 @@
  *    land on the SAME node in walkers / validateRelations;
  *  - lens-bin-never-item adversarial: a {kind:lens_bin} parent is validated as a
  *    bin, never resolved to an item — even when its bin label collides with an id;
- *  - foreign-not-resolved: a foreign {kind:item,substrate_id} endpoint is
- *    unresolved like a sentinel; the registry is NOT consulted during validation;
+ *  - foreign-resolved (Cycle 8 / F2): a foreign {kind:item,substrate_id} endpoint
+ *    whose substrate is registered + populated resolves `foreign` CLEAN via the
+ *    registry-backed foreign index (supersedes the Cycle-5 pre-F2 sentinel assertion);
  *  - porcelain resolution: bare refname / <alias>:<refname> / lens-bin selector,
  *    plus round-trip through the raw append.
  */
@@ -41,7 +42,7 @@ import {
 } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import * as registry from "./context-registry.js";
-import { appendRelationByRef, resolveRelationSelector, validateContext } from "./context-sdk.js";
+import { appendRelationByRef, resolveRef, resolveRelationSelector, validateContext } from "./context-sdk.js";
 import { validateFromFile } from "./schema-validator.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -225,15 +226,17 @@ describe("structured-endpoints: lens-bin never reaches idIndex.get", () => {
 });
 
 describe("structured-endpoints: foreign endpoint not resolved (no F2 pull-forward)", () => {
-	it("validateContext leaves a foreign item endpoint unresolved EVEN when its substrate is registered + populated", () => {
+	it("validateContext RESOLVES a foreign item endpoint when its substrate is registered + populated (Cycle 8 / F2)", () => {
 		const cwd = tmpProject("foreign");
 		adoptConception(cwd);
 
-		// Adversarial setup: register a foreign substrate AND populate it with the
-		// very refname the foreign endpoint names. If validation resolved foreign
-		// endpoints (a Cycle-8 pull-forward), this edge would RESOLVE. The probe is
-		// that it stays UNRESOLVED — proving the registry is not consulted to resolve
-		// the endpoint during validation.
+		// Cycle-8 intended reclassification (supersedes the Cycle-5 pre-F2 assertion):
+		// a foreign {kind:item,substrate_id} endpoint whose substrate is REGISTERED and
+		// whose refname is PRESENT there now resolves `foreign` CLEAN — the registry IS
+		// consulted (via the per-pass foreign-index cache) and the foreign index is read
+		// by byOid/byRefname. The endpoint produces NO `does not resolve` / endpoint
+		// error. (Pre-F2 this stayed an unresolved sentinel; F2 is not behavior-
+		// preserving on cross-substrate endpoints — that is the whole point.)
 		const foreignDir = ".context-foreign";
 		const foreignId = "sub-aaaaaaaaaaaaaaaa";
 		fs.mkdirSync(path.join(cwd, foreignDir, "schemas"), { recursive: true });
@@ -253,12 +256,22 @@ describe("structured-endpoints: foreign endpoint not resolved (no F2 pull-forwar
 		fs.writeFileSync(path.join(cwd, ".context", "relations.json"), JSON.stringify(edges, null, 2));
 
 		const result = validateContext(cwd);
-		// foreign parent OTHER-1 unresolved like a sentinel — NOT looked up in the
-		// foreign substrate even though it is registered + present there.
+		// The foreign parent OTHER-1 now resolves (byRefname in the registered foreign
+		// substrate) — no endpoint error names it.
 		assert.equal(
-			result.issues.some((i) => i.message.includes("Edge parent 'OTHER-1'") && i.message.includes("does not resolve")),
-			true,
-			"foreign endpoint must stay unresolved (Cycle-8 resolution not pulled forward)",
+			result.issues.some(
+				(i) =>
+					i.message.includes("OTHER-1") &&
+					(i.code === "edge_endpoint_dangling" || i.code === "edge_endpoint_unregistered"),
+			),
+			false,
+			"foreign endpoint resolves to its registered substrate (F2 — no endpoint error)",
+		);
+		// resolveRef confirms the status directly.
+		assert.equal(
+			resolveRef(cwd, edges[0].parent).status,
+			"foreign",
+			"the registered+populated foreign parent classifies as `foreign`",
 		);
 	});
 });

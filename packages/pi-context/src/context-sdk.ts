@@ -18,6 +18,7 @@ import {
 	type ItemRecord,
 	loadConfig,
 	loadRelations,
+	type RawEndpoint,
 	validateRelations,
 } from "./context.js";
 import { resolveContextDir, SCHEMAS_DIR, schemaPath, schemasDir, tryResolveContextDir } from "./context-dir.js";
@@ -1379,6 +1380,209 @@ export function appendRelationByRef(
 	return { appended, edge };
 }
 
+// ── Endpoint resolution (Cycle 8 / Phase F2) ────────────────────────────────
+
+/**
+ * Classification of an endpoint by {@link resolveRef}:
+ *  - `active`       — an item resolved in the ACTIVE substrate index (the
+ *                     same-substrate refname/oid path, byte-identical pass to today).
+ *  - `foreign`      — an item resolved in a REGISTERED foreign substrate's index
+ *                     (via a structured `substrate_id` locator or a legacy
+ *                     `<alias>:<refname>` string whose alias is registered).
+ *  - `dangling`     — a located endpoint (active or foreign) whose key was NOT
+ *                     found in the relevant index (the "does not resolve" outcome),
+ *                     OR a foreign substrate whose index build threw (degraded to
+ *                     dangling rather than crashing validation).
+ *  - `unregistered` — a locator naming a substrate_id / alias that the project-root
+ *                     registry does NOT carry (the foreign substrate is not yet
+ *                     registered — the pre-Phase-H state of the 30 `project:` strings).
+ */
+export type ResolveStatus = "active" | "foreign" | "dangling" | "unregistered";
+
+/**
+ * The result of {@link resolveRef}. `endpointKind` discriminates item endpoints
+ * (the resolution surface) from lens_bin endpoints (always `active`, never an
+ * item lookup). `loc` is the resolved {@link ItemLocation} for `active`/`foreign`
+ * item endpoints (absent for `dangling`/`unregistered`/lens_bin). `substrate_id`
+ * is the resolved foreign substrate_id when known (structured locator, or an
+ * alias that resolved); `oid`/`refname` carry the parsed/structured lookup keys.
+ */
+export interface ResolvedRef {
+	status: ResolveStatus;
+	endpointKind: "item" | "lens_bin";
+	substrate_id?: string;
+	oid?: string;
+	refname?: string;
+	loc?: ItemLocation;
+}
+
+/**
+ * Build (or fetch from the per-pass cache) the {@link SubstrateIndex} for a
+ * REGISTERED foreign substrate. Resolves the substrate dir from the registry,
+ * absolutizes it against `cwd`, and builds the index once per substrate_id within
+ * a validation pass (the `foreignCache` is keyed by substrate_id). A build that
+ * THROWS (malformed foreign block / prefix-invariant violation) is caught and
+ * returns null — the caller resolves the ref `dangling` rather than crashing the
+ * whole validation pass on one bad foreign substrate.
+ *
+ * Returns null when the substrate_id is not registered (→ caller `unregistered`)
+ * or when the foreign-index build throws (→ caller `dangling`). A registered
+ * substrate whose dir is missing on disk builds an empty index (not null) via
+ * `buildIdIndexForDir`'s existsSync guard, so its endpoints resolve `dangling`.
+ */
+function foreignIndexFor(
+	cwd: string,
+	substrate_id: string,
+	foreignCache: Map<string, SubstrateIndex>,
+): SubstrateIndex | null {
+	const cached = foreignCache.get(substrate_id);
+	if (cached) return cached;
+	const dir = resolveSubstrateDir(cwd, substrate_id);
+	if (dir === null) return null; // not registered → unregistered (caller)
+	const abs = path.isAbsolute(dir) ? dir : path.resolve(cwd, dir);
+	try {
+		const index = buildIdIndexForDir(abs, abs, loadConfigForDirBestEffort(abs));
+		foreignCache.set(substrate_id, index);
+		return index;
+	} catch {
+		// Malformed foreign block / prefix-invariant throw — degrade to dangling.
+		// Do NOT cache the failure (a transient read could differ); the per-pass
+		// cost of a re-throw is bounded by the edge count into this substrate.
+		return null;
+	}
+}
+
+/**
+ * Classify a single edge endpoint (legacy string OR structured) into one of the
+ * four {@link ResolveStatus} values — the load-bearing F2 resolver wired into
+ * `validateContext`'s edge loop + the `validateRelations` `resolve?` hook.
+ *
+ * Algorithm (the locked Cycle-8 design):
+ *  1. A structured `{kind:"lens_bin"}` endpoint → `{status:"active",
+ *     endpointKind:"lens_bin"}` with NO item lookup (a lens_bin never routes
+ *     through item resolution — the corruption-risk surface, Constraint 4).
+ *  2. An item endpoint WITH A LOCATOR — a structured `substrate_id`, OR a STRING
+ *     of the form `<alias>:<refname>` whose `<alias>` prefix is a REGISTERED
+ *     alias — resolves against the named FOREIGN substrate: substrate_id/alias
+ *     NOT in the registry → `unregistered`; registered → build (cached) the
+ *     foreign index → look up by `oid` (structured locator carrying an oid) else
+ *     by `refname` in `byOid`/`byRefname` → found `foreign` / absent `dangling`.
+ *     A foreign-index build that throws → `dangling` (never a crash).
+ *  3. An item endpoint with NO locator — a bare oid or a bare refname (a string
+ *     with no `:` alias-prefix) — resolves against the ACTIVE index ONLY → found
+ *     `active` / absent `dangling`.
+ *
+ * The alias-string parse is ATTEMPTED FIRST on any string containing a `:`
+ * (mirroring `resolveRelationSelector`): the `<x>` in `<x>:<y>` is treated as an
+ * alias candidate, so such a string is an aliased-item locator (step 2), NOT a
+ * bare refname (step 3). If `<x>` is NOT a registered alias → `unregistered`. So
+ * today's `project:FGAP-153` (the `project` alias is not registered until Phase H)
+ * → `unregistered`. The real 30 are therefore `unregistered` pre-H and flip to
+ * `foreign` once Phase H registers the `project` alias (the count/total stay
+ * unchanged at reclassification — see the note in `validateContext`).
+ *
+ * `opts.activeIndex` lets the caller pass a pre-built active index (built once per
+ * validation pass); `opts.foreignCache` memoizes foreign indices per substrate_id
+ * within the pass (so N edges into one foreign substrate build its index ONCE).
+ */
+export function resolveRef(
+	cwd: string,
+	ref: RawEndpoint,
+	opts?: { activeIndex?: SubstrateIndex; foreignCache?: Map<string, SubstrateIndex> },
+): ResolvedRef {
+	const foreignCache = opts?.foreignCache ?? new Map<string, SubstrateIndex>();
+	const activeIndex = opts?.activeIndex ?? buildIdIndex(cwd);
+
+	// (1) lens_bin endpoint — no item lookup.
+	if (typeof ref !== "string" && ref.kind === "lens_bin") {
+		return { status: "active", endpointKind: "lens_bin" };
+	}
+
+	// Derive the locator + lookup keys.
+	//  - structured item: substrate_id (locator), oid, refname.
+	//  - string: attempt `<alias>:<refname>` parse — a `:` whose prefix is a
+	//    REGISTERED alias yields a foreign locator; otherwise no locator (step 3
+	//    looks up the whole string in the active index).
+	let substrate_id: string | undefined;
+	let oid: string | undefined;
+	let refname: string | undefined;
+
+	// A string carrying a `:` is treated as a `<alias>:<refname>` LOCATOR
+	// candidate (the alias parse is ATTEMPTED): the prefix is an alias that
+	// either resolves (→ foreign locator) or does NOT (→ `unregistered` — the
+	// pre-Phase-H state of the 30 `project:` strings, whose `project` alias is
+	// not yet registered). A registered alias yields a foreign `substrate_id`
+	// locator + the post-colon refname; an UNregistered alias is flagged with the
+	// `aliasUnregistered` sentinel so step (2)/(3) below routes it to
+	// `unregistered` rather than the active index. A string with NO `:` is a bare
+	// active refname (step 3).
+	let aliasUnregistered = false;
+	if (typeof ref === "string") {
+		const colon = ref.indexOf(":");
+		if (colon > 0) {
+			const alias = ref.slice(0, colon);
+			const aliasSubId = resolveAlias(cwd, alias);
+			if (aliasSubId !== null) {
+				// Registered alias → foreign locator; refname is the post-colon part.
+				substrate_id = aliasSubId;
+				refname = ref.slice(colon + 1);
+			} else {
+				// `:`-prefix is an alias CANDIDATE but the alias is NOT registered →
+				// `unregistered` (NOT active-dangling). The whole string is retained as
+				// the refname for diagnostics; no active-index lookup is performed.
+				aliasUnregistered = true;
+				refname = ref;
+			}
+		} else {
+			// No colon — bare active refname.
+			refname = ref;
+		}
+	} else {
+		// Structured item endpoint.
+		substrate_id = ref.substrate_id;
+		oid = ref.oid;
+		refname = ref.refname;
+	}
+
+	// A `<alias>:<refname>` string whose alias is NOT registered → unregistered
+	// (locked decision 1: the alias parse is attempted; a missing alias is the
+	// pre-Phase-H state of the 30, NOT an active-substrate dangling lookup).
+	if (aliasUnregistered) {
+		return { status: "unregistered", endpointKind: "item", refname };
+	}
+
+	// (2) item endpoint WITH a foreign locator (structured substrate_id OR an
+	// alias that resolved to one).
+	if (substrate_id !== undefined) {
+		const index = foreignIndexFor(cwd, substrate_id, foreignCache);
+		if (index === null) {
+			// substrate_id not registered → unregistered (a build-throw also returns
+			// null, but foreignIndexFor only returns null on UNREGISTERED when the
+			// registry lacks the id; the throw path returns null too — disambiguate
+			// by re-checking the registry to keep the two outcomes distinct).
+			const dir = resolveSubstrateDir(cwd, substrate_id);
+			return dir === null
+				? { status: "unregistered", endpointKind: "item", substrate_id, oid, refname }
+				: { status: "dangling", endpointKind: "item", substrate_id, oid, refname };
+		}
+		// Look up by oid first (structured locator carrying an oid), else by refname.
+		let loc: ItemLocation | undefined;
+		if (typeof oid === "string" && oid.length > 0) loc = index.byOid.get(oid);
+		if (!loc && typeof refname === "string" && refname.length > 0) loc = index.byRefname.get(refname);
+		return loc
+			? { status: "foreign", endpointKind: "item", substrate_id, oid, refname, loc }
+			: { status: "dangling", endpointKind: "item", substrate_id, oid, refname };
+	}
+
+	// (3) item endpoint with NO locator → ACTIVE index only.
+	let loc: ItemLocation | undefined;
+	if (typeof oid === "string" && oid.length > 0) loc = activeIndex.byOid.get(oid);
+	if (!loc && typeof refname === "string" && refname.length > 0) loc = activeIndex.byRefname.get(refname);
+	return loc
+		? { status: "active", endpointKind: "item", oid, refname, loc }
+		: { status: "dangling", endpointKind: "item", oid, refname };
+}
+
 // ── Project Validation (cross-block reference integrity) ─────────────────────
 
 export interface ContextValidationIssue {
@@ -1503,29 +1707,55 @@ export function validateContext(cwd: string): ContextValidationResult {
 	// no-op on empty relations, so it needs no separate guard.
 	if (config) {
 		const registeredRelTypes = new Set((config.relation_types ?? []).map((rt) => rt.canonical_id));
+		// Per-pass foreign-index cache (Constraint 3): N foreign edges into the same
+		// registered substrate build that substrate's index ONCE within this pass.
+		const foreignCache = new Map<string, SubstrateIndex>();
+		// Resolver bound to this pass's cwd + active index + foreign cache; supplied
+		// to validateRelations so its lens/hierarchy resolution can see foreign items.
+		const resolve = (ref: RawEndpoint): ResolvedRef => resolveRef(cwd, ref, { activeIndex: index, foreignCache });
 		for (const edge of relations) {
-			// Consumer node keys (the load-bearing pivot): structured same-substrate
-			// items normalize to refname (same node as a legacy string); foreign
-			// items / project: strings key on their foreign string → idIndex miss →
-			// unresolved, identical to today's sentinels. Messages are string-typed
-			// via the keys for byte-identical diagnostics — no F2 resolution, no
-			// registry consultation here (Constraint 1/3).
+			// F2 severity split (DEC §F2): every endpoint is classified by resolveRef
+			// into active | foreign | dangling | unregistered. active/foreign/lens_bin
+			// → no issue; unregistered → ERROR (`edge_endpoint_unregistered`); dangling
+			// → ERROR (`edge_endpoint_dangling`). The two new codes REPLACE the prior
+			// inline "does not resolve" message — the intended reclassification of the
+			// cross-substrate (`<alias>:`) strings (their alias is unregistered pre-H).
 			const parentKey = endpointKey(edge.parent);
 			const childKey = endpointKey(edge.child);
-			if (!index.byRefname.has(parentKey)) {
+			const parentRes = resolve(edge.parent);
+			const childRes = resolve(edge.child);
+			if (parentRes.status === "unregistered") {
+				issues.push({
+					severity: "error",
+					message: `Edge parent '${parentKey}' (relation_type '${edge.relation_type}') names an unregistered substrate alias/id`,
+					block: "relations",
+					field: `${parentKey}->${childKey}`,
+					code: "edge_endpoint_unregistered",
+				});
+			} else if (parentRes.status === "dangling") {
 				issues.push({
 					severity: "error",
 					message: `Edge parent '${parentKey}' (relation_type '${edge.relation_type}') does not resolve to any item`,
 					block: "relations",
 					field: `${parentKey}->${childKey}`,
+					code: "edge_endpoint_dangling",
 				});
 			}
-			if (!index.byRefname.has(childKey)) {
+			if (childRes.status === "unregistered") {
+				issues.push({
+					severity: "error",
+					message: `Edge child '${childKey}' (relation_type '${edge.relation_type}') names an unregistered substrate alias/id`,
+					block: "relations",
+					field: `${parentKey}->${childKey}`,
+					code: "edge_endpoint_unregistered",
+				});
+			} else if (childRes.status === "dangling") {
 				issues.push({
 					severity: "error",
 					message: `Edge child '${childKey}' (relation_type '${edge.relation_type}') does not resolve to any item`,
 					block: "relations",
 					field: `${parentKey}->${childKey}`,
+					code: "edge_endpoint_dangling",
 				});
 			}
 			if (!registeredRelTypes.has(edge.relation_type)) {
@@ -1554,8 +1784,14 @@ export function validateContext(cwd: string): ContextValidationResult {
 			if (!rt.source_kinds && !rt.target_kinds) continue; // metadata absent → unchecked
 			const parentKey = endpointKey(edge.parent);
 			const childKey = endpointKey(edge.child);
-			const parentLoc = index.byRefname.get(parentKey);
-			const childLoc = index.byRefname.get(childKey);
+			// Use the resolved location for item endpoints (active OR foreign), so a
+			// foreign item's block is kind-checked against source/target_kinds too. A
+			// lens_bin endpoint (endpointKind:"lens_bin") carries no loc and is skipped
+			// — it never routes through item-block resolution.
+			const parentRes = resolve(edge.parent);
+			const childRes = resolve(edge.child);
+			const parentLoc = parentRes.loc;
+			const childLoc = childRes.loc;
 			if (
 				parentLoc &&
 				rt.source_kinds &&
@@ -1588,7 +1824,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 			(itemsByBlock[loc.block] ??= []).push({ id: loc.id, ...loc.item });
 		}
 		try {
-			const relResult = validateRelations(config, relations, itemsByBlock);
+			const relResult = validateRelations(config, relations, itemsByBlock, resolve);
 			for (const ri of relResult.issues) {
 				if (ri.code !== "edge_cycle_detected") continue;
 				issues.push({

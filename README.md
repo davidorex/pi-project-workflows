@@ -6,10 +6,11 @@ It runs Pi but can also be run via Claude Code etc. while Pi is running with the
 
 I'm considering renaming it "pi-prometheus-bound." Or maybe just "pi-bound." I currently run it with a script that wholly constrains the main Pi agent to tools given by the extensions, plus read and grep and ls. 
 
-My favorite thing currently is being able to craft and shape context substrates -- /context switch [.dir] -- and model them on the shape of the project's particular current focus. Alongside that is attempting to turn "agents" into jit-tool calls context exactingly composed from the context substrate.
+My favorite thing currently is being able to craft and shape context substrates -- /context switch [.dir] -- and model them on the shape of the project's particular current focus. 
 
-You should (I hope) be able to create exactly the kind of context substrates you need.  
+Alongside that is attempting to turn "agents" into jit-tool calls context exactingly composed from the context substrate. Perhaps I'll be proven wrong, but my working suspicion is that "agents" and even "skills" can be jit-composed from for-purpose atomic context blocks and need not be md files that go stale. DRY, via schemas and macros.
 
+You should (I hope) be able to create exactly the kind of context substrates you need, and then exactly the kind of jit-agent dispatchable as a tool, in a workflow if you like, as well.
 
 ## Philosophy
 
@@ -17,11 +18,7 @@ You should (I hope) be able to create exactly the kind of context substrates you
 >
 > *When cutting wood to make an axe handle, the model is right there in your hand.*
 
-If pi-project-workflows is done right, users need not wait for developers to implement changes that they find through use that they need. The use of the tool shows you the shape of how to make the version of the tool that you want.
-
-Add a JSON Schema — get a new block type with tools, validation, and derived state. Write a `.workflow.yaml` — get a new multi-step pipeline with typed data flow and checkpoint/resume. Drop a `.monitor.json` with a Nunjucks template — get an autonomous watchdog that classifies, learns, and steers. Author an `.agent.yaml` — get a typed agent contract compiled to prompts at dispatch time. The runtime is generic; the domain lives in specs, schemas, and templates that users create without touching TypeScript.
-
-The framework is outcome-agnostic — not a coding agent extension. Blocks can track sales pipelines, lesson plans, research findings, compliance audits. Workflows can orchestrate document review, data analysis, meeting preparation. Monitors can classify any agent behavior against any pattern library. Artifacts are any verifiable output: updated spreadsheets, reports, specifications, not just code.
+The use of the tool shows you the shape of how to make the version of the tool that you want. Reshape it in-air based on your experience using it.
 
 ## Packages
 
@@ -36,7 +33,7 @@ The framework is outcome-agnostic — not a coding agent extension. Blocks can t
 ## Quick Start
 
 ```bash
-# Install all four extensions in any Pi project (one command)
+# Install all extensions in any Pi project (one command)
 pi install npm:@davidorex/pi-project-workflows
 
 # Or install individually
@@ -238,4 +235,4 @@ This invokes `scripts/release.mjs`, which: checks for uncommitted changes, bumps
 
 ## License
 
-MIT
+MIT.

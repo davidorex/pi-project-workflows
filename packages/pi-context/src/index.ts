@@ -2999,7 +2999,7 @@ export {
 	resolveSubstrateDir,
 	writeRegistry,
 } from "./context-registry.js";
-export type { CompleteTaskResult, ItemLocation } from "./context-sdk.js";
+export type { CompleteTaskResult, ItemLocation, ResolvedRef, ResolveStatus } from "./context-sdk.js";
 // Re-export for consumers
 export {
 	blockStructure,
@@ -3008,6 +3008,7 @@ export {
 	completeTask,
 	findAppendableBlocks,
 	resolveItemById,
+	resolveRef,
 	schemaInfo,
 	schemaVocabulary,
 } from "./context-sdk.js";

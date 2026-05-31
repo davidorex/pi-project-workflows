@@ -371,18 +371,11 @@ describe("promoteItem", () => {
 		assert.strictEqual(destBlock.decisions.length, 0);
 		const destRelations = JSON.parse(fs.readFileSync(path.join(bDir, "relations.json"), "utf-8")) as unknown[];
 		assert.strictEqual(destRelations.length, 0);
-		// NOTE: the content object IS persisted during identity-stamping, which runs
-		// (putObject) BEFORE the whole-block AJV validation in writeTypedFile. An
-		// orphaned content object can therefore land even though the block + edge
-		// writes are rolled back — the object store is content-addressed + idempotent
-		// and not transactional with the block write. This reflects the existing
-		// block-api write-path ordering, not a promote-item-specific effect.
+		// Cycle 9.1 P6: object persistence is now post-validation, so a whole-block
+		// AJV failure leaves NO orphan content object (the prior <=1 tolerance is
+		// gone). Zero dest items, zero dest relations, zero dest objects.
 		const objDir = path.join(bDir, "objects");
-		if (fs.existsSync(objDir)) {
-			// At most an orphan object — never a referenced one (no item/edge points at it).
-			const objs = fs.readdirSync(objDir);
-			assert.ok(objs.length <= 1, `expected at most one orphan object, got ${objs.length}`);
-		}
+		assert.ok(!fs.existsSync(objDir), "no content object persisted on a rolled-back AJV-failed write");
 	});
 
 	it("precondition: unregistered destination alias throws", () => {

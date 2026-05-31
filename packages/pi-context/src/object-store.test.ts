@@ -10,6 +10,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
+import { writeBlockForDir } from "./block-api.js";
 import { getObject, hasObject, putObject } from "./object-store.js";
 
 /** A syntactically valid lowercase 64-char hex hash (not necessarily the hash
@@ -81,5 +82,76 @@ describe("object-store", () => {
 	it("getObject and hasObject also reject a malformed hash", () => {
 		assert.throws(() => getObject(dir, "nope"), /invalid contentHash/);
 		assert.throws(() => hasObject(dir, "nope"), /invalid contentHash/);
+	});
+});
+
+// ── Cycle 9.1 P6: object persistence is gated on whole-block AJV ──────────────
+//
+// Stamping computes content_hash regardless of AJV, but objects/ is written
+// ONLY after the whole block clears validation (writeTypedFile post-validation
+// walk). An AJV-fail must therefore leave objects/ empty AND the block file
+// untouched. A successful write persists the object. Seeding mirrors
+// identity-stamp.test.ts makeScratch (schema with the 3 identity fields +
+// config carrying substrate_id).
+
+const SUB = "sub-0011223344556677";
+
+function makeIdentityScratch(): { dir: string } {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "object-store-ajv-"));
+	fs.mkdirSync(path.join(dir, "schemas"), { recursive: true });
+	fs.writeFileSync(
+		path.join(dir, "config.json"),
+		JSON.stringify({ schema_version: "1.0.0", block_kinds: [], substrate_id: SUB }, null, 2),
+		"utf-8",
+	);
+	const schema = {
+		type: "object",
+		properties: {
+			tasks: {
+				type: "array",
+				items: {
+					type: "object",
+					additionalProperties: false,
+					required: ["id", "title"],
+					properties: {
+						id: { type: "string" },
+						title: { type: "string" },
+						oid: { type: "string", pattern: "^[0-9a-f]{32}$" },
+						content_hash: { type: "string", pattern: "^[0-9a-f]{64}$" },
+						content_parent: { type: "string", pattern: "^[0-9a-f]{64}$" },
+					},
+				},
+			},
+		},
+	};
+	fs.writeFileSync(path.join(dir, "schemas", "tasks.schema.json"), JSON.stringify(schema, null, 2), "utf-8");
+	return { dir };
+}
+
+describe("object-store: no orphan object on whole-block AJV failure", () => {
+	it("an AJV-failing write hashes fine but leaves objects/ empty and the block unwritten", (t) => {
+		const { dir } = makeIdentityScratch();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		const objDir = path.join(dir, "objects");
+		// `bogus` violates additionalProperties:false → whole-block AJV fails. The
+		// item still hashes during stamping, but persistence is post-validation.
+		assert.throws(() => writeBlockForDir(dir, "tasks", { tasks: [{ id: "T1", title: "x", bogus: 1 }] }));
+		// No orphan object — objects/ is empty (or never created).
+		const objs = fs.existsSync(objDir) ? fs.readdirSync(objDir) : [];
+		assert.equal(objs.length, 0, "AJV-fail must leave no orphan content object");
+		// Block file never landed.
+		assert.equal(fs.existsSync(path.join(dir, "tasks.json")), false, "block file unchanged (unwritten)");
+	});
+
+	it("a successful write persists exactly the stamped item's object", (t) => {
+		const { dir } = makeIdentityScratch();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		const objDir = path.join(dir, "objects");
+		writeBlockForDir(dir, "tasks", { tasks: [{ id: "T1", title: "x" }] });
+		const written = JSON.parse(fs.readFileSync(path.join(dir, "tasks.json"), "utf-8")) as {
+			tasks: Array<{ content_hash: string }>;
+		};
+		assert.ok(hasObject(dir, written.tasks[0].content_hash));
+		assert.equal(fs.readdirSync(objDir).length, 1, "exactly one content object persisted");
 	});
 });

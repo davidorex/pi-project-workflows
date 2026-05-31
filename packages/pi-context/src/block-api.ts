@@ -31,7 +31,7 @@ import {
 import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
 import { getProjectMigrationRegistryForDir } from "./migration-registry-loader.js";
-import { putObject } from "./object-store.js";
+import { hasObject, putObject } from "./object-store.js";
 import { validateBlockWithMigrationForDir, validateFromFile } from "./schema-validator.js";
 
 // Node16 module resolution + CJS interop: default import may be wrapped
@@ -685,7 +685,9 @@ export function prepareItemIdentityForWrite(
 		const projection = contentProjection(schema, arrayKey, out);
 		const hash = computeContentHash(projection);
 		out.content_hash = hash;
-		putObject(substrateDir, hash, projection);
+		// Object persistence is deferred to writeTypedFile's post-validation walk
+		// (Cycle 9.1 P6): stamping must not write to objects/ before the whole
+		// block clears AJV, else an AJV-fail leaves an orphan content object.
 		return out;
 	}
 
@@ -715,7 +717,8 @@ export function prepareItemIdentityForWrite(
 	const projection = contentProjection(schema, arrayKey, out);
 	const hash = computeContentHash(projection);
 	out.content_hash = hash;
-	putObject(substrateDir, hash, projection);
+	// Object persistence deferred to writeTypedFile's post-validation walk
+	// (Cycle 9.1 P6); see create-mode note above.
 	// content_parent advances to the prior content_hash ONLY when content
 	// actually changed. On an unchanged-content write (no-op / author-only
 	// re-stamp) it is NOT advanced — instead the prior version's own
@@ -886,6 +889,29 @@ export function writeTypedFile(
 		validateFromFile(schemaPath, toWrite, label);
 	}
 
+	// Post-validation object persistence (Cycle 9.1 P6). Content objects are
+	// written to objects/ ONLY after the whole block clears AJV and BEFORE the
+	// tmp+rename — so an AJV-fail leaves no orphan object, and a committed block
+	// never references a missing object. Stamping (prepareItemIdentityForWrite)
+	// computed each item's content_hash but no longer persists; we persist here.
+	// Gated on schemaPath: a schema-less write carries no identity items, and
+	// the per-item content_hash check protects the non-stamping config/registry/
+	// relations/migrations writers (their items carry no content_hash).
+	if (schemaPath) {
+		const substrateDir = path.dirname(filePath);
+		const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
+		forEachBlockArray(toWrite, (arrayKey, arr) => {
+			for (const item of arr) {
+				if (item && typeof item === "object" && !Array.isArray(item)) {
+					const rec = item as Record<string, unknown>;
+					if (typeof rec.content_hash === "string" && !hasObject(substrateDir, rec.content_hash)) {
+						putObject(substrateDir, rec.content_hash, contentProjection(schema, arrayKey, rec));
+					}
+				}
+			}
+		});
+	}
+
 	// Ensure directory exists
 	fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
@@ -964,6 +990,31 @@ function assertNoDuplicateIdsInArray(arr: unknown[], labelForArray: string): voi
 			throw new Error(`Item '${String(id)}' already exists in ${labelForArray}`);
 		}
 		seen.add(id);
+	}
+}
+
+/**
+ * Pure-data recursive walk over every array-valued property at any depth.
+ * For a plain (non-array) object `data`, each `[key, value]` pair whose `value`
+ * is an array is reported via `visit(key, value)`, then each element of that
+ * array that is itself a plain (non-array) object is recursed into (so an
+ * item's own nested id-bearing arrays — e.g. `layer-plans` items'
+ * `layers` / `migration_phases` — are visited under their item-local key).
+ * No schema is consulted; this matches the block shapes the schemas use
+ * (top-level arrays of items, items carrying nested arrays of items). Non-array
+ * object-valued properties that are NOT array elements are not descended into —
+ * block items live in arrays, so only array elements are recursion frontiers.
+ */
+function forEachBlockArray(data: unknown, visit: (arrayKey: string, array: unknown[]) => void): void {
+	if (!data || typeof data !== "object" || Array.isArray(data)) return;
+	for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+		if (!Array.isArray(value)) continue;
+		visit(key, value);
+		for (const el of value) {
+			if (el && typeof el === "object" && !Array.isArray(el)) {
+				forEachBlockArray(el, visit);
+			}
+		}
 	}
 }
 
@@ -1469,6 +1520,9 @@ export function appendToNestedTypedFile(
 				`Matched item in ${label} key '${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
 			);
 		}
+		// Atomic id-uniqueness guard on the nested array (Cycle 9.1 P4): reads the
+		// in-hand nested array under the lock. Label names the full parent.nested path.
+		assertAppendIdUnique(parent[nestedArrayKey] as unknown[], item, `${label}.${parentArrayKey}.${nestedArrayKey}`);
 		const authored =
 			ctx && item && typeof item === "object" && !Array.isArray(item)
 				? maybeStampItem(schemaPath, nestedArrayKey, item as Record<string, unknown>, ctx, "create")
@@ -1658,10 +1712,10 @@ export function writeBlockForDir(substrateDir: string, blockName: string, data: 
 	// re-write that merely refreshes attestation leaves content hashes stable.
 	// Whole-file id-uniqueness guard: a whole-block write carrying two items
 	// sharing an `id` within one array is rejected before stamping/validation.
+	// Recurses through nested id-bearing arrays (Cycle 9.1 P4) so a duplicate id
+	// inside e.g. a `layer-plans` item's `layers` is rejected too.
 	if (data && typeof data === "object" && !Array.isArray(data)) {
-		for (const [arrayKey, value] of Object.entries(data as Record<string, unknown>)) {
-			if (Array.isArray(value)) assertNoDuplicateIdsInArray(value, `${blockName}.${arrayKey}`);
-		}
+		forEachBlockArray(data, (arrayKey, arr) => assertNoDuplicateIdsInArray(arr, `${blockName}.${arrayKey}`));
 	}
 
 	let identityStamped: unknown = data;

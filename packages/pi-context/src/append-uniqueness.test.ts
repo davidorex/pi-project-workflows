@@ -18,6 +18,7 @@ import { describe, it } from "node:test";
 import {
 	appendManyToTypedFileIfAbsent,
 	appendToBlockForDir,
+	appendToNestedArrayForDir,
 	appendToTypedFile,
 	upsertItemInBlockForDir,
 	writeBlockForDir,
@@ -48,6 +49,37 @@ const gapsSchema = {
 				properties: {
 					id: { type: "string", pattern: "^FGAP-\\d{3}$" },
 					description: { type: "string" },
+				},
+			},
+		},
+	},
+};
+
+// A top-level array (`reviews`) whose items carry a nested id-bearing array
+// (`findings`) — the shape the Cycle 9.1 P4 nested guard targets. Nested items
+// allow an id-less shape too (so the "id-less not rejected" case is exercisable).
+const reviewsSchema = {
+	type: "object",
+	required: ["reviews"],
+	properties: {
+		reviews: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "findings"],
+				properties: {
+					id: { type: "string" },
+					findings: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["note"],
+							properties: {
+								id: { type: "string" },
+								note: { type: "string" },
+							},
+						},
+					},
 				},
 			},
 		},
@@ -175,5 +207,74 @@ describe("append id-uniqueness guard", () => {
 		assert.strictEqual(res.skipped, 1);
 		const arr = JSON.parse(fs.readFileSync(filePath, "utf-8")) as unknown[];
 		assert.strictEqual(arr.length, 2);
+	});
+
+	// ── Cycle 9.1 P4: nested id-bearing arrays ────────────────────────────────
+
+	it("appendToNestedArrayForDir: nested duplicate id throws (label names parent.nested)", () => {
+		const cwd = makeTmpDir("nested-dup");
+		const dir = path.join(cwd, ".project");
+		fs.mkdirSync(dir, { recursive: true });
+		setupSchema(cwd, "reviews", reviewsSchema);
+		fs.writeFileSync(
+			path.join(dir, "reviews.json"),
+			JSON.stringify({ reviews: [{ id: "R1", findings: [{ id: "F1", note: "first" }] }] }),
+		);
+
+		const parentPred = (it: Record<string, unknown>) => it.id === "R1";
+		assert.throws(
+			() => appendToNestedArrayForDir(dir, "reviews", "reviews", parentPred, "findings", { id: "F1", note: "dup" }),
+			/Item 'F1' already exists in .*\.reviews\.findings/,
+		);
+		// On-disk nested array unchanged — still exactly one finding.
+		const data = JSON.parse(fs.readFileSync(path.join(dir, "reviews.json"), "utf-8")) as {
+			reviews: Array<{ findings: unknown[] }>;
+		};
+		assert.strictEqual(data.reviews[0].findings.length, 1);
+	});
+
+	it("appendToNestedArrayForDir: id-less nested item is NOT rejected", () => {
+		const cwd = makeTmpDir("nested-noid");
+		const dir = path.join(cwd, ".project");
+		fs.mkdirSync(dir, { recursive: true });
+		setupSchema(cwd, "reviews", reviewsSchema);
+		fs.writeFileSync(
+			path.join(dir, "reviews.json"),
+			JSON.stringify({ reviews: [{ id: "R1", findings: [{ note: "a" }] }] }),
+		);
+
+		const parentPred = (it: Record<string, unknown>) => it.id === "R1";
+		assert.doesNotThrow(() =>
+			appendToNestedArrayForDir(dir, "reviews", "reviews", parentPred, "findings", { note: "b" }),
+		);
+		const data = JSON.parse(fs.readFileSync(path.join(dir, "reviews.json"), "utf-8")) as {
+			reviews: Array<{ findings: unknown[] }>;
+		};
+		assert.strictEqual(data.reviews[0].findings.length, 2);
+	});
+
+	it("writeBlockForDir: whole-file recurse rejects two same-id items in a NESTED array", () => {
+		const cwd = makeTmpDir("nested-wholefile");
+		const dir = path.join(cwd, ".project");
+		fs.mkdirSync(dir, { recursive: true });
+		setupSchema(cwd, "reviews", reviewsSchema);
+
+		assert.throws(
+			() =>
+				writeBlockForDir(dir, "reviews", {
+					reviews: [
+						{
+							id: "R1",
+							findings: [
+								{ id: "F9", note: "a" },
+								{ id: "F9", note: "b" },
+							],
+						},
+					],
+				}),
+			/Item 'F9' already exists in reviews\.findings/,
+		);
+		// Nothing written.
+		assert.strictEqual(fs.existsSync(path.join(dir, "reviews.json")), false);
 	});
 });

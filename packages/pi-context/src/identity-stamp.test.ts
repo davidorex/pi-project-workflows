@@ -28,6 +28,7 @@ import {
 	metadataFieldsForSchema,
 	mintOid,
 	prepareItemIdentityForWrite,
+	writeBlockForDir,
 } from "./block-api.js";
 import { computeContentHash } from "./content-hash.js";
 import { substrateIdForDir } from "./context-dir.js";
@@ -82,14 +83,31 @@ describe("mintOid", () => {
 });
 
 describe("prepareItemIdentityForWrite — create", () => {
-	it("mints oid, computes content_hash, puts the object, sets no content_parent", (t) => {
+	it("mints oid, computes content_hash, sets no content_parent (bare stamp does NOT persist)", (t) => {
 		const { dir, schemaPath } = makeScratch({});
 		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
 		const out = prepareItemIdentityForWrite(dir, "tasks", { id: "T1", title: "x" }, schemaPath, "tasks", "create");
 		assert.match(out.oid as string, /^[0-9a-f]{32}$/);
 		assert.match(out.content_hash as string, /^[0-9a-f]{64}$/);
 		assert.ok(!("content_parent" in out), "v1 item must have no content_parent");
-		assert.ok(hasObject(dir, out.content_hash as string), "object persisted under content_hash");
+		// Cycle 9.1 P6: object persistence moved to writeTypedFile's post-validation
+		// walk — a BARE stamp no longer touches objects/. The persistence checkpoint
+		// now follows a real (post-AJV) write; see the writeBlockForDir test below.
+		assert.ok(!hasObject(dir, out.content_hash as string), "bare stamp does NOT persist the object");
+	});
+
+	it("a successful writeBlockForDir persists the stamped item's object under its content_hash", (t) => {
+		const { dir } = makeScratch({});
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		// writeBlockForDir stamps each top-level array item (mint oid + content_hash)
+		// then, post-AJV, the writeTypedFile walk persists the content object.
+		writeBlockForDir(dir, "tasks", { tasks: [{ id: "T1", title: "x" }] });
+		const written = JSON.parse(fs.readFileSync(path.join(dir, "tasks.json"), "utf-8")) as {
+			tasks: Array<{ content_hash: string }>;
+		};
+		const hash = written.tasks[0].content_hash;
+		assert.match(hash, /^[0-9a-f]{64}$/);
+		assert.ok(hasObject(dir, hash), "object persisted under content_hash after a successful write");
 	});
 
 	it("is a NO-OP when the schema does not declare the identity fields", (t) => {

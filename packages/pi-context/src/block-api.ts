@@ -924,6 +924,49 @@ export function writeTypedFile(
  * intentionally a no-op until a schema actually declares author fields
  * on a top-level array shape (no current consumer does so).
  */
+/**
+ * Atomic id-uniqueness guard for the append path. Reads the `id` off the
+ * incoming item (when it carries one) and rejects the append if any element
+ * already present in `arr` shares that id. Items genuinely lacking an `id`
+ * property are skipped (NOT fabricated) — mirrors the `"id" in item` gate the
+ * tool layer used. The check runs inside the caller's `withBlockLock` critical
+ * section against the array already in hand, so it is atomic (unlike a racy
+ * `readBlock`-then-`append` at the tool layer). `labelForArray` is the
+ * `<label>.<arrayKey>` context the message names.
+ */
+function assertAppendIdUnique(arr: unknown[], item: unknown, labelForArray: string): void {
+	if (!item || typeof item !== "object" || Array.isArray(item)) return;
+	const rec = item as Record<string, unknown>;
+	if (!("id" in rec)) return;
+	const id = rec.id;
+	for (const existing of arr) {
+		if (existing && typeof existing === "object" && (existing as Record<string, unknown>).id === id) {
+			throw new Error(`Item '${String(id)}' already exists in ${labelForArray}`);
+		}
+	}
+}
+
+/**
+ * Atomic whole-file id-uniqueness guard: rejects a whole-array write that
+ * itself carries two elements sharing an `id`. Only elements that HAVE an `id`
+ * property participate (mirrors `assertAppendIdUnique`'s gate); id-less
+ * elements are skipped. `labelForArray` is the `<label>.<arrayKey>` context the
+ * message names.
+ */
+function assertNoDuplicateIdsInArray(arr: unknown[], labelForArray: string): void {
+	const seen = new Set<unknown>();
+	for (const el of arr) {
+		if (!el || typeof el !== "object" || Array.isArray(el)) continue;
+		const rec = el as Record<string, unknown>;
+		if (!("id" in rec)) continue;
+		const id = rec.id;
+		if (seen.has(id)) {
+			throw new Error(`Item '${String(id)}' already exists in ${labelForArray}`);
+		}
+		seen.add(id);
+	}
+}
+
 export function appendToTypedFile(
 	filePath: string,
 	schemaPath: string | null,
@@ -941,6 +984,8 @@ export function appendToTypedFile(
 			if (!Array.isArray(data)) {
 				throw new Error(`${label}: expected top-level array, got ${typeof data}`);
 			}
+			// Atomic id-uniqueness guard (reads the in-hand array under the lock).
+			assertAppendIdUnique(data, item, `${label}.__top__`);
 			const authored =
 				ctx && item && typeof item === "object" && !Array.isArray(item)
 					? maybeStampItem(schemaPath, "__top__", item as Record<string, unknown>, ctx, "create")
@@ -965,6 +1010,8 @@ export function appendToTypedFile(
 		if (!Array.isArray(record[arrayPath])) {
 			throw new Error(`${label} key '${arrayPath}' is not an array`);
 		}
+		// Atomic id-uniqueness guard (reads the in-hand array under the lock).
+		assertAppendIdUnique(record[arrayPath] as unknown[], item, `${label}.${arrayPath}`);
 		const authored =
 			ctx && item && typeof item === "object" && !Array.isArray(item)
 				? maybeStampItem(schemaPath, arrayPath, item as Record<string, unknown>, ctx, "create")
@@ -1609,6 +1656,14 @@ export function writeBlockForDir(substrateDir: string, blockName: string, data: 
 	// non-object data (the gate inside prepareItemIdentityForWrite short-
 	// circuits). Author-only re-stamping is hash-neutral, so a whole-block
 	// re-write that merely refreshes attestation leaves content hashes stable.
+	// Whole-file id-uniqueness guard: a whole-block write carrying two items
+	// sharing an `id` within one array is rejected before stamping/validation.
+	if (data && typeof data === "object" && !Array.isArray(data)) {
+		for (const [arrayKey, value] of Object.entries(data as Record<string, unknown>)) {
+			if (Array.isArray(value)) assertNoDuplicateIdsInArray(value, `${blockName}.${arrayKey}`);
+		}
+	}
+
 	let identityStamped: unknown = data;
 	if (schemaPath !== null && data && typeof data === "object" && !Array.isArray(data)) {
 		identityStamped = stampWholeBlockIdentity(
@@ -1744,6 +1799,11 @@ export function appendToBlockForDir(
 		if (!Array.isArray(record[arrayKey])) {
 			throw new Error(`Block '${blockName}' key '${arrayKey}' is not an array`);
 		}
+
+		// Atomic id-uniqueness guard (reads the in-hand array under the lock).
+		// This primitive writes inline (does NOT route through appendToTypedFile),
+		// so the guard is applied here separately.
+		assertAppendIdUnique(record[arrayKey] as unknown[], item, `${blockName}.${arrayKey}`);
 
 		// Optional ctx-stamping for object-shaped items (skipped silently for
 		// scalar items even when the schema technically permits author fields —

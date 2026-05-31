@@ -57,6 +57,10 @@
 			"types": "./dist/context.d.ts",
 			"default": "./dist/context.js"
 		},
+		"./promote-item": {
+			"types": "./dist/promote-item.d.ts",
+			"default": "./dist/promote-item.js"
+		},
 		"./dispatch-context": {
 			"types": "./dist/dispatch-context.d.ts",
 			"default": "./dist/dispatch-context.js"

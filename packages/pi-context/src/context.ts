@@ -380,6 +380,13 @@ function relationsPath(cwd: string): string {
 	return path.join(resolveContextDir(cwd), "relations.json");
 }
 
+/** `<substrateDir>/relations.json` — the dir-targeted twin of `relationsPath`.
+ * Takes the ALREADY-RESOLVED substrate dir directly (no pointer resolution),
+ * mirroring the Cycle-1 `*ForDir` pattern. */
+function relationsPathForDir(substrateDir: string): string {
+	return path.join(substrateDir, "relations.json");
+}
+
 // ── Loaders ─────────────────────────────────────────────────────────────────
 
 /**
@@ -510,7 +517,19 @@ export function loadRelations(cwd: string): Edge[] {
  * top-level-array stamping semantics documented in block-api).
  */
 export function writeRelations(cwd: string, edges: Edge[], ctx?: DispatchContext): void {
-	writeTypedFile(relationsPath(cwd), bundledSchemaPath("relations"), edges, ctx, "relations.json");
+	writeRelationsForDir(resolveContextDir(cwd), edges, ctx);
+}
+
+/**
+ * Dir-targeted twin of `writeRelations` (Cycle-1 `*ForDir` pattern). Operates
+ * on `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir
+ * — no `.pi-context.json` pointer resolution. `writeRelations` is a thin
+ * wrapper resolving the active dir; behaviour is byte-identical when called via
+ * cwd. AJV-shape validation comes from `writeTypedFile`; same attestation-parity
+ * no-op semantics as the cwd form.
+ */
+export function writeRelationsForDir(substrateDir: string, edges: Edge[], ctx?: DispatchContext): void {
+	writeTypedFile(relationsPathForDir(substrateDir), bundledSchemaPath("relations"), edges, ctx, "relations.json");
 }
 
 /**
@@ -553,8 +572,25 @@ export function appendRelations(
 	edges: Edge[],
 	ctx?: DispatchContext,
 ): { appended: number; skipped: number } {
+	return appendRelationsForDir(resolveContextDir(cwd), edges, ctx);
+}
+
+/**
+ * Dir-targeted twin of `appendRelations` (Cycle-1 `*ForDir` pattern). Operates
+ * on `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir
+ * — no pointer resolution. `appendRelations` is a thin wrapper resolving the
+ * active dir; behaviour is byte-identical when called via cwd. Same deferred-
+ * guard semantics: only AJV-shape validation + the (parent, child,
+ * relation_type) exact-duplicate-no-op; relation_type registration / endpoint
+ * resolution / cycle checks remain deferred to `validateContext`.
+ */
+export function appendRelationsForDir(
+	substrateDir: string,
+	edges: Edge[],
+	ctx?: DispatchContext,
+): { appended: number; skipped: number } {
 	return appendManyToTypedFileIfAbsent(
-		relationsPath(cwd),
+		relationsPathForDir(substrateDir),
 		bundledSchemaPath("relations"),
 		null,
 		edges,
@@ -571,7 +607,18 @@ export function appendRelations(
  * no-op). Same deferred-guard semantics as `appendRelations`.
  */
 export function appendRelation(cwd: string, edge: Edge, ctx?: DispatchContext): { appended: boolean } {
-	const r = appendRelations(cwd, [edge], ctx);
+	return appendRelationForDir(resolveContextDir(cwd), edge, ctx);
+}
+
+/**
+ * Dir-targeted twin of `appendRelation` (Cycle-1 `*ForDir` pattern). Operates
+ * on `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir.
+ * `appendRelation` is a thin wrapper resolving the active dir; behaviour is
+ * byte-identical when called via cwd. Same `{ appended }` semantics + deferred
+ * guards as `appendRelationsForDir`.
+ */
+export function appendRelationForDir(substrateDir: string, edge: Edge, ctx?: DispatchContext): { appended: boolean } {
+	const r = appendRelationsForDir(substrateDir, [edge], ctx);
 	return { appended: r.appended > 0 };
 }
 

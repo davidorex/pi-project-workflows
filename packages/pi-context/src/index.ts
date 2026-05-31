@@ -74,6 +74,7 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
+import { promoteItem } from "./promote-item.js";
 import { addressInto, serializeForRead } from "./read-element.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
@@ -918,20 +919,10 @@ const extension = (pi: ExtensionAPI) => {
 			if (params.autoId && params.item && typeof params.item === "object" && !params.item.id) {
 				params.item.id = nextId(ctx.cwd, params.block);
 			}
-			// Duplicate check if item has an id field
-			if (params.item && typeof params.item === "object" && "id" in params.item) {
-				try {
-					const data = readBlock(ctx.cwd, params.block) as Record<string, unknown>;
-					const arr = data[params.arrayKey];
-					if (Array.isArray(arr) && arr.some((i: Record<string, unknown>) => i.id === params.item.id)) {
-						throw new Error(`Item '${params.item.id}' already exists in ${params.block}.${params.arrayKey}`);
-					}
-				} catch (e) {
-					/* Re-throw duplicate errors; swallow block-not-found */
-					if (e instanceof Error && e.message.includes("already exists")) throw e;
-				}
-			}
-
+			// Id-uniqueness is enforced atomically inside appendToBlock's
+			// withBlockLock critical section (block-api assertAppendIdUnique) —
+			// the single enforcement point. The prior racy readBlock-then-append
+			// tool-layer check was removed in favour of that library guard.
 			appendToBlock(ctx.cwd, params.block, params.arrayKey, params.item);
 			const id = params.item?.id ? ` '${params.item.id}'` : "";
 			return {
@@ -1032,6 +1023,67 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text }],
+			};
+		},
+	});
+
+	// ── Tool: promote-item ────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "promote-item",
+		label: "Promote Item",
+		description:
+			"Promote a substrate item into another (registered) substrate as a NEW content-addressed item, recording the " +
+			"'item_derived_from_item' lineage edge in the destination relations.json (parent = the new derived item, child = " +
+			"the source, carrying the source content_hash). The destination write-path mints a fresh oid + content_hash + " +
+			"content object. When the source block's status enum supports it, the source is marked superseded. Preconditions " +
+			"(unresolvable/non-item source, unregistered destination alias, unregistered destination relation_type, refname " +
+			"collision) throw. Pass dryRun to compute the destination without writing.",
+		promptSnippet: "Promote an item into another substrate as a derived copy with a lineage edge",
+		parameters: Type.Object({
+			source: Type.String({ description: "Source item selector (bare refname / <alias>:<refname>)" }),
+			destinationSubstrate: Type.String({ description: "Registered destination substrate alias" }),
+			newRefname: Type.Optional(
+				Type.String({ description: "Explicit destination refname (else allocated from the dest block id pattern)" }),
+			),
+			dryRun: Type.Optional(Type.Boolean({ description: "Compute the destination without writing any channel" })),
+			writer: Type.Object(
+				{
+					kind: Type.String({ description: "Writer kind discriminator — MUST be 'human'." }),
+					user: Type.String({ description: "Human writer identity (e.g. 'davidryan@gmail.com')." }),
+				},
+				{ description: "DispatchContext.writer per pi-context/src/dispatch-context.ts." },
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: {
+				source: string;
+				destinationSubstrate: string;
+				newRefname?: string;
+				dryRun?: boolean;
+				writer: { kind: string; user: string };
+			},
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			if (!params.writer?.user) {
+				throw new Error("promote-item: writer.user is required.");
+			}
+			const result = promoteItem(
+				ctx.cwd,
+				{
+					source: params.source,
+					destinationSubstrate: params.destinationSubstrate,
+					...(params.newRefname !== undefined ? { newRefname: params.newRefname } : {}),
+					...(params.dryRun !== undefined ? { dryRun: params.dryRun } : {}),
+				},
+				{ writer: { kind: "human", user: params.writer.user } },
+			);
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
 			};
 		},
 	});

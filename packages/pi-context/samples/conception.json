@@ -326,6 +326,13 @@
       "category": "data_flow",
       "source_kinds": ["tasks"],
       "target_kinds": ["decisions"]
+    },
+    {
+      "canonical_id": "item_derived_from_item",
+      "display_name": "derived from",
+      "category": "data_flow",
+      "source_kinds": ["*"],
+      "target_kinds": ["*"]
     }
   ],
   "lenses": [

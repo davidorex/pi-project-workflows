@@ -93,6 +93,10 @@
 			"types": "./dist/read-element.d.ts",
 			"default": "./dist/read-element.js"
 		},
+		"./land-identity-fields": {
+			"types": "./dist/land-identity-fields.d.ts",
+			"default": "./dist/land-identity-fields.js"
+		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
 		"./schemas/context-registry.schema.json": "./schemas/context-registry.schema.json",
 		"./schemas/relations.schema.json": "./schemas/relations.schema.json",

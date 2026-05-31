@@ -30,7 +30,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { schemaPath } from "./context-dir.js";
+import { resolveContextDir, schemaPathForDir } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.js";
 
@@ -275,45 +275,57 @@ export function assertNoNestedIdBearingArray(schema: Record<string, unknown>, la
 }
 
 /**
- * `<resolveContextDir(cwd)>/schemas/<schemaName>.schema.json` — canonical schema
- * path, routed through `schemaPath` (context-dir) so write resolution is
- * BYTE-IDENTICAL to read resolution (FGAP-079 / DEC-0045). Previously this was
- * based on a config.root-honoring path-builder, which diverged from the
- * pointer-canonical read side (`schemaPath` / `validateBlockWithMigration`) under
- * a non-default `config.root` — schemas would be written where reads/validation
- * could not find them. Delegating to `schemaPath` collapses the two paths to one
- * source AND inherits its `assertSubstrateName` guard (path-traversal rejection).
+ * `<substrateDir>/schemas/<schemaName>.schema.json` — canonical schema path for
+ * an EXPLICIT substrate directory, routed through `schemaPathForDir`
+ * (context-dir) so write resolution is BYTE-IDENTICAL to read resolution
+ * (FGAP-079 / DEC-0045) and inherits its `assertSubstrateName` guard
+ * (path-traversal rejection). This is the dir-targeted twin of the cwd-resolved
+ * write path; the cwd forms below delegate here via `resolveContextDir(cwd)`,
+ * so a cwd call lands BYTE-IDENTICALLY where it did when this routed through the
+ * cwd-resolving `schemaPath`.
  */
-function schemaWritePath(cwd: string, schemaName: string): string {
-	return schemaPath(cwd, schemaName);
+function schemaWritePathForDir(substrateDir: string, schemaName: string): string {
+	return schemaPathForDir(substrateDir, schemaName);
 }
 
 /**
- * Read a schema from `<contextDir>/schemas/<schemaName>.schema.json` and
- * return the parsed object. Returns `null` when the file does not exist —
- * absence is a normal pre-write state, not an error. Throws when the file
- * exists but is unreadable or contains invalid JSON.
- *
- * Note: this reader does NOT meta-validate. Callers that need a guarantee
- * the file holds a valid schema should pipe the result through
- * `validateSchemaAgainstMeta` themselves; `updateSchema` already does.
+ * Dir-targeted twin of `readSchema`: read a schema from
+ * `<substrateDir>/schemas/<schemaName>.schema.json` and return the parsed
+ * object. Returns `null` when absent (a normal pre-write state). Throws when the
+ * file exists but is unreadable or holds invalid JSON. Does NOT meta-validate
+ * (mirrors `readSchema`).
  */
-export function readSchema(cwd: string, schemaName: string): object | null {
-	const p = schemaWritePath(cwd, schemaName);
+export function readSchemaForDir(substrateDir: string, schemaName: string): object | null {
+	const p = schemaWritePathForDir(substrateDir, schemaName);
 	if (!fs.existsSync(p)) return null;
 
 	let raw: string;
 	try {
 		raw = fs.readFileSync(p, "utf-8");
 	} catch (err) {
-		throw new Error(`readSchema: failed to read ${p}: ${err instanceof Error ? err.message : String(err)}`);
+		throw new Error(`readSchemaForDir: failed to read ${p}: ${err instanceof Error ? err.message : String(err)}`);
 	}
 
 	try {
 		return JSON.parse(raw) as object;
 	} catch (err) {
-		throw new Error(`readSchema: invalid JSON in ${p}: ${err instanceof Error ? err.message : String(err)}`);
+		throw new Error(`readSchemaForDir: invalid JSON in ${p}: ${err instanceof Error ? err.message : String(err)}`);
 	}
+}
+
+/**
+ * Read a schema from `<resolveContextDir(cwd)>/schemas/<schemaName>.schema.json`
+ * and return the parsed object. Thin cwd wrapper over `readSchemaForDir` — the
+ * read/parse logic lives in the ForDir body. Returns `null` when the file does
+ * not exist — absence is a normal pre-write state, not an error. Throws when the
+ * file exists but is unreadable or contains invalid JSON.
+ *
+ * Note: this reader does NOT meta-validate. Callers that need a guarantee
+ * the file holds a valid schema should pipe the result through
+ * `validateSchemaAgainstMeta` themselves; `updateSchema` already does.
+ */
+export function readSchema(cwd: string, schemaName: string): object | null {
+	return readSchemaForDir(resolveContextDir(cwd), schemaName);
 }
 
 /**
@@ -329,8 +341,25 @@ export function readSchema(cwd: string, schemaName: string): object | null {
  * Overwrites any existing schema at the target path; callers that need
  * mutate-in-place semantics should use `updateSchema`.
  */
-export function writeSchema(cwd: string, schemaName: string, schema: object): void {
-	const p = schemaWritePath(cwd, schemaName);
+/**
+ * Dir-targeted twin of `writeSchema`: atomically write `schema` to
+ * `<substrateDir>/schemas/<schemaName>.schema.json` after meta-validation + the
+ * nested-id guard. Carries the full validate-then-write body; `writeSchema`
+ * delegates here via `resolveContextDir(cwd)`. Cross-substrate consumers (Cycle
+ * H migration / land-identity-fields) target a non-active substrate directly.
+ *
+ * `ctx` is accepted and IGNORED: schema files carry no author-attestation
+ * fields (mirrors `writeSchemaChecked`'s ctx parameter). Present for call-site
+ * parity with the attestation-aware block-write surfaces.
+ */
+export function writeSchemaForDir(
+	substrateDir: string,
+	schemaName: string,
+	schema: object,
+	ctx?: DispatchContext,
+): void {
+	void ctx; // accepted for call-site parity; schema files carry no author fields.
+	const p = schemaWritePathForDir(substrateDir, schemaName);
 
 	// (1) Meta-schema validation BEFORE any disk activity.
 	validateSchemaAgainstMeta(schema, `schema '${schemaName}'`);
@@ -357,8 +386,12 @@ export function writeSchema(cwd: string, schemaName: string, schema: object): vo
 			/* best-effort cleanup — surface the original error below */
 		}
 		const msg = err instanceof Error ? err.message : String(err);
-		throw new Error(`writeSchema: failed to write ${p}: ${msg}`);
+		throw new Error(`writeSchemaForDir: failed to write ${p}: ${msg}`);
 	}
+}
+
+export function writeSchema(cwd: string, schemaName: string, schema: object): void {
+	writeSchemaForDir(resolveContextDir(cwd), schemaName, schema);
 }
 
 /**
@@ -402,8 +435,8 @@ export function writeSchema(cwd: string, schemaName: string, schema: object): vo
  * supplied body and returns `{ written: false }` without touching disk —
  * keeping ONE validation path (no re-implemented validation for the preview).
  */
-export function writeSchemaChecked(
-	cwd: string,
+export function writeSchemaCheckedForDir(
+	substrateDir: string,
 	schemaName: string,
 	schema: object,
 	operation: "create" | "replace",
@@ -412,15 +445,15 @@ export function writeSchemaChecked(
 ): { written: boolean; operation: "create" | "replace"; schemaPath: string } {
 	void ctx; // accepted for call-site parity; schema files carry no author fields.
 
-	const target = schemaWritePath(cwd, schemaName);
+	const target = schemaWritePathForDir(substrateDir, schemaName);
 
 	// (1) Operation discriminator — reject unknown ops before any disk read.
 	if (operation !== "create" && operation !== "replace") {
 		throw new Error(`writeSchemaChecked: unknown operation '${operation}' — expected create | replace`);
 	}
 
-	// (2) Presence guard — readSchema returns null when the file is absent.
-	const existing = readSchema(cwd, schemaName);
+	// (2) Presence guard — readSchemaForDir returns null when the file is absent.
+	const existing = readSchemaForDir(substrateDir, schemaName);
 	if (operation === "create" && existing !== null) {
 		throw new Error(
 			`writeSchemaChecked: create collision — schema '${schemaName}' already exists at ${target}; use operation 'replace' to overwrite`,
@@ -432,19 +465,30 @@ export function writeSchemaChecked(
 		);
 	}
 
-	// (3) Dry-run: meta-validate via the SAME validator writeSchema uses, no write.
-	// The dry-run branch does NOT route through writeSchema (which now carries the
-	// nested-id guard), so the guard is applied here too — a --dry-run preview of a
-	// nested-id schema must reject identically to a committing write.
+	// (3) Dry-run: meta-validate via the SAME validator the write path uses, no
+	// write. The dry-run branch does NOT route through writeSchemaForDir (which
+	// carries the nested-id guard), so the guard is applied here too — a --dry-run
+	// preview of a nested-id schema must reject identically to a committing write.
 	if (opts?.dryRun) {
 		validateSchemaAgainstMeta(schema, `schema '${schemaName}' (dry-run)`);
 		assertNoNestedIdBearingArray(schema as Record<string, unknown>, `schema '${schemaName}' (dry-run)`);
 		return { written: false, operation, schemaPath: target };
 	}
 
-	// (4) Commit: writeSchema re-meta-validates + writes atomically (tmp + rename).
-	writeSchema(cwd, schemaName, schema);
+	// (4) Commit: writeSchemaForDir re-meta-validates + writes atomically (tmp + rename).
+	writeSchemaForDir(substrateDir, schemaName, schema, ctx);
 	return { written: true, operation, schemaPath: target };
+}
+
+export function writeSchemaChecked(
+	cwd: string,
+	schemaName: string,
+	schema: object,
+	operation: "create" | "replace",
+	ctx?: DispatchContext,
+	opts?: { dryRun?: boolean },
+): { written: boolean; operation: "create" | "replace"; schemaPath: string } {
+	return writeSchemaCheckedForDir(resolveContextDir(cwd), schemaName, schema, operation, ctx, opts);
 }
 
 /**
@@ -466,7 +510,7 @@ export function updateSchema(cwd: string, schemaName: string, mutator: (current:
 	const current = readSchema(cwd, schemaName);
 	if (current === null) {
 		throw new Error(
-			`updateSchema: schema '${schemaName}' does not exist at ${schemaWritePath(cwd, schemaName)}; use writeSchema to create it`,
+			`updateSchema: schema '${schemaName}' does not exist at ${schemaWritePathForDir(resolveContextDir(cwd), schemaName)}; use writeSchema to create it`,
 		);
 	}
 

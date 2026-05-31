@@ -4,14 +4,17 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { writeConfig } from "./context.js";
-import { schemaPath, writeBootstrapPointer } from "./context-dir.js";
+import { schemaPath, schemaPathForDir, writeBootstrapPointer } from "./context-dir.js";
 import { ValidationError } from "./schema-validator.js";
 import {
 	findNestedIdBearingArrays,
 	readSchema,
+	readSchemaForDir,
 	updateSchema,
 	writeSchema,
 	writeSchemaChecked,
+	writeSchemaCheckedForDir,
+	writeSchemaForDir,
 } from "./schema-write.js";
 
 function makeTmpDir(prefix: string): string {
@@ -937,5 +940,111 @@ describe("writeSchema nested-id-bearing-array guard", () => {
 		};
 		assert.doesNotThrow(() => writeSchema(tmpDir, "ok-config", configShaped));
 		assert.ok(fs.existsSync(path.join(tmpDir, ".project", "schemas", "ok-config.schema.json")));
+	});
+});
+
+describe("schema-write ForDir twins", () => {
+	const nestedIdShape = {
+		type: "object",
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					required: ["id"],
+					properties: {
+						id: { type: "string" },
+						layers: {
+							type: "array",
+							items: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
+						},
+					},
+				},
+			},
+		},
+	};
+
+	it("writeSchemaCheckedForDir + readSchemaForDir write/read a TARGET dir's schemas/ — active pointer unmoved", (t) => {
+		// cwd carries an active pointer at `.project`; the target substrate is a
+		// SEPARATE dir under cwd. The ForDir write must land in the target dir and
+		// leave the cwd pointer file byte-identical.
+		const tmpDir = makeTmpDir("fordir-target");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const pointerPath = path.join(tmpDir, ".pi-context.json");
+		const pointerBefore = fs.readFileSync(pointerPath, "utf-8");
+
+		const targetDir = path.join(tmpDir, ".foreign-substrate");
+		fs.mkdirSync(targetDir, { recursive: true });
+
+		const res = writeSchemaCheckedForDir(targetDir, "widget", validSchema, "create");
+		assert.strictEqual(res.written, true);
+		assert.strictEqual(res.operation, "create");
+		assert.strictEqual(res.schemaPath, schemaPathForDir(targetDir, "widget"));
+
+		// Landed in the TARGET dir, NOT the active `.project` dir.
+		assert.ok(fs.existsSync(path.join(targetDir, "schemas", "widget.schema.json")));
+		assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "schemas", "widget.schema.json")));
+
+		// Active pointer file untouched.
+		assert.strictEqual(fs.readFileSync(pointerPath, "utf-8"), pointerBefore);
+
+		// readSchemaForDir round-trips the same body.
+		assert.deepStrictEqual(readSchemaForDir(targetDir, "widget"), validSchema);
+		// readSchemaForDir against an absent name → null.
+		assert.strictEqual(readSchemaForDir(targetDir, "ghost"), null);
+	});
+
+	it("cwd writeSchemaChecked is byte-identical to writeSchemaCheckedForDir(resolveContextDir) via the wrapper", (t) => {
+		const tmpDir = makeTmpDir("fordir-wrapper-parity");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupProjectDir(tmpDir);
+
+		// Write via the cwd form; the wrapper resolves the active `.project` dir.
+		writeSchemaChecked(tmpDir, "parity", validSchema, "create");
+		const viaCwd = fs.readFileSync(path.join(tmpDir, ".project", "schemas", "parity.schema.json"), "utf-8");
+
+		// Write the SAME body via the ForDir form against the SAME `.project` dir
+		// (replace, since the cwd form already created it) — bytes must match.
+		writeSchemaCheckedForDir(path.join(tmpDir, ".project"), "parity", validSchema, "replace");
+		const viaForDir = fs.readFileSync(path.join(tmpDir, ".project", "schemas", "parity.schema.json"), "utf-8");
+		assert.strictEqual(viaForDir, viaCwd);
+	});
+
+	it("nested-id guard still fires through writeSchemaForDir + writeSchemaCheckedForDir", (t) => {
+		const tmpDir = makeTmpDir("fordir-nested-guard");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const targetDir = path.join(tmpDir, ".target");
+		fs.mkdirSync(targetDir, { recursive: true });
+
+		assert.throws(
+			() => writeSchemaForDir(targetDir, "carrier", nestedIdShape),
+			/nested id-bearing arrays are forbidden/,
+		);
+		assert.throws(
+			() => writeSchemaCheckedForDir(targetDir, "carrier", nestedIdShape, "create"),
+			/nested id-bearing arrays are forbidden/,
+		);
+		// dry-run preview rejects identically.
+		assert.throws(
+			() => writeSchemaCheckedForDir(targetDir, "carrier", nestedIdShape, "create", undefined, { dryRun: true }),
+			/nested id-bearing arrays are forbidden/,
+		);
+		assert.ok(!fs.existsSync(path.join(targetDir, "schemas", "carrier.schema.json")));
+	});
+
+	it("writeSchemaCheckedForDir replace-missing throws; create-existing throws", (t) => {
+		const tmpDir = makeTmpDir("fordir-presence");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const targetDir = path.join(tmpDir, ".target");
+		fs.mkdirSync(targetDir, { recursive: true });
+
+		// replace on an absent target → throws.
+		assert.throws(
+			() => writeSchemaCheckedForDir(targetDir, "missing", validSchema, "replace"),
+			/replace target missing/,
+		);
+		// create then create again → collision throws.
+		writeSchemaCheckedForDir(targetDir, "dup", validSchema, "create");
+		assert.throws(() => writeSchemaCheckedForDir(targetDir, "dup", validSchema, "create"), /create collision/);
 	});
 });

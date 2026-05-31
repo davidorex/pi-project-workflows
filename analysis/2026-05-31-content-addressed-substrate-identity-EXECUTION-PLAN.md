@@ -33,10 +33,10 @@ Tracking lives in:
 | 9.1 | remediation (Cycle-9 audit P4+P6) — nested-array id-guard + object-write-ordering | ✅ done | `cabb8c3` | `…cycle9.1-guard-ordering-…` |
 | 9.2 | remediation — freeze guard: reject NEW nested id-bearing arrays; report `layer-plans` | ✅ done | `72a5596` (+`172f0c6`) | `…cycle9.2-nested-id-guard-…` |
 | 9.3 | remediation — harden the freeze predicate (required/composition/tuple/$ref-cycle) + guarantee termination | ✅ done | `8352d92` | `…cycle9.3-predicate-harden-…` |
-| 10 · H1-engine | migrateToContentAddressed + dir-targeted migration-decl/relations primitives (scratch-proven; real apply held) | ✅ done | `dca378d` | (audited at apply) |
-| 10 · H1-precursor | C2-completion: land identity-field declarations on `.project-migrate` + `.context` schemas | 🔧 in progress (engine built, re-plan pending — see sandbox note) | sandbox baseline `bdc9161` | — |
-| 10 · H1-apply | run the migration: backfill + register `project`→`.project-migrate` + convert the 30 edges → `edge_endpoint_unregistered` 0 | ⏳ remaining | — | — |
-| 10 · H2 | `layer-plans` (+ `.project` `features`) nested→entity promotion → `nested_id_bearing_array` 0 | ⏳ remaining | — | — |
+| 10 · H1-engine | migrateToContentAddressed + dir-targeted migration-decl/relations primitives (scratch-proven; subsumed by the canonicalizer) | ✅ done | `dca378d` | (audited at apply) |
+| 10 · canonicalizer | one-time `.project-migrate` canonicalizer: identity backfill + recursive nested→entity promotion (features/layer-plans trees) + edge conversion + register `project`→`.project-migrate` + the 30 edges; dupe-and-swap + dry-run de-riskers | ⏳ design next (plan mode) | sandbox baseline `bdc9161` | — |
+| (generic bootstrap tool) | generic "migrate any legacy substrate" version rendered FROM the canonicalizer | ⏳ operator-deferred (not now) | — | — |
+| 10 · active-substrate edges | the 30 `project:` edges in `.context-jit-spec-v2` → structured foreign into `.project-migrate` → `edge_endpoint_unregistered` 0 (clears with the canonicalizer) | ⏳ remaining | — | — |
 
 **Inserted remediation cycles (9.1/9.2/9.3):** each arose from an audit or orchestrator-verification finding and ran the full per-cycle loop + gates. 9.1 closed the Cycle-9 audit's two findings (nested-array id-guard completeness + the orphan-object-on-validation-failure write ordering). 9.2 added the freeze guard so no NEW nested id-bearing array can be authored/installed, reporting the one live carrier (`layer-plans`) as a non-fatal warning pending promotion. 9.3 hardened the freeze predicate to zero known bypass (required-only / `anyOf`/`oneOf`/`allOf` / tuple `items` / `$ref` through any of these, incl. `$ref`-cycle termination). Rationale: freeze the class **before** migrating it (Cycle 10), so the migration hits a fixed target.
 
@@ -51,7 +51,25 @@ Tracking lives in:
 - ONE logical change per commit (e.g. "land identity on block X", "backfill block Y", "promote features.stories → top-level"), so the sandbox's history is a fine-grained, individually-`git revert`-able ledger.
 - `.project-migrate` is git-tracked; its commit history IS the migration's audit trail + the revert net (in addition to per-step idempotency + dry-run).
 
-**Discovery that forced the H1/H2 re-plan (the features nested tree):** the H1-precursor's "inline the `.project` `features` `$ref`" step hit the 9.2 freeze guard — inlining surfaces `features.stories`, `features.stories.tasks`, `features.findings`: `.project/features` is a deeply **nested id-bearing entity tree** (feature → stories → tasks, plus findings), not a flat block. So `features` (like `layer-plans`) is an **H2 promotion target**, not a precursor identity-field-landing case. Consequence: the H1-precursor lands identity fields only on the **flat** block_kinds; the nested-id-bearing schemas (`features`, `layer-plans`) are promoted in **H2** (extract nested entities → top-level blocks + membership edges → then they can be content-addressed). The precursor engine + the H1/H2 sequencing are re-planned against `.project-migrate` accordingly (next plan-mode cycle).
+**Discovery that forced the H1/H2 re-plan (the features nested tree):** the H1-precursor's "inline the `.project` `features` `$ref`" step hit the 9.2 freeze guard — inlining surfaces `features.stories`, `features.stories.tasks`, `features.findings`: `.project/features` is a deeply **nested id-bearing entity tree** (feature → stories → tasks, plus findings), not a flat block. So `features` (like `layer-plans`) is an **H2 promotion target**, not a precursor identity-field-landing case.
+
+## Phase H reframed — one-time legacy-substrate canonicalizer (operator-directed 2026-06-01)
+
+Phase H is reframed from a minimal "clear the 30 edges" migration into a **one-time canonicalizer that brings this project's accumulated ad-hoc context into the full new-framework shape**, applied to `.project-migrate`. After canonicalization `.project-migrate` is a **frozen historic snapshot** of the past context; forward project work lives in `.context` + `.context-jit-spec-v2`.
+
+- **Scope NOW = one target: `.project-migrate`.** Build the canonicalizer concretely (may use direct knowledge of `.project-migrate`'s actual schemas/data). The coupled founding goal stays in scope: register `.project-migrate` as the `project` alias + convert the active substrate's 30 edges to resolve into it (`edge_endpoint_unregistered` → 0).
+- **Generic version = LATER, rendered FROM this script** (operator-deferred; not built now). No other-consumer constraint. **Design seam (honor now):** factor the load-bearing parts — recursive nested-promotion, block-kind/relation-type synthesis, identity backfill — behind clean boundaries so the generic "bootstrap any legacy substrate" tool is an *extraction*, not a rewrite. Build no generality machinery now; just don't wall it off.
+- **Canonical target shape for `.project-migrate`:** every item content-addressed (oid/content_hash/object); every nested id-bearing array at any depth promoted **recursively** to a top-level entity block + `parent contains child` membership edges (ordinal-preserving) — features→stories→tasks→findings + layer-plans→layers/phases all collapse into the entity+edge graph; block_kinds + relation_types registered; edges structured; substrate_id minted + registered. Structural canonicalization only — legacy content-semantic errors (e.g. a decision citing a missing artifact) are NOT in the canonicalizer's job.
+
+**Triple-buffer execution model (BINDING de-risker — operator-directed):** the canonicalizer must NEVER mutate `.project-migrate` in place.
+1. **Dry-run** — every invocation supports a dry-run that previews the full canonicalization (counts + the promotion/edge/registration plan) and writes nothing.
+2. **Work on a DUPE** — a real run dupes `.project-migrate` to a working copy and performs all canonicalization on the dupe.
+3. **Verify the dupe** — run the test/verification gate against the dupe (validateContext, item-count conservation, every nested-id warning gone, edges resolve, idempotency).
+4. **Atomic replace only on verified success** — `.project-migrate` is replaced by the verified dupe ONLY after the gate passes; on any failure the dupe is discarded and `.project-migrate` is untouched. `.project-migrate` therefore always holds the last-known-good; promotion-to-canonical is gated on proof.
+
+So the buffers are: `.project` (pristine, forever) → `.project-migrate` (last-known-good target, git-versioned per touch) → ephemeral work-dupe (where the run happens, verified, then swapped in). dry-run + the work-dupe + per-touch git history are three independent safety layers on top of `.project` being untouched.
+
+The precursor engine + H1/H2 sequencing collapse into this single canonicalizer (the precursor's reusable `writeSchemaCheckedForDir`/`readSchemaForDir` ForDir primitives survive; its bespoke inline-features logic is dropped for generic recursive promotion). Designed next plan-mode cycle against `.project-migrate`.
 
 ## Per-cycle loop (every cycle, no exceptions)
 

@@ -17,7 +17,7 @@ Tracking lives in:
 
 ## Status ledger (living — updated lockstep as cycles land; git log is authoritative)
 
-**Current position:** Cycles 1–9.3 committed; **Cycle 10 (Phase H) is the sole remaining cycle.** The nested-id-bearing-array freeze is complete (9.2 guard + 9.3 hardening — zero known bypass, stack-independent termination). Current `validateContext('.')` = **58 issues / 53 errors / 5 warnings**: the **30 `edge_endpoint_unregistered`** (cross-substrate `project:` edges, the arc's founding FGAP-185 target) and the **2 `nested_id_bearing_array`** warnings (`layer-plans`) both clear in Cycle 10.
+**Current position:** Cycles 1–9.3 committed; **Cycle 10 (Phase H) in progress, split into H1-engine ✅ / H1-precursor 🔧 / H1-apply ⏳ / H2 ⏳** (split forced by scale + by two discoveries — see below). The nested-id-bearing-array freeze is complete (9.2 guard + 9.3 hardening — zero known bypass, stack-independent termination). Current `validateContext('.')` = **58 issues / 53 errors / 5 warnings**: the **30 `edge_endpoint_unregistered`** (cross-substrate `project:` edges, the arc's founding FGAP-185 target) clear at H1-apply; the **2 `nested_id_bearing_array`** warnings (`layer-plans`) clear at H2.
 
 | Cycle | Phase | Status | Commit | Audit report (`analysis/`) |
 |---|---|---|---|---|
@@ -33,11 +33,25 @@ Tracking lives in:
 | 9.1 | remediation (Cycle-9 audit P4+P6) — nested-array id-guard + object-write-ordering | ✅ done | `cabb8c3` | `…cycle9.1-guard-ordering-…` |
 | 9.2 | remediation — freeze guard: reject NEW nested id-bearing arrays; report `layer-plans` | ✅ done | `72a5596` (+`172f0c6`) | `…cycle9.2-nested-id-guard-…` |
 | 9.3 | remediation — harden the freeze predicate (required/composition/tuple/$ref-cycle) + guarantee termination | ✅ done | `8352d92` | `…cycle9.3-predicate-harden-…` |
-| 10 | H — cross-project migration (capstone) | ⏳ remaining | — | — |
+| 10 · H1-engine | migrateToContentAddressed + dir-targeted migration-decl/relations primitives (scratch-proven; real apply held) | ✅ done | `dca378d` | (audited at apply) |
+| 10 · H1-precursor | C2-completion: land identity-field declarations on `.project-migrate` + `.context` schemas | 🔧 in progress (engine built, re-plan pending — see sandbox note) | sandbox baseline `bdc9161` | — |
+| 10 · H1-apply | run the migration: backfill + register `project`→`.project-migrate` + convert the 30 edges → `edge_endpoint_unregistered` 0 | ⏳ remaining | — | — |
+| 10 · H2 | `layer-plans` (+ `.project` `features`) nested→entity promotion → `nested_id_bearing_array` 0 | ⏳ remaining | — | — |
 
 **Inserted remediation cycles (9.1/9.2/9.3):** each arose from an audit or orchestrator-verification finding and ran the full per-cycle loop + gates. 9.1 closed the Cycle-9 audit's two findings (nested-array id-guard completeness + the orphan-object-on-validation-failure write ordering). 9.2 added the freeze guard so no NEW nested id-bearing array can be authored/installed, reporting the one live carrier (`layer-plans`) as a non-fatal warning pending promotion. 9.3 hardened the freeze predicate to zero known bypass (required-only / `anyOf`/`oneOf`/`allOf` / tuple `items` / `$ref` through any of these, incl. `$ref`-cycle termination). Rationale: freeze the class **before** migrating it (Cycle 10), so the migration hits a fixed target.
 
-**Cycle 10 scope expanded** beyond the original Phase-H table row: in addition to register-`project`-alias → rewrite the 30 edges → backfill oid/hash/objects → `appendMigrationDeclForDir`, Cycle 10 now also **promotes the `layer-plans` nested arrays** (`plans.layers` + `plans.migration_phases`) to top-level entities joined by membership edges — clearing the 2 `nested_id_bearing_array` warnings. Decision recorded (freeze-before-migrate, promote-in-pass, not deferred): the embedded nested id-bearing form is a relationship-as-embedding between un-addressable sub-entities — the same form the arc eliminates at the top level — so the inter-context guarantee is only total once these are promoted.
+**Cycle 10 scope expanded** beyond the original Phase-H table row: in addition to register-`project`-alias → rewrite the 30 edges → backfill oid/hash/objects → `appendMigrationDeclForDir`, Cycle 10 now also **promotes the nested id-bearing arrays** to top-level entities joined by membership edges — clearing the 2 `nested_id_bearing_array` warnings. Decision recorded (freeze-before-migrate, promote-in-pass, not deferred): the embedded nested id-bearing form is a relationship-as-embedding between un-addressable sub-entities — the same form the arc eliminates at the top level — so the inter-context guarantee is only total once these are promoted.
+
+## Phase-H migration sandbox + git-versioning discipline (BINDING — operator-directed 2026-06-01)
+
+**`.project` is PRISTINE.** The real 637-item working substrate is NOT touched anywhere in this arc. All `.project`-side migration work — identity-field landing, oid/content_hash/object backfill, and nested→entity promotion — targets **`.project-migrate`**, a verbatim `cp -r .project .project-migrate` copy (baseline commit `bdc9161`). The `project` alias the 30 cross-substrate edges resolve through is registered to `.project-migrate`'s minted substrate_id, so the active substrate's converted edges point into the migrated copy; `.project` stays out of the registry and unmodified. (The active substrate `.context-jit-spec-v2` and `.context` are still migrated in place — they are the arc's own substrates, not the protected one.)
+
+**Vigilant git versioning of `.project-migrate` (every touch = its own commit):**
+- `git status` BEFORE a mutation (confirm the intended clean starting point) and AFTER (inspect exactly what changed — no stray files, no scope creep).
+- ONE logical change per commit (e.g. "land identity on block X", "backfill block Y", "promote features.stories → top-level"), so the sandbox's history is a fine-grained, individually-`git revert`-able ledger.
+- `.project-migrate` is git-tracked; its commit history IS the migration's audit trail + the revert net (in addition to per-step idempotency + dry-run).
+
+**Discovery that forced the H1/H2 re-plan (the features nested tree):** the H1-precursor's "inline the `.project` `features` `$ref`" step hit the 9.2 freeze guard — inlining surfaces `features.stories`, `features.stories.tasks`, `features.findings`: `.project/features` is a deeply **nested id-bearing entity tree** (feature → stories → tasks, plus findings), not a flat block. So `features` (like `layer-plans`) is an **H2 promotion target**, not a precursor identity-field-landing case. Consequence: the H1-precursor lands identity fields only on the **flat** block_kinds; the nested-id-bearing schemas (`features`, `layer-plans`) are promoted in **H2** (extract nested entities → top-level blocks + membership edges → then they can be content-addressed). The precursor engine + the H1/H2 sequencing are re-planned against `.project-migrate` accordingly (next plan-mode cycle).
 
 ## Per-cycle loop (every cycle, no exceptions)
 

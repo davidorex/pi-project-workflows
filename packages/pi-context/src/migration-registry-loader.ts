@@ -12,8 +12,9 @@
  *     helpers).
  *   - This module is the bridge: it consumes MigrationDecl values from the
  *     store and produces MigrationFn closures that the registry registers.
- *     Per-cwd caching + invalidation hook live here so the substrate writers
- *     can punch a single function call to mark the cached registry stale.
+ *     Caching (keyed on the resolved substrate dir) + invalidation hooks live
+ *     here so the substrate writers can punch a single function call to mark
+ *     the cached registry stale.
  *
  * Path-walker semantics (TransformSpec dotted paths):
  *   - All paths are anchored on '$' and use simple dotted notation:
@@ -40,20 +41,28 @@
  */
 
 import path from "node:path";
-import { loadMigrationsFile, type MigrationDecl, type TransformOp } from "./migrations-store.js";
+import { resolveContextDir, tryResolveContextDir } from "./context-dir.js";
+import { loadMigrationsFileForDir, type MigrationDecl, type TransformOp } from "./migrations-store.js";
 import type { MigrationFn, MigrationRegistry } from "./schema-migrations.js";
 import { createRegistry } from "./schema-migrations.js";
 
 /**
- * Per-cwd cache of populated MigrationRegistry instances. Keyed by absolute
- * cwd. Invalidated by `invalidateMigrationRegistry(cwd)` after a successful
+ * Cache of populated MigrationRegistry instances. ONE cache, keyed by the
+ * RESOLVED SUBSTRATE DIR (`path.resolve(substrateDir)`) — not by cwd. The cwd
+ * and dir forms converge on this single key: the cwd forms first resolve
+ * `cwd → substrateDir` via the bootstrap pointer, then read/invalidate the
+ * dir-keyed entry. Invalidated by `invalidateMigrationRegistry(cwd)` /
+ * `invalidateMigrationRegistryForDir(substrateDir)` after a successful
  * migrations.json mutation so the next consumer sees the new declarations
  * without restarting the process.
  *
- * Cache identity is intentionally absolute-cwd-keyed rather than substrate-
- * resolved-dir-keyed: the bootstrap pointer is the source of truth for which
- * substrate dir a cwd resolves to, and the resolver itself already caches
- * pointer reads. Doubling that cache would just be a parallel ungated path.
+ * Keying on the resolved dir (rather than cwd) is load-bearing for coherence:
+ * the block writers read the registry via `getProjectMigrationRegistryForDir`
+ * (dir-keyed); a migration declaration invalidates via the cwd form. If the
+ * read key (resolved dir) and the invalidate key (raw cwd) diverged — which
+ * they do whenever cwd ≠ substrateDir, e.g. `<root>` vs `<root>/.project` —
+ * the post-declaration read would serve a stale pre-declaration registry. The
+ * single resolved-dir key keeps read and invalidate coherent.
  */
 const registryCache = new Map<string, MigrationRegistry>();
 
@@ -219,9 +228,9 @@ export function migrationFnFor(decl: MigrationDecl): MigrationFn {
  * transform.operations), preserving the fail-fast aim. The store's AJV
  * validation at load time catches schema-shape failures upstream.
  */
-export function buildRegistryFromSubstrate(cwd: string): MigrationRegistry {
+export function buildRegistryFromSubstrateForDir(substrateDir: string): MigrationRegistry {
 	const reg = createRegistry();
-	const file = loadMigrationsFile(cwd);
+	const file = loadMigrationsFileForDir(substrateDir);
 	if (file === null) return reg;
 	for (const decl of file.migrations) {
 		const migrate = migrationFnFor(decl);
@@ -235,18 +244,58 @@ export function buildRegistryFromSubstrate(cwd: string): MigrationRegistry {
 	return reg;
 }
 
+export function buildRegistryFromSubstrate(cwd: string): MigrationRegistry {
+	return buildRegistryFromSubstrateForDir(resolveContextDir(cwd));
+}
+
 /**
  * Return a cached MigrationRegistry for `cwd`, building it on first call (or
- * after invalidation). Resolves the cwd to an absolute path before keying so
- * relative-cwd consumers and absolute-cwd consumers collapse to one entry.
+ * after invalidation). Resolves the cwd to its substrate dir via the bootstrap
+ * pointer, then delegates to `getProjectMigrationRegistryForDir` so the cwd
+ * read path and the dir read path share ONE cache entry (keyed by the resolved
+ * substrate dir). This convergence is what keeps reads coherent with the
+ * cwd-form invalidation.
  */
 export function getProjectMigrationRegistry(cwd: string): MigrationRegistry {
-	const key = path.resolve(cwd);
+	return getProjectMigrationRegistryForDir(resolveContextDir(cwd));
+}
+
+/**
+ * Dir-targeted form of `getProjectMigrationRegistry` and the SINGLE registry
+ * builder/cacher: return a cached MigrationRegistry for an explicit substrate
+ * directory, building it on first call. Keyed on `path.resolve(substrateDir)`
+ * — the one cache key both read forms and both invalidate forms agree on. Used
+ * by `writeBlockForDir` so a write into a non-active substrate
+ * validates/migrates against THAT substrate's `migrations.json`, never the
+ * active dir's.
+ *
+ * The cwd form (`getProjectMigrationRegistry`) resolves `cwd → substrateDir`
+ * and delegates here, so when `substrateDir === resolveContextDir(cwd)` both
+ * forms hit the SAME entry. The migrations-store mutation helpers invalidate
+ * via `invalidateMigrationRegistry(cwd)`, which resolves the same dir key and
+ * deletes the entry this builder populates — so a declare-then-read sequence
+ * (mutate migrations.json, then `writeBlockForDir` re-reads) rebuilds against
+ * the fresh declarations rather than serving a stale registry.
+ */
+export function getProjectMigrationRegistryForDir(substrateDir: string): MigrationRegistry {
+	const key = path.resolve(substrateDir);
 	const cached = registryCache.get(key);
 	if (cached) return cached;
-	const reg = buildRegistryFromSubstrate(cwd);
+	const reg = buildRegistryFromSubstrateForDir(substrateDir);
 	registryCache.set(key, reg);
 	return reg;
+}
+
+/**
+ * Drop the cached MigrationRegistry for an explicit substrate directory (if
+ * any). Deletes `path.resolve(substrateDir)` — the SAME key the read forms
+ * populate, so an invalidation here is observed by the next read.
+ *
+ * No-op when no entry is cached — invalidation is cheap and write-after-no-
+ * cache is a normal pre-warming state.
+ */
+export function invalidateMigrationRegistryForDir(substrateDir: string): void {
+	registryCache.delete(path.resolve(substrateDir));
 }
 
 /**
@@ -254,9 +303,17 @@ export function getProjectMigrationRegistry(cwd: string): MigrationRegistry {
  * migrations-store mutation helper after a successful write so the next
  * consumer reads the fresh declarations without process restart.
  *
- * No-op when no entry is cached for `cwd` — invalidation is cheap and
- * write-after-no-cache is a normal pre-warming state.
+ * Resolves `cwd → substrateDir` and delegates to the ForDir form so the
+ * deleted key MATCHES the resolved-substrate-dir key the read path uses (the
+ * Regression-B fix: pre-fix this deleted `path.resolve(cwd)`, a different key
+ * from the dir-keyed read entry, leaving the post-declaration read stale). The
+ * mutation helpers always call this after a successful `writeMigrationsFile`,
+ * which itself required the pointer to resolve — so resolution is normally
+ * safe; `tryResolveContextDir` guards the absent-pointer edge with a no-op
+ * rather than throwing during invalidation.
  */
 export function invalidateMigrationRegistry(cwd: string): void {
-	registryCache.delete(path.resolve(cwd));
+	const substrateDir = tryResolveContextDir(cwd);
+	if (substrateDir === null) return;
+	invalidateMigrationRegistryForDir(substrateDir);
 }

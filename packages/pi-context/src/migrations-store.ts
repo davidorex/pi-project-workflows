@@ -40,7 +40,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeTypedFile } from "./block-api.js";
-import { migrationsPath } from "./context-dir.js";
+import { migrationsPath, migrationsPathForDir, resolveContextDir } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { invalidateMigrationRegistry } from "./migration-registry-loader.js";
 import { validateFromFile } from "./schema-validator.js";
@@ -97,8 +97,8 @@ export const MIGRATIONS_FILE_VERSION = "1.0.0";
  * (pre-write state is a normal condition, NOT an error — empty/missing yields
  * an empty registry in the loader). Throws on read / parse / schema failure.
  */
-export function loadMigrationsFile(cwd: string): MigrationsFile | null {
-	const p = migrationsPath(cwd);
+export function loadMigrationsFileForDir(substrateDir: string): MigrationsFile | null {
+	const p = migrationsPathForDir(substrateDir);
 	if (!fs.existsSync(p)) return null;
 	let raw: string;
 	try {
@@ -114,6 +114,10 @@ export function loadMigrationsFile(cwd: string): MigrationsFile | null {
 	}
 	validateFromFile(bundledMigrationsSchemaPath(), data, `migrations.json (${p})`);
 	return data as MigrationsFile;
+}
+
+export function loadMigrationsFile(cwd: string): MigrationsFile | null {
+	return loadMigrationsFileForDir(resolveContextDir(cwd));
 }
 
 /**

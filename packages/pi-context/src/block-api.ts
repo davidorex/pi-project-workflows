@@ -19,11 +19,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import _lockfile from "proper-lockfile";
-import { assertSubstrateName, resolveContextDir, schemaPath, tryResolveContextDir } from "./context-dir.js";
+import { assertSubstrateName, resolveContextDir, schemaPathForDir, tryResolveContextDir } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
-import { getProjectMigrationRegistry } from "./migration-registry-loader.js";
-import { validateBlockWithMigration, validateFromFile } from "./schema-validator.js";
+import { getProjectMigrationRegistryForDir } from "./migration-registry-loader.js";
+import { validateBlockWithMigrationForDir, validateFromFile } from "./schema-validator.js";
 
 // Node16 module resolution + CJS interop: default import may be wrapped
 const lockfile = (_lockfile as any).default ?? _lockfile;
@@ -45,13 +45,13 @@ function withBlockLock<T>(filePath: string, fn: () => T): T {
 	}
 }
 
-function blockFilePath(cwd: string, blockName: string): string {
+function blockFilePathForDir(substrateDir: string, blockName: string): string {
 	assertSubstrateName(blockName);
-	return path.join(resolveContextDir(cwd), `${blockName}.json`);
+	return path.join(substrateDir, `${blockName}.json`);
 }
 
-function blockSchemaPath(cwd: string, blockName: string): string {
-	return schemaPath(cwd, blockName);
+function blockSchemaPathForDir(substrateDir: string, blockName: string): string {
+	return schemaPathForDir(substrateDir, blockName);
 }
 
 // ── Schema introspection cache (DispatchContext support, FGAP-004) ───────────
@@ -290,12 +290,12 @@ function maybeStampItem(
  * matching items in the specified array key. Non-array or missing keys return the
  * block unchanged. The filter is applied after parsing, before returning.
  */
-export function readBlock(
-	cwd: string,
+export function readBlockForDir(
+	substrateDir: string,
 	blockName: string,
 	filter?: { arrayKey: string; predicate: (item: Record<string, unknown>) => boolean },
 ): unknown {
-	const filePath = blockFilePath(cwd, blockName);
+	const filePath = blockFilePathForDir(substrateDir, blockName);
 	let content: string;
 	try {
 		content = fs.readFileSync(filePath, "utf-8");
@@ -321,11 +321,11 @@ export function readBlock(
 	// uses the parsed `data` as-is; per-array-item migration is out of
 	// scope today (the block envelope is what carries schema_version, not
 	// each item).
-	if (existingBlockSchemaPath(cwd, blockName) !== null) {
+	if (existingBlockSchemaPathForDir(substrateDir, blockName) !== null) {
 		const envelope = data as Record<string, unknown> | null;
 		if (envelope && typeof envelope === "object" && typeof envelope.schema_version === "string") {
-			const registry = getProjectMigrationRegistry(cwd);
-			data = validateBlockWithMigration(cwd, blockName, envelope, registry);
+			const registry = getProjectMigrationRegistryForDir(substrateDir);
+			data = validateBlockWithMigrationForDir(substrateDir, blockName, envelope, registry);
 		}
 	}
 
@@ -340,13 +340,25 @@ export function readBlock(
 	return data;
 }
 
+export function readBlock(
+	cwd: string,
+	blockName: string,
+	filter?: { arrayKey: string; predicate: (item: Record<string, unknown>) => boolean },
+): unknown {
+	// Assert the name BEFORE resolving the substrate dir so the FGAP-079
+	// path-traversal guard fires ahead of BootstrapNotFoundError (preserves the
+	// pre-Phase-0 ordering: name-guard precedes pointer resolution).
+	assertSubstrateName(blockName);
+	return readBlockForDir(resolveContextDir(cwd), blockName, filter);
+}
+
 /**
  * Resolve the existing schema path for a block (or null when no schema
  * file is present at the conventional location). Used by every wrapper
  * that delegates to the typed-file primitives.
  */
-function existingBlockSchemaPath(cwd: string, blockName: string): string | null {
-	const schemaFile = blockSchemaPath(cwd, blockName);
+function existingBlockSchemaPathForDir(substrateDir: string, blockName: string): string | null {
+	const schemaFile = blockSchemaPathForDir(substrateDir, blockName);
 	return fs.existsSync(schemaFile) ? schemaFile : null;
 }
 
@@ -1053,9 +1065,9 @@ export function removeFromNestedTypedFile(
  * stamping; callers wanting per-item attribution should prefer the
  * array-grained writers.
  */
-export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: DispatchContext): void {
-	const filePath = blockFilePath(cwd, blockName);
-	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+export function writeBlockForDir(substrateDir: string, blockName: string, data: unknown, ctx?: DispatchContext): void {
+	const filePath = blockFilePathForDir(substrateDir, blockName);
+	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
 
 	// Version-aware pre-write validation (FGAP-136 plan step 4). When a
 	// schema is present AND the data envelope carries a schema_version,
@@ -1063,7 +1075,9 @@ export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: 
 	// MigrationRegistry. A version-mismatch with no declared migration
 	// throws upstream of writeTypedFile so the file never lands; a
 	// declared migration walks the data forward before AJV runs. The
-	// migrated form is what writeTypedFile receives.
+	// migrated form is what writeTypedFile receives. The ForDir registry +
+	// validation read the TARGET substrate's schema + migrations.json, never
+	// the active dir's.
 	let toWrite: unknown = data;
 	if (
 		schemaPath !== null &&
@@ -1071,11 +1085,17 @@ export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: 
 		typeof data === "object" &&
 		typeof (data as Record<string, unknown>).schema_version === "string"
 	) {
-		const registry = getProjectMigrationRegistry(cwd);
-		toWrite = validateBlockWithMigration(cwd, blockName, data, registry);
+		const registry = getProjectMigrationRegistryForDir(substrateDir);
+		toWrite = validateBlockWithMigrationForDir(substrateDir, blockName, data, registry);
 	}
 
 	writeTypedFile(filePath, schemaPath, toWrite, ctx, `block file '${blockName}.json'`);
+}
+
+export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: DispatchContext): void {
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	writeBlockForDir(resolveContextDir(cwd), blockName, data, ctx);
 }
 
 /**
@@ -1090,15 +1110,15 @@ export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: 
  * `additionalProperties: false` AJV failures on blocks whose item shape
  * doesn't carry author markers yet.
  */
-export function appendToBlock(
-	cwd: string,
+export function appendToBlockForDir(
+	substrateDir: string,
 	blockName: string,
 	arrayKey: string,
 	item: unknown,
 	ctx?: DispatchContext,
 ): void {
-	withBlockLock(blockFilePath(cwd, blockName), () => {
-		const data = readBlock(cwd, blockName);
+	withBlockLock(blockFilePathForDir(substrateDir, blockName), () => {
+		const data = readBlockForDir(substrateDir, blockName);
 
 		if (!data || typeof data !== "object") {
 			throw new Error(`Block '${blockName}' is not an object`);
@@ -1115,15 +1135,27 @@ export function appendToBlock(
 		// Optional ctx-stamping for object-shaped items (skipped silently for
 		// scalar items even when the schema technically permits author fields —
 		// stamping a string / number is meaningless).
-		const schemaPath = existingBlockSchemaPath(cwd, blockName);
+		const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
 		const itemToAppend =
 			ctx && item && typeof item === "object" && !Array.isArray(item)
 				? maybeStampItem(schemaPath, arrayKey, item as Record<string, unknown>, ctx, "create")
 				: item;
 
 		record[arrayKey] = [...(record[arrayKey] as unknown[]), itemToAppend];
-		writeBlock(cwd, blockName, record);
+		writeBlockForDir(substrateDir, blockName, record);
 	});
+}
+
+export function appendToBlock(
+	cwd: string,
+	blockName: string,
+	arrayKey: string,
+	item: unknown,
+	ctx?: DispatchContext,
+): void {
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	appendToBlockForDir(resolveContextDir(cwd), blockName, arrayKey, item, ctx);
 }
 
 /**
@@ -1136,6 +1168,19 @@ export function appendToBlock(
  * update-mode after the shallow merge — `created_by` / `created_at` are
  * preserved, `modified_by` / `modified_at` refresh.
  */
+export function updateItemInBlockForDir(
+	substrateDir: string,
+	blockName: string,
+	arrayKey: string,
+	predicate: (item: Record<string, unknown>) => boolean,
+	updates: Record<string, unknown>,
+	ctx?: DispatchContext,
+): void {
+	const filePath = blockFilePathForDir(substrateDir, blockName);
+	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
+	updateItemInTypedFile(filePath, schemaPath, arrayKey, predicate, updates, ctx, `block file '${blockName}.json'`);
+}
+
 export function updateItemInBlock(
 	cwd: string,
 	blockName: string,
@@ -1144,9 +1189,9 @@ export function updateItemInBlock(
 	updates: Record<string, unknown>,
 	ctx?: DispatchContext,
 ): void {
-	const filePath = blockFilePath(cwd, blockName);
-	const schemaPath = existingBlockSchemaPath(cwd, blockName);
-	updateItemInTypedFile(filePath, schemaPath, arrayKey, predicate, updates, ctx, `block file '${blockName}.json'`);
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	updateItemInBlockForDir(resolveContextDir(cwd), blockName, arrayKey, predicate, updates, ctx);
 }
 
 /**
@@ -1175,6 +1220,19 @@ export function updateItemInBlock(
  * to merge against. Callers that need merge-on-update should continue to
  * use `updateItemInBlock`.
  */
+export function upsertItemInBlockForDir(
+	substrateDir: string,
+	blockName: string,
+	arrayKey: string,
+	item: Record<string, unknown>,
+	idField: string,
+	ctx?: DispatchContext,
+): { mode: "appended" | "updated" } {
+	const filePath = blockFilePathForDir(substrateDir, blockName);
+	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
+	return upsertItemInTypedFile(filePath, schemaPath, arrayKey, item, idField, ctx, `block file '${blockName}.json'`);
+}
+
 export function upsertItemInBlock(
 	cwd: string,
 	blockName: string,
@@ -1183,9 +1241,9 @@ export function upsertItemInBlock(
 	idField: string,
 	ctx?: DispatchContext,
 ): { mode: "appended" | "updated" } {
-	const filePath = blockFilePath(cwd, blockName);
-	const schemaPath = existingBlockSchemaPath(cwd, blockName);
-	return upsertItemInTypedFile(filePath, schemaPath, arrayKey, item, idField, ctx, `block file '${blockName}.json'`);
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	return upsertItemInBlockForDir(resolveContextDir(cwd), blockName, arrayKey, item, idField, ctx);
 }
 
 /**
@@ -1200,8 +1258,8 @@ export function upsertItemInBlock(
  * file lock, predicate findIndex, multi-match warning, clone-before-write so
  * the original array remains unmodified if writeBlock throws.
  */
-export function appendToNestedArray(
-	cwd: string,
+export function appendToNestedArrayForDir(
+	substrateDir: string,
 	blockName: string,
 	parentArrayKey: string,
 	predicate: (item: Record<string, unknown>) => boolean,
@@ -1209,8 +1267,8 @@ export function appendToNestedArray(
 	item: unknown,
 	ctx?: DispatchContext,
 ): void {
-	const filePath = blockFilePath(cwd, blockName);
-	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	const filePath = blockFilePathForDir(substrateDir, blockName);
+	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
 	appendToNestedTypedFile(
 		filePath,
 		schemaPath,
@@ -1221,6 +1279,20 @@ export function appendToNestedArray(
 		ctx,
 		`block file '${blockName}.json'`,
 	);
+}
+
+export function appendToNestedArray(
+	cwd: string,
+	blockName: string,
+	parentArrayKey: string,
+	predicate: (item: Record<string, unknown>) => boolean,
+	nestedArrayKey: string,
+	item: unknown,
+	ctx?: DispatchContext,
+): void {
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	appendToNestedArrayForDir(resolveContextDir(cwd), blockName, parentArrayKey, predicate, nestedArrayKey, item, ctx);
 }
 
 /**
@@ -1235,8 +1307,8 @@ export function appendToNestedArray(
  * updateItemInBlock convention). Clone-then-write keeps the original arrays
  * unmodified if writeBlock throws.
  */
-export function updateNestedArrayItem(
-	cwd: string,
+export function updateNestedArrayItemForDir(
+	substrateDir: string,
 	blockName: string,
 	parentArrayKey: string,
 	parentPredicate: (item: Record<string, unknown>) => boolean,
@@ -1245,8 +1317,8 @@ export function updateNestedArrayItem(
 	updates: Record<string, unknown>,
 	ctx?: DispatchContext,
 ): void {
-	const filePath = blockFilePath(cwd, blockName);
-	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	const filePath = blockFilePathForDir(substrateDir, blockName);
+	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
 	updateNestedItemInTypedFile(
 		filePath,
 		schemaPath,
@@ -1260,6 +1332,30 @@ export function updateNestedArrayItem(
 	);
 }
 
+export function updateNestedArrayItem(
+	cwd: string,
+	blockName: string,
+	parentArrayKey: string,
+	parentPredicate: (item: Record<string, unknown>) => boolean,
+	nestedArrayKey: string,
+	nestedPredicate: (item: Record<string, unknown>) => boolean,
+	updates: Record<string, unknown>,
+	ctx?: DispatchContext,
+): void {
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	updateNestedArrayItemForDir(
+		resolveContextDir(cwd),
+		blockName,
+		parentArrayKey,
+		parentPredicate,
+		nestedArrayKey,
+		nestedPredicate,
+		updates,
+		ctx,
+	);
+}
+
 /**
  * Atomically remove all items matching `predicate` from a top-level array
  * inside `data[arrayKey]`, validate the whole file against schema, write
@@ -1269,6 +1365,18 @@ export function updateNestedArrayItem(
  * without throwing — removal of a non-existent item is treated as an
  * idempotent successful no-op, distinct from update which throws on miss.
  */
+export function removeFromBlockForDir(
+	substrateDir: string,
+	blockName: string,
+	arrayKey: string,
+	predicate: (item: Record<string, unknown>) => boolean,
+	ctx?: DispatchContext,
+): { removed: number } {
+	const filePath = blockFilePathForDir(substrateDir, blockName);
+	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
+	return removeFromTypedFile(filePath, schemaPath, arrayKey, predicate, ctx, `block file '${blockName}.json'`);
+}
+
 export function removeFromBlock(
 	cwd: string,
 	blockName: string,
@@ -1276,9 +1384,9 @@ export function removeFromBlock(
 	predicate: (item: Record<string, unknown>) => boolean,
 	ctx?: DispatchContext,
 ): { removed: number } {
-	const filePath = blockFilePath(cwd, blockName);
-	const schemaPath = existingBlockSchemaPath(cwd, blockName);
-	return removeFromTypedFile(filePath, schemaPath, arrayKey, predicate, ctx, `block file '${blockName}.json'`);
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	return removeFromBlockForDir(resolveContextDir(cwd), blockName, arrayKey, predicate, ctx);
 }
 
 /**
@@ -1291,8 +1399,8 @@ export function removeFromBlock(
  * mirrors removeFromBlock semantics). Multi-match warning at parent level
  * via console.error.
  */
-export function removeFromNestedArray(
-	cwd: string,
+export function removeFromNestedArrayForDir(
+	substrateDir: string,
 	blockName: string,
 	parentArrayKey: string,
 	parentPredicate: (item: Record<string, unknown>) => boolean,
@@ -1300,8 +1408,8 @@ export function removeFromNestedArray(
 	nestedPredicate: (item: Record<string, unknown>) => boolean,
 	ctx?: DispatchContext,
 ): { removed: number } {
-	const filePath = blockFilePath(cwd, blockName);
-	const schemaPath = existingBlockSchemaPath(cwd, blockName);
+	const filePath = blockFilePathForDir(substrateDir, blockName);
+	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
 	return removeFromNestedTypedFile(
 		filePath,
 		schemaPath,
@@ -1311,6 +1419,28 @@ export function removeFromNestedArray(
 		nestedPredicate,
 		ctx,
 		`block file '${blockName}.json'`,
+	);
+}
+
+export function removeFromNestedArray(
+	cwd: string,
+	blockName: string,
+	parentArrayKey: string,
+	parentPredicate: (item: Record<string, unknown>) => boolean,
+	nestedArrayKey: string,
+	nestedPredicate: (item: Record<string, unknown>) => boolean,
+	ctx?: DispatchContext,
+): { removed: number } {
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	return removeFromNestedArrayForDir(
+		resolveContextDir(cwd),
+		blockName,
+		parentArrayKey,
+		parentPredicate,
+		nestedArrayKey,
+		nestedPredicate,
+		ctx,
 	);
 }
 
@@ -1325,10 +1455,8 @@ export function removeFromNestedArray(
  * byte-identically; both pi-workflows and the `read-block-dir` registered
  * tool consume this single export.
  */
-export function readBlockDir(cwd: string, subdir: string): unknown[] {
-	const root = tryResolveContextDir(cwd);
-	if (root === null) return []; // no .pi-context.json pointer → no items (consistent with missing-dir → [])
-	const dirPath = path.join(root, subdir);
+export function readBlockDirForDir(substrateDir: string, subdir: string): unknown[] {
+	const dirPath = path.join(substrateDir, subdir);
 
 	let entries: string[];
 	try {
@@ -1357,6 +1485,12 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
 		}
 	}
 	return results;
+}
+
+export function readBlockDir(cwd: string, subdir: string): unknown[] {
+	const root = tryResolveContextDir(cwd);
+	if (root === null) return []; // no .pi-context.json pointer → no items (consistent with missing-dir → [])
+	return readBlockDirForDir(root, subdir);
 }
 
 // ── Item-schema resolution + id allocation (FGAP-083 / FGAP-084) ──────────────
@@ -1416,8 +1550,8 @@ export function resolveBlockItemSchema(schema: Record<string, unknown>): {
  * prefix+width parseable. Orchestrator CLIs + the in-pi append tool route
  * through this instead of re-implementing allocation.
  */
-export function nextId(cwd: string, blockName: string): string {
-	const schemaFile = blockSchemaPath(cwd, blockName);
+export function nextIdForDir(substrateDir: string, blockName: string): string {
+	const schemaFile = blockSchemaPathForDir(substrateDir, blockName);
 	if (!fs.existsSync(schemaFile)) {
 		throw new Error(`nextId: schema not found for block '${blockName}' at ${schemaFile}`);
 	}
@@ -1434,7 +1568,7 @@ export function nextId(cwd: string, blockName: string): string {
 	}
 	const prefix = m[1];
 	const width = Number.parseInt(m[2], 10);
-	const data = readBlock(cwd, blockName) as Record<string, unknown>;
+	const data = readBlockForDir(substrateDir, blockName) as Record<string, unknown>;
 	const items = (data[arrayKey] ?? []) as Array<Record<string, unknown>>;
 	const re = new RegExp(`^${prefix}(\\d+)$`);
 	let maxN = 0;
@@ -1447,4 +1581,10 @@ export function nextId(cwd: string, blockName: string): string {
 		}
 	}
 	return `${prefix}${String(maxN + 1).padStart(width, "0")}`;
+}
+
+export function nextId(cwd: string, blockName: string): string {
+	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	assertSubstrateName(blockName);
+	return nextIdForDir(resolveContextDir(cwd), blockName);
 }

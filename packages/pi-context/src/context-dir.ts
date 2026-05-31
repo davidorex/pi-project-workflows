@@ -374,9 +374,26 @@ export function schemasDir(cwd: string): string {
 	return path.join(resolveContextDir(cwd), SCHEMAS_DIR);
 }
 
-export function schemaPath(cwd: string, blockName: string): string {
+/**
+ * Dir-targeted form of `schemaPath`: build the schema path against an
+ * explicit substrate directory rather than resolving one from `cwd`.
+ * `assertSubstrateName` still guards the block name (path-injection guard
+ * preserved). Cross-substrate consumers (Cycle F resolver / Cycle H
+ * migration) target a non-active substrate by passing its directory here.
+ */
+export function schemaPathForDir(substrateDir: string, blockName: string): string {
 	assertSubstrateName(blockName);
-	return path.join(resolveContextDir(cwd), SCHEMAS_DIR, `${blockName}.schema.json`);
+	return path.join(substrateDir, SCHEMAS_DIR, `${blockName}.schema.json`);
+}
+
+export function schemaPath(cwd: string, blockName: string): string {
+	// Assert the name BEFORE resolving the substrate dir so the FGAP-079
+	// path-traversal guard fires ahead of BootstrapNotFoundError (a traversal
+	// name must reject even when no `.pi-context.json` pointer exists). The
+	// ForDir body asserts again — harmless double-assert; the boundary guard
+	// is the point.
+	assertSubstrateName(blockName);
+	return schemaPathForDir(resolveContextDir(cwd), blockName);
 }
 
 export function agentsDir(cwd: string): string {
@@ -395,6 +412,17 @@ export function contextTemplatesDir(cwd: string): string {
  * into a populated MigrationRegistry. Mirrors the relationsPath / configPath
  * shape: pointer-resolved, substrate-dir-relative, no fallback default.
  */
+/**
+ * Dir-targeted form of `migrationsPath`: build the `migrations.json` path
+ * against an explicit substrate directory rather than resolving one from
+ * `cwd`. Used by the ForDir migration-registry loader so a write into a
+ * non-active substrate validates/migrates against THAT substrate's
+ * declarations.
+ */
+export function migrationsPathForDir(substrateDir: string): string {
+	return path.join(substrateDir, "migrations.json");
+}
+
 export function migrationsPath(cwd: string): string {
-	return path.join(resolveContextDir(cwd), "migrations.json");
+	return migrationsPathForDir(resolveContextDir(cwd));
 }

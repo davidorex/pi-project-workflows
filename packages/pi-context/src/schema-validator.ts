@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { ErrorObject } from "ajv";
 import _Ajv from "ajv";
 import _addFormats from "ajv-formats";
-import { schemaPath as schemaPathHelper } from "./context-dir.js";
+import { resolveContextDir, schemaPathForDir as schemaPathForDirHelper } from "./context-dir.js";
 import { type MigrationRegistry, runMigrations } from "./schema-migrations.js";
 
 // Node16 module resolution + CJS interop: default import is the module namespace
@@ -201,13 +201,13 @@ export function validateFromFile(schemaPath: string, data: unknown, label: strin
  * Out of scope: writing the migrated form back to disk — call sites that need
  * persistence handle that themselves via the block-write surface.
  */
-export function validateBlockWithMigration(
-	cwd: string,
+export function validateBlockWithMigrationForDir(
+	substrateDir: string,
 	schemaName: string,
 	data: unknown,
 	registry?: MigrationRegistry,
 ): unknown {
-	const schemaPath = schemaPathHelper(cwd, schemaName);
+	const schemaPath = schemaPathForDirHelper(substrateDir, schemaName);
 	if (!fs.existsSync(schemaPath)) {
 		throw new Error(`validateBlockWithMigration: schema file not found at ${schemaPath}`);
 	}
@@ -238,4 +238,13 @@ export function validateBlockWithMigration(
 	}
 
 	return validate(schema, toValidate, schemaName);
+}
+
+export function validateBlockWithMigration(
+	cwd: string,
+	schemaName: string,
+	data: unknown,
+	registry?: MigrationRegistry,
+): unknown {
+	return validateBlockWithMigrationForDir(resolveContextDir(cwd), schemaName, data, registry);
 }

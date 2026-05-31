@@ -65,7 +65,7 @@ Work is not complete until the runtime can load it. Pi loads from `dist/`, not s
 3. **Check**: `npm run check` (biome + tsc)
 4. **Test**: `npm test` — full output inspection, no pipe-to-tail (pipe masks exit code)
 5. **Runtime demonstration**: exercise the actual feature path end-to-end via real invocation (tsx eval against block-api / pi -p tool dispatch / direct CLI invocation against real substrate). NOT a mocked unit assertion. Tests-pass alone is insufficient.
-6. **Adversarial verification probe**: fresh-context agent (or grep when sufficient) probes for false-pass scenarios. Probe verdict required before commit declared green.
+6. **Adversarial verification probe**: fresh-context agent (or grep when sufficient) probes for false-pass scenarios. Probe verdict required before commit declared green. **Both the adversarial agent and the orchestrator's own probe can under-flag** — each constructs only the cases it thought of, so neither alone is sufficient: the orchestrator independently re-verifies the audit's load-bearing claims (don't relay a verdict), and the audit independently re-derives the orchestrator's. When either finds a defect, fixing it does NOT inherit the prior green — **a fix to any audit/probe finding requires a FRESH re-audit of the fix** (a CRITICAL especially), because the fix can introduce its own defect or close only the reported instance of a class. Loop fix→re-verify→re-audit until a pass finds nothing new.
 7. **Skills**: `npm run skills` (regen SKILL.md)
 8. **Commit**: forensic message per global CLAUDE.md guidelines
 9. **Status cascade across 3 layers**: Claude Code Tasks + `.project/` blocks (TASK/FGAP/VER) + HANDOFF.md

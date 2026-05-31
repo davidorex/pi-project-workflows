@@ -284,3 +284,104 @@ describe("auth-gate — identity-stamp mutation on confirm=true", () => {
 		);
 	});
 });
+
+// ── Informed-authorization confirm (Cycle 3 / carried item 2) ────────────────
+//
+// When a write-schema payload's item subschema declares an
+// `x-identity.metadata_fields` override, the confirm message is enriched with
+// a human delta + the standing mandatory-floor affirmation. When NO override is
+// declared (or there is no schema payload, e.g. write-schema-migration) the
+// message is byte-identical to the pre-Cycle-3 form. The non-override message
+// is pinned verbatim so any future drift surfaces here.
+describe("auth-gate — informed-authorization confirm (identity metadata-field override)", () => {
+	const baseSchema = (extra?: Record<string, unknown>) => ({
+		type: "object",
+		properties: {
+			tasks: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						title: { type: "string" },
+						oid: { type: "string" },
+						content_hash: { type: "string" },
+						content_parent: { type: "string" },
+						...(extra ?? {}),
+					},
+					...(extra ? {} : {}),
+				},
+			},
+		},
+	});
+
+	function schemaWithOverride(fields: string[]): Record<string, unknown> {
+		const s = baseSchema() as Record<string, unknown>;
+		// inject x-identity.metadata_fields on the item subschema
+		(s.properties as Record<string, Record<string, unknown>>).tasks.items = {
+			...((s.properties as Record<string, Record<string, unknown>>).tasks.items as Record<string, unknown>),
+			"x-identity": { metadata_fields: fields },
+		};
+		return s;
+	}
+
+	it("write-schema with an override → message names the changed exclusions + affirms the mandatory floor", async () => {
+		const { ctx, calls } = mockCtx({ hasUI: true, confirmAnswer: true });
+		// Override drops the author fields from metadata (now hashed) and adds a
+		// bespoke `audit_note` exclusion.
+		const schema = schemaWithOverride(["audit_note"]);
+		const event = mockEvent("write-schema", { operation: "create", schemaName: "tasks", schema });
+		const result = await authGateHandler(event, ctx);
+		assert.strictEqual(result, undefined, "expected void/allow on confirm=true");
+		assert.strictEqual(calls.length, 1);
+		const msg = calls[0].message;
+		assert.match(msg, /identity metadata-field override declared/);
+		assert.match(msg, /audit_note/, "added exclusion named");
+		assert.match(msg, /created_by/, "dropped discretionary field named");
+		assert.match(msg, /mandatory floor id\/oid\/content_hash\/content_parent remains excluded/);
+	});
+
+	it("write-schema with a JSON-STRING schema payload carrying an override → still enriched", async () => {
+		const { ctx, calls } = mockCtx({ hasUI: true, confirmAnswer: true });
+		const schema = JSON.stringify(schemaWithOverride(["audit_note"]));
+		const event = mockEvent("write-schema", { operation: "create", schemaName: "tasks", schema });
+		await authGateHandler(event, ctx);
+		assert.match(calls[0].message, /identity metadata-field override declared/);
+	});
+
+	it("write-schema WITHOUT an override → message byte-identical to the pre-Cycle-3 form", async () => {
+		const { ctx, calls } = mockCtx({ hasUI: true, confirmAnswer: true });
+		// A schema with the identity fields but no x-identity override.
+		const schema = baseSchema();
+		const event = mockEvent("write-schema", { operation: "create", schemaName: "tasks", schema });
+		await authGateHandler(event, ctx);
+		const argSummary = `operation="create", schemaName="tasks", schema={...}`;
+		assert.strictEqual(
+			calls[0].message,
+			`tool write-schema requested; args: ${argSummary}`,
+			"no-override confirm must be byte-identical to the un-enriched form",
+		);
+	});
+
+	it("write-schema-migration (no schema payload) → byte-identical (never enriched)", async () => {
+		const { ctx, calls } = mockCtx({ hasUI: true, confirmAnswer: true });
+		const input = {
+			operation: "create",
+			schemaName: "tasks",
+			fromVersion: "1.0.0",
+			toVersion: "1.0.1",
+			kind: "identity",
+		};
+		const event = mockEvent("write-schema-migration", input);
+		await authGateHandler(event, ctx);
+		const argSummary = `operation="create", schemaName="tasks", fromVersion="1.0.0", toVersion="1.0.1", kind="identity"`;
+		assert.strictEqual(calls[0].message, `tool write-schema-migration requested; args: ${argSummary}`);
+	});
+
+	it("write-schema with a non-JSON-string schema → not enriched (parse fails, override null)", async () => {
+		const { ctx, calls } = mockCtx({ hasUI: true, confirmAnswer: true });
+		const event = mockEvent("write-schema", { operation: "create", schemaName: "tasks", schema: "not json{{" });
+		await authGateHandler(event, ctx);
+		assert.doesNotMatch(calls[0].message, /identity metadata-field override declared/);
+	});
+});

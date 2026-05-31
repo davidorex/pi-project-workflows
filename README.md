@@ -1,10 +1,10 @@
 # In short
 
-This monorepo is my playground / experimentation lab for crafting a controllable environment for working with llm's to build things in code.
+This monorepo is my experimentation lab for crafting a controllable environment for working with llm's to build things in code. 
 
-It's based on Pi. 
+It runs Pi but can also be run via Claude Code etc. while Pi is running with the extensions installed. 
 
-I'm considering renaming it "pi-prometheus-bound." Or maybe just "pi-bound." I currently run it with a script that wholly constrains the main Pi agent to tools given by the extensions, plus read and grep and ls.
+I'm considering renaming it "pi-prometheus-bound." Or maybe just "pi-bound." I currently run it with a script that wholly constrains the main Pi agent to tools given by the extensions, plus read and grep and ls. 
 
 My favorite thing currently is being able to craft and shape context substrates -- /context switch [.dir] -- and model them on the shape of the project's particular current focus. Alongside that is attempting to turn "agents" into jit-tool calls context exactingly composed from the context substrate.
 

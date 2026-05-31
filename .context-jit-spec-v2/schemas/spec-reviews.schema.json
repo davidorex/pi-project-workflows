@@ -1,47 +1,95 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/spec-reviews",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Spec Reviews",
   "description": "Design reviews of specification documents. Each review targets one spec, runs a pre-implementation review pass (ideally via independent fresh-context reviewer), and carries scope/method/status. A spec-review blocks implementation-spec drafting until 'clean'.",
   "type": "object",
-  "required": ["reviews"],
+  "required": [
+    "reviews"
+  ],
   "properties": {
     "reviews": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "target", "status", "created_by", "created_at"],
+        "required": [
+          "id",
+          "target",
+          "status",
+          "created_by",
+          "created_at"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^REVIEW-\\d{3}$" },
+          "id": {
+            "type": "string",
+            "pattern": "^REVIEW-\\d{3}$"
+          },
           "target": {
             "type": "string",
             "description": "Path to the spec doc being reviewed"
           },
-          "target_revision": { "type": "string", "description": "Git SHA or version at which the review was conducted" },
-          "reviewer": { "type": "string", "description": "Agent name or role performing the review" },
+          "target_revision": {
+            "type": "string",
+            "description": "Git SHA or version at which the review was conducted"
+          },
+          "reviewer": {
+            "type": "string",
+            "description": "Agent name or role performing the review"
+          },
           "status": {
             "type": "string",
-            "enum": ["not-started", "in-progress", "complete", "abandoned"]
+            "enum": [
+              "not-started",
+              "in-progress",
+              "complete",
+              "abandoned"
+            ]
           },
           "scope": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Sections or concerns of the target in scope for this review"
           },
           "method": {
             "type": "string",
             "description": "How the review is conducted — e.g. 'fresh-context independent reviewer', 'adversarial pre-mortem', 'self-review'",
-            "x-prompt-budget": { "tokens": 1000, "words": 800 }
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
           },
           "clean": {
             "type": "boolean",
             "description": "True when every finding has a terminal state (resolved/wontfix/duplicate)"
           },
-          "created_by": { "type": "string" },
-          "created_at": { "type": "string" },
-          "completed_at": { "type": "string" }
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "completed_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
         }
       }
     }
@@ -49,12 +97,34 @@
   "x-lifecycle": {
     "review": {
       "field": "status",
-      "states": ["not-started", "in-progress", "complete", "abandoned"],
+      "states": [
+        "not-started",
+        "in-progress",
+        "complete",
+        "abandoned"
+      ],
       "transitions": [
-        { "from": "not-started", "to": "in-progress", "required_authority": "any" },
-        { "from": "in-progress", "to": "complete", "required_authority": "any" },
-        { "from": "in-progress", "to": "abandoned", "required_authority": "user" },
-        { "from": "complete", "to": "in-progress", "required_authority": "user", "note": "reopen for follow-up review" }
+        {
+          "from": "not-started",
+          "to": "in-progress",
+          "required_authority": "any"
+        },
+        {
+          "from": "in-progress",
+          "to": "complete",
+          "required_authority": "any"
+        },
+        {
+          "from": "in-progress",
+          "to": "abandoned",
+          "required_authority": "user"
+        },
+        {
+          "from": "complete",
+          "to": "in-progress",
+          "required_authority": "user",
+          "note": "reopen for follow-up review"
+        }
       ]
     },
     "note": "AJV draft-07 cannot enforce transition validity; this block is metadata reserved for future framework-level state-machine validation."

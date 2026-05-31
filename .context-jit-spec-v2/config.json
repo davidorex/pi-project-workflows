@@ -1,5 +1,6 @@
 {
   "schema_version": "1.0.0",
+  "substrate_id": "sub-2668a102413f6aea",
   "block_kinds": [
     {
       "canonical_id": "decisions",

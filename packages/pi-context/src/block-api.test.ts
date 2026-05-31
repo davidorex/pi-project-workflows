@@ -27,7 +27,19 @@ import {
 } from "./block-api.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
+import { hasObject } from "./object-store.js";
 import { ValidationError } from "./schema-validator.js";
+
+/**
+ * A valid substrate_id (`^sub-[0-9a-f]{16}$`) for scratch substrates whose
+ * schemas declare the Cycle-3 identity fields. `substrateIdForDir` reads
+ * `config.substrate_id` and throws when absent, so any test that writes through
+ * an identity-declaring schema must seed a config carrying this id (see
+ * `setupSubstrateId`). Tests using schemas WITHOUT the identity fields never
+ * reach the substrate_id read (the stamping gate short-circuits), so the shared
+ * helpers below remain config-free by default — only identity tests opt in.
+ */
+const SCRATCH_SUBSTRATE_ID = "sub-0123456789abcdef";
 
 function makeTmpDir(prefix: string): string {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), `block-api-${prefix}-`));
@@ -45,6 +57,21 @@ function setupSchema(tmpDir: string, blockName: string, schema: Record<string, u
 	const schemasDir = path.join(tmpDir, ".project", "schemas");
 	fs.mkdirSync(schemasDir, { recursive: true });
 	fs.writeFileSync(path.join(schemasDir, `${blockName}.schema.json`), JSON.stringify(schema, null, 2));
+}
+
+/**
+ * Seed `<tmpDir>/.project/config.json` with a valid substrate_id so identity
+ * stamping (which reads `substrateIdForDir`) can fire for scratch substrates
+ * whose schemas declare oid/content_hash/content_parent. Idempotent-overwrite.
+ * Only needed by tests exercising identity-declaring schemas.
+ */
+function setupSubstrateId(tmpDir: string): void {
+	const wfDir = path.join(tmpDir, ".project");
+	fs.mkdirSync(wfDir, { recursive: true });
+	fs.writeFileSync(
+		path.join(wfDir, "config.json"),
+		JSON.stringify({ schema_version: "1.0.0", substrate_id: SCRATCH_SUBSTRATE_ID, block_kinds: [] }, null, 2),
+	);
 }
 
 const gapsSchema = {
@@ -3014,5 +3041,102 @@ describe("$ref block whole-file validation on append", () => {
 		assert.strictEqual((readBlock(tmp, "features") as any).features.length, 1);
 		// invalid (id violates the $ref'd pattern) throws ValidationError
 		assert.throws(() => appendToBlock(tmp, "features", "features", { id: "nope" }), ValidationError);
+	});
+});
+
+// ── Cycle 3: identity stamping through the full block-write path ─────────────
+//
+// Exercises the wired write primitives (append + update) end-to-end against a
+// scratch substrate whose schema declares the identity fields AND whose config
+// carries a substrate_id (via the grown setupSubstrateId helper). Proves the
+// gate fires for identity schemas, the object store is populated, oid is
+// preserved + immutable, and content_parent advances on content change only.
+const identityTaskSchema: Record<string, unknown> = {
+	type: "object",
+	required: ["tasks"],
+	properties: {
+		tasks: {
+			type: "array",
+			items: {
+				type: "object",
+				additionalProperties: false,
+				required: ["id", "title"],
+				properties: {
+					id: { type: "string" },
+					title: { type: "string" },
+					oid: { type: "string", pattern: "^[0-9a-f]{32}$" },
+					content_hash: { type: "string", pattern: "^[0-9a-f]{64}$" },
+					content_parent: { type: "string", pattern: "^[0-9a-f]{64}$" },
+				},
+			},
+		},
+	},
+};
+
+describe("Cycle 3 identity stamping via block-api write path", () => {
+	it("appendToBlock mints oid + content_hash, persists the object, sets no v1 content_parent", (t) => {
+		const tmp = makeTmpDir("identity-append");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupSchema(tmp, "tasks", identityTaskSchema);
+		setupSubstrateId(tmp);
+		writeBlockFile(tmp, "tasks", { tasks: [] });
+
+		appendToBlock(tmp, "tasks", "tasks", { id: "TASK-001", title: "x" });
+		const t1 = (readBlock(tmp, "tasks") as any).tasks[0];
+		assert.match(t1.oid, /^[0-9a-f]{32}$/);
+		assert.match(t1.content_hash, /^[0-9a-f]{64}$/);
+		assert.ok(!("content_parent" in t1), "v1 item has no content_parent");
+		assert.ok(hasObject(path.join(tmp, ".project"), t1.content_hash), "object persisted");
+	});
+
+	it("updateItemInBlock preserves oid, moves hash + sets content_parent on content change; oid mutation throws", (t) => {
+		const tmp = makeTmpDir("identity-update");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupSchema(tmp, "tasks", identityTaskSchema);
+		setupSubstrateId(tmp);
+		writeBlockFile(tmp, "tasks", { tasks: [] });
+
+		appendToBlock(tmp, "tasks", "tasks", { id: "TASK-001", title: "x" });
+		const v1 = (readBlock(tmp, "tasks") as any).tasks[0];
+		updateItemInBlock(tmp, "tasks", "tasks", (it) => it.id === "TASK-001", { title: "CHANGED" });
+		const v2 = (readBlock(tmp, "tasks") as any).tasks[0];
+		assert.strictEqual(v2.oid, v1.oid, "oid preserved");
+		assert.notStrictEqual(v2.content_hash, v1.content_hash, "hash moved");
+		assert.strictEqual(v2.content_parent, v1.content_hash, "content_parent = prior hash");
+
+		assert.throws(
+			() =>
+				updateItemInBlock(tmp, "tasks", "tasks", (it) => it.id === "TASK-001", {
+					oid: "ffffffffffffffffffffffffffffffff",
+				}),
+			/oid is immutable/,
+		);
+	});
+
+	it("a refname (id) rename leaves content_hash stable (id is mandatory-floor metadata)", (t) => {
+		const tmp = makeTmpDir("identity-rename");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupSchema(tmp, "tasks", identityTaskSchema);
+		setupSubstrateId(tmp);
+		writeBlockFile(tmp, "tasks", { tasks: [] });
+
+		appendToBlock(tmp, "tasks", "tasks", { id: "TASK-001", title: "x" });
+		const v1 = (readBlock(tmp, "tasks") as any).tasks[0];
+		updateItemInBlock(tmp, "tasks", "tasks", (it) => it.id === "TASK-001", { id: "TASK-001-renamed" });
+		const v2 = (readBlock(tmp, "tasks") as any).tasks.find((x: any) => x.id === "TASK-001-renamed");
+		assert.strictEqual(v2.content_hash, v1.content_hash, "id rename does not move the content hash");
+		assert.strictEqual(v2.oid, v1.oid);
+	});
+
+	it("does NOT stamp blocks whose schema lacks the identity fields (gate no-op)", (t) => {
+		const tmp = makeTmpDir("identity-gate-off");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		// gapsSchema declares no oid/content_hash/content_parent.
+		setupSchema(tmp, "gaps", gapsSchema);
+		setupSubstrateId(tmp);
+		writeBlockFile(tmp, "gaps", { gaps: [] });
+		appendToBlock(tmp, "gaps", "gaps", { id: "g1", description: "d", status: "open" });
+		const g = (readBlock(tmp, "gaps") as any).gaps[0];
+		assert.ok(!("oid" in g) && !("content_hash" in g), "non-identity schema item is never stamped");
 	});
 });

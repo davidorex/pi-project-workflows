@@ -1,33 +1,88 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/dispatch-modes",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Dispatch Modes",
   "description": "The dispatch modes executeAgent supports. Mode selection per the spec's D9 algorithm. Each mode is a distinct execution shape (single-call vs multi-turn-loop).",
   "type": "object",
-  "required": ["modes"],
+  "required": [
+    "modes"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "type": "string" },
+    "schema_version": {
+      "type": "string"
+    },
     "modes": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "name", "triggered_when", "dispatch_shape", "output_form", "created_by", "created_at"],
+        "required": [
+          "id",
+          "name",
+          "triggered_when",
+          "dispatch_shape",
+          "output_form",
+          "created_by",
+          "created_at"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^MODE-\\d{3}$" },
-          "name": { "type": "string", "description": "e.g. classifier-mode | agentic-mode" },
-          "triggered_when": { "type": "string", "description": "Spec-shape predicate that selects this mode" },
-          "dispatch_shape": { "type": "string", "description": "How executeAgent invokes the LLM (single call / multi-turn loop / tool registry etc.)" },
-          "output_form": { "type": "string", "description": "What the dispatch returns" },
+          "id": {
+            "type": "string",
+            "pattern": "^MODE-\\d{3}$"
+          },
+          "name": {
+            "type": "string",
+            "description": "e.g. classifier-mode | agentic-mode"
+          },
+          "triggered_when": {
+            "type": "string",
+            "description": "Spec-shape predicate that selects this mode"
+          },
+          "dispatch_shape": {
+            "type": "string",
+            "description": "How executeAgent invokes the LLM (single call / multi-turn loop / tool registry etc.)"
+          },
+          "output_form": {
+            "type": "string",
+            "description": "What the dispatch returns"
+          },
           "use_cases": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
-          "implementation_status": { "type": "string", "enum": ["landed", "pending", "partial"] },
-          "created_by": { "type": "string" },
-          "created_at": { "type": "string" }
+          "implementation_status": {
+            "type": "string",
+            "enum": [
+              "landed",
+              "pending",
+              "partial"
+            ]
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
         }
       }
     }

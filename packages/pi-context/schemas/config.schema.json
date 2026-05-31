@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "pi-context://schemas/config",
-	"version": "1.4.0",
+	"version": "1.5.0",
 	"title": "pi-context substrate config",
 	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, and lens specs.",
 	"type": "object",
@@ -16,6 +16,11 @@
 		"root": {
 			"type": "string",
 			"description": "Optional substrate-dir override. The substrate-dir name is set at /context init and recorded in the .pi-context.json bootstrap pointer; adoptConception writes this field at /context accept-all from the init-chosen dir. When absent, projectRoot resolves the substrate via the pointer (resolveContextDir). Not shipped by the packaged conception, which is a template. Relocatable per config."
+		},
+		"substrate_id": {
+			"type": "string",
+			"pattern": "^sub-[0-9a-f]{16}$",
+			"description": "Per-substrate root identity for content-addressed substrate identity (Cycle 3). Salts mintOid so item OIDs are distinct across substrates. Minted once via mintSubstrateId at /context init (Cycle 4) — established by hand for the active substrate + packaged samples this cycle — then immutable on disk; never re-minted on an item write. substrateIdForDir reads this field and throws loudly when absent (no degraded fallback)."
 		},
 		"naming": {
 			"type": "object",

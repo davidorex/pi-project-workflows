@@ -1,30 +1,83 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/axioms",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Axioms",
   "description": "Load-bearing framework commitments grounding spec decisions. Distinct from tactical DECs by carrying foundational principle weight.",
   "type": "object",
-  "required": ["axioms"],
+  "required": [
+    "axioms"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "type": "string" },
+    "schema_version": {
+      "type": "string"
+    },
     "axioms": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "title", "statement", "status", "created_by", "created_at"],
+        "required": [
+          "id",
+          "title",
+          "statement",
+          "status",
+          "created_by",
+          "created_at"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^AX-\\d{3}$" },
-          "title": { "type": "string" },
-          "statement": { "type": "string", "description": "The axiom verbatim" },
-          "rationale": { "type": "string", "description": "Why this is load-bearing" },
-          "status": { "type": "string", "enum": ["proposed", "enacted", "superseded"] },
-          "v1_origin": { "type": "string", "description": "Reference to v1 spec section if carried forward (e.g. 'v1 §0 P1')" },
-          "created_by": { "type": "string" },
-          "created_at": { "type": "string" },
-          "enacted_at": { "type": "string" }
+          "id": {
+            "type": "string",
+            "pattern": "^AX-\\d{3}$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "statement": {
+            "type": "string",
+            "description": "The axiom verbatim"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why this is load-bearing"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "enacted",
+              "superseded"
+            ]
+          },
+          "v1_origin": {
+            "type": "string",
+            "description": "Reference to v1 spec section if carried forward (e.g. 'v1 §0 P1')"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "enacted_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
         }
       }
     }

@@ -1,31 +1,81 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/v1-supersessions",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "V1 Supersessions",
   "description": "Per-v1-section supersession tracking — maps each v1 section reference to the v2 substrate items that supersede or extend it. Surfaces 'coverage-vs-v1' for the canonical lens.",
   "type": "object",
-  "required": ["supersessions"],
+  "required": [
+    "supersessions"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "type": "string" },
+    "schema_version": {
+      "type": "string"
+    },
     "supersessions": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "v1_section_reference", "supersession_kind", "created_by", "created_at"],
+        "required": [
+          "id",
+          "v1_section_reference",
+          "supersession_kind",
+          "created_by",
+          "created_at"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^VSUP-\\d{3}$" },
-          "v1_section_reference": { "type": "string", "description": "Section identifier in v1 spec (e.g. 'v1 §4 D4', 'v1 §0 P1', 'v1 §5 Success Criteria')" },
-          "supersession_kind": { "type": "string", "enum": ["carried_forward_unchanged", "extended", "rewritten", "removed", "replaced_by_new_decision"] },
+          "id": {
+            "type": "string",
+            "pattern": "^VSUP-\\d{3}$"
+          },
+          "v1_section_reference": {
+            "type": "string",
+            "description": "Section identifier in v1 spec (e.g. 'v1 §4 D4', 'v1 §0 P1', 'v1 §5 Success Criteria')"
+          },
+          "supersession_kind": {
+            "type": "string",
+            "enum": [
+              "carried_forward_unchanged",
+              "extended",
+              "rewritten",
+              "removed",
+              "replaced_by_new_decision"
+            ]
+          },
           "superseded_by_v2_items": {
             "type": "array",
-            "items": { "type": "string", "description": "ID of v2 substrate item (AX-NNN, DEC-NNNN, CONCEPT-NNN, MODE-NNN, FGAP-NNN)" }
+            "items": {
+              "type": "string",
+              "description": "ID of v2 substrate item (AX-NNN, DEC-NNNN, CONCEPT-NNN, MODE-NNN, FGAP-NNN)"
+            }
           },
-          "notes": { "type": "string", "description": "What changed + why" },
-          "created_by": { "type": "string" },
-          "created_at": { "type": "string" }
+          "notes": {
+            "type": "string",
+            "description": "What changed + why"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
         }
       }
     }

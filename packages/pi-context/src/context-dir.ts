@@ -25,8 +25,10 @@
  * workflow-executor.ts still import it as a bare segment); Phase 7 of
  * FGAP-026 closure cascades those sites and removes the export.
  */
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { canonicalJson, sha256Hex } from "./content-hash.js";
 import { validate } from "./schema-validator.js";
 
 /** @deprecated Same status as the removed PROJECT_DIR — Phase 7 cascade target. */
@@ -425,4 +427,83 @@ export function migrationsPathForDir(substrateDir: string): string {
 
 export function migrationsPath(cwd: string): string {
 	return migrationsPathForDir(resolveContextDir(cwd));
+}
+
+// ── Substrate identity (content-addressed substrate identity, Cycle 3) ────────
+
+/**
+ * `^sub-[0-9a-f]{16}$` — the substrate_id shape. A substrate_id is the per-
+ * substrate root identity that `mintOid` (block-api.ts) salts an item OID with,
+ * so two substrates minting an item with the same birth nonce still produce
+ * distinct OIDs. Single source of truth for the on-disk `config.substrate_id`
+ * regex (mirrored as a literal `pattern` in config.schema.json — the two must
+ * not drift).
+ */
+export const SUBSTRATE_ID_PATTERN = /^sub-[0-9a-f]{16}$/;
+
+/**
+ * Mint a fresh substrate_id: `"sub-" + sha256Hex(canonicalJson([Date.now(),
+ * randomUUID()])).slice(0, 16)`. The `[epoch-ms, uuid]` tuple makes the pre-
+ * image collision-free in practice (the uuid alone suffices; the timestamp is
+ * a readability/ordering aid in the pre-image only, never surfaced). The
+ * 16-hex-char slice keeps the id compact while leaving 64 bits of entropy —
+ * far beyond the substrate-count regime. Minted ONCE per substrate (at
+ * /context init in Cycle 4; established by hand for the active substrate +
+ * packaged samples this cycle) and then immutable on disk; never re-minted on
+ * an item write.
+ */
+export function mintSubstrateId(): string {
+	return `sub-${sha256Hex(canonicalJson([Date.now(), randomUUID()])).slice(0, 16)}`;
+}
+
+/**
+ * Read the `substrate_id` from `<substrateDir>/config.json`. Throws loudly when
+ * the config is absent / unreadable / lacks a `substrate_id` — there is NO
+ * degraded fallback and NO lazy mint-on-read (locked decision 2): a substrate
+ * that participates in identity stamping must carry an explicit substrate_id,
+ * established when its identity-declaring schemas were established. The
+ * schema-gate on `prepareItemIdentityForWrite` (block-api.ts) and this throw
+ * align by construction — stamping only fires for substrates whose schemas
+ * declare the identity fields, which are exactly the substrates given a
+ * substrate_id — so the throw is a loud guard against a mis-provisioned
+ * substrate, not an expected runtime branch.
+ */
+export function substrateIdForDir(substrateDir: string): string {
+	const configPath = path.join(substrateDir, "config.json");
+	if (!fs.existsSync(configPath)) {
+		throw new Error(
+			`substrateIdForDir: no config.json at ${configPath}; a substrate that stamps identity must carry an explicit substrate_id (no lazy mint on write)`,
+		);
+	}
+	let raw: string;
+	try {
+		raw = fs.readFileSync(configPath, "utf-8");
+	} catch (err) {
+		throw new Error(
+			`substrateIdForDir: failed to read ${configPath}: ${err instanceof Error ? err.message : String(err)}`,
+		);
+	}
+	let data: unknown;
+	try {
+		data = JSON.parse(raw);
+	} catch (err) {
+		throw new Error(
+			`substrateIdForDir: invalid JSON in ${configPath}: ${err instanceof Error ? err.message : String(err)}`,
+		);
+	}
+	const substrateId = data && typeof data === "object" ? (data as Record<string, unknown>).substrate_id : undefined;
+	if (typeof substrateId !== "string" || !SUBSTRATE_ID_PATTERN.test(substrateId)) {
+		throw new Error(
+			`substrateIdForDir: config.json at ${configPath} has no valid substrate_id (expected ^sub-[0-9a-f]{16}$, got ${JSON.stringify(substrateId)}); establish one before stamping identity`,
+		);
+	}
+	return substrateId;
+}
+
+/**
+ * `substrateIdForDir(resolveContextDir(cwd))` — the cwd-resolved form for
+ * callers holding a working directory rather than an explicit substrate dir.
+ */
+export function substrateIdFor(cwd: string): string {
+	return substrateIdForDir(resolveContextDir(cwd));
 }

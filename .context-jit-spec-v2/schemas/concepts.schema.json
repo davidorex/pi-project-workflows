@@ -1,27 +1,67 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/concepts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Concepts",
   "description": "Vocabulary + definitions surfaced by the spec — boundary contract elements, agent signature, dispatch modes, scope ownership. Referenced from decisions.",
   "type": "object",
-  "required": ["concepts"],
+  "required": [
+    "concepts"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "type": "string" },
+    "schema_version": {
+      "type": "string"
+    },
     "concepts": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "name", "definition", "created_by", "created_at"],
+        "required": [
+          "id",
+          "name",
+          "definition",
+          "created_by",
+          "created_at"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^CONCEPT-\\d{3}$" },
-          "name": { "type": "string" },
-          "definition": { "type": "string", "description": "Concept body — definition + boundary clarifications" },
-          "v1_origin": { "type": "string", "description": "Reference to v1 spec section if carried forward" },
-          "created_by": { "type": "string" },
-          "created_at": { "type": "string" }
+          "id": {
+            "type": "string",
+            "pattern": "^CONCEPT-\\d{3}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string",
+            "description": "Concept body — definition + boundary clarifications"
+          },
+          "v1_origin": {
+            "type": "string",
+            "description": "Reference to v1 spec section if carried forward"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
         }
       }
     }

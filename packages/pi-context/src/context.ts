@@ -32,6 +32,15 @@ import { ValidationError, validateFromFile } from "./schema-validator.js";
 export interface ConfigBlock {
 	schema_version: string;
 	root: string;
+	/**
+	 * Per-substrate root identity (content-addressed substrate identity, Cycle 3).
+	 * `^sub-[0-9a-f]{16}$`; minted once via `mintSubstrateId` and immutable on
+	 * disk. Read by `substrateIdForDir` (throws when absent). Optional on the
+	 * type so pre-Cycle-3 configs (and the packaged conception template, which
+	 * intentionally omits it) remain valid; substrates that stamp identity carry
+	 * it by construction.
+	 */
+	substrate_id?: string;
 	naming?: Record<string, string>;
 	layers?: LayerDecl[];
 	block_kinds: BlockKindDecl[];

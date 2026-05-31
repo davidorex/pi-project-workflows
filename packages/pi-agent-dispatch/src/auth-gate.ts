@@ -45,6 +45,7 @@
  * verdicts; this gate operates on toolName allowlist.
  */
 
+import { describeIdentityOverride } from "@davidorex/pi-context/block-api";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
@@ -155,7 +156,30 @@ export async function authGateHandler(
 	}
 
 	const argSummary = summarizeArgs(event.input as Record<string, unknown> | undefined);
-	const message = `tool ${event.toolName} requested; args: ${argSummary}`;
+	let message = `tool ${event.toolName} requested; args: ${argSummary}`;
+
+	// Informed-authorization (carried item 2): when the payload carries a schema
+	// (write-schema; write-schema-migration carries none) whose item subschema
+	// declares an `x-identity.metadata_fields` override, append a human delta so
+	// the operator confirms an INFORMED change to the content/metadata partition.
+	// When no override is declared (or no schema payload), the message is
+	// byte-identical to the pre-Cycle-3 form.
+	const rawSchema = (event.input as Record<string, unknown> | undefined)?.schema;
+	if (rawSchema !== undefined) {
+		let parsed: unknown = rawSchema;
+		if (typeof rawSchema === "string") {
+			try {
+				parsed = JSON.parse(rawSchema);
+			} catch {
+				parsed = rawSchema; // non-JSON string → describeIdentityOverride returns null
+			}
+		}
+		const override = describeIdentityOverride(parsed);
+		if (override !== null) {
+			message = `${message}\nidentity metadata-field override declared:\n${override}\nmandatory floor id/oid/content_hash/content_parent remains excluded from the content hash.`;
+		}
+	}
+
 	const ok = await ctx.ui.confirm(`Authorize ${event.toolName}?`, message);
 	if (ok === false) {
 		return { block: true, reason: "user declined" };

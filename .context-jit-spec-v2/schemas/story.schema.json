@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/story",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Stories",
   "description": "Top-level user-story / story array-block. Stories are a work-altitude between feature and task: a feature decomposes into stories, a story decomposes into tasks. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item, story→milestone/phase/project-goal) live in relations.json closure-table edges — NOT as inline arrays on the story. Sub-shape is structural (id/title/status/description/acceptance_criteria); the Agile user-story form (role/want/benefit) is a future optional enrichment, not imposed (no role/want/benefit present in current shape, none fabricated).",
   "type": "object",
@@ -65,6 +65,21 @@
           },
           "modified_at": {
             "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
         }
       }

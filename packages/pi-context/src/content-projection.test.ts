@@ -131,11 +131,23 @@ describe("content-projection", () => {
 		);
 	});
 
-	it("x-identity.metadata_fields override is honored (created_at becomes content)", () => {
-		assert.deepEqual([...metadataFieldsForSchema(overrideSchema, "notes")], ["id"]);
+	it("x-identity.metadata_fields override is honored under the mandatory-floor union (created_at becomes content)", () => {
+		// Cycle 3 (carried item 1): the override REPLACES the discretionary set
+		// (so created_at — a discretionary default — becomes content), but the
+		// mandatory floor (id/oid/content_hash/content_parent) is UNIONED back
+		// in. Override `["id"]` therefore resolves to the floor (id already a
+		// floor member; the override adds nothing beyond it), not to a bare
+		// `["id"]`. The projection still drops `id` and keeps `created_at`.
+		assert.deepEqual([...metadataFieldsForSchema(overrideSchema, "notes")].sort(), [
+			"content_hash",
+			"content_parent",
+			"id",
+			"oid",
+		]);
 		const item: Record<string, unknown> = { id: "N-1", created_at: "2026-01-01", body: "hello" };
 		const proj = contentProjection(overrideSchema, "notes", item);
-		// Only `id` dropped; `created_at` retained as content under the override.
+		// `id` dropped (floor); `created_at` retained as content (override drops
+		// it from the discretionary metadata set).
 		assert.deepEqual(proj, { created_at: "2026-01-01", body: "hello" });
 	});
 

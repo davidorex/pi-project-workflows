@@ -1,34 +1,92 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/verification",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Verification",
   "description": "Evidence that work meets its criteria. Per-item completion evidence linking implementation to acceptance via a verification_verifies_item edge.",
   "type": "object",
-  "required": ["verifications"],
+  "required": [
+    "verifications"
+  ],
   "properties": {
     "verifications": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "status", "method"],
+        "required": [
+          "id",
+          "status",
+          "method"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^VER-\\d{3,}$" },
-          "status": { "type": "string", "enum": ["passed", "failed", "partial", "skipped"] },
-          "method": { "type": "string", "enum": ["command", "inspect", "test"] },
-          "evidence": { "type": "string", "description": "What was checked and what was found" },
-          "timestamp": { "type": "string" },
+          "id": {
+            "type": "string",
+            "pattern": "^VER-\\d{3,}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "failed",
+              "partial",
+              "skipped"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "command",
+              "inspect",
+              "test"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "description": "What was checked and what was found"
+          },
+          "timestamp": {
+            "type": "string"
+          },
           "criteria_results": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["criterion", "status"],
+              "required": [
+                "criterion",
+                "status"
+              ],
               "properties": {
-                "criterion": { "type": "string" },
-                "status": { "type": "string", "enum": ["passed", "failed", "skipped"] },
-                "evidence": { "type": "string" }
+                "criterion": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "passed",
+                    "failed",
+                    "skipped"
+                  ]
+                },
+                "evidence": {
+                  "type": "string"
+                }
               }
             }
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
         }
       }

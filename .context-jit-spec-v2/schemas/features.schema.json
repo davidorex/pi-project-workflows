@@ -1,35 +1,112 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/features",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Features",
   "description": "L3 Work layer. Features with their own scope, acceptance criteria, and status lifecycle. A feature is atomically composable into prompt context as a self-contained unit of work.",
   "type": "object",
-  "required": ["features"],
+  "required": [
+    "features"
+  ],
   "properties": {
     "features": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "title", "status", "layer", "description", "acceptance_criteria", "created_by", "created_at"],
+        "required": [
+          "id",
+          "title",
+          "status",
+          "layer",
+          "description",
+          "acceptance_criteria",
+          "created_by",
+          "created_at"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^FEAT-\\d{3}$" },
-          "title": { "type": "string" },
+          "id": {
+            "type": "string",
+            "pattern": "^FEAT-\\d{3}$"
+          },
+          "title": {
+            "type": "string"
+          },
           "status": {
             "type": "string",
-            "enum": ["proposed", "approved", "in-progress", "in-review", "complete", "blocked", "cancelled"]
+            "enum": [
+              "proposed",
+              "approved",
+              "in-progress",
+              "in-review",
+              "complete",
+              "blocked",
+              "cancelled"
+            ]
           },
-          "layer": { "type": "string", "enum": ["L1", "L2", "L3", "L4", "L5"] },
-          "description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
-          "motivation": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
-          "acceptance_criteria": { "type": "array", "items": { "type": "string" } },
-          "created_by": { "type": "string" },
-          "created_at": { "type": "string" },
-          "modified_by": { "type": "string" },
-          "modified_at": { "type": "string" },
-          "approved_by": { "type": "string" },
-          "approved_at": { "type": "string" }
+          "layer": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "motivation": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "modified_by": {
+            "type": "string"
+          },
+          "modified_at": {
+            "type": "string"
+          },
+          "approved_by": {
+            "type": "string"
+          },
+          "approved_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
         }
       }
     }
@@ -37,15 +114,52 @@
   "x-lifecycle": {
     "feature": {
       "field": "status",
-      "states": ["proposed", "approved", "in-progress", "in-review", "complete", "blocked", "cancelled"],
+      "states": [
+        "proposed",
+        "approved",
+        "in-progress",
+        "in-review",
+        "complete",
+        "blocked",
+        "cancelled"
+      ],
       "transitions": [
-        { "from": "proposed", "to": "approved", "required_authority": "user", "precondition": "all gates in terminal state" },
-        { "from": "approved", "to": "in-progress", "required_authority": "any" },
-        { "from": "in-progress", "to": "in-review", "required_authority": "any" },
-        { "from": "in-review", "to": "complete", "required_authority": "any" },
-        { "from": "in-progress", "to": "blocked", "required_authority": "any" },
-        { "from": "blocked", "to": "in-progress", "required_authority": "any" },
-        { "from": "proposed", "to": "cancelled", "required_authority": "user" }
+        {
+          "from": "proposed",
+          "to": "approved",
+          "required_authority": "user",
+          "precondition": "all gates in terminal state"
+        },
+        {
+          "from": "approved",
+          "to": "in-progress",
+          "required_authority": "any"
+        },
+        {
+          "from": "in-progress",
+          "to": "in-review",
+          "required_authority": "any"
+        },
+        {
+          "from": "in-review",
+          "to": "complete",
+          "required_authority": "any"
+        },
+        {
+          "from": "in-progress",
+          "to": "blocked",
+          "required_authority": "any"
+        },
+        {
+          "from": "blocked",
+          "to": "in-progress",
+          "required_authority": "any"
+        },
+        {
+          "from": "proposed",
+          "to": "cancelled",
+          "required_authority": "user"
+        }
       ]
     },
     "note": "AJV draft-07 cannot enforce transition validity; this block is metadata reserved for future framework-level state-machine validation."

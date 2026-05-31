@@ -660,11 +660,11 @@ export function contextState(cwd: string): ContextState {
 export function currentState(cwd: string): CurrentState {
 	// Tolerate any substrate-read failure (no .project, malformed config, etc.)
 	// by collapsing to the empty state — this is a pure read surface.
-	let idIndex: Map<string, ItemLocation>;
+	let index: SubstrateIndex;
 	try {
-		idIndex = buildIdIndex(cwd);
+		index = buildIdIndex(cwd);
 	} catch {
-		idIndex = new Map();
+		index = { dir: cwd, byRefname: new Map(), byOid: new Map(), items: [] };
 	}
 	let edges: Edge[];
 	try {
@@ -683,11 +683,11 @@ export function currentState(cwd: string): CurrentState {
 
 	// ── inFlight: tasks-block items bucketing to in_progress ───────────────────
 	const inFlight: CurrentState["inFlight"] = [];
-	for (const [id, loc] of idIndex) {
+	for (const loc of index.byRefname.values()) {
 		if (loc.block !== "tasks") continue;
 		if (bucket(loc.item) !== "in_progress") continue;
 		inFlight.push({
-			id,
+			id: loc.id,
 			block: loc.block,
 			description: typeof loc.item.description === "string" ? loc.item.description : "",
 		});
@@ -699,7 +699,7 @@ export function currentState(cwd: string): CurrentState {
 	// at unknown ids are treated as satisfied — a dangling edge is a relations
 	// integrity concern surfaced by validateRelations, not a blocker here).
 	const isCompleted = (taskId: string): boolean => {
-		const loc = idIndex.get(taskId);
+		const loc = index.byRefname.get(taskId);
 		return loc !== undefined && bucket(loc.item) === "complete";
 	};
 	const depParentsOf = (taskId: string): string[] =>
@@ -707,14 +707,14 @@ export function currentState(cwd: string): CurrentState {
 			.filter((e) => e.relation_type === "task_depends_on_task" && endpointKey(e.child) === taskId)
 			.map((e) => endpointKey(e.parent));
 	const incompleteDeps = (taskId: string): string[] =>
-		depParentsOf(taskId).filter((dep) => idIndex.has(dep) && !isCompleted(dep));
+		depParentsOf(taskId).filter((dep) => index.byRefname.has(dep) && !isCompleted(dep));
 
 	// Collect all to-do (ready/queued) tasks once — drives both blocked + ready
 	// derivations. "todo" bucket = planned/queued work (raw status "planned"
 	// buckets to todo under STATUS_VOCABULARY_DEFAULTS).
 	const plannedTasks: { id: string; loc: ItemLocation }[] = [];
-	for (const [id, loc] of idIndex) {
-		if (loc.block === "tasks" && bucket(loc.item) === "todo") plannedTasks.push({ id, loc });
+	for (const loc of index.byRefname.values()) {
+		if (loc.block === "tasks" && bucket(loc.item) === "todo") plannedTasks.push({ id: loc.id, loc });
 	}
 
 	// ── blocked: planned tasks with at least one incomplete dep parent ─────────
@@ -736,10 +736,10 @@ export function currentState(cwd: string): CurrentState {
 	//    P0 > P1 > P2 > P3 (missing priority sorts last) then by id.
 	const priorityRank: Record<string, number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
 	const openGaps: { id: string; priority?: string }[] = [];
-	for (const [id, loc] of idIndex) {
+	for (const loc of index.byRefname.values()) {
 		if (loc.block !== "framework-gaps") continue;
 		if (bucket(loc.item) !== "todo") continue;
-		openGaps.push({ id, priority: typeof loc.item.priority === "string" ? loc.item.priority : undefined });
+		openGaps.push({ id: loc.id, priority: typeof loc.item.priority === "string" ? loc.item.priority : undefined });
 	}
 	openGaps.sort((a, b) => {
 		const ra = a.priority !== undefined ? (priorityRank[a.priority] ?? 99) : 99;
@@ -785,10 +785,10 @@ export function currentState(cwd: string): CurrentState {
 		// Fall back to a phase bucketing to in_progress (phase.json phases[]
 		// array-block).
 		let inProgressPhase: { id?: string; name?: string } | null = null;
-		for (const [id, loc] of idIndex) {
+		for (const loc of index.byRefname.values()) {
 			if (loc.block !== "phase") continue;
 			if (bucket(loc.item) !== "in_progress") continue;
-			inProgressPhase = { id, name: typeof loc.item.name === "string" ? loc.item.name : undefined };
+			inProgressPhase = { id: loc.id, name: typeof loc.item.name === "string" ? loc.item.name : undefined };
 			break;
 		}
 		if (inProgressPhase !== null) {
@@ -995,7 +995,7 @@ export function joinBlocks(cwd: string, spec: JoinSpec): JoinResult[] {
 	const relationType = spec.relationType as string;
 	const leftEndpoint = spec.leftEndpoint ?? "parent";
 	const edges = loadRelations(cwd).filter((e) => e.relation_type === relationType);
-	const idIndex = buildIdIndex(cwd);
+	const index = buildIdIndex(cwd);
 	return leftItems.map((left) => {
 		const leftId = left.id;
 		const right: Record<string, unknown>[] = [];
@@ -1004,7 +1004,7 @@ export function joinBlocks(cwd: string, spec: JoinSpec): JoinResult[] {
 				const here = leftEndpoint === "parent" ? endpointKey(e.parent) : endpointKey(e.child);
 				if (here !== leftId) continue;
 				const otherId = leftEndpoint === "parent" ? endpointKey(e.child) : endpointKey(e.parent);
-				const loc = idIndex.get(otherId);
+				const loc = index.byRefname.get(otherId);
 				if (loc && loc.block === spec.rightBlock) right.push(loc.item);
 			}
 		}
@@ -1021,9 +1021,49 @@ export function joinBlocks(cwd: string, spec: JoinSpec): JoinResult[] {
  * (e.g., a per-item macro inlining a related decision by ID).
  */
 export interface ItemLocation {
+	/**
+	 * The item's refname — its top-level string `id`. Exposed on the locator so
+	 * iteration over a {@link SubstrateIndex.items} list can recover the key
+	 * without re-deriving it from `item.id` (the value is identical: `id` is set
+	 * to `item.id` at index-build time). Lookup maps (`byRefname`) key on this
+	 * same value.
+	 */
+	id: string;
 	block: string;
 	arrayKey: string;
 	item: Record<string, unknown>;
+}
+
+/**
+ * Split-surface index over a single substrate's id-bearing items (Cycle 7 /
+ * Phase F1). Replaces the prior `Map<refname, ItemLocation>` return of
+ * {@link buildIdIndex}/{@link buildIdIndexForDir} by separating the two roles
+ * that the single Map previously served:
+ *
+ *   - `byRefname` — point-lookup map keyed by refname (`item.id`). First-writer-
+ *     wins on refname collision across blocks (one entry per distinct refname),
+ *     exactly as the prior Map. This is the lookup surface every `.get`/`.has`
+ *     consumer reads.
+ *   - `items` — the iteration surface: ONE entry per id-bearing item, in scan
+ *     order. Whole-index `for…of` consumers iterate this so a future dual-keyed
+ *     lookup map (F2's oid keys) cannot inflate iteration (anti-double-count).
+ *   - `byOid` — point-lookup map keyed by an item's string `oid`, ONE entry per
+ *     item that HAS a string `oid`. Populated here but DORMANT this cycle —
+ *     no F1 consumer reads it; it is the seam Cycle-8/F2 fills with cross-
+ *     substrate (oid-keyed) resolution. Near-empty on current real data (most
+ *     items are unstamped). First-writer-wins on oid collision, mirroring
+ *     `byRefname`'s collision discipline.
+ *
+ * `dir` is the scanned substrate directory; `substrate_id` is `config.substrate_id`
+ * when the config declares one (undefined otherwise — absence does NOT throw,
+ * so a pre-identity substrate still indexes cleanly).
+ */
+export interface SubstrateIndex {
+	substrate_id?: string;
+	dir: string;
+	byRefname: Map<string, ItemLocation>;
+	byOid: Map<string, ItemLocation>;
+	items: ItemLocation[];
 }
 
 /**
@@ -1085,10 +1125,15 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
  * (no overwrite) — duplicate entries are intentionally ignored to keep
  * the resolver deterministic without allocating warning channels here.
  */
-export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
+export function buildIdIndex(cwd: string): SubstrateIndex {
 	const blockDir = tryResolveContextDir(cwd);
-	if (blockDir === null) return new Map<string, ItemLocation>();
-	return buildIdIndexForDir(blockDir, loadConfig(cwd));
+	if (blockDir === null) {
+		// No active pointer — return an empty SubstrateIndex (dir set to cwd so
+		// the surface is still well-formed; substrate_id undefined). Mirrors the
+		// prior empty-Map return.
+		return { dir: cwd, byRefname: new Map(), byOid: new Map(), items: [] };
+	}
+	return buildIdIndexForDir(blockDir, cwd, loadConfig(cwd));
 }
 
 /**
@@ -1104,8 +1149,22 @@ export function buildIdIndex(cwd: string): Map<string, ItemLocation> {
  * fires identically to the active-dir path. Same first-writer-wins collision
  * semantics + prefix-invariant throw as `buildIdIndex`.
  */
-export function buildIdIndexForDir(substrateDir: string, cfg: ConfigBlock | null): Map<string, ItemLocation> {
-	const index = new Map<string, ItemLocation>();
+export function buildIdIndexForDir(substrateDir: string, _cwd: string, cfg: ConfigBlock | null): SubstrateIndex {
+	// `_cwd` is part of the locked F1 signature (the active-dir caller threads its
+	// cwd; the foreign-substrate caller threads the foreign dir) so F2 can resolve
+	// registry-relative concerns from it. F1's body reads config explicitly via
+	// `cfg`, so `_cwd` is currently unused — retained for the forward-compatible
+	// surface rather than dropped and re-added next cycle.
+	const byRefname = new Map<string, ItemLocation>();
+	const byOid = new Map<string, ItemLocation>();
+	const items: ItemLocation[] = [];
+	const index: SubstrateIndex = {
+		substrate_id: cfg?.substrate_id,
+		dir: substrateDir,
+		byRefname,
+		byOid,
+		items,
+	};
 	if (!fs.existsSync(substrateDir)) return index;
 
 	// Top-level block files — scan every array property for items with `id`.
@@ -1134,8 +1193,23 @@ export function buildIdIndexForDir(substrateDir: string, cfg: ConfigBlock | null
 					);
 				}
 
-				if (!index.has(idVal)) {
-					index.set(idVal, { block: blockName, arrayKey, item });
+				// `items` carries ONE entry per id-bearing item in scan order (the
+				// iteration surface). `byRefname` is first-writer-wins on refname
+				// collision (one entry per distinct refname) — exactly the prior
+				// single-Map semantics. The locator that lands in `items` is the
+				// same object reference stored under the maps when this is the first
+				// writer for its refname, so iteration and lookup share identity.
+				const loc: ItemLocation = { id: idVal, block: blockName, arrayKey, item };
+				items.push(loc);
+				if (!byRefname.has(idVal)) {
+					byRefname.set(idVal, loc);
+				}
+				// `byOid` — populated for items carrying a string `oid` (DORMANT this
+				// cycle: no F1 consumer reads it). First-writer-wins on oid collision,
+				// mirroring `byRefname`.
+				const oidVal = item.oid;
+				if (typeof oidVal === "string" && oidVal.length > 0 && !byOid.has(oidVal)) {
+					byOid.set(oidVal, loc);
 				}
 			}
 		}
@@ -1150,7 +1224,7 @@ export function buildIdIndexForDir(substrateDir: string, cfg: ConfigBlock | null
  * `buildIdIndex` once and reuse the returned map.
  */
 export function resolveItemById(cwd: string, id: string): ItemLocation | null {
-	return buildIdIndex(cwd).get(id) ?? null;
+	return buildIdIndex(cwd).byRefname.get(id) ?? null;
 }
 
 /**
@@ -1190,7 +1264,7 @@ export function resolveItemsByIds(cwd: string, ids: string[]): Map<string, ItemL
 	const index = buildIdIndex(cwd);
 	for (const id of ids) {
 		if (out.has(id)) continue; // duplicate input — Map dedup semantics
-		out.set(id, index.get(id) ?? null);
+		out.set(id, index.byRefname.get(id) ?? null);
 	}
 	return out;
 }
@@ -1257,8 +1331,8 @@ export function resolveRelationSelector(cwd: string, selector: string): EdgeEndp
 			let oid = refname;
 			if (dir !== null) {
 				const abs = path.isAbsolute(dir) ? dir : path.resolve(cwd, dir);
-				const foreignIndex = buildIdIndexForDir(abs, loadConfigForDirBestEffort(abs));
-				const loc = foreignIndex.get(refname);
+				const foreignIndex = buildIdIndexForDir(abs, abs, loadConfigForDirBestEffort(abs));
+				const loc = foreignIndex.byRefname.get(refname);
 				if (loc && typeof loc.item.oid === "string") oid = loc.item.oid;
 			}
 			return { kind: "item", substrate_id, oid, refname };
@@ -1273,7 +1347,7 @@ export function resolveRelationSelector(cwd: string, selector: string): EdgeEndp
 	// Bare refname → same-substrate item. oid from the active index; falls back
 	// to the refname itself when the item is not yet filed.
 	const index = buildIdIndex(cwd);
-	const loc = index.get(selector);
+	const loc = index.byRefname.get(selector);
 	const oid = loc && typeof loc.item.oid === "string" ? loc.item.oid : selector;
 	return { kind: "item", oid, refname: selector };
 }
@@ -1370,7 +1444,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 	// Note: buildIdIndex enforces the prefix-vs-block invariant and may throw
 	// on corrupted state; that surfaces as a hard failure to validateContext
 	// callers (intended — corrupted IDs are not recoverable cross-ref issues).
-	const idIndex = buildIdIndex(cwd);
+	const index = buildIdIndex(cwd);
 
 	// ── Edge integrity (DEC-0013 closure-table reference surface) ─────────────
 	// Load config + relations; both absent in a pre-bootstrap project, in which
@@ -1438,7 +1512,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 			// registry consultation here (Constraint 1/3).
 			const parentKey = endpointKey(edge.parent);
 			const childKey = endpointKey(edge.child);
-			if (!idIndex.has(parentKey)) {
+			if (!index.byRefname.has(parentKey)) {
 				issues.push({
 					severity: "error",
 					message: `Edge parent '${parentKey}' (relation_type '${edge.relation_type}') does not resolve to any item`,
@@ -1446,7 +1520,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 					field: `${parentKey}->${childKey}`,
 				});
 			}
-			if (!idIndex.has(childKey)) {
+			if (!index.byRefname.has(childKey)) {
 				issues.push({
 					severity: "error",
 					message: `Edge child '${childKey}' (relation_type '${edge.relation_type}') does not resolve to any item`,
@@ -1480,8 +1554,8 @@ export function validateContext(cwd: string): ContextValidationResult {
 			if (!rt.source_kinds && !rt.target_kinds) continue; // metadata absent → unchecked
 			const parentKey = endpointKey(edge.parent);
 			const childKey = endpointKey(edge.child);
-			const parentLoc = idIndex.get(parentKey);
-			const childLoc = idIndex.get(childKey);
+			const parentLoc = index.byRefname.get(parentKey);
+			const childLoc = index.byRefname.get(childKey);
 			if (
 				parentLoc &&
 				rt.source_kinds &&
@@ -1510,8 +1584,8 @@ export function validateContext(cwd: string): ContextValidationResult {
 		// resolution above is the authoritative reference-integrity surface, so
 		// merging validateRelations' resolution codes too would double-report).
 		const itemsByBlock: Record<string, ItemRecord[]> = {};
-		for (const [id, loc] of idIndex) {
-			(itemsByBlock[loc.block] ??= []).push({ id, ...loc.item });
+		for (const loc of index.byRefname.values()) {
+			(itemsByBlock[loc.block] ??= []).push({ id: loc.id, ...loc.item });
 		}
 		try {
 			const relResult = validateRelations(config, relations, itemsByBlock);
@@ -1544,7 +1618,8 @@ export function validateContext(cwd: string): ContextValidationResult {
 				if (!relTypeSet.has(edge.relation_type)) continue;
 				satisfied.add(inv.direction === "as_parent" ? endpointKey(edge.parent) : endpointKey(edge.child));
 			}
-			for (const [id, loc] of idIndex) {
+			for (const loc of index.byRefname.values()) {
+				const id = loc.id;
 				if (loc.block !== inv.block) continue;
 				if (!matchesWhere(loc.item, inv.where)) continue;
 				if (satisfied.has(id)) continue;
@@ -1574,7 +1649,8 @@ export function validateContext(cwd: string): ContextValidationResult {
 		for (const inv of config.invariants ?? []) {
 			if (inv.class !== "status-consistency") continue;
 			const relSet = new Set(inv.relation_types);
-			for (const [id, loc] of idIndex) {
+			for (const loc of index.byRefname.values()) {
+				const id = loc.id;
 				if (loc.block !== inv.block) continue;
 				if (inv.when_bucket && bucketOf(loc.item) !== inv.when_bucket) continue;
 				for (const edge of relations) {
@@ -1582,7 +1658,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 					const selfIsParent = inv.direction === "as_parent";
 					if ((selfIsParent ? endpointKey(edge.parent) : endpointKey(edge.child)) !== id) continue;
 					const otherId = selfIsParent ? endpointKey(edge.child) : endpointKey(edge.parent);
-					const otherLoc = idIndex.get(otherId);
+					const otherLoc = index.byRefname.get(otherId);
 					if (!otherLoc) continue; // dangling endpoint handled by edge-integrity above
 					const otherBucket = bucketOf(otherLoc.item);
 					const violateRequire = inv.require_target_bucket !== undefined && otherBucket !== inv.require_target_bucket;
@@ -1611,7 +1687,8 @@ export function validateContext(cwd: string): ContextValidationResult {
 	// key (recognized) and is NOT flagged; only a value with NO key is. Warning-only.
 	{
 		const statusVocab = resolveStatusVocabulary(cwd);
-		for (const [sid, sloc] of idIndex) {
+		for (const sloc of index.byRefname.values()) {
+			const sid = sloc.id;
 			const sval = sloc.item.status;
 			if (sval === undefined || sval === null) continue;
 			if (!(String(sval) in statusVocab)) {

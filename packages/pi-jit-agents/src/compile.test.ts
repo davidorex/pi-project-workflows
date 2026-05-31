@@ -476,13 +476,16 @@ describe("compileAgent", () => {
 		// supplied index (rather than rebuilding internally) we will see the
 		// sentinel payload in the rendered output. If it ignores the supplied
 		// index and rebuilds, we will see the real payload.
+		// F1 (Cycle 7): buildIdIndex returns a SubstrateIndex; the supplied-cache
+		// param (ctx.idIndex) is the refname-keyed Map, so seed from `.byRefname`.
 		const realIndex = buildIdIndex(cwd);
 		const sentinelLoc: ItemLocation = {
+			id: "DEC-0001",
 			block: "decisions",
 			arrayKey: "decisions",
 			item: { id: "DEC-0001", body: "SENTINEL-FROM-PROVIDED-INDEX" },
 		};
-		const sharedIndex = new Map(realIndex);
+		const sharedIndex = new Map(realIndex.byRefname);
 		sharedIndex.set("DEC-0001", sentinelLoc);
 
 		const spec = writeAndParseAgent(cwd, "idx-reuse", "Out: {{ _decisions_item }}", [

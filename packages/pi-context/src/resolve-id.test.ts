@@ -288,27 +288,33 @@ describe("buildIdIndex — prefix-vs-block invariant", () => {
 });
 
 describe("buildIdIndex — return shape and reuse", () => {
-	it("returns a Map yielding consistent results across multiple lookups", (t) => {
+	it("returns a SubstrateIndex whose byRefname lookups are consistent across calls", (t) => {
 		const tmpDir = makeTmpDir("map-reuse");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		seedFullFixture(tmpDir);
 
+		// F1 (Cycle 7): buildIdIndex returns a SubstrateIndex { substrate_id?, dir,
+		// byRefname, byOid, items }; point lookups read `.byRefname`.
 		const idx = buildIdIndex(tmpDir);
-		assert.ok(idx instanceof Map, "buildIdIndex must return a Map");
+		assert.ok(idx.byRefname instanceof Map, "buildIdIndex must expose a byRefname Map");
+		assert.ok(idx.byOid instanceof Map, "buildIdIndex must expose a byOid Map");
+		assert.ok(Array.isArray(idx.items), "buildIdIndex must expose an items array");
+		assert.strictEqual(idx.dir, path.join(tmpDir, ".project"), "dir is the scanned substrate dir");
 
-		const a1 = idx.get("DEC-0001");
-		const a2 = idx.get("DEC-0001");
-		const b1 = idx.get("FEAT-001");
-		const b2 = idx.get("FEAT-001");
+		const a1 = idx.byRefname.get("DEC-0001");
+		const a2 = idx.byRefname.get("DEC-0001");
+		const b1 = idx.byRefname.get("FEAT-001");
+		const b2 = idx.byRefname.get("FEAT-001");
 
 		assert.ok(a1, "first DEC-0001 lookup");
 		assert.strictEqual(a1, a2, "repeated lookup of the same ID returns the same ItemLocation reference");
 		assert.ok(b1, "first FEAT-001 lookup");
 		assert.strictEqual(b1, b2, "repeated lookup of FEAT-001 returns the same ItemLocation reference");
 
-		// And the ItemLocation surface really is { block, arrayKey, item }.
+		// And the ItemLocation surface really is { id, block, arrayKey, item }.
 		const probe: ItemLocation = a1 as ItemLocation;
+		assert.strictEqual(probe.id, "DEC-0001", "ItemLocation.id equals the refname");
 		assert.strictEqual(typeof probe.block, "string");
 		assert.strictEqual(typeof probe.arrayKey, "string");
 		assert.strictEqual(typeof probe.item, "object");

@@ -3080,12 +3080,16 @@ describe("context-sdk pointer-less degradation (tryResolveContextDir class fix)"
 		assert.deepEqual(blockStructure(tmp), []);
 	});
 
-	it("buildIdIndex returns an empty Map when no pointer exists", (t) => {
+	it("buildIdIndex returns an empty SubstrateIndex when no pointer exists", (t) => {
 		const tmp = makePointerlessDir("buildidindex");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		const index = buildIdIndex(tmp);
-		assert.ok(index instanceof Map);
-		assert.strictEqual(index.size, 0);
+		// F1 (Cycle 7): empty SubstrateIndex — empty lookup maps + empty items.
+		assert.ok(index.byRefname instanceof Map);
+		assert.strictEqual(index.byRefname.size, 0);
+		assert.ok(index.byOid instanceof Map);
+		assert.strictEqual(index.byOid.size, 0);
+		assert.deepEqual(index.items, []);
 	});
 
 	it("contextState does not throw and reports blocks===0 while git fields remain populated", (t) => {

@@ -105,9 +105,9 @@ export function renameCanonicalId(
 
 	if (kind === "item") {
 		const idx = buildIdIndex(cwd);
-		const loc = idx.get(oldId);
+		const loc = idx.byRefname.get(oldId);
 		if (!loc) throw new Error(`renameCanonicalId: item '${oldId}' not found`);
-		if (idx.has(newId)) throw new Error(`renameCanonicalId: collision — item '${newId}' already exists`);
+		if (idx.byRefname.has(newId)) throw new Error(`renameCanonicalId: collision — item '${newId}' already exists`);
 
 		// Home block id field.
 		if (!dryRun) {

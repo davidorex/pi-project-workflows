@@ -237,7 +237,12 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	const getIdIndex = (): Map<string, ItemLocation> => {
 		if (!cachedIdIndex) {
 			try {
-				cachedIdIndex = buildIdIndex(ctx.cwd);
+				// F1 (Cycle 7): buildIdIndex now returns a SubstrateIndex; the
+				// composition globals (`resolve`/`render_recursive`) read this as a
+				// refname-keyed Map, so extract `.byRefname` (the lookup surface).
+				// The supplied-cache path (`ctx.idIndex`) is already a refname-keyed
+				// Map, so both branches yield the same shape.
+				cachedIdIndex = buildIdIndex(ctx.cwd).byRefname;
 			} catch (err) {
 				if (err instanceof Error && err.name === "BootstrapNotFoundError") {
 					// Substrate absent — return empty index. Downstream resolution

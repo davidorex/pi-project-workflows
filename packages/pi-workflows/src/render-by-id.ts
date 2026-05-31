@@ -70,7 +70,11 @@ import {
  * the rendered string for parity with `render_recursive`.
  */
 export function renderItemById(cwd: string, id: string, depth: number = 0): string {
-	const idIndex = buildIdIndex(cwd);
+	// F1 (Cycle 7): buildIdIndex now returns a SubstrateIndex; take its
+	// refname-keyed lookup map (`.byRefname`) — the surface both the point lookup
+	// below and the `getIdIndex` composition-global closure (which contracts a
+	// refname-keyed Map) consume.
+	const idIndex = buildIdIndex(cwd).byRefname;
 	const loc = idIndex.get(id);
 	if (!loc) {
 		return notFoundMarker(id);

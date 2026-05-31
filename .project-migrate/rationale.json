@@ -1,0 +1,44 @@
+{
+  "rationales": [
+    {
+      "id": "RAT-001",
+      "title": "Subprocess dispatch via pi --mode json",
+      "narrative": "Each workflow step runs as a subprocess (pi --mode json) rather than executing agent logic in-process. The main conversation is the control plane; step agents are subordinate with independent context windows. This aims to achieve context window isolation between steps -- each agent gets a clean window without accumulated noise from prior steps. A step crash or timeout does not corrupt the parent session's state. The tradeoff is subprocess startup latency and the inability to share in-process state between steps; all inter-step data flows through the filesystem (JSON outputs) and expression resolution. Documented in CLAUDE.md, README, and workflow-extension.md. Confidence: HIGH."
+    },
+    {
+      "id": "RAT-002",
+      "title": "Fatal block validation on artifact writes",
+      "narrative": "When a workflow step produces a .project/*.json artifact and that artifact fails schema validation, the workflow fails. Non-block artifacts remain non-fatal (warning only). The block system is the authoritative data store for project state; if an agent writes invalid data to a project block, that corruption would propagate to every downstream consumer. Making block validation fatal aims to prevent silent data corruption. The retry mechanism (rollback invalid data, re-dispatch with validation errors in the prompt) gives the agent a chance to self-correct before failing the workflow. Commit 19eb683 explicitly states this aligns with 'every other block write in the system being fatal (tools, step retry block validation).' Confidence: HIGH."
+    },
+    {
+      "id": "RAT-003",
+      "title": "Nunjucks templates for agent prompt composition",
+      "narrative": "Agent prompts are compiled at dispatch time from YAML specs + Nunjucks templates + resolved input data. The rendered markdown exists only transiently (temp file passed to pi --append-system-prompt, then deleted). Nunjucks was chosen over string interpolation to support structured prompt authoring with conditionals ({% if %}), loops ({% for %}), template inheritance ({% extends %}), and filters. These constructs enable agent prompts that adapt to input shape. Three-tier resolution (project > user > builtin) enables user customization without forking package code. The tradeoff is that Nunjucks silently renders undefined variables as empty strings, which motivated the template-validation.ts module (commit c40f432). The specific choice of Nunjucks over other template engines (Handlebars, EJS) is not documented; it may have been an initial implementation decision. Confidence: MEDIUM (architecture documented; engine choice inferred)."
+    },
+    {
+      "id": "RAT-004",
+      "title": "Typed WorkflowContext/WorkflowPI interfaces instead of ExtensionContext",
+      "narrative": "The workflow internals use narrow WorkflowContext and WorkflowPI interfaces (6 methods total) rather than importing ExtensionContext directly from the pi SDK. Introduced in commit fffc833 to address a conformance audit finding (ctx: any / pi: any parameters). The narrow interfaces create an insulation layer: when the pi SDK evolves (which it does frequently -- see RAT-008), only the adapter at the entry point needs updating, not every step executor. The tradeoff is a cast at the monitor step call site where invokeMonitor() requires the full ExtensionContext type. Confidence: HIGH (conformance audit motivated, explicitly documented in commit)."
+    },
+    {
+      "id": "RAT-005",
+      "title": "Lockstep versioning across all packages",
+      "narrative": "All four packages share a single version number, bumped simultaneously by scripts/bump-versions.js. Introduced in commit 03ef5a6. The packages have tight cross-package dependencies (pi-workflows imports from pi-project, the meta-package re-exports all three). Lockstep versioning aims to eliminate compatibility matrix complexity -- any combination of packages at the same version is guaranteed compatible. The custom bump-versions.js script exists because npm version -ws runs peer dep resolution between bumping versions and syncing cross-references, which fails in the 0.x semver range where ^0.2.0 does not satisfy 0.3.0 (commit 153cb3b). Confidence: HIGH."
+    },
+    {
+      "id": "RAT-006",
+      "title": "Template-input alignment validation in SDK validator",
+      "narrative": "The validateWorkflow() SDK function includes a template-input alignment phase (commit c40f432) that traces: workflow step inputs -> source schemas -> Nunjucks template field references. Nunjucks silently renders undefined variables as empty strings. When a template references {{ spec.intent }} but the source schema defines the field as 'description', the agent receives an empty string with no error. The validator catches these mismatches at validation time rather than at runtime. Motivated by a template-schema audit that found 9 mismatches across 18 templates -- a ~50% defect rate invisible without this validation. Severity model: unguarded = error, guarded with {% if %} = warning. Confidence: HIGH."
+    },
+    {
+      "id": "RAT-007",
+      "title": "Release script stripped of publish/push steps",
+      "narrative": "The release script (scripts/release.mjs) ends at commit + tag. It does not attempt npm publish or git push (commit 1112496). The original script included both as automated steps, but both require human authentication (npm OTP, SSH credentials). When publish failed mid-script, exit code 1 masked the fact that commit and tag had already succeeded, creating ambiguous state. Separating deterministic steps (version bump, changelog, commit, tag) from authentication-gated steps (publish, push) aims to make each release attempt either fully succeed through the deterministic phase or fail cleanly before any side effects. Confidence: HIGH."
+    },
+    {
+      "id": "RAT-008",
+      "title": "Peer dependency freshness gate",
+      "narrative": "The check-peer-freshness.js script (commit 4299f80) compares locally installed @mariozechner/pi-coding-agent against the globally installed version. TypeScript compiles against local node_modules types, but at runtime pi loads extensions using its own (globally installed) SDK version. If the local peer dep is stale, API changes compile clean but fail at runtime. Motivated by a specific incident: 5 minor versions of drift (0.58.3 -> 0.63.1) hiding a breaking ModelRegistry API change (getApiKey -> getApiKeyAndHeaders, commit 9c2024d). The gate reads the global npm root directly instead of running pi --version because the latter triggers extension auto-updates with ~20s latency. Confidence: HIGH."
+    }
+  ]
+}

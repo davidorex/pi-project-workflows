@@ -1,0 +1,780 @@
+{
+  "features": [
+    {
+      "id": "FEAT-001",
+      "title": "pi-jit-agents consumer migration arc",
+      "status": "proposed",
+      "layer": "L3",
+      "description": "Migrate pi-workflows and pi-behavior-monitors to import agent infrastructure from @davidorex/pi-jit-agents. Resolve the provider-pin, thinking-seam, and cross-consumer duplication at the correct boundary (pi-jit-agents executeAgent). Close the cluster of open issues that are blocked on this migration: 043 (duplicate agent infrastructure), 045 (framework-level anti-injection), 048 (agent discovery contradiction), 049 (step-loop cwd bug), 050 (monitor classify wiring).",
+      "motivation": "The platonic first enactment of pi-jit-agents landed in commit 239f718 but consumers still carry their own copies of agent infrastructure. This duplication is load-bearing: the model-pin that breaks monitors under OpenRouter-only auth lives inside a consumer copy of parseModelSpec, not at the framework boundary. Fixing it in the consumer creates throwaway work since the code is about to move. Fixing it at the correct boundary (executeAgent in pi-jit-agents) resolves the pin and the duplication in one arc. The arc is also the operational-pattern test case for the Muni five-layer model enacted against PLAN-001 — how it plays out here informs what pi-project must eventually generate natively per the framework gaps in FGAP-001 through FGAP-006.",
+      "acceptance_criteria": [
+        "DEC-0001, DEC-0002, DEC-0003 all advance to decided state via user-authored transitions",
+        "parseModelSpec lives in pi-jit-agents at the execute boundary; pi-behavior-monitors' copy is removed",
+        "executeAgent enforces the thinking-seam policy per DEC-0002 with explicit warning",
+        "pi-behavior-monitors' classifyViaAgent delegates to pi-jit-agents executeAgent, carrying no duplicate agent-spec or template code",
+        "pi-workflows' agent-step dispatch delegates to pi-jit-agents executeAgent, removing step-shared.ts and local agent-spec/template helpers",
+        "All five bundled classifier YAMLs in pi-behavior-monitors/agents/ align with the decided DEC-0001 and DEC-0002 policies",
+        "Issues 043, 045, 048, 049, 050 close or migrate to scope-owned registries",
+        "Empirical verification: hedge monitor runs successfully against an OpenRouter-routed Claude model",
+        "Empirical verification: hedge monitor runs successfully against at least one Kimi model (via openrouter or via kimi-coding direct)",
+        "All tests in npm test remain at 0 failures",
+        "CI passes on Node 22/23"
+      ],
+      "dependencies": [
+        "PLAN-001",
+        "REVIEW-001",
+        "DEC-0001",
+        "DEC-0002",
+        "DEC-0003"
+      ],
+      "gates": [
+        "REVIEW-001",
+        "DEC-0001",
+        "DEC-0002",
+        "DEC-0003"
+      ],
+      "blocks_resolved": [
+        "issue-043",
+        "issue-045",
+        "issue-048",
+        "issue-049",
+        "issue-050"
+      ],
+      "decisions": [
+        "DEC-0001",
+        "DEC-0002",
+        "DEC-0003"
+      ],
+      "stories": [
+        {
+          "id": "STORY-001",
+          "title": "Resolve model-pin policy and apply at pi-jit-agents",
+          "status": "proposed",
+          "description": "Apply the DEC-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary. Remove the anthropic-default pin from the current parseModelSpec implementation in pi-behavior-monitors.",
+          "acceptance_criteria": [
+            "A bare model id in an agent spec resolves against the current session's provider via ExtensionContext lookup, not a hardcoded default",
+            "If ExtensionContext cannot supply currentModel, dispatch errors with a clear message naming the missing binding",
+            "Fully-qualified provider/model specs continue to pin explicitly",
+            "Unit tests cover: bare-id + session-with-model, bare-id + session-without-model (error), fully-qualified-id (pinned)"
+          ],
+          "depends_on": [],
+          "gates": [
+            "DEC-0001"
+          ],
+          "tasks": [
+            {
+              "id": "TASK-001-01",
+              "title": "Verify ExtensionContext exposes currentModel",
+              "status": "done",
+              "description": "Inspect pi-agent-core's ExtensionContext type to confirm whether currentModel (or equivalent) is available to extensions at dispatch time. If not, the task widens into a prerequisite against pi-agent-core — escalate to user for scope decision.\n\n## TASK-001-01 completion finding (2026-05-03)\n\n**ExtensionContext.model** is confirmed at `node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts:219`:\n\n```typescript\nmodel: Model<any> | undefined;\n```\n\n`Model<TApi>` at `node_modules/@mariozechner/pi-ai/dist/types.d.ts:378` exposes:\n\n```typescript\nid: string;       // e.g. \"anthropic/claude-sonnet-4-6\"\nprovider: Provider;  // Provider = KnownProvider | string — \"openrouter\", \"anthropic\", etc.\napi: TApi;        // \"anthropic-messages\" | \"openai-completions\" | ...\n```\n\n**Resolution**: DEC-0001's chosen option is implementable today. Bare `model:` ids (no `/`) can resolve `provider` from `ctx.model.provider` and `modelId` from the spec string. Fully-qualified specs (`openrouter/anthropic/claude-sonnet-4-6`) are unaffected — `parseModelSpec` splits on `/` as before.\n\n**Caveat**: `ctx.model` is typed `Model<any> | undefined`. The `| undefined` means the dispatch path must handle the case where no session model is active. Whether `ctx.model` is populated at classify time (monitor `agent_end` / `tool_call` events) is not type-enforceable — it's an empirical question. The type contract says it *should* be populated during any agent turn, but the code path that sets it is internal to pi-core. The dispatch must produce a clear error (\"Cannot resolve bare model id 'X': no session model context available\"), not a silent fallback to `anthropic`.",
+              "files": [
+                "node_modules/@mariozechner/pi-coding-agent/dist/types.d.ts"
+              ],
+              "acceptance": "Written confirmation in the task record of what ExtensionContext currently exposes and whether DEC-0001's chosen option is implementable today or depends on upstream changes"
+            },
+            {
+              "id": "TASK-001-02",
+              "title": "Implement bare-id resolution in pi-jit-agents",
+              "status": "todo",
+              "description": "Add model-resolution logic at executeAgent. Bare ids trigger ExtensionContext lookup; fully-qualified specs pin.",
+              "files": [
+                "packages/pi-jit-agents/src/jit-runtime.ts",
+                "packages/pi-jit-agents/src/types.ts"
+              ],
+              "acceptance": "executeAgent resolves bare ids via ExtensionContext, surfaces clear error on missing binding, preserves fully-qualified semantics"
+            },
+            {
+              "id": "TASK-001-03",
+              "title": "Unit tests for model resolution",
+              "status": "todo",
+              "files": [
+                "packages/pi-jit-agents/test/model-resolution.test.ts"
+              ],
+              "acceptance": "Three-way coverage (bare + session, bare + no session, fully-qualified) all passing"
+            }
+          ]
+        },
+        {
+          "id": "STORY-002",
+          "title": "Apply thinking-seam enforcement in pi-jit-agents",
+          "status": "proposed",
+          "description": "Apply the DEC-0002 decision: executeAgent enforces thinking=off when forced toolChoice is present, emits a warning naming the agent and the incompatibility.",
+          "acceptance_criteria": [
+            "executeAgent inspects dispatch options for forced toolChoice",
+            "When forced toolChoice is present and compiled spec declares thinking: on, thinking is disabled and a warning is emitted via a structured diagnostic channel",
+            "Non-forced dispatches continue to honor the spec's thinking field",
+            "Unit test covers: forced-toolChoice + thinking:on (warning + thinking off), forced-toolChoice + thinking:off (no warning), free-form + thinking:on (thinking forwarded)"
+          ],
+          "depends_on": [
+            "STORY-001"
+          ],
+          "gates": [
+            "DEC-0002"
+          ],
+          "tasks": [
+            {
+              "id": "TASK-002-01",
+              "title": "Add pre-dispatch check in executeAgent",
+              "status": "todo",
+              "files": [
+                "packages/pi-jit-agents/src/jit-runtime.ts"
+              ],
+              "acceptance": "Pre-dispatch branch inspects toolChoice and compiled spec's thinking field; when incompatible, disables thinking and emits warning"
+            },
+            {
+              "id": "TASK-002-02",
+              "title": "Define structured diagnostic channel",
+              "status": "todo",
+              "description": "Decide whether warnings emit via logger, alongside JitAgentResult, or both. Must be consumable by both pi-workflows (workflow steps) and pi-behavior-monitors (classify calls).",
+              "files": [
+                "packages/pi-jit-agents/src/types.ts"
+              ],
+              "acceptance": "JitAgentResult gains a diagnostics field or equivalent; both consumers can read it"
+            },
+            {
+              "id": "TASK-002-03",
+              "title": "Unit tests for thinking-seam enforcement",
+              "status": "todo",
+              "files": [
+                "packages/pi-jit-agents/test/thinking-seam.test.ts"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "STORY-003",
+          "title": "Move parseModelSpec to pi-jit-agents",
+          "status": "proposed",
+          "description": "Execute the DEC-0003 decision: move parseModelSpec (or its renamed successor) from pi-behavior-monitors/index.ts into pi-jit-agents at the execute boundary. Remove the duplicate from the consumer. Update the classifyViaAgent call site to use the new location.",
+          "acceptance_criteria": [
+            "parseModelSpec exported from pi-jit-agents at a named subpath (e.g. @davidorex/pi-jit-agents/runtime)",
+            "packages/pi-behavior-monitors/index.ts:1091-1097 removed",
+            "classifyViaAgent imports and uses the pi-jit-agents version",
+            "No anthropic-default fallback anywhere in the codebase for bare model ids",
+            "Unit tests from STORY-001 continue to pass"
+          ],
+          "depends_on": [
+            "STORY-001"
+          ],
+          "gates": [
+            "DEC-0003"
+          ],
+          "tasks": [
+            {
+              "id": "TASK-003-01",
+              "title": "Export parseModelSpec from pi-jit-agents",
+              "status": "todo",
+              "files": [
+                "packages/pi-jit-agents/src/jit-runtime.ts",
+                "packages/pi-jit-agents/src/index.ts",
+                "packages/pi-jit-agents/package.json"
+              ],
+              "acceptance": "Function available at a named subpath; visible in pi-jit-agents' exports"
+            },
+            {
+              "id": "TASK-003-02",
+              "title": "Remove duplicate from pi-behavior-monitors",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/index.ts"
+              ],
+              "acceptance": "Lines 1091-1097 removed; classifyViaAgent imports from pi-jit-agents"
+            },
+            {
+              "id": "TASK-003-03",
+              "title": "Audit pi-workflows for equivalent parsing",
+              "status": "todo",
+              "description": "Search pi-workflows/src for any model-id parsing or provider-selection logic. If found, consolidate into pi-jit-agents too.",
+              "files": [
+                "packages/pi-workflows/src/"
+              ],
+              "acceptance": "Written audit note in this task record; any duplicates consolidated or explicitly flagged as out-of-scope with justification"
+            }
+          ]
+        },
+        {
+          "id": "STORY-004",
+          "title": "Migrate pi-workflows agent infrastructure to pi-jit-agents",
+          "status": "proposed",
+          "description": "Replace pi-workflows' local copies of agent-spec.ts, template.ts, and step-shared.ts agent helpers with imports from pi-jit-agents. Consumer call sites (step-agent.ts, dispatch.ts) delegate to executeAgent.",
+          "acceptance_criteria": [
+            "packages/pi-workflows/src/agent-spec.ts either removed or reduced to a re-export from pi-jit-agents",
+            "packages/pi-workflows/src/template.ts equivalently reduced",
+            "packages/pi-workflows/src/step-shared.ts' agent-helper portions migrated; any non-agent helpers remain",
+            "Workflow agent steps execute end-to-end through pi-jit-agents executeAgent",
+            "Existing tsx --test suite for pi-workflows passes",
+            "No circular dependency introduced between pi-workflows and pi-jit-agents"
+          ],
+          "depends_on": [
+            "STORY-003"
+          ],
+          "gates": [],
+          "tasks": [
+            {
+              "id": "TASK-004-01",
+              "title": "Map pi-workflows agent-infrastructure surface to pi-jit-agents equivalents",
+              "status": "todo",
+              "acceptance": "Written mapping in this task of every symbol in pi-workflows/src/agent-spec.ts, template.ts, step-shared.ts to its pi-jit-agents target; any unmappable symbols flagged for separate handling"
+            },
+            {
+              "id": "TASK-004-02",
+              "title": "Migrate call sites in pi-workflows step executors",
+              "status": "todo",
+              "files": [
+                "packages/pi-workflows/src/step-agent.ts",
+                "packages/pi-workflows/src/dispatch.ts"
+              ]
+            },
+            {
+              "id": "TASK-004-03",
+              "title": "Remove migrated helpers from pi-workflows",
+              "status": "todo",
+              "files": [
+                "packages/pi-workflows/src/agent-spec.ts",
+                "packages/pi-workflows/src/template.ts",
+                "packages/pi-workflows/src/step-shared.ts"
+              ]
+            },
+            {
+              "id": "TASK-004-04",
+              "title": "Update pi-workflows package.json dependencies",
+              "status": "todo",
+              "files": [
+                "packages/pi-workflows/package.json"
+              ],
+              "acceptance": "@davidorex/pi-jit-agents listed as a direct dependency with concrete caret range"
+            },
+            {
+              "id": "TASK-004-05",
+              "title": "Run pi-workflows test suite",
+              "status": "todo",
+              "acceptance": "npm test passes for pi-workflows at 0 failures"
+            }
+          ]
+        },
+        {
+          "id": "STORY-005",
+          "title": "Migrate pi-behavior-monitors classifyViaAgent to pi-jit-agents",
+          "status": "proposed",
+          "description": "Rewrite classifyViaAgent to delegate fully to pi-jit-agents executeAgent. Remove local imports of pi-workflows agent helpers (issue-043 duplication) and local agent-spec/template code that pi-jit-agents now owns.",
+          "acceptance_criteria": [
+            "classifyViaAgent contains no agent-spec parsing, no template rendering, no parseModelSpec — only collector wiring, template-context assembly, and a call to pi-jit-agents executeAgent",
+            "pi-behavior-monitors no longer imports anything from pi-workflows",
+            "pi-behavior-monitors package.json lists @davidorex/pi-jit-agents as a direct dependency, not pi-workflows",
+            "Existing vitest suite for pi-behavior-monitors passes"
+          ],
+          "depends_on": [
+            "STORY-003"
+          ],
+          "gates": [],
+          "tasks": [
+            {
+              "id": "TASK-005-01",
+              "title": "Rewrite classifyViaAgent against executeAgent",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/index.ts"
+              ]
+            },
+            {
+              "id": "TASK-005-02",
+              "title": "Remove pi-workflows dependency",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/package.json",
+                "packages/pi-behavior-monitors/index.ts"
+              ]
+            },
+            {
+              "id": "TASK-005-03",
+              "title": "Add pi-jit-agents dependency",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/package.json"
+              ]
+            },
+            {
+              "id": "TASK-005-04",
+              "title": "Run pi-behavior-monitors test suite",
+              "status": "todo",
+              "acceptance": "npx vitest run passes for pi-behavior-monitors at 0 failures"
+            }
+          ]
+        },
+        {
+          "id": "STORY-006",
+          "title": "Align bundled classifier YAMLs with decided policies",
+          "status": "proposed",
+          "description": "Update all five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) to conform to the DEC-0001 model-field semantics and DEC-0002 thinking-seam policy.",
+          "acceptance_criteria": [
+            "Every bundled classifier YAML's model field is consistent with DEC-0001 — either a bare id that resolves via ExtensionContext, or a fully-qualified provider/model, depending on the final decision",
+            "Every bundled classifier YAML's thinking field is set to off (or removed if the default is off) per DEC-0002",
+            "No YAML contains dead config that the classify path silently ignores"
+          ],
+          "depends_on": [
+            "STORY-001",
+            "STORY-002"
+          ],
+          "gates": [
+            "DEC-0001",
+            "DEC-0002"
+          ],
+          "tasks": [
+            {
+              "id": "TASK-006-01",
+              "title": "Update hedge-classifier.agent.yaml",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml"
+              ]
+            },
+            {
+              "id": "TASK-006-02",
+              "title": "Update commit-hygiene-classifier.agent.yaml",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/agents/commit-hygiene-classifier.agent.yaml"
+              ]
+            },
+            {
+              "id": "TASK-006-03",
+              "title": "Update fragility-classifier.agent.yaml",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/agents/fragility-classifier.agent.yaml"
+              ]
+            },
+            {
+              "id": "TASK-006-04",
+              "title": "Update work-quality-classifier.agent.yaml",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/agents/work-quality-classifier.agent.yaml"
+              ]
+            },
+            {
+              "id": "TASK-006-05",
+              "title": "Update unauthorized-action-classifier.agent.yaml",
+              "status": "todo",
+              "files": [
+                "packages/pi-behavior-monitors/agents/unauthorized-action-classifier.agent.yaml"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "STORY-007",
+          "title": "Remove duplicate schema copies per issue-043",
+          "status": "proposed",
+          "description": "Consolidate duplicate copies of verdict.schema.json and any other schema fragments that pi-workflows, pi-behavior-monitors, and pi-jit-agents currently carry independently. Canonical owner is pi-jit-agents; consumers import.",
+          "acceptance_criteria": [
+            "verdict.schema.json exists only in pi-jit-agents",
+            "Any other schema fragments duplicated across consumers are consolidated to their correct owner package",
+            "Consumers import schemas via the owner package's subpath exports",
+            "Issue 043 closes"
+          ],
+          "depends_on": [
+            "STORY-004",
+            "STORY-005"
+          ],
+          "gates": [],
+          "tasks": [
+            {
+              "id": "TASK-007-01",
+              "title": "Identify duplicate schema copies",
+              "status": "todo",
+              "description": "Grep all packages/*/schemas and packages/*/src for *.schema.json files. Produce a duplicate inventory.",
+              "acceptance": "Written inventory listing every duplicate and its canonical owner"
+            },
+            {
+              "id": "TASK-007-02",
+              "title": "Remove duplicates",
+              "status": "todo"
+            },
+            {
+              "id": "TASK-007-03",
+              "title": "Update imports to use canonical owner",
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "STORY-008",
+          "title": "Empirical verification against OpenRouter and Kimi",
+          "status": "proposed",
+          "description": "Run the hedge monitor against an OpenRouter-routed Claude model (openrouter/anthropic/claude-sonnet-4.6) and against at least one Kimi model to verify that forced toolChoice works end-to-end through the openai-completions path. This is the §7/§9 caveat from analysis/openrouter-pi-mono-setup.md — plausibly works but not documented. If it fails, surface as a blocking finding for user decision.",
+          "acceptance_criteria": [
+            "hedge monitor classify returns a VERDICT_TOOL tool call from openrouter/anthropic/claude-sonnet-4.6",
+            "hedge monitor classify returns a VERDICT_TOOL tool call from at least one Kimi model (openrouter/moonshotai/Kimi-K2-Thinking or kimi-coding/kimi-k2-thinking)",
+            "If either verification fails, a new finding is created in spec-reviews.json or as a defect in this feature's findings array, and the arc pauses for user decision"
+          ],
+          "depends_on": [
+            "STORY-005",
+            "STORY-006"
+          ],
+          "gates": [],
+          "tasks": [
+            {
+              "id": "TASK-008-01",
+              "title": "Run hedge against openrouter/anthropic/claude-sonnet-4.6",
+              "status": "todo",
+              "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not"
+            },
+            {
+              "id": "TASK-008-02",
+              "title": "Run hedge against a Kimi model",
+              "status": "todo",
+              "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not"
+            },
+            {
+              "id": "TASK-008-03",
+              "title": "Document verification outcomes",
+              "status": "todo",
+              "description": "Write outcomes into this feature's findings array or into a new finding in REVIEW-001 if the outcome surfaces a spec-level disclarity"
+            }
+          ]
+        },
+        {
+          "id": "STORY-009",
+          "title": "Close or migrate resolved issues",
+          "status": "proposed",
+          "description": "Update or migrate issues 043, 045, 048, 049, 050 in issues.json to reflect their closure by this arc. Each issue either marks resolved with a reference to the relevant STORY/TASK, or migrates to a scope-owned finding registry per the PHASE-6 retroactive migration.",
+          "acceptance_criteria": [
+            "issues 043, 045, 048, 049, 050 each have status resolved (or have been migrated to a scope-owned registry with the same terminal state)",
+            "Each resolved issue has resolved_by pointing to the commit or feature that closed it"
+          ],
+          "depends_on": [
+            "STORY-007",
+            "STORY-008"
+          ],
+          "gates": [],
+          "tasks": [
+            {
+              "id": "TASK-009-01",
+              "title": "Close issue-043 (duplicate agent infrastructure)",
+              "status": "todo",
+              "files": [
+                ".project/issues.json"
+              ]
+            },
+            {
+              "id": "TASK-009-02",
+              "title": "Close issue-045 (framework-level anti-injection)",
+              "status": "todo",
+              "files": [
+                ".project/issues.json"
+              ]
+            },
+            {
+              "id": "TASK-009-03",
+              "title": "Close issue-048 (agent discovery contradiction)",
+              "status": "todo",
+              "files": [
+                ".project/issues.json"
+              ]
+            },
+            {
+              "id": "TASK-009-04",
+              "title": "Close issue-049 (step-loop cwd bug)",
+              "status": "todo",
+              "files": [
+                ".project/issues.json"
+              ]
+            },
+            {
+              "id": "TASK-009-05",
+              "title": "Close issue-050 (monitor classify wiring)",
+              "status": "todo",
+              "files": [
+                ".project/issues.json"
+              ]
+            }
+          ]
+        }
+      ],
+      "findings": [],
+      "created_by": "agent/claude-opus-4-6",
+      "created_at": "2026-04-15T00:00:00Z"
+    },
+    {
+      "id": "FEAT-002",
+      "title": "In-session jit-agent persona — reshape the main pi agent into one of our jit-agents via extension hooks (3rd dispatch modality)",
+      "status": "proposed",
+      "layer": "L2",
+      "description": "An extension makes the LIVE main interactive pi session ASSUME one of our compiled jit-agent specs WITHOUT forking pi: system prompt + injected contextBlocks via before_agent_start -> result.systemPrompt (runtime-honored end-to-end; our compiled.systemPrompt already carries the <context_block role=\"data\"> injection); tools/model/thinking via setActiveTools/setModel/setThinkingLevel from a registerCommand handler; a slash-command activation/exit seam that snapshots + restores prior session state. A 3rd dispatch modality alongside subprocess (pi --mode json, dispatch.ts) and in-process (executeAgent): strong where they are weak (live interactivity, zero spawn, context continuity), weak where they are strong (no typed-output GUARANTEE for the interactive loop — only a best-effort before_provider_request wire seam; F-012 forced-toolChoice inheritance). Output schema becomes prompt instruction, not contract, for the main agent.",
+      "motivation": "Completes the dispatch-modality space and lets the user own session seamlessly become a typed agent persona. Surfaced by the 0.74->0.75.4 SDK currency work; 0.75.x before_agent_start systemPrompt-replace + setActiveTools/setModel make it newly clean.",
+      "acceptance_criteria": [
+        "a slash command applies a jit-agent spec to the live session (systemPrompt + contextBlocks + tools + model + thinking) and a clean exit restores prior state",
+        "documented + accepted limit: no typed-output guarantee for the main agent (instruction-only); contract-bound output stays the subprocess/in-process paths"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-21T00:00:00Z"
+    },
+    {
+      "id": "FEAT-003",
+      "title": "Context plugin — portable, installable third-party context models",
+      "status": "proposed",
+      "layer": "L2",
+      "description": "Let users author a complete context model (config + schemas + starter blocks + relations + rendering macros) against the pi-context SDK, package it as a portable bundle, share it, and install it into any substrate to use immediately — the same way the package's own packaged conception (DEC-0037, samplesCatalog) works, generalized to any third-party conception. A 4th, DATA-ONLY artifact type distinct from Claude Code plugins / Pi extensions / behavior-monitor specs. Builds directly on B2/FGAP-068: samplesCatalog made the package conception queryable; this makes any conception portable + installable. Feasibility + reuse/gaps + the cross-package macro resolution + distribution channels: see R-0013 / analysis/2026-05-22-context-plugin-feasibility.md. Requires a new enacted decision for multi-source onboarding + external acquisition + provenance + conflict-resolution (DEC-0037/0038 are internal-samples-only).",
+      "motivation": "A crafted conception (great block_kinds/relations/schemas/macros) is currently locked inside the package's own samples/. Making it portable turns pi-context into an ecosystem: teams share OKR / research-loop / spec-loop / domain conceptions; onboarding draws from external catalogs, not just the built-in one. Directly extends the value of the config-driven framework (DEC-0015) + the packaged conception (DEC-0037).",
+      "acceptance_criteria": [
+        "installProject + samplesCatalog accept an external bundleSource (path / npm package / git checkout); install-source no longer hardcoded to import.meta.dirname",
+        "validateConception(bundleDir) gates install: manifest well-formed + bundled schemas meta-valid + invariants cite registered relation_types + relation_type source/target_kinds name real block_kinds — BEFORE any copy",
+        "a bundle's rendering macros install into project .pi/templates/items/ (found by the existing 3-tier search) with no pi-workflows refactor; manifest carries a macro/template field so delivery is registered + validatable",
+        "installed conceptions tracked with provenance (author/url/version/timestamp) + an update/migrate path; plugin schemas with custom $id register with AJV so $ref resolves",
+        "a distribution channel (npm primary, git secondary) + a curated conception-catalog.json discovery list; NOT MCP",
+        "a new DEC enacts multi-source onboarding + external acquisition + provenance + conflict-resolution (bundle redefining an existing kind)"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-22T00:00:00Z"
+    },
+    {
+      "id": "FEAT-004",
+      "title": "Agents-as-tools — dual-surface typed agent dispatch (Cluster E delegation)",
+      "status": "in-progress",
+      "layer": "L4",
+      "description": "Project pi-jit-agents' AgentContract (introspect's agentContract(spec): inputSchema -> tool parameters, output.schema -> return contract, contextBlocks -> substrate injection) into a callable agent-DISPATCH surface, dual-surfaced per DEC-0019/0020: a Pi tool (the harness-confined in-pi LLM per DEC-0014 delegates to a typed subagent) + an orchestrator CLI (Claude Code runs any .agent.yaml as a typed function). Today agents are WORKFLOW-STEP-ONLY — pi-workflows workflow-execute runs them, workflow-agents lists them, but there is no 'call agent X directly as a tool'. This is the net-new delegation surface: effectively Cluster E of the in-pi tool-surface-completeness program (after A write / B read / C onboarding / D validator) and the capstone of DEC-0014 — the in-pi LLM gains delegate-to-typed-subagent, not just read/write/query. The introspect bridge (agentContract) already exists. Sits on a stable pi-context (agents read/write substrate + draw contextBlocks via the hardened tools; discovered + understood through list-tools + the FGAP-085 / FGAP-095 self-describing surface). Sequenced AFTER pi-context solid + merged (FGAP-074 rename -> FGAP-095 onboarding -> merge). Gated by DEC-0044 (registration home) + the introspect->tool-shape contract.",
+      "motivation": "Makes agents first-class callable units for BOTH drivers — the Claude Code orchestrator and the in-pi LLM — through ONE typed contract, unifying the two dispatch worlds (this Task tool orchestrator-side + a Pi dispatch tool in-pi) behind agentContract. Completes the harness-confined-LLM capability story: read/write/query/onboard/validate + now DELEGATE. Extends the dual-surface tool-completeness method (DEC-0019/0020) from substrate ops to agent dispatch.",
+      "acceptance_criteria": [
+        "agentContract(spec) projects to a Pi-tool registration shape (inputSchema -> Typebox parameters; output.schema -> return validation); dispatch executes the agent (subprocess/in-process) returning typed, validated output",
+        "a dispatch Pi tool lets the in-pi LLM invoke a named agent with validated input + receive validated output (DEC-0014 clean — tools only)",
+        "an orchestrator CLI (dispatch-agent.ts) runs any .agent.yaml as a typed function (DEC-0019/0020 twin)",
+        "nested dispatch inherits cost-control (model-pin + tool-restrict, the F-006 discipline) + routes through the executeAgent normalizer boundary (F-012)",
+        "agent-tools are discoverable via list-tools, carry discovery-ready descriptions (FGAP-085), and surface via the instructional projection (FGAP-095)",
+        "registration home settled (DEC-0044) before build"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-23T00:00:00Z"
+    },
+    {
+      "title": "JIT capability composition + sandbox for subagent dispatch — operation-granular tool+perm grants from an empty-state registry",
+      "status": "complete",
+      "layer": "L4",
+      "description": "The safety/capability layer that sits atop FEAT-004 (agents-as-tools dispatch). FEAT-004 makes a subagent invocable as a typed tool call by the main context agent; THIS feature governs WHAT that subagent may do. Model (user-articulated 2026-05-24): a subagent is a programmatic action — a tool call carrying atomic context chunks composed into prompt shape (already supported: pi-jit-agents compile boundary + contextBlocks + introspect agentContract tool-shape projection). The subagent receives its OWN tools, JIT-composed per invocation, scoped to EXACTLY the operations the task needs and no others — e.g. the right to run a specific command (`npm test`) rather than the `bash` tool wholesale; a specific file path to read/write rather than read/write generally. Default is EMPTY: no perms, no tools; configs + schemas + macros materialize the exact capability grant from empty state (generalizing DEC-0015/0011/0025 empty-state-config-driven philosophy from the substrate dir to the agent/tool/perm surface). Capabilities drawn from a tool+permission REGISTRY, atomically composable into a per-dispatch bundle, and ideally sandboxed (fs/network jail around the subprocess). Pairs with DEC-0047 (constitutional capability model) which makes the registry + its composition human-ratified config (legislative), the main agent's dispatch executive, and validators/monitors judicial.",
+      "motivation": "FEAT-004 bare dispatch is necessary but not sufficient for a tools-constrained autonomous orchestrator: letting the main agent self-orchestrate (dispatch coding/explore/adversarial subagents that edit source, run shell, etc.) is only SAFE if each subagent's authority is exactly scoped, minimal, and human-sanctioned. Operation-granular JIT capability composition + sandboxing is the property that converts 'self-orchestration is possible' into 'self-orchestration is trustworthy'. Today tool restriction is category-granular only (`--tools read`), there is no permission/capability registry, and no per-invocation composition or sandbox.",
+      "acceptance_criteria": [
+        "A capability/permission registry exists (config-declared, empty by default) whose entries are tool grants AND operation-level permissions (e.g. an allowlisted command, a path-scoped read/write), not just tool categories",
+        "Per subagent-dispatch, a capability bundle is composed JUST-IN-TIME from the registry, granting exactly the declared operations and no others; the subagent cannot exceed its bundle",
+        "Empty-state default: a subagent with no declared capabilities can do nothing; all capability arrives via config/schema/macro composition (no ambient tools/perms)",
+        "Dispatch path enforces the bundle (subprocess --tools/perm scoping and/or in-process tool-subset gating via the FEAT-004 execute boundary); enforcement is verifiable",
+        "Sandboxing option: the dispatched subprocess can be confined (fs/network) to its declared scope",
+        "Dual-surface per DEC-0019/0020 (library + Pi tool + CLI) so both the in-pi main agent and the orchestrator-side compose capabilities the same way",
+        "The composition + the registry are config the human ratifies (DEC-0047 constitutional gate); the main agent proposes capability mutations, never self-grants unratified"
+      ],
+      "dependencies": [
+        "FEAT-004",
+        "DEC-0044",
+        "DEC-0047",
+        "FGAP-063"
+      ],
+      "decisions": [
+        "DEC-0047"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human/davidryan@gmail.com",
+      "id": "FEAT-005",
+      "created_at": "2026-05-24T09:42:40.250Z"
+    },
+    {
+      "title": "End-to-end constrained-orchestrator -> spec-block -> privileged-agent -> real-check-validated -> attested-commit code-change loop (north-star)",
+      "status": "complete",
+      "layer": "L1",
+      "description": "The ideal state (user-articulated 2026-05-25): a tools-only constrained in-pi orchestrator (DEC-0014, NO code/bash perms) authors a typed work-order/spec BLOCK via the substrate write tools; dispatches a privileged JIT-agent (spec-implementer-class: file write/edit + exactly-scoped command perms) that consumes the spec via contextBlocks; the agent makes ACTUAL source edits; the change is validated by an REAL DETERMINISTIC CHECKS (build/check/test exit code + runtime-demo + adversarial-against-artifacts per DEC-0018 — NOT LLM-self-report, FGAP-102); and the validated change is committed with DispatchContext agent-authorship attestation through husky. Net: a constrained agent can cause VALIDATED code changes through a privileged, governed, real-check-validated delegate without ever holding raw code-write or bash itself. Most of the mechanism already ships (self-implement.workflow.yaml skeleton + spec-implementer agent + contextBlocks injection + command/gate primitives); what remains is the ASSEMBLY, the real-check validation tail (FGAP-102), the capability scoping/clamp (FEAT-005 + FGAP-099), the dispatch-as-tool surface (FEAT-004), and the constitutional governance (DEC-0047). Includes defining the orchestrator-authored executable work-order block kind + its contextBlocks handoff (the spec-block-as-implementation-prompt; specs are self-contained coding prompts) — today the loop passes specs as transient workflow input, not a persisted orchestrator-authored block.",
+      "motivation": "This is the capstone of DEC-0014 (harness-confined tools-only main thread) and the agents-as-tools arc — the purpose the whole substrate->dispatch->validate->commit machine composes toward. It is what lets an in-pi agent safely change code: authority is config-granted and scoped (never ambient), execution is delegated to a privileged agent, and acceptance is gated by an real deterministic checks, not an LLM's opinion.",
+      "acceptance_criteria": [
+        "Constrained in-pi orchestrator (no bash/file perms) authors a typed work-order/spec block via substrate write tools",
+        "Privileged JIT-agent dispatched as a typed call (FEAT-004) with exactly-scoped capabilities composed from empty (FEAT-005) and clamped to its declared grant (FGAP-099)",
+        "Agent consumes the spec via contextBlocks and makes real source edits",
+        "Acceptance gated by an REAL DETERMINISTIC CHECKS: build+check+test exit code + a runtime-demonstration of the actual path + an adversarial check against external artifacts (DEC-0018 / FGAP-102) — never an LLM-verdict gate",
+        "On real-check-fail, the real compiler/test errors feed back for another implement pass (fix root cause, never bypass)",
+        "On real-check-pass, the change is committed through husky with DispatchContext agent-authorship attestation",
+        "The whole loop is invocable by the constrained in-pi orchestrator and governed by the DEC-0047 constitutional gate (capability human-ratified, never self-granted)"
+      ],
+      "dependencies": [
+        "FEAT-004",
+        "FEAT-005",
+        "FGAP-099",
+        "FGAP-102"
+      ],
+      "gates": [
+        "DEC-0044",
+        "DEC-0047"
+      ],
+      "decisions": [
+        "DEC-0014",
+        "DEC-0018",
+        "DEC-0047"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25T00:00:00Z",
+      "id": "FEAT-006"
+    },
+    {
+      "title": "JIT skills — schema-shaped, macro-rendered, composable-on-demand guidance via contextBlocks; skill-blocks as single source projecting to SKILL.md + in-pi fragments",
+      "status": "proposed",
+      "layer": "L1",
+      "description": "Vision (user 2026-05-25): skills join the JIT paradigm the rest of the system already runs on — agents JIT-compiled (pi-jit-agents), capabilities JIT-composed-from-empty (FEAT-005), context macro-rendered + injected (contextBlocks / render-item-by-id / templates macros), reads composed-to-need (FGAP-103). Today a skill is the ODD-ONE-OUT static markdown build-artifact (skill-narrative.md -> generate-skills -> SKILL.md). JIT skills = skill-blocks (schema-shaped substrate) rendered via Nunjucks macros, composed on demand scoped to need, delivered through the SAME contextBlocks channel as substrate data. SINGLE SOURCE / TWO PROJECTIONS: skill-blocks -> macro -> (a) SKILL.md for the external/marketplace+Claude-Code surface (replacing hand-written skill-narrative), (b) composable contextBlock fragments for in-pi JIT delivery. Unifies agents+skills as two instances of ONE JIT prompt-artifact compilation primitive in pi-jit-agents (DRY — the recurring 'don't repeat the code for different things'). REFRAMES FGAP-090 as ROUTE C, superseding its A/B fork (A inject-static-skills = always-on budget cost; B fold-into-descriptions = no home for cross-cutting guidance): JIT guidance is composed-when-relevant and reaches the agent without either cost. RELIEVES (does not kill) FGAP-085 — descriptions stay lean discovery+grounding; depth lives in composable skill-blocks. Intersects FGAP-103 (element-read of skill fragments — no read-all-or-nothing on skills), FGAP-101 (progressive), FGAP-090 (delivery solved). Generalizes the empty-state-config-driven philosophy (DEC-0015/0011/0025) from substrate/agents/capabilities to GUIDANCE itself. OPEN DESIGN FORK (UNSETTLED — must be decided before/at implementation; this FEAT carries the question, not the answer): WHO composes and WHEN. (a) COMPILER-COMPOSES — the dispatching context selects relevant skill-blocks and injects them at compile/dispatch time, declaratively (like agent contextBlocks: the agent spec / dispatch names the skills it needs). (b) AGENT-PULLS — the agent element-reads skill fragments on demand via tools as it works (like read-block element-level / FGAP-103). Likely HYBRID (baseline orientation compiler-composed + deep fragments agent-pulled), but the relevance-SELECTION mechanism is the crux and is unsettled: explicit contextBlocks declaration vs composition-lens-by-tag/relation vs agent-side retrieval. The fork determines the primitive's shape; settle before implementation. DELIVERY MECHANISM CONFIRMED (2026-05-25, pi 0.75.4): the JIT-skill in-pi delivery channel = pi's own extension hooks (exact adherence). resources_discover ({ skillPaths }) surfaces skill-block-rendered fragments as eager <available_skills> metadata (dist/core/extensions/types.d.ts:371/377/784; dist/core/skills.js:258-277 formatSkillsForPrompt); before_agent_start ({ systemPrompt }) injects the eager pointer/orientation block (types.d.ts:469/738/796; dist/core/agent-session.js:791-792; dist/core/extensions/runner.js:710-739 chaining); bodies fetched lazily via the element-read tools (FGAP-103). The OPEN compiler-composes-vs-agent-pulls fork maps directly onto these: compiler-composes = before_agent_start eager injection; agent-pulls = lazy element-read of contributed skill paths/blocks (likely hybrid). Single-source/two-projections still holds: skill-blocks -> macro -> SKILL.md (external) AND -> resources_discover/before_agent_start fragments (in-pi).",
+      "motivation": "Skills are the last static, non-JIT surface in a system where everything else is schema-shaped data + macro-rendered + composed-from-empty-to-need. Folding skills into that paradigm: makes authored guidance actually REACH the in-pi agent (closes FGAP-090, which today gives the agent zero passive benefit from the whole skill-narrative investment); is DRY (one schema'd source, two projections, one compile primitive shared with agents); and makes guidance composable/scoped rather than a monolithic blob. It is the capstone of the JIT/constitutional arc applied to guidance.",
+      "acceptance_criteria": [
+        "Skill content is schema-shaped (a skill block kind), not hand-authored freeform markdown",
+        "Skill-blocks render to prompt text via Nunjucks macros, reusing the existing macro system (no new bespoke renderer)",
+        "generate-skills projects skill-blocks -> SKILL.md (external/marketplace surface) from the schema'd source — replacing the hand-written skill-narrative pipeline",
+        "Skill fragments are delivered to the in-pi agent via the contextBlocks channel — verified in a live constrained-pi session that the composed guidance is in the agent's reported context (the FGAP-090 empirical test)",
+        "Skills are composable/reusable on demand, scoped to the task (not a monolithic SKILL.md blob)",
+        "Element-level read of skill fragments exists (no read-all-or-nothing on skills; routes through the FGAP-103 shared primitive)",
+        "The compose model (compiler-composes vs agent-pulls vs hybrid) AND the relevance-selection mechanism are DECIDED and implemented (the open fork resolved)",
+        "Agents and skills share ONE JIT prompt-artifact compilation primitive in pi-jit-agents (not two codepaths)"
+      ],
+      "dependencies": [
+        "FGAP-090",
+        "FGAP-103"
+      ],
+      "gates": [],
+      "decisions": [
+        "DEC-0014",
+        "DEC-0019",
+        "DEC-0020",
+        "DEC-0025"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-25T00:00:00Z",
+      "id": "FEAT-007"
+    },
+    {
+      "id": "FEAT-008",
+      "title": "decisions-substrate revision — split into 3 blocks (recognitions / decisions / substrate-conflicts) + uniform field tightening + migrate 49 entries",
+      "status": "proposed",
+      "layer": "L1",
+      "description": "Revise the .project/decisions.json substrate to match the data-room three-artifact frame (per /Users/david/Projects/data-room-pi-context.md and grounding analysis at analysis/2026-05-26-decisions-substrate-revision-grounding.md commit 083630e). Three-block split: (1) recognitions.json — pre-decisions / decision-needs with status enum [recognized | drafted | reviewed | ready_for_enactment | withdrawn]; promotes into decisions.json on user enactment via enacted_from link with recognition retained for lineage; (2) decisions.json — scope-narrowed to ratified entries only, status [enacted | superseded], required enacted_from + enacted_by + enacted_at; block name no longer lies; (3) substrate-conflicts.json — first-class home for in-substrate contradictions (the in-body Amendment/Widening/narrowed prose pattern flagged in the shape survey) with structured per-conflict entries (affected_ids, conflict_kind, resolution_state). Uniform field tightening across all three blocks: writer-identity enum/pattern kind:identifier (kills variance: 'user' / 'human/email' / 'human:email' / bare-email / 'agent/...'); structured commits[]: [{sha, label}] (kills free-text prose-rot commit mentions); null-state convention (empty-array required when field allowed; key-absent forbidden); first-class evolution_log[]: [{date, kind: widening|narrowing|amendment|correction, by, summary, commits[]}] (replaces in-body stacked revisions per feedback_substrate_blocks_not_changelogs). Options_considered preserves existing schema's soft convention (populated only when multiple mandate-compliant candidates genuinely compete); NO rejected_reason requirement added — staleness-prone redundancy with low marginal mandate-004 value (the chosen option's rationale + consequences[] already do the work). Migrate 49 existing entries from .project/decisions.json by current status — current open → recognitions.json with status mapped per drafted-state; current enacted → decisions.json; current superseded → decisions.json status:superseded; in-body revision prose extracted into evolution_log[] for affected entries (DEC-0040 amendment block, DEC-0044 narrowing prose, DEC-0047, DEC-0003 widening). Cascade across consumers: scripts/orchestrator/* (extract-decs.ts, file-block-item.ts, etc.); Pi tools registered in pi-context/index.ts; lens validators in lens-view.ts and roadmap-plan.ts; relations.json edges preserved with target-block updated where ids re-home.",
+      "motivation": "Address FGAP-113 (decisions-block conflates pre-decisions with decisions; block-name lies; status enum collapses operationally-distinct sub-states). Empirical basis: shape survey at analysis/2026-05-26-decisions-block-shape-survey.md commit 4900a34 — 49 entries, 20 emergent shape-clusters. Canon basis: every revision element traces to established canon (DEC-0040 single source of truth; FGAP-098 cross-reference affordance; FGAP-110 valid/current discipline; FGAP-111 raw-tier-with-decomposition shape; feedback_substrate_blocks_not_changelogs; DispatchContext attestation; data-room three-artifact frame). Nothing here is fresh architectural invention — bringing one of our oldest blocks into compliance with what we've established about substrate-shape since.",
+      "acceptance_criteria": [
+        "Three blocks exist with conformant schemas: recognitions.schema.json + decisions.schema.json (revised) + substrate-conflicts.schema.json; schemas pass AJV meta-validation",
+        "Block-api / scripts/orchestrator / Pi tool surfaces exist for each new block per DEC-0019/0020 dual-surface canon (file-block-item, append-relation invocations work; in-pi tools registered)",
+        "49 existing decisions.json entries migrated by status: open (e.g. DEC-0001/0002/0003) → recognitions.json with appropriate sub-status; enacted (e.g. DEC-0044/0047) → decisions.json; superseded → decisions.json status:superseded; lineage edges preserved",
+        "In-body revision prose extracted into evolution_log[] structured entries for affected entries (DEC-0040, DEC-0044, DEC-0047, DEC-0003) — verifiable via inspection that body fields carry current-truth only and journey lives in evolution_log[]",
+        "Writer-identity field uniformly conforms to kind:identifier pattern across all three blocks (zero residual 'user' / 'human/email' / bare-email / 'agent/...' variants)",
+        "Commits[] field uniformly structured across all three blocks (zero residual free-text commit mentions in body fields)",
+        "Null-state convention enforced (empty-array required where field allowed; AJV catches key-absent)",
+        "Relations.json edges referencing migrated entries updated to point to correct destination block; zero dangling references",
+        "Lens validators (lens-view.ts + roadmap-plan.ts + status_buckets in context-sdk) handle three-block substrate; zero stale references to single-block model",
+        "Cascade complete: scripts/orchestrator/extract-decs.ts handles new shape or is split into per-block extractors; Pi tools updated; CLAUDE.md Project Blocks section updated; SKILL.md regenerated via npm run skills",
+        "VER-attested closure: grep verifies zero residual references to pre-revision shape; runtime demo exercises full lifecycle (file recognition → promote to decision → record conflict) end-to-end with real substrate; adversarial probe by fresh-context agent confirms migration completeness"
+      ],
+      "dependencies": [
+        "DEC-0050"
+      ],
+      "blocks_resolved": [
+        "FGAP-113"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-26"
+    },
+    {
+      "id": "FEAT-009",
+      "title": "AC schema revision — object form {id, text, status} with AC-id addressability + per-criterion status + completion-invariant shift; scoped under .context greenfield transition",
+      "status": "proposed",
+      "layer": "L1",
+      "description": "Revise task.acceptance_criteria from string[] to object array: items carry {id (pattern ^TASK-\\d{3,}-AC-\\d+$), text, status (enum [pending|passed|failed|blocked])}. depends_on field semantically expanded from task-id only to union(task-id | ac-id) — resolver handles both kinds. Completion invariant shifts from current 'task.status=completed requires verification field present' to 'task.status=completed requires every criterion.status === passed' — schema-level guarantee rather than presence check. VER coexistence resolved: task's criterion.status = live lifecycle state (mutates as work progresses); VER's criteria_results.status = point-in-time attestation snapshot (immutable once filed); criterion field in VER.criteria_results becomes AC-id FK (e.g. criterion: 'TASK-081-AC-3') rather than restating the criterion text verbatim — this ELIMINATES the existing duplication where VER currently restates AC text, does not introduce a new one. Task is single source of truth for criterion text; VER references it. Vocabulary overlap on the word 'status' is intentional: enums differ semantically (VER skipped doesn't exist on task; task pending+blocked don't exist on VER). AC-id padding: 2-digit canonical (^AC-\\d{2,}$ within the compound TASK-NNN-AC-NN id) for sub-ids with bounded per-task population (typically 5-15 ACs), explicitly exempt from DEC-0026's 3-digit top-level canon (which applies to block-level ids, not sub-ids).",
+      "motivation": "Address FGAP-114 (AC string[] gaps: no addressability for FK depends_on; no per-criterion status; weak completion invariant). Surfaced immediately by TASK-080 split (2026-05-26) where finer-grained criterion-grain depends_on would enable cheaper sequencing. Canon basis: FK-enforcement anti-pattern (FGAP-040/041/046 class); DEC-0040 single-source-of-truth + derived completion state; FGAP-098 cross-reference affordance; DEC-0049 uniform-shape across same-block items; feedback_substrate_blocks_not_changelogs (status as field, not journey). Nothing here is fresh architectural invention.",
+      "acceptance_criteria": [
+        "Per-block schema for tasks in .context greenfield carries acceptance_criteria as object array with the proposed shape ({id, text, status})",
+        "Status enum is [pending, passed, failed, blocked]; default pending; AC-id pattern ^TASK-\\d{3,}-AC-\\d{2,}$ (compound id)",
+        "depends_on schema permits union(task-id | ac-id) with resolver handling both kinds; schema documentation explicitly notes the semantic expansion",
+        "Completion invariant: tasks.schema.json declares 'if status === completed then every acceptance_criteria[].status === passed' (AJV draft-07 cannot enforce conditionals on items.status; encoded in schema description + downstream validator)",
+        "VER schema (or equivalent in .context) declares criteria_results[].criterion is an AC-id FK rather than free-text; resolver verifies AC-id existence",
+        "AC-id padding canon recorded: sub-ids (AC-NN within TASK-NNN) are 2-digit canonical, explicitly exempt from DEC-0026's 3-digit top-level rule (sub-ids have bounded per-parent population)",
+        ".project schema unchanged during transition; .project tasks (existing + any new ones filed in .project) continue with string[] form; no data migration on .project tasks",
+        "Scoped under .context greenfield transition (DEC-0036 + DEC-0050/FEAT-008 umbrella); ships as part of the same revision arc as the decisions-substrate split",
+        "VALIDATION = real checks per DEC-0047/0018: runtime demo (file a task in .context greenfield with object-form AC; mark criteria progressively; verify task-completion derivation), adversarial probe (fresh-context agent verifies AC-id FK enforcement in VER + completion-invariant enforcement); never LLM self-report"
+      ],
+      "dependencies": [
+        "DEC-0051"
+      ],
+      "blocks_resolved": [
+        "FGAP-114"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-26"
+    },
+    {
+      "id": "FEAT-010",
+      "title": "Hybrid 3 composite-tool infrastructure for pi-agent-dispatch — per-KIND triples (library + Pi tool + CLI script) + 5-layer forbidden-wholesale enforcement + author-tool-grant Pi tool",
+      "status": "complete",
+      "layer": "L4",
+      "description": "Build the bounded-composite-vocabulary layer of FEAT-005 capability composition (operation-granular from empty). pi-agent-dispatch's extension declares a small set of canonical composite KINDS in framework code (initial 4: read-files, git-log, grep-paths, command-allowlist); config.tool_operations[] declares INSTANCES of those kinds (each instance = {canonical_id, kind, instance_params: {allowed_roots / since / paths / etc.}}); extension-load reads config + dynamically registers a Pi tool per instance (name=canonical_id, params closure-bound from instance_params). Per-KIND dual-surface (DEC-0019/0020): each KIND lands as a TRIPLE — library function in packages/pi-agent-dispatch/src/composites/{kind}.ts + the Pi tool registration that wraps it + a CLI script at scripts/orchestrator/composite-{kind}.ts taking the same instance_params as CLI flags. Adding a new KIND = source change + release; adding an INSTANCE of an existing KIND = config write under writer.kind=human (via new author-tool-grant Pi tool). 5-layer forbidden-wholesale enforcement prevents the design from degrading silently: L1 framework TS const FORBIDDEN_WHOLESALE_OPERATIONS = ['bash','write','edit','shell','execute']; L2 engine test invariant in operation-vocab.test.ts (TOOL_OPERATION_DEFAULTS contains zero forbidden tokens); L3 runtime guard at extension load reading L1 ∪ L5 union (refuses to load if any registered op is in the union); L4 JSDoc citation at operation-vocab.ts naming the discipline + cross-referencing feedback_no_parallel_ungated_paths; L5 substrate config.tool_operations_forbidden[] for project-specific additions, gated by author-tool-grant writer.kind=human, validated via AmendRegistry descriptor {kind: 'string-array'}. The author-tool-grant Pi tool mirrors TASK-089 author-agent-spec pattern: wraps amendConfigEntry mutations on config.tool_operations[] + config.tool_operations_forbidden[]; refuses writer.kind != 'human' with DEC-0047 message; refuses ops in FORBIDDEN_WHOLESALE_OPERATIONS. Zero canon evolution required.",
+      "motivation": "Address FGAP-116 (operation-granular capability vocabulary lacks composite-tool authoring + per-KIND dual-surface CLI scripts + forbidden-wholesale enforcement). FEAT-005 today implements name-only granularity via composeToolGrant + operation-vocab.ts (55 Pi tool names). JI-023 user verbatim names finer granularity ('A bash command. Not bash.' + 'There can be a registry of them') and FEAT-006 north-star requires bounded-composite scoping (constrained orchestrator + privileged agent + bounded grant). Composite-tool infrastructure is the concrete realization. Refined v2 design from analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md closes both design-completeness items surfaced in the v1 canon-eval (analysis/2026-05-28-hybrid-3-composite-tools-canon-eval.md commit 3b4b32d).",
+      "acceptance_criteria": [
+        "Per-KIND triple lands together for each of 4 initial KINDS (read-files / git-log / grep-paths / command-allowlist): library function in packages/pi-agent-dispatch/src/composites/{kind}.ts + Pi tool registration at extension-load reading config.tool_operations[] entries of that kind + CLI script at scripts/orchestrator/composite-{kind}.ts taking the same instance_params as CLI flags",
+        "config.schema.json extended with tool_operations_forbidden array property (items: string); samples/conception.json mirrors; AmendRegistry union + REGISTRY_DESCRIPTORS in packages/pi-context/src/context.ts include tool_operations_forbidden as kind:string-array",
+        "author-tool-grant Pi tool registered in pi-agent-dispatch: wraps amendConfigEntry mutations on tool_operations[] + tool_operations_forbidden[]; refuses writer.kind != 'human' per DEC-0047; refuses operations whose canonical_id is in FORBIDDEN_WHOLESALE_OPERATIONS union (L1 ∪ L5)",
+        "L1 forbidden-wholesale framework TS const FORBIDDEN_WHOLESALE_OPERATIONS = ['bash', 'write', 'edit', 'shell', 'execute'] in operation-vocab.ts with JSDoc citation",
+        "L2 engine test invariant in operation-vocab.test.ts asserts TOOL_OPERATION_DEFAULTS contains zero entries whose canonical_id is in FORBIDDEN_WHOLESALE_OPERATIONS; husky pre-commit fails on any addition",
+        "L3 runtime guard at pi-agent-dispatch/src/index.ts extension-load reads L1 ∪ L5 union; throws extension-load error if any registered op (from TOOL_OPERATION_DEFAULTS or from config.tool_operations[] instances) is in the union",
+        "composite-loader.ts: at extension-load reads config.tool_operations[]; for each entry of kind matching a registered KIND, registers a Pi tool wrapping that kind's library function with instance_params closure-bound. Tool name = entry's canonical_id; refuses to register if canonical_id is in L1 ∪ L5 union",
+        "Engine unit tests cover each KIND library function (success + error paths + bounds enforcement per instance_params); each Pi tool registration (correct name + param schema + dispatch to library); composite-loader (loads entries + skips kind-mismatch + refuses forbidden-wholesale); author-tool-grant (refuses non-human writer + refuses forbidden-wholesale + happy path)",
+        "Each CLI script under scripts/orchestrator/composite-{kind}.ts invokes the same library function as its Pi tool sibling; CLI tested via runtime-demo (.ts test script using tsx)",
+        "Zero new pi-workflows/pi-behavior-monitors deps (FEAT-010 lives entirely in pi-agent-dispatch + pi-context schema extension); per DEC-0048 bundled-artifact tests are not regression gates; engine unit tests + per-KIND library tests + composite-loader tests + author-tool-grant tests are gates",
+        "VALIDATION = real checks per DEC-0018: build/check/test exit codes (engine + new package + new tests all green); runtime demo per KIND (tsx-eval invokes each CLI script + verifies bounds-enforcement); adversarial probe (fresh-context agent verifies zero forbidden-wholesale tokens registered + L3 runtime guard catches violation attempts + author-tool-grant refuses non-human writers + no parallel ungated paths)"
+      ],
+      "dependencies": [
+        "DEC-0052",
+        "TASK-089"
+      ],
+      "blocks_resolved": [
+        "FGAP-116"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    },
+    {
+      "id": "FEAT-011",
+      "title": "pi-agent-dispatch launch-chain integration — wire the 5th extension into META + skills-generation + own-package self-registration so launching scripts/launch-constrained-pi.sh produces a canonical harness-confined session honoring DEC-0014 + DEC-0044 + DEC-0047 + FEAT-006",
+      "status": "complete",
+      "layer": "L5",
+      "description": "Close the launch-chain invisibility (FGAP-117 CRITICAL) by symmetry — 4 file edits + 1 new file per the audit's resolution scope. Concretely: (1) packages/pi-project-workflows/package.json adds @davidorex/pi-agent-dispatch to dependencies + ./agent-dispatch-extension.ts to pi.extensions[]; (2) NEW packages/pi-project-workflows/agent-dispatch-extension.ts as a one-line re-export shim (`export { default } from \"@davidorex/pi-agent-dispatch\";`) mirroring the existing 3 shim files; (3) packages/pi-agent-dispatch/package.json adds pi.skills field (mirroring other 3 extensions) + skills/ to files[]; (4) NEW packages/pi-agent-dispatch/skill-narrative.md hand-authored prose source (YAML frontmatter + XML-tagged sections per pi skill standard) documenting the 5 static tools (call-agent + author-agent-spec + run-real-checks + commit-attested + author-tool-grant) + the composite-loader dynamic-registration mechanism; (5) scripts/generate-skills.js packageDirs list adds 'pi-agent-dispatch'. After: npm run skills regenerates → SKILL.md emitted for pi-agent-dispatch with 5 static tool tags → launch script grep picks up the names → launched session includes the 5 new tools → FEAT-006 north-star loop reachable from launched session + JI-021 + DEC-0044 + DEC-0047 honored at the surface. Plus documentation cascade closes FGAP-122 (launch script header refresh + META README refresh + new docs/launching-the-orchestrator.md + canon-anchor citations); hygiene cascade closes FGAP-123 (pre-launch SKILL.md verification step + pi.skills field added + FEAT-005 status flip proposed→complete + FEAT-004 proposed→in-progress as substrate-status truth flips with FEAT-010 closure). Zero canon evolution required — all elements are concrete enactments of existing canon (DEC-0014 harness-confined positive clause + DEC-0044 sibling-consumer canon + DEC-0019/0020 dual-surface + DEC-0047 capability authoring + FEAT-006/010 already-built infrastructure).",
+      "motivation": "Address FGAP-117 CRITICAL (5 static tools + entire FEAT-006 loop unreachable from launched session) + FGAP-122 (launch-chain documentation drift) + FGAP-123 (launch-chain hygiene + symmetry). FEAT-010 shipped the infrastructure (TASK-092 completion at 9bc6602) but the LAUNCH chain that exposes that infrastructure to the in-pi orchestrator was never extended; the audit (commit 945dc93) made that gap canon-traceable.",
+      "acceptance_criteria": [
+        "packages/pi-project-workflows/package.json carries @davidorex/pi-agent-dispatch in dependencies[] + ./agent-dispatch-extension.ts in pi.extensions[]",
+        "packages/pi-project-workflows/agent-dispatch-extension.ts exists as a one-line re-export shim matching the pattern of the existing 3 shims",
+        "packages/pi-agent-dispatch/package.json carries pi.skills field + skills/ in files[]",
+        "packages/pi-agent-dispatch/skill-narrative.md exists with YAML frontmatter + XML-tagged sections per pi skill standard documenting the 5 static tools + composite-loader mechanism",
+        "scripts/generate-skills.js packageDirs[] list includes 'pi-agent-dispatch'",
+        "After npm run skills: packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md exists with <tool name=> tags for all 5 static tools (call-agent + author-agent-spec + run-real-checks + commit-attested + author-tool-grant)",
+        "Runtime demo: launching scripts/launch-constrained-pi.sh against a fresh tmp target dir (with .pi-context.json pointer + config.json scaffold) produces an in-pi session whose tool registry contains the 5 pi-agent-dispatch static tools (verified via list-tools Pi tool or direct introspection)",
+        "Documentation cascade (FGAP-122 closure): scripts/launch-constrained-pi.sh header refreshed (4 extensions; canon-anchor citations); packages/pi-project-workflows/README.md refreshed; NEW docs/launching-the-orchestrator.md (or equivalent) covers prerequisites + harness intention + composite-vocabulary author cadence",
+        "Hygiene cascade (FGAP-123 closure): launch script pre-launch SKILL.md presence check (warn or fail-fast on partial-set); features.json status flips applied (FEAT-005 proposed→complete; FEAT-004 proposed→in-progress; FEAT-006 stays proposed pending TASK-091)",
+        "Per DEC-0048: bundled-artifact tests not regression gates; engine unit tests + the runtime-demo + adversarial probe are gates",
+        "VALIDATION = real checks per DEC-0018: build/check/test exit codes; runtime demo (fresh tmp target dir launch + tool-registry assertion); adversarial probe (fresh-context agent verifies symmetry: all 4 extensions emit SKILL.md + META lists all 4 + launch script grep returns count ≥ static tool count + zero pi-agent-dispatch tools absent from the launched session + zero forbidden-term hits in any new file)"
+      ],
+      "dependencies": [
+        "FEAT-010"
+      ],
+      "blocks_resolved": [
+        "FGAP-117",
+        "FGAP-122",
+        "FGAP-123"
+      ],
+      "stories": [],
+      "findings": [],
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-05-28"
+    }
+  ]
+}

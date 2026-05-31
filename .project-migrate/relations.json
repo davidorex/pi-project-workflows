@@ -1,0 +1,687 @@
+[
+  {
+    "parent": "PHASE-005",
+    "child": "TASK-031",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-005",
+    "child": "TASK-032",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-005",
+    "child": "TASK-033",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-006",
+    "child": "TASK-034",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-006",
+    "child": "TASK-035",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-006",
+    "child": "TASK-036",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-006",
+    "child": "TASK-037",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-007",
+    "child": "TASK-038",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-007",
+    "child": "TASK-039",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-007",
+    "child": "TASK-040",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-008",
+    "child": "TASK-041",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-009",
+    "child": "TASK-042",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-010",
+    "child": "TASK-043",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-010",
+    "child": "TASK-044",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-010",
+    "child": "TASK-045",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "PHASE-010",
+    "child": "TASK-046",
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": "R-0013",
+    "child": "FEAT-003",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "FGAP-067",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "DEC-0037",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "DEC-0011",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "DEC-0019",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-055",
+    "child": "DEC-0020",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "VER-027",
+    "child": "TASK-055",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "TASK-056",
+    "child": "FGAP-045",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "VER-028",
+    "child": "TASK-056",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "TASK-057",
+    "child": "FGAP-043",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "VER-029",
+    "child": "TASK-057",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-045",
+    "child": "TASK-074",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-046",
+    "child": "TASK-075",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-047",
+    "child": "TASK-076",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-048",
+    "child": "TASK-077",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-049",
+    "child": "TASK-078",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-050",
+    "child": "TASK-079",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "DEC-0044",
+    "child": "FEAT-001",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0044",
+    "child": "FEAT-004",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0044",
+    "child": "FEAT-005",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0044",
+    "child": "FGAP-099",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FEAT-004",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FEAT-005",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FEAT-006",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FGAP-099",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "DEC-0047",
+    "child": "FGAP-102",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "TASK-080",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-080",
+    "child": "DEC-0044",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-080",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "DEC-0048",
+    "child": "FEAT-001",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0048",
+    "child": "DEC-0036",
+    "relation_type": "decision_relates_to_decision"
+  },
+  {
+    "parent": "DEC-0048",
+    "child": "DEC-0040",
+    "relation_type": "decision_relates_to_decision"
+  },
+  {
+    "parent": "DEC-0049",
+    "child": "FEAT-001",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0049",
+    "child": "FEAT-004",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0049",
+    "child": "FGAP-112",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "VER-051",
+    "child": "FGAP-112",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "DEC-0050",
+    "child": "FEAT-008",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0050",
+    "child": "FGAP-113",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "FGAP-113",
+    "child": "FEAT-008",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "TASK-081",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-082",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-083",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-084",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-081",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-082",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-083",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "DEC-0051",
+    "child": "FEAT-009",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0051",
+    "child": "FGAP-114",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "FGAP-114",
+    "child": "FEAT-009",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "TASK-085",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-086",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-087",
+    "child": "FEAT-001",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-085",
+    "child": "DEC-0001",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-086",
+    "child": "DEC-0002",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-087",
+    "child": "DEC-0003",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "VER-052",
+    "child": "TASK-081",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "TASK-088",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-089",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-090",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FEAT-006",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-089",
+    "child": "DEC-0044",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-089",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-090",
+    "child": "DEC-0018",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-090",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "DEC-0014",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "DEC-0047",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "VER-053",
+    "child": "TASK-088",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-054",
+    "child": "TASK-089",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-055",
+    "child": "TASK-090",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "DEC-0052",
+    "child": "FEAT-010",
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": "DEC-0052",
+    "child": "FGAP-116",
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": "FGAP-116",
+    "child": "FEAT-010",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FEAT-010",
+    "child": "FEAT-005",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FEAT-010",
+    "child": "FEAT-006",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "TASK-092",
+    "child": "FEAT-010",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-092",
+    "child": "DEC-0052",
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": "VER-056",
+    "child": "TASK-092",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "FEAT-011",
+    "child": "FEAT-010",
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": "FGAP-117",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FGAP-122",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FGAP-123",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FGAP-118",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FGAP-120",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "FGAP-121",
+    "child": "FEAT-011",
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FEAT-011",
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-117",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-118",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-120",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-121",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-122",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "TASK-091",
+    "child": "FGAP-123",
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": "VER-057",
+    "child": "TASK-091",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-058",
+    "child": "FGAP-130",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-059",
+    "child": "FGAP-131",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-059",
+    "child": "FGAP-132",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-060",
+    "child": "FGAP-133",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-060",
+    "child": "FGAP-134",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-060",
+    "child": "FGAP-126",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-061",
+    "child": "FGAP-136",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-062",
+    "child": "FGAP-137",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-063",
+    "child": "FGAP-138",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-064",
+    "child": "FGAP-135",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-139",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-140",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-141",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-142",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-143",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-144",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-135",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FEAT-007",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-145",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-146",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-147",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-148",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-149",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "R-0014",
+    "child": "FGAP-150",
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": "TASK-093",
+    "child": "FGAP-037",
+    "relation_type": "gap_superseded_by_task"
+  },
+  {
+    "parent": "VER-065",
+    "child": "TASK-093",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "TASK-094",
+    "child": "FGAP-179",
+    "relation_type": "gap_superseded_by_task"
+  },
+  {
+    "parent": "VER-066",
+    "child": "TASK-094",
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": "VER-067",
+    "child": "FGAP-115",
+    "relation_type": "verification_verifies_item"
+  }
+]

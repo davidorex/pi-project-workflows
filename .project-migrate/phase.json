@@ -1,0 +1,200 @@
+{
+  "phases": [
+    {
+      "id": "PHASE-001",
+      "name": "Make typed composition real",
+      "intent": "Enforce the agent input schema contracts that currently exist as decorative annotations, and demonstrate template composition across multiple agent families — converting the typed composition advantage from aspirational to functional. (pre-FGAP-026 planning artifact)",
+      "status": "planned",
+      "success_criteria": [
+        {
+          "criterion": "executeAgentStep validates input against AgentSpec.inputSchema before dispatch",
+          "verify_method": "command"
+        },
+        {
+          "criterion": "All existing workflow specs pass input schema validation without error",
+          "verify_method": "command"
+        },
+        {
+          "criterion": "At least 3 template families use Nunjucks extends/block composition (up from 1)",
+          "verify_method": "inspect"
+        },
+        {
+          "criterion": "At least one reusable agent accepts variable input shapes via optional fields with conditional template rendering",
+          "verify_method": "inspect"
+        }
+      ],
+      "specs": [
+        {
+          "number": 1,
+          "name": "Enforce agent input schema validation",
+          "intent": "Add schema validation in executeAgentStep so typed contracts are real",
+          "status": "planned"
+        },
+        {
+          "number": 2,
+          "name": "Fix workflow specs for schema compliance",
+          "intent": "Ensure every agent invocation in existing workflows satisfies the agent's input schema",
+          "status": "planned"
+        },
+        {
+          "number": 3,
+          "name": "Expand template inheritance to more agent families",
+          "intent": "Prove composition model works beyond the single analyzer family",
+          "status": "planned"
+        },
+        {
+          "number": 4,
+          "name": "Redesign reusable agents with parametric input",
+          "intent": "Transform structural repetition into genuine parametric recombination",
+          "status": "planned"
+        }
+      ],
+      "artifacts_produced": [
+        "packages/pi-workflows/src/step-agent.ts",
+        "packages/pi-workflows/templates/"
+      ]
+    },
+    {
+      "id": "PHASE-002",
+      "name": "Expand capabilities",
+      "intent": "Add ad-hoc agent invocation (bridging the pi-subagents usability gap) and worktree isolation for parallel steps (preventing filesystem conflicts in concurrent execution). (pre-FGAP-026 planning artifact)",
+      "status": "planned",
+      "success_criteria": [
+        {
+          "criterion": "/workflow run-agent dispatches a single agent step without a workflow spec",
+          "verify_method": "command"
+        },
+        {
+          "criterion": "parallel: steps with worktree: true create isolated git worktrees per sub-step",
+          "verify_method": "command"
+        }
+      ],
+      "specs": [
+        {
+          "number": 1,
+          "name": "Ad-hoc single-agent invocation",
+          "intent": "Allow agent dispatch from command line or tool call without a .workflow.yaml",
+          "status": "planned"
+        },
+        {
+          "number": 2,
+          "name": "Worktree isolation for parallel steps",
+          "intent": "Prevent filesystem conflicts when parallel agents write files concurrently",
+          "status": "planned"
+        }
+      ],
+      "artifacts_produced": [
+        "packages/pi-workflows/src/worktree.ts",
+        "packages/pi-workflows/src/index.ts"
+      ]
+    },
+    {
+      "id": "PHASE-003",
+      "name": "Future-proofing",
+      "intent": "Add safety infrastructure (recursion depth guard) and deferred capabilities (context forking, async execution) required before Phase 6 nested workflow invocation can be unblocked. (pre-FGAP-026 planning artifact)",
+      "status": "planned",
+      "success_criteria": [
+        {
+          "criterion": "PI_WORKFLOW_MAX_DEPTH env var limits nested workflow invocation depth",
+          "verify_method": "command"
+        }
+      ],
+      "specs": [
+        {
+          "number": 1,
+          "name": "Workflow recursion depth guard",
+          "intent": "Prevent unbounded recursive workflow spawning via env-var depth tracking",
+          "status": "planned"
+        }
+      ],
+      "artifacts_produced": [
+        "packages/pi-workflows/src/dispatch.ts"
+      ]
+    },
+    {
+      "id": "PHASE-004",
+      "name": "Task execution loop",
+      "intent": "Close the planning-to-execution gap: workflows produce task blocks but nothing consumes them as work input. Build the do-task workflow and supporting agents that read a task entry, investigate its scope, implement it, verify against acceptance criteria, and update task status — completing the self-driving cycle from plan-from-requirements through to done. (pre-FGAP-026 planning artifact)",
+      "status": "planned",
+      "success_criteria": [
+        {
+          "criterion": "A workflow reads a task entry from .project/tasks.json by ID and executes it through to status update",
+          "verify_method": "command"
+        },
+        {
+          "criterion": "Agent templates accept task block fields (description, acceptance_criteria, files, depends_on, phase)",
+          "verify_method": "inspect"
+        },
+        {
+          "criterion": "Task status lifecycle is updated by the workflow (planned → in-progress → completed/blocked)",
+          "verify_method": "command"
+        },
+        {
+          "criterion": "Verification step checks acceptance_criteria from the task entry, not just agent-generated criteria",
+          "verify_method": "inspect"
+        }
+      ],
+      "specs": [
+        {
+          "number": 1,
+          "name": "do-task workflow",
+          "intent": "Read task entry by ID, investigate scope, decompose if needed, implement, verify against acceptance_criteria, update task status",
+          "status": "planned"
+        },
+        {
+          "number": 2,
+          "name": "Task-aware agent templates",
+          "intent": "Agents that accept task block entry content — description, acceptance_criteria, files, depends_on — and adapt their behavior accordingly",
+          "status": "planned"
+        },
+        {
+          "number": 3,
+          "name": "Batch task execution",
+          "intent": "forEach over planned tasks with dependency ordering — execute tasks in topological order respecting depends_on",
+          "status": "planned"
+        }
+      ],
+      "artifacts_produced": [
+        "packages/pi-workflows/workflows/do-task.workflow.yaml",
+        "packages/pi-workflows/agents/",
+        "packages/pi-workflows/templates/"
+      ]
+    },
+    {
+      "id": "PHASE-005",
+      "name": "FGAP-026 closure phase 1 — resolver foundation + discovery tools",
+      "intent": "Resolver foundation (resolveContextDir) + 2 discovery tools (read-config, read-schema) + atomic safety .pi-context.json write. Step 8.7.1.",
+      "status": "completed"
+    },
+    {
+      "id": "PHASE-006",
+      "name": "FGAP-026 closure phase 2 — high-impact query tools",
+      "intent": "filter-block-items, resolve-items-by-id (bulk), walk-ancestors, walk-by-relation, find-references. Step 8.7.2.",
+      "status": "completed"
+    },
+    {
+      "id": "PHASE-007",
+      "name": "FGAP-026 closure phase 3 — work-unit context composition",
+      "intent": "Work-unit context composition substrate per DEC-0017 — context-contract substrate (FGAP-030) + gather-execution-context primitive (FGAP-031). Step 8.7.3.",
+      "status": "completed"
+    },
+    {
+      "id": "PHASE-008",
+      "name": "FGAP-026 closure phase 4 — workflow-execute + dispatch tools",
+      "intent": "workflow-execute + workflow-resume dispatch tools — harness-confined main LLM path to bash/read/write under DEC-0014 via JIT-agent dispatch through workflow steps. Step 8.7.4.",
+      "status": "completed"
+    },
+    {
+      "id": "PHASE-009",
+      "name": "FGAP-026 closure phase 5 — arc-tracking dogfood substrate",
+      "intent": "Arc-tracking blocks authored as dogfood substrate per FGAP-028 — config + relations + roadmap + phase + context-contracts for THIS repo. Step 8.7.5; partially realized through the FGAP-046/060 arc.",
+      "status": "in-progress"
+    },
+    {
+      "id": "PHASE-010",
+      "name": "FGAP-046/060/DEC-0028 coordinated arc",
+      "intent": "Eliminate inline FK (DEC-0013 enforcement) so the FGAP-060 canonical_id rename engine operates on one clean edge surface. Couples FGAP-040 + FGAP-046 + FGAP-049 + FGAP-060 + validateProject edge-migration + phase array-block (DEC-0028).",
+      "status": "in-progress"
+    }
+  ]
+}

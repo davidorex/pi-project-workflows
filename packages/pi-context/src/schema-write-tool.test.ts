@@ -157,6 +157,69 @@ describe("writeSchemaChecked", () => {
 		assert.equal(withBytes, withoutBytes);
 	});
 
+	// Nested id-bearing array guard (content-addressed substrate identity, Cycle 9.2).
+	// writeSchemaChecked routes create/replace through writeSchema (guarded), and the
+	// dry-run branch carries its own guard call — so all three paths must reject a
+	// nested id-bearing schema, while the top-level-id validSchema still passes.
+	it("nested-id guard: create / replace / dry-run all throw on a nested id-bearing schema; validSchema passes", (t) => {
+		const cwd = makeTmpDir("nested-id-guard");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		const nestedIdSchema = {
+			type: "object",
+			properties: {
+				plans: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							id: { type: "string" },
+							layers: {
+								type: "array",
+								items: { type: "object", properties: { id: { type: "string" }, name: { type: "string" } } },
+							},
+						},
+					},
+				},
+			},
+		};
+
+		// create → throws, nothing written.
+		assert.throws(
+			() => writeSchemaChecked(cwd, "carrier", nestedIdSchema, "create"),
+			/nested id-bearing arrays are forbidden/,
+		);
+		assert.ok(!fs.existsSync(onDisk(cwd, "carrier")));
+
+		// create dry-run → throws, nothing written.
+		assert.throws(
+			() => writeSchemaChecked(cwd, "carrier", nestedIdSchema, "create", undefined, { dryRun: true }),
+			/nested id-bearing arrays are forbidden/,
+		);
+		assert.ok(!fs.existsSync(onDisk(cwd, "carrier")));
+
+		// replace: seed a valid schema, then a nested-id replace throws + leaves it byte-unchanged.
+		writeSchema(cwd, "seeded", validSchema);
+		const before = fs.readFileSync(onDisk(cwd, "seeded"), "utf-8");
+		assert.throws(
+			() => writeSchemaChecked(cwd, "seeded", nestedIdSchema, "replace"),
+			/nested id-bearing arrays are forbidden/,
+		);
+		assert.equal(fs.readFileSync(onDisk(cwd, "seeded"), "utf-8"), before);
+
+		// replace dry-run → throws, seeded byte-unchanged.
+		assert.throws(
+			() => writeSchemaChecked(cwd, "seeded", nestedIdSchema, "replace", undefined, { dryRun: true }),
+			/nested id-bearing arrays are forbidden/,
+		);
+		assert.equal(fs.readFileSync(onDisk(cwd, "seeded"), "utf-8"), before);
+
+		// The top-level-id validSchema still passes on create AND replace AND dry-run.
+		assert.doesNotThrow(() => writeSchemaChecked(cwd, "vs", validSchema, "create"));
+		assert.doesNotThrow(() => writeSchemaChecked(cwd, "vs", validSchema, "replace"));
+		assert.doesNotThrow(() => writeSchemaChecked(cwd, "vs2", validSchema, "create", undefined, { dryRun: true }));
+	});
+
 	it("migration boundary: validateBlockWithMigration requires a registry on version-mismatch and succeeds when one is supplied", (t) => {
 		const cwd = makeTmpDir("migration-boundary");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));

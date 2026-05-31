@@ -6,7 +6,7 @@ import { describe, it } from "node:test";
 import { writeConfig } from "./context.js";
 import { schemaPath, writeBootstrapPointer } from "./context-dir.js";
 import { ValidationError } from "./schema-validator.js";
-import { readSchema, updateSchema, writeSchema } from "./schema-write.js";
+import { findNestedIdBearingArrays, readSchema, updateSchema, writeSchema } from "./schema-write.js";
 
 function makeTmpDir(prefix: string): string {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), `schema-write-${prefix}-`));
@@ -282,5 +282,150 @@ describe("updateSchema", () => {
 		assert.strictEqual(after.description, "added by mutator");
 		assert.deepStrictEqual(after.required, ["id"]);
 		assert.deepStrictEqual(after.properties, validSchema.properties);
+	});
+});
+
+// ── Nested id-bearing array guard (content-addressed substrate identity, Cycle 9.2) ──
+
+// A top-level block whose items each embed an id-bearing array (`plans[].layers`,
+// shaped like the real layer-plans carrier). The nested `layers` items carry an
+// `id` → relationship-as-embedding → forbidden.
+const nestedIdSchema = {
+	type: "object",
+	properties: {
+		plans: {
+			type: "array",
+			items: {
+				type: "object",
+				properties: {
+					id: { type: "string" },
+					layers: {
+						type: "array",
+						items: {
+							type: "object",
+							properties: { id: { type: "string" }, name: { type: "string" } },
+						},
+					},
+				},
+			},
+		},
+	},
+};
+
+// Same outer shape, but the nested array's items carry NO `id` — a legitimate
+// embedded value list, must pass.
+const nestedNonIdSchema = {
+	type: "object",
+	properties: {
+		plans: {
+			type: "array",
+			items: {
+				type: "object",
+				properties: {
+					id: { type: "string" },
+					tags: {
+						type: "array",
+						items: { type: "object", properties: { name: { type: "string" } } },
+					},
+				},
+			},
+		},
+	},
+};
+
+// Depth-0 id array: a top-level `items[]` array whose items carry `id`. This is
+// the normal block-item shape and must NOT be flagged.
+const topLevelIdArraySchema = {
+	type: "object",
+	properties: {
+		items: {
+			type: "array",
+			items: {
+				type: "object",
+				properties: { id: { type: "string" }, title: { type: "string" } },
+			},
+		},
+	},
+};
+
+describe("findNestedIdBearingArrays", () => {
+	it("flags a nested id-bearing array by its dotted path", () => {
+		assert.deepStrictEqual(findNestedIdBearingArrays(nestedIdSchema), ["plans.layers"]);
+	});
+
+	it("does NOT flag a nested NON-id array", () => {
+		assert.deepStrictEqual(findNestedIdBearingArrays(nestedNonIdSchema), []);
+	});
+
+	it("does NOT flag a depth-0 (top-level) id array", () => {
+		assert.deepStrictEqual(findNestedIdBearingArrays(topLevelIdArraySchema), []);
+	});
+
+	it("resolves a one-level $ref on nested items", () => {
+		const refSchema = {
+			type: "object",
+			properties: {
+				plans: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							id: { type: "string" },
+							layers: { type: "array", items: { $ref: "#/$defs/layer" } },
+						},
+					},
+				},
+			},
+			$defs: {
+				layer: { type: "object", properties: { id: { type: "string" }, name: { type: "string" } } },
+			},
+		};
+		assert.deepStrictEqual(findNestedIdBearingArrays(refSchema), ["plans.layers"]);
+	});
+});
+
+describe("writeSchema nested-id-bearing-array guard", () => {
+	it("rejects a schema with a nested id-bearing array — message names the path; file NOT created", (t) => {
+		const tmpDir = makeTmpDir("nested-id-reject");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupProjectDir(tmpDir);
+
+		assert.throws(
+			() => writeSchema(tmpDir, "carrier", nestedIdSchema),
+			(err: unknown) => {
+				assert.ok(err instanceof Error);
+				assert.match(err.message, /nested id-bearing arrays are forbidden/);
+				assert.match(err.message, /plans\.layers/);
+				return true;
+			},
+		);
+		assert.ok(!fs.existsSync(path.join(tmpDir, ".project", "schemas", "carrier.schema.json")));
+	});
+
+	it("accepts a schema with a nested NON-id array", (t) => {
+		const tmpDir = makeTmpDir("nested-nonid-ok");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupProjectDir(tmpDir);
+
+		assert.doesNotThrow(() => writeSchema(tmpDir, "ok-nonid", nestedNonIdSchema));
+		assert.ok(fs.existsSync(path.join(tmpDir, ".project", "schemas", "ok-nonid.schema.json")));
+	});
+
+	it("accepts a schema with a depth-0 (top-level) id array", (t) => {
+		const tmpDir = makeTmpDir("toplevel-id-ok");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupProjectDir(tmpDir);
+
+		assert.doesNotThrow(() => writeSchema(tmpDir, "ok-toplevel", topLevelIdArraySchema));
+		assert.ok(fs.existsSync(path.join(tmpDir, ".project", "schemas", "ok-toplevel.schema.json")));
+	});
+
+	it("still accepts a plain valid schema (no array at all)", (t) => {
+		const tmpDir = makeTmpDir("plain-still-ok");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupProjectDir(tmpDir);
+
+		assert.doesNotThrow(() => writeSchema(tmpDir, "plain", validSchema));
+		assert.ok(fs.existsSync(path.join(tmpDir, ".project", "schemas", "plain.schema.json")));
 	});
 });

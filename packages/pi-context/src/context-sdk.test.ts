@@ -3237,3 +3237,105 @@ describe("validateContext: substrate_id SoT-drift invariant", () => {
 		assert.deepStrictEqual(result.issues, []);
 	});
 });
+
+// ── validateContext: nested id-bearing array warning (Cycle 9.2) ─────────────
+//
+// Schema-level lint independent of block data + config: every array property at
+// nesting depth ≥ 1 whose item shape carries an `id` warns (one per offending
+// dotted key-path), non-fatal — status must not flip to "invalid" by it alone.
+describe("validateContext: nested id-bearing array warning", () => {
+	// A carrier schema shaped like layer-plans: top-level `plans[]` whose items
+	// embed two id-bearing arrays (layers, migration_phases). Two offending paths.
+	const carrierSchema = {
+		type: "object",
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						layers: {
+							type: "array",
+							items: { type: "object", properties: { id: { type: "string" }, name: { type: "string" } } },
+						},
+						migration_phases: {
+							type: "array",
+							items: { type: "object", properties: { id: { type: "string" }, name: { type: "string" } } },
+						},
+					},
+				},
+			},
+		},
+	};
+
+	// A clean schema: top-level id array (depth 0) + a nested NON-id array. No hit.
+	const cleanSchema = {
+		type: "object",
+		properties: {
+			items: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						tags: { type: "array", items: { type: "object", properties: { name: { type: "string" } } } },
+					},
+				},
+			},
+		},
+	};
+
+	function seedSchema(projectDir: string, name: string, schema: unknown): void {
+		const schemasDir = path.join(projectDir, "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(path.join(schemasDir, `${name}.schema.json`), JSON.stringify(schema, null, 2));
+	}
+
+	it("emits one warning per offending nested id-bearing key; non-fatal (status not 'invalid')", (t) => {
+		const tmpDir = makeTmpDir("nested-id-warn");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		seedSchema(projectDir, "layer-plans", carrierSchema);
+
+		const result = validateContext(tmpDir);
+
+		const warns = result.issues.filter((i) => i.code === "nested_id_bearing_array");
+		assert.strictEqual(warns.length, 2, "two offending nested id-bearing arrays");
+		assert.ok(
+			warns.every((w) => w.severity === "warning"),
+			"all nested-id issues are warnings",
+		);
+		assert.ok(
+			warns.every((w) => w.block === "layer-plans"),
+			"block names the schema (no .schema.json suffix)",
+		);
+		const fields = warns.map((w) => w.field).sort();
+		assert.deepStrictEqual(fields, ["plans.layers", "plans.migration_phases"]);
+		// Non-fatal on its own: with no errors present the status is "warnings", never "invalid".
+		assert.notStrictEqual(result.status, "invalid");
+		assert.strictEqual(result.status, "warnings");
+	});
+
+	it("emits no nested_id_bearing_array warning for a clean schema set", (t) => {
+		const tmpDir = makeTmpDir("nested-id-clean");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		seedSchema(projectDir, "clean-block", cleanSchema);
+
+		const result = validateContext(tmpDir);
+		assert.ok(!result.issues.some((i) => i.code === "nested_id_bearing_array"));
+	});
+
+	it("skips cleanly when the schemas dir is absent (no throw, no nested-id warning)", (t) => {
+		const tmpDir = makeTmpDir("nested-id-noschemas");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true }); // no schemas/ subdir
+
+		const result = validateContext(tmpDir);
+		assert.ok(!result.issues.some((i) => i.code === "nested_id_bearing_array"));
+	});
+});

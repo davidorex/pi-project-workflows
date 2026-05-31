@@ -127,6 +127,20 @@ describe("installContext", () => {
 		assert.deepEqual(result.installed, ["schemas/framework-gaps.schema.json"]);
 	});
 
+	// Cycle 9.2: writeSchema now rejects nested id-bearing schemas, but install
+	// copies catalog schemas via fs (not writeSchema), so the grandfathered
+	// layer-plans carrier still installs cleanly — confirm no throw + present.
+	it("installs the nested-id carrier layer-plans (fs copy bypasses the writeSchema guard)", () => {
+		tmpRoot = makeProject(["layer-plans"], []);
+		let result: ReturnType<typeof installContext>;
+		assert.doesNotThrow(() => {
+			result = installContext(tmpRoot);
+		});
+		// biome-ignore lint/style/noNonNullAssertion: assigned in the doesNotThrow callback above.
+		assert.deepEqual(result!.installed, ["schemas/layer-plans.schema.json"]);
+		assert.ok(fs.existsSync(path.join(tmpRoot, ".project", "schemas", "layer-plans.schema.json")));
+	});
+
 	it("config and relations report notFound", () => {
 		tmpRoot = makeProject(["config", "relations"], []);
 		const result = installContext(tmpRoot);

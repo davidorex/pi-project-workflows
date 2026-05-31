@@ -35,6 +35,95 @@ import type { DispatchContext } from "./dispatch-context.js";
 import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.js";
 
 /**
+ * The dotted key-paths of every array property at nesting depth ≥ 1 (reachable
+ * only by descending through ≥1 enclosing array's `items`) whose item shape
+ * declares an `"id"` property. A NESTED id-bearing array is a
+ * relationship-as-embedding — an id-bearing item that should be a top-level
+ * entity joined by a closure-table membership edge, not embedded inside another
+ * item's array (content-addressed substrate identity, Cycle 9.2). Depth-0
+ * (top-level) id arrays are the normal block-item shape and are NOT flagged;
+ * nested NON-id arrays (e.g. a list of strings, or objects with no `id`) are NOT
+ * flagged.
+ *
+ * Trigger = `"id"` PRESENCE in the nested array's item `properties` — NOT a
+ * full identity-field declaration (`collectArrayItemIdentityDecisions` keys on
+ * the IDENTITY_DECLARATION_FIELDS union; this guard keys on `id` alone, because
+ * an embedded item carrying any local `id` is the relationship-as-embedding
+ * smell regardless of whether it also declares oid/content_hash).
+ *
+ * The walk mirrors `collectArrayItemIdentityDecisions` (block-api.ts) —
+ * `properties.*` + recurse into array `items` + recurse into object-valued
+ * props — but carries a `depth` incremented each time it descends through an
+ * array's `items`, and resolves a one-level `#/definitions/*` or `#/$defs/*`
+ * `$ref` on `items` the same way `resolveBlockItemSchema` does (block-api.ts),
+ * so a nested item that sits behind a `$ref` is not missed by a ref-blind walk.
+ */
+export function findNestedIdBearingArrays(schema: Record<string, unknown>): string[] {
+	const hits: string[] = [];
+
+	// Resolve a one-level local `$ref` on a schema node, mirroring
+	// resolveBlockItemSchema's supported refs (#/definitions/* | #/$defs/*).
+	// Unresolvable / unsupported refs are returned as-is (the walk then finds no
+	// `properties` on them and stops — it never throws, since this is a lint pass,
+	// not a load-time validation gate).
+	function deref(node: Record<string, unknown>): Record<string, unknown> {
+		const ref = typeof node.$ref === "string" ? node.$ref : undefined;
+		if (!ref) return node;
+		const m = /^#\/(definitions|\$defs)\/(.+)$/.exec(ref);
+		if (!m) return node;
+		const bag = schema[m[1]] as Record<string, Record<string, unknown>> | undefined;
+		const target = bag?.[m[2]];
+		return target && typeof target === "object" ? target : node;
+	}
+
+	function walk(node: Record<string, unknown>, depth: number, keyPath: string): void {
+		if (!node || typeof node !== "object") return;
+		const resolved = deref(node);
+		const props = resolved.properties as Record<string, unknown> | undefined;
+		if (!props) return;
+		for (const [k, vRaw] of Object.entries(props)) {
+			if (!vRaw || typeof vRaw !== "object") continue;
+			const v = vRaw as Record<string, unknown>;
+			if (v.type === "array" && v.items) {
+				const items = deref(v.items as Record<string, unknown>);
+				const itemProps = items.properties as Record<string, unknown> | undefined;
+				// At nesting depth ≥ 1 an array whose item shape carries an `id`
+				// property is the forbidden relationship-as-embedding.
+				if (depth >= 1 && itemProps && Object.hasOwn(itemProps, "id")) {
+					hits.push(`${keyPath}${k}`);
+				}
+				// Descend into the array's items at depth+1 to catch deeper nesting.
+				walk(items, depth + 1, `${keyPath}${k}.`);
+			} else {
+				// Object-valued (non-array) property: recurse at the SAME depth so a
+				// nested object wrapper does not by itself count as array nesting.
+				walk(v, depth, `${keyPath}${k}.`);
+			}
+		}
+	}
+
+	walk(schema, 0, "");
+	return hits;
+}
+
+/**
+ * Throw when `schema` declares any nested id-bearing array (see
+ * `findNestedIdBearingArrays`). The message names every offending dotted
+ * key-path so the author knows exactly which embedded array to promote to a
+ * top-level entity + membership edge. Mirrors the meta-reject throw convention
+ * (a plain `Error` carrying a labeled message). A schema with no nested
+ * id-bearing array is a no-op.
+ */
+export function assertNoNestedIdBearingArray(schema: Record<string, unknown>, label: string): void {
+	const paths = findNestedIdBearingArrays(schema);
+	if (paths.length) {
+		throw new Error(
+			`${label}: nested id-bearing arrays are forbidden (id-bearing items must be top-level blocks joined by membership edges, not embedded): ${paths.join(", ")}`,
+		);
+	}
+}
+
+/**
  * `<resolveContextDir(cwd)>/schemas/<schemaName>.schema.json` — canonical schema
  * path, routed through `schemaPath` (context-dir) so write resolution is
  * BYTE-IDENTICAL to read resolution (FGAP-079 / DEC-0045). Previously this was
@@ -94,6 +183,13 @@ export function writeSchema(cwd: string, schemaName: string, schema: object): vo
 
 	// (1) Meta-schema validation BEFORE any disk activity.
 	validateSchemaAgainstMeta(schema, `schema '${schemaName}'`);
+
+	// (1b) Substrate-shape guard: reject a schema that embeds an id-bearing item
+	// inside another item's array (nested id-bearing array) — a
+	// relationship-as-embedding that must be a top-level entity + membership edge
+	// (content-addressed substrate identity, Cycle 9.2). Runs after meta-validation
+	// (so the body is structurally a schema) and before any disk activity.
+	assertNoNestedIdBearingArray(schema as Record<string, unknown>, `schema '${schemaName}'`);
 
 	// (2) Ensure the schemas/ directory exists.
 	fs.mkdirSync(path.dirname(p), { recursive: true });
@@ -186,8 +282,12 @@ export function writeSchemaChecked(
 	}
 
 	// (3) Dry-run: meta-validate via the SAME validator writeSchema uses, no write.
+	// The dry-run branch does NOT route through writeSchema (which now carries the
+	// nested-id guard), so the guard is applied here too — a --dry-run preview of a
+	// nested-id schema must reject identically to a committing write.
 	if (opts?.dryRun) {
 		validateSchemaAgainstMeta(schema, `schema '${schemaName}' (dry-run)`);
+		assertNoNestedIdBearingArray(schema as Record<string, unknown>, `schema '${schemaName}' (dry-run)`);
 		return { written: false, operation, schemaPath: target };
 	}
 

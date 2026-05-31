@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import { scanForCitationRot } from "./citation-rot-scanner.js";
 import { samplesCatalog } from "./samples-catalog.js";
 import { validate } from "./schema-validator.js";
+import { findNestedIdBearingArrays } from "./schema-write.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAMPLES_DIR = path.resolve(__dirname, "..", "samples");
@@ -159,6 +160,27 @@ describe("samplesCatalog", () => {
 	// *.schema.json; JSDoc + line-comment trivia in .ts files; node_modules +
 	// dist + .test.ts files) are coded inside the scanner per its failure-mode
 	// contract — the call site here supplies no exclusion list.
+	// Nested id-bearing array carrier pin (content-addressed substrate identity,
+	// Cycle 9.2). writeSchema now REJECTS a new schema declaring a nested
+	// id-bearing array, but a schema authored directly into samples/ bypasses
+	// that gate. This pin freezes the class at the catalog level: the set of
+	// shipped block-kind schemas whose body carries ≥1 nested id-bearing array is
+	// EXACTLY {layer-plans} (its plans.layers + plans.migration_phases embeddings,
+	// awaiting Phase-H promotion). A NEW catalog schema with a nested id-bearing
+	// array — or a regression that removes layer-plans without lifting this pin —
+	// fails CI here.
+	it("CYCLE-9.2 PIN: nested id-bearing array carriers across shipped schemas == {layer-plans}", () => {
+		const carriers = new Set<string>();
+		for (const k of samplesCatalog().kinds) {
+			const schema = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, k.schema_path), "utf-8")) as Record<
+				string,
+				unknown
+			>;
+			if (findNestedIdBearingArrays(schema).length > 0) carriers.add(k.canonical_id);
+		}
+		assert.deepStrictEqual([...carriers].sort(), ["layer-plans"]);
+	});
+
 	it("citation-rot regression — AST scanner across all monorepo packages (FGAP-131/132)", () => {
 		const projectRoot = path.resolve(__dirname, "..", "..", "..");
 		const hits = scanForCitationRot({

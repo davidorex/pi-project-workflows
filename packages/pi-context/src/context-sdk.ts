@@ -26,6 +26,7 @@ import { loadRegistry, resolveAlias, resolveSubstrateDir } from "./context-regis
 import type { DispatchContext } from "./dispatch-context.js";
 import { getLensValidators } from "./lens-validator.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
+import { findNestedIdBearingArrays } from "./schema-write.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
@@ -1935,6 +1936,46 @@ export function validateContext(cwd: string): ContextValidationResult {
 					field: "status",
 					code: "status_unknown_value",
 				});
+			}
+		}
+	}
+
+	// ── Nested id-bearing array warning (content-addressed substrate identity,
+	// Cycle 9.2) ─────────────────────────────────────────────────────────────
+	// Schema-level, independent of block DATA + config: enumerate the active
+	// substrate's installed schemas and flag every array property at nesting
+	// depth ≥ 1 whose item shape carries an `id` — a relationship-as-embedding
+	// that should be promoted to a top-level entity + membership edge (Phase H).
+	// Non-fatal (warning), so it raises the warning count only and never flips
+	// status to "invalid" by itself. Runs whether or not config is present;
+	// skips cleanly when the schemas dir is absent (pre-bootstrap substrate) and
+	// is best-effort per-file (an unparseable / unreadable schema is skipped
+	// rather than failing the whole project validate).
+	{
+		// Resolve the substrate dir via tryResolveContextDir (returns null when no
+		// pointer exists) rather than schemasDir, whose resolveContextDir THROWS on a
+		// pointer-less cwd — validateContext must degrade cleanly there, not throw.
+		const ctxRoot = tryResolveContextDir(cwd);
+		const schemasDirPath = ctxRoot === null ? null : path.join(ctxRoot, SCHEMAS_DIR);
+		if (schemasDirPath !== null && fs.existsSync(schemasDirPath)) {
+			for (const file of fs.readdirSync(schemasDirPath).sort()) {
+				if (!file.endsWith(".schema.json")) continue;
+				const schemaName = file.slice(0, -".schema.json".length);
+				let parsed: Record<string, unknown>;
+				try {
+					parsed = JSON.parse(fs.readFileSync(path.join(schemasDirPath, file), "utf-8")) as Record<string, unknown>;
+				} catch {
+					continue; // unreadable / non-JSON schema — not this pass's concern
+				}
+				for (const fieldPath of findNestedIdBearingArrays(parsed)) {
+					issues.push({
+						severity: "warning",
+						message: `nested id-bearing array '${fieldPath}' — promote to a top-level entity + membership edge (Phase H)`,
+						block: schemaName,
+						field: fieldPath,
+						code: "nested_id_bearing_array",
+					});
+				}
 			}
 		}
 	}

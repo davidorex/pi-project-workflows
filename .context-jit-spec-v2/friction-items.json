@@ -29,34 +29,6 @@
       ]
     },
     {
-      "id": "FB-001",
-      "title": "resolvePromptField heuristic misclassifies inline prompts as template file paths",
-      "severity": "blocking",
-      "status": "open",
-      "source": {
-        "repo": "clock-menu-app",
-        "file": ".context/usage-feedback.json",
-        "discovered_at": "2026-05-29T12:52:00Z",
-        "discovered_by": "agent"
-      },
-      "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T15:00:00Z",
-      "category": "prompt-heuristic",
-      "description": "When an inline prompt string (prompt.system or prompt.task) is a single line containing any '/' character, resolvePromptField classifies it as a template file path instead of inline text. The condition `value.includes('/') && !value.includes('\\n')` triggers on natural-language prompts that mention directories (e.g. 'docs/03-solar-engine.md'), URLs, or any path-like string. There is no explicit 'inline:' discriminator in the YAML shape — only 'template:' exists as an explicit key. The inline path is heuristic-only, and the heuristic is wrong.",
-      "actual_behavior": "Prompt text like 'Read docs/03-solar-engine.md' is stored as taskPromptTemplate instead of taskPrompt. compileAgent calls renderTemplateFile with the prompt text as a file path, resulting in ENOENT. The compile fails with 'no prompt content produced' when both prompts are misclassified.",
-      "expected_behavior": "Inline prompts containing natural language that happens to mention paths should be treated as inline text, not template file paths. A conservative heuristic would only treat a value as a template path if it ENDS with a known template extension (.md, .txt) and does not contain natural-language markers (spaces, punctuation outside path characters). Alternatively, an explicit 'inline:' key should exist alongside 'template:' in the YAML shape.",
-      "reproduction": "1. author-agent-spec with prompt.task set to any string containing '/' and no newlines (e.g. 'Read the docs at /Users/me/project/docs/'). 2. call-agent on that spec. 3. Observe ENOENT trying to open the prompt text as a file path.",
-      "workaround": "Remove all '/' characters from inline prompts. Use template variables like {{ input.doc }} to pass paths instead of hardcoding them.",
-      "code_references": [
-        {
-          "file": "packages/pi-jit-agents/src/agent-spec.ts",
-          "line": 30,
-          "symbol": "resolvePromptField",
-          "snippet": "(value.includes('/') && !value.includes('\\n'))"
-        }
-      ]
-    },
-    {
       "id": "FB-002",
       "title": "author-agent-spec YAML serializer uses folded block scalar, destroying newlines",
       "severity": "friction",

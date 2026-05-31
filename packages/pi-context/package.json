@@ -25,6 +25,14 @@
 			"types": "./dist/block-api.d.ts",
 			"default": "./dist/block-api.js"
 		},
+		"./content-hash": {
+			"types": "./dist/content-hash.d.ts",
+			"default": "./dist/content-hash.js"
+		},
+		"./object-store": {
+			"types": "./dist/object-store.d.ts",
+			"default": "./dist/object-store.js"
+		},
 		"./schema-validator": {
 			"types": "./dist/schema-validator.d.ts",
 			"default": "./dist/schema-validator.js"
@@ -108,6 +116,7 @@
 		"typebox": "^1.1.24",
 		"ajv": "^8.17.1",
 		"ajv-formats": "^3.0.1",
+		"canonicalize": "^2.0.0",
 		"proper-lockfile": "^4.1.2"
 	},
 	"devDependencies": {

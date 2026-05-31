@@ -65,6 +65,33 @@ function blockSchemaPathForDir(substrateDir: string, blockName: string): string 
  */
 const AUTHOR_FIELDS = ["created_by", "created_at", "modified_by", "modified_at"] as const;
 
+/**
+ * The default content/metadata partition (content-addressed substrate
+ * identity, Cycle 2 / Phase A). These are the item fields EXCLUDED from a
+ * content hash: identity/addressing fields (`id`, `oid`, `content_hash`,
+ * `content_parent`), the four author/attestation fields (`AUTHOR_FIELDS`), and
+ * the lifecycle-closure fields (`closed_by`, `closed_at`, which appear in the
+ * framework-gaps schema lifecycle). Everything NOT in this set is "content"
+ * and participates in the hash, so a metadata-only change (e.g. a refreshed
+ * `created_at` or a freshly-assigned `oid`) leaves the content hash stable.
+ *
+ * Built from `AUTHOR_FIELDS` plus the extras so the four author strings have a
+ * single source of truth and cannot drift from the stamping path. The exact
+ * membership is the 10 fields enumerated here.
+ *
+ * Schemas may override this per item kind via `x-identity.metadata_fields`
+ * (see `metadataFieldsForSchema`).
+ */
+export const DEFAULT_METADATA_FIELDS: ReadonlySet<string> = new Set<string>([
+	"id",
+	"oid",
+	"content_hash",
+	"content_parent",
+	...AUTHOR_FIELDS,
+	"closed_by",
+	"closed_at",
+]);
+
 interface SchemaCacheEntry {
 	mtimeMs: number;
 	/** True when the schema declares ANY author field anywhere — top-level
@@ -87,6 +114,17 @@ interface SchemaCacheEntry {
 	 * `additionalProperties: false`. Empty set = "key catalogued but no
 	 * author fields declared on its items". */
 	perArrayKey: Map<string, ReadonlySet<string>>;
+	/** The content/metadata partition per array key — the set of fields to
+	 * EXCLUDE when projecting an item to its hashable content (Cycle 2 /
+	 * Phase A). Keyed by array property name; value is the schema's
+	 * `x-identity.metadata_fields` for that item kind when declared, else
+	 * `DEFAULT_METADATA_FIELDS`. Populated once per cache load via
+	 * `metadataFieldsForSchema` so there is a single resolution path and no
+	 * parallel default. Purely additive: nothing reads it until Cycle 3
+	 * wires content-hashing into the write path. A lookup miss falls back to
+	 * `DEFAULT_METADATA_FIELDS` at the read site (`metadataFieldsForSchema`),
+	 * so an uncatalogued key still gets the safe default partition. */
+	metadataFieldsByArrayKey: Map<string, ReadonlySet<string>>;
 }
 
 const schemaCache = new Map<string, SchemaCacheEntry>();
@@ -176,6 +214,107 @@ function collectArrayItemAuthorDecisions(schema: unknown, into: Map<string, Read
 }
 
 /**
+ * Read the `x-identity.metadata_fields` override from an item subschema, if
+ * present. `x-identity` follows the established `x-prompt-budget` /
+ * `x-lifecycle` extension-keyword convention; `metadata_fields` is an array of
+ * field names to treat as metadata (excluded from the content hash) for items
+ * of this kind. Returns the array as a `Set` when validly declared, else
+ * `null` (caller falls back to `DEFAULT_METADATA_FIELDS`). Non-string entries
+ * are ignored defensively; a non-array `metadata_fields` yields `null`.
+ */
+function readItemMetadataFieldsOverride(itemSchema: unknown): ReadonlySet<string> | null {
+	if (!itemSchema || typeof itemSchema !== "object") return null;
+	const xIdentity = (itemSchema as Record<string, unknown>)["x-identity"];
+	if (!xIdentity || typeof xIdentity !== "object") return null;
+	const fields = (xIdentity as Record<string, unknown>).metadata_fields;
+	if (!Array.isArray(fields)) return null;
+	const out = new Set<string>();
+	for (const f of fields) {
+		if (typeof f === "string") out.add(f);
+	}
+	return out;
+}
+
+/**
+ * Walk every `items` subschema reachable from a schema (same traversal shape
+ * as `collectArrayItemAuthorDecisions`) and record, per array property name,
+ * the content/metadata partition for that array's items: the declared
+ * `x-identity.metadata_fields` override when present, else
+ * `DEFAULT_METADATA_FIELDS`. Mutates `into` in place. Nested arrays appear
+ * under their own key. When the same key appears at multiple depths, an
+ * explicitly-declared override wins over the default (first explicit
+ * declaration encountered is retained; a later default does not clobber it).
+ */
+function collectArrayItemMetadataFields(schema: unknown, into: Map<string, ReadonlySet<string>>): void {
+	if (!schema || typeof schema !== "object") return;
+	const s = schema as Record<string, unknown>;
+	const props = s.properties as Record<string, unknown> | undefined;
+	if (!props) return;
+	for (const [propKey, propSpecRaw] of Object.entries(props)) {
+		if (!propSpecRaw || typeof propSpecRaw !== "object") continue;
+		const spec = propSpecRaw as Record<string, unknown>;
+		if (spec.type === "array") {
+			const items = spec.items as Record<string, unknown> | undefined;
+			if (items && typeof items === "object") {
+				const itemProps = items.properties as Record<string, unknown> | undefined;
+				if (itemProps) {
+					const override = readItemMetadataFieldsOverride(items);
+					const resolved = override ?? DEFAULT_METADATA_FIELDS;
+					const prior = into.get(propKey);
+					// An explicit override always wins; otherwise the first
+					// recorded value (which may itself be a default) stands.
+					if (override || !prior) {
+						into.set(propKey, resolved);
+					}
+					collectArrayItemMetadataFields(items, into);
+				}
+			}
+		} else {
+			collectArrayItemMetadataFields(spec, into);
+		}
+	}
+}
+
+/**
+ * The content/metadata partition for items of array `arrayKey` under `schema`:
+ * the item subschema's `x-identity.metadata_fields` as a `Set` when declared,
+ * else `DEFAULT_METADATA_FIELDS`. Single reader — both the cache populate site
+ * and `contentProjection` route through this so there is exactly one
+ * resolution path and no parallel default. Resolves the item subschema by the
+ * same array-key traversal used for author-field decisions.
+ */
+export function metadataFieldsForSchema(schema: unknown, arrayKey: string): ReadonlySet<string> {
+	const collected = new Map<string, ReadonlySet<string>>();
+	collectArrayItemMetadataFields(schema, collected);
+	return collected.get(arrayKey) ?? DEFAULT_METADATA_FIELDS;
+}
+
+/**
+ * Project an item to its hashable content: a SHALLOW COPY of `item` with the
+ * metadata keys (`metadataFieldsForSchema(schema, arrayKey)`) deleted. Does
+ * NOT mutate `item`. The result is what Cycle 3 will feed to
+ * `computeContentHash`, so a metadata-only mutation (refreshed author stamp,
+ * freshly-assigned `oid`, etc.) leaves the projection — and therefore the
+ * content hash — unchanged.
+ *
+ * `schema` is the parsed schema object (not a path), so this is usable both
+ * from the cache populate path and from ad-hoc callers / tests holding an
+ * inline schema.
+ */
+export function contentProjection(
+	schema: Record<string, unknown>,
+	arrayKey: string,
+	item: Record<string, unknown>,
+): Record<string, unknown> {
+	const metadataFields = metadataFieldsForSchema(schema, arrayKey);
+	const projection: Record<string, unknown> = { ...item };
+	for (const f of metadataFields) {
+		delete projection[f];
+	}
+	return projection;
+}
+
+/**
  * Load the cached schema-introspection answer for a schema file, refreshing
  * the cache when the file's mtime changes (or it appears / disappears).
  * Returns `null` when no schema exists at the path — callers treat that as
@@ -211,12 +350,15 @@ function getSchemaCacheEntry(schemaPath: string | null): SchemaCacheEntry | null
 			hasAuthorFields: false,
 			envelopeDeclares: new Set<string>(),
 			perArrayKey: new Map(),
+			metadataFieldsByArrayKey: new Map(),
 		};
 		schemaCache.set(key, entry);
 		return entry;
 	}
 	const perArrayKey = new Map<string, ReadonlySet<string>>();
 	collectArrayItemAuthorDecisions(schema, perArrayKey);
+	const metadataFieldsByArrayKey = new Map<string, ReadonlySet<string>>();
+	collectArrayItemMetadataFields(schema, metadataFieldsByArrayKey);
 	const envelopeDeclares = schemaTopLevelDeclaredAuthorFields(schema);
 	let anyArrayItemDeclares = false;
 	for (const v of perArrayKey.values()) {
@@ -230,6 +372,7 @@ function getSchemaCacheEntry(schemaPath: string | null): SchemaCacheEntry | null
 		hasAuthorFields: envelopeDeclares.size > 0 || anyArrayItemDeclares,
 		envelopeDeclares,
 		perArrayKey,
+		metadataFieldsByArrayKey,
 	};
 	schemaCache.set(key, entry);
 	return entry;

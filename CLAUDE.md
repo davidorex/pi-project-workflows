@@ -1,16 +1,23 @@
 # pi-project-workflows
 
-Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state in `.project/`. Behavior monitors that classify agent activity and steer corrections.
+Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state via pi-context. Behavior monitors that classify agent activity and steer corrections.
 
-Monorepo: npm packages under `packages/*` with lockstep versioning. Inspect `packages/` for the current set.
+Monorepo: npm packages under `packages/*` with lockstep versioning. `ls -d packages/*/` for the set; each `packages/<name>/package.json` `description` + `src/index.ts` re-exports (root for pi-behavior-monitors) for its surface. `pi-project-workflows` is the meta-package re-exporting the Pi extensions; `pi-jit-agents` is a library, not an extension.
 
-| Package | Purpose |
-|---------|---------|
-| `@davidorex/pi-context` | Substrate: block CRUD with AJV validation + DispatchContext attestation, schema-write surface, closure-table relations + lens primitives, config-driven substrate-dir resolution (`resolveContextDir`), query primitives (filter / resolve-bulk / walkDescendants / walkAncestors / findReferences), PM-lens module, `/context` command + tool surface |
-| `@davidorex/pi-jit-agents` | Library (not extension). Agent spec compilation + in-process dispatch; the four boundary surfaces (load, compile, execute, introspect) per `docs/planning/jit-agents-spec.md` |
-| `@davidorex/pi-workflows` | Workflow orchestration, agent dispatch, `/workflow` command, Nunjucks template + macros for block injection |
-| `@davidorex/pi-behavior-monitors` | Autonomous monitors, classification (via phantom-tool pattern), steering |
-| `@davidorex/pi-project-workflows` | Meta-package re-exporting the three Pi extensions |
+# establishing and maintaining context for this project using pi-context
+
+Read `packages/pi-context/skills/pi-context/SKILL.md` — the generated reference for the full pi-context tool + command surface - to establish understanding of pi-context.
+
+Run  
+`npx tsx -e "import {listSubstrates} from '@davidorex/pi-context'; console.log(listSubstrates('.'))"` to see the list of available context substrates.
+
+Substrates can be switched (like switching git branches). Switching flips the active-substrate pointer in `.pi-context.json`; subsequent reads/writes target the newly-active substrate. Pass the target substrate name (from the `listSubstrates` output above) as the second argument:
+
+```bash
+npx tsx -e "import {flipBootstrapPointer} from '@davidorex/pi-context/context-dir'; flipBootstrapPointer('.', '<target-substrate-dir>', 'human:davidryan@gmail.com')"
+```
+
+Replace `<target-substrate-dir>` with the substrate to activate, e.g. `.context` or `.context-jit-spec-v2`. The third argument is the writer identity stamped on the switch.
 
 ## Commands
 
@@ -23,9 +30,9 @@ npm run skills             # regen SKILL.md from built extensions (run after bui
 npm run release:patch|minor|major   # lockstep bump + commit + tag
 ```
 
-Derive project state at any time:
+Derive context state at any time. `contextState('.')` reads the currently-active substrate (whichever `.pi-context.json` points at). To inspect a different substrate, switch to it first (see switch command above), then run:
 ```bash
-npx tsx -e "import{contextState}from'./packages/pi-context/src/context-sdk.js';console.log(JSON.stringify(contextState('.'),null,2))"
+npx tsx -e "import {contextState} from '@davidorex/pi-context/context-sdk'; console.log(JSON.stringify(contextState('.'), null, 2))"
 ```
 
 Project substrate to interactive HTML view (Pattern B build-step generation; static-baked output is self-contained + offline-portable + git-trackable):
@@ -76,46 +83,13 @@ Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion rel
 - **`.pi/`**: user's runtime testing directory. Never create / modify / delete files there.
 - **`docs/`**: gitignored planning docs. Read-only reference.
 
-## Source Layout
+## Workflow SDK
 
-Each package lives in `packages/<name>/` with source in `src/` (or root for pi-behavior-monitors). Read the package's JSDoc / type definitions / `src/index.ts` re-exports for the current surface — do not rely on enumerated file lists here as they go stale.
+`packages/pi-workflows/src/workflow-sdk.ts` is the single queryable surface (vocabulary / discovery / contracts / introspection / validation), all derived from code + filesystem. Read its `src/index.ts` exports for the function set; use `/workflow status` for derived state in conversation.
 
-- **pi-context**: extension entry in `src/index.ts`; canonical surfaces in `block-api.ts` (writes), `schema-validator.ts` (AJV), `schema-write.ts` (schema-write surface), `schema-migrations.ts` (migration chain), `context-dir.ts` (`resolveContextDir` + path-builders), `context.ts` (substrate SDK + closure-table primitives), `lens-view.ts` (lens projections + traversal wrappers), `context-sdk.ts` (state + discovery + validation), `roadmap-plan.ts` (PM lens), `lens-validator.ts` (register/dispatch), `execution-context.ts` (gather-execution-context). `schemas/` ships framework schemas; `samples/` (conception.json + schemas/ + blocks/) ships the packaged conception = the user-installable catalog; legacy `registry/`+`defaults/` are on-disk fixtures only, unshipped.
-- **pi-jit-agents** (library, not extension): boundary surfaces per `docs/planning/jit-agents-spec.md` — `agent-spec.ts` (load), `compile.ts` (compile + contextBlocks injection), `jit-runtime.ts` (execute + `normalizeToolChoice` provider shape normalization at dispatch boundary), `introspect.ts` (contract projection). `schemas/verdict.schema.json` is the phantom-tool classification contract
-- **pi-workflows**: extension entry in `src/index.ts`; `workflow-sdk.ts` (queryable surface), `workflow-executor.ts` (orchestration), `workflow-spec.ts` (YAML + STEP_TYPES registry), `expression.ts` (`${{ }}` eval + filters), `dispatch.ts` (subprocess spawn), `dag.ts` (planner), `step-*.ts` (one per step type). `templates/shared/macros.md` carries per-block-kind Nunjucks rendering macros.
-- **pi-behavior-monitors**: single-file extension `index.ts`; `agents/*.agent.yaml` (bundled classifiers); `examples/` (monitor specs + Nunjucks prompt templates per monitor)
+## Context SDK
 
-## Workflow SDK (`packages/pi-workflows/src/workflow-sdk.ts`)
-
-Single queryable surface for the workflow extension. All functions derive from code registries + filesystem — add a filter / agent / template / schema and it appears automatically.
-
-- **Vocabulary**: `stepTypes()`, `filterNames()`, `expressionRoots()`, `validationChecks()`
-- **Discovery**: `availableAgents(cwd)`, `availableWorkflows(cwd)`, `availableTemplates(cwd)`, `availableSchemas(cwd)`
-- **Contracts**: `agentContracts(cwd)` — per-agent inputSchema + contextBlocks + output; `agentsByBlock(cwd, blockName)`
-- **Introspection**: `extractExpressions(spec)`, `declaredSteps(spec)`, `declaredAgentRefs(spec)`, `declaredMonitorRefs(spec)`, `declaredSchemaRefs(spec)`
-- **Validation**: `validateWorkflow(spec, cwd)` — agent + monitor + schema + step + filter + StepType metadata + contextBlocks + template-input alignment. Returns `{ status, issues[] }`. Surfaced as `/workflow validate [name]`.
-
-Use `/workflow status` for derived state in conversation.
-
-## Context SDK (`packages/pi-context/src/context-sdk.ts`)
-
-Single queryable surface for project state, block discovery, schema vocabulary, cross-block validation.
-
-- **Vocabulary**: `schemaVocabulary(cwd)`, `schemaInfo(cwd, name)`, `CONTEXT_BLOCK_TYPES`
-- **Discovery**: `availableBlocks(cwd)`, `availableSchemas(cwd)`, `findAppendableBlocks(cwd)`, `blockStructure(cwd)`
-- **Derived state**: `contextState(cwd)`
-- **Validation**: `validateContext(cwd)` — cross-block referential integrity + lens-validator dispatch
-- **Query primitives**: `filterBlockItems(cwd, blockName, predicate)`, `resolveItemById(cwd, id)`, `resolveItemsByIds(cwd, ids)`
-- **Lens-view consumption** (via `lens-view.ts`): `loadLensView`, `renderLensView`, `buildCurationSuggestions`, `validateProjectRelations`, `edgesForLensByName`, `walkLensDescendants`, `walkAncestorsByLens`, `findReferencesInRepo`
-- **Closure-table primitives** (via `context.ts`): `walkDescendants`, `walkAncestors`, `findReferences`, `loadRelations`, `edgesForLens`, `resolveComposition`
-- **PM-lens** (via `roadmap-plan.ts`): `loadRoadmap`, `listRoadmaps`, `validateRoadmaps`, `renderRoadmap`
-- **Write surfaces** (via `block-api.ts`): 8 `.project/`-targeting primitives wrapping 8 typed-file primitives operating on arbitrary `(filePath, schemaPath)` pairs; all writes accept optional `DispatchContext` for authorship attestation
-- **Schema-write** (via `schema-write.ts`): `writeSchema` / `updateSchema` / `readSchema` with AJV meta-validation
-- **Schema migration** (via `schema-migrations.ts`): per-schema version-to-version transitions
-- **Substrate-dir resolution** (via `context-dir.ts`): `resolveContextDir(cwd)` hard-throws on absent `.pi-context.json`; `writeBootstrapPointer(cwd, contextDir)` for fresh-repo bootstrap; path-builders cascade through resolver
-- **Execution-context** (via `execution-context.ts`): `gatherExecutionContext(cwd, args)` composes ContextBundle per declared context-contract for the unit-kind
-
-Use `/context status` for derived state in conversation.
+`packages/pi-context/src/context-sdk.ts` is the single queryable surface for project state, block discovery, schema vocabulary, and cross-block validation (it re-exports the lens-view / closure-table / PM-lens / write / schema-write / migration / dir-resolution / execution-context primitives). Read its `src/index.ts` exports for the function set; use `/context status` for derived state in conversation.
 
 ## Project Blocks (`.project/`)
 
@@ -150,7 +124,6 @@ Typed JSON files with schemas. Substrate writes via block-api primitives (valida
 Load-bearing architectural rules (not change-history):
 
 - Each workflow step runs as a subprocess (`pi --mode json`) with its own context window. Main conversation is control plane; workflows are subordinate.
-- DAG planner infers parallelism from `${{ steps.X }}` references and `context: [stepName]` declarations.
 - Agent specs are `.agent.yaml` only (no `.md` fallback). Compiled to prompts via Nunjucks at dispatch time. Specs declare `inputSchema` (validated pre-spawn), `contextBlocks` (block names injected as `_<name>` into template context with framework anti-injection delimiters), `output.format`/`output.schema` (validated post-completion).
 - `templates/shared/macros.md` provides one rendering macro per block kind. Agents import via `{% from "shared/macros.md" import render_<kind> %}`. Three-tier template search: project `.pi/templates/` > user `~/.pi/agent/monitors/` > package `examples/`.
 - Monitor specs are `.monitor.json` with required `classify.agent` → `.agent.yaml` spec. Classify enforces structured output via the phantom tool pattern: forced `toolChoice` on a `VERDICT_TOOL` whose params match `verdict.schema.json` (CLEAN/FLAG/NEW). Forced-toolChoice shape is provider-specific; route through `normalizeToolChoice(api, toolName)` from `@davidorex/pi-jit-agents` — no hardcoded toolChoice shapes at consumer call sites. Forced tool-use unenforceable on `openai-responses` family + google providers.
@@ -162,12 +135,7 @@ Load-bearing architectural rules (not change-history):
 - Agent step `context: string[]` inlines prior step `textOutput` into dispatch prompt as labeled markdown sections.
 - Agent output instructions tell agents: "raw JSON only, no markdown fences." File-write is secondary; most JSON-producing agents lack write tools — textOutput is the only output channel.
 - `invokeMonitor(name, context?)` export from pi-behavior-monitors enables programmatic classification without `activate()` side effects.
-- `completion` field controls post-workflow message to main LLM. Fires only on `state.status === "completed"`; failed workflows render via `formatResult()`.
 - DispatchContext attestation: every block-api write accepts optional `ctx?: DispatchContext` with `WriterIdentity` (kinds: human / agent / monitor / workflow). When provided AND the target schema declares author fields, items are stamped per the schema's declared subset (per-field declaration honored; upsert pre-merge preserves attestation across replacement updates).
-- Lens-validator dispatch: context-sdk's `validateContext` iterates `getLensValidators()`; lens modules register at module-init via `registerLensValidator({name, validate})`.
-- Composition lens dispatch: LensSpec carries `kind: "target" | "composition"` + `members[]`; `resolveComposition` walks members with cycle detection; emits `composition_cycle_detected` on cycle.
-- Monitor write-action routing through block-api: `executeWriteAction` routes findings via `appendToBlock` / `upsertItemInBlock` with `DispatchContext.writer = { kind: "monitor", monitor_name }`; side-car state via `writeTypedFile` / `appendToTypedFile`.
-- Substrate consumption surface: `/context view <lensId>` renders lens projection as markdown; `/context lens-curate <lensId>` uses `pi.sendMessage` follow-up-turn pattern to surface uncategorized items + suggested calls — LLM curates via existing `append-block-item` tool.
 
 ## CLI Access from Other Agents
 
@@ -182,13 +150,6 @@ pi -p "..." --mode json --tools read --no-skills --model openrouter/anthropic/cl
 For write tools, restrict to minimum (`--tools read,write` or omit `--tools` if prompt needs broader access); always retain `--model` pin. Wrap long invocations in `gtimeout 120 pi -p ...`.
 
 To enumerate available tools at any time: query `/workflow status` + `/context status` or grep `pi.registerTool` across `packages/*/src/`.
-
-## Design Decisions & Gaps
-
-- DECs (architectural canon): `.project/decisions.json` — query via `readBlock` or `pi -p "call read-block with name decisions"` / `npx tsx scripts/orchestrator/extract-decs.ts`
-- FGAPs (open framework gaps): `.project/framework-gaps.json` — query via `readBlock` or canonical script
-- Tasks (in-flight + planned): `.project/tasks.json` — `status: in-progress` items are active focus
-- Verifications (completion evidence): `.project/verification.json` — VER-NNN entries cite criteria_results per closed TASK
 
 ## Substrate authorship semantics
 

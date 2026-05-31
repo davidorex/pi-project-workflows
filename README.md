@@ -1,8 +1,15 @@
-# pi-project-workflows
+# In short
 
-Four [Pi](https://github.com/badlogic/pi-mono) extensions plus a shared agent-runtime library: typed, multi-step workflow execution via `.workflow.yaml` specs; schema-driven project state in the substrate directory; behavior monitors that classify agent activity and steer corrections; in-pi orchestrator surface for bounded-composite agent-as-tool dispatch with operation-granular capability composition; and a library package that owns everything between "I have a spec" and "I have a typed result."
+This monorepo is my playground / experimentation lab for crafting a controllable environment for working with llm's to build things in code.
 
-Schemas are the contract layer. In pi-context, you define what your project tracks by writing JSON Schemas — the tools, validation, and derived state adapt automatically. In pi-workflows, agent steps declare output schemas that enforce the shape of data flowing through the pipeline. In pi-behavior-monitors, JSON pattern libraries define what to detect and how to respond. In pi-jit-agents, agent specs are compiled to typed results with phantom-tool structured output enforcement (classifier-mode) and (per the v2 spec arc) multi-turn agentic-mode dispatch. In pi-agent-dispatch, an in-pi orchestrator authors agent specs + composes operation-granular tool grants + dispatches privileged sub-agents under per-tool human-authorization at the dispatch boundary. The four extensions form a typed loop: project state → workflow input → agent output → validated project state → monitor classification → steering.
+It's based on Pi. 
+
+I'm considering renaming it "pi-prometheus-bound." Or maybe just "pi-bound." I currently run it with a script that wholly constrains the main Pi agent to tools given by the extensions, plus read and grep and ls.
+
+My favorite thing currently is being able to craft and shape context substrates -- /context switch [.dir] -- and model them on the shape of the project's particular current focus. Alongside that is attempting to turn "agents" into jit-tool calls context exactingly composed from the context substrate.
+
+You should (I hope) be able to create exactly the kind of context substrates you need.  
+
 
 ## Philosophy
 

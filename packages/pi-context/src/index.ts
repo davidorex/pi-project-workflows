@@ -73,6 +73,7 @@ import {
 	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
+import { migrateToContentAddressed } from "./migrate-content-addressed.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
 import { promoteItem } from "./promote-item.js";
 import { addressInto, serializeForRead } from "./read-element.js";
@@ -1084,6 +1085,45 @@ const extension = (pi: ExtensionAPI) => {
 			return {
 				details: undefined,
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: migrate-content-addressed ───────────────────────────────────
+
+	pi.registerTool({
+		name: "migrate-content-addressed",
+		label: "Migrate To Content-Addressed",
+		description:
+			"Run the §H content-addressing migration across every substrate under the project root: mint + register a " +
+			"substrate_id per substrate, record the default `project` legacy alias, backfill oid/content_hash/objects onto " +
+			"every existing item, and convert legacy `<alias>:<refname>` + bare-refname relation endpoints to structured form " +
+			"so cross-substrate edges resolve `foreign` CLEAN. Idempotent. Pass dryRun to compute the full report (counts + " +
+			"unresolved endpoints) without writing any channel. A non-dry run with unresolved endpoints is INCOMPLETE — the " +
+			"report's `unresolved[]` lists every dropped (not written as broken) endpoint.",
+		promptSnippet: "Migrate all substrates to content-addressed identity + structured relation endpoints",
+		parameters: Type.Object({
+			dryRun: Type.Optional(Type.Boolean({ description: "Compute the report without writing any channel" })),
+			legacyAliases: Type.Optional(
+				Type.Record(Type.String(), Type.String(), {
+					description: "Map of legacy alias → substrate dir basename (merged over the default `project` → `.project`)",
+				}),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { dryRun?: boolean; legacyAliases?: Record<string, string> },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const report = migrateToContentAddressed(ctx.cwd, {
+				...(params.dryRun !== undefined ? { dryRun: params.dryRun } : {}),
+				...(params.legacyAliases !== undefined ? { legacyAliases: params.legacyAliases } : {}),
+			});
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(report, null, 2) }],
 			};
 		},
 	});

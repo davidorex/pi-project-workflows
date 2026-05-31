@@ -3,15 +3,18 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { migrationsPath, writeBootstrapPointer } from "./context-dir.js";
+import { migrationsPath, migrationsPathForDir, writeBootstrapPointer } from "./context-dir.js";
 import {
 	appendMigrationDecl,
+	appendMigrationDeclForDir,
 	loadMigrationsFile,
+	loadMigrationsFileForDir,
 	MIGRATIONS_FILE_VERSION,
 	type MigrationDecl,
 	removeMigrationDecl,
 	replaceMigrationDecl,
 	writeMigrationsFile,
+	writeMigrationsFileForDir,
 } from "./migrations-store.js";
 import { ValidationError } from "./schema-validator.js";
 
@@ -202,6 +205,56 @@ describe("migrations-store: removeMigrationDecl", () => {
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 		appendMigrationDecl(cwd, declIdentity("thing", "1.0.0", "2.0.0"));
 		assert.throws(() => removeMigrationDecl(cwd, "thing", "9.9.9"), /target missing/);
+	});
+});
+
+describe("migrations-store: dir-targeted forms (Phase H)", () => {
+	it("writeMigrationsFileForDir targets an arbitrary dir; loadMigrationsFileForDir round-trips it", (t) => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "migrations-fordir-write-"));
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		const original = {
+			schema_version: MIGRATIONS_FILE_VERSION,
+			migrations: [declIdentity("thing", "1.0.0", "2.0.0")],
+		};
+		writeMigrationsFileForDir(dir, original);
+		assert.ok(fs.existsSync(migrationsPathForDir(dir)));
+		assert.deepEqual(loadMigrationsFileForDir(dir), original);
+	});
+
+	it("appendMigrationDeclForDir creates + appends against a target dir", (t) => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "migrations-fordir-append-"));
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		const a = declIdentity("thing", "1.0.0", "2.0.0");
+		const b = declIdentity("thing", "2.0.0", "3.0.0");
+		appendMigrationDeclForDir(dir, a);
+		appendMigrationDeclForDir(dir, b);
+		assert.deepEqual(loadMigrationsFileForDir(dir)?.migrations, [a, b]);
+	});
+
+	it("appendMigrationDeclForDir throws on (schemaName, fromVersion) collision, file untouched", (t) => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "migrations-fordir-collision-"));
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		appendMigrationDeclForDir(dir, declIdentity("thing", "1.0.0", "2.0.0"));
+		const before = fs.readFileSync(migrationsPathForDir(dir), "utf-8");
+		assert.throws(() => appendMigrationDeclForDir(dir, declIdentity("thing", "1.0.0", "2.5.0")), /collision/);
+		assert.equal(fs.readFileSync(migrationsPathForDir(dir), "utf-8"), before);
+	});
+
+	it("cwd forms are byte-identical to ForDir on the active substrate dir", (t) => {
+		// Two parallel substrates: one written via the cwd wrapper, one via ForDir
+		// against the same relative dir name. The on-disk bytes must match.
+		const viaCwd = makeTmpDir("byte-cwd");
+		const viaDir = makeTmpDir("byte-dir");
+		t.after(() => {
+			fs.rmSync(viaCwd, { recursive: true, force: true });
+			fs.rmSync(viaDir, { recursive: true, force: true });
+		});
+		const decl = declIdentity("thing", "1.0.0", "2.0.0");
+		appendMigrationDecl(viaCwd, decl);
+		appendMigrationDeclForDir(path.join(viaDir, ".project"), decl);
+		const cwdBytes = fs.readFileSync(path.join(viaCwd, ".project", "migrations.json"), "utf-8");
+		const dirBytes = fs.readFileSync(path.join(viaDir, ".project", "migrations.json"), "utf-8");
+		assert.equal(cwdBytes, dirBytes);
 	});
 });
 

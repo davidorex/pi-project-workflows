@@ -42,7 +42,7 @@ import { fileURLToPath } from "node:url";
 import { writeTypedFile } from "./block-api.js";
 import { migrationsPath, migrationsPathForDir, resolveContextDir } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
-import { invalidateMigrationRegistry } from "./migration-registry-loader.js";
+import { invalidateMigrationRegistry, invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { validateFromFile } from "./schema-validator.js";
 
 /**
@@ -129,7 +129,22 @@ export function loadMigrationsFile(cwd: string): MigrationsFile | null {
  * is the side-effect that matters for read-after-write parity).
  */
 export function writeMigrationsFile(cwd: string, file: MigrationsFile, ctx?: DispatchContext): void {
-	writeTypedFile(migrationsPath(cwd), bundledMigrationsSchemaPath(), file, ctx, "migrations.json");
+	writeMigrationsFileForDir(resolveContextDir(cwd), file, ctx);
+}
+
+/**
+ * Dir-targeted twin of {@link writeMigrationsFile} (Cycle-1 `*ForDir` pattern).
+ * Atomic, AJV-validated whole-file write of `<substrateDir>/migrations.json`
+ * against the bundled migrations schema — takes the ALREADY-RESOLVED substrate
+ * dir directly (no `.pi-context.json` pointer resolution). The cwd form is a
+ * thin wrapper resolving the active dir; behaviour is byte-identical when called
+ * via cwd. Same attestation-parity no-op semantics as the cwd form (the
+ * migrations schema declares no envelope author fields). Does NOT invalidate any
+ * loader cache — the cache-invalidation side-effect lives on the
+ * appendMigrationDecl mutation helpers, not the raw whole-file write.
+ */
+export function writeMigrationsFileForDir(substrateDir: string, file: MigrationsFile, ctx?: DispatchContext): void {
+	writeTypedFile(migrationsPathForDir(substrateDir), bundledMigrationsSchemaPath(), file, ctx, "migrations.json");
 }
 
 /**
@@ -166,7 +181,21 @@ function findMigrationIndex(file: MigrationsFile, schemaName: string, fromVersio
  * next registry consumer reads the fresh declaration.
  */
 export function appendMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: DispatchContext): void {
-	const current = loadMigrationsFile(cwd) ?? emptyMigrationsFile();
+	appendMigrationDeclForDir(resolveContextDir(cwd), decl, ctx);
+}
+
+/**
+ * Dir-targeted twin of {@link appendMigrationDecl} (Cycle-1 `*ForDir` pattern).
+ * Append a new MigrationDecl to the substrate at `substrateDir`. Op-correctness:
+ * the (schemaName, fromVersion) pair must be ABSENT on-disk; collision throws.
+ * Invalidates the loader cache for `substrateDir` after a successful write so
+ * the next registry consumer reads the fresh declaration. The cwd form is a thin
+ * wrapper resolving the active dir; behaviour is byte-identical when called via
+ * cwd (resolveContextDir(cwd) → invalidateMigrationRegistry(cwd) routes through
+ * invalidateMigrationRegistryForDir on the same dir).
+ */
+export function appendMigrationDeclForDir(substrateDir: string, decl: MigrationDecl, ctx?: DispatchContext): void {
+	const current = loadMigrationsFileForDir(substrateDir) ?? emptyMigrationsFile();
 	const idx = findMigrationIndex(current, decl.schemaName, decl.fromVersion);
 	if (idx >= 0) {
 		throw new Error(
@@ -175,8 +204,8 @@ export function appendMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: Disp
 	}
 	const next: MigrationsFile = clone(current);
 	next.migrations.push(decl);
-	writeMigrationsFile(cwd, next, ctx);
-	invalidateMigrationRegistry(cwd);
+	writeMigrationsFileForDir(substrateDir, next, ctx);
+	invalidateMigrationRegistryForDir(substrateDir);
 }
 
 /**

@@ -483,7 +483,20 @@ export function findUnmaterializedAssets(cwd: string, config: ConfigBlock): { sc
 export function loadRelations(cwd: string): Edge[] {
 	const root = tryResolveContextDir(cwd);
 	if (root === null) return [];
-	const p = path.join(root, "relations.json");
+	return loadRelationsForDir(root);
+}
+
+/**
+ * Dir-targeted twin of {@link loadRelations} (Cycle-1 `*ForDir` pattern). Reads
+ * `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir —
+ * no `.pi-context.json` pointer resolution. Returns `[]` when the file is absent;
+ * AJV-validates the top-level `Edge[]` array against the bundled relations schema
+ * exactly as the cwd form does. `loadRelations` is a thin wrapper resolving the
+ * active pointer dir; behaviour is byte-identical when called via cwd. Used by
+ * the Phase-H migration to read a NON-active substrate's edges in place.
+ */
+export function loadRelationsForDir(substrateDir: string): Edge[] {
+	const p = relationsPathForDir(substrateDir);
 	if (!fs.existsSync(p)) return [];
 	let raw: string;
 	try {

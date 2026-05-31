@@ -61,6 +61,10 @@
 			"types": "./dist/promote-item.d.ts",
 			"default": "./dist/promote-item.js"
 		},
+		"./migrate-content-addressed": {
+			"types": "./dist/migrate-content-addressed.d.ts",
+			"default": "./dist/migrate-content-addressed.js"
+		},
 		"./dispatch-context": {
 			"types": "./dist/dispatch-context.d.ts",
 			"default": "./dist/dispatch-context.js"

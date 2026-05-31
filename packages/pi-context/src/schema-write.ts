@@ -45,64 +45,215 @@ import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.j
  * nested NON-id arrays (e.g. a list of strings, or objects with no `id`) are NOT
  * flagged.
  *
- * Trigger = `"id"` PRESENCE in the nested array's item `properties` — NOT a
+ * Trigger = an `"id"` DECLARATION on the nested array's item shape — NOT a
  * full identity-field declaration (`collectArrayItemIdentityDecisions` keys on
  * the IDENTITY_DECLARATION_FIELDS union; this guard keys on `id` alone, because
  * an embedded item carrying any local `id` is the relationship-as-embedding
- * smell regardless of whether it also declares oid/content_hash).
+ * smell regardless of whether it also declares oid/content_hash). An `id` is
+ * detected however it is declared (Cycle 9.3 hardening over the 9.2 form, which
+ * keyed only on `items.properties.id` + one-level local `$ref`):
+ *   - `items.properties.id`;
+ *   - `id` in `items.required` (no `properties.id` needed);
+ *   - any `anyOf`/`oneOf`/`allOf` branch of the item shape declaring an `id`
+ *     (recursive, any-branch — the branch may itself declare it via `required`);
+ *   - tuple-form `items` (an array of subschemas) where ANY member declares an `id`;
+ *   - a one-level `#/definitions/*` | `#/$defs/*` `$ref` resolving to a target
+ *     that declares an `id` via any of the above.
  *
  * The walk mirrors `collectArrayItemIdentityDecisions` (block-api.ts) —
  * `properties.*` + recurse into array `items` + recurse into object-valued
- * props — but carries a `depth` incremented each time it descends through an
- * array's `items`, and resolves a one-level `#/definitions/*` or `#/$defs/*`
- * `$ref` on `items` the same way `resolveBlockItemSchema` does (block-api.ts),
- * so a nested item that sits behind a `$ref` is not missed by a ref-blind walk.
+ * props — extended to traverse composition branches + tuple-`items` members, and
+ * carries a `depth` incremented ONLY when it descends through an array's `items`.
+ * `$ref` resolution mirrors `resolveBlockItemSchema` (block-api.ts) and is
+ * cycle-guarded (a per-path visited set keyed on the resolved pointer string,
+ * plus a recursion-depth backstop) so self-referential / mutually-recursive
+ * `$defs` cannot loop. Unresolvable / external / unsupported `$ref`s are treated
+ * as opaque nodes; the pass NEVER throws (lint pass, not a load-time gate).
  */
 export function findNestedIdBearingArrays(schema: Record<string, unknown>): string[] {
 	const hits: string[] = [];
 
+	// Backstop against pathological array-nesting depth even when the cycle-guard's
+	// pointer set fails to catch a loop (e.g. an unbounded chain of distinct inline
+	// subschemas reached by descending through array `items`).
+	const MAX_DEPTH = 256;
+
+	// SEPARATE structural-recursion backstop. `MAX_DEPTH` only counts array-`items`
+	// descents — composition-branch descent (anyOf/oneOf/allOf) and object-property
+	// recursion deliberately do NOT increment array-depth, so a pure-inline chain of
+	// distinct composition subschemas (no `$ref` at all, e.g. allOf nested 500 deep)
+	// would never trip MAX_DEPTH and would recurse unbounded. This counter increments
+	// on EVERY structural recursion (object-property + array-items + composition) and
+	// bounds total descent regardless of how depth is (or isn't) advanced. The
+	// pointer-`visited` guard already terminates ALL `$ref` cycles; this counter only
+	// backstops a finite-but-pathologically-deep PURE-INLINE chain (no `$ref`), itself
+	// bounded by the finite schema-file size — so the bound can be small with no
+	// practical downside, and small is what keeps termination stack-INdependent.
+	//
+	// Native ceiling, measured in this counter's own units (one `recursion++` per
+	// structural step) for the deepest single-recursion-per-level inline chain:
+	//   - default node stack (~984 KB): RangeError past ~1562 recursion units
+	//   - `node --stack-size=512`:      RangeError past ~976 units
+	//   - `node --stack-size=256`:      RangeError past ~390 units
+	// A bound of 1024 therefore does NOT engage before native overflow on a 512 KB or
+	// smaller stack — termination would be stack-dependent. 128 sits with large margin
+	// below even the ~390-unit ceiling of a 256 KB stack (~67% headroom), so the
+	// counter RETURNS before any `RangeError` can escape regardless of stack size,
+	// preserving the lint-never-throws contract for a hostile pure-inline chain. It
+	// still vastly exceeds any realistic authored nesting (deepest shipped schema nests
+	// ~2 levels; real schemas stay well under ~20), and bounds recursion DEPTH per path
+	// only — breadth is unbounded, so a schema with hundreds of sibling id-bearing
+	// nested arrays still flags every one. Verified empirically at default and
+	// constrained (`--stack-size=512`/`256`) stacks against a 5000-deep inline chain.
+	const MAX_STRUCT_RECURSION = 128;
+
 	// Resolve a one-level local `$ref` on a schema node, mirroring
 	// resolveBlockItemSchema's supported refs (#/definitions/* | #/$defs/*).
-	// Unresolvable / unsupported refs are returned as-is (the walk then finds no
-	// `properties` on them and stops — it never throws, since this is a lint pass,
-	// not a load-time validation gate).
-	function deref(node: Record<string, unknown>): Record<string, unknown> {
+	// Unresolvable / unsupported / external refs are returned as the original node
+	// (opaque — the caller then finds no shape-bearing keys and stops). A `$ref`
+	// whose resolved pointer has already been seen on this descent path returns an
+	// empty object so a self-referential / mutually-recursive `$defs` cannot loop.
+	// Never throws — this is a lint pass, not a load-time validation gate. On a
+	// successful resolution the resolved pointer string is recorded in `visited`
+	// (which the caller passes as a path-local clone so sibling uses of the same
+	// `$ref` are not pruned — only cycles along one path are stopped).
+	function deref(node: Record<string, unknown>, visited: Set<string>): Record<string, unknown> {
 		const ref = typeof node.$ref === "string" ? node.$ref : undefined;
 		if (!ref) return node;
 		const m = /^#\/(definitions|\$defs)\/(.+)$/.exec(ref);
 		if (!m) return node;
+		if (visited.has(ref)) return {};
 		const bag = schema[m[1]] as Record<string, Record<string, unknown>> | undefined;
 		const target = bag?.[m[2]];
-		return target && typeof target === "object" ? target : node;
+		if (!target || typeof target !== "object") return node;
+		visited.add(ref);
+		return target;
 	}
 
-	function walk(node: Record<string, unknown>, depth: number, keyPath: string): void {
-		if (!node || typeof node !== "object") return;
-		const resolved = deref(node);
-		const props = resolved.properties as Record<string, unknown> | undefined;
-		if (!props) return;
-		for (const [k, vRaw] of Object.entries(props)) {
-			if (!vRaw || typeof vRaw !== "object") continue;
-			const v = vRaw as Record<string, unknown>;
-			if (v.type === "array" && v.items) {
-				const items = deref(v.items as Record<string, unknown>);
-				const itemProps = items.properties as Record<string, unknown> | undefined;
-				// At nesting depth ≥ 1 an array whose item shape carries an `id`
-				// property is the forbidden relationship-as-embedding.
-				if (depth >= 1 && itemProps && Object.hasOwn(itemProps, "id")) {
-					hits.push(`${keyPath}${k}`);
+	// The composition keywords whose members are arrays of subschemas; an `id`
+	// (or a deeper nested array) can be buried inside any branch.
+	function compositionBranches(node: Record<string, unknown>): Record<string, unknown>[] {
+		const out: Record<string, unknown>[] = [];
+		for (const key of ["anyOf", "oneOf", "allOf"] as const) {
+			const arr = node[key];
+			if (Array.isArray(arr)) {
+				for (const member of arr) {
+					if (member && typeof member === "object") out.push(member as Record<string, unknown>);
 				}
-				// Descend into the array's items at depth+1 to catch deeper nesting.
-				walk(items, depth + 1, `${keyPath}${k}.`);
-			} else {
-				// Object-valued (non-array) property: recurse at the SAME depth so a
-				// nested object wrapper does not by itself count as array nesting.
-				walk(v, depth, `${keyPath}${k}.`);
+			}
+		}
+		return out;
+	}
+
+	// True iff this subschema declares an `id` — directly via `properties.id`, via
+	// `required` membership, or through ANY anyOf/oneOf/allOf branch (recursive,
+	// any-branch). Cycle-guarded through `deref`; the visited set is cloned per
+	// descent so it stops loops without pruning sibling references.
+	function declaresId(nodeRaw: Record<string, unknown>, visited: Set<string>, depth: number): boolean {
+		if (!nodeRaw || typeof nodeRaw !== "object" || depth > MAX_DEPTH) return false;
+		const node = deref(nodeRaw, visited);
+		const props = node.properties as Record<string, unknown> | undefined;
+		if (props && Object.hasOwn(props, "id")) return true;
+		if (Array.isArray(node.required) && node.required.includes("id")) return true;
+		for (const branch of compositionBranches(node)) {
+			if (declaresId(branch, new Set(visited), depth + 1)) return true;
+		}
+		return false;
+	}
+
+	// True iff the `items` of an array property is id-bearing: an object subschema →
+	// `declaresId`; a tuple (array of subschemas) → ANY member `declaresId`.
+	function itemsDeclareId(itemsRaw: unknown, visited: Set<string>): boolean {
+		if (Array.isArray(itemsRaw)) {
+			return itemsRaw.some(
+				(member) =>
+					member !== null &&
+					typeof member === "object" &&
+					declaresId(member as Record<string, unknown>, new Set(visited), 0),
+			);
+		}
+		if (itemsRaw && typeof itemsRaw === "object") {
+			return declaresId(itemsRaw as Record<string, unknown>, new Set(visited), 0);
+		}
+		return false;
+	}
+
+	// Structural descent. From a (deref'd) node, visit every shape that can host a
+	// nested array: own `properties`, each composition branch's `properties`, and
+	// each tuple-`items` member. `depth` increments ONLY when descending through an
+	// array's `items`; an array property is the forbidden relationship-as-embedding
+	// when it is reached at `depth >= 1` AND its items declare an `id`. `recursion`
+	// increments on EVERY structural step (checked in `walk` AND at the composition
+	// loop entry) so a composition chain that never advances `depth` still terminates.
+	function descendShape(
+		node: Record<string, unknown>,
+		depth: number,
+		keyPath: string,
+		visited: Set<string>,
+		recursion: number,
+	): void {
+		const props = node.properties as Record<string, unknown> | undefined;
+		if (props) {
+			for (const [k, vRaw] of Object.entries(props)) {
+				if (!vRaw || typeof vRaw !== "object") continue;
+				const v = vRaw as Record<string, unknown>;
+				if (v.type === "array" && v.items) {
+					// The id-peek uses a FRESH cycle-guard, independent of the structural
+					// `visited` set. "Does this item declare an id" is a distinct question
+					// from "have I already structurally walked this $ref"; reusing the
+					// polluted structural set would short-circuit a $ref back to a $def that
+					// declares the id (the descent already added that pointer), yielding a
+					// false negative on $ref-cyclic id-bearing schemas. `declaresId` has its
+					// own per-branch clone + MAX_DEPTH backstop and only recurses through
+					// composition (not arbitrary properties), so a fresh seed cannot loop.
+					if (depth >= 1 && itemsDeclareId(v.items, new Set())) {
+						hits.push(`${keyPath}${k}`);
+					}
+					// Descend into the array's items at depth+1 to catch deeper nesting,
+					// whether `items` is a single subschema or a tuple of subschemas.
+					const itemMembers = Array.isArray(v.items) ? v.items : [v.items];
+					for (const memberRaw of itemMembers) {
+						if (memberRaw && typeof memberRaw === "object") {
+							walk(memberRaw as Record<string, unknown>, depth + 1, `${keyPath}${k}.`, new Set(visited), recursion + 1);
+						}
+					}
+				} else {
+					// Object-valued (non-array) property: recurse at the SAME depth so a
+					// nested object wrapper does not by itself count as array nesting.
+					walk(v, depth, `${keyPath}${k}.`, new Set(visited), recursion + 1);
+				}
+			}
+		}
+		// A nested array can be buried inside a composition branch; traverse each at
+		// the SAME `depth` (a branch is not itself an array `items` descent). Route the
+		// composition descent through `walk` — NOT a direct `descendShape` self-call — so
+		// the recursion is bounded by `walk`'s MAX_DEPTH / MAX_STRUCT_RECURSION backstops
+		// just like every other path, and pass the SAME running `visited` (a path-local
+		// clone that PRESERVES the ancestor refs already seen). `walk`'s `deref` then both
+		// records the resolved pointer into that clone AND checks `visited.has(ref)` on it,
+		// so a composition-routed `$ref` back to an ancestor `$def` already on this path
+		// resolves to `{}` (cycle caught) rather than recursing forever. A pure-inline
+		// composition chain (no `$ref`, so the pointer guard never fires) is instead bounded
+		// by MAX_STRUCT_RECURSION, which `walk` increments on entry.
+		for (const branch of compositionBranches(node)) {
+			if (branch && typeof branch === "object") {
+				walk(branch, depth, keyPath, new Set(visited), recursion + 1);
 			}
 		}
 	}
 
-	walk(schema, 0, "");
+	function walk(
+		node: Record<string, unknown>,
+		depth: number,
+		keyPath: string,
+		visited: Set<string>,
+		recursion: number,
+	): void {
+		if (!node || typeof node !== "object" || depth > MAX_DEPTH || recursion > MAX_STRUCT_RECURSION) return;
+		descendShape(deref(node, visited), depth, keyPath, visited, recursion);
+	}
+
+	walk(schema, 0, "", new Set<string>(), 0);
 	return hits;
 }
 

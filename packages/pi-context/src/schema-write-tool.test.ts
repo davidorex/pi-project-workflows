@@ -220,6 +220,112 @@ describe("writeSchemaChecked", () => {
 		assert.doesNotThrow(() => writeSchemaChecked(cwd, "vs2", validSchema, "create", undefined, { dryRun: true }));
 	});
 
+	// Cycle 9.3: the predicate detects an `id` declared via forms the 9.2 walk missed —
+	// `id` in `required` only (no `properties.id`), an `id` inside a oneOf/anyOf/allOf
+	// branch of the nested item shape, and an `id` in any tuple-`items` member. The
+	// 9.2 tool-level test pinned only the `items.properties.id` form; these assert the
+	// tool surface (create + replace + dry-run) rejects the additional NEW forms too.
+	const requiredOnlyIdNested = {
+		type: "object",
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						// nested items declare id via `required` only — NO properties.id
+						layers: {
+							type: "array",
+							items: { type: "object", required: ["id"], properties: { name: { type: "string" } } },
+						},
+					},
+				},
+			},
+		},
+	};
+
+	const oneOfBranchIdNested = {
+		type: "object",
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						layers: {
+							type: "array",
+							items: {
+								oneOf: [
+									{ type: "object", properties: { kind: { type: "string" } } },
+									{ type: "object", properties: { id: { type: "string" } } },
+								],
+							},
+						},
+					},
+				},
+			},
+		},
+	};
+
+	const tupleIdNested = {
+		type: "object",
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						layers: {
+							type: "array",
+							items: [
+								{ type: "object", properties: { name: { type: "string" } } },
+								{ type: "object", properties: { id: { type: "string" } } },
+							],
+						},
+					},
+				},
+			},
+		},
+	};
+
+	for (const [label, body] of [
+		["required-only id", requiredOnlyIdNested],
+		["oneOf-branch id", oneOfBranchIdNested],
+		["tuple-member id", tupleIdNested],
+	] as const) {
+		it(`9.3 NEW form (${label}): create / replace / dry-run all reject the nested id-bearing schema`, (t) => {
+			const cwd = makeTmpDir(`93-${label.replace(/[^a-z]/gi, "")}`);
+			t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+			// create → throws, nothing written.
+			assert.throws(() => writeSchemaChecked(cwd, "carrier", body, "create"), /nested id-bearing arrays are forbidden/);
+			assert.ok(!fs.existsSync(onDisk(cwd, "carrier")));
+
+			// create dry-run → throws (guard runs before the would-be write), nothing written.
+			assert.throws(
+				() => writeSchemaChecked(cwd, "carrier", body, "create", undefined, { dryRun: true }),
+				/nested id-bearing arrays are forbidden/,
+			);
+			assert.ok(!fs.existsSync(onDisk(cwd, "carrier")));
+
+			// replace → seed a valid schema, then the nested-id replace throws + leaves it byte-stable.
+			writeSchema(cwd, "seeded", validSchema);
+			const before = fs.readFileSync(onDisk(cwd, "seeded"), "utf-8");
+			assert.throws(() => writeSchemaChecked(cwd, "seeded", body, "replace"), /nested id-bearing arrays are forbidden/);
+			assert.equal(fs.readFileSync(onDisk(cwd, "seeded"), "utf-8"), before);
+
+			// replace dry-run → throws, seeded byte-stable.
+			assert.throws(
+				() => writeSchemaChecked(cwd, "seeded", body, "replace", undefined, { dryRun: true }),
+				/nested id-bearing arrays are forbidden/,
+			);
+			assert.equal(fs.readFileSync(onDisk(cwd, "seeded"), "utf-8"), before);
+		});
+	}
+
 	it("migration boundary: validateBlockWithMigration requires a registry on version-mismatch and succeeds when one is supplied", (t) => {
 		const cwd = makeTmpDir("migration-boundary");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));

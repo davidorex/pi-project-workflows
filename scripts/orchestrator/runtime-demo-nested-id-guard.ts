@@ -13,6 +13,10 @@
  *   (2) writeSchema with a nested NON-id array PASSES;
  *   (3) writeSchema with a depth-0 (top-level) id array PASSES;
  *   (4) writeSchemaChecked({dryRun:true}) with a nested id-bearing schema THROWS;
+ *   (4a) writeSchema with a oneOf-branch nested id-bearing schema THROWS (9.3);
+ *   (4b) writeSchema with a tuple-items nested id-bearing schema THROWS (9.3);
+ *   (4c) a $ref-cycle schema is handled without hanging + rejected (9.3 cycle-guard);
+ *   (4d) a $ref-self-cycle whose $def carries the id is rejected (9.3 fresh-seed id-peek);
  *   (5) a scratch substrate carrying a layer-plans-shaped schema → validateContext
  *       emits a `nested_id_bearing_array` WARNING (not error) and status is not
  *       flipped to "invalid" by it alone;
@@ -159,6 +163,219 @@ const topLevelIdArraySchema: Record<string, unknown> = {
 		fail("(4) dry-run wrote the schema to disk");
 	fs.rmSync(cwd, { recursive: true, force: true });
 	pass("(4) writeSchemaChecked({dryRun:true}) THROWS on a nested id-bearing schema; nothing written");
+}
+
+// ── (4a) writeSchema rejects a oneOf-branch nested id-bearing schema (9.3) ───
+// id buried in a oneOf branch of the nested array's items — 9.2 keyed only on
+// items.properties.id and would have MISSED this; 9.3 must reject it.
+{
+	const cwd = makeCwd("oneof");
+	const oneOfNestedId: Record<string, unknown> = {
+		type: "object",
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						layers: {
+							type: "array",
+							items: {
+								oneOf: [
+									{ type: "object", properties: { kind: { type: "string" } } },
+									{ type: "object", properties: { id: { type: "string" } } },
+								],
+							},
+						},
+					},
+				},
+			},
+		},
+	};
+	let caught: Error | undefined;
+	try {
+		writeSchema(cwd, "carrier", oneOfNestedId);
+	} catch (err) {
+		caught = err as Error;
+	}
+	if (!caught) fail("(4a) expected writeSchema to throw on a oneOf-branch nested id-bearing schema");
+	if (!/nested id-bearing arrays are forbidden/.test(caught.message))
+		fail(`(4a) throw message missing the forbidden-class label: ${caught.message}`);
+	if (!/plans\.layers/.test(caught.message)) fail(`(4a) throw message did not name plans.layers: ${caught.message}`);
+	if (fs.existsSync(path.join(cwd, ".project", "schemas", "carrier.schema.json")))
+		fail("(4a) rejected oneOf-branch schema was nonetheless written to disk");
+	fs.rmSync(cwd, { recursive: true, force: true });
+	pass("(4a) writeSchema THROWS on a oneOf-branch nested id-bearing schema, naming plans.layers; file unwritten");
+}
+
+// ── (4b) writeSchema rejects a tuple-items nested id-bearing schema (9.3) ─────
+{
+	const cwd = makeCwd("tuple");
+	const tupleNestedId: Record<string, unknown> = {
+		type: "object",
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						layers: {
+							type: "array",
+							items: [
+								{ type: "object", properties: { name: { type: "string" } } },
+								{ type: "object", properties: { id: { type: "string" } } },
+							],
+						},
+					},
+				},
+			},
+		},
+	};
+	let caught: Error | undefined;
+	try {
+		writeSchema(cwd, "carrier", tupleNestedId);
+	} catch (err) {
+		caught = err as Error;
+	}
+	if (!caught) fail("(4b) expected writeSchema to throw on a tuple-items nested id-bearing schema");
+	if (!/nested id-bearing arrays are forbidden/.test(caught.message))
+		fail(`(4b) throw message missing the forbidden-class label: ${caught.message}`);
+	if (!/plans\.layers/.test(caught.message)) fail(`(4b) throw message did not name plans.layers: ${caught.message}`);
+	if (fs.existsSync(path.join(cwd, ".project", "schemas", "carrier.schema.json")))
+		fail("(4b) rejected tuple-items schema was nonetheless written to disk");
+	fs.rmSync(cwd, { recursive: true, force: true });
+	pass("(4b) writeSchema THROWS on a tuple-items nested id-bearing schema, naming plans.layers; file unwritten");
+}
+
+// ── (4c) a $ref-cycle schema is handled without hanging (9.3 cycle-guard) ─────
+// A self-referential + mutually-recursive $defs graph must terminate. If the
+// cycle-guard regresses this loops forever and the demo never reaches PASS.
+{
+	const cwd = makeCwd("refcycle");
+	const refCycle: Record<string, unknown> = {
+		type: "object",
+		properties: {
+			plans: {
+				type: "array",
+				items: { type: "object", properties: { id: { type: "string" }, node: { $ref: "#/$defs/A" } } },
+			},
+		},
+		$defs: {
+			A: {
+				type: "object",
+				properties: {
+					children: { type: "array", items: { $ref: "#/$defs/A" } },
+					bs: { type: "array", items: { $ref: "#/$defs/B" } },
+				},
+			},
+			B: {
+				type: "object",
+				properties: { id: { type: "string" }, as: { type: "array", items: { $ref: "#/$defs/A" } } },
+			},
+		},
+	};
+	// Reached at depth ≥ 1 (descended plans.items), node→A.bs items ($def B) carry
+	// an id → writeSchema must REJECT — and the recursive A↔B cycle must terminate.
+	let caught: Error | undefined;
+	const t0 = Date.now();
+	try {
+		writeSchema(cwd, "carrier", refCycle);
+	} catch (err) {
+		caught = err as Error;
+	}
+	const elapsedMs = Date.now() - t0;
+	if (elapsedMs > 5000) fail(`(4c) $ref-cycle schema took ${elapsedMs}ms — guard likely looping`);
+	if (!caught) fail("(4c) expected writeSchema to reject the id-bearing $ref-cycle carrier");
+	if (!/nested id-bearing arrays are forbidden/.test(caught.message))
+		fail(`(4c) throw message missing the forbidden-class label: ${caught.message}`);
+	if (fs.existsSync(path.join(cwd, ".project", "schemas", "carrier.schema.json")))
+		fail("(4c) rejected $ref-cycle schema was nonetheless written to disk");
+	fs.rmSync(cwd, { recursive: true, force: true });
+	pass(`(4c) writeSchema handles a $ref-cycle schema WITHOUT hanging (${elapsedMs}ms) and rejects it`);
+}
+
+// ── (4d) a $ref-self-cycle whose $def carries the id is rejected (9.3 fresh seed) ─
+// `root` items resolve to $def A; A.kids ($ref back to A, depth ≥ 1) and A declares
+// `properties.id`. The structural descent records #/$defs/A before the id-peek runs;
+// if the id-peek shared that visited set it would short-circuit the kids→A $ref and
+// miss the id (false negative). The fresh-seed cycle-guard must REJECT this.
+{
+	const cwd = makeCwd("refcycle-id");
+	const cycleWithId: Record<string, unknown> = {
+		type: "object",
+		$defs: {
+			A: {
+				type: "object",
+				properties: {
+					id: { type: "string" },
+					kids: { type: "array", items: { $ref: "#/$defs/A" } },
+				},
+			},
+		},
+		properties: {
+			root: { type: "array", items: { $ref: "#/$defs/A" } },
+		},
+	};
+	let caught: Error | undefined;
+	const t0 = Date.now();
+	try {
+		writeSchema(cwd, "carrier", cycleWithId);
+	} catch (err) {
+		caught = err as Error;
+	}
+	const elapsedMs = Date.now() - t0;
+	if (elapsedMs > 5000) fail(`(4d) $ref-self-cycle schema took ${elapsedMs}ms — guard likely looping`);
+	if (!caught) fail("(4d) expected writeSchema to reject the id-bearing $ref-self-cycle carrier (root.kids)");
+	if (!/nested id-bearing arrays are forbidden/.test(caught.message))
+		fail(`(4d) throw message missing the forbidden-class label: ${caught.message}`);
+	if (!/root\.kids/.test(caught.message))
+		fail(`(4d) throw message missing the offending path root.kids: ${caught.message}`);
+	if (fs.existsSync(path.join(cwd, ".project", "schemas", "carrier.schema.json")))
+		fail("(4d) rejected $ref-self-cycle schema was nonetheless written to disk");
+	fs.rmSync(cwd, { recursive: true, force: true });
+	pass(`(4d) writeSchema REJECTS a $ref-self-cycle whose $def carries the id (root.kids), ${elapsedMs}ms`);
+}
+
+// ── (4e) a composition-routed $ref cycle terminates without overflow (9.3) ────
+// The form that surfaced the CRITICAL: a `$ref` cycle routed THROUGH a oneOf/
+// anyOf/allOf branch back to an ancestor `$def`. Pre-fix the structural
+// composition-branch descent reseeded the pointer-visited set to a throwaway clone
+// AND bypassed every depth/recursion backstop → unbounded recursion → RangeError
+// (stack overflow), violating the lint-never-throws contract. There is no depth-1
+// array in this shape, so writeSchema must ACCEPT it — the load-bearing property is
+// that the call RETURNS (terminates, does not hang / overflow) in bounded time.
+{
+	const cwd = makeCwd("compcycle");
+	const compCycle: Record<string, unknown> = {
+		type: "object",
+		$defs: {
+			// A↔B mutual composition cycle: A.allOf→B, B.anyOf→A. `items` is the
+			// composition directly (no $ref at the items level) so the structural visited
+			// set holds no ancestor pointer when the branch is first reached — the precise
+			// shape that overflowed.
+			A: { type: "object", allOf: [{ $ref: "#/$defs/B" }] },
+			B: { type: "object", anyOf: [{ $ref: "#/$defs/A" }] },
+		},
+		properties: {
+			root: { type: "array", items: { oneOf: [{ $ref: "#/$defs/A" }] } },
+		},
+	};
+	let caught: Error | undefined;
+	const t0 = Date.now();
+	try {
+		writeSchema(cwd, "compcycle", compCycle);
+	} catch (err) {
+		caught = err as Error;
+	}
+	const elapsedMs = Date.now() - t0;
+	if (elapsedMs > 5000) fail(`(4e) composition-routed $ref cycle took ${elapsedMs}ms — guard likely looping`);
+	if (caught) fail(`(4e) composition-routed $ref cycle (no nested id) must NOT throw; threw: ${caught.message}`);
+	if (!fs.existsSync(path.join(cwd, ".project", "schemas", "compcycle.schema.json")))
+		fail("(4e) composition-routed $ref cycle (no nested id) was not written");
+	fs.rmSync(cwd, { recursive: true, force: true });
+	pass(`(4e) writeSchema handles a composition-routed $ref cycle WITHOUT overflow/hang (${elapsedMs}ms); accepted`);
 }
 
 // ── (5) validateContext emits a non-fatal warning for an installed carrier ───

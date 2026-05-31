@@ -1,0 +1,46 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/context-registry",
+	"version": "1.0.0",
+	"title": "pi-context project-root substrate registry",
+	"description": "Project-root locator file (<cwd>/.pi-context-registry.json) mapping each substrate's content-addressed substrate_id to its on-disk directory + alias list. Distinct from the per-substrate .pi-context.json bootstrap pointer: the pointer names the ACTIVE substrate dir, whereas this registry enumerates EVERY known substrate by its immutable substrate_id so a foreign <substrate_id>:<oid> / <alias>:<refname> locator can be resolved to a directory (Cycle-8 F2 resolver consumer). Written via registerSubstrate (upsert). The SoT-drift invariant in validateContext requires the active config.substrate_id to have an entry here whose dir resolves to the active substrate.",
+	"type": "object",
+	"required": ["version", "substrates"],
+	"additionalProperties": false,
+	"properties": {
+		"version": {
+			"type": "string",
+			"description": "Schema version of this registry file itself. Tracks REGISTRY_FILE_VERSION in context-registry.ts; decoupled from any individual substrate's identity or schema versions."
+		},
+		"substrates": {
+			"type": "object",
+			"description": "Map keyed by substrate_id (^sub-[0-9a-f]{16}$). Each value carries the substrate's directory (relative to the project root) + its alias list.",
+			"propertyNames": {
+				"pattern": "^sub-[0-9a-f]{16}$"
+			},
+			"additionalProperties": {
+				"$ref": "#/definitions/RegistryEntry"
+			}
+		}
+	},
+	"definitions": {
+		"RegistryEntry": {
+			"type": "object",
+			"required": ["dir", "aliases"],
+			"additionalProperties": false,
+			"properties": {
+				"dir": {
+					"type": "string",
+					"description": "Substrate directory. Resolved against the project root (path.resolve(cwd, dir)) when matched against the active substrate. Typically a project-root-relative bare dir name (e.g. '.context-jit-spec-v2')."
+				},
+				"aliases": {
+					"type": "array",
+					"description": "Human-facing alternate locators for this substrate (e.g. the legacy 'project' alias populated by the Phase-H migration). resolveAlias scans these to recover the substrate_id. Empty until aliases are assigned.",
+					"items": {
+						"type": "string"
+					}
+				}
+			}
+		}
+	}
+}

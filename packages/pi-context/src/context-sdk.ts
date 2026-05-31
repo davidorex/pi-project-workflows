@@ -18,6 +18,7 @@ import {
 	validateRelations,
 } from "./context.js";
 import { resolveContextDir, SCHEMAS_DIR, schemaPath, schemasDir, tryResolveContextDir } from "./context-dir.js";
+import { loadRegistry } from "./context-registry.js";
 import { getLensValidators } from "./lens-validator.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
@@ -1247,6 +1248,48 @@ export function validateContext(cwd: string): ContextValidationResult {
 	// are skipped gracefully — there is no edge model to validate yet.
 	const config = loadConfig(cwd);
 	const relations: Edge[] = config ? loadRelations(cwd) : [];
+
+	// ── SoT-drift invariant (content-addressed substrate identity, Cycle 4) ───
+	// When the active config declares a `substrate_id`, the project-root
+	// registry (.pi-context-registry.json) MUST carry an entry for that id whose
+	// `dir` resolves to the active substrate dir. A missing entry or a dir
+	// mismatch means the registry has drifted from the active substrate's sole
+	// SoT (config.substrate_id) and is an ERROR. When `config.substrate_id` is
+	// ABSENT (a pre-identity / pre-Phase-H substrate), the check SKIPS — read
+	// the field directly off the config rather than via substrateIdFor (which
+	// THROWS on absence) so an un-migrated substrate still validates cleanly.
+	if (config) {
+		const substrateId = config.substrate_id;
+		if (typeof substrateId === "string" && substrateId.length > 0) {
+			const registry = loadRegistry(cwd);
+			const entry = registry?.substrates?.[substrateId];
+			if (!entry) {
+				issues.push({
+					severity: "error",
+					message: `config.substrate_id '${substrateId}' is not registered in the project-root .pi-context-registry.json — register the active substrate (registerSubstrate) so foreign-locator resolution can find it`,
+					block: "config",
+					field: "substrate_id",
+					code: "substrate_id_unregistered",
+				});
+			} else {
+				const registeredAbs = path.resolve(cwd, entry.dir);
+				// resolveContextDir returns path.join(cwd, contextDir), which is
+				// RELATIVE when cwd is relative (e.g. '.'). Absolutize it so the
+				// comparison is absolute-vs-absolute and a relative cwd can't
+				// produce a false-positive drift error.
+				const activeAbs = path.resolve(resolveContextDir(cwd));
+				if (registeredAbs !== activeAbs) {
+					issues.push({
+						severity: "error",
+						message: `config.substrate_id '${substrateId}' registry entry dir '${entry.dir}' (resolved ${registeredAbs}) does not match the active substrate dir ${activeAbs} — the registry has drifted from the active substrate's SoT`,
+						block: "config",
+						field: "substrate_id",
+						code: "substrate_id_registry_mismatch",
+					});
+				}
+			}
+		}
+	}
 
 	// `config` present → run edge-integrity + the relocated invariants. The
 	// invariants detect MISSING edges (completed task without a verification

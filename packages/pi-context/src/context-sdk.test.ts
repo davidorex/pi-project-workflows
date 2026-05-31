@@ -13,6 +13,7 @@ import { describe, it } from "node:test";
 import { appendToBlock, updateItemInBlock } from "./block-api.js";
 import type { ConfigBlock, RelationTypeDecl } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
+import { registerSubstrate } from "./context-registry.js";
 import {
 	availableBlocks,
 	availableSchemas,
@@ -3118,5 +3119,117 @@ describe("context-sdk pointer-less degradation (tryResolveContextDir class fix)"
 		});
 		assert.ok(result);
 		assert.strictEqual(result.status, "clean");
+	});
+});
+
+// ── SoT-drift invariant (content-addressed substrate identity, Cycle 4) ──────
+//
+// When config.substrate_id is present, validateContext requires a project-root
+// registry (.pi-context-registry.json) entry whose dir resolves to the active
+// substrate. Missing entry → substrate_id_unregistered; dir mismatch →
+// substrate_id_registry_mismatch; substrate_id absent → SKIP (clean).
+describe("validateContext: substrate_id SoT-drift invariant", () => {
+	const SUB = "sub-abc1230000000def";
+
+	/** Write a minimal schema-valid config.json, optionally carrying substrate_id. */
+	function writeIdentityConfig(projectDir: string, substrate_id?: string): void {
+		fs.writeFileSync(
+			path.join(projectDir, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [],
+				...(substrate_id ? { substrate_id } : {}),
+			}),
+		);
+	}
+
+	it("clean when substrate_id present + a registry entry matches the active dir", (t) => {
+		const tmpDir = makeTmpDir("drift-clean");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeIdentityConfig(projectDir, SUB);
+		registerSubstrate(tmpDir, SUB, ".project", []);
+		const result = validateContext(tmpDir);
+		assert.strictEqual(result.status, "clean");
+		assert.deepStrictEqual(result.issues, []);
+	});
+
+	it("error (substrate_id_registry_mismatch) when the registry entry dir differs from the active dir", (t) => {
+		const tmpDir = makeTmpDir("drift-mismatch");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeIdentityConfig(projectDir, SUB);
+		// Registry points the SAME substrate_id at a DIFFERENT dir than the active
+		// substrate (the pointer names .project).
+		registerSubstrate(tmpDir, SUB, ".some-other-dir", []);
+		const result = validateContext(tmpDir);
+		assert.strictEqual(result.status, "invalid");
+		const issue = result.issues.find((i) => i.code === "substrate_id_registry_mismatch");
+		assert.ok(issue, "expected a substrate_id_registry_mismatch issue");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "config");
+	});
+
+	it("error (substrate_id_unregistered) when substrate_id present but no registry entry", (t) => {
+		const tmpDir = makeTmpDir("drift-unregistered");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeIdentityConfig(projectDir, SUB);
+		// No registry file at all → entry missing.
+		const result = validateContext(tmpDir);
+		assert.strictEqual(result.status, "invalid");
+		const issue = result.issues.find((i) => i.code === "substrate_id_unregistered");
+		assert.ok(issue, "expected a substrate_id_unregistered issue");
+		assert.strictEqual(issue!.severity, "error");
+		assert.strictEqual(issue!.block, "config");
+	});
+
+	// Regression: a RELATIVE cwd ('.') must not drive a false-positive drift
+	// error. resolveContextDir returns path.join(cwd, contextDir) — relative
+	// when cwd is relative — while the registered side is path.resolve'd to
+	// absolute. Pre-fix the two differed only in absoluteness, so a correctly
+	// registered substrate spuriously reported substrate_id_registry_mismatch.
+	// The fix absolutizes both sides before comparing.
+	it("clean with a RELATIVE cwd ('.') when the substrate is correctly registered (no false-positive drift)", (t) => {
+		const tmpDir = makeTmpDir("drift-relcwd");
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeIdentityConfig(projectDir, SUB);
+		registerSubstrate(tmpDir, SUB, ".project", []);
+		// Exercise the relative-cwd path: chdir into the project root, then
+		// validate with cwd '.'. Save/restore the original cwd so sibling tests
+		// (which rely on process.cwd()) are unaffected.
+		const originalCwd = process.cwd();
+		t.after(() => {
+			process.chdir(originalCwd);
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		});
+		// macOS tmpdir is symlinked (/var → /private/var); chdir into the real
+		// path so process.cwd() and the resolved tmpDir agree.
+		process.chdir(fs.realpathSync(tmpDir));
+		const result = validateContext(".");
+		const driftIssue = result.issues.find((i) => i.code?.startsWith("substrate_id_"));
+		assert.strictEqual(
+			driftIssue,
+			undefined,
+			`relative cwd must not produce a substrate_id_* drift issue; got: ${JSON.stringify(driftIssue)}`,
+		);
+		assert.strictEqual(result.status, "clean");
+	});
+
+	it("skips (clean) when config.substrate_id is absent (pre-identity substrate)", (t) => {
+		const tmpDir = makeTmpDir("drift-absent");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeIdentityConfig(projectDir); // no substrate_id
+		// No registry; must NOT error — the check is gated on substrate_id presence.
+		const result = validateContext(tmpDir);
+		assert.strictEqual(result.status, "clean");
+		assert.deepStrictEqual(result.issues, []);
 	});
 });

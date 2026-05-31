@@ -2985,6 +2985,18 @@ const extension = (pi: ExtensionAPI) => {
 
 export default extension;
 
+export {
+	contextRegistryPath,
+	invalidateRegistry,
+	loadRegistry,
+	REGISTRY_FILE_VERSION,
+	type RegistryEntry,
+	type RegistryFile,
+	registerSubstrate,
+	resolveAlias,
+	resolveSubstrateDir,
+	writeRegistry,
+} from "./context-registry.js";
 export type { CompleteTaskResult, ItemLocation } from "./context-sdk.js";
 // Re-export for consumers
 export {

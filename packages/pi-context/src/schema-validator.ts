@@ -36,6 +36,7 @@ const FRAMEWORK_SCHEMA_NAMES = [
 	"config",
 	"relations",
 	"bootstrap",
+	"context-registry",
 	"priority",
 	"status",
 	"severity",

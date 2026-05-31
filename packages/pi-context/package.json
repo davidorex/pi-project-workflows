@@ -45,6 +45,10 @@
 			"types": "./dist/context-dir.d.ts",
 			"default": "./dist/context-dir.js"
 		},
+		"./context-registry": {
+			"types": "./dist/context-registry.d.ts",
+			"default": "./dist/context-registry.js"
+		},
 		"./context-sdk": {
 			"types": "./dist/context-sdk.d.ts",
 			"default": "./dist/context-sdk.js"
@@ -82,6 +86,7 @@
 			"default": "./dist/read-element.js"
 		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
+		"./schemas/context-registry.schema.json": "./schemas/context-registry.schema.json",
 		"./schemas/relations.schema.json": "./schemas/relations.schema.json",
 		"./schemas/priority.schema.json": "./schemas/priority.schema.json",
 		"./schemas/status.schema.json": "./schemas/status.schema.json",

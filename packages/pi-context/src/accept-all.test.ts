@@ -17,7 +17,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { adoptConception, loadConfig } from "./context.js";
-import { writeBootstrapPointer } from "./context-dir.js";
+import { SUBSTRATE_ID_PATTERN, writeBootstrapPointer } from "./context-dir.js";
+import { loadRegistry } from "./context-registry.js";
 import extension from "./index.js";
 
 let tmpRoot: string;
@@ -85,6 +86,29 @@ describe("adoptConception (accept-all)", () => {
 		const config = loadConfig(tmpRoot);
 		assert.ok(config);
 		assert.equal(config!.root, ".context");
+	});
+
+	it("accept-all mints config.substrate_id + registers the active substrate (Cycle 4)", () => {
+		tmpRoot = mkTmp(".context");
+		adoptConception(tmpRoot);
+		const config = loadConfig(tmpRoot);
+		assert.ok(config);
+		const id = config!.substrate_id;
+		assert.ok(typeof id === "string" && SUBSTRATE_ID_PATTERN.test(id), `expected a minted substrate_id, got ${id}`);
+		const reg = loadRegistry(tmpRoot);
+		assert.ok(reg, "accept-all must create the project-root registry");
+		assert.deepEqual(reg!.substrates[id as string], { dir: ".context", aliases: [] });
+	});
+
+	it("second accept-all is idempotent — no re-mint, no duplicate registry entry", () => {
+		tmpRoot = mkTmp(".context");
+		adoptConception(tmpRoot);
+		const firstId = loadConfig(tmpRoot)!.substrate_id;
+		const r2 = adoptConception(tmpRoot);
+		assert.equal(r2.adopted, false, "second accept-all must not re-adopt");
+		assert.equal(loadConfig(tmpRoot)!.substrate_id, firstId, "substrate_id must not be re-minted");
+		const reg = loadRegistry(tmpRoot);
+		assert.equal(Object.keys(reg!.substrates).length, 1, "no duplicate registry entry on second accept-all");
 	});
 
 	it("no bootstrap → throws", () => {

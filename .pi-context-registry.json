@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "substrates": {
+    "sub-2668a102413f6aea": {
+      "dir": ".context-jit-spec-v2",
+      "aliases": []
+    }
+  }
+}

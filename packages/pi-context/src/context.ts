@@ -23,7 +23,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { appendManyToTypedFileIfAbsent, writeTypedFile } from "./block-api.js";
-import { assertSubstrateName, resolveContextDir, SCHEMAS_DIR, tryResolveContextDir } from "./context-dir.js";
+import {
+	assertSubstrateName,
+	mintSubstrateId,
+	resolveContextDir,
+	SCHEMAS_DIR,
+	tryResolveContextDir,
+} from "./context-dir.js";
+import { registerSubstrate } from "./context-registry.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
@@ -522,7 +529,22 @@ export function adoptConception(cwd: string): AdoptResult {
 	const samplesRoot = path.resolve(here, "..", "samples");
 	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as ConfigBlock;
 	conception.root = root; // SET root from the resolved substrate dir — the conception template ships none (DEC-0041)
+
+	// Mint + register the per-substrate content-addressed substrate_id (Cycle 4).
+	// config.json is the sole SoT for substrate_id and first exists here at
+	// adopt-time (init only scaffolds the pointer + dirs), so minting wires into
+	// this path rather than bare init. Idempotent: skip the mint if the
+	// conception already carries a valid substrate_id (it ships none, so this
+	// mints on a fresh accept-all; a second accept-all returns early above on the
+	// existing-config branch, so this block never re-mints). registerSubstrate
+	// upserts the active substrate into the project-root registry under `root`
+	// (the project-root-relative substrate dir) with empty aliases — the
+	// SoT-drift invariant in validateContext then passes for this substrate.
+	if (typeof conception.substrate_id !== "string" || conception.substrate_id.length === 0) {
+		conception.substrate_id = mintSubstrateId();
+	}
 	writeConfig(cwd, conception);
+	registerSubstrate(cwd, conception.substrate_id, root, []);
 	return {
 		adopted: true,
 		configPath: path.relative(cwd, cfgPath),

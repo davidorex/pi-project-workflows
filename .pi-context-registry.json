@@ -4,6 +4,12 @@
     "sub-2668a102413f6aea": {
       "dir": ".context-jit-spec-v2",
       "aliases": []
+    },
+    "sub-0c813fd84348d4c2": {
+      "dir": ".project-migrate",
+      "aliases": [
+        "project"
+      ]
     }
   }
 }

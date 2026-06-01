@@ -10,7 +10,9 @@
       "v1_origin": "v1 §0 P1",
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T13:45:00Z",
-      "enacted_at": "2026-05-30T13:45:00Z"
+      "enacted_at": "2026-05-30T13:45:00Z",
+      "oid": "bfbc6767971a1f6503346b72e4f22191",
+      "content_hash": "66b9874fddaeed777dd423bad097f5a33526d60b6c7f75bead38dc596f490309"
     },
     {
       "id": "AX-002",
@@ -21,7 +23,9 @@
       "v1_origin": "v1 §0 P2",
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T13:45:00Z",
-      "enacted_at": "2026-05-30T13:45:00Z"
+      "enacted_at": "2026-05-30T13:45:00Z",
+      "oid": "55da77dc0a1cbd3f03075c4e08c82619",
+      "content_hash": "45584d0acd75ecbcba44416316c4ec2d22501bec6a22ff979be48cc348d94346"
     },
     {
       "id": "AX-003",
@@ -32,7 +36,9 @@
       "v1_origin": "v1 §0 P3",
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T13:45:00Z",
-      "enacted_at": "2026-05-30T13:45:00Z"
+      "enacted_at": "2026-05-30T13:45:00Z",
+      "oid": "74cc46e063a50992db8a20c1f25ee2a9",
+      "content_hash": "544f4013a181954ae5f17653b5bb402acb3271909404777e66c5d261a10286ee"
     }
   ]
 }

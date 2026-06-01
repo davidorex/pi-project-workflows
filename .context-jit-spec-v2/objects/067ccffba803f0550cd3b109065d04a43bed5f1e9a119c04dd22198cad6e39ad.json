@@ -1,0 +1,25 @@
+{
+  "title": "call-agent requires explicit parent_grant and requested_grant",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:34:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "tool-surface",
+  "description": "call-agent's parent_grant and requested_grant parameters default to empty. Dispatching an agent with tools without explicitly passing these grants results in 'grant violation: tools [X] not in parent grant'. The parameters are Type.Optional in the tool schema but effectively required when the agent spec declares tools.",
+  "actual_behavior": "Agent with tools: [read] dispatched without parent_grant → 'Agent X grant violation: tools [read] not in parent grant (DEC-0047 clamp at executeAgent boundary)'",
+  "expected_behavior": "parent_grant should default to the caller's full tool set rather than empty. Or the error message should explicitly state that parent_grant and requested_grant are required when the agent declares tools.",
+  "reproduction": "1. author-agent-spec with tools: [read]. 2. call-agent without parent_grant or requested_grant. 3. Observe grant violation.",
+  "workaround": "Always pass parent_grant and requested_grant explicitly.",
+  "code_references": [
+    {
+      "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+      "line": 58,
+      "symbol": "callAgentTool.parameters",
+      "snippet": "parent_grant: Type.Optional(Type.Array(Type.String()))"
+    }
+  ]
+}

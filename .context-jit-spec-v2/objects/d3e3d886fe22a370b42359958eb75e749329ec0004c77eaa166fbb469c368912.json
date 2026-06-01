@@ -1,0 +1,4 @@
+{
+  "description": "Implement FEAT-001 agentic-mode dispatch loop in jit-runtime.ts:432-738 per MODE-002 spec. Depends on TASK-001 (FGAP-115 resolved). Closes FGAP-169 + FGAP-178; enables formal closure of FGAP-102 via real-LLM demo.",
+  "status": "planned"
+}

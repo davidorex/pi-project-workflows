@@ -1,0 +1,18 @@
+{
+  "title": "Agent discovery tier structure",
+  "status": "enacted",
+  "context": "Per AX-001 uniformity, agent discovery should apply uniformly to all agents regardless of consumer. Per DEC-0003, .pi/ is not part of any tier.",
+  "decision": "Three-tier search, first match wins: (1) resolveContextDir(cwd)/agents/ — project-level overrides (substrate-tracked); (2) ~/.pi/agent/agents/ — user-global overrides (Pi home convention); (3) consumer-package/agents/ — builtins. Per AX-001 this single tier structure applies to all agents regardless of which consumer invokes them. Per DEC-0003 none of these tiers touch .pi/.",
+  "consequences": [
+    "Per AX-002 most existing builtin agents are disposable; what ships as a builtin must earn its place",
+    "Agents authored at project level have natural access to project state via contextBlocks (substrate-tracked path matches substrate-tracked blocks)",
+    "Framework package has no agents/ directory (DEC-0002 corollary)"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-30T13:50:00Z",
+  "references": [
+    {
+      "label": "v1 §4 D7 [DECIDED, was provisional]"
+    }
+  ]
+}

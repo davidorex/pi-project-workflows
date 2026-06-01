@@ -1,0 +1,8 @@
+{
+  "v1_section_reference": "v1 §6 Non-Goals 'add new features — only reorganizes and unifies existing capabilities'",
+  "supersession_kind": "replaced_by_new_decision",
+  "superseded_by_v2_items": [
+    "DEC-0004"
+  ],
+  "notes": "v1 §6's 'no new features' framing was the framing under which the implementation hedge happened (extraction-only scope, no multi-tool dispatch). v2 §6 replaces with 'realizes the canonical body's commitments (FEAT-005/006/DEC-0047/TASK-091/JI-029) at the agent layer.' DEC-0004's dual-mode dispatch IS new framework capability relative to v1's extraction-only scope; explicitly so per canonical-body alignment."
+}

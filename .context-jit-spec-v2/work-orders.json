@@ -76,7 +76,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:40:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:41:49.207Z"
+      "modified_at": "2026-05-30T09:41:49.207Z",
+      "oid": "cf9b0a3bc14c890cc90a21871e311b10",
+      "content_hash": "cf84fc7eb1b2df30ae287a9d6715f9ec9a91b7db6fbd37641efe0b975e665e24"
     },
     {
       "id": "WO-002",
@@ -177,7 +179,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:40:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:41:49.211Z"
+      "modified_at": "2026-05-30T09:41:49.211Z",
+      "oid": "4599c964c1cdef249384c9f923077fc0",
+      "content_hash": "587609fdb565ee8154b3ee84c701b31fd4b3919c8bd06b7e799d2070113bfbca"
     },
     {
       "id": "WO-003",
@@ -244,7 +248,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:40:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:41:49.213Z"
+      "modified_at": "2026-05-30T09:41:49.213Z",
+      "oid": "ef85d4c723d7a07e8db406bb6d59191f",
+      "content_hash": "68c310174371b80d6b676ba4ef43464ad24e11dc91c842615a25488c7b81e4e6"
     },
     {
       "id": "WO-004",
@@ -316,7 +322,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:40:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:41:49.213Z"
+      "modified_at": "2026-05-30T09:41:49.213Z",
+      "oid": "91936a2d67168b334969e7f5ec2d8864",
+      "content_hash": "cd519732c471c7e7bb835ff51d89086046055e3b67a8427672aa01014d4fe523"
     },
     {
       "id": "WO-005",
@@ -385,7 +393,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:40:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:41:49.214Z"
+      "modified_at": "2026-05-30T09:41:49.214Z",
+      "oid": "48244f1fa4baf04ee1ab5fd2545a60fd",
+      "content_hash": "c9a60ec6ebb9212b9fef6171da596fe4bc8337e8c411931b03883c89c0fce89b"
     },
     {
       "id": "WO-006",
@@ -456,7 +466,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:40:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:41:49.214Z"
+      "modified_at": "2026-05-30T09:41:49.214Z",
+      "oid": "1f577de76dd0961a2da5c0095ce84ffe",
+      "content_hash": "a0b7c70ea690f5a787f80e2deca2900000e23066c45f9b530176925015e5d45c"
     }
   ]
 }

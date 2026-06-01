@@ -19,7 +19,9 @@
         {
           "label": "v1 §4 D1"
         }
-      ]
+      ],
+      "oid": "6a2dd021734ec019737979991f7b542a",
+      "content_hash": "356e9de56094ae1e4b73c4ee05620c046b5f3182e0d55d7bc3f4d3225b22a113"
     },
     {
       "id": "DEC-0002",
@@ -40,7 +42,9 @@
         {
           "label": "v1 §4 D2"
         }
-      ]
+      ],
+      "oid": "c070907df5432c7ca24428e24ac1db99",
+      "content_hash": "31a9c7cbd2482688061c2a629b97e88bf2b837f79fadd8da71c666240ee5d364"
     },
     {
       "id": "DEC-0003",
@@ -60,7 +64,9 @@
         {
           "label": "v1 §4 D3"
         }
-      ]
+      ],
+      "oid": "4be56242928f068ebd14638d8fdb01b5",
+      "content_hash": "27a7f40e32445b71c2218ddc2cf1e6286edcb66298e87c456a890a125f42b09d"
     },
     {
       "id": "DEC-0004",
@@ -82,7 +88,9 @@
         {
           "label": "v1 §4 D4 [REWRITTEN]"
         }
-      ]
+      ],
+      "oid": "dea9892b7d9313b6e00ff68deeeda37e",
+      "content_hash": "7cf0fb05719ef9a41dcdb4b527ffb7a6e7b3b945f790ee76e5fa0ebb665c00ab"
     },
     {
       "id": "DEC-0005",
@@ -102,7 +110,9 @@
         {
           "label": "v1 §4 D5"
         }
-      ]
+      ],
+      "oid": "af8acdb46216542973c495933abed55d",
+      "content_hash": "2c34dce39f418da5ca0d74fb385cdec8fb1026b0e8cda1e47af1a815195a911f"
     },
     {
       "id": "DEC-0006",
@@ -122,7 +132,9 @@
         {
           "label": "v1 §4 D6"
         }
-      ]
+      ],
+      "oid": "f8b8fe2658f68236d085ddc5949ef024",
+      "content_hash": "f0462a7c454a379af4d39a4b821d3ffe3178ad52656affca6973546a948318ab"
     },
     {
       "id": "DEC-0007",
@@ -143,7 +155,9 @@
         {
           "label": "v1 §4 D7 [DECIDED, was provisional]"
         }
-      ]
+      ],
+      "oid": "d49187a742917616f4b26f651daf306d",
+      "content_hash": "96470f1eafd52c10afb7d746927de4385b85f80e28c1c28c830d9f2da898abbb"
     },
     {
       "id": "DEC-0008",
@@ -160,7 +174,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T13:50:00Z",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-30T13:50:00Z"
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "oid": "ed234f44d694565dfa4cca88b78841d8",
+      "content_hash": "32648df65de98de5becc5f5f6da407c07283eb3a6303c1cadc847cadfc9d2825"
     },
     {
       "id": "DEC-0009",
@@ -176,7 +192,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T13:50:00Z",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-30T13:50:00Z"
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "oid": "b3baea4b24bfc9f950053c136a542a65",
+      "content_hash": "ed841a6227a2b492ad06290f2966a5887e011e204f6527718ff62f2d52806238"
     },
     {
       "id": "DEC-0010",
@@ -192,7 +210,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T13:50:00Z",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-30T13:50:00Z"
+      "enacted_at": "2026-05-30T13:50:00Z",
+      "oid": "1546bbdc00a2cf25a9a089a5cc57336a",
+      "content_hash": "85423f6e52052f2bf55d6695b02c51f00b8bf2dfd93461956b051b1ec04034a2"
     },
     {
       "id": "DEC-0011",
@@ -236,7 +256,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-31T00:00:00Z",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-31T00:00:00Z"
+      "enacted_at": "2026-05-31T00:00:00Z",
+      "oid": "f0f5c970ab78cb205747b5d2f3f17ecf",
+      "content_hash": "0a90a9775e229f51b22fa8329f87be472300550b095052d5948dea4e19385d23"
     }
   ]
 }

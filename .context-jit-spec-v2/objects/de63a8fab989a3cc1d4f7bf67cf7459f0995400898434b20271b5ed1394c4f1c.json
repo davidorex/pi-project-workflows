@@ -1,0 +1,24 @@
+{
+  "title": "call-agent returns only a status summary — agent output not surfaced to orchestrator",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:35:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "dispatch-runtime",
+  "description": "call-agent returns a success message like 'Dispatched agent X (grant=[...]); result.output type=string' but does not include the agent's actual output content. The output is available in the session log (details.output) but is not returned to the orchestrator. This means the orchestrator cannot capture and process agent output — it must check the substrate for side effects or read session logs.",
+  "actual_behavior": "call-agent returns text/plain content with a status summary. The agent output ('I will start by reading...') exists in details.output in the session log but is not included in the tool result content.",
+  "expected_behavior": "call-agent should include the agent's output in the tool result, either as the primary content or as a separate content block. The orchestrator should be able to read the agent's response without inspecting session logs.",
+  "reproduction": "1. Dispatch an agent via call-agent. 2. Observe the result contains only a status summary. 3. Inspect session log to find the actual agent output in details.output.",
+  "code_references": [
+    {
+      "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+      "line": 105,
+      "symbol": "callAgentTool.execute return",
+      "snippet": "content: [{ type: 'text', text: `Dispatched agent...` }]"
+    }
+  ]
+}

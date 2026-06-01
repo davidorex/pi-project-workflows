@@ -1,0 +1,16 @@
+{
+  "title": "Zero-token dispatches with wrong model produce no error — silent empty output",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:34:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "dispatch-runtime",
+  "description": "When call-agent dispatches with a model string that parseModelSpec resolves incorrectly (e.g., no '/' defaults to anthropic), the dispatch 'succeeds' but the API returns zero tokens with empty content. The tool reports 'Dispatched agent X; result.output type=string' — no error is raised. The session log shows content: [], usage: { input: 0, output: 0 }. The orchestrator has no indication that the agent produced nothing.",
+  "actual_behavior": "Dispatch with model 'claude-sonnet-4-20250514' (no provider prefix) → anthropic/claude-sonnet-4-20250514 → model not found → zero tokens, empty output, reported as success.",
+  "expected_behavior": "Zero-token responses should be reported as errors or warnings. The tool result should indicate when the agent produced no output.",
+  "reproduction": "1. author-agent-spec with model 'nonexistent-model'. 2. call-agent. 3. Observe success message with zero tokens in session log."
+}

@@ -26,7 +26,9 @@
           "symbol": "resolvePromptField",
           "snippet": "(value.includes('/') && !value.includes('\\n'))"
         }
-      ]
+      ],
+      "oid": "dcbb5a8f9375b6a0f663caac1e422047",
+      "content_hash": "5e0b4f6fe72ba329efcd0107cd97acb387eda0d7ce6fe80613162da64f1990de"
     },
     {
       "id": "FB-002",
@@ -53,7 +55,9 @@
           "symbol": "yamlStringify",
           "snippet": "const yamlContent = yamlStringify(specObj);"
         }
-      ]
+      ],
+      "oid": "bb3b2380cdf509048f907d97dfad1bf4",
+      "content_hash": "ce4a687ad3adf9ac25290221d60f321a352165a1f41037b30e764cedfb95b666"
     },
     {
       "id": "FB-003",
@@ -80,7 +84,9 @@
           "symbol": "parseAgentYaml",
           "snippet": "const parsed = parseAgentYaml(tmpPath);"
         }
-      ]
+      ],
+      "oid": "af191a10b2b4303a94355a6078fbdd3d",
+      "content_hash": "0f71f1ac4682e0b4279fe0816bf9e1bbae4262292780d0f518b7d0fedacb5143"
     },
     {
       "id": "FB-004",
@@ -114,7 +120,9 @@
           "symbol": "parseAgentYaml",
           "snippet": "const systemField = resolvePromptField(spec.prompt?.system);"
         }
-      ]
+      ],
+      "oid": "0699233aeaa46d3b45fb7fb88acb05eb",
+      "content_hash": "35db795ed8072b3ab396113b5256a7b22bab5b86d89d141338d9f6ba37a3ffcb"
     },
     {
       "id": "FB-005",
@@ -148,7 +156,9 @@
           "symbol": "callAgentTool.execute",
           "snippet": "if (!modelSpec) { throw new Error(`call-agent: agent '${params.spec_name}' has no model specified.`); }"
         }
-      ]
+      ],
+      "oid": "0aaf17b1c77fb3edd80febfd6cdb0224",
+      "content_hash": "5c563b103a108b5fcdcc7d209cd0da6b2117fb652b0000160fe300f8ec7cdd60"
     },
     {
       "id": "FB-006",
@@ -176,7 +186,9 @@
           "symbol": "parseModelSpec",
           "snippet": "if (slashIndex !== -1) return { provider: spec.slice(0, slashIndex), modelId: spec.slice(slashIndex + 1) }; return { provider: 'anthropic', modelId: spec };"
         }
-      ]
+      ],
+      "oid": "2ce5022a4472782834b155f8ed005d0e",
+      "content_hash": "026193eec63323c976761889286a0887c0225f8405679aeec48ed0a384463b5f"
     },
     {
       "id": "FB-007",
@@ -195,7 +207,9 @@
       "description": "There is no tool or command to list which models are available in the dispatch model registry. The orchestration agent's models.json contains models, but those are rejected by the dispatch modelRegistry (kimi-k2.6:cloud was in models.json but 'not found in modelRegistry'). The actual contents and population mechanism of the dispatch model registry are undiscoverable via tools. Authors must guess or read source to find valid model strings.",
       "actual_behavior": "Two models were attempted and rejected ('deepseek-v4-pro' → wrong format but also wrong registry; 'kimi-k2.6:cloud' → wrong format). The correct format 'deepseek/deepseek-v4-pro' worked. No tool exists to show what provider/modelId combinations are valid.",
       "expected_behavior": "A tool or command to list models available for agent dispatch, showing provider, modelId, and the provider/modelId string format to use in agent specs.",
-      "reproduction": "Attempt to discover valid dispatch models. No tool available."
+      "reproduction": "Attempt to discover valid dispatch models. No tool available.",
+      "oid": "8d7ab430c31309bc58c38e3235bca4c1",
+      "content_hash": "be36d3f8a692f3ddbb0a6e6739b83b824f3bdf97b230dbde30f944c5f92f780e"
     },
     {
       "id": "FB-008",
@@ -223,7 +237,9 @@
           "symbol": "callAgentTool.parameters",
           "snippet": "parent_grant: Type.Optional(Type.Array(Type.String()))"
         }
-      ]
+      ],
+      "oid": "4c37f753d077c2da246be0d8aa526cae",
+      "content_hash": "067ccffba803f0550cd3b109065d04a43bed5f1e9a119c04dd22198cad6e39ad"
     },
     {
       "id": "FB-009",
@@ -250,7 +266,9 @@
           "symbol": "callAgentTool.execute return",
           "snippet": "content: [{ type: 'text', text: `Dispatched agent...` }]"
         }
-      ]
+      ],
+      "oid": "662356f9a618abdfefdeeec428212d71",
+      "content_hash": "de63a8fab989a3cc1d4f7bf67cf7459f0995400898434b20271b5ed1394c4f1c"
     },
     {
       "id": "FB-010",
@@ -278,7 +296,9 @@
           "symbol": "wrapBlockContent",
           "snippet": "JSON.stringify(content, null, 2)"
         }
-      ]
+      ],
+      "oid": "6a5712986121845a11783a74763aad19",
+      "content_hash": "b050053814b06cfb5a44ddcc33da523ac02cbb62d1819c4f5ccb2536329a18e3"
     },
     {
       "id": "FB-011",
@@ -309,7 +329,9 @@
           "line": 469,
           "snippet": "depth: ref.depth ?? 0"
         }
-      ]
+      ],
+      "oid": "d9def94a8fe94b022264b1bb787a81c9",
+      "content_hash": "e786473235f361f793beae6a4056fcc3c4812e3b955cb9a22326ca0b150c1643"
     },
     {
       "id": "FB-012",
@@ -335,7 +357,9 @@
           "line": 134,
           "snippet": "const projectDir = path.join(cwd, '.pi', 'templates');"
         }
-      ]
+      ],
+      "oid": "a289779f13705144d239875e19b8ab39",
+      "content_hash": "ef5827428ab39cfb8280f44fc500356d8057c942b6321f0d2dae0dc0eaca3c04"
     },
     {
       "id": "FB-013",
@@ -355,7 +379,9 @@
       "actual_behavior": "gather-execution-context with unitId REQ-001 and kind requirement returns: { error: 'no context-contract for kind: requirement' }",
       "expected_behavior": "A default context contract could be inferred from the block kind schema (all relation types the kind participates in, with default depth 1). Or an auto-generate tool.",
       "reproduction": "1. Create a requirement. 2. Call gather-execution-context with kind=requirement without first creating a context-contract. 3. Observe error.",
-      "workaround": "Manually create a CTX-NNN entry in the context-contracts block before calling gather-execution-context."
+      "workaround": "Manually create a CTX-NNN entry in the context-contracts block before calling gather-execution-context.",
+      "oid": "251a986b21cc93520422e886123f5ff5",
+      "content_hash": "44d8aee5b0e376480fe1e1b84f2c1c4f769c679608cd61d77b2f75642373a998"
     },
     {
       "id": "FB-014",
@@ -374,7 +400,9 @@
       "description": "run-work-order-loop hard-depends on the work-orders block kind. The tool was authored after TASK-088 specifically to consume that schema — the dependency is by-design, not accidental. Substrates that prune work-orders (as clock-menu-app did) sacrifice access to the loop. This is the cost of substrate minimalism — the framework doesn't promise every tool works against every substrate shape, it promises tools work against their declared block dependencies.",
       "actual_behavior": "After removing the work-orders block kind from our substrate during pruning, run-work-order-loop cannot be used.",
       "expected_behavior": "The dependency is correct and intentional. The improvement would be: the tool description (and error message when the block is absent) should explicitly name the required block kind so the orchestrator understands why the tool is unavailable, rather than failing with a generic 'block not found' error.",
-      "reproduction": "1. Set up a substrate without work-orders block. 2. Attempt run-work-order-loop. 3. Observe failure."
+      "reproduction": "1. Set up a substrate without work-orders block. 2. Attempt run-work-order-loop. 3. Observe failure.",
+      "oid": "c93d2e82a66abbf74dbaf0b95dd356f1",
+      "content_hash": "5d7974557962f0ba16a82b22395f79c06f0d66958aeb8a89c206b83bdafd4d4c"
     },
     {
       "id": "FB-015",
@@ -393,7 +421,9 @@
       "description": "When call-agent dispatches with a model string that parseModelSpec resolves incorrectly (e.g., no '/' defaults to anthropic), the dispatch 'succeeds' but the API returns zero tokens with empty content. The tool reports 'Dispatched agent X; result.output type=string' — no error is raised. The session log shows content: [], usage: { input: 0, output: 0 }. The orchestrator has no indication that the agent produced nothing.",
       "actual_behavior": "Dispatch with model 'claude-sonnet-4-20250514' (no provider prefix) → anthropic/claude-sonnet-4-20250514 → model not found → zero tokens, empty output, reported as success.",
       "expected_behavior": "Zero-token responses should be reported as errors or warnings. The tool result should indicate when the agent produced no output.",
-      "reproduction": "1. author-agent-spec with model 'nonexistent-model'. 2. call-agent. 3. Observe success message with zero tokens in session log."
+      "reproduction": "1. author-agent-spec with model 'nonexistent-model'. 2. call-agent. 3. Observe success message with zero tokens in session log.",
+      "oid": "7d6ec3c8972040a473c703ff9b4d60da",
+      "content_hash": "16c92e0368284f0a41a6ed5426b9af1cff80b027e0f2e4c9029f1e75034ad87c"
     },
     {
       "id": "FB-016",
@@ -412,7 +442,9 @@
       "description": "Agent dispatch details (model, provider, token usage, raw API response, actual agent output) are only available in .pi/agent/sessions/<project>/<timestamp>.jsonl files. There is no tool to query or inspect recent dispatch results. The orchestrator must grep session logs manually to find what an agent produced.",
       "actual_behavior": "After call-agent returns a status summary, the only way to see the agent's output (e.g., 'I will start by reading...') is to grep the session log for the toolName call-agent entries and manually parse the JSONL.",
       "expected_behavior": "A tool like dispatch-history or agent-traces that returns recent agent dispatch results with their outputs, models, and token usage. Or call-agent should include the output in its result.",
-      "reproduction": "1. Dispatch an agent. 2. Try to see what it produced. 3. No tool available — must read session logs."
+      "reproduction": "1. Dispatch an agent. 2. Try to see what it produced. 3. No tool available — must read session logs.",
+      "oid": "773b2069287687da213f284cc773da18",
+      "content_hash": "2548ea2474465a56bd8868b8a689387c23cdf60d5571a71f62f6d6e354f45ba0"
     },
     {
       "id": "FB-017",
@@ -431,7 +463,9 @@
       "description": "When writing a block with schema validation, fields declared as required in the schema are enforced. This is correct. However, the error messages reference array indices (e.g., '/feedback/10: must have required property status') rather than the item's id field. For blocks with many items, debugging which item failed requires cross-referencing the index.",
       "actual_behavior": "append-block-item rejected FB-011 with '/feedback/10: must have required property status' — useful but requires counting items to identify the offending entry.",
       "expected_behavior": "Error messages should include the item's id field when present: '/feedback/FB-011: must have required property status'.",
-      "reproduction": "1. append-block-item with missing required field. 2. Observe error references array index, not item id."
+      "reproduction": "1. append-block-item with missing required field. 2. Observe error references array index, not item id.",
+      "oid": "5de0170e01def8b65434c9d9d718556b",
+      "content_hash": "d7e6916876d354865ef58aad8c19207670d7ba6fa8d76a8fd564c5307eb1e517"
     },
     {
       "id": "FB-018",
@@ -450,7 +484,9 @@
       "description": "When an agent spec declares both output.format: text AND tools: [...], the model emits prose describing what it would do rather than actually invoking the tools. The text format biases against tool-invocation — the model treats its job as producing text output, not executing actions. This is a configuration interaction: text format + tools is the failure shape.",
       "actual_behavior": "Agent spec-requirements-miner with output.format: text, tools: [read, append-block-item] produced: 'I will start by reading the specification document to extract requirements. Let me first check what's in the context to understand the existing state.' Zero tool calls. The model described its plan instead of executing it.",
       "expected_behavior": "Either: (a) output.format: text should be rejected or warned when tools are declared, (b) the format should not bias against tool use, or (c) the documentation should state that json format is required for tool-using agents.",
-      "reproduction": "1. Dispatch spec-requirements-miner with tools: [read, append-block-item], model: deepseek/deepseek-v4-pro, output.format: text. 2. Observe agent describes plan instead of using tools."
+      "reproduction": "1. Dispatch spec-requirements-miner with tools: [read, append-block-item], model: deepseek/deepseek-v4-pro, output.format: text. 2. Observe agent describes plan instead of using tools.",
+      "oid": "4ac00f952a363255bdb08666e89f790c",
+      "content_hash": "401e1a474b20064d0bb76758e32d0437320025a0ddd56c6a25f1f3baf15d8891"
     }
   ]
 }

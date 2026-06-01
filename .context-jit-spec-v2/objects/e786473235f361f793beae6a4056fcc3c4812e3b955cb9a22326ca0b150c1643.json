@@ -1,0 +1,28 @@
+{
+  "title": "contextBlocks single-item injection is raw JSON — render_recursive must be called explicitly",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:23:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "context-blocks",
+  "description": "Object-form context block entries { name, item, depth } inject the item as raw JSON wrapped in XML. The depth field is stored as metadata on the injected array element but render_recursive is NOT auto-applied. The template must explicitly call render_recursive(resolve(id), depth). This means the agent receives unrendered JSON rather than the formatted view that per-item macros produce.",
+  "actual_behavior": "_requirements_item contains raw JSON wrapped in context_block XML. _requirements_depth contains the specified depth. The template author must call render_recursive to get macro-rendered output.",
+  "expected_behavior": "The depth field should auto-trigger render_recursive during injection, producing the rendered view directly in _requirements_item. Or there should be an explicit flag to opt into auto-rendering.",
+  "workaround": "Template author must call render_recursive(resolve(id), _requirements_depth) explicitly.",
+  "code_references": [
+    {
+      "file": "packages/pi-jit-agents/src/compile.ts",
+      "line": 460,
+      "snippet": "const wrapped = wrapItemContent(ref.name, itemId, loc.item);"
+    },
+    {
+      "file": "packages/pi-jit-agents/src/compile.ts",
+      "line": 469,
+      "snippet": "depth: ref.depth ?? 0"
+    }
+  ]
+}

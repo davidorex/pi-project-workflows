@@ -1,0 +1,5 @@
+{
+  "name": "What jit-agents does not own",
+  "definition": "Subprocess dispatch (pi --mode json) — stays in pi-workflows (workflow-specific orchestration; DEC-0005). Workflow orchestration — DAG planning, step execution, state persistence, checkpoint/resume — owned by pi-workflows. Monitor orchestration — classification event routing, steering, activation, pattern learning — owned by pi-behavior-monitors. Project block CRUD — owned by pi-context; jit-agents consumes pi-context's readBlock API for contextBlocks injection but does not own substrate read/write. Domain specs — workflow YAMLs and monitor JSONs stay in their consumer packages. Tool implementations — jit-agents is tool-agnostic per DEC-0010; tools are not directly imported into jit-agents source; resolved at runtime via ExtensionContext.",
+  "v1_origin": "v1 §3 DOES NOT OWN"
+}

@@ -1,0 +1,67 @@
+{
+  "title": "Implement call-agent structured-return + zero-token detection (FEAT-003)",
+  "status": "proposed",
+  "target_agent": "jit-agents-implementation-agent",
+  "input_contract": {
+    "type": "object",
+    "required": [
+      "feature_id"
+    ],
+    "properties": {
+      "feature_id": {
+        "type": "string",
+        "const": "FEAT-003"
+      }
+    }
+  },
+  "context_blocks": [
+    {
+      "name": "features",
+      "item": "FEAT-003"
+    },
+    {
+      "name": "friction-items",
+      "item": "FB-009"
+    },
+    {
+      "name": "friction-items",
+      "item": "FB-015"
+    }
+  ],
+  "output_contract": {
+    "type": "object",
+    "required": [
+      "call_agent_changes",
+      "zero_token_detection_summary"
+    ],
+    "properties": {
+      "call_agent_changes": {
+        "type": "string"
+      },
+      "zero_token_detection_summary": {
+        "type": "string"
+      }
+    }
+  },
+  "scope": {
+    "files": [
+      "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+      "packages/pi-jit-agents/src/jit-runtime.ts"
+    ],
+    "operations": []
+  },
+  "real_check_criteria": {
+    "build_check_test": true,
+    "runtime_demo": {
+      "invocation": "pi -p 'call call-agent with valid agent' --mode json | jq '.content[0]'",
+      "expected": "non-empty structured output"
+    },
+    "adversarial_probe": {
+      "targets": [
+        "AgentToolResult.content carries verbatim output",
+        "zero-token throws AgentDispatchError",
+        "workflow chaining input→output works"
+      ]
+    }
+  }
+}

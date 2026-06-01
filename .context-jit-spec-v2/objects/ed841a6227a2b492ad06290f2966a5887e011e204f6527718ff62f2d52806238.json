@@ -1,0 +1,13 @@
+{
+  "title": "Mode selection algorithm",
+  "status": "enacted",
+  "context": "DEC-0004 establishes dual-mode dispatch. The framework needs a deterministic algorithm for selecting which mode applies per spec shape. Per AX-001 uniformity, the selection should be structural (predictable from spec alone), not behavioral (per-invocation choice).",
+  "decision": "Mode selection at compile time from spec shape: outputSchema set + tools[] empty/absent → classifier-mode. outputSchema set + tools[] non-empty → agentic-mode; outputSchema becomes post-hoc validation on final assistant message after loop. outputSchema absent + tools[] empty/absent → classifier-mode with text-format output (no phantom tool; raw text return). outputSchema absent + tools[] non-empty → agentic-mode. The output.format field is informational about expected output shape; does not alter mode selection. An agent declaring tools: [read, append-block-item] with output.format: text runs in agentic-mode and produces a final assistant message after the tool-execution loop — closes the prior anti-pattern of declaring tools[] alongside text-format without expecting tool execution.",
+  "consequences": [
+    "Per AX-001 the selection is structural: same spec shape always selects same mode regardless of consumer",
+    "No per-invocation mode override; spec authors determine dispatch shape at authorship time",
+    "output.format becomes purely informational at the framework level (consumer-side validation may use it)"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-30T13:50:00Z"
+}

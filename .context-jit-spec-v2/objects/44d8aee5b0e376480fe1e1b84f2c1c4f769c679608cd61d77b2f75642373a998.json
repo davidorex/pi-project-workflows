@@ -1,0 +1,17 @@
+{
+  "title": "gather-execution-context requires a context-contract entry",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:22:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "contracts",
+  "description": "gather-execution-context requires a context-contract entry for the unit kind. Without one, it returns 'no context-contract for kind: requirement'. Context contracts are not auto-generated. The author must manually create a CTX-NNN entry for each unit kind they want to gather context for.",
+  "actual_behavior": "gather-execution-context with unitId REQ-001 and kind requirement returns: { error: 'no context-contract for kind: requirement' }",
+  "expected_behavior": "A default context contract could be inferred from the block kind schema (all relation types the kind participates in, with default depth 1). Or an auto-generate tool.",
+  "reproduction": "1. Create a requirement. 2. Call gather-execution-context with kind=requirement without first creating a context-contract. 3. Observe error.",
+  "workaround": "Manually create a CTX-NNN entry in the context-contracts block before calling gather-execution-context."
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Dispatch-model discovery tool surface",
+  "status": "proposed",
+  "layer": "L4",
+  "description": "list-dispatch-models / discover-agent-models Pi tool querying ExtensionContext's model registry returning {provider, modelId, contextWindow, capabilities}. scripts/orchestrator/list-dispatch-models.ts CLI dual-surface per DEC-0019/0020. Closes FB-007 (FGAP-158).",
+  "acceptance_criteria": [
+    "Pi tool list-dispatch-models registered in pi-agent-dispatch (or pi-jit-agents per DEC scope)",
+    "Returns structured list of valid provider/modelId combinations sourced from ExtensionContext",
+    "Companion scripts/orchestrator/list-dispatch-models.ts CLI dual-surface",
+    "Orchestrator can resolve model strings without trial-and-error"
+  ]
+}

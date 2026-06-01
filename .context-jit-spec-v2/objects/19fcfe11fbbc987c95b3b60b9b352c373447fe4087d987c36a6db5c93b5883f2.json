@@ -1,0 +1,4 @@
+{
+  "description": "Implement FEAT-003 call-agent structured-return + zero-token detection. Depends on TASK-002 (agentic-mode dispatch contract defines structured-return semantics). Closes FB-009 + FB-015 / FGAP-160 + FGAP-165.",
+  "status": "planned"
+}

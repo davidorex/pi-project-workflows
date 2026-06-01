@@ -1,0 +1,4 @@
+{
+  "description": "Implement FEAT-002 list-dispatch-models Pi tool + CLI dual-surface. Independent of TASK-002 (can land in parallel; no dep on agentic-mode). Closes FB-007 / FGAP-158.",
+  "status": "planned"
+}

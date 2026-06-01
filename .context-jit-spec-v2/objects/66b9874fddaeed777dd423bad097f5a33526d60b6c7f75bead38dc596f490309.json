@@ -1,0 +1,8 @@
+{
+  "title": "One concept of agent (uniformity)",
+  "statement": "An agent is a single uniform concept — a named callable unit with typed inputs, typed outputs, context-parametric implementation, and capability-granted tool execution when declared. There is no distinction between monitor agent / workflow agent / privileged agent at the framework level. The same spec format, compilation pipeline, dispatch runtime, and output-validation contract apply to every agent regardless of consumer.",
+  "rationale": "Uniformity is the framework correctness criterion. Special-casing per consumer multiplies code paths and contradicts P3 (recreatability via framework alone).",
+  "status": "enacted",
+  "v1_origin": "v1 §0 P1",
+  "enacted_at": "2026-05-30T13:45:00Z"
+}

@@ -20,7 +20,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T14:15:00Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-30T16:30:00Z"
+      "closed_at": "2026-05-30T16:30:00Z",
+      "oid": "b3808419b07f81a509552fbb8a7663f8",
+      "content_hash": "1dee735633f7421c98cc9504553dee8071f181f7a4acaccfdf2aeb49209d5e92"
     }
   ]
 }

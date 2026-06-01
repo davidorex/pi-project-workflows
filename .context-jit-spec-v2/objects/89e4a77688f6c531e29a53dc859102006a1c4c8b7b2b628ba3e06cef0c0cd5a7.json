@@ -1,0 +1,14 @@
+{
+  "title": "Agentic-mode dispatch loop",
+  "status": "proposed",
+  "layer": "L2",
+  "description": "Multi-turn dispatch loop in executeAgent realizing MODE-002 per DEC-0004 + DEC-0008 + DEC-0010. Declared tools[] are checked against dispatch.parentGrant per DEC-0011; non-subset violations throw GrantViolationError before LLM dispatch. The allowed compiled ToolDefinitions become the LLM's tool registry; LLM emits tool calls; the loop executes each by invoking the matching compiled ToolDefinition.execute(toolCallId, params, signal, onUpdate, ctx), passing ExtensionContext as ctx; threads results into message history; loop terminates on end_turn / max-turns / tool-failure. Returns final assistant message. Closes FGAP-169 + FGAP-178 + (via formal demo) FGAP-102.",
+  "acceptance_criteria": [
+    "executeAgent in agentic-mode dispatches a multi-turn loop wiring compiled.tools to LLM tool registry",
+    "Each LLM-emitted tool call executes via the matching compiled ToolDefinition.execute(toolCallId, params, signal, onUpdate, ctx) per DEC-0010; ExtensionContext is passed as ctx, not used as a dispatcher",
+    "Loop terminates correctly on end_turn / max-turns / tool-failure",
+    "Capability grant per DEC-0011 requires compiled.tools to be a subset of dispatch.parentGrant; violations throw GrantViolationError before LLM dispatch",
+    "Final assistant message returned as TypedResult with usage metadata",
+    "Integration test exercises full loop with a real tool (e.g. read-file) end-to-end"
+  ]
+}

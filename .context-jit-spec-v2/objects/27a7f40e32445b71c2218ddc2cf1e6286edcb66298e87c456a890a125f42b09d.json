@@ -1,0 +1,17 @@
+{
+  "title": "jit-agents does not read .pi/",
+  "status": "enacted",
+  "context": ".pi/ is Pi platform territory per the declared architecture. Current createAgentLoader's three-tier search reading from .pi/agents/ contradicts the declaration and was written before directory ownership was stated.",
+  "decision": "jit-agents does not read from .pi/agents/, .pi/templates/, or .pi/monitors/. User overrides for agents are provided by the consumer package's territory (e.g. .project/agents/ for project-tier, ~/.pi/agent/agents/ for user-tier per the 3-tier discovery in DEC-0007).",
+  "consequences": [
+    "createAgentLoader + createTemplateEnv have explicit negative tests pinning the no-.pi/ behavior",
+    "Specific discovery paths per consumer remain in scope of DEC-0007"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-30T13:50:00Z",
+  "references": [
+    {
+      "label": "v1 §4 D3"
+    }
+  ]
+}

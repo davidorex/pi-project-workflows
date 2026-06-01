@@ -1,0 +1,16 @@
+{
+  "title": "Session logs are the only place to see agent dispatch details — no tool to query them",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:42:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "dispatch-runtime",
+  "description": "Agent dispatch details (model, provider, token usage, raw API response, actual agent output) are only available in .pi/agent/sessions/<project>/<timestamp>.jsonl files. There is no tool to query or inspect recent dispatch results. The orchestrator must grep session logs manually to find what an agent produced.",
+  "actual_behavior": "After call-agent returns a status summary, the only way to see the agent's output (e.g., 'I will start by reading...') is to grep the session log for the toolName call-agent entries and manually parse the JSONL.",
+  "expected_behavior": "A tool like dispatch-history or agent-traces that returns recent agent dispatch results with their outputs, models, and token usage. Or call-agent should include the output in its result.",
+  "reproduction": "1. Dispatch an agent. 2. Try to see what it produced. 3. No tool available — must read session logs."
+}

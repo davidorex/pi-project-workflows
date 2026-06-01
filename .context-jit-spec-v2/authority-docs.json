@@ -63,7 +63,9 @@
           ],
           "implementing_feature_id": "FEAT-004"
         }
-      ]
+      ],
+      "oid": "53edfec883a39a569f7ddaf413427fc6",
+      "content_hash": "e4fa7208cbbfb3c2e32d2f67123ce4e209d26a686962789462b194f4e426f545"
     },
     {
       "id": "REF-002",
@@ -80,7 +82,9 @@
       "authored_by": "agent:claude (composed under user direction)",
       "authored_at": "2026-05-29",
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T15:30:00Z"
+      "created_at": "2026-05-30T15:30:00Z",
+      "oid": "0cef8b64a31cdaf19560aa27c3785367",
+      "content_hash": "01808625e8f0f0fba3e9777df65db093799aad23d441852f2d4d482f271987b5"
     }
   ]
 }

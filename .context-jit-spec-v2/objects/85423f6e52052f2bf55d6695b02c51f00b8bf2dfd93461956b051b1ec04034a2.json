@@ -1,0 +1,13 @@
+{
+  "title": "ToolDefinition.execute is the canonical tool-execution surface",
+  "status": "enacted",
+  "context": "DEC-0008 defines how agentic-mode runs a tool the LLM calls. The framework needs to commit to a single canonical execution mechanism (not a temporary one) to prevent consumer-specific tool dispatch surfaces from proliferating. The earlier form named ExtensionContext as that surface; verified investigation (analysis/2026-05-30-tool-execution-answer.md) against @earendil-works/pi-coding-agent 0.75.4 establishes ExtensionContext exposes no tool-execution method — the canonical surface is the execute method carried by each ToolDefinition.",
+  "decision": "The canonical tool-execution surface is ToolDefinition.execute(toolCallId, params, signal, onUpdate, ctx): Promise<AgentToolResult> (node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:354) — the method on each compiled tool object. Agentic-mode invokes the held ToolDefinition's execute directly; tools are not directly imported by jit-agents (they are compiled per invocation into compiled.tools), keeping jit-agents tool-agnostic and matching DEC-0005's separation-of-concerns discipline. Consumer-supplied tool surfaces compose naturally because each supplies its own ToolDefinition objects (workflows, monitor agents with restricted tool sets, pi-agent-dispatch composite tools per FEAT-010). pi provides no central by-name dispatcher (ExtensionAPI exposes registration + name/metadata enumeration + lifecycle observation only); the per-tool execute method IS the surface.",
+  "consequences": [
+    "Interlocks with TASK-089/092 (composite tool infrastructure already landed) — composite tools are ToolDefinitions whose execute the agentic loop calls like any other",
+    "No dependency on a pi-coding-agent ExtensionContext tool-dispatch method (none exists at 0.75.4)",
+    "Re-anchored 2026-05-30: prior form ('ExtensionContext is THE canonical tool-execution surface' / 'ExtensionContext.dispatchTool(toolName, params)') was verified false against pi-coding-agent 0.75.4 (analysis/2026-05-30-tool-execution-answer.md). The decision's intent (tool-agnostic execution wired into the agent loop, no proliferating dispatch surfaces) survives; only the named mechanism is corrected to ToolDefinition.execute. ExtensionContext remains relevant as the ctx argument passed into execute. Same correction pattern as DEC-0001/FGAP-115"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-30T13:50:00Z"
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Dispatch shape",
+  "definition": "executeAgent supports two distinct execution shapes selected per spec shape (DEC-0009). Classifier-mode dispatch shape: single LLM call; when outputSchema set forced phantom-tool toolChoice constrains output to structured payload; when outputSchema absent free-form text output with no phantom tool. Agentic-mode dispatch shape: multi-turn dispatch loop; declared tools[] must be a subset of dispatch.parentGrant per DEC-0011 or executeAgent throws GrantViolationError before LLM dispatch; the allowed compiled ToolDefinitions become the LLM's tool registry; LLM emits response; if tool calls are present executeAgent invokes each matching compiled ToolDefinition.execute(toolCallId, params, signal, onUpdate, ctx) per DEC-0008/DEC-0010, passing ExtensionContext as ctx, threads results into message history, and calls LLM again with enriched history; loop terminates on end_turn or max-turns or tool-failure. Phantom-tool not used in agentic-mode.",
+  "v1_origin": "v1 §2a (extended for dual-mode per DEC-0004)"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "Implement FEAT-004 agent-trace + inspect-agent + query-agent-dispatch Pi tools. Independent of TASK-002/004 (read-only introspection). Closes FB-016 / FGAP-166.",
+  "status": "planned"
+}

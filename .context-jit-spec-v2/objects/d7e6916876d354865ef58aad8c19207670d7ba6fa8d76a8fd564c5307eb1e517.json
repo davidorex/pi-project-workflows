@@ -1,0 +1,16 @@
+{
+  "title": "Substrate schema validation rejects items missing optional fields",
+  "severity": "observation",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T14:30:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "schema-validation",
+  "description": "When writing a block with schema validation, fields declared as required in the schema are enforced. This is correct. However, the error messages reference array indices (e.g., '/feedback/10: must have required property status') rather than the item's id field. For blocks with many items, debugging which item failed requires cross-referencing the index.",
+  "actual_behavior": "append-block-item rejected FB-011 with '/feedback/10: must have required property status' — useful but requires counting items to identify the offending entry.",
+  "expected_behavior": "Error messages should include the item's id field when present: '/feedback/FB-011: must have required property status'.",
+  "reproduction": "1. append-block-item with missing required field. 2. Observe error references array index, not item id."
+}

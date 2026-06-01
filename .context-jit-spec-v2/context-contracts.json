@@ -19,7 +19,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:35:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:40:18.461Z"
+      "modified_at": "2026-05-30T09:40:18.461Z",
+      "oid": "ae1c107002b18cedbeaec0727b2793f8",
+      "content_hash": "2be17c76f2d4a80d2da455d1c8268103c784393ce043ac2fc035a7719c883982"
     },
     {
       "id": "CTX-002",
@@ -40,7 +42,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:35:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:40:18.464Z"
+      "modified_at": "2026-05-30T09:40:18.464Z",
+      "oid": "16e5699c734c1616a8701b2e768028ce",
+      "content_hash": "3ef22e5486c323eb72b647b7a61452b6ee702b8b3010a1dca01ca6ab936c65c7"
     },
     {
       "id": "CTX-003",
@@ -81,7 +85,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:35:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:40:18.465Z"
+      "modified_at": "2026-05-30T09:40:18.465Z",
+      "oid": "f2c3a885ee06de2c5fbd8a89405eeb88",
+      "content_hash": "9c7c15beae55b956f6c206c26cea33f8cb610383ba594bb2cdaca1b460d7d6fc"
     },
     {
       "id": "CTX-004",
@@ -102,7 +108,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:35:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:40:18.465Z"
+      "modified_at": "2026-05-30T09:40:18.465Z",
+      "oid": "f9632ff1faf8965757bbdae4e5d322d5",
+      "content_hash": "673cdd8d4f31470d59b065d37c6bf3902eaae710caeeb156f951623abf1cab16"
     },
     {
       "id": "CTX-005",
@@ -128,7 +136,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T16:35:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-30T09:40:18.466Z"
+      "modified_at": "2026-05-30T09:40:18.466Z",
+      "oid": "0d075a3acacda2cd949cf5bab7b5cffc",
+      "content_hash": "91f0dc170d4a4d58d3e21dda282877efeb000380c962fcfd8b771b3c6821d957"
     }
   ]
 }

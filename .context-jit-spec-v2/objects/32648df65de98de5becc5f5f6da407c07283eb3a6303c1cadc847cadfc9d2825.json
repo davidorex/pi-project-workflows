@@ -1,0 +1,14 @@
+{
+  "title": "Agentic-mode tool execution invokes ToolDefinition.execute",
+  "status": "enacted",
+  "context": "DEC-0004 establishes agentic-mode where compiled.tools, after DEC-0011 reject-on-non-subset grant enforcement, become the LLM's tool registry. The framework needs a defined mechanism for executing the tool invocations the LLM emits. Direct tool imports in jit-agents would couple it to specific tool implementations and violate the consumer-agnostic boundary contract. The earlier form of this decision assumed pi's ExtensionContext exposes a by-name tool dispatcher; verified investigation (analysis/2026-05-30-tool-execution-answer.md) against @earendil-works/pi-coding-agent 0.75.4 establishes it does not — ExtensionContext is the per-call ctx argument passed INTO a tool's execute, not an executor of other tools.",
+  "decision": "In agentic-mode, when the LLM emits a tool call, executeAgent executes it by calling the tool's own execute method on the compiled ToolDefinition object the loop already holds: toolDefinition.execute(toolCallId, params, signal, onUpdate, ctx) (signature at node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:354). jit-agents authors/compiles the agent's tools, so it holds them as compiled.tools — the loop keeps a name->ToolDefinition map and invokes the matching object's execute. The ExtensionContext the dispatch carries is passed AS the ctx argument to execute (not used as a dispatcher). The loop constructs a toolCallId per call. Tool results (AgentToolResult) are threaded into the LLM's message history; the loop continues with enriched history. pi exposes no central by-name tool executor (ExtensionAPI has registerTool/getActiveTools/getAllTools/setActiveTools only — types.d.ts:32,73,75,77); the agent session runs tools only when the model calls them, so the agentic loop owns its own execution path.",
+  "consequences": [
+    "Realizes FEAT-005 ('subagent receives its OWN tools, JIT-composed per invocation, scoped to EXACTLY the operations the task needs') at the agent-tier dispatch boundary",
+    "Closes the gap FGAP-169 named at the agent-tier (compiled.tools structurally unreachable from LLM in v1 implementation)",
+    "Capability enforcement per DEC-0011 happens before LLM dispatch: non-subset child grants throw GrantViolationError; only validated compiled ToolDefinitions are offered to the LLM and kept in the loop's tool map",
+    "Re-anchored 2026-05-30: prior form assumed ExtensionContext exposes a tool dispatcher (ExtensionContext.dispatchTool / tool registry); verified false against pi-coding-agent 0.75.4 (analysis/2026-05-30-tool-execution-answer.md). Mechanism is toolDefinition.execute on the held compiled-tool objects; ExtensionContext is execute's ctx argument. Same correction pattern as DEC-0001/FGAP-115 (named surface that did not work as assumed)"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-30T13:50:00Z"
+}

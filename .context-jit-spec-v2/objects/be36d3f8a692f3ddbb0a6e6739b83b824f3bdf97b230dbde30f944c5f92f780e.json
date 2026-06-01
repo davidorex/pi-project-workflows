@@ -1,0 +1,16 @@
+{
+  "title": "No tool to discover available dispatch models",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:48:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "model-resolution",
+  "description": "There is no tool or command to list which models are available in the dispatch model registry. The orchestration agent's models.json contains models, but those are rejected by the dispatch modelRegistry (kimi-k2.6:cloud was in models.json but 'not found in modelRegistry'). The actual contents and population mechanism of the dispatch model registry are undiscoverable via tools. Authors must guess or read source to find valid model strings.",
+  "actual_behavior": "Two models were attempted and rejected ('deepseek-v4-pro' → wrong format but also wrong registry; 'kimi-k2.6:cloud' → wrong format). The correct format 'deepseek/deepseek-v4-pro' worked. No tool exists to show what provider/modelId combinations are valid.",
+  "expected_behavior": "A tool or command to list models available for agent dispatch, showing provider, modelId, and the provider/modelId string format to use in agent specs.",
+  "reproduction": "Attempt to discover valid dispatch models. No tool available."
+}

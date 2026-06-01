@@ -1,0 +1,5 @@
+{
+  "name": "Boundary contract",
+  "definition": "The jit-agents boundary is a function composition: spec name + invocation context → compiled spec → execution (mode-selected) → typed result OR final-assistant-message. Consumers interact through four surfaces: (1) Loading — loadAgent(name, loaderContext) → AgentSpec resolves the spec, fully resolves all relative paths, returns self-contained spec. (2) Compilation — compileAgent(spec, invocationContext) → CompiledAgent renders templates, produces final prompt, resolves contextBlocks. (3) Execution — executeAgent(compiled, dispatchContext) → TypedResult | FinalAssistantMessage dispatches per the mode selected from spec shape (DEC-0009); validates output (classifier-mode) or returns final message after multi-turn loop (agentic-mode). (4) Introspection — agentContract(name) → AgentContract exposes spec contract without executing. Key invariant: once an AgentSpec leaves the boundary, every path it references is absolute.",
+  "v1_origin": "v1 §2"
+}

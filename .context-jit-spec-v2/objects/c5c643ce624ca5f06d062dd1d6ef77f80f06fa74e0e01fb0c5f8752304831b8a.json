@@ -1,0 +1,13 @@
+{
+  "title": "author-agent-spec correctness arc",
+  "status": "proposed",
+  "layer": "L2",
+  "description": "Fixes to author-agent-spec eliminating the FB-001..006 friction cluster: resolvePromptField heuristic narrowed to .md/.txt-extension-only template detection; YAML serializer preserves newlines (no folded block scalar); round-trip validation surfaces semantic errors (template path doesn't resolve / schema not registered / model not in registry); explicit inline-vs-template discriminator in AgentSpec shape. Closes FB-001/002/003/004/005/006 (FGAPs 153/154/155/156/157/158).",
+  "acceptance_criteria": [
+    "resolvePromptField only classifies as template when value ends with .md or .txt extension",
+    "YAML serializer uses literal block scalar for multi-line prompts (preserves newlines)",
+    "Round-trip validation surfaces template-path resolution failure before disk write",
+    "AgentSpec shape enforces oneOf inline/template per prompt slot (no parallel optional ambiguity)",
+    "author-agent-spec invokes list-dispatch-models to validate model field at write time (FB-005)"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "unit_kind": "feature",
+  "bundle_relation_types": [
+    {
+      "relation_type": "feature_depends_on_item",
+      "direction": "out",
+      "max_depth": 2
+    },
+    {
+      "relation_type": "task_depends_on_task",
+      "direction": "in",
+      "max_depth": 1
+    }
+  ],
+  "notes": "FEAT execution context: outbound feature_depends_on_item at depth 2 surfaces the DECs realized + FB items addressed + MODE (since FEAT→MODE uses same relation_type); inbound task_depends_on_task at depth 1 surfaces the TASKs implementing this FEAT. Composes the bundle a planner needs: what does this FEAT cover, what FB friction does it close, what TASKs implement it, what decisions ground it."
+}

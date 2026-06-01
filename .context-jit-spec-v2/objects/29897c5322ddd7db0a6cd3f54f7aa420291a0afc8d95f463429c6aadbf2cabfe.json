@@ -1,0 +1,12 @@
+{
+  "title": "Agent introspection + dispatch-history surface",
+  "status": "proposed",
+  "layer": "L4",
+  "description": "Pi tools agent-trace + inspect-agent + query-agent-dispatch — orchestrator can query dispatch history (per-agent or session-wide) with input / output / usage / model / stopReason / duration, plus inspect any single agent's full spec + last-dispatch state + cumulative usage. Closes FB-016 (FGAP-166).",
+  "acceptance_criteria": [
+    "agent-trace Pi tool returns last N dispatches for an agent",
+    "inspect-agent Pi tool returns full spec + health snapshot",
+    "query-agent-dispatch Pi tool scans .pi/agent/sessions/ JSONL filtered + paginated",
+    "All three surface in pi-agent-dispatch with companion scripts/orchestrator/ CLI dual-surfaces"
+  ]
+}

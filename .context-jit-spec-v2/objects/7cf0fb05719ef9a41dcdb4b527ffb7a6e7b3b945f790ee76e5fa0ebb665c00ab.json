@@ -1,0 +1,19 @@
+{
+  "title": "executeAgent is dual-mode in-process dispatch primitive",
+  "status": "enacted",
+  "context": "v1's D4 framed executeAgent as phantom-tool-only single-turn dispatch (classifier-mode). The canonical body (AX-001 uniformity, FEAT-005 capability composition, FEAT-006 north-star, DEC-0011 local capability-grant model, TASK-091 'agent does the work', JI-029 'jit agent with perms for read/amend blocks') commits jit-agents to tool-using-agent semantics that the classifier-pattern alone cannot deliver. Implementation has been hedging by clamping declared tools[] at jit-runtime.ts:488 then discarding them; LLM receives only the phantom tool at line 568 (when outputSchema set) or nothing. compiled.tools is structurally unreachable from LLM under the v1 framing.",
+  "decision": "executeAgent supports TWO dispatch modes selected per spec shape via DEC-0009 algorithm. (a) Classifier-mode: triggered when outputSchema is set; forced phantom-tool toolChoice; single LLM call; output extracted and validated against outputSchema; returns typed result; used by monitors. (b) Agentic-mode: triggered when tools[] is non-empty and outputSchema is absent (or both set per DEC-0009 precedence); declared tools[] must be a subset of dispatch.parentGrant per DEC-0011, with violations throwing GrantViolationError before LLM dispatch; allowed compiled ToolDefinitions become the LLM's tool registry; multi-turn dispatch loop with tool-call iteration through ToolDefinition.execute(toolCallId, params, signal, onUpdate, ctx) per DEC-0008/DEC-0010, passing ExtensionContext as ctx; thread results into message history; loop termination on end_turn / max-turns / tool-failure; returns final assistant message.",
+  "consequences": [
+    "Both modes share spec loading + template compilation + contextBlocks injection + model resolution + attestation + tracing; differ only in dispatch surface",
+    "Replaces v1's D4 phantom-tool-only framing — the implementation hedge that capability-grant infrastructure (FEAT-004/005 + TASK-089/092) made dormant at agent dispatch tier",
+    "Closes FGAP-169 (compiled.tools structurally unreachable) + FGAP-178 (capability-grant infrastructure dormancy) at the spec layer",
+    "Implementation work pending: jit-runtime.ts:432-738 needs multi-tool dispatch loop; ToolDefinition.execute(...) per DEC-0010 is the tool-execution surface, with ExtensionContext passed as ctx rather than used as a dispatcher"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-30T13:50:00Z",
+  "references": [
+    {
+      "label": "v1 §4 D4 [REWRITTEN]"
+    }
+  ]
+}

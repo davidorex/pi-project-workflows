@@ -1,0 +1,16 @@
+{
+  "unit_kind": "framework-gap",
+  "bundle_relation_types": [
+    {
+      "relation_type": "open_question_blocks_decision",
+      "direction": "out",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "friction_item_files_to_gap",
+      "direction": "in",
+      "max_depth": 1
+    }
+  ],
+  "notes": "FGAP execution context: outbound open_question_blocks_decision at depth 1 surfaces which DEC this gap blocks; inbound friction_item_files_to_gap at depth 1 surfaces FB items grounding the gap (cross-substrate sentinel form receives FB→project:FGAP edges; in-substrate FGAP-NNN receives the in-substrate FB→FGAP-NNN form). Composes the bundle a coder needs at FGAP closure time: what decision unblocks, what friction grounds the closure."
+}

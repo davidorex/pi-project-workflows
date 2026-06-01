@@ -1,0 +1,16 @@
+{
+  "title": "output.format: text combined with tools biases model toward prose description instead of tool invocation",
+  "severity": "blocking",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T14:13:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "agent-authoring",
+  "description": "When an agent spec declares both output.format: text AND tools: [...], the model emits prose describing what it would do rather than actually invoking the tools. The text format biases against tool-invocation — the model treats its job as producing text output, not executing actions. This is a configuration interaction: text format + tools is the failure shape.",
+  "actual_behavior": "Agent spec-requirements-miner with output.format: text, tools: [read, append-block-item] produced: 'I will start by reading the specification document to extract requirements. Let me first check what's in the context to understand the existing state.' Zero tool calls. The model described its plan instead of executing it.",
+  "expected_behavior": "Either: (a) output.format: text should be rejected or warned when tools are declared, (b) the format should not bias against tool use, or (c) the documentation should state that json format is required for tool-using agents.",
+  "reproduction": "1. Dispatch spec-requirements-miner with tools: [read, append-block-item], model: deepseek/deepseek-v4-pro, output.format: text. 2. Observe agent describes plan instead of using tools."
+}

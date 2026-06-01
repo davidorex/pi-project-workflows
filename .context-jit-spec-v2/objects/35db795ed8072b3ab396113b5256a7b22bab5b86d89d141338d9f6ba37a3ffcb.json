@@ -1,0 +1,31 @@
+{
+  "title": "Two competing AgentSpec shapes: TypeScript type vs YAML input",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T12:54:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "agent-authoring",
+  "description": "The TypeScript AgentSpec type defines systemPrompt/taskPrompt as top-level fields. The YAML parser (parseAgentYaml) reads prompt.system/prompt.task. These are two different shapes for the same concept. An author writing to the TypeScript shape produces YAML with top-level systemPrompt/taskPrompt keys — which parseAgentYaml ignores because it reads from the prompt.* namespace. The parser's output shape differs from the YAML input shape.",
+  "actual_behavior": "Writing { systemPrompt: '...', taskPrompt: '...' } to author-agent-spec produces YAML with top-level systemPrompt/taskPrompt keys. parseAgentYaml reads spec.prompt?.system and spec.prompt?.task — both undefined. No prompt content is produced.",
+  "expected_behavior": "A single canonical shape for both the TypeScript type and the YAML input. If the TypeScript type is the truth, parseAgentYaml should read top-level fields. If the YAML input is the truth, the TypeScript type should reflect the nested shape.",
+  "reproduction": "1. author-agent-spec with { systemPrompt: 'test', taskPrompt: 'test' }. 2. call-agent. 3. Observe compile failure: no prompt content.",
+  "workaround": "Use prompt.system and prompt.task in the spec object.",
+  "code_references": [
+    {
+      "file": "packages/pi-jit-agents/src/types.ts",
+      "line": 21,
+      "symbol": "AgentSpec",
+      "snippet": "systemPrompt?: string; taskPrompt?: string;"
+    },
+    {
+      "file": "packages/pi-jit-agents/src/agent-spec.ts",
+      "line": 169,
+      "symbol": "parseAgentYaml",
+      "snippet": "const systemField = resolvePromptField(spec.prompt?.system);"
+    }
+  ]
+}

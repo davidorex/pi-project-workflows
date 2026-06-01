@@ -1,0 +1,36 @@
+{
+  "unit_kind": "decision",
+  "bundle_relation_types": [
+    {
+      "relation_type": "axiom_grounds_decision",
+      "direction": "in",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "concept_referenced_in_decision",
+      "direction": "in",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "dispatch_mode_realizes_decision",
+      "direction": "in",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "authority_doc_grounds_decision",
+      "direction": "in",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "friction_item_addressed_by_decision",
+      "direction": "in",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "v1_section_superseded_by_v2_item",
+      "direction": "in",
+      "max_depth": 1
+    }
+  ],
+  "notes": "DEC execution context: inbound from 6 relation types — axiom (foundational ground), concept (referenced surface), dispatch-mode (mode realizing the decision), authority-doc (external grounding), friction-item (FB addressed by the decision class), v1-supersession (v1 section being superseded). Composes the bundle a reader needs to understand WHY the decision says what it says + WHAT it addresses."
+}

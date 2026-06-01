@@ -1,0 +1,12 @@
+{
+  "title": "call-agent structured-return surface",
+  "status": "proposed",
+  "layer": "L4",
+  "description": "call-agent returns agent output as structured content (parsed JSON if outputSchema, text otherwise) + usage + model + duration in AgentToolResult.content, NOT buried in details metadata. Orchestrators consume output without session-log inspection. Closes FB-009 (FGAP-160).",
+  "acceptance_criteria": [
+    "AgentToolResult.content carries the agent output verbatim, parsed if outputSchema set",
+    "Usage / model / duration accessible on the result without manual log inspection",
+    "Zero-token-output detection per FB-015 (FGAP-165) — throw AgentDispatchError with stopReason + model on zero-token dispatches",
+    "Workflow chaining (output of agent A → input of agent B) works without out-of-band log read"
+  ]
+}

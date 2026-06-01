@@ -1,0 +1,64 @@
+{
+  "title": "Implement agent introspection + dispatch-history surface (FEAT-004)",
+  "status": "proposed",
+  "target_agent": "pi-tool-implementation-agent",
+  "input_contract": {
+    "type": "object",
+    "required": [
+      "feature_id"
+    ],
+    "properties": {
+      "feature_id": {
+        "type": "string",
+        "const": "FEAT-004"
+      }
+    }
+  },
+  "context_blocks": [
+    {
+      "name": "features",
+      "item": "FEAT-004"
+    },
+    {
+      "name": "friction-items",
+      "item": "FB-016"
+    }
+  ],
+  "output_contract": {
+    "type": "object",
+    "required": [
+      "tools_implemented"
+    ],
+    "properties": {
+      "tools_implemented": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "scope": {
+    "files": [
+      "packages/pi-agent-dispatch/src/agent-trace-tool.ts",
+      "packages/pi-agent-dispatch/src/inspect-agent-tool.ts",
+      "packages/pi-agent-dispatch/src/query-agent-dispatch-tool.ts",
+      "scripts/orchestrator/*.ts"
+    ],
+    "operations": []
+  },
+  "real_check_criteria": {
+    "build_check_test": true,
+    "runtime_demo": {
+      "invocation": "pi -p 'call agent-trace --limit 5' --mode json | jq '.dispatches | length'",
+      "expected": "number"
+    },
+    "adversarial_probe": {
+      "targets": [
+        "3 Pi tools registered",
+        "session JSONL parsing correct",
+        "pagination + filtering"
+      ]
+    }
+  }
+}

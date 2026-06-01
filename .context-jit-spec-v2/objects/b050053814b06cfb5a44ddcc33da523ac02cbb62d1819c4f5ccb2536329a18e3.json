@@ -1,0 +1,25 @@
+{
+  "title": "contextBlocks whole-block injection is all-or-nothing raw JSON",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:26:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "context-blocks",
+  "description": "contextBlocks bare-string entries inject the entire block as raw JSON wrapped in XML boundary tags. There is no filtering, pagination, field projection, or macro-rendered option. For blocks that grow large (40-60 requirements), this injects significant token cost into every agent dispatch. The template can prune with Nunjucks but the full block JSON is read and stringified into the template context regardless.",
+  "actual_behavior": "contextBlocks: ['requirements'] injects all fields of all items as JSON. Even if the agent only needs IDs to avoid duplicates, it receives descriptions, acceptance criteria, status, priority, and all other fields for every item.",
+  "expected_behavior": "Optional field projection or filtering on context block entries. For example: contextBlocks: [{ name: 'requirements', fields: ['id', 'description'] }] or a where clause to filter items. Alternatively, per-item macro rendering could be auto-applied at a specified depth.",
+  "reproduction": "1. Create 50 requirements. 2. Dispatch an agent with contextBlocks: ['requirements']. 3. Observe full block JSON in the template context.",
+  "workaround": "Template author manually prunes in Nunjucks: {% for req in _requirements.requirements %} {{ req.id }}: {{ req.description | truncate(120) }} {% endfor %}. Still reads full block into context.",
+  "code_references": [
+    {
+      "file": "packages/pi-jit-agents/src/compile.ts",
+      "line": 162,
+      "symbol": "wrapBlockContent",
+      "snippet": "JSON.stringify(content, null, 2)"
+    }
+  ]
+}

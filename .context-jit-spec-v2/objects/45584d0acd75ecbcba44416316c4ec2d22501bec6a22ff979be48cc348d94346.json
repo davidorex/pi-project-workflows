@@ -1,0 +1,8 @@
+{
+  "title": "Existing agents are disposable development artifacts",
+  "statement": "All agent specs in the codebase carry fossilized assumptions from the archaeological strata where they were authored. None are durable assets. If the framework is correct every agent can be recreated. Replacing, deleting, or starting over is permissible.",
+  "rationale": "Treating existing specs as requirements forces framework to accommodate legacy shapes. The discipline runs the other way: framework is canonical; specs are disposable.",
+  "status": "enacted",
+  "v1_origin": "v1 §0 P2",
+  "enacted_at": "2026-05-30T13:45:00Z"
+}

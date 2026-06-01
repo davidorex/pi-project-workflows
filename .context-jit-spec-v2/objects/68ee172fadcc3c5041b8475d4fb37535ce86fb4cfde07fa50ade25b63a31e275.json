@@ -1,0 +1,12 @@
+{
+  "name": "classifier-mode",
+  "triggered_when": "spec.outputSchema set AND tools[] empty/absent; OR outputSchema absent AND tools[] empty/absent (text-format variant — no phantom tool; raw text return)",
+  "dispatch_shape": "Single LLM call. When outputSchema set: forced phantom-tool toolChoice constrains output to structured payload per the verdict-shaped schema. When outputSchema absent: free-form text output; no phantom tool registered.",
+  "output_form": "Schema-validated typed result (when outputSchema set) OR raw text return. Returned as TypedResult.",
+  "use_cases": [
+    "Monitor classify calls (CLEAN / FLAG / NEW verdict-shaped output)",
+    "Workflow agent steps requiring structured output",
+    "Any agent dispatch where the operator-direction is 'transform input X into structured output Y'"
+  ],
+  "implementation_status": "landed"
+}

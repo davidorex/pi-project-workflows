@@ -1,0 +1,13 @@
+{
+  "v1_section_reference": "v1 §4 D4",
+  "supersession_kind": "rewritten",
+  "superseded_by_v2_items": [
+    "DEC-0004",
+    "DEC-0008",
+    "DEC-0009",
+    "DEC-0010",
+    "MODE-001",
+    "MODE-002"
+  ],
+  "notes": "v1 D4 framed executeAgent as phantom-tool-only single-turn dispatch. v2 rewrites to dual-mode dispatch (DEC-0004) with mode selection algorithm (DEC-0009) + agentic-mode tool execution through ExtensionContext (DEC-0008) + ExtensionContext as canonical tool-execution surface (DEC-0010). Both modes formally captured as MODE-001 (classifier) and MODE-002 (agentic). Replaces the implementation-hedge framing that capability-grant infrastructure (FEAT-004/005 + TASK-089/092) made dormant at agent dispatch tier."
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Specs leave jit-agents fully resolved",
+  "status": "enacted",
+  "context": "Relative paths in agent specs require consumers to know the directory context the spec was loaded from. That context belongs inside the jit-agents boundary. Leaking relative paths forces every consumer to reimplement resolution logic with mismatched assumptions (disclarity audit found 2 independent resolution strategies on main).",
+  "decision": "AgentSpec returned by loadAgent() has all path fields resolved to absolute paths. Consumers never see relative paths. Once an AgentSpec leaves the jit-agents boundary, every path it references is absolute.",
+  "consequences": [
+    "Consumers contain zero path resolution logic for agent specs",
+    "loadedFrom field on AgentSpec populated by parseAgentYaml",
+    "Template and schema paths resolved to absolute at load time"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-30T13:50:00Z",
+  "references": [
+    {
+      "label": "v1 §4 D1"
+    }
+  ]
+}

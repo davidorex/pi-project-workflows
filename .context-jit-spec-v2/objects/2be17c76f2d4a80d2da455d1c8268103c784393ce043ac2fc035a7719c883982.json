@@ -1,0 +1,16 @@
+{
+  "unit_kind": "task",
+  "bundle_relation_types": [
+    {
+      "relation_type": "task_depends_on_task",
+      "direction": "out",
+      "max_depth": 2
+    },
+    {
+      "relation_type": "feature_depends_on_item",
+      "direction": "in",
+      "max_depth": 1
+    }
+  ],
+  "notes": "TASK execution context: outbound task_depends_on_task at depth 2 surfaces the precondition chain + cross-substrate FGAPs the task closes (via the same relation_type carrying TASK→project:FGAP sentinel edges); inbound feature_depends_on_item at depth 1 surfaces the FEAT this TASK implements + (via the same relation_type) the DEC/MODE/FB items the FEAT depends on. Composes the bundle a coder needs at TASK-002 dispatch time: which TASK precedes me, which FEAT I serve, which FGAPs I close, which DECs the FEAT realizes."
+}

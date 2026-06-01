@@ -1,0 +1,31 @@
+{
+  "title": "model field required at dispatch but optional in AgentSpec type",
+  "severity": "blocking",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:33:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "model-resolution",
+  "description": "The AgentSpec TypeScript type declares model as optional (model?: string). call-agent rejects dispatch when model is absent with error 'no model specified'. The field is effectively required for dispatch but the type says optional.",
+  "actual_behavior": "dispatch fails: 'call-agent: agent X has no model specified.'",
+  "expected_behavior": "Either model should be required in the type, or call-agent should default to the orchestration agent's model when absent.",
+  "reproduction": "1. author-agent-spec without a model field. 2. call-agent. 3. Observe error.",
+  "workaround": "Always include a model field in agent specs.",
+  "code_references": [
+    {
+      "file": "packages/pi-jit-agents/src/types.ts",
+      "line": 25,
+      "symbol": "AgentSpec",
+      "snippet": "model?: string;"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+      "line": 83,
+      "symbol": "callAgentTool.execute",
+      "snippet": "if (!modelSpec) { throw new Error(`call-agent: agent '${params.spec_name}' has no model specified.`); }"
+    }
+  ]
+}

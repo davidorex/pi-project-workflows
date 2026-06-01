@@ -1,0 +1,21 @@
+{
+  "unit_kind": "concept",
+  "bundle_relation_types": [
+    {
+      "relation_type": "concept_referenced_in_decision",
+      "direction": "out",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "friction_item_addressed_by_concept",
+      "direction": "in",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "authority_doc_grounds_concept",
+      "direction": "in",
+      "max_depth": 1
+    }
+  ],
+  "notes": "CONCEPT execution context: outbound to decisions citing it; inbound from FB items addressed at the concept layer + authority docs grounding the concept. Composes the bundle a reader/coder needs when the concept is referenced as the surface a fix targets."
+}

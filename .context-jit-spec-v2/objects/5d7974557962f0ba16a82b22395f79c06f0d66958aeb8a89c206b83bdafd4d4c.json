@@ -1,0 +1,16 @@
+{
+  "title": "run-work-order-loop requires work-orders block — inaccessible after substrate pruning",
+  "severity": "observation",
+  "status": "resolved",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:37:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "substrate-tools",
+  "description": "run-work-order-loop hard-depends on the work-orders block kind. The tool was authored after TASK-088 specifically to consume that schema — the dependency is by-design, not accidental. Substrates that prune work-orders (as clock-menu-app did) sacrifice access to the loop. This is the cost of substrate minimalism — the framework doesn't promise every tool works against every substrate shape, it promises tools work against their declared block dependencies.",
+  "actual_behavior": "After removing the work-orders block kind from our substrate during pruning, run-work-order-loop cannot be used.",
+  "expected_behavior": "The dependency is correct and intentional. The improvement would be: the tool description (and error message when the block is absent) should explicitly name the required block kind so the orchestrator understands why the tool is unavailable, rather than failing with a generic 'block not found' error.",
+  "reproduction": "1. Set up a substrate without work-orders block. 2. Attempt run-work-order-loop. 3. Observe failure."
+}

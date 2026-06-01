@@ -1,0 +1,14 @@
+{
+  "title": "Pi-Context May 29 2026 LLM Perspective",
+  "file_path": "/Users/david/Projects/Pi-Context-May 29 2026 LLM Perspective.md",
+  "authority_kind": "perspective",
+  "summary": "Earlier perspective doc enumerating 11 customization surfaces (registries the in-pi LLM expects to drive) that pi-context exposes — read-config / write-schema / amend-config / write-block / migrations + 6 others. Cited in FGAP-136 as the source of the 11-registry in-pi customization promise. Established that the in-pi customization should extend to schema-evolution-with-data (which FGAP-136 closed via write-schema-migration tool).",
+  "key_claims": [
+    "Pi-context exposes 11 customization-registry surfaces accessible to the in-pi LLM via tool dispatch",
+    "Schema-evolution with existing data requires migration-tool surface (gap subsequently closed by FGAP-136)",
+    "Customization-as-tool-driven is the canonical pattern downstream consumers should be able to rely on"
+  ],
+  "scope": "Pi-context registry surfaces from the in-pi LLM perspective; what customization the LLM can drive via tools",
+  "authored_by": "agent:claude (composed under user direction)",
+  "authored_at": "2026-05-29"
+}

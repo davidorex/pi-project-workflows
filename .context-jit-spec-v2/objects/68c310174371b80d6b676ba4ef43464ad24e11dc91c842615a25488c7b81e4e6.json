@@ -1,0 +1,62 @@
+{
+  "title": "Implement list-dispatch-models Pi tool + CLI dual-surface (FEAT-002)",
+  "status": "proposed",
+  "target_agent": "pi-tool-implementation-agent",
+  "input_contract": {
+    "type": "object",
+    "required": [
+      "feature_id"
+    ],
+    "properties": {
+      "feature_id": {
+        "type": "string",
+        "const": "FEAT-002"
+      }
+    }
+  },
+  "context_blocks": [
+    {
+      "name": "features",
+      "item": "FEAT-002"
+    },
+    {
+      "name": "friction-items",
+      "item": "FB-007"
+    }
+  ],
+  "output_contract": {
+    "type": "object",
+    "required": [
+      "pi_tool_summary",
+      "cli_script_summary"
+    ],
+    "properties": {
+      "pi_tool_summary": {
+        "type": "string"
+      },
+      "cli_script_summary": {
+        "type": "string"
+      }
+    }
+  },
+  "scope": {
+    "files": [
+      "packages/pi-agent-dispatch/src/list-dispatch-models-tool.ts",
+      "scripts/orchestrator/list-dispatch-models.ts"
+    ],
+    "operations": []
+  },
+  "real_check_criteria": {
+    "build_check_test": true,
+    "runtime_demo": {
+      "invocation": "pi -p 'call list-dispatch-models' --mode json | jq '.models | length > 0'",
+      "expected": "true"
+    },
+    "adversarial_probe": {
+      "targets": [
+        "Pi tool registration + ExtensionContext model registry traversal",
+        "scripts/orchestrator/ CLI output matches Pi tool output"
+      ]
+    }
+  }
+}

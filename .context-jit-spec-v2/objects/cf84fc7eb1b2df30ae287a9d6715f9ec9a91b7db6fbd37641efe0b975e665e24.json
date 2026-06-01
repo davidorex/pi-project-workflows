@@ -1,0 +1,73 @@
+{
+  "title": "Resolve FGAP-115 ExtensionContext currentModel/currentProvider gap",
+  "status": "proposed",
+  "target_agent": "spec-resolution-agent",
+  "input_contract": {
+    "type": "object",
+    "required": [
+      "fgap_id",
+      "options_summary"
+    ],
+    "properties": {
+      "fgap_id": {
+        "type": "string",
+        "const": "FGAP-115"
+      },
+      "options_summary": {
+        "type": "string",
+        "description": "Three options from FGAP-115 body"
+      }
+    }
+  },
+  "context_blocks": [
+    {
+      "name": "framework-gaps",
+      "item": "FGAP-115"
+    },
+    "decisions",
+    "concepts"
+  ],
+  "output_contract": {
+    "type": "object",
+    "required": [
+      "selected_option",
+      "rationale",
+      "fgap_resolution_text"
+    ],
+    "properties": {
+      "selected_option": {
+        "type": "string",
+        "enum": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "rationale": {
+        "type": "string"
+      },
+      "fgap_resolution_text": {
+        "type": "string",
+        "description": "Text to append to FGAP-115 proposed_resolution"
+      }
+    }
+  },
+  "scope": {
+    "files": [
+      "packages/pi-jit-agents/src/**"
+    ],
+    "operations": []
+  },
+  "real_check_criteria": {
+    "build_check_test": false,
+    "runtime_demo": {
+      "invocation": "npx tsx -e 'import {readBlock} from \"@davidorex/pi-context/block-api\"; const fg = readBlock(\".\", \"framework-gaps\").gaps.find(g => g.id === \"FGAP-115\"); console.log(fg.status);'",
+      "expected": "closed"
+    },
+    "adversarial_probe": {
+      "targets": [
+        ".project/framework-gaps.json FGAP-115 status + closed_by + closed_at + proposed_resolution text"
+      ]
+    }
+  }
+}

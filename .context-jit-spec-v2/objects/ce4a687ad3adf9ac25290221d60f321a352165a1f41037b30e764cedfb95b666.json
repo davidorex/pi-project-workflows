@@ -1,0 +1,24 @@
+{
+  "title": "author-agent-spec YAML serializer uses folded block scalar, destroying newlines",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:01:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "yaml-serialization",
+  "description": "author-agent-spec serializes the spec object to YAML using yamlStringify. Multi-line strings with embedded newlines are serialized with '>-' (folded block scalar), which collapses newlines to spaces. This destroys the only escape from the resolvePromptField heuristic — making the string multi-line (containing '\\n') would bypass the '/' check, but the serializer strips the newlines. The author has no control over YAML scalar style (cannot force '|' literal block scalar).",
+  "actual_behavior": "A task prompt with embedded '\\n' characters like 'Read doc.\\nPath is X.' becomes a single folded line: 'Read doc. Path is X.' After folding, the '/' in the path triggers the template-path heuristic.",
+  "expected_behavior": "The author should be able to produce '|' (literal block scalar) YAML output for multi-line prompt content, preserving newlines.",
+  "reproduction": "1. author-agent-spec with prompt.task containing embedded newlines (e.g. 'line1\\nline2'). 2. Read the resulting YAML file. 3. Observe '>-' (folded) instead of '|' (literal).",
+  "code_references": [
+    {
+      "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+      "line": 72,
+      "symbol": "yamlStringify",
+      "snippet": "const yamlContent = yamlStringify(specObj);"
+    }
+  ]
+}

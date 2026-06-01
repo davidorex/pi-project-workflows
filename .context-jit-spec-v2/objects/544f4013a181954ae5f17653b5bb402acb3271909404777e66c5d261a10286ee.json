@@ -1,0 +1,8 @@
+{
+  "title": "Framework correctness implies agent recreatability",
+  "statement": "The test of framework correctness: can any agent be written against the framework purely by authoring an agent spec YAML + a template + optionally an output schema + a capability declaration — with no framework code changes? If a new agent requires touching framework code, the framework is insufficiently generalized.",
+  "rationale": "Recreatability is the operational definition of canonical framework. If specs are durable artifacts, the framework is leaking implementation into the consumer surface.",
+  "status": "enacted",
+  "v1_origin": "v1 §0 P3",
+  "enacted_at": "2026-05-30T13:45:00Z"
+}

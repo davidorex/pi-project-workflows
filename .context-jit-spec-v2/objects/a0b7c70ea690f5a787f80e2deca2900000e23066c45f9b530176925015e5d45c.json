@@ -1,0 +1,66 @@
+{
+  "title": "Implement author-agent-spec correctness arc (FEAT-005; FB-001..006)",
+  "status": "proposed",
+  "target_agent": "jit-agents-implementation-agent",
+  "input_contract": {
+    "type": "object",
+    "required": [
+      "feature_id"
+    ],
+    "properties": {
+      "feature_id": {
+        "type": "string",
+        "const": "FEAT-005"
+      }
+    }
+  },
+  "context_blocks": [
+    {
+      "name": "features",
+      "item": "FEAT-005"
+    },
+    "friction-items",
+    {
+      "name": "decisions",
+      "item": "DEC-0001"
+    }
+  ],
+  "output_contract": {
+    "type": "object",
+    "required": [
+      "fixes_landed"
+    ],
+    "properties": {
+      "fixes_landed": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "scope": {
+    "files": [
+      "packages/pi-jit-agents/src/agent-spec.ts",
+      "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+      "packages/pi-jit-agents/src/types.ts"
+    ],
+    "operations": []
+  },
+  "real_check_criteria": {
+    "build_check_test": true,
+    "runtime_demo": {
+      "invocation": "npx tsx packages/pi-agent-dispatch/scripts/runtime-demo-author-agent-spec-correctness.ts",
+      "expected": "FB-001..006 reproducers all pass"
+    },
+    "adversarial_probe": {
+      "targets": [
+        "resolvePromptField narrowed to .md/.txt extensions",
+        "YAML serializer preserves newlines (literal block scalar)",
+        "round-trip validation surfaces template-path-not-found / schema-not-registered / model-not-in-registry",
+        "AgentSpec oneOf discriminator",
+        "FB-005 model pre-validation via list-dispatch-models"
+      ]
+    }
+  }
+}

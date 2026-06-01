@@ -7,7 +7,9 @@
       "definition": "The jit-agents boundary is a function composition: spec name + invocation context → compiled spec → execution (mode-selected) → typed result OR final-assistant-message. Consumers interact through four surfaces: (1) Loading — loadAgent(name, loaderContext) → AgentSpec resolves the spec, fully resolves all relative paths, returns self-contained spec. (2) Compilation — compileAgent(spec, invocationContext) → CompiledAgent renders templates, produces final prompt, resolves contextBlocks. (3) Execution — executeAgent(compiled, dispatchContext) → TypedResult | FinalAssistantMessage dispatches per the mode selected from spec shape (DEC-0009); validates output (classifier-mode) or returns final message after multi-turn loop (agentic-mode). (4) Introspection — agentContract(name) → AgentContract exposes spec contract without executing. Key invariant: once an AgentSpec leaves the boundary, every path it references is absolute.",
       "v1_origin": "v1 §2",
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T14:15:00Z"
+      "created_at": "2026-05-30T14:15:00Z",
+      "oid": "d9439574730c6881062c1f75c71b08c6",
+      "content_hash": "b6784cfff8f4c496d7e4f50b067ead1850cac6672032b211d4c91fb068377dea"
     },
     {
       "id": "CONCEPT-002",
@@ -15,7 +17,9 @@
       "definition": "The canonical signature reflects the full agent contract including capability-granted tool execution: agent :: (input matching inputSchema, context matching contextBlocks, declared tools[] validated as a subset of dispatch.parentGrant per DEC-0011) → output matching outputSchema (classifier-mode) OR final-assistant-message after multi-turn tool-execution loop completion (agentic-mode). The .agent.yaml spec declares: input contract (inputSchema validated pre-spawn); context parameterization (contextBlocks block names injected into template environment); capability declaration (tools[] operations the agent intends to invoke; non-subset grants throw GrantViolationError before LLM dispatch per DEC-0011); output contract (output.format and output.schema); prompt composition (system and task templates rendered with Nunjucks); model + thinking (resolved against ExtensionContext per DEC-0001; thinking enforcement per DEC-0002).",
       "v1_origin": "v1 §2a",
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T14:15:00Z"
+      "created_at": "2026-05-30T14:15:00Z",
+      "oid": "293dea551b946b024cac3ce189acff48",
+      "content_hash": "fb748bd6034a93933b9440d8d633f9a8157de0a2dad9cc856b436fde39842337"
     },
     {
       "id": "CONCEPT-003",
@@ -23,7 +27,9 @@
       "definition": "executeAgent supports two distinct execution shapes selected per spec shape (DEC-0009). Classifier-mode dispatch shape: single LLM call; when outputSchema set forced phantom-tool toolChoice constrains output to structured payload; when outputSchema absent free-form text output with no phantom tool. Agentic-mode dispatch shape: multi-turn dispatch loop; declared tools[] must be a subset of dispatch.parentGrant per DEC-0011 or executeAgent throws GrantViolationError before LLM dispatch; the allowed compiled ToolDefinitions become the LLM's tool registry; LLM emits response; if tool calls are present executeAgent invokes each matching compiled ToolDefinition.execute(toolCallId, params, signal, onUpdate, ctx) per DEC-0008/DEC-0010, passing ExtensionContext as ctx, threads results into message history, and calls LLM again with enriched history; loop terminates on end_turn or max-turns or tool-failure. Phantom-tool not used in agentic-mode.",
       "v1_origin": "v1 §2a (extended for dual-mode per DEC-0004)",
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T14:15:00Z"
+      "created_at": "2026-05-30T14:15:00Z",
+      "oid": "998be46b3ec1a40746459b787eef511c",
+      "content_hash": "ddedb957bece7598160e4e79bd6cedcf57c4b3552265bb6f0f6ddbef97c4d121"
     },
     {
       "id": "CONCEPT-004",
@@ -31,7 +37,9 @@
       "definition": "Agent spec parsing (YAML → typed AgentSpec). Spec resolution (tier-aware discovery; relative-to-absolute path resolution). Template compilation (Nunjucks env construction; prompt rendering; shared macro library; contextBlocks injection with framework-level anti-injection wrapping). Prompt building (system + task + output instructions). Mode selection (per DEC-0009 algorithm). Classifier-mode in-process dispatch (existing: phantom-tool forced toolChoice; single LLM call; output extraction + validation against outputSchema). Agentic-mode in-process dispatch (pending implementation: multi-tool dispatch loop wiring compiled.tools to LLM tool registry after DEC-0011 grant enforcement; iterate tool-call responses; invoke matching compiled ToolDefinition.execute(...), passing ExtensionContext as ctx; thread results; loop termination). Capability-grant enforcement (DEC-0011 reject-on-non-subset at executeAgent boundary; granted capabilities exercised at agentic-mode dispatch not discarded post-check). Phantom tool construction (classifier-mode). Output validation. Agent contract introspection. Model resolution (DEC-0001 ExtensionContext lookup; FGAP-115 interlock).",
       "v1_origin": "v1 §3 OWNS (extended per DEC-0004/0008/0010)",
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T14:15:00Z"
+      "created_at": "2026-05-30T14:15:00Z",
+      "oid": "2172029c3f9f74f002e243e6ae134ed8",
+      "content_hash": "c06fc6b2ce62e3975a34f03aaf792fd5d8684a263a6a3b0da94177de081a3599"
     },
     {
       "id": "CONCEPT-005",
@@ -39,7 +47,9 @@
       "definition": "Subprocess dispatch (pi --mode json) — stays in pi-workflows (workflow-specific orchestration; DEC-0005). Workflow orchestration — DAG planning, step execution, state persistence, checkpoint/resume — owned by pi-workflows. Monitor orchestration — classification event routing, steering, activation, pattern learning — owned by pi-behavior-monitors. Project block CRUD — owned by pi-context; jit-agents consumes pi-context's readBlock API for contextBlocks injection but does not own substrate read/write. Domain specs — workflow YAMLs and monitor JSONs stay in their consumer packages. Tool implementations — jit-agents is tool-agnostic per DEC-0010; tools are not directly imported into jit-agents source; resolved at runtime via ExtensionContext.",
       "v1_origin": "v1 §3 DOES NOT OWN",
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T14:15:00Z"
+      "created_at": "2026-05-30T14:15:00Z",
+      "oid": "79872c0667f0a8e378f3696f4772ea25",
+      "content_hash": "7f6f6a5b53e2aa00af0ce4c31b150543295e8b57e9f78f44376550e134e152e1"
     }
   ]
 }

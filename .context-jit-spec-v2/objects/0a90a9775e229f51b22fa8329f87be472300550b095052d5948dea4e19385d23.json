@@ -1,0 +1,41 @@
+{
+  "title": "Local capability grant model for agentic dispatch — child tools must be declared, parent-granted, and enforced before LLM dispatch",
+  "status": "enacted",
+  "context": "This .context-jit-spec-v2 arc cites .project/DEC-0047 for the capability-grant model, but DEC-0047 is not a decision item in this substrate. WO-002 dispatches against this active substrate and injects local context_blocks only, so the capability model must be locally reachable. Source decision .project/DEC-0047 establishes the constitutional model: agents receive only declared, exactly-scoped tools/perms drawn from a default-empty registry; a child can never exceed the dispatching parent's grant; capability-registry widening requires human ratification; terminal acceptance is deterministic real checks, never LLM self-assessment. Current jit-runtime.ts implements the dispatch-boundary grant check with computeGrantViolation(...) and GrantViolationError before any LLM call.",
+  "decision": "For this substrate's agentic-dispatch work, DEC-0011 is the local capability-grant decision derived from .project/DEC-0047. A dispatched agent's tools are declared in its .agent.yaml spec; default is empty. At executeAgent dispatch, the compiled agent's declared tools must be a subset of dispatch.parentGrant. Undefined compiled.tools and undefined dispatch.parentGrant are treated as empty sets. If any declared tool is not present in the parent grant, executeAgent throws GrantViolationError before LLM dispatch. Agentic-mode offers the LLM only compiled ToolDefinitions that pass this dispatch-boundary check; it does not silently intersect away undelegated tools. Capability-registry widening remains human-ratified, and executable acceptance remains grounded in deterministic real checks.",
+  "options_considered": [
+    {
+      "label": "Reference .project/DEC-0047 only",
+      "description": "Leave DEC-0047 as a textual cross-substrate citation.",
+      "tradeoffs": "Preserves original numbering but leaves WO-002's injected context unable to resolve the cited decision from the active substrate.",
+      "rejected_reason": "WO-002 dispatch context resolves against .context-jit-spec-v2, not .project."
+    },
+    {
+      "label": "Copy DEC-0047 into .context-jit-spec-v2 with the same id",
+      "description": "Add a local DEC-0047 item copied from .project.",
+      "tradeoffs": "Makes the citation resolvable but creates a misleading local decision-number gap from DEC-0011 through DEC-0046.",
+      "rejected_reason": "The active substrate's decisions end at DEC-0010; the local imported decision is DEC-0011."
+    }
+  ],
+  "consequences": [
+    "WO-002 can inject DEC-0011 directly and no longer requires cross-substrate lookup to understand the capability model.",
+    "Substrate references in the WO-002 dispatch path should cite DEC-0011, not DEC-0047.",
+    "Grant semantics for this arc are reject-on-non-subset via GrantViolationError before LLM dispatch, matching current jit-runtime.ts behavior.",
+    "Agentic-mode tool registry construction must happen only after the grant boundary passes.",
+    "Capability mutation remains human-ratified; implementation agents may work within existing grants but must not widen the grant registry."
+  ],
+  "references": [
+    {
+      "label": "Source decision in canonical project substrate",
+      "path": ".project/decisions.json",
+      "lines": "DEC-0047"
+    },
+    {
+      "label": "Current grant enforcement implementation",
+      "path": "packages/pi-jit-agents/src/jit-runtime.ts",
+      "lines": "68-94,483-491"
+    }
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-31T00:00:00Z"
+}

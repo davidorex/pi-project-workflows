@@ -1,0 +1,96 @@
+{
+  "title": "Implement agentic-mode dispatch loop in jit-runtime.ts (FEAT-001)",
+  "status": "proposed",
+  "target_agent": "jit-agents-implementation-agent",
+  "input_contract": {
+    "type": "object",
+    "required": [
+      "target_file",
+      "feature_id",
+      "mode_id"
+    ],
+    "properties": {
+      "target_file": {
+        "type": "string",
+        "const": "packages/pi-jit-agents/src/jit-runtime.ts"
+      },
+      "feature_id": {
+        "type": "string",
+        "const": "FEAT-001"
+      },
+      "mode_id": {
+        "type": "string",
+        "const": "MODE-002"
+      }
+    }
+  },
+  "context_blocks": [
+    {
+      "name": "features",
+      "item": "FEAT-001"
+    },
+    {
+      "name": "dispatch-modes",
+      "item": "MODE-002"
+    },
+    {
+      "name": "decisions",
+      "item": "DEC-0004"
+    },
+    {
+      "name": "decisions",
+      "item": "DEC-0008"
+    },
+    {
+      "name": "decisions",
+      "item": "DEC-0010"
+    },
+    {
+      "name": "decisions",
+      "item": "DEC-0011"
+    },
+    "concepts"
+  ],
+  "output_contract": {
+    "type": "object",
+    "required": [
+      "implementation_summary",
+      "test_summary",
+      "runtime_demo_output"
+    ],
+    "properties": {
+      "implementation_summary": {
+        "type": "string"
+      },
+      "test_summary": {
+        "type": "string"
+      },
+      "runtime_demo_output": {
+        "type": "string"
+      }
+    }
+  },
+  "scope": {
+    "files": [
+      "packages/pi-jit-agents/src/jit-runtime.ts",
+      "packages/pi-jit-agents/src/*.test.ts"
+    ],
+    "operations": []
+  },
+  "real_check_criteria": {
+    "build_check_test": true,
+    "runtime_demo": {
+      "invocation": "npx tsx packages/pi-jit-agents/scripts/runtime-demo-agentic-dispatch.ts",
+      "expected": "agentic dispatch loop end-to-end success"
+    },
+    "adversarial_probe": {
+      "targets": [
+        "jit-runtime.ts executeAgent boundary",
+        "compiled.tools threading to LLM tool registry",
+        "ToolDefinition.execute(...) invocation with ExtensionContext passed as ctx",
+        "loop termination on end_turn/max-turns/tool-failure",
+        "GrantViolationError thrown before LLM dispatch when compiled.tools is not a subset of dispatch.parentGrant per DEC-0011"
+      ]
+    }
+  }
+}

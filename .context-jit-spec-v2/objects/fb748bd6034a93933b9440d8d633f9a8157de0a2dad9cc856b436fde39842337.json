@@ -1,0 +1,5 @@
+{
+  "name": "Agent signature",
+  "definition": "The canonical signature reflects the full agent contract including capability-granted tool execution: agent :: (input matching inputSchema, context matching contextBlocks, declared tools[] validated as a subset of dispatch.parentGrant per DEC-0011) → output matching outputSchema (classifier-mode) OR final-assistant-message after multi-turn tool-execution loop completion (agentic-mode). The .agent.yaml spec declares: input contract (inputSchema validated pre-spawn); context parameterization (contextBlocks block names injected into template environment); capability declaration (tools[] operations the agent intends to invoke; non-subset grants throw GrantViolationError before LLM dispatch per DEC-0011); output contract (output.format and output.schema); prompt composition (system and task templates rendered with Nunjucks); model + thinking (resolved against ExtensionContext per DEC-0001; thinking enforcement per DEC-0002).",
+  "v1_origin": "v1 §2a"
+}

@@ -1,0 +1,13 @@
+{
+  "v1_section_reference": "v1 §4 D1-D3 + D5-D7",
+  "supersession_kind": "carried_forward_unchanged",
+  "superseded_by_v2_items": [
+    "DEC-0001",
+    "DEC-0002",
+    "DEC-0003",
+    "DEC-0005",
+    "DEC-0006",
+    "DEC-0007"
+  ],
+  "notes": "v1 D1/D2/D3/D5/D6/D7 carried forward; D7 promoted from provisional to enacted. No substantive changes to the decisions themselves."
+}

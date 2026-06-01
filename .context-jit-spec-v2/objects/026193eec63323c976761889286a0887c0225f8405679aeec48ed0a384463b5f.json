@@ -1,0 +1,25 @@
+{
+  "title": "Model string requires provider prefix — no default from orchestration agent settings",
+  "severity": "blocking",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:47:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "model-resolution",
+  "description": "parseModelSpec splits the model string on '/' to separate provider from modelId. Without a '/', the provider defaults to 'anthropic'. So 'deepseek-v4-pro' resolves to anthropic/deepseek-v4-pro — which doesn't exist. The correct format is 'deepseek/deepseek-v4-pro'. The orchestration agent's defaultProvider from settings.json is not consulted for dispatch. The model string format is not documented.",
+  "actual_behavior": "model 'deepseek-v4-pro' → parseModelSpec → { provider: 'anthropic', modelId: 'deepseek-v4-pro' } → not found in modelRegistry. model 'kimi-k2.6:cloud' → { provider: 'anthropic', modelId: 'kimi-k2.6:cloud' } → not found. model 'deepseek/deepseek-v4-pro' → { provider: 'deepseek', modelId: 'deepseek-v4-pro' } → found, dispatch succeeds.",
+  "expected_behavior": "Either: (a) parseModelSpec should fall back to the orchestration agent's defaultProvider from settings when no '/' is present, or (b) the provider/ prefix requirement should be documented in the AgentSpec tool description and the call-agent error message should suggest the correct format.",
+  "reproduction": "1. author-agent-spec with model 'deepseek-v4-pro'. 2. call-agent. 3. Observe 'not found in modelRegistry'. 4. Change to 'deepseek/deepseek-v4-pro'. 5. Dispatch succeeds.",
+  "workaround": "Use provider/modelId format in the model field: 'deepseek/deepseek-v4-pro', 'anthropic/claude-sonnet-4-20250514', 'ollama/kimi-k2.6:cloud'.",
+  "code_references": [
+    {
+      "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+      "line": 22,
+      "symbol": "parseModelSpec",
+      "snippet": "if (slashIndex !== -1) return { provider: spec.slice(0, slashIndex), modelId: spec.slice(slashIndex + 1) }; return { provider: 'anthropic', modelId: spec };"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "title": "author-agent-spec validation is a false positive for misclassified prompts",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T12:52:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "agent-authoring",
+  "description": "author-agent-spec validates specs by round-tripping through parseAgentYaml. When a prompt is misclassified as a template path (FB-001), parseAgentYaml succeeds — it stores the value in taskPromptTemplate instead of taskPrompt. The validation sees a valid AgentSpec and passes. The failure only surfaces later in compileAgent when it tries to open the prompt text as a file. This means author-agent-spec reports success for specs that will fail at dispatch.",
+  "actual_behavior": "Spec with 'Read docs/03-solar-engine.md' as inline task prompt passes author-agent-spec validation. call-agent fails with ENOENT trying to open the prompt as a file.",
+  "expected_behavior": "Validation should catch that the prompt is misclassified, or the dispatcher should handle missing template files gracefully (fall back to inline interpretation when template file doesn't exist).",
+  "reproduction": "Same as FB-001. author-agent-spec succeeds, call-agent fails.",
+  "code_references": [
+    {
+      "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+      "line": 76,
+      "symbol": "parseAgentYaml",
+      "snippet": "const parsed = parseAgentYaml(tmpPath);"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "title": "No tool to author per-item macros for custom block kinds",
+  "severity": "friction",
+  "status": "open",
+  "source": {
+    "repo": "clock-menu-app",
+    "file": ".context/usage-feedback.json",
+    "discovered_at": "2026-05-29T13:31:00Z",
+    "discovered_by": "agent"
+  },
+  "category": "macros",
+  "description": "Per-item macros live at .pi/templates/items/<kind>.md, outside the substrate directory. Builtin macros exist for 14 shipped block kinds (requirements, decisions, tasks, issues, etc.) but not for custom block kinds with custom fields. For example, our requirements schema has hour_system and traces_to_spec_doc fields that the builtin render_requirement macro does not render. There is no tool (equivalent to author-agent-spec or write-schema) to create or register per-item macros. The macro files must be created manually with file-system access.",
+  "actual_behavior": "render-item-by-id(REQ-001) produces output using the builtin render_requirement macro, which ignores custom fields hour_system and traces_to_spec_doc. There is no way to create a project-level override via tools.",
+  "expected_behavior": "A tool like author-macro or write-macro that creates per-item macro files at .pi/templates/items/<kind>.md with schema-aware defaults and validation.",
+  "reproduction": "1. Create a custom schema with extra fields. 2. Add an item. 3. Call render-item-by-id. 4. Observe custom fields are not rendered. 5. No tool exists to create a project-level macro override.",
+  "code_references": [
+    {
+      "file": "packages/pi-jit-agents/src/renderer-registry.ts",
+      "line": 134,
+      "snippet": "const projectDir = path.join(cwd, '.pi', 'templates');"
+    }
+  ]
+}

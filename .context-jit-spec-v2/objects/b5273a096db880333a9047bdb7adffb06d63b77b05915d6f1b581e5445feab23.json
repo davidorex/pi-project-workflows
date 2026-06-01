@@ -1,0 +1,4 @@
+{
+  "description": "Implement FEAT-005 author-agent-spec correctness arc (resolvePromptField narrowed + YAML newline preservation + round-trip validation + oneOf discriminator + model-registry pre-validation). Depends on TASK-003 (list-dispatch-models exists for FB-005 model pre-validation). Closes FB-001..006 / FGAPs 153/154/155/156/157.",
+  "status": "planned"
+}

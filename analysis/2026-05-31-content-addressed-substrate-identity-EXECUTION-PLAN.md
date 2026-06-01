@@ -101,7 +101,20 @@ The ONLY remaining Cycle-10 step. Goal: clear the active substrate's golden — 
 - **De-nest its `layer-plans` schema** (data is EMPTY — schema-only: drop `plans.layers` + `plans.migration_phases` from the schema; no promotion, no data). → the 2 `nested_id_bearing_array` warnings clear.
 - **Expected golden delta:** active `validateContext('.')` **58 / 53 / 5 → 26 / 23 / 3** (the 30 errors + 2 warnings clear; the other 23 errors + 3 warnings are pre-existing active-substrate content/lint, unchanged).
 
-**Step 3 — `.context` (OPEN DECISION — fold-in vs defer).** `.context` = 8 `session-notes` items, NO `substrate_id`, 0/17 identity schemas, 1 EMPTY `layer-plans` schema. NOT needed for the 30 edges (those are in the active substrate). It is a *going-forward* substrate. **Fold-in** (recommended, small): mint `substrate_id` + register + land identity on its 17 schemas + backfill the 8 items + de-nest its empty `layer-plans` schema → `.context` becomes canonical so future work starts clean. **Defer**: it's near-empty + irrelevant to the founding objective; canonicalize later. No promotion either way (no nested-id *data*). Operator's scope call at plan time.
+**Step 3 — `.context` fold-in (decided; state verified by direct read 2026-06-02).** Bring `.context` to canonical shape so forward work starts clean. Verified current state:
+- No `substrate_id`; not present in the project-root registry.
+- 17 block_kinds; only `session-notes` carries data (**8 items**, 0 stamped). No `objects/` directory.
+- **All 17 schemas lack the identity fields** (`oid` / `content_hash` / `content_parent`).
+- **One schema carries nested id-bearing arrays — `layer-plans`** (`plans.layers` + `plans.migration_phases`); the other 16 do not.
+- **37 edges, all `session_touches_item`, all bare-string** `SESSION-NNN`→`FGAP-NNN`; 36 distinct child targets, **all present in `.project-migrate`** (so all resolve foreign post-conversion; none dangle).
+
+Fold-in operations (script-driven; ordered):
+1. **Land identity fields** on all 17 schemas (`landIdentityFieldsForDir`) — required first, or the scoped migration's step-0 fail-fast throws on the identity-less schemas.
+2. **De-nest `layer-plans`** (`writeSchemaCheckedForDir` replace) — drop `plans.layers` + `plans.migration_phases`; the sole nested schema (data empty).
+3. **Transform the 37 edge child endpoints** `FGAP-NNN` → `project:FGAP-NNN` (alias form) so the engine converts them to structured foreign endpoints into `.project-migrate` (a bare string resolves as a lens-bin, not a foreign ref). All 36 targets confirmed in `.project-migrate`.
+4. **Scoped `migrateToContentAddressed('.', {onlySubstrates:['.context']})`** — mints + registers `.context`'s substrate_id, backfills the 8 `session-notes` items (oid/content_hash/objects), converts the alias-form edges to structured foreign.
+
+`.context`-specific vs the active-wiring pass: identity-landing first (the active substrate already carried identity schemas) and the bare→alias edge transform (the active substrate's edges were already `project:` form). The de-nest is the same single `layer-plans` operation.
 
 **`config.json` / `project.json` are metadata, NOT entity blocks** (block_kinds / relation_types / substrate_id; project facts). "Canonically structured" for them = schema-valid + registry-consistent + carrying the minted substrate_id — which the canonicalizer/wiring already produces. Content-addressing (per-item oid) does NOT apply (they're not arrays of entities). No separate step. (See `analysis/2026-06-01-pi-context-substrate-model-before-after.md`.)
 

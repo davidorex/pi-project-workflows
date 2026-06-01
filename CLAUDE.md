@@ -43,7 +43,7 @@ npx tsx scripts/orchestrator/build-html-views.ts          # writes html-views/su
 npx tsx scripts/orchestrator/build-html-views.ts --dry-run # validate substrate readability + report stats
 ```
 
-Re-run after any `.project/*.json` change to refresh the rendered view.
+Re-run after any active-substrate `*.json` change to refresh the rendered view.
 
 ## Conventions
 
@@ -55,7 +55,7 @@ Re-run after any `.project/*.json` change to refresh the rendered view.
 - GitHub Actions CI runs check + build + test on Node 22/23 for push/PR to main
 - SKILL.md is generated build artifact (`npm run skills`) — do not edit by hand. Edit `skill-narrative.md` instead; uses YAML frontmatter + XML-tagged sections (no markdown headings).
 - Lockstep versioning via `npm run release:*` invoking `scripts/bump-versions.js` (direct JSON read/write per package.json; never `npm version -ws` directly — fails 0.x minor/major bumps)
-- **Orchestrator scripts dual-surface**: `scripts/orchestrator/*.ts` are Claude Code-side ergonomics wrappers over the same block-api / context-sdk library that in-pi harness-confined agents consume via Pi-registered tools. New substrate op = library + Pi tool + CLI script as a unit. Use canonical composer scripts (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`) — hand-authored briefs forbidden. Substrate-projection script `build-html-views.ts` reads `.project/*.json` via canonical pi-context block-api + emits self-contained HTML view at `html-views/substrate-overview.html`.
+- **Orchestrator scripts dual-surface**: `scripts/orchestrator/*.ts` are Claude Code-side ergonomics wrappers over the same block-api / context-sdk library that in-pi harness-confined agents consume via Pi-registered tools. New substrate op = library + Pi tool + CLI script as a unit. Use canonical composer scripts (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`) — hand-authored briefs forbidden. Substrate-projection script `build-html-views.ts` reads the active substrate's `*.json` via canonical pi-context block-api + emits self-contained HTML view at `html-views/substrate-overview.html`.
 - Dispatch artifacts live under gitignored `compiled-contexts/` (orchestrator-composed agent input + agent-written reports). Project-root `tmp/` is also gitignored for ad-hoc scratch.
 
 ## Completion Sequence (mandatory after every code change)
@@ -93,9 +93,9 @@ Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion rel
 
 `packages/pi-context/src/context-sdk.ts` is the single queryable surface for project state, block discovery, schema vocabulary, and cross-block validation (it re-exports the lens-view / closure-table / PM-lens / write / schema-write / migration / dir-resolution / execution-context primitives). Read its `src/index.ts` exports for the function set; use `/context status` for derived state in conversation.
 
-## Project Blocks (`.project/`)
+## Project Blocks (the active substrate)
 
-Typed JSON files with schemas. Substrate writes via block-api primitives (validated + DispatchContext-stamped). Direct `Edit` / `Write` on `.project/*.json` is forbidden. `pi -p "call append-block-item"` is retired; do not use.
+Typed JSON files with schemas. Substrate writes via block-api primitives (validated + DispatchContext-stamped). Direct `Edit` / `Write` on the active substrate's `*.json` is forbidden. `pi -p "call append-block-item"` is retired; do not use.
 
 **Canonical filing patterns**:
 
@@ -117,7 +117,7 @@ Typed JSON files with schemas. Substrate writes via block-api primitives (valida
 
 **Block kinds**: query the samples catalog via the `read-samples-catalog` tool (or read `samples/conception.json` `block_kinds[]`) for the canonical set + descriptions. Each schema declares its array_key + required fields + ID pattern.
 
-**Closure-table relations**: `.project/relations.json` carries edges `{ parent, child, relation_type, ordinal? }` for ALL inter-item relationships. Per-edge `relation_type` registered in `config.relation_types[]`. FK-as-field on item schemas is forbidden.
+**Closure-table relations**: the active substrate's `relations.json` carries edges `{ parent, child, relation_type, ordinal? }` for ALL inter-item relationships. Per-edge `relation_type` registered in `config.relation_types[]`. FK-as-field on item schemas is forbidden.
 
 **Schema versioning** ($id + version + $ref + migration registry): per-schema evolution; `validateBlockWithMigration` runs migrations when block file's `schema_version` differs from current.
 
@@ -132,7 +132,7 @@ Load-bearing architectural rules (not change-history):
 - Monitor step type: workflows invoke monitors as verification gates via `monitor: <name>`. CLEAN → completed; FLAG/NEW → failed.
 - `block:<name>` schema references resolve to `<contextDir>/schemas/<name>.schema.json` per the resolver — portable across substrate-dir names.
 - State persisted atomically (tmp + rename) after each step. State write failure is fatal.
-- Block artifact writes are fatal — schema-validation failure on a `.project/*.json` artifact fails the workflow. Non-block artifacts remain non-fatal. On resume, all steps are preserved; only artifact processing re-runs.
+- Block artifact writes are fatal — schema-validation failure on an active-substrate `*.json` artifact fails the workflow. Non-block artifacts remain non-fatal. On resume, all steps are preserved; only artifact processing re-runs.
 - Agent step JSON output validation is fatal — declared `output.format: json` or `output.schema` must be honored; markdown-fenced JSON fails.
 - Agent step `context: string[]` inlines prior step `textOutput` into dispatch prompt as labeled markdown sections.
 - Agent output instructions tell agents: "raw JSON only, no markdown fences." File-write is secondary; most JSON-producing agents lack write tools — textOutput is the only output channel.

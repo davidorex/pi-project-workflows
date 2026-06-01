@@ -23,7 +23,10 @@
  *      the registry only ever names the live substrate, never a transient dupe).
  *
  * Triple-buffer (mirrors canonicalize-substrate.ts):
- *   - dupe   — `fs.cpSync(substrate, workDir, {recursive:true})` under `<cwd>/tmp/`.
+ *   - dupe   — `fs.cpSync(substrate, workDir, {recursive:true})` to a root-sibling
+ *              `<cwd>/.context-temp` (a DIRECT CHILD of cwd, so OP4's
+ *              migrateToContentAddressed discovers + `onlySubstrates`-filters it;
+ *              a `tmp/`-nested dupe would be a child of `tmp/`, never discovered).
  *   - run    — the 4 ops above mutate ONLY the dupe; a throw discards it (exit ≠ 0,
  *              original untouched).
  *   - verify — pointer-switch the cwd to the dupe (`writeBootstrapPointer`),
@@ -231,10 +234,21 @@ function main(): void {
 	}
 
 	// ── Dupe ───────────────────────────────────────────────────────────────────
+	// The work-dupe MUST be a DIRECT CHILD of cwd: OP4's migrateToContentAddressed
+	// discovers substrates by `fs.readdirSync(cwd)` and filters by the child dir name
+	// via `onlySubstrates`. A dupe nested under `tmp/` is a child of `tmp/`, not of
+	// cwd, so it would never be discovered and OP4 would no-op. We therefore dupe to a
+	// root-sibling `.context-temp` (mirrors `.project-migrate` siblings). `stamp` is
+	// retained only for the swap's `.bak-<stamp>` name.
 	const stamp = `${Date.now()}-${randomUUID().slice(0, 8)}`;
-	const tmpRoot = path.join(args.cwd, "tmp");
-	fs.mkdirSync(tmpRoot, { recursive: true });
-	const workDir = path.join(tmpRoot, `foldin-context-${stamp}`);
+	const workDirName = ".context-temp";
+	const workDir = path.join(args.cwd, workDirName);
+	if (fs.existsSync(workDir)) {
+		console.error(
+			`foldin-context: ${workDirName} already exists — remove it before running (a prior interrupted run is not silently reused).`,
+		);
+		process.exit(3);
+	}
 	fs.cpSync(substrateAbs, workDir, { recursive: true });
 
 	// ── Ops on the dupe (a throw discards the dupe; original untouched) ──────────
@@ -244,7 +258,7 @@ function main(): void {
 		console.error("foldin-context: OP2 — landed identity-field declarations.");
 		promoteCrossSubstrateRefs(workDir, localRefnames(workDir)); // OP3 (locals computed on the dupe pre-rewrite)
 		const report = migrateToContentAddressed(args.cwd, {
-			onlySubstrates: [path.basename(workDir)],
+			onlySubstrates: [workDirName],
 			register: false,
 		}); // OP4
 		console.log(JSON.stringify(report, null, 2));
@@ -257,8 +271,8 @@ function main(): void {
 	}
 
 	// ── Verify (original pointer restored in finally) ────────────────────────────
-	const workDirRel = path.relative(args.cwd, workDir);
-	const verdict = verifyDupe(args.cwd, workDirRel);
+	// workDir is a direct child of cwd, so its relative dir name IS workDirName.
+	const verdict = verifyDupe(args.cwd, workDirName);
 	if (!verdict.ok) {
 		fs.rmSync(workDir, { recursive: true, force: true });
 		console.error("foldin-context: VERIFY FAILED on the dupe (original untouched). Blocking issues:");

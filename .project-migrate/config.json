@@ -328,6 +328,11 @@
       "target_kinds": [
         "plan-phase"
       ]
+    },
+    {
+      "canonical_id": "decision_relates_to_decision",
+      "display_name": "relates to",
+      "category": "data_flow"
     }
   ],
   "lenses": [],

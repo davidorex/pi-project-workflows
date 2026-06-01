@@ -201,7 +201,7 @@ function substrateHasItem(s: DiscoveredSubstrate, refname: string): boolean {
  */
 export function migrateToContentAddressed(
 	cwd: string,
-	opts?: { dryRun?: boolean; legacyAliases?: Record<string, string>; ctx?: DispatchContext },
+	opts?: { dryRun?: boolean; legacyAliases?: Record<string, string>; onlySubstrates?: string[]; ctx?: DispatchContext },
 ): MigrationReport {
 	const dryRun = opts?.dryRun ?? false;
 	const ctx = opts?.ctx;
@@ -220,6 +220,7 @@ export function migrateToContentAddressed(
 		if (!entry.isDirectory()) continue;
 		const abs = path.join(cwd, entry.name);
 		if (!fs.existsSync(path.join(abs, "config.json"))) continue;
+		if (opts?.onlySubstrates && !opts.onlySubstrates.includes(entry.name)) continue;
 		substrates.push({ dirName: entry.name, abs, config: readConfig(abs) });
 	}
 

@@ -64,7 +64,7 @@ import {
 	writeRelationsForDir,
 } from "./context.js";
 import { mintSubstrateId, SUBSTRATE_ID_PATTERN } from "./context-dir.js";
-import { loadRegistry, registerSubstrate, resolveSubstrateDir } from "./context-registry.js";
+import { loadRegistry, registerSubstrate, resolveAlias, resolveSubstrateDir } from "./context-registry.js";
 import { type DispatchContext, writerToString } from "./dispatch-context.js";
 import { appendMigrationDeclForDir } from "./migrations-store.js";
 import { hasObject } from "./object-store.js";
@@ -171,6 +171,15 @@ function buildRefnameOidMap(s: DiscoveredSubstrate): Map<string, string> {
 		}
 	}
 	return out;
+}
+
+/** Load a foreign (non-discovered) substrate dir into the shape buildRefnameOidMap expects. Read-only; returns null on failure. */
+function loadForeignSubstrate(abs: string): DiscoveredSubstrate | null {
+	try {
+		return { dirName: path.basename(abs), abs, config: readConfig(abs) };
+	} catch {
+		return null;
+	}
 }
 
 /** True when `refname` names a real item id in `s` (an item, not a lens bin). */
@@ -349,6 +358,10 @@ export function migrateToContentAddressed(
 	const subByDirName = new Map(substrates.map((s) => [s.dirName, s] as const));
 
 	// ── Step 4: endpoint conversion (per substrate, AFTER all backfill) ───────
+	// Cache of refname→oid maps for FOREIGN (registry-resolved, non-discovered)
+	// substrates, keyed by substrate_id. Persists across all substrates + edges so
+	// a foreign dir's map is built at most once. Read-only (buildRefnameOidMap).
+	const foreignMapCache = new Map<string, Map<string, string>>();
 	for (const s of substrates) {
 		const edges = loadRelationsForDir(s.abs);
 		if (edges.length === 0) continue;
@@ -365,25 +378,54 @@ export function migrateToContentAddressed(
 				const alias = ep.slice(0, colon);
 				const refname = ep.slice(colon + 1);
 				const targetDirName = aliasMap[alias];
-				if (targetDirName === undefined) {
+				const target = targetDirName ? subByDirName.get(targetDirName) : undefined;
+				if (target) {
+					// Discovered-substrate path (existing behavior, unchanged).
+					if (!substrateHasItem(target, refname)) {
+						report.unresolved.push({ substrate: s.dirName, ref: ep });
+						return null;
+					}
+					const targetId = idByDirName.get(targetDirName) as string;
+					const targetMap = refnameOidByDir.get(targetDirName) as Map<string, string>;
+					// Real run: the target oid was backfilled and is in the map. Dry run:
+					// the map may lack the oid (item was pre-identity), so fall back to the
+					// refname as a placeholder oid — the COUNT (cross_substrate_edges) is
+					// what matters under dryRun; the exact oid is not asserted.
+					const oid = targetMap.get(refname) ?? refname;
+					const out: EdgeEndpoint = { kind: "item", substrate_id: targetId, oid, refname };
+					report.cross_substrate_edges++;
+					return out;
+				}
+
+				// Registry fallback: the alias does not map to a discovered substrate.
+				// Resolve it through the project-root registry and read the foreign
+				// substrate READ-ONLY (no mint/backfill/own-edge processing; never
+				// enqueued onto `substrates`). buildRefnameOidMap only reads blocks.
+				const sid = resolveAlias(cwd, alias);
+				if (sid === null) {
 					report.unresolved.push({ substrate: s.dirName, ref: ep });
 					return null;
 				}
-				const target = subByDirName.get(targetDirName);
-				if (!target || !substrateHasItem(target, refname)) {
+				const dir = resolveSubstrateDir(cwd, sid);
+				if (dir === null) {
 					report.unresolved.push({ substrate: s.dirName, ref: ep });
 					return null;
 				}
-				const targetId = idByDirName.get(targetDirName) as string;
-				const targetMap = refnameOidByDir.get(targetDirName) as Map<string, string>;
-				// Real run: the target oid was backfilled and is in the map. Dry run:
-				// the map may lack the oid (item was pre-identity), so fall back to the
-				// refname as a placeholder oid — the COUNT (cross_substrate_edges) is
-				// what matters under dryRun; the exact oid is not asserted.
-				const oid = targetMap.get(refname) ?? refname;
-				const out: EdgeEndpoint = { kind: "item", substrate_id: targetId, oid, refname };
+				const fabs = path.resolve(cwd, dir);
+				let fmap = foreignMapCache.get(sid);
+				if (!fmap) {
+					const fsub = loadForeignSubstrate(fabs);
+					fmap = fsub ? buildRefnameOidMap(fsub) : new Map();
+					foreignMapCache.set(sid, fmap);
+				}
+				const oid = fmap.get(refname);
+				if (oid === undefined) {
+					// The refname genuinely is not an addressed item in the foreign substrate.
+					report.unresolved.push({ substrate: s.dirName, ref: ep });
+					return null;
+				}
 				report.cross_substrate_edges++;
-				return out;
+				return { kind: "item", substrate_id: sid, oid, refname };
 			}
 
 			// Bare string. Same-substrate item refname → structured item (no

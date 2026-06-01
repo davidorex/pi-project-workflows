@@ -65,6 +65,10 @@
 			"types": "./dist/migrate-content-addressed.d.ts",
 			"default": "./dist/migrate-content-addressed.js"
 		},
+		"./canonicalize-substrate": {
+			"types": "./dist/canonicalize-substrate.d.ts",
+			"default": "./dist/canonicalize-substrate.js"
+		},
 		"./dispatch-context": {
 			"types": "./dist/dispatch-context.d.ts",
 			"default": "./dist/dispatch-context.js"

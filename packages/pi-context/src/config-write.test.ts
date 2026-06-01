@@ -18,7 +18,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { amendConfigEntry, type ConfigBlock, loadConfig, loadContext } from "./context.js";
+import {
+	amendConfigEntry,
+	amendConfigEntryForDir,
+	type ConfigBlock,
+	loadConfig,
+	loadConfigForDir,
+	loadContext,
+} from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import { validateContext } from "./context-sdk.js";
 import { ValidationError } from "./schema-validator.js";
@@ -423,6 +430,107 @@ describe("amendConfigEntry — deferred cross-ref integrity", () => {
 		assert.equal(result.status, "invalid");
 		const issue = result.issues.find((i) => i.message.includes("not registered") && i.message.includes("rel"));
 		assert.ok(issue, "validateContext should flag the now-unregistered relation_type 'rel' on the edge");
+	});
+});
+
+// ── 15: amendConfigEntryForDir (Cycle-10 dir-targeted twin) ───────────────────
+
+describe("amendConfigEntryForDir — dir-targeted", () => {
+	it("15a: registers block_kind + relation_type into a NON-active substrate dir; active pointer unmoved", (t) => {
+		// cwd's active pointer is `.project`; target a DIFFERENT dir `.work` directly.
+		const cwd = makeTmpDir("15a-fordir");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const workDir = path.join(cwd, ".work");
+		fs.mkdirSync(workDir, { recursive: true });
+		fs.writeFileSync(path.join(workDir, "config.json"), JSON.stringify(baseConfig({ relation_types: [] })));
+
+		// Seed the ACTIVE substrate so we can prove it stays untouched.
+		seedConfig(cwd, baseConfig({ block_kinds: [] }));
+		const activeBefore = readRaw(cwd);
+		const pointerBefore = fs.readFileSync(path.join(cwd, ".pi-context.json"), "utf-8");
+
+		amendConfigEntryForDir(workDir, "block_kinds", "add", "story", {
+			canonical_id: "story",
+			display_name: "Story",
+			prefix: "STORY",
+			schema_path: "schemas/story.schema.json",
+			array_key: "stories",
+			data_path: "story.json",
+		});
+		amendConfigEntryForDir(workDir, "relation_types", "add", "feature_contains_story", {
+			canonical_id: "feature_contains_story",
+			display_name: "feature contains story",
+			category: "membership",
+			source_kinds: ["feature"],
+			target_kinds: ["story"],
+		});
+
+		const workCfg = loadConfigForDir(workDir)!;
+		assert.deepEqual(
+			workCfg.block_kinds.map((b) => b.canonical_id),
+			["story"],
+		);
+		assert.deepEqual(
+			workCfg.relation_types?.map((r) => r.canonical_id),
+			["feature_contains_story"],
+		);
+
+		// Active substrate + pointer both unmoved.
+		assert.equal(readRaw(cwd), activeBefore, "active substrate config byte-unchanged");
+		assert.equal(fs.readFileSync(path.join(cwd, ".pi-context.json"), "utf-8"), pointerBefore, "active pointer unmoved");
+	});
+
+	it("15b: AJV SHAPE guard fires (relation_type missing category) — dir config byte-unchanged", (t) => {
+		const cwd = makeTmpDir("15b-fordir-shape");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const workDir = path.join(cwd, ".work");
+		fs.mkdirSync(workDir, { recursive: true });
+		fs.writeFileSync(path.join(workDir, "config.json"), JSON.stringify(baseConfig({ relation_types: [] })));
+		const before = fs.readFileSync(path.join(workDir, "config.json"), "utf-8");
+
+		assert.throws(
+			() => amendConfigEntryForDir(workDir, "relation_types", "add", "a", { canonical_id: "a", display_name: "A" }),
+			ValidationError,
+		);
+		assert.equal(fs.readFileSync(path.join(workDir, "config.json"), "utf-8"), before);
+	});
+
+	it("15c: op-guard (add collision) fires on the dir form — dir config byte-unchanged", (t) => {
+		const cwd = makeTmpDir("15c-fordir-op");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const workDir = path.join(cwd, ".work");
+		fs.mkdirSync(workDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(workDir, "config.json"),
+			JSON.stringify(baseConfig({ relation_types: [{ canonical_id: "x", display_name: "X", category: "ordering" }] })),
+		);
+		const before = fs.readFileSync(path.join(workDir, "config.json"), "utf-8");
+		assert.throws(
+			() =>
+				amendConfigEntryForDir(workDir, "relation_types", "add", "x", {
+					canonical_id: "x",
+					display_name: "X",
+					category: "ordering",
+				}),
+			/add collision/,
+		);
+		assert.equal(fs.readFileSync(path.join(workDir, "config.json"), "utf-8"), before);
+	});
+
+	it("15d: cwd form is byte-identical to ForDir-on-resolved-dir (wrapper parity)", (t) => {
+		// cwd form: pointer → `.project`, amend via cwd.
+		const cwdA = makeTmpDir("15d-cwd");
+		t.after(() => fs.rmSync(cwdA, { recursive: true, force: true }));
+		seedConfig(cwdA, baseConfig({ naming: {} }));
+		amendConfigEntry(cwdA, "naming", "add", "k", "V");
+
+		// ForDir form: amend the resolved `.project` dir directly.
+		const cwdB = makeTmpDir("15d-fordir");
+		t.after(() => fs.rmSync(cwdB, { recursive: true, force: true }));
+		seedConfig(cwdB, baseConfig({ naming: {} }));
+		amendConfigEntryForDir(path.join(cwdB, ".project"), "naming", "add", "k", "V");
+
+		assert.equal(readRaw(cwdA), readRaw(cwdB), "cwd amend == ForDir amend on the resolved dir");
 	});
 });
 

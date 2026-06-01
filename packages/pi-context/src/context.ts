@@ -373,6 +373,14 @@ function configPath(cwd: string): string {
 	return path.join(resolveContextDir(cwd), "config.json");
 }
 
+/** `<substrateDir>/config.json` — the dir-targeted twin of `configPath`. Takes
+ * the ALREADY-RESOLVED substrate dir directly (no pointer resolution), mirroring
+ * the Cycle-1 `*ForDir` pattern (cf. `relationsPathForDir`). The Cycle-10
+ * canonicalizer targets a non-active work-dupe substrate via this path. */
+function configPathForDir(substrateDir: string): string {
+	return path.join(substrateDir, "config.json");
+}
+
 /** `<resolveContextDir(cwd)>/relations.json` — same substrate-dir-relative
  * resolution as configPath; previous `.project/`-fixed exemption removed for
  * DEC-0015 compliance. */
@@ -419,19 +427,32 @@ function relationsPathForDir(substrateDir: string): string {
 export function loadConfig(cwd: string): ConfigBlock | null {
 	const root = tryResolveContextDir(cwd);
 	if (root === null) return null;
-	const p = path.join(root, "config.json");
+	return loadConfigForDir(root);
+}
+
+/**
+ * Dir-targeted twin of {@link loadConfig} (Cycle-1 `*ForDir` pattern). Reads +
+ * AJV-validates `<substrateDir>/config.json` against the bundled config schema
+ * for the ALREADY-RESOLVED substrate dir — no `.pi-context.json` pointer
+ * resolution. Returns `null` when the file is absent (a normal pre-write state).
+ * `loadConfig` is a thin wrapper resolving the active pointer dir; behaviour is
+ * byte-identical when called via cwd. Used by the Cycle-10 canonicalizer to read
+ * a NON-active (work-dupe) substrate's config in place.
+ */
+export function loadConfigForDir(substrateDir: string): ConfigBlock | null {
+	const p = path.join(substrateDir, "config.json");
 	if (!fs.existsSync(p)) return null;
 	let raw: string;
 	try {
 		raw = fs.readFileSync(p, "utf-8");
 	} catch (err) {
-		throw new Error(`loadConfig: failed to read ${p}: ${err instanceof Error ? err.message : String(err)}`);
+		throw new Error(`loadConfigForDir: failed to read ${p}: ${err instanceof Error ? err.message : String(err)}`);
 	}
 	let data: unknown;
 	try {
 		data = JSON.parse(raw);
 	} catch (err) {
-		throw new Error(`loadConfig: invalid JSON in ${p}: ${err instanceof Error ? err.message : String(err)}`);
+		throw new Error(`loadConfigForDir: invalid JSON in ${p}: ${err instanceof Error ? err.message : String(err)}`);
 	}
 	validateFromFile(bundledSchemaPath("config"), data, `config.json (${p})`);
 	return data as ConfigBlock;
@@ -641,7 +662,19 @@ export function appendRelationForDir(substrateDir: string, edge: Edge, ctx?: Dis
  * Same cycle-safety reasoning as `writeRelations`.
  */
 export function writeConfig(cwd: string, config: ConfigBlock, ctx?: DispatchContext): void {
-	writeTypedFile(configPath(cwd), bundledSchemaPath("config"), config, ctx, "config.json");
+	writeConfigForDir(resolveContextDir(cwd), config, ctx);
+}
+
+/**
+ * Dir-targeted twin of `writeConfig` (Cycle-1 `*ForDir` pattern). Atomic,
+ * AJV-validated write of `<substrateDir>/config.json` against the bundled config
+ * schema for the ALREADY-RESOLVED substrate dir — no pointer resolution.
+ * `writeConfig` is a thin wrapper resolving the active dir; behaviour is
+ * byte-identical when called via cwd. Same attestation-parity no-op semantics as
+ * the cwd form (the config schema declares no envelope author fields).
+ */
+export function writeConfigForDir(substrateDir: string, config: ConfigBlock, ctx?: DispatchContext): void {
+	writeTypedFile(configPathForDir(substrateDir), bundledSchemaPath("config"), config, ctx, "config.json");
 }
 
 /**
@@ -806,6 +839,29 @@ export function amendConfigEntry(
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): AmendResult {
+	return amendConfigEntryForDir(resolveContextDir(cwd), registry, operation, key, entry, ctx, opts);
+}
+
+/**
+ * Dir-targeted twin of `amendConfigEntry` (Cycle-1 `*ForDir` pattern). Carries
+ * the FULL scoped add / replace / remove body; `amendConfigEntry` delegates here
+ * via `resolveContextDir(cwd)`, so a cwd call is byte-identical to a ForDir call
+ * on the resolved active dir. Targets `<substrateDir>/config.json` directly via
+ * `loadConfigForDir` / `writeConfigForDir` (NO pointer resolution) so the
+ * Cycle-10 canonicalizer can register block_kinds / relation_types into a
+ * non-active work-dupe substrate in place. Both guard tiers
+ * (OP-CORRECTNESS + SHAPE-via-AJV) and the deep-clone-then-write-once discipline
+ * are identical to the documented `amendConfigEntry` contract above.
+ */
+export function amendConfigEntryForDir(
+	substrateDir: string,
+	registry: string,
+	operation: string,
+	key: string,
+	entry?: unknown,
+	ctx?: DispatchContext,
+	opts?: { dryRun?: boolean },
+): AmendResult {
 	// (1) Discriminator validation.
 	const descriptor = REGISTRY_DESCRIPTORS[registry as AmendRegistry] as RegistryDescriptor | undefined;
 	if (!descriptor) {
@@ -826,7 +882,7 @@ export function amendConfigEntry(
 	}
 
 	// (2) Load + (3) deep clone (mutate the clone, write once at the end).
-	const config = loadConfig(cwd);
+	const config = loadConfigForDir(substrateDir);
 	if (!config) {
 		throw new Error("amendConfigEntry: no config.json");
 	}
@@ -956,7 +1012,7 @@ export function amendConfigEntry(
 		if (opts?.dryRun) {
 			validateFromFile(bundledSchemaPath("config"), nextConfig, "config.json (dry-run)");
 		} else {
-			writeConfig(cwd, nextConfig, ctx);
+			writeConfigForDir(substrateDir, nextConfig, ctx);
 		}
 	}
 

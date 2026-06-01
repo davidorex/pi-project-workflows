@@ -59,7 +59,7 @@ const SAMPLES_SCHEMAS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.
  * downstream mutation cannot silently corrupt the canonical shape; each
  * injection deep-clones it (via `structuredClone`) before insertion.
  */
-const IDENTITY_FIELDS: Readonly<Record<string, Record<string, string>>> = Object.freeze({
+export const IDENTITY_FIELDS: Readonly<Record<string, Record<string, string>>> = Object.freeze({
 	oid: {
 		type: "string",
 		pattern: "^[0-9a-f]{32}$",

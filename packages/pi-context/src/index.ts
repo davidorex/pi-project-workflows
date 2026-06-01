@@ -26,6 +26,7 @@ import {
 	updateNestedArrayItem,
 	writeBlock,
 } from "./block-api.js";
+import { canonicalizeSubstrate, type PromotionTargets } from "./canonicalize-substrate.js";
 import {
 	type AdoptResult,
 	adoptConception,
@@ -1120,6 +1121,61 @@ const extension = (pi: ExtensionAPI) => {
 			const report = migrateToContentAddressed(ctx.cwd, {
 				...(params.dryRun !== undefined ? { dryRun: params.dryRun } : {}),
 				...(params.legacyAliases !== undefined ? { legacyAliases: params.legacyAliases } : {}),
+			});
+			return {
+				details: undefined,
+				content: [{ type: "text", text: JSON.stringify(report, null, 2) }],
+			};
+		},
+	});
+
+	// ── Tool: canonicalize-substrate ──────────────────────────────────────
+
+	pi.registerTool({
+		name: "canonicalize-substrate",
+		label: "Canonicalize Substrate",
+		description:
+			"Transform the ACTIVE substrate into canonical content-addressed shape: promote every nested id-bearing array " +
+			"(any depth) to a top-level entity block + ordinal-bearing membership edges, de-nest the parents, content-address " +
+			"every item (oid/content_hash/object), register synthesized block_kinds + membership relation_types, mint a " +
+			"substrate_id when absent, and convert bare-refname relation endpoints to structured form. Idempotent. Pass dryRun " +
+			"to compute the full CanonicalizeReport (promotions/entities/edges, schemas de-nested, kinds + relation_types " +
+			"registered, items minted/hashed, objects stored) without writing any channel. NOTE: this tool targets the active " +
+			"substrate in place; the triple-buffer (dupe/verify/swap) lives in the orchestrator CLI. Promotion targets " +
+			"(block_kind + relation_type names per nested-array dotted path) are NEVER synthesized — supply them explicitly " +
+			"via promotionTargets; an unmapped data-bearing nested array throws.",
+		promptSnippet:
+			"Canonicalize the active substrate (promote nested arrays to top-level entity blocks + membership edges)",
+		parameters: Type.Object({
+			dryRun: Type.Optional(Type.Boolean({ description: "Compute the report without writing any channel" })),
+			promotionTargets: Type.Optional(
+				Type.Record(
+					Type.String(),
+					Type.Object({
+						blockKind: Type.String(),
+						reuse: Type.Optional(Type.Boolean()),
+						keepIds: Type.Optional(Type.Boolean()),
+						prefix: Type.Optional(Type.String()),
+						idPattern: Type.Optional(Type.String()),
+						relationType: Type.String(),
+					}),
+					{
+						description:
+							"Explicit promotion targets keyed by the nested-array dotted path (e.g. 'features.stories'). Required for every data-bearing nested id array; no name synthesis.",
+					},
+				),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { dryRun?: boolean; promotionTargets?: PromotionTargets },
+			_signal: AbortSignal,
+			_onUpdate: AgentToolUpdateCallback,
+			ctx: ExtensionContext,
+		): Promise<AgentToolResult<undefined>> {
+			const report = canonicalizeSubstrate(resolveContextDir(ctx.cwd), {
+				...(params.dryRun !== undefined ? { dryRun: params.dryRun } : {}),
+				...(params.promotionTargets !== undefined ? { promotionTargets: params.promotionTargets } : {}),
 			});
 			return {
 				details: undefined,

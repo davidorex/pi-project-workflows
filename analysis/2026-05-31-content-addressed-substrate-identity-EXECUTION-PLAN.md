@@ -85,6 +85,26 @@ The precursor engine + H1/H2 sequencing collapse into this single canonicalizer 
 
 - **Verification against the real shapes, up front (anti-whack-a-mole).** Validate the canonicalizer against a faithful copy of the REAL `.project-migrate` (its actual `$ref`-bearing definitions, fileless blocks, divergent schemas) in a fast test — surfacing the whole mole-set at once — rather than discovering shapes one slow dupe-run at a time.
 
+## REMAINING WORK — active-substrate wiring (session-surviving detail)
+
+The ONLY remaining Cycle-10 step. Goal: clear the active substrate's golden — the **30 `edge_endpoint_unregistered`** (the cross-substrate `project:FGAP-*` edges, founding FGAP-185) + the **2 `nested_id_bearing_array`** warnings (active `layer-plans` schema) — by wiring the active substrate into the now-canonical `.project-migrate`. Plan-mode this pass before any code.
+
+**Hard constraint (the dry-run blocker):** the committed `migrateToContentAddressed` does **repo-wide discovery** — it would discover all four dirs and **throw at step-0 on `.project`/`.context`** (their schemas declare no identity fields) and **overreach onto `.project` (PRISTINE — forbidden)** + `.project-migrate` (already canonical). So it **cannot** be run/dry-run repo-wide. The active-wiring MUST be **substrate-scoped** — add an `onlySubstrates?: string[]` (or `skip`) option to the engine (or a focused routine) so it processes ONLY the named substrate(s) and can NEVER touch `.project`/`.project-migrate`. Only after scoping is a dry-run safe + meaningful. (Dry-run is mandatory before the real apply, same discipline as the canonicalizer.)
+
+**Step 1 — register `.project-migrate` in the project-root registry.** `registerSubstrate('.', <.project-migrate substrate_id = sub-0c813fd8…>, '.project-migrate', ['project'])` → maps the `project` alias to the canonicalized archive. (A registry write to `.pi-context-registry.json`; touches neither `.project` nor `.project-migrate` data.) This alone makes the 30 `project:FGAP-*` strings *resolvable* — the archive's framework-gaps kept their `FGAP-NNN` refnames + now carry oids, so the foreign index resolves them.
+
+**Step 2 — active substrate `.context-jit-spec-v2`** (already has `substrate_id = sub-2668a102…` + 22/22 identity schemas; 70 unstamped items; 30 `project:` string edges; 1 empty `layer-plans` schema):
+- **Backfill** its 70 items (read + `writeBlockForDir` → stamp oid/content_hash/objects).
+- **Convert its 30 `project:FGAP-*` string edges** → structured foreign `{kind:"item", substrate_id:<.project-migrate>, oid:<that FGAP's oid in .project-migrate>, refname:"FGAP-NNN"}` (via the engine's endpoint conversion / `resolveRelationSelector`, which reads `.project-migrate`'s foreign index — requires Step 1 done). → the 30 `edge_endpoint_unregistered` clear.
+- **De-nest its `layer-plans` schema** (data is EMPTY — schema-only: drop `plans.layers` + `plans.migration_phases` from the schema; no promotion, no data). → the 2 `nested_id_bearing_array` warnings clear.
+- **Expected golden delta:** active `validateContext('.')` **58 / 53 / 5 → 26 / 23 / 3** (the 30 errors + 2 warnings clear; the other 23 errors + 3 warnings are pre-existing active-substrate content/lint, unchanged).
+
+**Step 3 — `.context` (OPEN DECISION — fold-in vs defer).** `.context` = 8 `session-notes` items, NO `substrate_id`, 0/17 identity schemas, 1 EMPTY `layer-plans` schema. NOT needed for the 30 edges (those are in the active substrate). It is a *going-forward* substrate. **Fold-in** (recommended, small): mint `substrate_id` + register + land identity on its 17 schemas + backfill the 8 items + de-nest its empty `layer-plans` schema → `.context` becomes canonical so future work starts clean. **Defer**: it's near-empty + irrelevant to the founding objective; canonicalize later. No promotion either way (no nested-id *data*). Operator's scope call at plan time.
+
+**`config.json` / `project.json` are metadata, NOT entity blocks** (block_kinds / relation_types / substrate_id; project facts). "Canonically structured" for them = schema-valid + registry-consistent + carrying the minted substrate_id — which the canonicalizer/wiring already produces. Content-addressing (per-item oid) does NOT apply (they're not arrays of entities). No separate step. (See `analysis/2026-06-01-pi-context-substrate-model-before-after.md`.)
+
+**After this pass:** the arc's founding objective is met (FGAP-185 / the 30 edges resolved); the substrate model before→after is documented in `analysis/2026-06-01-pi-context-substrate-model-before-after.md` (feeds README + the pi-context skill); the pre-publish step excises the `.project`-specific canonicalizer tooling.
+
 ## Per-cycle loop (every cycle, no exceptions)
 
 Each cycle runs four steps:

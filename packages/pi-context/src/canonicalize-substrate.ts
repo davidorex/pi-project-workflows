@@ -124,12 +124,48 @@ export interface PromotionTarget {
  * "layer-plans.layers"). */
 export type PromotionTargets = Record<string, PromotionTarget>;
 
+/**
+ * An EXPLICIT operator-provided directive to REGISTER an orphan content-bearing
+ * block — a `<array_key>` array of id-bearing items present in the substrate DATA
+ * but NOT declared as a `block_kind` in config (so the backfill pass, which iterates
+ * registered block_kinds only, never reaches it). The orphan's schema is assumed
+ * ALREADY CLEAN (it correctly models the array + any singleton fields); this directive
+ * does NOT clean-emit-rebuild it. It (i) registers the canonical_id as a block_kind and
+ * (ii) injects the 3 identity fields onto the array's item subschema if absent — exactly
+ * like `land-identity-fields`, preserving the rest of the schema (including the item `id`
+ * declaration: a slug `{type:"string"}` is kept verbatim — NO pattern added, NO ids
+ * minted). The EXISTING backfill pass then content-addresses the array's items.
+ *
+ * Singleton top-level fields alongside the array (e.g. `lint_command`, a
+ * `test_conventions` object) are NOT items → never touched by the backfill.
+ *
+ * Idempotent: re-running when the block is already registered AND its item schema
+ * already declares identity → no config amend, no schema write.
+ */
+export interface RegisterBlock {
+	/** canonical_id under which to register the orphan block_kind. */
+	canonical_id: string;
+	/** The data file's array property carrying the id-bearing items. */
+	array_key: string;
+	/** The block_kind `prefix` (config field; may be "" for slug-id orphans whose
+	 * ids are not prefix+number — no ids are minted for an orphan, so this is purely
+	 * the config declaration). */
+	prefix: string;
+	/** Schema file path relative to the substrate dir (the orphan's existing clean schema). */
+	schema_path: string;
+	/** Data file path relative to the substrate dir. */
+	data_path: string;
+	/** Optional display_name; defaults to the canonical_id when omitted. */
+	display_name?: string;
+}
+
 export interface CanonicalizeReport {
 	substrate_dir: string;
 	substrate_id: string;
 	promotions: { path: string; block_kind: string; reused: boolean; entities: number; edges: number }[];
 	schema_denested: string[]; // schemas whose nested id array was removed (incl 0-data)
 	kinds_registered: string[];
+	registered_blocks: string[]; // orphan content-bearing blocks newly registered via opts.registerBlocks
 	relation_types_registered: string[];
 	items_oid_minted: number;
 	items_hashed: number;
@@ -534,11 +570,17 @@ function idMatchesPattern(id: string, parsed: { prefix: string; width: number })
  */
 export function canonicalizeSubstrate(
 	substrateDir: string,
-	opts?: { dryRun?: boolean; ctx?: DispatchContext; promotionTargets?: PromotionTargets },
+	opts?: {
+		dryRun?: boolean;
+		ctx?: DispatchContext;
+		promotionTargets?: PromotionTargets;
+		registerBlocks?: RegisterBlock[];
+	},
 ): CanonicalizeReport {
 	const dryRun = opts?.dryRun ?? false;
 	const ctx = opts?.ctx;
 	const promotionTargets: PromotionTargets = opts?.promotionTargets ?? {};
+	const registerBlocks: RegisterBlock[] = opts?.registerBlocks ?? [];
 
 	const config = loadConfigForDir(substrateDir);
 	if (!config) {
@@ -551,6 +593,7 @@ export function canonicalizeSubstrate(
 		promotions: [],
 		schema_denested: [],
 		kinds_registered: [],
+		registered_blocks: [],
 		relation_types_registered: [],
 		items_oid_minted: 0,
 		items_hashed: 0,
@@ -939,6 +982,86 @@ export function canonicalizeSubstrate(
 		const reemit = denestedSchemaBody(bk.canonical_id, bk.array_key, items, report.substrate_id);
 		writeSchemaCheckedForDir(substrateDir, bk.canonical_id, reemit, "replace", ctx);
 	};
+
+	// ── Step 1.5: register orphan content-bearing blocks ───────────────────────
+	// BEFORE the backfill worklist seeds from config: take every operator-supplied
+	// `registerBlocks` directive and make the orphan a REGISTERED identity-declaring
+	// block_kind so the existing backfill pass (Step 2) content-addresses its items.
+	// The orphan's schema is assumed already clean (it models the array + any singleton
+	// fields correctly) — this pass does NOT clean-emit-rebuild it; it only (i) adds the
+	// block_kind to config when absent and (ii) injects the 3 identity fields onto the
+	// array's item subschema when absent (exactly like `land-identity-fields`, preserving
+	// everything else — including a slug `{type:"string"}` item `id` left verbatim, so no
+	// pattern is added + no ids are minted). Idempotent: already-registered +
+	// identity-declaring → no config amend, no schema write.
+	const registerOrphanBlock = (rb: RegisterBlock): void => {
+		const cfg = currentConfig();
+		const already = (cfg.block_kinds ?? []).some((b) => b.canonical_id === rb.canonical_id);
+		const bk: BlockKindDecl = {
+			canonical_id: rb.canonical_id,
+			display_name: rb.display_name ?? rb.canonical_id,
+			prefix: rb.prefix,
+			schema_path: rb.schema_path,
+			array_key: rb.array_key,
+			data_path: rb.data_path,
+		};
+		if (!already) {
+			report.registered_blocks.push(rb.canonical_id);
+			if (dryRun) {
+				(workingConfig.block_kinds ??= []).push(bk);
+			} else {
+				amendConfigEntryForDir(substrateDir, "block_kinds", "add", rb.canonical_id, bk, ctx);
+			}
+		}
+		// Inject the 3 identity fields onto the array's item subschema if absent — the
+		// SURGICAL inject (`land-identity-fields` discipline), NOT a clean-emit rebuild.
+		// Real run only: under dryRun oid stamping is simulated via `fakeOid` regardless of
+		// the on-disk schema declaration, so no schema write is needed (and dryRun writes
+		// nothing). The orphan's existing clean schema is read, the array's item
+		// `properties` augmented with any missing identity field, and written back via
+		// `writeSchemaCheckedForDir(..., "replace", ...)` — keeping the rest byte-for-byte.
+		if (dryRun) return;
+		const schemaPath = path.isAbsolute(rb.schema_path) ? rb.schema_path : path.join(substrateDir, rb.schema_path);
+		if (!fs.existsSync(schemaPath)) {
+			throw new Error(
+				`canonicalizeSubstrate: registerBlocks['${rb.canonical_id}'] schema not found at ${schemaPath} (an orphan block's clean schema must already exist on disk)`,
+			);
+		}
+		let schema: Record<string, unknown>;
+		try {
+			schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
+		} catch (err) {
+			throw new Error(
+				`canonicalizeSubstrate: registerBlocks['${rb.canonical_id}'] schema at ${schemaPath} is unparseable: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		}
+		const props = schema.properties as Record<string, unknown> | undefined;
+		const arrayNode = props?.[rb.array_key] as Record<string, unknown> | undefined;
+		if (!arrayNode || typeof arrayNode !== "object") {
+			throw new Error(
+				`canonicalizeSubstrate: registerBlocks['${rb.canonical_id}'] schema has no array property '${rb.array_key}' under properties`,
+			);
+		}
+		const items = arrayNode.items as Record<string, unknown> | undefined;
+		if (!items || typeof items !== "object") {
+			throw new Error(
+				`canonicalizeSubstrate: registerBlocks['${rb.canonical_id}'] array '${rb.array_key}' has no object 'items'`,
+			);
+		}
+		const itemProps = (items.properties as Record<string, unknown> | undefined) ?? {};
+		if (IDENTITY_FIELD_NAMES.every((n) => Object.hasOwn(itemProps, n))) return; // already declares identity
+		const nextProps: Record<string, unknown> = { ...itemProps };
+		for (const name of IDENTITY_FIELD_NAMES) {
+			if (!Object.hasOwn(nextProps, name)) nextProps[name] = structuredClone(IDENTITY_FIELDS[name]);
+		}
+		items.properties = nextProps;
+		writeSchemaCheckedForDir(substrateDir, rb.canonical_id, schema, "replace", ctx);
+	};
+	for (const rb of registerBlocks) registerOrphanBlock(rb);
+	if (!dryRun && registerBlocks.length > 0) {
+		// Re-read config so the worklist seed below includes the just-registered orphans.
+		workingConfig = loadConfigForDir(substrateDir) as ConfigBlock;
+	}
 
 	// ── Step 2: promotion worklist (parent-first) ──────────────────────────────
 	// Seed with every registered block_kind; synthesized child blocks enqueue.

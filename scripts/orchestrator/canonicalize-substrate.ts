@@ -32,7 +32,11 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { canonicalizeSubstrate, type PromotionTargets } from "@davidorex/pi-context/canonicalize-substrate";
+import {
+	canonicalizeSubstrate,
+	type PromotionTargets,
+	type RegisterBlock,
+} from "@davidorex/pi-context/canonicalize-substrate";
 import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { validateContext } from "@davidorex/pi-context/context-sdk";
 
@@ -78,6 +82,28 @@ const PROJECT_MIGRATE_TARGETS: PromotionTargets = {
 		relationType: "plan_contains_phase",
 	},
 };
+
+/**
+ * EXPLICIT orphan-block registration directives for the real `.project-migrate`
+ * substrate. `conventions` is a content-bearing block — a `rules` array (16 items,
+ * slug ids `esm`/`tsc-build`/… with NO prefix+number pattern) PLUS singleton fields
+ * (`test_conventions`/`lint_command`/`lint_scope`) — that is NOT a registered
+ * block_kind, so the backfill pass never reaches it. Its schema
+ * (`schemas/conventions.schema.json`) is ALREADY CLEAN (it models the array + the
+ * singletons correctly); it only lacks the 3 identity fields on the `rules` item +
+ * the block_kind registration. This directive registers it + injects identity +
+ * lets the existing backfill content-address the 16 rules (slug ids kept verbatim).
+ * `prefix` is "" — the rules carry slug ids, not minted prefix+number ids.
+ */
+const PROJECT_MIGRATE_REGISTER_BLOCKS: RegisterBlock[] = [
+	{
+		canonical_id: "conventions",
+		array_key: "rules",
+		prefix: "",
+		schema_path: "schemas/conventions.schema.json",
+		data_path: "conventions.json",
+	},
+];
 
 interface Args {
 	substrate: string;
@@ -169,7 +195,11 @@ function main(): void {
 	if (args.dryRun) {
 		let report: ReturnType<typeof canonicalizeSubstrate>;
 		try {
-			report = canonicalizeSubstrate(substrateAbs, { dryRun: true, promotionTargets: PROJECT_MIGRATE_TARGETS });
+			report = canonicalizeSubstrate(substrateAbs, {
+				dryRun: true,
+				promotionTargets: PROJECT_MIGRATE_TARGETS,
+				registerBlocks: PROJECT_MIGRATE_REGISTER_BLOCKS,
+			});
 		} catch (err) {
 			console.error(`canonicalize-substrate: ${err instanceof Error ? err.message : String(err)}`);
 			process.exit(3);
@@ -188,7 +218,10 @@ function main(): void {
 
 	let report: ReturnType<typeof canonicalizeSubstrate>;
 	try {
-		report = canonicalizeSubstrate(workDir, { promotionTargets: PROJECT_MIGRATE_TARGETS });
+		report = canonicalizeSubstrate(workDir, {
+			promotionTargets: PROJECT_MIGRATE_TARGETS,
+			registerBlocks: PROJECT_MIGRATE_REGISTER_BLOCKS,
+		});
 	} catch (err) {
 		fs.rmSync(workDir, { recursive: true, force: true });
 		console.error(

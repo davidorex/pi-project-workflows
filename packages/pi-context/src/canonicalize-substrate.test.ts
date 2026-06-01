@@ -30,6 +30,7 @@ import {
 	deriveIdPattern,
 	inferItemSubschemaFromData,
 	type PromotionTargets,
+	type RegisterBlock,
 } from "./canonicalize-substrate.js";
 import { type EdgeEndpoint, loadRelationsForDir } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
@@ -1253,5 +1254,210 @@ describe("deriveIdPattern + inferItemSubschemaFromData (clean-emit primitives)",
 		const props = inferred.properties as Record<string, Record<string, unknown>>;
 		assert.deepEqual(props.mixed, {}, "mixed-type field → permissive {} (no type)");
 		assert.deepEqual(props.id, { type: "string", pattern: "^X-\\d+$" }, "given idPattern used verbatim");
+	});
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ORPHAN-BLOCK REGISTRATION (`opts.registerBlocks`) — replicates the real
+// `.project-migrate` `conventions` block: a content-bearing `<arrayKey>` array of
+// SLUG-id items (no prefix+number pattern, `id` declared as bare `{type:"string"}`)
+// that is NOT a registered block_kind, PLUS singleton top-level fields alongside the
+// array. Its schema is ALREADY CLEAN (it models the array + the singletons correctly),
+// so it must NOT be clean-emit-rebuilt — only registered + identity-injected, then the
+// existing backfill content-addresses the items (slug ids kept verbatim).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A clean conventions-shaped schema: a `rules` array of slug-id items + singleton
+ * top-level fields (`lint_command` string, `test_conventions` object). The item `id`
+ * is a bare `{type:"string"}` (slug ids — NO pattern). It does NOT yet declare the 3
+ * identity fields — the registerBlocks inject must add them WITHOUT touching anything
+ * else. Mirrors `.project-migrate/schemas/conventions.schema.json`'s structure. */
+function conventionsSchema(): Record<string, unknown> {
+	return {
+		$schema: "http://json-schema.org/draft-07/schema#",
+		title: "Conventions",
+		description: "Code and process conventions.",
+		type: "object",
+		required: ["rules"],
+		properties: {
+			rules: {
+				type: "array",
+				items: {
+					type: "object",
+					required: ["id", "description", "enforcement", "severity"],
+					properties: {
+						id: { type: "string" },
+						description: { type: "string" },
+						enforcement: { type: "string", enum: ["lint", "test", "review", "manual"] },
+						severity: { type: "string", enum: ["error", "warning", "info"] },
+					},
+				},
+			},
+			test_conventions: {
+				type: "object",
+				required: ["runner_command", "file_pattern"],
+				properties: { runner_command: { type: "string" }, file_pattern: { type: "string" } },
+			},
+			lint_command: { type: "string" },
+			lint_scope: { type: "string" },
+		},
+	};
+}
+
+/** A scratch substrate carrying an UNREGISTERED hybrid `conventions` block: a `rules`
+ * array (3 slug-id items WITHOUT identity fields) + two singleton top-level fields
+ * (`lint_command` string, `test_conventions` object). The block_kind is deliberately
+ * NOT in config; the schema is on disk (clean). */
+function makeOrphanFixture(): { cwd: string; work: string } {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "canon-orphan-"));
+	writeBootstrapPointer(cwd, ".work");
+	const work = path.join(cwd, ".work");
+	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
+
+	const config = {
+		schema_version: "1.0.0",
+		root: ".work",
+		substrate_id: uniqueSubstrateId(),
+		// conventions deliberately ABSENT from block_kinds (the orphan).
+		block_kinds: [] as Record<string, unknown>[],
+		relation_types: [],
+		invariants: [],
+	};
+	fs.writeFileSync(path.join(work, "config.json"), JSON.stringify(config, null, 2));
+	fs.writeFileSync(path.join(work, "schemas", "conventions.schema.json"), JSON.stringify(conventionsSchema(), null, 2));
+	fs.writeFileSync(
+		path.join(work, "conventions.json"),
+		JSON.stringify(
+			{
+				rules: [
+					{ id: "esm", description: "ESM only", enforcement: "lint", severity: "error" },
+					{ id: "tsc-build", description: "tsc compiles", enforcement: "lint", severity: "error" },
+					{ id: "no-pi-dir", description: "never touch .pi", enforcement: "review", severity: "warning" },
+				],
+				test_conventions: { runner_command: "tsx --test", file_pattern: "src/*.test.ts" },
+				lint_command: "biome check .",
+			},
+			null,
+			2,
+		),
+	);
+	return { cwd, work };
+}
+
+const ORPHAN_REGISTER: RegisterBlock[] = [
+	{
+		canonical_id: "conventions",
+		array_key: "rules",
+		prefix: "",
+		schema_path: "schemas/conventions.schema.json",
+		data_path: "conventions.json",
+	},
+];
+
+describe("canonicalizeSubstrate: orphan-block registration (opts.registerBlocks)", () => {
+	it("registers an unregistered hybrid block, content-addresses its slug-id items, keeps singletons + schema shape", (t) => {
+		const { cwd, work } = makeOrphanFixture();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		// Capture the orphan schema BEFORE canonicalize to prove it is identity-injected,
+		// NOT clean-emit-rebuilt.
+		const schemaBefore = JSON.parse(
+			fs.readFileSync(path.join(work, "schemas", "conventions.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+
+		const report = canonicalizeSubstrate(work, { promotionTargets: {}, registerBlocks: ORPHAN_REGISTER });
+
+		// ── conventions is now a registered block_kind ──────────────────────────
+		assert.ok(report.registered_blocks.includes("conventions"), "report records conventions registered");
+		const bk = (readConfig(work).block_kinds as Record<string, unknown>[]).find(
+			(b) => b.canonical_id === "conventions",
+		);
+		assert.ok(bk, "conventions registered as a block_kind in config");
+		assert.equal(bk!.array_key, "rules", "array_key = rules");
+		assert.equal(bk!.data_path, "conventions.json", "data_path preserved");
+		assert.equal(bk!.schema_path, "schemas/conventions.schema.json", "schema_path preserved");
+
+		// ── the 3 rules are content-addressed, slug ids unchanged ───────────────
+		const rules = readBlockItems(work, "conventions.json", "rules");
+		assert.equal(rules.length, 3, "3 rules retained");
+		assert.deepEqual(
+			rules.map((r) => r.id).sort(),
+			["esm", "no-pi-dir", "tsc-build"],
+			"slug ids unchanged (no minting, no prefix+number)",
+		);
+		for (const r of rules) {
+			assert.match(r.oid as string, /^[0-9a-f]{32}$/, `rule ${String(r.id)} oid 32-hex`);
+			assert.match(r.content_hash as string, /^[0-9a-f]{64}$/, `rule ${String(r.id)} content_hash 64-hex`);
+			assert.ok(hasObject(work, r.content_hash as string), `rule ${String(r.id)} object on disk`);
+		}
+
+		// ── singleton top-level fields preserved (not items, never touched) ──────
+		const data = JSON.parse(fs.readFileSync(path.join(work, "conventions.json"), "utf-8")) as Record<string, unknown>;
+		assert.equal(data.lint_command, "biome check .", "lint_command singleton preserved");
+		assert.deepEqual(
+			data.test_conventions,
+			{ runner_command: "tsx --test", file_pattern: "src/*.test.ts" },
+			"test_conventions object singleton preserved verbatim",
+		);
+
+		// ── existing data validates: the items wrote back through the framework's
+		//    validating writeBlockForDir without throwing (asserted by reaching here),
+		//    and no nested id-bearing array surfaced in the schema ─────────────────
+		const schemaAfter = JSON.parse(
+			fs.readFileSync(path.join(work, "schemas", "conventions.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		assert.deepEqual(findNestedIdBearingArrays(schemaAfter), [], "conventions schema has no nested id-bearing array");
+
+		// ── schema is IDENTITY-INJECTED, NOT clean-emit-rebuilt: it still declares the
+		//    singleton top-level fields + the item `id` is the ORIGINAL bare {type:string}
+		//    (NO pattern added), only the 3 identity fields are newly present on the item ─
+		const itemPropsBefore = (
+			(schemaBefore.properties as Record<string, Record<string, unknown>>).rules.items as Record<string, unknown>
+		).properties as Record<string, Record<string, unknown>>;
+		const itemPropsAfter = (
+			(schemaAfter.properties as Record<string, Record<string, unknown>>).rules.items as Record<string, unknown>
+		).properties as Record<string, Record<string, unknown>>;
+		assert.deepEqual(itemPropsAfter.id, { type: "string" }, "item id kept as bare {type:string} (no pattern minted)");
+		for (const idf of ["oid", "content_hash", "content_parent"]) {
+			assert.ok(Object.hasOwn(itemPropsAfter, idf), `item schema now declares identity field ${idf}`);
+		}
+		// Every NON-identity item property is byte-identical to before (no rebuild).
+		for (const k of Object.keys(itemPropsBefore)) {
+			assert.deepEqual(
+				itemPropsAfter[k],
+				itemPropsBefore[k],
+				`item property '${k}' unchanged (surgical inject, no rebuild)`,
+			);
+		}
+		// The top-level singleton schema properties survive byte-for-byte.
+		const propsAfter = schemaAfter.properties as Record<string, unknown>;
+		assert.deepEqual(
+			propsAfter.test_conventions,
+			(schemaBefore.properties as Record<string, unknown>).test_conventions,
+			"test_conventions schema property unchanged",
+		);
+		assert.deepEqual(propsAfter.lint_command, { type: "string" }, "lint_command schema property unchanged");
+		assert.deepEqual(propsAfter.lint_scope, { type: "string" }, "lint_scope schema property unchanged");
+		assert.equal(schemaAfter.title, "Conventions", "title preserved (not rebuilt to canonical_id)");
+
+		// ── idempotent: a 2nd run registers nothing, mints no oids ───────────────
+		const report2 = canonicalizeSubstrate(work, { promotionTargets: {}, registerBlocks: ORPHAN_REGISTER });
+		assert.deepEqual(report2.registered_blocks, [], "2nd run: 0 orphan blocks newly registered");
+		assert.equal(report2.items_oid_minted, 0, "2nd run: 0 oids minted (all rules already content-addressed)");
+		const rules2 = readBlockItems(work, "conventions.json", "rules");
+		assert.deepEqual(rules2.map((r) => r.oid).sort(), rules.map((r) => r.oid).sort(), "2nd run: rule oids stable");
+	});
+
+	it("dryRun with registerBlocks reports the orphan + writes nothing", (t) => {
+		const { cwd, work } = makeOrphanFixture();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		const before = snapshotTree(work);
+		const report = canonicalizeSubstrate(work, { dryRun: true, promotionTargets: {}, registerBlocks: ORPHAN_REGISTER });
+		const after = snapshotTree(work);
+
+		assert.deepEqual([...after.entries()].sort(), [...before.entries()].sort(), "dryRun: every byte unchanged");
+		assert.ok(report.registered_blocks.includes("conventions"), "dryRun reports conventions would be registered");
+		assert.ok(report.items_oid_minted >= 3, "dryRun reports the 3 rules would be oid-minted");
 	});
 });

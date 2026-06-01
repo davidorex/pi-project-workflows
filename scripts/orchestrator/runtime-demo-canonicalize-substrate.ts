@@ -151,6 +151,54 @@ function makeFixture(): { cwd: string; work: string } {
 	};
 	fs.writeFileSync(path.join(work, "config.json"), JSON.stringify(config, null, 2));
 	fs.writeFileSync(path.join(work, "schemas", "features.schema.json"), JSON.stringify(featuresSchema(), null, 2));
+	// Orphan content-bearing `conventions` block — UNREGISTERED (absent from
+	// block_kinds) but with a clean schema (`rules` array of slug-id items + singleton
+	// fields) + data. The CLI's PROJECT_MIGRATE_REGISTER_BLOCKS directs the canonicalizer
+	// to register it + content-address its rules (slug ids kept), mirroring the real
+	// `.project-migrate/conventions` orphan. Exercises the registerBlocks path end-to-end.
+	fs.writeFileSync(
+		path.join(work, "schemas", "conventions.schema.json"),
+		JSON.stringify(
+			{
+				$schema: "http://json-schema.org/draft-07/schema#",
+				title: "Conventions",
+				type: "object",
+				required: ["rules"],
+				properties: {
+					rules: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "description", "enforcement", "severity"],
+							properties: {
+								id: { type: "string" },
+								description: { type: "string" },
+								enforcement: { type: "string", enum: ["lint", "test", "review", "manual"] },
+								severity: { type: "string", enum: ["error", "warning", "info"] },
+							},
+						},
+					},
+					lint_command: { type: "string" },
+				},
+			},
+			null,
+			2,
+		),
+	);
+	fs.writeFileSync(
+		path.join(work, "conventions.json"),
+		JSON.stringify(
+			{
+				rules: [
+					{ id: "esm", description: "ESM only", enforcement: "lint", severity: "error" },
+					{ id: "no-pi-dir", description: "never touch .pi", enforcement: "review", severity: "warning" },
+				],
+				lint_command: "biome check .",
+			},
+			null,
+			2,
+		),
+	);
 	fs.writeFileSync(
 		path.join(work, "features.json"),
 		JSON.stringify(
@@ -299,6 +347,28 @@ function main(): void {
 			const t2 = taskEdges.find((e) => (e.child as EdgeEndpoint & { refname?: string }).refname === "T2");
 			if (t1?.ordinal !== 0 || t2?.ordinal !== 1) fail("task edge ordinals wrong");
 			pass("(2) swap left a CANONICAL substrate (5 entities promoted, content-addressed, de-nested, edges ordinaled)");
+
+			// ── (2b) orphan `conventions` block registered + its slug-id rules content-addressed ─
+			const conventionsBk = cfgBlocks.find((b) => b.canonical_id === "conventions");
+			if (!conventionsBk) fail("(2b) conventions orphan block not registered as a block_kind");
+			const rules = blockItems(work, conventionsBk!.data_path as string, conventionsBk!.array_key as string);
+			if (rules.length !== 2) fail(`(2b) expected 2 conventions rules, got ${rules.length}`);
+			if (
+				rules
+					.map((r) => r.id)
+					.sort()
+					.join(",") !== "esm,no-pi-dir"
+			)
+				fail("(2b) conventions slug ids changed");
+			for (const r of rules) {
+				if (!/^[0-9a-f]{32}$/.test(r.oid as string)) fail(`(2b) conventions rule ${String(r.id)} oid not 32-hex`);
+				if (!hasObject(work, r.content_hash as string)) fail(`(2b) conventions rule ${String(r.id)} object missing`);
+			}
+			const convData = JSON.parse(
+				fs.readFileSync(path.join(work, conventionsBk!.data_path as string), "utf-8"),
+			) as Record<string, unknown>;
+			if (convData.lint_command !== "biome check .") fail("(2b) conventions singleton lint_command not preserved");
+			pass("(2b) orphan `conventions` block registered + its 2 slug-id rules content-addressed (singletons preserved)");
 		} finally {
 			fs.rmSync(cwd, { recursive: true, force: true });
 		}

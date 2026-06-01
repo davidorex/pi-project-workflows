@@ -386,6 +386,39 @@ describe("migrate-content-addressed: onlySubstrates scoping + registry-fallback 
 		for (const [k, v] of targetBefore) assert.equal(targetAfter.get(k), v, `target file ${k} unchanged`);
 	});
 
+	it("register:false mints config.substrate_id but writes NO registry entry; default run DOES register", (t) => {
+		const cwd = makeFixture();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const registryPath = path.join(cwd, ".pi-context-registry.json");
+
+		// register:false — mint must land on the target config, registry must not.
+		const report = migrateToContentAddressed(cwd, { onlySubstrates: [".subA"], register: false });
+		assert.deepEqual(
+			report.substrates.map((s) => s.dir),
+			[".subA"],
+			"only the scoped substrate processed",
+		);
+		const config = JSON.parse(fs.readFileSync(path.join(cwd, ".subA", "config.json"), "utf-8")) as {
+			substrate_id?: string;
+		};
+		assert.ok(typeof config.substrate_id === "string", "substrate_id minted onto config");
+		assert.match(config.substrate_id, /^sub-[0-9a-f]{16}$/, "minted id matches substrate-id pattern");
+		const mintedId = config.substrate_id;
+		// No registry entry for the minted id — the project-root registry file is
+		// absent, or present without an entry keyed by the minted id.
+		if (fs.existsSync(registryPath)) {
+			const reg = loadRegistry(cwd);
+			assert.ok(!reg?.substrates?.[mintedId], `register:false must not write a registry entry for ${mintedId}`);
+		}
+
+		// Control: a default-register run over the SAME (now-minted) substrate DOES
+		// register it under the id already on its config (mint is idempotent).
+		migrateToContentAddressed(cwd, { onlySubstrates: [".subA"] });
+		const reg2 = loadRegistry(cwd);
+		assert.ok(reg2?.substrates?.[mintedId], "default run registers the substrate under its minted id");
+		assert.equal(resolveSubstrateDir(cwd, mintedId), ".subA", "registry entry resolves to the substrate dir");
+	});
+
 	it("scoped dryRun writes nothing to the named substrate (no oid + no objects/ entries)", (t) => {
 		const cwd = makeFixture();
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));

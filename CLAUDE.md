@@ -4,12 +4,14 @@ Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven p
 
 Monorepo: npm packages under `packages/*` with lockstep versioning. `ls -d packages/*/` for the set; each `packages/<name>/package.json` `description` + `src/index.ts` re-exports (root for pi-behavior-monitors) for its surface. `pi-project-workflows` is the meta-package re-exporting the Pi extensions; `pi-jit-agents` is a library, not an extension.
 
-# establishing and maintaining context for this project using pi-context
+# How to establish exact current context for this project using pi-context
 
 Read `packages/pi-context/skills/pi-context/SKILL.md` — the generated reference for the full pi-context tool + command surface - to establish understanding of pi-context.
 
 Run  
 `npx tsx -e "import {listSubstrates} from '@davidorex/pi-context'; console.log(listSubstrates('.'))"` to see the list of available context substrates.
+
+The currently-active substrate is whatever `.pi-context.json`'s `contextDir` field names (the active-substrate pointer) — read it to establish which substrate is active. Do NOT assume the active substrate; confirm the resolved `contextDir` with the user before any read or write. Derive current project state (position, open work, recent history) from the active substrate itself — `contextState('.')` / `/context status` (below) plus `git log` — never from a stored narrative.
 
 Substrates can be switched (like switching git branches). Switching flips the active-substrate pointer in `.pi-context.json`; subsequent reads/writes target the newly-active substrate. Pass the target substrate name (from the `listSubstrates` output above) as the second argument:
 
@@ -68,7 +70,7 @@ Work is not complete until the runtime can load it. Pi loads from `dist/`, not s
 6. **Adversarial verification probe**: fresh-context agent (or grep when sufficient) probes for false-pass scenarios. Probe verdict required before commit declared green. **Both the adversarial agent and the orchestrator's own probe can under-flag** — each constructs only the cases it thought of, so neither alone is sufficient: the orchestrator independently re-verifies the audit's load-bearing claims (don't relay a verdict), and the audit independently re-derives the orchestrator's. When either finds a defect, fixing it does NOT inherit the prior green — **a fix to any audit/probe finding requires a FRESH re-audit of the fix** (a CRITICAL especially), because the fix can introduce its own defect or close only the reported instance of a class. Loop fix→re-verify→re-audit until a pass finds nothing new.
 7. **Skills**: `npm run skills` (regen SKILL.md)
 8. **Commit**: forensic message per global CLAUDE.md guidelines
-9. **Status cascade across 3 layers**: Claude Code Tasks + `.project/` blocks (TASK/FGAP/VER) + HANDOFF.md
+9. **Status cascade**: the Claude Code Task tool + the active substrate's own status blocks (via block-api)
 10. **Merge to main**: if on a feature branch
 11. **Release**: `npm run release:patch|minor|major` based on commit type
 12. **Credentialed verification (pre-publish for arc-completion releases)**: run the canonical verification protocol at `docs/reports/pi-internal-verification-protocol-2026-05-02.md` (or successor) when the release ships new public surface; uses pi's `auth.json` directly (no separate env-var gate). Routine bumps don't require this — build/check/test catches breakage there.

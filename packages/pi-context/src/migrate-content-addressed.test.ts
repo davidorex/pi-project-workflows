@@ -23,7 +23,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { type EdgeEndpoint, loadRelationsForDir } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import { loadRegistry, resolveAlias, resolveSubstrateDir } from "./context-registry.js";
+import { loadRegistry, registerSubstrate, resolveAlias, resolveSubstrateDir } from "./context-registry.js";
 import { validateContext } from "./context-sdk.js";
 import { migrateToContentAddressed } from "./migrate-content-addressed.js";
 import { hasObject } from "./object-store.js";
@@ -306,5 +306,97 @@ describe("migrate-content-addressed: full migration", () => {
 		);
 		const after = snapshotTree(cwd);
 		for (const [k, v] of before) assert.equal(after.get(k), v, `fail-fast left ${k} untouched`);
+	});
+});
+
+describe("migrate-content-addressed: onlySubstrates scoping + registry-fallback foreign resolution", () => {
+	it("onlySubstrates processes ONLY the named substrate (an identity-less sibling is never discovered → no step-0 throw)", (t) => {
+		const cwd = makeFixture();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		// Make the sibling (.subB) schema-illegal: strip its identity fields. If it
+		// were discovered, the step-0 fail-fast gate would throw. Scoping to .subA
+		// must exclude it from discovery so no throw occurs.
+		fs.writeFileSync(
+			path.join(cwd, ".subB", "schemas", "tasks.schema.json"),
+			JSON.stringify(
+				{
+					type: "object",
+					properties: { tasks: { type: "array", items: { type: "object", properties: { id: { type: "string" } } } } },
+				},
+				null,
+				2,
+			),
+			"utf-8",
+		);
+		let report!: ReturnType<typeof migrateToContentAddressed>;
+		assert.doesNotThrow(() => {
+			report = migrateToContentAddressed(cwd, { onlySubstrates: [".subA"] });
+		}, "identity-less sibling was scoped out → no step-0 throw");
+		// Only the named substrate appears in the report.
+		assert.deepEqual(
+			report.substrates.map((s) => s.dir),
+			[".subA"],
+			"report.substrates holds only the scoped substrate",
+		);
+	});
+
+	it("registry-fallback resolves a project:<refname> edge into a NON-discovered registered substrate, read-only", (t) => {
+		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "migrate-ca-fallback-"));
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeBootstrapPointer(cwd, ".active");
+		// Active substrate carries a STRING `project:REF-9` edge (no discovered
+		// target — the foreign substrate is scoped out below).
+		writeSubstrate(cwd, {
+			dirName: ".active",
+			tasks: [{ id: "A1", title: "one" }],
+			relations: [{ parent: "A1", child: "project:REF-9", relation_type: "relates_to" }],
+		});
+		// Foreign target substrate: already content-addressed (its item carries an
+		// oid). It is REGISTERED under alias `project` but is NOT in onlySubstrates,
+		// so the migration never discovers it.
+		const targetOid = "abcdef0123456789abcdef0123456789";
+		writeSubstrate(cwd, {
+			dirName: ".target",
+			tasks: [{ id: "REF-9", title: "target", oid: targetOid }],
+		});
+		const targetSid = "sub-00112233aabbccdd";
+		registerSubstrate(cwd, targetSid, ".target", ["project"]);
+
+		// Snapshot the target dir to prove read-only.
+		const targetBefore = snapshotTree(path.join(cwd, ".target"));
+
+		const report = migrateToContentAddressed(cwd, { onlySubstrates: [".active"] });
+
+		// The string edge converted to a structured foreign endpoint.
+		const edges = loadRelationsForDir(path.join(cwd, ".active"));
+		const foreign = edges.find((e) => typeof e.child === "object" && (e.child as EdgeEndpoint).kind === "item")
+			?.child as EdgeEndpoint;
+		assert.ok(foreign && foreign.kind === "item", "child converted to structured item");
+		assert.equal(foreign.substrate_id, targetSid);
+		assert.equal(foreign.oid, targetOid);
+		assert.equal(foreign.refname, "REF-9");
+
+		// Report counts: one cross-substrate edge, nothing unresolved.
+		assert.equal(report.cross_substrate_edges, 1);
+		assert.equal(report.unresolved.length, 0);
+
+		// The foreign target was read-only: byte-identical tree before/after.
+		const targetAfter = snapshotTree(path.join(cwd, ".target"));
+		assert.deepEqual([...targetAfter.keys()].sort(), [...targetBefore.keys()].sort(), "no new files in target");
+		for (const [k, v] of targetBefore) assert.equal(targetAfter.get(k), v, `target file ${k} unchanged`);
+	});
+
+	it("scoped dryRun writes nothing to the named substrate (no oid + no objects/ entries)", (t) => {
+		const cwd = makeFixture();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const before = snapshotTree(path.join(cwd, ".subA"));
+		const report = migrateToContentAddressed(cwd, { onlySubstrates: [".subA"], dryRun: true });
+		assert.equal(report.dry_run, true);
+		// The named substrate's block file is byte-unchanged: no oid/content_hash stamped.
+		const after = snapshotTree(path.join(cwd, ".subA"));
+		assert.deepEqual([...after.keys()].sort(), [...before.keys()].sort(), "no new files under .subA");
+		for (const [k, v] of before) assert.equal(after.get(k), v, `.subA file ${k} unchanged under scoped dryRun`);
+		// No objects/ directory entries were added.
+		assert.ok(!fs.existsSync(path.join(cwd, ".subA", "objects")), "no objects/ dir created under scoped dryRun");
 	});
 });

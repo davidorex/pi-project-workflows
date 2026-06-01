@@ -85,25 +85,15 @@ function parseArgs(argv: string[]): Args {
 	return out;
 }
 
-/** Read the active contextDir from `<cwd>/.pi-context.json` (basename string), or
- * null when no pointer exists — restored in the verify finally. */
-function readActivePointer(cwd: string): string | null {
-	const p = path.join(cwd, ".pi-context.json");
-	if (!fs.existsSync(p)) return null;
-	try {
-		const data = JSON.parse(fs.readFileSync(p, "utf-8")) as Record<string, unknown>;
-		return typeof data.contextDir === "string" ? (data.contextDir as string) : null;
-	} catch {
-		return null;
-	}
-}
-
-/** Verify a folded work-dupe via a pointer-switch + validateContext. Restores the
- * original pointer in a finally regardless of outcome. Returns the blocking issue
- * list (empty ⇒ clean). Mirrors canonicalize-substrate.ts's verifyDupe + its
- * BLOCKING_CODES set verbatim. */
+/** Verify a folded work-dupe via a pointer-switch + validateContext. Captures the
+ * prior `.pi-context.json` bytes verbatim and restores them in a finally
+ * regardless of outcome (a lossless restore — preserves previous_contextDir /
+ * switched_at / switched_by / version that a writeBootstrapPointer rewrite would
+ * drop). Returns the blocking issue list (empty ⇒ clean). Mirrors
+ * canonicalize-substrate.ts's verifyDupe + its BLOCKING_CODES set verbatim. */
 function verifyDupe(cwd: string, workDirRel: string): { ok: boolean; issues: string[] } {
-	const original = readActivePointer(cwd);
+	const pointerPath = path.join(cwd, ".pi-context.json");
+	const originalBytes = fs.existsSync(pointerPath) ? fs.readFileSync(pointerPath, "utf-8") : null;
 	try {
 		writeBootstrapPointer(cwd, workDirRel);
 		const result = validateContext(cwd);
@@ -121,9 +111,8 @@ function verifyDupe(cwd: string, workDirRel: string): { ok: boolean; issues: str
 		const issues = blocking.map((i) => `${i.code}: ${i.message}`);
 		return { ok: issues.length === 0, issues };
 	} finally {
-		if (original !== null) {
-			writeBootstrapPointer(cwd, original);
-		}
+		if (originalBytes !== null) fs.writeFileSync(pointerPath, originalBytes, "utf-8");
+		else if (fs.existsSync(pointerPath)) fs.unlinkSync(pointerPath);
 	}
 }
 

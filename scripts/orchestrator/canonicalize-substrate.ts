@@ -42,15 +42,24 @@ import { validateContext } from "@davidorex/pi-context/context-sdk";
  * algorithmically derived/singularized/truncated. Keys are the dotted nested-array
  * paths the canonicalizer reports (`<parentBlockKind>.<nestedArrayKey>`).
  *
- *  - `features.stories`  → REUSE the existing `story` block, KEEPING the original
- *    story ids (they already match the story block's id.pattern).
- *  - `story.tasks`       → NEW `story-task` block, ids `STORY-TASK-NNNN`.
+ *  - `features.stories`  → NEW `feature-story` block, ids `FSTORY-NNN`. (NOT a reuse of the
+ *    vestigial top-level `story` block: that block's schema is a narrower, divergent shape
+ *    (additionalProperties:false; no depends_on/gates/tasks), so the richer nested story
+ *    cannot validate against it. Synthesizing a block whose schema matches the actual nested
+ *    shape is faithful + lossless; the empty `story` block is left as a vestigial artifact.)
+ *  - `feature-story.tasks` → NEW `story-task` block, ids `STORY-TASK-NNNN`. (Path is
+ *    `feature-story.tasks` because the stories now live in the `feature-story` block.)
  *  - `layer-plans.layers`           → NEW `plan-layer` block, ids `PLAN-LAYER-NNN`.
  *  - `layer-plans.migration_phases` → NEW `plan-phase` block, ids `PLAN-PHASE-NNN`.
  */
 const PROJECT_MIGRATE_TARGETS: PromotionTargets = {
-	"features.stories": { blockKind: "story", reuse: true, keepIds: true, relationType: "feature_contains_story" },
-	"story.tasks": {
+	"features.stories": {
+		blockKind: "feature-story",
+		prefix: "FSTORY-",
+		idPattern: "^FSTORY-\\d{3}$",
+		relationType: "feature_contains_story",
+	},
+	"feature-story.tasks": {
 		blockKind: "story-task",
 		prefix: "STORY-TASK-",
 		idPattern: "^STORY-TASK-\\d{4}$",

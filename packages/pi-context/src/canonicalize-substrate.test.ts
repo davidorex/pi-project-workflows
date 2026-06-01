@@ -225,6 +225,88 @@ function makeFilelessReuseFixture(): { cwd: string; work: string } {
 	return { cwd, work };
 }
 
+/** Explicit promotion targets for the SYNTH-INTERMEDIATE depth-3 path — the depth-2
+ * parent of the depth-3 tree is SYNTHESIZED (a NEW `feature-story` block), NOT reused.
+ * This is the real `.project-migrate` shape (after `features.stories` was switched from
+ * reusing `story` to synthesizing `feature-story`): the deepest `feature-story.tasks`
+ * level rides inside the synthesized block's DATA (its written schema drops the deeper
+ * array per the 9.2 guard) and must be detected by data-observation when the synthesized
+ * block is processed. The deepest key is keyed on the SYNTH parent's canonical_id. */
+const STORY_TASK_ID_PATTERN = "^STORY-TASK-\\d{4}$";
+const SYNTH_INTERMEDIATE_TARGETS: PromotionTargets = {
+	"features.stories": {
+		blockKind: "feature-story",
+		prefix: "FSTORY-",
+		idPattern: "^FSTORY-\\d{3}$",
+		relationType: "feature_contains_story",
+	},
+	"feature-story.tasks": {
+		blockKind: "story-task",
+		prefix: "STORY-TASK-",
+		idPattern: STORY_TASK_ID_PATTERN,
+		relationType: "story_contains_task",
+	},
+};
+
+/** Fixture mirroring the real `.project-migrate` failure exactly: ONLY the `features`
+ * block is registered (NO `story` block, no `story.json`). The depth-2 parent of the
+ * depth-3 tree (`features`→stories→tasks) is therefore SYNTHESIZED, not reused — so the
+ * deepest `tasks` level is observable only from the synthesized `feature-story` block's
+ * in-memory (dry) / on-disk (real) DATA, never from a pre-registered schema. This is the
+ * path that masked the dry-run depth-3 drop: when the depth-2 parent is reused (other
+ * fixtures), its schema is already on disk and the dry run reads it; when synthesized,
+ * the dry run wrote no schema, so the deeper array went undetected. */
+function makeSynthIntermediateFixture(): { cwd: string; work: string } {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "canon-synth-"));
+	writeBootstrapPointer(cwd, ".work");
+	const work = path.join(cwd, ".work");
+	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
+
+	const config = {
+		schema_version: "1.0.0",
+		root: ".work",
+		substrate_id: "sub-0123456789abcdef",
+		block_kinds: [
+			{
+				canonical_id: "features",
+				display_name: "Features",
+				prefix: "FEAT",
+				schema_path: "schemas/features.schema.json",
+				array_key: "features",
+				data_path: "features.json",
+			},
+		],
+		relation_types: [],
+		invariants: [],
+	};
+	fs.writeFileSync(path.join(work, "config.json"), JSON.stringify(config, null, 2));
+	fs.writeFileSync(path.join(work, "schemas", "features.schema.json"), JSON.stringify(featuresSchema(), null, 2));
+	// 1 feature, 2 stories (STORY-001 carries 2 tasks; STORY-002 carries 1) → 2 stories
+	// + 3 tasks, 0 findings. Identical tree to makeFixture's data.
+	const features = {
+		features: [
+			{
+				id: "FEAT-001",
+				title: "Auth",
+				stories: [
+					{
+						id: "STORY-001",
+						summary: "login",
+						tasks: [
+							{ id: "T1", desc: "form" },
+							{ id: "T2", desc: "api" },
+						],
+					},
+					{ id: "STORY-002", summary: "logout", tasks: [{ id: "T3", desc: "endpoint" }] },
+				],
+				findings: [],
+			},
+		],
+	};
+	fs.writeFileSync(path.join(work, "features.json"), JSON.stringify(features, null, 2));
+	return { cwd, work };
+}
+
 /** Snapshot every file under `dir` as path → bytes (sorted), for dryRun no-write proof. */
 function snapshotTree(dir: string): Map<string, string> {
 	const out = new Map<string, string>();
@@ -580,5 +662,142 @@ describe("canonicalizeSubstrate: full canonicalization", () => {
 			const schema = JSON.parse(fs.readFileSync(path.join(work, "schemas", f), "utf-8")) as Record<string, unknown>;
 			assert.deepEqual(findNestedIdBearingArrays(schema), [], `schema ${f} has no nested id-bearing array`);
 		}
+	});
+
+	it("promotes a full depth-3 tree through a SYNTHESIZED intermediate, dry-run counts == real-run counts", (t) => {
+		// REGRESSION GUARD for the depth-3-through-synth-intermediate drop. When the
+		// depth-2 parent of a depth-3 tree is SYNTHESIZED (not reused), the deepest level
+		// rides inside the synthesized block's DATA (its written schema drops the deeper
+		// array per the 9.2 guard). The dry run wrote no schema for the synthesized block,
+		// so the worklist's on-disk schema read found nothing → the synthesized block was
+		// SKIPPED → the deepest `feature-story.tasks` promotion (and its mints/edges) was
+		// MISSING from the dry-run report while the REAL run promoted it. This test asserts
+		// (a) the REAL run promotes the full depth-3 tree on disk, AND (b) the dry-run
+		// report's counts match the real run's EXACTLY — so the operator's pre-apply
+		// checkpoint is trustworthy.
+
+		// ── Real run on a fresh fixture ──────────────────────────────────────────
+		const real = makeSynthIntermediateFixture();
+		t.after(() => fs.rmSync(real.cwd, { recursive: true, force: true }));
+		const realReport = canonicalizeSubstrate(real.work, { promotionTargets: SYNTH_INTERMEDIATE_TARGETS });
+
+		// feature-story is SYNTHESIZED (not reused), 2 stories promoted.
+		const fsPromo = realReport.promotions.find((p) => p.path === "features.stories");
+		assert.ok(fsPromo, "features.stories promoted");
+		assert.equal(fsPromo?.reused, false, "feature-story is SYNTHESIZED, not reused");
+		assert.equal(fsPromo?.block_kind, "feature-story", "explicit synth target = feature-story");
+		assert.equal(fsPromo?.entities, 2, "2 stories promoted");
+
+		// The DEEPEST level: feature-story.tasks promoted (this is the level that vanished
+		// from the dry run before the fix) — 3 tasks into a synth story-task block.
+		const taskPromo = realReport.promotions.find((p) => p.path === "feature-story.tasks");
+		assert.ok(taskPromo, "feature-story.tasks promoted (the depth-3 level through the synth intermediate)");
+		assert.equal(taskPromo?.reused, false, "story-task is synthesized");
+		assert.equal(taskPromo?.block_kind, "story-task", "explicit synth target = story-task");
+		assert.equal(taskPromo?.entities, 3, "all 3 deepest-level tasks promoted");
+		assert.equal(taskPromo?.edges, 3, "3 membership edges for the deepest level");
+
+		// On disk: the synth story-task block exists with 3 de-nested, content-addressed items.
+		const stCfg = (readConfig(real.work).block_kinds as Record<string, unknown>[]).find(
+			(b) => b.canonical_id === "story-task",
+		);
+		assert.ok(stCfg, "story-task block_kind registered (synth)");
+		const stTasks = readBlockItems(real.work, stCfg!.data_path as string, stCfg!.array_key as string);
+		assert.equal(stTasks.length, 3, "3 tasks on disk in the synth story-task block");
+		for (const tk of stTasks) {
+			assert.match(tk.id as string, /^STORY-TASK-\d{4}$/, `task ${String(tk.id)} minted via given prefix`);
+			assert.match(tk.oid as string, /^[0-9a-f]{32}$/, `task ${String(tk.id)} oid 32-hex`);
+			assert.ok(hasObject(real.work, tk.content_hash as string), `task ${String(tk.id)} object on disk`);
+		}
+
+		// The synthesized feature-story items are DE-NESTED (no embedded tasks array).
+		const fsCfg = (readConfig(real.work).block_kinds as Record<string, unknown>[]).find(
+			(b) => b.canonical_id === "feature-story",
+		)!;
+		const fsItems = readBlockItems(real.work, fsCfg.data_path as string, fsCfg.array_key as string);
+		assert.equal(fsItems.length, 2, "2 feature-story items on disk");
+		for (const s of fsItems) {
+			assert.equal(Object.hasOwn(s, "tasks"), false, "feature-story de-nested: no embedded tasks array");
+		}
+
+		// The feature-story SCHEMA ends with NO nested id-bearing array (tasks de-nested),
+		// and so does every resulting schema.
+		const fsSchema = JSON.parse(fs.readFileSync(path.join(real.work, fsCfg.schema_path as string), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		assert.deepEqual(findNestedIdBearingArrays(fsSchema), [], "feature-story schema has no nested id-bearing array");
+		for (const f of fs.readdirSync(path.join(real.work, "schemas"))) {
+			const schema = JSON.parse(fs.readFileSync(path.join(real.work, "schemas", f), "utf-8")) as Record<
+				string,
+				unknown
+			>;
+			assert.deepEqual(findNestedIdBearingArrays(schema), [], `schema ${f} has no nested id-bearing array`);
+		}
+
+		// Deepest membership edges: 3 task edges, ordinals 0/1 within STORY-001, 0 within STORY-002.
+		const realEdges = loadRelationsForDir(real.work);
+		const taskEdges = realEdges.filter((e) => {
+			const c = e.child;
+			return typeof c === "object" && c.kind === "item" && /^T\d$/.test(c.refname ?? "");
+		});
+		assert.equal(taskEdges.length, 3, "3 deepest-level membership edges on disk");
+		assert.equal(
+			taskEdges.filter((e) => e.relation_type === "story_contains_task").length,
+			3,
+			"all story_contains_task",
+		);
+
+		// Total promoted entities across both levels = 2 stories + 3 tasks = 5.
+		assert.equal(
+			realReport.promotions.reduce((n, p) => n + p.entities, 0),
+			5,
+			"5 entities promoted across the full depth-3 tree",
+		);
+
+		// ── Dry run on a SEPARATE fresh fixture: counts must match the real run EXACTLY ──
+		const dry = makeSynthIntermediateFixture();
+		t.after(() => fs.rmSync(dry.cwd, { recursive: true, force: true }));
+		const before = snapshotTree(dry.work);
+		const dryReport = canonicalizeSubstrate(dry.work, { dryRun: true, promotionTargets: SYNTH_INTERMEDIATE_TARGETS });
+		const after = snapshotTree(dry.work);
+
+		// dryRun is non-destructive (every byte unchanged).
+		assert.deepEqual([...after.entries()].sort(), [...before.entries()].sort(), "dryRun: every byte unchanged");
+
+		// The dry run reports the DEEPEST level (the regression: it was absent before the fix).
+		const dryTaskPromo = dryReport.promotions.find((p) => p.path === "feature-story.tasks");
+		assert.ok(dryTaskPromo, "dry run reports the feature-story.tasks depth-3 promotion (regression guard)");
+		assert.equal(dryTaskPromo?.entities, 3, "dry run reports all 3 deepest-level entities");
+
+		// EXACT count parity: promotions (path/block_kind/reused/entities/edges) + every numeric field.
+		assert.deepEqual(
+			dryReport.promotions,
+			realReport.promotions,
+			"dry-run promotions identical to real-run promotions (paths, kinds, entities, edges)",
+		);
+		assert.equal(dryReport.items_oid_minted, realReport.items_oid_minted, "dry minted == real minted");
+		assert.equal(dryReport.items_hashed, realReport.items_hashed, "dry hashed == real hashed");
+		assert.equal(dryReport.objects_stored, realReport.objects_stored, "dry objects_stored == real objects_stored");
+		assert.equal(
+			dryReport.edges_structured,
+			realReport.edges_structured,
+			"dry edges_structured == real edges_structured",
+		);
+		assert.deepEqual(
+			dryReport.schema_denested.sort(),
+			realReport.schema_denested.sort(),
+			"dry schema_denested == real schema_denested (both features + feature-story)",
+		);
+		assert.deepEqual(
+			dryReport.kinds_registered.sort(),
+			realReport.kinds_registered.sort(),
+			"dry kinds_registered == real kinds_registered (both feature-story + story-task)",
+		);
+		assert.deepEqual(
+			dryReport.relation_types_registered.sort(),
+			realReport.relation_types_registered.sort(),
+			"dry relation_types_registered == real relation_types_registered",
+		);
 	});
 });

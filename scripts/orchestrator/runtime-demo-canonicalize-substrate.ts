@@ -2,8 +2,9 @@
  * Runtime demo (Cycle 10 — the substrate CANONICALIZER + triple-buffer CLI).
  *
  * The orchestrator's rehearsal before the real `.project-migrate` dupe-run-swap.
- * Builds a scratch substrate (depth-3 nested tree + an empty reuse target + a
- * 0-data nested id array) end-to-end and drives it THROUGH THE CLI
+ * Builds a scratch substrate (depth-3 nested tree promoted THROUGH A SYNTHESIZED
+ * intermediate `feature-story` block — matching the CLI's PROJECT_MIGRATE_TARGETS —
+ * plus a 0-data nested id array) end-to-end and drives it THROUGH THE CLI
  * (`scripts/orchestrator/canonicalize-substrate.ts`) so the actual
  * dupe/verify/swap path is exercised — NOT a library-only call. Scratch fixtures
  * ONLY (mkdtemp); never a real substrate. Console PASS markers + process.exit(1)
@@ -96,39 +97,6 @@ function featuresSchema(): Record<string, unknown> {
 	};
 }
 
-function storySchema(): Record<string, unknown> {
-	return {
-		$schema: "http://json-schema.org/draft-07/schema#",
-		$id: "pi-context://schemas/story",
-		version: "1.0.0",
-		title: "story",
-		type: "object",
-		required: ["stories"],
-		properties: {
-			stories: {
-				type: "array",
-				items: {
-					type: "object",
-					required: ["id"],
-					properties: {
-						id: { type: "string", pattern: "^STORY-\\d{3}$" },
-						summary: { type: "string" },
-						tasks: {
-							type: "array",
-							items: {
-								type: "object",
-								required: ["id"],
-								properties: { id: { type: "string" }, desc: { type: "string" }, ...IDENTITY_PROPS },
-							},
-						},
-						...IDENTITY_PROPS,
-					},
-				},
-			},
-		},
-	};
-}
-
 /** Build a fresh scratch cwd whose `.work` substrate carries the nested tree.
  * The bootstrap pointer is written to a DIFFERENT active dir `.active` (an empty
  * substrate) so the verify pointer-switch is observable + restorable. */
@@ -155,6 +123,12 @@ function makeFixture(): { cwd: string; work: string } {
 		schema_version: "1.0.0",
 		root: ".work",
 		substrate_id: "sub-0123456789abcdef",
+		// ONLY the `features` block is registered. Per the CLI's PROJECT_MIGRATE_TARGETS
+		// constant, `features.stories` SYNTHESIZES a NEW `feature-story` block (it does NOT
+		// reuse a `story` block — there is none), and the deepest `feature-story.tasks`
+		// SYNTHESIZES a NEW `story-task` block. This mirrors the real `.project-migrate`
+		// shape after the reuse→synthesis switch, so the demo exercises the depth-3
+		// promotion THROUGH A SYNTHESIZED INTERMEDIATE (the dry-run/real divergence path).
 		block_kinds: [
 			{
 				canonical_id: "features",
@@ -164,21 +138,12 @@ function makeFixture(): { cwd: string; work: string } {
 				array_key: "features",
 				data_path: "features.json",
 			},
-			{
-				canonical_id: "story",
-				display_name: "Story",
-				prefix: "STORY",
-				schema_path: "schemas/story.schema.json",
-				array_key: "stories",
-				data_path: "story.json",
-			},
 		],
 		relation_types: [],
 		invariants: [],
 	};
 	fs.writeFileSync(path.join(work, "config.json"), JSON.stringify(config, null, 2));
 	fs.writeFileSync(path.join(work, "schemas", "features.schema.json"), JSON.stringify(featuresSchema(), null, 2));
-	fs.writeFileSync(path.join(work, "schemas", "story.schema.json"), JSON.stringify(storySchema(), null, 2));
 	fs.writeFileSync(
 		path.join(work, "features.json"),
 		JSON.stringify(
@@ -206,7 +171,6 @@ function makeFixture(): { cwd: string; work: string } {
 			2,
 		),
 	);
-	fs.writeFileSync(path.join(work, "story.json"), JSON.stringify({ stories: [] }, null, 2));
 	return { cwd, work };
 }
 
@@ -274,15 +238,21 @@ function main(): void {
 			}
 			pass("(3) verify pointer-switch restored the original active pointer (contextDir)");
 
-			// Substrate is canonical.
-			const stories = blockItems(work, "story.json", "stories");
+			// Substrate is canonical. Stories were promoted into the SYNTHESIZED
+			// `feature-story` block; the deepest tasks into the SYNTHESIZED `story-task`
+			// block. Resolve both from the post-swap config (data_path / array_key) since
+			// they were minted by the canonicalizer.
+			const cfgBlocks = JSON.parse(fs.readFileSync(path.join(work, "config.json"), "utf-8")).block_kinds as Record<
+				string,
+				unknown
+			>[];
+			const storyCfg = cfgBlocks.find((b) => b.canonical_id === "feature-story");
+			if (!storyCfg) fail("expected a synthesized feature-story block");
+			const stories = blockItems(work, storyCfg!.data_path as string, storyCfg!.array_key as string);
 			if (stories.length !== 2) fail(`expected 2 promoted stories, got ${stories.length}`);
-			const taskCfgBlocks = (
-				JSON.parse(fs.readFileSync(path.join(work, "config.json"), "utf-8")).block_kinds as Record<string, unknown>[]
-			).filter((b) => String(b.canonical_id).includes("task"));
-			if (taskCfgBlocks.length !== 1) fail("expected exactly 1 synthesized task block");
-			const taskCfg = taskCfgBlocks[0];
-			const tasks = blockItems(work, taskCfg.data_path as string, taskCfg.array_key as string);
+			const taskCfg = cfgBlocks.find((b) => b.canonical_id === "story-task");
+			if (!taskCfg) fail("expected a synthesized story-task block");
+			const tasks = blockItems(work, taskCfg!.data_path as string, taskCfg!.array_key as string);
 			if (tasks.length !== 3) fail(`expected 3 promoted tasks, got ${tasks.length}`);
 
 			for (const it of [...stories, ...tasks, ...blockItems(work, "features.json", "features")]) {
@@ -334,7 +304,9 @@ function main(): void {
 			const dupes = fs.readdirSync(path.join(cwd, "tmp")).filter((d) => d.startsWith("canonicalize-work-"));
 			if (dupes.length !== 1) fail(`(4) --no-swap expected 1 leftover dupe, got ${dupes.length}`);
 			const dupeWork = path.join(cwd, "tmp", dupes[0]);
-			const dupeStories = blockItems(dupeWork, "story.json", "stories");
+			// Stories were promoted into the SYNTHESIZED `feature-story` block (array_key
+			// `feature-story`, data file `feature-story.json`) — not a reused `story` block.
+			const dupeStories = blockItems(dupeWork, "feature-story.json", "feature-story");
 			if (dupeStories.length !== 2) fail("(4) --no-swap dupe not canonicalized");
 			pass("(4) --no-swap left a canonical dupe + the original untouched");
 		} finally {

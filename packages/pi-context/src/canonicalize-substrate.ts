@@ -478,10 +478,21 @@ export function canonicalizeSubstrate(
 		return loadConfigForDir(substrateDir) as ConfigBlock;
 	};
 
-	// ── In-memory item store for dryRun simulation ─────────────────────────────
+	// ── In-memory stores for dryRun simulation ─────────────────────────────────
 	// blockName → item array. Mutated only under dryRun; the real run reads/writes
 	// disk. Seeded lazily from the on-disk data.
 	const simItems = new Map<string, Record<string, unknown>[]>();
+	// canonical_id → schema body for SYNTHESIZED child blocks under dryRun. The real
+	// run writes a synthesized block's schema to disk in `registerKind`; the dryRun
+	// path performs ZERO writes, so a synthesized block has NO on-disk schema. Without
+	// this store the worklist's schema read (and the content-hash projection in
+	// backfill/appendPromoted) would see `fs.existsSync(schemaPath) === false` for a
+	// synthesized block and SKIP it — silently dropping any DEEPER nested array carried
+	// inside a synthesized intermediate (a depth-3 promotion through a synth depth-2
+	// parent). Holding the synthesized schema in memory lets the dryRun simulation read
+	// it exactly where the real run reads the just-written on-disk schema, so the
+	// data-observed deeper arrays are detected identically. Keyed by canonical_id.
+	const simSchemas = new Map<string, Record<string, unknown>>();
 	const simEdges: Edge[] = dryRun ? loadRelationsForDir(substrateDir).map((e) => ({ ...e })) : [];
 	let nextSimOid = 0;
 	const fakeOid = (): string => {
@@ -502,14 +513,49 @@ export function canonicalizeSubstrate(
 		return readItems(substrateDir, bk);
 	};
 
+	// Simulated object-store membership for dryRun. The real run writes objects to
+	// disk (via writeBlockForDir / appendToBlockForDir → putObject) AS IT GOES, so a
+	// later `hasObject` check sees an earlier write's hash already present and does NOT
+	// re-count it (content-addressed dedup). The dryRun writes nothing, so a plain
+	// `hasObject` against the static on-disk store would over-count every projection.
+	// This set replays putObject's idempotent dedup in memory: `simWouldStore(hash)`
+	// returns true (a NEW store) only when the hash is absent from BOTH the on-disk
+	// store and this set, recording it so a recurrence is not re-counted — matching the
+	// real run's `objects_stored` count exactly.
+	const simStored = new Set<string>();
+	const simWouldStore = (hash: string): boolean => {
+		if (hasObject(substrateDir, hash) || simStored.has(hash)) return false;
+		simStored.add(hash);
+		return true;
+	};
+
+	// Resolve a block's schema body: under dryRun, prefer the in-memory synthesized
+	// schema (a synth block has no on-disk schema in a dry run) then fall back to disk;
+	// under a real run, read disk. Returns null when neither source has it (a block
+	// whose schema file is genuinely absent). Mirrors the real run's on-disk read so
+	// the dryRun simulation observes the SAME schema the real run just wrote.
+	const schemaForBk = (bk: BlockKindDecl): Record<string, unknown> | null => {
+		if (dryRun) {
+			const inMem = simSchemas.get(bk.canonical_id);
+			if (inMem) return structuredClone(inMem);
+		}
+		const p = schemaAbs(substrateDir, bk);
+		if (!fs.existsSync(p)) return null;
+		try {
+			return JSON.parse(fs.readFileSync(p, "utf-8")) as Record<string, unknown>;
+		} catch {
+			return null;
+		}
+	};
+
 	// Backfill (real) or simulate-stamp (dry) a block's items so every item carries
 	// an oid; returns a refname→oid map for the block. Accumulates report counts.
 	const backfillBlock = (bk: BlockKindDecl): Map<string, string> => {
 		const map = new Map<string, string>();
-		const schemaPath = schemaAbs(substrateDir, bk);
-		const schema = fs.existsSync(schemaPath)
-			? (JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>)
-			: null;
+		// `schemaForBk` reads disk under a real run and prefers the in-memory synthesized
+		// schema under dryRun — so a synthesized child block's content-hash projection is
+		// computed against the same schema in both modes.
+		const schema = schemaForBk(bk);
 		if (dryRun) {
 			const arr = itemsFor(bk);
 			for (const item of arr) {
@@ -522,7 +568,12 @@ export function canonicalizeSubstrate(
 				if (schema) {
 					const projection = contentProjection(schema, bk.array_key, item);
 					const hash = computeContentHash(projection);
-					if (!hasObject(substrateDir, hash)) report.objects_stored += 1;
+					// Mirror the real run's backfill, which counts a store only when the hash
+					// is not already present (writeBlockForDir then stores all items). An item
+					// promoted earlier via appendPromoted was already simulated-stored, so it is
+					// not re-counted here — matching real, where the append's putObject already
+					// wrote it to disk before this backfill's pre-write hasObject check.
+					if (simWouldStore(hash)) report.objects_stored += 1;
 				}
 				if (typeof item.id === "string") map.set(item.id as string, item.oid as string);
 			}
@@ -563,6 +614,12 @@ export function canonicalizeSubstrate(
 		report.kinds_registered.push(bk.canonical_id);
 		if (dryRun) {
 			(workingConfig.block_kinds ??= []).push(bk);
+			// Hold the synthesized schema in memory so the worklist's later schema read
+			// (and the content-hash projection) sees it — the real run reads this same
+			// body off disk after `writeSchemaCheckedForDir`. Without it the dryRun worklist
+			// would skip the synthesized block (no on-disk schema) and miss its deeper
+			// nested arrays — a depth-3 promotion through a synth intermediate.
+			simSchemas.set(bk.canonical_id, structuredClone(schemaBody));
 			return;
 		}
 		amendConfigEntryForDir(substrateDir, "block_kinds", "add", bk.canonical_id, bk, ctx);
@@ -656,11 +713,16 @@ export function canonicalizeSubstrate(
 			arr.push(stamped);
 			report.items_oid_minted += 1;
 			report.items_hashed += 1;
-			const schemaPath = schemaAbs(substrateDir, targetBk);
-			if (fs.existsSync(schemaPath)) {
-				const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
+			// The REAL appendPromoted does NOT count objects_stored — it only WRITES the
+			// object (appendToBlockForDir → putObject); the store is counted later, when this
+			// block is backfilled and finds the hash present. Mirror that here: record the
+			// would-be store in the sim set (so the later backfill's simWouldStore skips it)
+			// WITHOUT incrementing the count. `schemaForBk` resolves the synthesized target's
+			// in-memory schema (no on-disk schema yet under dryRun) so the projection matches.
+			const schema = schemaForBk(targetBk);
+			if (schema) {
 				const hash = computeContentHash(contentProjection(schema, targetBk.array_key, stamped));
-				if (!hasObject(substrateDir, hash)) report.objects_stored += 1;
+				simWouldStore(hash);
 			}
 			return stamped.oid as string;
 		}
@@ -748,10 +810,12 @@ export function canonicalizeSubstrate(
 		//     paths and (ii) DATA-observed nested id arrays. The data source catches
 		//     deeper arrays carried inside a SYNTHESIZED child block whose written
 		//     schema intentionally omits them (the 9.2 guard forbids declaring them).
-		//     Re-read the schema (a prior de-nest may have changed it).
-		const schemaPath = schemaAbs(substrateDir, bk);
-		if (!fs.existsSync(schemaPath)) continue;
-		const parentSchema = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
+		//     Re-read the schema (a prior de-nest may have changed it). Under dryRun a
+		//     SYNTHESIZED child block has no on-disk schema (zero writes), so resolve it
+		//     from the in-memory store the real run would have written — else the
+		//     synthesized block is skipped and its deeper nested arrays go undetected.
+		const parentSchema = schemaForBk(bk);
+		if (!parentSchema) continue;
 		const schemaKeys = findNestedIdBearingArrays(parentSchema)
 			.filter((p) => p.split(".").length === 2)
 			.map((p) => p.split(".")[1]);
@@ -956,7 +1020,15 @@ export function canonicalizeSubstrate(
 				delete childBody.content_hash;
 				delete childBody.content_parent;
 				const childOid = appendPromoted(target, childBody);
-				targetItemsLive.push({ id: assignedId, oid: childOid });
+				// Track the assigned id so `nextIdFrom` sees the running set on the NEXT
+				// iteration. Under dryRun `appendPromoted` already pushed the full child body
+				// into the SAME sim array `targetItemsLive` references (itemsFor returns the
+				// live store), so pushing again here would DOUBLE-populate the sim store —
+				// inflating the later backfill's item/hash/object counts and diverging the
+				// dryRun report from the real run. Only the real run needs this stub: there
+				// `appendPromoted` writes to disk and `targetItemsLive` is a throwaway disk
+				// read, so the running set must be tracked here for `nextIdFrom`.
+				if (!dryRun) targetItemsLive.push({ id: assignedId, oid: childOid });
 				const parentOid = parentOidByRef.get(p.parentRef);
 				if (!parentOid) {
 					throw new Error(

@@ -1,0 +1,13 @@
+{
+  "description": "FGAP-026 closure phase 10 LAST (Step 8.7.10; Claude Code Task #30): Migrate this repo's .project/ → user-chosen dir + final FGAP-028 dogfood-dispatch dry-run",
+  "acceptance_criteria": [
+    "context-migrate run with prompt for user's chosen dir",
+    ".project/ → <user-chosen>/ rename atomic with .pi-context.json + config.root update",
+    "arc-tracking blocks move with substrate",
+    "all substrate operations work post-migration via gather-execution-context check",
+    "final dogfood-dispatch dry-run passes (FGAP-028 gate); failures back-loop into arc as gap closures",
+    "FGAP-026 transitions to closed with closed_by = closing commit composition",
+    "Task #11 (Step 9 adversarial audit) unblocked; subsequently Task #12 (Step 10 release)"
+  ],
+  "status": "planned"
+}

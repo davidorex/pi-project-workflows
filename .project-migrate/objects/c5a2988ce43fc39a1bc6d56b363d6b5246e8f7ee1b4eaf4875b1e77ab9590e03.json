@@ -1,0 +1,30 @@
+{
+  "title": "expectedBlockForId treats empty prefix as match-everything — empty-prefix block_kind becomes a catch-all that breaks buildIdIndex invariant",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "expectedBlockForId (project-sdk.ts:670) resolves an item id to its expected block by finding the block_kind whose prefix the id startsWith, longest-prefix-wins. An empty prefix '' matches EVERY id (every string startsWith ''), so a block_kind declaring prefix:'' becomes a catch-all claiming every unprefixed id. buildIdIndex (project-sdk.ts:754) then throws when it encounters a freeform-slug id (e.g. conventions rule 'esm') in its real block: expectedBlockForId returns the empty-prefix block (e.g. requirements) ≠ actual block (conventions) → 'Prefix-vs-block-kind invariant violated' hard throw. Discovered during FGAP-046/060 arc config.json authoring: declaring requirements (empty prefix, zero items) + conventions (freeform-slug ids, empty prefix) in block_kinds[] made requirements a catch-all for conventions' 'esm'/'tsc-build'/'no-pi-dir' ids. Workaround: dropped both empty-prefix blocks from block_kinds. Root: expectedBlockForId should treat empty prefix as 'opt out of prefix-resolution' (return null / never-match), NOT match-all.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/project-sdk.ts",
+      "reference": "expectedBlockForId:670 — `if (id.startsWith(bk.prefix))` with bk.prefix='' matches all ids"
+    },
+    {
+      "file": "packages/pi-context/src/project-sdk.ts",
+      "reference": "buildIdIndex:754-760 — throws on expected!==blockName; empty-prefix catch-all triggers false invariant violation"
+    },
+    {
+      "file": ".project/conventions.json",
+      "reference": "freeform-slug ids esm / tsc-build / no-pi-dir — no prefix scheme; collide with any empty-prefix block"
+    }
+  ],
+  "impact": "Any config.block_kinds[] declaring two or more empty-prefix blocks (or one empty-prefix block alongside a freeform-slug block) hard-throws validateProject / resolveItemById / buildIdIndex. Blocks vocabulary-neutral adoption (DEC-0025) for substrates with freeform-slug-id blocks (conventions-shaped) or prefix-less blocks (project/architecture/domain shaped). Forces dropping such blocks from block_kinds[], leaving them unrepresented (compounds FGAP-061 + FGAP-051).",
+  "canonical_vocabulary": "empty-prefix-catch-all, prefix-resolution-opt-out, freeform-slug-id-block",
+  "proposed_resolution": "expectedBlockForId: skip block_kinds with empty prefix (treat '' as 'no prefix-based resolution declared' → never the expected block; return null when only empty-prefix would match). Add a unit test: freeform-slug id + empty-prefix block in config → expectedBlockForId returns null → buildIdIndex indexes the item under its actual block without throwing. Cross-decision with FGAP-051 (conventions freeform-slug-id) + FGAP-061 (block-shape declaration) — freeform-slug-id blocks may warrant an explicit id_scheme: 'slug' | 'prefixed' declaration in config.block_kinds[] rather than overloading empty-prefix. [CLOSED 2026-05-23 — commit 4fb4d1e / TASK-062 / VER-034: expectedBlockForId skips empty-prefix block_kinds (no catch-all). Empty prefix is legitimate (slug-id blocks e.g. conventions, FGAP-051) — schema unchanged (1.4.0, no minLength; an initial minLength:1 was reverted as it broke the conception). Slug-id blocks are excluded from prefix-based resolution.]",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0025"
+  ],
+  "related_issues": []
+}

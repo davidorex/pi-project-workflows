@@ -1,0 +1,10 @@
+{
+  "title": "Scheduled workflow re-execution — time-based or event-based triggers for the compounding context loop",
+  "body": "Workflows execute once (or resume from checkpoint). The compounding context loop requires re-execution: run workflow → blocks updated by writeback monitor → re-run workflow with richer blocks. Currently the user must manually invoke /workflow run each time. Extension: a schedule field on WorkflowSpec (cron expression or interval) that triggers re-execution. The loop step type (LoopSpec in types.ts:56) already supports maxAttempts and iteration. A scheduled workflow is a loop at a higher level — the workflow itself iterates on a time basis, reading progressively richer blocks each cycle. Implementation could be a schedule step type, a workflow-level cron field, or an external trigger that calls the workflow tool. The executor already handles checkpoint/resume and state persistence to .workflows/runs/. The scheduling layer adds when to re-execute, not how.",
+  "location": "packages/pi-workflows/src/types.ts:3, packages/pi-workflows/src/workflow-executor.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-workflows",
+  "source": "human"
+}

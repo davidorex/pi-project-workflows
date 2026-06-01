@@ -1,0 +1,28 @@
+{
+  "title": "Decision lifecycle has no broadened-by state — superseded enum mis-fits enacted-then-broadened transitions",
+  "status": "identified",
+  "package": "pi-project",
+  "layer": "L1",
+  "description": "The decisions schema declares status enum [open, enacted, superseded] with the description characterizing superseded as withdrawn-without-enactment / not-a-real-decision. This covers open -> superseded cleanly but does not cover enacted -> superseded cleanly when the predecessor was a correct, ratified decision whose scope is later broadened by a successor decision (the case for DEC-0012 superseded by DEC-0013 on 2026-05-07). The schema forces this transition into the same superseded state with no way to distinguish retracted from broadened-by.",
+  "evidence": [
+    {
+      "file": ".project/schemas/decisions.schema.json",
+      "reference": "status enum description"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0006/0007/0010 (open->superseded, fits) vs DEC-0012 (enacted->superseded, semantic stretch)"
+    }
+  ],
+  "impact": "Substrate-level integrity ambiguity: a downstream reading status=superseded cannot distinguish retired-as-never-real from correctly-enacted-then-broadened. Lineage recoverable via supersedes/superseded_by fields but lifecycle vocabulary loses signal. Recurs as pi-context config-driven vocabulary matures (block_kinds, relation_types, status_buckets all evolve via broadening).",
+  "proposed_resolution": "Add a fourth status enum value (extended or broadened) for enacted -> broadened-by-successor. Update description distinguishing superseded (retired without ratification) from extended (correctly enacted, scope broadened by successor, original preserved). Transition rules: superseded reachable from open; extended reachable from enacted. Couples to FGAP-006 (schema versioning).",
+  "canonical_vocabulary": "decision-record lifecycle; supersession vs extension",
+  "related_decisions": [
+    "DEC-0012",
+    "DEC-0013"
+  ],
+  "related_features": [
+    "FEAT-001"
+  ],
+  "priority": "P2"
+}

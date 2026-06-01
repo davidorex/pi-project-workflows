@@ -1,0 +1,28 @@
+{
+  "title": "Lens-of-lenses composition — current LensSpec cannot express cross-block aggregation",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-project",
+  "layer": "L2",
+  "description": "Current LensSpec (packages/pi-project/src/project-context.ts) requires a single string `target` block and a single `relation_type`. There is no shape for a lens that aggregates multiple blocks (issues + decisions + features in one view) or that composes other lenses (a roadmap-shaped aggregation that pulls grouped output from named child lenses). This blocks every roadmap-shape, plan-shape, or any user-facing summary view that needs to span block kinds. The user's stated capability goal — 'LLMs can create roadmaps and plans out of blocks' — cannot be expressed under the current LensSpec without a flat-lens scope reduction (which is mandate-004 violating).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/project-context.ts",
+      "reference": "LensSpec interface declares target: string (single block); relation_type: string (single edge label); no field for composing lenses or pulling from multiple blocks."
+    },
+    {
+      "file": "packages/pi-context/src/lens-view.ts",
+      "reference": "loadLensView reads exactly one block via lens.target; renderLensView emits one heading-per-bin; no codepath for multi-target or lens-id resolution."
+    },
+    {
+      "file": "packages/pi-context/schemas/config.schema.json",
+      "reference": "lenses items require target as string; no kind/composition/targets/members fields. additionalProperties: false rejects any extension."
+    }
+  ],
+  "impact": "Every aggregation that spans block kinds requires either (a) a manual-edit flat lens reducing the user's hierarchical design intent (scope reduction), or (b) hand-written prose substitution for what should be a substrate primitive. Until this gap closes, roadmaps, plans, cross-cutting summary views, status rollups across mixed blocks, and any future lens variant (filter, join, etc.) all stall. Forward concern surfaced by the substrate-arc proposal: introducing kind: 'composition' as the first lens-shape variant means subsequent variants (filter, join) will need a discriminated-union schema if not consolidated; FGAP-012's resolution should specify the discriminator field shape so future variants extend cleanly rather than fork.",
+  "canonical_vocabulary": "lens composition; cross-block aggregation; discriminated-union lens variant",
+  "proposed_resolution": "Extend LensSpec with kind: 'target' | 'composition' (discriminator), targets: string[] (when composition; pulls items from multiple blocks), members: array of either { lens: <id> } (sub-lens reference) or { from: <block>, where: <field-equality> } (flat selection). config.schema.json oneOf-enforces the kind-discriminated union. resolveComposition(cwd, lens) SDK function recurses sub-lens references with cycle detection (composition_cycle_detected diagnostic). loadLensView dispatches on lens.kind. renderLensView emits per-member subsections for composition lenses. validateRelations gains lens-graph cycle detection on relation_type='lens_member'. Closes the substrate-shape gap that the roadmap/plan substrate proposal demands.\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `3625758` (Step 5 lens-view + composition lens dispatch + resolveComposition with cycle detection) — partially closed; 2 residuals filed as FGAP-022 (renderLensView per-member subsections) + FGAP-023 (validateRelations composition cycle detection). LensSpec extended with kind/targets/members; resolveComposition with cycle detection; loadLensView dispatches on lens.kind. Two refinement residuals (renderLensView per-member subsections + validateRelations composition cycle detection) filed as FGAP-022/023 per audit. Description text above preserves the forensic record of the pre-closure state.",
+  "related_decisions": [],
+  "related_features": [],
+  "related_issues": []
+}

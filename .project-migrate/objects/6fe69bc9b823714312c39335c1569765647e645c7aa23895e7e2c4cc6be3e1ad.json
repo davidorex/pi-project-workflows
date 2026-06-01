@@ -1,0 +1,7 @@
+{
+  "title": "Update fragility-classifier.agent.yaml",
+  "status": "todo",
+  "files": [
+    "packages/pi-behavior-monitors/agents/fragility-classifier.agent.yaml"
+  ]
+}

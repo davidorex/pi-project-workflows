@@ -1,0 +1,5 @@
+{
+  "description": "Extension owns its own subprocess dispatch — independent of pi-subagents, no shared state",
+  "enforcement": "review",
+  "severity": "error"
+}

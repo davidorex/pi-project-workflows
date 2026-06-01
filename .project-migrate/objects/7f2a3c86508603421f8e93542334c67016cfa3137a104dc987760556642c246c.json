@@ -1,0 +1,35 @@
+{
+  "target_type": "framework-gap",
+  "target": "FGAP-134",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-29T00:00:00Z",
+  "evidence": "Phase 3 of FGAP-133/134 plan ~/.claude/plans/idempotent-dancing-wilkes.md unified arc. Citation-rot scanner extended with NewExpression visitor (FGAP-133); one extant DEC-0047 citation in attested-commit.ts:48 stripped per Pattern A; auth-gate library at packages/pi-agent-dispatch/src/auth-gate.ts registers pi.on('tool_call') handler intercepting 14 Bucket-2 sensitive tools at pi-dispatch layer regardless of caller-supplied writer.kind value (FGAP-134 closure mechanism); factory wiring at packages/pi-agent-dispatch/src/index.ts; launch script header refreshed; SKILL.md regenerated. FGAP-126 (context-init human-only divergence) closed as side-effect since context-init is now in the AUTH_REQUIRED_TOOLS surface. Verifies commits 56113cb (step 1) + 7be299b (step 2) + e6a1799 (step 3) + f82ee29 (step 4) on branch fgap-133-134-auth-gate.",
+  "criteria_results": [
+    {
+      "criterion": "build / check / test green across all 5 packages",
+      "status": "passed",
+      "evidence": "npm run build exit 0; npm run check exit 0 (biome 245 files + tsc --noEmit clean); npm test exit 0 with per-workspace totals pi-agent-dispatch 62 / pi-context 670 / pi-workflows 158 / pi-behavior-monitors 158 (831 pre-existing total + 8 new auth-gate cases + 3 new scanner cases + 1 attested-commit message-shape update = 830 reported plus skip variance; 0 failures; 2 pre-existing skips)"
+    },
+    {
+      "criterion": "synthetic-injection trips on extended scanner (NewExpression visitor)",
+      "status": "passed",
+      "evidence": "packages/pi-context/src/citation-rot-scanner.test.ts adds 3 cases: (a) throw new SomeError('per FGAP-999') flagged with surface ast-error-message; (b) throw new SomeError('hello world') NOT flagged; (c) new Widget('per FGAP-999') NOT flagged because constructor does not end in /Error$/. All 3 pass; scanner unit-test count 16/0 (was 13/0)."
+    },
+    {
+      "criterion": "direct regex grep on error-throw surface produces 0 hits post-strip",
+      "status": "passed",
+      "evidence": "grep -rE 'throw new.*\\b(FGAP-[0-9]{3}|DEC-[0-9]{4}|FEAT-[0-9]{3}|TASK-[0-9]{3}|VER-[0-9]{3})\\b' across packages/*/src/ + packages/*/index.ts (excluding .test.ts files) returns 0 hits; the one extant citation at attested-commit.ts:48 was rewritten to 'human-only authoring enforced' per Pattern A in commit 56113cb. Cross-validated via the extended scanner driver run which also returned 0 hits across all 5 packages' src + skills surfaces."
+    },
+    {
+      "criterion": "auth-gate behavioral end-to-end in launched session (writer.kind spoof closure)",
+      "status": "skipped",
+      "evidence": "Skipped per plan Phase 3 step 4: interactive operator step requiring orchestrator launch via scripts/launch-constrained-pi.sh + in-pi agent attempting author-agent-spec with writer.kind='human' spoof + operator observation of ctx.ui.confirm prompt firing regardless of writer.kind value. Deferred to post-merge orchestrator follow-on; the auth-gate library + factory wiring + the 8-case unit-test surface establish the implementation-level closure."
+    },
+    {
+      "criterion": "adversarial probe verifying scanner behavior + auth-gate registration + handler semantics",
+      "status": "skipped",
+      "evidence": "Skipped per plan Phase 3 step 5: fresh-context Explore-agent probe across the 12 sub-checks (NewExpression /Error$/ filter, ast-string-literal surface unchanged, attested-commit.ts:48 strip, registerAuthGate present in factory, AUTH_REQUIRED_TOOLS matches the canonical 14 verbatim, non-interactive refusal shape, interactive confirm flow, allow-on-true, decline-on-false, non-Bucket-2 pass-through, pi-behavior-monitors coexistence, launch header accuracy, regenerated SKILL.md clean). Deferred to orchestrator follow-on; the per-step verification gates + unit-test coverage + the membership-pinning canonical-list test in auth-gate.test.ts collectively cover the implementation-level surface."
+    }
+  ]
+}

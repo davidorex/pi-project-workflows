@@ -1,0 +1,55 @@
+{
+  "title": "Sixth block of the substrate contract",
+  "status": "superseded",
+  "context": "The user's framing names the substrate contract as 'six discrete blocks.' Five enumerated against POC v2 evidence (config, partitions, lenses, closure-table relations, per-item macros). The sixth block of the contract is unresolved. Pre-heuristic candidates from the conversation were schemas-as-substrate, hierarchies-as-distinct-block, or macros split into registry + emitter. The heuristic-widening pass (mandates + monitors as in-scope typed contexts under one heuristic) narrows preferred candidates to two: prompt-composition contract OR scopes (user / project / agent). Implementation cannot proceed with contract enumeration until this resolves.",
+  "decision": "Decision pending. Two heuristic-aligned candidates compete; three pre-heuristic candidates retained for completeness but not preferred. Resolution updates §1.1 + §2 of analysis/2026-05-03-substrate-arc-frame.md and gates downstream block-enumeration.",
+  "options_considered": [
+    {
+      "label": "Prompt-composition contract",
+      "description": "The rules governing how typed contexts compose into prompts: order, deduplication, override, applicability evaluation, token-budget allocation across mandates + lens views + raw blocks + monitor outputs. Made central by the heuristic-widening; was implicit in the integration map.",
+      "tradeoffs": "Heuristic-aligned; central API surface for the unified frame. Couples sixth-block to gap #34 (composition contract)."
+    },
+    {
+      "label": "Scopes (user / project / agent)",
+      "description": "Layered anchors with composition rules across scopes. Mandates live at user scope; project blocks at project scope; agent overrides at agent scope. Composition resolves layered. Foundational for scope-layering decision DEC-0010.",
+      "tradeoffs": "Heuristic-aligned; couples sixth-block to gap #37 (scope layering). Selection here cascades into discovery-anchor mechanics."
+    },
+    {
+      "label": "Schemas-as-substrate (pre-heuristic)",
+      "description": "Every schema is itself a block, the meta-meta layer. Pre-heuristic candidate from POC v2 evaluation.",
+      "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+    },
+    {
+      "label": "Hierarchies-as-distinct-block (pre-heuristic)",
+      "description": "Hierarchy declarations elevate from a config field to their own typed block. Pre-heuristic candidate.",
+      "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+    },
+    {
+      "label": "Macros-split (pre-heuristic)",
+      "description": "Per-item macros + a separate cluster/whole-block render layer as separate blocks.",
+      "tradeoffs": "Not preferred under heuristic-widening; surfaced for completeness."
+    }
+  ],
+  "consequences": [
+    "Superseded: off-by-one re-count of the substrate contract. Original framing claimed six discrete blocks while enumerating five (config + partitions + lenses + closure-table relations + per-item macros). On reflection no sixth block exists; the contract is five blocks. Filed under proliferation pressure during the heuristic-widening pass; retired without enactment."
+  ],
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_gaps": [
+    "FGAP-001",
+    "FGAP-002",
+    "FGAP-003",
+    "FGAP-006"
+  ],
+  "references": [
+    {
+      "label": "frame doc §1.1 + §2",
+      "path": "analysis/2026-05-03-substrate-arc-frame.md"
+    },
+    {
+      "label": "POC v2 contract enumeration",
+      "path": "analysis/poc-degree-zero-lens/README.md"
+    }
+  ]
+}

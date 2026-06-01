@@ -1,0 +1,11 @@
+{
+  "title": "Monitor classify calls reinvent agent infrastructure — should use agent specs for LLM call contracts",
+  "body": "Monitor classify calls hand-roll template rendering, context injection, model resolution, and output parsing that the agent spec system already provides declaratively. Monitors have their own createMonitorTemplateEnv(), collectors parallel contextBlocks, parseVerdict() hand-parses what output.schema validates, and parseModelSpec() reimplements model registry resolution. A monitor's classify call IS an agent call — structured input, prompt template, model, structured output. Direction: monitors declare classify.agent referencing a .agent.yaml that defines the LLM call contract, executed in-process via direct complete() rather than subprocess dispatch. One spec format for all LLM calls, monitor-specific concerns (collectors, patterns, actions, ceiling) stay in .monitor.json, verdict format becomes output.schema with enum validation. Eliminates issue-024 (thinking block extraction) as a side effect since agent output pipeline already handles it. The agent spec parser and template compiler are the only pieces needed from pi-workflows — they could live in pi-project or a small shared package without moving the entire workflow engine. Rejected alternative: extracting shared infrastructure from pi-workflows into pi-project is unbounded refactoring that defers the design question behind a prerequisite wall.",
+  "location": "packages/pi-behavior-monitors/index.ts:1150",
+  "status": "resolved",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-behavior-monitors",
+  "source": "human",
+  "resolved_by": "classifyViaAgent() uses createAgentLoader + compileAgentSpec + in-process complete(). Per-monitor .agent.yaml specs define model, thinking, output schema, task template. Classify templates gain {% if json_output %} conditional. mapVerdictToClassifyResult() replaces text parsing. Legacy path preserved for monitors without classify.agent."
+}

@@ -1,0 +1,59 @@
+{
+  "title": "Research blocks — shape, functionality, and placement design",
+  "status": "complete",
+  "layer": "L2",
+  "type": "investigative",
+  "question": "What shape should a .project/research.json block take to capture the factual and analytical substrate under decisions — covering lifecycle, grounding, staleness, citations, cross-layer traceability, and prompt composability?",
+  "method": "code-inspection",
+  "scope": [
+    "analysis/ directory (7 existing markdown research artifacts)",
+    ".project/domain.json schema (partial L1 coverage)",
+    "spec-reviews.schema.json evidence arrays (micro-citations)",
+    "framework-gaps.schema.json evidence arrays",
+    "Muni five-layer model as reference frame"
+  ],
+  "findings_summary": "Research is the factual and analytical substrate under decisions — distinct from specification (what we chose), findings (problems discovered), feedback memory (distilled rules), and domain knowledge (stable glossary). Research runs across all five Muni layers with different cadence per layer: L1 (project-lifetime, stable), L2 (per-design-cycle), L3 (per-feature), L4 (per-task, ephemeral), L5 (post-incident, accumulator).\n\nDesigned shape: flat .project/research.json collection with per-entry layer tag and type tag (investigative, comparative, empirical, historical, audit, landscape, feasibility, curation). Each entry carries: question, method, scope, findings_summary (300–800 words, self-contained, prompt-injectable), findings_document (path to full markdown), grounding (version-pinned dependencies, git revisions, dated external refs), stale_conditions (explicit invalidation triggers), citations (labeled source pointers with file+line or URL+retrieval-time), and informs/informed_by edges for cross-artifact traceability.\n\nPlacement decision: one flat collection with cross-references, NOT research embedded inside decisions or features. Rationale: some research informs multiple artifacts (R-0001 informs DEC-0001 AND DEC-0003); research has its own lifecycle orthogonal to what it informs; research must be queryable across layers. Back-reference convention: every artifact that cites research carries a research_sources array.\n\nLifecycle: planned → in-progress → complete → (stale | superseded), with revised as transient re-investigation state. User-gated: stale → in-progress requires user authority when cited by an enacted decision. Surfaced new framework gap FGAP-007 (staleness engine): no runtime to automatically fire stale_conditions against current state.",
+  "findings_document": "analysis/research-blocks-design.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "pi-project-workflows repo state including analysis/ directory as of 2026-04-15"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-15T00:00:00Z",
+  "stale_conditions": [
+    "research.schema.json enacted with different shape than proposed here",
+    "Muni five-layer model revised or abandoned as reference frame",
+    "Block placement decision reversed (embedded research instead of flat collection)"
+  ],
+  "citations": [
+    {
+      "label": "analysis/ directory — 7 existing unstructured markdown research artifacts",
+      "path": "analysis/"
+    },
+    {
+      "label": "domain.json schema description mentioning research findings",
+      "path": ".project/schemas/domain.schema.json"
+    },
+    {
+      "label": "spec-reviews.schema.json evidence arrays as micro-citations",
+      "path": ".project/schemas/spec-reviews.schema.json"
+    }
+  ],
+  "informs": [
+    "issue-061"
+  ],
+  "informed_by": [
+    "R-0002"
+  ],
+  "related_research": [
+    "R-0005",
+    "R-0006"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-15T00:00:00Z"
+}

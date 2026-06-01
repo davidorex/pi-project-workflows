@@ -1,0 +1,32 @@
+{
+  "title": "End-to-end constrained-orchestrator -> spec-block -> privileged-agent -> real-check-validated -> attested-commit code-change loop (north-star)",
+  "status": "complete",
+  "layer": "L1",
+  "description": "The ideal state (user-articulated 2026-05-25): a tools-only constrained in-pi orchestrator (DEC-0014, NO code/bash perms) authors a typed work-order/spec BLOCK via the substrate write tools; dispatches a privileged JIT-agent (spec-implementer-class: file write/edit + exactly-scoped command perms) that consumes the spec via contextBlocks; the agent makes ACTUAL source edits; the change is validated by an REAL DETERMINISTIC CHECKS (build/check/test exit code + runtime-demo + adversarial-against-artifacts per DEC-0018 — NOT LLM-self-report, FGAP-102); and the validated change is committed with DispatchContext agent-authorship attestation through husky. Net: a constrained agent can cause VALIDATED code changes through a privileged, governed, real-check-validated delegate without ever holding raw code-write or bash itself. Most of the mechanism already ships (self-implement.workflow.yaml skeleton + spec-implementer agent + contextBlocks injection + command/gate primitives); what remains is the ASSEMBLY, the real-check validation tail (FGAP-102), the capability scoping/clamp (FEAT-005 + FGAP-099), the dispatch-as-tool surface (FEAT-004), and the constitutional governance (DEC-0047). Includes defining the orchestrator-authored executable work-order block kind + its contextBlocks handoff (the spec-block-as-implementation-prompt; specs are self-contained coding prompts) — today the loop passes specs as transient workflow input, not a persisted orchestrator-authored block.",
+  "motivation": "This is the capstone of DEC-0014 (harness-confined tools-only main thread) and the agents-as-tools arc — the purpose the whole substrate->dispatch->validate->commit machine composes toward. It is what lets an in-pi agent safely change code: authority is config-granted and scoped (never ambient), execution is delegated to a privileged agent, and acceptance is gated by an real deterministic checks, not an LLM's opinion.",
+  "acceptance_criteria": [
+    "Constrained in-pi orchestrator (no bash/file perms) authors a typed work-order/spec block via substrate write tools",
+    "Privileged JIT-agent dispatched as a typed call (FEAT-004) with exactly-scoped capabilities composed from empty (FEAT-005) and clamped to its declared grant (FGAP-099)",
+    "Agent consumes the spec via contextBlocks and makes real source edits",
+    "Acceptance gated by an REAL DETERMINISTIC CHECKS: build+check+test exit code + a runtime-demonstration of the actual path + an adversarial check against external artifacts (DEC-0018 / FGAP-102) — never an LLM-verdict gate",
+    "On real-check-fail, the real compiler/test errors feed back for another implement pass (fix root cause, never bypass)",
+    "On real-check-pass, the change is committed through husky with DispatchContext agent-authorship attestation",
+    "The whole loop is invocable by the constrained in-pi orchestrator and governed by the DEC-0047 constitutional gate (capability human-ratified, never self-granted)"
+  ],
+  "dependencies": [
+    "FEAT-004",
+    "FEAT-005",
+    "FGAP-099",
+    "FGAP-102"
+  ],
+  "gates": [
+    "DEC-0044",
+    "DEC-0047"
+  ],
+  "decisions": [
+    "DEC-0014",
+    "DEC-0018",
+    "DEC-0047"
+  ],
+  "findings": []
+}

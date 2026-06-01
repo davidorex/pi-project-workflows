@@ -1,0 +1,54 @@
+{
+  "title": "ID-prefix casing convention — uppercase vs lowercase across block kinds",
+  "status": "enacted",
+  "context": "Single drift surfaced in 2026-05-14 substrate inspection: issue- (issues block) uses lowercase prefix while DEC- / FGAP- / TASK- / VER- / FEAT- / PLAN- / REVIEW- / CTX- / RAT- all use uppercase. issue- has 91 items (issue-001..091) — largest single-block id population. No technical force for either; visual + grep + cross-reference shape uniformity is the consideration. Issue ids appear in commit messages, analysis MDs, FGAP related_issues fields — every citation site cascades on this decision.",
+  "decision": "Uppercase prefix is canonical across ALL block kinds. The single outlier — issue- (issues block, lowercase, 91 items) — migrates forward to ISSUE-. Direction follows by asymmetry: 12+ uppercase prefixes (DEC-, FGAP-, TASK-, VER-, FEAT-, PLAN-, REVIEW-, CTX-, RAT-, REC-, STORY-, REQ-, R-) versus 1 lowercase (issue-); migrating 1 to match 12+ is the obvious move, not the other direction. Per-block-declared casing (option 3) is rejected as 'accept the drift' — it is non-canonicalization. Lowercase-canonical is rejected by the same asymmetry.",
+  "consequences": [
+    "Cross-block id parsing assumes uniform casing post-canonicalization.",
+    "Citations across analysis + commits + FGAP related_issues all settle on chosen casing.",
+    "If migration required, 91 issue items + every reference site needs sweep."
+  ],
+  "options_considered": [
+    {
+      "label": "Uppercase canonical + migrate issue- → ISSUE-",
+      "description": "Renumber 91 issues; every related_issues citation in FGAPs + analysis + commit references migrates. Uniform with all other block prefixes.",
+      "tradeoffs": "Largest renumber sweep in substrate so far; rg-grep across analysis + .project + commit messages + relations.json (when populated)."
+    },
+    {
+      "label": "Lowercase canonical + migrate all uppercase prefixes",
+      "description": "Inverse migration. Massive churn across DEC- (25) + FGAP- (59) + TASK- (42) + VER- (15) + others.",
+      "tradeoffs": "Inverted-uniformity at far higher cost."
+    },
+    {
+      "label": "Per-block declared casing in config.block_kinds[].prefix preserves drift",
+      "description": "config.block_kinds[].prefix already carries the literal prefix string (e.g. 'issue-' vs 'DEC-'); no migration; framework respects per declaration.",
+      "tradeoffs": "Persistent visual inconsistency; LLM cross-block id-shape parsing must consult config not assume."
+    }
+  ],
+  "references": [
+    {
+      "label": "Drift surfaced in step-1 config draft",
+      "path": "analysis/2026-05-14-step-1-config-draft-from-substrate.md"
+    },
+    {
+      "label": "FGAP-048 forcing artifact",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "issues.json with 91 issue- prefixed items",
+      "path": ".project/issues.json"
+    },
+    {
+      "label": "DEC-0027 enactment (uppercase canonical, migrate issue- → ISSUE-)",
+      "commit": "a20a1c7"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-047",
+    "FGAP-048"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-26"
+}

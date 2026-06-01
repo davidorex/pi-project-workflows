@@ -1,0 +1,185 @@
+{
+  "feature-story": [
+    {
+      "id": "FSTORY-001",
+      "title": "Resolve model-pin policy and apply at pi-jit-agents",
+      "status": "proposed",
+      "description": "Apply the DEC-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary. Remove the anthropic-default pin from the current parseModelSpec implementation in pi-behavior-monitors.",
+      "acceptance_criteria": [
+        "A bare model id in an agent spec resolves against the current session's provider via ExtensionContext lookup, not a hardcoded default",
+        "If ExtensionContext cannot supply currentModel, dispatch errors with a clear message naming the missing binding",
+        "Fully-qualified provider/model specs continue to pin explicitly",
+        "Unit tests cover: bare-id + session-with-model, bare-id + session-without-model (error), fully-qualified-id (pinned)"
+      ],
+      "depends_on": [],
+      "gates": [
+        "DEC-0001"
+      ],
+      "oid": "6250dd3b972e4771be604c20d80492b4",
+      "content_hash": "c7bce1044b54cb358bb7d9c88bdf70ebaf8f08e38617dbb913e9da261f204b5a",
+      "content_parent": "620d7ba45bbcbd680e438f77fa14601e59a6c64e14f2521c50fbc3218b9125e4"
+    },
+    {
+      "id": "FSTORY-002",
+      "title": "Apply thinking-seam enforcement in pi-jit-agents",
+      "status": "proposed",
+      "description": "Apply the DEC-0002 decision: executeAgent enforces thinking=off when forced toolChoice is present, emits a warning naming the agent and the incompatibility.",
+      "acceptance_criteria": [
+        "executeAgent inspects dispatch options for forced toolChoice",
+        "When forced toolChoice is present and compiled spec declares thinking: on, thinking is disabled and a warning is emitted via a structured diagnostic channel",
+        "Non-forced dispatches continue to honor the spec's thinking field",
+        "Unit test covers: forced-toolChoice + thinking:on (warning + thinking off), forced-toolChoice + thinking:off (no warning), free-form + thinking:on (thinking forwarded)"
+      ],
+      "depends_on": [
+        "STORY-001"
+      ],
+      "gates": [
+        "DEC-0002"
+      ],
+      "oid": "ac6a92c57df7434128c093662f894fdb",
+      "content_hash": "758d7c339e92499bcdda17f021435caadf03f8d71bbbf41b8d4a8f61fc9618b9",
+      "content_parent": "3987edad1311b3084e09185ddb4e6a8630fc1c46c7eeeff200033fcec443a444"
+    },
+    {
+      "id": "FSTORY-003",
+      "title": "Move parseModelSpec to pi-jit-agents",
+      "status": "proposed",
+      "description": "Execute the DEC-0003 decision: move parseModelSpec (or its renamed successor) from pi-behavior-monitors/index.ts into pi-jit-agents at the execute boundary. Remove the duplicate from the consumer. Update the classifyViaAgent call site to use the new location.",
+      "acceptance_criteria": [
+        "parseModelSpec exported from pi-jit-agents at a named subpath (e.g. @davidorex/pi-jit-agents/runtime)",
+        "packages/pi-behavior-monitors/index.ts:1091-1097 removed",
+        "classifyViaAgent imports and uses the pi-jit-agents version",
+        "No anthropic-default fallback anywhere in the codebase for bare model ids",
+        "Unit tests from STORY-001 continue to pass"
+      ],
+      "depends_on": [
+        "STORY-001"
+      ],
+      "gates": [
+        "DEC-0003"
+      ],
+      "oid": "c1a2e8395ab65ea8cf6c056ad3ac4c46",
+      "content_hash": "b6dfb4bbfd633c73d99102242721d242a9f38eaaf80719ef5bdfc3107a6ef6e2",
+      "content_parent": "821b89e5fae118ddee96975bf528ee2dafe2245ec946f0d2f160842b63526398"
+    },
+    {
+      "id": "FSTORY-004",
+      "title": "Migrate pi-workflows agent infrastructure to pi-jit-agents",
+      "status": "proposed",
+      "description": "Replace pi-workflows' local copies of agent-spec.ts, template.ts, and step-shared.ts agent helpers with imports from pi-jit-agents. Consumer call sites (step-agent.ts, dispatch.ts) delegate to executeAgent.",
+      "acceptance_criteria": [
+        "packages/pi-workflows/src/agent-spec.ts either removed or reduced to a re-export from pi-jit-agents",
+        "packages/pi-workflows/src/template.ts equivalently reduced",
+        "packages/pi-workflows/src/step-shared.ts' agent-helper portions migrated; any non-agent helpers remain",
+        "Workflow agent steps execute end-to-end through pi-jit-agents executeAgent",
+        "Existing tsx --test suite for pi-workflows passes",
+        "No circular dependency introduced between pi-workflows and pi-jit-agents"
+      ],
+      "depends_on": [
+        "STORY-003"
+      ],
+      "gates": [],
+      "oid": "6f54963c195276920cded0601c572e18",
+      "content_hash": "c23929c323ebdab39da00bb5e3d99293d7df86a33a7291c1fcc697811c0684bf",
+      "content_parent": "13a757e3d1423f6a953d3dcaa41ef8b4ab005b4cfdbd6831677a50877b9869ca"
+    },
+    {
+      "id": "FSTORY-005",
+      "title": "Migrate pi-behavior-monitors classifyViaAgent to pi-jit-agents",
+      "status": "proposed",
+      "description": "Rewrite classifyViaAgent to delegate fully to pi-jit-agents executeAgent. Remove local imports of pi-workflows agent helpers (issue-043 duplication) and local agent-spec/template code that pi-jit-agents now owns.",
+      "acceptance_criteria": [
+        "classifyViaAgent contains no agent-spec parsing, no template rendering, no parseModelSpec — only collector wiring, template-context assembly, and a call to pi-jit-agents executeAgent",
+        "pi-behavior-monitors no longer imports anything from pi-workflows",
+        "pi-behavior-monitors package.json lists @davidorex/pi-jit-agents as a direct dependency, not pi-workflows",
+        "Existing vitest suite for pi-behavior-monitors passes"
+      ],
+      "depends_on": [
+        "STORY-003"
+      ],
+      "gates": [],
+      "oid": "f510339e894e9696c376d53ff27e18cd",
+      "content_hash": "5a9c2adce172bd88e981ba9ca89847293db77b2753745a4b8be10dd1a09174b3",
+      "content_parent": "7e1f7a3372af1467b02d7f9d327944d07e4c2b4b5a03ed0a9bebd4e091feb794"
+    },
+    {
+      "id": "FSTORY-006",
+      "title": "Align bundled classifier YAMLs with decided policies",
+      "status": "proposed",
+      "description": "Update all five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) to conform to the DEC-0001 model-field semantics and DEC-0002 thinking-seam policy.",
+      "acceptance_criteria": [
+        "Every bundled classifier YAML's model field is consistent with DEC-0001 — either a bare id that resolves via ExtensionContext, or a fully-qualified provider/model, depending on the final decision",
+        "Every bundled classifier YAML's thinking field is set to off (or removed if the default is off) per DEC-0002",
+        "No YAML contains dead config that the classify path silently ignores"
+      ],
+      "depends_on": [
+        "STORY-001",
+        "STORY-002"
+      ],
+      "gates": [
+        "DEC-0001",
+        "DEC-0002"
+      ],
+      "oid": "be8e31bc35f6f981b64710a0aa6c6096",
+      "content_hash": "6c3492a10077e65b108f2c0cc955db24984a3f7b90dd2e0ad4cd855e1464e402",
+      "content_parent": "4c5d170b93894923793fce2f18692c17c7b937ea25a8a833554efde7bc4f7d77"
+    },
+    {
+      "id": "FSTORY-007",
+      "title": "Remove duplicate schema copies per issue-043",
+      "status": "proposed",
+      "description": "Consolidate duplicate copies of verdict.schema.json and any other schema fragments that pi-workflows, pi-behavior-monitors, and pi-jit-agents currently carry independently. Canonical owner is pi-jit-agents; consumers import.",
+      "acceptance_criteria": [
+        "verdict.schema.json exists only in pi-jit-agents",
+        "Any other schema fragments duplicated across consumers are consolidated to their correct owner package",
+        "Consumers import schemas via the owner package's subpath exports",
+        "Issue 043 closes"
+      ],
+      "depends_on": [
+        "STORY-004",
+        "STORY-005"
+      ],
+      "gates": [],
+      "oid": "be3b75becb010d5568d6f756e1cd31f0",
+      "content_hash": "4c66402d2212834398b5cd415d6655dc2dd9646b17fa1c7713fa4533b4b9c98f",
+      "content_parent": "89c5474dd7dc1ec05df32af74a1739ef91a47f4caf995001894df77596e5036a"
+    },
+    {
+      "id": "FSTORY-008",
+      "title": "Empirical verification against OpenRouter and Kimi",
+      "status": "proposed",
+      "description": "Run the hedge monitor against an OpenRouter-routed Claude model (openrouter/anthropic/claude-sonnet-4.6) and against at least one Kimi model to verify that forced toolChoice works end-to-end through the openai-completions path. This is the §7/§9 caveat from analysis/openrouter-pi-mono-setup.md — plausibly works but not documented. If it fails, surface as a blocking finding for user decision.",
+      "acceptance_criteria": [
+        "hedge monitor classify returns a VERDICT_TOOL tool call from openrouter/anthropic/claude-sonnet-4.6",
+        "hedge monitor classify returns a VERDICT_TOOL tool call from at least one Kimi model (openrouter/moonshotai/Kimi-K2-Thinking or kimi-coding/kimi-k2-thinking)",
+        "If either verification fails, a new finding is created in spec-reviews.json or as a defect in this feature's findings array, and the arc pauses for user decision"
+      ],
+      "depends_on": [
+        "STORY-005",
+        "STORY-006"
+      ],
+      "gates": [],
+      "oid": "53ea2d06b10db54e9f88efd26f501974",
+      "content_hash": "39703ef22244806ec87d97f56dcedcea17bc6c3d5bd3cfcc453c83f69224ad48",
+      "content_parent": "f6bb4483af66030448dd5f7c2132635f1ab8bc22d7ea96a076701d34c9486d7c"
+    },
+    {
+      "id": "FSTORY-009",
+      "title": "Close or migrate resolved issues",
+      "status": "proposed",
+      "description": "Update or migrate issues 043, 045, 048, 049, 050 in issues.json to reflect their closure by this arc. Each issue either marks resolved with a reference to the relevant STORY/TASK, or migrates to a scope-owned finding registry per the PHASE-6 retroactive migration.",
+      "acceptance_criteria": [
+        "issues 043, 045, 048, 049, 050 each have status resolved (or have been migrated to a scope-owned registry with the same terminal state)",
+        "Each resolved issue has resolved_by pointing to the commit or feature that closed it"
+      ],
+      "depends_on": [
+        "STORY-007",
+        "STORY-008"
+      ],
+      "gates": [],
+      "oid": "e100cff54461f7748f40c05e79de069a",
+      "content_hash": "70427a15ff1447197cd3a88e281fd2eeef13b62d4c16875e2c6b17dedd052a20",
+      "content_parent": "ccab8dbbdb2f58e184d954f0bb1a32f14d68deaac7ddf60a209d95cc5c8c1ffe"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "title": "pi-workflows parallel step creates all sub-steps eagerly at parse; Claude Code parallel(thunks) defers execution until each thunk is invoked allowing conditional branching where some thunks never run; pi cannot express conditional-fan-out without per-sub-step 'when' fields",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 2: Claude Code workflows' parallel(thunks: Array<() => Promise<T>>) takes lazy thunks; some thunks may never execute based on prior-stage results. pi-workflows parallel step declares all sub-steps upfront in the YAML spec; all are created eagerly (even unreachable ones via gate breaks). Operators wanting conditional fan-out (e.g., 'run fast-path or thorough-path based on input.mode') must hand-build with gate routing rather than declaring naturally.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "284-317",
+      "reference": "Part 3 axis 2 — parallel() with Thunks vs parallel Step Type — INSPIRE verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/step-parallel.ts",
+      "reference": "parallel sub-step eager declaration; no per-sub-step conditional"
+    }
+  ],
+  "impact": "Operators expressing conditional fan-out patterns add complexity via gate steps + multiple parallel blocks. Simple lazy-thunk semantics from Claude Code workflows are inexpressible at the spec level. Spec becomes verbose for what should be a single 'parallel + when' construct.",
+  "canonical_vocabulary": "thunk-parallel; lazy sub-step evaluation; conditional fan-out; per-sub-step 'when' field",
+  "proposed_resolution": "Add 'when: <expression>' field to parallel sub-step definitions. Executor evaluates each sub-step's 'when' before dispatch; skips false-when sub-steps without creating their subprocess. Alternative: new 'thunk-parallel' step type that takes an array of step definitions each with optional 'when'. Simpler addition: extend existing parallel sub-step grammar with optional 'when' — matches the 'when' surface already used at top-level step + on transform/gate/loop steps.",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

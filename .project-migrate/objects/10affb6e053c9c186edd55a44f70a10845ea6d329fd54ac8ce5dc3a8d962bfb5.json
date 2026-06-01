@@ -1,0 +1,29 @@
+{
+  "title": "No-optional registries — absence = degenerate default (layers empty = 1 implicit layer)",
+  "status": "enacted",
+  "context": "The unit-2.2 onboarding articulation (2026-05-20) surfaced that treating substrate registries as optional yes/no choices branches both the elicitation flow and the runtime semantics. Layers in particular is resolved INTO (block_kinds[].layer is an FK), so it cannot be genuinely absent without breaking layer grouping.",
+  "decision": "Substrate registries are never optional choices. Each has a canonical empty-state: layers empty = ONE implicit layer that all block kinds belong to — the single legitimate degenerate default, because block_kinds[].layer must resolve. All other registries empty = genuine none (relation_types / lenses / invariants / hierarchy / naming): empty is a valid state meaning none, with no invented value. Onboarding presents defaults and lets the user elaborate; it never poses optionality (yes/no) gates. status_buckets currently carries a hardcoded default vocabulary — that is a separate DEC-0025 smell (FGAP-069), NOT a sanctioned degenerate default.",
+  "consequences": [
+    "Layers consumption (FGAP-052) implements no-layers = 1-implicit-layer; until then layers is inert.",
+    "Config optional-markers are read as defaulted-semantics, not absent: only layers gets an implicit value; the rest are empty-tolerant arrays.",
+    "Onboarding elicitation is flat (present-default-or-elaborate per registry), not a yes/no decision tree.",
+    "status_buckets source-shipped default vocabulary is reclassified as a smell to fix (FGAP-069), not a blessed degenerate default."
+  ],
+  "options_considered": [
+    {
+      "label": "No-optional + degenerate default (chosen)",
+      "description": "Every registry always has a value; absence is a canonical empty-state (layers=1 implicit layer; others=none).",
+      "tradeoffs": "Requires defining the empty-state semantic per registry (trivial for all but layers)."
+    },
+    {
+      "label": "Optional registries with yes/no gates",
+      "description": "Onboarding asks do you want layers/lenses/etc.; absent means the feature is off.",
+      "rejected_reason": "Branches flow + semantics; layers cannot be truly absent (FK resolves into it); user rejected optional framing."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-052"
+  ],
+  "related_findings": [],
+  "related_features": []
+}

@@ -1,0 +1,34 @@
+{
+  "title": "launch-chain documentation drift — launch script header says 'three extensions' (post-DEC-0044 there are 4); META README lists 3 + library (omits pi-agent-dispatch); no canonical-anchor citations in launch script; no docs/launching-the-orchestrator.md orientation doc",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-project-workflows",
+  "layer": "L5",
+  "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gaps 10+11+12+15 MEDIUM + F.2) empirically established: (1) scripts/launch-constrained-pi.sh:2-12 header describes 'three extensions' + 'all three'; stale post-FEAT-010 (4 extensions now). (2) packages/pi-project-workflows/README.md:6 reads 'Convenience meta-package that re-exports three Pi extensions plus a shared agent-runtime library' — pre-pi-agent-dispatch framing; lists 4 constituent packages (3 extensions + jit-agents library) without pi-agent-dispatch. (3) launch script body cites no canonical anchors (DEC-0014/0044/0047/FEAT-006) — operator has no in-script orientation to the harness intention. (4) No docs/launching-the-orchestrator.md or equivalent orientation doc exists; F-006 mitigation surface absent. (5) Launch script's pi install -l step 1 writes/mutates the target dir's .pi/ settings; feedback_no_touch_pi_dir applies but the .pi/-touching behavior isn't in-script-documented as required-by-design vs avoidable. Net: documentation drift accumulated since FEAT-010 + the existing pre-pi-agent-dispatch framings never updated to absorb the new extension.",
+  "evidence": [
+    {
+      "file": "scripts/launch-constrained-pi.sh",
+      "reference": "lines 2-12 header — 'three extensions' / 'all three'"
+    },
+    {
+      "file": "packages/pi-project-workflows/README.md",
+      "reference": "line 6 'three Pi extensions plus a shared agent-runtime library'"
+    },
+    {
+      "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+      "reference": "Audit commit 945dc93 Dimension E + gaps 10/11/12/15 MEDIUM + F.2"
+    }
+  ],
+  "impact": "Operator orientation degraded. Fresh-context operators reading the launch-script header + META README form a 3-extension mental model; the 5th tool surface they'd expect from FEAT-010 is unexplained. No canonical-anchor citations means operator cannot trace harness intention back to canon for context.",
+  "canonical_vocabulary": "extension-count-stale / canonical-anchor-citations-absent / orientation-doc-missing / .pi-touching-undocumented",
+  "proposed_resolution": "Addressed as part of FEAT-011 cascade (launch-chain integration): (a) update scripts/launch-constrained-pi.sh header to reference 4 extensions + cite DEC-0014/0044/0047/FEAT-006 anchors; (b) update packages/pi-project-workflows/README.md to absorb pi-agent-dispatch; (c) author docs/launching-the-orchestrator.md (gitignored per docs/ rule but tracked-as-non-substrate is fine) covering: prerequisites, the .pi/-touching behavior, FEAT-006 loop topology, FEAT-010 composite vocabulary author cadence; (d) launch script in-script comment naming the .pi/-touching as required-by-design (cites the pi install mechanism). Closes via documentation passes; no canon evolution. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
+  "related_features": [
+    "FEAT-011",
+    "FEAT-006"
+  ],
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0044",
+    "DEC-0047"
+  ]
+}

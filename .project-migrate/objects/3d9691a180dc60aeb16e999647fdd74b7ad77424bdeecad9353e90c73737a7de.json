@@ -1,0 +1,10 @@
+{
+  "title": "Directory-watching monitor — general filesystem observation primitive for skill discovery, dependency drift, external artifact arrival",
+  "body": "gsd-2's skill discovery (skill-discovery.ts) snapshots a directory at session start, detects new files by comparing against the snapshot, and injects newly discovered content into agent prompts. This pattern generalizes: any directory that may gain new files during execution (skills, dependencies, external artifacts, config changes) should be observable via a monitor. In our framework this is a directory-watching monitor that periodically scans a configured path, detects additions/changes, writes findings to a .project/ block, and triggers contextBlocks injection into subsequent agents. The general primitive enables: skill discovery (watch ~/.claude/skills/), dependency drift detection (watch node_modules/ or lock files), external artifact arrival (watch a drop directory), config change propagation. Currently no monitor collector observes filesystem state outside .project/.",
+  "location": "packages/pi-behavior-monitors/index.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-behavior-monitors",
+  "source": "human"
+}

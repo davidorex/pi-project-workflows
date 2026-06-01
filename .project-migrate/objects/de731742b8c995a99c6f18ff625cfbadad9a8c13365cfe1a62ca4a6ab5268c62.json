@@ -1,0 +1,4 @@
+{
+  "title": "Peer dependency freshness gate",
+  "narrative": "The check-peer-freshness.js script (commit 4299f80) compares locally installed @mariozechner/pi-coding-agent against the globally installed version. TypeScript compiles against local node_modules types, but at runtime pi loads extensions using its own (globally installed) SDK version. If the local peer dep is stale, API changes compile clean but fail at runtime. Motivated by a specific incident: 5 minor versions of drift (0.58.3 -> 0.63.1) hiding a breaking ModelRegistry API change (getApiKey -> getApiKeyAndHeaders, commit 9c2024d). The gate reads the global npm root directly instead of running pi --version because the latter triggers extension auto-updates with ~20s latency. Confidence: HIGH."
+}

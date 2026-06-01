@@ -1,0 +1,32 @@
+{
+  "title": "tsx-eval-reachable modules must not statically import the SDK root barrel for VALUES — it silently breaks the orchestrator's tsx -e verification path",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "@earendil-works/pi-coding-agent's package.json exports map has only \".\" + \"./hooks\" (no tools/core subpath) and the root barrel has no resolvable exports main under `tsx -e` -> ERR_PACKAGE_PATH_NOT_EXPORTED. A static VALUE import of the root barrel in any module reachable from context-sdk / block-api / context (the tsx-eval-reachable graph) therefore breaks `npx tsx -e \"...validateContext/contextState...\"` — the orchestrator's primary verification path — while npm build / npm test (tsx --test) / the in-pi extension all still resolve (so the gate stays green and the breakage is silent). Occurred 2026-05-25 when FGAP-103's read-element.ts imported truncateHead from the root barrel (read-element <- context-sdk). Type-only root-barrel imports (e.g. index.ts ExtensionAPI) are erased at compile and are harmless. Recurrence of the class documented in analysis/2026-05-10-tsx-barrel-pi-coding-agent-flake.md.",
+  "evidence": [
+    {
+      "file": "node_modules/@earendil-works/pi-coding-agent/package.json",
+      "reference": "exports map = { \".\": ..., \"./hooks\": ... } — no tools/core subpath; root barrel unresolvable under tsx -e"
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "lines": "29",
+      "reference": "the regression: static `import { truncateHead } from \"@earendil-works/pi-coding-agent\"` (root barrel) pulled into context-sdk's graph via context-sdk.ts:22 -> broke validateContext via tsx -e. Fixed by vendoring (TASK)."
+    },
+    {
+      "file": "analysis/2026-05-10-tsx-barrel-pi-coding-agent-flake.md",
+      "reference": "prior documentation of the same tsx-eval + SDK-root-barrel hazard class"
+    }
+  ],
+  "impact": "Silent degradation of the orchestrator's tsx -e verification harness (used constantly for validateContext/contextState/state checks); the gate (npm test) does not catch it because tsx --test resolves the barrel. Each new SDK util needed by a tsx-eval-reachable module risks re-breaking it.",
+  "canonical_vocabulary": "package-exports-resolution, tsx-eval-resolution, root-barrel-import, vendor-sdk-util, verification-harness-fragility",
+  "proposed_resolution": "Rule: tsx-eval-reachable modules (anything imported by context-sdk/block-api/context) must NOT statically import the SDK root barrel for VALUES. Vendor the needed util locally (as done for truncateHead, TASK), or import from a resolving SDK subpath if the SDK adds one. Type-only imports are fine (erased). Optional hardening: a check/test that greps tsx-eval-reachable modules for root-barrel value-imports.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_issues": []
+}

@@ -1,0 +1,70 @@
+{
+  "title": "Relation_type canonical_id naming shape — verb-based vs source_verb_target tripartite",
+  "status": "enacted",
+  "context": "DEC-0013 forces all inter-item relationships into closure-table edges with relation_type field; DEC-0017 declares per-unit-kind context contracts referencing relation_types. config.relation_types[] is the declared registry (currently empty in this repo). Existing test fixtures in packages/pi-context/src/roadmap-plan.test.ts use phase_depends_on + phase_member naming. LLM-filed substrate analysis (analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md) inferred candidates from inline FK violations: task_in_phase / task_depends_on / decision_supersedes / decision_relates_to / decision_addresses_finding / decision_addresses_feature / decision_addresses_gap / gap_addressed_by_decision / gap_addressed_by_feature / gap_addressed_by_issue / feature_resolves_block / feature_depends_on / story_depends_on / finding_resolved_by / issue_resolved_by / rationale_supports_decision / requirement_depends_on / research_supersedes / review_finding_resolved_by / verification_verifies / plan_relates_to_decision / plan_phase_depends_on. Plus milestone-cascade types from DEC-0024 / FGAP-054: milestone_grounded_by_research / milestone_addressed_by_decision / milestone_blocked_by_gap / milestone_delivered_by_feature / phase_culminates_at_milestone / milestone_verified_by / milestone_depends_on / roadmap_contains_milestone / roadmap_contains_phase / project_goal_served_by_milestone. No DEC settles the naming shape.",
+  "decision": "ENACTED: relation_type canonical_ids use tripartite source_verb_target snake_case (e.g. decision_supersedes_decision, phase_culminates_at_milestone, task_depends_on_task). Aligns with existing test fixtures (phase_depends_on / phase_member in roadmap-plan.test.ts); self-documenting; under DEC-0035 (canonical_id-permanent) the initial choice persists so clearest-wins. Bipartite loses source-context; kebab collides with kebab block-kind canonical_ids; verb_modifier is a half-measure. Edges store this canonical_id; config.relation_types[].display_name carries the mutable human label.",
+  "consequences": [
+    "Every relation_type canonical_id authored in config.relation_types[] follows chosen shape.",
+    "relations.json edges (when populated) use these canonical_ids in their relation_type field.",
+    "context-contracts bundle_relation_types[] reference these names.",
+    "Lens specs (config.lenses[]) bin by these names.",
+    "DEC-0013 + DEC-0017 enforcement consistency depends on shape uniformity."
+  ],
+  "options_considered": [
+    {
+      "label": "<source>_<verb>_<target> tripartite snake_case",
+      "description": "e.g. milestone_depends_on_milestone / phase_culminates_at_milestone / decision_addresses_gap. Source + target both encoded in name. Direction implicit by position.",
+      "tradeoffs": "Maximum self-documenting; longer names; redundant when source/target obvious from context; aligns with existing test fixtures (phase_depends_on)."
+    },
+    {
+      "label": "<source>_<verb> bipartite (target inferred from edge.child)",
+      "description": "e.g. depends_on / supersedes / addresses / culminates_at / verified_by. Direction encoded only in edge.parent + edge.child. Names are pure verbs.",
+      "tradeoffs": "Concise; reusable across many source/target pairs (e.g. depends_on works for milestone→milestone, task→task, phase→phase); ambiguous when same verb has different semantics per source/target type; loses self-documenting source."
+    },
+    {
+      "label": "<verb>_<modifier> shape",
+      "description": "e.g. depends_on / culminates_at / supersedes_with / verified_by_evidence. Verb-first; modifier optional disambiguator.",
+      "tradeoffs": "Hybrid approach; verb prominence; modifier carves out specific cases without source/target encoding."
+    },
+    {
+      "label": "Hyphenated kebab-case <source>-<verb>-<target>",
+      "description": "e.g. milestone-depends-on-milestone / phase-culminates-at-milestone. Same as tripartite but kebab-cased.",
+      "tradeoffs": "Visually distinct from typical_snake_case identifiers; consistent with config canonical_id casing in other registries; may collide with kebab-cased block-kind canonical_ids (decisions / framework-gaps / spec-reviews)."
+    }
+  ],
+  "references": [
+    {
+      "label": "DEC-0013 closure-table-canonical principle",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0017 work-unit context composition",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0024 milestone-as-anchor model",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "Test fixtures using phase_depends_on / phase_member",
+      "path": "packages/pi-context/src/roadmap-plan.test.ts"
+    },
+    {
+      "label": "Inferred relation_types from inline FK violations",
+      "path": "analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md"
+    },
+    {
+      "label": "Milestone-cascade relation_types",
+      "path": "analysis/2026-05-14-milestones-and-roadmap-draft.md"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-046",
+    "FGAP-047",
+    "FGAP-054"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-17T12:00:00Z"
+}

@@ -1,0 +1,11 @@
+{
+  "title": "validateRelations exposed as SDK function but not wrapped as a registered pi tool",
+  "body": "Forcing context: validateRelations (packages/pi-context/src/project-context.ts) emits structured SubstrateValidationResult covering edge_unknown_relation_type, edge_parent_not_in_bins, edge_unresolved_parent/child, edge_parent/child_wrong_block, edge_cycle_detected. SDK function exists with full test coverage. There is no pi.registerTool wrapper, so an LLM in a session cannot invoke it via tool-use.\n\nExisting precedent: project-validate is registered both as a /project subcommand (PROJECT_SUBCOMMANDS) and as a tool (pi.registerTool({ name: 'project-validate', ... })) per packages/pi-context/src/index.ts:720+. The same dual-surface treatment applies here.\n\nProposed shape: register tool 'project-validate-relations' that internally calls validateRelations against loaded config + relations + per-block items snapshot. Tool returns the SubstrateValidationResult shape (status + issues array). Pairs with a corresponding /project validate-relations subcommand (or extension to /project validate that includes substrate-relations checks alongside the existing cross-block referential integrity checks).",
+  "location": "packages/pi-context/src/index.ts:720",
+  "status": "resolved",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
+}

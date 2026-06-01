@@ -1,0 +1,48 @@
+{
+  "name": "Task execution loop",
+  "intent": "Close the planning-to-execution gap: workflows produce task blocks but nothing consumes them as work input. Build the do-task workflow and supporting agents that read a task entry, investigate its scope, implement it, verify against acceptance criteria, and update task status — completing the self-driving cycle from plan-from-requirements through to done. (pre-FGAP-026 planning artifact)",
+  "status": "planned",
+  "success_criteria": [
+    {
+      "criterion": "A workflow reads a task entry from .project/tasks.json by ID and executes it through to status update",
+      "verify_method": "command"
+    },
+    {
+      "criterion": "Agent templates accept task block fields (description, acceptance_criteria, files, depends_on, phase)",
+      "verify_method": "inspect"
+    },
+    {
+      "criterion": "Task status lifecycle is updated by the workflow (planned → in-progress → completed/blocked)",
+      "verify_method": "command"
+    },
+    {
+      "criterion": "Verification step checks acceptance_criteria from the task entry, not just agent-generated criteria",
+      "verify_method": "inspect"
+    }
+  ],
+  "specs": [
+    {
+      "number": 1,
+      "name": "do-task workflow",
+      "intent": "Read task entry by ID, investigate scope, decompose if needed, implement, verify against acceptance_criteria, update task status",
+      "status": "planned"
+    },
+    {
+      "number": 2,
+      "name": "Task-aware agent templates",
+      "intent": "Agents that accept task block entry content — description, acceptance_criteria, files, depends_on — and adapt their behavior accordingly",
+      "status": "planned"
+    },
+    {
+      "number": 3,
+      "name": "Batch task execution",
+      "intent": "forEach over planned tasks with dependency ordering — execute tasks in topological order respecting depends_on",
+      "status": "planned"
+    }
+  ],
+  "artifacts_produced": [
+    "packages/pi-workflows/workflows/do-task.workflow.yaml",
+    "packages/pi-workflows/agents/",
+    "packages/pi-workflows/templates/"
+  ]
+}

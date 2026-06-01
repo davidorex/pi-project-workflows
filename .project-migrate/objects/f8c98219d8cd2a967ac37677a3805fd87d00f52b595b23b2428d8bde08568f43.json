@@ -1,0 +1,5 @@
+{
+  "description": "TypeScript compiled via tsc to dist/ — each package has tsconfig.build.json, main field points to ./dist/index.js, pi loads extensions from dist/",
+  "enforcement": "manual",
+  "severity": "error"
+}

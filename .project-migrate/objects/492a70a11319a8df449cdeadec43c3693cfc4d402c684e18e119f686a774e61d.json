@@ -1,0 +1,32 @@
+{
+  "title": "Sibling-package citation rot un-audited and ungated — pi-workflows + pi-behavior-monitors + pi-agent-dispatch + pi-jit-agents shipped artifacts (skill-narrative.md / SKILL.md / bundled agents / schemas / docs / src description strings) carry unknown count of pi-project-workflows substrate canonical_id citations that downstream consumers cannot resolve; FGAP-130 closure explicitly scoped to pi-context only",
+  "status": "closed",
+  "priority": "P1",
+  "package": "all-extension-packages",
+  "layer": "L1",
+  "description": "FGAP-130 resolution (merge 9b65e4c 2026-05-28) stripped citation rot from packages/pi-context/* and added a samples-catalog.test.ts regression gate scoped to pi-context's samples/ + src/. By explicit plan scope (in approved plan + in FGAP-130 body), sibling packages were OUT OF SCOPE. They remain unaudited and ungated. Same root cause exists in their shipped surfaces if present: skill-narrative.md files regenerated into SKILL.md (operator-facing); bundled .agent.yaml specs (operator-facing prompt text + descriptions); bundled .workflow.yaml specs (likewise); bundled .monitor.json specs (likewise); src/*.ts files with description strings on pi.registerTool calls and parameter descriptions that surface to operators via SKILL.md generation; README.md files inside each package (if shipped via files[]); JSDoc comments that get pulled into description strings via doc-generation scripts. Empirically: the FGAP-130 adversarial probe CHECK 11 already flagged one known sibling-package leak — packages/pi-project-workflows/skills/pi-project-workflows/SKILL.md line 41 contains a citation sourced from pi-agent-dispatch/skill-narrative.md. Unknown how many more across 4 packages. Downstream consumers running `pi install -l <META>` followed by reading any sibling-package SKILL.md or bundled-spec description will encounter the same unresolvable references.",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/skill-narrative.md",
+      "reference": "FGAP-130 adversarial probe CHECK 11 (2026-05-28) identified one citation here that leaks to packages/pi-project-workflows/skills/pi-project-workflows/SKILL.md line 41 after meta-skills regeneration"
+    },
+    {
+      "file": "packages/pi-workflows/",
+      "reference": "shipped artifacts unaudited — bundled .workflow.yaml + .agent.yaml + skill-narrative.md + src/*.ts description strings all candidates"
+    },
+    {
+      "file": "packages/pi-behavior-monitors/",
+      "reference": "shipped artifacts unaudited — bundled .monitor.json + bundled .agent.yaml classifier specs + Nunjucks prompt templates + skill-narrative.md + src/*.ts all candidates"
+    },
+    {
+      "file": "packages/pi-jit-agents/",
+      "reference": "library (not extension) but ships docs/planning/jit-agents-spec.md + README.md + src/*.ts JSDoc — unaudited"
+    }
+  ],
+  "impact": "FGAP-130's resolution is partial: in-pi agent launched against any target dir that loads any extension other than pi-context can still cite unresolvable canonical_ids sourced from sibling-package shipped surfaces. The FGAP-130 regression test gates only pi-context; the same regex pattern violated in a sibling package's shipped artifact escapes detection. Downstream consumers experience the same citation-rot failure mode FGAP-130 catalogued but via a different package. The 'paramount canonical pipeline' completion-claim from FGAP-130 has a known-gap; closing FGAP-131 closes the actual user-facing problem completely.",
+  "canonical_vocabulary": "framework-canon vs project-substrate separation; portable-canonical-artifacts; cross-package regression-gate uniformity",
+  "proposed_resolution": "CLOSED: implemented via FGAP-131/132 arc on branch fgap-131-132-rigorous-citation-gate (10 commits). Rigorous AST + JSON + markdown/YAML scanner introduced in packages/pi-context/src/citation-rot-scanner.ts replaced the FGAP-130 naive line-by-line scan. All 5 sibling packages stripped of operator-facing canonical_id citations (pi-workflows + pi-behavior-monitors + pi-agent-dispatch + pi-jit-agents + pi-project-workflows META). SKILL.md regen via npm run skills produced clean outputs. Single workspace-wide regression gate in samples-catalog.test.ts asserts 0 hits across all packages — runs in husky pre-commit + CI. Attested by VER-059. Original proposed_resolution preserved below for archaeology: Audit every shipped artifact in packages/pi-workflows + packages/pi-behavior-monitors + packages/pi-agent-dispatch + packages/pi-jit-agents for the canonical_id regex pattern from FGAP-130 (the original text — full audit + Pattern A/B/C/D rewrite + per-package gate).",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

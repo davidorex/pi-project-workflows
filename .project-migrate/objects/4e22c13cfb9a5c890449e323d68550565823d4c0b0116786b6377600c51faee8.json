@@ -1,0 +1,8 @@
+{
+  "title": "Unit tests for model resolution",
+  "status": "todo",
+  "files": [
+    "packages/pi-jit-agents/test/model-resolution.test.ts"
+  ],
+  "acceptance": "Three-way coverage (bare + session, bare + no session, fully-qualified) all passing"
+}

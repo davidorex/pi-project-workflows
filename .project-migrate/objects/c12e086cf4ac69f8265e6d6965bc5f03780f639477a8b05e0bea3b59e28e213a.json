@@ -1,0 +1,10 @@
+{
+  "title": "No automatic decision recording during agent execution — decisions block task field exists but nothing populates it",
+  "body": "The decisions schema has a task field (added v0.11.0) for backlink from decisions to the task during which the decision was made. But no agent, workflow step, or tool automatically records decisions during task execution. The execution-results schema has a decisions[] array in agent output but nothing routes those entries to the decisions block. Decisions made by agents during execute-task are lost.",
+  "location": "packages/pi-context/registry/schemas/decisions.schema.json",
+  "status": "open",
+  "category": "primitive",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "agent"
+}

@@ -1,0 +1,46 @@
+{
+  "title": "scripts/orchestrator/* function as canonical test surface + executable specification of extension surface requirements",
+  "status": "enacted",
+  "context": "POC TypeScript scripts under scripts/orchestrator/ (extract-mandates, extract-decs, extract-feedback, build-subagent-preamble, file-block-item, build-explore-brief landed at HEAD fa59884) were initially framed as orchestrator-side ergonomics wrappers replacing hand-construction variance in subagent briefs. Observed during their construction: each script's implementation surfaces a concrete gap in the extension surface — extract-feedback exposes memory-vs-substrate boundary violation (closed by FGAP-033 candidate); extract-mandates exposes mandate substrate-canon home gap; extract-decs exposes per-item macros library incompleteness (REVIEW-001); file-block-item exposes schema-aware filing UX gap that pre-existed for both Claude-Code orchestrator AND in-pi JIT agents; build-subagent-preamble exposes per-type context composition gap (DEC-0017 context-contracts territory). The scripts thereby double as both consumers of the canonical surface AND executable specifications of what the canonical surface must offer for agents to execute their work.",
+  "decision": "scripts/orchestrator/*.ts have a CANONICAL DUAL ROLE per DEC-0019: (1) Claude-Code-side ergonomics wrappers around block-api / extension surface (per DEC-0014/0016 dual-surface pattern); AND (2) executable specifications of extension surface requirements that surface gaps via the act of being written. New scripts under scripts/orchestrator/ are evaluated on both axes: do they replace hand-construction variance? + do they surface gaps that become FGAPs driving extension implementation? Each gap surfaced is filed as FGAP (or referenced as existing FGAP) before script lands. Scripts are not throwaway POCs — they are persistent test surface for the extension API contract.",
+  "consequences": [
+    "Every new script under scripts/orchestrator/ is reviewed for which extension primitives it consumes + which it forces into existence. The list goes in the script's header docstring as the SURFACED-GAPS section.",
+    "FGAPs surfaced by scripts are first-class — not informational notes in commit bodies. Each gets file-block-item invocation to file in framework-gaps.json with cross-reference to the script that surfaced it.",
+    "Tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) becomes partially auto-populated by the script-writing process — scripts that need primitives not yet a Pi tool = confirmed gap in the audit's scope.",
+    "Test surface property: when a Pi tool / block-api primitive / DispatchContext shape changes, the affected scripts are the canary — their breakage signals consumer-facing impact. Includes explicit script-to-consumer-need mapping kept current as scripts are added.",
+    "Dual-direction value drives priority: a gap that blocks BOTH a script AND a Pi tool consumer = higher priority than one that blocks only one direction.",
+    "Articulation of extension requirements becomes Claude-Code-readable in addition to schema-readable. A future Claude session reading scripts/orchestrator/ has a working executable map of what the extension surface offers vs needs.",
+    "Per the just-landed dual-surface pattern (feedback_orchestrator_scripts_dual_surface.md): library + Pi tool + CLI script land as a unit. DEC-0019 adds: the CLI script ALSO articulates the API contract requirement set surfaced during its writing — these are inputs to FGAP filings + tool-surface audit refresh."
+  ],
+  "related_gaps": [
+    "FGAP-026",
+    "FGAP-033"
+  ],
+  "references": [
+    {
+      "label": "scripts/orchestrator/ POC bundle (commits 850167c + 576c176 + fa59884)",
+      "path": "scripts/orchestrator/"
+    },
+    {
+      "label": "feedback_orchestrator_scripts_dual_surface.md (companion doctrine layer)",
+      "path": "memory/feedback_orchestrator_scripts_dual_surface.md"
+    },
+    {
+      "label": "tool-surface gap audit",
+      "path": "analysis/2026-05-10-tool-surface-gap-audit.md"
+    },
+    {
+      "label": "DEC-0014 harness-confined main LLM",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0016 same-extension-tool-surface-for-Claude-Code",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0017 work-unit context composition substrate",
+      "path": ".project/decisions.json"
+    }
+  ],
+  "enacted_by": "human/davidryan@gmail.com"
+}

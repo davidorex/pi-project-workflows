@@ -1,0 +1,22 @@
+{
+  "description": "Close FGAP-038 — add scripts/orchestrator/inject-context-items.ts. Item-level substrate-item projection into subagent briefs. Selector + projection + format args. Doubles as test surface for block-schema shape discovery: every friction point encountered while writing the script gets filed as a follow-up FGAP, NOT silently worked-around.",
+  "status": "completed",
+  "files": [
+    "scripts/orchestrator/inject-context-items.ts"
+  ],
+  "acceptance_criteria": [
+    "scripts/orchestrator/inject-context-items.ts exists, shebang-tsx executable",
+    "Args: --items <block:itemId[,block:itemId...]> + --format markdown|json|xml + optional --fields <comma-list> projection",
+    "Reads each (block, itemId) via @davidorex/pi-context/block-api readBlock + filter by id",
+    "json format emits items as JSON array; xml format wraps each item in <item block=\"X\" id=\"Y\">...</item>; markdown format uses per-block-kind render macros (FGAP-037 dependency — until macros land, markdown emits a minimal fallback projection)",
+    "Fails fast if any block:itemId selector is unresolvable; reports the unresolvable selector verbatim",
+    "compile-explore-context.ts + compile-implementation-context.ts gain a --context-items arg that splices this script output into the context at a <context_items> XML block position",
+    "FGAP-035 Explore re-dispatch uses --context-items framework-gaps:FGAP-035,tasks:TASK-031,decisions:DEC-0015 validating the surface end-to-end",
+    "Every friction point encountered while writing the script that surfaces a schema-shape question gets filed as a follow-up FGAP — substrate-canon discipline, not silently worked-around"
+  ],
+  "depends_on": [
+    "TASK-032"
+  ],
+  "notes": "CLOSED at HEAD e88d7ee. inject-context-items.ts landed at 2c3794a; --context-items arg integrated into compile-{explore,implementation}-context.ts at ad02726. Acceptance criterion 7 (FGAP-035 Explore re-dispatch via canonical surface with item-level injection) validated: rendered context embeds <context_items> verbatim; Explore agent produced 11-row cascade table without OR-hedging because TASK-031 UX decision was injected. Friction points (array_key heuristic / id-field assumption / singleton-block shape / colon-escape) filed inline in JSDoc + commit body per dogfood discipline. See VER-003.",
+  "verification": "VER-003"
+}

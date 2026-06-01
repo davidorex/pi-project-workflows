@@ -1,0 +1,40 @@
+{
+  "title": "Adopt data-room three-artifact frame for decision-lifecycle substrate — split current .project/decisions.json into recognitions / decisions / substrate-conflicts blocks with uniform field tightening",
+  "status": "open",
+  "context": "The current single .project/decisions.json block conflates pre-decisions with actual decisions per FGAP-113 (filed 2026-05-26): block name carries colloquial 'has been decided' meaning while status enum admits 'open' for pre-decisions; the schema's own description stretches 'decision' stipulatively to cover the whole lifecycle but the word remains semantically misleading. The status enum (open|enacted|superseded) further collapses operationally-distinct sub-states inside 'open' (recognized / drafted / reviewed-and-revised) — fresh contexts cannot distinguish ready-to-enact from still-needs-framing. Empirical evidence at analysis/2026-05-26-decisions-block-shape-survey.md commit 4900a34: 49 entries surveyed; 20 emergent shape-clusters spanning heterogeneous writer-identity formats, enacted-tuple completeness variance, in-body revision-prose stacking (Amendment/Widening/narrowed), null-state convention variance, decision-as-question vs decision-as-answer. Data-room metaphor at /Users/david/Projects/data-room-pi-context.md establishes three first-class artifacts an orchestrator/LLM working environment needs: decisions (settled, authoritative) + missing-context-list (referenced/needed but unresolved) + conflict-log (sources contradict). Our single block conflates all three. Decision needed: adopt the data-room three-artifact frame at substrate-shape level, with uniform field tightening across all three blocks, replacing the current single-block conflation.",
+  "decision": "ADOPT the data-room three-artifact frame for decision-lifecycle substrate. Concretely: (1) recognitions.json (NEW) — pre-decisions / decision-needs; status enum [recognized | drafted | reviewed | ready_for_enactment | withdrawn]; promotes into decisions.json on user enactment via enacted_from link; recognition retained for lineage; (2) decisions.json (scope-narrowed) — ratified entries only; status enum [enacted | superseded]; required enacted_from + enacted_by + enacted_at; block name no longer lies about contents; (3) substrate-conflicts.json (NEW) — first-class home for in-substrate contradictions; structured per-conflict entries (affected_ids, conflict_kind, resolution_state) replace the in-body Amendment/Widening prose-stacking pattern flagged in the shape survey. Uniform field tightening across all three blocks: writer-identity enum/pattern kind:identifier; structured commits[] field; null-state convention (empty-array required, key-absent forbidden); first-class evolution_log[] entries (date, kind, by, summary, commits[]) per feedback_substrate_blocks_not_changelogs. Options_considered preserves the existing schema's soft convention; NO rejected_reason requirement added — staleness-prone redundancy with low marginal mandate-004 value (the chosen option's rationale + consequences[] already do the work; recorded rejection reasons date to enactment-time conditions and become misleading when conditions change). FEAT-008 carries the build + 49-entry migration. The full canon-mapping showing every revision element traces to established canon (DEC-0040 single source of truth; FGAP-098 cross-reference affordance; FGAP-110 valid/current discipline; FGAP-111 raw-tier-with-decomposition shape; feedback_substrate_blocks_not_changelogs; DispatchContext attestation; data-room frame) is at analysis/2026-05-26-decisions-substrate-revision-grounding.md commit 083630e — nothing in this decision is fresh architectural invention; it brings one of our oldest blocks into compliance with what we've established about substrate-shape since.",
+  "consequences": [
+    "FGAP-113 addressed: block-name no longer lies about contents (decisions.json contains only ratified entries); status enum granularity restored (recognitions carries the operationally-distinct sub-states inside its own enum)",
+    "Fresh contexts reading .project/decisions.json get authoritative canon — no mixed pending+enacted requiring field-level disambiguation; DEC-0040 single-source-of-truth canon honored at block level",
+    "In-body revision prose (Amendment/Widening/narrowed stacking observed at DEC-0040/0044/0047/0003) gets structured home in evolution_log[]; block body fields hold current-truth only per feedback_substrate_blocks_not_changelogs",
+    "Writer-identity / commits[] / null-state uniformly enforced via schema; the 20 emergent shape-clusters from the survey either become schema-impossible or get first-class field representation",
+    "Cascade required: scripts/orchestrator/* (extract-decs.ts and others), Pi tools registered in pi-context/index.ts, lens validators (lens-view.ts + roadmap-plan.ts), relations.json edges, CLAUDE.md documentation, SKILL.md regeneration. Cascade is scope of FEAT-008.",
+    "Migration of 49 existing entries by current status; lineage edges preserved; in-body revision prose extracted into evolution_log[] for affected entries"
+  ],
+  "related_features": [
+    "FEAT-008"
+  ],
+  "related_gaps": [
+    "FGAP-113"
+  ],
+  "references": [
+    {
+      "label": "decisions-substrate revision grounding",
+      "path": "analysis/2026-05-26-decisions-substrate-revision-grounding.md",
+      "commit": "083630e"
+    },
+    {
+      "label": "decisions block shape survey",
+      "path": "analysis/2026-05-26-decisions-block-shape-survey.md",
+      "commit": "4900a34"
+    },
+    {
+      "label": "data-room frame",
+      "path": "/Users/david/Projects/data-room-pi-context.md"
+    },
+    {
+      "label": "feedback_substrate_blocks_not_changelogs",
+      "path": "~/.claude/projects/-Users-david-Projects-workflowsPiExtension/memory/feedback_substrate_blocks_not_changelogs.md"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "title": "Resolve model-pin policy and apply at pi-jit-agents",
+  "status": "proposed",
+  "description": "Apply the DEC-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary. Remove the anthropic-default pin from the current parseModelSpec implementation in pi-behavior-monitors.",
+  "acceptance_criteria": [
+    "A bare model id in an agent spec resolves against the current session's provider via ExtensionContext lookup, not a hardcoded default",
+    "If ExtensionContext cannot supply currentModel, dispatch errors with a clear message naming the missing binding",
+    "Fully-qualified provider/model specs continue to pin explicitly",
+    "Unit tests cover: bare-id + session-with-model, bare-id + session-without-model (error), fully-qualified-id (pinned)"
+  ],
+  "depends_on": [],
+  "gates": [
+    "DEC-0001"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001-01",
+      "title": "Verify ExtensionContext exposes currentModel",
+      "status": "done",
+      "description": "Inspect pi-agent-core's ExtensionContext type to confirm whether currentModel (or equivalent) is available to extensions at dispatch time. If not, the task widens into a prerequisite against pi-agent-core — escalate to user for scope decision.\n\n## TASK-001-01 completion finding (2026-05-03)\n\n**ExtensionContext.model** is confirmed at `node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts:219`:\n\n```typescript\nmodel: Model<any> | undefined;\n```\n\n`Model<TApi>` at `node_modules/@mariozechner/pi-ai/dist/types.d.ts:378` exposes:\n\n```typescript\nid: string;       // e.g. \"anthropic/claude-sonnet-4-6\"\nprovider: Provider;  // Provider = KnownProvider | string — \"openrouter\", \"anthropic\", etc.\napi: TApi;        // \"anthropic-messages\" | \"openai-completions\" | ...\n```\n\n**Resolution**: DEC-0001's chosen option is implementable today. Bare `model:` ids (no `/`) can resolve `provider` from `ctx.model.provider` and `modelId` from the spec string. Fully-qualified specs (`openrouter/anthropic/claude-sonnet-4-6`) are unaffected — `parseModelSpec` splits on `/` as before.\n\n**Caveat**: `ctx.model` is typed `Model<any> | undefined`. The `| undefined` means the dispatch path must handle the case where no session model is active. Whether `ctx.model` is populated at classify time (monitor `agent_end` / `tool_call` events) is not type-enforceable — it's an empirical question. The type contract says it *should* be populated during any agent turn, but the code path that sets it is internal to pi-core. The dispatch must produce a clear error (\"Cannot resolve bare model id 'X': no session model context available\"), not a silent fallback to `anthropic`.",
+      "files": [
+        "node_modules/@mariozechner/pi-coding-agent/dist/types.d.ts"
+      ],
+      "acceptance": "Written confirmation in the task record of what ExtensionContext currently exposes and whether DEC-0001's chosen option is implementable today or depends on upstream changes"
+    },
+    {
+      "id": "TASK-001-02",
+      "title": "Implement bare-id resolution in pi-jit-agents",
+      "status": "todo",
+      "description": "Add model-resolution logic at executeAgent. Bare ids trigger ExtensionContext lookup; fully-qualified specs pin.",
+      "files": [
+        "packages/pi-jit-agents/src/jit-runtime.ts",
+        "packages/pi-jit-agents/src/types.ts"
+      ],
+      "acceptance": "executeAgent resolves bare ids via ExtensionContext, surfaces clear error on missing binding, preserves fully-qualified semantics"
+    },
+    {
+      "id": "TASK-001-03",
+      "title": "Unit tests for model resolution",
+      "status": "todo",
+      "files": [
+        "packages/pi-jit-agents/test/model-resolution.test.ts"
+      ],
+      "acceptance": "Three-way coverage (bare + session, bare + no session, fully-qualified) all passing"
+    }
+  ]
+}

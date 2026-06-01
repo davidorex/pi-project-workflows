@@ -1,0 +1,31 @@
+{
+  "title": "Samples catalog identity — the package samples ARE this project's platonic packaged conception (dogfood)",
+  "status": "enacted",
+  "context": "During the unit-2.2 onboarding design dialogue (2026-05-20), a fresh-install UX trace revealed the package registry/ folder is misnamed and its role ambiguous (auto-installed default vs offerable catalog). Disentangling the word registry surfaced three concepts colliding on it: the package asset folder, the per-project config registries, and the menu of suggestions onboarding offers.",
+  "decision": "The samples pi-context ships ARE this project's own platonic, packaged conception (decisions / tasks / framework-gaps / phase / story / ...), dogfooded. One authored artifact set serves triple duty: (a) this .context substrate, (b) the shipped samples catalog, (c) the onboarding accept-all default. Each sample is PACKAGED — schema + its relation_types + its invariants + a starter lens + description — not a bare schema file. The word registry denotes the config registries (block_kinds / relation_types / layers / lenses); the package registry/ folder IS the samples catalog and is renamed samples/. No separate generic abstraction layer is authored — the dogfooded platonic conception is the catalog.",
+  "consequences": [
+    "Unit 2.2 is redefined: it authors the platonic PACKAGED conception (schema + relations + invariants + lens per kind), not schemas alone — its output IS the samples catalog.",
+    "registry/ -> samples/ rename; registry reserved for config registries.",
+    "Collapses the earlier installed-15 vs all-registry vs generic-defaults boundary fork: there is one platonic conception, dogfooded.",
+    "Every catalog sample must be clean / edge-based (DEC-0013) so a fresh adopter who accepts a sample inherits no inline-FK.",
+    "Pairs with the initProject defaults-imposition gap (FGAP-067): the catalog is offered, not auto-copied."
+  ],
+  "options_considered": [
+    {
+      "label": "Platonic dogfood catalog (chosen)",
+      "description": "Ship this project's own clean conception as the sample set; one artifact serves substrate + catalog + onboarding default.",
+      "tradeoffs": "Couples the shipped catalog to this project's conception; mitigated because pi-context dogfoods its own PM substrate."
+    },
+    {
+      "label": "Separate generic abstraction layer",
+      "description": "Author a vocabulary-neutral generic sample set distinct from this project's substrate.",
+      "rejected_reason": "Duplicate authoring + drift between the generic set and the dogfooded substrate; contradicts the dogfood principle; no evidence a generic set differs usefully from the platonic one."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-068",
+    "FGAP-067"
+  ],
+  "related_findings": [],
+  "related_features": []
+}

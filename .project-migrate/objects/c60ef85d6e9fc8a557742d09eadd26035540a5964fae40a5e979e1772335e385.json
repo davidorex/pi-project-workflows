@@ -1,0 +1,41 @@
+{
+  "title": "Schema title field is the authoritative source for block-kind display_name",
+  "status": "enacted",
+  "context": "Every .project/schemas/*.schema.json already carries title (e.g. \"Framework Gaps\" / \"Design Decisions\" / \"Features\") + description authored as canonical purpose statements. Authoring config.block_kinds[].display_name from scratch would duplicate this — and worse, drift if the two diverge. Schema title is authored once per block kind alongside required/properties/etc., already AJV-validated through normal schema-write surfaces. Config.block_kinds[].display_name role was ambiguous prior to this decision: amplify schema.title (duplicate) vs override (deviation only). User direction 2026-05-14 surfaced this in dialogue while reverse-engineering config draft.",
+  "decision": "Schema title field is the canonical source for block-kind display_name. config.block_kinds[].display_name is override-only — populate ONLY when prose deviation from schema.title is needed for display context. Default rendering reads schema.title; UI/macros fall back to schema.title when config.block_kinds[].display_name absent. Same authority pattern extends to other block-kind metadata expressible in schema (description / title) before adding parallel config fields.",
+  "consequences": [
+    "Reduces config.json authoring burden — 21 block_kinds[] entries don't each need display_name unless overriding.",
+    "Schema-side title edits propagate to display layer automatically.",
+    "Future display-name divergence requires explicit override entry in config; surfaces deviation as substrate.",
+    "Same principle extends to: schema.description → config.block_kinds[].description (if added); schema.properties[X].description → field-level display strings.",
+    "Phase 5 sub-phase 5.1 (config.json authoring) is reduced in scope — display_name layer mostly omittable."
+  ],
+  "references": [
+    {
+      "label": "framework-gaps schema title=\"Framework Gaps\"",
+      "path": ".project/schemas/framework-gaps.schema.json",
+      "lines": "3"
+    },
+    {
+      "label": "features schema title=\"Features\"",
+      "path": ".project/schemas/features.schema.json",
+      "lines": "3"
+    },
+    {
+      "label": "config schema declares block_kinds[].display_name",
+      "path": "packages/pi-context/registry/schemas/config.schema.json",
+      "lines": "39-56"
+    },
+    {
+      "label": "Step-1 config draft from substrate",
+      "path": "analysis/2026-05-14-step-1-config-draft-from-substrate.md"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-047"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-14T12:15:00Z"
+}

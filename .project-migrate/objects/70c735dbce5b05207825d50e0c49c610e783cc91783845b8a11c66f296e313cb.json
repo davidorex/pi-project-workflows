@@ -1,0 +1,36 @@
+{
+  "title": "Edges-only authoring generalized: all inter-item relationships go through config-declared relation_types",
+  "status": "enacted",
+  "context": "DEC-0012 (enacted 2026-05-04) committed roadmap phase ordering and plan item ordering to edges in relations.json with hardcoded relation_type strings phase_depends_on and plan_item_depends_on. POC E (analysis/poc/pi-context-poc/E-relation-type-registry/, landed 2026-05-06 in commit 22a07a9) demonstrated mechanically that the same edges-only pattern works for any inter-item relationship type, and that the set of relation_types should be declared in config.relation_types[] with a category field (ordering | data_flow | membership) driving validator dispatch — not hardcoded as TS string constants in the SDK. The pi-context candidate articulation (analysis/2026-05-05-pi-context-executive-summary-candidate.md) names config-driven relation_types as a load-bearing primitive of the renamed substrate. DEC-0012's narrow scope leaves the substrate with edges-only ordering for two specific relationships and silently hardcoded everything else, mirroring the FGAP-013 antipattern that POC C/E close.",
+  "decision": "All inter-item relationships in the typed-context substrate are authored as edges in relations.json with a relation_type field. The set of valid relation_types is declared in config.relation_types[] (one entry per kind, fields: canonical_id, display_name, category, cycle_allowed). Validators dispatch on category (ordering: topo sort + cycle check; data_flow: upstream-content-hash propagation; membership: parent-child set membership) via a CATEGORY_HANDLERS table keyed on category, not on relation_type name. Per-block schemas omit any inline depends_on / parent / consumes / member field that would parallel-store relationship data. SDK functions read the registry from config and emit per-category diagnostics. Adding a new relationship type is a config edit; no TypeScript change.",
+  "consequences": [
+    "DEC-0012's scope (only phase_depends_on + plan_item_depends_on) is generalized to all inter-item relationships under any block kind. DEC-0012 is superseded by this decision.",
+    "ID_PREFIX_TO_BLOCK style hardcoded relation_type strings in pi-project/src/* (e.g. relation_type === 'phase_depends_on' branches) are antipattern under this decision; per-category dispatch tables key on category, not name.",
+    "FGAP-013 (status vocabulary registry hardcoded in TS) is the analogous gap on the status side; both close under the same config-driven-vocabulary architectural direction validated by POCs A/C/E.",
+    "Schema-side: roadmap.schema.json's phases items + plan.schema.json's items continue to omit depends_on (DEC-0012 contract preserved); future block kinds inherit the same omission as a substrate convention rather than a per-schema choice.",
+    "Adding a relation_type becomes a config.relation_types[] entry plus a category handler if a new category is introduced. Most additions reuse existing categories.",
+    "validateRelations() dispatches per category for diagnostics rather than emitting one undifferentiated diagnostic class.",
+    "This decision presumes the pi-context architectural direction (config-driven vocabulary substrate). Under continued pi-project naming with hardcoded vocabulary, this decision would not enact; it is coupled to that direction."
+  ],
+  "options_considered": [
+    {
+      "label": "Rewrite DEC-0012 with broader scope",
+      "description": "Edit DEC-0012 in place to extend its decision text and consequences to cover all relation_types.",
+      "tradeoffs": "Mutates an already-enacted decision in place. Erases the historical record of what DEC-0012 originally decided (narrow scope, two specific relation_types). Violates the lifecycle contract (open -> enacted; enacted is an integrity-preserving terminal state for that record). Rejected on integrity grounds."
+    },
+    {
+      "label": "File DEC-0013 with broader scope; mark DEC-0012 superseded (this option)",
+      "description": "New decision filed with explicit supersedes: [DEC-0012]; DEC-0012 transitions enacted -> superseded with superseded_by: DEC-0013 and consequences appended explaining the broadening.",
+      "tradeoffs": "Pro: preserves the historical decision record; uses the schema-supported supersession transition. Con: the schema status enum description for superseded says withdrawn without enactment / not-a-real-decision, which does not cleanly match enacted -> superseded for broadening. Stretching the semantic. File FGAP-015 (or next available) for the decision lifecycle gap (no broadened-by state)."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-013"
+  ],
+  "references": [],
+  "supersedes": [
+    "DEC-0012"
+  ],
+  "enacted_by": "user",
+  "enacted_at": "2026-05-06T22:14:17.096Z"
+}

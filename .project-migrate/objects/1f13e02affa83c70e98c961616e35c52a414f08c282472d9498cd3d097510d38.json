@@ -1,0 +1,39 @@
+{
+  "target": "TASK-068",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "evidence": "FGAP-074 C2 pi-jit-agents consumer migration. 6 files: project-dir->context-dir subpath + projectTemplatesDir->contextTemplatesDir + projectDir->resolveContextDir. Verified per DEC-0018: npm build+check+test green all 4 packages (pi-context 606 / pi-jit-agents 151 / pi-workflows 827 / monitors 157; 0 fail). Runtime demo (subpath exports vs built dist): createTemplateEnv->contextTemplatesDir (.project/templates), createAgentLoader->agentsDir (.project/agents), resolveContextDir->.project. Fresh-context adversarial PASS 6/6; scope contained to 6 files.",
+  "criteria_results": [
+    {
+      "criterion": "subpath project-dir->context-dir across 6 files; zero /project-* remain",
+      "status": "passed",
+      "evidence": "grep + adversarial #1: zero @davidorex/pi-context/project-* in pi-jit-agents"
+    },
+    {
+      "criterion": "projectTemplatesDir->contextTemplatesDir + projectDir->resolveContextDir (import+usage)",
+      "status": "passed",
+      "evidence": "template.ts:21/41; compile.ts:17/260; adversarial #2/#3"
+    },
+    {
+      "criterion": "non-renamed pi-context imports untouched (default/block-api/schema-validator); agentsDir/writeBootstrapPointer/schemaPath subpath-only",
+      "status": "passed",
+      "evidence": "adversarial #4"
+    },
+    {
+      "criterion": "build && check && test green (husky)",
+      "status": "passed",
+      "evidence": "pre-commit gate green; 0 failures"
+    },
+    {
+      "criterion": "runtime demo: migrated path-resolvers exercised end-to-end",
+      "status": "passed",
+      "evidence": "createTemplateEnv/createAgentLoader/resolveContextDir all ran against real .project"
+    },
+    {
+      "criterion": "pure rename, scope contained to pi-jit-agents",
+      "status": "passed",
+      "evidence": "adversarial #5/#6: logic identical, exactly 6 files changed, no cross-package leak"
+    }
+  ]
+}

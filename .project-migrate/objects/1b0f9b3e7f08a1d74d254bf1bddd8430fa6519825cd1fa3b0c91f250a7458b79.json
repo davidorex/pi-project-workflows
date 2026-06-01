@@ -1,0 +1,34 @@
+{
+  "title": "AgentSpec optional-field type-vs-runtime asymmetry is structural — FB-005 (model) is one instance; thinking / extensions / skills require audit",
+  "status": "identified",
+  "package": "@davidorex/pi-jit-agents",
+  "priority": "P2",
+  "layer": "L1",
+  "description": "AgentSpec at packages/pi-jit-agents/src/types.ts declares multiple fields as optional with a `?` marker: model?, thinking?, tools?, extensions?, skills?. Runtime behavior is not uniform across these optionals: model is dispatch-required (call-agent-tool.ts:83 throws 'no model specified' when absent — FGAP-157 / FB-005); thinking is silently dropped when toolChoice is forced (DEC-0002 enacted; TASK-086 implementation pending); tools' empty-array is a valid runtime state with no error (not a defect); extensions and skills have unclear optional-vs-required semantics. The pattern is structural — type-optional markers do not document runtime contract — and recurs across the spec. FB-005 is the one instance an external user surfaced; the broader audit has not been performed.",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-model-resolution.md",
+      "lines": "177-186",
+      "reference": "Discovered-gap #4: 'Type vs. runtime asymmetry on optional fields is structural. AgentSpec has multiple optional fields (model?, thinking?, tools?, extensions?, skills?) that are effectively required at dispatch or have silent fallbacks: model required at dispatch (FB-005); thinking silently dropped when toolChoice is forced (DEC-0002, fix in TASK-086); tools empty array valid (not a gap); extensions / skills unclear if optional or required; needs audit. Relation to FB-005: This is a broader class of which FB-005 is one instance. The pattern suggests a need for clearer contract between AgentSpec type definition and runtime enforcement.'"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+      "lines": "287-303",
+      "reference": "Single-Turn-Dispatch Verdict context: 'The declared tools array in the spec is purely declarative — it declares what tools the agent intends to use, but executeAgent does NOT wire them to the model'; tools field has its own asymmetry (declarative-vs-wiring) layered on top of optional-vs-required"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/types.ts",
+      "lines": "21-37",
+      "reference": "AgentSpec interface declaring all named fields with optional `?` markers; no per-field documentation of runtime contract"
+    }
+  ],
+  "impact": "Authors cannot rely on the AgentSpec type as documentation for runtime contract. Each optional field has its own semantic — some default-required, some silently-dropped, some silently-no-op, some unknown. Building tooling on top of the type (UI form generation, schema-driven validators, spec linters) yields incorrect results because the type's optional markers misrepresent reality. FB-005 (model) is the one externally-reported instance; closing FB-005 / FGAP-157 alone does not address the structural pattern.",
+  "proposed_resolution": "Audit + documentation. Audit step: enumerate every AgentSpec optional field at packages/pi-jit-agents/src/types.ts; for each field document the actual runtime contract (required-at-dispatch / silently-dropped-on-condition / valid-when-empty / unknown-pending-investigation). Documentation step: per-field JSDoc on the AgentSpec interface declares runtime semantics, not just shape. Per FGAP-170 (AgentSpec JSON Schema) closure, schema field annotations propagate the same runtime-contract documentation to schema consumers. Code-level fixes per-field follow the pattern of FGAP-157 (FB-005 model resolution): pick Option A (make required in type) or Option B (add runtime fallback) per field.",
+  "canonical_vocabulary": "AgentSpec field-level runtime contract",
+  "related_decisions": [
+    "DEC-0002"
+  ],
+  "related_features": [
+    "FEAT-001"
+  ]
+}

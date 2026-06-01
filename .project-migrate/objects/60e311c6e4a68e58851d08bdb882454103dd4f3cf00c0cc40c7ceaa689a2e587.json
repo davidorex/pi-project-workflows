@@ -1,0 +1,8 @@
+{
+  "title": "Remove duplicate from pi-behavior-monitors",
+  "status": "todo",
+  "files": [
+    "packages/pi-behavior-monitors/index.ts"
+  ],
+  "acceptance": "Lines 1091-1097 removed; classifyViaAgent imports from pi-jit-agents"
+}

@@ -1,0 +1,45 @@
+{
+  "target": "TASK-032",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T00:00:00Z",
+  "evidence": "compile-task-context.ts landed at commits 7883cea (creation) + 5293cca (console.log normalization) + e3a0247 (renamed from build-task-template.ts to compile-task-context.ts mirroring pi-jit-agents compileAgent vocabulary). Acceptance criterion 7 (FGAP-035 implementation context compiled via this script) validated end-to-end: compile-task-context.ts produced compiled-contexts/task-block-fgap035.md; that task-block fed into compile-implementation-context.ts which produced compiled-contexts/implementation-fgap035-rendered-context.md (472 lines); implementer agent (general-purpose) consumed the rendered context and committed f17efa3 applying all 11 cascade-target rows + e88d7ee for the 12th forbidden-phrase site. Script renders implementer task-block from substrate inputs (TASK-NNN id + explore-report path + commit-subject); reads task entry from .project/tasks.json via @davidorex/pi-context/block-api readBlock; extracts cascade-target table from explore-report via extract-markdown-section.ts; emits XML-structured task-block in shape compile-implementation-context.ts expects.",
+  "criteria_results": [
+    {
+      "criterion": "Script exists and is shebang-tsx executable",
+      "status": "passed",
+      "evidence": "scripts/orchestrator/compile-task-context.ts exists at HEAD e88d7ee"
+    },
+    {
+      "criterion": "Args: --task-id, --explore-report, --commit-subject, optional --required-reading-extra",
+      "status": "passed",
+      "evidence": "parseArgs at scripts/orchestrator/compile-task-context.ts lines 46-76 implements all four args"
+    },
+    {
+      "criterion": "Reads task from .project/tasks.json via readBlock",
+      "status": "passed",
+      "evidence": "readTaskFromSubstrate function imports readBlock from @davidorex/pi-context/block-api"
+    },
+    {
+      "criterion": "Extracts cascade-target table from explore-report",
+      "status": "passed",
+      "evidence": "extractCascadeTable invokes extract-markdown-section.ts --section '## Site inventory'"
+    },
+    {
+      "criterion": "Emits XML-structured task-block to stdout for compile-implementation-context.ts consumption",
+      "status": "passed",
+      "evidence": "Output piped via --task-template @<file> arg consumed by compile-implementation-context.ts; produced compiled-contexts/task-block-fgap035.md (80 lines) used in FGAP-035 implementation dispatch"
+    },
+    {
+      "criterion": "Composes: read-list + acceptance-criteria + cascade-table + apply-order + commit-spec + STOP triggers + report-back format",
+      "status": "passed",
+      "evidence": "buildTemplate function composes all sections; output structure verified via inspection of compiled-contexts/task-block-fgap035.md"
+    },
+    {
+      "criterion": "FGAP-035 implementation context compiled via this script (end-to-end validation)",
+      "status": "passed",
+      "evidence": "Implementer agent dispatched against compile-implementation-context.ts output (which embeds compile-task-context.ts output via --task-template) successfully committed FGAP-035 fix at f17efa3 + e88d7ee"
+    }
+  ]
+}

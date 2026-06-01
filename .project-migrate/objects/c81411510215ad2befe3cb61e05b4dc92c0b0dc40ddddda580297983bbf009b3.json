@@ -1,0 +1,33 @@
+{
+  "description": "Pi-workflows consumer cascade of FEAT-001 — pi-workflows consumes pi-jit-agents' canonical agent layer; deletes its duplicate. Specifically: replace pi-workflows' local AgentSpec type (types.ts:170), agent-spec.ts loader (with its divergent .pi/agents tier), agent parts of template.ts (the separate .pi/templates + templates/ roots), compileAgentSpec (step-shared.ts), separate agent-schema resolution — all repointed to @davidorex/pi-jit-agents canonical surfaces. workflow-step that needs an agent dispatches a jit-agent directly per JI-021 (orchestrator-direct-use). pi-workflows becomes orchestration-only (DAG, state, expressions, gates, step types other than agent — monitor step still uses pi-behavior-monitors integration). Per DEC-0048: bundled .workflow.yaml + bundled agents + their tests are NOT preserved/aligned/fixed; broken bundled-artifact tests are NOT regression gates; engine UNIT tests remain gates. parseModelSpec duplicate at packages/pi-workflows/src/step-monitor.ts:371 (used at line 270) deleted per DEC-0003 (a71c782 enacted): callers redirect to pi-jit-agents' API. Depends on TASK-081 landing first (jit-agents element must provide the canonical surface to consume). Split from original TASK-080 (2026-05-26) per user direction; monitors cascade is separate (TASK-083).",
+  "status": "planned",
+  "files": [
+    "packages/pi-workflows/src/types.ts",
+    "packages/pi-workflows/src/agent-spec.ts",
+    "packages/pi-workflows/src/template.ts",
+    "packages/pi-workflows/src/step-shared.ts",
+    "packages/pi-workflows/src/step-agent.ts",
+    "packages/pi-workflows/src/step-monitor.ts",
+    "packages/pi-workflows/src/dispatch.ts",
+    "packages/pi-workflows/src/workflow-executor.ts",
+    "packages/pi-workflows/src/index.ts",
+    "packages/pi-workflows/src/template-validation.ts",
+    "packages/pi-workflows/src/workflow-sdk.ts"
+  ],
+  "acceptance_criteria": [
+    "pi-workflows DELETES local AgentSpec type (types.ts:170)",
+    "pi-workflows DELETES agent-spec.ts loader; consumers import createAgentLoader from @davidorex/pi-jit-agents",
+    "pi-workflows DELETES the agent parts of template.ts (separate .pi/templates + templates/ roots); agent template resolution flows through jit-agents canonical surfaces",
+    "pi-workflows DELETES compileAgentSpec from step-shared.ts; replaced by calls to jit-agents' compileAgent",
+    "pi-workflows DELETES the duplicate parseModelSpec at step-monitor.ts:371; line 270 redirects to pi-jit-agents API per DEC-0003 enactment",
+    "pi-workflows step-agent dispatches a jit-agent directly via @davidorex/pi-jit-agents executeAgent (orchestrator-direct-use per JI-021)",
+    "pi-workflows is orchestration-only post-cascade: DAG, state, expressions, gates, step types — no local agent layer",
+    "Per DEC-0048: bundled .workflow.yaml + bundled agents + their tests are NOT preserved/aligned/fixed; broken legacy-artifact tests are NOT regression gates; engine UNIT tests (DAG planner, expression evaluation, state machinery, gate machinery) remain gates",
+    "pi-workflows engine unit tests green at every commit (husky)",
+    "VALIDATION = real checks: build/check/test exit codes (no pipe-masking), runtime demo (workflow with an agent step dispatches successfully against jit-agents canonical), adversarial probe (fresh-context agent greps for residual local AgentSpec / agent-spec.ts / compileAgentSpec references); never LLM self-report"
+  ],
+  "depends_on": [
+    "TASK-081"
+  ],
+  "notes": "Split 2026-05-26 from TASK-080. Depends on TASK-081 landing first. Monitors cascade is TASK-083. Aligns with narrowed DEC-0044 (a71c782) + closed FGAP-112 (71a7ea2): pi-workflows consumes pi-jit-agents as shared library directly per canonical."
+}

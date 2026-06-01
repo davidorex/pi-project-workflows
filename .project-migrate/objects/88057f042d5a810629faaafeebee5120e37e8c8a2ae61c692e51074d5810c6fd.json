@@ -1,0 +1,75 @@
+{
+  "title": "Layer registry adoption — declare config.layers[] with L1..L5 substrate/query/composition/dispatch/surface labels",
+  "status": "enacted",
+  "context": "config.layers[] (declared in config.schema.json lines 25-38: id + display_name + description) is currently empty in this repo. FGAP entries use 'layer' field with values L1 / L2 / L3 / L4 (free-text, no validation against an installed registry). features.schema.json declares 'L3 Work layer' for features (per items.properties.layer enum L1..L5). PLAN-001 (.project/layer-plans.json) uses Muni L1-L5 restructure plans framework. Inferred layer set per analysis/gsd-2-foundational-intelligence.md + analysis/gsd-2-derivability.md + my conversational scaffolding: L1 substrate (block CRUD / schemas / closure-table primitives), L2 query (filter / resolve / walk / find-references), L3 composition (lenses / roadmap-plan / execution-context), L4 dispatch (jit-agents / workflows / monitors), L5 surface (commands / tools / ceremonies / display). FGAP-052 records the runtime-vs-declaration gap: even when declared, no code path consumes layers[]. Adopting the registry settles the labels canonically; consumption is downstream FGAP-052 work.",
+  "decision": "Adopt L1..L5 substrate/query/composition/dispatch/surface as THIS repo's canonical layer registry — declared in config.layers[]. Already in widespread use as free-text across FGAPs (layer: L1/L2/L3/L4), features.schema.json (L3 Work layer enum), PLAN-001 layer-plans.json, and analysis docs. Maps directly to pi-context's own package layering: L1 substrate (block CRUD / schemas / closure-table primitives), L2 query (filter / resolve / walk / find-references), L3 composition (lenses / roadmap-plan / execution-context), L4 dispatch (jit-agents / workflows / monitors), L5 surface (commands / tools / ceremonies / display). The 'user-chosen scheme' option (option 2) remains valid for DOWNSTREAM adopters of pi-context — they declare whatever layer scheme fits their project; this enactment is THIS repo's dogfood declaration and does not foreclose other schemes for other adopters. 'Fewer layers (3-tier)' (option 3) rejected: the existing free-text usage already discriminates five layers and conflating any pair loses signal. 'Defer until FGAP-052 consumption lands' (option 4) rejected: declaration without consumption is still useful for validation; consumption is FGAP-052's separate work and not gated by this enactment.",
+  "consequences": [
+    "Every block_kinds[].layer FK references resolve to declared layers[].id.",
+    "FGAP layer field validates against the registry (currently free-text).",
+    "features.schema.json layer enum aligns with config.layers[].",
+    "Layer-aware lens binning + filtering becomes possible once FGAP-052 closes.",
+    "Documentation (CLAUDE.md / skill-narratives) references canonical layer labels."
+  ],
+  "options_considered": [
+    {
+      "label": "Adopt L1..L5 substrate/query/composition/dispatch/surface",
+      "description": "Five-tier engineering altitude per pi-context's package layering: L1 substrate (block-api / schemas / closure-table), L2 query (filter-block-items / walk-ancestors / find-references / resolve-items-by-id), L3 composition (lens-view / roadmap-plan / execution-context), L4 dispatch (pi-jit-agents / pi-workflows / pi-behavior-monitors), L5 surface (commands / pi tools / orchestrator scripts / ceremonies). Aligns with current FGAP layer field usage + analysis docs.",
+      "tradeoffs": "Captures pi-context's actual code architecture; canonical for engineering reasoning; conflates with work-altitude (where features are 'L3 Work layer' which is different conceptually); user-substrate-arc altitude vs engineering-layer ambiguity."
+    },
+    {
+      "label": "Adopt different layer scheme appropriate to user's project",
+      "description": "User's project may have different layer altitudes (e.g. for a research repo: L1 raw-data / L2 analyses / L3 papers / L4 publications / L5 dissemination). config.layers[] declares whatever the user's project conceives; built-in defaults are advisory.",
+      "tradeoffs": "Aligns with DEC-0025 vocabulary-neutral; user must choose; pi-context ships no canonical default; documentation guides user authoring."
+    },
+    {
+      "label": "Adopt fewer layers (3-tier)",
+      "description": "Simpler scheme: substrate / orchestration / surface. Maps current pi-context less cleanly but reduces conceptual surface.",
+      "tradeoffs": "Easier to reason about; loses granularity that FGAP entries already use."
+    },
+    {
+      "label": "Defer layer registry adoption until consumption (FGAP-052) lands",
+      "description": "Don't declare layers[] now; revisit when runtime-honoring lands so declared-vs-consumed don't drift.",
+      "tradeoffs": "Avoids declared-but-symbolic state; blocks any layer-aware lens authoring; conflicts with mandate-007 (no deferring)."
+    }
+  ],
+  "references": [
+    {
+      "label": "config.schema.json layers[] declaration site",
+      "path": "packages/pi-context/registry/schemas/config.schema.json",
+      "lines": "25-38"
+    },
+    {
+      "label": "FGAP layer field free-text usage",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "features.schema.json L1..L5 enum",
+      "path": ".project/schemas/features.schema.json",
+      "lines": "25"
+    },
+    {
+      "label": "PLAN-001 Muni L1-L5 restructure plans",
+      "path": ".project/layer-plans.json"
+    },
+    {
+      "label": "Analysis grounding for L1-L5 inferred labels",
+      "path": "analysis/gsd-2-foundational-intelligence.md"
+    },
+    {
+      "label": "FGAP-052 runtime-vs-declaration consumption gap",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "DEC-0032 enactment (L1..L5 for THIS repo; downstream-adopter-scheme path preserved as option 2)",
+      "commit": "a20a1c7"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-047",
+    "FGAP-052"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-26"
+}

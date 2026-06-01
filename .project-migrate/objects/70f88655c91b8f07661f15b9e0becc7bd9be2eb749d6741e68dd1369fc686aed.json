@@ -1,0 +1,11 @@
+{
+  "title": "extractResponseText() uses wrong property name for ThinkingContent — thinking block extraction was broken since implementation",
+  "body": "extractResponseText() checked 'text' in part for thinking blocks, but pi-ai ThinkingContent has { type: 'thinking', thinking: string }, not { type: 'thinking', text: string }. The fallback to thinking content never fired. Test fixtures used { type: 'thinking', text: '...' } — a made-up shape that matched the code's assumption, not the real type. Tests passed against wrong fixtures. Fixed in fd02c15 — property corrected to 'thinking', test fixtures corrected. Root cause: implementing agent was not scoped with the exact ThinkingContent type signature.",
+  "location": "packages/pi-behavior-monitors/index.ts",
+  "status": "resolved",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-behavior-monitors",
+  "source": "human",
+  "resolved_by": "fd02c15 — corrected property access from .text to .thinking, fixed test fixtures to use real ThinkingContent shape"
+}

@@ -1,0 +1,78 @@
+{
+  "title": "gsd-2 foundational intelligence pipeline — four-layer project onboarding and context engineering",
+  "status": "complete",
+  "layer": "L1",
+  "type": "comparative",
+  "question": "How does gsd-2 establish foundational intelligence about a project (codebase mapping, vision capture, staged research, skill discovery), and does each layer map to pi-project-workflows primitives?",
+  "method": "code-inspection",
+  "scope": [
+    "gsd-2 monorepo: src/resources/extensions/gsd/codebase-generator.ts",
+    "gsd-2 prompts: discuss.md, research-milestone.md, research-slice.md, parallel-research-slices.md",
+    "gsd-2 templates: research.md",
+    "gsd-2: src/resources/extensions/gsd/skill-discovery.ts",
+    "pi-project-workflows framework primitives"
+  ],
+  "findings_summary": "gsd-2 builds project intelligence through a four-layer sequential pipeline: (1) Codebase map generation — walks git ls-files, groups by directory, produces .gsd/CODEBASE.md with fingerprint + TTL staleness. (2) Vision capture — human-in-the-loop structured interview with mandatory pre-investigation pass (rg, find, web search before first question), anti-reduction rule, produces REQUIREMENTS.md. (3) Staged research — two tiers: milestone research (strategic, broad, shaped for roadmap planner) and slice research (tactical, per-slice, shaped for planner agent), with parallel dispatch of one subagent per slice. Research depth calibrated (deep/targeted/light) based on uncertainty. (4) Skill discovery — directory-watching for new skills, injection into system prompt via before_agent_start hook.\n\nAll four layers map to pi-project-workflows: codebase map → workflow writing to architecture.json block with render macro, vision capture → discussion workflow outputting to requirements.json, staged research → forEach workflow step with parallel research agents writing to research block, skill discovery → directory-watching monitor (issue-051). Cross-cutting patterns: inlined context preloading IS contextBlocks, forward intelligence between slices IS filtered contextBlocks reads (issue-041), research templates ARE agent specs without the framework to hold them.\n\nNew gaps surfaced: scoped/filtered contextBlocks reads (issue-041 — gsd-2's forward intelligence requires filtering verification/summary blocks to depends_on slice IDs), directory-watching monitor (issue-051), dynamic model selection (issue-052), pre-execution monitor gating on required tool calls (issue-053), per-agent tool-call budget tracking (issue-054). Every piece of gsd-2's intelligence pipeline is either already in our framework, in our open issues, or filed during this analysis.",
+  "findings_document": "analysis/gsd-2-foundational-intelligence.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "gsd-2 monorepo as observed 2026-04 (external, not version-pinned)"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-10T00:00:00Z",
+  "stale_conditions": [
+    "gsd-2 restructures its intelligence pipeline",
+    "pi-project-workflows closes issues 041, 051, 052, 053, 054",
+    "gsd-2's codebase-generator.ts or research templates materially change"
+  ],
+  "citations": [
+    {
+      "label": "gsd-2 codebase generator",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/codebase-generator.ts"
+    },
+    {
+      "label": "gsd-2 discussion prompt (vision capture)",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/prompts/discuss.md"
+    },
+    {
+      "label": "gsd-2 milestone research prompt",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/prompts/research-milestone.md"
+    },
+    {
+      "label": "gsd-2 slice research prompt",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/prompts/research-slice.md"
+    },
+    {
+      "label": "gsd-2 parallel research dispatch",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/prompts/parallel-research-slices.md"
+    },
+    {
+      "label": "gsd-2 research output template",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/templates/research.md"
+    },
+    {
+      "label": "gsd-2 skill discovery",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/skill-discovery.ts"
+    }
+  ],
+  "informs": [
+    "issue-041",
+    "issue-051",
+    "issue-052",
+    "issue-053",
+    "issue-054"
+  ],
+  "informed_by": [
+    "R-0010"
+  ],
+  "related_research": [
+    "R-0009"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-10T00:00:00Z"
+}

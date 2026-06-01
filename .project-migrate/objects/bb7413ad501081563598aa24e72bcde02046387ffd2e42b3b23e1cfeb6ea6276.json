@@ -1,0 +1,28 @@
+{
+  "title": "No canonical status vocabulary registry — status rollup hardcoded in TS, not user-extensible per project",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-project",
+  "layer": "L1",
+  "description": "The substrate has no canonical mapping from per-schema status enums to a normalized status vocabulary. Each block schema independently declares its own status enum (issues uses open|resolved|deferred; decisions uses open|enacted|superseded; tasks uses todo|in_progress|completed). Any aggregation across blocks (status rollup over mixed-kind items in a roadmap phase or plan) must collapse these to a normalized set (complete|in_progress|blocked|todo|unknown). Hardcoding the mapping in TypeScript (the proposal's STATUS_VOCABULARY) is not user-extensible per project and bakes in canonical-engineering vocabulary the user has flagged as opaque. Forces every cross-block aggregation to fail open or to lose semantic precision when a project introduces a new status value.",
+  "evidence": [
+    {
+      "file": ".project/schemas/issues.schema.json",
+      "reference": "issues.status enum: open|resolved|deferred"
+    },
+    {
+      "file": ".project/schemas/decisions.schema.json",
+      "reference": "decisions.status enum: open|enacted|superseded (3-state lifecycle, x-lifecycle metadata)"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/tasks.schema.json",
+      "reference": "tasks.status enum: todo|in_progress|completed|cancelled (different vocabulary)"
+    }
+  ],
+  "impact": "Without a canonical mapping at the substrate layer, every consumer that aggregates status across block kinds (status rollup, roadmap phase status, plan status, dashboards) must either ship its own hardcoded mapping (duplicated drift surface) or fall back to per-block reporting (no rollup possible). Per-project status extensions (a project adds a 'queued' status) cannot be onboarded without code change. Sub-gap surfaced by the roadmap/plan substrate proposal that needs first-class substrate handling.",
+  "canonical_vocabulary": "status vocabulary registry; status normalization; cross-block status rollup",
+  "proposed_resolution": "Add status_buckets field to config.schema.json: { complete: string[], in_progress: string[], blocked: string[], todo: string[] }. Each bucket lists the per-schema status values that map into it. Per-project extensible — a project adds 'queued' to todo by editing config.json. SDK rollupPhaseStatus / rollupPlanStatus functions read from getProjectContext(cwd).config?.status_buckets with a default mapping (resolved/done/enacted/completed → complete; in_progress/active → in_progress; etc.) if absent. Validator emits status_unknown_value warnings for items whose status doesn't appear in any bucket.\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `d4ec3ce` (Step 2 config.status_buckets in ConfigBlock + schema declaration) + `5fe8969` (Step 7 resolveStatusVocabulary merge function in roadmap-plan). ConfigBlock.status_buckets schema field declared; resolveStatusVocabulary merges hardcoded defaults with per-project config.status_buckets override; loadRoadmap consumes via Step 7. Description text above preserves the forensic record of the pre-closure state.",
+  "related_decisions": [],
+  "related_features": [],
+  "related_issues": []
+}

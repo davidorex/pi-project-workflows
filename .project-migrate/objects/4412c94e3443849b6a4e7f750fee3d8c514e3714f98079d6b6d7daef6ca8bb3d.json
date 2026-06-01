@@ -1,0 +1,25 @@
+{
+  "status": "completed",
+  "verification": "VER-019",
+  "description": "Re-derivation machinery unit 2.6 (DEC-0036 step 2): zero-loss state machinery. Sub-unit A — currentState(cwd) full-state derivation {focus, inFlight, nextActions, blocked} + atomic-next ranking (priority + topoSort over task_depends_on_task), exposed as library currentState + context-current-state Pi tool + scripts/orchestrator/current-state.ts; topoSort extracted to topo.ts to break the project-sdk<->roadmap-plan cycle. Sub-unit B — config-declared status-consistency invariant class (oneOf beside requires-edge), cycle-safe status-vocab.ts extraction (StatusBucket + STATUS_VOCABULARY_DEFAULTS + resolveStatusVocabulary), currentState vocabulary-neutralized to status buckets (DEC-0025), 3 task-relationship relation_types (task_addresses_gap/feature, task_governed_by_decision) + 4 status-consistency drift declarations. Sub-unit C (harness-side state projection to MEMORY/HANDOFF) RECLASSIFIED out of extension scope per the DEC-0040 amendment. Sub-unit D — comprehensive status-bucket completeness: STATUS_VOCABULARY_DEFAULTS extended with the 12 going-forward-conception status values that previously bucketed to unknown (closed/verified/in-review/revised/partial/approved/ready/decided/abandoned/wontfix/skipped/stale), grounded in samples-schema semantics; + status-vocab.test.ts conception-completeness guard. Scope canon-forced: DEC-0036 (defaults track the conception, registry/ retiring) + DEC-0025 (config.status_buckets is the per-substrate override; retired registry-only vocab excluded).",
+  "files": [
+    "packages/pi-context/src/topo.ts",
+    "packages/pi-context/src/status-vocab.ts",
+    "packages/pi-context/src/project-sdk.ts",
+    "packages/pi-context/src/project-context.ts",
+    "packages/pi-context/src/roadmap-plan.ts",
+    "packages/pi-context/schemas/config.schema.json",
+    "packages/pi-context/samples/conception.json",
+    ".project/config.json",
+    "scripts/orchestrator/current-state.ts",
+    "packages/pi-context/src/status-vocab.test.ts"
+  ],
+  "acceptance_criteria": [
+    "currentState(cwd) derives {focus, inFlight, nextActions, blocked}; atomic-next ranks open work by priority + topoSort over task_depends_on_task",
+    "config-declared status-consistency invariant class detects cross-block status drift, vocabulary-neutral (no hardcoded literal in consumer) + edge-gated (silent on edgeless .project)",
+    "status-vocab + topo extracted; no project-sdk<->roadmap-plan module cycle (grep-verified)",
+    "STATUS_VOCABULARY_DEFAULTS completeness fix: planned->todo (was bucketing to unknown)",
+    "sub-unit C reclassified harness-side per DEC-0040 amendment — not extension code",
+    "comprehensive status-bucket completeness (sub-unit D): 12 conception status values mapped (grounded in samples-schema semantics) + enforceable conception-completeness guard test (status-vocab.test.ts)"
+  ]
+}

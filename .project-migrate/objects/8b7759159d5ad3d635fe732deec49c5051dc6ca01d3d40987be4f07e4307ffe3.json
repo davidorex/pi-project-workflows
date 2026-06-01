@@ -1,0 +1,38 @@
+{
+  "title": "ID-prefix convention drift across existing block kinds — issue- lowercase + R-/DEC- 4-digit vs all others 3-digit uppercase",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Inspection of current .project/*.json block instances (analysis/2026-05-14-step-1-config-draft-from-substrate.md drift section) surfaces two specific prefix-convention drifts: (1) casing — `issue-001`/`issue-002`/etc. use lowercase prefix while DEC- / FGAP- / TASK- / VER- / FEAT- / PLAN- / REVIEW- / CTX- / RAT- all use uppercase; (2) padding — `R-0001` (research) + `DEC-0001..0023` (decisions) use 4-digit zero-padding while FGAP- (3-digit) / TASK- (3-digit) / VER- (3-digit) / FEAT- (3-digit) / PLAN- (3-digit) / REVIEW- (3-digit) / CTX- (3-digit) / RAT- (3-digit) all use 3-digit. Drift accumulated as block kinds were authored at different times by different sessions without canonical convention settlement (FGAP-047 root cause).",
+  "evidence": [
+    {
+      "file": ".project/issues.json",
+      "reference": "All issue IDs use 'issue-' lowercase prefix; 91 items"
+    },
+    {
+      "file": ".project/research.json",
+      "reference": "All research IDs use 'R-NNNN' 4-digit zero-pad; 11 items"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "All DEC IDs use 'DEC-NNNN' 4-digit zero-pad; 23 items now"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "All FGAP IDs use 'FGAP-NNN' 3-digit zero-pad; uppercase; 47 items now"
+    },
+    {
+      "file": "analysis/2026-05-14-step-1-config-draft-from-substrate.md",
+      "reference": "Drift surfaced in convention-drift section of config draft"
+    }
+  ],
+  "impact": "ID-prefix lens binning + cross-block ID parsing assumes uniform shape; current drift forces per-prefix branching at the lens-bin layer + complicates ID-pattern regex composition. LLM lookups grep across blocks assume one prefix shape per block. Display rendering needs to handle 3 distinct shapes (lowercase / 3-digit / 4-digit). Forced consistency post-hoc requires migration of existing IDs which cascades to every relations.json edge that ever references them.",
+  "canonical_vocabulary": "id-prefix-padding, id-prefix-casing, canonical-id-pattern",
+  "proposed_resolution": "Settle two DECs: (a) prefix-padding convention — 3-digit canonical; R- and DEC- migrate forward to 3-digit (preserving leading zero significance — DEC-0001 → DEC-001 would collide at ID-9 boundary, so likely retain 4-digit for high-count blocks OR introduce wider canonical width). Alternative: declare 4-digit canonical and migrate FGAP- TASK- etc. (b) prefix-casing — uppercase canonical; issue- migrates to ISSUE-. Migration impact: every relations.json edge + every analysis MD + every commit message referencing migrated IDs needs updating. Practical preservation: declare canonical convention going forward; existing drift items remain in current shape with a 'historical-convention' note OR are batch-migrated in a single arc-completion sweep.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0013"
+  ],
+  "related_issues": []
+}

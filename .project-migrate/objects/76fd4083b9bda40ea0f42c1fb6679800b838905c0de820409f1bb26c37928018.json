@@ -1,0 +1,8 @@
+{
+  "title": "Add pre-dispatch check in executeAgent",
+  "status": "todo",
+  "files": [
+    "packages/pi-jit-agents/src/jit-runtime.ts"
+  ],
+  "acceptance": "Pre-dispatch branch inspects toolChoice and compiled spec's thinking field; when incompatible, disables thinking and emits warning"
+}

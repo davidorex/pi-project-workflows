@@ -1,0 +1,10 @@
+{
+  "title": "Scoped/filtered contextBlocks reads — agents cannot request subsets of block data",
+  "body": "Current contextBlocks injection reads whole blocks from .project/ and injects them into the template environment. Agents cannot express 'inject only Active requirements', 'inject only verification entries for upstream slices', 'inject only decisions related to the active milestone'. This is the missing primitive for gsd-2's Forward Intelligence pattern, dependency slice summaries, and requirement-scoped research. Extension: contextBlocks entries should accept a filter expression or query (e.g., contextBlocks: [{name: 'verification', where: 'slice_id in ${{ dependencies }}'}] or contextBlocks: [{name: 'requirements', where: 'status == Active'}]). Reuses the existing ${{ }} expression engine for consistency. Without this, agents either get all-or-nothing block data (wasted tokens, irrelevant content) or must be hand-wired per use case.",
+  "location": "packages/pi-workflows/src/step-shared.ts:150-194",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-jit-agents",
+  "source": "human"
+}

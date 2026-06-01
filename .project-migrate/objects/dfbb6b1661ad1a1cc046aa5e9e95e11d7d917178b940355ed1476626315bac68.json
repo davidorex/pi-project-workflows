@@ -1,0 +1,35 @@
+{
+  "target": "FGAP-135",
+  "target_type": "framework-gap",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-29",
+  "criteria_results": [
+    {
+      "criterion": "Build / check / test green across the workspace at HEAD; husky pre-commit gate passed on every step commit (38ad48e, 7a09a27, 0703bc5)",
+      "status": "passed",
+      "evidence": "Each of the 3 source/skill commits was authored via git commit (no --no-verify); husky pre-commit ran npm run check && npm test on each and exited 0. Final workspace test count: 828 pass / 0 fail / 2 skipped (pre-existing skips unrelated to FGAP-135). Final check: biome + tsc --noEmit clean across 256 files. pi-agent-dispatch test count: 94 (was 81 at parent SHA 3c9e8e4; +13 new read-truncation-gate.test.ts tests across 7 describe blocks: handler-intercepts-truncated, handler-passes-non-truncated, handler-passes-non-read, directive-renders-exact-counts, directive-names-path, directive-canonical-phrases, buildTruncationDirective-pure)."
+    },
+    {
+      "criterion": "Behavioral coverage of read-truncation-gate semantics: truncated read replaced with directive; non-truncated read passes through; non-read tools pass through; directive embeds exact counts + nextOffset + file path; directive contains canonical-model strings ⚠️ / TRUNCATED / INCOMPLETE / 'do NOT' / 'offset=' / 'grep'; buildTruncationDirective is pure",
+      "status": "passed",
+      "evidence": "packages/pi-agent-dispatch/src/read-truncation-gate.test.ts (landed at commit 38ad48e) covers all 7 behavioral concerns in 13 tests across 7 describe blocks; all pass on first run (after a 1-test fix during step 1 to align the directive sentence boundary with the test's 'do NOT' lowercase assertion — resolved by restructuring the sentence to 'The content below is INCOMPLETE; do NOT proceed as if you have the full file'). Tests drive readTruncationGateHandler and buildTruncationDirective directly with synthetic ToolResultEvent + ExtensionContext shapes; no pi runtime required."
+    },
+    {
+      "criterion": "Citation-rot scanner reports 0 hits across all 5 packages post-SKILL.md regen",
+      "status": "passed",
+      "evidence": "packages/pi-context/src/samples-catalog.test.ts driver 'citation-rot regression — AST scanner across all monorepo packages' run post-commit 0703bc5: 15/15 tests pass; 0 hits across packages/pi-context, packages/pi-workflows, packages/pi-behavior-monitors, packages/pi-agent-dispatch, packages/pi-jit-agents, packages/pi-project-workflows. The new read-truncation-gate.ts module + its directive text + its unit tests carry no canonical-id citations in operator-facing strings; the scanner's NewExpression /Error$/ constructor-arg traversal + Type.String description traversal + pi.registerTool description traversal (per FGAP-133's hardening) remains green."
+    },
+    {
+      "criterion": "End-to-end behavioral verification — operator launches scripts/launch-constrained-pi.sh against a tmpdir + creates a 3000-line test file + asks the agent to read it; agent receives the directive (not the file head); agent invokes read with offset=2000 to continue OR invokes grep for targeted search",
+      "status": "skipped",
+      "evidence": "Plan Phase 3 criterion 4 explicitly marks this as a manual operator step (documented but deferred). Requires interactive launch + real LLM + tmpdir provisioning; not blockable as an automated gate. Empirical proof of the hard-refusal closure path is reserved for the orchestrator follow-on with credentials; coverage at this attestation level is structural (the handler replaces content unconditionally when truncation.truncated is true, demonstrated by the 13 unit tests; pi's tool_result event mechanics + ReadToolResultEvent details.truncation field shape are verified against node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:629-669,726-730 + core/tools/read.js:263 + core/tools/truncate.d.ts:13-36)."
+    },
+    {
+      "criterion": "Adversarial probe (fresh-context Explore agent skeptic) — skipped at this implementation step; deferred to orchestrator follow-on",
+      "status": "skipped",
+      "evidence": "Per plan Phase 3 criterion 5: an adversarial probe would re-verify (a) handler filters strictly on toolName === 'read'; (b) non-truncated reads pass through untouched; (c) truncated reads have content REPLACED (not appended); (d) directive contains canonical-model strings; (e) directive includes exact counts + nextOffset + file path; (f) buildTruncationDirective is a pure function (no I/O); (g) handler does not interfere with auth-gate (different event); (h) no canonical_id citations in directive text or new files; (i) registerReadTruncationGate wired into factory after registerAuthGate; (j) SKILL.md <events> section gains tool_result; (k) buildTruncationDirective handles edge cases (firstLineExceedsLimit; lastLinePartial; bytes-vs-lines truncation differential). The driver tests above attest (a/b/c/d/e/f/h/k) directly; the factory diff at commit 7a09a27 attests (i); the regenerated SKILL.md content at commit 0703bc5 attests (j). The fresh-context probe is deferred so the orchestrator can run it with bookkeeping discipline matching the rest of the FGAP-135 arc; it is not a blocker for closure given the deterministic-test coverage above."
+    }
+  ],
+  "evidence": "FGAP-135 (filed at commit c5f0010 2026-05-29) closed via 3 implementation-step commits on branch fgap-135-read-truncation-gate: 38ad48e (step 1: read-truncation-gate.ts library + read-truncation-gate.test.ts 13 unit tests; buildTruncationDirective pure function + readTruncationGateHandler ToolResultEvent handler + registerReadTruncationGate one-line registration wrapper; module created but NOT yet wired into factory); 7a09a27 (step 2: single-line wiring in packages/pi-agent-dispatch/src/index.ts adds registerReadTruncationGate(pi) after registerAuthGate(pi); behavioral effect at extension load — pi-dispatch now fires readTruncationGateHandler for every tool_result event); 0703bc5 (step 3: npm run skills regen captures the new pi.on('tool_result') call in both packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md and the meta packages/pi-project-workflows/skills/pi-agent-dispatch/SKILL.md mirror; events section now reads 'tool_call, tool_result'; citation-rot scanner verify clean). The canonical post-FGAP-135 model: pi-dispatch-layer tool_result intercept mirrors the tool_call auth-gate boundary; the directive IS the response so the agent cannot skim past it (no head returned); phrasing mirrors pi-context serializeForRead overCapDirective canon at packages/pi-context/src/read-element.ts:222-245. Coexists orthogonally with auth-gate (tool_call event); no canonical-pi changes; no release; no push; tree clean modulo pre-existing hedge.patterns.json mod."
+}

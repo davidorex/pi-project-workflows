@@ -1,0 +1,16 @@
+{
+  "title": "Existing workflows + bundled agents + their tests are NOT targets of work — disposable legacy PoCs predating pi-context/pi-jit-agents; the workflow FRAMEWORK is the only target",
+  "status": "enacted",
+  "context": "Recurring scope inversion (observed across the FGAP-099/FEAT-001 work): framework changes were being constrained or blocked by 'this breaks bundled workflow X / agent Y / test Z', and FEAT-001 STORY-006 treated bundled classifier/agent YAMLs as keep-and-align artifacts. The user grounded the project's actual intent (jit-agents user-intentions report analysis/2026-05-26-jit-agents-user-intentions.jsonl, JI-002: existing agents are development PoCs, recreatable from a correct framework) and issued an explicit scoping directive.",
+  "decision": "User directive (2026-05-26, verbatim): \"zero existing workflows are to be considered targets of any work. that goes for their tests too. they are nothing but legacy workflows development artifacts that predate pi-context and pi-jit-agents. the workflow framework is the only target.\" Operative: the existing .workflow.yaml specs, the bundled agents/*.agent.yaml + their templates/schemas, and the tests OF those legacy artifacts are NOT targets — not to be preserved, aligned, fixed, or treated as constraints/regression gates. They are disposable, recreatable from a correct framework. The ONLY targets of work are the workflow FRAMEWORK (the pi-workflows engine code) and the agent layer (pi-jit-agents). DISTINCTION: framework/engine UNIT tests (tests of pi-workflows/pi-jit-agents/pi-context engine behavior) ARE targets and remain regression gates; tests that exercise the legacy bundled workflows/agents are NOT.",
+  "consequences": [
+    "A framework change that breaks a legacy bundled-workflow/agent test is not a regression — the artifact is disposable; do not contort framework work to keep legacy artifacts green.",
+    "Resolves the FEAT-001 STORY-006 keep-and-align-bundled-agents tension toward DISPOSABLE (aligns DEC-0048 with JI-002).",
+    "The FGAP-099/agent-layer concern that 'every bundled workflow agent breaks' under an agent-layer change is moot — bundled agents are not targets.",
+    "Agent-layer unification (FEAT-001) need not preserve bundled-agent layouts/resolution; legacy bundled agents conform to the corrected framework or are discarded.",
+    "Verification gates for framework work assert engine behavior, not legacy-artifact behavior."
+  ],
+  "related_features": [
+    "FEAT-001"
+  ]
+}

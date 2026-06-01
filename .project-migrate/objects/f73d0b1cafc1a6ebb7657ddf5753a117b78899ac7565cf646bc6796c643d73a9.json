@@ -1,0 +1,25 @@
+{
+  "title": "pi-workflows agent dispatch has no content-identity cache (SHA256 of prompt+opts → cached result); each agent dispatch re-runs even on identical input across invocations + sessions; persistent cache could massively speedup repeated runs (nightly audits with same code)",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-workflows",
+  "layer": "L3",
+  "description": "Per R-0014 recon axis 6: Claude Code workflows cache (prompt, opts) → result; longest unchanged prefix returns cached results instantly; survives resume within session. pi-workflows has per-step state persistence (re-runs un-completed steps on resume) but no content-identity cache — identical agent dispatches across invocations or sessions re-run + re-spend tokens. For workflows run repeatedly with same input (nightly audits, idempotent verifications, replay of stable test scenarios), the wasted token cost is significant + the wall-clock latency is unnecessary.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "391-410",
+      "reference": "Part 3 axis 6 — Resume Cache by (Prompt, Opts) Identity — INSPIRE verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/dispatch.ts",
+      "reference": "no cache check before subprocess spawn"
+    }
+  ],
+  "impact": "Token waste on repeated runs of identical workflows. Cache invalidation puzzles (changed agent behavior → stale cached result) are real risk but mitigatable by explicit cache-clear flag + content-hash including agent.yaml hash + tool-surface hash. Operators running nightly verifications pay for re-computation that yields identical results.",
+  "canonical_vocabulary": "content-identity caching; SHA256(prompt+opts+agent-spec-hash); persistent agent cache; cache-by-input not cache-by-step-id",
+  "proposed_resolution": "Optional opt-in cache mode on agent step: 'cache: true | { ttl?: duration, key?: <expression> }'. Compute cache key = SHA256(prompt + JSON.stringify(opts) + agent-spec-content-hash + tool-surface-hash). Store cache in ~/.pi/agent-cache/<hash>.json with metadata (timestamp, agent-spec-version, expires). On dispatch, check cache before spawn; return cached result if hit + not expired. Configuration: 'pi cache clear' / 'pi cache list' / 'pi cache stats' CLI surface. Spec example: steps.audit-file: { agent: file-auditor, cache: true, input: { file: ${{ item }} } }. Risk + mitigation: explicit opt-in only (default off); cache key includes agent-spec hash so spec changes auto-invalidate; ttl bounds staleness; cache-clear command + per-invocation --no-cache flag for forced re-run.",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

@@ -1,0 +1,66 @@
+{
+  "title": "gsd-2 derivability — planning methodology and autonomous mode against pi-project-workflows primitives",
+  "status": "complete",
+  "layer": "L1",
+  "type": "comparative",
+  "question": "Is gsd-2's planning methodology (Milestone→Slice→Task hierarchy, context files, decisions register, codebase map, parallel execution, verification gates, 20+ auto-*.ts autonomous behaviors) derivable from pi-project-workflows primitives, and what framework gaps does the mapping expose?",
+  "method": "code-inspection",
+  "scope": [
+    "gsd-2 monorepo (~2581 files) as observed 2026-04",
+    "gsd extension source: src/resources/extensions/gsd/ (~60+ TypeScript files)",
+    "pi-project-workflows framework open issues (001–065)"
+  ],
+  "findings_summary": "gsd-2 is a fork-and-absorb of the pi ecosystem containing pi-ai, pi-coding-agent, pi-tui, and pi-agent-core as packages alongside gsd-specific infrastructure (daemon, mcp-server, native, studio, vscode-extension, web). Its planning uses strict Milestone→Slice→Task hierarchy with markdown state files in .gsd/, checkbox parsing, and inline metadata tags.\n\ngsd-2's planning methodology IS derivable: milestone/slice/task schemas map to .project/ blocks, context files map to contextBlocks injection, DECISIONS.md maps to decisions.json, STATE.md maps to projectState() SDK, CODEBASE.md maps to architecture.json, parallel slice execution maps to DAG parallelism, verification gates map to monitor: step type. All methodology is expressible as schemas + YAML + agent specs.\n\ngsd-2's autonomous mode (20+ auto-*.ts files) is ALSO derivable but exposes every gap we know about: auto-detect-stuck → stuck-detection monitor, auto-budget → token-budget monitor, auto-recovery → recovery workflows from monitor FLAG verdicts, auto-verification → monitor: step type (issue-050 blocks this), auto-worktree → workflow step type, auto-dashboard → projectState() rendering, auto-observability → execution trace debugger (issue-036).\n\nNine specific framework issues required: working monitor verification gates (042/050), execution trace debugger (036), block write-back (028), writeback monitor (030), scheduled re-execution (031), token budgeting (042), per-monitor collectors (035), monitor tuning (038), SDK execution history (037). gsd-2 has two workflow engines (custom-workflow-engine.ts and dev-workflow-engine.ts) because they tried to build the framework inside their application. Our platonic form is what that framework should have been.",
+  "findings_document": "analysis/gsd-2-derivability.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "gsd-2 monorepo as observed 2026-04 (external, not version-pinned)"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-10T00:00:00Z",
+  "stale_conditions": [
+    "gsd-2 restructures its planning methodology or workflow engines",
+    "pi-project-workflows closes the nine blocking issues (028, 030, 031, 035, 036, 037, 038, 042, 050)",
+    "gsd-2 adopts pi-project-workflows as its planning substrate"
+  ],
+  "citations": [
+    {
+      "label": "gsd-2 custom workflow engine",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/custom-workflow-engine.ts"
+    },
+    {
+      "label": "gsd-2 dev workflow engine",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/dev-workflow-engine.ts"
+    },
+    {
+      "label": "gsd-2 parallel orchestrator",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/parallel-orchestrator.ts"
+    },
+    {
+      "label": "gsd-2 auto-mode files (20+)",
+      "url": "gsd-2 monorepo: src/resources/extensions/gsd/auto-*.ts"
+    }
+  ],
+  "informs": [
+    "issue-028",
+    "issue-030",
+    "issue-031",
+    "issue-035",
+    "issue-036",
+    "issue-037",
+    "issue-038",
+    "issue-050"
+  ],
+  "informed_by": [],
+  "related_research": [
+    "R-0011",
+    "R-0009"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-10T00:00:00Z"
+}

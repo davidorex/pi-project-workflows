@@ -1,0 +1,53 @@
+{
+  "name": "Make typed composition real",
+  "intent": "Enforce the agent input schema contracts that currently exist as decorative annotations, and demonstrate template composition across multiple agent families — converting the typed composition advantage from aspirational to functional. (pre-FGAP-026 planning artifact)",
+  "status": "planned",
+  "success_criteria": [
+    {
+      "criterion": "executeAgentStep validates input against AgentSpec.inputSchema before dispatch",
+      "verify_method": "command"
+    },
+    {
+      "criterion": "All existing workflow specs pass input schema validation without error",
+      "verify_method": "command"
+    },
+    {
+      "criterion": "At least 3 template families use Nunjucks extends/block composition (up from 1)",
+      "verify_method": "inspect"
+    },
+    {
+      "criterion": "At least one reusable agent accepts variable input shapes via optional fields with conditional template rendering",
+      "verify_method": "inspect"
+    }
+  ],
+  "specs": [
+    {
+      "number": 1,
+      "name": "Enforce agent input schema validation",
+      "intent": "Add schema validation in executeAgentStep so typed contracts are real",
+      "status": "planned"
+    },
+    {
+      "number": 2,
+      "name": "Fix workflow specs for schema compliance",
+      "intent": "Ensure every agent invocation in existing workflows satisfies the agent's input schema",
+      "status": "planned"
+    },
+    {
+      "number": 3,
+      "name": "Expand template inheritance to more agent families",
+      "intent": "Prove composition model works beyond the single analyzer family",
+      "status": "planned"
+    },
+    {
+      "number": 4,
+      "name": "Redesign reusable agents with parametric input",
+      "intent": "Transform structural repetition into genuine parametric recombination",
+      "status": "planned"
+    }
+  ],
+  "artifacts_produced": [
+    "packages/pi-workflows/src/step-agent.ts",
+    "packages/pi-workflows/templates/"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Migrate call sites in pi-workflows step executors",
+  "status": "todo",
+  "files": [
+    "packages/pi-workflows/src/step-agent.ts",
+    "packages/pi-workflows/src/dispatch.ts"
+  ]
+}

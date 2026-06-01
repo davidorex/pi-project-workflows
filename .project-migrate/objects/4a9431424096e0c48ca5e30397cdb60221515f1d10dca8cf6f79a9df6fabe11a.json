@@ -1,0 +1,20 @@
+{
+  "name": "Memory",
+  "purpose": "What has been learned through incidents. Accumulates, never shrinks. Rules derived from past failures.",
+  "canonical_vocabulary": "Runbook + Postmortem archive + Lessons learned + Knowledge base",
+  "lifetime": "ever-accumulating",
+  "ownership_principle": "Each entry is tied to an originating incident. No speculative rules. Entries cross-reference the features/tasks/findings they derived from.",
+  "current_blocks": [],
+  "target_blocks": [
+    {
+      "name": "feedback-memory.json",
+      "shape": "flat",
+      "notes": "target: canonicalize the ~/.claude/.../memory/feedback_*.md corpus as a queryable block with incident cross-references"
+    },
+    {
+      "name": "postmortems.json",
+      "shape": "flat",
+      "notes": "target: structured postmortem records with cross-references to the incidents they analyze"
+    }
+  ]
+}

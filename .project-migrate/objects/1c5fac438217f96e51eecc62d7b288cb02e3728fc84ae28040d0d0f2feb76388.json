@@ -1,0 +1,10 @@
+{
+  "title": "No ad-hoc agent invocation path — every use requires a .workflow.yaml spec",
+  "body": "pi-subagents allows /run scout 'analyze auth' with zero files written. Our system requires a .workflow.yaml for every agent invocation. This makes the barrier to use much higher for exploration, debugging, and one-off tasks. A /workflow run-agent <name> command or equivalent tool call that dispatches a single agent step with inline input (JSON or key=value) would bridge this gap. The agent's input schema (once enforced) provides validation; the task template provides prompt rendering; the output schema provides structured results — all without a workflow spec.",
+  "location": "packages/pi-workflows/src/index.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "agent"
+}

@@ -1,0 +1,28 @@
+{
+  "title": "Substrate enum vocabularies not reconciled between shared schemas and registry consumers",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "FGAP-017 closure (commit a4e8c9c) added $id + version to 15 registry schemas + $ref consolidated 3 aligned vocabularies (issues.source, audit.severity, conformance-reference.severity). The remaining inline enums diverge from the 6 shared enum schemas authored at Step 4. Per-dimension state: priority — shared uses p-prefix [p-low, p-medium, p-high, p-critical] while 5 registry schemas use [low, medium, high, critical] (no p-prefix); status — shared uses workflow vocabulary [todo, in_progress, blocked, complete, unknown] while 8+ registry schemas use issue-tracker / document-lifecycle vocabularies (open/resolved/deferred, draft/active/blocked, planned/in-progress/completed, etc.); severity — shared uses [info, warning, error] while domain.priority uses [high, medium, low] and verification-method has subset relationships; verification-method — shared has 6 values [command, grep, ast, inspect, human, test] while audit/conformance-reference/phase/verification each use 3-element subsets. Drift surface for the unreconciled cases: enum value added to a shared schema does NOT propagate to consumer schemas because they don't $ref it.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/registry/schemas/requirements.schema.json",
+      "reference": "priority enum [low, medium, high, critical] vs shared [p-low, p-medium, p-high, p-critical] — divergent prefix convention"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/issues.schema.json",
+      "reference": "status enum [open, resolved, deferred] vs shared [todo, in_progress, blocked, complete, unknown] — issue-tracker vs workflow semantic divergence"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/audit.schema.json",
+      "reference": "verification-method enum [command, grep, inspect] is a subset of shared [command, grep, ast, inspect, human, test] — can't $ref because consumer is more restrictive"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/domain.schema.json",
+      "reference": "priority enum [high, medium, low] — yet another priority scale; 3-value vs 4-value mismatch with both shared and other registry schemas"
+    }
+  ],
+  "impact": "No live regression — schemas validate as authored; existing on-disk block items conform to current vocabularies. Architectural debt: the 'one canonical enum vocabulary per dimension' intent of Step 4 / FGAP-016 is not realized. New consumers may inherit from any of multiple competing vocabularies. Future enum-value additions to shared schemas don't reach unaligned registry consumers; tooling treating shared schemas as authoritative may produce false validation results.",
+  "proposed_resolution": "Per-dimension reconciliation decisions, each requiring a data-migration consideration (existing on-disk block items use current registry vocabulary): (1) priority — drop p-prefix from shared OR migrate registry to add prefix; (2) status — formally accept multi-vocabulary-per-dimension (workflow vs issue-tracker vs document-lifecycle as distinct shared schemas) OR collapse into one canonical form; (3) severity — align scales (3-value canonical OR 5-value canonical) across audit/domain/conformance-reference/shared; (4) verification-method — formalize subset-as-restriction via JSON Schema's $ref + constraints OR accept inline subsets as the consumer-restriction pattern. Each decision needs a migration registry entry per Step 4's schema-migrations.ts to bump schema version + transform existing data. The decision space is genuinely architectural (substrate vocabulary semantics), not mechanical."
+}

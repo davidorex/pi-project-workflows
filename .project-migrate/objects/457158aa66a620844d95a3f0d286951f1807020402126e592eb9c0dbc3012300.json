@@ -1,0 +1,41 @@
+{
+  "title": "config.layers[] + block_kinds[].layer FK + lens-validator dispatch are declarable in config but unconsumed at runtime — config-driven-from-line-1 (DEC-0015) partially delivered",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Grep audit of packages/pi-context/src/ surfaces three runtime-vs-declaration gaps: (1) config.layers[] — declared in packages/pi-context/registry/schemas/config.schema.json (work-altitude tier registry with id + display_name + description) — has ZERO consuming code paths. loadConfig reads it (project-context.ts:175,188,274) but no downstream usage of cfg.layers; filter-block-items / walkAncestors / lens-view / roadmap-plan never read it. Declaration is symbolic only. (2) config.block_kinds[].layer FK — schema permits optional layer reference per block-kind; no code groups, filters, projects, or rolls up by this FK. (3) Lens-validator dispatch — registerLensValidator() in lens-view.ts is code-registered (module-init); user-added lens kinds require code, not just config.lenses[] declaration. Result: framework intention per DEC-0015 (\"config drives substrate location; config is the source of truth from line 1\") is structurally undelivered for the work-altitude + lens-validator surfaces. A user can declare a custom layer scheme (e.g. initiative / epic / story / task / subtask) in config.layers[] and assign block_kinds[].layer references, but nothing in pi-context's runtime will honor those declarations — query primitives don't filter by altitude, lens projections don't bin by altitude, roadmap rollups don't group by altitude. [2026-05-20 refinement (DEC-0039 no-optional): the layers degenerate default is 1 IMPLICIT layer — when config.layers is empty, all block_kinds belong to a single implicit layer and block_kinds[].layer resolves to it. This is the concrete semantic layers consumption must implement, and it distinguishes layers (the one legitimate degenerate default) from the other registries (empty = genuine none).]",
+  "evidence": [
+    {
+      "file": "packages/pi-context/registry/schemas/config.schema.json",
+      "reference": "Lines 25-38: layers[] schema declaration; lines 39-55: block_kinds[].layer FK declared"
+    },
+    {
+      "file": "packages/pi-context/src/project-context.ts",
+      "reference": "Lines 175, 188, 274: loadConfig reads config but no consumer reads .layers[] downstream"
+    },
+    {
+      "file": "packages/pi-context/src/lens-view.ts",
+      "reference": "registerLensValidator pattern — code-side module-init registration; not config-driven"
+    },
+    {
+      "file": "packages/pi-context/src/roadmap-plan.ts",
+      "reference": "groupByLens projects via lens.bins; bins are arbitrary strings, not driven by config.layers[] altitude tiers"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP entries use 'layer: L1/L2/L3/L4' free-text field; no validation against any installed layer registry"
+    }
+  ],
+  "impact": "DEC-0015 substrate-canon claim is partially delivered. User attempting to set up custom work-altitude scheme (e.g. roadmap → milestone → epic → story → task → subtask) purely through config + schemas + macros would find that declarations parse and AJV-validate but produce no runtime altitude-aware behavior. Cross-package consumers (pi-workflows / pi-behavior-monitors) cannot rely on config.layers[] for any decision-making. The framework intention/reality gap is not currently visible as substrate. Phase 5 sub-phase 5.1 (config.json authoring) would surface this if config.layers[] is populated — the entries would have no consuming behavior. Cross-decision with FGAP-016 (closed) which surfaced similar declaration-without-consumer pattern for enum vocabularies.",
+  "canonical_vocabulary": "config-consumed-vs-declared, runtime-cascade-completeness, layer-aware-query, lens-validator-config-registration",
+  "proposed_resolution": "Three sub-resolutions: (a) Wire config.layers[] consumption into filter-block-items / walkAncestors / lens-view as a layer-aware predicate option; document which primitives honor layer filtering. (b) Add layer-aware projection helper in roadmap-plan that groups items by block_kinds[].layer FK + emits altitude-stratified roadmap rollups. (c) Move lens-validator dispatch from code-side registerLensValidator to config-side — lens-kind specs declared in config.lenses[] include a validator-strategy enum referencing built-in strategies; user-added strategies still need code but standard ones cascade from config. Acceptance: user can declare 5-tier altitude scheme in config.layers[], assign all block_kinds[].layer references, run filter-block-items + walkAncestors + roadmap rollup, and observe altitude-honored behavior without code changes. Cross-decision with FGAP-047 (vocabulary settlement) and FGAP-051 (conventions schema) — same underlying principle that pi-context's substrate canon must runtime-honor what config declares.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0011",
+    "DEC-0015",
+    "DEC-0017",
+    "DEC-0039"
+  ],
+  "related_issues": []
+}

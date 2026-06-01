@@ -1,0 +1,7 @@
+{
+  "title": "Unit tests for thinking-seam enforcement",
+  "status": "todo",
+  "files": [
+    "packages/pi-jit-agents/test/thinking-seam.test.ts"
+  ]
+}

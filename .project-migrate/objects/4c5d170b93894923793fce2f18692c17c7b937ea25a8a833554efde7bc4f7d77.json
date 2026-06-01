@@ -1,0 +1,60 @@
+{
+  "title": "Align bundled classifier YAMLs with decided policies",
+  "status": "proposed",
+  "description": "Update all five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) to conform to the DEC-0001 model-field semantics and DEC-0002 thinking-seam policy.",
+  "acceptance_criteria": [
+    "Every bundled classifier YAML's model field is consistent with DEC-0001 — either a bare id that resolves via ExtensionContext, or a fully-qualified provider/model, depending on the final decision",
+    "Every bundled classifier YAML's thinking field is set to off (or removed if the default is off) per DEC-0002",
+    "No YAML contains dead config that the classify path silently ignores"
+  ],
+  "depends_on": [
+    "STORY-001",
+    "STORY-002"
+  ],
+  "gates": [
+    "DEC-0001",
+    "DEC-0002"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-006-01",
+      "title": "Update hedge-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml"
+      ]
+    },
+    {
+      "id": "TASK-006-02",
+      "title": "Update commit-hygiene-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/commit-hygiene-classifier.agent.yaml"
+      ]
+    },
+    {
+      "id": "TASK-006-03",
+      "title": "Update fragility-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/fragility-classifier.agent.yaml"
+      ]
+    },
+    {
+      "id": "TASK-006-04",
+      "title": "Update work-quality-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/work-quality-classifier.agent.yaml"
+      ]
+    },
+    {
+      "id": "TASK-006-05",
+      "title": "Update unauthorized-action-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/unauthorized-action-classifier.agent.yaml"
+      ]
+    }
+  ]
+}

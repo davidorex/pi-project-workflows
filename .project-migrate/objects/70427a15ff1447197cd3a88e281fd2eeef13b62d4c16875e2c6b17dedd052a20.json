@@ -1,0 +1,14 @@
+{
+  "title": "Close or migrate resolved issues",
+  "status": "proposed",
+  "description": "Update or migrate issues 043, 045, 048, 049, 050 in issues.json to reflect their closure by this arc. Each issue either marks resolved with a reference to the relevant STORY/TASK, or migrates to a scope-owned finding registry per the PHASE-6 retroactive migration.",
+  "acceptance_criteria": [
+    "issues 043, 045, 048, 049, 050 each have status resolved (or have been migrated to a scope-owned registry with the same terminal state)",
+    "Each resolved issue has resolved_by pointing to the commit or feature that closed it"
+  ],
+  "depends_on": [
+    "STORY-007",
+    "STORY-008"
+  ],
+  "gates": []
+}

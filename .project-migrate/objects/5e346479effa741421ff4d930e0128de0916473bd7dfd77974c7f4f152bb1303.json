@@ -1,0 +1,24 @@
+{
+  "description": "Unit D — FGAP-079 schema/block path-surface fix. (1) Resolver unification: projectRoot drops the config.root branch -> returns resolveContextDir; auto-unifies all write-side callers (schema-write, installProject, readBlockItems, findUnmaterializedAssets) with the read side (schemaPath/blockSchemaPath/validateBlockWithMigration). Pointer-canonical (DEC-0045): config.root is not a path input — honoring it would split the substrate since config/relations are pointer-pinned. (2) Path-traversal sanitization: assertSubstrateName(name) in project-dir.ts (/^[A-Za-z0-9_-]+$/), guarding every name->path builder (schemaPath, blockFilePath, installedSchema/BlockDestPath, readBlockItems, schemaWritePath, file-block-item loadBlockSchema).",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/project-context.ts",
+    "packages/pi-context/src/project-dir.ts",
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/schema-write.ts",
+    "scripts/orchestrator/file-block-item.ts",
+    "packages/pi-context/src/project-context.test.ts",
+    "packages/pi-context/src/project-dir.test.ts"
+  ],
+  "acceptance_criteria": [
+    "projectRoot returns resolveContextDir (no config.root branch); read==write for schemas AND blocks; config/relations still resolve via pointer",
+    "assertSubstrateName(/^[A-Za-z0-9_-]+$/) guards every name->path builder (read + write); rejects ../ , / , \\ , .. ; accepts canonical_ids (framework-gaps etc.)",
+    "config.root-override test rewritten to assert projectRoot IGNORES config.root; new tests: write/read round-trip under non-default config.root resolves identically; traversal names throw",
+    "Runtime demo: temp substrate config.root:'alt-substrate' -> writeSchema/readSchema same path; traversal throws; real .project projectRoot===resolveContextDir + behavior unchanged",
+    "Fresh-context adversarial: resolver unified, every builder guarded, no bypass, behavior-preserving where config.root==pointer",
+    "build/check/test green; skills no-op"
+  ],
+  "depends_on": [],
+  "notes": "Unit D (post A/B/C). Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. DEC-0045 records the pointer-canonical decision. Closes FGAP-079.",
+  "verification": "VER-035"
+}

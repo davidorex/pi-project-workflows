@@ -1,0 +1,71 @@
+{
+  "title": "Agent-as-tool dispatch home — a NEW dedicated pi-agent-dispatch extension whose ONLY scope is the sub-agent→sibling-agent pi.registerTool surface; jit-agents stays library imported directly by orchestrator + workflows + monitors",
+  "status": "enacted",
+  "context": "FEAT-004 (agents-as-tools, cluster-E delegation) needs a Pi tool that exposes 'invoke another agent as a tool' to sub-agents executing inside pi -p subprocesses. pi-jit-agents is canonically a LIBRARY per CLAUDE.md package table ('Library (not extension)') + docs/planning/jit-agents-spec.md (four boundary surfaces: load/compile/execute/introspect) and is tool-less by design (no pi.registerTool in packages/pi-jit-agents/src — verified). Three consumers per DEC-0049 uniform-agent axiom (orchestrator + pi-workflows + pi-behavior-monitors) need agent dispatch; all three consume jit-agents AS A SHARED LIBRARY via direct npm import (TASK-080 is establishing this for workflows + monitors right now, repointing monitor index.ts:25-27 imports off pi-workflows' duplicate onto jit-agents canonical). JI-021 user verbatim 'orchestrator uses jit-agents directly' is honored by all three consumers calling jit-agents library functions directly — the orchestrator's own use is NOT mediated by any extension. The remaining question is narrow: where does pi.registerTool('call-agent', …) — the surface that exposes agent-as-tool dispatch to a SUB-AGENT executing inside a subprocess — live. This decision answers that narrow question only.",
+  "decision": "ENACTED (2026-05-26, narrowed 2026-05-26 per FGAP-112 working-out): the agent-as-tool dispatch surface registers in a NEW dedicated pi-agent-dispatch extension whose ONLY scope is hosting the sub-agent→sibling-agent pi.registerTool site (FEAT-004) and the dispatch-boundary capability clamp (FEAT-005, parent-grant ⊆ child-grant enforcement). The extension does NOT wrap or intermediate orchestrator use of jit-agents. The extension does NOT re-expose jit-agents' library surfaces. Orchestrator + pi-workflows + pi-behavior-monitors continue to consume pi-jit-agents AS A SHARED LIBRARY via direct npm import for their own use of load/compile/execute/introspect — JI-021 ('orchestrator uses jit-agents directly') honored literally for orchestrator + JI-010 ('jit-agents owns everything between I have a spec and I have a typed result') honored as the library surface. The new extension exists EXCLUSIVELY for the sub-agent agent-as-tool case: a sub-agent (running inside pi -p, with pi-agent-dispatch loaded) invokes pi.callTool('call-agent', { spec, input, grant }) → implementation calls jit-agents' executeAgent() under the hood with parent-grant ⊆ child-grant clamp at the boundary. The extension is loaded peer-to-peer by any subprocess context whose sub-agents may invoke siblings — workflow subprocesses, monitor subprocesses, orchestrator if it ever runs agents that need agent-as-tool — symmetrically, not hierarchically. Eliminations (hard, not preference): pi-jit-agents-as-extension is OUT — violates library-not-extension canon + widens past four boundary surfaces. pi-context is OUT — package cycle (pi-jit-agents already depends on pi-context). pi-workflows hosting dispatch is OUT — recreates a directional monitors→workflows runtime-load edge precisely when TASK-080 dismantles the source-import edge of the same shape (monitor subprocesses would have to load pi-workflows to gain agent-as-tool capability, violating workflows=orchestration-only and DEC-0049 sibling-consumer symmetry). pi-behavior-monitors is OUT — wrong domain. Supersedes the prior wider 'wraps the pi-jit-agents library' framing of this decision (2026-05-26 enactment language); the narrowing does not change which package gets created or its position in the dependency graph — it sharpens its scope to the sub-agent registration site only.",
+  "options_considered": [
+    {
+      "label": "NEW pi-agent-dispatch extension, scoped ONLY to sub-agent agent-as-tool pi.registerTool site (CHOSEN, narrowed)",
+      "description": "Thin extension that registers exactly one tool: pi.registerTool('call-agent', …) calling jit-agents' executeAgent() with parent-grant ⊆ child-grant clamp. Does NOT wrap or intermediate jit-agents library use by orchestrator / workflows / monitors — those continue direct library import. Loaded peer-to-peer by any subprocess whose sub-agents may invoke siblings.",
+      "tradeoffs": "Cleanest separation; cycle-free; jit-agents stays pure library per its spec; agent-as-tool capability available symmetrically to all subprocess contexts (workflow steps + monitor classifies + future orchestrator-spawned subprocesses) without forcing any consumer to depend on another. Accepted cost: a new extension package + install/version surface — judged correct layering for a distinct concern (sub-agent dispatch site) versus folding into an existing extension whose domain it does not match."
+    },
+    {
+      "label": "NEW agent-dispatch extension WRAPPING pi-jit-agents (prior framing, NARROWED AWAY FROM)",
+      "description": "Earlier framing of this same decision: the extension re-exposes jit-agents' library surfaces in addition to hosting the dispatch tool.",
+      "tradeoffs": "Single extension surface for everything agent-related.",
+      "rejected_reason": "Conflicts with JI-021 ('orchestrator uses jit-agents directly') and JI-010 ('jit-agents owns spec→typed-result library surface'). If the extension wraps library use, the orchestrator + workflows + monitors no longer use jit-agents directly — they use the wrapping extension. Three-consumer constraint + uniform-agent axiom resolve cleanly only when jit-agents is consumed as shared library directly and the extension's scope shrinks to the registration site alone. Narrowed 2026-05-26 per FGAP-112."
+    },
+    {
+      "label": "pi-jit-agents grows extension surface (registers its own dispatch tool)",
+      "description": "Add pi.registerTool to pi-jit-agents itself; package becomes both library + extension.",
+      "tradeoffs": "No new package.",
+      "rejected_reason": "Violates CLAUDE.md package table 'Library (not extension)' declaration AND docs/planning/jit-agents-spec.md four-boundary-surfaces definition. Widens jit-agents' surface beyond its declared scope. Additionally awkward under multi-consumer constraint: workflows would call an extension tool from inside their own extension's step machinery when a library import suffices."
+    },
+    {
+      "label": "pi-workflows hosts the pi.registerTool('call-agent', …)",
+      "description": "Fold the agent-as-tool registration into pi-workflows since workflows already consume jit-agents and run agent subprocesses.",
+      "tradeoffs": "No new package.",
+      "rejected_reason": "Forces monitor subprocesses to runtime-load pi-workflows to gain agent-as-tool capability, recreating a directional monitors→workflows runtime-load edge precisely when TASK-080 dismantles the source-import edge of the same shape (monitor index.ts:25-27 imports being deleted). Violates DEC-0048 (workflows=orchestration only) and DEC-0049 (uniform-agent axiom — consumers are siblings of jit-agents, not hierarchically dependent on each other for agent infrastructure)."
+    },
+    {
+      "label": "pi-context",
+      "description": "Register in the substrate tool hub.",
+      "tradeoffs": "Single discovery surface.",
+      "rejected_reason": "PACKAGE CYCLE — pi-jit-agents already depends on pi-context; pi-context importing pi-jit-agents (transitively, to call executeAgent) is circular. pi-context is the zero-@davidorex-dependency foundation. Hard-eliminated."
+    },
+    {
+      "label": "pi-behavior-monitors",
+      "description": "Register alongside monitor tools.",
+      "tradeoffs": "No cycle (already imports jit-agents).",
+      "rejected_reason": "Wrong domain — monitoring, not agent dispatch. Same monitors→workflows-shaped objection in reverse if monitors hosted the surface: workflow subprocesses would load monitors to gain agent-as-tool."
+    }
+  ],
+  "consequences": [
+    "Gates the detangle arc: FEAT-001 / TASK-080 (workflows + monitors consume jit-agents whole agent layer as shared library) → DEC-0044 narrowed (this) → FEAT-005 (capability composition + parent-superset child-tool clamp lands in the new pi-agent-dispatch extension's dispatch-tool implementation) → FEAT-004 (the dispatch tool itself ships in the new extension).",
+    "The FGAP-099 escalation guard (child tool surface ⊆ parent's) lands in the new extension's pi.registerTool('call-agent') implementation, enforced at the dispatch boundary — every consumer that loads the extension inherits the clamp identically. Per-caller clamps are forbidden (the gap is fixed at the registration site, not duplicated).",
+    "FGAP-099's prior workflow-local fix was reverted (commit 117b351) as wrong-layer; the FEAT-005-correct design (composeToolGrant / explicit-grant / empty-default / clamp) is preserved in history 7f8f991..7463138 for reuse at the new home.",
+    "Orchestrator + pi-workflows + pi-behavior-monitors source-import @davidorex/pi-jit-agents directly for their own load/compile/execute/introspect needs — no intermediary, no wrapping. JI-021 + JI-010 honored literally.",
+    "The new extension's exact package name (pi-agent-dispatch is a working name) and whether it joins the meta pi-project-workflows is a FEAT-004-build detail, not part of this home decision. Scope-narrowing supersedes the prior wider language; everything else in this decision stands."
+  ],
+  "related_features": [
+    "FEAT-004",
+    "FEAT-001",
+    "FEAT-005"
+  ],
+  "related_gaps": [
+    "FGAP-074",
+    "FGAP-085",
+    "FGAP-099"
+  ],
+  "references": [
+    {
+      "label": "pi-jit-agents introspect bridge",
+      "path": "packages/pi-jit-agents/src/introspect.ts",
+      "lines": "17"
+    },
+    {
+      "label": "pi-workflows owns dispatch (no standalone agent tool)",
+      "path": "packages/pi-workflows/src/index.ts"
+    }
+  ]
+}

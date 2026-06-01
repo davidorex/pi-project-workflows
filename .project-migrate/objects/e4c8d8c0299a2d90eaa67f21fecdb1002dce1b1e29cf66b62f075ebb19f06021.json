@@ -1,0 +1,34 @@
+{
+  "title": "tasks[].depends_on inline FK array — third instance of FGAP-040/041 DEC-0013 violation pattern; substrate-wide audit needed",
+  "status": "identified",
+  "priority": "P2",
+  "package": "@davidorex/pi-context",
+  "layer": "L4",
+  "description": "tasks schema declares depends_on: array<string> on each task item; TASK-040 carries depends_on: ['TASK-039']; multiple tasks across .project/tasks.json carry such inline FK arrays. Per DEC-0013 closure-table-only-for-inter-item-relationships, depends_on inline arrays are forbidden — references must live as relations.json edges with relation_type=depends_on. Same root pattern as FGAP-040 (tasks[].phase free-text label) + FGAP-041 (issues[].resolved_by free-text). Third instance triggers a substrate-wide audit obligation: every existing schema's array<string> field that references other block items is a DEC-0013 candidate violation. Surfaced by constrained-harness LLM evaluation.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/registry/schemas/tasks.schema.json",
+      "reference": "tasks[].depends_on declared as array<string> — inline FK array shape"
+    },
+    {
+      "file": ".project/tasks.json",
+      "reference": "TASK-040 + others carry depends_on values referencing other TASK-NNN items as inline strings rather than closure-table edges"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-040 + FGAP-041 same root pattern; FGAP-046 is the third explicit instance"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0013 — closure-table is canonical primitive for ALL inter-item relationships; FK-as-field forbidden; no carve-out for depends_on"
+    }
+  ],
+  "impact": "Substrate-wide DEC-0013 violation across tasks.json (multiple items carrying depends_on inline) and potentially other schemas. Cross-cutting pattern observation: the substrate audit must enumerate every array<string> field on every schema and classify each as (a) genuine inline data field (not an inter-item reference) OR (b) DEC-0013-violating FK array requiring migration to closure-table. Per pattern in FGAP-040/041 the migration vehicle is Phase 5 (TASK-025 / arc-tracking-blocks dogfood + schema-migrations.ts) — the same migration arc that lands relations.json + config.relation_types[].",
+  "canonical_vocabulary": "inline FK array DEC-0013 violation",
+  "proposed_resolution": "(1) Substrate-wide audit of every registry schema's array<string> fields; classify each as data-field OR FK-array. (2) For each FK-array: migration to relations.json closure-table edges with declared relation_type (depends_on / related / etc.) registered in config.relation_types[]. (3) Schema modifications via schema-migrations.ts version bumps removing the inline array. (4) Existing block items: per-item migration writing the inline values as relations.json edges + removing the inline field. (5) Migration scope tied to Phase 5 + 6 of FGAP-026 closure; FGAP-040/041/046 + future-discovered instances share the same migration arc — file each surfaced instance against this canonical pattern; do not relitigate per-field.",
+  "related_decisions": [
+    "DEC-0013"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

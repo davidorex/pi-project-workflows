@@ -1,0 +1,10 @@
+{
+  "title": "assigned_agent field on tasks is decorative — nothing routes work based on it",
+  "body": "The tasks schema has an assigned_agent field but no code reads it for dispatch routing. An agent could be assigned to a task and a different agent dispatched by the workflow. The execute-task workflow dispatches task-worker regardless of assigned_agent. Either the field should drive dispatch (workflow reads it and selects agent) or it should be removed to stop pretending.",
+  "location": "packages/pi-context/registry/schemas/tasks.schema.json",
+  "status": "open",
+  "category": "primitive",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent"
+}

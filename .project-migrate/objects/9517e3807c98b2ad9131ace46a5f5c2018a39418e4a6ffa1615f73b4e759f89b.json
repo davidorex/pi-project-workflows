@@ -1,0 +1,10 @@
+{
+  "title": "Domain block reference entries duplicate SDK query results — agent counts, workflow counts, step types go stale",
+  "body": "Domain entries like agent-spec ('26 bundled agents'), workflow-spec ('15 bundled workflows'), and step type descriptions restate what availableAgents(), availableWorkflows(), and stepTypes() return dynamically. When agents or workflows are added, the domain entries are wrong. These reference entries should be computed from SDK functions at injection time rather than maintained as static JSON. Human-authored domain entries (design patterns, composition families) remain static.",
+  "location": ".project/domain.json",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "human"
+}

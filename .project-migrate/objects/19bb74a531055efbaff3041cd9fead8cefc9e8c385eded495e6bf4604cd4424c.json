@@ -1,0 +1,10 @@
+{
+  "title": "Token budgeting across DAG edges — upstream output is interpolated verbatim with no budget",
+  "body": "When step B references ${{ steps.A.textOutput }} or ${{ steps.A.output }}, the entire upstream content is interpolated into B's input with no budget, no truncation, and no priority between direct and transitive dependencies. A 50KB upstream textOutput becomes 50KB in the downstream prompt regardless of token cost or relevance. context-packet solves this with: always-include summaries, body-first truncation from most distant upstream, truncated flag on result. reference_context_packet.md identifies this gap and has no implementation. Extension: workflow executor or expression engine should support maxTokens on step inputs, distance-aware priority for upstream content, and a truncated flag propagated through step results. Related to issue-043 (summary/body split) — both required to land token budgeting coherently.",
+  "location": "packages/pi-workflows/src/expression.ts, packages/pi-workflows/src/workflow-executor.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "human"
+}

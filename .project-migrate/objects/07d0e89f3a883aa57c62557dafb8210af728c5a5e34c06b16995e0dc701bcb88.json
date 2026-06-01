@@ -1,0 +1,34 @@
+{
+  "description": "FEAT-006 decomposition 2/4 — build pi-agent-dispatch extension per narrowed DEC-0044 + implement FEAT-005 (capability composition + sandbox) within it. New extension package whose ONLY scope is the in-pi agent-as-tool registration site: registers pi.registerTool('call-agent', {spec, input, grant}) for the in-pi orchestrator to dispatch a privileged JIT-agent as a typed tool call; registers pi.registerTool('author-agent-spec', {spec}) for orchestrator to author agent specs under writer.kind=human attestation per DEC-0047. Implementation calls pi-jit-agents library underneath (executeAgent direct library import from the extension; orchestrator + workflows + monitors continue consuming jit-agents as shared library directly per narrowed DEC-0044 — the extension does NOT wrap or intermediate library use). Capability composition (FEAT-005): operation-granular tool grants from empty-state registry — define the canonical operation vocabulary (e.g. npm-test, npm-build, file-write-scoped, etc.) in config.tool_operations[]; composeToolGrant(parent, requested) returns the clamped intersection; the dispatch tool calls executeAgent with the composed grant (TASK-081 clamp enforces at executeAgent boundary). Loaded peer-to-peer by any subprocess context needing agent-as-tool (workflow steps, monitor classifies, in-pi orchestrator's pi -p invocations).",
+  "status": "completed",
+  "files": [
+    "packages/pi-agent-dispatch/package.json",
+    "packages/pi-agent-dispatch/src/index.ts",
+    "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+    "packages/pi-agent-dispatch/src/author-agent-tool.ts",
+    "packages/pi-agent-dispatch/src/capability-composer.ts",
+    "packages/pi-agent-dispatch/src/capability-composer.test.ts",
+    "packages/pi-agent-dispatch/src/index.test.ts",
+    "packages/pi-agent-dispatch/tsconfig.json",
+    "packages/pi-agent-dispatch/tsconfig.build.json",
+    ".project/config.json"
+  ],
+  "acceptance_criteria": [
+    "New pi-agent-dispatch extension package scaffolded with package.json + tsconfig + src/ matching existing extension structure (model: pi-workflows or pi-behavior-monitors); dependencies: pi-context + pi-jit-agents + pi-ai (no workflow/monitor deps — peer-to-peer)",
+    "pi.registerTool('call-agent', …) registered: parameters include {specName, input, requestedGrant?}; impl loads agent via jit-agents createAgentLoader, compiles via compileAgent, calls executeAgent with the composed grant; returns the typed result",
+    "pi.registerTool('author-agent-spec', …) registered: parameters include {name, agentSpecYaml}; impl validates against jit-agents AgentSpec schema; writes .agent.yaml to the canonical agents directory; DispatchContext writer.kind=human enforced (rejects writer.kind=agent attempts — per DEC-0047 canon: spec/schema authorship is orchestrator-sole; sub-agents have no escalation)",
+    "capability-composer.ts: composeToolGrant(parentGrant, requestedGrant) returns the clamped intersection (matches TASK-081 executeAgent clamp semantics); operation-granular vocabulary lives in config.tool_operations[] (NEW config field, schema-validated); default EMPTY per DEC-0047",
+    "Engine unit tests for capability composition: empty-parent rejects-non-empty-request; subset-request passes-clamped; intersect-non-empty-non-subset returns-intersection",
+    "Engine unit tests for the two registered tools: call-agent dispatches successfully against a fixture .agent.yaml + returns typed result; author-agent-spec writes + validates + refuses writer.kind=agent",
+    "Loaded by pi -p invocation peer-to-peer with other extensions; in-pi orchestrator (the harness-confined agent per DEC-0014) sees call-agent + author-agent-spec in its tool surface and can invoke them",
+    "FEAT-005 capability vocabulary canon documented in config.json (the registered operation set) — distinct from raw pi --tools at subprocess boundary; this is the in-process / in-pi capability registry used by composeToolGrant",
+    "Per DEC-0048: no consumer cascade (TASK-082/083 separate); existing workflows / bundled agents tests are NOT regression gates",
+    "VALIDATION = real checks: build/check/test exit codes; runtime demo (pi -p invocation with pi-agent-dispatch loaded; in-pi orchestrator invokes call-agent + author-agent-spec end-to-end; outputs captured; grant composition verified against composed-grant ⊆ parent-grant invariant); adversarial probe (fresh-context: composeToolGrant cannot return a grant exceeding parent; author-agent-spec refuses writer.kind=agent; clamp at executeAgent fires when child not subset)"
+  ],
+  "depends_on": [
+    "TASK-081",
+    "TASK-088"
+  ],
+  "notes": "Filed 2026-05-26 per user direction. Second of four FEAT-006 decomposition tasks. Builds on TASK-081 clamp infrastructure + TASK-088 work-order block kind. Implements FEAT-004 (agents-as-tools) + FEAT-005 (capability composition) within the pi-agent-dispatch extension per narrowed DEC-0044. The single extension absorbs both FEAT-004 + FEAT-005 because they are one architectural concern (dispatch surface + the capability layer atop it). Unblocks TASK-090 + TASK-091.",
+  "verification": "VER-054"
+}

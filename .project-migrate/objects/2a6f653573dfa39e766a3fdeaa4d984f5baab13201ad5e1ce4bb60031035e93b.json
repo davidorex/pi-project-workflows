@@ -1,0 +1,30 @@
+{
+  "title": "context-init lacks the writer.kind=human enforcement that documentation (HANDOFF + in-pi agent narrative) repeatedly claims it has; documented intent and code-side enforcement are out of sync",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L3",
+  "description": "Observed twice in launched constrained-pi session 2026-05-28: the in-pi agent stated 'The bootstrap is human-only by design' when introducing pi-context to an operator. Verification: grep over packages/pi-context/src/index.ts at the context-init tool registration shows zero writer.kind=human enforcement — unlike author-agent-spec and author-tool-grant in pi-agent-dispatch which DO refuse non-human writers per DEC-0047. context-init's 'human-only-ness' is operator-convention documented in CLAUDE.md / HANDOFF.md but not enforced at the tool surface. An agent (writer.kind=agent) can in principle call context-init. The documented intent and the code-side enforcement diverge; the in-pi agent fabricates the enforcement claim from the documented intent.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "context-init tool registration has no writer.kind check; ctx is consumed only for non-attestation purposes"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+      "reference": "author-agent-spec enforces writer.kind === 'human' and throws on agent/monitor/workflow — the canonical enforcement pattern context-init claims to follow but doesn't"
+    },
+    {
+      "file": "CLAUDE.md",
+      "reference": "Install ceremony section describes /context init as a human ceremony but does not call out that this is convention-only, not code-enforced"
+    }
+  ],
+  "impact": "In-pi agent (and likely operator-facing docs elsewhere) repeats the 'human-only by design' claim as if it were a framework property. Reality: agents can write the bootstrap pointer. This is a substrate-vs-runtime drift case identical to the FEAT-004-vs-pi-agent-dispatch-built drift surfaced earlier in the same session — documented narrative ≠ code enforcement. Either gives operators false confidence (if they treat the documented invariant as enforced) or makes the docs lie.",
+  "canonical_vocabulary": "documented-invariant-vs-runtime-enforcement; convention-vs-mechanism; DispatchContext writer-kind gate",
+  "proposed_resolution": "Resolve the divergence (one or the other; user decides direction). Either: (a) ADD writer.kind === 'human' gate to context-init tool execute (matching the author-agent-spec / author-tool-grant precedent — they are the canonical enforcement template) AND propagate the same gate to context-accept-all and context-install which share the bootstrap ceremony; OR (b) REMOVE 'human-only by design' phrasing from all documentation (CLAUDE.md install-ceremony section, skill-narrative.md, HANDOFF.md, any in-pi-agent-facing narrative) and acknowledge it as operator-convention with no tool-side guard.\n\nCLOSED: closed as side-effect of FGAP-133/134 arc (branch fgap-133-134-auth-gate, commit e6a1799). context-init is in the FGAP-134 AUTH_REQUIRED_TOOLS Bucket-2 surface; the pi.on('tool_call') auth-gate handler intercepts context-init invocations at the pi-dispatch boundary regardless of caller-supplied writer.kind value. The divergence between documented intent (human-only) and code enforcement (any caller) is resolved at the dispatch layer rather than by adding a per-tool writer.kind branch to context-init's execute() body. VER-060 attests (one VER closes all three FGAPs in the arc).",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0047"
+  ],
+  "related_issues": []
+}

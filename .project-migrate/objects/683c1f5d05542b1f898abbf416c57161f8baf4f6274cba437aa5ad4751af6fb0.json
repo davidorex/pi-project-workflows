@@ -1,0 +1,10 @@
+{
+  "title": "Cycle handling composes between walkDescendants visited-guard and render_recursive depth-guard",
+  "body": "Integration map proposes templates combining walk_descendants() (Nunjucks global) with render_recursive(resolve(id), depth) per per-item-macros plan. POC v2's walkDescendants has a visited-guard preventing infinite traversal at edge-walk time. Per-item-macros' render_recursive has a depth-guard. The two guards must compose when authored relations contain cycles: walk-level visited prevents revisiting; depth-level guard prevents infinite recursion at render. Markers module (residual-debt survey item 9) emits [cycle: <id>] markers — tests against named constants. Without explicit composition, cyclic data could fail to render certain items (silent non-render) instead of emitting the cycle marker. Trace: cycle in authored edges → walk halts at visited → some items not visited → silent non-render vs marker emission. Surfaced as gap #27 in the integration-map review.",
+  "location": "packages/pi-jit-agents/src/compile.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-jit-agents",
+  "source": "agent"
+}

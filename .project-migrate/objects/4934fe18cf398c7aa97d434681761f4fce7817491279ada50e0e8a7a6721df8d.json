@@ -1,0 +1,11 @@
+{
+  "title": "/project view <lens> command — no LLM-invocable surface for rendering lens views",
+  "body": "Forcing context: the substrate SDK port (commit 8059764) landed groupByLens + renderClusterView (renderClusterView equivalent: lives in the POC's render.ts; needs production port if we want command output to match POC parity) plus all the substrate primitives. SDK functions exist in dist/ and tests prove them correct. There is no command an LLM can invoke from within a session to render a lens view.\n\nProposed shape: register `/project view <lensId>` subcommand in PROJECT_SUBCOMMANDS (packages/pi-context/src/index.ts:810-861) following the existing handler pattern. Handler logic: load config via loadConfig(ctx.cwd) — if null, error with run-init pointer; resolve named lens from config.lenses; load target items via readBlock(cwd, lens.target); compute lensEdges via edgesForLens(lens, items, getProjectContext(cwd).relations); compute grouped via groupByLens(items, lens, lensEdges); emit a markdown rendering via either ctx.ui.notify (multiline) or pi.sendMessage with customType 'project-view'. Display via existing ctx.ui infrastructure used by /project status + /project validate.\n\nCovers groupByLens + renderClusterView (or its production equivalent) consumption surfaces — those two SDK functions reach the user only through this command surface today.",
+  "location": "packages/pi-context/src/index.ts:810-861",
+  "status": "resolved",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
+}

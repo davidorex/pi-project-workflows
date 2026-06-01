@@ -1,0 +1,10 @@
+{
+  "title": "Writeback monitor — observe agent execution results and persist structured summaries to project blocks",
+  "body": "Monitors currently classify agent behavior (hedge, fragility, etc.) and write findings to the issues block via executeWriteAction() (index.ts:1312) with merge: append/upsert. Extension: a writeback monitor that fires on agent_end for any workflow step, reads the step's structured output, and determines what to record — decisions made, issues resolved, verification evidence, execution metadata. The classify call determines what category of result the agent produced. The write action persists it to the corresponding block (decisions, verification, issues, tasks). This closes the feedback loop: workflow reads blocks via contextBlocks → agent executes → writeback monitor observes output → monitor writes results back to blocks → next execution reads richer blocks. Each cycle compounds context. The monitor spec format, event system, classify.agent pipeline, and executeWriteAction with merge: upsert all exist. The new component is the writeback monitor spec, its classifier agent YAML, and the mapping from agent output categories to block write targets.",
+  "location": "packages/pi-behavior-monitors/index.ts:1312, packages/pi-behavior-monitors/examples/",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-behavior-monitors",
+  "source": "human"
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Monitor provider-pin — parseModelSpec defaults bare model ids to provider='anthropic'",
+  "body": "packages/pi-behavior-monitors/index.ts:1091-1097 implements parseModelSpec such that bare model ids (e.g. 'claude-sonnet-4-6') default to provider='anthropic'. This structural pin means monitor classify calls attempt Anthropic-direct authentication regardless of the main session's configured provider. Under OpenRouter-only auth (the user's current configuration), every monitor's classify call fails with 'Expected either apiKey or authToken to be set' because the Anthropic SDK receives undefined credentials. All five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) declare bare model ids and are all affected. This issue is gated on three open decisions in .project/decisions.json: DEC-0001 (agent spec model-field semantics), DEC-0002 (thinking-seam enforcement), DEC-0003 (parseModelSpec ownership at the execute boundary). Per mandate-004, the fix is NOT to set ANTHROPIC_API_KEY alongside — that leaves the coupling in place. The fix lives in .project/features.json FEAT-001 as STORY-001/003 of the consumer migration arc: remove the anthropic default, move parseModelSpec into pi-jit-agents, resolve bare ids via ExtensionContext lookup. Canonical owner: FEAT-001 + DEC-0001 + DEC-0003. Operational incident: analysis/openrouter-pi-mono-setup.md.",
+  "location": "packages/pi-behavior-monitors/index.ts:1091-1097",
+  "status": "open",
+  "category": "issue",
+  "priority": "high",
+  "package": "pi-behavior-monitors",
+  "source": "agent"
+}

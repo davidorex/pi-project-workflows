@@ -1,0 +1,5 @@
+{
+  "name": "FGAP-046/060/DEC-0028 coordinated arc",
+  "intent": "Eliminate inline FK (DEC-0013 enforcement) so the FGAP-060 canonical_id rename engine operates on one clean edge surface. Couples FGAP-040 + FGAP-046 + FGAP-049 + FGAP-060 + validateProject edge-migration + phase array-block (DEC-0028).",
+  "status": "in-progress"
+}

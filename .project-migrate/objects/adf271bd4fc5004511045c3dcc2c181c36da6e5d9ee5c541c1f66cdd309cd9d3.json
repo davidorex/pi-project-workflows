@@ -1,0 +1,5 @@
+{
+  "title": "Run hedge against a Kimi model",
+  "status": "todo",
+  "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not"
+}

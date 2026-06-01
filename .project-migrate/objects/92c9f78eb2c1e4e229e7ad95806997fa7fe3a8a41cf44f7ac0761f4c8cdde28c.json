@@ -1,0 +1,27 @@
+{
+  "title": "No write-authority enforcement layer beyond schema validation",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "FGAP-004 closure landed DispatchContext + WriterIdentity stamping (writer attribution on every block-api write). The stamping records WHO wrote; it does not enforce WHO IS ALLOWED to write. block-api's withBlockLock + AJV schema validation gate WHAT shape is written, not WHICH writer kind is permitted to write to which block. A monitor with kind=monitor can write to .project/decisions.json (a human-authored block) and the write succeeds as long as schema validates; only the created_by stamp differentiates.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "writeBlock, appendToBlock, updateItemInBlock, upsertItemInBlock all accept optional ctx?: DispatchContext but do not consult any authority configuration. ctx.writer is read for stamping; not read for permission."
+    },
+    {
+      "file": "packages/pi-context/src/dispatch-context.ts",
+      "reference": "WriterIdentity union covers 4 kinds (human, agent, monitor, workflow). No corresponding allowlist/denylist surface exists in pi-context for which kind can write to which block name."
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/",
+      "reference": "No registry schema declares an x-allowed-writers / x-write-authority extension; no config.json field declares per-block writer permissions."
+    }
+  ],
+  "impact": "Monitor write-action routing (Step 6 / commit 523fa96) closed the bypass-the-validation-layer concern but not the bypass-the-intended-author concern. A misconfigured monitor.json action.write.block can target .project/decisions.json and append entries that pass schema validation; the only differentiator is created_by stamp on the entry. Cross-writer authority drift is undetectable at write time.",
+  "proposed_resolution": "Define authority-matrix surface — either (a) per-schema x-allowed-writers extension declaring permitted WriterIdentity.kind values; (b) config.json write_authority object mapping block-name → allowed-kinds[]; or (c) WriterIdentity-aware predicate at block-api write surface that consults a registered authority-policy module (parallel to lens-validator dispatch). On violation, throw before write reaches AJV. Surfaced by adversarial audit of FGAP-004 closure (commit 001d11a + 2ed2102 + d24769a).",
+  "related_decisions": [],
+  "related_features": [],
+  "related_issues": []
+}

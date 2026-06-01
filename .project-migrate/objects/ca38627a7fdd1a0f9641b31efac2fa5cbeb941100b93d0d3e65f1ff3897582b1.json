@@ -1,0 +1,11 @@
+{
+  "title": "STATUS_VOCABULARY + topoSort + status rollup SDK primitives in new roadmap-plan.ts module",
+  "body": "Step 2. New module packages/pi-context/src/roadmap-plan.ts. Pure functions: STATUS_VOCABULARY mapping (interim TS-baked per FGAP-013; will eventually read from config.status_buckets when FGAP-013 lands), topoSort<T>(nodes, idOf, deps) returning { order: string[], cycles: string[][] } via Kahn's algorithm, rollupPhaseStatus(items: ItemRecord[]) returning { bucket: StatusBucket, counts, total }. New tool: project-status-rollup with params { block, ids? } — generally useful beyond roadmaps. Wired into existing pi.registerTool pattern. Unit-tested in isolation.",
+  "location": "packages/pi-context/src/roadmap-plan.ts (new), packages/pi-context/src/index.ts (tool registration)",
+  "category": "capability",
+  "priority": "high",
+  "status": "resolved",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit b7bf11b — feat(pi-project): step 2 of roadmap/plan substrate. STATUS_VOCABULARY + topoSort + rollupPhaseStatus pure functions in new roadmap-plan.ts; project-status-rollup tool registered. 24 new tests cover all three primitives. STATUS_VOCABULARY is interim-hardcoded per FGAP-013."
+}

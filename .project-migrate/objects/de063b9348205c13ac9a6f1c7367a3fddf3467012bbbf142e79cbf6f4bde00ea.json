@@ -1,0 +1,58 @@
+{
+  "title": "The Fully-Instrumented Specification Loop — curation and derivability assessment",
+  "status": "complete",
+  "layer": "L2",
+  "type": "curation",
+  "question": "Does the SYNTH-originated Fully-Instrumented Specification Loop pattern (31 artifact types, ~40 transitions, 10 verifier boundaries, 18 invariants) derive from pi-project-workflows primitives, and what framework gaps does the mapping expose?",
+  "method": "curation of external document",
+  "scope": [
+    "The Fully-Instrumented Specification Loop document (recovered from SYNTH project via Claude History Browser)",
+    "pi-project-workflows framework as of 2026-04-14",
+    ".project/ block schemas and workflow primitives"
+  ],
+  "findings_summary": "The Fully-Instrumented Specification Loop describes a specification-conformance verification loop with 31 artifact types across 9 categories (pre-flight, specification, decomposition, pre-implementation verification, planning, execution, verification, triage, historical), ~40 named transitions, 10 verifier boundaries (V1–V10), 18 invariants, ~15 agent stances, and 11 meta-infrastructure elements. Built incrementally in SYNTH in response to specific verification failures, not designed upfront.\n\nEvery element maps to pi-project-workflows primitives: artifacts → schema-driven blocks, transitions → workflow.yaml steps, verifier boundaries → monitor specs, findings state machine → block with status enum + cross-block validation, cross-audit schema alignment → .project/schemas/ registry, orchestrator-subagent boundary → subprocess-isolated step dispatch, fresh-context verifiers → pi-jit-agents executeAgent.\n\nFour framework capabilities the document requires that our framework lacks: (1) Schema-enforced authority matrix — 'only user can advance finding to decided' not expressible via schemas alone. (2) found_by authorship attestation as write-time convention. (3) Finding state machine with transition gates — AJV validates state membership but not transition validity. (4) Clustering and resolution-task artifacts as canonical bundled schemas.\n\nFive concrete work items surfaced: cross-block state machine validation, authorship attestation convention, bundled canonical schemas for audit pattern, incident cross-reference in feedback-memory block, verifier grid as validator category. The document validates our framework direction: every open issue (028, 030, 031, 036, 041, 045, 050) is something SYNTH built by hand.",
+  "findings_document": "analysis/The Fully-Instrumented Specification Loop.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "SYNTH project Claude History Browser recovery as of 2026-04-14"
+    ],
+    "external_refs": [
+      "~/.claude/cache/chb/ClaudeHistory.sqlite (source of SYNTH evidence)",
+      "~/.claude/projects/-Users-david-Projects-MUSE-SYNTH/memory/ (SYNTH feedback memory files)"
+    ]
+  },
+  "grounded_at": "2026-04-14T00:00:00Z",
+  "stale_conditions": [
+    "Framework closes issues 028, 030, 031, 036, 041, 045, 050 (changes derivability assessment)",
+    "SYNTH project updated with new verification loop layers",
+    "pi-project gains state-machine validation (FGAP-005) or authorship attestation (FGAP-004)"
+  ],
+  "citations": [
+    {
+      "label": "SYNTH specification loop source document",
+      "path": "analysis/The Fully-Instrumented Specification Loop.md"
+    },
+    {
+      "label": "SYNTH feedback memory files",
+      "url": "~/.claude/projects/-Users-david-Projects-MUSE-SYNTH/memory/"
+    },
+    {
+      "label": "Claude History Browser cache",
+      "url": "~/.claude/cache/chb/ClaudeHistory.sqlite"
+    }
+  ],
+  "informs": [
+    "issue-058",
+    "issue-059"
+  ],
+  "informed_by": [],
+  "related_research": [
+    "R-0009"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-14T00:00:00Z"
+}

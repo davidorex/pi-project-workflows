@@ -1,0 +1,4 @@
+{
+  "title": "Fatal block validation on artifact writes",
+  "narrative": "When a workflow step produces a .project/*.json artifact and that artifact fails schema validation, the workflow fails. Non-block artifacts remain non-fatal (warning only). The block system is the authoritative data store for project state; if an agent writes invalid data to a project block, that corruption would propagate to every downstream consumer. Making block validation fatal aims to prevent silent data corruption. The retry mechanism (rollback invalid data, re-dispatch with validation errors in the prompt) gives the agent a chance to self-correct before failing the workflow. Commit 19eb683 explicitly states this aligns with 'every other block write in the system being fatal (tools, step retry block validation).' Confidence: HIGH."
+}

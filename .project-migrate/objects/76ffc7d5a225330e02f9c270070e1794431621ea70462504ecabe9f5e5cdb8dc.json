@@ -1,0 +1,21 @@
+{
+  "description": "Phase 2 sub-phase 2.1: ship filter-block-items — library predicate-filter primitive + pi tool + scripts/orchestrator/filter-block-items.ts. Wraps existing readBlock + caller-side filter into a standalone tool. No closure-table dependency.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/project-sdk.ts",
+    "packages/pi-context/src/index.ts",
+    "scripts/orchestrator/filter-block-items.ts"
+  ],
+  "acceptance_criteria": [
+    "filterBlockItems(cwd, blockName, predicate) library function exported from project-sdk.ts; signature: (cwd: string, blockName: string, predicate: {field: string, op: 'eq'|'neq'|'in'|'matches', value: unknown}) => unknown[]",
+    "filter-block-items pi tool registered in packages/pi-context/src/index.ts with Type.Object schema {block, field, op, value}",
+    "scripts/orchestrator/filter-block-items.ts shebang-tsx executable; args --block --field --op --value [--format json|table]",
+    "Tests cover: filter by id / by enum field / by partial-string match / empty-result / missing-field; mkdtempSync + writeBootstrapPointer per test",
+    "Husky pre-commit gate (npm run check && npm test) green at commit time"
+  ],
+  "depends_on": [
+    "TASK-022"
+  ],
+  "notes": "CLOSED at HEAD 15cd881. filterBlockItems library + filter-block-items pi tool + scripts/orchestrator/filter-block-items.ts shipped. Tests: pi-context 401 → 407 (+6). Live-substrate runtime demos green. See VER-005.",
+  "verification": "VER-005"
+}

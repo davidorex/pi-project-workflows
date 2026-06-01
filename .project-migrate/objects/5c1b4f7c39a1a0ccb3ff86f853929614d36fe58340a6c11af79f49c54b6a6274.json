@@ -1,0 +1,38 @@
+{
+  "title": "Phase block-kind pattern divergence — file-per-phase at phases/{number}.json with integer discriminator vs array-block convention used by all other block kinds",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Every other block kind in .project/ uses the array-block pattern: one JSON file per block kind (e.g. decisions.json), top-level array_key (e.g. 'decisions'), items with string id field matching a canonical prefix pattern. Phase block-kind diverges: schema (phase.schema.json) requires integer 'number' field as discriminator; file path is phases/{number}.json (one file per phase, not one file per block kind); no top-level array. Roadmap block (roadmap.schema.json) references phases via string 'id' matching ^PHASE-[A-Z0-9-]+$ pattern — different from phase.schema.json's integer discriminator. The binding convention (PHASE-NNN string ↔ integer number) is declared nowhere. Result: phase items don't appear in standard block-item enumeration; can't be filed via file-block-item.ts append surface (which expects array-block shape); resolve-items-by-id won't find PHASE-NNN unless special-cased.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/registry/schemas/phase.schema.json",
+      "reference": "Requires 'number: integer' as primary discriminator; no id field"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/roadmap.schema.json",
+      "reference": "phases[] items require 'id' matching ^PHASE-[A-Z0-9-]+$ string pattern"
+    },
+    {
+      "file": ".project/phases/",
+      "reference": "Directory contains {1,2,3,4}.json (pre-FGAP-026 planning artifacts) using integer discriminator"
+    },
+    {
+      "file": "packages/pi-context/src/roadmap-plan.test.ts",
+      "reference": "Tests use PHASE-A / PHASE-B / PHASE-C single-letter suffix; LLM-filed commit body f3d6e41 uses PHASE-006..010 numeric suffix; no canonical convention"
+    },
+    {
+      "file": "analysis/2026-05-14-step-1-config-draft-from-substrate.md",
+      "reference": "Phase row in block_kinds[] flagged with 'file-per-phase, no array_key' anomaly"
+    }
+  ],
+  "impact": "TASK-025 sub-phase 5.4 (phase.json authoring) cannot proceed without resolving the binding convention. resolve-items-by-id / filter-block-items / walk-ancestors all assume array-block shape with string-id items; phase items invisible to those primitives without special handling. Lens projections referencing PHASE-NNN as bins don't connect to phase block-kind file storage without a binding rule. Pre-existing phases/{1..4}.json files occupy integer slots 1..4, blocking number=1..4 reuse without prior archive/repurpose decision.",
+  "canonical_vocabulary": "phase-discriminator, phase-id-binding, file-per-phase-vs-array-block",
+  "proposed_resolution": "Settle DEC binding integer number ↔ PHASE-NNN string id (e.g. PHASE-${number:03d}). Either: (a) extend phase.schema.json to include both fields with binding constraint; OR (b) migrate phase block to array-block pattern (single phases.json file with phases[] array, items with id field) which aligns with all other block kinds + enables canonical query primitives. Option (b) is more aligned with substrate canon (DEC-0013 + lens infrastructure) but requires migrating existing phases/{1..4}.json content. Cross-decision with pre-FGAP-026 phases disposition (which is in FGAP-047 settlement scope).",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0013"
+  ],
+  "related_issues": []
+}

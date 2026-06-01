@@ -1,0 +1,50 @@
+{
+  "target": "TASK-059",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-23",
+  "evidence": "FGAP-095 P1 deriveBootstrapState. Code commit 752e7e2 (DEC-0043 1d5ee89). build+check+full test green (587 pi-context, 0 fail) incl. 7 deriveBootstrapState + 3 materialization-helper tests. Runtime demo via REAL writeBootstrapPointer/adoptConception/installProject: no-pointer -> no-config -> not-installed(15s/15b) -> ready(0/0), installProject notFound=0 (detector agrees with installer). CLI smoke: json/table render + bad-arg exit 2. Fresh-context adversarial probe (Explore): OVERALL PASS on all 8 claims + false-pass hunt clean, no residual findings. Mid-verify the demo caught config/relations-in-installed_schemas (FGAP-050) -> resolved by DEC-0043 + conception fix, re-demo PASS.",
+  "criteria_results": [
+    {
+      "criterion": "project-context.ts materialization helpers added (projectRoot+SCHEMAS_DIR, matching installProject)",
+      "status": "passed",
+      "evidence": "installedSchemaDestPath/installedBlockDestPath/findUnmaterializedAssets; installProject refactored to route destFile through them (adversarial claim A: no path drift)"
+    },
+    {
+      "criterion": "project-sdk.ts deriver — pointer-first, no pre-bootstrap throw, corrupt propagates, empty=>ready",
+      "status": "passed",
+      "evidence": "BootstrapState/BootstrapStatus + deriveBootstrapState; adversarial claims B/C/D/E PASS; tests cover all 4 states + edges"
+    },
+    {
+      "criterion": "index.ts installProject refactor behavior-preserving + context-bootstrap-state tool",
+      "status": "passed",
+      "evidence": "install-subcommand tests unchanged (claim F); tool Type.Object({}) returns status JSON, no pre-bootstrap throw"
+    },
+    {
+      "criterion": "bootstrap-state CLI mirroring current-state",
+      "status": "passed",
+      "evidence": "--cwd/--format json|table, exit 2 (bad arg) confirmed unpiped; imports @davidorex/pi-context/project-sdk"
+    },
+    {
+      "criterion": "tests: 4 states + edges + helper unit tests",
+      "status": "passed",
+      "evidence": "project-sdk.test.ts 7 cases + project-context.test.ts 3 cases; 587 total 0 fail"
+    },
+    {
+      "criterion": "runtime demo observes all 4 states; detector matches installer (notFound=0)",
+      "status": "passed",
+      "evidence": "re-demo after DEC-0043 conception fix: ready reached, notFound=0"
+    },
+    {
+      "criterion": "fresh-context adversarial verdict green",
+      "status": "passed",
+      "evidence": "8/8 claims PASS, no residual"
+    },
+    {
+      "criterion": "skills regenerated with context-bootstrap-state; no exports change",
+      "status": "passed",
+      "evidence": "tool present in 3 SKILL.md copies; project-sdk/project-context already exported"
+    }
+  ]
+}

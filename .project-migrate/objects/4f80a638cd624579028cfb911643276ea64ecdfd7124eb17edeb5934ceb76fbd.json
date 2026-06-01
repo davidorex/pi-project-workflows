@@ -1,0 +1,45 @@
+{
+  "target": "TASK-054",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-22T00:00:00Z",
+  "evidence": "B2/FGAP-068 samples-catalog discovery + FGAP-086 endpoint-kind metadata — commits d1dba88 (B2.1 schema+type) / 2b4908d (B2.2 conception 27 authoring) / f227fdd (B2.3 library+schemaInfoFromPath+validateProject endpoint-check+tests) / 641b9a0 (B2.4 Pi tool+CLI+packaging) / skills regen (1d6703e). Verified DEC-0018: build 0, check 0 (biome+tsc), test pi-context 544 (+16: 13 catalog + 3 FGAP-086) / pi-jit-agents 152 / pi-behavior-monitors 157 / pi-workflows 829, all 0 fail. Runtime demonstration (not mocked): CLI read-samples-catalog.ts --kind tasks → packaged view (title/desc/shape + as_source 5 + as_target 8 incl. wildcard verification_verifies_item/research_informs_item + 4 invariants + tasks-by-status lens); --format table → 15-kind rollup with correct wildcard math (issues 0/9 = 3 explicit + 6 wildcard targets; decisions 4/11; tasks 5/8); tsx -e samplesCatalog() → 15 kinds/27 relationTypes/0 warnings; unknown-kind → empty+warning no-throw. GATE PROOF: validateProject('.') on frozen .project → 0 endpoint-kind issues (65 pre-existing inline-FK issues not chased; the new check gates silent on metadata-less relation_types). FRESH-CONTEXT ADVERSARIAL PROBE (Explore agent, not composer): SAFE-TO-COMMIT — independently re-derived all 27 mappings (100% match), proved endpoint-check FIRES (wrong-source-kind edge → error) and GATES (metadata-absent → clean) on a temp substrate, confirmed tests non-hollow (length===15 not >=, real validate() call), packaging files+samples/ + exports+./samples-catalog, both config.schema.json copies 1.3.0 + identical, schemaInfo refactor zero caller breakage, loc.block==canonical_id holds. Mid-verify defect found+fixed via plan-mode amendment + fresh Explore empirical proof: samples-catalog.ts top-level import.meta.dirname (undefined under tsx-CJS dist load) → fileURLToPath(import.meta.url) idiom (schema-validator.ts:47 precedent); falsifiable probe confirmed the throwing import now returns the catalog.",
+  "criteria_results": [
+    {
+      "criterion": "config.schema.json (both loaded copies) relation_types accept optional source_kinds/target_kinds (wildcard '*'); version 1.3.0; frozen .project loadConfig still validates (no MigrationFn)",
+      "status": "passed",
+      "evidence": "commit d1dba88; adversarial task 5"
+    },
+    {
+      "criterion": "all 27 conception.json relation_types carry correct source_kinds/target_kinds per the mapping (edge.parent=source, edge.child=target; item->'*')",
+      "status": "passed",
+      "evidence": "commit 2b4908d; adversarial task 2 re-derived 27/27 match"
+    },
+    {
+      "criterion": "schemaInfo delegates to new schemaInfoFromPath(absPath,name); zero caller breakage",
+      "status": "passed",
+      "evidence": "commit f227fdd; adversarial task 6 (schemaInfo('.','tasks') non-null)"
+    },
+    {
+      "criterion": "samplesCatalog() returns 15 enriched kinds + top-level registries; per-kind relation_types via source/target_kinds incl. wildcard; invariants via block; lenses via target; kind-filter + unknown-kind-warning; null title/desc/shape surfaced as warning; never throws",
+      "status": "passed",
+      "evidence": "samples-catalog.test.ts 13 cases; CLI + tsx -e runtime demos"
+    },
+    {
+      "criterion": "validateProject endpoint-kind check fires on wrong-kind edge WITH metadata, SILENT without (gate protects frozen .project), wildcard accepts any",
+      "status": "passed",
+      "evidence": "project-sdk.test.ts 3 FGAP-086 cases; adversarial task 1 temp-substrate fire+gate proof; gate proof validateProject('.') 0 endpoint issues"
+    },
+    {
+      "criterion": "Pi tool read-samples-catalog + cwd-less CLI both thin over samplesCatalog; package.json files +samples/ (publish fix) + exports +./samples-catalog; skills regen surfaces the tool",
+      "status": "passed",
+      "evidence": "commit 641b9a0 + skills commit; read-samples-catalog in 3 SKILL.md"
+    },
+    {
+      "criterion": "mid-verify import.meta.dirname defect fixed via plan-mode + fresh-Explore empirical proof (fileURLToPath idiom); falsifiable probe passes",
+      "status": "passed",
+      "evidence": "plan AMENDMENT section; throwing import now returns 15 kinds"
+    }
+  ]
+}

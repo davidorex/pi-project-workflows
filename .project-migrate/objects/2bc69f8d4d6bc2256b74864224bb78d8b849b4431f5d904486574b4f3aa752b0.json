@@ -1,0 +1,35 @@
+{
+  "target": "TASK-049",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-21T00:00:00Z",
+  "evidence": "FGAP-076 config-write dual-surface unit — commit 2eb9abf. Shipped: project-context amendConfigEntry over REGISTRY_DESCRIPTORS (all 11 registries, 4 keying kinds) + Pi tool amend-config + scripts/orchestrator/amend-config.ts + config-write.test.ts (15 cases). Verified DEC-0018: build/check/test green (pi-context 516 [+15] / 151 / 157 / 829, 0 fail). Two issues found-and-fixed mid-verification: (1) TOOL bug — the add/replace entry-required guard wrongly applied to string-array registries where the key IS the value (installed_schemas add needs no separate entry); fixed by exempting descriptor.kind==='string-array'. (2) TEST bug — case 13 asserted issue.code==='edge_unknown_relation_type', but validateProject's own edge-integrity loop emits the unregistered-relation_type issue message-only (code undefined); that code belongs to validateRelations which validateProject filters to cycle-only; fixed to match message. Also refactored the CLI dry-run to route SHAPE validation through amendConfigEntry(dryRun:true) (which validates the would-be-written config against the same schema writeConfig uses), removing the applyToClone parallel mutation path. Runtime demo: library (add/replace/remove across keyed-array+map with previousValue, out-of-enum AJV reject, mtime-cache fresh-read, dry-run inert + SHAPE-catch) + CLI (dry-run inert / real json / add-collision exit-5 / bad-arg exit-2). Adversarial: writeConfig is the SOLE config.json writer; amendConfigEntry routes through it; zero applyToClone/parallel mutation path; deferred-cross-ref proof (remove still-referenced relation_type succeeds, validateProject flags it). Registration via SKILL.md.",
+  "criteria_results": [
+    {
+      "criterion": "amendConfigEntry covers all 11 registries via descriptor table (4 keying kinds); add/replace/remove uniform (string-array replace the sole documented exception)",
+      "status": "passed",
+      "evidence": "library demo + tests 1-6; REGISTRY_DESCRIPTORS"
+    },
+    {
+      "criterion": "write enforces op-correctness + SHAPE via writeConfig AJV; config byte-unchanged on any throw",
+      "status": "passed",
+      "evidence": "tests 7-9 + out-of-enum demo throw"
+    },
+    {
+      "criterion": "Pi tool amend-config + CLI amend-config.ts (--entry @file, --dry-run inert) dual-surface twins",
+      "status": "passed",
+      "evidence": "SKILL.md registration + CLI demo dry-run/real/collision/bad-arg"
+    },
+    {
+      "criterion": "deferred-cross-ref proof: removing a still-referenced relation_type SUCCEEDS then validateProject flags it",
+      "status": "passed",
+      "evidence": "test 13"
+    },
+    {
+      "criterion": "mtime-cache invalidation + dry-run single validation path (applyToClone removed); build/check/test green + runtime + adversarial + skills",
+      "status": "passed",
+      "evidence": "test 10/11 + adversarial grep (writeConfig sole writer, 0 parallel path); 516 tests"
+    }
+  ]
+}

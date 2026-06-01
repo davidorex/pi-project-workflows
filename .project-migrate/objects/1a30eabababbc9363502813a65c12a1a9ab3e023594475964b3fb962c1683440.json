@@ -1,0 +1,23 @@
+{
+  "description": "Phase 3 sub-phase 3.3: integration test composing 3.1 + 3.2 end-to-end + FGAP cluster closure (FGAP-029 fully / FGAP-030 / FGAP-031). Closure-table dependency: integration fixture authors full synthetic substrate (config.json + relations.json + context-contracts.json + per-block items).",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/execution-context.integration.test.ts",
+    ".project/framework-gaps.json"
+  ],
+  "acceptance_criteria": [
+    "Integration test composes full synthetic substrate per mkdtempSync + writeBootstrapPointer + .project/config.json + .project/relations.json + .project/context-contracts.json + per-block items (tasks/decisions/requirements)",
+    "Test exercises gather-execution-context against a realistic task unit end-to-end",
+    "Asserts ContextBundle shape matches interface + perRelationType buckets contain expected items + traversal_depth honored",
+    "Verifies substrate-canon: unit via filterBlockItems; relations via loadRelations; ids via resolveItemsByIds; bundle per context-contract",
+    "FGAP-029 transitioned to status: closed in .project/framework-gaps.json",
+    "FGAP-030 transitioned to status: closed",
+    "FGAP-031 transitioned to status: closed",
+    "Husky pre-commit gate green"
+  ],
+  "depends_on": [
+    "TASK-039"
+  ],
+  "notes": "CLOSED at HEAD 02acf92. Integration test ships 4 scenarios through canonical surfaces (no mocks); pi-context 454 → 458 (+4). Final atomic unit under TASK-023; FGAP cluster transition in this same cascade. See VER-012.",
+  "verification": "VER-012"
+}

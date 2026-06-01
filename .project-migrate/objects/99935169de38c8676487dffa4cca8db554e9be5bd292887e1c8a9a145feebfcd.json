@@ -1,0 +1,62 @@
+{
+  "title": "Phase block-kind shape — file-per-phase with integer discriminator vs array-block with PHASE-NNN string id",
+  "status": "enacted",
+  "context": "Two divergent shape declarations exist in source: (1) packages/pi-context/registry/schemas/phase.schema.json requires 'number: integer' as discriminator; file path is .project/phases/{number}.json (file-per-phase). (2) packages/pi-context/registry/schemas/roadmap.schema.json roadmap.phases[].id requires string matching ^PHASE-[A-Z0-9-]+$. Existing .project/phases/{1,2,3,4}.json files (pre-FGAP-026 planning artifacts: 'Make typed composition real' / typed agent specs / template inheritance / etc., status=planned, never closed) use integer discriminator. Code (roadmap-plan.test.ts) uses PHASE-A / PHASE-B / PHASE-C / PHASE-D single-letter suffix. LLM-filed commit body f3d6e41 (TASK-021..030 substrate authoring) uses PHASE-006..010 numeric-suffix zero-padded. No DEC binds them. Phase items don't appear in standard block-item enumeration; can't be filed via file-block-item.ts append surface (which expects array-block shape); resolve-items-by-id won't find PHASE-NNN unless special-cased. FGAP-049 + FGAP-053 (milestone elevation companion) both touch this question.",
+  "decision": "ENACTED: phase block-kind is an array-block (single phases.json with phases[] array, items carrying PHASE-NNN string ids) — NOT file-per-phase-integer. The file-per-phase shape (phases/{number}.json, number:integer discriminator) is the pre-FGAP-026 legacy outlier. Array-block makes phases query-primitive-compatible (filter-block-items / walk-ancestors / find-references / resolve-items-by-id), edge-referenceable in relations.json (parent/child = PHASE-NNN), and consistent with milestone elevation (FGAP-053) under DEC-0013/0024/0025. Implementation: revise phase.schema.json to array-block; migrate buildIdIndex + ProjectState to read phases.json; convert legacy phases/{1..4}.json → PHASE-001..004 (status preserved); author PHASE entities for distinct tasks.phase values; migrate tasks.phase → task_positioned_in_phase edges; remove tasks.phase field. Closes FGAP-049.",
+  "consequences": [
+    "Standard query primitives (filter-block-items / resolve-items-by-id / walk-ancestors / find-references) become applicable to phases post-canonicalization (currently invisible to them).",
+    "Lens projections referencing PHASE-NNN as bins resolve to phase items canonically.",
+    "Pre-existing phases/{1..4}.json files either retain integer slot OR migrate to PHASE-NNN ids depending on path chosen.",
+    "TASK-025 sub-phase 5.4 (phase.json authoring) gates on this decision."
+  ],
+  "options_considered": [
+    {
+      "label": "Migrate phase to array-block pattern (single phases.json with phases[] array, items with PHASE-NNN string id)",
+      "description": "Aligns phase with all other block kinds. Drop file-per-phase; consolidate into .project/phases.json (collide-name with directory) OR .project/phase.json. Migrate existing phases/{1..4}.json content into the array. Each item gets a PHASE-NNN id (string).",
+      "tradeoffs": "Most aligned with substrate canon (DEC-0013 + lens infrastructure); query primitives work canonically; existing 4 phases need conversion (low churn — pre-FGAP-026 content; status=planned never advanced)."
+    },
+    {
+      "label": "Retain file-per-phase + add PHASE-NNN id field bound to integer number",
+      "description": "phase.schema.json extends to require both number (integer file discriminator) AND id (PHASE-NNN string canonical), with binding rule e.g. PHASE-${number:03d} ↔ number. Roadmap.phases[].milestone references resolve via id. File paths stay phases/{number}.json.",
+      "tradeoffs": "Preserves existing files at low migration cost; query primitives still need special-casing per file-per-phase shape; persistent divergence from array-block pattern."
+    },
+    {
+      "label": "Decouple entirely — phase block-kind has both shapes coexisting",
+      "description": "Roadmap-internal phases (inline arrays) are one entity; project-wide phase block (top-level) is another; both bear PHASE-NNN ids; binding only at the cite-site.",
+      "tradeoffs": "Maximum flexibility; maximum substrate duplication risk; resolution semantics ambiguous."
+    }
+  ],
+  "references": [
+    {
+      "label": "phase.schema.json integer discriminator",
+      "path": "packages/pi-context/registry/schemas/phase.schema.json",
+      "lines": "5-15"
+    },
+    {
+      "label": "roadmap.schema.json PHASE-NNN string pattern",
+      "path": "packages/pi-context/registry/schemas/roadmap.schema.json",
+      "lines": "phases[].id"
+    },
+    {
+      "label": "Pre-existing phases files",
+      "path": ".project/phases/"
+    },
+    {
+      "label": "FGAP-049 forcing artifact",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "Cross-decision FGAP-053 milestone elevation",
+      "path": ".project/framework-gaps.json"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-047",
+    "FGAP-049",
+    "FGAP-053"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-17T13:00:00Z"
+}

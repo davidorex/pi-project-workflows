@@ -1,0 +1,16 @@
+{
+  "title": "Agents-as-tools — dual-surface typed agent dispatch (Cluster E delegation)",
+  "status": "in-progress",
+  "layer": "L4",
+  "description": "Project pi-jit-agents' AgentContract (introspect's agentContract(spec): inputSchema -> tool parameters, output.schema -> return contract, contextBlocks -> substrate injection) into a callable agent-DISPATCH surface, dual-surfaced per DEC-0019/0020: a Pi tool (the harness-confined in-pi LLM per DEC-0014 delegates to a typed subagent) + an orchestrator CLI (Claude Code runs any .agent.yaml as a typed function). Today agents are WORKFLOW-STEP-ONLY — pi-workflows workflow-execute runs them, workflow-agents lists them, but there is no 'call agent X directly as a tool'. This is the net-new delegation surface: effectively Cluster E of the in-pi tool-surface-completeness program (after A write / B read / C onboarding / D validator) and the capstone of DEC-0014 — the in-pi LLM gains delegate-to-typed-subagent, not just read/write/query. The introspect bridge (agentContract) already exists. Sits on a stable pi-context (agents read/write substrate + draw contextBlocks via the hardened tools; discovered + understood through list-tools + the FGAP-085 / FGAP-095 self-describing surface). Sequenced AFTER pi-context solid + merged (FGAP-074 rename -> FGAP-095 onboarding -> merge). Gated by DEC-0044 (registration home) + the introspect->tool-shape contract.",
+  "motivation": "Makes agents first-class callable units for BOTH drivers — the Claude Code orchestrator and the in-pi LLM — through ONE typed contract, unifying the two dispatch worlds (this Task tool orchestrator-side + a Pi dispatch tool in-pi) behind agentContract. Completes the harness-confined-LLM capability story: read/write/query/onboard/validate + now DELEGATE. Extends the dual-surface tool-completeness method (DEC-0019/0020) from substrate ops to agent dispatch.",
+  "acceptance_criteria": [
+    "agentContract(spec) projects to a Pi-tool registration shape (inputSchema -> Typebox parameters; output.schema -> return validation); dispatch executes the agent (subprocess/in-process) returning typed, validated output",
+    "a dispatch Pi tool lets the in-pi LLM invoke a named agent with validated input + receive validated output (DEC-0014 clean — tools only)",
+    "an orchestrator CLI (dispatch-agent.ts) runs any .agent.yaml as a typed function (DEC-0019/0020 twin)",
+    "nested dispatch inherits cost-control (model-pin + tool-restrict, the F-006 discipline) + routes through the executeAgent normalizer boundary (F-012)",
+    "agent-tools are discoverable via list-tools, carry discovery-ready descriptions (FGAP-085), and surface via the instructional projection (FGAP-095)",
+    "registration home settled (DEC-0044) before build"
+  ],
+  "findings": []
+}

@@ -1,0 +1,39 @@
+{
+  "title": "issues[].resolved_by carries free-text (commit SHAs / commit messages) instead of VER-NNN verification-entry references — substrate-canon evidence layer not adopted for 26 existing resolved issues",
+  "status": "identified",
+  "priority": "P2",
+  "package": "@davidorex/pi-context",
+  "layer": "L4",
+  "description": ".project/issues.json carries 26 resolved issues whose resolved_by field contains free-text (commit SHAs, commit messages, plain-string author identifiers) rather than VER-NNN ids referencing entries in the verification block. Pre-this-turn convention treated resolved_by as a free-text annotation; this turn established the verification block kind (.project/verification.json) as the canonical evidence layer with VER-NNN ids carrying structured fields (target, target_type, status, method, evidence, criteria_results[]). For substrate-canon consistency, resolved_by should reference a VER-NNN id (FK string OR closure-table edge with relation_type = verified_by) so resolution evidence lives in the typed verification block rather than as inline free-text fields on the issue.",
+  "evidence": [
+    {
+      "file": ".project/issues.json",
+      "reference": "26 issues with status=resolved carry resolved_by free-text values (commit SHAs / commit messages / author identifiers); inconsistent shape across issues"
+    },
+    {
+      "file": ".project/verification.json",
+      "reference": "VER-001/002/003/004 filed this turn establish the verification block kind as canonical evidence layer with structured criteria_results[] per VER"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/issues.schema.json",
+      "reference": "resolved_by field shape: free-text string; no FK constraint against VER-NNN"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/verification.schema.json",
+      "reference": "VER schema requires id, target, target_type, status, method; verification.target_type enum doesn't currently include 'issue' — issues schema would need to enumerate FK target OR verification.target_type would need to extend"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0013 closure-table is canonical for inter-item relationships; FK-as-field is parallel ungated path"
+    }
+  ],
+  "impact": "DEC-0013 canon violation across 26 existing resolved issues + every future issue-resolution. Inter-item references (issue → verification) live as free-text fields rather than closure-table edges. Cross-cutting: same pattern in tasks[].verification (added this turn as FK-as-field — also a DEC-0013 violation that must be migrated). Decisions[].enacted_by + framework-gaps[].closed_by reference IDENTITIES not block items so DEC-0013 governs them only if/when identities become substrate-block items (separate substrate-canon question).",
+  "canonical_vocabulary": "verification-FK convention for resolution evidence",
+  "proposed_resolution": "Per DEC-0013 (closure-table is canonical for ALL inter-item relationships): (1) Extend verification.schema.json target_type enum to include issue + task + decision + framework-gap so all four block kinds become legal verification targets. (2) Add relation_type = verified_by to config.relation_types[] registry. (3) Migrate the 26 existing resolved issues via schema-migrations.ts: for each issue with free-text resolved_by, author a retrospective VER-NNN capturing the closure evidence + write a relations.json edge (issue-X --verified_by--> VER-Y). (4) Migrate the FK-as-field violations introduced this turn (tasks[].verification carrying VER-NNN as inline string field for TASK-021/031/032/033) into closure-table edges of the same shape — accepts mandate-007 correction of substrate-canon violation introduced during VER-001..004 filing. (5) Deprecate / remove issues[].resolved_by + tasks[].verification inline string fields once edges carry the references. Out of scope: decisions[].enacted_by + framework-gaps[].closed_by carry identity strings (human/agent author refs), not block-item refs — DEC-0013 applies only when identities themselves become substrate-block items.",
+  "related_decisions": [
+    "DEC-0013",
+    "DEC-0018"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

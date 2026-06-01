@@ -1,0 +1,40 @@
+{
+  "title": "Substrate-dir name '.project' is hardcoded in framework-facing tool descriptions + SKILL.md — teaches a fresh agent that state lives in .project, contra DEC-0015 (no default dir; user-chosen)",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "A fresh constrained agent (no-pointer scratch dir) surveyed pi-context and repeatedly asserted that project state 'lives under a .project/ directory' and that no-pointer = 'no .project/ dir at all'. There is NO default substrate dir (DEC-0015/0011; the dir is chosen at /context start, suggested .context; FGAP-094 dropped the config root:.project default). The leak is at the DESCRIPTION level: tool descriptions + param hints + result labels hardcode '.project/' as the canonical/example dir, and SKILL.md (generated from them) propagates it. So a fresh agent learns the wrong, repo-specific dir name as canonical. The code path-resolution is fine (pointer-driven via .pi-context.json, any dir name); only the human/agent-facing GUIDANCE strings leak. Note: the init/dir-name surfaces were already fixed (index.ts:400 '/context init .project or /context init .context … Per DEC-0015, no default'; :1411 'Substrate dir name (e.g. .project). Required per DEC-0015 — no default') — that correct pattern just wasn't applied to the READ tool descriptions.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "845,848",
+      "reference": "read-block-dir desc 'all .json files in a .project/<subdir>/' + param 'Subdirectory under .project/' — presents .project as the dir"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1514",
+      "reference": "resolve-item-by-id desc 'across all .project/ blocks'"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "150,858,885,2084,2109,2173",
+      "reference": "serializeForRead labels + handoff/install/roadmap descs hardcode .project/ + .project/config.json"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "400,1411",
+      "reference": "the CORRECT pattern already present on the init/dir-name surfaces (cites DEC-0015 no-default) — extend this to the read descriptions"
+    }
+  ],
+  "impact": "Every fresh agent is mis-taught the substrate dir on first contact — it confidently reports/uses '.project' (this repo's frozen choice) as the canonical/default dir, contra DEC-0015 (user picks at /context start, suggested .context). Onboarding-relevant (intersects DEC-0042 /context start + FGAP-090 orientation). The agent's bootstrap-state table even says no-pointer = 'no .project/ dir' — doubly wrong (no dir AND no chosen name yet).",
+  "canonical_vocabulary": "substrate-dir-leakage, no-default-dir, pointer-driven-resolution, description-grounding-accuracy",
+  "proposed_resolution": "Scrub '.project' from framework-facing GUIDANCE (tool descriptions, param hints, result labels) — replace with a neutral referent: 'the substrate dir (resolved via .pi-context.json; you choose it at /context start, suggested .context)' or '<substrate-dir>/<block>.json'. Keep code path-resolution pointer-driven (unchanged). Regenerate SKILL.md. Extend the already-correct DEC-0015 framing at index.ts:400/1411 to all read descriptions. Pairs with FGAP-090 (the orientation block should also frame the dir as user-chosen) + DEC-0015/0042.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0015",
+    "DEC-0011",
+    "DEC-0042"
+  ],
+  "related_issues": []
+}

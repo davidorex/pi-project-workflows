@@ -1,0 +1,38 @@
+{
+  "title": "Monitor specs as typed blocks under the substrate contract",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-behavior-monitors",
+  "layer": "L1",
+  "description": "Monitor specs today live as `.pi/monitors/<name>.monitor.json` with ad-hoc shape (classify.agent + collectors), classify templates as `examples/<name>/classify.md` with handcoded `{% if %}` guards on context variables. Monitor write-actions bypass block-api (issue-065 — silent schema drift from destination blocks). Under the unifying heuristic monitor specs become typed blocks: monitor.schema.json captures the spec contract (collectors, classify routing, write actions); validateMonitor() lives in pi-project SDK as a peer to validateProject() and validateRelations(). Classify templates declare typed contextBlocks (per DEC-0008) flowing through the same composition layer (DEC-0007) as workflow agents. Surfaced as gap #36.",
+  "evidence": [
+    {
+      "file": "packages/pi-behavior-monitors/examples/",
+      "reference": "Bundled monitor specs and classify templates use ad-hoc shape; no monitors.schema.json exists."
+    },
+    {
+      "file": "packages/pi-behavior-monitors/index.ts",
+      "reference": "executeWriteAction in monitor write-action path bypasses block-api per issue-065 — silent schema drift surface."
+    },
+    {
+      "file": "analysis/2026-05-03-substrate-arc-frame.md",
+      "lines": "§2.1, §4.2, §5 gap #36",
+      "reference": "Heuristic-widening pass surfaces monitor specs as in-scope typed contexts."
+    }
+  ],
+  "impact": "Without typed monitor blocks: monitor authoring lacks schema-validated writes (issue-065's parallel ungated path stays open); monitor classify templates duplicate composition logic that lens injection now provides; validateMonitor() does not exist (issue-039 mirrors this); monitor tooling (issue-038) cannot route through canonical surfaces. Monitors as a class become second-class citizens of the substrate.",
+  "canonical_vocabulary": "typed monitor specifications; declarative observation store; canonical monitor authoring surface",
+  "proposed_resolution": "Land monitors.json (flat block) or monitors/ subdirectory (only if DEC-0009 enacts subpath form, which is the rejected direction under the heuristic) + monitors.schema.json + validateMonitor() in pi-project SDK. Monitor write-actions route through block-api appendToBlock for any destination block they target (closes issue-065). Classify templates adopt typed contextBlocks (DEC-0008). Resolution coupled to DEC-0007 (composition contract for classify-prompt assembly) and DEC-0009 (storage primitive direction).",
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_decisions": [
+    "DEC-0007",
+    "DEC-0008",
+    "DEC-0009"
+  ],
+  "related_issues": [
+    "issue-039",
+    "issue-065"
+  ]
+}

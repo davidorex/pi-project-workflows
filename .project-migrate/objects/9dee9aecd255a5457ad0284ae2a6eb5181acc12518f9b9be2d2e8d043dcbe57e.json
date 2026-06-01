@@ -1,0 +1,31 @@
+{
+  "title": "Test suite doesn't exercise pi-context against a fully-different substrate vocabulary — vocabulary-neutrality claim per DEC-0025 untested",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Per DEC-0025 (vocabulary-neutral substrate canon), a user with wholly-different substrate conception (e.g. {initiatives, OKRs, experiments, decisions, tasks, runs, observations} OR {hypotheses, experiments, results, papers, datasets} OR any other vocabulary) must be able to clone pi-context, author their own config + schemas + macros, and have the framework operate on their vocabulary without source modification. This claim is currently untested. pi-context's existing test suite (390 tests) exercises the framework against canonical-default vocabulary (decisions / framework-gaps / tasks / etc.) — every test fixture authors substrate using PROJECT_BLOCK_TYPES kinds. No test instantiates a fully-different substrate conception + exercises block-api / lens / closure-table / query primitives / execution-context against it. Result: claim is asserted (in DEC-0025) but unevidenced. Any latent coupling between pi-context source and the canonical-default vocabulary remains undiscovered until a real user attempts a vocabulary-neutral adoption + finds the gap.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/",
+      "reference": "All 390 tests use canonical-default vocabulary fixtures — grep for 'decisions' / 'framework-gaps' / 'tasks' in test files surfaces canonical-only usage"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0025 enacts vocabulary-neutrality; no test evidence for the claim"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-056 (PROJECT_BLOCK_TYPES const) + FGAP-057 (macro bootstrap) — the surfaces a vocabulary-neutral test would exercise + likely fail against currently"
+    }
+  ],
+  "impact": "Vocabulary-neutrality claim is asserted but unevidenced. Latent couplings between pi-context source and canonical-default vocabulary remain hidden — any code path that hardcodes a kind name, prefix, relation_type literal, lens id, or layer label is a regression that won't surface until a downstream user attempts vocabulary-neutral adoption + reports failure. Adversarial discoverability low: standard test pass-rate doesn't catch coupling drift. Per DEC-0018 (tests-pass-alone insufficient; runtime demo + adversarial probe per step), this is a verification gap at the framework-claim level.",
+  "canonical_vocabulary": "vocabulary-neutrality-test, custom-substrate-conception-fixture, universalization-evidence",
+  "proposed_resolution": "Author a fixture-based test that: (a) creates a tmpdir with .pi-context.json bootstrap pointer naming a custom dir (e.g. .lab/); (b) populates .lab/config.json + .lab/schemas/ + .lab/<custom-kinds>.json with a wholly-different substrate vocabulary (e.g. {hypotheses, experiments, results, datasets, papers}); (c) exercises block-api appendToBlock / readBlock / upsertItemInBlock against custom kinds; (d) declares custom relation_types in config.relation_types[] + populates .lab/relations.json with edges; (e) declares custom lens in config.lenses[] + verifies groupByLens projection works; (f) authors custom macro under .lab/templates/ + verifies pi-jit-agents contextBlocks injection picks it up; (g) calls gather-execution-context for a custom unit_kind via custom CTX-NNN context-contract + verifies bundle composition. Test failure cases reveal coupling sites; each becomes a code-path migration to vocabulary-neutral pattern. Lives at packages/pi-context/src/vocabulary-neutrality.integration.test.ts (analogous to execution-context.integration.test.ts which exists per Phase 3 Step 8.7.3.3). Cross-decision with FGAP-056 + FGAP-057 — those gaps surface DURING this test authoring; their resolution gates this test passing.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0018",
+    "DEC-0025"
+  ],
+  "related_issues": []
+}

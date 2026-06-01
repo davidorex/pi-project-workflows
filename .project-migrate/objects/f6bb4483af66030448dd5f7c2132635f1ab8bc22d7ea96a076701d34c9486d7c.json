@@ -1,0 +1,35 @@
+{
+  "title": "Empirical verification against OpenRouter and Kimi",
+  "status": "proposed",
+  "description": "Run the hedge monitor against an OpenRouter-routed Claude model (openrouter/anthropic/claude-sonnet-4.6) and against at least one Kimi model to verify that forced toolChoice works end-to-end through the openai-completions path. This is the §7/§9 caveat from analysis/openrouter-pi-mono-setup.md — plausibly works but not documented. If it fails, surface as a blocking finding for user decision.",
+  "acceptance_criteria": [
+    "hedge monitor classify returns a VERDICT_TOOL tool call from openrouter/anthropic/claude-sonnet-4.6",
+    "hedge monitor classify returns a VERDICT_TOOL tool call from at least one Kimi model (openrouter/moonshotai/Kimi-K2-Thinking or kimi-coding/kimi-k2-thinking)",
+    "If either verification fails, a new finding is created in spec-reviews.json or as a defect in this feature's findings array, and the arc pauses for user decision"
+  ],
+  "depends_on": [
+    "STORY-005",
+    "STORY-006"
+  ],
+  "gates": [],
+  "tasks": [
+    {
+      "id": "TASK-008-01",
+      "title": "Run hedge against openrouter/anthropic/claude-sonnet-4.6",
+      "status": "todo",
+      "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not"
+    },
+    {
+      "id": "TASK-008-02",
+      "title": "Run hedge against a Kimi model",
+      "status": "todo",
+      "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not"
+    },
+    {
+      "id": "TASK-008-03",
+      "title": "Document verification outcomes",
+      "status": "todo",
+      "description": "Write outcomes into this feature's findings array or into a new finding in REVIEW-001 if the outcome surfaces a spec-level disclarity"
+    }
+  ]
+}

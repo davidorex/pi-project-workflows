@@ -1,0 +1,24 @@
+{
+  "description": "Phase 4 sub-phase 4.1: rename pi-workflows `workflow` tool → `workflow-execute` (canonical naming alignment per pi-context verb-noun convention) + add workflow-resume pi tool (explicit-resume-by-runId complement to workflow-execute's auto-resume default). Closes TASK-024 directly (single-sub-phase phase).",
+  "status": "completed",
+  "files": [
+    "packages/pi-workflows/src/index.ts",
+    "packages/pi-workflows/skill-narrative.md",
+    "packages/pi-workflows/README.md"
+  ],
+  "acceptance_criteria": [
+    "Pi tool name `workflow` renamed to `workflow-execute` at packages/pi-workflows/src/index.ts:494; parameters + execute body unchanged",
+    "New pi tool `workflow-resume` registered after workflow-execute; parameters: Type.Object({workflow: Type.String, runId: Type.String, input: Type.Optional(Type.Unknown)}); rejects when no incomplete run matches OR runId mismatch",
+    "Bare-string scan: `grep -wn '\"workflow\"' packages/pi-workflows/src/index.ts` returns only legitimate non-tool-name usages (params.workflow / error strings / JSDoc)",
+    "skill-narrative.md + README.md updated where tool-name references exist",
+    "Existing tests calling tool by name 'workflow' updated to 'workflow-execute'",
+    "New tests cover workflow-resume happy path + no-incomplete-run rejection + runId-mismatch rejection",
+    "Husky pre-commit gate (npm run check && npm test) green",
+    "Breaking change flagged with `!` in commit subject (tool name change affects any in-tree caller)"
+  ],
+  "depends_on": [
+    "TASK-024"
+  ],
+  "notes": "CLOSED at HEAD 569eec4. workflow tool renamed to workflow-execute (index.ts:495); workflow-resume new tool registered (index.ts:575) with no-incomplete-run + runId-mismatch + cross-spec-incompat rejection paths. Tests: pi-workflows 824 to 829 (+5). See VER-014.",
+  "verification": "VER-014"
+}

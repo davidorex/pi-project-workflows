@@ -1,0 +1,39 @@
+{
+  "title": "Orchestrator CLIs validate items against the item-subschema FRAGMENT in isolation (losing $ref definitions), not whole-file like block-api",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "file-block-item.ts and append-relation.ts (the dual-surface append CLIs) re-implement pre-write item validation against the block's ITEMS SUBSCHEMA FRAGMENT extracted from the schema (file-block-item.ts:109 itemSchema=properties[arrayKey].items, validated at :270; append-relation.ts:117-139 extracts relations .items, validated at :157), rather than validating the whole file the way the library does (appendToBlock->writeBlock->writeTypedFile->validateFromFile against the WHOLE schema, block-api.ts:401 — proven to resolve $refs). When an items schema is {\"$ref\":\"#/definitions/<kind>\"} (features.schema.json:10, spec-reviews.schema.json:38), the fragment cannot resolve #/definitions/<kind> (parent definitions out of scope) -> --dry-run errors \"can't resolve reference\". ACTIVE on file-block-item filing features/spec-reviews; LATENT in append-relation (relations.schema.json has no $ref today but the same fragment-in-isolation pattern is shipped). NOTE: the REAL (non-dry-run) file-block-item append delegates straight to appendToBlock and is NOT broken — only --dry-run (this gap) + --auto-id (FGAP-083) fail. Conception (samples) + registry schemas use no item $ref, so .context library filing is unaffected. Root: orchestrator-CLI validation is a PARALLEL re-implementation diverging from block-api whole-file validation (feedback_no_parallel_ungated_paths).",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "109,267-270",
+      "reference": "--dry-run validates item against extracted .items fragment, not whole schema; $ref-to-definitions item fails to resolve"
+    },
+    {
+      "file": "scripts/orchestrator/append-relation.ts",
+      "lines": "117-139,154-157",
+      "reference": "same fragment-in-isolation validation pattern (latent — relations.schema has no $ref yet)"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "lines": "401",
+      "reference": "the canonical whole-file validateFromFile path the CLIs should route through (resolves $refs)"
+    },
+    {
+      "file": ".project/schemas/features.schema.json",
+      "lines": "10",
+      "reference": "items {\"$ref\":\"#/definitions/feature\"} — the shape that breaks fragment validation; spec-reviews.schema.json:38 same"
+    }
+  ],
+  "impact": "file-block-item — the canonical append surface (CLAUDE.md filing pattern) — cannot append/preview/auto-id features (or any future $ref-item block kind), forcing a non-canonical raw appendToBlock tsx-eval fallback that bypasses the CLI's --writer/--dry-run/--auto-id ergonomics. Undermines the DEC-0019/0020 canonical-script surface for $ref-using schemas; the conception (samples) schemas may use $ref similarly, so .context filing would hit this too.",
+  "canonical_vocabulary": "fragment-validation, whole-file-validation, $ref-item-schema, parallel-path-divergence, orchestrator-cli",
+  "proposed_resolution": "Both append CLIs should validate the candidate item by composing a whole-block wrapper and running validateFromFile against the FULL schema (mirroring writeBlock/appendToBlock) for --dry-run, NOT the item-fragment in isolation. Best: route --dry-run through the same library validation the real path uses (single path; eliminates the divergence). [CLOSED 2026-05-23 — commit 5ecd7bd / TASK-060 / VER-032: file-block-item + append-relation dry-run now validate the prospective WHOLE file (validateFromFile) not the items fragment — resolves $ref + dry-run==write parity.]",
+  "related_decisions": [
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

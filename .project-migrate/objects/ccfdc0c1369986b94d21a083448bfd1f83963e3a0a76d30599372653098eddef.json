@@ -1,0 +1,21 @@
+{
+  "description": "FGAP-074 C7 — remove aliases + bare-string sweep (closes FGAP-074). Drop the dual package.json exports -> single ./context-*; drop tsconfig legacy path mappings; remove all @deprecated identifier aliases; scoped + bare-string sweep of residual in-scope project naming in comments/JSDoc/temp-dir prefixes/test-fixture strings. Green proves zero legacy-name consumers remain.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/package.json",
+    "packages/pi-context/tsconfig.json"
+  ],
+  "acceptance_criteria": [
+    "Dual exports collapsed to single ./context-*; tsconfig legacy mappings removed; all identifier aliases removed",
+    "grep -rn '@davidorex/pi-context/project-' packages scripts returns nothing",
+    "Renamed-identifier grep shows no legacy survivors (excluding OUT-of-scope pi-project-workflows package name + .project substrate-dir literal)",
+    "Scoped + bare-string sweep complete (comments/JSDoc/temp-dir prefixes/test fixtures)",
+    "Fresh-context adversarial probe: pure rename, no behavioral change, no orphaned alias, OUT-of-scope items untouched; runtime demo /context status + a context-* tool dispatch resolve against still-.project substrate",
+    "build && check && test green; FGAP-074 marked resolved"
+  ],
+  "depends_on": [
+    "TASK-072"
+  ],
+  "notes": "Decomposition chunk C7 (final). Maps to Claude task #66. FGAP-074. After this: FGAP-095 P2-P6 build native on /context; .project->.context DIR cutover (DEC-0036 step-5) + .context re-population (step-3) remain SEPARATE arcs.",
+  "verification": "VER-044"
+}

@@ -1,0 +1,65 @@
+{
+  "title": "Substrate-dir replacement name — what user-chosen directory name replaces .project/",
+  "status": "enacted",
+  "context": "FGAP-026 closure (DEC-0015 enacted) requires user choice of substrate-dir name; current literal .project/ is the bootstrap default to be replaced. Resolver (resolveContextDir per Phase 1.1 / TASK-021 commit a98d) reads .pi-context.json bootstrap pointer at repo root, which carries the user-chosen directory name. /context init (Phase 6 / TASK-026) prompts for the name — no default to avoid hardcode-dressed-as-default per FGAP-026 callout. Migration ceremony (Phase 10 / TASK-030) renames this repo's existing .project/ → user-chosen dir + writes .pi-context.json. Cross-tool naming conventions for repo-local config dirs include: .git, .vscode, .claude, .pi, .gh, .npmrc — single-word leading-dot is common. Substrate-canon-dir naming considerations: brevity (frequent typing); semantic (what's inside); collision-risk (other tools); discoverability (alphabetical in ls -a). The substrate is project-context (matches package name pi-context); other candidates align with role: substrate / canon / arc / work / state.",
+  "decision": "ENACTED: the canonical substrate directory is .context (matching pi-context package + the forthcoming /context subcommand surface). The current .project/ becomes the frozen ad-hoc source; .context/ is authored fresh + canonical via re-derivation (DEC-0036). The bootstrap pointer (.pi-context.json) + config.root flip to .context at cutover (FGAP-026 Phase 10); until then .project/ remains the active working dir.",
+  "consequences": [
+    "Migration script renames .project/ → <chosen-name>/ in this repo (touches every block instance file path; relations.json edges; phase files; schema files).",
+    "/context init scaffold creates <chosen-name>/ + .pi-context.json bootstrap pointer for new projects.",
+    "All analysis MDs + commit messages + CLAUDE.md / HANDOFF.md / MEMORY.md references to .project/ migrate or carry historical-name notation.",
+    "Cross-package consumers (pi-jit-agents / pi-workflows / pi-behavior-monitors) inherit through the resolver — no per-package literal change."
+  ],
+  "options_considered": [
+    {
+      "label": ".context/",
+      "description": "Aligns with pi-context package name + /context subcommand surface (Phase 6).",
+      "tradeoffs": "Clean semantic; short; matches forward-looking branding."
+    },
+    {
+      "label": ".pi/",
+      "description": "Already used by pi-runtime as user's testing directory (forbidden to touch per memory feedback_no_touch_pi_dir.md). Collision.",
+      "tradeoffs": "Cannot use; already taken."
+    },
+    {
+      "label": ".substrate/",
+      "description": "Names what's inside (typed substrate blocks).",
+      "tradeoffs": "Longer; less common; semantic."
+    },
+    {
+      "label": ".canon/",
+      "description": "Names the architectural-canon role.",
+      "tradeoffs": "Short; less obvious to non-pi-context users."
+    },
+    {
+      "label": ".arc/",
+      "description": "Names the work-arc tracking role.",
+      "tradeoffs": "Short; ambiguous (could be 'arc' as in archive)."
+    },
+    {
+      "label": "Other user-chosen",
+      "description": "Free-form user choice not enumerated here.",
+      "tradeoffs": "User's prerogative."
+    }
+  ],
+  "references": [
+    {
+      "label": "FGAP-026 closure plan + DEC-0015 substrate-location-config-driven",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "resolveContextDir Phase 1.1 cascade",
+      "path": "packages/pi-context/src/project-dir.ts"
+    },
+    {
+      "label": "Phase 6 + Phase 10 in canonical sub-phase analysis",
+      "path": "analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-026"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-17T15:00:00Z"
+}

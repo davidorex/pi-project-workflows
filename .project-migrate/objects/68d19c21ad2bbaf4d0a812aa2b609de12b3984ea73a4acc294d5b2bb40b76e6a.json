@@ -1,0 +1,20 @@
+{
+  "description": "Fix the pi-context skill-name collision (startup [Skill conflicts] warning via launch-constrained-pi.sh). Cause: scripts/generate-skills.js generateMetaSkill copies every sub-package skill into the meta-package (packages/pi-project-workflows/skills/<name>), and FGAP-090's resources_discover now self-surfaces packages/pi-context/skills/pi-context — so pi-context's skill reaches pi's name-keyed loader from two paths -> collision (byte-identical copies, cosmetic but a self-inflicted regression). Second root: generate-skills never cleans the meta skills dir (mkdir+writeFile only), so orphans persist. FIX (both roots): (1) rmSync the meta skills dir at the start of generateMetaSkill before regenerating (idempotent clean-rebuild; import rmSync); (2) skip pi-context in the copy loop (`if (result.shortName===\"pi-context\") continue;`) since it self-surfaces via resources_discover; keep copying pi-workflows + pi-behavior-monitors (no resources_discover hook). Then npm run skills removes packages/pi-project-workflows/skills/pi-context/.",
+  "status": "completed",
+  "files": [
+    "scripts/generate-skills.js",
+    "packages/pi-project-workflows/skills/pi-context/"
+  ],
+  "acceptance_criteria": [
+    "generate-skills.js: rmSync clean-rebuild of meta skills dir at start of generateMetaSkill + pi-context excluded from the copy loop (workflows/monitors still copied)",
+    "after npm run skills: packages/pi-project-workflows/skills/pi-context/ no longer exists (git deletion staged); other 3 meta skill dirs intact",
+    "build/check/test green",
+    "runtime via the real load path: cd $(mktemp -d) && launch-constrained-pi.sh -p noop --mode json ... shows ZERO [Skill conflicts]/pi-context collision lines",
+    "idempotent: npm run skills twice -> identical tree, no orphan"
+  ],
+  "depends_on": [
+    "TASK-074"
+  ],
+  "notes": "Follow-on of FGAP-090/TASK-074 (resources_discover introduced the second path). Fix both roots (redundant copy + no-clean) — skipping pi-context alone would leave the orphan (negligent). Principled end-state (workflows/monitors also self-surface, meta stops bundling) is FEAT-007-adjacent future. Verify via launch-constrained-pi.sh from a SCRATCH cwd (pi install -l touches scratch .pi/, never the repo's). NO RELEASE (held).",
+  "verification": "VER-048"
+}

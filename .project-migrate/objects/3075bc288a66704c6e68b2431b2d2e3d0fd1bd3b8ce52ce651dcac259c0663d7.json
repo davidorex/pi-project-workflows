@@ -1,0 +1,35 @@
+{
+  "target": "TASK-040",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T18:05:00Z",
+  "evidence": "Sub-phase 3.3 (execution-context integration test) landed at HEAD 02acf92 — FINAL atomic unit under TASK-023. Integration test packages/pi-context/src/execution-context.integration.test.ts (18593 bytes) authors per-test full synthetic substrate (mkdtempSync + writeBootstrapPointer + config.json + relations.json + context-contracts.json + tasks.json + decisions.json + registry-copied schemas) and exercises gatherExecutionContext end-to-end through canonical surfaces (no mocks for filterBlockItems / resolveItemsByIds / walkAncestors / walkDescendants / readBlock). 4 scenarios: A single-relation; B multi-relation cross-block (cross-block resolution exercised + decisions-schema payload fields asserted); C deep cross-block chain + maxDepth cap; D missing-edges no-false-pass. Tests: pi-context 454 → 458 (+4). Husky pre-commit gate green (biome 175 files + tsc --noEmit + full workspace tests).",
+  "criteria_results": [
+    {
+      "criterion": "Integration test composes full synthetic substrate per per-test fixture",
+      "status": "passed",
+      "evidence": "execution-context.integration.test.ts authors config.json + relations.json + context-contracts.json + per-block items + schemas in each test's mkdtempSync dir"
+    },
+    {
+      "criterion": "Exercises gather-execution-context against realistic task unit end-to-end",
+      "status": "passed",
+      "evidence": "4 scenarios A/B/C/D all invoke gatherExecutionContext through canonical surfaces"
+    },
+    {
+      "criterion": "Asserts ContextBundle shape matches interface + perRelationType buckets + traversal_depth honored",
+      "status": "passed",
+      "evidence": "Scenario assertions cover bundle.unit + bundle.perRelationType[<rt>] + bundle.traversal_depth bounds"
+    },
+    {
+      "criterion": "Verifies substrate-canon: unit via filterBlockItems; relations via loadRelations; ids via resolveItemsByIds; bundle per context-contract",
+      "status": "passed",
+      "evidence": "No mocks; canonical surfaces exercised"
+    },
+    {
+      "criterion": "Husky pre-commit gate green",
+      "status": "passed",
+      "evidence": "Commit 02acf92 landed without --no-verify across all 4 packages"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "title": "edgesForLens + walkDescendants exposed as SDK functions but not wrapped as registered pi tools",
+  "body": "Forcing context: both functions (packages/pi-context/src/project-context.ts) are pure graph operations over Edge[] — edgesForLens(lens, items, authoredEdges) returns the materialized edge set for a lens (synthetic or hand-curated); walkDescendants(parentId, relationType, edges) returns the closure-table descendants under a relation_type. SDK functions exist with full test coverage. No pi.registerTool wrappers — LLMs cannot inspect lens edges or walk hierarchies via tool-use today.\n\nProposed shape: register two tools — 'project-edges-for-lens' (params: lensId; computes via getProjectContext + edgesForLens; returns Edge[]) and 'project-walk-descendants' (params: parentId, relationType; computes via getProjectContext + walkDescendants; returns string[] of descendant ids). Both tools enable LLM-driven exploration of the substrate hierarchy — required for any agent workflow that wants to navigate closure-table relations programmatically.\n\nCombined into one issue per the user's gap inventory because both are pure-graph traversal functions sharing implementation pattern (resolve config + pull edges + run pure function).",
+  "location": "packages/pi-context/src/index.ts:720",
+  "status": "resolved",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
+}

@@ -48,7 +48,9 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "closed_by": "agent/step-8.5-orchestrator",
-      "closed_at": "2026-05-09T23:58:13.827Z"
+      "closed_at": "2026-05-09T23:58:13.827Z",
+      "oid": "6379e232fd63054e45505c4e40f47ad7",
+      "content_hash": "5a2c71dae59aae6c89ace05828123c4bd2048f3256e32040f6dceb5d7a9958d0"
     },
     {
       "id": "FGAP-002",
@@ -77,7 +79,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-6",
-      "created_at": "2026-04-15T00:00:00Z"
+      "created_at": "2026-04-15T00:00:00Z",
+      "oid": "a45887fd815504f427ea467be587cb02",
+      "content_hash": "df8528222e8e7d66dafce7707b3f7a183e0f98eadb73d20a68fa373e37223dd6"
     },
     {
       "id": "FGAP-003",
@@ -106,7 +110,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-6",
-      "created_at": "2026-04-15T00:00:00Z"
+      "created_at": "2026-04-15T00:00:00Z",
+      "oid": "1c250c838814d8a73a6b8f35dbc684a8",
+      "content_hash": "05cf6e6b474c40cca364b366290e21ba2a037ebac59e012c89647f0f58ed746c"
     },
     {
       "id": "FGAP-004",
@@ -141,7 +147,9 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "closed_by": "agent/step-8.5-orchestrator",
-      "closed_at": "2026-05-09T23:58:13.827Z"
+      "closed_at": "2026-05-09T23:58:13.827Z",
+      "oid": "31a6eefbba81c667abcbb6742c3ed539",
+      "content_hash": "c7cf94ca846b455bb1b8eb2cef02829647031d784ffde5410de6e3d4b5fb1f3f"
     },
     {
       "id": "FGAP-005",
@@ -174,7 +182,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-6",
-      "created_at": "2026-04-15T00:00:00Z"
+      "created_at": "2026-04-15T00:00:00Z",
+      "oid": "83f32912d432e7c829e5728ae8ff8943",
+      "content_hash": "93846cc22101fbf72dcbc3f43db141b12492da5e8725c7f6f2d9d68bca6eda68"
     },
     {
       "id": "FGAP-006",
@@ -209,7 +219,9 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "closed_by": "agent/step-8.5-orchestrator",
-      "closed_at": "2026-05-09T23:58:13.827Z"
+      "closed_at": "2026-05-09T23:58:13.827Z",
+      "oid": "9a0788ff9859198f5192ae462e1a7d99",
+      "content_hash": "f9487c788dcb36013d3d9bf4e1423a62ed74192d8b15d7a1ecdda3c94333b4e4"
     },
     {
       "id": "FGAP-008",
@@ -243,7 +255,9 @@
       ],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-03T00:00:00Z"
+      "created_at": "2026-05-03T00:00:00Z",
+      "oid": "e89268f3381147141dcceb16f5ed895e",
+      "content_hash": "1fdfcf3826d6bd85d4284f8e4919e953c804c243741181b25bd4fcea250c9ec1"
     },
     {
       "id": "FGAP-009",
@@ -284,7 +298,9 @@
         "issue-065"
       ],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-03T00:00:00Z"
+      "created_at": "2026-05-03T00:00:00Z",
+      "oid": "7fe6d19a4fd9848cd0d31490db1a65f3",
+      "content_hash": "ab5586bebf210964be2a2cf7a33ccf7002efcb941208ec7497ea442d40f01cc4"
     },
     {
       "id": "FGAP-010",
@@ -321,7 +337,9 @@
       ],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-03T00:00:00Z"
+      "created_at": "2026-05-03T00:00:00Z",
+      "oid": "a088e04e9e322cbfcaf928a082c9003a",
+      "content_hash": "502fbaee340f737ec6edff900f6d928185eceb63c26d75a2d446060029998294"
     },
     {
       "id": "FGAP-007",
@@ -362,7 +380,9 @@
         "issue-061"
       ],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-03T00:00:00Z"
+      "created_at": "2026-05-03T00:00:00Z",
+      "oid": "2937a41e965a4f7151f9485910641075",
+      "content_hash": "7f61aedcd9d4653c69175ebb558a5dda8af6696740746084dd31476b82b07d75"
     },
     {
       "id": "FGAP-011",
@@ -395,7 +415,9 @@
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-03T00:00:00Z",
       "closed_by": "agent/step-8.5-orchestrator",
-      "closed_at": "2026-05-09T23:58:13.827Z"
+      "closed_at": "2026-05-09T23:58:13.827Z",
+      "oid": "993372294aabfcebcabef0375964c5a6",
+      "content_hash": "98719c5272d01018a4e42f5ce6ef8e88107e5ccf6589f53af442156dc8415597"
     },
     {
       "id": "FGAP-012",
@@ -428,7 +450,9 @@
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-04T00:00:00Z",
       "closed_by": "agent/step-8.5-orchestrator",
-      "closed_at": "2026-05-09T23:58:13.827Z"
+      "closed_at": "2026-05-09T23:58:13.827Z",
+      "oid": "728368e6b72df1f76eb95f1f16d17735",
+      "content_hash": "ac96779de2b25db2ba2a276e8199706b19249f700b511c6516529990704ab69a"
     },
     {
       "id": "FGAP-013",
@@ -461,7 +485,9 @@
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-04T00:00:00Z",
       "closed_by": "agent/step-8.5-orchestrator",
-      "closed_at": "2026-05-09T23:58:13.827Z"
+      "closed_at": "2026-05-09T23:58:13.827Z",
+      "oid": "599798c93b5e89646c539b6882928627",
+      "content_hash": "bb7413ad501081563598aa24e72bcde02046387ffd2e42b3b23e1cfeb6ea6276"
     },
     {
       "id": "FGAP-014",
@@ -488,7 +514,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-04T00:00:00Z"
+      "created_at": "2026-05-04T00:00:00Z",
+      "oid": "5cfe0f19dcb087c74a36ebe754db51af",
+      "content_hash": "404a546db63bfafee027d0d47c46a627a6bdc56aa297822d9c1c6c9abfba1a80"
     },
     {
       "id": "FGAP-015",
@@ -519,7 +547,9 @@
       ],
       "priority": "P2",
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-06T22:18:41.991Z"
+      "created_at": "2026-05-06T22:18:41.991Z",
+      "oid": "0b68b61985704baee890576d00e3913f",
+      "content_hash": "ffce93001bfc9b0913f235bf08548f37911107c47a6ab776bb3dde2d42250828"
     },
     {
       "id": "FGAP-016",
@@ -579,7 +609,9 @@
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-06T22:22:49.154Z",
       "closed_by": "agent/step-8.5-orchestrator",
-      "closed_at": "2026-05-09T23:58:13.827Z"
+      "closed_at": "2026-05-09T23:58:13.827Z",
+      "oid": "be2e814ba66fe24f5b8d6806a0863def",
+      "content_hash": "6a865a61604acea0ec5a3c160a486fecf578313199d710aefbb3d64e7b3d739f"
     },
     {
       "id": "FGAP-017",
@@ -608,7 +640,9 @@
       "created_by": "agent/step-5-orchestrator",
       "created_at": "2026-05-09T01:58:41.571Z",
       "closed_by": "agent/step-5.1-orchestrator",
-      "closed_at": "2026-05-09T09:27:54.059Z"
+      "closed_at": "2026-05-09T09:27:54.059Z",
+      "oid": "6093902cb97c9831db3beba0bdcf05a8",
+      "content_hash": "0542d1689ac2ab18a36acfe35a46d6dcd94b95085261eb877e5dc91c945551f1"
     },
     {
       "id": "FGAP-018",
@@ -637,7 +671,9 @@
       "created_by": "agent/step-6-orchestrator",
       "created_at": "2026-05-09T05:34:01.350Z",
       "closed_by": "agent/step-6.2-orchestrator",
-      "closed_at": "2026-05-09T07:32:43.789Z"
+      "closed_at": "2026-05-09T07:32:43.789Z",
+      "oid": "994a18d9b2260630df4908682b34052e",
+      "content_hash": "859c39ed855f7229e289f2d63f32fabeaa97bb052a6e82d178942af7de49d156"
     },
     {
       "id": "FGAP-019",
@@ -670,7 +706,9 @@
       "created_by": "agent/step-6-orchestrator",
       "created_at": "2026-05-09T05:38:52.759Z",
       "closed_by": "agent/step-6.1-orchestrator",
-      "closed_at": "2026-05-09T07:18:06.691Z"
+      "closed_at": "2026-05-09T07:18:06.691Z",
+      "oid": "804d1740a57a5fdc00f5045aed6e5458",
+      "content_hash": "afcff72569964503a5bae6986339e869c1fd799488c55321297920b2c3c1cb23"
     },
     {
       "id": "FGAP-020",
@@ -695,7 +733,9 @@
       "created_by": "agent/step-6.1-orchestrator",
       "created_at": "2026-05-09T07:16:50.240Z",
       "closed_by": "agent/step-6.3-orchestrator",
-      "closed_at": "2026-05-09T08:08:48.641Z"
+      "closed_at": "2026-05-09T08:08:48.641Z",
+      "oid": "e5e8ccd130a999fba2c8ccd09373d45e",
+      "content_hash": "9b1f869bb742b3d971e94901b0a27c2aa18f8c1d0bb3a4ef380e04479566ac57"
     },
     {
       "id": "FGAP-021",
@@ -726,7 +766,9 @@
       "impact": "No live regression — schemas validate as authored; existing on-disk block items conform to current vocabularies. Architectural debt: the 'one canonical enum vocabulary per dimension' intent of Step 4 / FGAP-016 is not realized. New consumers may inherit from any of multiple competing vocabularies. Future enum-value additions to shared schemas don't reach unaligned registry consumers; tooling treating shared schemas as authoritative may produce false validation results.",
       "proposed_resolution": "Per-dimension reconciliation decisions, each requiring a data-migration consideration (existing on-disk block items use current registry vocabulary): (1) priority — drop p-prefix from shared OR migrate registry to add prefix; (2) status — formally accept multi-vocabulary-per-dimension (workflow vs issue-tracker vs document-lifecycle as distinct shared schemas) OR collapse into one canonical form; (3) severity — align scales (3-value canonical OR 5-value canonical) across audit/domain/conformance-reference/shared; (4) verification-method — formalize subset-as-restriction via JSON Schema's $ref + constraints OR accept inline subsets as the consumer-restriction pattern. Each decision needs a migration registry entry per Step 4's schema-migrations.ts to bump schema version + transform existing data. The decision space is genuinely architectural (substrate vocabulary semantics), not mechanical.",
       "created_by": "agent/step-5.1-orchestrator",
-      "created_at": "2026-05-09T09:28:59.735Z"
+      "created_at": "2026-05-09T09:28:59.735Z",
+      "oid": "7c47ebf6fdfd1c235622fabc90545c6b",
+      "content_hash": "b09ad9775253b9f87b3d87772e2791cb6000f33d15e2e710750d52727b759cb6"
     },
     {
       "id": "FGAP-022",
@@ -752,7 +794,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8-audit-orchestrator",
-      "created_at": "2026-05-09T23:03:46.282Z"
+      "created_at": "2026-05-09T23:03:46.282Z",
+      "oid": "2b7a9cc08dcd5a87b6193946ea81ad57",
+      "content_hash": "d7078e316d3ca25bc8f2bf3952c3d122b588a65347b25faaf0ffbfd2a6379f97"
     },
     {
       "id": "FGAP-023",
@@ -778,7 +822,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8-audit-orchestrator",
-      "created_at": "2026-05-09T23:03:46.282Z"
+      "created_at": "2026-05-09T23:03:46.282Z",
+      "oid": "13b503fc23246b230a77114cb3154d14",
+      "content_hash": "981371d6ebce98efc3627269745d251da681fd191a77c63a61ea5998d20887e4"
     },
     {
       "id": "FGAP-024",
@@ -808,7 +854,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8-audit-orchestrator",
-      "created_at": "2026-05-09T23:03:46.282Z"
+      "created_at": "2026-05-09T23:03:46.282Z",
+      "oid": "2445a2e068db711383a26bbebb720b04",
+      "content_hash": "92c9f78eb2c1e4e229e7ad95806997fa7fe3a8a41cf44f7ac0761f4c8cdde28c"
     },
     {
       "id": "FGAP-025",
@@ -838,7 +886,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8-audit-orchestrator",
-      "created_at": "2026-05-09T23:03:46.282Z"
+      "created_at": "2026-05-09T23:03:46.282Z",
+      "oid": "10bbb42e030678b00049aadc570f614a",
+      "content_hash": "3f76281d346eac56167bea40deb7e7ff33c2babc3562d70c089fa91242586e3b"
     },
     {
       "id": "FGAP-026",
@@ -878,7 +928,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
-      "created_at": "2026-05-10T01:22:24.605Z"
+      "created_at": "2026-05-10T01:22:24.605Z",
+      "oid": "532c01b7b839b5dcf6743f596db58f98",
+      "content_hash": "c0707560b4fc226555296066deeb9a7a6de1c6294875495b417d5940b6beb9d1"
     },
     {
       "id": "FGAP-027",
@@ -911,7 +963,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
-      "created_at": "2026-05-10T03:30:10.099Z"
+      "created_at": "2026-05-10T03:30:10.099Z",
+      "oid": "a0da57903cc1e87b4711e403064ef957",
+      "content_hash": "1dece144aead7857382031c359bc34d0ed946a9121b72fd8f5cdc094913a5550"
     },
     {
       "id": "FGAP-028",
@@ -952,7 +1006,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
-      "created_at": "2026-05-10T03:41:49.494Z"
+      "created_at": "2026-05-10T03:41:49.494Z",
+      "oid": "f8df7e83e6a95a22cdbf0539a3f26319",
+      "content_hash": "2f771a46d23fe66b42564fa8a36c8ab79a7a8098cfb80ad90c19ea5dd478b2da"
     },
     {
       "id": "FGAP-029",
@@ -983,7 +1039,9 @@
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T04:14:52.901Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-13T10:06:34.001Z"
+      "closed_at": "2026-05-13T10:06:34.001Z",
+      "oid": "d24f5b352f0f22477db7dba9eb210277",
+      "content_hash": "de6e50645f211f9340c1878fff647594ceabde155c979a29315ea085a2174d2e"
     },
     {
       "id": "FGAP-030",
@@ -1015,7 +1073,9 @@
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T04:14:52.901Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-13T10:06:34.001Z"
+      "closed_at": "2026-05-13T10:06:34.001Z",
+      "oid": "caed2d1b9cbd05ef1ddf37ea9c8f6962",
+      "content_hash": "53e4fa027c84d72c22056b0fe9c1603a8adf30030cf6a585f09747398e3d1192"
     },
     {
       "id": "FGAP-031",
@@ -1047,7 +1107,9 @@
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T04:14:52.901Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-13T10:06:34.001Z"
+      "closed_at": "2026-05-13T10:06:34.001Z",
+      "oid": "34430a2469b3be349464db28d7e18b22",
+      "content_hash": "adf95286781cbddcffb7b8646a561a4e334ec9174ba7c309396c47dadafe0ba9"
     },
     {
       "id": "FGAP-032",
@@ -1076,7 +1138,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "agent/post-step-8.6-orchestrator",
-      "created_at": "2026-05-10T04:14:52.901Z"
+      "created_at": "2026-05-10T04:14:52.901Z",
+      "oid": "e7fb06bf056ffe7e9bfb7a622022319a",
+      "content_hash": "dae7d3e3d7886b12489160dd334887ad1e62a1f86058d63e40edd68d6eb695c4"
     },
     {
       "id": "FGAP-033",
@@ -1109,7 +1173,9 @@
       ],
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
-      "created_at": "2026-05-10T22:18:11.613Z"
+      "created_at": "2026-05-10T22:18:11.613Z",
+      "oid": "ef79f4d90752652ac3930957b9b5bfb8",
+      "content_hash": "b91cd8326e86a51c1f6979c50cdfb8817acfbc173f7b5533797d484ca2ba30cf"
     },
     {
       "title": "Orchestrator-side intermediates (Explore agent outputs, brief-composition logs, investigation queries) lack substrate block kinds — markdown-output workflow is the load-bearing intermediate format",
@@ -1147,7 +1213,9 @@
       "related_issues": [],
       "id": "FGAP-034",
       "created_at": "2026-05-10T23:28:31.831Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "0a6fd7763773e9de417f53755f956312",
+      "content_hash": "fa455bea60592c80814be6c458e9b16c8ca023510d12c93944c55567096554b9"
     },
     {
       "id": "FGAP-035",
@@ -1190,7 +1258,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T06:55:00Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-12T21:37:48.738Z"
+      "closed_at": "2026-05-12T21:37:48.738Z",
+      "oid": "92f0532bd7dccdc09468c8e9645882d5",
+      "content_hash": "4023cf6af070aac1f0f9be9d15a66e28abc42d6f04cc7ca58685354b757f64a1"
     },
     {
       "id": "FGAP-036",
@@ -1237,7 +1307,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T07:15:00Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-12T21:37:48.738Z"
+      "closed_at": "2026-05-12T21:37:48.738Z",
+      "oid": "6ccc03428082394a002f26e84aaa85a4",
+      "content_hash": "6afb0a99d33514897090af7f4b85efd4ed36a24b4368c8c74649871a30c5f8f0"
     },
     {
       "id": "FGAP-037",
@@ -1311,7 +1383,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T07:35:00Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-29T14:08:36.337Z"
+      "closed_at": "2026-05-29T14:08:36.337Z",
+      "oid": "f62e386193829f7711a1797b169724d7",
+      "content_hash": "da023e74a79a889b60d1758d65f078112436c5537a809e9aec2afade09982c29"
     },
     {
       "id": "FGAP-038",
@@ -1362,7 +1436,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T07:55:00Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-12T21:37:48.738Z"
+      "closed_at": "2026-05-12T21:37:48.738Z",
+      "oid": "0e8589caee5b683040f10596c3f3793b",
+      "content_hash": "db329b5b71ee300e2e0a5547a9615a0d556845d70d4720da0a9104c8b9b597ef"
     },
     {
       "id": "FGAP-039",
@@ -1396,7 +1472,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-12T08:15:00Z",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-12T11:53:01.933Z"
+      "closed_at": "2026-05-12T11:53:01.933Z",
+      "oid": "7e07fa8ec8c9c195565442de7d649254",
+      "content_hash": "6423cfe74df6a1405f03e734dde503af2e57ee99cd5d87ca5bcc88f7601f209d"
     },
     {
       "id": "FGAP-040",
@@ -1433,7 +1511,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-13T00:00:00Z"
+      "created_at": "2026-05-13T00:00:00Z",
+      "oid": "9d12f2e41c8d00d89b15fae09c0d3a87",
+      "content_hash": "6b16ce0f888d728bc907b1c8d80189f8e2c1247c3ab08c1306ccf1c450ff8537"
     },
     {
       "id": "FGAP-041",
@@ -1475,7 +1555,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-13T00:00:00Z"
+      "created_at": "2026-05-13T00:00:00Z",
+      "oid": "8f939b1e59ee5525a517fa46386d6e41",
+      "content_hash": "198db3eff00b6e297aad79838433138312c2a4d5caac782776ffa721e6902194"
     },
     {
       "id": "FGAP-042",
@@ -1509,7 +1591,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-13T18:30:00Z"
+      "created_at": "2026-05-13T18:30:00Z",
+      "oid": "d418c393a819f9f0a48ff3edd8c6e592",
+      "content_hash": "444e98feeb3355bca276ce73b472d9fe07e96e2c556de30bac4f255147992079"
     },
     {
       "id": "FGAP-043",
@@ -1545,7 +1629,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-13T18:30:00Z",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-22T00:00:00Z"
+      "closed_at": "2026-05-22T00:00:00Z",
+      "oid": "aff8f4ec0f6f21e8d000b0951860f343",
+      "content_hash": "aaa1911ff3e50ff9981550fb96d1db72fc67b9942188d455caf2ea8c9d1968bb"
     },
     {
       "id": "FGAP-044",
@@ -1577,7 +1663,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-13T18:30:00Z",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-21T00:00:00Z"
+      "closed_at": "2026-05-21T00:00:00Z",
+      "oid": "d3881296fa6ec4e92f37e3c764200dc8",
+      "content_hash": "9b8ad79a2f5a6d3e804428d5bf6d7e9b40ece337e0f960b975bad89d50b9608d"
     },
     {
       "id": "FGAP-045",
@@ -1613,7 +1701,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-13T18:30:00Z",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-22T00:00:00Z"
+      "closed_at": "2026-05-22T00:00:00Z",
+      "oid": "aa670ad32c5915a4ea04701855dbf5d9",
+      "content_hash": "b627ff239d2fd5936dc9634b5ef32ce9187f9ead09f1342c30b1eaf7bd92eb2c"
     },
     {
       "id": "FGAP-046",
@@ -1650,7 +1740,9 @@
       "related_features": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-13T18:30:00Z"
+      "created_at": "2026-05-13T18:30:00Z",
+      "oid": "98b9fc565704699430df398d50b24a9b",
+      "content_hash": "e4c8d8c0299a2d90eaa67f21fecdb1002dce1b1e29cf66b62f075ebb19f06021"
     },
     {
       "title": "Vocabulary settlement upstream of Phase 5 LLM-filed decomposition skipped — display layer, ID conventions, relation_type names, lens ids, layer registry, status-bucket mapping unsettled",
@@ -1698,7 +1790,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T12:10:00Z",
-      "id": "FGAP-047"
+      "id": "FGAP-047",
+      "oid": "2ba64d1aa5f2c6364229fd0734075f18",
+      "content_hash": "5449a9e31b534e09761a2481f5226b7a56a6632422ba59da47caef78b690a517"
     },
     {
       "title": "ID-prefix convention drift across existing block kinds — issue- lowercase + R-/DEC- 4-digit vs all others 3-digit uppercase",
@@ -1739,7 +1833,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T12:11:00Z",
-      "id": "FGAP-048"
+      "id": "FGAP-048",
+      "oid": "946f8668bd97bbfe53fdcf8e9e9ae61a",
+      "content_hash": "8b7759159d5ad3d635fe732deec49c5051dc6ca01d3d40987be4f07e4307ffe3"
     },
     {
       "title": "Phase block-kind pattern divergence — file-per-phase at phases/{number}.json with integer discriminator vs array-block convention used by all other block kinds",
@@ -1780,7 +1876,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T12:12:00Z",
-      "id": "FGAP-049"
+      "id": "FGAP-049",
+      "oid": "8ceaa46af31b8dd899426ac3c09ddcba",
+      "content_hash": "5c1b4f7c39a1a0ccb3ff86f853929614d36fe58340a6c11af79f49c54b6a6274"
     },
     {
       "title": "Framework-shaped schemas (config / relations / roadmap / bootstrap) authored in pi-context/registry/schemas/ but not installed in .project/schemas/",
@@ -1818,7 +1916,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T12:13:00Z",
-      "id": "FGAP-050"
+      "id": "FGAP-050",
+      "oid": "5e52e28ede12b5f06e6a4e4197b90be4",
+      "content_hash": "3a17f48e35883a063325f9c09742be545baca99d721802e96a1c13ecb21b238b"
     },
     {
       "title": "Conventions block schema underspecified for relational / lens / lookup discoverability — flat slug-id rules with no category / applies_to / related_decisions / title / lifecycle / source",
@@ -1864,7 +1964,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T12:14:00Z",
-      "id": "FGAP-051"
+      "id": "FGAP-051",
+      "oid": "22b089270b767e7cbef5443409346f72",
+      "content_hash": "9da0cad2cd75b2b2a44f0abefce34409400ea5c40f922af1c4dfbf2d530d2aff"
     },
     {
       "title": "config.layers[] + block_kinds[].layer FK + lens-validator dispatch are declarable in config but unconsumed at runtime — config-driven-from-line-1 (DEC-0015) partially delivered",
@@ -1908,7 +2010,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T12:30:00Z",
-      "id": "FGAP-052"
+      "id": "FGAP-052",
+      "oid": "7681fd275123027357a4b6ed66109f70",
+      "content_hash": "457158aa66a620844d95a3f0d286951f1807020402126e592eb9c0dbc3012300"
     },
     {
       "title": "Milestone is inline within roadmap.milestones[] — should be elevated to its own top-level block kind for independent queryability + DEC-0013 edge-bearing",
@@ -1947,7 +2051,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T13:00:00Z",
-      "id": "FGAP-053"
+      "id": "FGAP-053",
+      "oid": "1370e9f8f07ce6dac17543c7aad7d51a",
+      "content_hash": "1eb1ffd1cbae51c7bf7d29137a2eb8e2740bd140e21cf78000c072871da2f0a2"
     },
     {
       "title": "No CTX-NNN context-contract for unit_kind=milestone — gatherExecutionContext cannot compose milestone bundle for cascade query",
@@ -1985,7 +2091,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T13:31:00Z",
-      "id": "FGAP-054"
+      "id": "FGAP-054",
+      "oid": "5e564bbeb174f0569d4eaf19a906b158",
+      "content_hash": "8fe28c219d6bf6b67616d3dea2499a26f0cea13a715c753c1b01c7c558a9152b"
     },
     {
       "title": "Roadmap shape thinning post-milestone-elevation — what remains in roadmap when milestones + phases become top-level blocks",
@@ -2024,7 +2132,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T13:32:00Z",
-      "id": "FGAP-055"
+      "id": "FGAP-055",
+      "oid": "520a1a24887671f852a665de229836eb",
+      "content_hash": "5e6e66f7bae22edc5c516e1899f196977edf3bf60f72ee7984005d942ae244ee"
     },
     {
       "title": "PROJECT_BLOCK_TYPES const at project-sdk.ts:117 hardcodes 12 default block kinds — should be config-derived for vocabulary-neutrality (DEC-0025)",
@@ -2063,7 +2173,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T14:01:00Z",
-      "id": "FGAP-056"
+      "id": "FGAP-056",
+      "oid": "15a763193c774c40c1a1b896929e453c",
+      "content_hash": "1a35671eb44aa97926a7a71af9b9a0d837fc65ba6b59e97ca0ba05752362d0cb"
     },
     {
       "title": "Macro library bootstrap missing for user-added block kinds — framework provides canonical kinds' macros only; user-added kind has no scaffolding for vocabulary-neutral substrate",
@@ -2101,7 +2213,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T14:02:00Z",
-      "id": "FGAP-057"
+      "id": "FGAP-057",
+      "oid": "5f57bbbe51dc4cc453ca6e0b0e1e700c",
+      "content_hash": "301b36d0275b9c068f358bd08f53900600a0308bdea727528bff0b1008544dca"
     },
     {
       "title": "Test suite doesn't exercise pi-context against a fully-different substrate vocabulary — vocabulary-neutrality claim per DEC-0025 untested",
@@ -2135,7 +2249,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-14T14:03:00Z",
-      "id": "FGAP-058"
+      "id": "FGAP-058",
+      "oid": "4d67a14546f34e3051b97d9b78ffce61",
+      "content_hash": "9dee9aecd255a5457ad0284ae2a6eb5181acc12518f9b9be2d2e8d043dcbe57e"
     },
     {
       "title": "No canonical primitive for \"atomic-next-work-unit\" query — existing filter / walk-ancestors / find-references require caller composition; substrate cannot self-direct",
@@ -2181,7 +2297,9 @@
       "created_at": "2026-05-14T14:30:00Z",
       "id": "FGAP-059",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-21T00:00:00Z"
+      "closed_at": "2026-05-21T00:00:00Z",
+      "oid": "661d791a0702fda9bde12a215d2881ff",
+      "content_hash": "64770ce4a0faa3fb04294ff3bfb93f7f72904347107700b02450e3eb61c02f49"
     },
     {
       "title": "No automatic cross-file value-rename engine for canonical_id changes — schema-migrations handles shape, not canonical_id value renames across relations.json edges + item-id-prefix renumbering",
@@ -2228,7 +2346,9 @@
       "created_at": "2026-05-17T10:00:00Z",
       "id": "FGAP-060",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-20T00:00:00Z"
+      "closed_at": "2026-05-20T00:00:00Z",
+      "oid": "b985b0608af8709a3e72128ba1fe6294",
+      "content_hash": "748fc7ca692dc276f9306fe062f6f632ac816e8bdaead5b2f16f4ea165931e52"
     },
     {
       "title": "config.block_kinds[] requires single array_key per block — cannot represent mixed-shape blocks (project / architecture / domain / conformance-reference) with multiple arrays + scalar identity fields",
@@ -2270,7 +2390,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-17T12:15:00Z",
-      "id": "FGAP-061"
+      "id": "FGAP-061",
+      "oid": "a5b59238ae9ef0dc9c6e6e90c5b68076",
+      "content_hash": "d973e77dc22e55a2c317672661d3c59779164f9748927b1ab25ef18a57b46b87"
     },
     {
       "title": "expectedBlockForId treats empty prefix as match-everything — empty-prefix block_kind becomes a catch-all that breaks buildIdIndex invariant",
@@ -2303,7 +2425,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-17T12:25:00Z",
-      "id": "FGAP-062"
+      "id": "FGAP-062",
+      "oid": "c07d2d7738cb67b1d8c36ee056d1c5b3",
+      "content_hash": "c5a2988ce43fc39a1bc6d56b363d6b5246e8f7ee1b4eaf4875b1e77ab9590e03"
     },
     {
       "title": "Orchestration / procedural-policy canon has no dedicated substrate block — scattered across decisions (procedural DECs), conventions (coding-only), feedback memories (off-substrate), and the mandate hook",
@@ -2348,7 +2472,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-17T14:00:00Z",
-      "id": "FGAP-063"
+      "id": "FGAP-063",
+      "oid": "217d18558c2c788897a4dbc5af35b7e8",
+      "content_hash": "ca30add62857398987a52414f455fbaa3e9318bf385e742e12a69368becf7d88"
     },
     {
       "title": "No top-level user-story block — stories exist only nested inside features[].stories[]; cannot relate independently to project-goal / milestone / phase / task via closure-table",
@@ -2387,7 +2513,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-17T14:15:00Z",
-      "id": "FGAP-064"
+      "id": "FGAP-064",
+      "oid": "ddf975f71e19081378c33f4b78bbe8df",
+      "content_hash": "9ff3d71378d4c3e92fc8c68de36dc82b03e10fe3743bfa3583ba581de46c283d"
     },
     {
       "title": "validateProject invariants are hardcoded (completed-task-verification, decision-forcing-artifact) — DEC-0025 violation; must be config-declared",
@@ -2428,7 +2556,9 @@
       "created_at": "2026-05-17T16:00:00Z",
       "id": "FGAP-065",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-20T00:00:00Z"
+      "closed_at": "2026-05-20T00:00:00Z",
+      "oid": "8066246792118730f3219acd31612a0b",
+      "content_hash": "1ff05efb137fe8eb5d2273fc6645e7fffb35fc4b54382bb58534c7e00e6096c8"
     },
     {
       "title": "No conversational onboarding for substrate init — /context init should elicit the user’s own conception (block kinds / layers / relation types / lenses) with sample suggestions + revisable labels, rather than imposing a fixed default set.",
@@ -2468,7 +2598,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
-      "id": "FGAP-066"
+      "id": "FGAP-066",
+      "oid": "c08d0de2d7051f2553bc541a6441afb0",
+      "content_hash": "2d695821134b46837b5c901d3312af05569c5b678922820967fc8de9abd59367"
     },
     {
       "title": "initProject auto-copies defaults/schemas + defaults/blocks at init — violates DEC-0011 (ship no defaults) and is in tension with DEC-0025 (vocabulary-neutral).",
@@ -2506,7 +2638,9 @@
       "created_at": "2026-05-20T00:00:00Z",
       "id": "FGAP-067",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-22T00:00:00Z"
+      "closed_at": "2026-05-22T00:00:00Z",
+      "oid": "dceadebafa984140ab073e3df78da743",
+      "content_hash": "ad19871bc43c69ebc335b1ede242906d240536e3df2a44efc2381d6e6146ccdc"
     },
     {
       "title": "Samples catalog is not an enumerable/described/queryable registry — no tool lists the installable block kinds; discovery is filename-convention only.",
@@ -2549,7 +2683,9 @@
       "created_at": "2026-05-20T00:00:00Z",
       "id": "FGAP-068",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-22T00:00:00Z"
+      "closed_at": "2026-05-22T00:00:00Z",
+      "oid": "d4ac2f23311212db26d1138c647eaaaf",
+      "content_hash": "ba544d9327972b3e47179b3a6b1a8d6d9af93dff2f2953669ecdac48df45f04d"
     },
     {
       "title": "status_buckets falls back to a hardcoded default status vocabulary (STATUS_VOCABULARY_DEFAULTS) — DEC-0025 smell (source ships vocabulary).",
@@ -2579,7 +2715,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
-      "id": "FGAP-069"
+      "id": "FGAP-069",
+      "oid": "d88a0fc21f1575e33f360eb512677cd2",
+      "content_hash": "ee57c68bd36ab2bdc017ba5b17d7c326c0c2eeb1988173930c5469528388e052"
     },
     {
       "title": "Lens composition cannot express edge-traversal rollups — only field-filtered item-set unions",
@@ -2617,7 +2755,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
-      "id": "FGAP-070"
+      "id": "FGAP-070",
+      "oid": "a11ddf9a75070e01ca7a470fef577841",
+      "content_hash": "7e59972f5a5cc999d14090050489b0db3e9bc3e19ce46e7beb42ba49afde1cf8"
     },
     {
       "title": "block_kind canonical_id rename requires a file/data_path/array_key/schema_path cascade — unsupported by renameCanonicalId (deferred from FGAP-060/unit 2.3)",
@@ -2652,7 +2792,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
-      "id": "FGAP-071"
+      "id": "FGAP-071",
+      "oid": "61815a0b19e5e9e8849affd075a4f89c",
+      "content_hash": "c7a5a6ba62101052d6e6f03e2f745edcdddf3ef587dd6632c94975e93c0a2950"
     },
     {
       "title": "Full-state derivation capability (currentState) — derive the project's complete state from the substrate as an extension capability exposed dual-surface; do not hand-maintain it",
@@ -2689,7 +2831,9 @@
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-072",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-21T00:00:00Z"
+      "closed_at": "2026-05-21T00:00:00Z",
+      "oid": "238389e4ed3e32f06b93da00986dd390",
+      "content_hash": "a41a0f578f2f899a7fdf5ba8faa66602422e04a4ace9dea6d866300535c02a27"
     },
     {
       "title": "Unit-of-work closure produces no enforced substrate record (DEC-0018/0020 unenforced) + validateProject lacks cross-block status-drift checks",
@@ -2726,7 +2870,9 @@
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-073",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-21T00:00:00Z"
+      "closed_at": "2026-05-21T00:00:00Z",
+      "oid": "dea8e8d6ad277b059009a19d2cca9d72",
+      "content_hash": "5741b2537e20220c21482854d7a5c34a8034dafb111ed24763510682ca077047"
     },
     {
       "title": "Residual pi-project-era 'project' naming debt across pi-context source/surface — package is pi-context + dir .context (DEC-0029) + surface /context, but source identifiers, files, Pi tools, and the command still say project",
@@ -2768,7 +2914,9 @@
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-074",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-24T11:20:05.616Z"
+      "closed_at": "2026-05-24T11:20:05.616Z",
+      "oid": "36a1f69ca9d26fe3e11fbc72ef7d3ff4",
+      "content_hash": "cd53a25b7cb726c36771fefc4995dcc31cea1b191901139a54ce695a0e9711d5"
     },
     {
       "title": "No edge-write Pi tool — in-pi agents cannot create DEC-0013 relations through the extension tool surface",
@@ -2809,7 +2957,9 @@
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-075",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-21T00:00:00Z"
+      "closed_at": "2026-05-21T00:00:00Z",
+      "oid": "9c6ff328b2e5b754db1dcfbdeabe9854",
+      "content_hash": "639adbb56eedc08b8a7b609319534b2207eaa26fcfaad8a6439c0e231e61cc7e"
     },
     {
       "title": "No config-write Pi tool — in-pi agents cannot author or amend config.json (framework vocabulary)",
@@ -2853,7 +3003,9 @@
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-076",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-21T00:00:00Z"
+      "closed_at": "2026-05-21T00:00:00Z",
+      "oid": "b7b39789954e0aa21845d1a48d35e7e5",
+      "content_hash": "60db3420945443c7d12f20a59dc7a8f63386c617cf344c0434a8e7616a7d7448"
     },
     {
       "title": "No schema-write Pi tool — in-pi agents cannot define new block kinds or evolve existing schemas",
@@ -2895,7 +3047,9 @@
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-077",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-21T00:00:00Z"
+      "closed_at": "2026-05-21T00:00:00Z",
+      "oid": "e464574290c231a5f55b0c8fb95ba599",
+      "content_hash": "0afa90120a3586e44682513d1b10cd535fea66fd23744d00ee8d42b648b183de"
     },
     {
       "title": "No tool-surface for MigrationFn registration — breaking schema evolution requires a code change",
@@ -2935,7 +3089,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-078"
+      "id": "FGAP-078",
+      "oid": "8c7e5463164db7786cdc6b178319d563",
+      "content_hash": "774ce9c0143308df29efff952b2ea42b4ba9f5daa751f07a465f1da868a001a4"
     },
     {
       "title": "Schema-path surface inconsistency — write/read resolver divergence (config.root) + no path-traversal sanitization on schemaName",
@@ -2974,7 +3130,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-079"
+      "id": "FGAP-079",
+      "oid": "9d8e01661aa0a0b2c1546bb5ad856ab8",
+      "content_hash": "5e9fa1ec053c429d4e64bbb76d38b8f0370e5d2a056d1eda28c5d49bac2f4781"
     },
     {
       "title": "Orchestrator CLIs catching transitively-thrown package errors via `instanceof` are module-instance-fragile — prefer name-based checks",
@@ -3013,7 +3171,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-080"
+      "id": "FGAP-080",
+      "oid": "2b5db3533c76bcac3a5c1adee6ccc70a",
+      "content_hash": "3a294f5a523495e3fd8c9e140d43f6711231954b001085810a2c453a2a955627"
     },
     {
       "title": "Anti-injection contextBlocks delimiters not aligned with pi 0.75.x XML-tag context-boundary convention",
@@ -3047,7 +3207,9 @@
       "created_at": "2026-05-21T00:00:00Z",
       "id": "FGAP-081",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-21T00:00:00Z"
+      "closed_at": "2026-05-21T00:00:00Z",
+      "oid": "93515200f6976121ff83fe3399441b73",
+      "content_hash": "06d27ad46e4b6305666d2fbb99187cb4401a20b8182f8c871134a8f5c4b39158"
     },
     {
       "title": "Orchestrator CLIs validate items against the item-subschema FRAGMENT in isolation (losing $ref definitions), not whole-file like block-api",
@@ -3089,7 +3251,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-082"
+      "id": "FGAP-082",
+      "oid": "d3909e349a82a0faa57cf92027f57438",
+      "content_hash": "b8e8a7db358ca6fbdeaad8df8cacc14edc658801bfd4f812a0d7bfd690763659"
     },
     {
       "title": "file-block-item --auto-id cannot read the id pattern from a $ref item schema (reads itemSchema.properties.id.pattern, absent on a $ref fragment)",
@@ -3118,7 +3282,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-083"
+      "id": "FGAP-083",
+      "oid": "839095b95edb388068f195dc375cf1b0",
+      "content_hash": "adac44a0e0e757a6079d94e3055960bbeaeb7dcebeaac091e4085fb371881758"
     },
     {
       "title": "No canonical block-api id-allocation helper — orchestrator scripts re-implement next-id allocation",
@@ -3149,7 +3315,9 @@
       "related_issues": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "FGAP-084"
+      "id": "FGAP-084",
+      "oid": "53bd5c632671efc9ec6ecbf9095f1875",
+      "content_hash": "3a2371ff3a0baac1c79f1d7feb64780f5e99bb0abd92a4203828d9cabcb525e1"
     },
     {
       "title": "Tool descriptions need a discovery-readiness + grounding rubric — the per-tool eager-guidance layer",
@@ -3183,7 +3351,9 @@
       "related_decisions": [
         "DEC-0014",
         "DEC-0013"
-      ]
+      ],
+      "oid": "ef4660d9ea9772ef7861086e8fc7c5fb",
+      "content_hash": "d510d1e6c409e4ba93243298902427d9fdcb4083f0ed6dc9b9c022f3ae3a88c4"
     },
     {
       "title": "relation_types carry no endpoint-kind metadata — edges can wire wrong-kind endpoints undetected; validateProject checks endpoint existence but never kind",
@@ -3222,7 +3392,9 @@
       "created_at": "2026-05-21T21:55:01.988Z",
       "created_by": "human/davidryan@gmail.com",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-22T00:00:00Z"
+      "closed_at": "2026-05-22T00:00:00Z",
+      "oid": "2f095300b402cf0f13ddc25e2ecf75f8",
+      "content_hash": "dde41544d9cd4fc9d56e2215876937200876c7dfa8017395f53520b45f022063"
     },
     {
       "title": "registry/ + defaults/ dirs retained on disk as AJV test fixtures after consumption-MVP de-canonicalized them; delete pending fixture-repoint + a home for 8 conception-less legacy schemas",
@@ -3255,7 +3427,9 @@
       "related_issues": [],
       "id": "FGAP-087",
       "created_at": "2026-05-22T07:15:33.675Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "123344dde11a2c176ed05312b21549e8",
+      "content_hash": "29e4900db9bc7d7858a83ddf76407473bf076a3ee6f17bb888740f8e87cad1f9"
     },
     {
       "title": "Package-relative path resolution uses import.meta.dirname in 3 sites — undefined under tsx-CJS dist-load; normalize to fileURLToPath(import.meta.url)",
@@ -3295,7 +3469,9 @@
       "related_issues": [],
       "id": "FGAP-088",
       "created_at": "2026-05-22T08:21:11.846Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "a0c166b9740d74c345e17ead9fb9f86c",
+      "content_hash": "451687ea99ac72fc7d8aa5074a1fe47f2c1ab968d47dc4ca84b0342d8f7c7acd"
     },
     {
       "title": "Truncating read tools invite partial-read-as-complete — no machine-checkable completeness signal; >50KB content dropped with a prose-only note",
@@ -3339,7 +3515,9 @@
       "created_at": "2026-05-22T12:52:36.962Z",
       "created_by": "human/davidryan@gmail.com",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-25T00:00:00Z"
+      "closed_at": "2026-05-25T00:00:00Z",
+      "oid": "337059abcd0e77db7bdce0e0265d6d2c",
+      "content_hash": "af0a251d4a838d2f3021324dad2d0e41cc20929d2df17a247ce1a7e51b8c19cc"
     },
     {
       "title": "In-pi agent receives no skill/guidance content — our extension does not wire pi's eager-injection hooks (before_agent_start / resources_discover)",
@@ -3374,7 +3552,9 @@
       "created_at": "2026-05-22T12:52:56.891Z",
       "created_by": "human/davidryan@gmail.com",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-25T00:00:00Z"
+      "closed_at": "2026-05-25T00:00:00Z",
+      "oid": "22144fba737e7751d9f80245302fc924",
+      "content_hash": "c4c64bf6528aebdbbc501b955b3f148eb12af2fe896f5abe8e3a2103a7f09a00"
     },
     {
       "title": "No project-install tool — bootstrap tool-trilogy incomplete; a tools-only agent can't self-materialize a substrate from the catalog",
@@ -3408,7 +3588,9 @@
       "related_issues": [],
       "id": "FGAP-091",
       "created_at": "2026-05-22T12:58:19.638Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "99d9e3c6bd32fc004136c34e1cbb4c52",
+      "content_hash": "92604031636fbc54bfc1b74a55d49216e23dbf66b8beb8451af62b967f9a33eb"
     },
     {
       "title": "In-pi agent confabulates substrate vocabulary/signatures instead of grounding in the discovery tools — no anti-confabulation directive in the agent-reachable layer",
@@ -3444,7 +3626,9 @@
       "created_at": "2026-05-22T13:00:02.113Z",
       "created_by": "human/davidryan@gmail.com",
       "closed_by": "human/davidryan@gmail.com",
-      "closed_at": "2026-05-22T00:00:00Z"
+      "closed_at": "2026-05-22T00:00:00Z",
+      "oid": "da43ef816f0a1e9706d02db35e3fa48c",
+      "content_hash": "b8dcda7c98497a4ae53a02e2dc13046c3cc52ecb6ee075f45e540cf40152082a"
     },
     {
       "title": "/project install 'no config.json' error misdirects to /project init — should name /project accept-all (stale post init/accept-all split)",
@@ -3474,7 +3658,9 @@
       "related_issues": [],
       "id": "FGAP-093",
       "created_at": "2026-05-22T13:20:18.749Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "9e707439e50dfdd0dcdfea50865c2d68",
+      "content_hash": "fb03f8dc9687d184a82f9f9afbec82fc18266663e8f7e664907e4dce4a4290b1"
     },
     {
       "title": "Ship NO concrete substrate-dir default — samples/conception.json smuggles a hidden root: '.project'; contradicts DEC-0015 (no default dir) + DEC-0011 (ship-no-defaults) + perpetuates legacy 'project' naming",
@@ -3512,7 +3698,9 @@
       "related_issues": [],
       "id": "FGAP-094",
       "created_at": "2026-05-22T13:22:09.443Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "12220530d4a3dea5d1e841e39aca601f",
+      "content_hash": "2dfc1a0f107dccaaf31b4f7de175a599c17df2b688556ae65131655aabae9bdb"
     },
     {
       "title": "Build /context start — the impossibilized single-entry onboarding conductor (state-machine; READY-gated twinned operational verbs; init/accept-all/install dissolved)",
@@ -3565,7 +3753,9 @@
       "related_issues": [],
       "id": "FGAP-095",
       "created_at": "2026-05-22T22:19:16.598Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "93fd1f733a5bb92432d4e462dd471d5e",
+      "content_hash": "b0b9a52603ec1d05a0d59d10bbda5d350ef43449a8388a44458bd539da46b42e"
     },
     {
       "title": "Cross-package src consumers catch BootstrapNotFoundError via instanceof — same FGAP-080 module-instance pattern, outside the orchestrator-CLI scope",
@@ -3601,7 +3791,9 @@
       "related_issues": [],
       "id": "FGAP-096",
       "created_at": "2026-05-23T00:35:14.836Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "14d50016288cca0be9b92c45338a6a1a",
+      "content_hash": "674c3c4f0b6b4af0e614314b8e383b385fdcb85152e58def9d1ec4462943e6db"
     },
     {
       "title": "In-pi substrate-read tools should emit an onboarding-actionable message pre-bootstrap instead of a raw BootstrapNotFoundError",
@@ -3629,7 +3821,9 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "id": "FGAP-097",
-      "created_at": "2026-05-24T09:00:38.364Z"
+      "created_at": "2026-05-24T09:00:38.364Z",
+      "oid": "8d5a0d6ffb32b1e0f18ca405cff67cc4",
+      "content_hash": "04c0aa2158b8e56744885dec928f2e020c05081ff2a769efadaa8788db1d6ea5"
     },
     {
       "title": "No FGAP<->FGAP cross-reference affordance — framework-gaps schema lacks related_gaps; per DEC-0013 the fix is a gap_relates_to_gap relation_type + edges, not an FK field",
@@ -3652,7 +3846,9 @@
       "proposed_resolution": "Add a gap_relates_to_gap relation_type to samples/conception.json relation_types[] (category data_flow; source_kinds/target_kinds [framework-gaps]; mirror decision_relates_to_decision). Do NOT add a related_gaps FK field to the framework-gaps schema (DEC-0013). FGAP<->FGAP links become relations.json edges. Backfill prose-only cross-refs (incl. FGAP-097->FGAP-095/085) as edges after the .context cutover, alongside the DEC-0045 backfill (TASK-065).",
       "created_by": "human/davidryan@gmail.com",
       "id": "FGAP-098",
-      "created_at": "2026-05-24T09:01:21.017Z"
+      "created_at": "2026-05-24T09:01:21.017Z",
+      "oid": "95d5d82b055ae5010d126bbcc2638c33",
+      "content_hash": "b77356d64e8cb83d02c2559749ca4cdc1c8f15cead08c25dc05c0ebeddbac5d4"
     },
     {
       "title": "Workflow agent-step dispatch does not clamp child tool surface to the parent — spec omission defaults to full privilege (harness sandbox is per-process, not transitive)",
@@ -3697,7 +3893,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-24T00:00:00Z",
-      "id": "FGAP-099"
+      "id": "FGAP-099",
+      "oid": "26b3910d3e2dcdfcf11eeb4b024e9136",
+      "content_hash": "1468a927d8f43f807d6bc54d8d7d77e544f34214de68135dae9f94d3252b09e5"
     },
     {
       "title": "Canonical credentialed verification protocol is stale post-FGAP-074 — needs a successor before the next arc-completion release",
@@ -3743,7 +3941,9 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FGAP-100"
+      "id": "FGAP-100",
+      "oid": "0c5e66564e28705b4c77401f998f5baa",
+      "content_hash": "9d946227dfbaa415a4067a48e7b9074d4d6fe3c412ecdb72d85de9f426479fd1"
     },
     {
       "title": "list-tools is a single-shot full-schema dump — no progressive disclosure (names/index -> per-tool detail); the ~54-tool payload exceeds the 50KB cap and truncates, blinding the agent's own discovery surface",
@@ -3782,7 +3982,9 @@
       "created_at": "2026-05-25T00:00:00Z",
       "id": "FGAP-101",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-25T00:00:00Z"
+      "closed_at": "2026-05-25T00:00:00Z",
+      "oid": "0bfa9f97f6d2f51a8e7e9572f8917b6b",
+      "content_hash": "4ccfa44d6b8a89411f29094c1ac635196eabc50b344b188faec4eb9110878805"
     },
     {
       "title": "Autonomous code-change loop validates via LLM-self-report, not real deterministic checks — DEC-0018 not inherited; no build/check/test gate, runtime-demo, adversarial-against-artifacts, or attested commit",
@@ -3826,7 +4028,9 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FGAP-102"
+      "id": "FGAP-102",
+      "oid": "f64a71fbf9c981c8d015042dee737523",
+      "content_hash": "d4555838742cd67a236f647e76b6f694ba8a46e1d984371cdffa0a1a540bf63b"
     },
     {
       "title": "No universal, DRY element-level read across JSON surfaces — config/schema/relations/roadmap/block-dir are read-all-or-nothing; element-read exists only for blocks and is bespoke, not a shared primitive",
@@ -3875,7 +4079,9 @@
       "created_at": "2026-05-25T00:00:00Z",
       "id": "FGAP-103",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-25T00:00:00Z"
+      "closed_at": "2026-05-25T00:00:00Z",
+      "oid": "286671384e9c99cdf760b6eaff49320a",
+      "content_hash": "d863a7c7fe6df787122474896a6d7539227dc3ba7f1b2dbd014f0e8ed349aae0"
     },
     {
       "title": "tsx-eval-reachable modules must not statically import the SDK root barrel for VALUES — it silently breaks the orchestrator's tsx -e verification path",
@@ -3910,7 +4116,9 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FGAP-104"
+      "id": "FGAP-104",
+      "oid": "1ba1f61edf4720d2ea446fbd007f0a64",
+      "content_hash": "dea4f1752b1ff63141ebcc09edded6260814442a1a8c83bb6f04f4d239a328a8"
     },
     {
       "title": "Derived-state / computed read tools bypass serializeForRead — uncapped full bodies: no token-budget protection and no fail-closed if a result exceeds the cap",
@@ -3941,7 +4149,9 @@
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FGAP-105"
+      "id": "FGAP-105",
+      "oid": "1fcc8b0ea29afd0fa15f55cf2c8229f0",
+      "content_hash": "e283a266b74779db86a605308818501fa31bdedf6455ce7154359cc8f735d6af"
     },
     {
       "title": "Substrate-dir name '.project' is hardcoded in framework-facing tool descriptions + SKILL.md — teaches a fresh agent that state lives in .project, contra DEC-0015 (no default dir; user-chosen)",
@@ -3986,7 +4196,9 @@
       "created_at": "2026-05-25T00:00:00Z",
       "id": "FGAP-106",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-25"
+      "closed_at": "2026-05-25",
+      "oid": "5ff4532ca0336d019cc9c1ac70870b50",
+      "content_hash": "4513a288860b18a307e321939655a58772015e83726f8afe6c43f24e3383b33f"
     },
     {
       "title": "FGAP-090 orientation block directs the agent to `/context start`, which is NOT a registered subcommand — mis-guides to a non-existent command (conductor is FGAP-095-pending)",
@@ -4018,7 +4230,9 @@
       "created_at": "2026-05-25T00:00:00Z",
       "id": "FGAP-107",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-25"
+      "closed_at": "2026-05-25",
+      "oid": "49fd1b42f15d129bf28e0bcbd31e134a",
+      "content_hash": "1dbf2db691617c9cba54000b46232078b8d48edb737f6045b375f48fd4a72753"
     },
     {
       "id": "FGAP-108",
@@ -4077,7 +4291,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-25"
+      "closed_at": "2026-05-25",
+      "oid": "78c58a5d9273bc921aeb79f72b0b538b",
+      "content_hash": "bd55056287a35c6c778a2bcdf34b7373c0f39b698861ccd66cdef92be94508f3"
     },
     {
       "id": "FGAP-109",
@@ -4127,7 +4343,9 @@
         "FGAP-108"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-25"
+      "created_at": "2026-05-25",
+      "oid": "c920f90ef86acb53de2ae1c1df4aabb8",
+      "content_hash": "98411c26e36075a7d5975aaeadb5ed763711c94410a0f0074e2864d65a10efb9"
     },
     {
       "id": "FGAP-110",
@@ -4174,7 +4392,9 @@
         "FEAT-007"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-25"
+      "created_at": "2026-05-25",
+      "oid": "6ebcf6cb3c5538afdf2f90d77d2b30bb",
+      "content_hash": "322e1f2f98c717ad101d975dd9af82f4b62fe3bae242374b1e5b425b8b99b50a"
     },
     {
       "id": "FGAP-111",
@@ -4208,7 +4428,9 @@
         "FEAT-007"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-25"
+      "created_at": "2026-05-25",
+      "oid": "f8087eba4983f9a68991e298078ff625",
+      "content_hash": "580313f3c2d311851fc19a47427b728b75023deeaf37861c8dc11c70ef368bd7"
     },
     {
       "id": "FGAP-112",
@@ -4252,7 +4474,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-26",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-26"
+      "closed_at": "2026-05-26",
+      "oid": "734d31ee7b25eb98e441d4f719443eb4",
+      "content_hash": "d5d0c9a0ae22fc31a104ede8c3bfa293483874fbaa775a03fe5f75fae2bb201d"
     },
     {
       "id": "FGAP-113",
@@ -4290,7 +4514,9 @@
         "DEC-0050"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26"
+      "created_at": "2026-05-26",
+      "oid": "b7634d4ee8dfa445f533fe002d9dc2ba",
+      "content_hash": "103fc5004e36a310890adba4c9a00a398f16d67ac283b63485b5b0a5618c9c0f"
     },
     {
       "id": "FGAP-114",
@@ -4324,7 +4550,9 @@
         "DEC-0051"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26"
+      "created_at": "2026-05-26",
+      "oid": "0810c4fe85953393d2d557d24bade1e3",
+      "content_hash": "3b2908ffdbbb6d35697e7b0c02f1d1a401a39941a5bac705fd512072797cb28d"
     },
     {
       "id": "FGAP-115",
@@ -4362,7 +4590,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-26",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-30T17:00:00Z"
+      "closed_at": "2026-05-30T17:00:00Z",
+      "oid": "74fc755d11970e73222706ca7cfee33e",
+      "content_hash": "b91b0e5d4f6fce04a3ef82a8aeb83ff4108f50783d70531a6790c5e19378d776"
     },
     {
       "id": "FGAP-116",
@@ -4409,7 +4639,9 @@
         "DEC-0052"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "046c8d3c06b0d5f346e838d534f2eab4",
+      "content_hash": "6abc475c28d1aea33fd63536598358feafeda57397f0624431dd05988cb740d5"
     },
     {
       "id": "FGAP-117",
@@ -4452,7 +4684,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "569473c6f9d7dbc6c6809142d5fb2ddb",
+      "content_hash": "558de67a72d978aa399bea32dc414e5eea3bf250417363155fcfc33969c7e8a7"
     },
     {
       "id": "FGAP-118",
@@ -4494,7 +4728,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "6169b5f9597fe52220ff6bb9f5bfa6e2",
+      "content_hash": "457ac3eba68f573a4b97ad428929fa78d1e59a6e280886fed896e3cac2e0065d"
     },
     {
       "id": "FGAP-119",
@@ -4529,7 +4765,9 @@
         "DEC-0047"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "84ec0e072eed72f89200bf2054f80e4d",
+      "content_hash": "830846bf7fb8e0f6531622c26bd4d0cda406b30e94721ad071ac40158b1f8a10"
     },
     {
       "id": "FGAP-120",
@@ -4563,7 +4801,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "29f5229f1045dc03da39f40b132b33f4",
+      "content_hash": "41fe53dcd46a1b6c4ff73e15bfd10eac981c905fd7af57f20b5a6bdefafd6e3f"
     },
     {
       "id": "FGAP-121",
@@ -4604,7 +4844,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "7b9ca20139e8a2622acdb42a15bce4f1",
+      "content_hash": "094311c13358241c15d3b67e9207a58c3cb12adea8c74dd357ee0d044f0aa160"
     },
     {
       "id": "FGAP-122",
@@ -4643,7 +4885,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "5fa0c633cf8169e6fecb243d37f2a651",
+      "content_hash": "ee55dedd54ffc14e00882162b5471d8ea23ed5d1a894fbbc341ee54ff7f838d1"
     },
     {
       "id": "FGAP-123",
@@ -4687,7 +4931,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "e3d2e7e6579d3b8b194faae2735e25bc",
+      "content_hash": "91a5aeea60a35dca59113f12bc01eb86f46fd53a8492aec88883bee3f55dc5b4"
     },
     {
       "id": "FGAP-124",
@@ -4714,7 +4960,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "d4773abb370344c0e3aa9e796de5ee22",
+      "content_hash": "4b1e33216277950ed8d13f04d1b77d5d6ed5ff6d46f2ff4951e6f961807840dc"
     },
     {
       "id": "FGAP-125",
@@ -4745,7 +4993,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "903bc72fcd57a1414d59f96563972567",
+      "content_hash": "5e49635925c596efd350903506aef26cce1dbc78fada964a3de9a15f67fd06d9"
     },
     {
       "id": "FGAP-126",
@@ -4780,7 +5030,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-29T00:00:00Z"
+      "closed_at": "2026-05-29T00:00:00Z",
+      "oid": "6db24179be2b5212be96d2e96dc383b7",
+      "content_hash": "2a6f653573dfa39e766a3fdeaa4d984f5baab13201ad5e1ce4bb60031035e93b"
     },
     {
       "id": "FGAP-127",
@@ -4813,7 +5065,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "0c17b63291774c2ab3b994819f157172",
+      "content_hash": "86c761ad40895ff0f0f6de9c6ec6f2018b9dcfed278252db8639e3ced52cf675"
     },
     {
       "id": "FGAP-128",
@@ -4840,7 +5094,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "fd649b39624f3c65653a7b47eef5b517",
+      "content_hash": "0b701b4fbfeda1ccdee68a9361e75b07e1fbd31c66a2f8166f1ebbfc6e020522"
     },
     {
       "id": "FGAP-129",
@@ -4869,7 +5125,9 @@
       ],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "2b29994bd759b69d067fa63c7475db0d",
+      "content_hash": "5a17a76e99c35b0f1c9d941fa2ee69229b9c4aba07902b3fa21f9c5cd9fe9c87"
     },
     {
       "id": "FGAP-130",
@@ -4902,7 +5160,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "106ff0f4c366545ca5d7c3308707de6c",
+      "content_hash": "0ab8788d4af738140a611180cb2363b2481e6de280a76f68d0b39b109f990c34"
     },
     {
       "id": "FGAP-131",
@@ -4939,7 +5199,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "1757589d437e5033a0bc879086beb454",
+      "content_hash": "492a70a11319a8df449cdeadec43c3693cfc4d402c684e18e119f686a774e61d"
     },
     {
       "id": "FGAP-132",
@@ -4968,7 +5230,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-28"
+      "closed_at": "2026-05-28",
+      "oid": "a6b7b08d41fe48d439f462594e1ea688",
+      "content_hash": "26a5ab15b2d485bac67d13ab3c6dc8057e5cb2e0dca2209fd60520f3b833999d"
     },
     {
       "id": "FGAP-133",
@@ -5005,7 +5269,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-29T00:00:00Z"
+      "closed_at": "2026-05-29T00:00:00Z",
+      "oid": "65e69ce4c42f015c63524ffb88eadea7",
+      "content_hash": "a03c965e978f5ba470febd83be44a54ee664e2b207050cb6e4d2a887fcf4c965"
     },
     {
       "id": "FGAP-134",
@@ -5050,7 +5316,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-29T00:00:00Z"
+      "closed_at": "2026-05-29T00:00:00Z",
+      "oid": "979afdf45bc13d36fdea91a30fbf4688",
+      "content_hash": "1e208b74aafd88529fcae7f72651df8e1a2577b2c65b451f5c3ca04eeba24451"
     },
     {
       "id": "FGAP-135",
@@ -5094,7 +5362,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-29"
+      "closed_at": "2026-05-29",
+      "oid": "4c756d70214d86772e9fac8b7b52d934",
+      "content_hash": "ba38de46840cb2455bfb2aefad390a28392e1be79f6c9b04463741e8a55eae7e"
     },
     {
       "id": "FGAP-136",
@@ -5136,7 +5406,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-29T00:00:00Z"
+      "closed_at": "2026-05-29T00:00:00Z",
+      "oid": "15563902184aa434d06bd8eba14aeb62",
+      "content_hash": "482ad6e6cf3e7bdb36f86c830359d29782b951b323aaa6d39fe7061814d8b8ad"
     },
     {
       "id": "FGAP-137",
@@ -5173,7 +5445,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-29"
+      "closed_at": "2026-05-29",
+      "oid": "a60a3df19479033e2a4750b7966f8af1",
+      "content_hash": "225258238ed01dcbe32b3497a33ba0959dca37f7d15eea4a7b9a4b185b32eae2"
     },
     {
       "id": "FGAP-138",
@@ -5231,7 +5505,9 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-29"
+      "closed_at": "2026-05-29",
+      "oid": "8608a532568dea19c6c4580be6a68aaf",
+      "content_hash": "886633ed5444a9f42d0209ed91ab7c577447f37fa6dffc167b226f8b6e1ed800"
     },
     {
       "id": "FGAP-139",
@@ -5265,7 +5541,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "66c1a52896b3383311307eac757d163f",
+      "content_hash": "c5e455f3f7dacaf7db2891894215a491873565ec9c89436fb07c984eedf9729c"
     },
     {
       "id": "FGAP-140",
@@ -5293,7 +5571,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "3e0171fc705c83eaffb95643369e8c7f",
+      "content_hash": "7fc141ff9a15deec935bb4a7acc8cba4ddee272fcaf8dc40b554ee2a57167ad5"
     },
     {
       "id": "FGAP-141",
@@ -5325,7 +5605,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "a2e0ca7d588f5df4b51d94cbac6fc713",
+      "content_hash": "614d35c0463a9c722d5c85b2c9f0fe9087aa13931085c74631ede7fabc4d5a0f"
     },
     {
       "id": "FGAP-142",
@@ -5357,7 +5639,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "95d22c5c0f0c84a420b47e80f5f0d36a",
+      "content_hash": "f1c13aff1bc4133affd9651b2f918e62e9964041c289cdf72d85450e8da3d8f9"
     },
     {
       "id": "FGAP-143",
@@ -5385,7 +5669,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "c199c22a2646096bf9cf26ff4e4c7544",
+      "content_hash": "fe063f920dd4c2f88d49287e65b6df3602e8bccb0471a7435d6c1c0d71280ea2"
     },
     {
       "id": "FGAP-144",
@@ -5414,7 +5700,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "9e1933760016dd8bff88cccc7bf3b17c",
+      "content_hash": "7ee319f8e261244f7d3302854ba96cf0b0b875cc6a5f0b4b8a6a8d9d6d459f95"
     },
     {
       "id": "FGAP-145",
@@ -5442,7 +5730,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "d5c2a7ff254f768b11b8295313e63e07",
+      "content_hash": "a7aeedd5fbd9acc64632cb9abd46728cc82e60f7ca8db680760a954451b10d98"
     },
     {
       "id": "FGAP-146",
@@ -5470,7 +5760,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "f72764364d09316b333fdb71793aa13c",
+      "content_hash": "1bb322e2dbf2ff8d15dc08bf88c258042e91438ac984ac4d659b53da85fe654a"
     },
     {
       "id": "FGAP-147",
@@ -5498,7 +5790,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "6a03a7dd434cc76840e031ec2c9fb965",
+      "content_hash": "f73d0b1cafc1a6ebb7657ddf5753a117b78899ac7565cf646bc6796c643d73a9"
     },
     {
       "id": "FGAP-148",
@@ -5526,7 +5820,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "1c807f82fb67505af609127037c3c11b",
+      "content_hash": "f8a16bd9bb9fb9e5b66f4f65992251e9ae1de69b9c5b7739c5a36c7383befc88"
     },
     {
       "id": "FGAP-149",
@@ -5554,7 +5850,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "96775a545f107c0488cb808cd51d49af",
+      "content_hash": "8172700624af29fc7d4d64daed93c09479c2b047324b616101969f97b3a5c130"
     },
     {
       "id": "FGAP-150",
@@ -5582,7 +5880,9 @@
       "related_decisions": [],
       "related_issues": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-29"
+      "created_at": "2026-05-29",
+      "oid": "75372ab69426e2900d0e51399e3803ef",
+      "content_hash": "70fa48b73eea32315e810d44dffca77c9899db089bf8d95d219d6e99d8e9036a"
     },
     {
       "title": "run-work-order-loop hard-dep on work-orders block kind is undocumented at tool surface + install ceremony",
@@ -5622,7 +5922,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T07:30:00Z",
-      "id": "FGAP-151"
+      "id": "FGAP-151",
+      "oid": "3da7533e25152728e20ddc1417196b59",
+      "content_hash": "a0333f12c756bf70abdffc0ea1666571e40daf2aab3a3ea14baa144808642d5c"
     },
     {
       "title": "run-work-order-loop has no alternative entry point for substrates that legitimately prune the work-orders block kind",
@@ -5662,7 +5964,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T07:35:00Z",
-      "id": "FGAP-152"
+      "id": "FGAP-152",
+      "oid": "b74f811820a6821cbd89474580632887",
+      "content_hash": "d0d9a08b30d79aaefbd2ed32a764d080bade273c754e30c1dec975b0bced8537"
     },
     {
       "title": "resolvePromptField heuristic misclassifies inline prompts containing '/' as template file paths",
@@ -5699,7 +6003,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-153"
+      "id": "FGAP-153",
+      "oid": "de1d1bfed9caeb10468ddf3d9cfde8cb",
+      "content_hash": "fa437a30f478eaa311d67b1d69d99f3676dde185086446e5d7d50dffd78290b2"
     },
     {
       "title": "author-agent-spec YAML serializer folds multi-line prompts to a single line, destroying newlines",
@@ -5730,7 +6036,9 @@
       "canonical_vocabulary": "literal block scalar serialization",
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-154"
+      "id": "FGAP-154",
+      "oid": "339ed526cd469a7cf991eb0a2e5f66dc",
+      "content_hash": "d181eec33c79c0373e4a3b8a7fae0bd9bb2fecfa5bea895bcdfc4154df4d9f79"
     },
     {
       "title": "author-agent-spec round-trip validation does not catch resolvePromptField misclassification — false positive at author-time",
@@ -5764,7 +6072,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-155"
+      "id": "FGAP-155",
+      "oid": "835e5692e10e5a55937c85a82cf04913",
+      "content_hash": "5742af43a6b743a01d3cd8fa82491cd5761bc00cf93fb80413cef06d28fede6d"
     },
     {
       "title": "AgentSpec TypeScript type uses top-level prompt fields while YAML parser reads nested prompt.system/prompt.task — silent data loss across the shape divergence",
@@ -5807,7 +6117,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-156"
+      "id": "FGAP-156",
+      "oid": "4943336d5da7ee57cd8f7119fef74d09",
+      "content_hash": "537433c93c4351c40da56e0717f0ddc7ea37effb1245bede04de354635da2e9f"
     },
     {
       "title": "AgentSpec.model is type-optional but dispatch-required — call-agent throws 'no model specified' with no fallback",
@@ -5850,7 +6162,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-157"
+      "id": "FGAP-157",
+      "oid": "f89396f1b919f8250b5bf4d4f3f60df6",
+      "content_hash": "698da1146bb586e510de6abe9c69f3d114ab67dc7d4a157626c9795b4016f150"
     },
     {
       "title": "No tool to discover dispatch-registry models — author must guess valid provider/modelId combinations",
@@ -5879,7 +6193,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-158"
+      "id": "FGAP-158",
+      "oid": "3d15d93bdd66365f9d1c5ff185862c6d",
+      "content_hash": "7a49b11aa1192c3dfd78105de5d409c8aef2042d927f240839990e029fa71522"
     },
     {
       "title": "call-agent parent_grant and requested_grant are Type.Optional but functionally required when agent declares tools — silent default-empty triggers grant violation",
@@ -5921,7 +6237,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-159"
+      "id": "FGAP-159",
+      "oid": "172e518aa16059fadf9814381bb52f5c",
+      "content_hash": "1356df6c37cd3de7b36f4911d669cac382865d615eb9282ddeb7aa3b38cf8907"
     },
     {
       "title": "call-agent returns only status summary — agent output buried in details metadata, not surfaced to orchestrator content",
@@ -5955,7 +6273,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-160"
+      "id": "FGAP-160",
+      "oid": "82d28cc7b45d76b0be5ccce874759653",
+      "content_hash": "39f798a1c3787a6df95785e633c99e7fb8bf7ea169d0ac24effa81704ea6c312"
     },
     {
       "title": "contextBlocks whole-block injection is all-or-nothing raw JSON — no field projection, filtering, or pagination",
@@ -5989,7 +6309,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-161"
+      "id": "FGAP-161",
+      "oid": "6945a40ef7eab3376420e68350730671",
+      "content_hash": "03c63fafda32df68d9157cfa638121e8d9268060f7c958c36b2bb9306a820888"
     },
     {
       "title": "contextBlocks single-item object form depth field is stored but render_recursive is not auto-applied",
@@ -6023,7 +6345,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-162"
+      "id": "FGAP-162",
+      "oid": "d3b79821fede85958808cf6cee7d6c5d",
+      "content_hash": "4e24a98dd12aad3ded4aba03240570f53f9824626ea971eab21fb7004ae012ea"
     },
     {
       "title": "No tool to author per-item macros for custom block kinds — custom-field rendering requires manual filesystem access outside substrate",
@@ -6060,7 +6384,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-163"
+      "id": "FGAP-163",
+      "oid": "fd6e5e7bc36339a361d9a2e93cbb94ba",
+      "content_hash": "b0447f82ff8ddddb7db9a004d07fd123ffc100cc7c6cfaabf93111206818595a"
     },
     {
       "title": "gather-execution-context requires hand-authored context-contract entry — no schema-derived default",
@@ -6095,7 +6421,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-164"
+      "id": "FGAP-164",
+      "oid": "f72a6d531dc4213b2199a30e3326b138",
+      "content_hash": "612715e0700d1cf7788db6cf319b7066f81674b54ad36097580b265bfb002d03"
     },
     {
       "title": "Zero-token agent dispatches report as success — silent empty output with no framework-level error",
@@ -6126,7 +6454,9 @@
       "canonical_vocabulary": "zero-token detection",
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-165"
+      "id": "FGAP-165",
+      "oid": "6f0fd85fb26d91351921eed9cd2aaec5",
+      "content_hash": "6ed098e02114b95105f7a3969475033eb354ef4f5fc8eb55f07066d9bd89b6fc"
     },
     {
       "title": "No tool to query agent dispatch history — session logs are the only audit trail",
@@ -6155,7 +6485,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-166"
+      "id": "FGAP-166",
+      "oid": "7a7e4c4a944b8ba172b68d5a1dcfd126",
+      "content_hash": "5972be8eb4d59778946d30a29da40e5fa0a5bad6b63f387308fdca5427a0b1f4"
     },
     {
       "title": "Substrate schema validation errors reference array indices, not item ids — debugging requires manual cross-reference",
@@ -6186,7 +6518,9 @@
       "canonical_vocabulary": "schema-error item-id enrichment",
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-167"
+      "id": "FGAP-167",
+      "oid": "84e0179d5d28f68a5d56ed47b0dd350a",
+      "content_hash": "2780b8b019111816247d13666f269179c68867dbea3b23b11ff7e959ff5d6bfb"
     },
     {
       "title": "output.format: text combined with tools[] is structurally allowed but produces prose-only output — no compile-time conflict check",
@@ -6221,7 +6555,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-168"
+      "id": "FGAP-168",
+      "oid": "f31860669c740a54237cf986e72c06dd",
+      "content_hash": "c9aa34fdc8aa0f3e41976ea3a15a3ca27183c7006a721da5e6a36b5aa6776a92"
     },
     {
       "title": "Agent-spec tools[] is structurally unreachable from LLM — declared tools stripped at grant-clamp boundary (line 488) and never delivered (line 568 wires only phantom-tool when outputSchema set); implementation gap relative to canonical body (FEAT-005/006/DEC-0047/JI-029)",
@@ -6259,7 +6595,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-169"
+      "id": "FGAP-169",
+      "oid": "805af0a5e97d40bf91bd9b0dfa5bb217",
+      "content_hash": "35a0504e979dbfc2c33686e4381c25afe1790a60478b2f257d64f1ebf0a3c3db"
     },
     {
       "title": "No JSON Schema file for AgentSpec — round-trip parseAgentYaml validation does not enforce semantic correctness or enable schema-driven tooling",
@@ -6288,7 +6626,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-170"
+      "id": "FGAP-170",
+      "oid": "e6c238f769b865cfe39c1d0544cb8e68",
+      "content_hash": "a73340fc3724da94cfa9d4c3e3e9a03e0192212206f7eff39a6a3a64e4296ae2"
     },
     {
       "title": "AgentSpec inline-prompt and template-prompt fields are parallel optional with no mutual-exclusion enforcement",
@@ -6317,7 +6657,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-171"
+      "id": "FGAP-171",
+      "oid": "90e633bba89a1c39feb8c0ab96b49db9",
+      "content_hash": "78e34814a060cbd6ae8c48b007adb9e098f64e63b3feece518ac86213e538118"
     },
     {
       "title": "Agent-spec template-path heuristic bypasses canonical resolveContextDir(cwd) resolver established in FGAP-026 closure",
@@ -6349,7 +6691,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-172"
+      "id": "FGAP-172",
+      "oid": "239fd10aa91e853c3fd177a3922fd7f4",
+      "content_hash": "b1df0ad340bf3c9f81c4dead68fa2181bc93dcfc813865fcf8222c8a32d75bc8"
     },
     {
       "title": "author-agent-spec in-body writer.kind=='human' check is redundant with FGAP-134/138 auth-gate at pi-dispatch layer",
@@ -6381,7 +6725,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-173"
+      "id": "FGAP-173",
+      "oid": "1504b144a5a67139eb9391f8f0555a2d",
+      "content_hash": "61df07761c2cb97d8350b66cd98a9488f25b3e81d327ab14b07d48dbaf1f7a95"
     },
     {
       "title": "author-agent-spec has no semantic-validation surface for template-path existence, schema-referenced files, or contextBlocks block-kind existence",
@@ -6410,7 +6756,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-174"
+      "id": "FGAP-174",
+      "oid": "a40b7dfa245cbddd164fdc444b745ab2",
+      "content_hash": "f2a72037f9f1c0375819c5d271ac6a7fcbb23a1ea1e04012a97eefc42354d176"
     },
     {
       "title": "No tool to discover available agent templates or emit a canonical agent-spec scaffold — author-agent-spec requires constructing a complete AgentSpec from scratch",
@@ -6440,7 +6788,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-175"
+      "id": "FGAP-175",
+      "oid": "0626f78327f9cb0c0a88741690416765",
+      "content_hash": "474f7b5449577039867d897ba1e66e6b66dadecdca4b4346fed3a6b4392a290b"
     },
     {
       "title": "AgentSpec optional-field type-vs-runtime asymmetry is structural — FB-005 (model) is one instance; thinking / extensions / skills require audit",
@@ -6477,7 +6827,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T00:00:00Z",
-      "id": "FGAP-176"
+      "id": "FGAP-176",
+      "oid": "49262cce24094a53b971918594b47938",
+      "content_hash": "1b0f9b3e7f08a1d74d254bf1bddd8430fa6519825cd1fa3b0c91f250a7458b79"
     },
     {
       "title": "jit-agents-spec.md is the outlier substrate text — describes phantom-tool-only dispatch contradicting canonical body (FEAT-005/006/DEC-0047/TASK-091/JI-029) which declares tool-using agents; spec doc is being amended to match canonical body",
@@ -6533,7 +6885,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T09:00:00Z",
-      "id": "FGAP-177"
+      "id": "FGAP-177",
+      "oid": "4416e9e11421b5eff60c4f2242c0d3ff",
+      "content_hash": "0c52490d9ced79a96acfd3912bc217bd623328347a4a165348b4b0ddf1c9b65f"
     },
     {
       "title": "Capability-grant infrastructure (FEAT-004/005 + DEC-0047 + TASK-089/092) operates at orchestrator-tier but is no-op at agent-dispatch tier — grants are computed and clamped at jit-runtime.ts line 488 then discarded with the declared tools; closure tracked by multi-tool dispatch loop implementation per FGAP-169",
@@ -6585,7 +6939,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T09:05:00Z",
-      "id": "FGAP-178"
+      "id": "FGAP-178",
+      "oid": "7641069d345d6f70314819b0ecc37160",
+      "content_hash": "1df7a27305656218781825f5f0c224a4e80540a8c0e50fc99e480746f5b4626e"
     },
     {
       "title": "/context init <dir> silently ignores dir argument when .pi-context.json exists; no /context switch family for bootstrap-pointer flip + bidirectional substrate-dir navigation; blocks DEC-0036 cutover + denies operators the substrate-management primitive parallel to git switch",
@@ -6635,7 +6991,9 @@
       "created_at": "2026-05-30T10:30:00Z",
       "id": "FGAP-179",
       "closed_by": "human:davidryan@gmail.com",
-      "closed_at": "2026-05-30T11:05:00Z"
+      "closed_at": "2026-05-30T11:05:00Z",
+      "oid": "0ccc8671e927d944fba35f6f3fe93129",
+      "content_hash": "e3557a7d44074686fae5448dbb08dab8f3d07336e29b65b527e5d00e552a61a8"
     },
     {
       "title": "Orchestrator scripts (39 dual-surface wrappers at scripts/orchestrator/*) are not portable beyond this repo; downstream Claude Code sessions on pi-context-consuming projects cannot use the Claude-Code-side canonical-surface convenience without copying scripts or operating against this repo's filesystem path",
@@ -6678,7 +7036,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T11:35:00Z",
-      "id": "FGAP-180"
+      "id": "FGAP-180",
+      "oid": "93356478e285e7c92d7c9a9736841502",
+      "content_hash": "77adc4e1daa3883ad73128b0ecbe4cf14bc83cce74f6d6010642bd6b5749136e"
     },
     {
       "title": "Per-script --help / Usage discoverability gap — 37 of 39 scripts/orchestrator/*.ts lack robust --help blocks; invocations return terse errors (\"Missing --block <name>\") instead of self-explaining usage; fresh Claude operators cannot surface command-shape without reading script bodies",
@@ -6714,7 +7074,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T12:00:00Z",
-      "id": "FGAP-181"
+      "id": "FGAP-181",
+      "oid": "f452137562c8b63f056cd442a6c3b1cb",
+      "content_hash": "171f67726c53d6714fe73804fc3806336ff86d90a8abaca8696be5a92150b95f"
     },
     {
       "title": "Framework-use discoverability gap — no canonical substrate-queryable surface for \"how do I X with pi-context\" questions; fresh Claude operators must grep code + read scattered docs (SKILL.md + CLAUDE.md + analysis MDs + feedback memories) to learn canonical patterns; substrate is not its own usage source",
@@ -6757,7 +7119,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T12:05:00Z",
-      "id": "FGAP-182"
+      "id": "FGAP-182",
+      "oid": "8903337676d3cbb46231fa2dc5b6da3a",
+      "content_hash": "0794bbf3692eca98ae4e3cdacb0bd58bfa3e666c446556f238670e5c7408ba89"
     },
     {
       "id": "FGAP-183",
@@ -6789,7 +7153,9 @@
       "canonical_vocabulary": "MigrationRegistry; readBlock contextDir override; cross-substrate read; getProjectMigrationRegistry",
       "proposed_resolution": "Extend getProjectMigrationRegistry to accept an optional contextDir override: getProjectMigrationRegistry(cwd, contextDir?). Uses override when provided; falls back to active-pointer resolution otherwise. Cache key becomes (cwd, resolved-substrate-dir) instead of cwd alone, since a single process can legitimately want both .context and .project migration registries cached simultaneously. validateBlockWithMigration accepts + threads contextDir to the loader. readBlock passes its options.contextDir through. Three call-sites change; one root-cause site (the loader) determines the contract. Reason for fixing at the loader (not at the call-site of validateBlockWithMigration): the registry is per-cwd-per-substrate-dir; the cache key has to discriminate by resolved substrate-dir; that property belongs to the loader, not its callers. Threading the override only at validateBlockWithMigration would still leak the active-pointer assumption into the loader's cache.",
       "created_at": "2026-05-30T06:46:45.266Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "b1e981c1e2bee9016cf8649764b4a9e9",
+      "content_hash": "3f20f4b21dbf8923c9af990ccbbf275ecabf678979b76e9a30f8452e93b0643d"
     },
     {
       "id": "FGAP-184",
@@ -6821,7 +7187,9 @@
       "canonical_vocabulary": "truncation regime; overCapDirective uniformity; hard-refusal vs soft-truncation signal; paginated read surfaces; serializeForRead call-sites; FGAP-135 companion",
       "proposed_resolution": "Audit all paginated / large-result returning Pi tool registrations in pi-context (and pi-agent-dispatch / pi-workflows / pi-behavior-monitors) for serializeForRead + overCapDirective usage. Apply uniformly: every Pi tool that can return a paginatable/large result MUST route through serializeForRead with an overCapDirective naming the appropriate paginate/grep next-call. Concrete sites to fix from initial survey: context-walk-descendants (line 1XXX) uses raw JSON.stringify — wrap in serializeForRead + add overCapDirective routing to paginated walk variant (or a documented offset/limit walk tool). Same survey for context-find-references / context-edges-for-lens / any other JSON.stringify-direct return. Add a tsx --test lens (test file in packages/pi-context/src/) that enumerates all Pi tool registrations + asserts each returning a list/array/large-object goes through serializeForRead. Out-of-scope alternative considered: route ALL pi-context tool outputs through a pi-dispatch-layer truncation gate (like FGAP-135 does for pi's `read`) — rejected because the per-tool overCapDirective contains tool-specific paginate hints (read-block-page vs grep vs walk-descendants offset) that the generic gate cannot produce; per-tool serializeForRead-with-overCapDirective preserves the hint specificity.\n\nADDITIONAL CONCRETE REQUIREMENTS (added 2026-05-30 after lived-evidence framing refined):\n\n(R1) Element-count visibility — every truncated read MUST surface the count it returned vs the total available (\"you have seen X of Y items\"). Soft footers naming only byte/KB caps are insufficient because LLMs hand-wave size as opaque; explicit X/Y counts make partial-view status structurally visible. Concrete shape: every overCapDirective payload includes returned_count + total_count + truncated_at fields so the directive can render \"showing 50 of 128 edges; 78 not returned\" rather than \"truncated at 12KB.\" Applies uniformly across all paginated read surfaces.\n\n(R2) Line-number markers for file reads — pi built-in read truncation directive (FGAP-135) currently names byte/line caps; extend to ALWAYS include the precise line-range returned vs the file total line count (\"returned lines 1-200 of 847\") so the LLM can compute which offset to next-call without guessing. Byte-only signals leave LLMs to infer line-position from KB which they hand-wave as \"probably most of it.\" Concrete shape: TruncationResult carries first_line + last_line + total_lines fields; buildTruncationDirective renders \"returned lines X-Y of Z; next: offset=Y+1\" instead of \"truncated at N bytes.\" The four TruncationResult variant directives (lines / bytes / firstLineExceedsLimit / lastLinePartial per FGAP-135) all get the explicit line-range upgrade.\n\nBoth requirements address the same root cause as the original gap: soft truncation signals (sizes, generic warnings) get hand-waved; explicit count-of-total + line-range data force the LLM to structurally acknowledge partial-view status before composing assertions.\n\n(R3) Monitor-class consideration — design space, not specification — pi-behavior-monitors could observe truncation encounters as a distinct activity class. Open direction: when an agent's tool_call → tool_result chain includes a truncation event AND the agent's subsequent assistant message composes assertions about the (partially-viewed) content, a monitor classifies whether the agent acknowledged partial-view or hand-waved. Hand-wave detection (the lived pattern that grounded this gap) becomes monitorable rather than relying purely on R1+R2 directive-prominence to compel structural acknowledgment. Possible monitor class: truncation-handwave-classifier. Possible signal source: pi event handlers (tool_result truncation flags + message_end content scanning). Possible steering: inject correction directive on FLAG verdict (paginate-before-asserting reminder). Specific monitor design + name + classify template + verdict shape NOT yet specified; this requirement names that monitor involvement is a load-bearing design consideration alongside the per-tool directive uniformity (R1+R2 work at the read-surface layer; R3 works at the agent-behavior-observation layer; complementary, not substitutionary).",
       "created_at": "2026-05-30T09:52:04.167Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "dd31a40f58f74630875a6e02e930cec6",
+      "content_hash": "d8058765a0547451807313d6888915389f1a7f1309178e52dc9c93a141c6a6e1"
     },
     {
       "id": "FGAP-185",
@@ -6853,7 +7221,9 @@
       "canonical_vocabulary": "ID namespace collision; cross-substrate reference ambiguity; substrate-namespaced ID; sentinel form (substrate-name:ID); per-arc substrate engagement pattern; canonical ID resolution context",
       "proposed_resolution": "Operator decides resolution among canonical pi-context patterns. Three load-bearing requirements regardless of selected mechanism: (R1) every cross-substrate reference (commit message, analysis doc, agent prompt, cross-substrate edge, orchestrator conversation) carries unambiguous substrate disambiguation; (R2) the disambiguation mechanism is uniform across all reference layers (relations.json edges + conversation + commits + prompts) so a reader does not need different parsing rules per layer; (R3) the mechanism is queryable from substrate metadata so an agent can resolve a substrate-qualified ID to its canonical home without out-of-band knowledge.\n\nMechanism options grounded in pi-context canon:\n\n(M1) Substrate-prefix ID expansion at filing time: when a new per-arc substrate is bootstrapped, its config declares an id_prefix_modifier (e.g. spec-v2:) that is prepended to every canonical ID at filing time. .context-jit-spec-v2's FEAT-005 becomes spec-v2:FEAT-005 in its own substrate's features.json id field. Universal disambiguation at the data layer. Breaks existing per-substrate ID patterns; cost is migration of every existing per-arc filing (currently small — .context-jit-spec-v2 is the only per-arc substrate; ~70 items).\n\n(M2) Substrate-qualified canonical reference convention at the consumption layer: substrate IDs remain unqualified internally; cross-substrate references ALWAYS use sentinel form substrate-name:ID per the pattern already established in this session's FB→project:FGAP edges. Extend to commit messages + analysis docs + orchestrator conversation as documented convention. Lower cost (no migration); higher discipline-load (every reference must remember to qualify).\n\n(M3) Substrate-namespaced display rendering: keep raw IDs unqualified in the JSON; rendering layers (read-block tool output, /context view lens output, conversational reports) always emit substrate-qualified form. Reader sees 'spec-v2:FEAT-005' always; substrate JSON stays clean. Requires every read surface to participate; missed surfaces leak ambiguity.\n\nRecommendation: (M2) — lowest cost, builds on existing sentinel-form pattern, makes the discipline explicit at the consumption layer where ambiguity surfaces (not at the storage layer where IDs are unambiguous within their substrate). Add a per-arc invariant that asserts: for every substrate-qualified reference appearing in a per-arc substrate's items (e.g. FB→project:FGAP edges), the qualifier substring (e.g. project:) appears in a registered list of known substrate names — catches typos and missing qualifications structurally.\n\nThe ambiguity does NOT manifest within a single substrate (where IDs are unique by construction); it manifests at cross-substrate boundaries. Solution focuses on disambiguation at boundary-crossing references, not on universal renumbering.",
       "created_at": "2026-05-30T10:52:59.018Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "758dc12da20687a792ce51278acce029",
+      "content_hash": "7628381c2e93fdc1d643f55c4e53c3bef5f07923b2773f64d007cd576eb8128d"
     },
     {
       "id": "FGAP-186",
@@ -6885,7 +7255,9 @@
       "canonical_vocabulary": "invariant class; cross-collection invariant; set-equivalence; field-array-matches-edge-set; lens-validator; programmatic invariant; config-declarable invariant",
       "proposed_resolution": "Add a new invariant class to the config.invariants[] schema (and the dispatch logic in pi-context's validator) that expresses cross-collection set-equivalence. Provisional shape:\n\nclass: \"field-array-matches-edge-set\"\nblock: <source-block-name>\nfield_path: <dotted path to the array field on items, e.g. \"surface_kills_mapping\">\nentry_reference_field: <field on each array-entry that names the related item, e.g. \"implementing_feature_id\">\nentry_value_field: <field on each array-entry that lists the IDs to match, e.g. \"killed_friction_ids\">\nrelation_type: <edge type to walk from entry_reference_field, e.g. \"feature_depends_on_item\">\ndirection: <as_parent|as_child>\nmatch_mode: <exact-set-equivalence|subset|superset>\nseverity: <error|warning>\nmessage: <templated, with {field_path entry index} + {missing IDs} + {extra IDs}>\n\nValidator walks each item in <block>; for each entry in item[field_path]; resolves item identified by entry[entry_reference_field]; walks that item's edges of relation_type in direction; compares resulting child/parent ID set against entry[entry_value_field] per match_mode; emits diagnostic on mismatch naming the specific missing/extra IDs.\n\nThis enables the kills-tracking authority-alignment invariant directly:\n  block: authority-docs\n  field_path: surface_kills_mapping\n  entry_reference_field: implementing_feature_id\n  entry_value_field: killed_friction_ids\n  relation_type: feature_depends_on_item\n  direction: as_parent\n  match_mode: exact-set-equivalence\n  severity: error\n  message: 'REF {id} surface_kills_mapping[{index}]: FEAT {implementing_feature_id} edge set does not match killed_friction_ids ({missing} missing; {extra} extra)'\n\nSame class addresses feature.acceptance_criteria↔sub-task-completion and decision.consequences↔verifications patterns by parameterization without code.\n\nAlternative considered + rejected: extend requires-edge with a 'count-or-set-match' parameter. Rejected because it overloads requires-edge's single-edge semantic (which is about presence, not set-shape) and would mix two semantically distinct invariant classes; clean separation as a new class is cheaper than overloading.\n\nWork shape: schema addition to config.json invariants[] item shape; dispatcher case in lens-validator.ts (or wherever invariant evaluation lives) for the new class; test coverage; documentation in the conception.json's invariants[] description. Plan-mode implementation required per [[feedback_no_adhoc_dev]] + [[feedback_plan_mode_protocol]].",
       "created_at": "2026-05-30T11:37:16.066Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "c7994a3a2b0f3dcc314c865088bd4f54",
+      "content_hash": "8d7f15b1038970e7a820fb03b84b2526164a2c3be4ab28bb5f67dbadc07fe397"
     },
     {
       "id": "FGAP-187",
@@ -6921,7 +7293,9 @@
       "canonical_vocabulary": "edit-schema; schema-write operation; field-level patch; create vs replace vs edit; schema-write surface; canonical schema mutation path",
       "proposed_resolution": "Add an edit operation to the schema-write surface (schema-write.ts + write-schema Pi tool + scripts/orchestrator/write-schema.ts) that applies a structured field-level patch to an existing schema without requiring the caller to supply the full body. The patch operates on the schema document via dotted JSON path (mirroring the declarative-transform migration DSL already established in FGAP-136's write-schema-migration: rename / set / delete on dotted paths). Operations the edit primitive supports: add-property (insert a property at a dotted path under properties), remove-property, modify-property (replace a property's subtree), add-enum-value / remove-enum-value (mutate an enum array), set-description, add-required / remove-required (mutate the required array). The handler reads the existing schema, applies the patch, runs the same AJV meta-validation + atomic write + DispatchContext attestation that replace runs, and — when the patch is breaking (remove-property / remove-enum-value / add-required / type change) — refuses unless a version bump + companion write-schema-migration declaration accompanies it, routing the breaking case through the existing FGAP-136 migration machinery. The edit primitive makes the canonical surface cheaper than the direct-Edit bypass for the common single-field case, removing the friction differential that drives the bypass. Auth-gate: edit-schema is a capability-widening substrate-semantics operation; add to AUTH_REQUIRED_TOOLS alongside write-schema + write-schema-migration. Work shape: schema-write.ts gains an editSchema function + patch-op evaluator; write-schema Pi tool gains operation: edit + patch parameter; scripts/orchestrator/write-schema.ts gains --operation edit + --patch @file; test coverage for each patch op + the breaking-change-requires-migration refusal; documentation in the tool description. Plan-mode implementation per the project's source-change discipline.",
       "created_at": "2026-05-30T12:22:02.227Z",
-      "created_by": "human/davidryan@gmail.com"
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "06a914d40595e7073398b425205aee58",
+      "content_hash": "43fb229e5f1737ad9f7eaeb2c713e5536fa632ddb351b5c62aebee159f59123a"
     }
   ]
 }

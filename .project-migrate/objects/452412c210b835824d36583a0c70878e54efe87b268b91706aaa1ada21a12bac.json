@@ -1,0 +1,45 @@
+{
+  "name": "Specification",
+  "purpose": "What the system must do and how it is structured. Evolves with design decisions. Architectural contradictions and missing requirements are owned here.",
+  "canonical_vocabulary": "Specification + decisions + RFCs + Requirements + Architecture",
+  "lifetime": "per-design-cycle",
+  "ownership_principle": "Findings discovered during design review of a spec live attached to that spec, not in global issues. decisions record each design decision with a lifecycle gate for user-authored transitions to 'enacted'.",
+  "current_blocks": [
+    "requirements.json",
+    "architecture.json",
+    "decisions.json",
+    "rationale.json"
+  ],
+  "target_blocks": [
+    {
+      "name": "requirements.json",
+      "shape": "flat",
+      "notes": "unchanged in shape; may embed findings later"
+    },
+    {
+      "name": "architecture.json",
+      "shape": "flat",
+      "notes": "unchanged in shape; may embed findings later"
+    },
+    {
+      "name": "decisions.json",
+      "shape": "flat",
+      "notes": "live-decision block with open/enacted lifecycle; entries persist through enactment; each decision must cite its forcing issue/gap/feature"
+    },
+    {
+      "name": "spec-reviews.json",
+      "shape": "flat",
+      "notes": "per-target design reviews with embedded findings arrays — new for this plan"
+    },
+    {
+      "name": "framework-gaps.json",
+      "shape": "flat",
+      "notes": "L2 capability gaps in the framework itself — new for this plan"
+    },
+    {
+      "name": "layer-plans.json",
+      "shape": "flat",
+      "notes": "this file; L2 restructure plans — new for this plan"
+    }
+  ]
+}

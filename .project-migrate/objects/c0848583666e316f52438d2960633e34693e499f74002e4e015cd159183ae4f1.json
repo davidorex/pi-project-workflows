@@ -1,0 +1,32 @@
+{
+  "title": "Composition contract for prompt assembly across typed contexts",
+  "status": "superseded",
+  "context": "Under the unifying heuristic, multiple typed-context entries (lenses, mandates, monitor outputs, raw blocks) can land in one agent's prompt. The integration-map design assumed pre-rendered injection without articulating how N typed contexts compose. Order, deduplication, override semantics, applicability-evaluation timing, and token-budget allocation are unspecified. This is the central API surface for the unified heuristic; lens injection, mandate injection, monitor-output injection all flow through it. Surfaced as gap #34 in the heuristic-widening pass.",
+  "decision": "Decision pending. The composition contract must specify: (1) ordering rules across context types; (2) deduplication when multiple entries pull the same item; (3) override semantics including agent-scope opt-out of mandates / lenses; (4) applicability-predicate evaluation timing (compile-time vs per-turn); (5) token-budget allocation policy with truncation strategy. Resolution lands as a new design doc plus DEC enactment; gates implementation of jit-agents lens-injection path and downstream typed-context surfaces.",
+  "consequences": [
+    "Superseded: composition rules for prompt assembly (ordering, deduplication, override, applicability evaluation, token-budget allocation) are specification work, not a directional choice between mandate-compliant alternatives. Belongs as an FGAP or implementation-issue series, not a DEC. Filed by treating 'things that need specification' as 'decisions to make'; retired without enactment."
+  ],
+  "related_findings": [
+    "issue-020",
+    "issue-041",
+    "issue-042",
+    "issue-045"
+  ],
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_gaps": [
+    "FGAP-002",
+    "FGAP-003"
+  ],
+  "references": [
+    {
+      "label": "frame doc §5 gap #34 + §5.1 rank 2",
+      "path": "analysis/2026-05-03-substrate-arc-frame.md"
+    },
+    {
+      "label": "anti-injection wrapping pattern",
+      "path": "packages/pi-jit-agents/src/compile.ts"
+    }
+  ]
+}

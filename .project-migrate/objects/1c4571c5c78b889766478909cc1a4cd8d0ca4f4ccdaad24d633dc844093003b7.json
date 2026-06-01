@@ -1,0 +1,63 @@
+{
+  "title": "Conventions block schema migration — add facets needed for relational/lens/lookup discoverability",
+  "status": "open",
+  "context": "FGAP-051 records that conventions block schema (.project/schemas/conventions.schema.json) is pre-DEC-0013 / pre-lens-infrastructure shape: items have id (freeform slug like 'esm' / 'tsc-build' / 'no-pi-dir') + description (single payload) + enforcement (lint/test/review/manual) + severity (error/warning/info). Missing facets: title separate from description; category / domain (substrate-filing / naming / commit / build / monitoring); applies_to (target surface — substrate / source / tests / commit / specific-package); related_decisions (closure-table edge home); status / lifecycle (active / retired / superseded); source / citation (file path or DEC enacted from); canonical_vocabulary (engineering terminology). 16 existing rules need migration. Same shape questions apply to architecture / domain / requirements (zero-item; authored pre-relational-layer).",
+  "decision": "OPEN: conventions schema migration scope + sequencing. Mandate-compliant options below.",
+  "consequences": [
+    "LLM lookup of 'how to file substrate' / 'what build commands' / 'what naming convention' becomes filter-block-items predicate-driven, not grep-on-description.",
+    "Convention rules emerging from DECs gain closure-table edge home (relations.json with relation_type=convention_emerges_from_decision).",
+    "Lens binning by category becomes possible.",
+    "Status-tracked rule lifecycle records when rules retire.",
+    "Cascade: same migration applicable to architecture / domain / requirements schemas if they remain in current shape."
+  ],
+  "options_considered": [
+    {
+      "label": "Migrate conventions schema in single sweep + populate all 16 existing rules",
+      "description": "Schema-write update conventions.schema.json adding fields (title / category / applies_to / related_decisions / status / source / canonical_vocabulary); migrate all 16 rules to populate new fields with values authored from rule context. Simultaneously audit + propose-migrations for architecture / domain / requirements schemas.",
+      "tradeoffs": "Single coherent migration; larger scope; closes FGAP-051 atomically + surfaces sister-schema gaps."
+    },
+    {
+      "label": "Migrate schema only; populate fields lazy per future authoring",
+      "description": "Update schema with new fields (all optional except title); existing 16 rules left as-is until each touched; new rules require new fields; schema-version migration handles default-population for existing.",
+      "tradeoffs": "Minimal immediate churn; persistent partial-state; LLM lookups partially work depending on which rules migrated."
+    },
+    {
+      "label": "Author parallel block kind 'rules' with the desired facet shape; deprecate conventions",
+      "description": "Don't migrate existing conventions schema; author new 'rules' or 'rule-set' block kind with full facets; migrate convention items into new block; mark conventions block as deprecated.",
+      "tradeoffs": "Cleaner schema-design without legacy-shape constraint; substrate carries deprecated block until full migration; all consumers of conventions block need update."
+    },
+    {
+      "label": "Audit + migrate conventions + architecture + domain + requirements as one work-unit",
+      "description": "Treat all four pre-relational-layer schemas as a coherent migration scope; one DEC enacts; one sweep populates.",
+      "tradeoffs": "Largest scope; addresses cascade comprehensively; aligns with mandate-007 (no deferring discovered issues — sister-schema gaps surfaced in FGAP-051's last paragraph)."
+    }
+  ],
+  "references": [
+    {
+      "label": "Conventions schema current shape",
+      "path": ".project/schemas/conventions.schema.json"
+    },
+    {
+      "label": "16 existing convention rules",
+      "path": ".project/conventions.json"
+    },
+    {
+      "label": "FGAP-051 forcing artifact + sister-schema cascade callout",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "Comparison: DEC schema with rich facets",
+      "path": ".project/schemas/decisions.schema.json"
+    },
+    {
+      "label": "Comparison: FGAP schema with rich facets",
+      "path": ".project/schemas/framework-gaps.schema.json"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-047",
+    "FGAP-051"
+  ]
+}

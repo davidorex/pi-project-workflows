@@ -1,0 +1,10 @@
+{
+  "title": "Plan primitives: loadPlan + listPlans + validatePlans + renderPlan + tools + subcommands",
+  "body": "Step 5. Symmetric to issue-084 for plans. loadPlan(cwd, planId) returning PlanView with topo-sorted items resolved via existing resolveItemById, validatePlans(cwd) emitting plan_ref_unresolved | plan_dep_missing | plan_item_cycle | plan_roadmap_missing | plan_phase_missing | plan_status_inconsistent. Subcommands: /project plan-{list,view,validate}. Tools: project-plan-{load,render,validate,list}. renderPlan emits ordered numbered list grouped by topo-order strata + mermaid 'graph TD' for dependency graph + status rollup summary header.",
+  "location": "packages/pi-context/src/roadmap-plan.ts, packages/pi-context/src/index.ts",
+  "category": "capability",
+  "priority": "high",
+  "status": "open",
+  "package": "pi-project",
+  "source": "agent"
+}

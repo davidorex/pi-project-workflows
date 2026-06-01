@@ -1,0 +1,40 @@
+{
+  "target": "TASK-021",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T00:00:00Z",
+  "evidence": "FGAP-026 closure phase 1 CLOSED at HEAD e88d7ee. All 5 acceptance criteria verified: (1) resolveContextDir(cwd) lives at packages/pi-context/src/project-dir.ts:106-145 — replaces hardcoded PROJECT_DIR/SCHEMAS_DIR construction across pi-context internals. (2) bootstrap.schema.json with $id pi-context://schemas/bootstrap + version 1.0.0 ships at packages/pi-context/schemas/bootstrap.schema.json. (3) block-api + project-context internals fully cascade through resolver per Phase 1.2 sections A/B/C.1-4. (4) read-config + read-schema tools registered in packages/pi-context/src/index.ts at Phase 1.3.A (commit bac1893) + orchestrator scripts (read-config.ts at 4a24866; read-schema.ts at c11ee92). (5) .pi-context.json bootstrap pointer exists at repo root {contextDir: '.project'}. Foundational FGAP-035 fix (writeBootstrapPointer signature default + initProject .project literal + 12 JSDoc forbidden-phrase sites) closed at commits f17efa3 + e88d7ee — bootstrap-write surface no longer carries hardcode-dressed-as-default. Substrate-canon decisions enacted through Phase 1: DEC-0014/0015/0017/0018/0019/0020/0021. Test counts post-cascade: pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0. Adversarial probe verdict GREEN against final FGAP-035 implementation.",
+  "criteria_results": [
+    {
+      "criterion": "resolveContextDir(cwd) function in project-dir.ts replacing PROJECT_DIR/SCHEMAS_DIR constants",
+      "status": "passed",
+      "evidence": "project-dir.ts:106-145 implements resolveContextDir with hard-throw BootstrapNotFoundError + AJV-validated pointer read + mtime cache; PROJECT_DIR/SCHEMAS_DIR retained as @deprecated exports for Phase 7 cascade target only"
+    },
+    {
+      "criterion": "bootstrap.schema.json with $id pi-context://schemas/bootstrap + version 1.0.0",
+      "status": "passed",
+      "evidence": "packages/pi-context/schemas/bootstrap.schema.json exists; pre-registered into shared AJV instance at schema-validator.ts module init per FGAP-026 phase 1.1"
+    },
+    {
+      "criterion": "block-api + project-context cascade through resolver",
+      "status": "passed",
+      "evidence": "Phase 1.2 sections A bb2c7d5 + B 9846b90 + C.1 8f33a38 + audit-fix cluster + DEC-0021 per-package atomic cascade at C.2 99436c3/ba58d78 + C.3 856e139/f4dd1a2 + C.4 3274466 — all 4 packages green post-cascade"
+    },
+    {
+      "criterion": "read-config + read-schema tools registered",
+      "status": "passed",
+      "evidence": "Pi tools registered at packages/pi-context/src/index.ts via commit bac1893 (Phase 1.3.A); orchestrator-side scripts at scripts/orchestrator/read-config.ts (commit 4a24866) + read-schema.ts (commit c11ee92) per DEC-0019 dual-surface"
+    },
+    {
+      "criterion": ".pi-context.json written for this repo containing {contextDir: '.project'}",
+      "status": "passed",
+      "evidence": "Bootstrap pointer exists at repo root .pi-context.json with contextDir field; resolveContextDir resolves to .project per the bootstrap-pointer mechanism"
+    },
+    {
+      "criterion": "Foundational FGAP-035 violation closed (no parameter default at writeBootstrapPointer; no .project literal at initProject; no default-as-feature framing in JSDoc)",
+      "status": "passed",
+      "evidence": "Commits f17efa3 + e88d7ee close FGAP-035 + Q4 follow-up; grep verifications return 0 for `= PROJECT_DIR` / `.project` production literals / forbidden JSDoc phrases across project-dir.ts + index.ts"
+    }
+  ]
+}

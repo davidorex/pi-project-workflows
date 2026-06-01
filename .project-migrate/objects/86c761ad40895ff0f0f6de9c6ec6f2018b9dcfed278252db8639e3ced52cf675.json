@@ -1,0 +1,30 @@
+{
+  "title": "work-orders block kind under-surfaced in pi-context introductory canon; in-pi agent describes the run-work-order-loop capability without naming work-orders as the substrate kind that backs it",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L4",
+  "description": "Observed 2026-05-28: in-pi agent introducing pi-context to operator listed 8 block_kinds without naming 'work-orders' AND in the same response described 'work-orders with real-check criteria' under Verification Gates plus 'bounded work-order loops' under Agent Dispatch. The operator gets the capability concept without the substrate-hook to author the actual work-order item that the loop consumes. work-orders block kind was added by TASK-088 (VER-053 attests, merge 2267d7b) as canon for FEAT-006 north-star but is not surfaced in any introductory or 'headline' description of the substrate. Operators launching into a fresh substrate have no map from 'I want to use the work-order-loop capability' to 'I need to author a work-orders[] item via append-block-item first'.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "reference": "work-orders is present in block_kinds[] with canonical schema and ID pattern (per TASK-088)"
+    },
+    {
+      "file": "packages/pi-context/skill-narrative.md",
+      "reference": "skill narrative does not list work-orders among the introduced block kinds despite work-orders being the input to the run-work-order-loop tool that pi-agent-dispatch ships"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/run-work-order-loop-tool.ts",
+      "reference": "tool consumes a work_order_id parameter that resolves against the work-orders block; no SKILL.md text bridges the operator from the tool to the substrate-authoring step"
+    }
+  ],
+  "impact": "Operator with the run-work-order-loop tool granted has no narrative path from the tool's purpose to the substrate-authoring step that feeds it. Likely failure mode: operator calls run-work-order-loop with a nonexistent or hand-invented work_order_id, hits a resolve-item-by-id miss, has to discover the authoring step by trial. Reduces operator efficacy on the FEAT-006 north-star surface that just shipped.",
+  "canonical_vocabulary": "tool-substrate-handoff documentation; capability-to-input traceability; operator-onboarding completeness",
+  "proposed_resolution": "Surface work-orders explicitly in pi-context's skill-narrative.md alongside tasks / decisions / features as a first-class introductory block kind, with a one-line note: 'work-orders are authored via append-block-item and consumed by pi-agent-dispatch's run-work-order-loop tool to drive the FEAT-006 constrained-orchestrator loop.' Mirror in pi-agent-dispatch's skill-narrative.md from the tool side: 'run-work-order-loop expects work_order_id to resolve against the work-orders block; author the item first via append-block-item.'",
+  "related_features": [
+    "FEAT-006"
+  ],
+  "related_decisions": [],
+  "related_issues": []
+}

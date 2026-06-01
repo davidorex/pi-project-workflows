@@ -1,0 +1,10 @@
+{
+  "title": "Dynamic model selection via expressions in agent spec model field",
+  "body": "Agent spec model field is currently a hardcoded string (e.g., model: claude-sonnet-4-6). gsd-2 has auto-model-selection.ts and capability-aware model routing (ADR-004) that select models at dispatch time based on task complexity, cost budget, and capability requirements. In our framework the agent spec model field should support expression resolution (e.g., model: ${{ registry.best(capability: 'thinking', budget: 'standard') }}) evaluated at dispatch time against the model registry. The model registry lives in pi-ai/pi-coding-agent; the dispatch decision is orchestration that belongs in the agent compilation pipeline. Without this, every agent locks to a specific model at authoring time, preventing runtime cost/quality optimization and provider failover.",
+  "location": "packages/pi-workflows/src/agent-spec.ts, packages/pi-workflows/src/step-shared.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-jit-agents",
+  "source": "human"
+}

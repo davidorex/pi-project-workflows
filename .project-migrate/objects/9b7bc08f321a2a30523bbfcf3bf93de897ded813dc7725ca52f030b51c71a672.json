@@ -1,0 +1,45 @@
+{
+  "target": "TASK-088",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-28",
+  "criteria_results": [
+    {
+      "criterion": "work-orders.schema.json declares orchestrator-authored spec shape: id (^WO-\\d{3,}$ per DEC-0026/0027), title, status enum (proposed | in-progress | real-check-passed | real-check-failed | completed | cancelled), input_contract, context_blocks, output_contract, target_agent, scope, real_check_criteria",
+      "status": "passed",
+      "evidence": "commit 7d06f61 created .project/schemas/work-orders.schema.json with all required fields; adversarial CHECK 1 + CHECK 10 verified $id, version, required, items.properties.id.pattern, status enum, context_blocks oneOf shape matching ContextBlockRef."
+    },
+    {
+      "criterion": "config.json block_kinds[] registers work-orders with canonical_id + prefix (WO-) + schema_path + array_key (work_orders) + data_path (work-orders.json)",
+      "status": "passed",
+      "evidence": "commit 95910ef added block_kinds[] entry + installed_schemas[] + installed_blocks[]. Adversarial CHECK 4 verified all three arrays carry work-orders + the block_kinds entry is shape-complete."
+    },
+    {
+      "criterion": "Sample blocks under packages/pi-context/samples/blocks/work-orders.json + samples/schemas/work-orders.schema.json + samples/conception.json registration",
+      "status": "passed",
+      "evidence": "commits b107fad (samples schema mirror, byte-matched canonical per CHECK 2), 26d4ceb (empty-block seed matching story.json pattern per CHECK 3), 6ab7545 (conception.json registration mirroring config.json per CHECK 5). Adversarial CHECK 2/3/5 PASS."
+    },
+    {
+      "criterion": "contextBlocks handoff pattern documented: how the agent.yaml of the spec-implementer-class agent references the work-order block via contextBlocks, how compileAgent injects it, how the agent's prompt consumes it",
+      "status": "passed",
+      "evidence": "Schema description fields (top-level + context_blocks field) cite the {name, item?, depth?, focus?} ContextBlockRef shape; template-key naming _work_orders_item documented. Runtime demo 3 (tmp/wo-handoff-demo.agent.yaml compiled via compileAgent) confirmed WO-001 content wraps in <context_block name=\"work-orders\" item=\"WO-001\" role=\"data\"> and injects at _work_orders_item — full content rendered into taskPrompt as expected. Adversarial CHECK 8 PASS."
+    },
+    {
+      "criterion": "In-pi orchestrator can author a work-order via existing append-block-item / file-block-item canonical surface (no new write tool needed if existing surface handles the new block kind generically)",
+      "status": "passed",
+      "evidence": "Runtime demo 2: npx tsx scripts/orchestrator/file-block-item.ts --block work-orders --writer human:davidryan@gmail.com --item @tmp/WO-001-sample.json succeeded; readBlock(\".\", \"work-orders\") round-trip returned WO-001 with all declared fields intact; availableBlocks() discovered work-orders (after installContext seeded the data file). No new code in pi-context required; existing canonical surface handles new block kinds generically — confirmed."
+    },
+    {
+      "criterion": "Engine unit tests cover: schema AJV validation passes on valid samples + rejects malformed; block_kinds discovery picks up the new kind; sample blocks pass validateContext + relations.json cross-reference integrity",
+      "status": "passed",
+      "evidence": "Build exit 0; check exit 0; test exit 0 (830/830, 828 pass + 2 skipped, 0 fail). status-vocab.test.ts completeness guard passes after the real-check-passed → complete + real-check-failed → blocked mapping additions in status-vocab.ts (commit 443eb65 — required to satisfy the framework invariant for the work-orders status enum values; canon-aligned per FGAP-069 + DEC-0033). conception completeness-guard count updated (15 → 16) per the catalog growth."
+    },
+    {
+      "criterion": "VALIDATION = real checks: build/check/test exit codes; runtime demo (tsx-eval authors a work-order via canonical write tool + reads it back + validates schema); adversarial probe (fresh-context agent confirms zero free-text scaffolding in samples; everything FK-referenced via canonical patterns)",
+      "status": "passed",
+      "evidence": "Build exit 0; check exit 0; test exit 0 (830/830). Runtime demo 1 (readSchema + availableSchemas) PASS — schema discoverable. Runtime demo 2 (file-block-item author + readBlock round-trip + availableBlocks post-author) PASS. Runtime demo 3 (compileAgent on fixture .agent.yaml with ContextBlockRef item-ref to WO-001) PASS — WO-001 content wrapped in <context_block> + injected at _work_orders_item template key. Adversarial probe (fresh-context Explore agent): 10/10 PASS with no false-pass scenarios. Forbidden-term audit (CHECK 9): zero hits across file content AND commit messages for the TASK-088 commit range."
+    }
+  ],
+  "evidence": "TASK-088 substrate-only work-order block kind landed on branch task-088-work-order-block-kind. Six commits (one beyond plan due to discovered status-vocab framework invariant; canon-aligned addition): 7d06f61 (canonical schema), 443eb65 (status-vocab mappings real-check-passed → complete + real-check-failed → blocked), b107fad (samples schema mirror), 26d4ceb (samples empty-block seed), 95910ef (.project/config.json registration), 6ab7545 (samples/conception.json registration). Verification: build/check/test 830/830 green; 3/3 runtime demos PASS (schema discovery + author/round-trip + contextBlocks item-ref handoff via compileAgent); adversarial probe 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits. Per DEC-0048: bundled-artifact tests not regression gates; engine unit tests + completeness guards are gates (all green). Per DEC-0037 + FGAP-087: zero touches to defaults/+registry/ (canonical-clean post-DEC-0037). ContextBlockRef item-ref handoff path empirically demonstrated end-to-end (WO content → compileAgent → wrapped in <context_block role=\"data\"> → injected at _work_orders_item template key). NOTE on status-vocab addition: TASK-088 scope expanded by one TS file (status-vocab.ts) beyond pure-substrate because the framework's completeness-guard invariant required mapping the new enum values to canonical buckets; the addition is canon-aligned and is the right mechanism for new status values (FGAP-069 + DEC-0033 territory)."
+}

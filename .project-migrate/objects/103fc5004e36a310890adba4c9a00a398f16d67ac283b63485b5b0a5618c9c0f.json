@@ -1,0 +1,35 @@
+{
+  "title": "decisions block conflates pre-decisions with decisions — block-name lies about content + status enum collapses operationally-distinct sub-states",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "The .project/decisions.json block, by its name, carries the colloquial meaning 'what has been decided.' Its schema (.project/schemas/decisions.schema.json) declares status enum [open | enacted | superseded] where 'open' entries are explicitly 'decisions that need to be made and gate work.' The block therefore contains pre-decisions AND actual decisions simultaneously; the name lies about half the content. The schema's own description acknowledges the stretch with a stipulative definition: 'Each entry is a decision either open (needs to be made and gates work), enacted (ratified by user authority...), or superseded.' Coherent stipulatively; at odds with the word 'decisions' colloquially. Compounding: the single 'open' state collapses at least three operationally-distinct sub-states — (1) recognized (decision-need identified, no drafted answer), (2) drafted (decision field carries canon-derived answer awaiting user review), (3) reviewed-and-revised (user reviewed + widened/refined, only enactment stamp pending). From substrate-query perspective, all three report status:open — indistinguishable. Fresh contexts cannot tell ready-to-enact from still-needs-framing. Empirical evidence in analysis/2026-05-26-decisions-block-shape-survey.md (commit 4900a34): 49 entries surveyed, 20 emergent shape-clusters identified including writer-identity format variance, enacted-tuple completeness variance, in-field stacked revision prose (Amendment/Widening/narrowed), null-state convention variance, decision-as-question vs decision-as-answer. Cross-mapped via data-room lens (per /Users/david/Projects/data-room-pi-context.md and grounding analysis at commit 083630e): our single decisions block conflates three first-class data-room artifacts — decisions (settled), missing-context-list (pre-decisions), conflict-log (in-substrate contradictions).",
+  "evidence": [
+    {
+      "file": ".project/schemas/decisions.schema.json",
+      "reference": "status enum: [open, enacted, superseded]; schema description acknowledges the stipulative stretch — 'Each entry is a decision either open (needs to be made and gates work)...'"
+    },
+    {
+      "file": "analysis/2026-05-26-decisions-block-shape-survey.md",
+      "reference": "49 entries surveyed; 20 emergent shape-clusters; commit 4900a34"
+    },
+    {
+      "file": "analysis/2026-05-26-decisions-substrate-revision-grounding.md",
+      "reference": "Side-quest grounding incl. semantic gap framing, data-room mapping, canon-mapping table; commit 083630e"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "Current state at time of filing: DEC-0001/0002/0003 are open with drafted answers (status:open) but indistinguishable from a hypothetical entry that was open without any draft; DEC-0040 carries amendment block as in-body stacking; DEC-0044 narrowing prose (commit a71c782); DEC-0003 widening (commit cfbb211)."
+    }
+  ],
+  "impact": "Substrate-shape conflation impacting all decision-substrate consumers. Fresh contexts cannot distinguish pre-decisions from decisions without field-level inspection. The block name actively misleads as documentation. The status enum coarseness causes the cognitive-load problem observed in handling DEC-0001/0002/0003 — they look identical at status-query level but are in operationally-distinct lifecycle states. The in-body revision stacking (Amendment/Widening) observed in DEC-0040/0044/0003 violates feedback_substrate_blocks_not_changelogs but has no first-class structural alternative under the current schema. Downstream: relations.json edges to decisions.json reference both ratified canon AND pre-decisions; lens projections cannot cleanly distinguish.",
+  "canonical_vocabulary": "decisions-block-conflation / lifecycle-state-collapse / block-name-vs-content-mismatch / in-body-revision-stacking",
+  "proposed_resolution": "Addressed by FEAT-008 (decisions-substrate revision — 3-block split into recognitions / decisions / substrate-conflicts + uniform field tightening) per architectural decision DEC-0050 (data-room three-artifact frame adoption). See analysis/2026-05-26-decisions-substrate-revision-grounding.md commit 083630e for the full canon-mapping showing every revision element traces to established canon (DEC-0040, FGAP-098/110/111, feedback_substrate_blocks_not_changelogs, DispatchContext attestation, data-room frame). Nothing in the resolution is fresh architectural invention.",
+  "related_features": [
+    "FEAT-008"
+  ],
+  "related_decisions": [
+    "DEC-0050"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "description": "Close FGAP-035 — eliminate writeBootstrapPointer signature default and initProject .project literal. Make contextDir required at the bootstrap-write surface so DEC-0015 enacts at line 1, not as a Phase 6 promise.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/project-dir.ts",
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "writeBootstrapPointer signature has no parameter default — contextDir: string required",
+    "initProject signature changes to initProject(cwd: string, contextDir: string); body replaces .project literal with contextDir parameter",
+    "project-dir.ts JSDoc rewritten to remove default-as-feature framing; no \"Default contextDir is .project\" / \"legacy substrate-dir name\" / \"future /context init ceremony will prompt\" wording remains",
+    "index.ts initProject body comment block (lines 232-237) rewritten to remove same default-as-feature framing",
+    "handleInit subcommand handler signature changes to handleInit(args, ctx): parses positional contextDir via args.trim().split(/\\s+/)[0]; missing arg emits ctx.ui.notify error \"/project init requires a substrate dir name (e.g. '/project init .project' or '/project init .context'). Per DEC-0015, no default.\" and returns; non-empty arg passed to initProject(ctx.cwd, contextDir)",
+    "PROJECT_SUBCOMMANDS init dispatch entry changes from handler: (_args, ctx) => handleInit(ctx) to handler: (args, ctx) => handleInit(args, ctx)",
+    "project-init pi tool parameters schema gains required contextDir field: Type.Object({ contextDir: Type.String({ description: \"Substrate dir name (e.g. .project). Required per DEC-0015 — no default.\" }) })",
+    "project-init pi tool execute body destructures params.contextDir and passes to initProject(ctx.cwd, params.contextDir)",
+    "All 168 existing test sites continue to pass without modification (they already pass .project explicitly)",
+    "Full test suite green across all 4 packages",
+    "Production-source grep returns zero hardcoded substrate-dir literals: grep -rn \"\".project\"\" packages/pi-context/src/ --include=\"*.ts\" | grep -v .test.ts | grep -v project-dir.ts (excluding @deprecated PROJECT_DIR/SCHEMAS_DIR const exports per Phase 7 separation of concerns)",
+    "grep -n \"= PROJECT_DIR\" packages/pi-context/src/ returns 0 matches"
+  ],
+  "depends_on": [
+    "TASK-021"
+  ],
+  "notes": "CLOSED at HEAD e88d7ee. FGAP-035 implementation: 11 cascade rows applied at f17efa3 + Q4 follow-up site at e88d7ee. All 4 packages green (pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0). Adversarial probe verdict GREEN (8 PASS, 1 PASS-post-fix Q4, 1 PASS-substantively Q10). UX decision (positional arg required; ctx.ui.notify error on missing) preserved verbatim in handleInit. project-init pi tool gains required contextDir Type.Object param. See VER-001 for full criteria_results.",
+  "verification": "VER-001"
+}

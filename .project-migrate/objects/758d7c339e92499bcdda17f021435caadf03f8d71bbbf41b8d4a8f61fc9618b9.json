@@ -1,0 +1,17 @@
+{
+  "title": "Apply thinking-seam enforcement in pi-jit-agents",
+  "status": "proposed",
+  "description": "Apply the DEC-0002 decision: executeAgent enforces thinking=off when forced toolChoice is present, emits a warning naming the agent and the incompatibility.",
+  "acceptance_criteria": [
+    "executeAgent inspects dispatch options for forced toolChoice",
+    "When forced toolChoice is present and compiled spec declares thinking: on, thinking is disabled and a warning is emitted via a structured diagnostic channel",
+    "Non-forced dispatches continue to honor the spec's thinking field",
+    "Unit test covers: forced-toolChoice + thinking:on (warning + thinking off), forced-toolChoice + thinking:off (no warning), free-form + thinking:on (thinking forwarded)"
+  ],
+  "depends_on": [
+    "STORY-001"
+  ],
+  "gates": [
+    "DEC-0002"
+  ]
+}

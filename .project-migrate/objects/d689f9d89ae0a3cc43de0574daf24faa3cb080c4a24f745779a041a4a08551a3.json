@@ -1,0 +1,10 @@
+{
+  "title": "Agent steps should declare block write-back targets — memory accumulates as side effect of work, not separate task",
+  "body": "Currently an agent step produces output (StepOutputSpec in types.ts:114 — format, schema, path) but persisting results to project blocks requires a separate block step wired manually in the workflow YAML. This means memory accumulation is an authoring burden, not automatic. Extension: add an optional output.block field to StepOutputSpec (e.g., output.block: decisions) that tells the workflow executor to appendToBlock() or updateItemInBlock() after the agent returns. The block API (block-api.ts) handles validated writes. The schema comes from .project/schemas/<blockName>.schema.json. The agent doesn't know it's building memory — the step spec declares the write target, the executor persists it. Domain-agnostic: a sales agent writes to a leads block, a code agent writes to a decisions block, a review agent writes to a findings block. The write-back runs after output validation, using the same atomic write path as the block step type (step-block.ts).",
+  "location": "packages/pi-workflows/src/types.ts:114, packages/pi-workflows/src/step-agent.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "human"
+}

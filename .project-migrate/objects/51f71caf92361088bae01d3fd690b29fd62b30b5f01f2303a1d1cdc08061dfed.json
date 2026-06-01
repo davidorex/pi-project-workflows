@@ -1,0 +1,10 @@
+{
+  "title": "Per-agent tool-call budget tracking — framework-level counting and enforcement of tool-call budgets",
+  "body": "gsd-2's prompts articulate web search budgets ('max ~15 per session', 'Target 3-5 total web searches for a typical research unit') but leave enforcement to the LLM's self-discipline. The framework has no mechanism to count tool calls by type across agent invocations or enforce limits. This is the tool-call counterpart to issue-042 (token budgeting across DAG edges): who counts calls, where is the count stored, how is over-budget handled. In our framework this is either a monitor collector that tracks tool_results counts by tool name and classifies over-budget as FLAG, or a first-class budget field on the agent spec (e.g., budget: { web_search: 5, grep: unlimited }) enforced by the dispatch runtime. Without this, agents either self-regulate (unreliable) or have no budget at all (wasteful).",
+  "location": "packages/pi-behavior-monitors/index.ts, packages/pi-workflows/src/step-agent.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-behavior-monitors",
+  "source": "human"
+}

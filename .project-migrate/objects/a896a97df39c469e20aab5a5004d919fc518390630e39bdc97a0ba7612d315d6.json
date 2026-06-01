@@ -1,0 +1,11 @@
+{
+  "title": "Classify calls with thinking enabled return empty text — model puts verdict in thinking block",
+  "body": "classifyPrompt() passes thinkingEnabled: true to complete(). With thinking enabled, the model can place its entire response (including the CLEAN/FLAG/NEW verdict) inside the thinking block and return no text content. extractText() filters for type === 'text' only, so thinking content is invisible. parseVerdict('') hits the unrecognized format path and returns verdict: 'error'. Observed on fragility monitor: 'classify failed: Unrecognized verdict format: \"\"'. Immediate fix: extractText() should fall back to thinking block content when no text blocks are present. This issue is also a symptom of issue-025 — unifying the classify path with agent specs eliminates this bug class entirely since the agent output pipeline already handles thinking extraction.",
+  "location": "packages/pi-behavior-monitors/index.ts:1169",
+  "status": "resolved",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-behavior-monitors",
+  "source": "human",
+  "resolved_by": "extractResponseText() replaces extractText() in classifyPrompt() — falls back to thinking block content when no text parts present. Agent path uses extractResponseText() natively. Both paths now handle thinking-only responses."
+}

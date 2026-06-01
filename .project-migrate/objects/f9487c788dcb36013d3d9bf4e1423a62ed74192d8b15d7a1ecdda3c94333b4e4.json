@@ -1,0 +1,30 @@
+{
+  "title": "Schema versioning and evolution",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-project",
+  "layer": "L2",
+  "description": "Schemas have no version field, no $id, no migration story, no $ref composition, no schema reuse via $ref. Schemas drift silently across projects and across time. A schema rename or field rename has no backward-compatibility path. Schemas are effectively copy-paste snapshots with no evolution protocol.",
+  "evidence": [
+    {
+      "file": ".project/schemas/decisions.schema.json",
+      "reference": "flat draft-07 schema with no $id, no version, no allOf / anyOf composition"
+    },
+    {
+      "file": ".project/schemas/rationale.schema.json",
+      "reference": "duplicates fields from decisions.schema.json with no $ref to a shared schema — rename in one does not propagate"
+    },
+    {
+      "file": "CLAUDE.md",
+      "reference": "'All schemas are user-customizable. Edit .project/schemas/*.schema.json to add fields, change enums, or restructure — no code changes needed.' — no mention of migration or version compatibility"
+    }
+  ],
+  "impact": "Long-term schema evolution is undefined. Projects that adopted the framework early and never updated their .project/schemas/ drift from projects that adopted later. There is no way for tooling to know what schema version a block conforms to.",
+  "canonical_vocabulary": "schema evolution; JSON Schema $id; schema registry; schema versioning",
+  "proposed_resolution": "Add a required $id (URI) and version field on every schema. schema-validator reads version and can apply migration functions. Introduce a schema-migrations registry. Schema composition via $ref becomes the standard way to express shared fields (e.g. a common 'authorship.schema.json' imported by every block schema).\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `899bcc3` (Step 4 6 shared enum schemas + schema-migrations.ts + schema-validator $ref resolution) + `a4e8c9c` (Step 5.1 15 registry schemas $id+version + 3 $ref consolidations). 23 schemas (8 framework + 15 registry) carry $id (pi-context://schemas/<name>) + version: '1.0.0'; schema-migrations.ts ships per-schema migration registry + runMigrations chain; schema-validator pre-registers + resolves $ref. Description text above preserves the forensic record of the pre-closure state.",
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_decisions": [],
+  "related_issues": []
+}

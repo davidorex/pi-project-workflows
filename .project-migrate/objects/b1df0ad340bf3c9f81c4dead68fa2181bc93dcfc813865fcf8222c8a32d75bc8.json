@@ -1,0 +1,29 @@
+{
+  "title": "Agent-spec template-path heuristic bypasses canonical resolveContextDir(cwd) resolver established in FGAP-026 closure",
+  "status": "identified",
+  "package": "@davidorex/pi-jit-agents",
+  "priority": "P2",
+  "layer": "L1",
+  "description": "Agent-spec template-path resolution at packages/pi-jit-agents/src/agent-spec.ts treats template paths as filesystem-relative-to-spec-dir at parse time. The canonical substrate-dir resolver `resolveContextDir(cwd)` established in FGAP-026 closure (DEC-0015 enacted) is the canonical path resolution surface for substrate paths. Agent-spec template paths bypass this canon — the parse-time path interpretation is heuristic, not routed through the same resolver that project-context paths use. The bypass creates two inconsistent path-handling conventions inside the same framework.",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+      "lines": "300",
+      "reference": "Discovered-gap #1: 'FGAP-026 (closed): Context-dir resolver is canonical; all path construction should use resolveContextDir(cwd). The hardcoded template-path heuristic bypasses this canon (templates are assumed to be relative to spec dir, resolved at parse-time). Agent-spec path resolution should flow through the canonical resolver for consistency with project-context canon.'"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/agent-spec.ts",
+      "lines": "20-31",
+      "reference": "resolvePromptField + template-path interpretation lives at parse-time inside agent-spec.ts; no call to resolveContextDir"
+    }
+  ],
+  "impact": "Path-handling conventions inside pi-jit-agents and pi-context diverge. Substrate consumers benefit from FGAP-026's canonical resolver (cascading bootstrap pointer, configurable substrate-dir name); agent-spec consumers do not. Cross-package code that needs to resolve both types of paths must understand two separate conventions. Substrate relocation (.context vs .pi-context vs custom name) does not automatically apply to agent-spec template paths.",
+  "proposed_resolution": "Code at packages/pi-jit-agents/src/agent-spec.ts: route agent-spec template-path resolution through the canonical resolveContextDir(cwd) resolver (or an equivalent agent-spec-dir resolver that delegates to the same canon). The fix presumes FGAP-153 closure (narrowing the resolvePromptField heuristic) — the resolver change is on the template branch only, not on the inline branch. Schema-level: FGAP-170 (AgentSpec JSON Schema) documents path-resolution semantics so callers know which paths flow through which resolver.",
+  "canonical_vocabulary": "canonical path-resolver dispatch",
+  "related_decisions": [
+    "DEC-0015"
+  ],
+  "related_features": [
+    "FEAT-001"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "title": "Agent-as-tool dispatch home — narrowed to a NEW dedicated pi-agent-dispatch extension whose ONLY scope is the sub-agent→sibling-agent pi.registerTool surface; jit-agents stays library and is imported directly by orchestrator + workflows + monitors",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-jit-agents",
+  "layer": "L4",
+  "description": "Refined framing (2026-05-26, after working-out with three-consumer constraint). Original FGAP-112 framed DEC-0044 as a binary conflict with JI-021 (orchestrator uses jit-agents directly), with two coherent paths. Working-out collapsed the disjunction: (1) jit-agents is canonically library-not-extension per CLAUDE.md package table + docs/planning/jit-agents-spec.md four-boundary-surfaces definition — B1 (jit-agents-grows-extension-surface) is dead. (2) jit-agents must be usable by orchestrator AND pi-workflows AND pi-behavior-monitors (DEC-0049 uniform-agent axiom) — all three consume jit-agents as a SHARED LIBRARY via direct npm import (TASK-080 is establishing this for workflows + monitors right now). (3) JI-021 'orchestrator uses jit-agents directly' is honored under any path where the orchestrator's own use is a library import — JI-021 does NOT speak to where the sub-agent→sibling-agent registration site lives. (4) The remaining narrow question is exclusively: where does pi.registerTool('call-agent', …) — the surface that exposes agent-as-tool dispatch to sub-agents executing inside pi -p subprocesses — live. (5) Two candidates remained: Path A = dedicated pi-agent-dispatch extension; Path B2a = pi-workflows hosts the registration. Path B2a fails because monitor subprocesses would have to runtime-load pi-workflows to gain agent-as-tool capability, recreating a directional monitors→workflows runtime-load edge precisely when TASK-080 dismantles the source-import edge of the same shape (empirically verified: monitor index.ts:25-27 currently imports createAgentLoader+compileAgentSpec+AgentSpec from pi-workflows, all marked for deletion by TASK-080). (6) Path A survives all constraints. The narrowed Path A is the determinate framing.",
+  "evidence": [
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0044.decision (full): 'the agents-as-tools dispatch surface registers in a NEW dedicated agent-dispatch extension that wraps the pi-jit-agents library' — verbatim from the enacted decision."
+    },
+    {
+      "file": "analysis/2026-05-26-jit-agents-user-intentions.jsonl",
+      "reference": "JI-021 user verbatim: orchestrator uses jit-agents directly. JI-010 user verbatim: jit-agents owns 'everything between I have a spec and I have a typed result.' JI-038 user verbatim: settle DEC-0044 by exploring jit-agents."
+    },
+    {
+      "file": "analysis/2026-05-26-project-vs-jit-intentions-eval.jsonl",
+      "reference": "EV-001 conflict — flagged the divergence with JI-010/021/038 as the contradicted intentions."
+    },
+    {
+      "file": ".project/tasks.json",
+      "reference": "TASK-080.notes + TASK-080.acceptance_criteria already encode 'NOTE: this scope assumes the user-intent framing (orchestrator uses jit-agents directly per JI-021/010); DEC-0044 new-extension home (EV-001 conflict) awaits separate re-anchoring and is NOT a target of this task.'"
+    }
+  ],
+  "impact": "Narrows DEC-0044 to a smaller and clearer surface than the original 'extension wrapping pi-jit-agents' language suggested. The dispatch extension's scope is EXCLUSIVELY the sub-agent→sibling-agent pi.registerTool surface; it does NOT wrap or intermediate the orchestrator's use of jit-agents (which is a direct library import per JI-021). Unblocks FEAT-004 (registration locus = the new pi-agent-dispatch extension), FEAT-005 (capability-clamp lives in the dispatch extension's tool implementation, calling jit-agents library with grant ⊆ enforcement at the boundary), and FGAP-099 (clamp re-homes to the dispatch extension after its construction). TASK-080's body (whole agent layer consumption as shared library) is unchanged and remains correct under this narrowing.",
+  "canonical_vocabulary": "agent-as-tool registration site / pi-jit-agents library scope / extension peer-load symmetry / uniform-agent dispatch surface",
+  "proposed_resolution": "ADOPT NARROWED PATH A as canon. Concretely: (1) jit-agents stays library, four boundary surfaces (load/compile/execute/introspect), per its spec — NO extension surface added. (2) Orchestrator + pi-workflows + pi-behavior-monitors consume jit-agents as a shared npm library via direct import (TASK-080 finishes this for workflows + monitors). (3) A NEW extension package pi-agent-dispatch (FEAT-004's home) registers EXACTLY ONE tool: pi.registerTool('call-agent', …) (name TBD), whose implementation calls jit-agents' executeAgent() under the hood, enforcing parent-grant ⊆ child-grant clamp (FEAT-005) at the dispatch boundary. (4) pi-agent-dispatch is loaded peer-to-peer by any subprocess context whose sub-agents may invoke siblings — workflow subprocesses, monitor subprocesses, orchestrator if it ever runs agents that need agent-as-tool. (5) Edit DEC-0044 to replace 'a NEW dedicated agent-dispatch extension that wraps the pi-jit-agents library' with the narrower 'a NEW dedicated pi-agent-dispatch extension whose ONLY scope is the agent-as-tool pi.registerTool surface; pi-jit-agents remains library and is imported directly by orchestrator, workflows, and monitors; the extension does not wrap or intermediate library use, it exclusively provides the agent-as-tool registration site for sub-agent dispatch.' (6) Close this FGAP on DEC-0044 edit. Path B variants (B1 jit-agents-as-extension; B2a workflows-hosts-registration; B2b no-agent-as-tool-surface) are documented in this gap's description as eliminated and NOT live options. | CLOSED 2026-05-26: NARROWED PATH A adopted as canon. Closing commits: 3da9edc (FGAP-112 narrowing — three-consumer working-out, B1/B2a/B2b eliminated, narrowed Path A determinate) + a71c782 (DEC-0044 body narrowed to match: extension scope = ONLY the sub-agent→sibling-agent pi.registerTool site + dispatch-boundary capability clamp; jit-agents stays library imported directly by orchestrator + workflows + monitors). Verification: VER-051 (verification_verifies_item edge VER-051 → FGAP-112). Schema extension required for canonical closure: verification.target_type enum extended with 'framework-gap' (this commit) — prior schema admitted only task|phase|requirement.",
+  "related_decisions": [
+    "DEC-0044",
+    "DEC-0047",
+    "DEC-0048"
+  ],
+  "related_features": [
+    "FEAT-001",
+    "FEAT-004",
+    "FEAT-005"
+  ]
+}

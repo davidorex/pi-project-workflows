@@ -1,0 +1,20 @@
+{
+  "description": "FGAP-074 C6 — docs rename. README.md (~18) + CLAUDE.md (~5) + packages/pi-context/skill-narrative.md (~26): /project -> /context + tool-name updates; any .agent.yaml / .workflow.yaml / .monitor.json referencing /project or project-* tools. npm run skills regenerates SKILL.md. Green.",
+  "status": "completed",
+  "files": [
+    "README.md",
+    "CLAUDE.md",
+    "packages/pi-context/skill-narrative.md"
+  ],
+  "acceptance_criteria": [
+    "README + CLAUDE + skill-narrative updated to /context + context-* tool names",
+    "Any bundled .agent.yaml/.workflow.yaml/.monitor.json referencing /project or project-* tools updated",
+    "npm run skills regenerated (SKILL.md is a build artifact, not hand-edited)",
+    "build && check && test green"
+  ],
+  "depends_on": [
+    "TASK-071"
+  ],
+  "notes": "Decomposition chunk C6. Maps to Claude task #65. FGAP-074.",
+  "verification": "VER-043"
+}

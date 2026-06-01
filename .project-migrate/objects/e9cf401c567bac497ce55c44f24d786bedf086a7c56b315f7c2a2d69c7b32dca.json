@@ -1,0 +1,10 @@
+{
+  "title": "Execution trace debugger — capture full input→template→LLM→parse→result chain for workflow steps and monitor classify calls",
+  "body": "When a workflow step fails, a monitor misclassifies, or a block write is rejected, nothing captures the full execution chain: what input arrived, what the template rendered to, what the LLM received as prompt, what it produced, how the response was parsed, where it diverged from the expected schema. Issue-023 covers monitor session capture specifically. This issue is broader: a debugger layer that captures execution traces for all agent invocations — workflow steps (via dispatch subprocess session logs, already partially captured in .workflows/runs/sessions/), monitor classify calls (no capture currently), and block validation failures (error message only, no input context). The debugger surface should be queryable via SDK functions (e.g., stepTrace(runId, stepName), classifyTrace(monitorName, timestamp)) and inspectable via tools so the LLM can self-diagnose failures without the user needing to read raw log files. This is the missing fractal element: SDK describes capability, validator describes correctness, monitors describe behavior, debugger describes execution.",
+  "location": "packages/pi-workflows/src/workflow-executor.ts, packages/pi-behavior-monitors/index.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "critical",
+  "package": "pi-project-workflows",
+  "source": "human"
+}

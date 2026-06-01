@@ -1,0 +1,45 @@
+{
+  "target": "TASK-035",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T06:40:00Z",
+  "evidence": "Sub-phase 2.2 (resolve-items-by-id bulk) landed at HEAD 2ddf85f. Library resolveItemsByIds exported from project-sdk.ts:812 (Map<string, ItemLocation | null> return shape; wraps existing buildIdIndex; single index build per call). Pi tool resolve-items-by-id registered at index.ts:1044 coexisting with singular resolve-item-by-id at index.ts:1018. Orchestrator script scripts/orchestrator/resolve-items-by-id.ts shebang-executable. Tests: pi-context 407 → 413 (+6 covering all-found/partial-found/none-found/cross-block/duplicate-input/empty-input). Husky pre-commit gate green at commit time. Live runtime demo resolved DEC-0015/FGAP-035/TASK-034 across 3 distinct block kinds (decisions/framework-gaps/tasks) in a single bulk invocation.",
+  "criteria_results": [
+    {
+      "criterion": "resolveItemsByIds(cwd, ids) library exported from project-sdk.ts wrapping buildIdIndex",
+      "status": "passed",
+      "evidence": "project-sdk.ts:812 export function resolveItemsByIds(cwd: string, ids: string[]): Map<string, ItemLocation | null>"
+    },
+    {
+      "criterion": "resolve-items-by-id pi tool registered with Type.Array(Type.String()) param shape",
+      "status": "passed",
+      "evidence": "index.ts:1044 pi.registerTool({name: \"resolve-items-by-id\", parameters: Type.Object({ids: Type.Array(Type.String())}), ...})"
+    },
+    {
+      "criterion": "Singular resolve-item-by-id tool preserved unchanged",
+      "status": "passed",
+      "evidence": "index.ts:1018 singular tool definition intact; bulk variant coexists"
+    },
+    {
+      "criterion": "scripts/orchestrator/resolve-items-by-id.ts shebang-tsx executable",
+      "status": "passed",
+      "evidence": "-rwxr-xr-x 3495 bytes; --ids csv parsing + --format json|table"
+    },
+    {
+      "criterion": "Tests cover all-found/partial-found/none-found/cross-block/duplicate-input/empty-input",
+      "status": "passed",
+      "evidence": "+6 tests in pi-context test suite (407 → 413)"
+    },
+    {
+      "criterion": "Husky pre-commit gate green at commit time",
+      "status": "passed",
+      "evidence": "Commit 2ddf85f landed without --no-verify"
+    },
+    {
+      "criterion": "Live-substrate runtime demo against this repo",
+      "status": "passed",
+      "evidence": "Bulk resolve of DEC-0015/FGAP-035/TASK-034 returns correct JSON map; each id resolves to its block (decisions/framework-gaps/tasks) with full item payload"
+    }
+  ]
+}

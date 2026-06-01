@@ -1,0 +1,22 @@
+{
+  "name": "Future-proofing",
+  "intent": "Add safety infrastructure (recursion depth guard) and deferred capabilities (context forking, async execution) required before Phase 6 nested workflow invocation can be unblocked. (pre-FGAP-026 planning artifact)",
+  "status": "planned",
+  "success_criteria": [
+    {
+      "criterion": "PI_WORKFLOW_MAX_DEPTH env var limits nested workflow invocation depth",
+      "verify_method": "command"
+    }
+  ],
+  "specs": [
+    {
+      "number": 1,
+      "name": "Workflow recursion depth guard",
+      "intent": "Prevent unbounded recursive workflow spawning via env-var depth tracking",
+      "status": "planned"
+    }
+  ],
+  "artifacts_produced": [
+    "packages/pi-workflows/src/dispatch.ts"
+  ]
+}

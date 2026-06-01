@@ -1,0 +1,33 @@
+{
+  "name": "Expand capabilities",
+  "intent": "Add ad-hoc agent invocation (bridging the pi-subagents usability gap) and worktree isolation for parallel steps (preventing filesystem conflicts in concurrent execution). (pre-FGAP-026 planning artifact)",
+  "status": "planned",
+  "success_criteria": [
+    {
+      "criterion": "/workflow run-agent dispatches a single agent step without a workflow spec",
+      "verify_method": "command"
+    },
+    {
+      "criterion": "parallel: steps with worktree: true create isolated git worktrees per sub-step",
+      "verify_method": "command"
+    }
+  ],
+  "specs": [
+    {
+      "number": 1,
+      "name": "Ad-hoc single-agent invocation",
+      "intent": "Allow agent dispatch from command line or tool call without a .workflow.yaml",
+      "status": "planned"
+    },
+    {
+      "number": 2,
+      "name": "Worktree isolation for parallel steps",
+      "intent": "Prevent filesystem conflicts when parallel agents write files concurrently",
+      "status": "planned"
+    }
+  ],
+  "artifacts_produced": [
+    "packages/pi-workflows/src/worktree.ts",
+    "packages/pi-workflows/src/index.ts"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "title": "Cross-package src consumers catch BootstrapNotFoundError via instanceof — same FGAP-080 module-instance pattern, outside the orchestrator-CLI scope",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-jit-agents",
+  "layer": "L4",
+  "description": "FGAP-080 (closed) converted ORCHESTRATOR-CLI catches of pi-context error classes to name-based, because instanceof across the pi-context package boundary is module-instance-fragile under tsx (a class reached via a subpath import vs a transitive relative import resolves to two different objects). Surfaced during Unit B (FGAP-080) by the fresh-context adversarial probe: the SAME pattern lives in cross-package SRC consumers outside FGAP-080's filed scope — pi-jit-agents/src/compile.ts:242,263 and pi-workflows/src/step-shared.ts:181 catch BootstrapNotFoundError via `instanceof`. These are RUNTIME-SAFE today (pi loads pi-jit-agents/pi-workflows as built dist via node = a single module instance; their tests import fresh under tsx --test = single instance) — so they are NOT in the demonstrated-fragile tsx-CJS-interop path the orchestrator CLIs hit. But the FGAP-080 PRINCIPLE (name-based across the pi-context package boundary) applies, and a future tsx-load or refactor of the throw path could break them silently.",
+  "evidence": [
+    {
+      "file": "packages/pi-jit-agents/src/compile.ts",
+      "lines": "242,263",
+      "reference": "if (err instanceof BootstrapNotFoundError) — cross-package (imports BootstrapNotFoundError from @davidorex/pi-context/project-dir)"
+    },
+    {
+      "file": "packages/pi-workflows/src/step-shared.ts",
+      "lines": "181",
+      "reference": "if (!(err instanceof BootstrapNotFoundError)) throw err — cross-package"
+    },
+    {
+      "file": "scripts/orchestrator/write-schema.ts",
+      "reference": "precedent name-based fix (err.name === 'BootstrapNotFoundError')"
+    }
+  ],
+  "impact": "Low/latent: no live failure (runtime path is single-instance), but the FGAP-080 pattern is not fully eliminated — leaving 3 principle-violating sites that could regress to silent-miss if their load/throw path changes. Closing FGAP-080 for orchestrator scope while these remain is the residual.",
+  "canonical_vocabulary": "name-based error identity across package boundary, module-instance fragility",
+  "proposed_resolution": "Convert the 3 cross-package src-consumer catches to name-based (err instanceof Error && err.name === 'BootstrapNotFoundError'), matching the FGAP-080/077 precedent; drop the now-unused BootstrapNotFoundError imports. Trivial + uniform. Optionally consolidate via a canonical isBootstrapNotFoundError(err) predicate exported from pi-context (would also DRY the orchestrator CLIs + write-schema/accept-all). Batch with a future hygiene pass or Unit C. [CLOSED 2026-05-23 — commit 4fb4d1e / TASK-062 / VER-034: compile.ts:242,263 + step-shared.ts:181 instanceof BootstrapNotFoundError -> name-based; unused imports dropped.]",
+  "related_decisions": [
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

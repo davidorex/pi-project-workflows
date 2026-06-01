@@ -1,0 +1,5 @@
+{
+  "description": "Domain logic lives in YAML specs, templates, and schemas — never in the runtime",
+  "enforcement": "review",
+  "severity": "error"
+}

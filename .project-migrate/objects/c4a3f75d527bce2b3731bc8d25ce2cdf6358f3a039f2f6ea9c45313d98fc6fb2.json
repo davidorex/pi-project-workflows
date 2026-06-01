@@ -1,0 +1,39 @@
+{
+  "title": "canonical_id is permanent (primary-key semantics); display_name is the relabel surface",
+  "status": "enacted",
+  "context": "Investigation 2026-05-17 confirmed via relations.schema.json + config.schema.json that the substrate already separates stable opaque identity from mutable label: relations.json edge.relation_type stores the registered relation_type canonical_id (not the label); config.relation_types[] carries canonical_id + display_name as separate fields; same pattern for config.block_kinds[] (canonical_id + display_name per DEC-0023). This means human-facing relabeling is free — edit display_name, mtime-invalidated config re-read, zero edge migration. The migration-cost cases (FGAP-060) are ONLY canonical_id-itself changes. Without an explicit permanence discipline, LLMs/users may rename canonical_ids casually, triggering cross-file value-rename churn (relations.json edges + item ids embedded with prefix per DEC-0026/0027).",
+  "decision": "ENACTED: canonical_ids carry primary-key semantics — set once, never renamed in normal operation. This applies to relation_type canonical_ids, block_kind canonical_ids, lens ids, layer ids, and item canonical_ids (DEC-NNNN / FGAP-NNN / etc.). All human-facing relabeling goes through display_name (config.*.display_name) + schema.title (DEC-0023), which are freely revisable as live data. Renaming a canonical_id is the rare, deliberate, migration-cost operation that the FGAP-060 renameCanonicalId engine exists to serve — not a routine edit. Consequence for vocabulary settlement (DEC-0026..0034): the INITIAL canonical_id choice matters because it persists; the display label does not lock in. This reduces most rename anxiety to a non-event (relabel via display_name) and isolates true migration to the deliberate canonical_id-change case.",
+  "consequences": [
+    "Vocabulary relabeling (block-kind names, relation_type labels, lens labels, layer labels) is a live config.display_name edit — no migration, no rebuild.",
+    "renameCanonicalId (FGAP-060) is reserved for deliberate canonical_id changes (e.g. ID-prefix renumbering per DEC-0026/0027), not routine relabeling.",
+    "Initial canonical_id choices (DEC-0030 relation_type shape; DEC-0026/0027 prefix conventions) are the permanent decisions; their display_names remain revisable.",
+    "Schema/CLAUDE.md substrate-canon section gains the canonical_id-permanent rule so future authoring honors it.",
+    "Where a canonical_id MUST change, it routes through the FGAP-060 engine (edges + home-id + out-of-substrate report), never hand-edited."
+  ],
+  "references": [
+    {
+      "label": "relations.schema.json edge.relation_type = registered canonical_id",
+      "path": "packages/pi-context/schemas/relations.schema.json"
+    },
+    {
+      "label": "config.schema.json relation_types[] canonical_id + display_name split",
+      "path": "packages/pi-context/schemas/config.schema.json",
+      "lines": "70-84"
+    },
+    {
+      "label": "DEC-0023 schema title as display_name authority",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "FGAP-060 value-rename engine this discipline scopes",
+      "path": ".project/framework-gaps.json"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-060"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-17T12:05:00Z"
+}

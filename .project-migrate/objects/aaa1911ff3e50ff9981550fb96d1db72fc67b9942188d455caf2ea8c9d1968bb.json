@@ -1,0 +1,31 @@
+{
+  "title": "Composite/join operations across blocks missing at tool surface — N+1 read pattern for natural queries (e.g. tasks × verifications join)",
+  "status": "closed",
+  "priority": "P2",
+  "package": "@davidorex/pi-context",
+  "layer": "L2",
+  "description": "Natural cross-block queries require multiple round-trip tool calls. Example: 'show me all completed tasks with their verifications' requires read-block(tasks) → filter-block-items(tasks, status=completed) → for each completed task: resolve-item-by-id(verification VER-id). Minimum 3 calls (or N+1 if resolved per item) for a single natural query. The closure-table primitives (walkDescendants / walkAncestors / findReferences) traverse edges but don't compose with cross-block resolution at the tool surface; gatherExecutionContext (TASK-039) is unit-driven for the DEC-0017 context-bundle use-case, not a general cross-block join. Surfaced by constrained-harness LLM evaluation: 'show completed tasks with their verifications' couldn't be answered in one tool call.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "Registered tool surface: filter-block-items + resolve-item-by-id + resolve-items-by-id are independent primitives; no compose-join tool wraps them for FK-style block-to-block joins"
+    },
+    {
+      "file": "packages/pi-context/src/execution-context.ts",
+      "reference": "gatherExecutionContext composes per unit-kind context-contract; not a general join primitive for arbitrary block pairs"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0014 — harness-confined main LLM bears the cost of N round-trip calls when one composite call would suffice"
+    }
+  ],
+  "impact": "N+1 round-trip cost on natural cross-block queries when the substrate has the data to satisfy them in one composite call. Under DEC-0014 each tool call is a context-window event; N+1 calls multiply prompt + response tokens proportionally. Substrate is queryable; the tool surface forces decomposition the substrate doesn't require.",
+  "canonical_vocabulary": "block-to-block join primitive",
+  "proposed_resolution": "Add a join-blocks-on-field tool: signature `joinBlocks(cwd, leftBlock: string, rightBlock: string, leftField: string, rightField: string, leftPredicate?: FilterPredicate): Array<{left: ItemRecord, right: ItemRecord | null}>` returning paired records where leftItem[leftField] === rightItem[rightField]. Library function in project-sdk.ts; pi tool + orchestrator script per DEC-0019 dual-surface. Optional leftPredicate parameter filters the left side before join (covers the 'completed tasks × verifications' case via leftPredicate={field:status, op:eq, value:completed}). Out of scope: many-to-many joins (require composite key shape; addressable later via closure-table walks once relations.json has real edges per Phase 5).",
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0019"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

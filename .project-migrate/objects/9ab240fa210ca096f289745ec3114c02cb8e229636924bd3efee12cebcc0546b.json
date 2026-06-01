@@ -1,0 +1,5 @@
+{
+  "description": "Agents appearing in 2+ workflows MUST accept variable input shapes — identical input wiring across workflows is copy-paste, not composition. Templates must include conditionals that adapt to input variation.",
+  "enforcement": "review",
+  "severity": "warning"
+}

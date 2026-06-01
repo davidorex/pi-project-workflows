@@ -1,0 +1,13 @@
+{
+  "description": "FGAP-026 closure phase 3 (Step 8.7.3; Claude Code Task #23): Work-unit context composition substrate per DEC-0017 — context contract substrate (FGAP-030) + gather-execution-context primitive (FGAP-031)",
+  "acceptance_criteria": [
+    "context contract substrate in place (block kind OR composition-lens encoding; closure picks)",
+    "gather-execution-context(unitId, kind) JS export + tool wrapper",
+    "bidirectional traversal per declared relation_types in contract",
+    "ContextBundle structure returned as one tool call",
+    "FGAP-030 + FGAP-031 closed; FGAP-029 fully closed"
+  ],
+  "status": "completed",
+  "verification": "VER-013",
+  "notes": "CLOSED at HEAD 02acf92. Phase 3 (FGAP-026 closure phase 3: Work-unit context composition substrate per DEC-0017) complete via 3 atomic sub-phases (3.1 context-contracts block kind / 3.2 gatherExecutionContext primitive / 3.3 integration test). Test counts: pi-context 428 → 458 (+30 cumulative). DEC-0017 substrate surface satisfied. FGAP-029/030/031 closed in this cascade. Phase 4 unblocked. See VER-013 + child VER-010/011/012."
+}

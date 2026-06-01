@@ -1,0 +1,31 @@
+{
+  "title": "Precise-diagnostic-without-repair-surface pattern: validators surface unresolvable diagnostics with no repair tool — UX pattern unfiled",
+  "status": "identified",
+  "priority": "P2",
+  "package": "@davidorex/pi-context",
+  "layer": "L4",
+  "description": "Multiple pi-context validator tools emit precise actionable diagnostics that the harness-confined main LLM (DEC-0014) cannot resolve through any registered tool. Surfaced by constrained-harness LLM evaluation under --tools pi-context-only constraint. Specific instances: project-validate-relations returns 'No .project/config.json — cannot validate relations'; project-edges-for-lens returns 'No .project/config.json — run /project init first'; project-validate returns 'tasks[TASK-031].phase references 8.7.1 which does not exist' (×10). None of these conditions has a repair tool — config.json authoring is Phase 5 (TASK-025) substrate-canon work; tasks[].phase free-text labels are FGAP-040 territory. Pattern: substrate exposes diagnostic surface precisely but the repair surface is absent. FGAP-028 names 'subcommand-only surfaces unreachable under DEC-0014' adjacent but doesn't capture the precise-diagnostic-orphan-repair pattern itself.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "project-validate-relations + project-edges-for-lens + project-validate tool error messages name conditions that have no repair-tool counterpart in the registered tool surface"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-040 (tasks[].phase free-text) + FGAP-041 (issues[].resolved_by free-text) describe substrate violations whose validator-flagged-but-unrepairable instances surface as this pattern"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0014 (harness-confined main LLM) — diagnostics that can only be repaired by exiting the harness violate the substrate-IS-operating-surface principle"
+    }
+  ],
+  "impact": "Under DEC-0014 a harness-confined main LLM receiving an unresolvable diagnostic has no path forward via the tool surface. The diagnostic surface is precise; the repair surface is absent — substrate-canon-wise the validator surface should pair with repair tools OR the diagnostic should defer with a tool-routable next-step pointer. Live: substrate writes outside the tool surface (e.g. Edit on .project/*.json) are forbidden per F-006 / DEC-0016; so the harness-confined LLM legitimately has no path. Compounds with FGAP-028 (subcommand-only surfaces) as the substrate-surface UX gap.",
+  "canonical_vocabulary": "diagnostic-repair surface symmetry",
+  "proposed_resolution": "(1) Audit all validator / read tools in pi-context that emit error strings naming substrate states the LLM cannot resolve via the tool surface. (2) For each: either pair with a repair tool (e.g. config-init writes a minimal config.json from prompts; task-update-phase rewrites a free-text phase value; relations-add adds a closure-table edge) OR change the diagnostic to point at the canonical repair path that DOES exist (e.g. error includes 'use context-init Phase 6 tool when shipped' OR 'this is Phase 5 substrate-canon work tracked at TASK-025'). (3) Substrate-canon principle: every validator-emitted error string SHOULD identify either a repair tool, an in-progress task, or a known-deferred phase — never a dead-end. Implementation arc: tied to Phase 4 + Phase 5 + Phase 6 of FGAP-026 closure (workflow-execute tools + arc-tracking-blocks + context-init/install/migrate respectively); FGAP-042 closes when validators have repair-tool pairs OR explicit deferred-state pointers.",
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0016"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

@@ -1,0 +1,5 @@
+{
+  "description": "Bundled workflow/agent/monitor specs live in their package directories: packages/pi-workflows/workflows/ for workflows, packages/pi-workflows/agents/ for agents, packages/pi-behavior-monitors/examples/ for monitor specs and templates",
+  "enforcement": "review",
+  "severity": "error"
+}

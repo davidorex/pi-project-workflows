@@ -1,0 +1,10 @@
+{
+  "title": "Route POC AJV instance through pi-project schema-validator's cache",
+  "body": "POC v2 (analysis/poc-degree-zero-lens/render.ts:77) creates its own AJV instance per run for config + relations validation, matching pi-project's schema-validator.ts ESM/CJS import shim pattern. Production form must consume the existing schema-validator cache rather than spinning parallel AJV instances per consumer. Without routing, every consumer (compile.ts lens injection, walk_descendants Nunjucks global, validateRelations gate, cluster-render) compiles its own schemas — duplicate state, duplicate compile cost, fragmented invalidation strategy. Pure integration discipline; no new mechanism needed. Surfaced as gap #20 in the POC v2 evaluation; classified as package-bound because it requires pi-project edit.",
+  "location": "packages/pi-context/src/schema-validator.ts",
+  "status": "open",
+  "category": "cleanup",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent"
+}

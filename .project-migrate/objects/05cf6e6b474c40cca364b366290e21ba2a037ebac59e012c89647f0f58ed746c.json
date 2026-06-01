@@ -1,0 +1,26 @@
+{
+  "title": "Materialized views over scoped blocks",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-project",
+  "layer": "L2",
+  "description": "There is no derived block kind. projectState() does in-memory aggregation but it is not a persisted, addressable, schema-validated block. There is no way to declare 'global issues_view.json is a derived index over per-scope finding registries' or 'open_work_view.json aggregates all non-terminal stories across features'.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/project-sdk.ts",
+      "reference": "projectState() computes derived metrics at query time but returns in-memory only — no persistence, no addressability, no schema"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "only writeable blocks exist; no concept of a read-only derived block"
+    }
+  ],
+  "impact": "Consumers who want a flat queryable view (the current issues.json shape) cannot have it alongside scope-owned registries without manual sync. Two sources of truth or fragile regeneration.",
+  "canonical_vocabulary": "materialized view (database canon)",
+  "proposed_resolution": "Add a view-block kind with a definition file that names source blocks, a projection function, and refresh triggers. block-api exposes readView(name) but disallows direct writes. Refresh fires on underlying block writes. Schemas describe the view shape.",
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_decisions": [],
+  "related_issues": []
+}

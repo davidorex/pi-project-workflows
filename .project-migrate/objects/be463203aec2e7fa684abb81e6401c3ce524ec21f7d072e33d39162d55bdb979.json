@@ -1,0 +1,10 @@
+{
+  "title": "Agent templates with tool-use output enforcement should drop output format instructions — template focuses on reasoning, tool definition handles output contract",
+  "body": "When tool-use structured output is active (issue-026 for monitors, issue-032 for workflow agents), the template's output instructions ('Respond with a JSON object: {...}' or 'Reply CLEAN/FLAG/NEW') become redundant — the toolChoice forces the schema shape regardless of what the template says. The template should focus purely on the classification/analysis task and reasoning guidance. Output format instructions in templates are a holdover from the prompt-based enforcement era. With tool-use, they add noise and can conflict with the tool definition (e.g., template says 'respond with JSON' but tool forces a different field set). The classify templates already have {% if json_output %} conditionals from the issue-025 migration. The fix: when tool-use enforcement is active, templates should not include output format instructions at all. The template rendering context should signal this (e.g., tool_enforced: true) so templates can omit the instructions block entirely. For workflow agent templates, the same principle applies: buildPrompt() in step-shared.ts:95-106 appends output instructions ('Your final response MUST be raw JSON only'). When tool-use dispatch is active, these instructions should be omitted.\n\nImpacted components: buildPrompt() in step-shared.ts (skip output instructions when phantom tool active), all classify.md templates in pi-behavior-monitors/examples/ (remove {% if json_output %} blocks), compileAgentSpec() template context (add tool_enforced flag).",
+  "location": "packages/pi-behavior-monitors/examples/*/classify.md, packages/pi-workflows/src/step-shared.ts:95",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project-workflows",
+  "source": "human"
+}

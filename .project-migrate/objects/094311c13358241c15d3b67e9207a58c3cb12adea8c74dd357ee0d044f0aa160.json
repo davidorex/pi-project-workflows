@@ -1,0 +1,36 @@
+{
+  "title": "composite-loader silently registers nothing in pointerless target dirs (loadContext graceful-degrade) + launch script lacks pointer-presence pre-flight check — operator gets a 'constrained' session with zero composites and no signal",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-agent-dispatch",
+  "layer": "L5",
+  "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gap 9 HIGH + F.4) empirically established: packages/pi-context/src/context.ts loadContext gracefully returns {config: null} when .pi-context.json pointer is absent. packages/pi-agent-dispatch/src/composite-loader.ts:82 buildForbiddenUnion(null) returns the framework-only FORBIDDEN_WHOLESALE_OPERATIONS set; composite-loader's iteration of config.tool_operations[] returns []. composite-loader.ts:103 returns {registered: [], skipped: []}. NO ERROR. The launched session sees: the 5 static pi-agent-dispatch tools (post-FGAP-117 closure) + zero composites — operator has no signal that composites are 'missing' vs 'none declared.' Symmetric concern at the launch-script layer: scripts/launch-constrained-pi.sh has no pre-flight that checks .pi-context.json existence + asserts config.tool_operations[] population matches operator intent. Operator launches against a fresh project + gets a session with vastly reduced capability + no warning.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "loadContext graceful-degrade path when .pi-context.json absent → returns {config: null}"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/composite-loader.ts",
+      "reference": "lines 82-104 — buildForbiddenUnion + iteration silently produce empty registered[] under config:null"
+    },
+    {
+      "file": "scripts/launch-constrained-pi.sh",
+      "reference": "no pointer-presence pre-flight; no observability around composite-loader's silent no-op"
+    },
+    {
+      "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+      "reference": "Audit commit 945dc93 gap 9 HIGH + F.4"
+    }
+  ],
+  "impact": "Operator observability gap. Launching against a pointerless target dir produces a session indistinguishable (from the operator's perspective) from a properly-configured launch with zero declared composites. Silent no-op is anti-canon per DEC-0047 no-deception clause + feedback_no_stderr_diagnostics (silent behavior drops violate canon).",
+  "canonical_vocabulary": "silent-no-op / operator-signal-gap / pointer-presence-pre-flight",
+  "proposed_resolution": "Two-layer enforcement per existing canon patterns: (a) composite-loader emits a TraceEntry warning (or returns a 'config_absent' marker in its return shape) when loadContext returns config:null; the extension factory surfaces this via pi.ui.notify (or equivalent observable surface) at startup — matches DEC-0047 no-deception clause + the TraceEntry pattern established for DEC-0002 thinking-seam warning; (b) scripts/launch-constrained-pi.sh adds a pre-flight `test -f \"$TARGET/.pi-context.json\" || warn` step before exec-ing pi — operator gets explicit notification + can decide whether to proceed or run /context init first. Neither layer requires canon evolution; both apply existing patterns (TraceEntry observability + pre-flight ceremony). Lands as part of FEAT-011 implementation cascade. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
+  "related_features": [
+    "FEAT-010"
+  ],
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0047"
+  ]
+}

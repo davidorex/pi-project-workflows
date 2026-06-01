@@ -1,0 +1,10 @@
+{
+  "title": "SDK query surface for execution history — lastRunResult, stepTrace, executionHistory functions",
+  "body": "projectState() shows current state. validateWorkflow() shows spec correctness. Nothing shows what happened in past executions. Run state lives in .workflows/runs/ as JSON files (state.json per run, session JSONL per step) but there's no SDK function to query it. An LLM can't inspect what went wrong without reading raw JSON files and knowing the directory structure. Needed: executionHistory(cwd, workflowName?) → list of runs with status/timing/usage summaries. lastRunResult(cwd, workflowName) → most recent run's state. stepTrace(cwd, runId, stepName) → full step result including session log path. These derive from existing .workflows/runs/ data — no new persistence needed, just query functions over what's already written. Follows the SDK pattern: derive dynamically from filesystem, add to workflow-sdk.ts exports, surface via /workflow status and the skill generator.",
+  "location": "packages/pi-workflows/src/workflow-sdk.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "human"
+}

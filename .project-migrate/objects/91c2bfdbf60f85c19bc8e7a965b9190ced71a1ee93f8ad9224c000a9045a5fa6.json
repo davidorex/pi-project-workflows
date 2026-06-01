@@ -1,0 +1,5 @@
+{
+  "description": "Never create, copy, modify, or delete files in .pi/ — it is the user's runtime testing directory",
+  "enforcement": "review",
+  "severity": "error"
+}

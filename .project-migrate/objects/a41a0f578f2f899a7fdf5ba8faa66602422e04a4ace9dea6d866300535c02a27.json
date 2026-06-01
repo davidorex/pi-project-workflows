@@ -1,0 +1,32 @@
+{
+  "title": "Full-state derivation capability (currentState) — derive the project's complete state from the substrate as an extension capability exposed dual-surface; do not hand-maintain it",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Zero-loss (DEC-0040, as amended 2026-05-21) requires the project's CURRENT STATE (focus / per-arc status / in-flight / next-action / blocked) to be a pure function of the SUBSTRATE — an EXTENSION capability, exposed via the dual surface (Pi tool + scripts/orchestrator/*) to BOTH the Pi runtime and the Claude Code harness (consumed exactly as filing is). FGAP-059 derives only what-is-next. UN-CONFLATION (DEC-0040 amendment): the earlier 'projection engine that regenerates MEMORY.md/HANDOFF/Claude-tasks/plan' framing conflated two layers — those are CLAUDE CODE HARNESS-owned files, not extension projections; the extension's job is to EXPOSE currentState, and the harness APPLIES it to refresh its own files (a harness workflow/skill, not extension code). CORE LANDED: sub-unit 2.6A (commit 0cbd676) shipped currentState(cwd) -> { focus, inFlight, nextActions, blocked } + the context-current-state Pi tool + scripts/orchestrator/current-state.ts (dual surface), reusing projectState + roadmap-plan topoSort/resolveStatusVocabulary; verified on the live .project. REMAINING: atomic-next refinement — v1 ranks open gaps by priority+id + unblocked tasks by topo, but is not active-arc-aware (it surfaces all open P1 gaps, not 'the one next thing'); enrich to weight the active arc / in-flight phase. Subsumes FGAP-059.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/project-sdk.ts",
+      "reference": "projectState derives partial state; no full focus/next/in-flight derivation; validateProject does not project to consuming surfaces"
+    },
+    {
+      "file": ".project/tasks.json",
+      "reference": "TASK-043 in-progress (superseded in-place migration) + TASK-044 planned (rename engine actually delivered) — stored state contradicts reality"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-059 atomic-next derives only next-action, not full state"
+    }
+  ],
+  "impact": "State drift = loss, violating the zero-loss goal. A fresh session is misled before it reads anything else: MEMORY.md auto-loads a wrong + truncated focus. Execution truth survives only in one hand-maintained gitignored file (HANDOFF).",
+  "canonical_vocabulary": "full-state-derivation, state-projection, derived-state, no-hand-stored-state, single-source-of-truth",
+  "proposed_resolution": "currentState(cwd) deriving complete state from the substrate, exposed dual-surface (Pi tool + orchestrator script) — usable from the Claude Code harness as filing is; the harness applies it to refresh its own working-memory files (harness-side, not extension-written, per DEC-0040 amendment). Core delivered in sub-unit 2.6A. Remaining (outcome-only): refine atomic-next to be active-arc/in-flight-aware rather than priority+id over all open gaps. Reuse projectState + roadmap-plan topo/status; do not parallel them. Extends FGAP-059.",
+  "related_decisions": [
+    "DEC-0040",
+    "DEC-0024",
+    "DEC-0036"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

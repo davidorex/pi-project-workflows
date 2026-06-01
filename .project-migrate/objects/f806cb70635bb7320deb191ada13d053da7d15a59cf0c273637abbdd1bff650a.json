@@ -1,0 +1,65 @@
+{
+  "target": "TASK-092",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-28",
+  "criteria_results": [
+    {
+      "criterion": "Each of 4 initial composite KINDS (read-files / git-log / grep-paths / command-allowlist) lands as a TRIPLE per DEC-0019/0020: library + Pi tool registration + CLI script",
+      "status": "passed",
+      "evidence": "16 implementation commits (4e722f0..ccad130). Library files at packages/pi-agent-dispatch/src/composites/{kind}.ts + sibling tests (4 commits e2fffc0/0afa1b4/98b382a/69ca081). Pi tool registration via composite-loader at extension-load (commit 30ccfc0). CLI scripts at scripts/orchestrator/composite-{kind}.ts (4 commits 371f9fe/a25c8df/6ea7b2a/680d849). Adversarial CHECK 5 PASS: 4 libs + 4 CLIs + 4 KIND_REGISTRY entries; CHECK 9 PASS: each CLI invokes matching runFn."
+    },
+    {
+      "criterion": "config.schema.json (.project + packaged samples/schemas mirror) + samples/conception.json gain tool_operations_forbidden[] property; AmendRegistry union + REGISTRY_DESCRIPTORS include tool_operations_forbidden as kind:string-array; ConfigBlock.tool_operations_forbidden? typed",
+      "status": "passed",
+      "evidence": "commit 4e722f0. Adversarial CHECK 8 PASS: tool_operations_forbidden present in .project/schemas/config.schema.json:469 + packages/pi-context/schemas/config.schema.json:214 + samples/conception.json:478 + context.ts:47 (ConfigBlock) + context.ts:94 (AmendRegistry) + context.ts:562 (REGISTRY_DESCRIPTORS). Runtime demo D1.a + D1.b PASS: schema admits the property + amendConfigEntry round-trip works."
+    },
+    {
+      "criterion": "author-tool-grant Pi tool registered: wraps amendConfigEntry on tool_operations[] + tool_operations_forbidden[]; refuses writer.kind != 'human' per DEC-0047; refuses ops in L1 ∪ L5 forbidden union",
+      "status": "passed",
+      "evidence": "commit ed9f66f. Adversarial CHECK 3 PASS: writer.kind=human gate at author-tool-grant-tool.ts:67 + forbidden-union gate at lines 78-91 + amendConfigEntry call at line 97 (gates fire BEFORE mutation). Runtime demo D4.a/b/c/d PASS: agent/monitor/workflow writer kinds rejected; human happy path writes successfully; forbidden-wholesale 'bash' add attempt refused with explicit error."
+    },
+    {
+      "criterion": "L1 forbidden-wholesale framework TS const FORBIDDEN_WHOLESALE_OPERATIONS = ['bash','write','edit','shell','execute'] in operation-vocab.ts with JSDoc citation referencing feedback_no_parallel_ungated_paths",
+      "status": "passed",
+      "evidence": "commit e1ad57b. Adversarial CHECK 1 PASS: FORBIDDEN_WHOLESALE_OPERATIONS const exists with all 5 expected tokens; TOOL_OPERATION_DEFAULTS verified to contain zero entries whose canonical_id matches any of the 5 tokens. JSDoc citation present per the L4 documentation requirement."
+    },
+    {
+      "criterion": "L2 engine test invariant in operation-vocab.test.ts asserts TOOL_OPERATION_DEFAULTS contains zero forbidden tokens; husky pre-commit fails on any addition",
+      "status": "passed",
+      "evidence": "commit e1ad57b. Test landed in operation-vocab.test.ts; pi-agent-dispatch test count 32 → 59 (27 new). Husky pre-commit (check + test) green at every commit in TASK-092 chain."
+    },
+    {
+      "criterion": "L3 runtime guard at extension load reads L1 ∪ L5 union (TOOL_OPERATION_DEFAULTS + config.tool_operations[] + config.tool_operations_forbidden[]); throws if any registered op in union",
+      "status": "passed",
+      "evidence": "commit 0256323. Adversarial CHECK 2 PASS: assertDefaultsClean called FIRST in extension factory at index.ts:39; composite-loader internally enforces forbidden union at composite-loader.ts:95 before pi.registerTool call at line 120. No bypass path. Runtime demo D3.b PASS: composite-loader refuses forbidden-wholesale 'bash' attempt with explicit refusal message."
+    },
+    {
+      "criterion": "composite-loader.ts: reads config.tool_operations[] at extension-load; for each entry of kind matching a registered KIND, registers Pi tool wrapping that kind's library function with instance_params closure-bound; refuses if canonical_id in L1 ∪ L5 union",
+      "status": "passed",
+      "evidence": "commit 30ccfc0. Implementation reads loadContext + dispatches per KIND_REGISTRY + closure-binds instance_params. Runtime demo D3.a PASS: registered=[demo-read-analysis, demo-git-recent], skipped=[demo-unknown-kind] (unknown KIND skipped, not failed). Adversarial CHECK 4 PASS: forbidden union checked before pi.registerTool."
+    },
+    {
+      "criterion": "Engine unit tests cover each KIND library function + composite-loader + author-tool-grant + L2 invariant + L3 runtime guard",
+      "status": "passed",
+      "evidence": "Test count: pi-agent-dispatch 32 (post-TASK-090) → 59 (post-TASK-092) = 27 new tests covering: 4 KIND libraries × 3 tests each (=12) + composite-loader 5 tests + author-tool-grant 7 tests + L2 invariant 1 test + L3 runtime guard 2 tests = 27. All 59/59 pass."
+    },
+    {
+      "criterion": "Each CLI script under scripts/orchestrator/composite-{kind}.ts invokes the same library function as its Pi tool sibling; CLI tested via runtime-demo",
+      "status": "passed",
+      "evidence": "4 CLI script commits (371f9fe/a25c8df/6ea7b2a/680d849). Adversarial CHECK 9 PASS: each CLI imports/invokes the matching runReadFiles/runGitLog/runGrepPaths/runCommandAllowlist library function. CLI runtime demo (orchestrator-side) exercised all 4 against real fixtures: composite-read-files (reads CLI-DEMO-CONTENT), composite-grep-paths (finds pattern), composite-command-allowlist (echo allowlisted, refuses non-allowlisted via library), composite-git-log (reads current repo's last 2 commits with full sha/author/date/message JSON output)."
+    },
+    {
+      "criterion": "Zero new pi-workflows/pi-behavior-monitors deps; per DEC-0048 bundled-artifact tests not regression gates; engine unit tests + per-KIND library tests + composite-loader + author-tool-grant + L2/L3 tests are gates",
+      "status": "passed",
+      "evidence": "Adversarial CHECK 7 PASS: zero pi-workflows / pi-behavior-monitors / pi-tui imports in any new pi-agent-dispatch source. Husky pre-commit (check + test) green at every commit in the TASK-092 chain — all gates hold."
+    },
+    {
+      "criterion": "VALIDATION = real checks per DEC-0018: build/check/test exit codes; 5 runtime demos; adversarial probe",
+      "status": "passed",
+      "evidence": "Build exit 0; check exit 0 (after one biome auto-format pass at ccad130 — formatting-only, zero behavioral change, documented in commit body); pi-agent-dispatch test 59/59. Runtime demos (14/14 PASS): D1.a/b schema + amendConfigEntry; D2.a-f per-KIND library bounds enforcement; D3.a/b composite-loader dynamic registration + forbidden refusal; D4.a-d author-tool-grant writer.kind=human enforcement + forbidden-wholesale refusal. Per-KIND CLI runtime demo: all 4 CLIs successfully invoked against real fixtures with structured JSON output. Adversarial probe (fresh-context Explore): 10/10 PASS with zero false-pass scenarios — L1+L2 invariant clean, L3 guard cannot be bypassed, author-tool-grant gates fire pre-mutation, composite-loader refuses pre-registration, per-KIND triple symmetric, zero forbidden-term hits in code OR commit messages, zero sibling-consumer imports, schema parity in both config.schema.json locations, all 5 static tools registered unconditionally."
+    }
+  ],
+  "evidence": "TASK-092 FEAT-010 (Hybrid 3 v2 composite-tool infrastructure) landed on branch feat-010-composite-tools. 18 commits total: 2 Phase 1 substrate (a166c36 + c1d1f21 enacting DEC-0052 + filing TASK-092 + SHA-resolve), 14 implementation commits (4e722f0..605b507 across 8 step-groups), 1 biome format commit (ccad130, formatting-only zero behavioral change documented in body), 1 Phase 4 cascade (this commit pending). Three verification layers all green: build/check/test (59/59 pi-agent-dispatch tests pass + workspace gates), 4 runtime demos (D1-D4) totaling 14/14 PASS + per-KIND CLI demo (4/4 PASS), adversarial probe 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits. Implements FEAT-005 capability composition at bounded-composite granularity (the JI-023 form: 'A bash command. Not bash.' + 'There can be a registry of them'). Closes FGAP-116 (operation-granular capability vocabulary gap). NOTE on substrate config drift: runtime demo D1.b add/remove against tool_operations_forbidden left an empty 'tool_operations_forbidden': [] seed in .project/config.json — committed as canonical post-install state matching samples/conception.json. Subagent deviations (documented in commit bodies): (a) STEP 6 committed before STEP 5 to avoid transient broken-import commit; (b) ToolOperationDecl extension folded into composite-loader commit rather than schema-extension commit (lands with its first consumer); (c) assertDefaultsClean exported with optional defaults arg for test parameterization. All deviations canon-aligned."
+}

@@ -1,0 +1,47 @@
+{
+  "title": "Re-derive .context substrate clean via the config-based framework rather than in-place migrating .project",
+  "status": "enacted",
+  "context": "The FGAP-046/060/DEC-0028/FGAP-064 arc attempted in-place migration of the ad-hoc .project/ substrate (inline FK → edges, story/phase elevation, field strips). Apply attempts hit cascading schema-invariant collisions: tasks if-then (completed→verification required), decisions anyOf (≥1 forcing-artifact required), status-enum mismatches (feature done/todo vs tasks enum), dotted nested-task ids, prose citations of old ids. Root cause: some inline-FK fields encode INVARIANTS (decisions-cites-forcing-artifact; completed-task-has-verification), not just references; in-place stripping violates the schema while the field/constraint still exists, and relocating invariants to edge-validation must be coordinated with the strip. The .project/ substrate was authored ad-hoc BEFORE the config-based framework existed; retrofitting it through the framework's invariants is high-friction + accumulates migration scars. User direction 2026-05-17: name the canonical dir .context (DEC-0029) + keep .project as ad-hoc source + re-populate/refile into .context + refactor remaining extensions onto the config-based framework.",
+  "decision": "ENACTED: finish the framework by RE-DERIVATION, not in-place migration. .project/ is frozen as the ad-hoc historical source (read-only reference). .context/ is authored fresh + entirely THROUGH the config-based canonical surfaces (config + schemas + block-api + relations + file-block-item), so every item conforms by construction: references authored as relations.json closure-table edges from the start (no inline-FK to strip); invariants satisfied at authoring time (forcing-artifact edges, completed-VER edges); elevations native (phase/story/milestone array-blocks). The in-place migration FGAPs (FGAP-046 inline-FK migration, FGAP-040 tasks.phase) DISSOLVE — they become 'author .context references as edges', a non-event under canonical authoring rather than a retrofit. Schema invariants relocate from inline-field-presence (AJV anyOf/if-then) to edge-validation (validateProject) in the .context-targeting schemas. The migration is dogfood: the canonical authoring surfaces PRODUCE the canonical substrate (FGAP-028). Cutover (FGAP-026 Phase 10) is a bootstrap-pointer flip + .project archive, not a data migration.",
+  "consequences": [
+    "In-flight Phase 2 in-place inline-FK migration superseded; tmp/migrate-phase2.ts discardable (its logic informs re-population authoring).",
+    "Framework-machinery work stays real: validateProject edge-validation + relocated invariants; rename engine (FGAP-060); config-consumption (FGAP-052); macro library (FGAP-037/057); atomic-next (FGAP-059); PROJECT_BLOCK_TYPES removal (FGAP-056); mixed-shape block_kinds (FGAP-061); empty-prefix (FGAP-062); milestone elevation (FGAP-053/054/055). Schemas authored edge-based.",
+    "Already-landed machinery valid + carried forward: config.json + relations.json schemas, phase array-block (DEC-0028), story schema (FGAP-064 schema), DEC-0030/0035 — all enable .context authoring.",
+    "Phase 2b substrate already written into .project/ (phase.json + edges + tasks.phase strip) stays as-is in the frozen ad-hoc dir; .context/ gets its own canonical phase data at re-population.",
+    "FGAP-046 + FGAP-040 reframed: closure = '.context references authored as edges' (re-population), not '.project stripped in place'.",
+    ".project/ preserved as point-in-time ad-hoc record (substrate-authorship-semantics).",
+    "Finishing sequence: (1) finish framework machinery + edge-based .context schemas; (2) re-populate .context by re-filing .project + analysis + git through canonical surfaces; (3) refactor extensions onto config-based framework (/project→/context rename + consumers); (4) cutover (pointer flip + archive)."
+  ],
+  "references": [
+    {
+      "label": "DEC-0029 .context dir name",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "in-place migration collisions surfaced",
+      "path": "tmp/migrate-phase2.ts"
+    },
+    {
+      "label": "schema invariants: decisions anyOf forcing-artifact",
+      "path": ".project/schemas/decisions.schema.json"
+    },
+    {
+      "label": "schema invariants: tasks if-then completed-VER",
+      "path": ".project/schemas/tasks.schema.json"
+    },
+    {
+      "label": "re-derivation finishing plan",
+      "path": "~/.claude/plans/idempotent-dancing-wilkes.md"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-026",
+    "FGAP-028",
+    "FGAP-040",
+    "FGAP-046"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-17T15:05:00Z"
+}

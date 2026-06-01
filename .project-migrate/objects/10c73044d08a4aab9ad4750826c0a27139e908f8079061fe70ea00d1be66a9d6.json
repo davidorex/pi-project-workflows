@@ -1,0 +1,10 @@
+{
+  "title": "Monitor classify calls produce no debug output — misfires are uninspectable",
+  "body": "classifyViaAgent() calls complete() via the phantom tool pattern, extracts ToolCall.arguments, and discards all intermediate state. When a monitor misfires, there is no way to see: (1) the rendered classify prompt sent to the LLM, (2) the raw LLM response (content array, stopReason, errorMessage, usage), (3) the collected context values each collector resolved to, (4) the verdict mapping decision. The diagnostic string added in v0.14.3 (stopReason + content types + errorMessage) helps for API-level failures but not for classification quality issues (wrong verdict, false positive). Part of the broader debugger layer (issue-036): monitor session capture is the monitor-specific instantiation of execution tracing. Side-car JSONL is the correct pattern — monitor logs are a parallel audit trail, not conversation entries. Location: .workflows/monitors/<monitor-name>/ or similar project-owned path (not .pi/ which is pi's territory). Extensions get ReadonlySessionManager — cannot write to main session, which is correct since classify calls are side-channel. The completeAgent() refactor (monitors-as-agents design) should build session capture into the shared execution function so both workflow steps and monitors get it from the same path.",
+  "location": "packages/pi-behavior-monitors/index.ts:1150",
+  "status": "open",
+  "category": "capability",
+  "priority": "critical",
+  "package": "pi-behavior-monitors",
+  "source": "human"
+}

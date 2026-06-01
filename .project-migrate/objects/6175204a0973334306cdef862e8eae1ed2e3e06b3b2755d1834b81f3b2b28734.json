@@ -1,0 +1,12 @@
+{
+  "title": "In-session jit-agent persona — reshape the main pi agent into one of our jit-agents via extension hooks (3rd dispatch modality)",
+  "status": "proposed",
+  "layer": "L2",
+  "description": "An extension makes the LIVE main interactive pi session ASSUME one of our compiled jit-agent specs WITHOUT forking pi: system prompt + injected contextBlocks via before_agent_start -> result.systemPrompt (runtime-honored end-to-end; our compiled.systemPrompt already carries the <context_block role=\"data\"> injection); tools/model/thinking via setActiveTools/setModel/setThinkingLevel from a registerCommand handler; a slash-command activation/exit seam that snapshots + restores prior session state. A 3rd dispatch modality alongside subprocess (pi --mode json, dispatch.ts) and in-process (executeAgent): strong where they are weak (live interactivity, zero spawn, context continuity), weak where they are strong (no typed-output GUARANTEE for the interactive loop — only a best-effort before_provider_request wire seam; F-012 forced-toolChoice inheritance). Output schema becomes prompt instruction, not contract, for the main agent.",
+  "motivation": "Completes the dispatch-modality space and lets the user own session seamlessly become a typed agent persona. Surfaced by the 0.74->0.75.4 SDK currency work; 0.75.x before_agent_start systemPrompt-replace + setActiveTools/setModel make it newly clean.",
+  "acceptance_criteria": [
+    "a slash command applies a jit-agent spec to the live session (systemPrompt + contextBlocks + tools + model + thinking) and a clean exit restores prior state",
+    "documented + accepted limit: no typed-output guarantee for the main agent (instruction-only); contract-bound output stays the subprocess/in-process paths"
+  ],
+  "findings": []
+}

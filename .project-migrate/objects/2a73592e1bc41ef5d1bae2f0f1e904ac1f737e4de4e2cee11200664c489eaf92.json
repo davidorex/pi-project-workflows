@@ -1,0 +1,34 @@
+{
+  "title": "Substrate is the single source of truth for process + state; state is derived, never hand-stored; all other surfaces are projections or raw logs",
+  "status": "enacted",
+  "context": "Project goal (user, 2026-05-21): process + state must be EXACTLY preserved for zero-loss persistence. An audit this session found state hand-stored + drifted across six surfaces — substrate TASK/VER (TASK-043 in-progress for a superseded approach, TASK-044 planned for delivered work, units 2.1b/2.2/2.3 with no task at all), MEMORY.md Current Focus (pre-DEC-0036 framing AND 1.55x over its size limit so it loads truncated), the Claude Code task list (stale pre-pivot pending layer), the plan file ACTIVE marker, with HANDOFF.md the lone current one. N independent mutable state-stores guarantee drift; drift is loss. Root cause: the substrate was treated as one store among many rather than THE source with derived views.",
+  "decision": "The .context substrate (typed blocks + relations) is the SINGLE authoritative source for both PROCESS (decisions, gaps, units-of-work, verification, reasoning) and STATE (current focus, status, next-action, in-flight, blocked). State is DERIVED from the substrate as a pure function of its contents; it is never independently hand-stored. All other surfaces are one of two kinds and neither is an authoritative independent state store: (a) GENERATED PROJECTIONS of the substrate (MEMORY.md Current Focus, HANDOFF.md, the Claude Code task mirror, plan ACTIVE) or (b) RAW APPEND-ONLY LOGS (the session transcript via claude-history). Hand-maintained duplication of state across surfaces is forbidden. Zero-loss has two senses that this split satisfies: raw exact preservation = the transcript (claude-history); usable reconstruction = the substrate (distilled process + derived state); together they are exact AND usable, recoverable without the live conversation. Where derivation/projection machinery does not yet exist, the projection surfaces are kept manually current as an explicitly drift-prone INTERIM, not as canon-blessed independent stores. [Amendment 2026-05-21 — un-conflate the EXTENSION vs the CLAUDE CODE HARNESS]: precise three-layer scoping. (1) The EXTENSION (pi-context, loaded by the Pi runtime) owns the substrate + its capabilities (file / query / derive currentState / validate). (2) Those capabilities are EXPOSED via the dual surface (DEC-0019/0020) + DEC-0016 to BOTH consumers — the Pi runtime (Pi tools, in-pi agents) AND the Claude Code harness (scripts/orchestrator/* + the `pi -p` bridge); the Claude Code instance drives the extension (filing, querying, currentState) exactly as this session has done. (3) The Claude Code harness's OWN working-memory artifacts (MEMORY.md, HANDOFF.md, the Claude Code task list, plan files) are HARNESS-OWNED — a separate consumer layer, NOT extension-managed projections; the extension never writes them. CORRECTION to clause (a) above: those harness files are NOT 'generated projections of the substrate' the extension produces — they are Claude Code harness working memory, kept current by the HARNESS APPLYING the exposed currentState capability to its own files. 'Single source of truth' scopes to the SUBSTRATE (the project's process + state); the harness files are downstream consumers, outside the source-of-truth model. The operative boundary: the extension EXPOSES derivation (use it from the Claude Code harness, like filing) which is intended and canonical, vs the extension WRITING the harness's files (it does not).",
+  "consequences": [
+    "MEMORY.md / HANDOFF / Claude-task list / plan ACTIVE are downgraded from authoritative to derived-projection (or raw-log); none may hold state the substrate does not.",
+    "Every unit-of-work captures its process as substrate items (TASK + VER + any DEC) per DEC-0018/0020 — the transcript is the raw backstop, not the only home; units landing as commits-only is a violation.",
+    "Requires a full-state derivation + projection engine (FGAP-072) and unit-closure enforcement + cross-block status-drift validation (FGAP-073).",
+    "DEC-0018 (verify per step) + DEC-0020 (units produce typed substrate blocks) are reclassified from aspirational to ENFORCED; their violation is substrate loss.",
+    "Until the engine lands, hand-syncing the projection surfaces is recovery work (restoring lost state), explicitly recognized as the interim cost the engine eliminates.",
+    "Extends/anchors the DEC-0036 re-derivation: .context is built so state is derivable from line one.",
+    "Extension capabilities (file/query/derive/validate) are exposed + usable from the Claude Code harness (scripts/orchestrator/* + pi -p) per DEC-0016/0019/0020 — the un-conflation does NOT wall the harness off from the extension; it only stops the extension from writing harness-owned files.",
+    "MEMORY.md / HANDOFF.md / Claude Code task list / plan files are Claude Code HARNESS-owned consumers, refreshed by the harness APPLYING the exposed currentState; the extension neither produces nor writes them (corrects the earlier 'generated projections of the substrate' framing)."
+  ],
+  "options_considered": [
+    {
+      "label": "Single substrate source + derived projections (chosen)",
+      "description": "Substrate is the only state store; all other surfaces are generated from it or are raw logs.",
+      "tradeoffs": "Requires building derivation + projection machinery (FGAP-072/073) before the drift fully stops; interim hand-sync remains."
+    },
+    {
+      "label": "Disciplined manual multi-surface sync",
+      "description": "Keep the six surfaces, sync them by hand every step.",
+      "rejected_reason": "Proven to fail this very session — six surfaces drifted despite intent; N mutable stores drift by construction; cannot be zero-loss."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-072",
+    "FGAP-073"
+  ],
+  "related_findings": [],
+  "related_features": []
+}

@@ -1,0 +1,25 @@
+{
+  "description": "FGAP-060 closure: build renameCanonicalId engine on canonical edge-only reference surface (after TASK-043 eliminates inline FK). Library packages/pi-context/src/rename-canonical-id.ts + writeRelations wrapper in project-context.ts + Pi tool rename-canonical-id (index.ts) + orchestrator script scripts/orchestrator/migrate-canonical-id.ts + tests. Rewrites home-block item id + relations.json edges (parent/child/relation_type) + reports out-of-substrate citations (analysis MDs, commits — report-only). NO inline-FK sweep (eliminated in TASK-043). DEC-0019/0020 dual-surface unit.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "renameCanonicalId(cwd, kind, oldId, newId, {dryRun}) rewrites home item id + relations.json edges",
+    "out-of-substrate citations (analysis/ + git log) reported, never auto-rewritten",
+    "no inline-FK sweep code path exists (adversarial probe confirms)",
+    "fails loud on unknown kind/id; dry-run writes nothing",
+    "Pi tool rename-canonical-id registered; orchestrator script migrate-canonical-id.ts present; both thin over library per DEC-0019/0020",
+    "tests cover home-id rewrite + edge rewrite + dry-run inert + out-of-substrate report + no-match error",
+    "build + check + test green; runtime demo + adversarial probe per DEC-0018"
+  ],
+  "depends_on": [
+    "TASK-043"
+  ],
+  "files": [
+    "packages/pi-context/src/rename-canonical-id.ts",
+    "packages/pi-context/src/project-context.ts",
+    "packages/pi-context/src/index.ts",
+    "scripts/orchestrator/migrate-canonical-id.ts",
+    "packages/pi-context/src/rename-canonical-id.test.ts"
+  ],
+  "notes": "Coordinated arc with TASK-043. Engine operates on single canonical surface because TASK-043 eliminated inline FK. canonical_id-permanent (DEC-0035) scopes this engine to deliberate rename only. [DEC-0036 reframe: FGAP-060 rename engine is framework machinery for .context (finishing step 2); built against .context schemas + fixtures, not retrofitted to .project.]",
+  "verification": "VER-016"
+}

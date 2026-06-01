@@ -1,0 +1,27 @@
+{
+  "title": "No cross-block status-vocabulary validator surfaces unknown status values",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Step 7's roadmap-plan validateRoadmaps emits roadmap_status_unknown_value when a roadmap.status field carries a value outside ROADMAP_STATUS_ENUM. This single-block coverage exists only for roadmap. Other blocks with status fields (issues, decisions, tasks, requirements, plan, project, features, layer-plans, etc.) rely entirely on AJV schema-enum validation at write time. validateProject + project-validate pi tool do not surface 'this on-disk item carries a status value not in the current schema enum' diagnostics for those blocks. Schema migrations (FGAP-006 surface) that change enum values silently invalidate on-disk data until the next write attempt against that item.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/roadmap-plan.ts",
+      "reference": "validateRoadmaps emits 7 diagnostic codes including roadmap_status_unknown_value, scoped to roadmap blocks only. No equivalent validator exists for issues.status, decisions.status, tasks.status, etc."
+    },
+    {
+      "file": "packages/pi-context/src/project-sdk.ts",
+      "reference": "validateProject iterates getLensValidators() (Step 7's lens-validator dispatch) but no cross-block status-vocabulary validator is registered. The lens-validator dispatch surface accommodates such a validator but none is authored."
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/",
+      "reference": "11 registry schemas declare status enums (verified via grep). A schema-enum mutation through writeSchema/updateSchema (Step 3 surface) does not retroactively diagnose pre-existing on-disk items whose status falls outside the new enum."
+    }
+  ],
+  "impact": "Schema enum evolution silently strands on-disk data. Status values that became invalid via a schema migration remain readable but are undiagnosed until an LLM or workflow attempts to mutate the item. Cross-block lens rendering (groupByLens, lens-view consumers) may bin orphaned-status items into the (uncategorized) bucket without any signal that the underlying status value is schema-invalid rather than schema-omitted.",
+  "proposed_resolution": "Author a lens-validator-dispatch-registered cross-block status-vocabulary validator (parallel to the roadmap-plan lens-validator pattern from Step 7): for every block with a 'status' property in its schema, walk all items and emit a SubstrateValidationIssue code (e.g. 'block_status_unknown_value') when an item's status falls outside the schema's declared enum at validation time. Couples to FGAP-013 (config.status_buckets vocabulary registry) and FGAP-006 (schema-versioning + migration registry). Surfaced by adversarial audit of FGAP-013 closure (commit d4ec3ce + 5fe8969). [CLOSED 2026-05-23 — commit 4fb4d1e / TASK-062 / VER-034: validateProject emits status_unknown_value (warning) for status values not in resolveStatusVocabulary; vocabulary-neutral, warning-only, skips status-less items, distinguishes no-key from unknown-bucket. .project count=0.]",
+  "related_decisions": [],
+  "related_features": [],
+  "related_issues": []
+}

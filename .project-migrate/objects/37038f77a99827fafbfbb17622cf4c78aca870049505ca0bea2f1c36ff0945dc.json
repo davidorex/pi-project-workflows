@@ -1,0 +1,10 @@
+{
+  "title": "Framework gap FGAP-002 — no per-scope finding registries on block kinds",
+  "body": "There is no convention for a block to carry its own embedded findings array distinct from global issues.json. A design issue discovered during review of jit-agents-spec.md has nowhere to live except the global issue tracker, where it is indistinguishable from task-level defects and feature-level scope conflicts. Result: issues.json (this file, currently 65+ entries) conflates L2 architectural contradictions with L4 implementation bugs with L5 incident-derived rules. The hand-enacted .project/spec-reviews.json and .project/features.json already embed scoped findings arrays as a preview of the target shape — block-api needs to standardize the convention and provide appendFinding(blockName, parentItemId, finding). Global issues.json becomes a derived view (see issue-057 / FGAP-003). Canonical owner: .project/framework-gaps.json FGAP-002. Canonical vocabulary: scoped issues; per-artifact defect list; embedded finding registries.",
+  "location": "packages/pi-context/src/block-api.ts, .project/schemas/",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-project",
+  "source": "agent"
+}

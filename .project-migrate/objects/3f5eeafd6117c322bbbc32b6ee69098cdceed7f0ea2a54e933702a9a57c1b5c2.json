@@ -1,0 +1,5 @@
+{
+  "description": "In pi-workflows, shared interfaces are defined in src/types.ts — other packages define types alongside their modules",
+  "enforcement": "review",
+  "severity": "warning"
+}

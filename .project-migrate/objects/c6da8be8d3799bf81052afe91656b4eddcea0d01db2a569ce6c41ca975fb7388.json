@@ -1,0 +1,68 @@
+{
+  "title": "Per-step prompt composition — minimal-context agent role specifications for 17 agent kinds",
+  "status": "complete",
+  "layer": "L2",
+  "type": "investigative",
+  "question": "For each agent role in the ten-phase lifecycle and monitor/query subsystem, what is the exact context each step needs and what must be explicitly excluded to prevent prompt pollution?",
+  "method": "code-inspection",
+  "scope": [
+    "packages/pi-jit-agents/src/ (agent spec compilation, dispatch)",
+    "packages/pi-workflows/src/ (step executors, dispatch)",
+    "packages/pi-behavior-monitors/ (monitor classify agents, collectors)",
+    "Ten-phase lifecycle from R-0005 process articulation"
+  ],
+  "findings_summary": "Articulates minimal-context specifications for 17 distinct agent roles across four categories: ten process agents (intention-capture, research, spec-drafting, spec-review, plan-drafting, plan-review, implementation, impl-review, verification, learning-capture), five monitor classify agents (hedge, fragility, work-quality, commit-hygiene, unauthorized-action), and two query/introspection agents (status summarizer, triage).\n\nFive context classes identified: ambient (mandates, framework delimiters, output format), block-item injected (one entry from a block at specified depth), block-whole injected (entire block), collector-populated (session data from monitor collectors), and tool-access granted (dispatch context tools field). Each agent role uses a specific subset.\n\nThe minimal-context principle repeated across all 17 roles: work-scoped context (the specific item being worked on) always present at depth=0, role-scoped context always present at depth=0, ambient context always present, everything else excluded. The summary table maps each of 17 agent kinds against 13 context columns (project, conventions, architecture, domain, decisions, features, reviews, research, findings, gaps, patterns, session, tools).\n\nFive new process refinements surfaced: (1) Agent spec must declare contextBlocks with item-level selectivity, depth, and focus. (2) Collectors must be first-class in pi-jit-agents, not monitor-only. (3) Exclusion must be explicit in agent spec (context_excludes field). (4) Ambient context composition must be declarative (L5 block injected via ambient contextBlocks). (5) Per-agent-role token budgets should be pre-computed before dispatch.",
+  "findings_document": "analysis/2026-04-15-runtime-step-context.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "pi-project-workflows repo state as of 2026-04-15"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-15T00:00:00Z",
+  "stale_conditions": [
+    "Agent spec schema (AgentSpec type in pi-jit-agents) gains contextBlocks item-level selectivity",
+    "Monitor collectors move from pi-behavior-monitors to pi-jit-agents",
+    "New agent roles added beyond the 17 articulated here"
+  ],
+  "citations": [
+    {
+      "label": "Agent spec compilation pipeline",
+      "path": "packages/pi-jit-agents/src/compile.ts"
+    },
+    {
+      "label": "AgentSpec type with contextBlocks",
+      "path": "packages/pi-jit-agents/src/types.ts"
+    },
+    {
+      "label": "Monitor classify dispatch with collectors",
+      "path": "packages/pi-behavior-monitors/index.ts"
+    },
+    {
+      "label": "Workflow step executors",
+      "path": "packages/pi-workflows/src/"
+    },
+    {
+      "label": "Process articulation ten-phase lifecycle",
+      "path": "analysis/2026-04-15-process-articulation.md"
+    }
+  ],
+  "informs": [
+    "issue-041",
+    "issue-042"
+  ],
+  "informed_by": [
+    "R-0005",
+    "R-0006"
+  ],
+  "related_research": [
+    "R-0002",
+    "R-0003"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-15T00:00:00Z"
+}

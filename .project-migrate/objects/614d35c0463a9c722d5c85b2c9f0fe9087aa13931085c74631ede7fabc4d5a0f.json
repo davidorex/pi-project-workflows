@@ -1,0 +1,29 @@
+{
+  "title": "pi-workflows has no aggregate token-budget surface — each step tracks per-step usage but no WorkflowSpec-level budget.maxTokens / budget.spent() / budget.remaining() across all steps; cannot express budget-aware termination or fail-on-overspend semantics",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 7: Claude Code workflows expose budget.total / budget.spent() / budget.remaining() globals shared across the main script + all spawned agents; decrements as agents run; HARD ceiling — agent() throws once total reached. pi-workflows has per-step usage tracking (input/output tokens, cache, cost via dispatch.ts) but no aggregate across steps + no enforcement at the WorkflowSpec level. Operators cannot cap runaway loops by budget; cannot route by remaining-budget (e.g. fast-path when low; thorough-path when ample); cannot fail-with-structured-error on overspend.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "412-438",
+      "reference": "Part 3 axis 7 — Token Budget Tracking — ADOPT verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/dispatch.ts",
+      "reference": "per-step usage capture; no aggregate sink"
+    },
+    {
+      "file": "packages/pi-workflows/src/workflow-spec.ts",
+      "reference": "WorkflowSpec interface — no budget field"
+    }
+  ],
+  "impact": "Runaway loops + accidental overspend on long-running workflows are not contained at the framework layer. Operators must manually track aggregate spend via post-hoc inspection of per-step usage. Budget-aware termination (loop-until-budget-remaining; see FGAP-140) cannot be implemented without this surface. Composability with Claude Code workflows' budget model (when pi-workflows are invoked from Claude-Code-side) is poor — the two budget models don't speak the same language.",
+  "canonical_vocabulary": "workflow-level token budget; budget.maxTokens; budget.spent; budget.remaining; budget-aware termination; aggregate usage sink",
+  "proposed_resolution": "Extend WorkflowSpec with optional budget object: { maxTokens?: number, maxCost?: number, alertThreshold?: number (0-1 fraction; default 0.8) }. Extend ExecutionState with budgetSpent: { tokens: number, cost: number, byStep: Record<string, {tokens, cost}> }. Executor accumulates per-step usage into budgetSpent after each step completes. Pre-step check: if budget exhausted → throw BudgetExhaustedError with structured payload. Expose to expression scope as budget.spent / budget.remaining for use in transform / gate / until predicates. Updates: types.ts (WorkflowSpec + ExecutionState), workflow-executor.ts (accumulation + check), expression.ts (budget. scope).",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

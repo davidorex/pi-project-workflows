@@ -1,0 +1,22 @@
+{
+  "description": "FEAT-006 decomposition 1/4 — define the orchestrator-authored executable work-order block kind. Per FEAT-006: 'today the loop passes specs as transient workflow input, not a persisted orchestrator-authored block.' This task defines + registers the canonical block kind for the spec the in-pi orchestrator authors (the spec-block-as-implementation-prompt; specs are self-contained coding prompts per feedback_specs_are_implementation_prompts). Includes: schema for the work-order block (id pattern, fields covering input contract / context-blocks-injected / output contract / privileged-agent target / scope-of-edit / real-check criteria); registration in config.block_kinds[]; sample blocks demonstrating spec authoring shape; contextBlocks handoff pattern (how the privileged JIT-agent consumes the work-order spec via its declared contextBlocks at dispatch time); substrate-write tool surface for in-pi orchestrator to author work-orders (extends or reuses existing append-block-item / file-block-item canonical surface). Filed 2026-05-26 per user direction (supersede TASK-084's degraded POC framing; decompose FEAT-006 into concrete tasks). Substrate-only work; no jit-agents code changes.",
+  "status": "completed",
+  "files": [
+    ".project/schemas/work-orders.schema.json",
+    ".project/config.json",
+    "packages/pi-context/samples/schemas/work-orders.schema.json",
+    "packages/pi-context/samples/blocks/work-orders.json"
+  ],
+  "acceptance_criteria": [
+    "work-orders.schema.json declares the orchestrator-authored spec shape: id (canonical pattern), title, status enum, input_contract (typed schema for what the agent receives), context_blocks (which substrate blocks the privileged agent consumes at dispatch), output_contract (typed return), target_agent (the privileged spec-implementer-class JIT-agent name), scope (file/directory/operation bounds), real_check_criteria (the deterministic checks that gate acceptance — build/check/test exit + runtime-demo + adversarial-against-artifacts per DEC-0018)",
+    "config.json block_kinds[] registers work-orders with canonical_id + prefix (WO- per DEC-0027 uppercase + DEC-0026 3-digit) + schema_path + array_key + data_path",
+    "Sample blocks under packages/pi-context/samples/blocks/work-orders.json demonstrate a complete work-order: a spec that an orchestrator could author + a privileged agent could consume + real-checks could gate",
+    "contextBlocks handoff pattern documented: how the agent.yaml of the spec-implementer-class agent references the work-order block via contextBlocks, how compileAgent injects it, how the agent's prompt consumes it",
+    "In-pi orchestrator can author a work-order via existing append-block-item / file-block-item canonical surface (no new write tool needed if existing surface handles the new block kind generically)",
+    "Engine unit tests cover: schema AJV validation passes on valid samples + rejects malformed; block_kinds discovery picks up the new kind; sample blocks pass validateContext + relations.json cross-reference integrity",
+    "VALIDATION = real checks: build/check/test exit codes; runtime demo (tsx-eval authors a work-order via canonical write tool + reads it back + validates schema); adversarial probe (fresh-context agent confirms zero free-text scaffolding in samples; everything FK-referenced via canonical patterns)"
+  ],
+  "depends_on": [],
+  "notes": "Filed 2026-05-26 per user direction supersede-TASK-084 + decompose-FEAT-006. First of four FEAT-006 decomposition tasks: TASK-088 (work-order block), TASK-089 (pi-agent-dispatch extension), TASK-090 (real-check tail + attested commit), TASK-091 (assembly + orchestrator loop). No dependencies (substrate-only); unblocks TASK-089.",
+  "verification": "VER-053"
+}

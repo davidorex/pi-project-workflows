@@ -1,0 +1,12 @@
+{
+  "description": "FGAP-026 closure phase 2 (Step 8.7.2; Claude Code Task #22): High-impact query tools — filter-block-items, resolve-items-by-id (bulk), walk-ancestors (FGAP-029 partial), walk-by-relation, find-references",
+  "acceptance_criteria": [
+    "filter-block-items collapses N-call serial probes to 1 call",
+    "resolve-items-by-id batch-resolves",
+    "walkAncestors JS export + walk-ancestors tool symmetric to walkDescendants",
+    "find-references cross-block reverse-index"
+  ],
+  "status": "completed",
+  "verification": "VER-009",
+  "notes": "CLOSED at HEAD 680cb1c. Phase 2 (FGAP-026 closure phase 2) complete via 4 atomic sub-phases (2.1 filter-block-items / 2.2 resolve-items-by-id bulk / 2.3 walk-ancestors / 2.4 find-references). walk-by-relation dropped from scope (pre-existing at HEAD bcf2e60 as walkDescendants + project-walk-descendants tool). Test counts: pi-context 401 → 428 (+27 cumulative). All 4 sub-phases shipped DEC-0019 dual-surface (library + pi tool + orchestrator script). See VER-009 + child VER-005/006/007/008."
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Per-monitor configurable collector parameters — context window tunable from YAML without code changes",
+  "body": "Collector limits (conversation_history turns, tool_results count, tool_calls count, truncation char limits) are hardcoded in collector functions in index.ts. The monitor YAML declares which collectors to use (classify.context array) but not their parameters. Extension: classify.context becomes an object map with optional per-collector config — e.g., context: { conversation_history: { turns: 5 }, tool_results: { limit: 10, truncate: 3000 }, tool_calls: { limit: 30 } }. The collector functions already accept optional limit parameters (collectToolResults has limit=5, collectToolCalls has limit=20). The plumbing exists — the missing piece is reading per-collector config from the monitor spec and passing it through classifyViaAgent to the collector calls. Falls back to current defaults when config is absent. Changes take effect on next monitor firing after /reload. This is part of the live tuning loop: monitor fires → produces verdict → user/LLM evaluates quality → adjusts parameters from within the session → next firing reflects the adjustment. The README principle applies: 'the use of the tool shows you the shape of how to make the version of the tool that you want.' Collector parameters are the primary tuning surface for classification quality — they determine how much context the model sees, which determines verdict accuracy. Issue-038 adds the command-mediated interface for changing these parameters; this issue adds the spec-level support.",
+  "location": "packages/pi-behavior-monitors/index.ts, packages/pi-behavior-monitors/schemas/monitor.schema.json",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-behavior-monitors",
+  "source": "human"
+}

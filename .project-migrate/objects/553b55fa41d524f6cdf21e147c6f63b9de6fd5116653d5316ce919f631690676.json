@@ -1,0 +1,10 @@
+{
+  "title": "Implement bare-id resolution in pi-jit-agents",
+  "status": "todo",
+  "description": "Add model-resolution logic at executeAgent. Bare ids trigger ExtensionContext lookup; fully-qualified specs pin.",
+  "files": [
+    "packages/pi-jit-agents/src/jit-runtime.ts",
+    "packages/pi-jit-agents/src/types.ts"
+  ],
+  "acceptance": "executeAgent resolves bare ids via ExtensionContext, surfaces clear error on missing binding, preserves fully-qualified semantics"
+}

@@ -1,0 +1,11 @@
+{
+  "title": "Extend validateRelations to detect cycles in authored relations",
+  "body": "POC v2 validateRelations() catches dangling-id cases (edge_unresolved_child, edge_parent_wrong_block, edge_parent_not_in_bins, edge_unknown_relation_type) but does NOT detect cycles in (parent, child, relation_type) triples. Cycles in hierarchy edges create infinite drill-down for any consumer walking the hierarchy. Cycles in lens edges are nonsensical (a bin is its own item?). Validator should walk each relation_type subgraph (Tarjan or simple DFS with visited+stack) and emit edge_cycle_detected diagnostics with the cycle path. Authoring-time validation prevents the issue rather than handling it at runtime via guards (which is the issue-072 concern). Surfaced as gap #28 in the integration-map review.",
+  "location": "analysis/poc-degree-zero-lens/render.ts",
+  "status": "resolved",
+  "category": "primitive",
+  "priority": "high",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit 8059764 (substrate SDK port). validateRelations final-pass cycle detection landed with edge_cycle_detected diagnostic shape { code, message, cycle: string[], relation_type } per the issue spec. Six tests cover 2-node, 3-node, self-loop, multi-component, acyclic-control, partition-by-relation_type. Status was open in error; this update brings the lifecycle in sync with the implementation reality."
+}

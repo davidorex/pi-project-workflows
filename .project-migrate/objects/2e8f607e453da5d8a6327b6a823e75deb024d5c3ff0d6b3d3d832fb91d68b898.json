@@ -1,0 +1,10 @@
+{
+  "title": "Agent reuse across workflows is structural repetition, not parametric recombination",
+  "body": "code-explorer appears in 6 workflows but always with identical input (path: ${{ input.path }}). structure-analyzer appears in 6 workflows, always with (exploration + path). synthesizer appears in 4 workflows with minor variation. Agents are copy-pasted at the YAML level — the typed input system and Nunjucks templates could enable genuinely different compositions (e.g., explorer with depth parameter, synthesizer with optional analysis channels) but this isn't happening. The agents should be redesigned to accept variable input shapes and adapt their prompts accordingly.",
+  "location": "packages/pi-workflows/agents/",
+  "status": "open",
+  "category": "composition",
+  "priority": "medium",
+  "package": "pi-workflows",
+  "source": "agent"
+}

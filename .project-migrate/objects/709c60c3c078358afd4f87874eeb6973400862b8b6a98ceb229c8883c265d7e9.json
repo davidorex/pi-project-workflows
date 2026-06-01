@@ -1,0 +1,30 @@
+{
+  "target": "TASK-056",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-22T00:00:00Z",
+  "evidence": "B3/FGAP-045 item-level read — commits 154def0 (lib readBlockItem+readBlockPage + Pi tools read-block-item/read-block-page + CLIs + 12 tests) / 1c77607 (skill-narrative <block_item_reads> + regen SKILL.md) (+ step-1). Verified DEC-0018: build/check/test green (pi-context 563 [+12], pi-jit-agents 152, pi-behavior-monitors 157, pi-workflows 829, all 0 fail). Runtime demonstration via CLI on real .project: read-block-page framework-gaps offset 0 limit 3 → items 3/total 88/hasMore true; offset 86 limit 5 → items 2/total 88/hasMore false; offset 200 → items 0/total 88/hasMore false; default → items 50/total 88. total stays 88 across all offsets (proves full-count not page-length). read-block-item tasks TASK-055 → item (status completed); DEC-0037 in decisions → found; NOPE → null; cross-block prefix mismatch (DEC-0037 under tasks) → null NO throw (additivity vs resolve-item-by-id confirmed). Fresh-context adversarial probe (Explore, not composer): SAFE-TO-COMMIT — all 7 criteria PASS (block-scoped additivity real not hollow; total/hasMore correct; edge propagation missing-block→exit3 / no-array→empty / multi-array→throw; tests honest incl. adversarial total≠items.length; tools wired + in SKILL.md; no regression; immutable slice/filter).",
+  "criteria_results": [
+    {
+      "criterion": "readBlockItem returns item for known block+id, null on miss, propagates missing-block/multi-array throws, null on no-array; block-scoped (additive vs resolve-item-by-id, no prefix-throw)",
+      "status": "passed",
+      "evidence": "project-sdk.ts readBlockItem; 5 tests; CLI TASK-055/DEC-0037/NOPE/cross-prefix-null; adversarial #1"
+    },
+    {
+      "criterion": "readBlockPage {items,total,hasMore} with offset/limit defaults 0/50; total=FULL count; hasMore=offset+limit<total; offset≥total→empty+total+hasMore:false; no-array→{[],0,false}",
+      "status": "passed",
+      "evidence": "project-sdk.ts readBlockPage; 7 tests incl. adversarial total≠items.length; CLI framework-gaps total 88 stable; adversarial #2"
+    },
+    {
+      "criterion": "Pi tools read-block-item + read-block-page (offset/limit Type.Optional Integer; truncateHead) + CLIs (exit 0/2/3, --format table)",
+      "status": "passed",
+      "evidence": "index.ts registrations; 2 CLIs; adversarial #5; SKILL.md ×3"
+    },
+    {
+      "criterion": "build/check/test green (563); runtime demo on real .project; fresh-context adversarial SAFE-TO-COMMIT; skills regen surfaces both",
+      "status": "passed",
+      "evidence": "commit 1c77607; adversarial verdict"
+    }
+  ]
+}

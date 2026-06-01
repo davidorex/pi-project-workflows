@@ -1,0 +1,50 @@
+{
+  "target": "TASK-033",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T00:00:00Z",
+  "evidence": "inject-context-items.ts landed at commit 2c3794a (creation); --context-items arg integration into compile-{explore,implementation}-context.ts at ad02726. Acceptance criterion 7 (FGAP-035 Explore re-dispatch uses --context-items framework-gaps:FGAP-035,tasks:TASK-031,decisions:DEC-0015) validated end-to-end: the rendered explore context at compiled-contexts/explore-fgap035-rendered-context.md embeds <context_items> with all three items verbatim; Explore agent dispatched against that context produced compiled-contexts/explore-fgap035-canonical-v2.md with 11 cascade-target rows; implementer agent dispatched against the downstream implementation context (which re-injected same three items) committed the fix without OR-hedging in any Required-change cell. Substrate items composed via extension tools into JIT-agent-shaped context per DEC-0014 substrate-IS-operating-surface principle. Schema-shape friction points filed inline: array_key heuristic (single-top-level-array discovery); id-field assumption; singleton-block-shape gap; colon-escape selector gap — all documented in script JSDoc + commit body 2c3794a per dogfood discipline.",
+  "criteria_results": [
+    {
+      "criterion": "Script exists, shebang-tsx executable",
+      "status": "passed",
+      "evidence": "scripts/orchestrator/inject-context-items.ts exists at HEAD e88d7ee"
+    },
+    {
+      "criterion": "Args: --items, --format json|xml|markdown, optional --fields",
+      "status": "passed",
+      "evidence": "parseArgs at lines 43-83 implements all three; format validated against enum"
+    },
+    {
+      "criterion": "Reads each (block, itemId) via readBlock + filter by id",
+      "status": "passed",
+      "evidence": "main function at lines 140-187 invokes readBlock(cwd, block) then arr.find((i) => i.id === itemId)"
+    },
+    {
+      "criterion": "json/xml/markdown format paths emit per spec",
+      "status": "passed",
+      "evidence": "All three paths smoke-tested + integrated into compile-*-context.ts via --context-items arg"
+    },
+    {
+      "criterion": "Fails fast on unresolvable selector with verbatim error",
+      "status": "passed",
+      "evidence": "Exit 6 with item-count message verified during smoke-test"
+    },
+    {
+      "criterion": "compile-{explore,implementation}-context.ts gain --context-items arg that splices output at <context_items> position",
+      "status": "passed",
+      "evidence": "compile-explore-context.ts:87-93 (injectContextItems function) + compile-implementation-context.ts:170-172 (contextItems variable) both invoke inject-context-items.ts --format xml and splice into <context_items> XML block"
+    },
+    {
+      "criterion": "FGAP-035 Explore re-dispatch validates surface end-to-end",
+      "status": "passed",
+      "evidence": "compiled-contexts/explore-fgap035-rendered-context.md carries <context_items> with FGAP-035 + TASK-031 + DEC-0015 verbatim; Explore agent produced 11-row cascade table without OR-hedging because TASK-031 UX decision was injected"
+    },
+    {
+      "criterion": "Friction points filed as follow-up FGAPs / surfaced",
+      "status": "passed",
+      "evidence": "JSDoc lines 13-21 + commit body 2c3794a document 4 surfaced friction points (array_key heuristic, id-field assumption, singleton-block shape, colon-escape)"
+    }
+  ]
+}

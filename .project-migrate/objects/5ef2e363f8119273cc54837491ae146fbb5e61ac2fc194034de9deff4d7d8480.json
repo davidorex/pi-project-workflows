@@ -1,0 +1,34 @@
+{
+  "title": "Features schema description drops \"Epic-level\" qualifier; canonical kind name is \"feature\"",
+  "status": "enacted",
+  "context": "PM-vocabulary survey (analysis/2026-05-05-pm-vocabulary-prior-art-survey.md) catalogues \"epic\" as Scrum/SAFe-origin emphasis-on-scale qualifier. User direction 2026-05-14: \"epic\" reads as zero-signal. The features.schema.json description prose carried \"L3 Work layer. Epic-level features with...\" which conflated PM-jargon scale-emphasis with the canonical block name. The structural shape (feature → stories → tasks + scoped findings) is what carries meaning; the \"epic-level\" qualifier adds no machine semantics and reads opaque to non-PM-familiar readers.",
+  "decision": "Drop \"Epic-level\" from features.schema.json description prose. Canonical kind name is \"feature\" (singular) / \"features\" (block array_key). config.block_kinds[].display_name will read \"Features\" (matching schema.title). No PM-scale qualifier in schema prose or display layer.",
+  "consequences": [
+    "Schema prose reads cleanly to non-PM readers.",
+    "Display-name layer can rely on schema.title field directly (see DEC-0023).",
+    "Future block-kind authoring avoids PM-jargon qualifiers in descriptions.",
+    "No code paths or AJV behavior changes (description field is not enforced)."
+  ],
+  "references": [
+    {
+      "label": "features.schema.json edited",
+      "path": ".project/schemas/features.schema.json",
+      "lines": "4"
+    },
+    {
+      "label": "PM-vocabulary prior-art survey",
+      "path": "analysis/2026-05-05-pm-vocabulary-prior-art-survey.md"
+    },
+    {
+      "label": "PM-vocabulary survey full analysis",
+      "path": "analysis/2026-05-14-pm-vocabulary-survey-full-analysis.md"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_gaps": [],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-14T12:00:00Z"
+}

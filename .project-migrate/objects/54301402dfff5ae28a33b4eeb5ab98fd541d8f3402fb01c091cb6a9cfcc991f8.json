@@ -1,0 +1,10 @@
+{
+  "title": "Expression-level field validation against source schemas in workflow step input blocks",
+  "body": "The template-input alignment validator (template-validation.ts) traces field access in Nunjucks templates against source schemas — e.g., {{ architecture.overview }} checked against the architecture block schema. But the same field access happens in workflow step input blocks via ${{ }} expressions: input: { overview: '${{ steps.load.output.architecture.overview }}' }. The validator checks that steps.load exists and that the expression is well-formed (extractExpressions in workflow-sdk.ts), but does not check that .architecture.overview is a valid field path against the source step's output schema. If the source step declares output.schema or is a block read (with traceable block schema), the validator should verify each dotted field path in ${{ }} expressions against the resolved schema — same tracing logic that template-validation already implements for Nunjucks variables.\n\nImpacted components: validateWorkflow() in workflow-sdk.ts (new check after existing step-reference validation), extractExpressions() already parses dotted paths and field references, traceInputSchema() and loadSchemaFields() in template-validation.ts provide the schema resolution logic to reuse, VALIDATION_CHECKS array needs new entry, validationChecks() return updates automatically, skill generator <validation_vocabulary> table regenerates from registry.",
+  "location": "packages/pi-workflows/src/workflow-sdk.ts, packages/pi-workflows/src/template-validation.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "human"
+}

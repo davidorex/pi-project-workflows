@@ -1,0 +1,24 @@
+{
+  "title": "conventions block_kind in samples/conception.json has no prefix field — structurally inconsistent with the other 15 block_kinds and likely causes downstream enumerators to filter-and-drop it",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Verified 2026-05-28 via direct read of packages/pi-context/samples/conception.json: of 16 block_kinds, 15 declare a `prefix` field (TASK-, DEC-, FEAT-, FGAP-, REQ-, STORY-, R-, REVIEW-, VER-, RAT-, PHASE-, CTX-, WO-, PLAN-, issue-) and 1 — `conventions` — does NOT. Surfaced empirically by an in-pi agent's enumeration response: agent claimed to query read-samples-catalog per-kind and returned 14 of 16 block_kinds; conventions was one of the two omitted. Most likely cause: agent's enumeration pipeline (or read-samples-catalog response shape) groups/filters kinds by structural property such as 'has prefix' and silently drops kinds lacking that property. Whether the canonical-id-without-prefix is intentional (conventions items addressed by some other naming pattern) or an oversight is not declared anywhere.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "reference": "conventions block_kind entry: keys = [canonical_id, display_name, schema_path, array_key, data_path] — NO prefix field; sibling entries (e.g. layer-plans, work-orders) all carry prefix"
+    },
+    {
+      "file": "packages/pi-context/schemas/config.schema.json",
+      "reference": "block_kinds[] schema declares prefix as optional vs required (whichever it is, the conception+schema combination permits the inconsistency)"
+    }
+  ],
+  "impact": "Downstream consumers (in-pi agents enumerating, validators iterating, ID-pattern resolvers, prefix-vs-block invariant in buildIdIndex) all have to handle the missing-prefix case as a special case. Empirically observed: an enumeration agent dropped conventions from its 14/16 response. If conventions items are intended to carry typed IDs (CONV-? CVT-?) the absence is a canon-completeness gap. If conventions items are intended to be prefix-less (named by canonical_id alone or by content-derived slug), the absence is unstated convention that needs declaring.",
+  "canonical_vocabulary": "schema-uniformity-across-siblings; structural-consistency-as-canon; prefix-vs-block invariant",
+  "proposed_resolution": "Resolve the conception inconsistency. Either: (a) ADD a canonical prefix to conventions in samples/conception.json (e.g. CONV- or VOC-) and propagate to its schema's id-pattern + any sample blocks/ items; OR (b) DECLARE prefix-less-by-design explicitly — annotate the conventions block_kind entry with `prefix: null` plus a schema-side note that items use canonical_id-as-id (no prefix), and update buildIdIndex's prefix-vs-block invariant + read-samples-catalog response shape to surface this kind as 'prefix-less' rather than silently omit. User-decides which direction; both close the structural inconsistency.",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

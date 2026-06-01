@@ -1,0 +1,5 @@
+{
+  "description": "New agent templates MUST use Nunjucks extends/block when a base template exists for their structural pattern family. Flat templates in families with established bases are defects, not shortcuts.",
+  "enforcement": "review",
+  "severity": "error"
+}

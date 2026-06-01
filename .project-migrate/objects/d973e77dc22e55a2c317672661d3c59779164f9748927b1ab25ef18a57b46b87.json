@@ -1,0 +1,39 @@
+{
+  "title": "config.block_kinds[] requires single array_key per block — cannot represent mixed-shape blocks (project / architecture / domain / conformance-reference) with multiple arrays + scalar identity fields",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "config.schema.json block_kinds[] items require [canonical_id, display_name, prefix, schema_path, array_key, data_path] — array_key is a single required string naming THE top-level array property in the block JSON. This models clean array-blocks (decisions.decisions[] / framework-gaps.gaps[] / tasks.tasks[] / etc.) correctly. It cannot represent mixed-shape blocks: project.json (scalar name/description/core_value/status + goals[] + constraints[] + scope_boundaries{}), architecture.json (modules[] + patterns[] + boundaries[] + compilation_pipeline{} + execution_model{} + dispatch_design{}), domain.json (entries[] + possibly scalars), conformance-reference.json (name + scope{} + principles[]). These have ZERO or MULTIPLE top-level arrays + scalar identity fields with no single canonical array_key. Surfaced twice: build-html-views.ts agent hit it (discoverArrayKey picks largest array, discards scalars — lossy); config.json authoring (FGAP-046/060 arc Phase 1) cannot author block_kinds[] entries for these blocks. The step-1 config draft (analysis/2026-05-14-step-1-config-draft-from-substrate.md) papered over it by putting scalar field 'name' as project's array_key, which is incorrect.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/schemas/config.schema.json",
+      "reference": "block_kinds[].array_key required single string (lines 44-52)"
+    },
+    {
+      "file": ".project/project.json",
+      "reference": "scalar name/description/core_value/status + goals[] + constraints[] + scope_boundaries{} — no single array_key"
+    },
+    {
+      "file": ".project/architecture.json",
+      "reference": "modules[] + patterns[] + boundaries[] + 3 object fields — multiple arrays"
+    },
+    {
+      "file": "scripts/orchestrator/build-html-views.ts",
+      "reference": "discoverArrayKey heuristic + identity-panel workaround built precisely because config.block_kinds can't declare mixed-shape"
+    },
+    {
+      "file": "analysis/2026-05-14-step-1-config-draft-from-substrate.md",
+      "reference": "draft put scalar 'name' as project array_key — incorrect, surfaces the gap"
+    }
+  ],
+  "impact": "config.json cannot losslessly declare all installed blocks. Mixed-shape blocks (project / architecture / domain / conformance-reference) are unrepresentable in block_kinds[]. Any consumer iterating config.block_kinds[] for block enumeration misses them OR mis-declares their shape. Forces per-consumer heuristics (build-html-views discoverArrayKey). For the FGAP-046/060 arc: not blocking (cross-reference-bearing blocks are all clean single-array_key array-blocks), but config.block_kinds[] authored for this arc will omit the mixed-shape blocks, leaving config incomplete.",
+  "canonical_vocabulary": "block-shape-declaration, multi-array-block, scalar-identity-fields, array-keys-plural",
+  "proposed_resolution": "Extend config.block_kinds[] schema: replace required single 'array_key' with optional 'array_keys: string[]' (zero or more top-level array properties) + optional 'identity_fields: string[]' (top-level scalar/object fields forming block identity). Single-array blocks declare array_keys: ['decisions']; mixed-shape blocks declare array_keys: ['goals','constraints'] + identity_fields: ['name','description','core_value','status','scope_boundaries']; pure-singleton blocks declare array_keys: []. Migrate existing consumers (project-sdk availableBlocks / blockStructure; build-html-views discoverArrayKey → read config.block_kinds[].array_keys; schema-validator). Schema version bump + MigrationFn (array_key string → array_keys[1-element array]). Cross-decision with the build-html-views identity-panel rendering (already handles multi-array + identity via schemaInfo introspection — config.block_kinds[] should carry the same shape so introspection isn't re-derived per consumer).",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0013",
+    "DEC-0025"
+  ],
+  "related_issues": []
+}

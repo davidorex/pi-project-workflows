@@ -1,0 +1,18 @@
+{
+  "description": "Unit E (user-directed) — add a decision_relates_to_decision relation_type to the packaged conception (samples/conception.json relation_types[]): the DEC-0013-clean DEC↔DEC associative link (vs a related_decisions FK field). Mirrors research_relates_to_research (category data_flow, source_kinds/target_kinds=[decisions]). Ships downstream via the conception (DEC-0037). .project/config.json untouched (frozen).",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/src/samples-catalog.test.ts"
+  ],
+  "acceptance_criteria": [
+    "conception relation_types[] gains decision_relates_to_decision {display_name 'relates to decision', category data_flow, source_kinds [decisions], target_kinds [decisions]}; mirrors research_relates_to_research shape",
+    "samples-catalog.test relationTypes count 27 -> 28 (comment + test name + assertion); 'no unknown kinds' adversarial test stays green",
+    "Runtime demo: samplesCatalog().relationTypes includes decision_relates_to_decision (decisions<->decisions); count 28",
+    "Fresh-context adversarial: entry well-formed per model + precedent; all 27 refs updated; valid endpoints; net-new",
+    "Implemented via coding subagent, orchestrator-verified (build/check/test green)"
+  ],
+  "depends_on": [],
+  "notes": "Unit E. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Vocabulary add under user directive; no DEC/FGAP. Backfilling DEC-0045 links as .project edges is a separate (unrequested) step.",
+  "verification": "VER-036"
+}

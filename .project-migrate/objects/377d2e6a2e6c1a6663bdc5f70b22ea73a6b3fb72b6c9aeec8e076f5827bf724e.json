@@ -1,0 +1,35 @@
+{
+  "target": "TASK-051",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-21T00:00:00Z",
+  "evidence": "Pi SDK upgrade 0.74.0->0.75.4 (commit chore(deps)). Part 1 (build-time): bumped 8 @earendil-works/* ^0.74.0->^0.75.4 sites + engines.node>=22.19.0 on 4 packages + CI matrix [22,23]->[22.19,23]; npm install resolved pi-ai/pi-coding-agent/pi-tui/pi-agent-core to 0.75.4 + typebox 1.1.38. ZERO source edits required (the local-vs-unpkg .d.ts diff predicted no breaking surface, confirmed empirically): build/check/test green on 0.75.4 (524/151/157/829, 0 fail). Part 2 (runtime): user ran `pi update` -> global pi CLI 0.75.4; real dispatch() against `pi --mode json` (haiku pinned, 120s timeout) parsed message_end -> textOutput 'hi' + full usage {input,output,cacheRead,cacheWrite,cost,turns} unchanged -> the pi-workflows dispatch.ts event-stream contract holds on 0.75.4 (the one type-diff-unprovable risk, retired). Deliberate retentions (NOT plan's cleanup): google-gemini-cli case (jit-runtime.ts:294 — removing is net-negative; routes the string to correct 'any' google-mode) + normalizeToolChoice (pi-ai 0.75.4 still no toolChoice field; F-012). package-lock.json gitignored so ranges are git source of truth. FGAP-081 (delimiter alignment) remains the post-upgrade adoption follow-on.",
+  "criteria_results": [
+    {
+      "criterion": "all 8 ^0.74.0 sites -> ^0.75.4; npm install resolves @earendil/* to 0.75.4",
+      "status": "passed",
+      "evidence": "grep no remaining 0.74; node_modules pi-ai/pi-coding-agent/pi-tui = 0.75.4; typebox 1.1.38"
+    },
+    {
+      "criterion": "CI Node floor 22.19 + engines declared",
+      "status": "passed",
+      "evidence": "ci.yml:14 [22.19,23]; engines.node>=22.19.0 on 4 packages"
+    },
+    {
+      "criterion": "build/check/test green across 4 packages on 0.75.4",
+      "status": "passed",
+      "evidence": "524/151/157/829, 0 fail; zero source edits"
+    },
+    {
+      "criterion": "runtime-demo confirms pi --mode json dispatch event-stream parses unchanged on global pi 0.75.4",
+      "status": "passed",
+      "evidence": "dispatch() real call -> textOutput 'hi' + usage parsed; contract holds"
+    },
+    {
+      "criterion": "google-gemini-cli + normalizeToolChoice retained (deliberate); FGAP-081 left as follow-on",
+      "status": "passed",
+      "evidence": "jit-runtime.ts unchanged; F-012 intact"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "status": "completed",
+  "description": "Pi SDK mechanical upgrade 0.74.0 -> 0.75.4 (committed, no-defer per user). Bump all 8 declared ^0.74.0 -> ^0.75.4 sites: pi-behavior-monitors x3 (pi-ai/pi-coding-agent/pi-tui), pi-context x1 (pi-coding-agent), pi-jit-agents x1 (pi-ai), pi-workflows x3 (pi-ai/pi-coding-agent/pi-tui); npm install (transitive pi-agent-core + typebox 1.1.38 flow automatically under our ^1.1.24). Raise CI Node floor: 0.75.0 lifts engines.node 20.6.0 -> 22.19.0, so .github/workflows node-version matrix [22,23] -> [22.19,23] (the ONLY breaking change; verified). Authoritative local-0.74.0 vs unpkg-0.75.4 .d.ts diff = ZERO breaking type-surface changes (every imported symbol signature-identical) -> no forced source edits. Fold in: google-gemini-cli dead KnownApi-case cleanup (jit-runtime.ts:293; dropped from pi-ai KnownApi union but Api=KnownApi|(string&{}) keeps it compiling). RETAIN normalizeToolChoice (pi-ai 0.75.4 still has no toolChoice field; F-012 workaround still required). Grounding: analysis/2026-05-21-pi-sdk-0.74-to-0.75-investigation.md. Follow-on best-practice adoption tracked separately as FGAP-081 (XML-tag context-boundary delimiter alignment) — NOT in this task.",
+  "files": [
+    "packages/pi-context/package.json",
+    "packages/pi-jit-agents/package.json",
+    "packages/pi-workflows/package.json",
+    "packages/pi-behavior-monitors/package.json",
+    ".github/workflows/ci.yml",
+    "packages/pi-jit-agents/src/jit-runtime.ts",
+    "package-lock.json"
+  ],
+  "acceptance_criteria": [
+    "all 8 ^0.74.0 sites bumped to ^0.75.4; npm install resolves @earendil-works/* to 0.75.4 (verify node_modules)",
+    "CI Node floor raised to 22.19 (0.75.0 engines >=22.19.0)",
+    "build/check/test green across all 4 packages",
+    "runtime-demo confirms the pi --mode json dispatch event-stream (pi-workflows dispatch.ts) parses unchanged against 0.75.4 — retires the residual print-mode-contract risk (the one thing the .d.ts diff cannot prove)",
+    "google-gemini-cli dead KnownApi case removed; normalizeToolChoice retained (F-012 still real)",
+    "release tail per completion sequence; FGAP-081 (delimiter alignment) left as the separate follow-on adoption unit"
+  ],
+  "verification": "VER-023"
+}

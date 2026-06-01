@@ -1,0 +1,5 @@
+{
+  "name": "FGAP-026 closure phase 4 — workflow-execute + dispatch tools",
+  "intent": "workflow-execute + workflow-resume dispatch tools — harness-confined main LLM path to bash/read/write under DEC-0014 via JIT-agent dispatch through workflow steps. Step 8.7.4.",
+  "status": "completed"
+}

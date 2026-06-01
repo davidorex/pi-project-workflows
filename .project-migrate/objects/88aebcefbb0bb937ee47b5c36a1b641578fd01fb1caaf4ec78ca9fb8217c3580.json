@@ -1,0 +1,10 @@
+{
+  "title": "Explicit depends_on vs consumes edge types — no first-class ordering-only edge",
+  "body": "The workflow DAG has two implicit edge types: context: [stepName] as an explicit data edge, and ${{ steps.X }} references as implicit data edges. There is no ordering-only edge — 'run after this step but do not consume its output'. A step that needs to wait for another but does not consume its data must still reference it somehow (via a dummy expression or a no-op context entry). context-packet distinguishes depends_on (ordering edge) from consumes (data edge). Extension: add an explicit dependsOn: [stepName] field to StepSpec that creates a DAG edge without implying data consumption. Clarifies the DAG for parallel execution and downstream caching. The distinction matters for token budgeting (only consumed upstream counts toward the budget) and for idempotent skip (only consumed upstream affects the input hash).",
+  "location": "packages/pi-workflows/src/types.ts, packages/pi-workflows/src/dag.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-workflows",
+  "source": "human"
+}

@@ -1,0 +1,44 @@
+{
+  "title": "No universal, DRY element-level read across JSON surfaces — config/schema/relations/roadmap/block-dir are read-all-or-nothing; element-read exists only for blocks and is bespoke, not a shared primitive",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Every JSON-backed read surface the in-pi LLM can reach must let it fetch an INDIVIDUAL element (by id / key / path), never only the whole blob. Today element-level read exists ONLY for blocks (read-block-item by id + read-block-page offset/limit, FGAP-045) plus resolve-item-by-id (cross-block id) and read-samples-catalog (kind-level). Every other JSON surface is JSON.stringify + truncateHead WHOLE-BLOB: read-config (index.ts:964, NO params -> returns the entire config.json; cannot read one registry like relation_types, or one entry by key), read-schema (:1206, whole schema per kind; cannot read one property/field), context-roadmap-load (:1867, whole roadmap; no per-phase/per-milestone), context-edges-for-lens (whole lens edge set), read-block-dir (whole dir). Read-all-or-nothing is the anti-pattern to eliminate everywhere: when a surface exceeds the 50KB cap the LLM gets a truncated, unreliable view and hand-waves/confabulates (FGAP-089/092) instead of surgically fetching the element it needs. This is the UNIVERSAL principle of which FGAP-045 (blocks) and FGAP-101 (the tool catalog) are per-surface instances. DRY DIMENSION (user-emphasized 2026-05-25): the element-reads that exist are hand-rolled per surface (read-block-item is block-specific); adding read-config-entry / read-schema-field / read-roadmap-phase as separate bespoke tools would repeat the same addressing + extraction + truncation logic N times. The fix must be ONE shared element-addressing primitive every JSON surface routes through — not per-surface copies.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "964-985",
+      "reference": "read-config takes NO params and JSON.stringify+truncateHead the entire config.json — no way to read a single registry (e.g. relation_types) or one entry by key. Whole-blob-or-nothing."
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1206-1229",
+      "reference": "read-schema returns the whole schema for a kind; no path/property addressing to read one field definition."
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1867-1896",
+      "reference": "context-roadmap-load returns the whole roadmap; no per-phase / per-milestone element read (cf. FGAP-014 render pagination)."
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1431-1493",
+      "reference": "read-block-item + read-block-page are the ONLY element-level reads — and they are block-specific, the bespoke pattern to generalize into a shared primitive rather than copy per surface."
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "The JSON.stringify + truncateHead + '[Truncated: N bytes exceeds 50KB limit]' whole-blob pattern is repeated across ~8 read handlers (read-block-dir/read-block/read-config/read-samples-catalog/read-schema/list-tools/read-block-item/read-block-page) — duplicated truncation+serialization logic that a shared primitive would unify."
+    }
+  ],
+  "impact": "Any JSON surface that grows past 50KB becomes undetailed-readable: a config with many registries, a large schema, a big roadmap, the tool catalog (FGAP-101) — the LLM cannot surgically fetch the element it needs, so it truncates+hand-waves (FGAP-089) or confabulates (FGAP-092). And the per-surface implementation guarantees drift and duplicated addressing/truncation logic as surfaces multiply — the opposite of DRY.",
+  "canonical_vocabulary": "element-level-read, addressable-read, json-path-extraction, DRY-single-primitive, read-all-or-nothing-antipattern, structured-completeness-envelope",
+  "proposed_resolution": "Introduce ONE generic element-addressable read primitive: a shared function taking a surface + an addressing key (id | object-key | JSON-path) + paging, wrapping every result in the structured-completeness envelope (reuse read-block-page's {items,total,hasMore} / the FGAP-089 structured truncation signal). Route EVERY JSON read surface through it — config (one registry / one entry by key), schema (one property/field by path), roadmap (one phase/milestone), relations (edges by endpoint/type), samples-catalog (deepen beyond kind), block-dir, AND refactor the existing block element-read (read-block-item/read-block-page) onto it so blocks are not a special case. No bespoke read-X-item per surface — each is a parameterization of the one primitive; dual-surface per DEC-0019/0020 = one library fn + one tool + one CLI reused. Generalizes FGAP-045 (blocks), subsumes FGAP-101 (list-tools index/detail becomes an instance), and carries FGAP-089's structured signal in the shared envelope. Implementation via plan mode (source edit).",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_issues": []
+}

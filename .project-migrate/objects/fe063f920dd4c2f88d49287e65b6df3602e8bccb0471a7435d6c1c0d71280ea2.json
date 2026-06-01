@@ -1,0 +1,25 @@
+{
+  "title": "pi-workflows dispatch does not surface worktree isolation as a step opt — parallel agent steps that mutate shared files have no framework-provided isolation mechanism; today's subprocess + cwd-scoped dispatch leaves parallel-mutation conflicts to operator discipline",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-workflows",
+  "layer": "L3",
+  "description": "Per R-0014 recon axis 8: Claude Code workflows expose isolation: 'worktree' on agent() opt — each agent runs in a freshly-cloned git worktree with auto-cleanup if no changes; concurrent agents mutating the same files cannot conflict. pi-workflows agent step dispatches as subprocess in the same cwd; concurrent parallel agents have no isolation. Today's pattern: when operators need worktree-isolated parallel work, they hand-implement worktree-spawn in shell command steps + manage cleanup themselves. Expensive operationally + error-prone (cleanup-on-failure paths).",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "441-461",
+      "reference": "Part 3 axis 8 — Worktree Isolation per-Agent — ADOPT verdict (partial support already in dispatch; surface not exposed)"
+    },
+    {
+      "file": "packages/pi-workflows/src/dispatch.ts",
+      "reference": "subprocess spawn in cwd; no worktree spawn / cleanup path"
+    }
+  ],
+  "impact": "Parallel agent steps that mutate shared files race + corrupt each other's edits. Operators avoid the parallel pattern entirely or hand-build worktree spawn in command step shims that bypass framework lifecycle management (cleanup-on-error not handled). Worktree-spawning cost (~200-500ms + disk per agent per Claude docs) is justified only when parallel mutation is the threat — but operators have no framework hook to opt into it per-step.",
+  "canonical_vocabulary": "worktree isolation; per-agent filesystem sandbox; parallel-mutation safety",
+  "proposed_resolution": "Add 'isolation' field to agent StepSpec: 'isolation?: 'worktree' | { type: 'worktree', cleanup?: boolean, branch?: string }'. dispatch.ts checks step.isolation: if 'worktree', spawn agent in `git worktree add <tmpdir> HEAD` + execute subprocess with cwd=tmpdir + on completion: if no changes, remove worktree; else preserve + report path + branch (per Claude docs cleanup semantics). Cost surfaced in step output (worktree-creation latency added to step duration). Documentation: only enable when concurrent mutation risk exists; do NOT default-on (cost overhead).",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

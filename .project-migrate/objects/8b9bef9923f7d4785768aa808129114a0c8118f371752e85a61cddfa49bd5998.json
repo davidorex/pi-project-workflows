@@ -1,0 +1,21 @@
+{
+  "description": "Vendor truncateHead locally to remove the SDK root-barrel VALUE import from context-sdk's tsx-eval-reachable graph (fixes FGAP-104; restores validateContext/contextState via tsx -e, broken by FGAP-103's read-element.ts:29). NEW packages/pi-context/src/truncate.ts = VERBATIM copy of truncateHead + DEFAULT_MAX_BYTES (50*1024) + DEFAULT_MAX_LINES (2000) + the result interface from node_modules/@earendil-works/pi-coding-agent/dist/core/tools/truncate.js (pure, only Buffer.byteLength; ~70 lines), with a provenance header (vendored from @0.75.4; SDK exposes no resolving subpath + root barrel unresolvable under tsx -e; re-sync if SDK adds a tools export). Repoint read-element.ts:29 import to ./truncate.js. index.ts type-only root-barrel import unchanged. NOT a simpler byte-cap (keep line-aware head-truncation parity with pi, which FGAP-089 mirrors).",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/truncate.ts",
+    "packages/pi-context/src/truncate.test.ts",
+    "packages/pi-context/src/read-element.ts"
+  ],
+  "acceptance_criteria": [
+    "truncate.ts is a verbatim vendor of the SDK truncateHead (same signature + return shape {content,truncated,truncatedBy,totalBytes,...}); pure (only Buffer.byteLength)",
+    "read-element.ts imports truncateHead from ./truncate.js — zero static SDK root-barrel VALUE imports remain in context-sdk's reachable graph",
+    "build/check/test green; read-element/serializeForRead truncation tests unchanged-pass (behavior-identical)",
+    "REGRESSION GATE: npx tsx -e validateContext('.').issues.length RESOLVES + prints 88 (also confirms FGAP-103 cascade integrity); contextState tsx-eval smoke resolves",
+    "truncate.test.ts covers under-cap passthrough + over-cap truncated/totalBytes + byte accuracy"
+  ],
+  "depends_on": [
+    "TASK-075"
+  ],
+  "notes": "Addresses FGAP-104. Vendor (not subpath — SDK has no tools export; not re-export — still imports barrel in compiled code; not simpler-cap — parity). If the SDK truncateHead impl isn't self-contained, STOP+report. NO RELEASE (held).",
+  "verification": "VER-047"
+}

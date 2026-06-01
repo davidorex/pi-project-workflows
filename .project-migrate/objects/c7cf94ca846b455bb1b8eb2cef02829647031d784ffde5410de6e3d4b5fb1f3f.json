@@ -1,0 +1,30 @@
+{
+  "title": "Authorship attestation at write time",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-project",
+  "layer": "L4",
+  "description": "Only issues.schema.json has a source enum (human | agent | monitor | workflow). tasks.schema.json has assigned_agent which is a different concept (assignment, not authorship). No block records created_by / modified_by / created_at / modified_at consistently. block-api.ts does not stamp authorship on writes. The authorship-matrix principle — 'only the user can advance a finding from proposed to decided' — cannot be enforced because the writer identity is not recorded.",
+  "evidence": [
+    {
+      "file": ".project/schemas/issues.schema.json",
+      "reference": "source enum exists here and only here — partial coverage, no other block has equivalent fields"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "writeBlock / appendToBlock / updateItemInBlock do not inject authorship metadata"
+    },
+    {
+      "file": ".project/schemas/tasks.schema.json",
+      "reference": "assigned_agent field is assignment semantics, not authorship — a task can be assigned to agent X but written by user Y"
+    }
+  ],
+  "impact": "State-machine validation of user-gated transitions (decision enacted, finding decided, feature approved) is structurally impossible. The framework cannot distinguish 'user advanced this' from 'agent advanced this' and so cannot enforce authority matrices. The spec-loop invariant M4 is unenforceable.",
+  "canonical_vocabulary": "authorship attestation; written_by attribution; audit trail",
+  "proposed_resolution": "block-api.ts stamps created_by / modified_by / created_at / modified_at on every write, reading writer identity from a DispatchContext parameter. Every block schema adds these as required fields. Cross-block validation can then enforce authority-matrix rules per-transition.\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `001d11a` (Step 3 DispatchContext + WriterIdentity + stampItem) + `2ed2102` (Step 3.1 per-field schema declaration honoring) + `d24769a` (Step 6.2 upsert attestation pre-merge). DispatchContext + WriterIdentity + per-field-aware stampItem land authorship attestation across all block-api write surfaces; upsert pre-merge preserves created_* across replacement updates. Description text above preserves the forensic record of the pre-closure state.",
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_decisions": [],
+  "related_issues": []
+}

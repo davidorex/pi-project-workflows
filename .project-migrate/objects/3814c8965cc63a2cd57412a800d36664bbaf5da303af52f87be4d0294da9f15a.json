@@ -1,0 +1,61 @@
+{
+  "title": "ID-prefix padding convention — 3-digit vs 4-digit zero-padding across block kinds",
+  "status": "enacted",
+  "context": "Inspection of current .project/*.json items surfaces concrete drift: R- (research) + DEC- (decisions) use 4-digit zero-padding (R-0001 / DEC-0001..0025); FGAP- (3-digit, 59 items, near-rollover at FGAP-100), TASK- (3-digit, 42 items), VER- (3-digit, 15 items), FEAT- (3-digit, 1 item), PLAN- (3-digit, 1 item), REVIEW- (3-digit, 1 item), CTX- (3-digit, 3 items), RAT- (3-digit, 8 items) all use 3-digit zero-padding. Drift surfaced via ls + node enumeration during 2026-05-14 reverse-engineered config draft (analysis/2026-05-14-step-1-config-draft-from-substrate.md). Existing items aren't broken — block-api operates on string ids regardless of padding — but lens binning by id-pattern + LLM ID parsing assumes uniform shape per prefix. Without canonical declaration, future authoring continues drift; future migration becomes harder per existing-id volume.",
+  "decision": "3-digit zero-padding (e.g. DEC-001, R-001) is canonical across ALL block kinds. The two outliers — R- (research, 4-digit, ~11 items) and DEC- (decisions, 4-digit, 50 items at enactment time) — migrate forward to 3-digit. Net migration scope: ~61 items (4-digit → 3-digit) versus ~170+ items that would have moved under 4-digit-canonical. The 999-id ceiling per block is adequate at current scale (largest 3-digit block today is issue- at ~91 items; second-largest FGAP- at ~113 items). Per-block-declared width (option 4) is explicitly rejected as 'accept the drift FGAP-048 was filed to fix' — it is the non-canonicalization, not a canonical choice. 4-digit-canonical is rejected by asymmetry: 170+ migrate vs 61.",
+  "consequences": [
+    "Lens binning by id-pattern becomes uniform per prefix once canonicalized.",
+    "Existing items either preserve historical shape (per-block override) OR migrate forward.",
+    "relations.json edges (when populated) reference canonicalized ids.",
+    "LLM lookups + analysis MD authoring inherit the canonical pattern."
+  ],
+  "options_considered": [
+    {
+      "label": "3-digit canonical + per-block historical exception",
+      "description": "Declare 3-digit canonical universally; R- and DEC- retain 4-digit as historical drift declared via config.block_kinds[].id_width override per block. No migration of existing items.",
+      "tradeoffs": "Drift remains visible as historical-not-canonical; per-block exception cataloged in config; future items per block follow declared width."
+    },
+    {
+      "label": "3-digit canonical + migrate R- and DEC- forward",
+      "description": "Declare 3-digit canonical; renumber R- (11 items, R-0001..0011 → R-001..011) + DEC- (25 items, DEC-0001..0025 → DEC-001..025). No leading-zero conflict.",
+      "tradeoffs": "Lowest-churn migration given current item counts; relations.json edges (when populated) need migration; analysis MDs + commit messages keep historical references but new authoring is canonical."
+    },
+    {
+      "label": "4-digit canonical + migrate 3-digit blocks forward",
+      "description": "Declare 4-digit canonical; renumber FGAP- (59) + TASK- (42) + VER- (15) + others.",
+      "tradeoffs": "Higher churn; accommodates higher per-block count without rollover (FGAP-9999 vs FGAP-999)."
+    },
+    {
+      "label": "Per-block-declared width with no canonical universal rule",
+      "description": "config.block_kinds[].id_width declares per-block width; framework respects per declaration; no canonical universal width.",
+      "tradeoffs": "No migration; persistent inconsistency; LLM lookups must consult config.block_kinds[].id_width before parsing."
+    }
+  ],
+  "references": [
+    {
+      "label": "Drift surfaced in step-1 config draft",
+      "path": "analysis/2026-05-14-step-1-config-draft-from-substrate.md"
+    },
+    {
+      "label": "FGAP-048 forcing artifact",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "config.block_kinds[].prefix declaration site",
+      "path": "packages/pi-context/registry/schemas/config.schema.json",
+      "lines": "39-55"
+    },
+    {
+      "label": "DEC-0026 enactment (3-digit canonical, migrate R-/DEC- forward)",
+      "commit": "a20a1c7"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-047",
+    "FGAP-048"
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-26"
+}

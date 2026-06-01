@@ -1,0 +1,28 @@
+{
+  "title": "No canonical write-surface for schema files",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-project",
+  "layer": "L2",
+  "description": "pi-project's block-api provides typed write-surface for block data (.project/<name>.json) via writeBlock / appendToBlock / updateItemInBlock / appendToNestedArray / updateNestedArrayItem / removeFromBlock / removeFromNestedArray / readBlockDir. No parallel surface exists for schema files (.project/schemas/<name>.schema.json). Every schema modification — adding an enum value, adding a property, restructuring — happens via filesystem-direct Edit, bypassing the write-time-validation pattern block-api enforces for block data. This is a parallel-ungated path relative to the F-006 mitigation pattern: schemas are foundational artifacts of the substrate contract but lack the typed write surface that block files have.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "Nine exported write functions all route through blockFilePath() to .project/<name>.json. None target .project/schemas/<name>.schema.json. No writeSchema, addSchemaEnumValue, addSchemaProperty, or equivalent exports."
+    },
+    {
+      "file": "CLAUDE.md",
+      "reference": "Conventions section reads 'All schemas are user-customizable. Edit `.project/schemas/*.schema.json` to add fields, change enums, or restructure — no code changes needed.' This implicitly acknowledges Edit as the only path; there is no tool-mediated alternative."
+    },
+    {
+      "file": ".project/schemas/decisions.schema.json",
+      "reference": "Modified via filesystem Edit on 2026-05-03 to add 'superseded' to the status enum + corresponding x-lifecycle states/transitions update. Edit was the only canonical path because no block-api schema-write surface exists. The schema gap motivated this entry."
+    }
+  ],
+  "impact": "Every schema edit is a manual operation outside the block-api validation pattern. Schema validity (well-formed JSON Schema, AJV-compilable) is unverified at write time. Cross-block invariants — e.g., that an enum-value removal is rejected when existing block items still carry that value — are not enforced. Schemas drift independently of the items they validate. Schema modifications cannot participate in the block-validation snapshot/rollback contract because they happen below the block-api boundary.",
+  "canonical_vocabulary": "schema-write surface; meta-validation; schema-as-substrate write contract",
+  "proposed_resolution": "Extend block-api with schema-write functions: writeSchema (full replacement with AJV meta-validation), addSchemaEnumValue (additive enum extension with check that no existing items become invalid), addSchemaProperty (additive property extension with check on required-key handling), removeSchemaEnumValue (with rejection if any existing item still carries the value). All functions perform JSON Schema meta-validation at write time and check that existing block items remain valid under the modified schema. SDK validateProject gains schema-modification atomicity guarantees. Block-validation rollback extends to cover schema files in its snapshot/restore set.\n\nCLOSURE (agent/step-8.5-orchestrator 2026-05-09T23:58:13.827Z): Structurally closed by `001d11a` (Step 3 schema-write.ts: writeSchema/updateSchema/readSchema with AJV meta-validation) + `523fa96` (Step 6 monitor write-action routing through block-api) + `2160c63` (Step 6.1 typed-file generalization) + `1e68034` (Step 6.3 6 typed-file find-or-merge primitives). schema-write.ts ships writeSchema/updateSchema/readSchema with AJV meta-schema validation; block-api generalized to 16 primitives (8 .project/-targeting wrappers + 8 typed-file primitives operating on arbitrary (filePath, schemaPath) pairs); monitor write-actions route through block-api; zero parallel ungated paths remain. Description text above preserves the forensic record of the pre-closure state.",
+  "related_decisions": [],
+  "related_features": [],
+  "related_issues": []
+}

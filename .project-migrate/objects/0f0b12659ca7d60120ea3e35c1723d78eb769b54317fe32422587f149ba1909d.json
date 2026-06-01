@@ -1,0 +1,11 @@
+{
+  "title": "Agent output instructions tell agents to write files they cannot write — fenced JSON rejected",
+  "body": "buildPrompt() in step-shared.ts told agents \"Write your result as valid JSON to: <path>\" but 14 of 16 JSON-producing agents have tools: [read] or similar — no write capability. Their only output channel is textOutput (last assistant message). No instruction prohibited markdown fences, so LLMs wrapped JSON in markdown code blocks which JSON.parse() rejected. The prompt instruction was mismatched with agent capabilities.",
+  "location": "packages/pi-workflows/src/step-shared.ts:95",
+  "status": "resolved",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-workflows",
+  "source": "agent",
+  "resolved_by": "v0.11.3 commit b614be4 — rewritten to \"raw JSON only, no markdown fences\" with file-write as secondary"
+}

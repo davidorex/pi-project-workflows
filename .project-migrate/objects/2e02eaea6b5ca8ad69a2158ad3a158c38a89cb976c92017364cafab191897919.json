@@ -1,0 +1,50 @@
+{
+  "target": "TASK-039",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T17:30:00Z",
+  "evidence": "Sub-phase 3.2 (gatherExecutionContext primitive) landed at HEAD 6bea7e1. Closes FGAP-031. Library packages/pi-context/src/execution-context.ts:143 export function gatherExecutionContext returns ContextBundle | {error: string}. ContextBundle + BundleRelationTypeSpec + GatherExecutionContextArgs + ContextContract types exported (interface declarations at execution-context.ts:104+). Pi tool gather-execution-context registered at index.ts:1282. Orchestrator script scripts/orchestrator/gather-execution-context.ts shebang-tsx + chmod +x (--unit-id + --kind + --max-depth + --format json|summary). tsconfig.json gained @davidorex/pi-context/execution-context path mapping. Tests: pi-context 447 → 454 (+7 covering happy path / multi-relation / direction semantic / maxDepth bound / missing unit / missing contract / empty bundle_relation_types). Reuses Phase 2 primitives (filterBlockItems / resolveItemsByIds / walkAncestors / walkDescendants / findReferences). Per-test fixtures own synthetic relations.json. Husky pre-commit gate green.",
+  "criteria_results": [
+    {
+      "criterion": "gatherExecutionContext(cwd, args) library exported from new execution-context.ts",
+      "status": "passed",
+      "evidence": "execution-context.ts:143"
+    },
+    {
+      "criterion": "ContextBundle / BundleRelationTypeSpec / GatherExecutionContextArgs types exported",
+      "status": "passed",
+      "evidence": "execution-context.ts:104 ContextBundle interface; other types co-declared"
+    },
+    {
+      "criterion": "Library composes via Phase 2 primitives (filterBlockItems / resolveItemsByIds / walkAncestors / walkDescendants / findReferences)",
+      "status": "passed",
+      "evidence": "Library imports all 5 primitives + readBlock + loadRelations"
+    },
+    {
+      "criterion": "gather-execution-context pi tool registered with Type.Object({unitId, kind, maxDepth?})",
+      "status": "passed",
+      "evidence": "index.ts:1282 pi.registerTool({name: \"gather-execution-context\", ...})"
+    },
+    {
+      "criterion": "scripts/orchestrator/gather-execution-context.ts shebang-tsx + chmod +x",
+      "status": "passed",
+      "evidence": "-rwxr-xr-x 4646 bytes; --unit-id + --kind + --max-depth + --format json|summary"
+    },
+    {
+      "criterion": "tsconfig.json gained @davidorex/pi-context/execution-context path mapping",
+      "status": "passed",
+      "evidence": "tsconfig.json:13"
+    },
+    {
+      "criterion": "7 tests pass per per-test-fixture pattern",
+      "status": "passed",
+      "evidence": "+7 tests in pi-context (447 → 454)"
+    },
+    {
+      "criterion": "Husky pre-commit gate green",
+      "status": "passed",
+      "evidence": "Commit 6bea7e1 landed without --no-verify across all 4 packages"
+    }
+  ]
+}

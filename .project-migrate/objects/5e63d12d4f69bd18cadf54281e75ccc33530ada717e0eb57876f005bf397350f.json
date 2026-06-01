@@ -1,0 +1,4 @@
+{
+  "title": "Lockstep versioning across all packages",
+  "narrative": "All four packages share a single version number, bumped simultaneously by scripts/bump-versions.js. Introduced in commit 03ef5a6. The packages have tight cross-package dependencies (pi-workflows imports from pi-project, the meta-package re-exports all three). Lockstep versioning aims to eliminate compatibility matrix complexity -- any combination of packages at the same version is guaranteed compatible. The custom bump-versions.js script exists because npm version -ws runs peer dep resolution between bumping versions and syncing cross-references, which fails in the 0.x semver range where ^0.2.0 does not satisfy 0.3.0 (commit 153cb3b). Confidence: HIGH."
+}

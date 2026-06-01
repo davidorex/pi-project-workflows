@@ -1,0 +1,46 @@
+{
+  "title": "Harness-confined main LLM; all action via extension tools, JIT-agent dispatch, and workflows; default Pi tools (bash/read/write/edit) excluded from the main thread",
+  "status": "enacted",
+  "context": "Empirical observation across this rebuild arc: every time the main LLM had access to bash/read/write/edit, it bypassed the substrate (direct file edits to .project/*.json instead of block-api; bash-grep instead of substrate query tools; write-to-disk instead of writeBlock). The bypasses recreated the F-006 trap (unrestricted tools + agentic model = tool-call loops + state corruption + parallel ungated paths) that FGAP-011 closure was filed to retire. The substrate-arc thesis (config-driven typed substrate as canonical surface) is structurally only realized when the substrate IS the operating surface, not one option among many. Tool-surface gap audit at analysis/2026-05-10-tool-surface-gap-audit.md enumerates 22 gaps + meta-pattern (pi tool surface systematically lags JS export surface); under unconstrained-tools assumption these are nice-to-have architectural debt, but under harness-confined assumption they are functional spec items.",
+  "decision": "Every Pi runtime invocation EXCLUDES bash/read/write/edit (the default Pi tools) from the main LLM's tool list. The main LLM operates ONLY through extension-registered tools (pi-context's 21 tools + pi-jit-agents / pi-workflows / pi-behavior-monitors registered tools). Out-of-substrate operations route through workflows that dispatch JIT agents whose .agent.yaml specs declare the required tool surface (bash/read/write/edit assignable per agent; spec-author authorizes; workflow step dispatches). The harness-confined model is the canonical execution surface for the typed-context substrate; unrestricted main-thread tools are explicitly rejected.",
+  "consequences": [
+    "Tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) is reframed from architectural debt to functional spec — closing the 22 enumerated gaps + meta-pattern is precondition for the harness-confined model to be operable. The 8-rank consolidated impact ranking becomes the implementation order.",
+    "FGAP-026 (config-driven bootstrap; substrate dir name from config) moves from P1 architectural-completeness to P0 unblocker — without read-config / read-schema / discovery tools, the harness-confined main thread cannot inspect the substrate it is meant to operate on. Bootstrap-edge hardcode is no longer 'embarrassing'; it is 'blocking'.",
+    "filter-block-items + resolve-items-by-id (the two practical-priority gaps from the audit) become P0 — without bash/grep, the main LLM has zero fallback for predicate-based queries beyond N-call serial probes against potentially-truncating read-block.",
+    "Subcommand-only surfaces (/project view, /project lens-curate, /project install, /project add-work) need either tool wrappers OR explicit JIT-agent dispatch contracts — the main LLM cannot invoke a subcommand from its tool list.",
+    "JS-export-only surfaces (schema-write, lens-view rendering, discovery aggregator, walk-ancestors, etc.) need tool wrappers — main LLM has no Read access to even inspect what those JS exports do.",
+    "Out-of-substrate operations (npm install, git status, file edits outside .project/, build/check/test invocations) reframe as workflow steps that dispatch JIT agents with appropriate tool surface. Main LLM cannot invoke npm run build directly; it dispatches a workflow.",
+    "Step 9 (adversarial audit, Task #11) shape changes — the audit can dispatch a JIT agent with read/grep tools, but the orchestrator consuming the audit report is harness-confined. Audit results need structured tool returns, not free-form report parsing.",
+    "Step 10 (release, Task #12) — npm publish + git tag + git reset --hard + git push remain user-execution per existing convention (interactive OTP, etc.). Agent-side build/check/test of step 1-8 must route through workflows that dispatch JIT agents with bash.",
+    "DispatchContext attestation (FGAP-004 closure) gains semantic weight — the WriterIdentity discriminator (human/agent/monitor/workflow) accurately reflects who took an action because the harness no longer permits ad-hoc bypass.",
+    "FGAP-024 (no write-authority enforcement) becomes more pressing — under harness-confined operation, blocking the main LLM from writing to inappropriate blocks at the dispatch boundary becomes the only enforcement layer.",
+    "feedback memory entries that gated bypass behavior (feedback_no_ad_hoc_code.md, feedback_no_destructive_git_ops.md, feedback_persist_means_mv_verbatim.md, feedback_tsx_eval_for_deterministic_state.md) describe behaviors the main LLM no longer has the surface to perform; they remain valid for JIT-agent-dispatched contexts.",
+    "Substrate-arc completion criterion (per FGAP-028, filed 2026-05-10): 'harness-confined dispatch dry-run' — synthetic main-LLM-as-tool-only invocation of representative arc work using ONLY extension tools + JIT-agent dispatch via workflows. Step 9 (adversarial audit, Task #11) gains a dogfood-dispatch test gate as part of its protocol. Step 10 (release, Task #12) is conditioned on Step 9's dogfood-dispatch passing. Tool-existence-as-completion-proxy (build/check/test gate) is necessary but insufficient under DEC-0014 because it hides agent-reachable surface gaps (e.g. 8 typed-file primitives from FGAP-019/020 closure ship as JS exports with no agent-reachable tool wrappers — invisible to the harness-confined consumer despite passing all builds/tests). FGAP-028 codifies the dogfood-completeness criterion; FGAP-026 closure + tool-surface gap audit closure are scoped against it."
+  ],
+  "options_considered": [
+    {
+      "label": "Default Pi tools available to main LLM",
+      "description": "Allow bash/read/write/edit as default tools; rely on instruction discipline (CLAUDE.md mandates, feedback memory) to prevent bypass.",
+      "tradeoffs": "Empirically rejected across the rebuild arc — every bypass observed (direct .project/*.json edits, bash-grep instead of resolve-item-by-id, write-to-disk instead of writeBlock) followed instruction-discipline framing. Mandate hooks remind but do not enforce. Recreates F-006 trap pattern. Continued substrate erosion as bypass becomes default-easier than canonical surface."
+    },
+    {
+      "label": "Harness-confined main LLM; JIT-agent dispatch for default-tool needs (this option)",
+      "description": "Main LLM tool list excludes bash/read/write/edit. JIT agents declared with explicit tool-surface authorization. Out-of-substrate operations via workflow + JIT-agent dispatch. Substrate IS the operating surface.",
+      "tradeoffs": "Pro: substrate-arc thesis structurally enforced; bypass impossible by surface design rather than instruction discipline; DispatchContext attestation gains semantic weight; tool-surface gap closure becomes functional spec. Con: tool-surface gap audit's 22 items + meta-pattern become P0 precondition; substantial implementation work to close before the model is operable; out-of-substrate operations require workflow authoring not direct execution."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-024",
+    "FGAP-026",
+    "FGAP-028"
+  ],
+  "references": [
+    {
+      "label": "tool-surface gap audit",
+      "path": "analysis/2026-05-10-tool-surface-gap-audit.md"
+    }
+  ],
+  "supersedes": [],
+  "enacted_by": "user",
+  "enacted_at": "2026-05-10T02:26:02.779Z"
+}

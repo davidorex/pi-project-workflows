@@ -1,0 +1,62 @@
+{
+  "title": "Work-unit context composed at dispatch time via bidirectional scoped traversal of config-declared relation_types per unit-kind context contract; inline reference arrays on work-units forbidden as DEC-0013 violation",
+  "status": "enacted",
+  "context": "User-surfaced theoretical framing 2026-05-10: a unit-of-work is the convergence point of multiple context streams — intent (requirements, goals, issues being resolved), constraints (decisions, conventions, conformance rules, applicable architectural patterns), rationale, dependencies, touched-surfaces, verification criteria, authority/attribution, position in the larger arc. Forward edges are author-time (decision authored with enacted_by_phase pointer); backward edges are execution-time (task executor needs to walk back to all decisions constraining it). Without bidirectional traversal + composition primitives, work-unit dispatch requires N+1 reads + ad-hoc composition by the orchestrator before the executor can proceed. Under DEC-0014 + DEC-0016 (harness-confined main LLM + Claude Code instruction-imposed) the orchestrator cannot do that ad-hoc composition efficiently — work-unit context bundling must be a substrate primitive, not an orchestrator responsibility.\n\nThe specific articulation user critiqued (inline arrays like `related_requirements: string[]` on the task schema) violates DEC-0013 (edges-only authoring; all inter-item relationships go through config-declared relation_types in relations.json with category dispatch). The theoretical concept is correct (work-unit needs backward visibility to all relevant context streams); the implementation shape is closure-table edges + per-unit-kind context contracts + a composition primitive at gather-time, not inline reference arrays parallel-storing relationship data.",
+  "decision": "Work-unit context (the bundle of items relevant to executing a unit-of-work) is composed at dispatch time by walking config-declared relation_types per a unit-kind-specific context contract. (1) RELATIONSHIPS: every link from a work-unit to context items is a closure-table edge in relations.json with a config-declared relation_type per DEC-0013 — NOT an inline array on the work-unit's schema. Reference-bearing fields like `related_requirements: string[]` on a task schema are forbidden as DEC-0013 violations; the substrate's authoritative reference graph lives in relations.json. (2) CONTEXT CONTRACT: per work-unit-kind, the substrate declares (in a context-contract block kind, OR encoded as composition-lens definitions in config.lenses[]) which relation_types compose the execution bundle. Different unit kinds have different bundles: implementation tasks need conventions + acceptance + architecture-touched; decision-making tasks need rationale + alternatives + related-decisions; verification tasks need verification-criteria + evidence-rules + items-under-verification. (3) GATHER PRIMITIVE: a single substrate operation (gather-execution-context(unitId, kind)) reads the unit + reads its context contract + walks the declared relation_types bidirectionally + composes the result as a single typed bundle returned as one structured payload. (4) DISPATCH-TIME INJECTION: pi-jit-agents' contextBlocks mechanism extends to item-level selectivity driven by gather-execution-context output — agents receive bundle as composed input, not as N whole-block dumps. (5) RELEVANCE SCOPING: traversal scoped per relation_type's category semantics; bounded by depth + applicability predicate (FGAP-010 territory) so reach-but-not-relevant items don't pollute the bundle.",
+  "consequences": [
+    "Work-unit context bundling is a substrate primitive, not orchestrator responsibility — under DEC-0014/0016 the harness-confined main LLM cannot do ad-hoc N+1 reads to compose execution context efficiently; the substrate must deliver the composed bundle as one tool return.",
+    "DEC-0013 enforcement extends: inline reference arrays on ANY work-unit-kind schema (task, plan-item, story, phase, or future kinds) are forbidden. References to other items go through closure-table edges with config-declared relation_types. Migration of any existing schemas violating this (e.g. tasks.schema with inline depends_on, decisions.schema with inline related_findings, etc.) is its own arc — file as relevant FGAP if surfaced.",
+    "Per-unit-kind context contract is itself substrate data — either a new context-contract block kind declaring per-kind which relation_types compose the bundle, OR encoded as kind=execution-context-bundle composition lenses in config.lenses[] keyed by unit-kind. Latter reuses existing composition lens machinery (FGAP-012 closure surface); former adds a new block kind. Decision deferred to FGAP-030 closure work; either implementation satisfies DEC-0017.",
+    "FGAP cluster filed alongside this DEC: FGAP-029 (bidirectional scoped traversal primitive — walk-ancestors / gather-by-relation), FGAP-030 (per-work-unit-kind context contract substrate), FGAP-031 (gather-execution-context composition primitive), FGAP-032 (item-level contextBlocks selectivity in pi-jit-agents driven by gather output). FGAP-010 (applicability predicate language) supplies the relevance-scoping mechanism. FGAP-005 (state-machine validation) gates context-time validity. FGAP-024 (write-authority enforcement) extends to gather-time authority (who can request which bundles for which units).",
+    "Tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) gains gather-execution-context as a P1 candidate alongside filter-block-items / read-config / read-schema. Under DEC-0014/0016 dogfood-completeness lens (FGAP-028) this primitive is required — without it, work-unit dispatch is undispatchable from a tools-only orchestrator.",
+    "Rebuild arc's FGAP-026 closure phase plan extends: a new phase between Phase 2 (high-impact query tools) and Phase 3 (workflow-execute) lands the gather-execution-context primitive + context contract substrate + walk-ancestors/walk-by-relation tools. Without this, Phase 4's arc-tracking-block authoring + Phase 5+ dispatch via dogfooding lacks the context-bundling surface.",
+    "Documentation discipline (DEC-0015 9th consequence) extends to DEC-0017 surface — gather-execution-context tool + context-contract block kind + per-unit-kind bundle semantics surface in code comments, CLAUDE.md, READMEs, skill-narratives.",
+    "DEC-0014 + DEC-0015 + DEC-0016 + DEC-0017 form the four-piece canon establishing the substrate operational contract: (a) surface enforcement for pi-runtime, (b) config drives location, (c) instruction-imposed for Claude Code, (d) work-unit context composed at dispatch time. All four required for substrate-arc thesis to be structurally complete; FGAP-028's dogfood-completeness gate measures all four together."
+  ],
+  "options_considered": [
+    {
+      "label": "Inline reference arrays on work-unit schemas (the user-quoted articulation)",
+      "description": "Add fields like related_requirements: string[], related_decisions: string[], etc. to tasks.schema (and parallel arrays to other work-unit-kind schemas). Each work-unit carries its own list of related-item IDs; reads are local to the unit.",
+      "tradeoffs": "Empirically rejected — violates DEC-0013 (parallel storage of relationship data alongside relations.json). Fragmentation: same relationship now lives in TWO places (the unit's array + relations.json edges) with no atomic write across both. Drift risk: array updated, edge missing, or vice versa. Reverse-traversal still requires reading all units to find inbound references (the array doesn't index in reverse). Cross-block consistency validation impossible because reference vocabulary scattered across N schemas. Same antipattern as FGAP-013's pre-DEC-0013 status-vocabulary-hardcoded-in-TS."
+    },
+    {
+      "label": "Closure-table edges + per-unit-kind context contract + gather-execution-context composition primitive (this option)",
+      "description": "All work-unit→context references are edges in relations.json with config-declared relation_types per DEC-0013. Per-unit-kind context contract declares which relation_types compose the execution bundle. gather-execution-context(unitId, kind) primitive walks contract + bidirectionally traverses declared edges + composes one typed bundle. Substrate primitive serving harness-confined dispatch.",
+      "tradeoffs": "Pro: substrate-arc thesis structurally consistent (single source of truth for relationships per DEC-0013); reverse traversal cheap (closure-table indexed); per-unit-kind contracts make context bundling extensible without schema changes per kind; orchestrator gets composed bundle in one tool call (FGAP-028 dogfood-dispatchable); attribution + state-machine + authority gates layer on naturally. Con: requires bidirectional traversal primitive (FGAP-029), context contract substrate (FGAP-030), composition primitive (FGAP-031), pi-jit-agents item-level injection (FGAP-032) — substantial closure work; relation_type registry must declare ALL the work-unit→context edge kinds (addresses, constrained_by, informed_by, depends_on, touches, verified_by, assigned_to, positioned_in or canonical naming aligned with substrate vocabulary)."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-005",
+    "FGAP-010",
+    "FGAP-024",
+    "FGAP-029",
+    "FGAP-030",
+    "FGAP-031",
+    "FGAP-032"
+  ],
+  "references": [
+    {
+      "label": "DEC-0013 (edges-only authoring; the contract DEC-0017 enforces against inline arrays)",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0014 (harness-confined main LLM; substrate primitive needed because orchestrator cannot do N+1 ad-hoc composition)",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0016 (Claude Code instruction-imposed equivalent; same primitive needed for Claude Code orchestrator)",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "FGAP-028 (dogfood-completeness criterion measures DEC-0017 surface as part of dispatch capability)",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "tool-surface gap audit (gather-execution-context joins as P1 tool candidate)",
+      "path": "analysis/2026-05-10-tool-surface-gap-audit.md"
+    }
+  ],
+  "supersedes": [],
+  "enacted_by": "user",
+  "enacted_at": "2026-05-10T04:14:52.901Z"
+}

@@ -1,0 +1,39 @@
+{
+  "title": "launch-chain hygiene + symmetry — no verification that all extensions emitted SKILL.md (silent partial-set launch); pi-agent-dispatch package.json lacks pi.skills field (asymmetric with peers); FEAT-004/005/006 status=proposed while FEAT-010=complete (arc-readiness asymmetry obscures roadmap)",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-project-workflows",
+  "layer": "L5",
+  "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gaps 13+14+16 MEDIUM + F.3+F.5+F.6) clusters three symmetry/hygiene gaps: (1) launch script greps for `<tool name=>` tags across packages/*/skills/*/SKILL.md; if pi-agent-dispatch's SKILL.md is silently missing (e.g., generate-skills.js failure or unrun), launch proceeds with a partial allowlist + no warning — no pre-launch verification step asserts the 4-extension symmetry post-cascade; (2) pi-context / pi-workflows / pi-behavior-monitors all have pi.skills field in package.json for pi's own skill discovery; pi-agent-dispatch's package.json omits this field, so even if pi installs it the skill won't auto-load via pi's own discovery (separate from the meta-bundled copy mechanism); (3) FEAT-004/005/006 currently status=proposed while FEAT-010 status=complete — the proposed-vs-complete asymmetry in the features block obscures arc readiness for fresh-context readers (FEAT-010 ships FEAT-005's infrastructure but FEAT-005 is still proposed). Each is independently small; clustered here because they all touch launch-chain symmetry hygiene.",
+  "evidence": [
+    {
+      "file": "scripts/launch-constrained-pi.sh",
+      "reference": "no pre-launch symmetry verification; grep-only derivation trusts file presence"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/package.json",
+      "reference": "lines 26-29 pi.skills field absent (asymmetric with other 3 extensions)"
+    },
+    {
+      "file": ".project/features.json",
+      "reference": "FEAT-004 status=proposed + FEAT-005 status=proposed + FEAT-006 status=proposed + FEAT-010 status=complete — arc-readiness asymmetry"
+    },
+    {
+      "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+      "reference": "Audit commit 945dc93 gaps 13/14/16 MEDIUM + F.3+F.5+F.6"
+    }
+  ],
+  "impact": "Symmetry hygiene gaps that don't block functionality but accumulate operator confusion + arc-state opacity. Gap 13 (no verification) means a silent-partial-launch is possible; gap 14 (pi.skills asymmetry) means pi-agent-dispatch's skill self-discovery is non-canonical post-meta-bundle; gap 16 (FEAT proposed/complete asymmetry) makes fresh-context arc-state reading require knowing the project history.",
+  "canonical_vocabulary": "launch-symmetry-verification / pi-skills-field-asymmetry / feat-status-arc-readiness-asymmetry",
+  "proposed_resolution": "Addressed as part of FEAT-011 cascade (launch-chain integration) + a separate substrate-status cleanup pass: (a) launch script adds pre-launch symmetry check (count of SKILL.mds emitted ≥ 4 OR explicit warning to operator); (b) pi-agent-dispatch package.json adds pi.skills field once skills/ dir exists (per FGAP-117 closure); (c) features.json status flips: FEAT-005 (proposed → complete, since FEAT-010 closure covers it) + FEAT-004 (proposed → in-progress, since pi-agent-dispatch ships the agents-as-tools dispatch surface via call-agent) — separate from FEAT-011's scope but in the same status-cascade pass. Pure hygiene; no canon evolution. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
+  "related_features": [
+    "FEAT-011",
+    "FEAT-004",
+    "FEAT-005",
+    "FEAT-006"
+  ],
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0044"
+  ]
+}

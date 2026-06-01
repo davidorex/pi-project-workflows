@@ -1,0 +1,23 @@
+{
+  "description": "Implement DEC-0002 (thinking-seam enforcement for forced-toolChoice dispatch) — executeAgent enforces thinking=off when toolChoice.type='tool' is present in dispatch options; spec-declared thinking:on in combination with forced toolChoice triggers a warning naming the agent + the incompatibility + proceeds with thinking disabled; free-form (non-forced) dispatches forward thinking per spec; forced-toolChoice path never silently drops thinking without notification. Per DEC-0002 enacted (bb1bc27), warning channel emits a TraceEntry via the canonical pi-jit-agents trace-writer pipeline (NOT DispatchContext, NOT JitAgentResult). Implementation requires: (a) extending agent-trace.schema.json (strict discriminated union; new entry kind for 'thinking_toolchoice_warning' or similar with type/id/parentId/timestamp + agentName/specPath/warningMessage); (b) translating spec.thinking string field to pi-ai's reasoning: ThinkingLevel option (name + type mismatch — spec field is freeform string per AgentSpec.thinking at types.ts:26; pi-ai enum is 'minimal|low|medium|high|xhigh' on SimpleStreamOptions); (c) wiring spec.thinking through compile.ts to CompiledAgent; (d) executeAgent pre-dispatch check inspecting compiled.thinking + dispatch toolChoice presence; (e) safeWriteTrace emission of the new entry kind when warning triggers. Split from original TASK-080 (2026-05-26) per the TASK-081 narrow-scope discipline.",
+  "status": "planned",
+  "files": [
+    "packages/pi-jit-agents/schemas/agent-trace.schema.json",
+    "packages/pi-jit-agents/src/types.ts",
+    "packages/pi-jit-agents/src/compile.ts",
+    "packages/pi-jit-agents/src/jit-runtime.ts"
+  ],
+  "acceptance_criteria": [
+    "agent-trace.schema.json extended with a new entry kind (e.g. thinking_toolchoice_warning) — new definition block + new $ref in oneOf + per-kind required fields including agentName + warningMessage",
+    "CompiledAgent gains thinking?: string field (spec.thinking threaded through compile.ts to CompiledAgent)",
+    "executeAgent pre-dispatch check: if compiled.thinking present AND toolChoice.type='tool' would be set → emit warning trace entry + proceed with thinking disabled (DO NOT pass reasoning to pi-ai complete())",
+    "Free-form (non-forced-toolChoice) dispatches: translate compiled.thinking → pi-ai reasoning: ThinkingLevel + forward to complete(); name mismatch documented; if spec.thinking carries a string not in ThinkingLevel enum, throw clear error naming the invalid value",
+    "Forced-toolChoice path never silently drops thinking — warning trace is the explicit signal per DEC-0047 no-deception canon",
+    "Engine unit tests: warning-emits-on-forced-toolchoice-with-thinking + free-form-forwards-thinking + invalid-thinking-value-throws + trace-schema-admits-new-kind",
+    "VALIDATION = real checks: build/check/test exit codes (incl. agent-trace schema AJV validation against new kind), runtime demo (tsx-eval invocation exercising both warning-emit + free-form-forward paths against captured trace JSONL), adversarial probe (fresh-context agent verifies zero silent thinking drops + trace pipeline carries the new kind)"
+  ],
+  "depends_on": [
+    "TASK-081"
+  ],
+  "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. Depends on TASK-081 landing first (executeAgent surface). Implementation pairs with DEC-0002 enacted bb1bc27 (consequence #4 narrowed to TraceEntry pipeline per feedback_no_stderr_diagnostics). Pi-ai's reasoning option name + ThinkingLevel enum verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 131-135). Trace schema extension scope verified during plan-mode exploration (packages/pi-jit-agents/schemas/agent-trace.schema.json strict discriminated union with additionalProperties:false per kind)."
+}

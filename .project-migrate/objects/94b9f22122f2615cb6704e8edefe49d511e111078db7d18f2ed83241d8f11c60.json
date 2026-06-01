@@ -1,0 +1,7 @@
+{
+  "title": "Update hedge-classifier.agent.yaml",
+  "status": "todo",
+  "files": [
+    "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml"
+  ]
+}

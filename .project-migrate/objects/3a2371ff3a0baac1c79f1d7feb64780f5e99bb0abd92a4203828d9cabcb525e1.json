@@ -1,0 +1,28 @@
+{
+  "title": "No canonical block-api id-allocation helper — orchestrator scripts re-implement next-id allocation",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "block-api exposes read/write primitives but NO id-allocation helper (no nextId/allocateId; verified absent across block-api.ts). file-block-item.ts re-implements id allocation inline (file-block-item.ts:156-174: parse prefix+width from the id pattern, scan existing items, increment) as a parallel path. Any other surface needing auto-id (the in-pi append tools, future CLIs) must re-implement or hand-scan. The missing primitive is the allocation-side analog of the validation divergence in FGAP-082: allocation logic lives in the CLI, not the library, so it can't be shared + diverges (e.g. it doesn't dereference $ref item schemas — FGAP-083).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "no exported id-allocation function (only read/write primitives)"
+    },
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "156-174",
+      "reference": "inline re-implementation of next-id allocation (prefix/width parse + scan + increment) — the logic that belongs in a shared block-api helper"
+    }
+  ],
+  "impact": "id-allocation is duplicated/divergent and not reusable by the in-pi tool surface (the Pi append tools have no auto-id at all). Extracting a canonical allocateId(cwd, block) helper would let file-block-item, the in-pi tools, and future surfaces share one correct implementation (and fix FGAP-083 once).",
+  "canonical_vocabulary": "id-allocation, allocateId, next-id, block-api-primitive, dual-surface",
+  "proposed_resolution": "Add a block-api id-allocation primitive (e.g. allocateId(cwd, blockName) → next id from the block-kind's resolved id pattern + existing items, dereferencing $ref item schemas) and route file-block-item + any in-pi auto-id through it. DEC-0019/0020 dual-surface: library primitive + CLI + (optionally) Pi tool. [CLOSED 2026-05-23 — commit 5ecd7bd / TASK-060 / VER-032: canonical block-api nextId(cwd,block) helper; file-block-item + the in-pi append-block-item autoId twin route through it; inline re-implementation removed.]",
+  "related_decisions": [
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

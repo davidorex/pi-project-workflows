@@ -1,0 +1,50 @@
+{
+  "target": "TASK-079",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-25",
+  "evidence": "FGAP-106/107/108 + the .project/onboarding-command doc convergence verified across all consumer-facing surfaces. Build+check+test green (pi-context 653/653, pi-jit-agents 153/153 +1 skip, pi-workflows 828/828 +2 skip, pi-behavior-monitors 157/157). npm run skills regenerated; SKILL.md clean. Adversarial grep (re-enumeration to LEAVE-only): zero bare /context init, zero <dir> token, zero consumer-facing .project outside the LEAVE set (console.error x2, code/JSDoc comments, scripts/orchestrator this-repo, README:159 dev-instruction, root README:182 this-repo, the corrective 'not necessarily .project' sentence). Live runtime gate (launch-constrained-pi.sh, scratch cwd, haiku-4.5): agent named /context init .context -> /context accept-all -> /context install, all paths .context/, missing-config remedy /context accept-all; zero .project, zero bare /context init. Fresh-context audit: zero defects within approved scope (its FAIL was JSDoc, explicitly LEAVE; surfaced as new FGAP for developer-API-doc resolution-path inaccuracy). Code path-resolution unchanged (pointer-driven).",
+  "criteria_results": [
+    {
+      "criterion": "All agent-reachable code strings name the dir correctly (resolved path or <substrate-dir>); code path-resolution unchanged",
+      "status": "passed",
+      "evidence": "block-api throws interpolate ${filePath}; lens/roadmap/workflow-sdk/compile/monitor descriptions use <substrate-dir> or prose; src non-comment .project grep returns only console.error:803/819 (LEAVE)"
+    },
+    {
+      "criterion": "skill-narrative.md neutralized + factual corrections; skill-narrative:40 corrected vs DEC-0015",
+      "status": "passed",
+      "evidence": "skill-narrative:40 'always at substrate-dir root, not necessarily .project'; :38 reframed; SKILL.md regen clean except corrective sentence"
+    },
+    {
+      "criterion": "Every consumer-facing /context init converged to <substrate-dir> or self-explaining; <dir> retired",
+      "status": "passed",
+      "evidence": "adversarial grep classes A+B CLEAN; live gate agent emits /context init .context"
+    },
+    {
+      "criterion": "DEC-0011/0015 factual errors corrected (workflow-sdk scaffold-schemas, pi-pw README scaffolds-blocks, root README init-writes-config, config/relations always-at-.project)",
+      "status": "passed",
+      "evidence": "audit factual-correctness verdict: all corrected sites now TRUE per DEC-0011/0015"
+    },
+    {
+      "criterion": "Missed README surfaces (pi-jit-agents, pi-behavior-monitors) caught + converged",
+      "status": "passed",
+      "evidence": "commit 97623e4; re-grep of all package READMEs returns only the 2 LEAVE"
+    },
+    {
+      "criterion": "build/check/test green; SKILL.md regenerated",
+      "status": "passed",
+      "evidence": "TEST_EXIT=0 across 4 packages; 053648a SKILL.md regen"
+    },
+    {
+      "criterion": "live runtime gate: agent names real ceremony with dir arg, not .project",
+      "status": "passed",
+      "evidence": "/tmp/fgap108-gate.log: .context + 3-command ceremony + accept-all remedy"
+    },
+    {
+      "criterion": "fresh-context audit + orchestrator re-grep; LEAVE integrity",
+      "status": "passed",
+      "evidence": "audit zero in-scope defects; JSDoc-resolution-path inaccuracy filed as new FGAP; code unchanged"
+    }
+  ]
+}

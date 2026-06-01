@@ -1,0 +1,15 @@
+{
+  "name": "Framework gap closure",
+  "description": "Address the six framework gaps (FGAP-001 through FGAP-006) so the hand-enacted L1–L5 structure becomes natively expressible. Each gap becomes a feature of its own with stories and tasks. Order is informed by priority (P1 first) and by what the remaining phases need.",
+  "depends_on": [
+    "PHASE-5"
+  ],
+  "exit_criteria": [
+    "FGAP-001 through FGAP-006 all in closed or wontfix state",
+    "pi-project natively supports nested blocks, scoped findings, materialized views, authorship attestation, state-machine validation, and schema versioning"
+  ],
+  "produces": [
+    "framework substrate for the layered model"
+  ],
+  "status": "pending"
+}

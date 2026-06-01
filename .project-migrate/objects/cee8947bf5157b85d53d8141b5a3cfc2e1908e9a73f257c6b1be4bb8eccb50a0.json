@@ -1,0 +1,10 @@
+{
+  "title": "partitions field on config block: commit to runtime semantics or drop from schema",
+  "body": "POC v2 config.schema.json declares partitions: [{name, blocks: [...]}] — top-level organizational divisions over the substrate. POC's render.ts reads the field but does not consume it. Integration map omits it. Two paths: (a) commit to runtime semantics — partitions scope validateProject passes (a partition's validation runs only over its declared blocks), or partitions become directory subpaths (which DEC-0009 rejects under closure-table-only direction), or partitions become the within-scope-grouping concept DEC-0010 (scope layering) might require; (b) drop from schema as dead config until a runtime use emerges. Without explicit decision, partitions sits as schema-validated noise. Couples to DEC-0009 (storage primitive direction) and DEC-0010 (scope layering). Surfaced as gap #33 in the integration-map review.",
+  "location": "analysis/poc-degree-zero-lens/schemas/config.schema.json",
+  "status": "open",
+  "category": "cleanup",
+  "priority": "low",
+  "package": "pi-project",
+  "source": "agent"
+}

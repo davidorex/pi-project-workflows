@@ -1,0 +1,35 @@
+{
+  "title": "Framework-shaped schemas (config / relations / roadmap / bootstrap) authored in pi-context/registry/schemas/ but not installed in .project/schemas/",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "pi-context/registry/schemas/ ships 25 schemas including framework-shaped ones (config.schema.json / relations.schema.json / roadmap.schema.json / bootstrap.schema.json / layer.schema.json / plan.schema.json / priority.schema.json / severity.schema.json / source.schema.json / status.schema.json / verification-method.schema.json). .project/schemas/ holds 23 schemas covering user-block kinds (decisions / framework-gaps / tasks / etc.) but is missing the framework-shaped 4: config / relations / roadmap / bootstrap. Without config.schema.json in .project/schemas/, config.json instance cannot be AJV-validated via the installed-schema resolution path. Without relations.schema.json, relations.json edges cannot be schema-validated. Without roadmap.schema.json, roadmap.json instance authoring blocked. Bootstrap pointer is the .pi-context.json file at repo root; bootstrap.schema.json validates that pointer — currently this repo's .pi-context.json exists but is not AJV-validated against an installed schema.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/registry/schemas/",
+      "reference": "25 schema files including config.schema.json + relations.schema.json + roadmap.schema.json + bootstrap.schema.json"
+    },
+    {
+      "file": ".project/schemas/",
+      "reference": "23 schema files; missing config / relations / roadmap / bootstrap"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/config.schema.json",
+      "reference": "Schema declares root, naming, layers, block_kinds, status_buckets, display_strings, relation_types, hierarchy, lenses, installed_schemas, installed_blocks"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/relations.schema.json",
+      "reference": "Schema validates closure-table edges (parent, child, relation_type, ordinal)"
+    }
+  ],
+  "impact": "TASK-025 sub-phases 5.1 (config.json) + 5.2 (relations.json) + 5.3 (roadmap.json) cannot author instances against AJV until schemas installed. Phase 5 sub-phase 5.1 implicitly requires this schema-install step. Current substrate canon cascades (block-api appendToBlock validates against schemas via resolver) silently treat absent schemas as 'no schema available' — falling back to no validation, which violates DEC-0013 + DEC-0017 invariants for the framework-shaped blocks.",
+  "canonical_vocabulary": "schema-install, .project/schemas/ provisioning, registry-to-project cascade",
+  "proposed_resolution": "Install the 4 framework-shaped schemas to .project/schemas/ as part of Phase 5 prep (or as a discrete sub-step in TASK-025 / TASK-042). Pattern: cp packages/pi-context/registry/schemas/{config,relations,roadmap,bootstrap}.schema.json .project/schemas/. After install, authoring config.json + relations.json + roadmap.json via file-block-item.ts or canonical block-api routes will AJV-validate. Cross-decision with FGAP-051 (other registry-shipped schemas) for whether to install the supporting enum-shaped schemas (priority / severity / source / status / layer / plan / verification-method) — those are referenced via $ref from user-block schemas but don't require their own data instance. [CLOSED 2026-05-23 — DEC-0043 (1d5ee89) + commit 752e7e2: framework schemas (config/relations/roadmap/bootstrap) are bundled-validated, NOT installable; installed_schemas = block-kinds only. The install-the-framework-schemas premise is superseded by bundled validation (loadConfig/loadRelations use bundledSchemaPath). config + relations dropped from the conception installed_schemas.]",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0013",
+    "DEC-0017"
+  ],
+  "related_issues": []
+}

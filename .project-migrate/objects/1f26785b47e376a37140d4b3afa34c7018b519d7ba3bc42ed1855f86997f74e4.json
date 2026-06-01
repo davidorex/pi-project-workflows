@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "verification": "VER-018",
+  "description": "Re-derivation machinery unit 2.2 (DEC-0036 step 2): packaged conception (DEC-0037) — author packages/pi-context/samples/ catalog (conception.json: 15 block_kinds incl. new requirements/conventions, 24 relation_types, 2 invariants, 2 status lenses) + 15 clean edge-based schemas (FK->edges, nesting eliminated, invariants relocated, external scalars kept) + 15 starter blocks. Authoring-only alongside frozen registry/.",
+  "files": [
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/samples/schemas/",
+    "packages/pi-context/samples/blocks/"
+  ],
+  "acceptance_criteria": [
+    "15 clean edge-based schemas + conception.json validating vs config.schema.json",
+    "work-rollup composition lens deferred -> FGAP-070",
+    "samples/ unimported by src (build unaffected)"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "title": "Milestone is inline within roadmap.milestones[] — should be elevated to its own top-level block kind for independent queryability + DEC-0013 edge-bearing",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Milestone is the schema-shaped concept that matches \"end-state-intention that organizes the work needing to be done\" — every roadmap.milestones[] entry carries id (^MILESTONE-[A-Z0-9-]+$) + name + criterion + evidence_block + evidence_query. The third orchestrator query (\"what must happen or have happened before X can be worked on and delivered\") maps to traversing dependencies from a milestone backward through phases. Current shape (per packages/pi-context/registry/schemas/roadmap.schema.json properties.roadmaps.items.properties.milestones): milestones are INLINE within roadmap.milestones[], not a top-level block kind. Consequences: (1) MILESTONE-NNN ids cannot be resolved via filter-block-items / resolve-items-by-id / walk-ancestors / find-references — query primitives operate on top-level array blocks. (2) Resolving a milestone always goes through roadmap loading + array scan. (3) relations.json edges cannot canonically connect MILESTONE-NNN to FGAP-NNN / DEC-NNN / FEAT-NNN / VER-NNN as parent/child — the inline embedding forces edges to live as roadmap-internal arrays. (4) The roadmap.phases[].milestone FK and roadmap.milestones[] inline shape are both DEC-0013 violations — inter-item references via inline field/array. User direction 2026-05-14: elevate milestone to its own block kind.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/registry/schemas/roadmap.schema.json",
+      "reference": "properties.roadmaps.items.properties.milestones — inline array within roadmap items; ^MILESTONE-[A-Z0-9-]+$ pattern declared but no top-level block kind"
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/roadmap.schema.json",
+      "reference": "properties.roadmaps.items.properties.phases.items.properties.milestone — inline FK string from phase to milestone; DEC-0013 violation"
+    },
+    {
+      "file": "packages/pi-context/src/roadmap-plan.ts",
+      "reference": "Milestone resolution flows through loadRoadmap; no independent milestone-loading surface"
+    },
+    {
+      "file": "packages/pi-context/src/project-sdk.ts",
+      "reference": "PROJECT_BLOCK_TYPES list at L117 excludes milestone — confirms block-kind absence"
+    }
+  ],
+  "impact": "Milestone is the natural anchor for the orchestrator query \"what must happen before X is delivered\" — X is a milestone, prerequisites are phases + tasks + decisions that gate it. Current inline shape blocks: (a) independent milestone-by-status lensing (milestone-by-status / milestone-by-evidence-availability rollups); (b) closure-table edges anchoring on MILESTONE-NNN; (c) gather-execution-context binding unit_kind=milestone for context bundle composition (CTX-NNN extension); (d) cross-roadmap milestone references (a milestone in roadmap A as gate for phase in roadmap B). Filable cascade to phases (FGAP-049 covers phase block-kind divergence) and to roadmap-shape (roadmap shape itself becomes inline-references-to-milestones + inline-references-to-phases via relations.json edges).",
+  "canonical_vocabulary": "milestone-as-top-level-block, milestone-block-kind, queryable-milestone, MILESTONE-NNN-canonical-id",
+  "proposed_resolution": "Elevate milestone to top-level block kind: (1) Author packages/pi-context/registry/schemas/milestone.schema.json with array_key=milestones, item shape carrying id (^MILESTONE-[A-Z0-9-]+$) + name + criterion + evidence_block + evidence_query + status + created_by + created_at + description + related_decisions[] + related_features[] + canonical_vocabulary (analogous to FGAP/DEC schema shape). Schema title=\"Milestones\" per DEC-0023. (2) Author packages/pi-context/registry/blocks/milestones.json with empty milestones[]. (3) Register milestone in PROJECT_BLOCK_TYPES in project-sdk.ts + adjust roadmap-plan.ts to resolve milestones via top-level block load rather than roadmap-internal embedded array. (4) Roadmap schema migration: roadmap.milestones[] becomes reference array of MILESTONE-NNN strings OR moves entirely to relations.json with relation_type=roadmap_contains_milestone per DEC-0013. roadmap.phases[].milestone FK moves to relations.json edge phase_culminates_at_milestone. (5) Cross-decision with FGAP-049 (phase block-kind pattern) — same elevation pattern likely applies; phase should also be array-block, not file-per-phase. (6) Install milestone schema in .project/schemas/ as part of TASK-042 + TASK-025 substrate cascade. Acceptance: filter-block-items --block milestones --where status=open works; walk-ancestors --id MILESTONE-001 returns prerequisite phases + decisions; find-references --id MILESTONE-001 surfaces every block that depends on it.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0013",
+    "DEC-0017",
+    "DEC-0023"
+  ],
+  "related_issues": []
+}

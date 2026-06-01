@@ -1,0 +1,26 @@
+{
+  "title": "Item-level contextBlocks selectivity missing in pi-jit-agents — currently injects whole blocks, not work-unit-driven item selections",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-jit-agents",
+  "layer": "L2",
+  "description": "DEC-0017 specifies dispatch-time injection: agents receive context bundles as composed inputs, not as N whole-block dumps. Today pi-jit-agents' contextBlocks injection mechanism (DEC-0008 typed contextBlocks form) injects WHOLE BLOCKS — agent's compileAgent template gets the entire decisions.json under {{ _decisions }}, not just the decisions reached via gather-execution-context for THIS work-unit. Bundle from FGAP-031 is structured but injection is unstructured-dump.",
+  "evidence": [
+    {
+      "file": "packages/pi-jit-agents/src/compile.ts",
+      "reference": "compileAgent reads contextBlocks declarations + injects whole block content under {{ _<name> }} variables. No mechanism to inject item-level selections driven by a work-unit's gather-execution-context output. Per the runtime-step-context analysis (analysis/2026-04-15-runtime-step-context.md) this gap was named earlier as 'agent spec must declare contextBlocks with item-level selectivity'."
+    },
+    {
+      "file": "packages/pi-jit-agents/src/types.ts",
+      "reference": "AgentSpec.contextBlocks current shape per DEC-0008: typed object form { name, item?, focus?, depth? } — item field exists at type level but is per-block-static, not per-dispatch-derived from a work-unit gather."
+    }
+  ],
+  "impact": "Bundle composition (FGAP-031) returns structured per-relation-type item lists, but injection collapses them back to whole-block dumps in the agent's compiled prompt. Agents receive irrelevant context (sibling items not reached via the work-unit's relation walk) + miss work-unit-specific context (the per-relation-type structure). Defeats DEC-0017's selectivity intent.",
+  "proposed_resolution": "Extend AgentSpec.contextBlocks shape to support work-unit-driven gather: { name, gather_for_unit?: { unitId, kind } } — when gather_for_unit is present, compileAgent calls gather-execution-context(unitId, kind) and injects the bundle as { _<name>_bundle: ContextBundle } variable. Templates reference _<block>_bundle.perRelationType.<relation_type>[] for selective rendering. Existing per-item macros (per the macros-as-prompt-substrate work) consume the bundle's per-relation-type collections. Backward compatible: existing { name, item?, focus?, depth? } usage unchanged; gather_for_unit is additive.",
+  "related_decisions": [
+    "DEC-0008",
+    "DEC-0017"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

@@ -1,0 +1,59 @@
+{
+  "title": "Migrate pi-workflows agent infrastructure to pi-jit-agents",
+  "status": "proposed",
+  "description": "Replace pi-workflows' local copies of agent-spec.ts, template.ts, and step-shared.ts agent helpers with imports from pi-jit-agents. Consumer call sites (step-agent.ts, dispatch.ts) delegate to executeAgent.",
+  "acceptance_criteria": [
+    "packages/pi-workflows/src/agent-spec.ts either removed or reduced to a re-export from pi-jit-agents",
+    "packages/pi-workflows/src/template.ts equivalently reduced",
+    "packages/pi-workflows/src/step-shared.ts' agent-helper portions migrated; any non-agent helpers remain",
+    "Workflow agent steps execute end-to-end through pi-jit-agents executeAgent",
+    "Existing tsx --test suite for pi-workflows passes",
+    "No circular dependency introduced between pi-workflows and pi-jit-agents"
+  ],
+  "depends_on": [
+    "STORY-003"
+  ],
+  "gates": [],
+  "tasks": [
+    {
+      "id": "TASK-004-01",
+      "title": "Map pi-workflows agent-infrastructure surface to pi-jit-agents equivalents",
+      "status": "todo",
+      "acceptance": "Written mapping in this task of every symbol in pi-workflows/src/agent-spec.ts, template.ts, step-shared.ts to its pi-jit-agents target; any unmappable symbols flagged for separate handling"
+    },
+    {
+      "id": "TASK-004-02",
+      "title": "Migrate call sites in pi-workflows step executors",
+      "status": "todo",
+      "files": [
+        "packages/pi-workflows/src/step-agent.ts",
+        "packages/pi-workflows/src/dispatch.ts"
+      ]
+    },
+    {
+      "id": "TASK-004-03",
+      "title": "Remove migrated helpers from pi-workflows",
+      "status": "todo",
+      "files": [
+        "packages/pi-workflows/src/agent-spec.ts",
+        "packages/pi-workflows/src/template.ts",
+        "packages/pi-workflows/src/step-shared.ts"
+      ]
+    },
+    {
+      "id": "TASK-004-04",
+      "title": "Update pi-workflows package.json dependencies",
+      "status": "todo",
+      "files": [
+        "packages/pi-workflows/package.json"
+      ],
+      "acceptance": "@davidorex/pi-jit-agents listed as a direct dependency with concrete caret range"
+    },
+    {
+      "id": "TASK-004-05",
+      "title": "Run pi-workflows test suite",
+      "status": "todo",
+      "acceptance": "npm test passes for pi-workflows at 0 failures"
+    }
+  ]
+}

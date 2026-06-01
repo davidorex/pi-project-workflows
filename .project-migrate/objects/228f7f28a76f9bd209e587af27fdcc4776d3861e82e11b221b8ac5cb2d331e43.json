@@ -1,0 +1,20 @@
+{
+  "target": "TASK-046",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-20T00:00:00Z",
+  "evidence": "Unit 2.2 packaged conception — commits b8a9d7e (B0)..a4c5257 (B4). samples/conception.json (15 block_kinds, 24 relation_types, 2 invariants, 2 status lenses) + 15 clean edge-based schemas + 15 starter blocks. Verified V1 meta-validate all 15, V2 conception validates vs config.schema.json, V4 relation_type endpoints resolve, V5 array_key consistency, V6 title+description, V8 package-derivation demo. build/check/test green; samples/ unimported by src.",
+  "criteria_results": [
+    {
+      "criterion": "15 clean edge-based schemas (FK stripped, nesting eliminated, invariants relocated)",
+      "status": "passed",
+      "evidence": "V1/V3 per kind"
+    },
+    {
+      "criterion": "conception.json validates vs config.schema.json",
+      "status": "passed",
+      "evidence": "V2"
+    }
+  ]
+}

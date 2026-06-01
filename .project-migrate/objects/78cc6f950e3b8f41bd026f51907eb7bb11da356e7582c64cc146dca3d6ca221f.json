@@ -1,0 +1,50 @@
+{
+  "title": "contextBlocks parameterization: typed object form vs bare-string convention",
+  "status": "enacted",
+  "context": "The integration-map design proposed a bare-string `_lens:<id>` convention for lens-view injection in agent contextBlocks. The per-item-macros plan (analysis/2026-05-02-per-item-macros-atomic-plans.md plan #3) extends contextBlocks to a typed object form `{name, item, focus, depth}`. Two parallel parameterization mechanisms in one field. The heuristic-widening pass forces typed-only because bare-string cannot carry the parameter set the unified surface needs: `_mandate:<id>`, `_lens:<id>?status=open`, `_monitor:<id>:last-classification`, agent-scope omit lists, applicability filters. Bare-string would proliferate as `_kind:id:opt1:opt2` — a regression toward stringly-typed configuration. Surfaced as gap #29.",
+  "decision": "Typed object form of contextBlocks entries (name + optional item/focus/depth) is the canonical injection surface for selective composition. Bare-string form (whole-block injection by name) remains valid for backward compatibility with existing agent YAMLs. The heuristic-widening forces the typed form because bare-string cannot carry the parameter set the unified composition surface needs (lens id, item selector, focus, depth, applicability predicate). Per-item-macros plan #3 is the canonical landing path.",
+  "options_considered": [
+    {
+      "label": "Typed object form only (proposed direction)",
+      "description": "Single typed surface. Carries kind, id, scope, applicability, focus, depth, filters. Bare-string remains valid for whole-block injection only.",
+      "tradeoffs": "Slightly more verbose at the simple case (whole-block injection unchanged; lens injection requires typed entry). Single canonical surface; no fragmentation."
+    },
+    {
+      "label": "Bare-string convention layered on typed (coexistence)",
+      "description": "Both surfaces accepted. Bare-string for trivial cases; typed for parameterized.",
+      "tradeoffs": "Two surfaces to maintain. Author must learn when to use which. Composition contract (DEC-0007) more complex.",
+      "rejected_reason": "Heuristic prefers one canonical surface; coexistence creates the same parallel-ungated-path pattern the substrate arc retires."
+    }
+  ],
+  "consequences": [
+    "per-item-macros plan #3 (typed contextBlocks extension) is the canonical landing path; no parallel bare-string convention",
+    "Lens-view injection lands as `{kind: 'lens', id: 'context-management', filters: {status: 'open'}}` not `_lens:context-management`",
+    "Mandate injection lands as `{kind: 'mandate', id: 'mandate-001'}` or `{kind: 'mandate', filter: {tags: ['workflow']}}`",
+    "Monitor output injection lands as `{kind: 'monitor', id: 'fragility', focus: 'last-classification'}`",
+    "Filter parameterization channel (gap #30) collapses into the typed form's `filters` field"
+  ],
+  "related_findings": [
+    "issue-020",
+    "issue-029",
+    "issue-041"
+  ],
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_gaps": [
+    "FGAP-002",
+    "FGAP-003"
+  ],
+  "references": [
+    {
+      "label": "per-item-macros plan #3",
+      "path": "analysis/2026-05-02-per-item-macros-atomic-plans.md"
+    },
+    {
+      "label": "integration-map review + frame doc §5 gap #29",
+      "path": "analysis/2026-05-03-substrate-arc-frame.md"
+    }
+  ],
+  "enacted_by": "user",
+  "enacted_at": "2026-05-03T00:00:00Z"
+}

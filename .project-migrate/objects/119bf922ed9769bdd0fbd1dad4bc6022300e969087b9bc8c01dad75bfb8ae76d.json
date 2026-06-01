@@ -1,0 +1,59 @@
+{
+  "title": "FGAP-074 /project->/context source-surface naming canon — unify identifiers on 'context'",
+  "status": "enacted",
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-23T03:31:07.902Z",
+  "context": "FGAP-074 renames the framework's OWN source surface (the 3 project-*.ts modules + their subpath exports, exported identifiers, the 11 project-* Pi tools, the /project command) from pi-project-era 'project' naming to 'context'. C0 is the decision-only chunk that settles the target names so C1-C7 are pure mechanical codemod. The surface already converges on 'context' (package @davidorex/pi-context, command target /context per DEC-0042, the .context dir target, context-* tools, the already-context-named resolveContextDir/writeBootstrapPointer/schemaPath). Two naming questions were non-mechanical: (1) the project-context.ts target (context-context is absurd), and (2) whether the data-layer identifiers (getProjectContext/ProjectContext/validateProject + the State/Validation interface families) should adopt a precise second noun 'substrate' (already the codebase's PROSE term for the data layer) or stay in the 'context' vocabulary. Empirical grounding: ProjectState provably carries non-substrate fields (sourceFiles, sourceLines, testCount, lastCommit, recentCommits) so it is a whole-project derived dashboard, not a data-layer artifact; getProjectContext loads config+relations (the materialized data layer); validateProject checks referential integrity of blocks/relations. The 'Context' token is overloaded in-tree (DispatchContext x50, ContextBundle x20, resolveContextDir x50, contextBlocks).",
+  "decision": "Unify ALL renamed source identifiers on the 'context' vocabulary; 'substrate' remains a prose/conceptual term only (CLAUDE.md keeps calling the data layer 'the substrate'), never a code identifier. Collision with the overloaded Context token is avoided by QUALIFIED interface names (ContextData, not bare Context). Canon: FILES/SUBPATHS: project-dir.ts->context-dir.ts (./context-dir), project-context.ts->context.ts (./context), project-sdk.ts->context-sdk.ts (./context-sdk). IDENTIFIERS: getProjectContext->loadContext; ProjectContext->ContextData; validateProject->validateContext; ProjectValidationResult/Issue->ContextValidationResult/Issue; projectState->contextState; ProjectState->ContextState; projectTemplatesDir->contextTemplatesDir; installProject->installContext; PROJECT_BLOCK_TYPES->CONTEXT_BLOCK_TYPES. DROPS (not renamed): projectRoot + projectDir are collapsed into the canonical resolveContextDir (post-DEC-0045 both are no-op aliases that return resolveContextDir(cwd); call-sites repoint during C2-C4) — this also dissolves the projectDir->contextDir local-var collision hazard; PROJECT_DIR (@deprecated '.project' literal) is dropped outright (its cross-package consumers migrate off it in C3). TOOLS/COMMAND: project-* Pi tools -> context-*; /project -> /context; PROJECT_SUBCOMMANDS -> CONTEXT_SUBCOMMANDS; the DEC-0042 bootstrap trio (init/accept-all/install) renamed uniformly now (FGAP-095 P4 removes the then-context-named trio when /context start lands). RESERVED (DEC-0044/FEAT-004): keep a /context dispatch verb unclaimed for the future agent-dispatch tool — proposed 'run' (/context run); soft, finalized by DEC-0044; does not block C0.",
+  "options_considered": [
+    {
+      "label": "Unify on context (CHOSEN)",
+      "description": "All renamed identifiers in the context family; substrate stays prose-only; qualified interface names (ContextData/ContextValidationResult) dodge the DispatchContext/ContextBundle collision.",
+      "tradeoffs": "One vocabulary on the surface a consumer touches (package/command/dir/tools/imports all 'context'); the existing prose(substrate)/code(context) distinction does not worsen. Cost: 'context' carries more meaning, relies on qualifier discipline (never a bare Context interface)."
+    },
+    {
+      "label": "Split: substrate for the data layer, context for the surface",
+      "description": "getSubstrate/Substrate, validateSubstrate/SubstrateValidationResult for data-layer ops; contextState for the dashboard.",
+      "tradeoffs": "More precise denotation (data layer vs derived view); 'substrate' is already the documented term.",
+      "rejected_reason": "Introduces a SECOND noun into the import surface — the package called 'context' would expose 'substrate' functions, a code-vs-surface divergence the consumer hits on every import. Precision is recoverable via the verb (loadContext vs contextState vs validateContext) without a second noun. User decision 2026-05-23; revisit if problematic."
+    },
+    {
+      "label": "Rename projectRoot/projectDir -> contextRoot/contextDir (instead of dropping)",
+      "description": "Keep the two wrappers under context names.",
+      "tradeoffs": "Mechanical.",
+      "rejected_reason": "Post-DEC-0045 both merely return resolveContextDir(cwd); renaming re-mints the redundancy DEC-0045 unified. Collapse to resolveContextDir is the coherent call."
+    }
+  ],
+  "consequences": [
+    "C1-C7 become a pure mechanical codemod against this map; no further naming judgement needed downstream.",
+    "resolveContextDir is the SOLE substrate-dir-path resolver (projectRoot/projectDir gone); every former caller repoints to it during C2-C4.",
+    "PROJECT_DIR drop: pi-workflows (and any) bare-segment consumers must migrate off it in C3; C3/C7 greps must show zero survivors.",
+    "Qualified interface names (ContextData, ContextValidationResult/Issue, ContextState) are mandatory — a bare 'Context' interface is forbidden (would collide with DispatchContext/ContextBundle reading).",
+    "Subpath @davidorex/pi-context/context is mildly stutter-y but harmless; context.ts sits beside dispatch-context.ts/execution-context.ts as the core module.",
+    "/context run reserved for the FEAT-004 agent-dispatch tool (DEC-0044 finalizes the verb); C5 must not claim it.",
+    "Gates FGAP-074 C1-C7 and (transitively) FGAP-095 P2-P6. OUT of scope: package name @davidorex/pi-project-workflows, the .project dir literal (DEC-0036 step-5), user-substrate vocabulary (DEC-0025), already-context-named symbols.",
+    "Relates to DEC-0042 (/context command + bootstrap trio), DEC-0044 (reserved dispatch verb), DEC-0045 (projectRoot/projectDir collapse), DEC-0036 step-5 (dir-literal cutover, separate), DEC-0025 (user vocab, untouched). [DEC<->DEC edges deferred to TASK-065 post-.context cutover; recorded in prose here.]"
+  ],
+  "related_features": [
+    "FEAT-004"
+  ],
+  "related_gaps": [
+    "FGAP-074",
+    "FGAP-093",
+    "FGAP-095"
+  ],
+  "references": [
+    {
+      "label": "rename decomposition (C0-C7)",
+      "path": "analysis/2026-05-23-fgap-074-rename-decomposition.md"
+    },
+    {
+      "label": "the 3 modules to rename",
+      "path": "packages/pi-context/src/project-context.ts"
+    },
+    {
+      "label": "command + tools surface",
+      "path": "packages/pi-context/src/index.ts"
+    }
+  ]
+}

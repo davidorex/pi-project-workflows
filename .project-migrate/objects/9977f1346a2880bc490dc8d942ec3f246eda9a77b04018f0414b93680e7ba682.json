@@ -1,0 +1,10 @@
+{
+  "title": "No recursion depth guard for future nested workflow invocation (Phase 6)",
+  "body": "The workflow: field on StepSpec is parsed but rejected at validation time (Phase 6 — not yet implemented). When unblocked, nested workflow invocation will allow unbounded recursive spawning without a depth guard. pi-subagents' pattern: PI_SUBAGENT_MAX_DEPTH env var propagated via PI_SUBAGENT_DEPTH in child process env. Must be in place before workflow: steps are enabled.",
+  "location": "packages/pi-workflows/src/workflow-spec.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-workflows",
+  "source": "agent"
+}

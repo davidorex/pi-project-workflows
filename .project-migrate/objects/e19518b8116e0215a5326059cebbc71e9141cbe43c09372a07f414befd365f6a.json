@@ -1,0 +1,5 @@
+{
+  "description": "JSON is the intermediate representation between steps — file system is the data bus",
+  "enforcement": "test",
+  "severity": "error"
+}

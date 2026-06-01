@@ -1,0 +1,46 @@
+{
+  "title": "Milestones are the primary declarative-organizing anchor; work cascades from + verifies upward to them; aspirational → satisfied → archived lifecycle",
+  "status": "enacted",
+  "context": "User direction 2026-05-14 dialogue articulating the substrate-canon model: a MILESTONE is the aspirational end-state-with-criterion+evidence_query authored declaratively at the top of a roadmap. Everything below it is decomposition: research (R-NNNN) explores what's needed; decisions (DEC-NNNN) settle choices; framework-gaps (FGAP-NNN) capture deficiencies blocking it; features (FEAT-NNN) scope coherent bodies of work toward it; phases group + sequence work-units; stories/tasks decompose features atomically down to atomic Task-1 execution. Verifications (VER-NNN) accumulate upward; when milestone.evidence_query satisfies against VER items, milestone moves from aspirational → satisfied (project history). Milestone is what reveals + organizes the work needing to be done. This decision crystallizes the canon already implicit in roadmap.schema.json + roadmap-plan.ts + DEC-0017 work-unit context composition.",
+  "decision": "Milestones are the primary declarative-organizing anchor of work in pi-context substrate. Milestone authoring is the entry point to a body of work — the milestone names the aspirational end-state + evidence_query that defines satisfaction. All work-altitude blocks (research / decisions / framework-gaps / features / stories / phases / tasks) cascade from milestone authoring as decomposition: a milestone's evidence_query implies what work-units must produce evidence; authoring those work-units is the decomposition. Milestones bear lifecycle: aspirational/planned → active (work in progress) → satisfied (evidence_query passes; becomes project history) → archived. Roadmap is the named, status-bearing curation of an ordered milestone set; once milestones + phases are top-level blocks (FGAP-053 + FGAP-049 cascade), roadmap thins to {id, title, description, status} + lens-spec for grouping + closure-table edges for ordering. Forward verification (milestone evidence_query → satisfaction) is automatic via roadmap-plan; backward decomposition (milestone → required work-units) is human/LLM authored — framework provides scaffold, authoring fills.",
+  "consequences": [
+    "Milestone elevation per FGAP-053 becomes higher-priority — milestone block-kind is the canonical entry surface for the substrate canon, not an inline roadmap detail.",
+    "Roadmap thins to envelope per FGAP-055 — substantive structure migrates to milestones + phases + relations.json.",
+    "Context-contract for unit_kind=milestone needed per FGAP-054 — gather-execution-context becomes the primitive for \"what's the picture around MILESTONE-NNN\".",
+    "Work-altitude tiers (FGAP-052 config.layers consumed-at-runtime gap) cascade from milestones: layer = altitude at which work-units sit; milestones organize across altitudes.",
+    "Forward query \"is MILESTONE-NNN satisfied\" works via existing roadmap-plan evidence_query primitive.",
+    "Backward query \"what must happen before MILESTONE-NNN\" works via walk-ancestors on relations.json edges once edges are authored.",
+    "Auto-decomposition (milestone → required tasks derivation) is NOT enabled by this decision; decomposition remains authoring work. Could be filed as separate framework-gap if desired.",
+    "Project goals (project.json goals[]) sit ABOVE milestones — multi-milestone arcs serve project goals; future cascade rule may make this explicit via project_goal_served_by_milestone relation_type."
+  ],
+  "references": [
+    {
+      "label": "Roadmap schema with milestones[] inline + evidence_query",
+      "path": "packages/pi-context/registry/schemas/roadmap.schema.json",
+      "lines": "milestones[] subschema"
+    },
+    {
+      "label": "roadmap-plan evidence_query satisfaction logic",
+      "path": "packages/pi-context/src/roadmap-plan.ts"
+    },
+    {
+      "label": "FGAP-053 milestone elevation gap",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "DEC-0017 work-unit context composition",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "Step-2 resolution patterns substrate analysis",
+      "path": "analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-053"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-14T13:30:00Z"
+}

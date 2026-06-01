@@ -1,0 +1,34 @@
+{
+  "target": "TASK-072",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "evidence": "FGAP-074 C6 — docs rename to /context vocabulary across root README + CLAUDE.md + pi-context README/skill-narrative + 3 workflow yaml + handoff-writer.agent.yaml + the doc-content sources generate-skills.js + shipped config.schema.json. npm run skills regenerated SKILL.md (5 files) to zero project-surface tokens. Verified per DEC-0018: build/check/test green all 4 packages (0 fail). Grep: zero in-scope /project command or project-* tool tokens; zero invented contextRoot/CONTEXT_DIR; LEAVE tokens (.project dir, pi-project-workflows, validateProjectRelations, workflow/agent names, conceptual prose, frozen .project/schemas copy) intact. Fresh-context adversarial PASS 6/6.",
+  "criteria_results": [
+    {
+      "criterion": "Doc prose (README/CLAUDE/skill-narrative) + workflow/agent yaml /project->/context + tool names + module/identifier refs",
+      "status": "passed",
+      "evidence": "8 doc/spec files; grep zero /project command + project-* tool tokens"
+    },
+    {
+      "criterion": "Verified targets (projectRoot/projectDir prose->resolveContextDir, PROJECT_DIR reword; no invented contextRoot/CONTEXT_DIR)",
+      "status": "passed",
+      "evidence": "adversarial #2/#5; grep zero contextRoot/CONTEXT_DIR"
+    },
+    {
+      "criterion": "npm run skills regenerated SKILL.md; required generated/schema doc-string sources fixed (generate-skills.js + shipped config.schema.json)",
+      "status": "passed",
+      "evidence": "SKILL.md project-surface 0; corrective subagent fixed the 2 residual sources"
+    },
+    {
+      "criterion": "No over-rename: .project dir + pi-project-workflows + validateProjectRelations + workflow/agent names + conceptual prose + frozen schema copy intact",
+      "status": "passed",
+      "evidence": "adversarial #3/#4; LEAVE-token grep counts present; frozen .project/schemas/config.schema.json git-unchanged"
+    },
+    {
+      "criterion": "build && check && test green; scope contained",
+      "status": "passed",
+      "evidence": "0 failures all 4 packages; adversarial #6 (only doc/spec/generate-skills/shipped-schema/SKILL.md changed)"
+    }
+  ]
+}

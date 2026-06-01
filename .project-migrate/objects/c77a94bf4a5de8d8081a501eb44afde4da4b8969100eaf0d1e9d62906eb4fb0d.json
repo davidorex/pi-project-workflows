@@ -1,0 +1,5 @@
+{
+  "description": "ESM modules only (\"type\": \"module\" in package.json)",
+  "enforcement": "lint",
+  "severity": "error"
+}

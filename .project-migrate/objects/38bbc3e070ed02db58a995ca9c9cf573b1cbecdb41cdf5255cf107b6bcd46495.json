@@ -1,0 +1,4 @@
+{
+  "title": "Release script stripped of publish/push steps",
+  "narrative": "The release script (scripts/release.mjs) ends at commit + tag. It does not attempt npm publish or git push (commit 1112496). The original script included both as automated steps, but both require human authentication (npm OTP, SSH credentials). When publish failed mid-script, exit code 1 masked the fact that commit and tag had already succeeded, creating ambiguous state. Separating deterministic steps (version bump, changelog, commit, tag) from authentication-gated steps (publish, push) aims to make each release attempt either fully succeed through the deterministic phase or fail cleanly before any side effects. Confidence: HIGH."
+}

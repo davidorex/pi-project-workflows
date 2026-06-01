@@ -1,0 +1,27 @@
+{
+  "description": "FGAP-089 comprehensive fix: every over-cap READ across our extensions FAILS CLOSED — no satisficeable partial body. serializeForRead (read-element.ts) on cap.truncated: (a) if overCapDirective provided -> DIRECTIVE-ONLY, no body ('READ REFUSED — <label> is N bytes over the 50KB cap; nothing returned; narrow: call <tool> with <params>'); (b) edge case (no finer addressing) -> UNMISSABLE HEAD-LEADING PARTIAL marker BEFORE the head (the old footer failed because it was at the END, skimmed past). Add overCapDirective{tool,params,hint} to SerializeForReadOptions + complete:boolean to ReadEnvelope. Thread per-surface narrowing at the ~23 pi-context index.ts call sites (read-block->read-block-page/item; read-config->registry/id; read-samples-catalog->kind; read-schema->path; list-tools->name; filter/join->refine; edge cases: read-block-dir/resolve-items-by-id/edges-for-lens/walk-ancestors/find-references/gather-execution-context/roadmap-load + addressed-singles when the single over-caps). ALSO route pi-workflows read tools (workflow-list/agents/status/validate/init, index.ts ~674-808) through the SAME serializeForRead (import @davidorex/pi-context/read-element) instead of direct truncateHead (workflow-agents->name; others edge). OUT-OF-SCOPE (leave): output truncation — dispatch MAX_STDOUT_BYTES, workflow-executor:976 completion truncateTail, jit-runtime verdict/error, budget-enforcer, context-sdk:764 nextActions cap.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/read-element.ts",
+    "packages/pi-context/src/read-element.test.ts",
+    "packages/pi-context/src/index.ts",
+    "packages/pi-workflows/src/index.ts",
+    "packages/pi-context/package.json"
+  ],
+  "acceptance_criteria": [
+    "serializeForRead over-cap WITH overCapDirective: content = refusal directive naming the tool+params, NO serialized body (the over-cap payload's strings absent), complete:false",
+    "serializeForRead over-cap edge (no directive): UNMISSABLE marker FIRST (head-leading), then head; complete:false; never a silent/trailing-only partial",
+    "under-cap: unchanged full content, complete:true",
+    "all ~23 pi-context read call sites pass overCapDirective or hit the edge path; pi-workflows 5 read tools routed through serializeForRead (no direct truncateHead in those read handlers)",
+    "out-of-scope output truncations untouched (dispatch/completion/verdict/budget/nextActions)",
+    "build/check/test green",
+    "live regression gate: constrained agent asking for the full catalog gets a refusal+directive (not partial) and follows it (read-samples-catalog kind=...)",
+    "fresh-context AUDIT confirms no in-scope over-read returns a usable partial; orchestrator re-greps the audit"
+  ],
+  "depends_on": [
+    "TASK-075",
+    "TASK-077"
+  ],
+  "notes": "Closes FGAP-089 (P1; the structured footer was empirically insufficient — agent skimmed it). Shared serializeForRead is the DRY chokepoint (pi-workflows imports @davidorex/pi-context/read-element). Key insight: the warning must lead (head-first), not trail. User scope: comprehensive/global all over-READS, not just pi-context; output-truncation explicitly out. Verify from scratch cwd; NO RELEASE (held). Audit step mandatory (user-directed).",
+  "verification": "VER-049"
+}

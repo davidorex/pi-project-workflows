@@ -1,0 +1,18 @@
+{
+  "name": "Run design review of jit-agents-spec.md",
+  "description": "Spawn a fresh-context independent reviewer subagent against docs/planning/jit-agents-spec.md with the scope declared in REVIEW-001. Findings populate REVIEW-001.findings and drive DEC-0001/0002/0003 state from proposed toward decided where evidence supports it.",
+  "depends_on": [
+    "PHASE-2"
+  ],
+  "exit_criteria": [
+    "REVIEW-001 advances to complete",
+    "Every finding in REVIEW-001.findings reaches a terminal state (resolved/wontfix/duplicate)",
+    "Findings that generate new decisions are linked via produces_decision",
+    "REVIEW-001.clean is true"
+  ],
+  "produces": [
+    "populated spec-reviews.json",
+    "possibly new decisions beyond DEC-0001/0002/0003"
+  ],
+  "status": "pending"
+}

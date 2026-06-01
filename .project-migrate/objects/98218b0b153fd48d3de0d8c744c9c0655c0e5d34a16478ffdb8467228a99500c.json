@@ -1,0 +1,17 @@
+{
+  "description": "FGAP-074 C0 — naming DEC (decision-only, no code). Settle target names for the /project->/context surface rename: the 3 src filenames (project-dir.ts / project-context.ts / project-sdk.ts -> new) + their 3 subpath exports; identifier scheme (projectRoot->contextRoot, projectDir->contextDir [collision-scoped per feedback_rename_scope_discipline], projectState->contextState, validateProject->validateContext|validateSubstrate, getProjectContext->getContext, installProject->installContext, projectTemplatesDir->contextTemplatesDir, PROJECT_BLOCK_TYPES->CONTEXT_BLOCK_TYPES, interfaces Project*->Context*/Substrate*, PROJECT_DIR @deprecated -> drop|rename); Pi tool prefix project-* -> context-*; command /project -> /context + PROJECT_SUBCOMMANDS rename. Resolve the project-context.ts target-name hazard (context-context is awkward: choose context-core|context-substrate|context.ts). Gates C1-C7.",
+  "status": "completed",
+  "files": [
+    ".project/decisions.json"
+  ],
+  "acceptance_criteria": [
+    "A DEC is filed settling: 3 target filenames, 3 target subpath strings, the full identifier rename map, the tool-prefix scheme, and the command name",
+    "project-context.ts target name chosen (resolves the context-context awkwardness hazard)",
+    "DEC notes the DEC-0044/FEAT-004 constraint: keep a /context dispatch-verb namespace open (do not foreclose an agent-dispatch tool/command)",
+    "DEC notes OUT-of-scope: package name @davidorex/pi-project-workflows, the .project substrate-dir literal (DEC-0036 step-5), user-substrate vocabulary (DEC-0025), already-context-named symbols",
+    "Decision-only: no source code changes in this chunk"
+  ],
+  "depends_on": [],
+  "notes": "Decomposition: analysis/2026-05-23-fgap-074-rename-decomposition.md (chunk C0). Maps to Claude Code task #59. FGAP-074. Transition-alias-bridged strategy; each subsequent chunk green-per-commit (husky check+test). Independent of DEC-0036 step-3/.context re-population — pure source codemod against the still-.project substrate via the pointer.",
+  "verification": "VER-037"
+}

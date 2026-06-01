@@ -1,0 +1,4 @@
+{
+  "title": "Typed WorkflowContext/WorkflowPI interfaces instead of ExtensionContext",
+  "narrative": "The workflow internals use narrow WorkflowContext and WorkflowPI interfaces (6 methods total) rather than importing ExtensionContext directly from the pi SDK. Introduced in commit fffc833 to address a conformance audit finding (ctx: any / pi: any parameters). The narrow interfaces create an insulation layer: when the pi SDK evolves (which it does frequently -- see RAT-008), only the adapter at the entry point needs updating, not every step executor. The tradeoff is a cast at the monitor step call site where invokeMonitor() requires the full ExtensionContext type. Confidence: HIGH (conformance audit motivated, explicitly documented in commit)."
+}

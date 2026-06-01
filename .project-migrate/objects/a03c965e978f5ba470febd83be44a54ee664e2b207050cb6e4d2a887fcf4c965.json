@@ -1,0 +1,32 @@
+{
+  "title": "Runtime error-message string-literals escape FGAP-131/132 citation-rot scanner — scanner extracts string literals at Type.String/Object description fields and at pi.registerTool description argument but does NOT extract string-literal arguments to throw new Error(...) / new <ErrorClass>(...) constructions in tool execute() bodies; canonical_id citations in error messages reach operators verbatim ungated",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "Surfaced empirically 2026-05-29 by in-pi agent telemetry: agent attempted author-agent-spec with writer.kind=agent; pi-agent-dispatch's tool execute() body threw an error whose message included verbatim 'DEC-0047: Capability/spec authoring is human-only; sub-agents have no escalation path.' Downstream operator reading that error in a fresh-substrate target dir cannot resolve DEC-0047 locally — same citation-rot failure mode FGAP-130/131/132 closed for description text, surviving via a different AST surface the scanner does not visit. Verified scope: packages/pi-context/src/citation-rot-scanner.ts walks ts.CallExpression nodes filtering on PropertyAccessExpression pi.registerTool and Type.String/Type.Object call patterns; it does NOT visit NewExpression nodes (e.g. new Error('...')) or ThrowStatement argument string-literals. Each pi-agent-dispatch tool throws structured errors with canonical_id citations: AuthorAgentSpecRefusedError (DEC-0047), CommitAttestedRefusedError (DEC-0047), AuthorToolGrantRefusedError (DEC-0047), composeToolGrant failures, plus pi-context's own BootstrapNotFoundError (DEC-0015). Full citation count in error-message strings across all 5 packages unknown until the scanner is extended + re-run.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/citation-rot-scanner.ts",
+      "reference": "AST walker visits Type.String/Object description call-argument string-literals + pi.registerTool description-field string-literals; does not visit NewExpression / ThrowStatement / AwaitExpression argument string-literals"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+      "reference": "throws new AuthorAgentSpecRefusedError with citation-rich message ('Capability/spec authoring is human-only per DEC-0047...')"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/commit-attested-tool.ts",
+      "reference": "throws CommitAttestedRefusedError with DEC-0047 citation"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/author-tool-grant-tool.ts",
+      "reference": "throws AuthorToolGrantRefusedError with DEC-0047 citation"
+    }
+  ],
+  "impact": "Citations in runtime error messages reach operators unfiltered. The FGAP-131/132 scanner reports zero hits while the leak persists via a parallel AST surface. The FGAP-130/131/132 closure narrative is therefore partial: operator-visible canonical_id leakage continues through every error-throw path in tool execute() bodies. Worse: error-message citations are MORE visible to operators than description-field citations because errors fire at the moment of failure — operators read them directly to diagnose what went wrong, where the foreign canonical_id is most likely to be parroted and copy-pasted into bug reports / questions.",
+  "canonical_vocabulary": "AST-surface-coverage completeness; error-message-string-literal extraction; parallel-ungated-path closure",
+  "proposed_resolution": "Extend packages/pi-context/src/citation-rot-scanner.ts AST walker to ALSO visit: (1) NewExpression nodes where the constructor identifier ends in 'Error' (Error / TypeError / RangeError / project-specific *RefusedError / *NotFoundError / etc.) — extract their first string-literal argument; (2) ThrowStatement argument string-literals (cases where throw uses a string directly or a constructor whose first arg is a template literal). Apply the same canonical_id regex to extracted string-literals. Re-run scanner across all 5 packages; strip every hit per Pattern A — rewrite error messages to convey the same operational meaning without naming substrate canonical_ids (e.g. 'Capability/spec authoring is human-only per DEC-0047' → 'Capability/spec authoring requires writer.kind=human'). Verify by extending citation-rot-scanner.test.ts with a synthetic-injection test for the new surface type. Closes citation-rot at the runtime-error path; combined with existing scanner coverage, no parallel ungated string-literal path remains in shipped operator-visible TypeScript surfaces.\n\nCLOSED: implemented via FGAP-133/134 arc on branch fgap-133-134-auth-gate (commit 56113cb). citation-rot scanner extended in packages/pi-context/src/citation-rot-scanner.ts with isErrorConstructorCall predicate + NewExpression visitor branch; new ScanResult.surface variant ast-error-message; the one extant DEC-0047 citation at packages/pi-agent-dispatch/src/attested-commit.ts:48 rewritten per Pattern A to 'human-only authoring enforced'. Scanner unit-test count 16/0 (was 13/0). Driver run across all 5 packages' src + skills surfaces returns 0 hits post-strip. VER-060 attests.",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

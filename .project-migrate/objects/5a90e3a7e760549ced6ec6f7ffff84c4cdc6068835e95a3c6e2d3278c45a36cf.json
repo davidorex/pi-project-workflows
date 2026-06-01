@@ -1,0 +1,10 @@
+{
+  "title": "Bound synthetic-edge synthesis: lazy per-lens vs eager union",
+  "body": "POC v2's edgesForLens() + synthesizeFromField() unified accessor decides at query time whether synthetic edges (auto-derived lens edges from item fields) get computed. Production scale requires bounding the cardinality. Eager union — synthesizeAll(config) computing every lens's synthetic edges per call — is O(L × N) per query; for L=50 lenses and N=1000 items that's 50K synthetic edges per call. Lazy per-lens — only synthesize for the lens being queried — is O(N) per call, but requires the unified-accessor signature to know which lens is being queried. Lazy is correct for production scale; eager simpler to implement. Couples to issue-070 (cache placement) — caching synthetic edges and invalidating on item-field change is the orthogonal optimization. Surfaced as gap #26 in the integration-map review.",
+  "location": "analysis/poc-degree-zero-lens/render.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent"
+}

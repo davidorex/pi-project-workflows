@@ -1,0 +1,10 @@
+{
+  "title": "Monitor tuning tools — command-mediated parameter changes for collector config, classify template, agent YAML",
+  "body": "Patterns and instructions are tunable via /<monitor-name> <text> commands. But collector parameters (issue-035), classify template prose, and agent YAML fields are not tunable via commands — the LLM must use raw file edits and know Nunjucks syntax and YAML format. For the system to be self-tuning from live enactment, every parameter that affects classification quality should be adjustable via tool or command. Examples: /monitors hedge context conversation_history.turns=5 (adjust collector window), /monitors hedge template (show current classify template for inspection), /monitors hedge model claude-sonnet-4-6 (change classify model). The /monitors command infrastructure exists (monitors-control, monitors-rules tools). Extension: add parameter-setting subcommands that write to the monitor spec JSON and agent YAML, taking effect on next /reload or next firing. The skill should document these commands so the LLM knows they exist.",
+  "location": "packages/pi-behavior-monitors/index.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-behavior-monitors",
+  "source": "human"
+}

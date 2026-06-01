@@ -1,0 +1,5 @@
+{
+  "description": "Template families sharing structural patterns (read → findings → schema) MUST extract shared structure into a base template with extends/block. Duplicating prompt structure across agent templates is a defect.",
+  "enforcement": "review",
+  "severity": "error"
+}

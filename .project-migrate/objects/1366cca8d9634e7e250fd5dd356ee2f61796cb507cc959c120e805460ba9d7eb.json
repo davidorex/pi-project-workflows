@@ -1,0 +1,5 @@
+{
+  "title": "Run pi-behavior-monitors test suite",
+  "status": "todo",
+  "acceptance": "npx vitest run passes for pi-behavior-monitors at 0 failures"
+}

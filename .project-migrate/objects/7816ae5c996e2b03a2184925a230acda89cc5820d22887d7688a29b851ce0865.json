@@ -1,0 +1,9 @@
+{
+  "title": "Audit pi-workflows for equivalent parsing",
+  "status": "todo",
+  "description": "Search pi-workflows/src for any model-id parsing or provider-selection logic. If found, consolidate into pi-jit-agents too.",
+  "files": [
+    "packages/pi-workflows/src/"
+  ],
+  "acceptance": "Written audit note in this task record; any duplicates consolidated or explicitly flagged as out-of-scope with justification"
+}

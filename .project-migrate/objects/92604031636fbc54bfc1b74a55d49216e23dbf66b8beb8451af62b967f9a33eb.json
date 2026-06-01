@@ -1,0 +1,31 @@
+{
+  "title": "No project-install tool — bootstrap tool-trilogy incomplete; a tools-only agent can't self-materialize a substrate from the catalog",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "Bootstrap is init -> accept-all -> install. project-init and project-accept-all are registered TOOLS (the harness-confined agent can call them), but install exists ONLY as the /project install slash command — there is no project-install tool. So a tools-only agent (DEC-0014) can create the skeleton + write config.json, but CANNOT materialize the declared schemas + starter blocks from the samples catalog. The init+accept-all-have-tools-but-install-doesn't asymmetry is the decisive point: the trilogy is inconsistent. The write-schema workaround is INFEASIBLE for a tools-only agent: read-samples-catalog returns only SHAPE (arrayKeys + itemProperties), NOT the raw draft-07 schema bodies (verified: SampleKind has shape, no schema body), so the agent has nothing to pass to write-schema; and a fully-constrained --tools session has no builtin read tool to source the package's .schema.json files either. Surfaced 2026-05-22 by a live in-pi agent tracing its own bootstrap pipeline. (Refines an earlier mis-call that 'install-as-tool' was marginal — it is a real gap once init+accept-all are already tools.)",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "project-init + project-accept-all registered as tools; NO project-install tool (grep count 0); /project install is a command-only handler"
+    },
+    {
+      "file": "packages/pi-context/src/samples-catalog.ts",
+      "reference": "samplesCatalog SampleKind = {…, shape:{arrayKeys,itemProperties}, …} — no raw schema body; so write-schema has no source for the body via the catalog"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "installProject (the copy-from-samples logic, post FGAP-067) exists as a function but is only invoked by the /project install command — a tool binding would expose it to the agent"
+    }
+  ],
+  "impact": "A harness-confined agent cannot complete a fresh-substrate bootstrap through tools — it gets a config.json (accept-all) but no schemas/blocks on disk, so subsequent block writes proceed UNVALIDATED (schema-absent path) and the substrate is degraded. The self-bootstrap scenario (e.g. a constrained session in a fresh dir like may-22-2026) is blocked at step 3 of 3. Inconsistent with init/accept-all being agent-callable.",
+  "canonical_vocabulary": "bootstrap-trilogy, project-install tool, self-materialize substrate",
+  "proposed_resolution": "Add a project-install Pi tool (and orchestrator CLI per DEC-0019/0020) wrapping the existing installProject library fn — completing the init/accept-all/install trilogy on the tool surface. This is the root fix; it makes the write-schema workaround + the read-samples-catalog-lacks-bodies observation moot (install copies the bodies from the package; the agent never needs them in-context). Do NOT pursue the reconstruct-schemas-from-shape workaround (lossy/error-prone) as the resolution.",
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0019"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Framework gap FGAP-003 — no materialized views over scoped blocks",
+  "body": "projectState() in project-sdk.ts does in-memory aggregation but it is not a persisted, addressable, schema-validated block. There is no way to declare 'global issues_view.json is a derived index over per-scope finding registries' or 'open_work_view.json aggregates all non-terminal stories across features'. Consumers wanting a flat queryable view (the current issues.json shape) cannot have it alongside scope-owned registries without manual sync. Proposed resolution: add a view-block kind with a definition file naming source blocks, a projection function, and refresh triggers; block-api exposes readView(name) but disallows direct writes; refresh fires on underlying block writes. Canonical owner: .project/framework-gaps.json FGAP-003. Canonical vocabulary: materialized view (database canon). Depends on FGAP-002 (issue-056) landing first to have scope-owned registries to project from.",
+  "location": "packages/pi-context/src/project-sdk.ts, packages/pi-context/src/block-api.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent"
+}

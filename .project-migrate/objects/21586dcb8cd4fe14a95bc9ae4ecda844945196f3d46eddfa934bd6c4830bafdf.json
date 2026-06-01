@@ -1,0 +1,30 @@
+{
+  "target": "TASK-076",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "evidence": "Vendored truncateHead (FGAP-104). Static: build/check/test all exit 0; truncate.test.ts (under-cap passthrough / over-cap bytes+lines / multi-byte accuracy) pass; read-element.ts imports truncateHead from ./truncate.js. Adversarial grep: zero SDK root-barrel VALUE imports in context-sdk-reachable modules (index.ts:8-14 is `import type` — erased). REGRESSION GATE (the point): npx tsx -e validateContext('.').issues.length now RESOLVES -> 88 (was ERR_PACKAGE_PATH_NOT_EXPORTED); also retroactively confirms the FGAP-103 cascade integrity (TASK-075 verification edge -> 88 baseline). contextState tsx-eval smoke resolves (full keys). Vendored impl diffed byte-for-byte-equivalent to SDK dist/core/tools/truncate.js.",
+  "timestamp": "2026-05-25T00:00:00Z",
+  "criteria_results": [
+    {
+      "criterion": "truncateHead vendored verbatim (pure; matches SDK signature/return shape)",
+      "status": "passed",
+      "evidence": "diffed vs SDK truncate.js; truncate.test.ts green"
+    },
+    {
+      "criterion": "zero SDK root-barrel VALUE imports in context-sdk-reachable graph (type-only ok)",
+      "status": "passed",
+      "evidence": "grep: only index.ts type-only import remains"
+    },
+    {
+      "criterion": "tsx -e validateContext resolves -> 88 (regression fixed + cascade confirmed)",
+      "status": "passed",
+      "evidence": "validateContext issues: 88"
+    },
+    {
+      "criterion": "build/check/test green, no behavior change",
+      "status": "passed",
+      "evidence": "all exit 0; read-element truncation tests unchanged-pass"
+    }
+  ]
+}

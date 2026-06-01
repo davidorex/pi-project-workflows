@@ -1,0 +1,25 @@
+{
+  "title": "In-pi substrate-read tools should emit an onboarding-actionable message pre-bootstrap instead of a raw BootstrapNotFoundError",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "Block-level read tools that an in-pi LLM may invoke before a substrate is set up (read-block + named-block reads generally) surface the raw resolveContextDir BootstrapNotFoundError when no .pi-context.json pointer exists. The error message IS already actionable (it names 'run /context init'), but it is a thrown error rather than a structured, onboarding-consistent tool response. A friendlier emit ('no substrate yet — run /context start') paired with the write affordance would align with the DEC-0042/FGAP-095 instructional-projection requirement (pair every fact/absence with its remedy). This is a UX/error-shaping improvement, NOT a correctness gap: read-block/readBlock are throw-on-missing by contract, so throwing pointer-less is correct behavior (confirmed during the tryResolveContextDir class fix, TASK-069); degrade-to-empty would mislead and is explicitly NOT wanted here. Relates to FGAP-095 (onboarding conductor) + FGAP-085 (tool description discovery-readiness).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "876",
+      "reference": "read-block tool calls readBlock(ctx.cwd, params.block) directly; pointer-less it throws BootstrapNotFoundError (via blockFilePath->resolveContextDir) rather than returning an onboarding-shaped tool result"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "lines": "1290",
+      "reference": "readBlockDir now degrades to [] pointer-less (tryResolveContextDir) — a directory-enumeration read; the named-block read tools intentionally still throw per readBlock's throw-on-missing contract"
+    }
+  ],
+  "impact": "Minor in-pi onboarding friction: an LLM calling a read tool in a fresh repo gets a thrown error (actionable text, but not a structured/consistent onboarding affordance). No correctness or data-integrity impact.",
+  "canonical_vocabulary": "actionable error surfacing (onboarding affordance)",
+  "proposed_resolution": "When a substrate-read tool handler hits a missing-pointer condition, catch BootstrapNotFoundError (name-based, per FGAP-080) at the TOOL boundary (not in readBlock itself — its throw contract stays) and return a structured tool result naming the remedy ('run /context start'), consistent with the FGAP-095 instructional-projection pattern. Scope to the in-pi tool handlers; orchestrator CLIs keep throwing (misuse should fail loudly). Sequence with / fold into FGAP-095 onboarding work.",
+  "related_features": [
+    "FEAT-004"
+  ]
+}

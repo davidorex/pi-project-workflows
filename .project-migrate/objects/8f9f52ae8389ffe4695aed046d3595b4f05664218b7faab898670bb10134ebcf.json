@@ -1,0 +1,5 @@
+{
+  "description": "{{ var }}/{% tag %} for Nunjucks prompt rendering, ${{ expr }} for workflow data flow — never mix contexts",
+  "enforcement": "review",
+  "severity": "warning"
+}

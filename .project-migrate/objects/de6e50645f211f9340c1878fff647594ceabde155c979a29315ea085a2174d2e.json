@@ -1,0 +1,26 @@
+{
+  "title": "Bidirectional scoped traversal primitive missing — walk-ancestors + walk-by-relation tools",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "DEC-0017 (work-unit context composed at dispatch time) requires bidirectional traversal of closure-table edges per relation_type. Today only project-walk-descendants exists; reverse traversal is not exposed. find-references (cross-block reverse-index) gap from the tool-surface audit overlaps this. The gather-execution-context primitive (FGAP-031) cannot exist without bidirectional traversal as foundational layer.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/project-context.ts",
+      "reference": "walkDescendants exists; no walkAncestors. Reverse traversal logic is per-relation_type DFS over relations.json edges; primitive shape is symmetric to walkDescendants but reverse-direction."
+    },
+    {
+      "file": "analysis/2026-05-10-tool-surface-gap-audit.md",
+      "reference": "8-rank consolidated impact ranking position 5: project-walk-ancestors. Position 10: find-references (cross-block reverse-index). Both load-bearing for DEC-0017 work-unit context composition."
+    }
+  ],
+  "impact": "Without bidirectional traversal, work-unit context cannot be gathered — backward edges from a unit to its constraining/motivating context are invisible. Under DEC-0014/0016 dogfood-completeness lens, work-unit dispatch is undispatchable because the orchestrator cannot ask 'what context informs this unit'. Cascades through DEC-0017 dependencies: FGAP-031 (gather primitive) needs FGAP-029; FGAP-032 (contextBlocks item-level selectivity) needs FGAP-031.",
+  "proposed_resolution": "Add walk-ancestors(childId, relationType) tool wrapping a new walkAncestors JS export in project-context.ts (symmetric to walkDescendants; reverse-direction DFS over relations edges of the given relation_type, cycle-safe via visited-set). Add walk-by-relation(itemId, relationType, direction: 'in'|'out'|'both') generalized tool covering both directions in one primitive. Item-level scoping per applicability predicate (FGAP-010) optional at first; can layer in later. Cascades into pi-context's project-context.ts SDK + new tool registrations in index.ts.",
+  "related_decisions": [
+    "DEC-0013",
+    "DEC-0017"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

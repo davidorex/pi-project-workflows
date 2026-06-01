@@ -1,0 +1,5 @@
+{
+  "title": "Run hedge against openrouter/anthropic/claude-sonnet-4.6",
+  "status": "todo",
+  "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not"
+}

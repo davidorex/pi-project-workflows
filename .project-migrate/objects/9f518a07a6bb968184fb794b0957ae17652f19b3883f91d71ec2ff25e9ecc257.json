@@ -1,0 +1,4 @@
+{
+  "title": "Subprocess dispatch via pi --mode json",
+  "narrative": "Each workflow step runs as a subprocess (pi --mode json) rather than executing agent logic in-process. The main conversation is the control plane; step agents are subordinate with independent context windows. This aims to achieve context window isolation between steps -- each agent gets a clean window without accumulated noise from prior steps. A step crash or timeout does not corrupt the parent session's state. The tradeoff is subprocess startup latency and the inability to share in-process state between steps; all inter-step data flows through the filesystem (JSON outputs) and expression resolution. Documented in CLAUDE.md, README, and workflow-extension.md. Confidence: HIGH."
+}

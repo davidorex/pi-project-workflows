@@ -1,0 +1,40 @@
+{
+  "title": "Framework-use discoverability gap — no canonical substrate-queryable surface for \"how do I X with pi-context\" questions; fresh Claude operators must grep code + read scattered docs (SKILL.md + CLAUDE.md + analysis MDs + feedback memories) to learn canonical patterns; substrate is not its own usage source",
+  "status": "identified",
+  "priority": "P1",
+  "package": "@davidorex/pi-context",
+  "layer": "L5",
+  "description": "Layer 3 of the 3-layer orchestrator-surface-discoverability gap (Layer 1 = CLI elevation per FGAP-180 / TASK-095; Layer 2 = per-script --help per FGAP-181). Layer 3 operates at the framework-USE level: \"how do I file a new FGAP?\" / \"what's the canonical pattern for X?\" / \"when do I use file-block-item vs append-block-item?\" / \"what does this error mean?\" / \"what's the cutover sequence?\". These questions don't have canonical-substrate-queryable answers today. The knowledge is scattered across SKILL.md (per-extension; Pi-loaded) + CLAUDE.md (project-local; Claude-Code-loaded) + analysis MDs (durable but not substrate-typed) + feedback memories (operator-private) + Pi tool descriptions (at registration time) + inline error messages + the orchestrator script preambles + git history + the operator's head.\n\nFor a fresh Claude operator (this-project's operators relying on CLAUDE.md + memory + session-notes; downstream-consumer operators starting fresh): no canonical surface answers \"how do I X with pi-context.\" Operator must grep + spelunk + chain-read + maintain mental model from disparate sources. The framework provides robust SURFACES (Pi tools + slash commands + orchestrator scripts) but no canonical DISCOVERY layer above those surfaces.\n\nThe self-documenting-substrate design (filed at analysis/2026-05-30-self-documenting-substrate-design.md as design possibility; commit 62f9114) addresses this gap. Specifically: `commands` block kind (one entry per slash command with usage + examples); `tools` block kind (one entry per Pi tool with parameters + use cases); `runbooks` block kind (one entry per operational how-to like cutover-from-.project-to-.context); `patterns` block kind (canonical idioms: per-package atomic cascade; lazy migration; sentinel cross-references); `concepts` block kind (vocabulary: block-kind; relation-type; lens; invariant; status-bucket); `errors` block kind (error message reference with explanation + remediation). Plus a `/context help [topic]` slash command surfacing the guide blocks. Plus a packaged baseline shipped via /context install so consumers get framework-help on first install.\n\nThe design possibility exists; this FGAP names it as a gap-to-close.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-30-self-documenting-substrate-design.md",
+      "reference": "Design possibility filed at commit 62f9114. Two block-kind design choices (single omnibus usage-guides kind with category enum vs multiple specific kinds — operator-direction pending). Three-layer bootstrap (SKILL.md thin pointer → /context status existing → NEW /context help [topic] slash command → readBlock direct for in-pi agents). Two-tier packaged/project-specific shape. Staleness mitigation via per-guide version stamps + guide-rot scanner + schema-migration for guide-format evolution"
+    },
+    {
+      "file": "analysis/2026-05-30-LLM-perspective JIT Agent UX.md",
+      "reference": "Operator-experience target verbatim: 'No session log grep. No model string guessing. No discovering prompt.system vs systemPrompt at dispatch time.' Same discipline applies to framework-use discoverability: operator should not be required to grep CLAUDE.md + memory + analysis MDs to learn canonical patterns. Discovery should be queryable through the canonical substrate surface that everything else uses"
+    },
+    {
+      "file": "packages/pi-context/skills/pi-context/SKILL.md",
+      "reference": "Current framework-use docs live here (per-extension; Pi-loaded). Static documentation not queryable as substrate. Cannot be incrementally evolved via canonical write-schema-migration mechanism. Cannot be cross-referenced via relations.json edges. Not lens-projectable"
+    },
+    {
+      "file": "CLAUDE.md",
+      "reference": "Project-local discipline + canonical filing patterns documented here. Loaded only into Claude Code sessions for this specific project; not portable to downstream-consumer projects. Each consumer would re-derive equivalent content from scratch without canonical-substrate-discoverability"
+    },
+    {
+      "file": "~/.claude/projects/<this-project>/memory/feedback_*.md",
+      "reference": "60+ operator-private feedback memories carrying discipline-lessons. Operator-private (not portable to downstream consumers). Not substrate-typed (no schema validation; no relations; no canonical query surface). Each memory IS a piece of framework-use knowledge that should arguably live in substrate as a discoverable framework-discipline / pattern / runbook"
+    },
+    {
+      "file": "scripts/orchestrator/*.ts",
+      "reference": "39 scripts each with 5-15 line preamble documenting their canonical-relation + usage. Preamble content IS framework-use docs but only surfaces by reading individual script files (compounds with FGAP-181 Layer 2 --help gap)"
+    }
+  ],
+  "impact": "Fresh-Claude productivity gated by ability to learn canonical patterns from scattered sources. Downstream-consumer operators (clock-menu-app today; future consuming projects) cannot adopt the canonical patterns this project's operators use because the patterns aren't substrate-discoverable from outside this repo's CLAUDE.md + memory dir. Pattern-portability the substrate-vocabulary-extension model demonstrates (clock-menu-app's session-notes block adopted by this project unchanged) is structurally limited to substrate-vocabulary; pattern-vocabulary stays per-project until each operator re-derives. The eat-own-dog-food argument: pi-context provides canonical substrate-management; should use that substrate to manage its own usage documentation. Currently the framework's docs about itself live OUTSIDE the substrate it manages — meta-canonical-inconsistency.",
+  "canonical_vocabulary": "self-documenting substrate; framework-use discoverability; canonical-help-surface",
+  "proposed_resolution": "Implement the self-documenting-substrate design per analysis/2026-05-30-self-documenting-substrate-design.md. Specific work: (a) operator scope-decision on single omnibus usage-guides kind vs multiple specific kinds (commands / tools / runbooks / patterns / concepts / errors / axioms — 7 candidate kinds); (b) author block-kind schemas per chosen split; (c) amend-config to register block_kinds + relation_types; (d) author packaged baseline guides shipped via packaged conception; (e) /context install copies baseline guides into consuming substrates; (f) new /context help [topic] slash command queries the guide blocks; (g) staleness mitigation via per-guide version stamps + guide-rot scanner; (h) eat-own-dog-food: SKILL.md becomes thin pointer to substrate-typed guides; CLAUDE.md becomes thin pointer to substrate-typed runbooks; feedback memories selectively migrated to substrate-typed framework-discipline blocks. Sized as a multi-arc undertaking; interlocks with FGAP-181 (Layer 2 --help) + FGAP-180 / TASK-095 (Layer 1 CLI elevation). All three layers together close the orchestrator-surface-discoverability territory.",
+  "related_features": [
+    "FEAT-001"
+  ]
+}

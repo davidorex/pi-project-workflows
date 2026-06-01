@@ -1,0 +1,41 @@
+{
+  "title": "Autonomous code-change loop validates via LLM-self-report, not real deterministic checks — DEC-0018 not inherited; no build/check/test gate, runtime-demo, adversarial-against-artifacts, or attested commit",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-workflows",
+  "layer": "L1",
+  "description": "self-implement.workflow.yaml (the shipped agent code-change loop) verifies via an LLM `verifier` agent emitting a prose status, gated by `echo '${{ steps.verify.output.status }}' | grep -q passed` (lines 42-54). The verdict is an LLM grading an LLM's work against prose criteria — the SAME KIND of process as the thing it checks, with no real deterministic check. Verified: NO bundled workflow runs npm run check / npm test / tsc, and NONE commits. The privileged spec-implementer agent (tools:[read,write,edit,bash,grep,find]) therefore writes code that is never compiler/test-verified, never runtime-demonstrated, and never landed. This relocates the DEC-0018 false-pass (tests-pass necessary-not-sufficient; LLMs perform) into the VERIFY position — the most dangerous place for it — so the agent grades its own work instead of a real check grading it (DEC-0047: the terminal verdict must be a real check the executive cannot fake). The capability the Claude-Code orchestrator applies every step (run the real toolchain and read its exit code; runtime-demo the actual path; adversarially re-check EXTERNAL artifacts like the git diff / event stream) is absent from the autonomous loop. The engine already HAS the real-check primitive — command/gate steps spawn sh (step-command.ts:28, step-gate.ts:24) — the loop simply does not use it for validation.",
+  "evidence": [
+    {
+      "file": "packages/pi-workflows/workflows/self-implement.workflow.yaml",
+      "lines": "42-54",
+      "reference": "verify step = LLM `verifier` agent emitting output.status; check gate = `echo '${{ steps.verify.output.status }}' | grep -q passed`. Terminal acceptance keys on an LLM's prose verdict, not an real-check exit code."
+    },
+    {
+      "file": "packages/pi-workflows/workflows",
+      "reference": "Verified zero matches for 'npm run check' / 'npm test' / 'npm run build' / 'tsc' / 'biome' and zero 'git commit' across all *.workflow.yaml — no bundled workflow runs a real build/test gate or commits."
+    },
+    {
+      "file": "packages/pi-workflows/agents/spec-implementer.agent.yaml",
+      "reference": "Privileged code-writer: tools:[read,write,edit,bash,grep,find]. Its edits are accepted on the LLM-verifier verdict, never compiler/test-verified."
+    },
+    {
+      "file": "packages/pi-workflows/src/step-command.ts",
+      "lines": "28",
+      "reference": "command step spawn('sh',['-c',command]) — the real-check primitive that exists but is unused for code-change validation (same for step-gate.ts:24)."
+    }
+  ],
+  "impact": "The 'validated' in 'validated code changes' is fake: an autonomous (or constrained-agent-dispatched) self-implement run can land — or claim to land — broken code on an LLM's say-so. This is the load-bearing blocker for the north-star loop (FEAT-006): a constrained orchestrator dispatching a privileged code agent without a real-check gate produces unvalidated changes under a validation-shaped wrapper. The fix is low-mechanism (the command/gate real-check primitive already ships) but load-bearing for trust.",
+  "canonical_vocabulary": "real-check-validation, validator-independence, runtime-verification-gate, exit-code-gating, real-check-backed-acceptance, false-pass",
+  "proposed_resolution": "Port DEC-0018 into the loop as an executable real-check acceptance tail: (1) replace the LLM-verifier terminal gate with a command step running the real toolchain (npm run build && npm run check && npm test) gated on EXIT CODE, full output / no pipe-masking per the project's own rule; (2) a runtime-demonstration step that executes the actual feature path and gates on emitted facts (events/diffs/exit codes), not a description; (3) an adversarial step that checks EXTERNAL artifacts (git diff, a re-run), not re-grades prose; (4) accept the implementer's edits ONLY when the real checks pass; on fail feed the REAL compiler/test errors back for another implement pass (fix root cause, never bypass); (5) commit through husky (itself the external check) with DispatchContext agent-authorship attestation. ENFORCEMENT INVARIANT: a workflow-validate check (+ config policy) forbidding an LLM-verdict as the TERMINAL acceptance of a code-change workflow — the terminal verdict must key on a real external-command exit code; an LLM verifier may triage/route but may not be the terminal gate. Refines DEC-0047 (the terminal verdict is a real check the executive cannot fake) and realizes DEC-0018 in autonomous loops.",
+  "related_features": [
+    "FEAT-004",
+    "FEAT-005",
+    "FEAT-006"
+  ],
+  "related_decisions": [
+    "DEC-0018",
+    "DEC-0047"
+  ],
+  "related_issues": []
+}

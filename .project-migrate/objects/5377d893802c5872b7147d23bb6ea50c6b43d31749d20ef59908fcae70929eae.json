@@ -1,0 +1,21 @@
+{
+  "description": "Phase 2 sub-phase 2.2: ship resolve-items-by-id (bulk variant) — library bulk-resolve wrapping buildIdIndex + pi tool + scripts/orchestrator/resolve-items-by-id.ts. Singular resolve-item-by-id tool already exists. No closure-table dependency.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/project-sdk.ts",
+    "packages/pi-context/src/index.ts",
+    "scripts/orchestrator/resolve-items-by-id.ts"
+  ],
+  "acceptance_criteria": [
+    "resolveItemsByIds(cwd, ids) library function exported from project-sdk.ts; signature: (cwd: string, ids: string[]) => Map<string, ItemLocation | null>; wraps existing buildIdIndex (project-sdk.ts:616)",
+    "resolve-items-by-id pi tool registered in packages/pi-context/src/index.ts with Type.Object({ids: Type.Array(Type.String())}); coexists with existing singular resolve-item-by-id tool",
+    "scripts/orchestrator/resolve-items-by-id.ts shebang-tsx executable; args --ids <csv> [--format json|table]",
+    "Tests cover: all-found / partial-found / none-found / cross-block resolution / prefix-mismatch fail mode",
+    "Husky pre-commit gate green at commit time"
+  ],
+  "depends_on": [
+    "TASK-022"
+  ],
+  "notes": "CLOSED at HEAD 2ddf85f. resolveItemsByIds library + resolve-items-by-id pi tool (coexists with singular resolve-item-by-id) + scripts/orchestrator/resolve-items-by-id.ts shipped. Tests: pi-context 407 → 413 (+6). Live-substrate runtime demo green. See VER-006.",
+  "verification": "VER-006"
+}

@@ -1,0 +1,37 @@
+{
+  "description": "Fix FGAP-106 (.project leaks into agent-facing guidance) + close FGAP-107 (orientation /context start). EXHAUSTIVE pass — supersedes the original 7-string enumeration after a full-tree orchestrator re-grep proved both my list and a follow-up explore non-exhaustive. Already landed (correct, kept): 4b84cb8 (FGAP-106 original subset) + 2301cec (FGAP-107 orientation -> real ceremony + test needles). REMAINDER this pass. Neutral-form rule: interpolate the REAL resolved path/dir where in local scope at the string site; else placeholder <substrate-dir>; any /context init mention -> /context init <substrate-dir>. Scope A (19 agent-reachable code strings): pi-context index.ts:150 (handoff render) +1155 (current-state desc); lens-view.ts:46/200/225; roadmap-plan.ts:299/303; context.ts:1260 (resolveComposition throw); block-api.ts:302/310/1313/1318 (read-block/subdir throws); pi-jit-agents compile.ts:436/457; pi-workflows workflow-sdk.ts:631/643 + template-validation.ts:583; pi-behavior-monitors index.ts:111/112 (monitor contextBlock descriptions). Scope B (~15 SKILL.md-source lines in skill-narrative.md, carried verbatim into SKILL.md by npm run skills): pi-context 6/12/38/40/48/120 (38+40 FACTUAL rewrite vs DEC-0015 — :40 wrongly asserts config.json/relations.json always live at .project/; truth = substrate-dir root, pointer-resolved, suggested .context, exempt from config.root redirection); behavior-monitors 95/361/379; pi-workflows 31/69/84. Tests updated in lockstep (grep each edited string across *.test.ts). LEAVE: code path-resolution literals/path-builders, JSDoc + conceptual comments, console.error stderr logs (behavior-monitors 803/819 — separate stderr-diagnostic smell), test fixtures, pi-project-workflows package name, context-sdk.ts:330/348 /context start JSDoc forward-refs, frozen .project dir (DEC-0036). FGAP-107 effectively resolved by 2301cec; closes once verification confirms zero agent-facing /context start.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/lens-view.ts",
+    "packages/pi-context/src/roadmap-plan.ts",
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-jit-agents/src/compile.ts",
+    "packages/pi-workflows/src/workflow-sdk.ts",
+    "packages/pi-workflows/src/template-validation.ts",
+    "packages/pi-behavior-monitors/index.ts",
+    "packages/pi-context/skill-narrative.md",
+    "packages/pi-behavior-monitors/skill-narrative.md",
+    "packages/pi-workflows/skill-narrative.md",
+    "packages/pi-context/src/index.test.ts",
+    "packages/pi-context/src/read-element.test.ts"
+  ],
+  "acceptance_criteria": [
+    "Scope A: all 19 agent-reachable code strings name the dir correctly (resolved path where in scope, else <substrate-dir>); code path-resolution unchanged (pointer-driven)",
+    "Scope B: all ~15 skill-narrative.md agent-facing lines neutralized; skill-narrative.md:40 factually corrected (config/relations live at pointer-resolved substrate-dir root, exempt from config.root; NOT always .project); :38 reframed to current-truth",
+    "zero .project in any agent-facing string across packages/*/src + pi-behavior-monitors/index.ts + skill-narrative.md + regenerated SKILL.md (excluding LEAVE set)",
+    "zero /context start outside context-sdk.ts:330/348 JSDoc",
+    "tests updated in lockstep; build/check/test green (full output, no pipe)",
+    "npm run skills regenerated; SKILL.md clean of agent-facing .project",
+    "LEAVE set untouched (code resolution pointer-driven; JSDoc; console.error; package name; frozen dir; JSDoc forward-refs)",
+    "live runtime gate (launch-constrained-pi.sh scratch cwd): agent names real init->accept-all->install ceremony (suggested .context), does NOT assert state lives in .project",
+    "fresh-context audit confirms full neutralize + zero residue + LEAVE intact; orchestrator re-greps the verdict"
+  ],
+  "depends_on": [
+    "TASK-074",
+    "TASK-078"
+  ],
+  "notes": "EXHAUSTIVE supersession of original enumeration (feedback_class_fix_completeness_reenumeration: re-grep until zero). Scope grew 7->19 code + ~15 narrative after full-tree re-verification. Exhaustive sweep recorded in analysis/2026-05-25-fgap-106-107-exhaustive-sweep.md. Interim guidance-accuracy fix; does NOT build /context start (FGAP-095+066). Neutral referent <substrate-dir>. SKILL.md generated -> edit source + regen. NO RELEASE (held). Audit mandatory.",
+  "verification": "VER-050"
+}

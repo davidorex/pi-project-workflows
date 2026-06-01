@@ -1,0 +1,35 @@
+{
+  "title": "Agent-spec tools[] is structurally unreachable from LLM — declared tools stripped at grant-clamp boundary (line 488) and never delivered (line 568 wires only phantom-tool when outputSchema set); implementation gap relative to canonical body (FEAT-005/006/DEC-0047/JI-029)",
+  "status": "identified",
+  "package": "@davidorex/pi-jit-agents",
+  "priority": "P1",
+  "layer": "L1",
+  "description": "executeAgent at packages/pi-jit-agents/src/jit-runtime.ts strips the agent's declared tools[] at the grant-clamp boundary and never delivers them to the LLM. Verified via grep `compiled\\.tools|context\\.tools|options\\.tools` returning exactly two hits: line 488 `computeGrantViolation(compiled.tools, dispatch.parentGrant)` (grant clamp; throws if child not subset of parent; tools then discarded), and line 568 `context.tools = [phantomTool]` ONLY inside `if (compiled.outputSchema)` (delivers only the framework's phantom-tool for forced toolChoice). Single completeFn call at line 572. The agent's declared tools[] is structurally unreachable from the LLM. An agent declaring tools: [read, append-block-item] cannot read files, cannot append to substrate, cannot do anything beyond emit text (or schema-bound JSON when outputSchema is set). The framework's canonical body — FEAT-005 ('subagent receives its OWN tools'), FEAT-006 ('privileged-agent code-change loop'), DEC-0047 (capability-grant model: grants clamped at dispatch then exercised by the agent), TASK-091 ('agent does the work'), JI-029 ('jit agent with perms for read/amend blocks') — declares jit-agents as tool-using agents acting on granted capabilities. The current implementation does not honor that canonical body. jit-agents-spec.md describes the dispatch as phantom-tool-only; the spec doc is the outlier substrate text relative to the canonical body and is being amended to match.",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+      "lines": "229-303",
+      "reference": "Single-Turn Dispatch (No Tool-Result Loop) section; verdict 'CONFIRMED (with architectural context)'; verbatim: 'executeAgent contains NO LOOP over tool calls and results'; 'grep confirms no while, for, or iteration over tool calls'; 'Tool invocation is the responsibility of the ORCHESTRATOR (the caller of executeAgent), not executeAgent itself'; 'the declared tools array in the spec is purely declarative — it declares what tools the agent intends to use, but executeAgent does NOT wire them to the model'"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/jit-runtime.ts",
+      "lines": "550-617",
+      "reference": "Single try block with ONE completeFn invocation; no iteration; ONE response extracted and returned"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/jit-runtime.ts",
+      "lines": "566-570",
+      "reference": "Phantom-tool registration when outputSchema is set; the phantom tool is the framework's structured-output constraint, not the spec's declared tools"
+    }
+  ],
+  "impact": "Every existing agent spec declaring tools[] is broken-by-architecture. clock-menu-app's 4 agent specs (spec-issues-miner, spec-decisions-drafter, spec-requirements-miner, test-reader) all declare tools[] expecting to invoke them; none can. The capability-grant infrastructure landed via FEAT-004/005 + DEC-0047 + TASK-089 (composeToolGrant, clamp semantics, author-tool-grant) is functionally no-op at agent dispatch — capabilities are composed and clamped at line 488 then discarded with the tools at line 568. The 'agent that does things with tools' framework intent (FEAT-006 north-star, JI-029 verbatim) is unmet by the implementation. Authors writing agent specs under the natural reading of tools[] receive prose-only output and discover the cliff at first dispatch with no framework-level signal.",
+  "proposed_resolution": "Implementation work: extend executeAgent at packages/pi-jit-agents/src/jit-runtime.ts to wire compiled.tools (intersected with dispatch.parentGrant) into the LLM's tool registry, iterate over tool-call responses, dispatch tool invocations through ExtensionContext, append results to message history, re-call the model until end_turn or max-turns. Substrate work: amend jit-agents-spec.md to describe multi-tool dispatch as canonical and classifier-pattern (forced phantom-tool toolChoice for structured output) as one mode-among-modes. Verification: re-run clock-menu-app's 4 agent specs as regression-positives — they succeed after this lands. Interlocks with FGAP-115 (ExtensionContext.currentModel/currentProvider absent; multi-tool dispatch needs the tool-execution surface that ExtensionContext provides).",
+  "canonical_vocabulary": "single-turn dispatch axiom / orchestrator-owns-the-loop",
+  "related_decisions": [
+    "DEC-0049"
+  ],
+  "related_features": [
+    "FEAT-001",
+    "FEAT-006"
+  ]
+}

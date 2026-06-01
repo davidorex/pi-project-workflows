@@ -1,0 +1,39 @@
+{
+  "target": "TASK-071",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "evidence": "FGAP-074 C5 — renamed pi-context's Pi tool-name strings (11 project-*->context-*) + 3 customType + tool labels/descriptions + /project command->/context + PROJECT_SUBCOMMANDS->CONTEXT_SUBCOMMANDS, all in index.ts; + 1 test ref (accept-all.test). npm run skills regenerated SKILL.md (3 files) to context-* tool tags. Verified per DEC-0018: build/check/test green all 4 packages (0 fail). Runtime demo: mock-pi extension-factory capture -> /context command + 13 context-* tools + zero project-* + no run subcommand (DEC-0044 reserve honored). Fresh-context adversarial PASS 6/6.",
+  "criteria_results": [
+    {
+      "criterion": "11 project-* tool names -> context-* + 3 customType + labels/descriptions in index.ts",
+      "status": "passed",
+      "evidence": "grep: 0 name:project-/customType:project-; 13 context-* tools; runtime demo"
+    },
+    {
+      "criterion": "/project command -> /context; PROJECT_SUBCOMMANDS -> CONTEXT_SUBCOMMANDS (+refs); subcommand keys unchanged",
+      "status": "passed",
+      "evidence": "registerCommand(context); CONTEXT_SUBCOMMANDS def+5 refs; adversarial #1/#5"
+    },
+    {
+      "criterion": "one executable runtime ref updated (accept-all.test project-init->context-init); no other executable breakage",
+      "status": "passed",
+      "evidence": "adversarial #3: only accept-all.test; no workflow/monitor/script invokes a project-* tool"
+    },
+    {
+      "criterion": "npm run skills regenerated SKILL.md to context-* tool tags (0 project-* tags)",
+      "status": "passed",
+      "evidence": "adversarial #4: 13 <tool name=context-*>, 0 project-* tags; body prose project-* is skill-narrative->C6"
+    },
+    {
+      "criterion": "DEC-0044 reserve: no run/dispatch/agent subcommand; build && check && test green",
+      "status": "passed",
+      "evidence": "runtime demo []; 0 failures all 4 packages"
+    },
+    {
+      "criterion": "scope contained (index.ts + test + regen SKILL.md); aliases+comments left for C7",
+      "status": "passed",
+      "evidence": "adversarial #6; installProject alias + JSDoc untouched"
+    }
+  ]
+}

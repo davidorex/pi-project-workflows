@@ -1,0 +1,61 @@
+{
+  "title": "pi-project schema and naming conventions — current state audit",
+  "status": "complete",
+  "layer": "L2",
+  "type": "audit",
+  "question": "What conventions does pi-project actually use for schemas, naming, lifecycle enums, cross-references, authorship, and hierarchy — and where do those conventions fall short of canonical engineering vocabulary and the L1–L5 artifact-ownership model?",
+  "method": "code-inspection",
+  "scope": [
+    ".project/schemas/ (18 schema files) as of 2026-04-14",
+    "packages/pi-project/src/ (block-api.ts, schema-validator.ts, project-sdk.ts, block-validation.ts)",
+    "CLAUDE.md project conventions"
+  ],
+  "findings_summary": "pi-project uses JSON Schema draft-07 with AJV validation, kebab-case file naming, and validate-on-write at the API boundary — all canonical. Every block is a JSON object with one required wrapper property whose value is an array (except architecture.schema.json which has multiple arrays). Items have required string id fields, free-form (no format constraint). State enums are per-block with no global lifecycle vocabulary. Cross-references are enforced by validateProject() in code (11 dimensional checks), not by $ref in schemas. 18 schemas exist as of snapshot date.\n\nSix framework gaps surfaced: (1) No hierarchical/nested blocks — flat arrays only, no tasks/{id}.json or epic→story→task tree. (2) No per-scope finding registries — all findings land in global issues.json regardless of scope. (3) No materialized views — projectState() aggregates in-memory but produces no persisted, addressable, schema-validated derived block. (4) No authorship attestation at write time — only issues.schema.json has a source enum; block-api.ts does not stamp writes. (5) No state-machine validation on enum transitions — AJV validates current value membership but cannot express allowed transition paths. (6) No schema versioning or evolution — no version field, no $id, no $ref composition, no migration story. These six gaps became FGAP-001 through FGAP-006 and issues 055–060.",
+  "findings_document": "analysis/pi-project-schema-conventions-audit.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "pi-project-workflows repo state as of 2026-04-14"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-14T00:00:00Z",
+  "stale_conditions": [
+    ".project/schemas/ contents change (schema count, field shapes, naming conventions)",
+    "packages/pi-project/src/block-api.ts adds authorship stamping or transition validation",
+    "packages/pi-project/src/project-sdk.ts validateProject() check count changes from 11"
+  ],
+  "citations": [
+    {
+      "label": "18 schema files in .project/schemas/",
+      "path": ".project/schemas/"
+    },
+    {
+      "label": "block-api.ts validate-on-write",
+      "path": "packages/pi-project/src/block-api.ts"
+    },
+    {
+      "label": "schema-validator.ts AJV wrapper",
+      "path": "packages/pi-project/src/schema-validator.ts"
+    },
+    {
+      "label": "project-sdk.ts validateProject() cross-ref checks",
+      "path": "packages/pi-project/src/project-sdk.ts"
+    },
+    {
+      "label": "block-validation.ts snapshot and rollback",
+      "path": "packages/pi-project/src/block-validation.ts"
+    }
+  ],
+  "informs": [],
+  "informed_by": [],
+  "related_research": [
+    "R-0003",
+    "R-0005"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-14T00:00:00Z"
+}

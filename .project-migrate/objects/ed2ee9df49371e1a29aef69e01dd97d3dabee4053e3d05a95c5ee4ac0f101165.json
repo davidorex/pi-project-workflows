@@ -1,0 +1,23 @@
+{
+  "name": "Seed initial L2/L3 artifacts",
+  "description": "Populate each new block with seed data representing the current state of the consumer migration arc — three open decisions, one spec-review target, one feature with story decomposition, six framework gaps, one layer plan.",
+  "depends_on": [
+    "PHASE-1"
+  ],
+  "exit_criteria": [
+    "decisions.json contains DEC-0001 through DEC-0003 in proposed state",
+    "spec-reviews.json contains REVIEW-001 in not-started state",
+    "features.json contains FEAT-001 (consumer migration epic) in proposed state",
+    "framework-gaps.json contains FGAP-001 through FGAP-006 in identified state",
+    "layer-plans.json contains PLAN-001 in draft state",
+    "every data file validates against its schema via AJV"
+  ],
+  "produces": [
+    ".project/decisions.json",
+    ".project/spec-reviews.json",
+    ".project/features.json",
+    ".project/framework-gaps.json",
+    ".project/layer-plans.json"
+  ],
+  "status": "in-progress"
+}

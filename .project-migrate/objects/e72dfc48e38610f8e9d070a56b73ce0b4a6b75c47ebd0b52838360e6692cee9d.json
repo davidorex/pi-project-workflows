@@ -1,0 +1,18 @@
+{
+  "status": "completed",
+  "verification": "VER-017",
+  "description": "Re-derivation machinery unit 2.1b (DEC-0036 step 2): config-declared substrate invariants — relocate the two hardcoded validateProject invariants (completed-task-has-verification, decision-cites-forcing-artifact) to config.invariants[] requires-edge class consumed by a vocabulary-free generic loop. Closes FGAP-065 (DEC-0025 violation).",
+  "files": [
+    "packages/pi-context/src/project-sdk.ts",
+    "packages/pi-context/src/project-context.ts",
+    "packages/pi-context/schemas/config.schema.json",
+    "packages/pi-context/src/project-sdk.test.ts",
+    ".project/config.json"
+  ],
+  "acceptance_criteria": [
+    "config.invariants[] requires-edge class + schema version bump",
+    "validateProject generic loop with zero hardcoded block/status/relation literals",
+    "2 canonical invariants declared as config data",
+    "tests incl. ABSENCE case + foreign-vocabulary DEC-0025 universalization"
+  ]
+}

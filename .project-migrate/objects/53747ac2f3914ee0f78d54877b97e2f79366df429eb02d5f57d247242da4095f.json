@@ -1,0 +1,9 @@
+{
+  "title": "Remove migrated helpers from pi-workflows",
+  "status": "todo",
+  "files": [
+    "packages/pi-workflows/src/agent-spec.ts",
+    "packages/pi-workflows/src/template.ts",
+    "packages/pi-workflows/src/step-shared.ts"
+  ]
+}

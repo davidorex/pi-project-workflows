@@ -1,0 +1,13 @@
+{
+  "description": "FGAP-026 closure phase 1 (Step 8.7.1; Claude Code Task #21): Resolver foundation + 2 discovery tools (read-config, read-schema) + atomic safety .pi-context.json write",
+  "acceptance_criteria": [
+    "resolveContextDir(cwd) function in project-dir.ts replacing PROJECT_DIR/SCHEMAS_DIR constants",
+    "bootstrap.schema.json with $id pi-context://schemas/bootstrap + version 1.0.0",
+    "block-api + project-context cascade through resolver",
+    "read-config + read-schema tools registered",
+    ".pi-context.json written for this repo containing {contextDir: '.project'}"
+  ],
+  "status": "completed",
+  "notes": "CLOSED at HEAD e88d7ee. FGAP-026 closure phase 1 substantively complete: resolver foundation (Phase 1.1 909a086) + bootstrap.schema.json + per-package atomic resolver cascade (Phase 1.2 sections A-F + Section E husky re-roll 6fb434f) + read-config/read-schema tools (Phase 1.3.A bac1893 + orchestrator scripts 4a24866 / c11ee92) + foundational FGAP-035 fix (f17efa3 + Q4 follow-up e88d7ee). Substrate canon DEC-0014/0015/0017/0018/0019/0020/0021 enacted. Test counts post-cascade: pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0. Adversarial probe verdict GREEN. See VER-004 for criteria_results. Phase 2 (Task #22 high-impact query tools) unblocked.",
+  "verification": "VER-004"
+}

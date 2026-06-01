@@ -1,0 +1,22 @@
+{
+  "description": "B2-continuation samples-catalog CONSUMPTION MVP. (1) installProject reads samples/ via conception.json block_kinds paths (not legacy registry/); still driven by config.installed_*; absent-from-block_kinds → notFound (config/relations stay notFound). (2) initProject stops copying defaults/ (closes FGAP-067 DEC-0011 violation) — bootstrap pointer + mkdir dirs only. (3) NEW adoptConception(cwd) accept-all = adopt conception.json as substrate config.json (validated writeConfig; CRITICAL root override to actual contextDir; idempotent never-clobber; writes config only, not install) + dual-surface (lib in project-context.ts + Pi tool project-accept-all + CLI scripts/orchestrator/accept-all.ts + /project accept-all subcommand). (4) drop defaults/+registry/ from package.json files[] (DEC-0011 ship-no-defaults; dirs stay on disk as test fixtures). 4-commit sequence. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md ACTIVE.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/project-context.ts",
+    "packages/pi-context/package.json",
+    "packages/pi-context/src/install-subcommand.test.ts",
+    "packages/pi-context/src/accept-all.test.ts",
+    "scripts/orchestrator/accept-all.ts"
+  ],
+  "acceptance_criteria": [
+    "installProject copies from samples/ (byte-equal to samples/schemas/<k>; framework-gaps (samples-only) installs; config/relations notFound); install-subcommand.test.ts assertions survive (title strings only)",
+    "initProject no longer copies defaults/ (schemas dir empty, no block files post-init); FGAP-067 closed",
+    "adoptConception writes a config.json from conception with config.root = actual contextDir (not hardcoded .project); AJV-valid (loadConfig non-null); idempotent (2nd call adopted:false, no clobber); BootstrapNotFound → run-init-first",
+    "accept-all dual-surface: lib (project-context.ts) + Pi tool project-accept-all + CLI accept-all.ts + /project accept-all subcommand; writes config only (does not install)",
+    "package.json files[] drops defaults/ + registry/ (npm pack --dry-run excludes them); dirs remain on disk so the 7 registry-fixture tests stay green",
+    "build/check/test green; runtime demo init(.context)->accept-all->install full lifecycle; fresh-context adversarial probe"
+  ],
+  "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs npm/tsx/git. Closes FGAP-067; files follow-up FGAP for registry/defaults dir-deletion (test-fixture repoint; audit/conformance-reference need a samples home). Conversational step-through onboarding (FGAP-066) deferred per DEC-0038. Built on /project (rename later).",
+  "verification": "VER-027"
+}

@@ -1,0 +1,19 @@
+{
+  "description": "Close FGAP-036 — add scripts/orchestrator/compile-task-context.ts. Canonicalizes implementer-task-block composition from substrate inputs (TASK-NNN + explore-report-path + commit-subject-template). Enables FGAP-035 dispatch via canonical orchestrator-side context-compilation surface rather than hand-authored /tmp/task-template-*.md.",
+  "status": "completed",
+  "files": [
+    "scripts/orchestrator/compile-task-context.ts"
+  ],
+  "acceptance_criteria": [
+    "scripts/orchestrator/compile-task-context.ts exists and is shebang-tsx executable",
+    "Args: --task-id TASK-NNN, --explore-report <path>, --commit-subject <template>, optional --required-reading-extra <comma-separated paths>",
+    "Reads task entry from .project/tasks.json via @davidorex/pi-context/block-api readBlock; fails fast if task id absent",
+    "Extracts cascade-target table from explore-report via inline extract-markdown-section.ts invocation (or shared helper)",
+    "Emits XML-structured task-block to stdout in the shape compile-implementation-context.ts expects via --task-template @file",
+    "Composes: read-list (from task.files + required-reading-extra), apply-order (numbered per cascade-table rows), concrete-edits (per-row from explore-report Required-change column), commit-spec (subject from template + forensic body skeleton), STOP triggers boilerplate, report-back format tables-only",
+    "FGAP-035 implementation context compiled via this script (validates the surface end-to-end)"
+  ],
+  "depends_on": [],
+  "notes": "CLOSED at HEAD e88d7ee. compile-task-context.ts landed at 7883cea (creation) + 5293cca (console.log normalization) + e3a0247 (build-task-template.ts → compile-task-context.ts rename mirroring pi-jit-agents compileAgent vocabulary). Acceptance criterion 7 (FGAP-035 implementation context compiled via this script) validated end-to-end through the FGAP-035 dispatch chain. See VER-002.",
+  "verification": "VER-002"
+}

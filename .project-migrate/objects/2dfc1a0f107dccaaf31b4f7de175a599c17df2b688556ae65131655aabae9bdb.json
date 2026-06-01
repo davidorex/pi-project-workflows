@@ -1,0 +1,35 @@
+{
+  "title": "Ship NO concrete substrate-dir default — samples/conception.json smuggles a hidden root: '.project'; contradicts DEC-0015 (no default dir) + DEC-0011 (ship-no-defaults) + perpetuates legacy 'project' naming",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "DEC-0015 mandates NO default substrate dir (/project init requires an explicit dir name; resolveContextDir hard-throws BootstrapNotFoundError on absent pointer — no fallback). But samples/conception.json — the packaged conception (DEC-0037) a fresh adopter consumes via accept-all — ships root: '.project'. That is a HIDDEN, shipped substrate-dir default. accept-all's adoptConception overrides it to the user's init'd dir (project-context.ts), so it is operationally masked and NOT load-bearing in the normal init -> accept-all -> install flow; but the SHIPPED artifact still imposes '.project': any consumer reading conception.root directly, or any code path that bypasses the override, inherits the legacy default. Triply wrong: (1) a default substrate dir at all (DEC-0015 says none); (2) shipping a default value (DEC-0011 ship-no-defaults); (3) the legacy 'project' name in the going-forward .context-era artifact (the FGAP-074 project-residual cluster — which explicitly SCOPED OUT the substrate-dir-name as 'a separate concern', i.e. THIS gap). Worst because it is hidden inside a config field, not an obvious default. Surfaced 2026-05-22 reviewing install substrate-dir resolution; user directive: 'we should not be shipping anything project as default let alone when it is hidden'.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "reference": "ships root: '.project' — a hidden shipped substrate-dir default (the conception is the packaged template a fresh adopter accepts)"
+    },
+    {
+      "file": "packages/pi-context/src/project-context.ts",
+      "reference": "adoptConception overrides conception.root to the actual contextDir — masks the shipped '.project' but does not remove it from the artifact"
+    },
+    {
+      "file": "packages/pi-context/src/project-dir.ts",
+      "lines": "11,33",
+      "reference": "resolveContextDir hard-throws (no .project fallback) per DEC-0015; PROJECT_DIR='.project' @deprecated constant — the legacy literal"
+    }
+  ],
+  "impact": "The shipped conception imposes/leaks the legacy '.project' default; correctness relies on accept-all's override to mask it, which is fragile — a consumer reading the conception directly, or a future path skipping the override, silently gets '.project'. Perpetuates 'project' naming in the .context-era (DEC-0029) artifact and contradicts the no-default-dir invariant the framework otherwise enforces by hard-throw. This is the organizing instance of the residual-'project' cluster's substrate-dir-name concern (paired with FGAP-074 source/surface naming).",
+  "canonical_vocabulary": "ship-no-defaults, no-default-substrate-dir, conception-as-template",
+  "proposed_resolution": "[RESOLVED APPROACH 2026-05-23, DEC-0041] Make config.root an OPTIONAL schema field (drop from required[], v1.3.0->1.4.0) and drop root from the packaged conception; the .pi-context.json pointer is the substrate-dir SoT and projectRoot already falls back to it when root is absent. samplesCatalog stops surfacing root. Shipped default-.project doc claims (config.schema desc, skill-narrative:16, README:24) corrected; SKILL.md regenerated. Frozen .project/schemas/ copy untouched (DEC-0036; loadConfig uses the bundled schema). Rejected: a separate conception.schema.json (heavier, no functional gain — config.root already redundant with the pointer). FGAP-074 location/naming cutover refs left untouched. [CLOSED 2026-05-23 — commit ce87262, TASK-058/VER-030. conception ships no root; config.root optional + v1.4.0; catalog drops root; default-claim docs corrected; adoptConception comments de-staled. DEC-0041 (open) records the contract change, awaiting user enactment.]",
+  "related_decisions": [
+    "DEC-0015",
+    "DEC-0011",
+    "DEC-0029",
+    "DEC-0037",
+    "DEC-0041"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

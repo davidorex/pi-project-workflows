@@ -1,0 +1,45 @@
+{
+  "title": "/context init <dir> silently ignores dir argument when .pi-context.json exists; no /context switch family for bootstrap-pointer flip + bidirectional substrate-dir navigation; blocks DEC-0036 cutover + denies operators the substrate-management primitive parallel to git switch",
+  "status": "superseded_by",
+  "priority": "P0",
+  "package": "@davidorex/pi-context",
+  "layer": "L2",
+  "description": "initProject at packages/pi-context/src/index.ts:266 writes the bootstrap pointer ONLY when .pi-context.json does NOT exist (condition: `if (!fs.existsSync(path.join(cwd, '.pi-context.json'))) writeBootstrapPointer(cwd, contextDir);`). When an existing pointer is present, the caller-supplied contextDir argument is completely discarded. The function proceeds with resolveContextDir(cwd) which reads the EXISTING pointer (line 267) and operates against the existing substrate dir, not the user-supplied one. Result message reports skipped against the existing dir while the user's argument named a different dir. 'Project initialized' message is misleading — project was already initialized for existing dir; user's explicit new-dir request was silently dropped. DEC-0036 (enacted 2026-05-17) declares the canonical re-derivation path with consequence #7 'Cutover (bootstrap-pointer flip + .project archive)' as the closing step. The framework has no canonical surface for that flip OR for the broader substrate-management primitive that bidirectional switching would enable. Operators need the substrate-management equivalent of git switch — flip pointer to existing substrate dir; bootstrap new substrate dir and flip; flip back to previous; list discoverable substrates; archive deprecated substrates. The substrate-as-bounded-context property (each substrate internally coherent; cross-substrate references explicit + sentinel-typed) is preserved under multi-substrate navigation. Bidirectional capability unlocks workflow shapes that do not exist today: transitional A/B during cutover, experimental substrate trees parallel to canonical, per-feature substrate scratch spaces, read-only consultation of frozen substrates without ceremony.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "266",
+      "reference": "initProject body: `if (!fs.existsSync(path.join(cwd, '.pi-context.json'))) writeBootstrapPointer(cwd, contextDir);` — pointer write is conditional on absence; with existing pointer, caller's contextDir argument is ignored"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "267-279",
+      "reference": "Function body after the conditional pointer-write proceeds with resolveContextDir(cwd) which reads existing pointer; dir creation operates against resolved path not against the user-supplied argument; returns created/skipped lists against the wrong dir"
+    },
+    {
+      "file": ".project/decisions.json",
+      "lines": "DEC-0036",
+      "reference": "Enacted 2026-05-17, consequence #7 verbatim: 'Cutover (FGAP-026 Phase 10) is a bootstrap-pointer flip + .project archive, not a data migration.' The cutover step depends on a canonical surface for the pointer flip that does not exist."
+    },
+    {
+      "file": ".pi-context.json",
+      "reference": "Current state: {\"contextDir\": \".project\", \"version\": \"1.0.0\", \"created_at\": \"2026-05-10T05:27:24.196Z\"} — pointer dates from 2026-05-10; pre-dates DEC-0036; no surface to flip it canonically"
+    },
+    {
+      "file": "analysis/2026-05-30-LLM-perspective JIT Agent UX.md",
+      "reference": "Operator-experience target: 'I never guess. I see the agent's health at a glance.' Same discipline applies to substrate operations: an init command that silently ignores its argument and reports success under a no-op violates the same operator-experience contract — the operator can't tell the framework did the wrong thing"
+    },
+    {
+      "file": "/tmp/clock-menu-app-context-init-history",
+      "reference": "Re-survey of /Users/david/Projects/clock-menu-app/.context shows init works correctly there because clock-menu-app's .pi-context.json was created at the same time as .context/ (no pre-existing pointer); the bug surfaces only when an existing pointer is being replaced — the exact DEC-0036 cutover scenario"
+    }
+  ],
+  "impact": "Blocks DEC-0036-mandated .context/ cutover for every existing pi-context user-substrate. Operators following the DEC-0036-directed path get silent no-op + misleading success message. Workaround paths violate canonical-authoring discipline: direct .pi-context.json edit bypasses pi-dispatch auth-gate (FGAP-134/138) + dispatch attestation; manual .context/ scaffolding bypasses install-ceremony invariants. Beyond the immediate cutover blocker: absence of a /context switch family denies operators the substrate-management primitive needed for transitional cutover work (substrates side-by-side during transition), experimental substrate design (try new block-kind shapes in throwaway substrate without affecting canonical), per-arc substrate scratch (focused work in isolated substrate then merge back), and read-only consultation of frozen substrates (DEC-0036's archaeological .project/ access pattern). The operator-experience parity with git's substrate-of-record management (git switch + git branch) is the model; substrate-management today lacks even the basic flip primitive.",
+  "canonical_vocabulary": "bootstrap-pointer flip; substrate dir switch; cutover canonical surface",
+  "proposed_resolution": "/context switch command family modeled on git switch, with bootstrap-pointer flip as one mode among bidirectional substrate-dir navigation operations. Command surface: (a) `/context switch <existing-dir>` — flip pointer to existing substrate dir; validate target is a valid substrate (has config.json) before flipping; (b) `/context switch -c <new-dir>` — bootstrap new substrate dir (writeBootstrapPointer + create dirs via initProject-equivalent) AND flip pointer to it; (c) `/context switch -` — flip to previous contextDir per pointer.previous_contextDir field; (d) `/context list` companion — list discoverable substrate dirs in cwd (scan for dirs with config.json); (e) `/context archive <dir>` separate command — move substrate dir to archive/<dir>/ + write-protect; non-default operation requiring explicit invocation (substrate-delete more dangerous than git branch -d so no `-d` flag on switch). Pointer-shape extension v1.0.0 → v1.1.0: add optional `previous_contextDir`, `switched_at`, `switched_by` fields. Migrated via existing write-schema-migration mechanism per FGAP-136 (identity migration; old pointer shape remains readable). Cross-substrate semantics: edges within relations.json are substrate-scoped; cross-substrate references use sentinel form (`<substrate-name>:<id>` or `project-archive:<id>`); new relation_type `references_cross_substrate_item` carries explicit cross-substrate edges; lazy resolution via consultation tool. Auth-gate routing: every switch operation modifies the pointer = structural substrate change with significant operator-flow consequence; routes through pi-dispatch auth-gate (FGAP-134/138) for writer.kind=human attestation + interactive confirmation; switch history auditable via pointer's switched_at + switched_by fields (potentially extended to switch-history array). initProject argument-handling fix: when existing pointer differs from caller's contextDir, fail loudly with structured guide-message pointing to `/context switch -c <dir>` as the correct command rather than silently dropping the argument. The init + switch commands form a guided-handoff: init bootstraps fresh substrate when none exists; switch handles all subsequent substrate-dir transitions. DEC-0036's cutover step becomes the first use of `/context switch -c .context` (operator-directed, auth-gate-confirmed, attestation-stamped).\n\nClosing-citation (2026-05-30): superseded_by TASK-094 (filed under FEAT-001); status identified to superseded_by; closed_by=human:davidryan@gmail.com; closed_at=2026-05-30T11:05:00Z; implementation arc commits cdacdb4..53000d6 on task-094-context-switch branch; VER-066 attests TASK-094 completion with 12 criteria_results; adversarial-probe 4/4 PASS at /tmp/task-094-adversarial-probe.md.",
+  "related_decisions": [
+    "DEC-0011",
+    "DEC-0015",
+    "DEC-0036"
+  ]
+}

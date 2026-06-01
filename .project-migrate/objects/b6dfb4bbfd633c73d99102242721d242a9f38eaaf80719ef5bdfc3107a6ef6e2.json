@@ -1,0 +1,18 @@
+{
+  "title": "Move parseModelSpec to pi-jit-agents",
+  "status": "proposed",
+  "description": "Execute the DEC-0003 decision: move parseModelSpec (or its renamed successor) from pi-behavior-monitors/index.ts into pi-jit-agents at the execute boundary. Remove the duplicate from the consumer. Update the classifyViaAgent call site to use the new location.",
+  "acceptance_criteria": [
+    "parseModelSpec exported from pi-jit-agents at a named subpath (e.g. @davidorex/pi-jit-agents/runtime)",
+    "packages/pi-behavior-monitors/index.ts:1091-1097 removed",
+    "classifyViaAgent imports and uses the pi-jit-agents version",
+    "No anthropic-default fallback anywhere in the codebase for bare model ids",
+    "Unit tests from STORY-001 continue to pass"
+  ],
+  "depends_on": [
+    "STORY-001"
+  ],
+  "gates": [
+    "DEC-0003"
+  ]
+}

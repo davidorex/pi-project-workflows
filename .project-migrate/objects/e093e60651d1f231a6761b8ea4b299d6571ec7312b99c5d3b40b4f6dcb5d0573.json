@@ -1,0 +1,30 @@
+{
+  "title": "Onboarding model — /context init = standing incremental registry-population surfaces; accept-all | step-through",
+  "status": "enacted",
+  "context": "DEC-0011 (ship no defaults) is violated by initProject auto-copying defaults/ (FGAP-067), and a fresh adopter has no guided path to a conception (FGAP-066). The onboarding interaction shape was unarticulated; the unit-2.2 dialogue (2026-05-20) articulated it.",
+  "decision": "Onboarding is a conversation that populates the config registries from the samples catalog (DEC-0037), conducted by the harness-confined main LLM via tools (the pi.sendMessage follow-up-turn pattern, DEC-0014-clean; lens-curate is the precedent). /context init is the FIRST PASS of standing, incrementally-invokable registry-population surfaces — the same surfaces later add a block kind, add a relation, or relabel — NOT a one-shot wizard; revisability is therefore structural. Two modes: accept-all (take the platonic bundle wholesale) and step-through (review / relabel / subset one registry entry at a time). The step-through UX is a bounded pi-sdk/TUI investigation, adopting canonical exemplars rather than inventing. Bespoke net-new block-kind authoring (a kind absent from the platonic set) is out of this scope — ship and subset the platonic conception first.",
+  "consequences": [
+    "init = first invocation of permanent surfaces, so add/relabel later reuse the same machinery (no separate wizard).",
+    "accept-all is the trivial MVP onboarding; step-through is a separate UX-investigation track.",
+    "Depends on the samples discovery surface (FGAP-068) and the per-registry register/relabel write surfaces; the canonical_id-revise leg is the rename engine (FGAP-060).",
+    "Supersedes the initProject defaults-imposition (FGAP-067): onboarding offers, never imposes.",
+    "Bespoke-kind authoring deferred as a later, separate capability (not silently dropped)."
+  ],
+  "options_considered": [
+    {
+      "label": "Standing incremental surfaces, init=first pass (chosen)",
+      "description": "One set of registry-population surfaces; init is just the empty-state entry; add/relabel reuse them.",
+      "tradeoffs": "Requires the surfaces to be CRUD-shaped from day one rather than init-only."
+    },
+    {
+      "label": "One-shot init wizard",
+      "description": "A distinct guided wizard that runs once at setup.",
+      "rejected_reason": "Makes revisability a bolt-on; duplicates logic between init and later edits; the user rejected optional/one-shot framing."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-066"
+  ],
+  "related_findings": [],
+  "related_features": []
+}

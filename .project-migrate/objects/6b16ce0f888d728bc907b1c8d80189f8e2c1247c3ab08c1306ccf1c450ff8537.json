@@ -1,0 +1,34 @@
+{
+  "title": "tasks[].phase carries free-text sub-phase labels (e.g. \"8.7.1\") instead of FK references to PHASE-NNN phase block items",
+  "status": "identified",
+  "priority": "P2",
+  "package": "@davidorex/pi-context",
+  "layer": "L4",
+  "description": ".project/tasks.json items use task.phase as a free-text string holding sub-phase labels from the canonical FGAP-026 sub-phase decomposition (e.g. TASK-031/032/033 carry phase: \"8.7.1\"). The substrate also defines a phase block kind (PHASE-NNN id pattern via packages/pi-context/registry/schemas/phase.schema.json) whose items would be the canonical FK target. Currently phase block items for the FGAP-026 closure plan are not populated — HANDOFF documents PHASE-006..010 as scheduled for Phase 5 of the FGAP-026 closure plan (the arc-tracking-blocks dogfood deliverable per TASK-025). Until Phase 5 lands the PHASE-006..010 substrate, every task.phase field carrying a sub-phase label is a free-text placeholder rather than a typed reference. Per DEC-0013 (closure-table is canonical primitive for ALL inter-item relationships), the proper representation is either (a) PHASE-NNN id as FK string OR (b) closure-table edge with relation_type = belongs_to_phase. Free-text labels are neither.",
+  "evidence": [
+    {
+      "file": ".project/tasks.json",
+      "reference": "TASK-031/032/033 carry phase: \"8.7.1\" — free-text sub-phase label, not a PHASE-NNN FK; same shape for TASK-021..030 carrying phase: \"8.7.1\" through \"8.7.10\""
+    },
+    {
+      "file": "packages/pi-context/registry/schemas/phase.schema.json",
+      "reference": "Phase block schema exists; PHASE-NNN id pattern; ready to receive the FGAP-026 closure plan phase items"
+    },
+    {
+      "file": "memory/HANDOFF.md",
+      "reference": "HANDOFF documents PHASE-006..010 as scheduled for Phase 5 of FGAP-026 closure (TASK-025 arc-tracking-blocks dogfood deliverable)"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0013 closure-table is canonical primitive for ALL inter-item relationships — free-text phase labels violate this"
+    }
+  ],
+  "impact": "DEC-0013 canon violation: tasks[].phase carries free-text labels where the canon mandates closure-table edges for inter-item relationships. Validators surfacing the gap correctly flag tasks[].phase as unresolvable references; cross-block phase queries (e.g. all tasks in PHASE-007) cannot run; status-by-phase rollup (per roadmap-plan PM-lens semantics) misses these tasks until phase substrate is populated. Every task added during the FGAP-026 closure carries the same free-text shape; migration scope grows with each filing.",
+  "canonical_vocabulary": "foreign-key reference vs free-text label",
+  "proposed_resolution": "Resolved by Phase 5 (TASK-025) execution: ship PHASE-006..010 phase items + relations.json edges (task → phase via relation_type = belongs_to_phase per DEC-0013 closure-table-only convention) + migration via schema-migrations.ts rewriting existing task.phase free-text labels into typed relations.json edges. tasks schema deprecates the inline phase field (or removes it) once relations.json carries the references. Substantive sub-gap of FGAP-026 phase 5 — fix vehicle is TASK-025 execution, not a parallel arc.",
+  "related_decisions": [
+    "DEC-0013"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

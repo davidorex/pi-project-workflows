@@ -1,0 +1,10 @@
+{
+  "title": "agent-spec discovery path split — pi-workflows uses .pi/agents/, pi-jit-agents uses .project/agents/ three-tier",
+  "body": "Surfaced by the v0.24.x verification protocol run. The protocol authored fixture agent yamls under `.project/agents/` per the three-tier loader contract documented in pi-jit-agents (`.project/agents/` → `~/.pi/agent/agents/` → consumer builtin). Workflow agent dispatch through pi-workflows did not see them — pi-workflows still uses its own loader that points at `.pi/agents/`. Two agent-discovery code paths coexist; consumer migration to adopt pi-jit-agents createAgentLoader as the canonical surface (FEAT-001 territory) has not landed for the workflow path. The protocol workaround (copying the fixture to `.pi/agents/`) cannot be exercised because issue-066 (workflow executor crash) blocks dispatch end-to-end. Resolution belongs inside the FEAT-001 consumer-migration arc; filed here so the discovery split is queryable independent of the FEAT record’s broader scope.",
+  "location": "packages/pi-workflows/src/agent-spec.ts or packages/pi-workflows/src/dispatch.ts (workflow-side loader); packages/pi-jit-agents/src/agent-spec.ts (canonical three-tier loader)",
+  "status": "open",
+  "category": "issue",
+  "priority": "medium",
+  "package": "pi-workflows",
+  "source": "agent"
+}

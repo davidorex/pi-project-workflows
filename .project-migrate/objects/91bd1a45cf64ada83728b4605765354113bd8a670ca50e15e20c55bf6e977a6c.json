@@ -1,0 +1,27 @@
+{
+  "title": "Feasibility: main pi agent as our jit-agent via extension hooks (no pi fork)",
+  "status": "complete",
+  "layer": "L2",
+  "type": "feasibility",
+  "question": "Can a pi extension reshape the main interactive session into one of our compiled jit-agent specs (system prompt, contextBlocks, tools, model, thinking, output) seamlessly, WITHOUT forking pi?",
+  "method": "Read pi 0.75.4 ExtensionAPI source (extensions/types.d.ts events + result types, system-prompt.js, agent-session.js) + mapped each AgentSpec facet to a mutating SDK hook; contrasted with our subprocess (dispatch.ts) and in-process (executeAgent) dispatch paths.",
+  "findings_summary": "HIGH-but-PARTIAL feasible, extension-only. Decisive enabling hooks: before_agent_start -> result.systemPrompt (runtime-honored end-to-end; carries our compiled.systemPrompt incl. <context_block> contextBlocks) + setActiveTools/setModel/setThinkingLevel via a registerCommand handler. Hard limits (why partial): no typed-output GUARANTEE for the interactive loop (no forced-toolChoice injection point; only a best-effort before_provider_request wire seam) + F-012 inheritance; setActiveTools narrows-only (cannot widen to never-loaded tools); system prompt self-restores but model/tools/thinking need explicit snapshot-restore. Conclusion: a genuine 3rd dispatch modality (= FEAT-002) — strong on live interactivity/zero-spawn/context-continuity, weak on typed-output. Honesty caveat: systemPrompt-replace confirmed in code end-to-end; the wire-seam toolChoice injection confirmed invoked but NOT runtime-verified against a live turn.",
+  "findings_document": "analysis/2026-05-21-main-agent-as-jit-agent-feasibility.md",
+  "informs": [
+    "FEAT-002"
+  ],
+  "citations": [
+    {
+      "label": "pi 0.75.4 before_agent_start systemPrompt replace + agent loop",
+      "path": "node_modules/@earendil-works/pi-coding-agent/dist/core/agent-session.js"
+    },
+    {
+      "label": "feasibility report (this study)",
+      "path": "analysis/2026-05-21-main-agent-as-jit-agent-feasibility.md"
+    }
+  ],
+  "stale_conditions": [
+    "@earendil-works/pi-coding-agent bumped past 0.75.4 (ExtensionAPI event/result surface may change)",
+    "our executeAgent / dispatch model changes"
+  ]
+}

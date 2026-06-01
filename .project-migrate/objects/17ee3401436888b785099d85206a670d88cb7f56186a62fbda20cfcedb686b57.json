@@ -1,0 +1,11 @@
+{
+  "description": "FGAP-026 closure phase 6 (Step 8.7.6; Claude Code Task #26): Surface rename + context-* tools + context-init/install/migrate",
+  "acceptance_criteria": [
+    "subcommand /project → /context",
+    "pi tool names project-* → context-* (15+ tools)",
+    "context-init prompt-required for dirName per DEC-0015",
+    "context-install wraps installProject",
+    "context-migrate(newName) atomic dir-rename + pointer-update + config.root-update; body authored not stub"
+  ],
+  "status": "planned"
+}

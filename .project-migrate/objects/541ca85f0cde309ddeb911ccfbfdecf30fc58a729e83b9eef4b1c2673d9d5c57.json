@@ -1,0 +1,5 @@
+{
+  "title": "Map pi-workflows agent-infrastructure surface to pi-jit-agents equivalents",
+  "status": "todo",
+  "acceptance": "Written mapping in this task of every symbol in pi-workflows/src/agent-spec.ts, template.ts, step-shared.ts to its pi-jit-agents target; any unmappable symbols flagged for separate handling"
+}

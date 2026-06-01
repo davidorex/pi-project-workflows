@@ -1,0 +1,10 @@
+{
+  "title": "Framework gap FGAP-006 — no schema versioning or evolution protocol",
+  "body": "Schemas have no version field, no $id, no migration story, no $ref composition, no shared-fragment reuse. Schemas drift silently across projects and across time. A schema rename or field rename has no backward-compatibility path. decisions.schema.json and rationale.schema.json duplicate fields with no shared fragment — a rename in one does not propagate. CLAUDE.md says 'All schemas are user-customizable' with no mention of migration or version compatibility. Long-term schema evolution is undefined. Proposed resolution: add a required $id (URI) and version field on every schema; schema-validator reads version and can apply migration functions; introduce a schema-migrations registry; $ref fragment composition becomes the standard way to express shared fields (e.g. a common 'authorship-fragment.schema.json' imported by every block schema). Canonical owner: .project/framework-gaps.json FGAP-006. Canonical vocabulary: schema evolution; JSON Schema $id; schema registry; schema versioning.",
+  "location": ".project/schemas/, packages/pi-context/src/schema-validator.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent"
+}

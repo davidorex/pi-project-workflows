@@ -1,0 +1,5 @@
+{
+  "description": "Agents accepting structured input MUST define inputSchema in .agent.yaml. Template variable references ({{ field }}) without a corresponding inputSchema property are silent failures.",
+  "enforcement": "review",
+  "severity": "error"
+}

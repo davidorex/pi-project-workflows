@@ -1,0 +1,25 @@
+{
+  "title": "pi-workflows DAG planner inserts strict layer-barriers between dependency tiers; cannot express streaming-pipeline-no-barrier semantics where item A is in stage 2 while item B is still in stage 1; asymmetric work (50 slow + 50 fast checks) loses parallelism waiting for slowest item in each layer",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 1: Claude Code workflows' pipeline(items, ...stages) lets each item flow through stages asynchronously — item A can be in stage 3 while item B is still in stage 1; asymmetric per-stage latency does not block fast items behind slow ones. pi-workflows DAG planner (dag.ts buildPlanFromDeps) builds topological-sort layers + REQUIRES all steps in layer N to complete before layer N+1 starts. For forEach-style work (per-file analysis), this means 50 slow + 50 fast checks all wait on the slowest item in each layer; wall-clock = sum of (slowest item in each layer) instead of max of (slowest item-chain end-to-end). Significant wall-clock loss on heterogeneous work.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "254-282",
+      "reference": "Part 3 axis 1 — Pipeline-No-Barrier vs DAG-with-Barriers — INSPIRE verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/dag.ts",
+      "reference": "buildPlanFromDeps → topological layers + buildConservativePlan implicit sequencing"
+    }
+  ],
+  "impact": "Wall-clock loss on heterogeneous workflows (per-file audits, per-FGAP closures, per-package scans). The pattern Claude Code calls 'streaming pipeline' is canonical for fan-out-with-per-item-progression but inexpressible in pi-workflows spec today.",
+  "canonical_vocabulary": "streaming pipeline; per-item asynchronous stage progression; soft-barrier between stages; asymmetric concurrency",
+  "proposed_resolution": "Add a 'stream' step type OR a 'streaming: true' flag on the existing parallel step type. Spec example: steps.analyze-all: { stream: { stages: [read-file, check-syntax, report], forEach: <expression> } }. Executor implementation: collect per-item per-stage promises; resolution polls for ready-items in stage N+1 rather than waiting for layer N completion. Risk: spec semantics now include two parallelism models (DAG-layered + streaming) — operator must choose. Documentation must clarify when each is canonical. Significant refactor in dag.ts + workflow-executor.ts; lower-priority than ADOPT items but not deferred.",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

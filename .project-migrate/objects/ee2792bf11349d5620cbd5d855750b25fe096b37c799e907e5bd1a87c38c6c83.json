@@ -1,0 +1,5 @@
+{
+  "name": "FGAP-026 closure phase 2 — high-impact query tools",
+  "intent": "filter-block-items, resolve-items-by-id (bulk), walk-ancestors, walk-by-relation, find-references. Step 8.7.2.",
+  "status": "completed"
+}

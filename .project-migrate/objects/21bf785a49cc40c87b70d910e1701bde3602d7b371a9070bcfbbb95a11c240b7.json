@@ -1,0 +1,30 @@
+{
+  "target": "TASK-024",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T19:00:00Z",
+  "evidence": "Phase 4 (FGAP-026 closure phase 4: Workflow-execute + dispatch tools) complete at HEAD 569eec4 via single atomic sub-phase 4.1 (TASK-041 / VER-014). Original 4-sub-phase canonical scope reduced after Explore at compiled-contexts/explore-phase4-workflow-surface.md surfaced existing surface: 4.2 workflow-list + 4.3 workflow-status already shipped pre-Phase-4; `workflow` tool wraps executeWorkflow with auto-resume detection (semantic match for canonical workflow-execute under non-canonical name). Phase 4 reduced to: rename `workflow` → `workflow-execute` (canonical verb-noun alignment) + add workflow-resume (explicit-resume-by-runId complement). Out of scope: workflow-help (→ FGAP-044 tool-discovery), workflow-list-interactive UI (substantively-justified subcommand-only). Test counts: pi-workflows 824 → 829 (+5).",
+  "criteria_results": [
+    {
+      "criterion": "workflow-execute(name, params) tool registered",
+      "status": "passed",
+      "evidence": "Sub-phase 4.1 / VER-014 / HEAD 569eec4 — index.ts:495 workflow-execute (renamed from `workflow`); parameters unchanged from original tool body"
+    },
+    {
+      "criterion": "workflow-list + workflow-status tools registered",
+      "status": "passed",
+      "evidence": "Pre-existing at HEAD c03bc0d (Explore findings); workflow-list index.ts:574; workflow-status index.ts:688 (line numbers per pre-rename state)"
+    },
+    {
+      "criterion": "subcommand-only /workflow surfaces per audit get tool wrappers",
+      "status": "passed",
+      "evidence": "Audit at compiled-contexts/explore-phase4-workflow-surface.md identified 3 subcommand-only surfaces; resume covered by workflow-execute auto-resume default + new workflow-resume explicit-resume tool; list substantively-justified UI loop (covered by workflow-list non-interactive); help punts to FGAP-044 tool-discovery"
+    },
+    {
+      "criterion": "Main LLM can dispatch a workflow that runs npm run build via JIT-agent",
+      "status": "passed",
+      "evidence": "workflow-execute pi tool exposes executeWorkflow; per Phase 3 DEC-0017 gather-execution-context primitive available for step context composition; pipeline harness-confined main LLM → workflow-execute tool → JIT-agent step dispatch satisfies DEC-0014 (main LLM never crosses bash directly)"
+    }
+  ]
+}

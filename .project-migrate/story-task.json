@@ -1,0 +1,345 @@
+{
+  "story-task": [
+    {
+      "id": "STORY-TASK-0001",
+      "title": "Verify ExtensionContext exposes currentModel",
+      "status": "done",
+      "description": "Inspect pi-agent-core's ExtensionContext type to confirm whether currentModel (or equivalent) is available to extensions at dispatch time. If not, the task widens into a prerequisite against pi-agent-core — escalate to user for scope decision.\n\n## TASK-001-01 completion finding (2026-05-03)\n\n**ExtensionContext.model** is confirmed at `node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts:219`:\n\n```typescript\nmodel: Model<any> | undefined;\n```\n\n`Model<TApi>` at `node_modules/@mariozechner/pi-ai/dist/types.d.ts:378` exposes:\n\n```typescript\nid: string;       // e.g. \"anthropic/claude-sonnet-4-6\"\nprovider: Provider;  // Provider = KnownProvider | string — \"openrouter\", \"anthropic\", etc.\napi: TApi;        // \"anthropic-messages\" | \"openai-completions\" | ...\n```\n\n**Resolution**: DEC-0001's chosen option is implementable today. Bare `model:` ids (no `/`) can resolve `provider` from `ctx.model.provider` and `modelId` from the spec string. Fully-qualified specs (`openrouter/anthropic/claude-sonnet-4-6`) are unaffected — `parseModelSpec` splits on `/` as before.\n\n**Caveat**: `ctx.model` is typed `Model<any> | undefined`. The `| undefined` means the dispatch path must handle the case where no session model is active. Whether `ctx.model` is populated at classify time (monitor `agent_end` / `tool_call` events) is not type-enforceable — it's an empirical question. The type contract says it *should* be populated during any agent turn, but the code path that sets it is internal to pi-core. The dispatch must produce a clear error (\"Cannot resolve bare model id 'X': no session model context available\"), not a silent fallback to `anthropic`.",
+      "files": [
+        "node_modules/@mariozechner/pi-coding-agent/dist/types.d.ts"
+      ],
+      "acceptance": "Written confirmation in the task record of what ExtensionContext currently exposes and whether DEC-0001's chosen option is implementable today or depends on upstream changes",
+      "oid": "7376ebf70acfb6789b7290c33b649bb1",
+      "content_hash": "bba528d9e24c8d5b0a5b4398cd39f989d2e874a50c1dfe3bc73fea80f1074ffe"
+    },
+    {
+      "id": "STORY-TASK-0002",
+      "title": "Implement bare-id resolution in pi-jit-agents",
+      "status": "todo",
+      "description": "Add model-resolution logic at executeAgent. Bare ids trigger ExtensionContext lookup; fully-qualified specs pin.",
+      "files": [
+        "packages/pi-jit-agents/src/jit-runtime.ts",
+        "packages/pi-jit-agents/src/types.ts"
+      ],
+      "acceptance": "executeAgent resolves bare ids via ExtensionContext, surfaces clear error on missing binding, preserves fully-qualified semantics",
+      "oid": "5187a22775965453409a901d80b71868",
+      "content_hash": "553b55fa41d524f6cdf21e147c6f63b9de6fd5116653d5316ce919f631690676"
+    },
+    {
+      "id": "STORY-TASK-0003",
+      "title": "Unit tests for model resolution",
+      "status": "todo",
+      "files": [
+        "packages/pi-jit-agents/test/model-resolution.test.ts"
+      ],
+      "acceptance": "Three-way coverage (bare + session, bare + no session, fully-qualified) all passing",
+      "oid": "b9d34bcb76141b3846bb3c907050b32a",
+      "content_hash": "4e22c13cfb9a5c890449e323d68550565823d4c0b0116786b6377600c51faee8"
+    },
+    {
+      "id": "STORY-TASK-0004",
+      "title": "Add pre-dispatch check in executeAgent",
+      "status": "todo",
+      "files": [
+        "packages/pi-jit-agents/src/jit-runtime.ts"
+      ],
+      "acceptance": "Pre-dispatch branch inspects toolChoice and compiled spec's thinking field; when incompatible, disables thinking and emits warning",
+      "oid": "a5014c1bd1d4898b10c37b91cd849cfb",
+      "content_hash": "76fd4083b9bda40ea0f42c1fb6679800b838905c0de820409f1bb26c37928018"
+    },
+    {
+      "id": "STORY-TASK-0005",
+      "title": "Define structured diagnostic channel",
+      "status": "todo",
+      "description": "Decide whether warnings emit via logger, alongside JitAgentResult, or both. Must be consumable by both pi-workflows (workflow steps) and pi-behavior-monitors (classify calls).",
+      "files": [
+        "packages/pi-jit-agents/src/types.ts"
+      ],
+      "acceptance": "JitAgentResult gains a diagnostics field or equivalent; both consumers can read it",
+      "oid": "a4e4dfa0b9b1a76d553afc38a908eb7b",
+      "content_hash": "d6526e6270d9a12938efd3cd170f062ce619511cd93d206f46f941073aaa83bf"
+    },
+    {
+      "id": "STORY-TASK-0006",
+      "title": "Unit tests for thinking-seam enforcement",
+      "status": "todo",
+      "files": [
+        "packages/pi-jit-agents/test/thinking-seam.test.ts"
+      ],
+      "oid": "b6c566c05fccaa3fa614c04fadcb2323",
+      "content_hash": "4a5b4efd8db1c6906c5c8886d2cd5ed4f0b8d3845e25610965f3d354e16ff9eb"
+    },
+    {
+      "id": "STORY-TASK-0007",
+      "title": "Export parseModelSpec from pi-jit-agents",
+      "status": "todo",
+      "files": [
+        "packages/pi-jit-agents/src/jit-runtime.ts",
+        "packages/pi-jit-agents/src/index.ts",
+        "packages/pi-jit-agents/package.json"
+      ],
+      "acceptance": "Function available at a named subpath; visible in pi-jit-agents' exports",
+      "oid": "81f4df52697777cd0e70af36e038d6a1",
+      "content_hash": "4e35b975ea475f7dffe46c9bdb8bfa7038a0da267b43d7f7f5e9697d7c41225e"
+    },
+    {
+      "id": "STORY-TASK-0008",
+      "title": "Remove duplicate from pi-behavior-monitors",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/index.ts"
+      ],
+      "acceptance": "Lines 1091-1097 removed; classifyViaAgent imports from pi-jit-agents",
+      "oid": "4b30af079c3dace6d8af4b3699b324e6",
+      "content_hash": "60e311c6e4a68e58851d08bdb882454103dd4f3cf00c0cc40c7ceaa689a2e587"
+    },
+    {
+      "id": "STORY-TASK-0009",
+      "title": "Audit pi-workflows for equivalent parsing",
+      "status": "todo",
+      "description": "Search pi-workflows/src for any model-id parsing or provider-selection logic. If found, consolidate into pi-jit-agents too.",
+      "files": [
+        "packages/pi-workflows/src/"
+      ],
+      "acceptance": "Written audit note in this task record; any duplicates consolidated or explicitly flagged as out-of-scope with justification",
+      "oid": "fb6a254b75a7229ce91e58b8dc54bc57",
+      "content_hash": "7816ae5c996e2b03a2184925a230acda89cc5820d22887d7688a29b851ce0865"
+    },
+    {
+      "id": "STORY-TASK-0010",
+      "title": "Map pi-workflows agent-infrastructure surface to pi-jit-agents equivalents",
+      "status": "todo",
+      "acceptance": "Written mapping in this task of every symbol in pi-workflows/src/agent-spec.ts, template.ts, step-shared.ts to its pi-jit-agents target; any unmappable symbols flagged for separate handling",
+      "oid": "609fd07e3bf3db4aa0741a53cca60fd5",
+      "content_hash": "541ca85f0cde309ddeb911ccfbfdecf30fc58a729e83b9eef4b1c2673d9d5c57"
+    },
+    {
+      "id": "STORY-TASK-0011",
+      "title": "Migrate call sites in pi-workflows step executors",
+      "status": "todo",
+      "files": [
+        "packages/pi-workflows/src/step-agent.ts",
+        "packages/pi-workflows/src/dispatch.ts"
+      ],
+      "oid": "e258fee631e1a1e5d7a348093edf5399",
+      "content_hash": "52fa4531e5876ad00c74920c74fe36ee7884382c57cbe59715880c45b92e4a76"
+    },
+    {
+      "id": "STORY-TASK-0012",
+      "title": "Remove migrated helpers from pi-workflows",
+      "status": "todo",
+      "files": [
+        "packages/pi-workflows/src/agent-spec.ts",
+        "packages/pi-workflows/src/template.ts",
+        "packages/pi-workflows/src/step-shared.ts"
+      ],
+      "oid": "083cd14c53d7c0257b87d85fd20c09b5",
+      "content_hash": "53747ac2f3914ee0f78d54877b97e2f79366df429eb02d5f57d247242da4095f"
+    },
+    {
+      "id": "STORY-TASK-0013",
+      "title": "Update pi-workflows package.json dependencies",
+      "status": "todo",
+      "files": [
+        "packages/pi-workflows/package.json"
+      ],
+      "acceptance": "@davidorex/pi-jit-agents listed as a direct dependency with concrete caret range",
+      "oid": "14db5bf445e5d2842269acb5b00b92bb",
+      "content_hash": "09af1bc57ee80cd997b90288401ee92deca0f384c5d118c8ad50216f4465bd0a"
+    },
+    {
+      "id": "STORY-TASK-0014",
+      "title": "Run pi-workflows test suite",
+      "status": "todo",
+      "acceptance": "npm test passes for pi-workflows at 0 failures",
+      "oid": "da504c628d25f848ccc2e4e34104b773",
+      "content_hash": "0d6ffa785ee1ea36e666661ea627d1a9d591dec21657d4937fb7dbb5e0a2811b"
+    },
+    {
+      "id": "STORY-TASK-0015",
+      "title": "Rewrite classifyViaAgent against executeAgent",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/index.ts"
+      ],
+      "oid": "3710b75793f9ca6b46f129a4d1ca5cf9",
+      "content_hash": "48c78ff07c56738757eddd56aac24263e1595ff10775d1fe8b5c12892f93e909"
+    },
+    {
+      "id": "STORY-TASK-0016",
+      "title": "Remove pi-workflows dependency",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/package.json",
+        "packages/pi-behavior-monitors/index.ts"
+      ],
+      "oid": "dac8536bd9376513f424b0f0babaddfd",
+      "content_hash": "003fabff4cb2dea148363111426011a9572fe0de8b6e5b3a4db2be3ed693e01f"
+    },
+    {
+      "id": "STORY-TASK-0017",
+      "title": "Add pi-jit-agents dependency",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/package.json"
+      ],
+      "oid": "03d361d711c600b9e5c11e08757b4201",
+      "content_hash": "030a2238a740dd5437f3e7a564862ca7d37182f95abd5458b54bd4a7d185a799"
+    },
+    {
+      "id": "STORY-TASK-0018",
+      "title": "Run pi-behavior-monitors test suite",
+      "status": "todo",
+      "acceptance": "npx vitest run passes for pi-behavior-monitors at 0 failures",
+      "oid": "2aca572755a49f3492a2eb85e3c30830",
+      "content_hash": "1366cca8d9634e7e250fd5dd356ee2f61796cb507cc959c120e805460ba9d7eb"
+    },
+    {
+      "id": "STORY-TASK-0019",
+      "title": "Update hedge-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml"
+      ],
+      "oid": "df506cd2b61bdf6df23832122d0a4b20",
+      "content_hash": "94b9f22122f2615cb6704e8edefe49d511e111078db7d18f2ed83241d8f11c60"
+    },
+    {
+      "id": "STORY-TASK-0020",
+      "title": "Update commit-hygiene-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/commit-hygiene-classifier.agent.yaml"
+      ],
+      "oid": "9692bebad67622e34531411a6b791d75",
+      "content_hash": "6161676faa60b8480306e91c7cd450fbea5a73cbe0482fa23ab341014190267e"
+    },
+    {
+      "id": "STORY-TASK-0021",
+      "title": "Update fragility-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/fragility-classifier.agent.yaml"
+      ],
+      "oid": "94ae05779a6ab97e051bdf5c953a8889",
+      "content_hash": "6fe69bc9b823714312c39335c1569765647e645c7aa23895e7e2c4cc6be3e1ad"
+    },
+    {
+      "id": "STORY-TASK-0022",
+      "title": "Update work-quality-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/work-quality-classifier.agent.yaml"
+      ],
+      "oid": "219b0b8a347df2cf43cf8dd02f5d07b7",
+      "content_hash": "47321a08f06b83d3c86e0efa3b8eb314e353f98e0e0cecf6a8e7506df0f3a3ff"
+    },
+    {
+      "id": "STORY-TASK-0023",
+      "title": "Update unauthorized-action-classifier.agent.yaml",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/agents/unauthorized-action-classifier.agent.yaml"
+      ],
+      "oid": "477cba2babfadd4e523a39323267d29e",
+      "content_hash": "1ea6939bda7c899c9dc55782a6675b54ef8db112eab9219bb79056c61bbf55cc"
+    },
+    {
+      "id": "STORY-TASK-0024",
+      "title": "Identify duplicate schema copies",
+      "status": "todo",
+      "description": "Grep all packages/*/schemas and packages/*/src for *.schema.json files. Produce a duplicate inventory.",
+      "acceptance": "Written inventory listing every duplicate and its canonical owner",
+      "oid": "dec3dc75c2e86a61912f075af8a9e86e",
+      "content_hash": "438fcb562d9f1d06b1dfbee8fd51339a267bcf691ae99c1ed5836b2de949ddfb"
+    },
+    {
+      "id": "STORY-TASK-0025",
+      "title": "Remove duplicates",
+      "status": "todo",
+      "oid": "329dce24b6fb4062636ed7dcfed85c59",
+      "content_hash": "bb4f2537e6755fb6c3520e2d70de15a9245d99638df23b47f60424e1d995c510"
+    },
+    {
+      "id": "STORY-TASK-0026",
+      "title": "Update imports to use canonical owner",
+      "status": "todo",
+      "oid": "df80da6e0a4dba15d8ad3f25bec8aac4",
+      "content_hash": "f53774eef7adb37e8833194ffc97b579dbd35122ba13fac436493d5d62dee968"
+    },
+    {
+      "id": "STORY-TASK-0027",
+      "title": "Run hedge against openrouter/anthropic/claude-sonnet-4.6",
+      "status": "todo",
+      "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not",
+      "oid": "4eb14f442caf060182bfdbf577b34c7b",
+      "content_hash": "f59c17fc9c021e5ab057ebd037baaef508ae461864eabdc3c633d132fa7897a4"
+    },
+    {
+      "id": "STORY-TASK-0028",
+      "title": "Run hedge against a Kimi model",
+      "status": "todo",
+      "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not",
+      "oid": "26ddf3198e871ee3dfb0af9f2a3def58",
+      "content_hash": "adf271bd4fc5004511045c3dcc2c181c36da6e5d9ee5c541c1f66cdd309cd9d3"
+    },
+    {
+      "id": "STORY-TASK-0029",
+      "title": "Document verification outcomes",
+      "status": "todo",
+      "description": "Write outcomes into this feature's findings array or into a new finding in REVIEW-001 if the outcome surfaces a spec-level disclarity",
+      "oid": "a2fa326cb42de647eb353e26c7c03c30",
+      "content_hash": "2635e91c007fdc97586dc7755db86024cc42dfbf685508f57c98d13f66e87d1b"
+    },
+    {
+      "id": "STORY-TASK-0030",
+      "title": "Close issue-043 (duplicate agent infrastructure)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ],
+      "oid": "01e79de63b800328abbb9340d550a1bf",
+      "content_hash": "2d2f36c72bbb549dc596b8d7f9177d5129f6db24a0164068c325a5d5b7f287b5"
+    },
+    {
+      "id": "STORY-TASK-0031",
+      "title": "Close issue-045 (framework-level anti-injection)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ],
+      "oid": "887ae297cc6f4e6c6615470afdb3105a",
+      "content_hash": "3e39b7587412ba6cd9f9fb4381dbfa5e2590beb285bfab9bb189adea3fc859d8"
+    },
+    {
+      "id": "STORY-TASK-0032",
+      "title": "Close issue-048 (agent discovery contradiction)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ],
+      "oid": "3cbb77fe3129144f8f21df203f820408",
+      "content_hash": "e5faf280989e2669eb2ac12321acabc1dbce82832d83cefa53ed0f851ac289f7"
+    },
+    {
+      "id": "STORY-TASK-0033",
+      "title": "Close issue-049 (step-loop cwd bug)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ],
+      "oid": "b1506aa6b6a142c01b1064211f7dbec0",
+      "content_hash": "776ab71a2b6e59f2431c71867f75475e9284803331eedbecc71b9fd9c0c479ae"
+    },
+    {
+      "id": "STORY-TASK-0034",
+      "title": "Close issue-050 (monitor classify wiring)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ],
+      "oid": "246e67d4f45f901137d503f1c61acbd1",
+      "content_hash": "3e80ebab191e4b214a6ca1be6b01d9f8b9fddaad3d3431203b6d31c60d9bdea8"
+    }
+  ]
+}

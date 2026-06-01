@@ -1,0 +1,10 @@
+{
+  "title": "Monitor spec validator — validateMonitor() checking spec + agent YAML + classify template against schemas and available collectors",
+  "body": "validateWorkflow() checks workflow YAML specs at authoring time — agent resolution, schema existence, template-input alignment, step references, etc. No equivalent exists for monitor specs. An LLM authoring a monitor gets no feedback until runtime. validateMonitor(spec, cwd) would check: classify.agent resolves to an existing .agent.yaml, the agent YAML's prompt.task.template resolves in the template search paths, classify.context entries are valid collector names (from COLLECTOR_DESCRIPTORS), the verdict.schema.json exists at the agent's output.schema path, pattern and instruction files exist. Returns { status, issues[] } matching ValidationResult. Exposed via /monitors validate [name] command and monitors-validate tool. Added to the VALIDATION_CHECKS registry. The skill generator surfaces it in the validation vocabulary table.",
+  "location": "packages/pi-behavior-monitors/index.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-behavior-monitors",
+  "source": "human"
+}

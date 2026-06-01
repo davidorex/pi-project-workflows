@@ -1,0 +1,51 @@
+{
+  "title": "Same extension-tool surface consumed from both pi-runtime (harness-confined per DEC-0014) and Claude Code (instruction-imposed); direct .project/*.json edits forbidden in both surfaces",
+  "status": "enacted",
+  "context": "This session's empirical operating pattern — every FGAP filing + DEC filing + FGAP status transition + .project/ block content alignment (Step 8.5) + this very DEC filing went via npx tsx -e invocations against @davidorex/pi-context block-api primitives (appendToBlock / updateItemInBlock with DispatchContext attestation), not via Edit/Write/sed against .project/*.json files directly. The instruction-imposed convention has been operating throughout the rebuild arc; user direction this turn names it as the future-imposed convention to be substrate canon. DEC-0014 established surface-enforcement for pi-runtime (main LLM tool list excludes default Pi tools); DEC-0016 establishes the equivalent instruction-enforcement for Claude Code such that the SAME extension-tool surface is the consumption pattern from both execution surfaces. Tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) is functional spec for both consumers; closing the 22 enumerated gaps + meta-pattern serves both pi-runtime + Claude Code.",
+  "decision": "Claude Code sessions operating against pi-context substrate use the same extension-tool surface the harness-confined pi-runtime main LLM uses (per DEC-0014). Specifically: NO direct Edit / Write / sed / awk / cat-redirect targeting .project/*.json files. ALL substrate operations route through @davidorex/pi-context block-api primitives (writeBlock / appendToBlock / updateItemInBlock / upsertItemInBlock / removeFromBlock / nested variants / typed-file primitives) invoked via `npx tsx -e` inline scripts OR through future thin script wrappers (e.g. `bin/pi-context` CLI executable) that compose the same primitives. DispatchContext attestation required on every write (writer.kind = 'agent' for orchestrator-driven; writer.kind = 'human' for direct-user-driven; agent_id / user identifies the actor). Schema validation, proper-lockfile contention guard, per-field author stamping all flow through the canonical primitives — same semantics, same enforcement, regardless of which execution surface invoked. Pattern is enforced by instruction for Claude Code (retains bash/read/write/edit by harness design; cannot be surface-confined like pi-runtime under DEC-0014); operational equivalence is established by binding convention. Forbidden patterns explicitly: Edit on `.project/*.json`, Write on `.project/*.json`, Bash invocations using `sed -i` / `awk` / `cat > ` / `echo > ` / `>>` targeting `.project/*.json`. Optional thin script wrappers (`bin/pi-context <subcommand> --arg ...`) ship as ergonomic shell over block-api primitives — same primitives, same semantics, same DispatchContext requirement; no parallel ungated path.",
+  "consequences": [
+    "Tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) serves both consumers — closing the 22 enumerated gaps + meta-pattern unblocks both pi-runtime (DEC-0014 surface-enforced) and Claude Code (DEC-0016 instruction-imposed). Gap closure work is the same; consumer base doubles.",
+    "DispatchContext writer.kind on every block-api invocation: 'agent' for orchestrator-driven Claude Code work (agent_id = session identifier or task slug, e.g. 'post-step-8.6-orchestrator'); 'human' when direct-user-driven (user = david); 'monitor' / 'workflow' as before. Author attribution survives the invocation surface — every write is forensically attributable.",
+    "CLAUDE.md project conventions must surface this binding — DEC-0016 + DEC-0014 + DEC-0015 + DEC-0011 collectively define the substrate operational contract. Step 8.6 successor work or a documentation-discipline phase under FGAP-026 closure plan adds the binding statement: 'Claude Code sessions operate via extension tool surface invoked by `npx tsx -e` against block-api primitives OR future `bin/pi-context` wrappers; direct Edit / Write / sed / cat-redirect targeting .project/*.json is forbidden — same forbidden-pattern as pi-runtime under DEC-0014 surface enforcement'.",
+    "Cross-surface consistency check becomes natural Step 9 (adversarial audit) audit dimension: not just 'could harness-confined main LLM dispatch the arc?' (FGAP-028's dogfood-dispatch gate) but also 'could Claude Code session under DEC-0016's imposed pattern dispatch the arc using only the same extension tool surface?' Likely the same gaps surface in both; one surface check covers both; failure of either = blocking finding for Step 10 release.",
+    "DEC-0015's 9th consequence (documentation discipline for the dual-nature note) extends: code comments / docstrings / READMEs / skill-narratives surface the framework-config-mutability + user-content-prose-staleness caveat for BOTH pi-runtime consumers AND Claude Code consumers. Same documentation; both audiences read it.",
+    "Optional `bin/pi-context` CLI wrapper (NOT in scope for any specific phase yet; user-flagged for future authoring): ships as part of pi-context package; takes subcommand + JSON-shaped args (e.g. `pi-context append-block-item --block issues --array-key issues --item '{...}' --writer agent/<id>`); composes block-api primitives internally with DispatchContext construction; ergonomic alternative to inline tsx scripts. NOT a parallel ungated path because it's the same primitives.",
+    "Bypass under DEC-0016 is technically possible (Claude Code retains bash/read/write/edit) but explicitly forbidden by binding convention + harness-prepended-mandates + CLAUDE.md statement. Empirically: this rebuild arc's session has been dogfooding the convention all session; bypass observed at Step 8.5 origin (the 'Bootstrap exemption' framing as LLM rationalization of unaddressed work) was caught by user critique — instruction-imposed enforcement requires user-vigilance + structural mandate-prepend hooks; not surface-impossible like pi-runtime. The pattern is 'workable but requires the user-feedback loop' for Claude Code; surface-enforced for pi-runtime.",
+    "FGAP-024 (no write-authority enforcement layer beyond schema validation) gains weight from a second angle: under DEC-0016, Claude Code's 'agent' writer-kind has no upstream enforcement preventing writes to inappropriate blocks (e.g. agent writing to decisions.json that should be human-authored). Authority-matrix layer would gate cross-surface inappropriate writes regardless of execution-surface origin.",
+    "DEC-0014 + DEC-0015 + DEC-0016 form the canon trio establishing the substrate operational contract: surface enforcement for pi-runtime (DEC-0014); config drives location (DEC-0015); instruction-imposed equivalent for Claude Code (DEC-0016). All three required for substrate-arc thesis to be structurally complete."
+  ],
+  "options_considered": [
+    {
+      "label": "Claude Code uses Edit / Write / bash freely against .project/*.json; substrate operations as ad-hoc choice",
+      "description": "Permit direct file edits when convenient; rely on instruction discipline (mandates, feedback memory) to prefer block-api primitives.",
+      "tradeoffs": "Empirically rejected — every direct edit observed in this session's history (e.g. early-session attempts to direct-edit .project/*.json before user-corrected) bypassed schema validation, DispatchContext attestation, and proper-lockfile guard. Recreates F-006 trap pattern from the parallel surface. Undermines DEC-0014's substrate-arc thesis at the second consumer. Substrate erosion accelerated whenever direct-edit is faster-by-default than canonical surface."
+    },
+    {
+      "label": "Same extension-tool surface for Claude Code via instruction-imposed convention (this option)",
+      "description": "Claude Code uses npx tsx -e against block-api primitives OR future bin/pi-context wrappers — same primitives the pi-runtime main LLM uses under DEC-0014; same DispatchContext attestation; same schema/lock/stamp semantics. Bypass forbidden by convention + mandate hooks + CLAUDE.md binding statement.",
+      "tradeoffs": "Pro: substrate-arc thesis structurally consistent across both consumers; tool-surface gap closure serves both; DispatchContext attestation works regardless of invocation surface; bypass technically possible but explicitly forbidden. Con: instruction-imposed has weaker teeth than surface-imposed (bypass requires user-vigilance loop to catch + correct); Claude Code retains the technical capability to direct-edit; pattern relies on harness-prepended-mandate reminder + user-feedback enforcement; not as structurally airtight as DEC-0014's surface enforcement."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-024",
+    "FGAP-026",
+    "FGAP-028"
+  ],
+  "references": [
+    {
+      "label": "DEC-0014 harness-confined main LLM (parallel surface; surface-enforced)",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0015 config drives substrate location",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "tool-surface gap audit (functional spec for both consumers)",
+      "path": "analysis/2026-05-10-tool-surface-gap-audit.md"
+    }
+  ],
+  "supersedes": [],
+  "enacted_by": "user",
+  "enacted_at": "2026-05-10T04:04:46.645Z"
+}

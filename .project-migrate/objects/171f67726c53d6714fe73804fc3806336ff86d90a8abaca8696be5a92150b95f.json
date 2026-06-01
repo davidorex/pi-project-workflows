@@ -1,0 +1,33 @@
+{
+  "title": "Per-script --help / Usage discoverability gap — 37 of 39 scripts/orchestrator/*.ts lack robust --help blocks; invocations return terse errors (\"Missing --block <name>\") instead of self-explaining usage; fresh Claude operators cannot surface command-shape without reading script bodies",
+  "status": "identified",
+  "priority": "P2",
+  "package": "@davidorex/pi-context",
+  "layer": "L4",
+  "description": "Layer 2 of the 3-layer orchestrator-surface-discoverability gap (Layer 1 = CLI elevation per FGAP-180 / TASK-095; Layer 3 = framework-use discoverability per companion FGAP-182). Verified via `grep -lE '\\-\\-help|Usage:' scripts/orchestrator/*.ts | wc -l` returning 2 (only accept-all.ts + one other; rest lack the convention). Each script carries a 5-15 line docstring preamble at the top describing purpose + canonical-relation + 2-3 usage examples (verified: file-block-item.ts has a structured preamble with 3 invocation patterns). The preamble is discoverable IF the operator reads the file; not discoverable from invocation. Invocation with missing args returns terse errors like 'Missing --block <name>' (file-block-item.ts behavior verified earlier this session) — no command-surface enumeration, no param description, no example invocation surfaced from the script itself.\n\nFor a fresh Claude operator landing in a project with the scripts (or with the future CLI per FGAP-180 / TASK-095): invoking an unknown script provides no path forward beyond the bare error. Operator must `ls scripts/orchestrator/` + `head` each candidate to find the right surface + read the preamble to learn invocation shape. High-friction; operator-knowledge-dependent. Discoverability-at-invocation is the standard for canonical CLI tools (git / npm / gh / kubectl / docker / etc.); these scripts don't meet it.\n\nThis is Layer 2 because it operates at the per-command level — making each individual invocation self-explaining. Distinct from Layer 1 (CLI elevation makes the surface installable; FGAP-180) and Layer 3 (framework-use discoverability makes the canonical patterns + workflows queryable; FGAP-182). All three needed for fresh-Claude-becomes-productive-without-operator-hand-holding. Layer 2 without Layer 1 = scripts are self-explaining locally but not portable. Layer 2 without Layer 3 = individual scripts are clear but the canonical workflows across multiple scripts are not.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/",
+      "reference": "39 .ts files (verified count via `ls scripts/orchestrator/ | wc -l`); 2 carry --help or Usage blocks per grep `grep -lE '\\-\\-help|Usage:' scripts/orchestrator/*.ts | wc -l`; remaining 37 print terse missing-arg errors on invalid invocation"
+    },
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "1-23",
+      "reference": "Representative preamble shape: 17 lines describing purpose + 5 specific features added beyond raw block-api + canonical-relation per DEC-0014/0016 + 3-pattern Usage block. Quality preamble exists but only surfaces by reading the file; invocation with missing args returns 'Missing --block <name>' (verified earlier this session)"
+    },
+    {
+      "file": "scripts/orchestrator/accept-all.ts + bootstrap-state.ts",
+      "reference": "Two scripts (per grep) that DO carry --help / Usage convention; serve as the existing-pattern precedent for the discipline to be applied across remaining 37"
+    },
+    {
+      "file": "analysis/2026-05-30-LLM-perspective JIT Agent UX.md",
+      "reference": "Operator-experience target verbatim from line 7: 'I see the agent's health at a glance.' Same discipline applies to substrate-management commands: discoverability-at-invocation is the operator-experience-canon the framework promises but the orchestrator-script layer doesn't deliver"
+    }
+  ],
+  "impact": "Fresh-Claude-operator + downstream-consumer-operator productivity is gated by ability to discover invocation shape. With Layer 1 elevated (FGAP-180 / TASK-095) but Layer 2 unaddressed, operators install the CLI but still face per-subcommand discovery friction. The CLI's bin entry would enumerate subcommands but each subcommand still needs --help; without it, `pi-ctx file-block-item` invoked bare returns the same terse error. Operator-experience asymmetry between this-project's-operators (have CLAUDE.md + memory + session-notes context) and downstream-consumers (start fresh, no project-specific context) compounds with Layer 2 unaddressed.",
+  "canonical_vocabulary": "command-surface self-explaining; --help discoverability; invocation-time discovery",
+  "proposed_resolution": "Two-part work: (1) shared --help helper module in packages/<cli>/src/ (per FGAP-180 / TASK-095 CLI package) that each subcommand registers description + params + examples against; print on --help or on missing-required-args before returning error; (2) backfill the 37 existing scripts with the convention either inline OR via the same shared helper imported from the elevated CLI package. Bundled together with FGAP-180 / TASK-095 implementation arc (CLI elevation's natural moment to land --help convention across all subcommands) OR as standalone follow-on TASK if CLI elevation prioritizes shape-not-content. Canonical pattern reference: git / gh / kubectl / docker per-subcommand --help convention; printing description + Usage block + per-param descriptions + 1-3 example invocations.",
+  "related_features": [
+    "FEAT-001"
+  ]
+}

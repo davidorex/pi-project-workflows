@@ -1,0 +1,42 @@
+{
+  "title": "Missing canonical script: compile-task-context.ts — implementer task-block hand-authored bypasses DEC-0019 dual-surface discipline",
+  "status": "closed",
+  "priority": "P1",
+  "package": "scripts/orchestrator",
+  "layer": "L1",
+  "description": "scripts/orchestrator/ has compile-preamble-context.ts (mandates + DEC canon + tool-surface preamble), compile-explore-context.ts (composes Explore-agent context; instructs agent to write report to specified path), and compile-implementation-context.ts (composes implementation-agent context from preamble + substrate-state + section-spec + cascade-table + task-template). It lacks a compile-task-context.ts script that programmatically renders the implementer task-block (read-list + apply-order + concrete-edits + commit-spec + STOP triggers + report-back format) from substrate inputs (TASK-NNN id, explore-report path, commit-subject-template). Without it, every implementation-agent context requires hand-authored /tmp/task-template-*.md. Hand-authored content (a) drifts in shape across dispatches, (b) bypasses mandate-005, (c) violates DEC-0019 dual-surface discipline (scripts/orchestrator/ is the Claude-Code-side ergonomics surface; hand-authoring is the parallel ungated path), (d) embeds orchestrator-side guesswork rather than reading the canonical TASK-NNN acceptance_criteria from substrate.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/compile-explore-context.ts",
+      "lines": "1-200",
+      "reference": "exists — Explore-agent context composer; writes report to --output path via agent"
+    },
+    {
+      "file": "scripts/orchestrator/compile-implementation-context.ts",
+      "lines": "1-207",
+      "reference": "exists — implementation-agent context composer; takes --task-template as @file (assumed pre-authored)"
+    },
+    {
+      "file": "scripts/orchestrator/compile-preamble-context.ts",
+      "lines": "exists",
+      "reference": "preamble composer used by both compile-*-context.ts"
+    },
+    {
+      "file": "/tmp/task-template-fgap035.md",
+      "reference": "hand-authored task-template this turn — direct evidence of the gap"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0019 — scripts/orchestrator/* serve as canonical test surface + executable specs; hand-authoring per-task templates is the gap-shaped surface DEC-0019 names"
+    }
+  ],
+  "impact": "Every implementation-class subagent dispatch requires hand-authoring the task-template. Across N tasks this means N hand-authored files with no shape canonicalization. Orchestrator-side authoring of task-templates also separates implementation specs from substrate (task acceptance_criteria live in .project/tasks.json; hand-authored templates duplicate them in /tmp/*.md). The duplication is the canon-violation surface — DEC-0019 says scripts/orchestrator/* is the canonical surface and substrate is single-source-of-truth; hand-authored templates contradict both.",
+  "canonical_vocabulary": "programmatic template rendering",
+  "proposed_resolution": "Add scripts/orchestrator/compile-task-context.ts. Args: --task-id TASK-NNN (reads from .project/tasks.json) + --explore-report <path> (cascade-target table source) + --commit-subject <template>. Output: XML-structured task-block matching the shape compile-implementation-context.ts expects in its --task-template @file arg.",
+  "related_decisions": [
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

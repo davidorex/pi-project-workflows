@@ -1,0 +1,5 @@
+{
+  "description": "Expression evaluator uses property access only — no eval(), no arithmetic/logic",
+  "enforcement": "test",
+  "severity": "error"
+}

@@ -1,0 +1,38 @@
+{
+  "title": "pi-agent-dispatch launch-chain invisibility — META package + generate-skills.js + package self-registration ALL omit the 5th extension; 5 static tools + entire FEAT-006 loop unreachable from launch-constrained-pi.sh",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-project-workflows",
+  "layer": "L5",
+  "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gaps 1-5 CRITICAL) empirically established that pi-agent-dispatch is INVISIBLE to the launch chain through three coordinated absences: (1) META `packages/pi-project-workflows/package.json` `dependencies[]` (lines 32-34) + `pi.extensions[]` (lines 22-26) list only the 3 prior extensions; pi-agent-dispatch is in neither; no `agent-dispatch-extension.ts` shim parallel to the existing project/workflows/monitors shims. Therefore `pi install -l $META` step 1 of the launch script does not install pi-agent-dispatch. (2) `scripts/generate-skills.js:999` hardcodes `packageDirs = ['pi-context', 'pi-workflows', 'pi-behavior-monitors']`; pi-agent-dispatch is absent. Therefore no SKILL.md is emitted for it under `packages/pi-agent-dispatch/skills/`. (3) pi-agent-dispatch's own `package.json` has no `pi.skills` field, no `skills/` directory, no `skill-narrative.md`, no `skills/` in `files[]` — diverges from the parity pattern of the other 3 extensions. Net effect: empirical grep of `packages/*/skills/*/SKILL.md` returns 53 tool names; ZERO of pi-agent-dispatch's 5 static tools (call-agent, author-agent-spec, run-real-checks, commit-attested, author-tool-grant) appear. The launch script's --tools derivation therefore cannot include them. Launching the current script produces a session where the entire FEAT-006 north-star loop (orchestrator → author spec → dispatch agent → run-real-checks → commit-attested) is unreachable; JI-021 (orchestrator uses jit-agents directly) is violated because call-agent is absent; DEC-0044 (pi-agent-dispatch loaded peer-to-peer) is violated.",
+  "evidence": [
+    {
+      "file": "packages/pi-project-workflows/package.json",
+      "reference": "lines 22-26 (pi.extensions[] omits agent-dispatch shim); lines 32-34 (dependencies[] omits @davidorex/pi-agent-dispatch)"
+    },
+    {
+      "file": "scripts/generate-skills.js",
+      "reference": "line 999 hardcoded packageDirs list omits pi-agent-dispatch"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/package.json",
+      "reference": "no pi.skills field; files[] omits skills/; whole package omits skill-narrative.md + skills/ dir"
+    },
+    {
+      "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+      "reference": "Audit commit 945dc93 gaps 1-5 CRITICAL; per-gap evidence + canon-violated columns"
+    }
+  ],
+  "impact": "Launching the canonical `scripts/launch-constrained-pi.sh` today produces a session that cannot execute the FEAT-006 north-star loop. DEC-0014 negative clause (no bash/read/write/edit) is honored; positive clause (the canonical tool surface) is violated by omission. JI-021 + DEC-0044 + FEAT-005 + FEAT-010 + FEAT-006 all blocked at the surface where they were meant to manifest.",
+  "canonical_vocabulary": "launch-chain-invisibility / META-package-omission / skills-generation-hardcoded-list / extension-self-registration-parity",
+  "proposed_resolution": "Addressed by FEAT-011 (pi-agent-dispatch launch-chain integration). Four file edits + 1 new file per audit's resolution scope: (a) packages/pi-project-workflows/package.json adds @davidorex/pi-agent-dispatch dep + agent-dispatch-extension.ts to pi.extensions[]; (b) NEW packages/pi-project-workflows/agent-dispatch-extension.ts one-line re-export shim mirroring the existing 3 shims; (c) packages/pi-agent-dispatch/package.json adds pi.skills field + skills/ to files[]; (d) NEW packages/pi-agent-dispatch/skill-narrative.md hand-authored narrative source (YAML frontmatter + XML-tagged sections per pi skill standard); (e) scripts/generate-skills.js packageDirs list adds 'pi-agent-dispatch'. After: npm run skills regenerates → pi-agent-dispatch SKILL.md exists with 5 static tool tags → launch script grep picks them up → launched session sees all 5. Closes via canonical-symmetry, no canon evolution required. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
+  "related_features": [
+    "FEAT-011",
+    "FEAT-006"
+  ],
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0044",
+    "DEC-0047"
+  ]
+}

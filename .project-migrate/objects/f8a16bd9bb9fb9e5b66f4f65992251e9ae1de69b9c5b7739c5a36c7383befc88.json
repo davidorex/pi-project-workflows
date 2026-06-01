@@ -1,0 +1,25 @@
+{
+  "title": "pi-workflows agent step has no agentType dispatch hint — operators cannot request a specialized subagent type (Explore / code-reviewer / etc. analog) from the agent step; pi-workflows agents reference .agent.yaml specs by name only with no subagent-type routing surface",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 9: Claude Code workflows' agent(prompt, { agentType: 'Explore' | 'code-reviewer' }) lets the script invoke specialized subagent types from the same registry the Agent tool uses. pi-workflows agent step references agents by name (agent: code-explorer) which maps to a .agent.yaml file; no subagent-type field. Two different mechanisms with similar intent — type-routing vs name-routing. Pi's name-routing is more explicit but less composable (no way to say 'I want an Explore-type agent dispatched against any agent spec').",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "464-490",
+      "reference": "Part 3 axis 9 — agentType Opt — INSPIRE verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/step-agent.ts",
+      "reference": "agent step references agent by name only; no agentType field on StepSpec"
+    }
+  ],
+  "impact": "Operators wanting to compose 'Explore-type-agent runs against this agent spec' cannot express it at the spec level. Mapping to Claude Code workflows surface for cross-system invocation is lossy. Pi's agent specs themselves could declare their type but no current convention captures it.",
+  "canonical_vocabulary": "subagent-type routing; agent-spec + agent-type composition; dispatch-hint surface",
+  "proposed_resolution": "Add 'agentType: <string>' opt to agent step OR add 'agent_type: <string>' top-level field to .agent.yaml specs. dispatch.ts passes agentType to pi CLI via new flag (assumes pi CLI supports subagent-type dispatch; verify upstream surface). If pi CLI does not support: implement pi-workflows-side dispatch routing where agentType selects from a registry of dispatch-strategy implementations. Simpler shape: agent_type as advisory metadata on the agent spec consumed by dispatch + by introspection tools (workflow-validate could check agent_type compatibility with step.agentType).",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

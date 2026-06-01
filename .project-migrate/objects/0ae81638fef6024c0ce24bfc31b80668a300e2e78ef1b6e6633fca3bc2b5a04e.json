@@ -1,0 +1,10 @@
+{
+  "title": "No phase-level verification rollup — individual task verification exists but nothing aggregates to phase success_criteria",
+  "body": "The verification schema supports target_type: phase but nothing produces phase-level verification entries. Phase specs have success_criteria with verify_method but no workflow connects individual task completion to phase-level verification. A phase could have all tasks completed and verified but no phase-level evidence that success_criteria were met.",
+  "location": "packages/pi-context/registry/schemas/verification.schema.json",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "agent"
+}

@@ -1,0 +1,26 @@
+{
+  "title": "Per-scope finding registries",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-project",
+  "layer": "L2",
+  "description": "There is no convention for a block to carry its own embedded findings array distinct from global issues.json. A design issue discovered during review of jit-agents-spec.md has nowhere to live except the global issue tracker, where it is indistinguishable from task-level defects and feature-level scope conflicts. The result is issues.json conflating L2 architectural contradictions with L4 implementation bugs with L5 incident-derived rules.",
+  "evidence": [
+    {
+      "file": ".project/issues.json",
+      "reference": "62KB flat file mixing spec contradictions, task bugs, and session observations with no scope tagging beyond the informal 'package' field"
+    },
+    {
+      "file": ".project/schemas/issues.schema.json",
+      "reference": "single flat items array with no parent-scope reference — issues float free of the artifact they belong to"
+    }
+  ],
+  "impact": "Every finding discovered during any layer of work lands in the same flat bucket. There is no mechanism to say 'this finding belongs to the review of spec X' or 'this defect belongs to task Y within feature Z'. The global tracker becomes an unmanageable tangle that must be sorted by hand to answer any scoped question.",
+  "canonical_vocabulary": "scoped issues; per-artifact defect list; embedded finding registries",
+  "proposed_resolution": "Standardize a 'findings' sub-array on every L2/L3/L4 block schema kind (specs, features, tasks). Each finding carries scope metadata (layer, parent_artifact). Provide a block-api helper appendFinding(blockName, parentItemId, finding). Global issues.json becomes a derived view (see FGAP-003).",
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_decisions": [],
+  "related_issues": []
+}

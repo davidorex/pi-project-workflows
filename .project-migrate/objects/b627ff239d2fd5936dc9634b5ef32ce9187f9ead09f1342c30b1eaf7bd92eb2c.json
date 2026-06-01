@@ -1,0 +1,31 @@
+{
+  "title": "No item-level read at tool surface — read-block is all-or-nothing; no read-block-item / paginated read; large blocks force whole-file fetch",
+  "status": "closed",
+  "priority": "P2",
+  "package": "@davidorex/pi-context",
+  "layer": "L2",
+  "description": "read-block returns the entire block's JSON. Large blocks (decisions ~109KB, framework-gaps growing similarly) force whole-file fetch even when the caller wants one item. resolve-item-by-id covers by-ID lookup; filter-block-items covers predicate filter; but there's no read-block-item(block, id) for direct item fetch by ID without the block roundtrip, and no paginated read for blocks too large to inject. Distinct from FGAP-014 (pagination in renderers like renderLensView / renderRoadmap) and FGAP-032 (item-level INJECTION at JIT-agent dispatch via contextBlocks selectivity). This is item-level READ at the tool API surface for harness-confined main LLM consumption.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "read-block tool returns whole block via readBlock from block-api; no item-by-id variant + no paginated variant"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-014 (renderer pagination) + FGAP-032 (item-level contextBlocks injection at dispatch) are adjacent but distinct — neither covers tool-API item-level read"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0014 — context-window economy under harness confinement makes whole-block-fetch-when-one-item-wanted a substrate-surface inefficiency"
+    }
+  ],
+  "impact": "Context-window cost when caller wants one item from a large block. read-block-item via filter-block-items + take(1) requires two tool calls (filter then implicit pick); resolve-item-by-id covers when the ID is known but not when discovery + read should compose. No paginated read means large blocks can exceed the truncateHead 50KB threshold (already observed; truncation message surfaces). Under growing substrate this gap compounds.",
+  "canonical_vocabulary": "item-level read at tool surface; paginated block-read",
+  "proposed_resolution": "(1) Add read-block-item(cwd, block, id) tool: equivalent to filter-block-items(block, id, eq) + take(1) but as a single primitive returning the item OR null. (2) Add read-block-page(cwd, block, offset, limit) for paginated reads of large blocks; returns `{items: ItemRecord[], total: number, hasMore: boolean}`. (3) read-block stays for full-block fetches; truncateHead behavior unchanged. Library + pi tool + orchestrator script per DEC-0019 dual-surface.",
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0019"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

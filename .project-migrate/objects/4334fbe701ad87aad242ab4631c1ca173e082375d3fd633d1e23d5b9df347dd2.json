@@ -1,0 +1,10 @@
+{
+  "title": "Agent execution metadata (model, cost, duration) not persisted to project blocks",
+  "body": "Workflow step results contain agent name, model, token usage, cost, and duration in run state (.workflows/runs/). But this data is ephemeral — not persisted to any project block. No record of which agent executed a task at what model tier with what quality. The verification block has evidence text but not structured execution metadata.",
+  "location": "packages/pi-workflows/src/workflow-executor.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-workflows",
+  "source": "agent"
+}

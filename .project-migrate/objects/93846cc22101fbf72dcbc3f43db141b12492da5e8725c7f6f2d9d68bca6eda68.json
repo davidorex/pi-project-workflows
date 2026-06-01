@@ -1,0 +1,30 @@
+{
+  "title": "State-machine validation on enum-field transitions",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-project",
+  "layer": "L2",
+  "description": "AJV draft-07 validates current-value membership on enum fields but cannot express allowed transitions. Every block schema today permits any enum value on any write. 'Issue status can only go from open to in-progress, not back to open' is not expressible. 'Finding decided-state transitions require user authority' is not expressible.",
+  "evidence": [
+    {
+      "file": ".project/schemas/issues.schema.json",
+      "reference": "status enum has open | resolved | deferred but no transitions constraint — any value can overwrite any other on updateItemInBlock"
+    },
+    {
+      "file": "packages/pi-context/src/schema-validator.ts",
+      "reference": "AJV draft-07 wrapper with no custom keywords; no before-value inspection at write time"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "updateItemInBlock does not pass the prior value to validation, so transition rules cannot be applied even if expressible"
+    }
+  ],
+  "impact": "The whole class of lifecycle-gated workflows (design review clean-gate, decision enacted gate, feature approval gate) cannot be enforced by schema. Current workaround is discipline. Discipline fails silently when agents run unattended.",
+  "canonical_vocabulary": "state-machine validation; lifecycle invariant; transition guard",
+  "proposed_resolution": "Add a custom AJV keyword (x-lifecycle) that the schema-validator reads. block-api.ts passes both prior-value and new-value to the validator at update time. Validator checks allowed transitions and required-authority. Fails write if transition is invalid or authority is insufficient.",
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_decisions": [],
+  "related_issues": []
+}

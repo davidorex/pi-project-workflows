@@ -1,0 +1,7 @@
+{
+  "title": "Update unauthorized-action-classifier.agent.yaml",
+  "status": "todo",
+  "files": [
+    "packages/pi-behavior-monitors/agents/unauthorized-action-classifier.agent.yaml"
+  ]
+}

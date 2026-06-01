@@ -1,0 +1,16 @@
+{
+  "title": "Remove duplicate schema copies per issue-043",
+  "status": "proposed",
+  "description": "Consolidate duplicate copies of verdict.schema.json and any other schema fragments that pi-workflows, pi-behavior-monitors, and pi-jit-agents currently carry independently. Canonical owner is pi-jit-agents; consumers import.",
+  "acceptance_criteria": [
+    "verdict.schema.json exists only in pi-jit-agents",
+    "Any other schema fragments duplicated across consumers are consolidated to their correct owner package",
+    "Consumers import schemas via the owner package's subpath exports",
+    "Issue 043 closes"
+  ],
+  "depends_on": [
+    "STORY-004",
+    "STORY-005"
+  ],
+  "gates": []
+}

@@ -1,0 +1,26 @@
+{
+  "title": "No tool to discover dispatch-registry models — author must guess valid provider/modelId combinations",
+  "status": "identified",
+  "package": "@davidorex/pi-agent-dispatch",
+  "priority": "P2",
+  "layer": "L1",
+  "description": "pi-agent-dispatch exposes no tool to list models available in the dispatch modelRegistry. ctx.modelRegistry.find(provider, modelId) at packages/pi-agent-dispatch/src/call-agent-tool.ts line 86 looks up models in an in-memory collection populated by pi-agent-core (the orchestrator host) from unknown sources. User-level models.json exists but is not consulted by the dispatch path. Authors discover valid model strings only by trial-and-error — submit a dispatch, observe 'not found in modelRegistry', try a different format.",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+      "lines": "148-160",
+      "reference": "FB-007 'No tool to discover available dispatch models'; actual_behavior: two models attempted and rejected (deepseek-v4-pro / kimi-k2.6:cloud); correct format deepseek/deepseek-v4-pro worked; no tool exists to show valid provider/modelId combinations; notes: 'Unknown where the dispatch model registry is populated from'"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-model-resolution.md",
+      "lines": "97-128",
+      "reference": "Investigation report FB-007 section confirms absence verbatim ('No tool exists in pi-agent-dispatch to list available models in the dispatch registry'); verdict 'Tool surface' — create new Pi tool list-dispatch-models / discover-agent-models querying ctx.modelRegistry, plus scripts/orchestrator/list-dispatch-models.ts dual-surface CLI per DEC-0019/0020"
+    }
+  ],
+  "impact": "Authors of agent specs have no canonical way to know which models the dispatch path accepts. The mismatch between user-level models.json (visible) and dispatch modelRegistry (opaque) compounds the confusion — a model declared in models.json may still be rejected at dispatch. Iteration cost is high: each guess costs one round-trip dispatch attempt plus error inspection.",
+  "proposed_resolution": "Tool surface — new Pi tool `list-dispatch-models` (or `discover-agent-models`) in packages/pi-agent-dispatch/src/ that queries ctx.modelRegistry and returns (provider, modelId, combined `provider/modelId`) tuples. Per DEC-0019/0020 dual-surface canon, also add scripts/orchestrator/list-dispatch-models.ts CLI script. Tool description documents that output reflects models available at dispatch-time under the current auth config — not a static list. A separate decision (DEC-level) is required to clarify whether models.json should be a registry source.",
+  "canonical_vocabulary": "dispatch model discovery",
+  "related_decisions": [
+    "DEC-0019"
+  ]
+}

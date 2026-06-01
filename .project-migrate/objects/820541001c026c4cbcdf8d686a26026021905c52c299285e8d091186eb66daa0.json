@@ -1,0 +1,10 @@
+{
+  "title": "No TUI visibility into monitor token usage and cost — side-channel LLM calls are invisible",
+  "body": "Every monitor classification is an LLM call (classify model, typically claude-sonnet). These calls consume tokens and incur cost but are completely invisible in the TUI. No running tally, no per-monitor breakdown, no session total. In a session with active monitors firing on every turn_end, the accumulated cost can be significant. Users have no way to see what monitors are costing them. Need: running tally in TUI showing monitor token usage (input/output) and cost, updated after each classification call.",
+  "location": "packages/pi-behavior-monitors/index.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-behavior-monitors",
+  "source": "human"
+}

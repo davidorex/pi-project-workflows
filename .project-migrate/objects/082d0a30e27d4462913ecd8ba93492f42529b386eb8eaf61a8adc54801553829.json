@@ -1,0 +1,66 @@
+{
+  "title": "Spec-loop derivability — mapping the Fully-Instrumented Specification Loop against pi-project-workflows",
+  "status": "complete",
+  "layer": "L2",
+  "type": "comparative",
+  "question": "Can every element of the SYNTH specification loop (artifacts, transitions, verifiers, invariants, meta-infrastructure) be expressed using pi-project-workflows primitives, and what gaps remain?",
+  "method": "code-inspection",
+  "scope": [
+    "analysis/The Fully-Instrumented Specification Loop.md (source pattern)",
+    "pi-project-workflows framework as of 2026-04-13",
+    ".project/ block schemas, workflow executor, pi-jit-agents, pi-behavior-monitors"
+  ],
+  "findings_summary": "Systematic element-by-element mapping of the SYNTH specification loop against pi-project-workflows. All 31 artifact types map to schema-driven blocks under .project/ or workflow run artifacts under .workflows/. All ~40 transitions map to .workflow.yaml steps with agent specs. All 10 verifier boundaries (V1–V10) map to monitor specs with .agent.yaml classify agents. All 18 invariants are expressible as combinations of schema validation, cross-block validation, and monitor enforcement.\n\nZero artifacts require TypeScript — each is a JSON Schema authored by the user, with pi-project's generic block-CRUD tools handling read/write/validate. The methodology is content that runs ON the framework; the framework is outcome-agnostic.\n\nFour capability gaps confirmed: (1) Schema-enforced authority matrix (M4) — who-can-write-what not expressible. (2) Authorship attestation (found_by) as write-time convention. (3) Finding state machine transition validity (not just membership). (4) Canonical bundled schemas for audit pattern (18-field findings, 15-field resolution tasks). Five concrete work items identified for closing the derivability gap. Assessment: the loop is derivable from our platonic ideal; the gap is exactly the open issues we already track.",
+  "findings_document": "analysis/2026-04-13-spec-loop-derivability.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "pi-project-workflows repo state as of 2026-04-13"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-13T00:00:00Z",
+  "stale_conditions": [
+    "Framework closes the four capability gaps identified (authority matrix, authorship, transition validation, bundled schemas)",
+    "The Fully-Instrumented Specification Loop document is revised with new elements",
+    "pi-project-workflows issue set changes materially (issues 028–065)"
+  ],
+  "citations": [
+    {
+      "label": "Spec loop source document",
+      "path": "analysis/The Fully-Instrumented Specification Loop.md"
+    },
+    {
+      "label": "pi-project block-api",
+      "path": "packages/pi-project/src/block-api.ts"
+    },
+    {
+      "label": "pi-workflows workflow executor",
+      "path": "packages/pi-workflows/src/workflow-executor.ts"
+    },
+    {
+      "label": "pi-jit-agents dispatch runtime",
+      "path": "packages/pi-jit-agents/src/jit-runtime.ts"
+    },
+    {
+      "label": "pi-behavior-monitors classify pipeline",
+      "path": "packages/pi-behavior-monitors/index.ts"
+    }
+  ],
+  "informs": [
+    "issue-058",
+    "issue-059"
+  ],
+  "informed_by": [
+    "R-0008"
+  ],
+  "related_research": [
+    "R-0010",
+    "R-0011"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-13T00:00:00Z"
+}

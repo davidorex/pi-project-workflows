@@ -1,0 +1,21 @@
+{
+  "description": "FGAP-074 C5 — tool names + /project command rename (index.ts). Rename Pi tools project-* -> context-* (project-status/validate/validate-relations/edges-for-lens/walk-descendants/roadmap-{load,render,validate,list}); command /project -> /context + PROJECT_SUBCOMMANDS -> CONTEXT_SUBCOMMANDS; installProject -> installContext. Rename the DEC-0042 bootstrap trio (init/accept-all/install + project-init/project-accept-all tools) UNIFORMLY now (FGAP-095 P4 removes the then-context-named trio when /context start lands). NOT aliased (strings, no code consumers) — renamed atomically. npm run skills. Green.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "All project-* Pi tool names renamed to context-* (already-context-named tools untouched)",
+    "/project command + PROJECT_SUBCOMMANDS renamed to /context + CONTEXT_SUBCOMMANDS",
+    "DEC-0042 bootstrap trio (init/accept-all/install) renamed uniformly under /context",
+    "CONSTRAINT (DEC-0044/FEAT-004): a /context dispatch-verb namespace kept open — no name claimed that would collide with a future run/dispatch agent-tool verb",
+    "npm run skills regenerated; build && check && test green"
+  ],
+  "depends_on": [
+    "TASK-068",
+    "TASK-069",
+    "TASK-070"
+  ],
+  "notes": "Decomposition chunk C5. Maps to Claude task #64. FGAP-074. Surface rename after all consumers migrated.",
+  "verification": "VER-042"
+}

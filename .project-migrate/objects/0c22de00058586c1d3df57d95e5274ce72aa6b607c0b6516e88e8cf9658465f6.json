@@ -1,0 +1,40 @@
+{
+  "target": "TASK-055",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-22T00:00:00Z",
+  "evidence": "Samples-catalog consumption MVP — commits 458a575 (core: installProject→samples + initProject defaults-removal + adoptConception accept-all dual-surface) / f61aead (generate-skills + skill-narrative → samples, the 4th legacy consumer) / a53663e (drop defaults/+registry/ from files[]) (+ step-1 66f6e54). Verified DEC-0018: build/check/test green (pi-context 551 / pi-jit-agents 152 / pi-behavior-monitors 157 / pi-workflows 829, all 0 fail). Runtime demonstration (real library code path, not mocked): init-equivalent (writeBootstrapPointer + dirs) → accept-all CLI (adopted:true, config.root='.context' NOT conception's '.project', 15 block_kinds / 17 installed_schemas / 27 relation_types) → second accept-all skipped (idempotent, not clobbered); install-from-samples proven by install-subcommand byte-compare tests (installed tasks.schema.json === samples/schemas/tasks.schema.json) + samples-only framework-gaps installs + config/relations notFound. TWO fresh-context adversarial probes (Explore, not composer): first PASS on core (1-5) + FOUND generate-skills as a 4th registry/ consumer (NOT-SAFE); after the generate-skills→samples fix the re-probe verdict SAFE-TO-COMMIT (0 registry/ in any SKILL.md, samples paths + accept-all flow present, 8 legacy schemas dropped, prose matches code, pack excludes registry/+defaults/, 551 tests). Two mid-verify defects caught+fixed via plan-mode amendments: (1) block-source path asymmetry (samples/blocks/ prefix — data_path is bare); (2) generate-skills/skill-narrative legacy-catalog residual. registry/+defaults/ retained on disk as AJV fixtures (FGAP-087 follow-up).",
+  "criteria_results": [
+    {
+      "criterion": "installProject copies from samples/ (byte-equal to samples/schemas/<k>; samples-only framework-gaps installs; config/relations notFound)",
+      "status": "passed",
+      "evidence": "458a575; install-subcommand.test.ts T1-3; adversarial probe-1 #1"
+    },
+    {
+      "criterion": "initProject no longer copies defaults/ (schemas dir empty post-init); FGAP-067 closed",
+      "status": "passed",
+      "evidence": "458a575; accept-all.test.ts T7 via real project-init tool surface"
+    },
+    {
+      "criterion": "adoptConception writes config from conception, root override to actual substrate dir, idempotent never-clobber, BootstrapNotFound→run-init-first; dual-surface (lib+tool+CLI); writes config only",
+      "status": "passed",
+      "evidence": "458a575; accept-all.test.ts T4-6; CLI runtime demo root=.context + idempotent skip"
+    },
+    {
+      "criterion": "generate-skills + skill-narrative read samples/ not registry/; SKILL.md has 0 registry/ refs + accept-all flow + 8 legacy schemas dropped",
+      "status": "passed",
+      "evidence": "f61aead; adversarial re-probe #1-5 (0 registry/ in all SKILL.md)"
+    },
+    {
+      "criterion": "package.json files[] drops defaults/+registry/ (npm pack excludes); dirs remain on disk so fixture tests stay green",
+      "status": "passed",
+      "evidence": "a53663e; npm pack --dry-run grep 0; 551 tests"
+    },
+    {
+      "criterion": "fresh-context adversarial verdict SAFE-TO-COMMIT after both mid-verify defects fixed",
+      "status": "passed",
+      "evidence": "re-probe verdict; both plan-mode amendments (block-path + generate-skills)"
+    }
+  ]
+}

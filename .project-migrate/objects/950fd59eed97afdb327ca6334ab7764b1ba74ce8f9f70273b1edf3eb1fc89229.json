@@ -1,0 +1,40 @@
+{
+  "target": "FGAP-137",
+  "target_type": "framework-gap",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-29",
+  "criteria_results": [
+    {
+      "criterion": "Build/check/test green workspace-wide; husky pre-commit gate passed on the launch-script edit",
+      "status": "passed",
+      "evidence": "Husky pre-commit on commit dcdcae7 ran biome check + tsc --noEmit + npm test --workspaces; all green (828/830 pass, 0 fail, 2 skip — pre-existing skips unrelated to FGAP-137 scope). No source-code changes outside scripts/launch-constrained-pi.sh JSDoc header."
+    },
+    {
+      "criterion": "Runtime demo fresh-launch path: install IS invoked unconditionally; --tools allowlist passed; no --continue in exec argv",
+      "status": "passed",
+      "evidence": "tmp/launch-runtime-demo-v2.sh pre-existing assertions 1a/1b/1e default-no-grant case continue to pass per the 9/10 final tally."
+    },
+    {
+      "criterion": "Runtime demo --continue path: install IS invoked unconditionally; --tools allowlist passed (constraint preserved); --continue present in exec argv",
+      "status": "passed",
+      "evidence": "New demo 1g extends tmp/launch-runtime-demo-v2.sh asserting --continue passthrough; fake-pi capture confirms install argv present + --tools <allowlist> present + --continue threaded through unchanged. 9/10 overall (2a composite-loader tsx-eval failure pre-existing + unrelated to this arc per Node-23.7 ERR_PACKAGE_PATH_NOT_EXPORTED)."
+    },
+    {
+      "criterion": "Runtime demo -c short-form: parses identically to --continue; same passthrough behavior",
+      "status": "passed",
+      "evidence": "New demo 1h asserts -c short-form passthrough; identical to 1g assertions; passes."
+    },
+    {
+      "criterion": "JSDoc header documents --continue + -c as supported flags + explains unconditional-install + --tools-re-derivation rationale (constraint preservation requires re-derivation every invocation because pi does not persist per-session tool restrictions)",
+      "status": "passed",
+      "evidence": "scripts/launch-constrained-pi.sh:40 declares 'Passthrough flags: --continue / -c — pi's canonical resume-last-session flag, honored as...' + follows with the rationale text. Verified post-edit. No canonical_id citations per FGAP-130 Pattern A."
+    },
+    {
+      "criterion": "Adversarial probe (fresh-context Explore) — skipped: header-only change to a bash script + the runtime demo extension provides verification at the script's exec boundary; a fresh-context probe would not surface additional false-pass scenarios beyond what the runtime demo already attests",
+      "status": "skipped",
+      "evidence": "Plan Phase 4 status cascade explicitly marks adversarial-probe skipped for this single-file header-only change."
+    }
+  ],
+  "evidence": "FGAP-137 (filed at commit 1d3f0a6) closed via commit dcdcae7 (header-only edit + runtime-demo extension; install + composite-discovery + --tools allowlist + symmetry verification all unchanged per user direction that install stays unconditional). --continue / -c now first-class documented passthrough flags. Mechanical correctness was already in place (script's ARGS catch-all routes --continue to pi at exec); this arc adds the documentation contract + runtime-demo assertion that the contract holds. Verified empirically via pi-coding-agent recon that pi does NOT persist --tools per-session, making the script's existing every-invocation --tools re-derivation REQUIRED on --continue too (skipping it would silently unconstrain the resumed orchestrator). No release; no push; tree clean modulo pre-existing hedge.patterns.json mod."
+}

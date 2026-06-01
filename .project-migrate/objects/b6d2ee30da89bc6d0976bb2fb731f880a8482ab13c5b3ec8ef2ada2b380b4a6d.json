@@ -1,0 +1,23 @@
+{
+  "description": "Unit B — module hygiene sweep (FGAP-088 + FGAP-080). FGAP-088: 3 shipped src modules still use import.meta.dirname (undefined under tsx-CJS dist-load -> ERR_INVALID_ARG_TYPE) -> the path.dirname(fileURLToPath(import.meta.url)) idiom (update-check.ts:20 lazy, index.ts installProject samplesRoot lazy, pi-workflows/src/bundled-dirs.ts:14 EAGER top-level). FGAP-080: orchestrator CLIs catch pi-context error classes via instanceof (module-instance-fragile under tsx) -> uniform name-based err.name=== checks (read-config, read-schema, file-block-item, append-relation; write-schema/accept-all already done) + drop unused error-class imports.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/update-check.ts",
+    "packages/pi-context/src/index.ts",
+    "packages/pi-workflows/src/bundled-dirs.ts",
+    "scripts/orchestrator/read-config.ts",
+    "scripts/orchestrator/read-schema.ts",
+    "scripts/orchestrator/file-block-item.ts",
+    "scripts/orchestrator/append-relation.ts"
+  ],
+  "acceptance_criteria": [
+    "FGAP-088: all 3 shipped-src import.meta.dirname sites use path.dirname(fileURLToPath(import.meta.url)) with node:url imported; no shipped-module import.meta.dirname remains (test files + run-tests.ts out of scope)",
+    "FGAP-080: read-config/read-schema/file-block-item/append-relation catch pi-context errors via err instanceof Error && err.name===... (not instanceof class); unused error-class imports dropped; name strings match the classes' .name",
+    "Runtime demo: dist-load under tsx exercises update-check + installProject + pi-workflows bundled-dirs with NO ERR_INVALID_ARG_TYPE; name-based catches fire on real BootstrapNotFoundError/ValidationError (clean message + exit code)",
+    "Fresh-context adversarial: 3/3 dirname + 4/4 instanceof sites converted, no unused-import residue, no behavior regression",
+    "build/check/test green; skills no-op"
+  ],
+  "depends_on": [],
+  "notes": "Unit B of A/B/C operational-friction cluster. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-088/080. Agent mislabeled bundled-dirs.ts:14 'safe' — it is EAGER top-level src, in scope.",
+  "verification": "VER-033"
+}

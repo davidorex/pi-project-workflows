@@ -1,0 +1,45 @@
+{
+  "target": "TASK-041",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T19:00:00Z",
+  "evidence": "Sub-phase 4.1 (workflow→workflow-execute rename + workflow-resume new tool) landed at HEAD 569eec4. Pi tool name renamed at packages/pi-workflows/src/index.ts:495 (was index.ts:494 before commit; line moved +1 due to surrounding context). workflow-resume new tool registered at index.ts:575 with Type.Object({workflow, runId, input?}) parameters; rejection paths cover no-incomplete-run + runId-mismatch + cross-spec-incompat. Bare-string scan clean: sole remaining `\"workflow\"` literal at index.ts:965 is `pi.registerCommand(\"workflow\", ...)` (slash command name, not tool). README.md + skill-narrative.md updated; SKILL.md is generated artifact (regen via `npm run skills`). Tests: pi-workflows 824 → 829 (+5). Husky pre-commit (check + test) green across all 4 packages.",
+  "criteria_results": [
+    {
+      "criterion": "Pi tool name `workflow` renamed to `workflow-execute`",
+      "status": "passed",
+      "evidence": "packages/pi-workflows/src/index.ts:495 name: \"workflow-execute\""
+    },
+    {
+      "criterion": "New pi tool `workflow-resume` registered with Type.Object({workflow, runId, input?})",
+      "status": "passed",
+      "evidence": "packages/pi-workflows/src/index.ts:575 name: \"workflow-resume\""
+    },
+    {
+      "criterion": "workflow-resume rejects no-incomplete-run + runId-mismatch",
+      "status": "passed",
+      "evidence": "Execute body covers 3 rejection paths (no-incomplete-run / runId-mismatch / cross-spec-incompat) per implementer report"
+    },
+    {
+      "criterion": "Bare-string scan clean",
+      "status": "passed",
+      "evidence": "Sole remaining `\"workflow\"` literal is pi.registerCommand slash command name at index.ts:965 (legitimate)"
+    },
+    {
+      "criterion": "skill-narrative.md + README.md updated",
+      "status": "passed",
+      "evidence": "Implementer report confirms updates"
+    },
+    {
+      "criterion": "5 new tests cover workflow-resume",
+      "status": "passed",
+      "evidence": "pi-workflows 824 → 829 (+5 tests)"
+    },
+    {
+      "criterion": "Husky pre-commit gate green; breaking-change `!` flag in commit subject",
+      "status": "passed",
+      "evidence": "Commit 569eec4 subject carries `!`; landed across all 4 packages without --no-verify"
+    }
+  ]
+}

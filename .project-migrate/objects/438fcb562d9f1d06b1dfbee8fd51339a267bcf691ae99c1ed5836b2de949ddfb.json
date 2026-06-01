@@ -1,0 +1,6 @@
+{
+  "title": "Identify duplicate schema copies",
+  "status": "todo",
+  "description": "Grep all packages/*/schemas and packages/*/src for *.schema.json files. Produce a duplicate inventory.",
+  "acceptance": "Written inventory listing every duplicate and its canonical owner"
+}

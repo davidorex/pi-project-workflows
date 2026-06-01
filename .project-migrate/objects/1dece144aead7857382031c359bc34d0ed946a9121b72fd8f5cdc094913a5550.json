@@ -1,0 +1,30 @@
+{
+  "title": "Framework cannot detect user-authored hardcoded substrate-dir references in block content",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "DEC-0015 establishes config-driven substrate location with framework-side mutability via context-migrate (rename dir + update .pi-context.json + update config.root atomically). Framework code is hardcode-free by construction; rename propagates cleanly through the resolver. But user-authored block content (decisions, rationale, research, issues, etc.) is free-form text/JSON and MAY contain hardcoded substrate-dir path references in description / proposed_resolution / external_refs / impact / commentary fields. After a context-migrate rename (e.g. .project/ → my-substrate/), prose like 'see .project/decisions.json line 47 for X' goes stale. Framework cannot scan, detect, or auto-rewrite these references because they are user-content-shaped, not framework-data-shaped.\n\nThis mirrors the .project/ block-content staleness pattern Step 8.5 addressed by mass updateItemInBlock substitutions across 18+39 path sites — those substitutions worked because the ORIGINATING references followed predictable patterns (evidence[].file fields with packages/pi-project/ prefix). Free-form prose references (paragraph text mentioning paths) are not predictably-shaped and cannot be safely auto-rewritten.\n\nDual-nature dichotomy formalized: framework-side substrate location is config-mutable (DEC-0015 enforces no hardcoding); user-content-side staleness on rename is forensic-of-when-written (per feedback_rename_scope_discipline.md historical-by-design vs missed-rename distinction). User responsibility — convention recommendation: avoid hardcoding substrate-dir names in block prose; prefer relative phrases ('see decisions block entry for X', 'see project-edges-for-lens output').",
+  "evidence": [
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "Step 8.5 closure (commit fff1495) preserved 2 packages/pi-project/ substring references in FGAP-012 + FGAP-016 description prose as forensic-of-pre-closure-state — those references are stale-by-design. After a context-migrate rename, all current substrate-dir references in block prose become similarly stale-by-design (or stale-as-defect depending on user convention)."
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "block-api primitives expose updateItemInBlock with predicate-based field-level rewrites — but framework cannot construct the predicate for free-form prose path references (no field-level structure to target). Mass-rewrite via this primitive only works when references live in structured fields like evidence[].file."
+    },
+    {
+      "file": "DEC-0015 + DEC-0014",
+      "reference": "DEC-0015 framework-side mutability assumption + DEC-0014 harness-confined main LLM together imply: agents under harness confinement cannot grep/sed user-content prose to update path references after rename. context-migrate's body must NOT attempt prose rewrites; rewrites would corrupt forensic-by-default block content."
+    }
+  ],
+  "impact": "Post-rename (context-migrate from old-dir-name to new-dir-name), block prose containing path references to the old name displays as stale to readers. No live regression — substrate operations succeed; framework code resolves through pointer; reads/writes work. But human-readable block content (decisions explaining 'see .project/ for X', issues describing path-bound state, research entries citing file:line references) loses temporal accuracy of the prose. Documentation discipline mitigates: convention to avoid hardcoded substrate-dir names in prose. Framework-side: documentation must SURFACE the user-content-staleness caveat so users know to prefer relative phrasing.",
+  "proposed_resolution": "P3 — accept the dual-nature dichotomy as substrate canon (framework config-mutable; user-content prose staleness on rename is forensic). Framework-side enforcement: documentation discipline per DEC-0015 consequence — surface the caveat in code comments at resolver/init/migrate, CLAUDE.md project conventions, root + per-package READMEs, skill-narratives (auto-loaded into LLM substrate consumers). User-side convention: prefer relative phrasing in block prose ('see decisions block entry X', 'via project-edges-for-lens', etc.) over hardcoded paths. Optional future tooling (NOT in scope for FGAP-027 closure): a context-rename-prose-scan tool that surfaces (does NOT auto-rewrite) likely-stale path references in block prose for user review — explicit human-in-the-loop, never automatic. The documentation surface MUST land regardless; the scan tool is opt-in safety net.",
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0015"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

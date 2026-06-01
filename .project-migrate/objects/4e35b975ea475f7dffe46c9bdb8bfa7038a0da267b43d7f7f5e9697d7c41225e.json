@@ -1,0 +1,10 @@
+{
+  "title": "Export parseModelSpec from pi-jit-agents",
+  "status": "todo",
+  "files": [
+    "packages/pi-jit-agents/src/jit-runtime.ts",
+    "packages/pi-jit-agents/src/index.ts",
+    "packages/pi-jit-agents/package.json"
+  ],
+  "acceptance": "Function available at a named subpath; visible in pi-jit-agents' exports"
+}

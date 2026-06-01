@@ -1,0 +1,5 @@
+{
+  "name": "FGAP-026 closure phase 5 — arc-tracking dogfood substrate",
+  "intent": "Arc-tracking blocks authored as dogfood substrate per FGAP-028 — config + relations + roadmap + phase + context-contracts for THIS repo. Step 8.7.5; partially realized through the FGAP-046/060 arc.",
+  "status": "in-progress"
+}

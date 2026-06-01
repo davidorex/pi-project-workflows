@@ -1,0 +1,11 @@
+{
+  "title": "Roadmap primitives: loadRoadmap + listRoadmaps + validateRoadmaps + renderRoadmap + tools + subcommands",
+  "body": "Step 4. Land roadmap consumption surface in packages/pi-context/src/roadmap-plan.ts: loadRoadmap(cwd, roadmapId) returning RoadmapView with topo-sorted phases + status rollup + milestone evidence resolution, listRoadmaps(cwd), validateRoadmaps(cwd) emitting roadmap_lens_missing | roadmap_phase_dep_missing | roadmap_phase_cycle | roadmap_milestone_evidence_block_missing | roadmap_milestone_query_invalid | roadmap_composition_cycle | roadmap_status_unknown_value diagnostic codes (wired into validateProject aggregate). Subcommands: /project roadmap-list, roadmap-view <ROADMAP-id>, roadmap-validate [ROADMAP-id]. Tools: project-roadmap-{load,render,validate,list}. renderRoadmap emits per-phase markdown sections + mermaid 'graph LR' phase DAG.",
+  "location": "packages/pi-context/src/roadmap-plan.ts, packages/pi-context/src/index.ts",
+  "category": "capability",
+  "priority": "high",
+  "status": "resolved",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit 5f852b1 — roadmap primitives + four tools + three subcommands + diamond-fixture regression coverage landed; renderRoadmap is pure-textual markdown with no-mermaid regression guard."
+}

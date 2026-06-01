@@ -1,0 +1,10 @@
+{
+  "title": "Framework gap FGAP-005 — no state-machine validation on enum-field transitions",
+  "body": "AJV draft-07 validates current-value membership on enum fields but cannot express allowed transitions. Every block schema today permits any enum value on any write. 'Issue status can only go from open to in-progress, not back to open' is not expressible. 'Finding decided-state transitions require user authority' is not expressible. The whole class of lifecycle-gated workflows (design review clean-gate, decision enacted gate, feature approval gate) cannot be enforced by schema. Current workaround is discipline — which fails silently when agents run unattended. The five new block schemas landed this session (.project/schemas/decisions.schema.json, spec-reviews.schema.json, features.schema.json, framework-gaps.schema.json, layer-plans.schema.json) all carry x-lifecycle metadata at root declaring allowed transitions with required_authority annotations — this metadata is load-bearing for the framework-level implementation that will eventually honor it. Proposed resolution: add a custom AJV keyword that the schema-validator reads; block-api.ts passes both prior-value and new-value to the validator at update time; validator checks allowed transitions and required-authority; fails write if transition is invalid or authority is insufficient. Depends on FGAP-004 (issue-058) for the authorship data. Canonical owner: .project/framework-gaps.json FGAP-005. Canonical vocabulary: state-machine validation; lifecycle invariant; transition guard.",
+  "location": "packages/pi-context/src/schema-validator.ts, packages/pi-context/src/block-api.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-project",
+  "source": "agent"
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Update pi-workflows package.json dependencies",
+  "status": "todo",
+  "files": [
+    "packages/pi-workflows/package.json"
+  ],
+  "acceptance": "@davidorex/pi-jit-agents listed as a direct dependency with concrete caret range"
+}

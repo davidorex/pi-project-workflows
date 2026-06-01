@@ -1,0 +1,18 @@
+{
+  "name": "FEAT-001 story execution",
+  "description": "User advances FEAT-001 to approved. Each story within FEAT-001 executes in dependency order, starting with the decision-enacted boundary changes (STORY-001/002/003 for model-pin, thinking-seam, parseModelSpec move) and proceeding to the consumer call-site migration (STORY-004/005), bundled YAML updates (STORY-006), duplicate removal (STORY-007), empirical verification (STORY-008), and issue closeout (STORY-009).",
+  "depends_on": [
+    "PHASE-4"
+  ],
+  "exit_criteria": [
+    "FEAT-001 in complete state",
+    "All nine stories in FEAT-001.stories in complete state",
+    "The five existing issues named in blocks_resolved are closed in issues.json or migrated to their scope-owned registries",
+    "pi-workflows and pi-behavior-monitors import agent infrastructure from pi-jit-agents"
+  ],
+  "produces": [
+    "completed consumer migration",
+    "resolved issues 043, 045, 048, 049, 050"
+  ],
+  "status": "pending"
+}

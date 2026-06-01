@@ -1,0 +1,7 @@
+{
+  "title": "Close issue-048 (agent discovery contradiction)",
+  "status": "todo",
+  "files": [
+    ".project/issues.json"
+  ]
+}

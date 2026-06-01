@@ -1,0 +1,21 @@
+{
+  "title": "Uniform-agent definition — 'an agent' is ONE abstraction (the jit-agent), used uniformly across all consumers (monitors, workflow steps, agents-as-tools); no per-consumer agent kinds",
+  "status": "enacted",
+  "context": "The intentions eval (analysis/2026-05-26-project-vs-jit-intentions-eval.jsonl, EV-013/JI-001) flagged the user's most foundational definitional intent — agent-as-one-thing — as NOT encoded as substrate canon (only implied by FEAT-001/DEC-0044). This DEC closes that gap directly by recording the axiom, so a substrate query (not a narrative read) surfaces it. Pairs with DEC-0048 (existing artifacts not targets / disposable — JI-002, the operational complement) and FEAT-001 (the implementation of the axiom).",
+  "decision": "User-stated (JI-001, verbatim, 2026-04-09): \"an 'agent' is the same thing whether it be used as a monitor or used in and by workflows.\" OPERATIVE: there is ONE agent abstraction — the jit-agent (pi-jit-agents library: AgentSpec + loader + compile/templates/macros/schemas/contextBlocks + capability composition + execute). Every consumer uses THIS abstraction: pi-behavior-monitors (monitor classifiers + steering subagents), pi-workflows (a workflow step that needs an agent dispatches a jit-agent), the agents-as-tools dispatch surface (FEAT-004 projects from introspect.agentContract over the same AgentSpec). There are no per-consumer agent kinds. Duplicates of the agent abstraction in consumer packages (e.g. pi-workflows' parallel AgentSpec + agent-spec loader + agent-template machinery + compileAgentSpec) are non-canon by construction and to be removed (FEAT-001). The disposability of existing artifacts (JI-002: 'all existing agents are development proofs of concept… recreatable from a correct framework') is recorded in DEC-0048.",
+  "consequences": [
+    "FEAT-001 (pi-workflows + pi-behavior-monitors consume pi-jit-agents whole agent layer; delete duplicates) IS the implementation of this axiom; closes issue-043 duplicate-agent-infrastructure.",
+    "Any per-consumer agent abstraction (a separate monitor-agent / workflow-agent / dispatch-agent kind) is non-canon by construction; future PRs introducing one violate this DEC.",
+    "FEAT-004 (agents-as-tools dispatch surface) projects from the same AgentSpec via introspect.agentContract; it does NOT define a 'tool-agent' kind.",
+    "TASK-080 (re-scoped) inherits this axiom: 'pi-workflows is orchestration-only; a workflow step needing an agent dispatches a jit-agent directly' is the axiom's operational form.",
+    "DEC-0048 (existing artifacts disposable; framework is the only target) is the operational complement of this definitional axiom.",
+    "Agent-template assets (items/ + shared/ + per-agent subdirs) live at pi-jit-agents per uniform-agent axiom; pi-workflows + pi-behavior-monitors + pi-agent-dispatch consumers resolve through the 3-tier template search rooted at the pi-jit-agents package layer via bundledTemplateDir() (relocation landed in TASK-093 closing FGAP-037)."
+  ],
+  "related_features": [
+    "FEAT-001",
+    "FEAT-004"
+  ],
+  "related_gaps": [
+    "FGAP-112"
+  ]
+}

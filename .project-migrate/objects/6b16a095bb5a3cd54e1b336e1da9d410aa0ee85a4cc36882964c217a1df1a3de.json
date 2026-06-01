@@ -1,0 +1,20 @@
+{
+  "target": "TASK-045",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-20T00:00:00Z",
+  "evidence": "Unit 2.1b config-declared invariants — commit ff5f3f1; FGAP-065 closed 5bae82f. build/check/test green. Runtime demo: foreign-vocabulary requires-edge invariant fires (draft note) + clears (edge added); {id}/{block} tokens substitute; where-filter + direction honored. Adversarial grep: zero block/status/relation vocabulary literal in the validateProject invariant loop.",
+  "criteria_results": [
+    {
+      "criterion": "config.invariants[] requires-edge generic loop, no hardcoded vocabulary",
+      "status": "passed",
+      "evidence": "grep clean + 9 invariant tests"
+    },
+    {
+      "criterion": "DEC-0025 universalization (foreign conception enforced)",
+      "status": "passed",
+      "evidence": "foreign-vocab runtime demo"
+    }
+  ]
+}

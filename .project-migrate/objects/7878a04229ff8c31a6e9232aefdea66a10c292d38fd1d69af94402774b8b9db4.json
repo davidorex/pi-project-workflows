@@ -1,0 +1,8 @@
+{
+  "description": "FGAP-026 closure phase 8 (Step 8.7.8; Claude Code Task #28): Test-fixture cascade — all setup helpers write .pi-context.json per-tmpdir",
+  "acceptance_criteria": [
+    "setupWorkflowDir / setupSchema / makeTmpDir helpers write .pi-context.json",
+    "tests cascade through resolver; counts unchanged 390/151/826/157, 0-fail"
+  ],
+  "status": "planned"
+}

@@ -1,0 +1,30 @@
+{
+  "target": "FGAP-130",
+  "target_type": "framework-gap",
+  "status": "passed",
+  "method": "test",
+  "evidence": "Citation rot resolution arc complete: 8 schemas in packages/pi-context/samples/schemas/ stripped of pi-project-workflows substrate canonical_id citations (commit 7dc597d); 12 user-facing strings in packages/pi-context/src/index.ts stripped (commit feedc2a); regression test 'citation-rot regression — shipped artifacts contain zero pi-project-workflows canonical_id references' added to packages/pi-context/src/samples-catalog.test.ts (commit 4fd28a6) and confirmed both green on the post-strip baseline AND failing on a synthetic injection (then reverted); SKILL.md regenerated post-strip on commit 7c6007c, with skill-narrative.md also stripped of DEC-0015 + DEC-0011 citations (the regen surfaced them as remaining hits). Direct grep on packages/pi-context/skills/pi-context/SKILL.md returns zero canonical_id matches. PHASE-001 example on phase.schema.json id description preserved as structural ID-format illustration per the rewrite-template carve-out.",
+  "timestamp": "2026-05-28",
+  "criteria_results": [
+    {
+      "criterion": "Build/check/test green (npm run build + npm run check + npm test across the workspace)",
+      "status": "passed",
+      "evidence": "All commits in this arc (7dc597d, feedc2a, 4fd28a6, 7c6007c) landed through the husky pre-commit gate (npm run check && npm test); each commit's hook output shows biome + tsc clean and the workspace test suite green including the new regression test in samples-catalog.test.ts (15/15 pass on the post-edit baseline)."
+    },
+    {
+      "criterion": "Direct-regex spot-check: grep -rE '(FGAP-NNN|DEC-NNNN|FEAT-NNN|TASK-NNN)' across packages/pi-context/samples/schemas/ returns zero hits",
+      "status": "passed",
+      "evidence": "Post-step-1 grep on samples/schemas/*.schema.json returned only the deliberately-preserved structural example PHASE-001 in phase.schema.json (carve-out per plan). No substrate canonical_id citations remain in shipped schemas."
+    },
+    {
+      "criterion": "Tool-surface re-read: grep on packages/pi-context/skills/pi-context/SKILL.md returns zero canonical_id matches",
+      "status": "passed",
+      "evidence": "Post-step-4 regen + grep returns zero matches (exit 1) for /(FGAP-[0-9]{3}|DEC-[0-9]{4}|FEAT-[0-9]{3}|TASK-[0-9]{3})/. Operator-facing SKILL.md surface is clean."
+    },
+    {
+      "criterion": "Adversarial probe: fresh-context agent re-verifies no canonical_id references in any shipped artifact, framework rules preserved in abstract language, regression test fails on synthetic injection",
+      "status": "skipped",
+      "evidence": "Synthetic-injection verification of the regression test gate was performed in-process during step 3 (injected 'Synthetic violation per FGAP-999' into features.schema.json x-lifecycle.note; test FAILED with expected diagnostic naming file + jsonPath + matched id; reverted via git checkout HEAD; test re-passed 15/15). Fresh-context adversarial probe (per the plan's verification gate 4) is the next step after this commit lands; outcome is not yet attested here. Out-of-scope for the in-arc orchestrator that authored the changes; deferred per the adversarial-audits-not-self-audits directive."
+    }
+  ]
+}

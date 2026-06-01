@@ -1,0 +1,69 @@
+{
+  "title": "Process articulation — the ten-phase lifecycle .project/ blocks support",
+  "status": "complete",
+  "layer": "L2",
+  "type": "investigative",
+  "question": "What is the full process lifecycle that the .project/ block substrate supports — from intention through verified completion — and where are the gaps that prevent the process from running unattended with integrity?",
+  "method": "code-inspection",
+  "scope": [
+    ".project/ block schemas (all 18 as of 2026-04-15)",
+    "packages/pi-project/src/ (block-api.ts, project-sdk.ts)",
+    "Muni five-layer model × canonical engineering vocabulary",
+    "Consumer migration arc planning context"
+  ],
+  "findings_summary": "The .project/ block substrate supports a ten-phase lifecycle for any unit of work at any scale (project, feature, story, task, gap closure, research investigation): (1) Intention/goal/articulation of done, (2) Research, (3) Initial spec, (4) Adversarial audit of spec + revision loop, (5) Implementation plan, (6) Adversarial audit of plan + revision loop, (7) Task implementation, (8) Adversarial audit of implementation, (9) Fix loop or verification pass, (10) Learning capture.\n\nThe lifecycle is fractal — the same ten phases apply whether the unit is a project, feature, story, or task. Blocks support nested application because every artifact kind has a finding registry, state machine, and cross-references. The traceability graph enables forward walk (project → feature → story → task → commit → file → decision → research → citation → ground truth), backward walk (commit → task → story → feature → project), and cross walk (decision → supersedes chain, research → informs → decision).\n\nThe process is operationally correct for a single human running the pipeline by hand with discipline. It is not yet mechanically enforceable against an unattended agent. The seven existing framework gaps (FGAP-001 through FGAP-007) plus ten new shortcomings surfaced in this articulation block mechanical enforcement: (1) goals block, (2) milestones block, (3) roadmap block, (4) verification criteria taxonomy on acceptance_criteria, (5) review target-kind ambiguity, (6) review iteration chain linking, (7) task git provenance (implemented_by commit SHAs), (8) verification.json schema depth, (9) lessons/feedback memory block, (10) postmortem block.",
+  "findings_document": "analysis/2026-04-15-process-articulation.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "pi-project-workflows repo state as of 2026-04-15"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-15T00:00:00Z",
+  "stale_conditions": [
+    ".project/schemas/ set changes materially (new blocks added, lifecycle enums revised)",
+    "Any of FGAP-001 through FGAP-007 closed (changes what the substrate supports)",
+    "packages/pi-project/src/block-api.ts gains authorship stamping or transition validation"
+  ],
+  "citations": [
+    {
+      "label": "18 schema files defining block shapes",
+      "path": ".project/schemas/"
+    },
+    {
+      "label": "block-api.ts write-time validation",
+      "path": "packages/pi-project/src/block-api.ts"
+    },
+    {
+      "label": "project-sdk.ts cross-block validation (11 checks)",
+      "path": "packages/pi-project/src/project-sdk.ts"
+    },
+    {
+      "label": "FGAP-001 through FGAP-007 in issues block",
+      "path": ".project/issues.json"
+    }
+  ],
+  "informs": [
+    "issue-055",
+    "issue-056",
+    "issue-057",
+    "issue-058",
+    "issue-059",
+    "issue-060",
+    "issue-061"
+  ],
+  "informed_by": [
+    "R-0002",
+    "R-0003"
+  ],
+  "related_research": [
+    "R-0006",
+    "R-0007"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-15T00:00:00Z"
+}

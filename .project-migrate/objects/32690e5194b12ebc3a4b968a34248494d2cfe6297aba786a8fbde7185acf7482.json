@@ -1,0 +1,57 @@
+{
+  "title": "Lens id naming convention — lens-prefix vs descriptive vs purpose-tagged",
+  "status": "enacted",
+  "context": "config.lenses[] currently empty in this repo. Test fixtures (packages/pi-context/src/roadmap-plan.test.ts) use names like 'lens-issues-by-phase'. Drafted milestones+roadmap MD (analysis/2026-05-14-milestones-and-roadmap-draft.md) proposes lens-roadmap-001-milestones / lens-roadmap-002-milestones format for per-roadmap composition lenses. Other proposed lenses for this repo: tasks-by-phase / decisions-by-status / gaps-by-status / issues-by-status / verifications-by-target / features-by-status / decisions-by-layer / arc-rollup-by-phase / decision-context. Lens spec carries id (canonical) + bins[] (canonical bin names) + kind (target | composition) + target or members + relation_type + derived_from_field. Bin names within a lens inherit ID-prefix conventions (DEC-0026 / DEC-0027); lens id itself is freeform per current schema.",
+  "decision": "ENACTED: lens-<block>-by-<facet> kebab-case (e.g. lens-tasks-by-phase, lens-decisions-by-status, lens-issues-by-phase, lens-gaps-by-status, lens-verifications-by-target, lens-features-by-status, lens-arc-rollup-by-phase, lens-decision-context). Self-documenting; grep lens- finds every reference across substrate/analysis/code; no collision with kebab block-kind canonical_ids (which don't carry a lens- prefix); aligns with existing test fixture pattern in roadmap-plan.test.ts; discoverability + concision + substrate-uniformity all satisfied with zero functional cost.",
+  "consequences": [
+    "Every lens declared in config.lenses[] follows lens-<block>-by-<facet> shape.",
+    "Roadmap.phases[].lens references resolve to these ids.",
+    "Lens cross-reference in code + analysis + commands (/context view <lens-id>) follows the shape.",
+    "Composition lenses not expressing a block-granularity bin (e.g. lens-decision-context) use lens-<purpose-slug> — lens- prefix preserved, purpose-slug replaces block-by-facet pattern.",
+    "FGAP-047 partial closure: lens-id naming question (DEC-0031) settled."
+  ],
+  "options_considered": [
+    {
+      "label": "lens-<block>-by-<facet> kebab-case",
+      "description": "e.g. lens-tasks-by-phase / lens-decisions-by-status / lens-issues-by-phase. lens- prefix + block-kind canonical_id + by-facet. Self-documenting; matches existing test fixture pattern.",
+      "tradeoffs": "Verbose; lens- prefix is redundant given config.lenses[] context; long when nested in references."
+    },
+    {
+      "label": "<block>-by-<facet> without lens- prefix",
+      "description": "e.g. tasks-by-phase / decisions-by-status. Drops the lens- prefix; relies on context from config.lenses[] section.",
+      "tradeoffs": "Concise; potential collision with future block-kind canonical_ids that include hyphens (e.g. spec-reviews-by-status hits spec-reviews block name); requires disambiguation."
+    },
+    {
+      "label": "<purpose-slug> freeform",
+      "description": "e.g. arc-rollup / decision-context / phase-membership. Names what the lens IS, not what it bins. Composition lenses get scoped names.",
+      "tradeoffs": "Maximum flexibility; less self-documenting; new lens authoring requires a name decision per case; harder to enumerate canonically."
+    },
+    {
+      "label": "LENS-NNN canonical-id pattern matching other block kinds",
+      "description": "Lenses become canonical_id-bearing items like FEAT-001 / PLAN-001. config.lenses[] entries get LENS-001 / LENS-002 / etc. with display_name carrying the human-readable bin description.",
+      "tradeoffs": "Fully canonical; opaque ids must be looked up to know what they are; requires display_name layer; aligns with vocabulary-neutral substrate canon (DEC-0025)."
+    }
+  ],
+  "references": [
+    {
+      "label": "Test fixture lens-issues-by-phase pattern",
+      "path": "packages/pi-context/src/roadmap-plan.test.ts"
+    },
+    {
+      "label": "Drafted lens names in milestones+roadmap MD",
+      "path": "analysis/2026-05-14-milestones-and-roadmap-draft.md"
+    },
+    {
+      "label": "config.lenses[] shape",
+      "path": "packages/pi-context/registry/schemas/config.schema.json",
+      "lines": "99-138"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-047"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-27T00:00:00Z"
+}

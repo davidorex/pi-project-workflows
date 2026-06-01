@@ -1,0 +1,11 @@
+{
+  "title": "Completion message fires on workflow failure — misleading success message",
+  "body": "workflow-executor.ts else branch at line 947 handled completed and failed status identically. resolveCompletion() ran unconditionally when spec.completion existed. Static completion.message strings like \"Handoff captured to .project/handoff.json\" fired on failure even though nothing was written. All workflow specs with completion messages assumed success — none checked ${{ status }}. formatResult() already correctly renders failure but was bypassed when spec.completion was present.",
+  "location": "packages/pi-workflows/src/workflow-executor.ts:949",
+  "status": "resolved",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-workflows",
+  "source": "agent",
+  "resolved_by": "v0.11.3 commit b614be4 — added state.status === \"completed\" guard to completion condition"
+}

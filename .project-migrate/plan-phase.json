@@ -1,0 +1,152 @@
+{
+  "plan-phase": [
+    {
+      "id": "PLAN-PHASE-001",
+      "name": "New L2 schemas in place",
+      "description": "Create the five new schemas (adrs, spec-reviews, features, framework-gaps, layer-plans) in .project/schemas/. Existing schemas untouched.",
+      "depends_on": [],
+      "exit_criteria": [
+        ".project/schemas/decisions.schema.json exists and is valid draft-07",
+        ".project/schemas/spec-reviews.schema.json exists and is valid draft-07",
+        ".project/schemas/features.schema.json exists and is valid draft-07",
+        ".project/schemas/framework-gaps.schema.json exists and is valid draft-07",
+        ".project/schemas/layer-plans.schema.json exists and is valid draft-07"
+      ],
+      "produces": [
+        ".project/schemas/decisions.schema.json",
+        ".project/schemas/spec-reviews.schema.json",
+        ".project/schemas/features.schema.json",
+        ".project/schemas/framework-gaps.schema.json",
+        ".project/schemas/layer-plans.schema.json"
+      ],
+      "status": "complete",
+      "oid": "7084cbde79c30797b6caa6d179d47072",
+      "content_hash": "d81e65aa219d3a5957b9d985cea8ac95f4b89c0d6558021b4ad31d51a80c6037"
+    },
+    {
+      "id": "PLAN-PHASE-002",
+      "name": "Seed initial L2/L3 artifacts",
+      "description": "Populate each new block with seed data representing the current state of the consumer migration arc — three open decisions, one spec-review target, one feature with story decomposition, six framework gaps, one layer plan.",
+      "depends_on": [
+        "PHASE-1"
+      ],
+      "exit_criteria": [
+        "decisions.json contains DEC-0001 through DEC-0003 in proposed state",
+        "spec-reviews.json contains REVIEW-001 in not-started state",
+        "features.json contains FEAT-001 (consumer migration epic) in proposed state",
+        "framework-gaps.json contains FGAP-001 through FGAP-006 in identified state",
+        "layer-plans.json contains PLAN-001 in draft state",
+        "every data file validates against its schema via AJV"
+      ],
+      "produces": [
+        ".project/decisions.json",
+        ".project/spec-reviews.json",
+        ".project/features.json",
+        ".project/framework-gaps.json",
+        ".project/layer-plans.json"
+      ],
+      "status": "in-progress",
+      "oid": "656942fc1ef1a026ecc0db2fb84e260a",
+      "content_hash": "ed2ee9df49371e1a29aef69e01dd97d3dabee4053e3d05a95c5ee4ac0f101165"
+    },
+    {
+      "id": "PLAN-PHASE-003",
+      "name": "Run design review of jit-agents-spec.md",
+      "description": "Spawn a fresh-context independent reviewer subagent against docs/planning/jit-agents-spec.md with the scope declared in REVIEW-001. Findings populate REVIEW-001.findings and drive DEC-0001/0002/0003 state from proposed toward decided where evidence supports it.",
+      "depends_on": [
+        "PHASE-2"
+      ],
+      "exit_criteria": [
+        "REVIEW-001 advances to complete",
+        "Every finding in REVIEW-001.findings reaches a terminal state (resolved/wontfix/duplicate)",
+        "Findings that generate new decisions are linked via produces_decision",
+        "REVIEW-001.clean is true"
+      ],
+      "produces": [
+        "populated spec-reviews.json",
+        "possibly new decisions beyond DEC-0001/0002/0003"
+      ],
+      "status": "pending",
+      "oid": "bebca81b6f9fd115f3e1dd317e63f726",
+      "content_hash": "2001a6b5b98a065de2c5716cc867d6b2121400e22da033e1d53c4855a34ccd04"
+    },
+    {
+      "id": "PLAN-PHASE-004",
+      "name": "User-authored transitions on gating decisions",
+      "description": "User reviews DEC-0001/0002/0003 in light of the design-review findings and advances each to enacted or requests revision. All open-to-enacted transitions require user authority per the lifecycle metadata. Until each gating decision is enacted, FEAT-001 cannot advance from proposed to approved.",
+      "depends_on": [
+        "PHASE-3"
+      ],
+      "exit_criteria": [
+        "DEC-0001 in enacted state with enacted_by=user",
+        "DEC-0002 in enacted state with enacted_by=user",
+        "DEC-0003 in enacted state with enacted_by=user"
+      ],
+      "produces": [
+        "enacted DEC-0001",
+        "enacted DEC-0002",
+        "enacted DEC-0003"
+      ],
+      "status": "pending",
+      "oid": "06c6b734a6df64bae7f9badb4af3475f",
+      "content_hash": "bd0714a0539416c978b7df84c180733373cf473044e829d6c3efbffedb1686e1"
+    },
+    {
+      "id": "PLAN-PHASE-005",
+      "name": "FEAT-001 story execution",
+      "description": "User advances FEAT-001 to approved. Each story within FEAT-001 executes in dependency order, starting with the decision-enacted boundary changes (STORY-001/002/003 for model-pin, thinking-seam, parseModelSpec move) and proceeding to the consumer call-site migration (STORY-004/005), bundled YAML updates (STORY-006), duplicate removal (STORY-007), empirical verification (STORY-008), and issue closeout (STORY-009).",
+      "depends_on": [
+        "PHASE-4"
+      ],
+      "exit_criteria": [
+        "FEAT-001 in complete state",
+        "All nine stories in FEAT-001.stories in complete state",
+        "The five existing issues named in blocks_resolved are closed in issues.json or migrated to their scope-owned registries",
+        "pi-workflows and pi-behavior-monitors import agent infrastructure from pi-jit-agents"
+      ],
+      "produces": [
+        "completed consumer migration",
+        "resolved issues 043, 045, 048, 049, 050"
+      ],
+      "status": "pending",
+      "oid": "eb4e01100eb23ce2b84bd9d04eaf3d35",
+      "content_hash": "02b7a02de5fc1e95e12a560dd01c4aa56eb8ea59a2ad0bd090e9f94567f4f4ea"
+    },
+    {
+      "id": "PLAN-PHASE-006",
+      "name": "Retroactive issue migration",
+      "description": "Migrate existing issues.json entries into scope-owned finding registries. Each issue gets a layer tag (L2/L3/L4) and is moved to the appropriate owner — spec-reviews for L2 design issues, features for L3 scope conflicts, features[].findings for L4 implementation defects. Global issues.json becomes a derived view. Depends on FGAP-002 and FGAP-003 landing for proper enforcement, but can be hand-enacted in the interim.",
+      "depends_on": [
+        "PHASE-5"
+      ],
+      "exit_criteria": [
+        "Every issue in issues.json has a layer tag or has been moved to a scope-owned registry",
+        "issues.json is either empty or contains only entries not yet classified"
+      ],
+      "produces": [
+        "scoped finding distribution"
+      ],
+      "status": "pending",
+      "oid": "ffbc527f289b874fe20a91e04951ff68",
+      "content_hash": "0857d136541ee7df79eb51d7d846fc94ffab66fd3ebbb4d79d8194d23a010ce9"
+    },
+    {
+      "id": "PLAN-PHASE-007",
+      "name": "Framework gap closure",
+      "description": "Address the six framework gaps (FGAP-001 through FGAP-006) so the hand-enacted L1–L5 structure becomes natively expressible. Each gap becomes a feature of its own with stories and tasks. Order is informed by priority (P1 first) and by what the remaining phases need.",
+      "depends_on": [
+        "PHASE-5"
+      ],
+      "exit_criteria": [
+        "FGAP-001 through FGAP-006 all in closed or wontfix state",
+        "pi-project natively supports nested blocks, scoped findings, materialized views, authorship attestation, state-machine validation, and schema versioning"
+      ],
+      "produces": [
+        "framework substrate for the layered model"
+      ],
+      "status": "pending",
+      "oid": "656ec6de987d49045f231e6333697217",
+      "content_hash": "dc0f593ed653fa6e8b2bd5d35b5d3dd13e4ec4c1bb033329dbc35d5d253a821a"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "title": "Framework schemas (config/relations/roadmap/bootstrap) are bundled-validated, not installable catalog assets — installed_* enumerate block-kind assets only",
+  "status": "enacted",
+  "enacted_by": "davidryan@gmail.com",
+  "enacted_at": "2026-05-23",
+  "context": "Surfaced by FGAP-050 and forced by the FGAP-095 P1 runtime demo. The packaged conception (samples/conception.json) declared `config` and `relations` in installed_schemas, but installProject reports them notFound BY DESIGN — they are not block_kinds with catalog sources (install-subcommand.test.ts:131 'config and relations report notFound' asserts exactly this) — and loadConfig/loadRelations validate against the BUNDLED package schema (bundledSchemaPath in project-context.ts), never a substrate copy. So a fully + correctly installed substrate perpetually read not-installed: deriveBootstrapState could never reach `ready` (missing config, relations forever). FGAP-050's original premise — that config.schema.json must be installed into <root>/schemas/ for config.json to AJV-validate via the installed-schema resolution path — is contradicted by the current bundled-validation implementation. FGAP-095 P1 (deriveBootstrapState) is the first consumer that needs a crisp definition of 'fully installed', which FGAP-050/FGAP-087 left open. The forcing question: are framework schemas installable catalog assets or bundled-only?",
+  "decision": "Framework schemas — config, relations, roadmap, bootstrap — are validated against the BUNDLED package copy (bundledSchemaPath) and are NOT installable catalog assets. config.installed_schemas / installed_blocks enumerate BLOCK-KIND assets ONLY: the user-vocabulary block schemas + starter block files installProject copies from the samples catalog. The packaged conception drops `config` + `relations` from installed_schemas (17 -> 15, symmetric with the 15 installed_blocks). 'Fully installed / ready' = config.json present AND all declared block-kind assets materialized; framework schemas require no substrate copy. No validation behavior changes — loadConfig/loadRelations already resolve the bundled schema; this ratifies that reality and makes the conception honest.",
+  "consequences": [
+    "samples/conception.json installed_schemas drops config + relations (now 15, symmetric with installed_blocks).",
+    "installProject reports notFound=0 on the canonical conception; deriveBootstrapState `ready` becomes reachable + correctly defined — FGAP-095 P1 unblocked.",
+    "Closes FGAP-050: its 'install the framework schemas into <root>/schemas/' premise is superseded by bundled validation.",
+    "Gives FGAP-087 a clean catalog contract: framework-shaped schemas are not catalog entries; they are bundled (config/relations/bootstrap) or PM-lens framework (roadmap) — not 'a samples/ home to find'.",
+    "FGAP-091 (no install tool) is separately superseded by DEC-0042 (install is a start phase, not a tool) — re-scope independently; not on this decision's path.",
+    "installed_schemas/installed_blocks semantics are now crisp: block-kind catalog assets only; a name in installed_schemas that is not a block_kind is a misdeclaration."
+  ],
+  "related_gaps": [
+    "FGAP-050",
+    "FGAP-095",
+    "FGAP-087",
+    "FGAP-091"
+  ],
+  "references": [
+    {
+      "label": "notFound-by-design for config/relations",
+      "path": "packages/pi-context/src/install-subcommand.test.ts",
+      "lines": "131-135"
+    },
+    {
+      "label": "loadConfig/loadRelations validate against bundled schema",
+      "path": "packages/pi-context/src/project-context.ts",
+      "lines": "279,303"
+    },
+    {
+      "label": "conception installed_schemas (config+relations to drop)",
+      "path": "packages/pi-context/samples/conception.json"
+    }
+  ]
+}

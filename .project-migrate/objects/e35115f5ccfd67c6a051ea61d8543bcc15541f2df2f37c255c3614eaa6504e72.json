@@ -1,0 +1,23 @@
+{
+  "description": "Phase 2 sub-phase 2.4: ship find-references — library reverse-edge lookup + pi tool + scripts/orchestrator/find-references.ts. Specialization of walkDescendants/walkAncestors patterns returning Edge[] not string[].",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/project-context.ts",
+    "packages/pi-context/src/lens-view.ts",
+    "packages/pi-context/src/index.ts",
+    "scripts/orchestrator/find-references.ts"
+  ],
+  "acceptance_criteria": [
+    "findReferences(itemId, edges, direction?) library function exported from project-context.ts; returns Edge[] where edge.child === itemId (inbound) OR edge.parent === itemId (outbound); direction param defaults to 'both'",
+    "findReferencesInRepo(cwd, itemId, direction?) wrapper exported from lens-view.ts using existing loadRelations path",
+    "find-references pi tool registered in packages/pi-context/src/index.ts with Type.Object({itemId, direction: Type.Optional(Type.Union([...]))})",
+    "scripts/orchestrator/find-references.ts shebang-tsx executable; args --item-id [--direction inbound|outbound|both] [--format json|table]",
+    "Tests cover: inbound only / outbound only / both / no-references / multiple relation_types between same pair; per-test fixtures",
+    "Husky pre-commit gate green at commit time"
+  ],
+  "depends_on": [
+    "TASK-036"
+  ],
+  "notes": "CLOSED at HEAD 680cb1c. Final atomic unit under TASK-022. findReferences + findReferencesInRepo + find-references pi tool + scripts/orchestrator/find-references.ts shipped. Tests: pi-context 420 → 428 (+8). Edge[] return type intentionally distinct from walkDescendants/walkAncestors string[] semantic. See VER-008.",
+  "verification": "VER-008"
+}

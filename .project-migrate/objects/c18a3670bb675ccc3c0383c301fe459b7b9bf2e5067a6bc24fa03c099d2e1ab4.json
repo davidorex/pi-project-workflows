@@ -1,0 +1,47 @@
+{
+  "title": "pi-context substrate canon is vocabulary-neutral; user's block / layer / relation / lens / status conception bootstraps entirely from config + schemas + macros without code changes",
+  "status": "enacted",
+  "context": "User direction 2026-05-14 dialogue articulating the foundational extension goal: the entire substrate apparatus must be bootstrappable + enactable for a wholly different conception of blocks / layers / relations than what pi-context ships defaults for. The memory shape arises from user/LLM use of the tool and needs, not from hardcoded canonical vocabulary in source. This generalizes DEC-0015 (config drives substrate location) + DEC-0011 (schema-install opt-in) to their full extent: pi-context's source is vocabulary-machinery (block-api primitives + closure-table + lens infrastructure + query primitives + DispatchContext attestation + execution-context composition); the canonical vocabulary (block kinds / IDs / relation_types / lenses / layers / status) is config-driven user-authored data, not built-in commitment. Currently pi-context ships defaults (PROJECT_BLOCK_TYPES list of 12 kinds; canonical macros for those kinds; etc.) which are USER-OPTIONAL per DEC-0011 install opt-in pattern but appear as hardcoded literals in source — partial alignment with the principle.",
+  "decision": "pi-context substrate canon is vocabulary-neutral. The framework's source code MUST operate on canonical_id-keyed registries derived purely from config.json + .project/schemas/ + .pi/templates/ macros. Built-in defaults shipped in packages/pi-context/registry/ are user-OPTIONAL; a user with a wholly different substrate conception can clone pi-context, author their own config + schemas + macros + relation_types + lenses + layers, and have a fully-functioning substrate canon for THEIR vocabulary without modifying any pi-context source. Implications: (a) hardcoded vocabulary literals in source (e.g. PROJECT_BLOCK_TYPES const) are gaps to close — vocabulary derives from loaded config; (b) macro library must scaffold user-added block kinds, not assume canonical-kind exclusivity; (c) lens-validator dispatch must be config-registerable, not code-registered; (d) layer registry must be runtime-honored from config.layers[], not symbolic; (e) test suite must exercise pi-context against a fully-different substrate vocabulary as universalization proof.",
+  "consequences": [
+    "PROJECT_BLOCK_TYPES const removal — block kinds derive from loaded config (FGAP-056 filed).",
+    "Macro library bootstrap surface for user-added kinds — drop-in macros + canonical-kind defaults + framework auto-discovery (FGAP-057 filed; cross-decision with FGAP-037).",
+    "Universalization test suite — pi-context exercises against a fully-different substrate vocabulary (FGAP-058 filed); proves the claim.",
+    "Lens-validator dispatch config-registration (covered by FGAP-052 already filed).",
+    "Runtime layer-aware behavior (covered by FGAP-052).",
+    "All future pi-context surface additions checked against vocabulary-neutrality: any new code path that hardcodes a block-kind name / relation_type literal / lens id / layer label is a regression and gets filed as a gap.",
+    "Documentation: 'bring-your-own-substrate' workflow needs explicit documentation in CLAUDE.md + skill-narratives + README — user can adopt pi-context with non-default vocabulary without code changes.",
+    "Implication for the milestone-as-anchor model (DEC-0024): even milestones are user-optional; a user-defined substrate could anchor on different concepts (initiatives / OKRs / projects / etc.); pi-context provides milestone-block-kind as a recommended default, not as a framework-mandate."
+  ],
+  "references": [
+    {
+      "label": "DEC-0015 substrate-location-is-config-driven",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0011 schema-install opt-in",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "PROJECT_BLOCK_TYPES const at project-sdk.ts:117",
+      "path": "packages/pi-context/src/project-sdk.ts",
+      "lines": "117-130"
+    },
+    {
+      "label": "Three-tier schema resolution surfacing user-installable schemas",
+      "path": "packages/pi-context/src/project-context.ts"
+    },
+    {
+      "label": "config.schema.json declares block_kinds + relation_types + lenses + layers + status_buckets registries",
+      "path": "packages/pi-context/registry/schemas/config.schema.json"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-026",
+    "FGAP-052"
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-14T14:00:00Z"
+}

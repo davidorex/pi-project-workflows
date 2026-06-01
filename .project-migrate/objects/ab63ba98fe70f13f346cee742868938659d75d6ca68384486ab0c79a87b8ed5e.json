@@ -1,0 +1,35 @@
+{
+  "target": "TASK-052",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-21T00:00:00Z",
+  "evidence": "FGAP-081 canonical redo (commit d153877) — context-block delimiters → pi 0.75.x XML house style. Replaces reverted ad-hoc 78d4548. compile.ts wrapBlockContent/wrapItemContent emit <context_block name= [item=] role=\"data\">…</context_block> with escapeXmlText (&/</> in body+attrs, & first; quotes skipped). 3 forks resolved with evidence: escape-3 (semi-trusted bodies → forged </context_block> neutralized, vs pi leaving its own trusted bodies raw), <context_block> snake_case distinct from pi's <project_context>, role=\"data\" guard retained. Verified DEC-0018: build/check/test green (pi-jit-agents 152 [+1 forged-close-tag test] / pi-context 524 / behavior-monitors 157 / pi-workflows 829, 0 fail). Runtime demo via real createTemplateEnv: compiled prompt shows <context_block name=\"project\" role=\"data\"> + body escaped (a &lt; b &amp;&amp; c &gt; d &lt;/context_block&gt; injected), zero [BLOCK, exactly 1 real </context_block> (boundary held). Adversarial grep: zero bracket refs in packages/. Fully contained (not exported); no SKILL.md/docs string change.",
+  "criteria_results": [
+    {
+      "criterion": "XML <context_block name= [item=] role=\"data\"> form with escape-3 body+attr escaping via escapeXmlText",
+      "status": "passed",
+      "evidence": "compile.ts:148/165/183; runtime demo"
+    },
+    {
+      "criterion": "all 10 assertions remapped bracket→XML; build/check/test green",
+      "status": "passed",
+      "evidence": "152/524/157/829 0 fail"
+    },
+    {
+      "criterion": "forged-close-tag escaping test proves boundary integrity (escaped + exactly 1 real close tag)",
+      "status": "passed",
+      "evidence": "new compile.test.ts test + runtime demo split count=1"
+    },
+    {
+      "criterion": "zero residual bracket delimiters in packages/",
+      "status": "passed",
+      "evidence": "adversarial grep clean"
+    },
+    {
+      "criterion": "canonical process (plan mode + Plan-agent design + Write-agent dispatch), not ad-hoc",
+      "status": "passed",
+      "evidence": "redo after revert; feedback_no_adhoc_dev honored"
+    }
+  ]
+}

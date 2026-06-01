@@ -1,0 +1,22 @@
+{
+  "description": "Unit C — standalone small fixes. FGAP-062: expectedBlockForId empty-prefix catch-all -> skip empty-prefix block_kinds (defensive) + config.schema.json prefix minLength:1 (root-cause, version 1.4.0->1.5.0). FGAP-025: validateProject cross-block status-vocab check -> warn when an item's status value isn't a key in resolveStatusVocabulary (vocabulary-neutral, reuses vocab+idIndex). FGAP-096: compile.ts:242,263 + step-shared.ts:181 instanceof BootstrapNotFoundError -> name-based (err.name===) + drop unused imports.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/project-sdk.ts",
+    "packages/pi-context/schemas/config.schema.json",
+    "packages/pi-jit-agents/src/compile.ts",
+    "packages/pi-workflows/src/step-shared.ts",
+    "packages/pi-context/src/project-sdk.test.ts"
+  ],
+  "acceptance_criteria": [
+    "FGAP-062: expectedBlockForId skips empty-prefix block_kinds (no catch-all); config.schema.json prefix has minLength:1, version 1.5.0; conception still validates",
+    "FGAP-025: validateProject emits status_unknown_value (warning) for items whose status value is not a key in resolveStatusVocabulary; no issue for known status / unknown-bucket-mapped status / status-less items; vocabulary-neutral",
+    "FGAP-096: 3 cross-package instanceof BootstrapNotFoundError sites -> name-based; unused BootstrapNotFoundError imports dropped; graceful-skip behavior unchanged",
+    "Runtime demo: empty-prefix no longer catch-alls; validateProject('.') status_unknown_value count reported+handled; compile/step-shared graceful-skip on non-bootstrapped dir intact",
+    "Fresh-context adversarial: all 3 fixes complete, vocabulary-neutral, no regression",
+    "build/check/test green; skills no-op. A/B/C cluster complete."
+  ],
+  "depends_on": [],
+  "notes": "Unit C of A/B/C cluster (+FGAP-096 folded per user). Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-062/025/096.",
+  "verification": "VER-034"
+}

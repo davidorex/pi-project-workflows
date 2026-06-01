@@ -1,0 +1,10 @@
+{
+  "title": "Architecture block is manually maintained — modules, dependencies, and patterns are derivable from package.json and source",
+  "body": "The architecture block restates what code inspection provides: module names from package.json, entry files, dependencies, responsibility from package descriptions. These go stale on every code change. A projectArchitecture(cwd) function could derive modules and dependencies from package.json files and entry points, producing the same schema shape as the static block. This would make the architecture block a computed block candidate for issue-020.",
+  "location": ".project/architecture.json",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "human"
+}

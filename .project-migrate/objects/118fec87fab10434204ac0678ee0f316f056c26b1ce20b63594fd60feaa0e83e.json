@@ -1,0 +1,50 @@
+{
+  "title": "Config drives substrate location; no hardcoded substrate-dir paths anywhere in pi-context, pi-jit-agents, pi-workflows, or pi-behavior-monitors",
+  "status": "enacted",
+  "context": "Step 2 substrate SDK port (commit d4ec3ce) commit message claimed 'config-driven vocabulary registries from line 1' but the bootstrap edge stayed hardcoded against `.project/` via PROJECT_DIR + SCHEMAS_DIR constants in packages/pi-context/src/project-dir.ts. config.root field exists in ConfigBlock but only relocates substrate state INSIDE the hardcoded outer dir; cannot relocate the outer dir itself. FGAP-026 enumerates the specific implementation gap. DEC-0014 (harness-confined main LLM) makes this a P0 unblocker because the harness-confined main thread cannot work around hardcoded paths via bash/cd/cat fallback. The principle ('config drives substrate location') is permanent substrate canon; the implementation gap (FGAP-026) closes when the resolver + cascades land. Anchor the principle separately from the gap so future work is checked against the principle, not just the closure status of FGAP-026.",
+  "decision": "Substrate location is determined exclusively by config (read via a per-cwd resolver, e.g. resolveContextDir(cwd) reading a JSON-typed bootstrap pointer at <cwd>/.pi-context.json which carries the user-chosen substrate dir name; with default fallback). NO hardcoded substrate-dir paths anywhere in pi-context, pi-jit-agents, pi-workflows, pi-behavior-monitors source. Every path-construction site (block-api primitives, schema lookup, lens-view consumers, roadmap-plan, monitor side-car state, etc.) composes against the resolver. New tools and SDK functions take cwd as input + use the resolver; hardcoding `.project/` or `.context/` or any literal substrate dir name is a DEC-0015 violation requiring immediate remediation. /context init is prompt-required for the user's chosen dir name; defaulting to `.context/` reintroduces the hardcode-dressed-as-default pattern this decision rejects.",
+  "consequences": [
+    "FGAP-026 is the current-state implementation-gap record for DEC-0015; FGAP-026 closes (status:closed + closed_by) when the resolver + cascades + bootstrap pointer schema + /context init + migration ceremony land. The DEC-0015 principle remains permanent canon after FGAP-026 closes — future tool/primitive additions are checked against DEC-0015 even with FGAP-026 in closed state.",
+    "Every new pi tool added to close the tool-surface gap audit (analysis/2026-05-10-tool-surface-gap-audit.md) MUST take cwd as a parameter + use the resolver. Tools that hardcode any substrate dir name or accept a different scoping mechanism (e.g. global default substrate) violate DEC-0015.",
+    "Bootstrap pointer file (.pi-context.json) is the canonical lookup mechanism — schema authored under packages/pi-context/schemas/bootstrap.schema.json with $id pi-context://schemas/bootstrap + version 1.0.0 per FGAP-006 discipline. Pointer file is itself substrate (typed JSON with schema), not a sentinel.",
+    "Subcommand surface renames `/project` → `/context` (matches package name; reflects that the dir is config-driven, not name-bound); pi tool surface renames `project-*` → `context-*` (full rename; rebuild branch unpublished, zero downstream consumers).",
+    "Migration ceremony for existing `.project/`-using repos (currently this repo): `pi context migrate` renames `.project/` → `<user-chosen-name>/` (or accepts a `--keep .project` flag to preserve location while writing the bootstrap pointer). Default = rename to user-chosen.",
+    "All future Pi-runtime tooling outside pi-context (pi-jit-agents contextBlocks injection, pi-workflows substrate reads, pi-behavior-monitors block writes) imports the resolver from pi-context; no parallel resolution logic in any package.",
+    "The HANDOFF.md 'Bootstrap exemption: config.json + relations.json continue at <cwd>/.project/' line that surfaced FGAP-026 as LLM hedging is retired by this decision — there is no exemption; bootstrap is itself config-driven via the pointer mechanism.",
+    "DEC-0014 (harness-confined main LLM) gains structural backing: under harness confinement the main LLM cannot work around a hardcoded path via bash/cd/cat fallback, so DEC-0015 is the only mechanism enabling user-chosen substrate locations.",
+    "Documentation discipline (binding for all phases of FGAP-026 closure + all future tool/primitive additions): the framework-side config-mutability + user-content-prose-staleness dual-nature MUST be surfaced in EVERY documentation layer touching substrate-location: (a) code comments / docstrings at resolveContextDir, context-init, context-migrate, .pi-context.json schema; (b) CLAUDE.md project conventions; (c) root + per-package READMEs; (d) skill-narrative.md files (auto-loaded into LLM substrate consumers via SKILL.md regeneration); (e) any future tool that touches substrate-location resolution. The note states: framework-side rename is parameter-update with zero downstream breakage by design (context-migrate atomically renames dir + updates pointer + updates config.root); user-authored block content MAY contain hardcoded substrate-dir references in prose fields which the framework cannot detect or auto-rewrite — convention recommendation: prefer relative phrasing ('see decisions block entry X') over hardcoded paths ('.context/decisions.json line 47'). Filed as FGAP-027 (P3) for systematic tracking."
+  ],
+  "options_considered": [
+    {
+      "label": "Hardcoded `.project/` (or `.context/`) substrate dir; config.root only relocates within",
+      "description": "Keep PROJECT_DIR constant; treat 'bootstrap exemption' as legitimate design.",
+      "tradeoffs": "Empirically rejected — surfaced as FGAP-026; LLM rationalization in HANDOFF treated incomplete work as deliberate. Substrate-arc thesis structurally undelivered. Multi-substrate repos impossible. User-chosen dir name impossible. Recreates the hardcode-dressed-as-config pattern."
+    },
+    {
+      "label": "Config-driven substrate location via per-cwd resolver + bootstrap pointer (this option)",
+      "description": "Replace PROJECT_DIR constant with resolveContextDir(cwd) reading .pi-context.json bootstrap pointer; cascade through all path-construction sites; no hardcoded substrate-dir anywhere.",
+      "tradeoffs": "Pro: substrate-arc thesis structurally delivered; user-chosen dir name actually works; multi-substrate repos possible; tool-surface additions checked against the principle. Con: substantial implementation work (every path-construction site cascades); migration ceremony for existing .project/-using repos required; permanent vigilance against future hardcode regressions."
+    }
+  ],
+  "related_gaps": [
+    "FGAP-026",
+    "FGAP-027"
+  ],
+  "references": [
+    {
+      "label": "FGAP-026 implementation-gap record",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "DEC-0014 harness-confined main LLM (load-bearing premise)",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "tool-surface gap audit (functional spec under DEC-0014)",
+      "path": "analysis/2026-05-10-tool-surface-gap-audit.md"
+    }
+  ],
+  "supersedes": [],
+  "enacted_by": "user",
+  "enacted_at": "2026-05-10T02:49:48.058Z"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Retroactive issue migration",
+  "description": "Migrate existing issues.json entries into scope-owned finding registries. Each issue gets a layer tag (L2/L3/L4) and is moved to the appropriate owner — spec-reviews for L2 design issues, features for L3 scope conflicts, features[].findings for L4 implementation defects. Global issues.json becomes a derived view. Depends on FGAP-002 and FGAP-003 landing for proper enforcement, but can be hand-enacted in the interim.",
+  "depends_on": [
+    "PHASE-5"
+  ],
+  "exit_criteria": [
+    "Every issue in issues.json has a layer tag or has been moved to a scope-owned registry",
+    "issues.json is either empty or contains only entries not yet classified"
+  ],
+  "produces": [
+    "scoped finding distribution"
+  ],
+  "status": "pending"
+}

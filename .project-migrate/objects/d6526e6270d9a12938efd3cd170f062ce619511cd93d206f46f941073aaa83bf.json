@@ -1,0 +1,9 @@
+{
+  "title": "Define structured diagnostic channel",
+  "status": "todo",
+  "description": "Decide whether warnings emit via logger, alongside JitAgentResult, or both. Must be consumable by both pi-workflows (workflow steps) and pi-behavior-monitors (classify calls).",
+  "files": [
+    "packages/pi-jit-agents/src/types.ts"
+  ],
+  "acceptance": "JitAgentResult gains a diagnostics field or equivalent; both consumers can read it"
+}

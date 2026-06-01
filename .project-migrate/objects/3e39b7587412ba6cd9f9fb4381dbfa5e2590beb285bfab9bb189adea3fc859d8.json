@@ -1,0 +1,7 @@
+{
+  "title": "Close issue-045 (framework-level anti-injection)",
+  "status": "todo",
+  "files": [
+    ".project/issues.json"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Summary/body output contract — StepResult lacks a budget-safe summary field distinct from full body",
+  "body": "StepResult has output (structured JSON validated against output.schema) and textOutput (narrative text from the agent). Neither is designated as 'short enough to always fit under budget'. Agents write prose into textOutput of whatever length. Downstream steps receive everything with no categorization. context-packet's Packet has a required summary (always included) and optional body (truncated under budget) — the distinction is contractual. Extension: StepResult should separate summary (required, short, budget-safe) from body (optional, full). Agent output instructions should direct agents to produce both. Token budgeting (issue-042) depends on this contract — without a summary field, there is nothing to 'always include' when budgets are tight.",
+  "location": "packages/pi-workflows/src/types.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "human"
+}

@@ -1,0 +1,36 @@
+{
+  "title": "Orchestrator CLIs catching transitively-thrown package errors via `instanceof` are module-instance-fragile — prefer name-based checks",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "An orchestrator CLI that imports an error class from `@davidorex/pi-context/<subpath>` and catches it with `instanceof` fails SILENTLY when the error is thrown TRANSITIVELY through a different package subpath. Surfaced in FGAP-077: scripts/orchestrator/write-schema.ts imported BootstrapNotFoundError from @davidorex/pi-context/project-dir and caught it with `instanceof`, but writeSchemaChecked (from @davidorex/pi-context/schema-write) throws BootstrapNotFoundError via schema-write's OWN internal project-dir module instance — under tsx/symlink resolution that is a DIFFERENT class object, so `instanceof` returns false and the catch falls through to the wrong exit code (uninitialized-cwd hit exit 5 instead of the contracted exit 1). Confirmed empirically: instanceof === false while err.name === 'BootstrapNotFoundError' and err.constructor.name === 'BootstrapNotFoundError'. Fixed in write-schema.ts with a name-based check. Siblings read-schema.ts / read-config.ts happen to work because they throw the class DIRECTLY from their own project-dir import (same instance) — but the pattern is fragile: any future CLI catching a transitively-thrown package error via instanceof will silently misbehave.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/write-schema.ts",
+      "reference": "FIXED here: instanceof BootstrapNotFoundError -> err.name === 'BootstrapNotFoundError' (module-instance-proof); comment documents why"
+    },
+    {
+      "file": "scripts/orchestrator/read-schema.ts",
+      "reference": "uses instanceof BootstrapNotFoundError — works ONLY because the throw is direct (schemaPath from the same project-dir import); latent fragility if its throw path ever becomes transitive"
+    },
+    {
+      "file": "scripts/orchestrator/read-config.ts",
+      "reference": "same instanceof pattern, same direct-throw dependency"
+    },
+    {
+      "file": "packages/pi-context/src/project-dir.ts",
+      "lines": "46",
+      "reference": "BootstrapNotFoundError sets this.name='BootstrapNotFoundError' (project-dir.ts:53) — the name survives the module-instance split that defeats instanceof"
+    }
+  ],
+  "impact": "Silent exit-code / control-flow wrongness in orchestrator CLIs when a package error is caught via instanceof across the package boundary under tsx. Currently only write-schema.ts was affected (fixed); read-schema/read-config are correct today but one refactor of their throw path away from breaking. A cross-cutting convention gap, not a single bug.",
+  "canonical_vocabulary": "instanceof-module-instance-hazard, dual-package-error-class, name-based-error-check, tsx-symlink-resolution",
+  "proposed_resolution": "Outcome-only: establish + apply the convention that orchestrator CLIs (and any cross-package consumer) catching a pi-context error class check by `err.name === '<ClassName>'` (or a shared type-guard helper exported from the package) rather than `instanceof`, which is unreliable across module instances under tsx/symlink resolution. Audit existing CLIs (read-schema/read-config already correct but instanceof-based) + add the guard helper or convention doc so future CLIs don't reintroduce the hazard. [CLOSED 2026-05-23 — commit dfa0fc6 / TASK-061 / VER-033: orchestrator-CLI instanceof on pi-context errors -> name-based (read-config/read-schema/file-block-item/append-relation); write-schema/accept-all already done. Residual src-consumer sites filed FGAP-096.]",
+  "related_decisions": [
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

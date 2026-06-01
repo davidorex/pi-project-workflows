@@ -1,0 +1,20 @@
+{
+  "name": "New L2 schemas in place",
+  "description": "Create the five new schemas (adrs, spec-reviews, features, framework-gaps, layer-plans) in .project/schemas/. Existing schemas untouched.",
+  "depends_on": [],
+  "exit_criteria": [
+    ".project/schemas/decisions.schema.json exists and is valid draft-07",
+    ".project/schemas/spec-reviews.schema.json exists and is valid draft-07",
+    ".project/schemas/features.schema.json exists and is valid draft-07",
+    ".project/schemas/framework-gaps.schema.json exists and is valid draft-07",
+    ".project/schemas/layer-plans.schema.json exists and is valid draft-07"
+  ],
+  "produces": [
+    ".project/schemas/decisions.schema.json",
+    ".project/schemas/spec-reviews.schema.json",
+    ".project/schemas/features.schema.json",
+    ".project/schemas/framework-gaps.schema.json",
+    ".project/schemas/layer-plans.schema.json"
+  ],
+  "status": "complete"
+}

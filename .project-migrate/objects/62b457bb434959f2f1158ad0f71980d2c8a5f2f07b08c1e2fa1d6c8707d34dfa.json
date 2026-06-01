@@ -1,0 +1,10 @@
+{
+  "title": "Semantic input hash for idempotent skip — no mechanism to detect equivalent inputs and skip re-execution",
+  "body": "Checkpoint/resume is time-based and index-based: resume from step N of run ID X. There is no mechanism to compute a semantic hash of a step's inputs and compare against a prior run to skip re-execution when inputs are equivalent. context-packet computes input_hash = SHA-256(canonicalized upstream packets minus timestamps) and enables idempotent skip. Extension: each StepResult records an input_hash computed from resolved inputs (minus timestamps, run IDs, and other noise). Workflow executor can check prior runs and skip when the hash matches. Issue-031 (scheduled workflow re-execution — the compounding context loop) requires this capability — without it, scheduled re-runs repeat wasted work on identical inputs.",
+  "location": "packages/pi-workflows/src/workflow-executor.ts, packages/pi-workflows/src/types.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "human"
+}

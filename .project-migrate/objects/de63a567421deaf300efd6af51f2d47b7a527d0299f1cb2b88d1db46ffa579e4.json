@@ -1,0 +1,22 @@
+{
+  "description": "Phase 3 sub-phase 3.1: ship context-contracts block kind — schema + registry default (3 starter contracts: task/decision/verification) + block-kind registration. Closes FGAP-030 substrate side. No closure-table dependency.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/registry/schemas/context-contracts.schema.json",
+    "packages/pi-context/registry/blocks/context-contracts.json",
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "packages/pi-context/registry/schemas/context-contracts.schema.json exists with $id pi-context://schemas/context-contracts + version 1.0.0",
+    "Schema declares per-item: id (pattern ^CTX-\\d{3,}$), unit_kind (string), bundle_relation_types[] (array of {relation_type, direction in/out/both, max_depth, applicability_predicate?}), created_by, created_at; optional modified_by/at/description/notes",
+    "packages/pi-context/registry/blocks/context-contracts.json seeded with 3 default contracts (CTX-001 task / CTX-002 decision / CTX-003 verification; each with empty bundle_relation_types[])",
+    "Block kind registered in packages/pi-context/src/index.ts following existing pattern",
+    "Schema-validation tests cover: AJV round-trip / required-field rejection / id pattern rejection / bundle_relation_types[] shape rejection",
+    "Husky pre-commit gate green"
+  ],
+  "depends_on": [
+    "TASK-023"
+  ],
+  "notes": "CLOSED at HEAD 6ddb1ba. context-contracts schema + registry default + auto-discovery registration shipped. Tests: pi-context 428 → 447 (+19). See VER-010.",
+  "verification": "VER-010"
+}

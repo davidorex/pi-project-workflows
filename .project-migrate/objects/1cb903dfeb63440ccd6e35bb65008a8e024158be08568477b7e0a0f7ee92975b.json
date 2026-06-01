@@ -1,0 +1,78 @@
+{
+  "title": "OpenRouter API configuration and model selection in pi-mono/pi-ai",
+  "status": "stale",
+  "layer": "L2",
+  "type": "investigative",
+  "question": "How to add an OpenRouter API key to a Pi coding agent installation alongside an existing Anthropic key, and how to select OpenRouter-hosted models?",
+  "method": "code-inspection",
+  "scope": [
+    "@mariozechner/pi-ai@0.63.1 installed at /Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/",
+    "badlogic/pi-mono main branch as of 2026-04-10"
+  ],
+  "findings_summary": "OpenRouter is a first-class built-in provider in both pi-ai and the pi coding agent, requiring no extension wiring. Configuration requires either setting the OPENROUTER_API_KEY environment variable or adding an openrouter entry to ~/.pi/agent/auth.json (file permissions 0600) with key types supporting literal values, environment variable references, or shell commands. The credential resolution order is (1) CLI --api-key flag, (2) auth.json entry, (3) environment variable, (4) custom provider apiKey from models.json.\n\nOpenRouter models are accessed via their native vendor/model namespace (e.g., anthropic/claude-sonnet-4.6) with no pi-invented prefix. Model selection occurs through CLI flags --provider openrouter --model <id>, the shorthand --model openrouter/<id>, or the interactive /model picker which displays only providers with resolvable credentials. The transport layer uses openai-completions via the openai npm SDK, with baseUrl https://openrouter.ai/api/v1 and Authorization: Bearer header set automatically.\n\nFor Claude-via-OpenRouter, pi-ai automatically injects cache_control: {type: ephemeral} on the last text block and uses reasoning: {effort} format instead of reasoning_effort. The model catalog in dist/models.generated.js is a static build-time snapshot; models released after pi-ai publish may be added via ~/.pi/agent/models.json using either Option A (override the built-in openrouter provider) or Option B (register a distinct provider namespace). Tool-forced output with Claude-via-OpenRouter is not explicitly documented as working or failing; empirical testing is required before relying on forced-tool-use behavior such as that used by pi-behavior-monitors. HTTP-Referer and X-Title headers are not sent by default but can be added via models.json header override. Extended cache retention (PI_CACHE_RETENTION=long) does not apply to OpenRouter routes, only to direct Anthropic and OpenAI calls.",
+  "findings_document": "analysis/openrouter-pi-mono-setup.md",
+  "grounding": {
+    "dependencies": [
+      "@mariozechner/pi-ai@0.63.1"
+    ],
+    "revisions": [
+      "badlogic/pi-mono main branch fetched 2026-04-10"
+    ],
+    "external_refs": [
+      "https://openrouter.ai/keys"
+    ]
+  },
+  "grounded_at": "2026-04-10T00:00:00Z",
+  "stale_conditions": [
+    "@mariozechner/pi-ai version bumped past 0.63.1 (model catalog may change)",
+    "badlogic/pi-mono main branch updated with breaking changes to auth.json or provider resolution order",
+    "OpenRouter API endpoint URL or auth header format changes",
+    "Issue #2921 or #2955 status changes regarding custom model merging behavior"
+  ],
+  "citations": [
+    {
+      "label": "OpenRouter first-class provider support",
+      "path": "/Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/README.md",
+      "lines": "60"
+    },
+    {
+      "label": "OPENROUTER_API_KEY environment mapping",
+      "path": "/Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/dist/env-api-keys.js",
+      "lines": "93"
+    },
+    {
+      "label": "OpenRouter model catalog and baseUrl",
+      "path": "/Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/dist/models.generated.js",
+      "lines": "6517"
+    },
+    {
+      "label": "OpenRouter-specific code paths cache-control and reasoning format",
+      "path": "/Users/david/Projects/workflowsPiExtension/node_modules/@mariozechner/pi-ai/dist/providers/openai-completions.js",
+      "lines": "240-400, 709-711"
+    },
+    {
+      "label": "pi-mono coding-agent providers documentation",
+      "url": "https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/providers.md"
+    },
+    {
+      "label": "pi-mono coding-agent models.json schema",
+      "url": "https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/models.md"
+    },
+    {
+      "label": "pi-mono coding-agent README CLI reference",
+      "url": "https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/README.md"
+    }
+  ],
+  "informs": [
+    "DEC-0001",
+    "DEC-0003",
+    "FEAT-001"
+  ],
+  "informed_by": [],
+  "related_research": [],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-10T00:00:00Z"
+}

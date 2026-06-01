@@ -1,0 +1,45 @@
+{
+  "target": "TASK-037",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T07:00:00Z",
+  "evidence": "Sub-phase 2.4 (find-references) — FINAL atomic unit under TASK-022 — landed at HEAD 680cb1c. findReferences library at project-context.ts:405 returns Edge[] (intentionally distinct from walkDescendants/walkAncestors which return string[]); supports inbound/outbound/both directions; self-loop edge returns once. findReferencesInRepo wrapper at lens-view.ts:289. Pi tool find-references at index.ts:1234; siblings walk-ancestors (index.ts:1195) + project-walk-descendants (index.ts:1165) preserved. Orchestrator script scripts/orchestrator/find-references.ts shebang-executable. Tests: pi-context 420 → 428 (+8 covering inbound/outbound/both/no-references/multiple-relation-types/self-loop + 2 wrapper tests). Husky pre-commit gate green.",
+  "criteria_results": [
+    {
+      "criterion": "findReferences(itemId, edges, direction?) library returns Edge[] with inbound/outbound/both directions",
+      "status": "passed",
+      "evidence": "project-context.ts:405 export function findReferences(...): Edge[]"
+    },
+    {
+      "criterion": "findReferencesInRepo(cwd, itemId, direction?) wrapper exported from lens-view.ts",
+      "status": "passed",
+      "evidence": "lens-view.ts:289 export function findReferencesInRepo(...)"
+    },
+    {
+      "criterion": "find-references pi tool registered with direction Type.Optional(Type.Union(...))",
+      "status": "passed",
+      "evidence": "index.ts:1234 pi.registerTool({name: \"find-references\", ...})"
+    },
+    {
+      "criterion": "Sibling tools preserved: walk-ancestors + project-walk-descendants",
+      "status": "passed",
+      "evidence": "index.ts:1195 walk-ancestors + index.ts:1165 project-walk-descendants intact"
+    },
+    {
+      "criterion": "scripts/orchestrator/find-references.ts shebang-tsx executable",
+      "status": "passed",
+      "evidence": "-rwxr-xr-x 3934 bytes"
+    },
+    {
+      "criterion": "Tests cover inbound/outbound/both/no-references/multiple-relation-types/self-loop + wrapper",
+      "status": "passed",
+      "evidence": "+8 tests in pi-context (420 → 428): 6 findReferences + 2 findReferencesInRepo"
+    },
+    {
+      "criterion": "Husky pre-commit gate green at commit time",
+      "status": "passed",
+      "evidence": "Commit 680cb1c landed without --no-verify across all 4 packages"
+    }
+  ]
+}

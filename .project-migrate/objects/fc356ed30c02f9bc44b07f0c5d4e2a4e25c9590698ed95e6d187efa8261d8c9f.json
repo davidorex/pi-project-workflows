@@ -1,0 +1,26 @@
+{
+  "title": "AC schema revision — object form {id, text, status} with AC-id addressability + per-criterion status + completion-invariant shift; scoped under .context greenfield transition",
+  "status": "proposed",
+  "layer": "L1",
+  "description": "Revise task.acceptance_criteria from string[] to object array: items carry {id (pattern ^TASK-\\d{3,}-AC-\\d+$), text, status (enum [pending|passed|failed|blocked])}. depends_on field semantically expanded from task-id only to union(task-id | ac-id) — resolver handles both kinds. Completion invariant shifts from current 'task.status=completed requires verification field present' to 'task.status=completed requires every criterion.status === passed' — schema-level guarantee rather than presence check. VER coexistence resolved: task's criterion.status = live lifecycle state (mutates as work progresses); VER's criteria_results.status = point-in-time attestation snapshot (immutable once filed); criterion field in VER.criteria_results becomes AC-id FK (e.g. criterion: 'TASK-081-AC-3') rather than restating the criterion text verbatim — this ELIMINATES the existing duplication where VER currently restates AC text, does not introduce a new one. Task is single source of truth for criterion text; VER references it. Vocabulary overlap on the word 'status' is intentional: enums differ semantically (VER skipped doesn't exist on task; task pending+blocked don't exist on VER). AC-id padding: 2-digit canonical (^AC-\\d{2,}$ within the compound TASK-NNN-AC-NN id) for sub-ids with bounded per-task population (typically 5-15 ACs), explicitly exempt from DEC-0026's 3-digit top-level canon (which applies to block-level ids, not sub-ids).",
+  "motivation": "Address FGAP-114 (AC string[] gaps: no addressability for FK depends_on; no per-criterion status; weak completion invariant). Surfaced immediately by TASK-080 split (2026-05-26) where finer-grained criterion-grain depends_on would enable cheaper sequencing. Canon basis: FK-enforcement anti-pattern (FGAP-040/041/046 class); DEC-0040 single-source-of-truth + derived completion state; FGAP-098 cross-reference affordance; DEC-0049 uniform-shape across same-block items; feedback_substrate_blocks_not_changelogs (status as field, not journey). Nothing here is fresh architectural invention.",
+  "acceptance_criteria": [
+    "Per-block schema for tasks in .context greenfield carries acceptance_criteria as object array with the proposed shape ({id, text, status})",
+    "Status enum is [pending, passed, failed, blocked]; default pending; AC-id pattern ^TASK-\\d{3,}-AC-\\d{2,}$ (compound id)",
+    "depends_on schema permits union(task-id | ac-id) with resolver handling both kinds; schema documentation explicitly notes the semantic expansion",
+    "Completion invariant: tasks.schema.json declares 'if status === completed then every acceptance_criteria[].status === passed' (AJV draft-07 cannot enforce conditionals on items.status; encoded in schema description + downstream validator)",
+    "VER schema (or equivalent in .context) declares criteria_results[].criterion is an AC-id FK rather than free-text; resolver verifies AC-id existence",
+    "AC-id padding canon recorded: sub-ids (AC-NN within TASK-NNN) are 2-digit canonical, explicitly exempt from DEC-0026's 3-digit top-level rule (sub-ids have bounded per-parent population)",
+    ".project schema unchanged during transition; .project tasks (existing + any new ones filed in .project) continue with string[] form; no data migration on .project tasks",
+    "Scoped under .context greenfield transition (DEC-0036 + DEC-0050/FEAT-008 umbrella); ships as part of the same revision arc as the decisions-substrate split",
+    "VALIDATION = real checks per DEC-0047/0018: runtime demo (file a task in .context greenfield with object-form AC; mark criteria progressively; verify task-completion derivation), adversarial probe (fresh-context agent verifies AC-id FK enforcement in VER + completion-invariant enforcement); never LLM self-report"
+  ],
+  "dependencies": [
+    "DEC-0051"
+  ],
+  "blocks_resolved": [
+    "FGAP-114"
+  ],
+  "stories": [],
+  "findings": []
+}

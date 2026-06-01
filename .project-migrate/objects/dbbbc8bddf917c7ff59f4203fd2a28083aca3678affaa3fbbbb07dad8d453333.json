@@ -1,0 +1,10 @@
+{
+  "title": "contextBlocks injection only reads static files — no support for computed blocks derived at dispatch time",
+  "body": "compileAgentSpec() reads .project/<name>.json for each contextBlocks entry. Blocks whose content is derivable from code (architecture, domain reference entries) go stale between writes. The injection path should support registered generator functions alongside static files — for derivable blocks, the generator runs at injection time, returning the same shape as the static block. Agent templates and shared macros are unaffected — they render whatever data they receive regardless of source.",
+  "location": "packages/pi-workflows/src/step-shared.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "human"
+}

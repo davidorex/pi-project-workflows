@@ -1,0 +1,37 @@
+{
+  "title": "Dynamic composite tools have no skills-generation pathway by construction — composite-loader reads loadContext(process.cwd()) which at build-time = repo root (config:null degrade), while per-project composite instances live in target launch dir; skill-discovery vs runtime-discovery split unreconciled",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-agent-dispatch",
+  "layer": "L5",
+  "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gap 6 HIGH + F.1) empirically established: scripts/generate-skills.js:803 invokes factory(mockPi) with process.cwd() = repo root at npm run skills time. Repo root has .project/ (not .pi-context.json pointer). loadContext() graceful-degrades to {config: null}. composite-loader registers ZERO composite Pi tools under this condition. Therefore even after FGAP-117 closure (pi-agent-dispatch wired into META + skills-gen + own package self-reg), the DYNAMIC composite tools (config.tool_operations[] entries registered at extension-load) would NEVER appear in any generated SKILL.md. The launch script's --tools grep-from-static-SKILLs derivation cannot capture them. The architectural mismatch: skill discovery is build-time (per-repo), composite registration is runtime (per-target-dir). Closing FGAP-117 establishes the skills-gen path for STATIC tools but does not address dynamic composites' invisibility. Two coherent resolution paths surface: (a) launch script reads target-dir config.tool_operations[] at launch time + extends --tools allowlist with derived names (per-target-dir discovery, separate from skills-gen); (b) generate-skills.js gains a target-dir-aware mode that reads composite vocabulary from a designated source then emits a 'composites' SKILL.md (build-time per-target — adds complexity); (c) accept that composites can only be granted via flag-driven launch script extension (FGAP-120 territory) and skills-gen captures only the static surface.",
+  "evidence": [
+    {
+      "file": "scripts/generate-skills.js",
+      "reference": "line 803 factory(mockPi) call site; process.cwd() = repo root at npm run skills"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/composite-loader.ts",
+      "reference": "reads loadContext(cwd) which graceful-degrades to config:null when .pi-context.json pointer absent — repo root in our case has .project/ but no pointer for npm run skills cwd"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/index.ts",
+      "reference": "extension factory calls loadComposites(process.cwd(), pi) at lines 51-52"
+    },
+    {
+      "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+      "reference": "Audit commit 945dc93 Dimension B (gap 6 HIGH); F.1 (HIGH)"
+    }
+  ],
+  "impact": "Even after FGAP-117 (launch-chain integration) closes, the bounded-composite capability vocabulary FEAT-010 ships is unreachable from a launched session UNLESS one of the resolution paths is chosen. User-stated intent (2026-05-28: 'I'd like to add some flags to give select additional tool use perms') maps to a/c above; canon doesn't yet dictate which.",
+  "canonical_vocabulary": "skills-gen-vs-runtime-discovery / per-target-dir-composite-invisibility / launch-time-vs-build-time-tool-derivation",
+  "proposed_resolution": "Launch script reads the target dir's `config.tool_operations[]` at launch time (post-installContext or pre-exec pi) and extends the --tools allowlist with derived composite canonical_ids. Per-target persistence + per-launch surfacing match FEAT-010 design literally: config is the per-project capability registry (writer.kind=human authored via author-tool-grant per DEC-0047); the launch script consumes it at launch. Skills-gen continues to capture only the 5 static pi-agent-dispatch tools via the existing canonical pipeline (resolved separately by FGAP-117 / FEAT-011). FGAP-118 + FGAP-120 collapse to one implementation: launch script reads config at launch + --grant flag (FGAP-120) selects which declared composites to surface in --tools. [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
+  "related_features": [
+    "FEAT-010"
+  ],
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0044",
+    "DEC-0047"
+  ]
+}

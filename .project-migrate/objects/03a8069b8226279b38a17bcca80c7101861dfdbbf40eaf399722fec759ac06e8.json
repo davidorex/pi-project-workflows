@@ -1,0 +1,10 @@
+{
+  "title": "Framework gap FGAP-004 — no authorship attestation at block write time",
+  "body": "Only issues.schema.json (this block) has a source enum (human | agent | monitor | workflow); tasks.schema.json has assigned_agent which is a different concept (assignment, not authorship). No block records created_by / modified_by / created_at / modified_at consistently. block-api.ts does not stamp authorship on writes. The authorship-matrix principle — 'only the user can advance a finding from proposed to decided' — cannot be enforced because the writer identity is not recorded. State-machine validation of user-gated transitions (decision enacted, finding decided, feature approved) is structurally impossible without this. Proposed resolution: block-api.ts stamps created_by / modified_by / created_at / modified_at on every write, reading writer identity from a DispatchContext parameter; every block schema adds these as required fields; cross-block validation enforces authority-matrix rules per-transition. Hand-enacted today in .project/decisions.json, features.json, framework-gaps.json, spec-reviews.json, layer-plans.json — every item carries explicit created_by and created_at fields populated manually. Canonical owner: .project/framework-gaps.json FGAP-004. Canonical vocabulary: authorship attestation; written_by attribution; audit trail.",
+  "location": "packages/pi-context/src/block-api.ts, .project/schemas/",
+  "status": "open",
+  "category": "primitive",
+  "priority": "high",
+  "package": "pi-project",
+  "source": "agent"
+}

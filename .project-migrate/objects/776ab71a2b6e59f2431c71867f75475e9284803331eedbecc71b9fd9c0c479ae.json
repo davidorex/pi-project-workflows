@@ -1,0 +1,7 @@
+{
+  "title": "Close issue-049 (step-loop cwd bug)",
+  "status": "todo",
+  "files": [
+    ".project/issues.json"
+  ]
+}

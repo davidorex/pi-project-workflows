@@ -1,0 +1,5 @@
+{
+  "name": "FGAP-026 closure phase 3 — work-unit context composition",
+  "intent": "Work-unit context composition substrate per DEC-0017 — context-contract substrate (FGAP-030) + gather-execution-context primitive (FGAP-031). Step 8.7.3.",
+  "status": "completed"
+}

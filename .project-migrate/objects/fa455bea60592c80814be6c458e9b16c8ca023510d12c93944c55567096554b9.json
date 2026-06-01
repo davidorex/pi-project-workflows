@@ -1,0 +1,35 @@
+{
+  "title": "Orchestrator-side intermediates (Explore agent outputs, brief-composition logs, investigation queries) lack substrate block kinds — markdown-output workflow is the load-bearing intermediate format",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Orchestrator-side scripts under scripts/orchestrator/* produce + consume intermediates as markdown files in /tmp (e.g. /tmp/explore-c3-fixtures-v2.md Site Inventory table, /tmp/import-chains-pi-workflows.md per-test-file reach registry, /tmp/c3-impl-brief.md composed brief). Downstream composers (build-implementation-brief.ts) re-extract sections from these markdown files via extract-markdown-section.ts (regex on header text). The shape of every intermediate is structured data (per-row tables, key-value pairs) that would be better-served as substrate blocks with typed schemas, AJV validation, block-api access, and cross-session continuity. Markdown-as-load-bearing-intermediate is the failure surface that produced the C.3 v2 explore-agent prose-summary contradiction (executive summary aggregated table cells incorrectly; cells were sound but summary drifted). Same architectural class as FGAP-033 (communication-style needs substrate block) and the unfiled gaps for mandates substrate-canon home + feedback substrate-canon home — orchestrator-side concerns living outside substrate.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/extract-markdown-section.ts",
+      "reference": "Generic markdown section extractor; uses regex on header text (line 65). Brittle to header rewrites; no schema validation."
+    },
+    {
+      "file": "/tmp/explore-c3-fixtures-v2.md",
+      "reference": "Explore agent's Site Inventory table emitted as markdown; downstream consumer (build-implementation-brief.ts:99) regex-extracts cells. Aggregation hallucination observed: executive summary contradicted detail rows."
+    },
+    {
+      "file": "/tmp/import-chains-pi-workflows.md",
+      "reference": "extract-test-import-chains.ts output is structured per-file reach data emitted as markdown table; would be queryable substrate if filed via block-api."
+    },
+    {
+      "file": "scripts/orchestrator/build-implementation-brief.ts",
+      "lines": "98-119",
+      "reference": "Composer reads explore report by markdown-section name; brittle to header changes + cannot validate cell shape."
+    }
+  ],
+  "impact": "Markdown-as-load-bearing-intermediate fails on six axes: (1) hallucination drift — LLM aggregations of table cells contradict the cells (C.3 v2 incident); (2) re-derivability — /tmp/ files lose provenance; cannot reconstruct what substrate-state generated them; (3) cross-session continuity — /tmp/ files vanish on shell restart; future sessions cannot query past dispatches; (4) composability — extract-markdown-section regex on header text is brittle; refactoring header text breaks downstream; (5) validation — markdown table cells are unvalidated; wrong-shape rows pass silently; (6) programmatic consumers — every consumer has its own ad-hoc parser. Substrate block_kinds with typed schemas + AJV validation + block-api access close all six. Six block_kinds elided: cascade-target / audit-result / arc-cross-ref / import-chain / investigation / brief-history.",
+  "proposed_resolution": "File six new block_kinds in packages/pi-context/registry/schemas/: cascade-target.schema.json (per-site cascade table rows: file/line/helper-or-inline/tmpdir-contents/first-resolver-cascading-call/classification/justification); audit-result.schema.json (pattern + hit-count + per-hit classification); arc-cross-ref.schema.json (concern-source pointer to existing arc planning); import-chain.schema.json (per-file direct + transitive pi-context reach registry); investigation.schema.json (id + question + target + status + results-pointer for Explore dispatches); brief-history.schema.json (composer-run log: extractors + params + substrate-state SHA at composition). Cascade: each affected scripts/orchestrator/* script writes via file-block-item.ts (or programmatically via block-api); downstream composers replace extract-markdown-section.ts calls with readBlock + filter. Markdown-rendering becomes display-only (substrate is canonical; markdown is a view). Same dual-direction pattern as DEC-0019: filing each block_kind surfaces additional gaps in macros library + per-item rendering; closures feed back to REVIEW-001 + tool-surface gap audit.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0017",
+    "DEC-0018",
+    "DEC-0019"
+  ],
+  "related_issues": []
+}

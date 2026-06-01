@@ -1,0 +1,25 @@
+{
+  "title": "pi-workflows expression evaluator has no determinism enforcement — expressions evaluated at dispatch time can include non-deterministic patterns (current-time / random / uuid) that break resume semantics silently; Claude Code workflows reject Date.now() / Math.random() / argless new Date() at validation time to maintain cache + resume integrity",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 12: Claude Code workflows throw at script-validation time on Date.now() / Math.random() / argless new Date() — would break the (prompt, opts) cache + resume semantics (same script + same args must produce identical agent results). pi-workflows expression evaluator (${{ }} syntax) lets operators reference any value at dispatch time; if expression evaluates to current time / random number / uuid / etc., resume re-evaluates → different value → resume cache (when added per FGAP-147) would never hit. Today no enforcement; no warning; silent non-determinism breaks resume idempotence.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "545-559",
+      "reference": "Part 3 axis 12 — Resume-Incompatible API Enforcement — INSPIRE verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/expression.ts",
+      "reference": "expression evaluator with no determinism enforcement"
+    }
+  ],
+  "impact": "Resume semantics silently break when operators include non-deterministic expressions. Cache-by-input (FGAP-147) would never hit. State persistence + resume produce different agent dispatches than original run. Operators discover the gap only when resume yields different results — late + diagnostic-poor.",
+  "canonical_vocabulary": "determinism enforcement; resume-cache integrity; non-deterministic-expression detection; pre-flight expression validation",
+  "proposed_resolution": "Add pre-flight expression validator to validateWorkflow: scan all ${{ }} expressions for disallowed patterns (Date.now, new Date() with no args, Math.random, crypto.randomUUID, uuid(), or any user-registered non-deterministic filter). Issue warning at validation-time (status: warning) OR error under --strict-determinism flag. Documentation: enumerate which built-in filters are deterministic vs non-deterministic + which expression patterns to avoid. Optional: provide deterministic alternatives (e.g., 'workflow.startTime' filter that captures startup-time once + returns same value across resumes).",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

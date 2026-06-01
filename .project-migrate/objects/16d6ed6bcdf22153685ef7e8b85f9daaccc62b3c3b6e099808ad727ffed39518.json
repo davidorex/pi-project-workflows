@@ -1,0 +1,10 @@
+{
+  "title": "step-monitor.ts ignores classify.agent — workflow monitor verification gates silently return CLEAN",
+  "body": "packages/pi-workflows/src/step-monitor.ts is a separate lightweight monitor step executor for workflow verification gates. Its MonitorSpec interface (lines 23-37) has NO classify.agent field — only classify.prompt, classify.promptTemplate, classify.context, classify.model. It renders prompts via Nunjucks or inline string replacement and parses verdicts via TEXT parsing (parseVerdict at lines 193-206, expects 'CLEAN', 'FLAG:', 'NEW:' prefixes). It does NOT use phantom tool enforcement, does NOT use agent specs, does NOT use structured output. Issue-025 unified pi-behavior-monitors to require classify.agent on all monitor specs, but step-monitor.ts was not updated — it predates the agent-based architecture. When a workflow uses monitor: <name> and the monitor only declares classify.agent (as all unified monitors should), step-monitor.ts produces no prompt (renderPrompt returns null) and silently returns CLEAN at line 258. Workflow verification gates are therefore non-functional for any monitor that has been unified. Per P1 in jit-agents-spec.md, there should be one classify pathway across the framework — step-monitor.ts must delegate to pi-behavior-monitors' classifyViaAgent() (which in turn goes through jit-agents) rather than reimplementing classification.",
+  "location": "packages/pi-workflows/src/step-monitor.ts:23-37, 193-206, 258",
+  "status": "open",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-workflows",
+  "source": "agent"
+}

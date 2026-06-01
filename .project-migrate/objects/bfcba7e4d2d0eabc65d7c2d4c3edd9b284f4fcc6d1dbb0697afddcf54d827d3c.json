@@ -1,0 +1,10 @@
+{
+  "title": "Structured artifacts[] on StepResult — no first-class pointer to files a step produced",
+  "body": "StepResult has outputPath (single file path where the output was persisted). There is no structured list of artifacts a step produced, no kind classification, no way for a step to say 'I produced these 3 files, these 2 are source code, this 1 is a report'. step-block.ts writes to .project/ blocks but those writes are not returned as artifacts on the StepResult. context-packet's Packet has artifacts: Array<{path: string, kind: string}> — structured file pointers separate from the packet body. Extension: StepResult should include artifacts: Array<{path: string, kind: string, summary?: string}>. Enables downstream steps to reference artifacts by path and kind without loading them into the prompt; enables block write-back monitors (issue-030) to observe what a step produced.",
+  "location": "packages/pi-workflows/src/types.ts, packages/pi-workflows/src/step-agent.ts, packages/pi-workflows/src/step-block.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-workflows",
+  "source": "human"
+}

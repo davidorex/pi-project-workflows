@@ -1,0 +1,11 @@
+{
+  "title": "Structured output via tool-use enforcement for monitor classify",
+  "body": "Monitor classify calls relied on prompt instructions ('respond with JSON only') and text parsing (JSON.parse on free-form LLM response). The model could ignore the instruction and produce prose preambles, reasoning text, or malformed output — causing classify failures. Fixed in classifyViaAgent() by defining VERDICT_TOOL with TypeBox parameters, passing it in Context.tools, and setting toolChoice to force the tool call. The model produces ToolCall.arguments matching the schema — no free-form text, no JSON.parse() of LLM output. Scoped to monitors (direct complete() calls). Workflow agent steps use subprocess dispatch via pi --mode json where tool-use enforcement would require pi-coding-agent core changes — that remains a separate concern.",
+  "location": "packages/pi-behavior-monitors/index.ts",
+  "status": "resolved",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-behavior-monitors",
+  "source": "human",
+  "resolved_by": "VERDICT_TOOL + toolChoice enforcement in classifyViaAgent(), ToolCall extraction replaces extractResponseText() + JSON.parse() + parseVerdict() fallback"
+}

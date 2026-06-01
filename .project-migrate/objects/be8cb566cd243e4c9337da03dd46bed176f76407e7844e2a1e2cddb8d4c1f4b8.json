@@ -1,0 +1,10 @@
+{
+  "title": "Issue lifecycle not connected to task completion — resolved_by must be set manually",
+  "body": "When task-001 was completed, issue-001 status remained open. No workflow or tool automatically updates issue status when the task that fixes it completes. The issues schema has resolved_by but nothing populates it from task/verification data. Manual intervention required to keep issues block in sync with reality.",
+  "location": "packages/pi-context/src/project-sdk.ts",
+  "status": "open",
+  "category": "primitive",
+  "priority": "high",
+  "package": "pi-project",
+  "source": "agent"
+}

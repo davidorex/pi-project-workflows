@@ -1,0 +1,10 @@
+{
+  "title": "step-loop.ts:187 calls compileAgentSpec without cwd — agents in loop steps never receive contextBlocks data",
+  "body": "Disclarity audit of pi-workflows found that step-loop.ts:187 calls compileAgentSpec(agentSpec, resolvedInput, options.templateEnv) WITHOUT the cwd parameter. Without cwd, compileAgentSpec cannot read .project/ blocks for contextBlocks injection — the named blocks silently resolve to null in the template environment. Any agent that runs inside a loop step and declares contextBlocks gets null where block data was expected, producing broken prompts without any error. This is a functional bug with no current test coverage that would catch it. Contrast: step-agent.ts correctly passes cwd. Fix: step-loop.ts must pass options.cwd (or the equivalent) to compileAgentSpec. Must add a regression test exercising a loop step with an agent that declares contextBlocks.",
+  "location": "packages/pi-workflows/src/step-loop.ts:187",
+  "status": "open",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-workflows",
+  "source": "agent"
+}

@@ -1,0 +1,45 @@
+{
+  "title": "Vocabulary settlement upstream of Phase 5 LLM-filed decomposition skipped — display layer, ID conventions, relation_type names, lens ids, layer registry, status-bucket mapping unsettled",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "The LLM-filed Phase 5 sub-phase decomposition (analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md line 14: 5.1 config / 5.2 relations / 5.3 roadmap / 5.4 phase / 5.5 context-contracts / 5.6 tasks-phase-edges) assumed vocabulary was settled but no upstream settlement step was filed. Concretely unsettled: (1) display layer — block-kind display_name + per-item ID-prefix display rendering have no canonical settlement; (2) ID prefix conventions — padding (3-digit vs 4-digit), casing (uppercase vs lowercase) have observed drift (see FGAP-048); (3) relation_type canonical_ids — DEC-0013 forced relation_type registry but no relation_types are declared anywhere except code test fixtures (phase_depends_on / phase_member); (4) lens ids — config.lenses[] would carry projection definitions but no lens-id naming convention exists; (5) layer registry — L1..L5 referenced in FGAP layer field but no .project/schemas/layer.schema.json or config.layers[] populated (FGAP-016 was closed but the registry remains unauthored); (6) status-bucket mapping — FGAP-021 tracks the 4 divergent lifecycle vocabularies (workflow-state / gate-state / authority-state / authoring-state) reconciliation but no status_buckets[] declared. Result: Phase 5 sub-phase 5.1 (config.json authoring) cannot proceed coherently — every block_kinds[] / relation_types[] / lenses[] / layers[] / status_buckets[] entry needs a settled convention before being authored.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-14-arc-tracking-substrate-open-decisions.md",
+      "reference": "7 open decisions enumerated; vocabulary is upstream of decisions 1+4+7"
+    },
+    {
+      "file": "analysis/2026-05-14-step-1-config-draft-from-substrate.md",
+      "reference": "Reverse-engineered config draft surfaces L1+L2 inventory + drift + missing-schemas"
+    },
+    {
+      "file": "analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md",
+      "reference": "Patterns derivable from existing substrate for L3+L4+L5+L6"
+    },
+    {
+      "file": "analysis/2026-05-14-arc-tracking-substrate-decision-sharpening.md",
+      "reference": "Cross-doc mapping of decisions to analysis content"
+    },
+    {
+      "file": "analysis/2026-05-14-pm-vocabulary-survey-full-analysis.md",
+      "reference": "Exhaustive PM-vocabulary external-survey analysis"
+    },
+    {
+      "file": "analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md",
+      "reference": "Line 14: Phase 5 sub-phases enumeration assuming vocabulary settled"
+    }
+  ],
+  "impact": "Phase 5 (TASK-025) cannot complete acceptance criterion 1 (\"config.json declares relation_types[]...\") without upstream vocabulary settlement. Every config.block_kinds[].display_name + relation_type canonical_id + lens id + layer canonical_id needs a settled convention; without them, authoring is improvised per session and accumulates drift. Downstream: relations.json edge writes (DEC-0013 closure-table) need relation_type names settled; roadmap.json phases[].lens references need lens-id naming settled; status rollups across blocks need status_buckets[] settled. Sub-phases 5.2 / 5.3 / 5.5 / 5.6 all gate on this work.",
+  "canonical_vocabulary": "config.block_kinds[].display_name, config.relation_types[].canonical_id, config.relation_types[].display_name, config.lenses[].id, config.layers[].id, config.status_buckets",
+  "proposed_resolution": "Open DEC entries per unsettled convention; user direction enacts each; settled DECs cascade into convention rules (conventions[].rules[]) + config.json content. Specific DEC questions: (a) prefix-padding convention (3-digit canonical; R- and DEC- 4-digit are drift); (b) prefix-casing convention (uppercase canonical; issue- is drift); (c) PHASE-NNN ↔ phase.json `number` integer binding; (d) substrate-dir replacement name (FGAP-026 deliverable); (e) layer registry adoption (L1 substrate / L2 query / L3 composition / L4 dispatch / L5 surface labels per analysis/gsd-2-foundational-intelligence.md); (f) status-bucket normalization mapping per FGAP-021; (g) relation_type naming shape (`<source>_<verb>_<target>` per existing test fixtures). TASK-042 scopes the settlement work-unit; each DEC enacts atomically at user direction.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0013",
+    "DEC-0014",
+    "DEC-0015",
+    "DEC-0017"
+  ],
+  "related_issues": []
+}

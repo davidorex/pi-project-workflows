@@ -1,0 +1,25 @@
+{
+  "title": "pi-workflows discoverability surface is weak — workflows live in ~/.pi/workflows/ or .pi/workflows/ + execute via workflow-execute tool or TUI picker; Claude Code workflows auto-register as /<name> slash commands + appear in / autocomplete; pi has no equivalent runtime-discovery / autocomplete / slash-command-shorthand surface",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-workflows",
+  "layer": "L4",
+  "description": "Per R-0014 recon axis 11: Claude Code workflows registered at .claude/workflows/<name>.js appear as /<name> slash commands in / autocomplete; discoverable via /workflows list. pi-workflows lives in directories but execution requires either workflow-execute tool invocation (with explicit name argument) or TUI picker navigation. No slash-command-shorthand registration; no auto-complete-in-conversation surface; no /workflows-list-style command on the pi side. Operators running frequently-used workflows incur friction every time.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "528-543",
+      "reference": "Part 3 axis 11 — Bundled / Discoverable Workflows — INSPIRE verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/index.ts",
+      "reference": "workflow-execute / workflow-list / workflow-status tools but no slash-command auto-registration"
+    }
+  ],
+  "impact": "Operator friction on frequently-used workflows. Workflow discovery requires explicit knowledge of names + invocation conventions. Mapping to Claude-Code-side parity for cross-system operator UX is poor — slash-command-shorthand is the canonical pi-extension command surface but not extended to workflows.",
+  "canonical_vocabulary": "slash-command registration; workflow autocomplete; pi-side / autocomplete equivalent; bundled-workflow surface parity",
+  "proposed_resolution": "Extend pi-agent-dispatch or pi-workflows extension to register each discovered workflow as a pi slash command. Auto-discovery from bundled (packages/*/workflows/) + project (.pi/workflows/) + user (~/.pi/workflows/) directories at extension load. Slash command shape: /<workflow-name> invokes workflow-execute with that name + parses args per the workflow's inputSchema. TUI: add workflow picker to main menu (alongside other actions). Documentation refresh for discoverability + invocation. Verify pi CLI supports dynamic slash-command registration (may require upstream surface; if not, file follow-on FGAP).",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

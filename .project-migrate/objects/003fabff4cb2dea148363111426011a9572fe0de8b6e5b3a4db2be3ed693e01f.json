@@ -1,0 +1,8 @@
+{
+  "title": "Remove pi-workflows dependency",
+  "status": "todo",
+  "files": [
+    "packages/pi-behavior-monitors/package.json",
+    "packages/pi-behavior-monitors/index.ts"
+  ]
+}

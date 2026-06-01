@@ -1,0 +1,50 @@
+{
+  "target": "TASK-090",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-28",
+  "criteria_results": [
+    {
+      "criterion": "real-check-runner runs three deterministic checks per DEC-0018: build+check+test exit codes (no pipe-masking; full output captured); runtime-demo (tsx-eval invocation of the actual feature path); adversarial probe (fresh-context agent re-greps for false-pass on external artifacts: git diff / event stream / runtime output)",
+      "status": "passed",
+      "evidence": "commit e1a64bd. real-check-runner.ts runRealChecks dispatches three sub-runs: runBCT (`npm run check && npm test` as single sh -c chain, exit-code verdict, full stdout/stderr buffered), runRD (sh -c invocation + expected-substring assertion), runAP (per-target `grep -rn` with hits enumerated). Adversarial CHECK 6 PASS: no truncation. CHECK 7 PASS: no pipe-to-tail. Runtime demo 1 (6/6 PASS): all three check kinds exercised against tmp fixture; exit-0 → passed; exit-1 → failed + exit_code preserved; substring match/miss verdicts correct; target-present-vs-absent enumerated."
+    },
+    {
+      "criterion": "real-check-runner returns structured RealCheckResult { passed: boolean, details: per-check exit codes + stdout/stderr/grep evidence }; no LLM self-report at any point in the gate (per FGAP-102 / DEC-0047 clause 5)",
+      "status": "passed",
+      "evidence": "Result shape verified in commit e1a64bd source. Adversarial CHECK 2 PASS: real-check-runner.ts has zero executeAgent/completeFn/LLM imports; pure deterministic command execution. Aggregate `passed` is AND of all declared checks (verified by tests #4 #8 + runtime demo 1 multi-check fail-case)."
+    },
+    {
+      "criterion": "On real-check-fail: RealCheckResult.passed=false carries the structured fail-report (real compiler/test errors); calling code feeds back to the implement pass (loop logic in TASK-091 assembly task)",
+      "status": "passed",
+      "evidence": "Tests #3 + #8 + runtime demo 1 path 2 verify exit-code + stderr + stdout all preserved verbatim in details.build_check_test on fail-path. The structured fail-report is the literal compiler/test output (no LLM summarization), per FGAP-102. TASK-091 (assembly) consumes this directly."
+    },
+    {
+      "criterion": "attested-commit invokes husky (no --no-verify; never skip hooks per feedback_no_destructive_git_ops + standard discipline); commit message carries DispatchContext attestation footer: writer.kind=agent + agent_id",
+      "status": "passed",
+      "evidence": "commit d3df262 + bbf7179. attested-commit.ts uses spawnSync('git', ['commit', '-m', msg]) — no --no-verify/--no-gpg-sign/-c commit.gpgsign=false flags anywhere (Adversarial CHECK 1 PASS). Attestation footer `Attested-by: agent/<agent_id>` + optional `Work-order: <id>` appended automatically to user-provided message. Per-file `git add <file>` (Adversarial CHECK 8 PASS — never `-A` / `.`). Runtime demo 2 path 4 verified happy-path commit with husky-as-backup; path 6 verified husky-style hook-fail propagates as committed=false + exit_code preserved (real precedent for actual husky pre-commit pipeline)."
+    },
+    {
+      "criterion": "On real-check-pass + attested-commit success: return the commit SHA for the orchestrator's status cascade",
+      "status": "passed",
+      "evidence": "attested-commit captures commit_sha via `git log -1 --format=%h` after successful commit. Runtime demo 2 path 4 verified: committed=true + commit_sha=79bc207 (captured at runtime; varies per run) + exit_code=0. Footer presence confirmed (path 5): `Attested-by: agent/spec-implementer-demo-001` AND `Work-order: WO-DEMO-001` both in git log -1 --format=%B output."
+    },
+    {
+      "criterion": "Engine unit tests cover: real-check-runner exits correctly on each check's pass/fail; structured RealCheckResult shape valid; attested-commit invokes husky + carries the attestation footer; refusal-of-writer.kind=agent-set-by-agent",
+      "status": "passed",
+      "evidence": "15 new tests landed (Adversarial CHECK 10 PASS): real-check-runner.test.ts (8 tests covering all three check kinds + multi-check aggregation + empty-criteria edge), run-real-checks-tool.test.ts (2 tests: WorkOrderNotFoundError + happy-path round-trip), attested-commit.test.ts (5 tests: 3 refusal gates + happy-path footer + husky-style hook-fail). Total pi-agent-dispatch tests now: 32 (17 pre-existing + 15 new). All pass."
+    },
+    {
+      "criterion": "Per DEC-0048: no consumer cascade; existing workflows / bundled agents tests are NOT regression gates",
+      "status": "passed",
+      "evidence": "Zero source changes outside pi-agent-dispatch new files. No pi-workflows / pi-behavior-monitors / pi-jit-agents touches. Husky pre-commit (check + test) green on every commit in the TASK-090 chain."
+    },
+    {
+      "criterion": "VALIDATION = real checks (this gate validates itself with the same pattern): build/check/test exit codes; runtime demo (run real-check-runner against a known-failing fixture + verify it reports failure; against a known-passing fixture + verify it reports pass); adversarial probe (fresh-context: zero LLM self-report paths in the gate; husky bypass impossible)",
+      "status": "passed",
+      "evidence": "Build exit 0; check exit 0; test 32/32 in pi-agent-dispatch (+ 830 workflow tests + rest of workspace, all green). Runtime demo 1 (6/6 PASS): real-check-runner against tmp fixture exercises all three check kinds incl. known-failing + known-passing paths; exit-code/stdout/stderr verbatim preservation verified. Runtime demo 2 (6/6 PASS): attested-commit against tmp git repo exercises refusal gates + happy-path footer + husky-style hook-fail. Adversarial probe (fresh-context Explore): 10/10 PASS with zero false-pass scenarios: husky-bypass surfaces absent (CHECK 1), LLM-self-report paths absent (CHECK 2), refusal-before-mutation enforced (CHECK 3), writer.kind=agent exclusive (CHECK 4), forbidden-term audit clean (CHECK 5), stdout/stderr verbatim (CHECK 6), no pipe-masking (CHECK 7), no `-A`/`.` git add (CHECK 8), all 4 tools wired (CHECK 9), test coverage matches (CHECK 10). Orchestrator independently re-verified subagent's claims via direct grep + observation of runtime demo outputs."
+    }
+  ],
+  "evidence": "TASK-090 real-check tail + attested-commit landed on branch task-090-real-check-tail-attested-commit. Five commits: 9f1c88d (substrate status flip), e1a64bd (real-check-runner + 8 tests), c2d50e1 (run-real-checks Pi tool + 2 tests), d3df262 (attested-commit + 5 tests), bbf7179 (commit-attested Pi tool + wiring). Three verification layers all green: build/check/test (32/32 pi-agent-dispatch + 830 workflows + rest of workspace), 2/2 runtime demos PASS (6/6 runRealChecks paths + 6/6 attestedCommit paths), 10/10 adversarial probe PASS. Closes FGAP-102 (real-check verdict, never LLM self-report) at the implementation level for the FEAT-006 loop's gate position. NOTE on subagent deviations from brief: three pre-commit hook re-runs for biome formatter (organize-imports + line-length consolidation) — re-fixed in-place, same intended commit; no scope change. Out of scope (TASK-091): assembly into orchestrator loop + iteration policy + launch script."
+}

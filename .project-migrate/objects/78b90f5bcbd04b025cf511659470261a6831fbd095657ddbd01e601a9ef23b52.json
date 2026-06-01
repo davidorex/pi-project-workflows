@@ -1,0 +1,25 @@
+{
+  "description": "Phase 3 sub-phase 3.2: ship gatherExecutionContext primitive — library + pi tool + orchestrator script + 7 tests. Closes FGAP-031. Closure-table dependency: per-test fixtures own synthetic relations.json.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/execution-context.ts",
+    "packages/pi-context/src/index.ts",
+    "scripts/orchestrator/gather-execution-context.ts",
+    "tsconfig.json"
+  ],
+  "acceptance_criteria": [
+    "gatherExecutionContext(cwd, args) library function exported from new packages/pi-context/src/execution-context.ts; returns ContextBundle | {error: string}",
+    "ContextBundle / BundleRelationTypeSpec / GatherExecutionContextArgs types exported",
+    "Library body: reads unit via resolveItemById; reads context-contract via filterBlockItems(cwd, 'context-contracts', {field: 'unit_kind', op: 'eq', value: kind}); iterates bundle_relation_types[] walking edges per direction (walkAncestors / walkDescendants / findReferences) within max_depth; resolves reached ids via resolveItemsByIds; returns ContextBundle with unit + perRelationType + traversal_depth + scoped_at",
+    "gather-execution-context pi tool registered in index.ts with Type.Object({unitId, kind, maxDepth?})",
+    "scripts/orchestrator/gather-execution-context.ts shebang-tsx executable; --unit-id --kind [--max-depth N] [--format json|summary]",
+    "tsconfig.json gains @davidorex/pi-context/execution-context path mapping",
+    "7 tests per per-test fixture pattern: happy path / multi-relation / direction semantic / max_depth bound / missing unit / missing contract / empty bundle_relation_types",
+    "Husky pre-commit gate green"
+  ],
+  "depends_on": [
+    "TASK-038"
+  ],
+  "notes": "CLOSED at HEAD 6bea7e1. gatherExecutionContext library + ContextBundle types + gather-execution-context pi tool + scripts/orchestrator/gather-execution-context.ts + tsconfig path mapping shipped. Tests: pi-context 447 → 454 (+7). FGAP-031 closure pending sub-phase 3.3 (will transition FGAP-031 status to closed in VER-013 cascade). See VER-011.",
+  "verification": "VER-011"
+}

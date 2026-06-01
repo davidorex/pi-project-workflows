@@ -1,0 +1,36 @@
+{
+  "title": "Adopt object-form acceptance_criteria schema for task-lifecycle substrate — {id, text, status} with AC-id addressability + per-criterion status tracking + completion-invariant shift to 'every criterion passed'; scoped under .context greenfield transition (no .project migration)",
+  "status": "open",
+  "context": "Current .project/schemas/tasks.schema.json declares task.acceptance_criteria as string[]. Per FGAP-114 (filed 2026-05-26): individual criteria have no canonical id (no FK addressability for depends_on); no per-criterion status field (partial completion invisible); completion invariant collapses to 'verification field present' rather than schema-level 'every criterion passed.' Surfaced immediately by TASK-080 split (2026-05-26) — TASK-082 depends on TASK-081 at task-grain only when criterion-grain would enable cheaper sequencing. Same FK-as-free-text anti-pattern documented in FGAP-040/041/046. VER schema's criteria_results[].criterion currently restates the AC text verbatim (existing duplication). Decision needed: adopt the object-form AC schema at substrate-level, scoped consistently with the broader substrate-shape revision arc (DEC-0050 / FEAT-008 reframed under .context greenfield rather than .project in-place migration).",
+  "decision": "ADOPT object-form acceptance_criteria schema for task-lifecycle substrate. Concretely: acceptance_criteria becomes object array with items {id (pattern ^TASK-\\d{3,}-AC-\\d{2,}$), text, status (enum [pending|passed|failed|blocked])}. depends_on semantic expanded to union(task-id | ac-id); resolver handles both kinds. Completion invariant shifts to 'task.status=completed requires every acceptance_criteria[].status === passed' (AJV draft-07 cannot enforce conditionals at item-status level; encoded in schema description + downstream validator). VER coexistence: task.criterion.status = live lifecycle state (mutates as work progresses; canonical home for current truth); VER.criteria_results.status = point-in-time attestation snapshot (immutable once filed; canonical home for historical verifier attestation); criterion field in VER.criteria_results becomes AC-id FK eliminating the existing text-restating duplication. Two distinct facts with intentional vocabulary overlap — NOT duplicates. Enums intentionally differ (VER has 'skipped' which task doesn't; task has 'pending'+'blocked' which VER doesn't). AC-id padding: 2-digit canonical (^AC-\\d{2,}$ within compound TASK-NNN-AC-NN id) — sub-ids exempt from DEC-0026 3-digit top-level rule (sub-ids have bounded per-parent population). Scope: .context greenfield only — .project tasks unchanged, no data migration; ships with the broader .context transition (DEC-0036 + DEC-0050/FEAT-008 umbrella) as same-arc structural-shape revision. FEAT-009 carries the build.",
+  "consequences": [
+    "FGAP-114 addressed: AC-id addressability enables FK depends_on at criterion-grain; per-criterion status surfaces partial completion; completion invariant strengthens from presence-check to content-check",
+    "VER duplication eliminated: criteria_results[].criterion becomes AC-id FK rather than free-text restating; task is single source of truth for criterion text; VER references it",
+    "depends_on resolver semantic expansion: must handle both task-id and ac-id endpoints",
+    "No data migration in .project; .project task schema unchanged; existing string[] AC entries remain canonical in .project until full .context transition completes",
+    ".context greenfield schema-design absorbs the object-form AC shape from day one alongside DEC-0050's recognitions/decisions/substrate-conflicts split — same revision arc",
+    "AC-id padding canon (2-digit sub-id, exempt from DEC-0026's 3-digit top-level rule) precedent established for other future sub-id patterns in substrate"
+  ],
+  "related_features": [
+    "FEAT-009"
+  ],
+  "related_gaps": [
+    "FGAP-114"
+  ],
+  "references": [
+    {
+      "label": "decisions-substrate revision grounding (parallel arc)",
+      "path": "analysis/2026-05-26-decisions-substrate-revision-grounding.md",
+      "commit": "083630e"
+    },
+    {
+      "label": "FK-enforcement anti-pattern precedent",
+      "path": ".project/framework-gaps.json",
+      "lines": "FGAP-040 / FGAP-041 / FGAP-046"
+    },
+    {
+      "label": "ID-padding sub-id exemption rationale (DEC-0026 applies to top-level block-kind ids)",
+      "commit": "a20a1c7"
+    }
+  ]
+}

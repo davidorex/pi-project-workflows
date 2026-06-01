@@ -1,0 +1,10 @@
+{
+  "title": "Skill generator coverage — surface classify template variables, collector output shapes, tuning commands, debug query paths",
+  "body": "The generated SKILL.md surfaces tools, commands, vocabulary tables (collectors, when conditions, verdicts), agent contracts (inputSchema, contextBlocks, outputFormat). It does not surface: what Nunjucks variables each classify template expects (patterns, instructions, iteration, plus each collector name), what each collector returns and in what format (e.g., tool_results returns '---\\n[toolName] result\\n---' blocks), what tuning commands are available per monitor (issue-038), how to inspect execution traces and debug failures (issue-036/037). Without these in the skill, the LLM can use monitors but can't tune them or debug them — it hits a wall where self-correction requires knowledge the skill doesn't provide. Extension: the skill generator should extract template variable references from classify.md files (same Nunjucks variable extraction the workflow validator uses), document collector output formats from COLLECTOR_DESCRIPTORS (add a format field), and list available tuning/debug commands.",
+  "location": "scripts/generate-skills.js",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-project-workflows",
+  "source": "human"
+}

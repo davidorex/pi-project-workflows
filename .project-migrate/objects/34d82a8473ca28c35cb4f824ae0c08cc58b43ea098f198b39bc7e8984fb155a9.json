@@ -1,0 +1,37 @@
+{
+  "title": "Thinking-seam enforcement for forced-toolChoice dispatch",
+  "status": "enacted",
+  "context": "Agent spec YAMLs can declare thinking: on, but packages/pi-behavior-monitors/index.ts:1449-1450 does not forward thinking to the complete() call. The comment at lines 1449-1450 region acknowledges that the Anthropic API rejects thinking + forced toolChoice, so thinking must stay off when the dispatch uses a phantom-tool verdict shape. All five bundled classifier YAMLs declare thinking: on despite the silent drop. Issue-063 tracks this dead config as the forcing artifact. The framework does not currently enforce consistency between spec-declared thinking and dispatch-time behavior.",
+  "decision": "executeAgent in pi-jit-agents (once parseModelSpec and classify dispatch move there per DEC-0003) enforces thinking=off whenever toolChoice.type === 'tool' is present in the dispatch options. If the agent spec declares thinking: on in combination with forced toolChoice, the framework emits a warning naming the agent and the incompatibility, and proceeds with thinking disabled. Free-form (non-forced) dispatches continue to forward thinking per the spec. The forced-toolChoice path never silently drops thinking without notification.",
+  "consequences": [
+    "executeAgent gains a pre-dispatch check that inspects toolChoice and the compiled spec's thinking field",
+    "The five bundled classifier YAMLs should be corrected to thinking: off for cleanliness, separately from the enforcement change",
+    "Any future agent that combines forced toolChoice with thinking: on will be flagged loudly rather than silently mis-executing",
+    "Warning channel emits a TraceEntry via the canonical pi-jit-agents trace-writer pipeline (packages/pi-jit-agents/src/trace-writer.ts + agent-trace-sdk.ts). NOT via DispatchContext (attestation metadata, wrong layer) and NOT via JitAgentResult (typed return surface, wrong concern). Per feedback_no_stderr_diagnostics: diagnostics route through the canonical TraceEntry pipeline; the original 'logger via DispatchContext OR diagnostic via JitAgentResult' or-hedge is resolved by canon to the TraceEntry form (2026-05-26 narrowing)."
+  ],
+  "supersedes": [],
+  "related_findings": [
+    "issue-063"
+  ],
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_gaps": [],
+  "references": [
+    {
+      "label": "classify call site silent drop",
+      "path": "packages/pi-behavior-monitors/index.ts",
+      "lines": "1231-1248"
+    },
+    {
+      "label": "dead-config YAML",
+      "path": "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml"
+    },
+    {
+      "label": "DEC-0002 enactment + consequence #4 narrowing (or-hedge → TraceEntry) + citation refresh",
+      "commit": "bb1bc27"
+    }
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-05-26"
+}

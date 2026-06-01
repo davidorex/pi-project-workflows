@@ -1,0 +1,22 @@
+{
+  "name": "Work",
+  "purpose": "What is planned and in what order. Hierarchical decomposition — roadmap → milestone → epic → story → task. Each feature/epic owns its own scope, acceptance criteria, and scoped finding registry.",
+  "canonical_vocabulary": "Roadmap + Epics + Stories + Tasks (Agile/Jira/GitHub canon)",
+  "lifetime": "per-iteration",
+  "ownership_principle": "A task belongs to a story, a story to an epic, an epic to a milestone. Findings discovered while working on a story live in that story's feature node, not in the global tracker. Global task lists are materialized views, not the authoritative store.",
+  "current_blocks": [
+    "tasks.json"
+  ],
+  "target_blocks": [
+    {
+      "name": "features.json",
+      "shape": "flat",
+      "notes": "seed: one feature per epic, with embedded stories and tasks; hand-enactment of the nested structure until FGAP-001 lands"
+    },
+    {
+      "name": "features/",
+      "shape": "nested",
+      "notes": "target: once FGAP-001 lands, each feature becomes features/{id}.json and stories/tasks become subfiles"
+    }
+  ]
+}

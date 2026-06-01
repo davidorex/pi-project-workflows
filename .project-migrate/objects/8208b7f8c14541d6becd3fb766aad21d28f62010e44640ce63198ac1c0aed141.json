@@ -1,0 +1,21 @@
+{
+  "description": "FGAP-074 C3 — migrate pi-workflows consumers (29 files). Largest consumer set: workflow-sdk, workflow-executor, step-block, step-shared, index, template-validation, test-helpers + ~22 tests, mostly importing writeBootstrapPointer / schemaPath / PROJECT_DIR. Repoint old project-* subpaths + renamed identifiers to context-* names. Green per commit.",
+  "status": "completed",
+  "files": [
+    "packages/pi-workflows/src/workflow-sdk.ts",
+    "packages/pi-workflows/src/workflow-executor.ts",
+    "packages/pi-workflows/src/step-block.ts",
+    "packages/pi-workflows/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "All 29 pi-workflows files repointed to ./context-* subpaths + renamed identifiers",
+    "PROJECT_DIR consumers updated to the C0-decided replacement (drop|rename)",
+    "No legacy project-* import string remains in pi-workflows",
+    "npm run build && check && test green"
+  ],
+  "depends_on": [
+    "TASK-067"
+  ],
+  "notes": "Decomposition chunk C3. Maps to Claude task #62. FGAP-074. Parallelizable with C2/C4 but commit serially for green clarity (sequence note).",
+  "verification": "VER-040"
+}

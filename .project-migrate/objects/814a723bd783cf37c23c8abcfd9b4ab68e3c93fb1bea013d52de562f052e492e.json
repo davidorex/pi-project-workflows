@@ -1,0 +1,10 @@
+{
+  "title": "Curation ceremonies: roadmap-curate + plan-curate subcommands with buildCurationSuggestions parallels",
+  "body": "Step 6. Mirror lens-curate's pattern (packages/pi-context/src/lens-view.ts:116, packages/pi-context/src/index.ts:1042). buildRoadmapCurationSuggestions(view: RoadmapView) enumerates the roadmap's composition lenses and surfaces unbinned items per phase as append-block-item suggestions for relations.json with relation_type='phase_member' + suggested ordinal. buildPlanCurationSuggestions(view: PlanView) enumerates plan items missing depends_on edges against the existing block items they reference and surfaces dependency suggestions. /project roadmap-curate <ROADMAP-id> + /project plan-curate <PLAN-id> handlers use pi.sendMessage with { triggerTurn: true, deliverAs: 'followUp' } to drive the LLM through the curation. No new write surface — LLM persists via existing append-block-item.",
+  "location": "packages/pi-context/src/roadmap-plan.ts, packages/pi-context/src/index.ts",
+  "category": "capability",
+  "priority": "medium",
+  "status": "open",
+  "package": "pi-project",
+  "source": "agent"
+}

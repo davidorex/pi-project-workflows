@@ -1,0 +1,48 @@
+{
+  "title": "Migrate pi-behavior-monitors classifyViaAgent to pi-jit-agents",
+  "status": "proposed",
+  "description": "Rewrite classifyViaAgent to delegate fully to pi-jit-agents executeAgent. Remove local imports of pi-workflows agent helpers (issue-043 duplication) and local agent-spec/template code that pi-jit-agents now owns.",
+  "acceptance_criteria": [
+    "classifyViaAgent contains no agent-spec parsing, no template rendering, no parseModelSpec — only collector wiring, template-context assembly, and a call to pi-jit-agents executeAgent",
+    "pi-behavior-monitors no longer imports anything from pi-workflows",
+    "pi-behavior-monitors package.json lists @davidorex/pi-jit-agents as a direct dependency, not pi-workflows",
+    "Existing vitest suite for pi-behavior-monitors passes"
+  ],
+  "depends_on": [
+    "STORY-003"
+  ],
+  "gates": [],
+  "tasks": [
+    {
+      "id": "TASK-005-01",
+      "title": "Rewrite classifyViaAgent against executeAgent",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/index.ts"
+      ]
+    },
+    {
+      "id": "TASK-005-02",
+      "title": "Remove pi-workflows dependency",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/package.json",
+        "packages/pi-behavior-monitors/index.ts"
+      ]
+    },
+    {
+      "id": "TASK-005-03",
+      "title": "Add pi-jit-agents dependency",
+      "status": "todo",
+      "files": [
+        "packages/pi-behavior-monitors/package.json"
+      ]
+    },
+    {
+      "id": "TASK-005-04",
+      "title": "Run pi-behavior-monitors test suite",
+      "status": "todo",
+      "acceptance": "npx vitest run passes for pi-behavior-monitors at 0 failures"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "title": "pi-workflows workflow: step type is declared in spec but REJECTED at parse time (phase-6, not yet implemented) — operators cannot compose workflows from workflows; audit-codebase → forEach file → audit-file workflow pattern is inexpressible at the spec level today; manual subprocess chaining is the only workaround",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 10: Claude Code workflows expose workflow(name, args) hook as the canonical sub-workflow composition primitive (1-level only — child cannot recurse). pi-workflows declares a workflow step type in spec definitions but the validator REJECTS it at workflow-spec.ts:~291 (phase-6 not-yet-implemented marker). High-value composition patterns are blocked: (a) audit-codebase top-level workflow that fans out to per-file sub-workflow invocations; (b) canonical-pipeline meta-workflow that calls plan-mode + recon + implementation + verification sub-workflows in sequence; (c) batch-FGAP-closure that calls per-FGAP closure-workflow N times with different IDs. All inexpressible today; require manual subprocess chaining outside the framework.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "491-525",
+      "reference": "Part 3 axis 10 — Sub-Workflow Invocation — ADOPT verdict (rejection at parse currently)"
+    },
+    {
+      "file": "packages/pi-workflows/src/workflow-spec.ts",
+      "lines": "~291",
+      "reference": "validator rejection of workflow step type at parse time (phase-6 marker)"
+    }
+  ],
+  "impact": "Composition is blocked. Operators wanting to reuse a workflow as a step in another workflow are forced to hand-chain pi -p subprocess calls outside the framework — losing state-persistence, resume, validation, expression evaluation, all the affordances pi-workflows provides. Today's session pattern (multiple FGAP closures, each through identical canonical-pipeline) cannot be batched as a single parent-workflow invoking per-FGAP-closure sub-workflow. Pattern adoption from Claude Code (workflow() hook is 1-level) is direct + the prior phase-6 design work is wasted as long as the rejection stays.",
+  "canonical_vocabulary": "sub-workflow composition; workflow-as-step; 1-level composition; recursive workflow invocation (forbidden); state-hierarchy under parent runId",
+  "proposed_resolution": "Implement workflow step type: (1) workflow-spec.ts: remove the parse-time rejection at line ~291; add WorkflowStepSpec interface with required 'workflow: <name>' field + optional 'input: <expression>' + optional 'forEach: <expression>' for iteration; (2) validation: validateWorkflow checks target workflow exists + target's inputSchema matches step's input expression shape + DETECTS recursion (target.name === current workflow OR target transitively invokes current → reject at validation per Claude Code's 1-level limit); (3) workflow-executor.ts: implement execution — recursive call to executeWorkflow with runDir hierarchical (parent-runId/subflows/<workflow-name>-N/); forEach iterates with item context; sub-workflow result lands at steps.<step-name>.output; (4) expression scope: parent workflow can reference sub-workflow output via standard ${{ steps.X.output }}; (5) nesting depth: enforce 2-level limit (parent + 1 sub-workflow level; sub-workflow cannot itself invoke workflow step) per Claude Code's 1-level constraint. Tests: composition smoke + forEach + recursion-detection. No changes to other step types.",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

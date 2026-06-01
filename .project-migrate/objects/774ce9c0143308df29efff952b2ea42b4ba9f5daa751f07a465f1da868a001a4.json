@@ -1,0 +1,37 @@
+{
+  "title": "No tool-surface for MigrationFn registration — breaking schema evolution requires a code change",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "The FGAP-077 write-schema tool can create/replace a block-kind JSON Schema (incl. bumping its `version`), but it cannot complete a BREAKING evolution. When a schema's `version` changes, existing block items retain the old `schema_version`, and read-time `validateBlockWithMigration` (schema-validator.ts) THROWS a version mismatch unless a `MigrationFn` is registered. A `MigrationFn = (data:unknown)=>unknown` (schema-migrations.ts:45) is TypeScript CODE registered in-source via `registry.register(entry)` — it cannot be carried by a Pi tool param. So a harness-confined in-pi agent (or any tools-only consumer) can write an evolved schema but cannot forward-migrate the existing items through the tool surface; the evolution requires a code change. This is the deferred half of FGAP-077's migration boundary, surfaced + proven by its migration-boundary test. Mirrors the FGAP-071 precedent (unit 2.3 deferred the block_kind-rename cascade it could not cover).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/schema-migrations.ts",
+      "lines": "45",
+      "reference": "MigrationFn = (data:unknown)=>unknown registered in-source via registry.register — code, not data; no tool param can carry a function"
+    },
+    {
+      "file": "packages/pi-context/src/schema-validator.ts",
+      "lines": "204",
+      "reference": "validateBlockWithMigration throws on schema.version !== block.schema_version when no MigrationRegistry supplied"
+    },
+    {
+      "file": "packages/pi-context/src/schema-write-tool.test.ts",
+      "reference": "migration-boundary test: write-schema replace with a bumped version SUCCEEDS, then validateBlockWithMigration THROWS on an old-version item; only a code MigrationFn closes it"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0019/0020 dual-surface — the migration-registration leg is inherently code, no tool/CLI twin possible without an executable-code-carrying surface"
+    }
+  ],
+  "impact": "Breaking schema evolution (item-shape change) is not completable via the tool surface — the schema JSON is writable, but existing items are left un-migratable until a developer registers a MigrationFn in source. Onboarding / in-pi agents that evolve a schema must hand off to a code change. Bounds what FGAP-077's write-schema can deliver end-to-end.",
+  "canonical_vocabulary": "migration-registration, MigrationFn, schema-evolution, breaking-change, code-only-surface",
+  "proposed_resolution": "Outcome-only (implementation deferred): provide a path for forward-migrating existing block items when a schema version changes that a harness-confined agent can drive — e.g. a declarative/data-expressible migration spec the framework can interpret (vs an arbitrary code MigrationFn), OR an explicit accepted-boundary doc that breaking evolution is a developer-code task with a clear handoff. Survey whether common migrations (add-optional, rename-field, drop-field) are expressible as data the framework runs, reserving code MigrationFn for the irreducible cases. Coordinate with the schema-write tool (FGAP-077) + onboarding (DEC-0038).",
+  "related_decisions": [
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

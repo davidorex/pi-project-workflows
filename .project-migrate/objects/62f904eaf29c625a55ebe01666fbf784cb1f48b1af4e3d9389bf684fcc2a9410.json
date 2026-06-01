@@ -1,0 +1,29 @@
+{
+  "name": "Identity",
+  "purpose": "What this project is, who it is for, what cannot change. Stable across the project lifetime. Foundational and rarely revised.",
+  "canonical_vocabulary": "Project Charter + README + Glossary + Coding Standards",
+  "lifetime": "project-lifetime",
+  "ownership_principle": "Changes require user authority and affect every downstream layer",
+  "current_blocks": [
+    "project.json",
+    "domain.json",
+    "conventions.json"
+  ],
+  "target_blocks": [
+    {
+      "name": "project.json",
+      "shape": "flat",
+      "notes": "charter; unchanged"
+    },
+    {
+      "name": "domain.json",
+      "shape": "flat",
+      "notes": "glossary + domain rules; unchanged"
+    },
+    {
+      "name": "conventions.json",
+      "shape": "flat",
+      "notes": "coding standards; should subsume conformance-reference.json"
+    }
+  ]
+}

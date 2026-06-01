@@ -1,0 +1,25 @@
+{
+  "title": "pi-workflows LoopSpec lacks expression-based termination predicates (until / untilBudgetRemaining); maxAttempts hardcoding cannot express loop-until-dry / loop-until-condition canonical patterns without manual gate+break shims inside the loop body",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 4: Claude Code workflows let the script body express loop-until-dry via arbitrary expression gates (while loop with break on condition). pi-workflows loop step is hardcoded to maxAttempts (number) or attempts (expression evaluating to number) — both terminate by COUNT, not CONDITION. Loop-until-dry (terminate when no new issues found across iterations) requires a manual gate+break shim inside the loop body that's brittle + verbose + doesn't express the operator's intent at the spec level. Loop-until-budget-remaining (terminate when token budget drops below threshold) cannot be expressed at all — pi-workflows has no aggregate budget surface (see FGAP-141).",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "337-365",
+      "reference": "Part 3 axis 4 — Loop-Until-Dry / Loop-Until-Budget / Loop-Until-Count — ADOPT verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/step-loop.ts",
+      "reference": "LoopSpec definition + execution — currently only maxAttempts / attempts; no until / untilBudgetRemaining"
+    }
+  ],
+  "impact": "Operators expressing iterative-refinement workflows (review → improve → check → repeat-until-clean) must hardcode iteration counts that either over-iterate (waste tokens after convergence) or under-iterate (terminate before convergence). The canonical loop-until-dry pattern from Claude Code workflows docs cannot be expressed natively; requires manual nested gate+break shims that defeat the spec's declarative intent.",
+  "canonical_vocabulary": "expression-based loop termination; until-condition predicates; budget-aware termination",
+  "proposed_resolution": "Extend LoopSpec with optional fields: 'until: <expression>' (terminate when expression evaluates truthy AFTER each iteration; supersedes maxAttempts when both are set OR runs alongside as 'either-first' termination per executor decision); 'untilBudgetRemaining: <number>' (terminate when global budget.remaining() < threshold; depends on FGAP-141 budget surface). Updates: packages/pi-workflows/src/workflow-spec.ts (LoopSpec interface + AJV schema); packages/pi-workflows/src/step-loop.ts (executor short-circuits when until evaluates truthy); packages/pi-workflows/src/expression.ts (expression context exposes loop.iteration + loop.priorAttempts for predicate access).",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

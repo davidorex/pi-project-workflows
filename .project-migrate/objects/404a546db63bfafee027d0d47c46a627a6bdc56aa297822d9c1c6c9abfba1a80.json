@@ -1,0 +1,24 @@
+{
+  "title": "No render-time pagination primitive for projection rendering — large views overflow context windows",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-project",
+  "layer": "L2",
+  "description": "renderLensView, renderRoadmap (proposed), renderPlan (proposed), and any future projection renderer emit complete markdown with no pagination boundary. truncateHead (used by read-block via @mariozechner/pi-coding-agent) is intentionally NOT applied — full markdown is the contract; truncation defeats compositional projection. At small scales (≤10 phases per roadmap, ≤50 items per phase, ≤200 items per plan) this fits comfortably under typical context windows. At larger scales it overflows. The substrate currently has no primitive for: (a) page/section selection (render only phase X of roadmap Y), (b) summary-vs-detail rendering modes, (c) lazy materialization of nested compositions. Affects every aggregation primitive; particularly acute for the proposed roadmap/plan compositions.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/lens-view.ts",
+      "reference": "renderLensView emits all bins + items unconditionally; no pagination params; no summary mode."
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "read-block tool wraps payload in truncateHead per @mariozechner/pi-coding-agent — but lens-view rendering is exempt by design; no equivalent pagination knob exists for renderers."
+    }
+  ],
+  "impact": "Today: not blocking — all current renders fit in context. Tomorrow: every roadmap/plan substrate consumer needs a way to address sub-views (one phase at a time, one bin at a time, summary-only, count-only). Without pagination primitives, the substrate's expressivity is bounded by the user's context window. Cannot be deferred indefinitely once roadmaps/plans land at scale; users will hit the wall on first large composition.",
+  "canonical_vocabulary": "render-time pagination; sub-view selection; summary vs detail rendering",
+  "proposed_resolution": "Add optional render-time params to renderLensView/renderRoadmap/renderPlan: { detail: 'summary' | 'full', limit?: number, offset?: number, focus?: string[] (bin or item ids to render exclusively) }. SDK functions return paginated markdown with explicit cursor metadata (nextOffset, totalCount). Tool wrappers expose the params so LLMs can request specific sub-views. renderRoadmap's mermaid graph stays full (DAG topology rendering is cheap); per-phase item tables paginate. renderPlan's dependency graph stays full; item table paginates. Add a count-only mode that returns just the structural shape (phase names, item counts, status rollup) without item content. Filed forward per mandate-007 even though not currently triggered.",
+  "related_decisions": [],
+  "related_features": [],
+  "related_issues": []
+}

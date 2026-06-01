@@ -1,0 +1,10 @@
+{
+  "title": "pi-workflows dispatch.ts lacks per-step provider/model override",
+  "body": "packages/pi-workflows/src/dispatch.ts spawns 'pi --mode json' subprocesses without passing --provider or --model flags. Workflow agent steps inherit the parent session's configured model — there is no way to route one step to OpenRouter while the rest of the workflow runs on Anthropic direct, or to pin a specific reasoning step to a higher-capability model. This parallels the monitor-level issue-062 (provider-pin in pi-behavior-monitors) but for workflow steps. The underlying question is the same: agent spec 'model:' field semantics, resolved by DEC-0001. STORY-003 TASK-003-03 in FEAT-001 includes an audit of pi-workflows/src/ for equivalent parseModelSpec implementations so any consolidation happens alongside the monitor-side fix. Beyond consolidation, enabling per-step provider choice requires either: (a) workflow step type carries provider/model fields that dispatch.ts plumbs through to pi invocation flags, or (b) workflow steps declare their ideal provider/model via the agent spec's 'model:' field and inherit ExtensionContext-resolved semantics per DEC-0001. Canonical owner: FEAT-001 STORY-003 + follow-up capability work once DEC-0001 decides.",
+  "location": "packages/pi-workflows/src/dispatch.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-workflows",
+  "source": "agent"
+}

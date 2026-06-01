@@ -1,0 +1,13 @@
+{
+  "description": "FGAP-026 closure phase 5 (Step 8.7.5; Claude Code Task #25): Arc-tracking blocks authored as dogfood substrate per FGAP-028 — config + relations + roadmap + phase + (extend tasks.json) + context-contracts for THIS REPO",
+  "acceptance_criteria": [
+    "config.json declares relation_types[] including DEC-0017 work-unit-relation kinds + lenses",
+    "relations.json with phase_depends_on + per-task constraint edges per DEC-0017",
+    "roadmap.json with ROADMAP-001 referencing PHASE-006..010",
+    "phase.json with PHASE-006..010 entries",
+    "tasks.json extended with phase references via update-block-item (TASK-021..030 entries already authored pre-Phase-5; Phase 5 adds phase linkage via relations.json edges per DEC-0013/0017)",
+    "context-contract entries per work-unit-kind",
+    "gather-execution-context returns valid bundle for representative arc-tracking task"
+  ],
+  "status": "planned"
+}

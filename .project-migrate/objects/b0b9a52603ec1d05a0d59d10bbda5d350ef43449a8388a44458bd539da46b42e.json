@@ -1,0 +1,50 @@
+{
+  "title": "Build /context start — the impossibilized single-entry onboarding conductor (state-machine; READY-gated twinned operational verbs; init/accept-all/install dissolved)",
+  "status": "in-progress",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "GAP: there is no single safe entry to substrate bootstrap; the 3-step init->accept-all->install DAG is user-sequenced and out-of-order is representable (FGAP-093). DEC-0042 settles the design: /context start is the sole human entry; bootstrap is human-only; all other verbs are twinned + READY-gated; init/accept-all/install dissolve into start. This FGAP is the implementation spec.\n\nARCHITECTURE.\nBootstrap state is a pure function of the filesystem (DEC-0040 — nothing stored): deriveBootstrapState(cwd) -> NO_POINTER (no .pi-context.json) | NO_CONFIG (pointer present, no config.json) | NOT_INSTALLED (config present, declared installed_schemas[]/installed_blocks[] not all materialized on disk) | READY (all present). \n\n/context start = state machine with FALL-THROUGH, human-only command, NO tool twin, precondition-free, never errors:\n  NO_POINTER -> elicit substrate dir name (suggest .context; NEVER default — DEC-0015) -> writeBootstrapPointer + mkdir dir + dir/schemas -> fallthrough\n  NO_CONFIG -> elicit accept-all | step-through (DEC-0038 fork) -> accept-all: adoptConception(cwd); step-through: conversational curation (FGAP-066, LLM-via-tools pi.sendMessage pattern) -> fallthrough\n  NOT_INSTALLED -> installProject(cwd) (idempotent, never-clobber) -> fallthrough\n  READY -> render the /context status view (thin pass-through; status owns the read home — no duplicate home)\nRe-running start from any state resumes; READY re-run just shows status.\n\nGATING. Every /context subcommand EXCEPT start checks deriveBootstrapState(cwd)===READY at the DISPATCH layer before invoking its handler. Unmet -> do not run; emit the single unified remedy 'substrate not set up — run /context start' (+ ctx.ui.setEditorText('/context start') prefill). start is the only precondition-free verb. Gate is STATE-based, not a 'did you run start' flag.\n\nDISSOLUTION. init/accept-all/install lose their standalone command forms AND their tool forms; remove the project-init and project-accept-all Pi tools from the registry. The library fns initProject / adoptConception / installProject REMAIN, called only as start's internal phases.\n\nTWINNING. start is the ONE human-only exception. status/view/validate/validate-relations/roadmap-* + the block CRUD tools stay twinned (command+tool) per DEC-0019/0020, all READY-gated.\n\nUNIFIED REMEDY. BootstrapNotFoundError message + the command-gate redirect both read 'run /context start'; tool throws carry the guidance so the harness-confined LLM (DEC-0014) relays the correct HUMAN action (the LLM cannot bootstrap — intentional per DEC-0042).\n\nSTARTUP SLOT. In the existing session_start handler (index.ts:459), gate on event.reason==='startup' && ctx.hasUI && deriveBootstrapState(ctx.cwd)!==READY -> ctx.ui.setWidget(key, ['pi-context installed — run /context start to begin'], {placement:'aboveEditor'}) + optional setEditorText; clear the widget when READY. Per analysis/2026-05-23-pi-tui-onboarding-banner-research.md (pi's own update-banner slot is NOT extension-addressable; setWidget is the closest persistent extension-owned slot; surfaces are text-only).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1953-2183",
+      "reference": "PROJECT_SUBCOMMANDS dispatch — where the uniform READY gate + the start verb are added; where init/accept-all/install command forms are removed"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "457-461",
+      "reference": "session_start handler — where the startup-slot setWidget hint is added (today only checkForUpdates->notify)"
+    },
+    {
+      "file": "packages/pi-context/src/project-context.ts",
+      "lines": "419-445",
+      "reference": "adoptConception — becomes a start internal phase (no longer a standalone tool)"
+    },
+    {
+      "file": "packages/pi-context/src/project-dir.ts",
+      "reference": "resolveContextDir / BootstrapNotFoundError — carry the unified 'run /context start' remedy in the throw"
+    },
+    {
+      "file": "analysis/2026-05-23-pi-tui-onboarding-banner-research.md",
+      "reference": "startup-slot SDK mechanism + the not-extension-addressable update-banner limitation"
+    }
+  ],
+  "impact": "Closes the out-of-order class entirely (subsumes FGAP-093); gives a fresh adopter one verb reachable from any state; aligns the human command surface with DEC-0042/0038; makes the in-pi LLM's unset-substrate behavior a single correct human-redirect. Without it, onboarding stays a memorized multi-step sequence with misdirecting errors.",
+  "canonical_vocabulary": "impossibilization-by-design, bootstrap state machine, READY-gate, dual-surface twinning, human-only entry",
+  "proposed_resolution": "Phased, each phase dual-surface where applicable (DEC-0019/0020) + runtime demo + fresh-context adversarial (DEC-0018) + tests.\nP1 deriveBootstrapState(cwd): pure fn returning the 4-state enum from pointer/config/asset-materialization signals; library + unit tests (all four states + idempotent re-derivation).\nP2 Dispatch READY-gate: in the subcommand dispatcher, every sub except start gates on deriveBootstrapState===READY else unified redirect + setEditorText; start precondition-free. Tests: each gated sub on a non-READY dir redirects; on READY runs.\nP3 /context start conductor: fall-through state machine (NO_POINTER dir-name elicit -> pointer+dirs; NO_CONFIG adopt-mode elicit -> adoptConception | step-through-stub; NOT_INSTALLED -> installProject; READY -> render status). Human-only command, NO tool twin. Elicitation via the pi.sendMessage follow-up-turn pattern (lens-curate precedent). Runtime demo: fresh dir -> start -> answer -> READY end-to-end (accept-all branch).\nP4 Dissolve init/accept-all/install: remove their command forms; remove project-init + project-accept-all tools from the registry; keep library fns as start internals. Adversarial: grep that no command/tool path reaches them except via start.\nP5 Unified remedy: BootstrapNotFoundError + command gate text = 'run /context start'; tool throws carry it. Test: a tool on an unset dir throws with the start guidance.\nP6 Startup slot: session_start setWidget hint gated to not-READY + reason===startup + hasUI; cleared at READY. Demo via the SDK surfaces in the analysis report.\nP7 step-through branch = FGAP-066 (honest stub in P3: offered, lands with FGAP-066; never silently substitute accept-all). On landing, close FGAP-093 (subsumed). \nSEQUENCING: assumes the /context surface (FGAP-074 / DEC-0036 step-4 cutover). Buildable on /project first then renamed, OR after cutover — user's call. The whole spec is the FGAP-066 vehicle's superstructure (start), with FGAP-066 supplying the step-through interior. [INSTRUCTIONAL-PROJECTION REQUIREMENT 2026-05-23, user-directed] The READY/status view + start conductor + startup slot must deliver INSTRUCTIONS, not bare counts: every derived-state line pairs the fact with its exact write AFFORDANCE (the tool/command to act). E.g. not-installed -> handled by start (run /context start); ready + 0 edges -> \"0 edges — add via the append-relation tool\"; ready + empty block kind -> \"<kind>: 0 items — add via the append/file-block-item tool\". This is the chosen alternative to pre-seeding empty files (pre-seeding advertises hand-editing forbidden by F-006, imposes content against DEC-0011, clutters the dir so it no longer reflects real work, and freezes a stale schema_version on never-written blocks). The derived view delivers the same discoverability with zero materialized files. Cross-cuts: status render (project-sdk + /context status handler), start READY branch (renders status), and the startup slot. Intersects FGAP-085 — the human-facing \"add via X\" affordance strings and the in-pi LLM tool-description discovery are two faces of one self-describing surface; design them together.",
+  "related_decisions": [
+    "DEC-0042",
+    "DEC-0038",
+    "DEC-0015",
+    "DEC-0011",
+    "DEC-0014",
+    "DEC-0019",
+    "DEC-0020",
+    "DEC-0040",
+    "DEC-0029",
+    "DEC-0036"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

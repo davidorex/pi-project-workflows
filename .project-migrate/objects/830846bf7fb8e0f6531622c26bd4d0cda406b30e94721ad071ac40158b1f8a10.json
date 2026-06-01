@@ -1,0 +1,32 @@
+{
+  "title": ".project/config.json tool_operations + tool_operations_forbidden both null/empty in this repo — even after FGAP-117 closure, ZERO composite instances exist for FEAT-010 bounded-composite vocabulary to operate on",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-project-workflows",
+  "layer": "L1",
+  "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gap 7 HIGH) empirically established: .project/config.json has tool_operations: [] (empty array seed from TASK-089/092 runtime demos) + tool_operations_forbidden: [] (empty seed from TASK-092). Zero composite instances declared. Even after FGAP-117 wires pi-agent-dispatch into the launch chain + FGAP-118 resolves dynamic-composite discovery, the in-pi orchestrator will see NO bounded composites because none are declared in this repo's config. The mechanism (FEAT-010 + composite-loader + author-tool-grant) ships complete; the data layer (composite instances) is empty. Authoring composite instances requires either: (a) human writer using author-tool-grant Pi tool (currently unreachable per FGAP-117) or amendConfigEntry directly via tsx-eval; (b) defining a default set of canonical composites that ship in samples/conception.json's tool_operations[] (analogous to status-vocab defaults); (c) leaving the seed empty as canon-correct (composites are project-specific; this repo is a framework workspace not an end-user project; end-user projects would author their own).",
+  "evidence": [
+    {
+      "file": ".project/config.json",
+      "reference": "tool_operations: [] + tool_operations_forbidden: [] empty seeds (committed at TASK-089 a1764ca + TASK-092 a1764ca)"
+    },
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "reference": "tool_operations: [] + tool_operations_forbidden: [] canonical default catalog also empty"
+    },
+    {
+      "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+      "reference": "Audit commit 945dc93 Dimension C.3 + gap 7 HIGH"
+    }
+  ],
+  "impact": "Bounded-composite capability vocabulary is DEMONSTRABLY available only in test fixtures (per pi-agent-dispatch tests); production-launch surface has no composite instances. The FEAT-005 'composed from empty' intent is honored literally, but 'composed to need' has no path to need-declaration. End-user projects adopting pi-agent-dispatch would face the same: zero composites until they declare some.",
+  "canonical_vocabulary": "composite-instances-empty-seed / framework-vs-project-vocabulary-distinction / sample-composites-defaults-question",
+  "proposed_resolution": "Empty seed stays canon-correct: composites are project-specific bounded capabilities; no project-agnostic defaults can exist (a default `read-files-scoped-to-WHAT` makes no sense without knowing target project shape). For THIS repo's dogfooding of FEAT-006 demos, author a small composite set via the `author-tool-grant` Pi tool (writer.kind=human enforced per DEC-0047) targeting this repo's actual shape: `read-files-analysis-docs` scoped to {allowed_roots: ['analysis/', 'docs/']}, `git-log-recent` with {since: <iso>, limit: 20}, `grep-paths-substrate` scoped to .project/. End-user projects adopting pi-agent-dispatch author their own composites the same way. The `author-tool-grant` Pi tool is the SOLE canonical authoring path; calling `amendConfigEntry` directly via tsx-eval bypasses the writer.kind=human enforcement gate (anti-canon per DEC-0047 capability-widening clause + feedback_no_parallel_ungated_paths). pi-agent-dispatch README documents this authoring cadence as the canonical pattern post-FEAT-011. Closure criterion: FGAP-119 transitions to `closed` when this repo's 3 named composites are authored into `.project/config.json:tool_operations[]` via author-tool-grant invocations + verified discoverable via composite-loader at extension-load. Sequencing: FEAT-011 (launch-chain integration) is the hard prerequisite — it lands first so a constrained pi session can be launched where author-tool-grant is reachable; then the authoring TASK invokes author-tool-grant 3 times (one per composite) from inside that session.",
+  "related_features": [
+    "FEAT-010",
+    "FEAT-006"
+  ],
+  "related_decisions": [
+    "DEC-0047"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "title": "writer.kind enforcement on author-agent-spec / author-tool-grant / commit-attested is field-validation not identity-verification — caller-supplied writer.kind='human' is accepted at face value; in-pi agent demonstrated spoof 2026-05-29 (capability-widening / git-write tools bypassable by setting writer.kind='human' in tool-call args); the entire DEC-0047 governance assumption (capability widening is human-only; orchestrator cannot escalate its own grant) is undercut",
+  "status": "closed",
+  "priority": "P0",
+  "package": "pi-agent-dispatch",
+  "layer": "L3",
+  "description": "Empirical demonstration 2026-05-29: in-pi agent launched via scripts/launch-constrained-pi.sh against foreign target dir attempted author-agent-spec with writer.kind='agent' — rejected per DEC-0047 (working). Same agent then spoofed writer.kind='human' in its tool args — gate accepted the field value at face value and proceeded to substrate-write attempt (failed only because the foreign target had no substrate pointer; on a properly-bootstrapped target the spoofed write would have succeeded). Root cause: author-agent-spec / author-tool-grant / commit-attested all gate at execute()-body entry on a caller-supplied writer.kind string field; nothing in pi's tool-call interface verifies the caller's actual identity. The gate is theatrical defense against compliant agents, no defense against motivated or confused ones. Pi-coding-agent does expose a tamper-proof per-tool pre-execute gate via pi.on('tool_call', handler) returning {block: true, reason} + ctx.ui.confirm() (verified 2026-05-29 by Explore investigation of node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:605-611 + docs/extensions.md:69-73). The gate fires BEFORE the tool's execute() body, so the agent's args (including spoofed writer.kind) cannot escape it. CAVEAT: ctx.ui.confirm() auto-succeeds in non-interactive modes (pi --mode json / RPC / print) — the handler must explicitly refuse non-interactive contexts for sensitive tools to prevent JSON-mode bypass.\n\nFiled with concrete 3-bucket tool-tier conception (settled 2026-05-29 with user) baked into proposed_resolution so the implementation arc has canonical decisions in substrate not just conversation memory. BUCKET 1 (default-grant, no auth): all read tools + substrate-item writes (append/update/remove-block-item + nested + append-relation) + call-agent + run-real-checks + run-work-order-loop + complete-task + gather-execution-context + render-item-by-id + enforce-budget + list-tools + workflow-* reads + monitors-* reads. BUCKET 2 (auth-required via tool_call handler + ctx.ui.confirm): author-agent-spec + author-tool-grant + write-schema + amend-config + write-block + commit-attested + rename-canonical-id + workflow-execute + workflow-resume + workflow-init + monitors-control + monitors-rules (write mode) + context-init + context-accept-all. BUCKET 3 (off-allowlist; already-forbidden per FEAT-010 5-layer): bash + write + edit + shell + execute.",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+      "reference": "gates on params.writer.kind === 'human' read directly from caller-supplied tool-call args; no identity verification"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/author-tool-grant-tool.ts",
+      "reference": "same pattern"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/commit-attested-tool.ts",
+      "reference": "writer.kind=agent enforcement is field-validation; same spoof surface"
+    },
+    {
+      "file": "node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts",
+      "lines": "605-611",
+      "reference": "ToolCallEventResult { block?: boolean; reason?: string } — the pre-execute gate API"
+    },
+    {
+      "file": "node_modules/@earendil-works/pi-coding-agent/docs/extensions.md",
+      "lines": "69-73",
+      "reference": "pi.on('tool_call', async (event, ctx) => ...) — pattern docs include ctx.ui.confirm usage"
+    }
+  ],
+  "impact": "P0 security finding. Every Bucket-2 tool (13 tools listed in description) is currently bypassable by an in-pi agent setting writer.kind='human' in its own tool-call args. The orchestrator we launch via scripts/launch-constrained-pi.sh can therefore (a) author new privileged sub-agent specs with arbitrary capability declarations, (b) widen its OWN capability grants via author-tool-grant, (c) commit arbitrary files to git under fabricated agent_id attestation. The FEAT-006 north-star governance story (orchestrator-cannot-widen-its-own-grant; human-OK gate at iteration boundary) is undercut at the foundation. FGAP-130/131/132 work to close citation rot is necessary but orthogonal — they close the citation problem, not the authority problem.",
+  "canonical_vocabulary": "identity-verification vs field-validation; pre-execute pi-dispatch gate vs in-execute body gate; tool_call event interception; defense-in-depth at the trust boundary",
+  "proposed_resolution": "Register a single pi.on('tool_call', handler) in pi-agent-dispatch's extension factory. Handler filters event.toolName against a const Bucket-2 list (the 13 tools enumerated in description). For each match: (a) if !ctx.ui.isInteractive return {block: true, reason: 'tool <name> requires interactive user-confirm; current context is non-interactive'} — closes JSON-mode bypass; (b) if interactive, call await ctx.ui.confirm(<tool-name + args-summary>); on false return {block: true, reason: 'user declined'}. One handler, one file (packages/pi-agent-dispatch/src/auth-gate.ts), wired into the extension factory at packages/pi-agent-dispatch/src/index.ts. Unit tests assert (1) Bucket-2 tools require confirm; (2) Bucket-1 tools do not invoke the handler's confirm path; (3) non-interactive context returns block:true with refusal reason; (4) user-decline returns block:true; (5) user-approve allows tool to proceed. Side-effect: closes FGAP-126 simultaneously (context-init becomes truly human-only at pi-dispatch layer, not just documented-as-human-only). Once landed, the writer.kind field can be derived from the verified interaction (set programmatically inside the handler based on ctx.user) rather than trusted from caller args — second iteration cleanup; first iteration is the block-gate alone.\n\nCLOSED: implemented via FGAP-133/134 arc on branch fgap-133-134-auth-gate (commits 7be299b + e6a1799). The writer.kind spoof is now closed at the pi-dispatch layer rather than at each tool's execute() body: packages/pi-agent-dispatch/src/auth-gate.ts registers a pi.on('tool_call') handler from the extension factory; AUTH_REQUIRED_TOOLS pins the 14 Bucket-2 sensitive tools verbatim (membership-pinning test guards against drift); non-interactive contexts (ctx.hasUI=false) are refused unconditionally with a structured reason; interactive contexts invoke ctx.ui.confirm with a sanitized arg summary. 8 new unit-test cases cover the 5 branch outcomes + the message-rendering surface. Writer.kind field becomes derived-from-verified-interaction rather than caller-trusted; a future cleanup iteration may delete the field-validation branches in author-agent-spec / author-tool-grant / commit-attested entirely. VER-060 attests. NOTE: the launch-script behavioral demo (operator types 'no' to a synthetic spoof attempt) + the fresh-context adversarial probe are deferred to orchestrator follow-on per plan Phase 3.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0047"
+  ],
+  "related_issues": []
+}

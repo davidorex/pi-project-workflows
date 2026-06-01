@@ -1,0 +1,29 @@
+{
+  "title": "pi-agent-dispatch launch-chain integration — wire the 5th extension into META + skills-generation + own-package self-registration so launching scripts/launch-constrained-pi.sh produces a canonical harness-confined session honoring DEC-0014 + DEC-0044 + DEC-0047 + FEAT-006",
+  "status": "complete",
+  "layer": "L5",
+  "description": "Close the launch-chain invisibility (FGAP-117 CRITICAL) by symmetry — 4 file edits + 1 new file per the audit's resolution scope. Concretely: (1) packages/pi-project-workflows/package.json adds @davidorex/pi-agent-dispatch to dependencies + ./agent-dispatch-extension.ts to pi.extensions[]; (2) NEW packages/pi-project-workflows/agent-dispatch-extension.ts as a one-line re-export shim (`export { default } from \"@davidorex/pi-agent-dispatch\";`) mirroring the existing 3 shim files; (3) packages/pi-agent-dispatch/package.json adds pi.skills field (mirroring other 3 extensions) + skills/ to files[]; (4) NEW packages/pi-agent-dispatch/skill-narrative.md hand-authored prose source (YAML frontmatter + XML-tagged sections per pi skill standard) documenting the 5 static tools (call-agent + author-agent-spec + run-real-checks + commit-attested + author-tool-grant) + the composite-loader dynamic-registration mechanism; (5) scripts/generate-skills.js packageDirs list adds 'pi-agent-dispatch'. After: npm run skills regenerates → SKILL.md emitted for pi-agent-dispatch with 5 static tool tags → launch script grep picks up the names → launched session includes the 5 new tools → FEAT-006 north-star loop reachable from launched session + JI-021 + DEC-0044 + DEC-0047 honored at the surface. Plus documentation cascade closes FGAP-122 (launch script header refresh + META README refresh + new docs/launching-the-orchestrator.md + canon-anchor citations); hygiene cascade closes FGAP-123 (pre-launch SKILL.md verification step + pi.skills field added + FEAT-005 status flip proposed→complete + FEAT-004 proposed→in-progress as substrate-status truth flips with FEAT-010 closure). Zero canon evolution required — all elements are concrete enactments of existing canon (DEC-0014 harness-confined positive clause + DEC-0044 sibling-consumer canon + DEC-0019/0020 dual-surface + DEC-0047 capability authoring + FEAT-006/010 already-built infrastructure).",
+  "motivation": "Address FGAP-117 CRITICAL (5 static tools + entire FEAT-006 loop unreachable from launched session) + FGAP-122 (launch-chain documentation drift) + FGAP-123 (launch-chain hygiene + symmetry). FEAT-010 shipped the infrastructure (TASK-092 completion at 9bc6602) but the LAUNCH chain that exposes that infrastructure to the in-pi orchestrator was never extended; the audit (commit 945dc93) made that gap canon-traceable.",
+  "acceptance_criteria": [
+    "packages/pi-project-workflows/package.json carries @davidorex/pi-agent-dispatch in dependencies[] + ./agent-dispatch-extension.ts in pi.extensions[]",
+    "packages/pi-project-workflows/agent-dispatch-extension.ts exists as a one-line re-export shim matching the pattern of the existing 3 shims",
+    "packages/pi-agent-dispatch/package.json carries pi.skills field + skills/ in files[]",
+    "packages/pi-agent-dispatch/skill-narrative.md exists with YAML frontmatter + XML-tagged sections per pi skill standard documenting the 5 static tools + composite-loader mechanism",
+    "scripts/generate-skills.js packageDirs[] list includes 'pi-agent-dispatch'",
+    "After npm run skills: packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md exists with <tool name=> tags for all 5 static tools (call-agent + author-agent-spec + run-real-checks + commit-attested + author-tool-grant)",
+    "Runtime demo: launching scripts/launch-constrained-pi.sh against a fresh tmp target dir (with .pi-context.json pointer + config.json scaffold) produces an in-pi session whose tool registry contains the 5 pi-agent-dispatch static tools (verified via list-tools Pi tool or direct introspection)",
+    "Documentation cascade (FGAP-122 closure): scripts/launch-constrained-pi.sh header refreshed (4 extensions; canon-anchor citations); packages/pi-project-workflows/README.md refreshed; NEW docs/launching-the-orchestrator.md (or equivalent) covers prerequisites + harness intention + composite-vocabulary author cadence",
+    "Hygiene cascade (FGAP-123 closure): launch script pre-launch SKILL.md presence check (warn or fail-fast on partial-set); features.json status flips applied (FEAT-005 proposed→complete; FEAT-004 proposed→in-progress; FEAT-006 stays proposed pending TASK-091)",
+    "Per DEC-0048: bundled-artifact tests not regression gates; engine unit tests + the runtime-demo + adversarial probe are gates",
+    "VALIDATION = real checks per DEC-0018: build/check/test exit codes; runtime demo (fresh tmp target dir launch + tool-registry assertion); adversarial probe (fresh-context agent verifies symmetry: all 4 extensions emit SKILL.md + META lists all 4 + launch script grep returns count ≥ static tool count + zero pi-agent-dispatch tools absent from the launched session + zero forbidden-term hits in any new file)"
+  ],
+  "dependencies": [
+    "FEAT-010"
+  ],
+  "blocks_resolved": [
+    "FGAP-117",
+    "FGAP-122",
+    "FGAP-123"
+  ],
+  "findings": []
+}

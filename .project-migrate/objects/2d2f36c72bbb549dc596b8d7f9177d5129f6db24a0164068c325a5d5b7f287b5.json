@@ -1,0 +1,7 @@
+{
+  "title": "Close issue-043 (duplicate agent infrastructure)",
+  "status": "todo",
+  "files": [
+    ".project/issues.json"
+  ]
+}

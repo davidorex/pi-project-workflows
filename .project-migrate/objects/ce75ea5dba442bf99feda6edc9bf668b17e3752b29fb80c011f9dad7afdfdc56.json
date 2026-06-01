@@ -1,0 +1,4 @@
+{
+  "title": "Template-input alignment validation in SDK validator",
+  "narrative": "The validateWorkflow() SDK function includes a template-input alignment phase (commit c40f432) that traces: workflow step inputs -> source schemas -> Nunjucks template field references. Nunjucks silently renders undefined variables as empty strings. When a template references {{ spec.intent }} but the source schema defines the field as 'description', the agent receives an empty string with no error. The validator catches these mismatches at validation time rather than at runtime. Motivated by a template-schema audit that found 9 mismatches across 18 templates -- a ~50% defect rate invisible without this validation. Severity model: unguarded = error, guarded with {% if %} = warning. Confidence: HIGH."
+}

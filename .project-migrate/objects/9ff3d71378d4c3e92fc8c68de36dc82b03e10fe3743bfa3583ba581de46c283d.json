@@ -1,0 +1,36 @@
+{
+  "title": "No top-level user-story block — stories exist only nested inside features[].stories[]; cannot relate independently to project-goal / milestone / phase / task via closure-table",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Stories currently exist ONLY as a nested inline array inside features (.project/schemas/features.schema.json definitions.story; features[].stories[]; 9 STORY-NNN instances under FEAT-001). There is no top-level story / user-story block: not a file in .project/, not in config.block_kinds, not independently queryable via filter-block-items / walk-ancestors / find-references / resolve-items-by-id. Consequence: a story cannot be related independently to project-goal (global), milestone, phase, or task — it is locked inside its parent feature. The envisioned flow (a project deliberates and produces N user-stories, then relates them across altitudes — global / milestone / phase / task) is not expressible because the story has no standalone identity to anchor closure-table edges. The framework CAN bear the conception: this is the identical elevation pattern as milestone (FGAP-053, milestone-inline-in-roadmap → top-level block) and phase (DEC-0028, file-per-phase → array-block). A top-level user-story block + relations.json edges expresses all the envisioned cross-altitude relations under DEC-0013 (closure-table allows one story to participate in multiple parallel hierarchies — milestone AND phase AND N tasks simultaneously). Sub-shape (whether the elevated block carries the Agile user-story form role/want/benefit, or stays structural like the current nested story title/status/tasks, or both coexist as distinct kinds) is DELIBERATELY LEFT OPEN here — to be designed when the gap is taken up, not presumed now.",
+  "evidence": [
+    {
+      "file": ".project/schemas/features.schema.json",
+      "reference": "definitions.story nested in features; story id is plain string (no canonical pattern); fields id/title/status/description/acceptance_criteria/depends_on/gates/tasks"
+    },
+    {
+      "file": ".project/features.json",
+      "reference": "FEAT-001 carries 9 stories nested in stories[] (STORY-001..009); no standalone story block"
+    },
+    {
+      "file": ".project/config.json",
+      "reference": "block_kinds has no story/user-story entry"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-053 (milestone elevation) is the parallel pattern; same nested-inline → top-level-block + edges shape"
+    }
+  ],
+  "impact": "Stories cannot anchor cross-altitude relations. Project deliberation producing a backlog of user-stories has no substrate home for them as first-class items. Stories cannot be lensed (stories-by-status / stories-by-milestone), edge-linked (story_serves_milestone / phase_contains_story / task_implements_story / project_goal_served_by_story), or context-composed (gather-execution-context unit_kind=story). The feature→story relationship is currently a DEC-0013 violation in waiting (nested inline child) the same way milestone-in-roadmap is — elevating story makes feature_contains_story a closure-table edge. Without elevation, the requirements→user-story→task traceability chain (and any user-story-driven planning) is unrepresentable.",
+  "canonical_vocabulary": "user-story-block, story-elevation, cross-altitude-story-relations, nested-inline-child-elevation",
+  "proposed_resolution": "Elevate story to a top-level array-block (parallel to FGAP-053 milestone elevation + DEC-0028 phase array-block): new block kind (canonical_id + prefix TBD at design time) with STORY-NNN-style ids; register in config.block_kinds; relations.json edges across altitudes via DEC-0030-tripartite relation_types (candidates, named at design time: project_goal_served_by_story / milestone_delivered_by_story / phase_contains_story / feature_contains_story / task_implements_story); migrate FEAT-001's 9 nested stories out of features[].stories[] into the top-level block + feature_contains_story edges; CTX-NNN context-contract for unit_kind=story. SUB-SHAPE NOT PRESUMED: whether the block is the Agile user-story form (role / want / benefit / acceptance_criteria), the current structural story form (title / status / tasks), or two distinct kinds — is an open design decision to resolve when this gap is taken up, gated on user deliberation. Cross-decision with FGAP-053 (milestone) + FGAP-046 (inline-nested elimination) + DEC-0013/0024/0025 — same elevation discipline.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0013",
+    "DEC-0024",
+    "DEC-0025"
+  ],
+  "related_issues": []
+}

@@ -1,0 +1,11 @@
+{
+  "title": "resolveComposition SDK function + loadLensView dispatch on lens.kind composition",
+  "body": "Step 3. Closes FGAP-012 implementation. Add resolveComposition(cwd, lens) to packages/pi-context/src/project-context.ts. For each member of lens.members: if {lens} member, recurse via resolveComposition (or loadLensView if target lens); if {from, where} member, readBlock(cwd, from) + filter by where field-equality. Cycle-safe via visited-set on lens ids; throws composition_cycle_detected. Extend loadLensView (packages/pi-context/src/lens-view.ts:40) to dispatch on lens.kind === 'composition' before falling back to today's target-lens path. New tool: project-resolve-composition with params { lensId } — exposes composed-lens result for inspection without rendering. Tests: composition fixture + cycle test.",
+  "location": "packages/pi-context/src/project-context.ts, packages/pi-context/src/lens-view.ts:40, packages/pi-context/src/index.ts",
+  "category": "capability",
+  "priority": "high",
+  "status": "resolved",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit 048a2ac — composition lens kind dispatch (resolveComposition + loadLensView routing + project-resolve-composition tool); FGAP-012 implementation complete, status transition deferred to user authority per framework-gaps lifecycle convention."
+}

@@ -1,0 +1,31 @@
+{
+  "title": "Mandates as a typed block in the substrate contract",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-project",
+  "layer": "L1",
+  "description": "Under the unifying heuristic (substrate-arc-frame.md §1.1), every typed context that gets composed into a prompt belongs to one canonical contract. Mandates today live as ~/.claude/mandates.jsonl — a flat JSONL store with id/title/rule/tags fields, prefixed all-or-nothing on every UserPromptSubmit by an external claude-side hook. Under the heuristic mandates become a typed block at user scope with their own schema, enabling: selective composition (lens views like _lens:mandates-for-classify inject only classifier-relevant mandates rather than all-or-nothing), schema-validated writes (no parallel ungated path for mandate authoring), supersession edges (one mandate retiring another via closure-table relations), authorship attestation (mandates gain the same FGAP-004 target as project blocks). Concrete schema fields needed beyond today's id/title/rule/tags: scope (user/project/agent — couples to DEC-0010), priority/severity, applicability_conditions (which agents, which contexts — couples to FGAP-010 applicability predicate language), lifecycle (active/superseded), supersedes (lineage). Surfaced as gap #35 in the heuristic-widening pass.",
+  "evidence": [
+    {
+      "file": "~/.claude/mandates.jsonl",
+      "reference": "Today's mandate store: flat JSONL, no schema, no canonical write surface, no per-context selective composition. The all-or-nothing prefix on UserPromptSubmit is the degenerate 'all mandates' lens."
+    },
+    {
+      "file": "analysis/2026-05-03-substrate-arc-frame.md",
+      "lines": "§1.1, §2.1, §5 gap #35",
+      "reference": "Heuristic-widening pass surfaces mandates as in-scope under the same heuristic that governs project blocks."
+    }
+  ],
+  "impact": "Without typed mandate blocks: mandate authoring bypasses block-api (parallel ungated path); mandate-relevant lens injection (selective composition by context) is impossible; mandate authorship attestation has no target; supersession lineage cannot be carried; agent-scope opt-out / opt-in is unreachable. The heuristic-widening's second-class citizen problem: mandates exist in prompt-composition reality but not in the substrate contract.",
+  "canonical_vocabulary": "policy-as-data; declarative governance store; typed user-scope substrate",
+  "proposed_resolution": "Land mandates.json + mandates.schema.json under the configured user-scope root (per DEC-0010). Schema fields: id, title, rule, tags (preserved from today), plus scope, priority, applicability_conditions, lifecycle, supersedes. Migrate ~/.claude/mandates.jsonl content via one-shot conversion. Update the UserPromptSubmit hook to read from the new typed store (or to apply lens projection rather than all-or-nothing prefix). Resolution is gated on DEC-0007 (composition contract) for applicability_conditions evaluation timing and DEC-0010 (scope layering) for the user-scope discovery anchor.",
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_decisions": [
+    "DEC-0006",
+    "DEC-0007",
+    "DEC-0010"
+  ],
+  "related_issues": []
+}

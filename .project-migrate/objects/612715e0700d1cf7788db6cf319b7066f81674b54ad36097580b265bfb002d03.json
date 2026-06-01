@@ -1,0 +1,32 @@
+{
+  "title": "gather-execution-context requires hand-authored context-contract entry — no schema-derived default",
+  "status": "identified",
+  "package": "@davidorex/pi-context",
+  "priority": "P2",
+  "layer": "L1",
+  "description": "gatherExecutionContext at packages/pi-context/src/execution-context.ts line 172 returns `{ error: 'no context-contract for kind: <kind>' }` when no matching CTX-NNN entry exists in the context-contracts block for the unit's kind. The function design (lines 143+) reads the unit by unitId, reads the matching context-contract entry, then walks each declared relation_type bidirectionally. Authors invoking gather-execution-context for any unit kind must first manually create a CTX-NNN entry declaring relation types and depths. No default context-contract is synthesized from the block's schema (which already declares the relation types the kind participates in).",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+      "lines": "274-286",
+      "reference": "FB-013 'gather-execution-context requires a context-contract entry'; actual_behavior: gather-execution-context with unitId REQ-001 and kind requirement returns {error: 'no context-contract for kind: requirement'}"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-substrate-surfaces.md",
+      "lines": "111-138",
+      "reference": "Investigation report FB-013 section confirms execution-context.ts:172 error path verbatim; verdict 'Schema + tool surface' — new tool author-context-contract symmetric to author-agent-spec, generating default contract (all relation_types the kind participates in, depth 1); optional auto-derive flag in gatherExecutionContext"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-context/src/execution-context.ts",
+      "lines": "172",
+      "reference": "return { error: 'no context-contract for kind: ${args.kind}' }; — hard-errors on missing contract"
+    }
+  ],
+  "impact": "First-time use of gather-execution-context for any unit kind fails until the author manually authors a CTX-NNN entry. The schema already declares the relation_types the kind participates in; the framework does not synthesize the corresponding contract automatically. Authors must learn the context-contract schema and write entries before the gather tool produces useful output.",
+  "proposed_resolution": "Schema + tool surface per investigation verdict. Tool surface: new Pi tool `author-context-contract` reading the target block kind's schema, generating a default CTX-NNN entry declaring all relation_types the kind participates in at default depth 1. Schema: extend gatherExecutionContext at packages/pi-context/src/execution-context.ts to accept an optional auto-derive flag that synthesizes a default contract on the fly when no entry exists. Authors can override defaults via author-context-contract when the synthesized contract is wrong for their use case.",
+  "canonical_vocabulary": "context-contract auto-derivation",
+  "related_decisions": [
+    "DEC-0017",
+    "DEC-0019"
+  ]
+}

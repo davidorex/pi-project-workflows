@@ -1,0 +1,26 @@
+{
+  "title": "AgentSpec inline-prompt and template-prompt fields are parallel optional with no mutual-exclusion enforcement",
+  "status": "identified",
+  "package": "@davidorex/pi-jit-agents",
+  "priority": "P2",
+  "layer": "L1",
+  "description": "AgentSpec at packages/pi-jit-agents/src/types.ts declares `systemPrompt?: string`, `systemPromptTemplate?: string`, `taskPrompt?: string`, `taskPromptTemplate?: string` as parallel optional fields. Both inline and template variants can be populated simultaneously without type-system or schema rejection. The parser at packages/pi-jit-agents/src/agent-spec.ts resolves with the heuristic in resolvePromptField — which can fire incorrectly (FGAP-153 / FB-001) and which silently chooses one branch when both could apply. No oneOf or discriminated-union construct enforces that exactly one of the two variants is present per prompt slot.",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+      "lines": "304",
+      "reference": "Discovered-gap #3: 'Shape inconsistency in AgentSpec across consumers: The TypeScript type declares both systemPrompt/taskPrompt (inline) and systemPromptTemplate/taskPromptTemplate (file paths) as parallel optional fields. This optional-pairing design allows both to be present simultaneously, creating ambiguity. The parser chooses one or the other heuristically (FB-001); the type does not enforce mutual exclusion. A oneOf or discriminated-union schema would prevent this.'"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/types.ts",
+      "lines": "21-37",
+      "reference": "AgentSpec declares systemPrompt? + systemPromptTemplate? + taskPrompt? + taskPromptTemplate? as parallel optional fields with no mutual-exclusion construct"
+    }
+  ],
+  "impact": "Authors can construct AgentSpec values where both systemPrompt and systemPromptTemplate are populated; the parser silently chooses one; the other is dropped without warning. Combined with FGAP-153 (heuristic over-firing) the dropped variant can be the one the author intended. The shape permits invalid combinations that the canonical contract should reject.",
+  "proposed_resolution": "Schema-level — when FGAP-170 (AgentSpec JSON Schema) lands, declare the prompt fields as a oneOf / discriminated-union construct that enforces exactly one of inline-or-template per prompt slot. Concrete shapes per FGAP-156 decision: if nested shape is chosen, `prompt: { system: { oneOf: [{inline: string}, {template: string}] }, task: { oneOf: [...] } }`; if top-level fields are chosen, JSON Schema `oneOf` over the systemPrompt/systemPromptTemplate pair and the taskPrompt/taskPromptTemplate pair. Code-level: extend parseAgentYaml at packages/pi-jit-agents/src/agent-spec.ts to throw when both variants are populated for the same prompt slot, prior to the resolvePromptField heuristic.",
+  "canonical_vocabulary": "inline-vs-template mutual exclusion",
+  "related_features": [
+    "FEAT-001"
+  ]
+}

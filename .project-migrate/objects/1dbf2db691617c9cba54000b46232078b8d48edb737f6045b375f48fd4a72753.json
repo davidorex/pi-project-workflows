@@ -1,0 +1,27 @@
+{
+  "title": "FGAP-090 orientation block directs the agent to `/context start`, which is NOT a registered subcommand — mis-guides to a non-existent command (conductor is FGAP-095-pending)",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "The FGAP-090 eager orientation block (orientation.ts:36, injected via before_agent_start) tells the in-pi agent 'Bootstrap / onboarding: run /context start'. But /context start is NOT a registered subcommand — the registered CONTEXT_SUBCOMMANDS are init/install/accept-all/view/lens-curate/roadmap-*/status/add-work/validate/help (no 'start'; per the 2026-05-25 explore agent). The /context start unified conductor is DEC-0042-enacted but FGAP-095 P2-P6-pending (only P1 deriveBootstrapState landed). So a fresh agent following the orientation directs the user to a command that returns 'unknown subcommand'. The real current ceremony is /context init <dir> -> /context accept-all -> /context install (three separate subcommands). Same guidance-accuracy class as FGAP-106 (.project leak): the eager guidance describes aspirational/wrong surface vs the live one.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/orientation.ts",
+      "lines": "36",
+      "reference": "'- Bootstrap / onboarding: run `/context start`.' — references an unregistered command (shipped in FGAP-090/TASK-074)"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "CONTEXT_SUBCOMMANDS registration has no 'start' key (init/install/accept-all/view/lens-curate/roadmap-list/roadmap-view/roadmap-validate/status/add-work/validate/help); the real ceremony is init -> accept-all -> install (per the explore agent enumeration)"
+    }
+  ],
+  "impact": "A fresh constrained agent, steered by the orientation block, tells the user to 'run /context start' — which fails (unknown subcommand). The keystone onboarding guidance points at vapor; mis-onboards every fresh user until /context start is built or the orientation names the real ceremony.",
+  "canonical_vocabulary": "orientation-accuracy, unregistered-command-reference, aspirational-vs-live-surface, onboarding-guidance",
+  "proposed_resolution": "Until FGAP-095 builds the /context start conductor, change the orientation block (and any tool/SKILL text referencing /context start) to name the ACTUAL current bootstrap: /context init <dir> -> /context accept-all -> /context install. When FGAP-095 lands /context start, switch the orientation to it (single entry per DEC-0042). Pairs with FGAP-106 (same eager-guidance-accuracy surface) + FGAP-090 + FGAP-095 + DEC-0042. Verify via a live constrained run that the orientation names a command that actually resolves.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0042"
+  ],
+  "related_issues": []
+}

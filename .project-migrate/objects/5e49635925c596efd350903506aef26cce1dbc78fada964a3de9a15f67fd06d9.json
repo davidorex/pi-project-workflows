@@ -1,0 +1,28 @@
+{
+  "title": "Canonical relation_type naming convention '<parent>_<verb>_<child>' is invisible to freshly-launched agents; no operator-facing layer surfaces the pattern or rejects verb-only shortforms with a helpful diagnostic",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L4",
+  "description": "Observed 2026-05-28: in-pi agent introducing pi-context to operator described edges as 'verification → verifies → task' (canonical: verification_verifies_item), 'decision → addresses → issue' (canonical: decision_addresses_issue), and 'task → implements → requirement' (no such canonical relation_type exists). The '<parent>_<verb>_<child>' naming convention is canon in samples/conception.json relation_types[] but is not declared as a convention anywhere an agent or operator naturally reads pre-action. append-relation schema validation will refuse a verb-only relation_type at write time, but the error path is downstream of operator confusion + agent miseducation upstream.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "reference": "all 28 relation_types follow <parent>_<verb>_<child> pattern (e.g. decision_addresses_issue, verification_verifies_item, feature_depends_on_item)"
+    },
+    {
+      "file": "packages/pi-context/skill-narrative.md",
+      "reference": "skill narrative does not declare the naming convention or warn against verb-only shortforms"
+    },
+    {
+      "file": "packages/pi-context/schemas/relations.schema.json",
+      "reference": "relation_type field has no naming-pattern declaration or operator-facing diagnostic"
+    }
+  ],
+  "impact": "Operators and in-pi agents use verb-only shortforms in conversation about substrate relationships, then hit silent canonicality drift (the conversation references one name; the actual edge uses another). When operator tries to author an edge with the shortform, append-relation refuses with a generic 'relation_type not registered' message that doesn't point to the canonical form. Increases time-to-correct-edge + erodes operator mental model.",
+  "canonical_vocabulary": "naming-convention-as-canon; convention-discovery-affordance",
+  "proposed_resolution": "(a) Declare '<parent>_<verb>_<child>' as the canonical relation_type naming pattern in pi-context's skill-narrative.md so it lands in SKILL.md visible to launched agents; (b) optionally extend append-relation's error path: when relation_type is not registered, attempt verb-only-to-canonical match by suffix lookup against config.relation_types[] and suggest the canonical form in the error message.",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

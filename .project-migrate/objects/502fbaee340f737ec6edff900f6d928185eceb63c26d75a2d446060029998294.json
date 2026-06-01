@@ -1,0 +1,34 @@
+{
+  "title": "Applicability predicate language for typed-context entries",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-project",
+  "layer": "L2",
+  "description": "Under the composition contract (DEC-0007) each typed-context entry (lens view, mandate, monitor output, raw block) carries an applicability declaration: which agent / classifier / context the entry applies to. Today this is implicit in template authoring (`{% if conversation_history %}`), in agent YAML inputSchema, and in monitor classify routing. Under the unifying heuristic applicability becomes a first-class declarative field with a predicate language that the composition layer evaluates at compile-time (or per-turn) to decide what enters the prompt. The predicate language must express: which agent kinds (workflow agents vs classifiers vs query agents); which scopes (user / project / agent); which lifecycle states (open issues only, enacted decisions only); which tags or attributes; logical composition (AND/OR/NOT). Surfaced as gap #38.",
+  "evidence": [
+    {
+      "file": "packages/pi-jit-agents/src/compile.ts",
+      "reference": "compileAgent's contextBlocks loop today reads each declared block unconditionally; no applicability filter at the compile boundary."
+    },
+    {
+      "file": "packages/pi-behavior-monitors/examples/",
+      "reference": "Classify templates use {% if %} guards on Nunjucks vars to express applicability — implicit, per-template, not declarative."
+    },
+    {
+      "file": "analysis/2026-05-03-substrate-arc-frame.md",
+      "lines": "§2.1, §5 gap #38",
+      "reference": "Heuristic-widening pass identifies applicability as the channel by which selective composition resolves which typed contexts enter which agent prompts."
+    }
+  ],
+  "impact": "Without an applicability predicate language: composition contract (DEC-0007) cannot specify when each typed-context entry applies; mandate-block applicability_conditions (FGAP-008) and monitor-spec applicability (FGAP-009) lack a shared expression form; lens-view filters (gap #30, collapsed into DEC-0008) lack a runtime evaluator. Each typed-context kind would invent its own ad-hoc applicability surface — the same fragmentation the substrate arc retires.",
+  "canonical_vocabulary": "declarative applicability predicates; pre-composition filter expressions; typed-context selectivity",
+  "proposed_resolution": "Specify an applicability predicate mini-language (or adopt an existing one — couples to ADR-0004's expression-language comparison; CEL is a candidate). Predicates live as a typed field on every typed-context entry's schema (mandates, monitor specs, lens views). Composition layer (DEC-0007) evaluates predicates at compile-time against {agent_kind, scope, context_tags, ...}. Predicates fail closed: missing predicate means 'applies always'; failed evaluation means 'does not apply.' Resolution gated on DEC-0007 for evaluation timing semantics.",
+  "related_features": [
+    "FEAT-001"
+  ],
+  "related_decisions": [
+    "DEC-0007",
+    "DEC-0008"
+  ],
+  "related_issues": []
+}

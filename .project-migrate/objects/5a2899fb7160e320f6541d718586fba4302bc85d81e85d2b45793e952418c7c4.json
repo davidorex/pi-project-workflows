@@ -1,0 +1,11 @@
+{
+  "title": "Lens curation ceremony — slash command for binning uncategorized items",
+  "body": "POC v2's listUncategorized() + suggestionTemplate() in analysis/poc-degree-zero-lens/render.ts demonstrate the curation surface shape — emit would-be edge-append payloads for items in the (uncategorized) bucket of a hand-curated lens. The ceremony itself — a /project lens-curate <lensId> slash command that interactively walks uncategorized items, accepts bin assignments, and translates to batched appendToBlock writes against relations.json — needs registration in pi-project's command surface. Without it, lens curation is manual edge-authoring; with it, lens curation becomes a first-class workflow. Couples to DEC-0008 (typed contextBlocks) for lens-view rendering during curation, and to DEC-0007 (composition contract) for how the curation prompt itself is composed. Aligns with analysis/2026-05-01-ceremony-ideas.md sibling commands (/project new, /project new-phase, /project edit-item, /project archive-item). Surfaced as gap #15 in the heuristic-widening pass.",
+  "location": "packages/pi-context/src/index.ts",
+  "status": "resolved",
+  "category": "capability",
+  "priority": "medium",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
+}

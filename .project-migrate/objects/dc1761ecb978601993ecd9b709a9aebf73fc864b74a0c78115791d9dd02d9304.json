@@ -1,0 +1,10 @@
+{
+  "title": "Cross-package cache surface for config + relations + synthesized edges",
+  "body": "Multiple consumers want cached substrate state: compile.ts (lens injection), walk_descendants Nunjucks global, validateRelations gate, cluster-render. Three placement candidates: (a) pi-project SDK new export getProjectContext(cwd, scope) returning a memoized handle — canonical-surface aligned per DEC-0003; (b) pi-jit-agents compile-call-local — fresh per compile, no cross-package surface; (c) module-level singleton in pi-project — cwd-keyed map, mtime-invalidated. Without an explicit choice every consumer duplicates state or pays cold-cache cost. Couples to DEC-0007 (composition contract): cache strategy follows once the contract specifies what gets cached and at what scope. Issue-069 (AJV cache routing) is the schema-side analogue. Surfaced as gap #25 in the integration-map review.",
+  "location": "packages/pi-context/src/project-sdk.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-project",
+  "source": "agent"
+}

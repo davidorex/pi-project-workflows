@@ -1,0 +1,31 @@
+{
+  "title": "pi-workflows lacks bundled quality-pattern templates (adversarial-verify / perspective-diverse / judge-panel / loop-until-dry / multi-modal-sweep / completeness-critic) — pi-workflows can express most via existing step types but lacks templates + pattern guidance + voting/scoring primitives; load-bearing evidence is today's FGAP-135 CHECK 11 PARTIAL where a single-Explore adversarial probe self-categorized findings as 'low-risk' that the orchestrator accepted without challenge",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 3: Claude Code dynamic workflows docs explicitly enumerate 6 quality patterns (adversarial-verify / perspective-diverse / judge-panel / loop-until-dry / multi-modal-sweep / completeness-critic) with concrete script-snippet templates. pi-workflows can express most via existing step types (parallel + agent + transform + gate) but lacks: (a) bundled .workflow.yaml templates under examples/patterns/; (b) Nunjucks macro library for boilerplate (vote-aggregation; majority-survives filter); (c) SDK documentation referencing patterns + when to use each. Load-bearing session evidence: FGAP-135 CHECK 11 PARTIAL surfaced operational ambiguity in 3 TruncationResult edge-case variants; single-Explore adversarial probe self-categorized as 'low-risk'; orchestrator hand-waved past + user caught the violation. With a bundled adversarial-verify pattern (N independent skeptics + structured findings-schema vote-aggregation), the hand-wave would have been mechanically refuted by N-1 of N skeptics rather than depending on orchestrator judgment.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "319-335",
+      "reference": "Part 3 axis 3 — Quality Patterns Enumerated in Docs — ADOPT verdict with concrete bundled-template addition spec"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-135 closing-citation describes the CHECK 11 PARTIAL load-bearing evidence"
+    },
+    {
+      "file": "packages/pi-workflows/examples/",
+      "reference": "directory exists but no patterns/ subdir + no bundled quality-pattern workflows today"
+    }
+  ],
+  "impact": "Orchestrators improvise quality-verification patterns instead of running canonical templates. Each improvisation re-creates the adversarial-verify or judge-panel logic with risk of judgment-call hand-waves (today's CHECK 11 evidence). N-skeptic vote aggregation, perspective-diverse-lens review, loop-until-dry discovery — each implemented inconsistently across orchestrator runs without reusable + auditable substrate. The framework's quality-pattern story is partial: primitives exist but the canonical compositions don't ship.",
+  "canonical_vocabulary": "quality-pattern templates; bundled-workflow library; vote-aggregation primitive; majority-survives filter; pattern-composition macros",
+  "proposed_resolution": "Add packages/pi-workflows/examples/patterns/ subdirectory with 6 starter .workflow.yaml templates (adversarial-verify / perspective-diverse / judge-panel / loop-until-dry / multi-modal-sweep / completeness-critic) per R-0014 axis 3 specs. Add Nunjucks macro library (templates/shared/quality-patterns.macros.md) for boilerplate (vote-aggregation across N findings sets; majority-survives filter; per-lens-perspective dispatch). Update pi-workflows skill-narrative + SDK docs to reference each pattern + when canonical. Workflow validation gates ensure patterns load cleanly. No source-code-language changes; YAML + macros + docs.",
+  "related_features": [
+    "FEAT-007"
+  ],
+  "related_decisions": [],
+  "related_issues": []
+}

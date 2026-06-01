@@ -1,0 +1,27 @@
+{
+  "title": "/project install 'no config.json' error misdirects to /project init — should name /project accept-all (stale post init/accept-all split)",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "After the consumption-MVP split (init scaffolds dirs only; accept-all writes config.json from the conception; install copies assets), installProject's no-config error (index.ts:314) still reads 'No config.json found in substrate dir — run /project init first.' But init does NOT write config.json — accept-all does. A user running the natural-looking init -> install (skipping accept-all) is told to re-run init, which can't resolve it; the actual remedy (accept-all) is never named. Observed live 2026-05-22: '/project init .context' (Created .context/ + .context/schemas/) then '/project install' -> 'No config.json found in substrate dir — run /project init first.' The message names the wrong command.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "314",
+      "reference": "installProject no-config error: 'run /project init first' — but init (post-split) writes no config.json; accept-all does"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "init = bootstrap pointer + mkdir dirs only (FGAP-067); project-accept-all writes config.json — the split that made the message stale"
+    }
+  ],
+  "impact": "A fresh adopter following the apparent init -> install path hits a dead-end whose stated remedy (re-run init) cannot fix it; the resolving command (accept-all) is unnamed. UX trap at the most common first-use path; erodes the 'self-describing surface' aim.",
+  "canonical_vocabulary": "error-remedy accuracy, init/accept-all/install flow",
+  "proposed_resolution": "Change the index.ts:314 message to name the resolving command: 'No config.json in the substrate dir — run /project accept-all to adopt the conception (or author config.json), then /project install.' One-line source fix (plan mode per feedback_no_adhoc_dev). [SUBSUMED-ON-LANDING by FGAP-095/DEC-0042: /context start makes install a non-user-verb and collapses the remedy to a single \"run /context start\"; the misdirect cannot occur once start lands. Bug remains live until then — interim one-line message fix optional.]",
+  "related_decisions": [
+    "DEC-0011"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

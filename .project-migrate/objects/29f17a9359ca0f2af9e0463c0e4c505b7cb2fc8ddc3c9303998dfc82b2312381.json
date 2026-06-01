@@ -1,0 +1,27 @@
+{
+  "description": "Re-derivation machinery arc (DEC-0036, step 2): build .context clean via the config-based framework — edge-based validator (units 2.1/2.1b=TASK-045), packaged conception (2.2=TASK-046), rename engine (2.3=TASK-044); remaining units 2.4-2.7 + re-populate .context (step 3) + extension refactor (step 4) + cutover (step 5). SUPERSEDES the original in-place inline-FK migration (abandoned per DEC-0036): the DEC-0013 clean-edge goal is achieved by construction in .context, not by stripping .project.",
+  "status": "in-progress",
+  "acceptance_criteria": [
+    "config.relation_types[] declares all relation_type canonical_ids per DEC-0030 tripartite mapping",
+    ".project/relations.json carries one edge per former inline FK reference",
+    "inline FK fields removed/deprecated from schemas with version bump + drop-field MigrationFn registered",
+    "validateProject clean: no dangling edge refs, no unregistered relation_types",
+    "non-substrate-target fields (issues.resolved_by / spec-reviews.resolved_by commit strings) NOT auto-migrated; surfaced for user decision",
+    "tasks.phase free-text migration gated on DEC-0028 (phase shape) — STOP + surface if unresolved"
+  ],
+  "depends_on": [],
+  "files": [
+    ".project/relations.json",
+    ".project/config.json",
+    ".project/schemas/decisions.schema.json",
+    ".project/schemas/framework-gaps.schema.json",
+    ".project/schemas/features.schema.json",
+    ".project/schemas/tasks.schema.json",
+    ".project/schemas/requirements.schema.json",
+    ".project/schemas/research.schema.json",
+    ".project/schemas/layer-plans.schema.json",
+    ".project/schemas/spec-reviews.schema.json",
+    ".project/schemas/verification.schema.json"
+  ],
+  "notes": "REFRAMED per DEC-0036 (2026-05-17): in-place inline-FK migration of .project superseded by re-derivation. FGAP-046 closure now = author .context references as relations.json edges (conform by construction), not strip .project in place. The in-place attempt hit cascading schema-invariant collisions (tasks completed→VER if-then; decisions ≥1-forcing-artifact anyOf); tmp/migrate-phase2.ts discardable. This work folds into .context re-population (DEC-0036 finishing step 3). Stays in-progress as the inline-FK-elimination concern, now realized via canonical authoring."
+}

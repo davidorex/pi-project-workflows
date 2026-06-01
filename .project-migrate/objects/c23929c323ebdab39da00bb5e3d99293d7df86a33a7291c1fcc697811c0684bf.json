@@ -1,0 +1,17 @@
+{
+  "title": "Migrate pi-workflows agent infrastructure to pi-jit-agents",
+  "status": "proposed",
+  "description": "Replace pi-workflows' local copies of agent-spec.ts, template.ts, and step-shared.ts agent helpers with imports from pi-jit-agents. Consumer call sites (step-agent.ts, dispatch.ts) delegate to executeAgent.",
+  "acceptance_criteria": [
+    "packages/pi-workflows/src/agent-spec.ts either removed or reduced to a re-export from pi-jit-agents",
+    "packages/pi-workflows/src/template.ts equivalently reduced",
+    "packages/pi-workflows/src/step-shared.ts' agent-helper portions migrated; any non-agent helpers remain",
+    "Workflow agent steps execute end-to-end through pi-jit-agents executeAgent",
+    "Existing tsx --test suite for pi-workflows passes",
+    "No circular dependency introduced between pi-workflows and pi-jit-agents"
+  ],
+  "depends_on": [
+    "STORY-003"
+  ],
+  "gates": []
+}

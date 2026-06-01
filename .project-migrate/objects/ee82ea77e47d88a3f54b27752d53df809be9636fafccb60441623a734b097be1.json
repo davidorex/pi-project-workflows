@@ -1,0 +1,54 @@
+{
+  "title": "FGAP-001 resolution: closure-table relations vs subpath block names",
+  "status": "enacted",
+  "context": "FGAP-001 (hierarchical/nested block storage) was originally framed with proposed_resolution = 'extend block-api to support subpath block names (e.g. readBlock(features/consumer-migration)).' The substrate-arc POC v2 demonstrates closure-table relations as an alternative substrate for hierarchy: (parent, child, relation_type) edges over flat blocks, with multiple parallel hierarchies coexisting as different relation_type values. The heuristic-widening pass (mandates and monitors as in-scope typed contexts) tilts decisively toward closure-table-only because the heuristic prefers ONE storage primitive across all context types — mandates and monitors do not need subpath storage.",
+  "decision": "Closure-table relations are the canonical primitive for hierarchical decomposition over project blocks. Subpath block names (FGAP-001's original framing) are not pursued. The heuristic prefers ONE storage primitive across all context types (project blocks, mandates, monitor specs). The phases-pattern subdirectory walks (readBlockDir + buildIdIndex's phases handling) remain as legacy exceptions, not generalized. POC at analysis/poc-degree-zero-lens/ proves the closure-table shape mechanically; FGAP-001's resolution path is now closure-table-only via a relations.json block kind landing in pi-project.",
+  "options_considered": [
+    {
+      "label": "Closure-table relations only (proposed)",
+      "description": "All hierarchy expressed as edges in relations.json over flat blocks. One storage primitive across all context types per heuristic.",
+      "tradeoffs": "Per-item lock contention unchanged from today (per-block file lock). Hierarchy queries require edge-walk per query (mitigated by SDK caching). Authoring experience: edge-write rather than file-tree write."
+    },
+    {
+      "label": "Subpath block names only (original FGAP-001 framing)",
+      "description": "readBlock('features/consumer-migration/stories/STORY-A'). Native tree shape on disk. Atomic per-item writes.",
+      "tradeoffs": "Two storage forms across the contract (subpath for hierarchy, flat-with-edges for everything else). Block-api gains directory-walk semantics. Schema-walk targeting array-item subschema is a new contract.",
+      "rejected_reason": "Heuristic prefers one storage primitive; subpath form would create a parallel ungated path for hierarchy expression that the closure-table primitive already handles."
+    },
+    {
+      "label": "Both (closure-table for cross-cutting taxonomies, subpath for work-decomposition)",
+      "description": "Hybrid: closure-table for lens-style organization, subpath for genuine work-decomposition with atomic-write requirements.",
+      "tradeoffs": "Dual maintenance burden. Two query paths, two write paths, two validation paths.",
+      "rejected_reason": "Heuristic prefers one canonical substrate; hybrid creates the same fragmentation the unifying frame is meant to retire."
+    }
+  ],
+  "consequences": [
+    "FGAP-001's proposed_resolution field updates to closure-table-only direction on enactment",
+    "Subpath block names not implemented; readBlockDir's existing one-off subdirectory walks (phases pattern) remain as exceptions, not generalized",
+    "Work decomposition (FEAT-001 epics → stories → tasks, future PHASE-NNN structures) lives as flat blocks with closure-table edges",
+    "Lock contention claim from FGAP-001 framing unchanged: per-block file lock; partition-per-file unblock is not pursued under this direction",
+    "block-validation.ts rollback contract simpler: no recursion into subdirectories"
+  ],
+  "related_gaps": [
+    "FGAP-001"
+  ],
+  "related_features": [
+    "FEAT-001"
+  ],
+  "references": [
+    {
+      "label": "FGAP-001 original framing",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "POC v2 closure-table demonstration",
+      "path": "analysis/poc-degree-zero-lens/relations.json"
+    },
+    {
+      "label": "frame doc §4.2",
+      "path": "analysis/2026-05-03-substrate-arc-frame.md"
+    }
+  ],
+  "enacted_by": "user",
+  "enacted_at": "2026-05-03T00:00:00Z"
+}

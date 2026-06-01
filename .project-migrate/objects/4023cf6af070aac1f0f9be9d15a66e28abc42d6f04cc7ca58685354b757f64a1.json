@@ -1,0 +1,38 @@
+{
+  "title": "DEC-0015 violation: writeBootstrapPointer carries hardcoded .project default; initProject hardcodes .project literal",
+  "status": "closed",
+  "priority": "P0",
+  "package": "@davidorex/pi-context",
+  "layer": "L1",
+  "description": "Two surfaces hardcode the substrate-dir name '.project' in direct violation of DEC-0015 (config drives substrate location, permanently — no hardcoded substrate-dir paths anywhere). (1) packages/pi-context/src/project-dir.ts:162 — writeBootstrapPointer signature has parameter default: `contextDir: string = PROJECT_DIR` where PROJECT_DIR is the deprecated '.project' constant. (2) packages/pi-context/src/index.ts:237 — initProject() calls writeBootstrapPointer(cwd, '.project') with a string literal. Both surfaces synthesize the substrate-dir name from code rather than receiving it from the user. DEC-0015 explicitly rejects default-as-fallback as 'hardcode-dressed-as-default'. The JSDoc at project-dir.ts:147-152 frames the default as 'transitional bridge for self-bootstrapping callers (initProject); future /context init ceremony will prompt the user' — that framing is LLM-rationalized deferral pattern, not enactment of DEC-0015.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/project-dir.ts",
+      "lines": "162",
+      "reference": "writeBootstrapPointer(cwd: string, contextDir: string = PROJECT_DIR): void — signature default is the violation"
+    },
+    {
+      "file": "packages/pi-context/src/project-dir.ts",
+      "lines": "147-152",
+      "reference": "JSDoc framing the default as transitional bridge — accepts violation rather than fixing it"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "237",
+      "reference": "writeBootstrapPointer(cwd, '.project') — initProject hardcodes the literal"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0015 permanent canon: NO hardcoded substrate-dir paths anywhere; default-as-fallback explicitly rejected"
+    }
+  ],
+  "impact": "Foundational DEC-0015 violation lives at the bootstrap surface — the very primitive that exists to enforce config-driven substrate location is itself hardcoded. Fresh repos calling /project init silently default to .project rather than prompting the user; this contradicts the Phase 6 user-prompt ceremony before it ships. Every Phase-1.2 cascade landed on top of this foundation — the resolver layer is config-driven but the bootstrap-write layer is not. Closing FGAP-026 without fixing FGAP-035 would mark substrate canon enacted while the actual canon-violation persists at the foundational write surface.",
+  "canonical_vocabulary": "default-parameter elimination",
+  "proposed_resolution": "(1) Remove parameter default from writeBootstrapPointer signature — `contextDir: string` becomes required. (2) Change initProject signature to require contextDir from caller (passed as param OR obtained from a prompt). (3) Rewrite project-dir.ts:147-152 JSDoc to remove default-as-feature framing. (4) Remove or update PROJECT_DIR/SCHEMAS_DIR @deprecated exports per remaining cascade need. (5) Test sites (168) already pass '.project' explicitly — no test-side changes needed for the signature fix. (6) Determine initProject UX: pass contextDir from /project init subcommand arg OR prompt user via pi.sendMessage follow-up turn (Phase 6 design surface, brought forward).",
+  "related_decisions": [
+    "DEC-0015",
+    "DEC-0021"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

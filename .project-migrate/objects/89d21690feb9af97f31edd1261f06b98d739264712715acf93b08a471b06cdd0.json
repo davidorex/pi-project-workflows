@@ -1,0 +1,18 @@
+{
+  "description": "Materialize DEC-0045's DEC<->DEC associative links as decision_relates_to_decision edges in the live substrate's relations.json. DEC-0045 currently references DEC-0041 (x3), DEC-0036 (x2), DEC-0015 (x1) only in prose; those are real associative relationships with no edge representation. The relation_type was added to the packaged conception in Unit E (commit 817cae3 / TASK-064) but is NOT in .project/config.json (frozen ad-hoc source per DEC-0036) and .project/relations.json has zero decision<->decision edges. Backfilling into frozen .project would require either breaking the DEC-0036 freeze or writing an edge whose relation_type its own config.json does not register (DEC-0013 violation). Coherent home is .context after the re-derivation cutover, where decision_relates_to_decision arrives natively via the conception (DEC-0037). At that point materialization is a clean appendRelations data-write.",
+  "status": "planned",
+  "files": [
+    ".context/relations.json"
+  ],
+  "acceptance_criteria": [
+    "decision_relates_to_decision is registered in the live substrate config (.context, via conception adoption) before any edge write",
+    "Edges filed for each DEC-0045 prose reference: DEC-0045->DEC-0041, DEC-0045->DEC-0036, DEC-0045->DEC-0015 (relation_type decision_relates_to_decision)",
+    "Re-survey DEC-0045 prose at materialization time to capture any reference drift; do not hardcode the three pairs if the decision body has changed",
+    "Edges written via canonical append-relation / appendRelations surface (not direct relations.json Edit); validateProject passes endpoint-kind check (decisions<->decisions)",
+    "Consider generalizing: other DECs may carry prose-only DEC<->DEC references that should likewise become edges — survey at materialization, file separately if in scope"
+  ],
+  "depends_on": [
+    "TASK-030"
+  ],
+  "notes": "Filed at user direction 2026-05-23 to canonically persist the Unit E follow-up (was conversation-only). Gated on the .context cutover (TASK-030). Origin: DEC-0045 wanted DEC<->DEC links; Unit E (TASK-064) added the relation_type vocabulary to the conception; this task materializes the specific DEC-0045 link instances as edges."
+}

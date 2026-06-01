@@ -1,0 +1,20 @@
+{
+  "description": "Implement DEC-0001 (agent spec 'model:' field semantics) — bare model id resolution at the canonical session source. Gated by FGAP-115 resolution: pi-coding-agent ExtensionContext does NOT expose currentModel/currentProvider as DEC-0001's enacted body assumed. Until FGAP-115 resolves the source question (extend pi-coding-agent / read auth.json directly / re-anchor DEC-0001), this task cannot proceed to implementation. Once FGAP-115 resolves, this task implements the resolution mechanism in whichever package owns it (likely pi-jit-agents jit-runtime.ts if source becomes auth.json-readable from jit-agents, OR caller-side in monitors/workflows if DEC-0001 re-anchors to caller-responsibility framing). Split from original TASK-080 (2026-05-26) per the discovered-issue-surfacing discipline established during TASK-081 plan-mode exploration.",
+  "status": "blocked",
+  "files": [
+    "packages/pi-jit-agents/src/jit-runtime.ts"
+  ],
+  "acceptance_criteria": [
+    "FGAP-115 resolved before this task proceeds — resolution determines the implementation surface + source-of-truth for current-session model+provider",
+    "Bare model ids (e.g. 'claude-sonnet-4-6') resolve to (provider, modelId) tuple against session-canonical source per FGAP-115-determined mechanism",
+    "Missing-binding case: dispatch errors with clear message naming the missing context (per DEC-0001 enacted body)",
+    "Fully-qualified specs (provider/model) continue to pin the provider regardless of session (no behavior change)",
+    "Pinning is explicit, not a default (no silent fallback to 'anthropic' or any other provider)",
+    "Engine unit tests cover: bare-spec-resolves-to-session-provider + missing-binding-throws + fully-qualified-pins + no-silent-default",
+    "VALIDATION = real checks: build/check/test exit codes, runtime demo (tsx-eval call exercising each resolution path against real auth configurations), adversarial probe (fresh-context agent confirms zero residual 'anthropic' static defaults in caller code-paths)"
+  ],
+  "depends_on": [
+    "TASK-081"
+  ],
+  "notes": "Split 2026-05-26 from TASK-080 per TASK-081 plan-mode discovery of FGAP-115 (ExtensionContext currentModel gap). HARD-BLOCKED until FGAP-115 resolves; status:blocked reflects that. Implementation surface determined post-FGAP-115. Authority: DEC-0001 enacted bb45880; FGAP-115 filed alongside this task. Pairs with TASK-086 (DEC-0002 impl) + TASK-087 (DEC-0003 impl) as the three executeAgent-boundary-canon implementations split out from TASK-081 narrow scope."
+}

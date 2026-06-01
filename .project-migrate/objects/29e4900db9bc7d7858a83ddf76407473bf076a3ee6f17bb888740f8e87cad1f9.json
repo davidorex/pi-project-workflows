@@ -1,0 +1,30 @@
+{
+  "title": "registry/ + defaults/ dirs retained on disk as AJV test fixtures after consumption-MVP de-canonicalized them; delete pending fixture-repoint + a home for 8 conception-less legacy schemas",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "The consumption MVP (TASK-055) made samples/ the single canonical catalog: installProject + initProject + generate-skills now read samples/, and registry/ + defaults/ were dropped from the shipped package.json files[] (DEC-0011). But the two dirs were NOT deleted from disk because (a) ~7 test files read packages/pi-context/registry/schemas/*.json directly as AJV fixtures (schema-validator.test, context-contracts.test, execution-context.integration.test, index.test + pi-workflows macros/render-architecture/render-task tests) and (b) 8 schemas live ONLY in registry/ with no samples/ home (architecture, audit, conformance-reference, domain, handoff, plan, project, roadmap — legacy, absent from the going-forward DEC-0037 conception). So registry/ + defaults/ are now dead-but-present: unshipped, unread by production, retained solely as test fixtures + legacy-schema holding.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/registry/schemas",
+      "reference": "8 schemas absent from samples/: architecture/audit/conformance-reference/domain/handoff/plan/project/roadmap"
+    },
+    {
+      "file": "packages/pi-context/src/schema-validator.test.ts",
+      "reference": "reads registry/schemas as AJV fixtures (one of ~7 test readers); deletion would break these"
+    },
+    {
+      "file": "packages/pi-context/package.json",
+      "reference": "files[] no longer lists registry/ or defaults/ (TASK-055 commit a53663e) — dirs ship nowhere but remain in the repo tree"
+    }
+  ],
+  "impact": "Dead dirs in the repo tree are misleading (a reader may assume registry/ is still canonical) and the legacy-fixture coupling blocks a clean cutover. Low-urgency (no production path touches them; samples/ is canonical) hence P2. Becomes relevant at the .context cutover (DEC-0036) when the substrate vocabulary is finalized.",
+  "proposed_resolution": "Repoint the ~7 registry-fixture tests to samples/schemas (where the kind exists) or to inline fixtures; decide each of the 8 conception-less legacy schemas — either give it a samples/ home (if still wanted in the going-forward conception) or drop it (legacy planning vocab not in DEC-0037). Then delete packages/pi-context/registry/ + packages/pi-context/defaults/. Sequence with the .context cutover; not blocking.",
+  "related_decisions": [
+    "DEC-0011",
+    "DEC-0036",
+    "DEC-0037"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

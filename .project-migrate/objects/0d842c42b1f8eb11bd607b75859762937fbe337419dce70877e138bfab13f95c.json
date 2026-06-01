@@ -1,0 +1,35 @@
+{
+  "target": "TASK-053",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-21T00:00:00Z",
+  "evidence": "FGAP-044 (B1) list-tools Pi tool — commit 06c5619. Wraps SDK-native pi.getAllTools()/getActiveTools() (ExtensionAPI) via closure over the extension-factory pi; returns {tools:[{name,description,parameters,sourceInfo}],active,total,activeCount} JSON via truncateHead. Pi-tool-ONLY (deliberate DEC-0019/0020 deviation: runtime introspection — no library fn, no CLI twin; orchestrator already served by grep/skills/status). Verified DEC-0018: build/check/test green (pi-context 528 [+4] / 152 / 157 / 829, 0 fail). Runtime demonstration = 4 mock-pi tests invoking the REAL registered list-tools execute through the factory closure against controlled getAllTools/getActiveTools stubs (proves registration + closure-reach + JSON composition; no library to tsx-eval; pi -p is user .pi/). Adversarial: empty getAllTools → empty no-crash; surfaces description+parameters (not just names) + sourceInfo. skills regen → list-tools in SKILL.md. captureTools mock extended back-compat. EXCLUDES label/promptSnippet (ToolInfo Pick). Companion description-readiness audit filed as FGAP-085 (kept out of B1).",
+  "criteria_results": [
+    {
+      "criterion": "list-tools registered (Type.Object({})); execute closes over factory pi → getAllTools+getActiveTools → JSON via truncateHead; ctx unused",
+      "status": "passed",
+      "evidence": "index.ts:970-999; test case 1"
+    },
+    {
+      "criterion": "returns name+description+parameters+sourceInfo + active + total/activeCount; excludes label/promptSnippet",
+      "status": "passed",
+      "evidence": "test cases 1-3"
+    },
+    {
+      "criterion": "4 mock-pi tests: all+active / description+parameters / sourceInfo / empty-no-crash",
+      "status": "passed",
+      "evidence": "index.test.ts list-tools describe, 528 total 0 fail"
+    },
+    {
+      "criterion": "Pi-tool-ONLY rationale recorded (no library/CLI twin); build/check/test green + skills regen",
+      "status": "passed",
+      "evidence": "commit body + SKILL.md:157 list-tools"
+    },
+    {
+      "criterion": "companion description-audit filed separately (out of B1)",
+      "status": "passed",
+      "evidence": "FGAP-085"
+    }
+  ]
+}

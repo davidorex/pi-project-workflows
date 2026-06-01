@@ -1,0 +1,29 @@
+{
+  "title": "launch-constrained-pi.sh has no flag surface for ad-hoc bounded grants — user-stated need 2026-05-28 ('flags to give select additional tool use perms') unwired; relationship to FEAT-010 config.tool_operations[] mechanism unresolved",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-project-workflows",
+  "layer": "L5",
+  "description": "Audit (analysis/2026-05-28-launch-script-harness-canonical-audit.md commit 945dc93, gap 8 HIGH + Dimension D) empirically established: scripts/launch-constrained-pi.sh accepts only \"$@\" passthrough to pi; no --allow-read <dir>, --composite <name>:<params>, or similar flags. User stated 2026-05-28: 'I'd like to add some flags to it so I can give select additional tool use perms to the main agent; e.g., read files; but i want to think it out first. can we constrain that to particular dirs?' The thinking-out concluded: FEAT-010 IS the canonical mechanism (config.tool_operations[] bounded composites + author-tool-grant). But the per-target-dir config-driven path requires the target dir to have a .pi-context.json pointer + config.json with composite instances pre-launch — that's a launch prerequisite, not a launch flag. The user-stated 'flag surface' framing remains unresolved against: (a) FEAT-010 config-driven path (canonical; per-target-dir state must exist pre-launch); (b) FGAP-118 skills-gen-vs-runtime split (composites must be discoverable somehow); (c) a NEW launch-script flag layer that translates --grant <composite-id> into runtime --tools allowlist additions, bypassing the static-SKILL-grep entirely.",
+  "evidence": [
+    {
+      "file": "scripts/launch-constrained-pi.sh",
+      "reference": "line 33 exec pi --tools \"$TOOLS\" \"$@\" — no per-grant flag parsing"
+    },
+    {
+      "file": "analysis/2026-05-28-launch-script-harness-canonical-audit.md",
+      "reference": "Audit commit 945dc93 Dimension D + gap 8 HIGH"
+    }
+  ],
+  "impact": "User intent (operator ad-hoc bounded-grant at launch) unaddressed. The FEAT-010 mechanism (config-driven) handles the canonical case where bounded composites are declared in advance + persist across launches; FGAP-120 territory is the EPHEMERAL case (operator wants a one-time grant for a single session). Two distinct use cases with two coherent mechanisms; canon hasn't resolved which (or both).",
+  "canonical_vocabulary": "ad-hoc-bounded-grant / launch-time-flag-vs-config-persistence / ephemeral-vs-persistent-capability-grant",
+  "proposed_resolution": "Launch script gains `--grant <composite-id>` flag (repeatable) that selects from composites already declared in target dir's `config.tool_operations[]` and extends the --tools allowlist with the selected ids. Composites stay config-mediated: writer.kind=human enforcement preserved (per DEC-0047); persistence preserved (composite declarations survive across launches); flag is purely per-launch scoping of which declared composites to expose. Honors user-stated 2026-05-28 intent (flag surface for ad-hoc grants) within canon (no ephemeral bypass that would violate writer.kind=human gate or feedback_no_parallel_ungated_paths). Coupled with FGAP-118: same launch-script enhancement closes both — read target config + offer --grant selector. Default behavior when --grant omitted: extend allowlist with ALL declared composites (operator gets full granted vocabulary; --grant scopes to a subset). [CLOSED 2026-05-28 via TASK-091 unified (FEAT-006+FEAT-011) merge at task-091-unified-feat-006-feat-011 + VER-057 attestation. See verification body for per-criterion evidence.]",
+  "related_features": [
+    "FEAT-010",
+    "FEAT-005"
+  ],
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0047"
+  ]
+}

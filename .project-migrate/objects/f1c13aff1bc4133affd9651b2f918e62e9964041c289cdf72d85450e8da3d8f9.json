@@ -1,0 +1,29 @@
+{
+  "title": "pi-workflows agent step validates output.schema POST-execution (wasted tokens on schema-violating output); no pre-execution forcing via StructuredOutput-tool dispatch — agents can ignore declared output contract until validation fails at completion",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-workflows",
+  "layer": "L2",
+  "description": "Per R-0014 recon axis 5: Claude Code workflows' agent(prompt, { schema }) opt FORCES the agent to use StructuredOutput tool before execution begins — schema-violating output is impossible by construction. pi-workflows agent step declares output.schema (validated via AJV against the agent's textOutput POST-completion) — if the agent's output violates schema, the workflow surfaces a validation error AFTER paying full token cost. Operators paying for schema-violating outputs in 'agent confused, returned markdown when JSON was required' scenarios is preventable. Pi-workflows DOES have an output.format: json directive that hints intent but does not force tool-use at dispatch.",
+  "evidence": [
+    {
+      "file": "analysis/2026-05-29-cc-workflows-vs-pi-workflows-recon.md",
+      "lines": "370-389",
+      "reference": "Part 3 axis 5 — Structured-Output Forcing (JSON Schema Pre-Execution) — ADOPT verdict"
+    },
+    {
+      "file": "packages/pi-workflows/src/step-agent.ts",
+      "reference": "agent dispatch + post-completion output.schema validation"
+    },
+    {
+      "file": "packages/pi-workflows/src/dispatch.ts",
+      "reference": "buildArgs + spawn flow — no --schema-enforce or equivalent flag passed to pi CLI"
+    }
+  ],
+  "impact": "Token waste on schema-violating outputs that the workflow then rejects. The cost ratio is unfavorable: full-prompt + full-output cost paid to produce text that the workflow discards. Operators relying on output.schema validation as a contract are paying for the contract violation rather than preventing it.",
+  "canonical_vocabulary": "pre-execution schema forcing; StructuredOutput-tool dispatch; output-contract enforcement at dispatch boundary",
+  "proposed_resolution": "Extend dispatch.ts buildArgs: when step.output.schema is set, pass schema to pi CLI via new --schema-enforce flag (assumes pi CLI supports it; verify upstream surface) OR inject schema into the system prompt with explicit StructuredOutput-tool-use directive. Pre-execution forcing complements the existing post-execution validation (don't remove the post-check — defense-in-depth). Updates: step-agent.ts (thread schema through to dispatch options); dispatch.ts (build the --schema-enforce arg or system-prompt injection). If pi CLI surface doesn't support pre-execution forcing today, file a follow-on FGAP for the upstream change OR implement system-prompt-injection as the pi-workflows-side fallback.",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

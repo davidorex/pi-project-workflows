@@ -1,0 +1,34 @@
+{
+  "target": "TASK-066",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "evidence": "C0 deliverable is decision-only: DEC-0046 filed + enacted, recording the full FGAP-074 source-surface naming canon (unify on context). Settles all C0 acceptance criteria: 3 filenames + 3 subpaths, the full identifier map, tool-prefix + command scheme, the project-context.ts->context.ts awkwardness resolution, the projectRoot/projectDir->resolveContextDir collapse + PROJECT_DIR drop, the DEC-0044 reserved /context run verb, and the OUT-of-scope set. Substrate considered + rejected for the import surface (recorded as options_considered).",
+  "criteria_results": [
+    {
+      "criterion": "DEC settles 3 target filenames, 3 subpaths, identifier map, tool-prefix, command",
+      "status": "passed",
+      "evidence": "DEC-0046.decision: full map present"
+    },
+    {
+      "criterion": "project-context.ts target name chosen (context-context awkwardness resolved)",
+      "status": "passed",
+      "evidence": "context.ts (./context); subpath-stutter noted as harmless in consequences"
+    },
+    {
+      "criterion": "DEC notes DEC-0044/FEAT-004 dispatch-verb reservation",
+      "status": "passed",
+      "evidence": "RESERVED clause: /context run, finalized by DEC-0044"
+    },
+    {
+      "criterion": "DEC notes OUT-of-scope set",
+      "status": "passed",
+      "evidence": "consequences: pi-project-workflows pkg, .project literal (DEC-0036 s5), DEC-0025 user vocab, already-context-named symbols"
+    },
+    {
+      "criterion": "Decision-only: no source code changes",
+      "status": "passed",
+      "evidence": "only .project/decisions.json written"
+    }
+  ]
+}

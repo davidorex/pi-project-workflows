@@ -1,0 +1,10 @@
+{
+  "title": "PLAN- prefix collision: layer-plans vs new plan block (surfaced by issue-085 step 5)",
+  "body": "Step 5 of /Users/david/.claude/plans/idempotent-dancing-wilkes.md (issue-085 plan primitives) implementation surfaced a structural collision between the existing layer-plans block (PLAN-NNN ids) and the new plan block landed in step 1 (also PLAN-NNN ids per plan.schema.json). ID_PREFIX_TO_BLOCK in project-sdk.ts maps PLAN- to layer-plans, so loadPlan internally calls resolveItemById which calls buildIdIndex which scans all .project/*.json including plan.json — the prefix-vs-block invariant throws when it finds PLAN-001 in the plan block (expected layer-plans). Step 5 implementation (load/validate/render/tools/subcommands all wired in roadmap-plan.ts and index.ts) compiles + lints cleanly; only the new test fixtures hit the collision. Resolution requires a design decision exceeding step 5 scope: (a) update ID_PREFIX_TO_BLOCK[PLAN-] to point at the new plan block (canonical going forward per substrate-arc envelope) and migrate or rename layer-plans, (b) extend the invariant to allow multi-block hosting per prefix, or (c) special-case via a separate prefix mapping table. Reporter halted per binding instruction in the step-5 prompt: \"if plan instructions ambiguous or contradict observed code, STOP and report rather than improvise\".",
+  "location": "packages/pi-context/src/project-sdk.ts:586",
+  "status": "open",
+  "category": "issue",
+  "priority": "high",
+  "package": "pi-project",
+  "source": "agent"
+}

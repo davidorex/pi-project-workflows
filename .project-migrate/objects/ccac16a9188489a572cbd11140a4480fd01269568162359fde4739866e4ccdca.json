@@ -1,0 +1,23 @@
+{
+  "description": "FGAP-074 C1 — pi-context internal rename + transition aliases (additive, green). Rename the 3 project-*.ts -> new filenames (+ their tests); update all pi-context-internal relative imports + identifier usages to the C0-settled new names; add DUAL package.json subpath exports (legacy ./project-* AND new ./context-* -> same dist) + DUAL tsconfig path mappings; add @deprecated identifier aliases (export const projectRoot = contextRoot; etc.). After C1 the pi-context package is fully on new names internally while the external world still resolves via the legacy aliases.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/project-dir.ts",
+    "packages/pi-context/src/project-context.ts",
+    "packages/pi-context/src/project-sdk.ts",
+    "packages/pi-context/package.json",
+    "packages/pi-context/tsconfig.json"
+  ],
+  "acceptance_criteria": [
+    "3 src modules renamed to C0 target names (+ tests renamed); all intra-package imports/usages updated",
+    "package.json ships BOTH legacy ./project-* and new ./context-* subpath exports resolving to the same dist; tsconfig has dual path mappings (incl. project-context, whose mapping was previously absent — verify resolution)",
+    "@deprecated identifier aliases exported for every renamed symbol so external consumers still resolve",
+    "projectDir->contextDir rename is scope-guarded against the existing contextDir local-var collision (feedback_rename_scope_discipline)",
+    "npm run build && check && test green (husky-gated)"
+  ],
+  "depends_on": [
+    "TASK-066"
+  ],
+  "notes": "Decomposition chunk C1. Maps to Claude task #60. FGAP-074. Pure rename — no behavioral change.",
+  "verification": "VER-038"
+}

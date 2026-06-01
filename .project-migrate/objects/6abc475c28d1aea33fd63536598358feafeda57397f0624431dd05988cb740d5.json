@@ -1,0 +1,44 @@
+{
+  "title": "Operation-granular capability vocabulary in pi-agent-dispatch lacks composite-tool authoring + per-KIND dual-surface CLI scripts + forbidden-wholesale enforcement — TASK-089 left FEAT-005 capability composition with name-only granularity, not the bounded-composite shape JI-023 names",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-agent-dispatch",
+  "layer": "L4",
+  "description": "TASK-089 (commit babe385) landed pi-agent-dispatch with capability composition (composeToolGrant intersection) + operation-vocab.ts (55 canonical Pi tool names as default operations) + config.tool_operations[] (empty seed). The mechanism grants/clamps at TOOL NAME granularity. JI-023 user verbatim names a finer granularity ('A bash command. Not bash.' + 'There can be a registry of them'), and FEAT-005's description ('operation-granular tool+perm grants from an empty-state registry') anticipates BOUNDED COMPOSITES (e.g. git-log-with-these-paths-and-this-since, read-files-only-in-these-roots) — not just 'yes/no on built-in read'. Three concrete gaps surfaced during the 2026-05-28 design exploration (analysis/2026-05-28-hybrid-3-composite-tools-canon-eval.md commit 3b4b32d + analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md): (1) no composite-tool authoring infrastructure — pi-agent-dispatch admits no concept of 'composite KIND with instance params closure-bound at extension load' although pi's tool API supports it via pluggable operations; (2) no per-KIND CLI script under scripts/orchestrator/ — DEC-0019/0020 dual-surface canon requires triple-as-unit (library + Pi tool + CLI script); a composite KIND in pi-agent-dispatch would be in-pi-only without a Claude-Code-side equivalent, violating canonical symmetry; (3) no forbidden-wholesale enforcement — TOOL_OPERATION_DEFAULTS today admits any token; if 'bash' or 'write' or 'edit' is ever added to the registry, the composite-tool pattern dissolves into a gated alternative next to an unrestricted original (feedback_no_parallel_ungated_paths). All three gaps are interrelated: composite authoring without dual-surface produces asymmetric capability surfaces; composite authoring without forbidden-wholesale enforcement allows the design to degrade silently.",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/src/operation-vocab.ts",
+      "reference": "55 canonical Pi tool names enumerated as TOOL_OPERATION_DEFAULTS; each entry is a TOOL NAME (e.g. 'read-block', 'workflow-execute'). No KIND discriminator, no instance-params, no composite-shape support. No FORBIDDEN_WHOLESALE_OPERATIONS const."
+    },
+    {
+      "file": ".project/features.json",
+      "reference": "FEAT-005 description: 'operation-granular tool+perm grants from an empty-state registry'; 'A capability/permission registry exists ... tool grants AND operation-level permissions'; 'capability bundle composed JIT'. The bounded-composite shape is implied but not yet realized."
+    },
+    {
+      "file": "analysis/2026-05-26-jit-agents-user-intentions.jsonl",
+      "reference": "JI-023 user verbatim: 'A bash command. Not bash.' + 'There can be a registry of them.' The finer granularity than tool-name."
+    },
+    {
+      "file": "analysis/2026-05-28-hybrid-3-composite-tools-canon-eval.md",
+      "reference": "Commit 3b4b32d. Canon-eval of v1 Hybrid 3 design surfaced two design-completeness items (DEC-0019/0020 dual-surface missing; forbidden-wholesale under-specified) + identified hedging on substrate-canon forbidden-list."
+    },
+    {
+      "file": "analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md",
+      "reference": "Refined v2 design closing both gaps with no canon evolution required: per-KIND triples + 5-layer forbidden enforcement + author-tool-grant Pi tool. 14 new + 5 modified files for first build (4 initial KINDS: read-files, git-log, grep-paths, command-allowlist)."
+    },
+    {
+      "file": "scripts/orchestrator/",
+      "reference": "No per-KIND composite scripts exist today. DEC-0019/0020 dual-surface canon requires triple-as-unit landings — gap currently leaves any composite KIND in-pi-only without a Claude-Code-side equivalent."
+    }
+  ],
+  "impact": "Without composite-tool authoring + forbidden-wholesale enforcement + per-KIND CLI scripts, FEAT-005 capability composition stays at coarse tool-name granularity. The in-pi orchestrator can grant subagents 'read' (wholesale) or 'composeToolGrant intersection' (still wholesale-vocabulary) but cannot grant 'read-only-from-analysis-and-docs' or 'git-log-with-these-paths-and-this-since'. The bounded-composite shape JI-023 names + the FEAT-006 north-star (constrained orchestrator + privileged agent + scoped grant) require composites. Also without forbidden-wholesale enforcement, a future addition of 'bash' or 'write' to TOOL_OPERATION_DEFAULTS would silently degrade the entire FEAT-005 design into a gated-alternative-next-to-unrestricted-original (feedback_no_parallel_ungated_paths violation). DEC-0019/0020 dual-surface canon is breached for every composite added without a sibling CLI script.",
+  "canonical_vocabulary": "composite-tool-authoring / bounded-composite-vocabulary / per-kind-dual-surface-triple / forbidden-wholesale-enforcement",
+  "proposed_resolution": "Addressed by FEAT-010 (Hybrid 3 composite-tool infrastructure) per DEC-0052. Concretely the refined v2 design at analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md: per-KIND triple (library function + config-driven Pi tool registration + CLI script under scripts/orchestrator/) for each of 4 initial KINDS (read-files / git-log / grep-paths / command-allowlist); 5-layer forbidden-wholesale enforcement (TS const FORBIDDEN_WHOLESALE_OPERATIONS + engine test invariant + runtime guard at extension load reading L1∪L5 union + JSDoc citation + substrate config.tool_operations_forbidden[] for project-specific additions under writer.kind=human); new author-tool-grant Pi tool wrapping the config mutation surface with writer.kind=human enforcement per DEC-0047. Zero canon evolution required — all elements are concrete enactments of existing canon (DEC-0019/0020 dual-surface; DEC-0040 substrate single source of truth; DEC-0047 capability authoring human-only; DEC-0048 engine-tests-as-gates; FEAT-005 operation-granular from empty; JI-023 bounded composites; feedback_no_parallel_ungated_paths defense-in-depth).",
+  "related_features": [
+    "FEAT-010",
+    "FEAT-005"
+  ],
+  "related_decisions": [
+    "DEC-0052"
+  ]
+}

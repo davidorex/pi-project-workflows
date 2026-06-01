@@ -1,0 +1,37 @@
+{
+  "title": "No conversational onboarding for substrate init — /context init should elicit the user’s own conception (block kinds / layers / relation types / lenses) with sample suggestions + revisable labels, rather than imposing a fixed default set.",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "A fresh adopter currently has no guided path to a substrate conception. Intended outcome: running /context init guides the user conversationally to declare THEIR conception — what work-items they track (becoming block_kinds: canonical_id + prefix + display label + shape), their work-altitudes (becoming layers), how items relate (becoming relation_types), and projections (becoming lenses) — with the canonical pi-context conception offered as SAMPLE SUGGESTIONS (a catalog menu), never imposed. Output is a valid config.json composed from the answers, written through the canonical config-write surface. Labels are revisable afterward (display_name relabel; canonical_id rename is the rare deliberate engine op). User framing: flexibility (their conception, not ours) + no-hardcoding (ship nothing, offer everything) + revisability. Two elicitation tiers fall out naturally: (a) pick-a-sample-and-relabel, (b) author-bespoke-fields. Mechanisms already present in-repo: pi.sendMessage follow-up-turn ceremony pattern (lens-curate at index.ts:1524; the harness-confined main LLM conducts the dialogue and writes via a registered tool, DEC-0014-clean); config registries already drive block_kinds/layers/relation_types/lenses (DEC-0025); config.naming alias map + display_name fields; schema-write.ts surface for bespoke schema authoring; the FGAP-060 rename engine for canonical_id rename. This also reframes registry/ from auto-installed defaults into the SUGGESTION CATALOG that onboarding offers — the honest role under DEC-0025 (a menu, not a mandate); pairs with the initProject defaults-imposition gap (sibling FGAP). [2026-05-20 refinement: settled as DEC-0037 (samples = this project's platonic PACKAGED conception — schema + relations + invariants + lens per kind — dogfooded; registry/ -> samples/) + DEC-0038 (onboarding = standing incremental registry-population surfaces, init = first pass, modes accept-all | step-through). Write-side mechanism = per-registry register + relabel surfaces; the canonical_id-revise leg is the FGAP-060 rename engine; the samples discovery/enumeration surface is FGAP-068. Bespoke net-new-kind authoring is out of scope (ship + subset the platonic conception first).]",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1524",
+      "reference": "pi.sendMessage follow-up-turn ceremony precedent (lens-curate) — the established mechanism a conversational /context init onboarding would reuse; main LLM conducts dialogue, writes via registered tool (DEC-0014-clean)"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0025 (vocabulary-neutral: a user’s own conception bootstraps from config), DEC-0011 (ship no defaults), DEC-0035 (display_name mutable / canonical_id permanent), DEC-0023 (schema title is display_name source), DEC-0029 (/context surface) — the enacted canon this onboarding operationalizes"
+    },
+    {
+      "file": "analysis/2026-05-01-ceremony-ideas.md",
+      "reference": "existing ceremony catalog covers item-level ceremonies (new/edit/archive) only; onboarding-init elicitation is NOT covered — this is net-new canon"
+    }
+  ],
+  "impact": "Without it, every adopter either inherits an imposed conception (DEC-0011/0025 violation, see sibling FGAP) or hand-authors config.json with no guidance — the central DEC-0025 promise (a user’s own vocabulary bootstraps from config) has no on-ramp. Gates the /context surface (FGAP-026 Phase 6) being genuinely usable by a fresh adopter.",
+  "canonical_vocabulary": "onboarding-elicitation, suggestion-catalog, conception-bootstrap, revisable-labels",
+  "proposed_resolution": "Deliver a /context start step-through onboarding that elicits + suggests + writes a config.json the user owns and can relabel, with the canonical conception (samples) as one selectable sample. Outcome-only filing: the implementer MUST first survey the pi-sdk surface (sendMessage / registerTool / before_agent_start / resources_discover / follow-up-turn) + prior art in other pi extensions, and adopt the exemplar pattern rather than invent one. SCOPE (FGAP-095/DEC-0042): this is the conversational STEP-THROUGH interior of /context start (the conductor's NO_CONFIG fork = accept-all | step-through); it supplies the step-through branch — do not silently substitute accept-all. PREREQUISITE + LEARNING-MECHANISM: the guided path requires the LLM to comprehend the framework to elicit/explain/suggest (else it confabulates the conception, FGAP-092). Mechanism = exact adherence to pi's self-docs hooks (FGAP-090): a before_agent_start eager pointer block carrying a topic->tool-call map (e.g. 'add a block kind -> read-samples-catalog, then write-schema + amend-config') + resources_discover framework-skill metadata + lazy content via element-read tools (FGAP-103). The two real entries are accept-all vs guided-conversational; raw-empty is the technical default (DEC-0011/0015), never a user-facing option. Depends-on FGAP-090 (wire the hooks) + FEAT-007 (JIT skills as corpus).",
+  "related_decisions": [
+    "DEC-0011",
+    "DEC-0025",
+    "DEC-0029",
+    "DEC-0035",
+    "DEC-0023",
+    "DEC-0037",
+    "DEC-0038"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

@@ -1,0 +1,59 @@
+{
+  "title": "Blocks as prompt substrate — rendering infrastructure gaps for pi-jit-agents contextBlocks injection",
+  "status": "complete",
+  "layer": "L2",
+  "type": "investigative",
+  "question": "Given that .project/ blocks are composable prompt fragments injected via contextBlocks, what rendering infrastructure is missing to support per-item injection, depth control, token budgeting, and cross-block traversal?",
+  "method": "code-inspection",
+  "scope": [
+    "packages/pi-workflows/templates/shared/macros.md (12 existing macros)",
+    "packages/pi-jit-agents/src/compile.ts (contextBlocks injection)",
+    "packages/pi-jit-agents/src/types.ts (AgentSpec shape)",
+    ".project/schemas/ (18 schemas, 6 new block kinds prompt-unreachable)"
+  ],
+  "findings_summary": "The .project/ blocks are not state storage separate from agent work — they are composable prompt fragments that pi-jit-agents injects into agent contexts via contextBlocks. The current macro library has 12 whole-block macros (render_conventions, render_requirements, render_conformance, render_architecture, render_project, render_domain, render_decisions, render_tasks, render_issues, render_exploration, render_exploration_full, render_gap). Every macro takes the entire block as input and renders every item.\n\nAtomic composability requires per-item rendering. An agent working on STORY-001 needs FEAT-001 and its specific story, not every feature. Six new block kinds (decisions, spec-reviews, features, framework-gaps, layer-plans, research) have zero macros — they are prompt-unreachable. The contextBlocks agent-spec schema needs item-level selectivity: { name, item, focus, depth } instead of bare block names.\n\nNine shortcomings surfaced: (1) Per-item rendering missing across every existing macro. (2) Six per-item macros missing for new block kinds (render_decision, render_spec_review, render_feature, render_framework_gap, render_layer_plan, render_research). (3) contextBlocks schema needs item-level selectivity. (4) Rendering depth as first-class parameter. (5) Per-field token budget annotations (x-prompt-budget metadata). (6) Rendering-chain traversal subsystem (registry, cross-block query, depth-aware recursion, cycle detection). (7) Bidirectional schema contract not captured as principle. (8) render_gap name occupied by legacy concept. (9) REVIEW-001 blocked on render_decision existence — compile-chain dependency.",
+  "findings_document": "analysis/2026-04-15-blocks-as-prompt-substrate.md",
+  "grounding": {
+    "dependencies": [],
+    "revisions": [
+      "pi-project-workflows repo state as of 2026-04-15"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-15T00:00:00Z",
+  "stale_conditions": [
+    "packages/pi-workflows/templates/shared/macros.md gains per-item macros",
+    "packages/pi-jit-agents/src/types.ts AgentSpec contextBlocks shape changes from string[] to structured",
+    "New block kinds gain rendering macros"
+  ],
+  "citations": [
+    {
+      "label": "12 existing whole-block macros",
+      "path": "packages/pi-workflows/templates/shared/macros.md"
+    },
+    {
+      "label": "contextBlocks injection in compileAgent",
+      "path": "packages/pi-jit-agents/src/compile.ts"
+    },
+    {
+      "label": "AgentSpec type definition",
+      "path": "packages/pi-jit-agents/src/types.ts"
+    }
+  ],
+  "informs": [
+    "issue-041"
+  ],
+  "informed_by": [
+    "R-0002",
+    "R-0005"
+  ],
+  "related_research": [
+    "R-0003",
+    "R-0007"
+  ],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-15T00:00:00Z"
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Parallel agent steps share working tree — filesystem conflicts in concurrent file-writing workflows",
+  "body": "The parallel: step type and DAG-inferred parallelism run agents concurrently in the same working directory. If two parallel agents modify the same file (or even different files that trigger build/lint side effects), results are undefined. pi-subagents solves this with git worktree isolation: temp worktrees per agent, node_modules symlink, diff capture after completion, cleanup in finally block. Our parallel steps need an optional worktree: true flag with equivalent machinery.",
+  "location": "packages/pi-workflows/src/step-parallel.ts",
+  "status": "open",
+  "category": "issue",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "agent"
+}

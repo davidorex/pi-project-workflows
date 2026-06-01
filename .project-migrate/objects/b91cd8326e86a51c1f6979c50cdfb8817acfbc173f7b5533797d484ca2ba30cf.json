@@ -1,0 +1,30 @@
+{
+  "title": "No substrate block for communication-style preferences (orchestrator-side concern; lives only in memory layer)",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Communication-style preferences (e.g. bullets-not-walls heuristic from feedback_communications_heuristic.md just persisted) live only in the orchestrator-side memory layer at ~/.claude/projects/<this-project>/memory/feedback_*.md. There is no canonical substrate block for communication preferences — no block_kind, no schema, no block-api access. Cross-session continuity relies on memory load + LLM honoring the rule. The same anti-LLM-performance reasoning that put DEC-0018 in substrate canon (so LLMs choosing not to read memory cannot miss it) applies to communication-style preferences. Communication style governs orchestrator output shape across every interaction; missing-from-substrate means future sessions/agents can ignore via memory-skip OR see only stale snapshots.",
+  "evidence": [
+    {
+      "file": "~/.claude/projects/-Users-david-Projects-workflowsPiExtension/memory/feedback_communications_heuristic.md",
+      "reference": "Communication heuristic just filed only at memory layer; no substrate mirror"
+    },
+    {
+      "file": ".project/registry/schemas/",
+      "reference": "No communication-style schema exists in registry; no block_kind declared"
+    },
+    {
+      "file": "scripts/orchestrator/extract-feedback.ts",
+      "lines": "42",
+      "reference": "POC had to use native fs + ad-hoc YAML frontmatter parser specifically because feedback layer is outside substrate — same gap shape recurring"
+    }
+  ],
+  "impact": "Communication-style preferences are not queryable via block-api / projectState / readBlock. Cross-session continuity depends on memory layer reads only. Agents dispatched without memory access (e.g. JIT agents per DEC-0014, JIT agents in pi-jit-agents harness-confined dispatch dry-run per FGAP-028) cannot retrieve the communication heuristic; their output style drifts from project canon. Same architectural debt class as DEC-0018 was for verification gates: insufficient layering means LLMs can opt out by not reading.",
+  "proposed_resolution": "File new block_kind communication-style (or broader: orchestrator-style, agent-style — covering output discipline, hedging policies, brief-construction preferences, etc.). Schema fields per item: id, title, scope (orchestrator|subagent|user-facing), rule, examples, applies_to (which dispatch types), enforcement (instruction|surface), references. Add to registry/schemas/ + registry/blocks/. Cascade: subagent brief composer (build-subagent-preamble.ts) reads via block-api like it reads decisions + feedback. Memory layer entry (feedback_communications_heuristic.md) becomes mirror, not source-of-truth. Same pattern as DEC-0018 substrate-canon-not-just-memory persistence. Could include broader scope: orchestrator-style block also covers no-judgment-vocabulary, no-throat-clearing, depth-matching, etc., as separate items rather than one monolithic style entry.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0017",
+    "DEC-0018"
+  ],
+  "related_issues": []
+}

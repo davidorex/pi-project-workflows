@@ -1,0 +1,12 @@
+{
+  "description": "FGAP-026 closure phase 4 (Step 8.7.4; Claude Code Task #24): Workflow-execute + dispatch tools — main LLM's path to bash/read/write under DEC-0014 via JIT-agent dispatch through workflow steps",
+  "acceptance_criteria": [
+    "workflow-execute(name, params) tool registered",
+    "workflow-list + workflow-status tools registered",
+    "subcommand-only /workflow surfaces per audit get tool wrappers",
+    "main LLM can dispatch a workflow that runs npm run build via JIT-agent"
+  ],
+  "status": "completed",
+  "verification": "VER-015",
+  "notes": "CLOSED at HEAD 569eec4. Phase 4 complete via single sub-phase 4.1 TASK-041. Original 4-sub-phase scope reduced after Explore surfaced pre-existing surface (workflow-list / workflow-status already shipped; workflow tool semantic match for canonical workflow-execute under non-canonical name). See VER-015 + child VER-014. Phase 5 (TASK-025 arc-tracking-blocks dogfood substrate) unblocked."
+}

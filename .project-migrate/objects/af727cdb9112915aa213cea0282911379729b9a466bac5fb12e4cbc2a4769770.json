@@ -1,0 +1,11 @@
+{
+  "title": "Format-json output path silently swallows JSON parse failures — step completes with output: undefined",
+  "body": "step-agent.ts lines 232-238: the format-json path (no schema) caught JSON.parse exceptions and silently left output undefined. Step completed successfully with no output. persistStepOutput then wrote { text: garbage } to the output file. Downstream steps accessing steps.X.output.field got undefined — cascading failures untraceable to the silent swallow. Block writes are fatal on validation failure; this path was not, violating the principle from dec-009 that ungated paths next to gated ones are not enforcement.",
+  "location": "packages/pi-workflows/src/step-agent.ts:236",
+  "status": "resolved",
+  "category": "primitive",
+  "priority": "critical",
+  "package": "pi-workflows",
+  "source": "agent",
+  "resolved_by": "v0.11.3 commit b614be4 — parse failure now marks step as failed, same contract as schema-bound path"
+}

@@ -1,0 +1,23 @@
+{
+  "description": "Phase 2 sub-phase 2.3: ship walk-ancestors — library parent-direction closure-table traversal + pi tool + scripts/orchestrator/walk-ancestors.ts. Mirrors walkDescendants (project-context.ts:325) inverted. FGAP-029 partial closure.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/project-context.ts",
+    "packages/pi-context/src/lens-view.ts",
+    "packages/pi-context/src/index.ts",
+    "scripts/orchestrator/walk-ancestors.ts"
+  ],
+  "acceptance_criteria": [
+    "walkAncestors(itemId, relationType, edges) library function exported from project-context.ts; signature: (itemId: string, relationType: string, edges: Edge[]) => string[]; visited-set cycle protection; iterates edges.filter(e => e.child === id) recursing on e.parent",
+    "walkAncestorsByLens(cwd, itemId, relationType) wrapper exported from lens-view.ts mirroring walkLensDescendants pattern",
+    "walk-ancestors pi tool registered in packages/pi-context/src/index.ts with Type.Object({itemId, relationType})",
+    "scripts/orchestrator/walk-ancestors.ts shebang-tsx executable; args --item-id --relation-type [--format json|chain]",
+    "Tests cover: linear DAG ancestor chain / branching DAG / cycle protection / no-ancestors / relation_type filter; per-test fixtures create mkdtempSync + writeBootstrapPointer + .project/relations.json synthetic edges",
+    "Husky pre-commit gate green at commit time"
+  ],
+  "depends_on": [
+    "TASK-035"
+  ],
+  "notes": "CLOSED at HEAD 7cb17f0. walkAncestors + walkAncestorsByLens + walk-ancestors pi tool + scripts/orchestrator/walk-ancestors.ts shipped. tsconfig.json gained @davidorex/pi-context/lens-view path mapping. Tests: pi-context 413 → 420 (+7). Closure-table runtime demo deferred to Phase 5 (per-test fixtures own synthetic relations.json). See VER-007.",
+  "verification": "VER-007"
+}

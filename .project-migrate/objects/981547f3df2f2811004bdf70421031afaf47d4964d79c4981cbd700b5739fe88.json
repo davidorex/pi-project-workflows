@@ -1,0 +1,10 @@
+{
+  "title": "Template composition (extends/blocks/macros) used in only 1 of 22 template families",
+  "body": "The Nunjucks template system supports extends, block, macro, and include — powerful composition primitives. Only the analyzers/ family uses them (structure/quality/patterns extending base-analyzer.md). The other 21 template directories are flat files with no composition. This means the template machinery is over-engineered relative to actual usage, OR the agent library is under-exploiting available composition. Agents like investigator, researcher, gap-identifier, and gap-resolution-assessor share structural patterns (read code → produce structured findings → validate against schema) that could share a base template.",
+  "location": "packages/pi-workflows/templates/",
+  "status": "open",
+  "category": "composition",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "agent"
+}

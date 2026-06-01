@@ -1,0 +1,41 @@
+{
+  "title": "TraceEntry schema independence from SessionEntry",
+  "status": "enacted",
+  "context": "Issue-023 requires side-car trace capture for monitor classify calls. Pi-mono's SessionManager.SessionEntry (node_modules/@mariozechner/pi-coding-agent/dist/core/session-manager.d.ts) carries the canonical tree structure (type discriminator, id, parentId, timestamp, extension fields). The architectural question: should TraceEntry inherit SessionEntry literally, or adopt its structural contract without tight coupling? Inherit-literally couples our trace evolution to pi-mono's session schema, so any upstream change auto-breaks traces. Adopt-structurally preserves pi-mono's tree-traversal patterns while keeping trace concerns scoped to the trace subsystem. The 2026-04-26 mandate-bound canonical-compliance audit established that the structural contract is canonical pi-mono and the inheritance is not — pi-coding-agent does not export SessionEntry as a base type for extension reuse, so structural adoption is the only path that does not invent a new pi-mono surface.",
+  "decision": "Trace entries adopt the SessionEntry conceptual shape (type discriminator, id, parentId, timestamp, extension fields per kind) but live in a separate schema namespace. No literal inheritance, no shared base type. The trace subsystem owns its own discriminated union: session_start, classify_call, classify_response, context_collection, verdict_decision, trace_end. Both subsystems use identical timestamp semantics (ISO 8601 via new Date().toISOString()). If session schema evolves, traces continue independently.",
+  "consequences": [
+    "TraceEntry is defined in pi-jit-agents and consumed by pi-behavior-monitors; not inherited from pi-coding-agent",
+    "Trace entries pass the same tree-traversal queries as session entries (getEntry / getBranch shape) if ever unified for analytics; that integration is opt-in and scoped to extension code",
+    "Both subsystems use identical timestamp semantics so cross-subsystem time correlation works without conversion",
+    "Redaction filter operates on both session and trace entries via a shared comprehensive pattern set",
+    "Schema evolution is independent: changes to SessionEntry do not force changes to TraceEntry and vice versa",
+    "A new .workflows/schemas/agent-trace.schema.json defines the trace shape; AJV validation reuses pi-project's schema-validator at write time"
+  ],
+  "related_findings": [
+    "issue-023"
+  ],
+  "references": [
+    {
+      "label": "SessionEntry source",
+      "path": "node_modules/@mariozechner/pi-coding-agent/dist/core/session-manager.d.ts"
+    },
+    {
+      "label": "SessionManager._persist canonical append pattern",
+      "path": "node_modules/@mariozechner/pi-coding-agent/dist/core/session-manager.js",
+      "lines": "560,565"
+    },
+    {
+      "label": "agent_end extension hook canonical capture point",
+      "path": "node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts",
+      "lines": "781-783"
+    },
+    {
+      "label": "Forcing finding issue-023",
+      "path": ".project/issues.json"
+    },
+    {
+      "label": "Enacting commit — issue-023 implementation",
+      "commit": "1bc36ba"
+    }
+  ]
+}

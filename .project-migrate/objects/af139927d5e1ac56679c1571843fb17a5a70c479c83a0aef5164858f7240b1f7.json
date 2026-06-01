@@ -1,0 +1,35 @@
+{
+  "target": "TASK-048",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-21T00:00:00Z",
+  "evidence": "FGAP-075 edge-write dual-surface unit — commit c1e72af. Shipped: block-api appendManyToTypedFileIfAbsent (lock-held dedup-append) + project-context appendRelations/appendRelation + Pi tool append-relation + scripts/orchestrator/append-relation.ts + edge-write.test.ts (11 cases). Verified DEC-0018: build/check/test green (pi-context 501 [+11] / 151 / 157 / 829, 0 fail). Runtime demo across surfaces: library (append true / dup no-op / bulk {appended:1,skipped:1} / creates relations.json on absent), CLI (--dry-run inert no file / real append / re-run no-op / exit-2 bad-arg). Deferred-guard PROOF: a dangling+unregistered edge writes {appended:true} then validateProject flags child-unresolved + unregistered-relation_type + edge_cycle_detected (guards deferred to validateProject by layering, not dropped). Registration proof: append-relation present in generated SKILL.md (dist introspection). Adversarial: only writeRelations + appendMany write relations.json, both via canonical writeTypedFile inside withBlockLock (no raw write / no parallel ungated path). pi -p LLM-dispatch deferred to user .pi/ runtime (extension not loaded in bare temp dirs).",
+  "criteria_results": [
+    {
+      "criterion": "appendRelations/appendRelation over a lock-held dedup-append primitive; absent relations.json created",
+      "status": "passed",
+      "evidence": "library demo + tests A/B/H; block-api.ts:516 withBlockLock+writeTypedFile"
+    },
+    {
+      "criterion": "exact-duplicate (parent,child,relation_type) silent no-op; ordinal not identity",
+      "status": "passed",
+      "evidence": "tests C/D + library demo dup no-op"
+    },
+    {
+      "criterion": "Pi tool append-relation + CLI append-relation.ts (--dry-run inert) dual-surface twins",
+      "status": "passed",
+      "evidence": "SKILL.md registration + CLI demo dry-run/real/no-op"
+    },
+    {
+      "criterion": "deferred-guard proof: unregistered-rt/dangling/cycle edge WRITES then CAUGHT by validateProject",
+      "status": "passed",
+      "evidence": "tests I/J/K + library deferred-guard demo"
+    },
+    {
+      "criterion": "build/check/test green + runtime demo (library+CLI) + adversarial probe + skills regen",
+      "status": "passed",
+      "evidence": "501 tests 0 fail; no parallel write path grep; npm run skills"
+    }
+  ]
+}

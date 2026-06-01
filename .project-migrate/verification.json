@@ -69,7 +69,9 @@
           "status": "passed",
           "evidence": "Verified at HEAD e88d7ee"
         }
-      ]
+      ],
+      "oid": "814cdacc2170a52baa9f8c162bc3b1cc",
+      "content_hash": "ce69aef084d40f61d7f05e8306373d568d939565f3ecb50538a11e4af4ff0d15"
     },
     {
       "id": "VER-002",
@@ -115,7 +117,9 @@
           "status": "passed",
           "evidence": "Implementer agent dispatched against compile-implementation-context.ts output (which embeds compile-task-context.ts output via --task-template) successfully committed FGAP-035 fix at f17efa3 + e88d7ee"
         }
-      ]
+      ],
+      "oid": "32efe14557edbb5bb43a00d7d1f26942",
+      "content_hash": "aaa397caa39753f381d48fcecaa2d32baed0dddc3c1b1d082ee842ca738002cd"
     },
     {
       "id": "VER-003",
@@ -166,7 +170,9 @@
           "status": "passed",
           "evidence": "JSDoc lines 13-21 + commit body 2c3794a document 4 surfaced friction points (array_key heuristic, id-field assumption, singleton-block shape, colon-escape)"
         }
-      ]
+      ],
+      "oid": "fd14ebd509beb1efb28bdf13e9f51ce9",
+      "content_hash": "acb973afe7d05552b2d7d91fe012bb3efb56af2c1228e55a253d2e6ba5dedddf"
     },
     {
       "id": "VER-004",
@@ -207,7 +213,9 @@
           "status": "passed",
           "evidence": "Commits f17efa3 + e88d7ee close FGAP-035 + Q4 follow-up; grep verifications return 0 for `= PROJECT_DIR` / `.project` production literals / forbidden JSDoc phrases across project-dir.ts + index.ts"
         }
-      ]
+      ],
+      "oid": "3799775e758dc537dc08b54eaad8e043",
+      "content_hash": "455578f1c2647893485acbeda01b7727132e61d3077b5ab83332edb06a01227a"
     },
     {
       "id": "VER-005",
@@ -248,7 +256,9 @@
           "status": "passed",
           "evidence": "3 demos run post-commit: eq+status, matches+id, in+priority — all return correct JSON-array results from .project/ substrate"
         }
-      ]
+      ],
+      "oid": "f2487890edad435199fa5742f04a5fc4",
+      "content_hash": "831a7367028508228a67b8d616ff4389e3e448e8d521dbd69ec20bac800a35a5"
     },
     {
       "id": "VER-006",
@@ -294,7 +304,9 @@
           "status": "passed",
           "evidence": "Bulk resolve of DEC-0015/FGAP-035/TASK-034 returns correct JSON map; each id resolves to its block (decisions/framework-gaps/tasks) with full item payload"
         }
-      ]
+      ],
+      "oid": "f139c0ee9ce505cec525897d297f3470",
+      "content_hash": "6958999d845c5e280f0f5a32ecade81b842de30d53de8c933974b5ef9bd16ee5"
     },
     {
       "id": "VER-007",
@@ -340,7 +352,9 @@
           "status": "passed",
           "evidence": "Commit 7cb17f0 landed without --no-verify across all 4 packages"
         }
-      ]
+      ],
+      "oid": "f4ceca63422c959a55c042453668f00a",
+      "content_hash": "f9e03fb8841fc34b9e33195d76388f9c4d9ac0fa3db8bfb1b13d1c3e1552a4a4"
     },
     {
       "id": "VER-008",
@@ -386,7 +400,9 @@
           "status": "passed",
           "evidence": "Commit 680cb1c landed without --no-verify across all 4 packages"
         }
-      ]
+      ],
+      "oid": "69de45720525712649ffb784eb66038e",
+      "content_hash": "ba65acef819b7f5c71ebb27ebcdb487a2cfb86518c902773d271eb6bc321c39e"
     },
     {
       "id": "VER-009",
@@ -432,7 +448,9 @@
           "status": "passed",
           "evidence": "Each VER-005..008 enumerates all three surfaces landed"
         }
-      ]
+      ],
+      "oid": "def0e68c96c92c7fd29d1e34991005d5",
+      "content_hash": "366fd4b8fb2aa81113396058a6820792aa54fc28f0aecc43eb23d307355483b5"
     },
     {
       "id": "VER-010",
@@ -473,7 +491,9 @@
           "status": "passed",
           "evidence": "Commit 6ddb1ba landed without --no-verify across all 4 packages"
         }
-      ]
+      ],
+      "oid": "888b5047540f1c351c1c02ddbcf948d4",
+      "content_hash": "a773920d85ee06233ccc9e061b4a0b62c388e80385c5dbb1f3ef1ef641dcce8d"
     },
     {
       "id": "VER-011",
@@ -524,7 +544,9 @@
           "status": "passed",
           "evidence": "Commit 6bea7e1 landed without --no-verify across all 4 packages"
         }
-      ]
+      ],
+      "oid": "1b6bac33f6721e0f645e3df5318ad7c4",
+      "content_hash": "2e02eaea6b5ca8ad69a2158ad3a158c38a89cb976c92017364cafab191897919"
     },
     {
       "id": "VER-012",
@@ -560,7 +582,9 @@
           "status": "passed",
           "evidence": "Commit 02acf92 landed without --no-verify across all 4 packages"
         }
-      ]
+      ],
+      "oid": "3f5e6ec23ff62c0884115c261b13bc5a",
+      "content_hash": "3075bc288a66704c6e68b2431b2d2e3d0fd1bd3b8ce52ce651dcac259c0663d7"
     },
     {
       "id": "VER-013",
@@ -596,7 +620,9 @@
           "status": "passed",
           "evidence": "FGAP cluster transition handled in status-cascade commit alongside TASK-023 closure"
         }
-      ]
+      ],
+      "oid": "024cbf11327acbb9e2b3700fb0c0ccc8",
+      "content_hash": "0ce73447f7954968d9da45a80628881750ea2f39b65bd04bfa3b7024a08b1e08"
     },
     {
       "id": "VER-014",
@@ -642,7 +668,9 @@
           "status": "passed",
           "evidence": "Commit 569eec4 subject carries `!`; landed across all 4 packages without --no-verify"
         }
-      ]
+      ],
+      "oid": "057802903663601d4e493d77d61de715",
+      "content_hash": "39bbd1461b6dda8f585399f3b4184417f896496ba3da679946fd70fa8af4d056"
     },
     {
       "id": "VER-015",
@@ -673,7 +701,9 @@
           "status": "passed",
           "evidence": "workflow-execute pi tool exposes executeWorkflow; per Phase 3 DEC-0017 gather-execution-context primitive available for step context composition; pipeline harness-confined main LLM → workflow-execute tool → JIT-agent step dispatch satisfies DEC-0014 (main LLM never crosses bash directly)"
         }
-      ]
+      ],
+      "oid": "a42feb8069b8b81636c50b8ea885300b",
+      "content_hash": "21bf785a49cc40c87b70d910e1701bde3602d7b371a9070bcfbbb95a11c240b7"
     },
     {
       "id": "VER-016",
@@ -699,7 +729,9 @@
           "status": "passed",
           "evidence": "runtime demo: zero file change under dryRun; adversarial grep"
         }
-      ]
+      ],
+      "oid": "baf9d2ac73a73a5b38c3b9647fea6969",
+      "content_hash": "7fe097ec02de1112c3c7fbac102b6bcad5353317d1d26e71b37e82830d98b307"
     },
     {
       "id": "VER-017",
@@ -720,7 +752,9 @@
           "status": "passed",
           "evidence": "foreign-vocab runtime demo"
         }
-      ]
+      ],
+      "oid": "bcc92d87c7c694ca5460b0a132592b49",
+      "content_hash": "6b16a095bb5a3cd54e1b336e1da9d410aa0ee85a4cc36882964c217a1df1a3de"
     },
     {
       "id": "VER-018",
@@ -741,7 +775,9 @@
           "status": "passed",
           "evidence": "V2"
         }
-      ]
+      ],
+      "oid": "bd7950445249c01daec04367f8d5734f",
+      "content_hash": "228f7f28a76f9bd209e587af27fdcc4776d3861e82e11b221b8ac5cb2d331e43"
     },
     {
       "target": "TASK-047",
@@ -782,7 +818,9 @@
           "evidence": "D1 +12 mappings (grounded in samples semantics) + D2 status-vocab.test.ts; additivity + adversarial verified; commit 4cbcf31"
         }
       ],
-      "id": "VER-019"
+      "id": "VER-019",
+      "oid": "c556c9c14402dacaf0686b9478c52daf",
+      "content_hash": "381a5f9fbe7eb960ed7ebbcf6da2bbe03eedf7ac0146ec93fa88d94229861da2"
     },
     {
       "target": "TASK-048",
@@ -818,7 +856,9 @@
           "evidence": "501 tests 0 fail; no parallel write path grep; npm run skills"
         }
       ],
-      "id": "VER-020"
+      "id": "VER-020",
+      "oid": "87645fffa61c2c1083517c78e29f4067",
+      "content_hash": "af139927d5e1ac56679c1571843fb17a5a70c479c83a0aef5164858f7240b1f7"
     },
     {
       "target": "TASK-049",
@@ -854,7 +894,9 @@
           "evidence": "test 10/11 + adversarial grep (writeConfig sole writer, 0 parallel path); 516 tests"
         }
       ],
-      "id": "VER-021"
+      "id": "VER-021",
+      "oid": "95b66f71fdbc83a4a7b3afeea0df872f",
+      "content_hash": "2bc69f8d4d6bc2256b74864224bb78d8b849b4431f5d904486574b4f3aa752b0"
     },
     {
       "target": "TASK-050",
@@ -890,7 +932,9 @@
           "evidence": "524 tests; exit-1 fix verified; FGAP-078/079/080"
         }
       ],
-      "id": "VER-022"
+      "id": "VER-022",
+      "oid": "82f17e5bd99f7095492ee6cda7a4b48a",
+      "content_hash": "dd5d70a1db35a12e46e06a260bb1d4a855fe7cb799b89baede40449b52a19919"
     },
     {
       "target": "TASK-051",
@@ -926,7 +970,9 @@
           "evidence": "jit-runtime.ts unchanged; F-012 intact"
         }
       ],
-      "id": "VER-023"
+      "id": "VER-023",
+      "oid": "94811b5626371e5e3337b5aab86df826",
+      "content_hash": "377d2e6a2e6c1a6663bdc5f70b22ea73a6b3fb72b6c9aeec8e076f5827bf724e"
     },
     {
       "target": "TASK-052",
@@ -962,7 +1008,9 @@
           "evidence": "redo after revert; feedback_no_adhoc_dev honored"
         }
       ],
-      "id": "VER-024"
+      "id": "VER-024",
+      "oid": "07bb9f072d498adc110f4bd72eedf36f",
+      "content_hash": "ab63ba98fe70f13f346cee742868938659d75d6ca68384486ab0c79a87b8ed5e"
     },
     {
       "target": "TASK-053",
@@ -998,7 +1046,9 @@
           "evidence": "FGAP-085"
         }
       ],
-      "id": "VER-025"
+      "id": "VER-025",
+      "oid": "ac2743d492299b2f989b56a7a4258e16",
+      "content_hash": "0d842c42b1f8eb11bd607b75859762937fbe337419dce70877e138bfab13f95c"
     },
     {
       "target": "TASK-054",
@@ -1044,7 +1094,9 @@
           "evidence": "plan AMENDMENT section; throwing import now returns 15 kinds"
         }
       ],
-      "id": "VER-026"
+      "id": "VER-026",
+      "oid": "abf36c786fca4ee77ab7996407b85c8f",
+      "content_hash": "4f80a638cd624579028cfb911643276ea64ecdfd7124eb17edeb5934ceb76fbd"
     },
     {
       "target": "TASK-055",
@@ -1085,7 +1137,9 @@
           "evidence": "re-probe verdict; both plan-mode amendments (block-path + generate-skills)"
         }
       ],
-      "id": "VER-027"
+      "id": "VER-027",
+      "oid": "2100a051e9ef7178ad25ca4cd500ef14",
+      "content_hash": "0c22de00058586c1d3df57d95e5274ce72aa6b607c0b6516e88e8cf9658465f6"
     },
     {
       "target": "TASK-056",
@@ -1116,7 +1170,9 @@
           "evidence": "commit 1c77607; adversarial verdict"
         }
       ],
-      "id": "VER-028"
+      "id": "VER-028",
+      "oid": "f993544f53660308ee00ee64fb9dedbe",
+      "content_hash": "709c60c3c078358afd4f87874eeb6973400862b8b6a98ceb229c8883c265d7e9"
     },
     {
       "target": "TASK-057",
@@ -1152,7 +1208,9 @@
           "evidence": "commit 2a848df; adversarial verdict"
         }
       ],
-      "id": "VER-029"
+      "id": "VER-029",
+      "oid": "22ae7a17b6f17f204e0557e4d0e865ea",
+      "content_hash": "0d05fe47d76fcce32695cf58177332e8b7f8fa84c719d8d500a0e756a03f1192"
     },
     {
       "target": "TASK-058",
@@ -1203,7 +1261,9 @@
           "evidence": "probe confirmed skill-narrative 38/40 + README 66/120/134/154 unchanged"
         }
       ],
-      "id": "VER-030"
+      "id": "VER-030",
+      "oid": "e45c025689e9c201168132d737041f40",
+      "content_hash": "536e2e674e8704e10d62b7b45c788a31a47fb317726b197aeea8838269a3812f"
     },
     {
       "target": "TASK-059",
@@ -1254,7 +1314,9 @@
           "evidence": "tool present in 3 SKILL.md copies; project-sdk/project-context already exported"
         }
       ],
-      "id": "VER-031"
+      "id": "VER-031",
+      "oid": "5ba0a1f7810457b4e5d9ef1147342925",
+      "content_hash": "77230bb68ec76deace95b7b5b32fec9e3b9b47cd069d7fe8350f11edf7a69934"
     },
     {
       "target": "TASK-060",
@@ -1295,7 +1357,9 @@
           "evidence": "nextId across 5 blocks; features $ref auto-id+stamp+PASS; this VER filed via --auto-id"
         }
       ],
-      "id": "VER-032"
+      "id": "VER-032",
+      "oid": "1153faa11864ef28ab65ad924d5a7764",
+      "content_hash": "d18e7ec137f6c113d5c6581e39b472641fac5273c5de414a162fe4cee558fd9e"
     },
     {
       "target": "TASK-061",
@@ -1331,7 +1395,9 @@
           "evidence": "FGAP-096 filed for compile.ts/step-shared.ts src-consumer instanceof"
         }
       ],
-      "id": "VER-033"
+      "id": "VER-033",
+      "oid": "8188ef583c5ea2bd4b3f9038fe4740cd",
+      "content_hash": "1bb2c479d7f819e4bbb4f49fce40db339b698bec3134dbcd5a84718d1ca047ee"
     },
     {
       "target": "TASK-062",
@@ -1362,7 +1428,9 @@
           "evidence": "602 pi-context 0 fail; no stray minLength/1.5.0; no other cross-package instanceof (adversarial D PASS)"
         }
       ],
-      "id": "VER-034"
+      "id": "VER-034",
+      "oid": "34f6bc72170a9c408c16fcf8b96ce507",
+      "content_hash": "21aa4e73f016b3c19b702625b57d7def4698417718b14060fde389ff5ca05bd8"
     },
     {
       "target": "TASK-063",
@@ -1403,7 +1471,9 @@
           "evidence": "ad-hoc edits discarded; subagent implemented from plan; orchestrator ran build/test/demo + adversarial + commit"
         }
       ],
-      "id": "VER-035"
+      "id": "VER-035",
+      "oid": "afcd587112b2949b0704c28f00618e6f",
+      "content_hash": "eb2733d8b21045201db68728ecf986a7c39d4288fa6916e396b0d135a05333b2"
     },
     {
       "target": "TASK-064",
@@ -1438,7 +1508,9 @@
           "evidence": "general-purpose subagent edited 2 files; orchestrator ran build/check/test + dual demos + commit"
         }
       ],
-      "id": "VER-036"
+      "id": "VER-036",
+      "oid": "b72d76b37d7950aa91dee4caa3089a04",
+      "content_hash": "c565d348fb82ffda4d308e9c8129ec9573c0c8cb2a583dd8008cbecc0e4f4ced"
     },
     {
       "target": "TASK-066",
@@ -1473,7 +1545,9 @@
           "evidence": "only .project/decisions.json written"
         }
       ],
-      "id": "VER-037"
+      "id": "VER-037",
+      "oid": "6dbc56d1800f936c66d9aebff29380f9",
+      "content_hash": "a92390916b9b9314d15897c0b8938df0bf4a8d2998e7b487e4b729c0db7cf5ae"
     },
     {
       "target": "TASK-067",
@@ -1513,7 +1587,9 @@
           "evidence": "adversarial #5: project-status etc. + registerCommand('project') unchanged (C5 scope)"
         }
       ],
-      "id": "VER-038"
+      "id": "VER-038",
+      "oid": "d1a8335a9b52353730a43d5d463e54df",
+      "content_hash": "ccaa20fc5288327dcd1cc317030c3bfd113ed7c16cb086e99608bcc7ebb51efa"
     },
     {
       "target": "TASK-068",
@@ -1553,7 +1629,9 @@
           "evidence": "adversarial #5/#6: logic identical, exactly 6 files changed, no cross-package leak"
         }
       ],
-      "id": "VER-039"
+      "id": "VER-039",
+      "oid": "a25093e3479a409b052e0efdfe8a0dcf",
+      "content_hash": "1f13e02affa83c70e98c961616e35c52a414f08c282472d9498cd3d097510d38"
     },
     {
       "target": "TASK-069",
@@ -1588,7 +1666,9 @@
           "evidence": "final re-enumeration; readBlock throw-on-missing contract verified; FGAP-097 filed for optional friendlier in-pi emit"
         }
       ],
-      "id": "VER-040"
+      "id": "VER-040",
+      "oid": "5699fa2ede206ffeb51e5dedd76ecc61",
+      "content_hash": "3cbc830fa4744ef1fb2bcbe9d2042d61f1dba22c382462089df137589e124f1c"
     },
     {
       "target": "TASK-070",
@@ -1628,7 +1708,9 @@
           "evidence": "adversarial #5/#6; no PROJECT_DIR in scope; no tryResolveContextDir misuse in CLIs"
         }
       ],
-      "id": "VER-041"
+      "id": "VER-041",
+      "oid": "5210081d50ce231eb60f74d4fe6c8fd6",
+      "content_hash": "ab48bfc94d9b92eaab479707552f602b82c504001a008232a851688286e85f0a"
     },
     {
       "target": "TASK-071",
@@ -1668,7 +1750,9 @@
           "evidence": "adversarial #6; installProject alias + JSDoc untouched"
         }
       ],
-      "id": "VER-042"
+      "id": "VER-042",
+      "oid": "83b47626e808161b1f667b121d8adf8c",
+      "content_hash": "7d7914c270a13e4b5a89124b7aabf7d81a7915a5108179db43a92f6b393aea9d"
     },
     {
       "target": "TASK-072",
@@ -1703,7 +1787,9 @@
           "evidence": "0 failures all 4 packages; adversarial #6 (only doc/spec/generate-skills/shipped-schema/SKILL.md changed)"
         }
       ],
-      "id": "VER-043"
+      "id": "VER-043",
+      "oid": "1cb221ab22e5ed129f8c37136622c893",
+      "content_hash": "8f2c2f7b1dcadba6742a08a8adf31d5bf9ce424a3da2e0e048bdedb43a09c00e"
     },
     {
       "target": "TASK-073",
@@ -1738,7 +1824,9 @@
           "evidence": "0 failures; runtime demo; .project dir + pi-project-workflows + SCHEMAS_DIR intact"
         }
       ],
-      "id": "VER-044"
+      "id": "VER-044",
+      "oid": "5ee0ab9aada52205fae403f90e2c7861",
+      "content_hash": "8181e0b59ce6a69504ae309cf07397a5d505c9d6c30b24835e54f4e9a507fd2d"
     },
     {
       "target": "TASK-074",
@@ -1776,7 +1864,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "VER-045"
+      "id": "VER-045",
+      "oid": "a9dbc2664b08053675444d031b22bf04",
+      "content_hash": "6129b51c5d878a5e0dc91fe460757693ade529c54e3832bff87fa6cb076d3e0f"
     },
     {
       "target": "TASK-075",
@@ -1814,7 +1904,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "VER-046"
+      "id": "VER-046",
+      "oid": "6e51f30a77c0fa4d3358fda4c8478f04",
+      "content_hash": "bbd49513aca54cc82c2a29d2062055c3baea512b944749123458e47e00b402d4"
     },
     {
       "target": "TASK-076",
@@ -1847,7 +1939,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "VER-047"
+      "id": "VER-047",
+      "oid": "bb0c7f87b81c23454f055677155795db",
+      "content_hash": "21586dcb8cd4fe14a95bc9ae4ecda844945196f3d46eddfa934bd6c4830bafdf"
     },
     {
       "target": "TASK-077",
@@ -1885,7 +1979,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "VER-048"
+      "id": "VER-048",
+      "oid": "ebb11667dc72cc3cc9cf7d0d6d1ef9a3",
+      "content_hash": "7cc9c8cc2f740cb71e4ec67e1552e9f0427d4ebd1f8ad3d68c2c1348168472b1"
     },
     {
       "target": "TASK-078",
@@ -1923,7 +2019,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "VER-049"
+      "id": "VER-049",
+      "oid": "440becf9ac7861557fa4921dc9d3883c",
+      "content_hash": "efc9779a0d7f1781abe9bfb415c4b1d979e971f22f82d9a9cb23b0756c7960cd"
     },
     {
       "id": "VER-050",
@@ -1976,7 +2074,9 @@
         }
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-25"
+      "created_at": "2026-05-25",
+      "oid": "2a597856796b27c404b15aeeb732cdbb",
+      "content_hash": "1eee8d7d4bbc3ed14ca5d097a2ec5644badb53fa356d92a1c267e55f50da93ff"
     },
     {
       "id": "VER-051",
@@ -2022,7 +2122,9 @@
           "evidence": "Commit be42a27 'analysis: refresh draft roadmap to reflect narrowed DEC-0044 + FGAP-112' — analysis/2026-05-26-roadmap-by-extension.md updated cross-cutting governance line, removed FGAP-112 from pi-jit-agents Decision needs, added pi-agent-dispatch (NEW) section, updated reading order."
         }
       ],
-      "evidence": "Canonical closure of FGAP-112 (architectural canon resolution). Three substrate landings: (a) FGAP-112 commit 3da9edc — gap body narrowed to determinate Path A; (b) DEC-0044 commit a71c782 — decision body edited to match the narrowing (the FGAP's stated close criterion); (c) roadmap refresh commit be42a27 — analysis projection updated. This VER required prior schema extension: verification.target_type enum extended with 'framework-gap' (committed same atomic landing as this VER) — pre-existing enum admitted only task|phase|requirement, surfacing a separate substrate-mechanism gap that the close-out exposed; the extension was the prerequisite hygiene before canonical FGAP closure was possible. Verifier inspected: (1) git log --oneline showing the three closing commits in order; (2) tsx-eval readBlock confirming FGAP-112 status=closed + closed_by + closed_at + augmented proposed_resolution; (3) tsx-eval readBlock confirming DEC-0044 carries the narrowed title + 6 options + narrowed decision body; (4) tsx-eval reading verification.schema.json confirming target_type enum extended."
+      "evidence": "Canonical closure of FGAP-112 (architectural canon resolution). Three substrate landings: (a) FGAP-112 commit 3da9edc — gap body narrowed to determinate Path A; (b) DEC-0044 commit a71c782 — decision body edited to match the narrowing (the FGAP's stated close criterion); (c) roadmap refresh commit be42a27 — analysis projection updated. This VER required prior schema extension: verification.target_type enum extended with 'framework-gap' (committed same atomic landing as this VER) — pre-existing enum admitted only task|phase|requirement, surfacing a separate substrate-mechanism gap that the close-out exposed; the extension was the prerequisite hygiene before canonical FGAP closure was possible. Verifier inspected: (1) git log --oneline showing the three closing commits in order; (2) tsx-eval readBlock confirming FGAP-112 status=closed + closed_by + closed_at + augmented proposed_resolution; (3) tsx-eval readBlock confirming DEC-0044 carries the narrowed title + 6 options + narrowed decision body; (4) tsx-eval reading verification.schema.json confirming target_type enum extended.",
+      "oid": "a0e4eb2d37e6eb19f6939d6395ce7c14",
+      "content_hash": "5a4ed5cf1d64a211c02f567e1264bf26ed94e18be4e7ff5fc4077f8a18d68265"
     },
     {
       "id": "VER-052",
@@ -2073,7 +2175,9 @@
           "evidence": "Build exit 0; check exit 0; test exit 0 (830/830). Runtime demo at tmp/runtime-demo-task-081.ts: 3/3 PASS (real executeAgent + real GrantViolationError + real clamp; mock confined to completeFn since clamp throws first). Adversarial probe (fresh-context Explore): 9/9 PASS, no false-pass scenarios. Orchestrator independently re-verified clamp-position via grep (line 488 < 551 < 572)."
         }
       ],
-      "evidence": "TASK-081 narrow scope implementation complete on branch task-081-jit-agents-grant-clamp. Four impl commits: dee01a5 (types.ts fields), 4e9a866 (compile.ts thread), a273ab9 (clamp + error class), d3cf81f (4 tests). Three verification layers all green: build/check/test, runtime demo (3/3), adversarial probe (9/9). NOTE on filing: d287b0f attempted to file this VER + status update + edge in one commit but the status-update threw on tasks-schema if/then conditional (status=completed requires verification field which the script omitted); the edge committed but VER + status update did not. This file (committed separately) completes that trio: files VER-052 + updates TASK-081 status with the required verification field. The d287b0f commit message overstated landing; this commit corrects."
+      "evidence": "TASK-081 narrow scope implementation complete on branch task-081-jit-agents-grant-clamp. Four impl commits: dee01a5 (types.ts fields), 4e9a866 (compile.ts thread), a273ab9 (clamp + error class), d3cf81f (4 tests). Three verification layers all green: build/check/test, runtime demo (3/3), adversarial probe (9/9). NOTE on filing: d287b0f attempted to file this VER + status update + edge in one commit but the status-update threw on tasks-schema if/then conditional (status=completed requires verification field which the script omitted); the edge committed but VER + status update did not. This file (committed separately) completes that trio: files VER-052 + updates TASK-081 status with the required verification field. The d287b0f commit message overstated landing; this commit corrects.",
+      "oid": "66a97e14936bf93af1b4dddc26db50c7",
+      "content_hash": "7918996dee1cea1f16b78a4355180a62cdb2696f5e532a1f991acd650c2e2d81"
     },
     {
       "id": "VER-053",
@@ -2119,7 +2223,9 @@
           "evidence": "Build exit 0; check exit 0; test exit 0 (830/830). Runtime demo 1 (readSchema + availableSchemas) PASS — schema discoverable. Runtime demo 2 (file-block-item author + readBlock round-trip + availableBlocks post-author) PASS. Runtime demo 3 (compileAgent on fixture .agent.yaml with ContextBlockRef item-ref to WO-001) PASS — WO-001 content wrapped in <context_block> + injected at _work_orders_item template key. Adversarial probe (fresh-context Explore agent): 10/10 PASS with no false-pass scenarios. Forbidden-term audit (CHECK 9): zero hits across file content AND commit messages for the TASK-088 commit range."
         }
       ],
-      "evidence": "TASK-088 substrate-only work-order block kind landed on branch task-088-work-order-block-kind. Six commits (one beyond plan due to discovered status-vocab framework invariant; canon-aligned addition): 7d06f61 (canonical schema), 443eb65 (status-vocab mappings real-check-passed → complete + real-check-failed → blocked), b107fad (samples schema mirror), 26d4ceb (samples empty-block seed), 95910ef (.project/config.json registration), 6ab7545 (samples/conception.json registration). Verification: build/check/test 830/830 green; 3/3 runtime demos PASS (schema discovery + author/round-trip + contextBlocks item-ref handoff via compileAgent); adversarial probe 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits. Per DEC-0048: bundled-artifact tests not regression gates; engine unit tests + completeness guards are gates (all green). Per DEC-0037 + FGAP-087: zero touches to defaults/+registry/ (canonical-clean post-DEC-0037). ContextBlockRef item-ref handoff path empirically demonstrated end-to-end (WO content → compileAgent → wrapped in <context_block role=\"data\"> → injected at _work_orders_item template key). NOTE on status-vocab addition: TASK-088 scope expanded by one TS file (status-vocab.ts) beyond pure-substrate because the framework's completeness-guard invariant required mapping the new enum values to canonical buckets; the addition is canon-aligned and is the right mechanism for new status values (FGAP-069 + DEC-0033 territory)."
+      "evidence": "TASK-088 substrate-only work-order block kind landed on branch task-088-work-order-block-kind. Six commits (one beyond plan due to discovered status-vocab framework invariant; canon-aligned addition): 7d06f61 (canonical schema), 443eb65 (status-vocab mappings real-check-passed → complete + real-check-failed → blocked), b107fad (samples schema mirror), 26d4ceb (samples empty-block seed), 95910ef (.project/config.json registration), 6ab7545 (samples/conception.json registration). Verification: build/check/test 830/830 green; 3/3 runtime demos PASS (schema discovery + author/round-trip + contextBlocks item-ref handoff via compileAgent); adversarial probe 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits. Per DEC-0048: bundled-artifact tests not regression gates; engine unit tests + completeness guards are gates (all green). Per DEC-0037 + FGAP-087: zero touches to defaults/+registry/ (canonical-clean post-DEC-0037). ContextBlockRef item-ref handoff path empirically demonstrated end-to-end (WO content → compileAgent → wrapped in <context_block role=\"data\"> → injected at _work_orders_item template key). NOTE on status-vocab addition: TASK-088 scope expanded by one TS file (status-vocab.ts) beyond pure-substrate because the framework's completeness-guard invariant required mapping the new enum values to canonical buckets; the addition is canon-aligned and is the right mechanism for new status values (FGAP-069 + DEC-0033 territory).",
+      "oid": "88f03909543b23119861e20a9d5f04a9",
+      "content_hash": "9b7bc08f321a2a30523bbfcf3bf93de897ded813dc7725ca52f030b51c71a672"
     },
     {
       "id": "VER-054",
@@ -2175,7 +2281,9 @@
           "evidence": "Build exit 0; check exit 0; pi-agent-dispatch test 17/17; aggregate npm test green (workflows 830/830 sub-suite + new package 17/17 + others unchanged). Runtime demo 1 (schema extension + amendConfigEntry round-trip): PASS. Runtime demo 2 (composeToolGrant + TASK-081 clamp end-to-end): 3/3 PASS. Runtime demo 3 (author-agent-spec writer.kind=human enforcement): 5/5 PASS. Adversarial probe (fresh-context Explore agent): 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits in code AND commit messages. Orchestrator independently verified subagent's claims via direct grep."
         }
       ],
-      "evidence": "TASK-089 pi-agent-dispatch extension landed on branch task-089-pi-agent-dispatch-extension. Six commits: 4394ab6 (config schema extension + REGISTRY_DESCRIPTORS), a1d8072 (package scaffold + root build), 5b84aff (operation-vocab 55 entries + capability-composer + 7 tests), 8532c44 (author-agent-spec + 5 tests), d568980 (call-agent + 4 tests + _internals.executeAgent test seam), b0f4983 (extension entry + smoke test). Three verification layers all green: build/check/test (workspace tests + 17 new pi-agent-dispatch tests, 0 fail), 3/3 runtime demos PASS (schema extension; composeToolGrant + clamp; writer.kind=human enforcement), 10/10 adversarial probe PASS (no false-pass scenarios, no forbidden-term hits, sibling-consumer canon upheld). Implements FEAT-004 (agents-as-tools dispatch site) + FEAT-005 (capability composition) per narrowed DEC-0044. Closes FGAP-099 (the clamp ↔ composition pairing canonically homed in pi-agent-dispatch; TASK-081 infrastructure consumed not duplicated). Subagent deviations from brief (documented in commit bodies): (a) extended PACKAGED schema at packages/pi-context/schemas/config.schema.json in addition to .project/schemas (samples-catalog tests gated on it); (b) added ToolOperationDecl interface to ConfigBlock for typing; (c) added _internals.executeAgent test seam for stubbable dispatch in unit tests; (d) auth.ok discriminated-union handling matching pi-behavior-monitors precedent; (e) AgentNotFoundError imported from barrel not subpath. All deviations canon-aligned."
+      "evidence": "TASK-089 pi-agent-dispatch extension landed on branch task-089-pi-agent-dispatch-extension. Six commits: 4394ab6 (config schema extension + REGISTRY_DESCRIPTORS), a1d8072 (package scaffold + root build), 5b84aff (operation-vocab 55 entries + capability-composer + 7 tests), 8532c44 (author-agent-spec + 5 tests), d568980 (call-agent + 4 tests + _internals.executeAgent test seam), b0f4983 (extension entry + smoke test). Three verification layers all green: build/check/test (workspace tests + 17 new pi-agent-dispatch tests, 0 fail), 3/3 runtime demos PASS (schema extension; composeToolGrant + clamp; writer.kind=human enforcement), 10/10 adversarial probe PASS (no false-pass scenarios, no forbidden-term hits, sibling-consumer canon upheld). Implements FEAT-004 (agents-as-tools dispatch site) + FEAT-005 (capability composition) per narrowed DEC-0044. Closes FGAP-099 (the clamp ↔ composition pairing canonically homed in pi-agent-dispatch; TASK-081 infrastructure consumed not duplicated). Subagent deviations from brief (documented in commit bodies): (a) extended PACKAGED schema at packages/pi-context/schemas/config.schema.json in addition to .project/schemas (samples-catalog tests gated on it); (b) added ToolOperationDecl interface to ConfigBlock for typing; (c) added _internals.executeAgent test seam for stubbable dispatch in unit tests; (d) auth.ok discriminated-union handling matching pi-behavior-monitors precedent; (e) AgentNotFoundError imported from barrel not subpath. All deviations canon-aligned.",
+      "oid": "5605d5f9298acaa33c732e49d23cfe16",
+      "content_hash": "fa4d4aa9d40e7de914efde7be892697298496533389d1567a9b03e24f4c801ef"
     },
     {
       "id": "VER-055",
@@ -2226,7 +2334,9 @@
           "evidence": "Build exit 0; check exit 0; test 32/32 in pi-agent-dispatch (+ 830 workflow tests + rest of workspace, all green). Runtime demo 1 (6/6 PASS): real-check-runner against tmp fixture exercises all three check kinds incl. known-failing + known-passing paths; exit-code/stdout/stderr verbatim preservation verified. Runtime demo 2 (6/6 PASS): attested-commit against tmp git repo exercises refusal gates + happy-path footer + husky-style hook-fail. Adversarial probe (fresh-context Explore): 10/10 PASS with zero false-pass scenarios: husky-bypass surfaces absent (CHECK 1), LLM-self-report paths absent (CHECK 2), refusal-before-mutation enforced (CHECK 3), writer.kind=agent exclusive (CHECK 4), forbidden-term audit clean (CHECK 5), stdout/stderr verbatim (CHECK 6), no pipe-masking (CHECK 7), no `-A`/`.` git add (CHECK 8), all 4 tools wired (CHECK 9), test coverage matches (CHECK 10). Orchestrator independently re-verified subagent's claims via direct grep + observation of runtime demo outputs."
         }
       ],
-      "evidence": "TASK-090 real-check tail + attested-commit landed on branch task-090-real-check-tail-attested-commit. Five commits: 9f1c88d (substrate status flip), e1a64bd (real-check-runner + 8 tests), c2d50e1 (run-real-checks Pi tool + 2 tests), d3df262 (attested-commit + 5 tests), bbf7179 (commit-attested Pi tool + wiring). Three verification layers all green: build/check/test (32/32 pi-agent-dispatch + 830 workflows + rest of workspace), 2/2 runtime demos PASS (6/6 runRealChecks paths + 6/6 attestedCommit paths), 10/10 adversarial probe PASS. Closes FGAP-102 (real-check verdict, never LLM self-report) at the implementation level for the FEAT-006 loop's gate position. NOTE on subagent deviations from brief: three pre-commit hook re-runs for biome formatter (organize-imports + line-length consolidation) — re-fixed in-place, same intended commit; no scope change. Out of scope (TASK-091): assembly into orchestrator loop + iteration policy + launch script."
+      "evidence": "TASK-090 real-check tail + attested-commit landed on branch task-090-real-check-tail-attested-commit. Five commits: 9f1c88d (substrate status flip), e1a64bd (real-check-runner + 8 tests), c2d50e1 (run-real-checks Pi tool + 2 tests), d3df262 (attested-commit + 5 tests), bbf7179 (commit-attested Pi tool + wiring). Three verification layers all green: build/check/test (32/32 pi-agent-dispatch + 830 workflows + rest of workspace), 2/2 runtime demos PASS (6/6 runRealChecks paths + 6/6 attestedCommit paths), 10/10 adversarial probe PASS. Closes FGAP-102 (real-check verdict, never LLM self-report) at the implementation level for the FEAT-006 loop's gate position. NOTE on subagent deviations from brief: three pre-commit hook re-runs for biome formatter (organize-imports + line-length consolidation) — re-fixed in-place, same intended commit; no scope change. Out of scope (TASK-091): assembly into orchestrator loop + iteration policy + launch script.",
+      "oid": "43abacb22820f1c7336d0fb90fe4e44f",
+      "content_hash": "570a89a2e9a373d2c2889e235cdebdd15e44683c7fb2fab760dfc9f1ed0e7769"
     },
     {
       "id": "VER-056",
@@ -2292,7 +2402,9 @@
           "evidence": "Build exit 0; check exit 0 (after one biome auto-format pass at ccad130 — formatting-only, zero behavioral change, documented in commit body); pi-agent-dispatch test 59/59. Runtime demos (14/14 PASS): D1.a/b schema + amendConfigEntry; D2.a-f per-KIND library bounds enforcement; D3.a/b composite-loader dynamic registration + forbidden refusal; D4.a-d author-tool-grant writer.kind=human enforcement + forbidden-wholesale refusal. Per-KIND CLI runtime demo: all 4 CLIs successfully invoked against real fixtures with structured JSON output. Adversarial probe (fresh-context Explore): 10/10 PASS with zero false-pass scenarios — L1+L2 invariant clean, L3 guard cannot be bypassed, author-tool-grant gates fire pre-mutation, composite-loader refuses pre-registration, per-KIND triple symmetric, zero forbidden-term hits in code OR commit messages, zero sibling-consumer imports, schema parity in both config.schema.json locations, all 5 static tools registered unconditionally."
         }
       ],
-      "evidence": "TASK-092 FEAT-010 (Hybrid 3 v2 composite-tool infrastructure) landed on branch feat-010-composite-tools. 18 commits total: 2 Phase 1 substrate (a166c36 + c1d1f21 enacting DEC-0052 + filing TASK-092 + SHA-resolve), 14 implementation commits (4e722f0..605b507 across 8 step-groups), 1 biome format commit (ccad130, formatting-only zero behavioral change documented in body), 1 Phase 4 cascade (this commit pending). Three verification layers all green: build/check/test (59/59 pi-agent-dispatch tests pass + workspace gates), 4 runtime demos (D1-D4) totaling 14/14 PASS + per-KIND CLI demo (4/4 PASS), adversarial probe 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits. Implements FEAT-005 capability composition at bounded-composite granularity (the JI-023 form: 'A bash command. Not bash.' + 'There can be a registry of them'). Closes FGAP-116 (operation-granular capability vocabulary gap). NOTE on substrate config drift: runtime demo D1.b add/remove against tool_operations_forbidden left an empty 'tool_operations_forbidden': [] seed in .project/config.json — committed as canonical post-install state matching samples/conception.json. Subagent deviations (documented in commit bodies): (a) STEP 6 committed before STEP 5 to avoid transient broken-import commit; (b) ToolOperationDecl extension folded into composite-loader commit rather than schema-extension commit (lands with its first consumer); (c) assertDefaultsClean exported with optional defaults arg for test parameterization. All deviations canon-aligned."
+      "evidence": "TASK-092 FEAT-010 (Hybrid 3 v2 composite-tool infrastructure) landed on branch feat-010-composite-tools. 18 commits total: 2 Phase 1 substrate (a166c36 + c1d1f21 enacting DEC-0052 + filing TASK-092 + SHA-resolve), 14 implementation commits (4e722f0..605b507 across 8 step-groups), 1 biome format commit (ccad130, formatting-only zero behavioral change documented in body), 1 Phase 4 cascade (this commit pending). Three verification layers all green: build/check/test (59/59 pi-agent-dispatch tests pass + workspace gates), 4 runtime demos (D1-D4) totaling 14/14 PASS + per-KIND CLI demo (4/4 PASS), adversarial probe 10/10 PASS with zero false-pass scenarios + zero forbidden-term hits. Implements FEAT-005 capability composition at bounded-composite granularity (the JI-023 form: 'A bash command. Not bash.' + 'There can be a registry of them'). Closes FGAP-116 (operation-granular capability vocabulary gap). NOTE on substrate config drift: runtime demo D1.b add/remove against tool_operations_forbidden left an empty 'tool_operations_forbidden': [] seed in .project/config.json — committed as canonical post-install state matching samples/conception.json. Subagent deviations (documented in commit bodies): (a) STEP 6 committed before STEP 5 to avoid transient broken-import commit; (b) ToolOperationDecl extension folded into composite-loader commit rather than schema-extension commit (lands with its first consumer); (c) assertDefaultsClean exported with optional defaults arg for test parameterization. All deviations canon-aligned.",
+      "oid": "6ddab5495fa0bafb6bfd75e51e2ebd96",
+      "content_hash": "f806cb70635bb7320deb191ada13d053da7d15a59cf0c273637abbdd1bff650a"
     },
     {
       "id": "VER-057",
@@ -2368,7 +2480,9 @@
           "evidence": "Build exit 0; check exit 0; pi-agent-dispatch test 66/66; workspace test suite green. Runtime demos 1+2 (8 sub-tests; 7 PASS + 1 covered by unit test). Real launch script bug DISCOVERED via runtime demo (ARGS[@] nounset failure on no-args common case) + FIXED at commit eecdb19 — exactly the pattern DEC-0018 + FGAP-102 mandate (real-check verdict catches what tests don't; LLM-self-report would have missed this). Adversarial probe (fresh-context Explore): 10/10 PASS — zero raw-code-execution surfaces + bounded iteration + human-OK gate + footer present + 4 SKILL.md + --grant scoping correct + TraceEntry observability + zero forbidden-term hits + zero parallel ungated paths + nounset guard pattern correct. No LLM self-report at any verification gate."
         }
       ],
-      "evidence": "TASK-091 UNIFIED (FEAT-006 4/4 assembly + FEAT-011 launch-chain integration) landed on branch task-091-unified-feat-006-feat-011. 13 commits total: 0d2163c (substrate unify), a898229+8640932+d860fc6 (META wiring + self-registration + helper), 51c307d (launch script enhancement), 8030c61 (TraceEntry observability), 494357a (work-order-loop), 7c94352 (run-work-order-loop Pi tool), a2a3f6c (docs cascade), 27eacfe (status cascade), 586f690+3364e64 (skill regen), eecdb19 (runtime-demo-discovered nounset fix). Three verification layers all green: build/check/test (66/66 pi-agent-dispatch + workspace), 7/8 effective runtime demos PASS (1f tsx-eval test-harness issue covered by unit-test parity), 10/10 adversarial probe PASS with zero false-pass scenarios. Real launch-script bug (ARGS[@] nounset on common-case no-args invocation) DISCOVERED + FIXED during runtime-demo phase — exactly the DEC-0018 + FGAP-102 real-check verdict pattern (test-pass alone misses runtime regressions). Closes FEAT-006 north-star + FEAT-011 launch-chain + FGAP-117/118/120/121/122/123. FGAP-102 implementation-level closure (real-check verdict actually deployed in the launched session via run-real-checks tool); formal FGAP-102 closure pending real-LLM end-to-end demo (deferred — orchestrator action with credentials). Runtime demo 3 (real-LLM dispatch end-to-end) deferred to post-merge orchestrator action requiring API credentials; work-order-loop behavior verified via 6 unit tests with mocked LLM. NOTE on subagent deviations: 3 commits needed format-only retry due to husky biome line-length/import-order; one bug surfaced + fixed mid-pipeline (nounset guard). All canon-aligned."
+      "evidence": "TASK-091 UNIFIED (FEAT-006 4/4 assembly + FEAT-011 launch-chain integration) landed on branch task-091-unified-feat-006-feat-011. 13 commits total: 0d2163c (substrate unify), a898229+8640932+d860fc6 (META wiring + self-registration + helper), 51c307d (launch script enhancement), 8030c61 (TraceEntry observability), 494357a (work-order-loop), 7c94352 (run-work-order-loop Pi tool), a2a3f6c (docs cascade), 27eacfe (status cascade), 586f690+3364e64 (skill regen), eecdb19 (runtime-demo-discovered nounset fix). Three verification layers all green: build/check/test (66/66 pi-agent-dispatch + workspace), 7/8 effective runtime demos PASS (1f tsx-eval test-harness issue covered by unit-test parity), 10/10 adversarial probe PASS with zero false-pass scenarios. Real launch-script bug (ARGS[@] nounset on common-case no-args invocation) DISCOVERED + FIXED during runtime-demo phase — exactly the DEC-0018 + FGAP-102 real-check verdict pattern (test-pass alone misses runtime regressions). Closes FEAT-006 north-star + FEAT-011 launch-chain + FGAP-117/118/120/121/122/123. FGAP-102 implementation-level closure (real-check verdict actually deployed in the launched session via run-real-checks tool); formal FGAP-102 closure pending real-LLM end-to-end demo (deferred — orchestrator action with credentials). Runtime demo 3 (real-LLM dispatch end-to-end) deferred to post-merge orchestrator action requiring API credentials; work-order-loop behavior verified via 6 unit tests with mocked LLM. NOTE on subagent deviations: 3 commits needed format-only retry due to husky biome line-length/import-order; one bug surfaced + fixed mid-pipeline (nounset guard). All canon-aligned.",
+      "oid": "0105407cd3b606952e91aea45635231a",
+      "content_hash": "d184426eaeb8563e80ca08d442a483e406cc60af6ba591b56de9c6940aec2d35"
     },
     {
       "id": "VER-058",
@@ -2401,7 +2515,9 @@
         }
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "7b63210cfce61f45604c84778d244137",
+      "content_hash": "8fd55ea5adf3acf736b3d8cbf843023aa4f92d7b76f036592baa7b298c6939fb"
     },
     {
       "id": "VER-059",
@@ -2437,7 +2553,9 @@
           "status": "skipped",
           "evidence": "Orchestrator follow-on action; this VER attests the implementation-level closure pending the credentialed adversarial probe."
         }
-      ]
+      ],
+      "oid": "2f5ddbf71a1015cc7e85fc50df44502a",
+      "content_hash": "150e3e7928f2458bb8af8f8416c95542713b89c91ea7f000a9c27c2d808a5bab"
     },
     {
       "id": "VER-060",
@@ -2473,7 +2591,9 @@
           "status": "skipped",
           "evidence": "Skipped per plan Phase 3 step 5: fresh-context Explore-agent probe across the 12 sub-checks (NewExpression /Error$/ filter, ast-string-literal surface unchanged, attested-commit.ts:48 strip, registerAuthGate present in factory, AUTH_REQUIRED_TOOLS matches the canonical 14 verbatim, non-interactive refusal shape, interactive confirm flow, allow-on-true, decline-on-false, non-Bucket-2 pass-through, pi-behavior-monitors coexistence, launch header accuracy, regenerated SKILL.md clean). Deferred to orchestrator follow-on; the per-step verification gates + unit-test coverage + the membership-pinning canonical-list test in auth-gate.test.ts collectively cover the implementation-level surface."
         }
-      ]
+      ],
+      "oid": "868925f4ae8798b60f81b40e71987aed",
+      "content_hash": "7f2a3c86508603421f8e93542334c67016cfa3137a104dc987760556642c246c"
     },
     {
       "id": "VER-061",
@@ -2509,7 +2629,9 @@
           "status": "skipped",
           "evidence": "Skipped per the in-arc verification gates; the 16-case write-schema-migration-tool unit test surface + the 22-case migration-registry-loader test surface + the 15-case migrations-store test surface + the 2 integration scenarios + the auth-gate canonical-list pin collectively cover the implementation-level surface. Deferred to orchestrator follow-on for the credentialed end-to-end real-LLM demo when the dogfood composites land."
         }
-      ]
+      ],
+      "oid": "2ee4f97a0fa8f9e92ff909c44c2b9927",
+      "content_hash": "725f6638f8b4685386798b3df3cc34d8b97d9d029077b2a104d43cc2eb46150d"
     },
     {
       "id": "VER-062",
@@ -2550,7 +2672,9 @@
           "evidence": "Plan Phase 4 status cascade explicitly marks adversarial-probe skipped for this single-file header-only change."
         }
       ],
-      "evidence": "FGAP-137 (filed at commit 1d3f0a6) closed via commit dcdcae7 (header-only edit + runtime-demo extension; install + composite-discovery + --tools allowlist + symmetry verification all unchanged per user direction that install stays unconditional). --continue / -c now first-class documented passthrough flags. Mechanical correctness was already in place (script's ARGS catch-all routes --continue to pi at exec); this arc adds the documentation contract + runtime-demo assertion that the contract holds. Verified empirically via pi-coding-agent recon that pi does NOT persist --tools per-session, making the script's existing every-invocation --tools re-derivation REQUIRED on --continue too (skipping it would silently unconstrain the resumed orchestrator). No release; no push; tree clean modulo pre-existing hedge.patterns.json mod."
+      "evidence": "FGAP-137 (filed at commit 1d3f0a6) closed via commit dcdcae7 (header-only edit + runtime-demo extension; install + composite-discovery + --tools allowlist + symmetry verification all unchanged per user direction that install stays unconditional). --continue / -c now first-class documented passthrough flags. Mechanical correctness was already in place (script's ARGS catch-all routes --continue to pi at exec); this arc adds the documentation contract + runtime-demo assertion that the contract holds. Verified empirically via pi-coding-agent recon that pi does NOT persist --tools per-session, making the script's existing every-invocation --tools re-derivation REQUIRED on --continue too (skipping it would silently unconstrain the resumed orchestrator). No release; no push; tree clean modulo pre-existing hedge.patterns.json mod.",
+      "oid": "41b9baf13ec30d089df2d67eed8993ff",
+      "content_hash": "950fd59eed97afdb327ca6334ab7764b1ba74ce8f9f70273b1edf3eb1fc89229"
     },
     {
       "id": "VER-063",
@@ -2586,7 +2710,9 @@
           "evidence": "Per plan Phase 3 criterion 5: an adversarial probe would re-verify (a) all 4 in-body writer.kind=='human' checks removed (one was actually the attested-commit agent_id check, intentionally retained); (b) all 'human-only' framing sites renamed; (c) auth-gate mutation fires only on confirm=true + only for Bucket-2 tools; (d) verified-identity falls back correctly; (e) commit-attested's agent_id check preserved; (f) DispatchContext stamping reflects mutated writer; (g) no canonical_id citations in rewritten text; (h) auth-gate header docstring documents the canonical model + mutation contract; (i) deprecated test patterns fully removed; (j) verified-identity cache is module-level + reset-able. The driver tests above attest (b/c/d/g/i/j) directly; the body-trusts-writer replacement tests attest (a/e); the new auth-gate mutation tests attest (c/f). The fresh-context probe is deferred so the orchestrator can run it with bookkeeping discipline matching the rest of the FGAP-138 arc; it is not a blocker for closure given the deterministic-test coverage above."
         }
       ],
-      "evidence": "FGAP-138 (filed at commit fde8e71) closed via 5 implementation-step commits on branch fgap-138-canonical-reframing-identity-verify: d872fce (step 1: verified-identity module + 7 tests); 3bbb555 (step 2: auth-gate mutation on confirm=true + 4 mutation tests); f939777 (step 3: strip in-body writer.kind checks from 3 tools + replace 6 deprecated tests with 3 body-trusts-writer assertions); fc67993 (step 4: rename 'human-only' framing across docstrings + error messages + test names + skill-narratives to canonical 'human-authorized via auth-gate confirm' model; 14+ sites rewritten in abstract canonical-model language with no canonical-id citations); 0110c2b (step 5: SKILL.md regen + scanner verify clean). The canonical post-FGAP-134 + post-FGAP-138 model: auth-gate at the pi-dispatch layer is the structural identity check; agent issues, user authorizes at the terminal, auth-gate stamps event.input.writer with verified terminal-operator identity; tool bodies trust the writer field as-is. The framing that misdirected an in-pi agent on 2026-05-29 ('a human must issue the call') is removed; the substrate attestation chain now records verified identity rather than caller-claimed identity. No release; no push; tree clean modulo pre-existing hedge.patterns.json mod."
+      "evidence": "FGAP-138 (filed at commit fde8e71) closed via 5 implementation-step commits on branch fgap-138-canonical-reframing-identity-verify: d872fce (step 1: verified-identity module + 7 tests); 3bbb555 (step 2: auth-gate mutation on confirm=true + 4 mutation tests); f939777 (step 3: strip in-body writer.kind checks from 3 tools + replace 6 deprecated tests with 3 body-trusts-writer assertions); fc67993 (step 4: rename 'human-only' framing across docstrings + error messages + test names + skill-narratives to canonical 'human-authorized via auth-gate confirm' model; 14+ sites rewritten in abstract canonical-model language with no canonical-id citations); 0110c2b (step 5: SKILL.md regen + scanner verify clean). The canonical post-FGAP-134 + post-FGAP-138 model: auth-gate at the pi-dispatch layer is the structural identity check; agent issues, user authorizes at the terminal, auth-gate stamps event.input.writer with verified terminal-operator identity; tool bodies trust the writer field as-is. The framing that misdirected an in-pi agent on 2026-05-29 ('a human must issue the call') is removed; the substrate attestation chain now records verified identity rather than caller-claimed identity. No release; no push; tree clean modulo pre-existing hedge.patterns.json mod.",
+      "oid": "a16ba37aa087f2f1071569c0f745e00b",
+      "content_hash": "b5f6e8d3762302f11bc92eb8588be8994ea3c1f628a8d347fc23df161fa289fc"
     },
     {
       "id": "VER-064",
@@ -2622,7 +2748,9 @@
           "evidence": "Per plan Phase 3 criterion 5: an adversarial probe would re-verify (a) handler filters strictly on toolName === 'read'; (b) non-truncated reads pass through untouched; (c) truncated reads have content REPLACED (not appended); (d) directive contains canonical-model strings; (e) directive includes exact counts + nextOffset + file path; (f) buildTruncationDirective is a pure function (no I/O); (g) handler does not interfere with auth-gate (different event); (h) no canonical_id citations in directive text or new files; (i) registerReadTruncationGate wired into factory after registerAuthGate; (j) SKILL.md <events> section gains tool_result; (k) buildTruncationDirective handles edge cases (firstLineExceedsLimit; lastLinePartial; bytes-vs-lines truncation differential). The driver tests above attest (a/b/c/d/e/f/h/k) directly; the factory diff at commit 7a09a27 attests (i); the regenerated SKILL.md content at commit 0703bc5 attests (j). The fresh-context probe is deferred so the orchestrator can run it with bookkeeping discipline matching the rest of the FGAP-135 arc; it is not a blocker for closure given the deterministic-test coverage above."
         }
       ],
-      "evidence": "FGAP-135 (filed at commit c5f0010 2026-05-29) closed via 3 implementation-step commits on branch fgap-135-read-truncation-gate: 38ad48e (step 1: read-truncation-gate.ts library + read-truncation-gate.test.ts 13 unit tests; buildTruncationDirective pure function + readTruncationGateHandler ToolResultEvent handler + registerReadTruncationGate one-line registration wrapper; module created but NOT yet wired into factory); 7a09a27 (step 2: single-line wiring in packages/pi-agent-dispatch/src/index.ts adds registerReadTruncationGate(pi) after registerAuthGate(pi); behavioral effect at extension load — pi-dispatch now fires readTruncationGateHandler for every tool_result event); 0703bc5 (step 3: npm run skills regen captures the new pi.on('tool_result') call in both packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md and the meta packages/pi-project-workflows/skills/pi-agent-dispatch/SKILL.md mirror; events section now reads 'tool_call, tool_result'; citation-rot scanner verify clean). The canonical post-FGAP-135 model: pi-dispatch-layer tool_result intercept mirrors the tool_call auth-gate boundary; the directive IS the response so the agent cannot skim past it (no head returned); phrasing mirrors pi-context serializeForRead overCapDirective canon at packages/pi-context/src/read-element.ts:222-245. Coexists orthogonally with auth-gate (tool_call event); no canonical-pi changes; no release; no push; tree clean modulo pre-existing hedge.patterns.json mod."
+      "evidence": "FGAP-135 (filed at commit c5f0010 2026-05-29) closed via 3 implementation-step commits on branch fgap-135-read-truncation-gate: 38ad48e (step 1: read-truncation-gate.ts library + read-truncation-gate.test.ts 13 unit tests; buildTruncationDirective pure function + readTruncationGateHandler ToolResultEvent handler + registerReadTruncationGate one-line registration wrapper; module created but NOT yet wired into factory); 7a09a27 (step 2: single-line wiring in packages/pi-agent-dispatch/src/index.ts adds registerReadTruncationGate(pi) after registerAuthGate(pi); behavioral effect at extension load — pi-dispatch now fires readTruncationGateHandler for every tool_result event); 0703bc5 (step 3: npm run skills regen captures the new pi.on('tool_result') call in both packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md and the meta packages/pi-project-workflows/skills/pi-agent-dispatch/SKILL.md mirror; events section now reads 'tool_call, tool_result'; citation-rot scanner verify clean). The canonical post-FGAP-135 model: pi-dispatch-layer tool_result intercept mirrors the tool_call auth-gate boundary; the directive IS the response so the agent cannot skim past it (no head returned); phrasing mirrors pi-context serializeForRead overCapDirective canon at packages/pi-context/src/read-element.ts:222-245. Coexists orthogonally with auth-gate (tool_call event); no canonical-pi changes; no release; no push; tree clean modulo pre-existing hedge.patterns.json mod.",
+      "oid": "cf2b43da7fe76c7f413d5da35674fe39",
+      "content_hash": "dfbb6b1661ad1a1cc046aa5e9e95e11d7d917178b940355ed1476626315bac68"
     },
     {
       "target": "TASK-093",
@@ -2685,7 +2813,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29T14:11:18.034Z",
-      "id": "VER-065"
+      "id": "VER-065",
+      "oid": "a462e48c58c0f7f825d1fc4c02bbc1d6",
+      "content_hash": "c445098146947ff2c45022689d43ae54dc3e02cd889371eb67a4560fd76aa525"
     },
     {
       "target": "TASK-094",
@@ -2758,7 +2888,9 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T11:00:00Z",
-      "id": "VER-066"
+      "id": "VER-066",
+      "oid": "5ccaac6fc86e0cf18009d4e9b1c96ba2",
+      "content_hash": "7cad669b44da5404240a389315845a38bf59a9e98a2f3732796c85225e83a2e3"
     },
     {
       "id": "VER-067",
@@ -2796,7 +2928,9 @@
         }
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-30T17:00:00Z"
+      "created_at": "2026-05-30T17:00:00Z",
+      "oid": "22c39cdff2d9ce1f08281c4ee4419101",
+      "content_hash": "8a3ef11f4650eb71943074581a0c3055bfbfb1cd08c77720ee8fc1089f118db9"
     }
   ]
 }

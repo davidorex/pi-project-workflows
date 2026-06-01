@@ -1,0 +1,7 @@
+{
+  "title": "Update work-quality-classifier.agent.yaml",
+  "status": "todo",
+  "files": [
+    "packages/pi-behavior-monitors/agents/work-quality-classifier.agent.yaml"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "title": "Close or migrate resolved issues",
+  "status": "proposed",
+  "description": "Update or migrate issues 043, 045, 048, 049, 050 in issues.json to reflect their closure by this arc. Each issue either marks resolved with a reference to the relevant STORY/TASK, or migrates to a scope-owned finding registry per the PHASE-6 retroactive migration.",
+  "acceptance_criteria": [
+    "issues 043, 045, 048, 049, 050 each have status resolved (or have been migrated to a scope-owned registry with the same terminal state)",
+    "Each resolved issue has resolved_by pointing to the commit or feature that closed it"
+  ],
+  "depends_on": [
+    "STORY-007",
+    "STORY-008"
+  ],
+  "gates": [],
+  "tasks": [
+    {
+      "id": "TASK-009-01",
+      "title": "Close issue-043 (duplicate agent infrastructure)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ]
+    },
+    {
+      "id": "TASK-009-02",
+      "title": "Close issue-045 (framework-level anti-injection)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ]
+    },
+    {
+      "id": "TASK-009-03",
+      "title": "Close issue-048 (agent discovery contradiction)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ]
+    },
+    {
+      "id": "TASK-009-04",
+      "title": "Close issue-049 (step-loop cwd bug)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ]
+    },
+    {
+      "id": "TASK-009-05",
+      "title": "Close issue-050 (monitor classify wiring)",
+      "status": "todo",
+      "files": [
+        ".project/issues.json"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "title": "Context-plugin feasibility — portable, installable third-party context models",
+  "status": "complete",
+  "layer": "L2",
+  "type": "feasibility",
+  "question": "Can a complete context model (config + schemas + starter blocks + relations + macros) authored against the pi-context SDK be packaged as a portable, shareable bundle that another user installs into their substrate and uses immediately — and what does the current architecture already provide vs. require building?",
+  "method": "Two read-only Explore passes over the live tree (2026-05-22): (1) install/distribution mechanics + what a complete portable model comprises + where each piece lives + validation-on-install + versioning/migration; (2) substrate/canon coverage + onboarding-model fit (DEC-0037/0038/0039, FGAP-068/066) + distribution-channel reality (4 distinct artifact types) + macro/template integration. Findings cross-checked against file:line.",
+  "findings_summary": "Feasible; ~70% scaffolded. A context plugin is a 4th, DATA-ONLY artifact type (distinct from Claude Code plugin / Pi extension / behavior-monitor spec) and the next altitude above FGAP-068 (samplesCatalog made the package's own conception queryable; this makes any conception portable). REUSE: conception.json IS the manifest; installProject is the install flow; bootstrap pointer; schema $id+version+migration-chain; validateProject/validateSchemaAgainstMeta; samplesCatalog; the 3-tier template search (project .pi/templates tier-1). GAPS: (1) install-source abstraction — installProject:355 + samplesCatalog SAMPLES_DIR hardcode import.meta.dirname/..; need bundleSource. (2) pre-install validateConception (install copies with zero validation today). (3) provenance/version (installed_conceptions[]) + update path + AJV registration of plugin schemas with custom $id. (4) plugin migration discovery. (5) manifest lacks macros/hierarchy/naming. HARD PROBLEM (resolved cheaply): data lives in pi-context, rendering macros in pi-workflows — but the 3-tier search already reads project .pi/templates/, so install can EXTRACT bundle macros into .pi/templates/items/ with no pi-workflows refactor (Explore-pass-2 over pass-1's major-refactor framing). CANON: substrate does NOT cover external conceptions; DEC-0037/0038 are internal-samples-only; the onboarding MECHANISM (registry-amendment) is source-agnostic so external sources ADD to it, but multi-source onboarding + acquisition + provenance + conflict-resolution need a NEW enacted decision. CHANNEL: npm primary, git secondary, curated conception-catalog.json discovery; NOT MCP. Decomposition A-E in the findings doc.",
+  "findings_document": "analysis/2026-05-22-context-plugin-feasibility.md",
+  "stale_conditions": [
+    "installProject or samplesCatalog gains an external-source parameter (gap 1 closed)",
+    "a new DEC enacts external/multi-source conceptions",
+    "pi-workflows template resolution changes"
+  ]
+}

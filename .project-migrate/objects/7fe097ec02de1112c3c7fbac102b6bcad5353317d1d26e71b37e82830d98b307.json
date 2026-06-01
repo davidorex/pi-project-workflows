@@ -1,0 +1,25 @@
+{
+  "target": "TASK-044",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-05-20T00:00:00Z",
+  "evidence": "Unit 2.3 FGAP-060 rename engine — commit 33b76a7; FGAP-060 closed 1378151. build/check/test green (pi-context 475/475, 0 fail). Runtime demo via built package: item + relation_type rename (home id + edges), dry-run inert, block_kind throws, out-of-substrate reported. Adversarial grep: every write site !dryRun-guarded; single config write.",
+  "criteria_results": [
+    {
+      "criterion": "renameCanonicalId for item/relation_type/lens/layer",
+      "status": "passed",
+      "evidence": "9 test groups + runtime demo via built package"
+    },
+    {
+      "criterion": "block_kind fail-loud",
+      "status": "passed",
+      "evidence": "throws unsupported; FGAP-071 filed for the file-cascade"
+    },
+    {
+      "criterion": "dry-run inert + guards before any write",
+      "status": "passed",
+      "evidence": "runtime demo: zero file change under dryRun; adversarial grep"
+    }
+  ]
+}

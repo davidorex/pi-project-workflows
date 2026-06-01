@@ -1,0 +1,69 @@
+{
+  "title": "Expression language comparison — custom minimal evaluator vs CEL adoption",
+  "status": "complete",
+  "layer": "L2",
+  "type": "comparative",
+  "question": "Should the workflow expression language remain the current bespoke 339-line property-access evaluator, adopt Google's Common Expression Language (CEL) wholesale, or adopt a CEL hybrid — and what are the tradeoffs?",
+  "method": "code-inspection",
+  "scope": [
+    "packages/pi-workflows/src/expression.ts at commit 8b184c6 (339 lines)",
+    "docs/planning/workflow-extension.md:537-554 (minimalism rationale)",
+    "systeminit/swamp main branch cloned 2026-04-15 (CEL adoption reference)",
+    "@marcbachmann/cel-js@7.5.1 as declared in swamp's deno.json"
+  ],
+  "findings_summary": "Our expression language is a deliberate, minimal, security-audited, 339-line bespoke evaluator supporting ${{ path.to.value | filter }} syntax with nine built-in filters (duration, currency, json, length, keys, filter, first, last, slugify, shell). It deliberately excludes arithmetic, comparisons, logical operators, ternary, string concatenation, and function calls — pushing logic into transform steps per documented design rationale.\n\nCEL (Common Expression Language) is Google's non-Turing-complete, bounded-evaluation, sandboxed expression engine used in Kubernetes validation rules, gRPC, Firebase Security Rules, and Envoy. The swamp project (systeminit/swamp) adopts cel-js with the same ${{ }} delimiter convention. CEL supports arithmetic, comparisons, logical operators, ternary, typed string/list/map operations, and caller-registered functions with deterministic evaluation guarantees.\n\nCost of staying: every workflow needing boolean logic or arithmetic requires a transform step; contributors and LLMs must learn project-specific grammar (CEL is in training distributions via K8s/Firebase docs); each extension (==, !=, >, <) is custom code.\n\nBenefits of staying: smaller attack surface (339 lines, zero supply-chain risk); security-audited shell filter for command-step single-quote context; explicit ExpressionError diagnostics scoped to our domain.\n\nCleanest adoption path: keep ${{ }} delimiters, replace property-access-split implementation with CEL evaluator, retain scope shape (input, steps, runId, etc.), register nine filters as CEL functions, retire transform step's reason-for-being. Adjacent ${{ }}${{ }} parse limitation (workflow-extension.md:253) would resolve. Most existing expressions are valid CEL (field-selection operations). Risk: CEL has different null-propagation semantics; shell filter security must be re-audited.\n\nNo decision entry exists — no forcing issue currently requires resolving the CEL question. Research stands alone until a forcing function emerges.",
+  "findings_document": "analysis/2026-04-15-expression-language-comparison.md",
+  "grounding": {
+    "dependencies": [
+      "@marcbachmann/cel-js@7.5.1"
+    ],
+    "revisions": [
+      "packages/pi-workflows/src/expression.ts at commit 8b184c6",
+      "systeminit/swamp main branch cloned 2026-04-15"
+    ],
+    "external_refs": []
+  },
+  "grounded_at": "2026-04-15T00:00:00Z",
+  "stale_conditions": [
+    "packages/pi-workflows/src/expression.ts materially changes shape",
+    "swamp switches expression engines",
+    "@marcbachmann/cel-js deprecated or replaced"
+  ],
+  "citations": [
+    {
+      "label": "Current evaluator source",
+      "path": "packages/pi-workflows/src/expression.ts"
+    },
+    {
+      "label": "Minimalism rationale",
+      "path": "docs/planning/workflow-extension.md",
+      "lines": "537-554"
+    },
+    {
+      "label": "Adjacent expression parse limitation",
+      "path": "docs/planning/workflow-extension.md",
+      "lines": "253"
+    },
+    {
+      "label": "No eval, deliberate constraints, excellent diagnostics",
+      "path": "docs/planning/2026-03-14-parallel-analysis-review.md",
+      "lines": "30"
+    },
+    {
+      "label": "Swamp expression design",
+      "path": "/tmp/swamp-analysis/swamp/design/expressions.md"
+    },
+    {
+      "label": "Swamp cel-js dependency declaration",
+      "path": "/tmp/swamp-analysis/swamp/deno.json"
+    }
+  ],
+  "informs": [],
+  "informed_by": [],
+  "related_research": [],
+  "produces_findings": [],
+  "supersedes": [],
+  "superseded_by": "",
+  "conducted_by": "agent/claude-opus-4-6",
+  "conducted_at": "2026-04-15T00:00:00Z"
+}

@@ -1,0 +1,46 @@
+{
+  "title": "Missing canonical script: item-level context-block injection for subagent briefs — script doubles as test surface for block-schema shape discovery",
+  "status": "closed",
+  "priority": "P1",
+  "package": "scripts/orchestrator",
+  "layer": "L1",
+  "description": "scripts/orchestrator/compile-explore-context.ts and compile-implementation-context.ts accept --required-reading <full-file-paths> only — they cannot inject specific substrate items at item-level granularity natively in the composer. Result: Explore agents see full files (or worse, free-form preamble) but not the specific FGAP-035 record, TASK-031 record, DEC-0015 record that constitute the binding context. In pi-runtime the equivalent is FGAP-032 (item-level contextBlocks selectivity in pi-jit-agents). Claude Code orchestrator-side has the same shape of gap with no covering FGAP before this one. Per DEC-0019/0020 dual-surface, both layers need item-level injection. The script doubles as schema-shape discovery test surface: building it forces decisions on selector syntax (block:id vs structured JSON), projection shape (full item / projected fields / macro-rendered), output format (markdown requires macros — FGAP-037; raw JSON; XML-tagged).",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/compile-explore-context.ts",
+      "lines": "1-220",
+      "reference": "accepts --required-reading file-paths only; no item-level selector arg natively (now integrates inject-context-items.ts via --context-items)"
+    },
+    {
+      "file": "scripts/orchestrator/compile-implementation-context.ts",
+      "lines": "1-207",
+      "reference": "same constraint; --context-items integration landed"
+    },
+    {
+      "file": "/tmp/explore-fgap035-canonical.md",
+      "reference": "this turn first Explore dispatch surfaced OR-hedging in cascade-target Required-change cells because the context omitted TASK-031 UX-decision (lived in ~/.claude/plans/*.md, not substrate); direct evidence of the missing-injection failure mode"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-032 captures pi-runtime side (item-level contextBlocks); FGAP-038 is the Claude Code-side counterpart"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0019/0020 dual-surface — both consumer layers need item-level injection"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0014 — substrate IS operating surface; orchestrator-side scripts that cannot inject substrate items at granularity break the dogfooding goal"
+    }
+  ],
+  "impact": "Subagent briefs that need specific FGAP/TASK/DEC items injected as binding context currently route via free-form question text or full-file --required-reading. Free-form text propagates orchestrator-side rephrasing (LLM-summarizes-then-summarizes-again drift); full-file reading bloats agent context window with irrelevant content. Both failure modes surface in /tmp/explore-fgap035-canonical.md's row 5+7 OR-hedging — the agent didn't know about TASK-031's resolved UX decision because no clean injection path delivered it. Without the script, every subagent dispatch this turn has gone out under-contextualized; the canonical surface degradation falls back on hand-authored briefs (FGAP-036 root cause). The block-schema shape discovery angle compounds the impact: not having the script means schemas evolve without the constraint-driven-design that item-level injection would impose.",
+  "canonical_vocabulary": "item-level context block injection — work-unit-driven substrate projection into agent prompts",
+  "proposed_resolution": "Add scripts/orchestrator/inject-context-items.ts. Args: --items <block:itemId,...> selector list + --format <markdown|json|xml> output mode + optional --fields <fieldList> projection. Output: structured context-block content for inclusion in compile-explore-context.ts / compile-implementation-context.ts via a new --context-items arg, or piped directly into Agent prompt. Per FGAP-037 dependency: markdown format requires per-block-kind render macros.",
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0019",
+    "DEC-0020"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

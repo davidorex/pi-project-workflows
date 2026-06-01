@@ -1,0 +1,44 @@
+{
+  "title": "Per-item valid/current bits + a constrained-agent read-gate (reads only valid+current) — makes blocks-not-changelogs structural and generalizes the substrate to a domain-agnostic data room",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Generalizes pi-context from a software-project substrate to a domain-agnostic context engine (the 'data room' pattern: any work that needs curated context; the conception/config is the only domain-specific part). Two net-new primitives: (1) every block item carries two independent bits — `valid` (an audit has confirmed the item is accurate/grounded against its raw source) and `current` (not superseded; the live one) — set NOT by the process that authored/decomposed the item but by a SEPARATE audit process (separation of powers: decomposer 'finds', validator 'decides'); (2) a READ-GATE so the constrained agent's default read surface is exactly `valid AND current` — superseded/journey/un-audited content lives in a raw tier (immutable provenance) + git and is structurally OUT of the constrained agent's reach. This makes 'blocks are current-truth, not changelogs' (feedback_substrate_blocks_not_changelogs) a STRUCTURAL INVARIANT rather than a discipline that can be (and was) broken: the agent cannot mistake a changelog for truth because it never sees one. The decider is a permitted JIT agent (read + amend-block) amending the bit with a grounded contract (cite the raw span it validated against) — mechanism = existing primitives (jit dispatch + updateItemInBlock + DispatchContext attestation); this gap is the FIELD it amends + the GATE that enforces the read boundary. Extends the FGAP-089 read chokepoint (serializeForRead / lens read tools) — same enforcement point, adds a valid+current filter as the constrained-agent read mode. Four-state model from the two bits: valid+current = default agent read (authoritative live truth); valid+superseded = 'background' (accurate-but-old, e.g. an old deck; exposed only on explicit request, never in the default gate); invalid (un-audited or failed) = raw tier, never agent-readable. Concept source: analysis of Nate B. Jones 'data room' (/Users/david/Projects/data-room-pi-context.md) — source-inventory/conflict-log/missing-context/duplicates artifacts map onto typed blocks + closure-table edges; this gap is the staleness/validity primitive that underpins them.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "reference": "serializeForRead is the read chokepoint (FGAP-089 fail-closed); the valid+current read-gate extends it as the constrained-agent read mode"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "updateItemInBlock + DispatchContext attestation already provide the amend-the-bit mechanism; the bits are not yet schema fields"
+    },
+    {
+      "file": "packages/pi-context/src/verification.json (block) + relations.json verification_verifies_item",
+      "reference": "proof-of-mechanism that a SEPARATE audit process flips a status via an edge; valid/current generalizes this from task-verification to per-item bits"
+    },
+    {
+      "file": "/Users/david/Projects/data-room-pi-context.md",
+      "reference": "concept source: 'read valid + current, not full; the valid bit flipped by a different audit than the decomposer; organization-management as a task; raw -> decompose into blocks'"
+    }
+  ],
+  "impact": "Without it, 'blocks-not-changelogs' stays a discipline the LLM must follow (and breaks under correction-layering); the constrained agent can read superseded/journey/un-audited content and mistake it for current truth — the exact structural-hallucination failure the data-room pattern exists to prevent. With it, validity/staleness becomes a substrate invariant, the same engine serves any domain via a conception pack (software dev is conception #1), and the constrained agent's context is by construction the curated valid+current projection.",
+  "canonical_vocabulary": "validity/recency lifecycle bits + read-time visibility gating (curated-projection-as-read-surface)",
+  "proposed_resolution": "1. Decide the semantics fork: two independent bits (`valid`, `current`) vs one lifecycle enum — and whether the read-gate is a HARD harness boundary or a default-on lens. 2. Add `valid` + `current` (+ provenance: who/when/against-what-raw-span) as schema-level item fields, settable only via the audit flip (not the authoring write). 3. Extend serializeForRead / the lens read tools with a constrained-agent read mode returning only valid+current by default; valid+superseded (\"background\") only on explicit request; raw/invalid never. 4. FLIP AUTHORITY = HUMAN-IN-THE-LOOP (NOT FINALIZED — needs more thinking; verging into Karpathy LLM-wiki territory): the JIT validator agent PROFFERS a grounded flip (reads raw + block, cites the raw span/evidence) but the HUMAN'S OK is the authority that actually flips valid/current — the agent does not self-certify. The permitted JIT agent (read + amend-block, depends FGAP-099 clamp) prepares + proposes; the human approves; intersects FGAP-102 (grounded/real-check-not-LLM) + DEC-0047 (judiciary). Whether/when this can delegate to a real-check vs always-human is the open question. Depends on the raw tier + decomposition front-end (FGAP-111). Concept source: /Users/david/Projects/data-room-pi-context.md. Verify: a constrained agent loaded against a substrate with superseded+invalid items reads ONLY valid+current, cannot reach the journey; round-trip decompose(FGAP-111) -> agent-proffer -> human-OK flip -> read demonstrated.",
+  "related_decisions": [
+    "DEC-0040",
+    "DEC-0047",
+    "DEC-0018"
+  ],
+  "related_issues": [
+    "FGAP-099",
+    "FGAP-102",
+    "FGAP-089",
+    "FGAP-090",
+    "FEAT-004",
+    "FEAT-005",
+    "FEAT-006",
+    "FEAT-007"
+  ]
+}

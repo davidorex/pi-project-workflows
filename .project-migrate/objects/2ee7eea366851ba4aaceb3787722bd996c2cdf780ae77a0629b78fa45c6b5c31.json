@@ -1,0 +1,10 @@
+{
+  "title": "render_roadmap + render_plan macros in packages/pi-workflows/templates/shared/macros.md for contextBlocks injection",
+  "body": "Step 7. Per-block-kind render macros following the existing pattern in packages/pi-workflows/templates/shared/macros.md. Add render_roadmap(roadmap) and render_plan(plan) Nunjucks macros so workflow agents can declare contextBlocks: [roadmap, plan] and have rendered roadmap/plan markdown injected into their prompts. Closes the agent-prompt-substrate side of the substrate-arc thesis for these new block kinds.",
+  "location": "packages/pi-workflows/templates/shared/macros.md",
+  "category": "capability",
+  "priority": "medium",
+  "status": "open",
+  "package": "pi-workflows",
+  "source": "agent"
+}

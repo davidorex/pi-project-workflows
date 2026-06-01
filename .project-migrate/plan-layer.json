@@ -1,0 +1,164 @@
+{
+  "plan-layer": [
+    {
+      "id": "PLAN-LAYER-001",
+      "name": "Identity",
+      "purpose": "What this project is, who it is for, what cannot change. Stable across the project lifetime. Foundational and rarely revised.",
+      "canonical_vocabulary": "Project Charter + README + Glossary + Coding Standards",
+      "lifetime": "project-lifetime",
+      "ownership_principle": "Changes require user authority and affect every downstream layer",
+      "current_blocks": [
+        "project.json",
+        "domain.json",
+        "conventions.json"
+      ],
+      "target_blocks": [
+        {
+          "name": "project.json",
+          "shape": "flat",
+          "notes": "charter; unchanged"
+        },
+        {
+          "name": "domain.json",
+          "shape": "flat",
+          "notes": "glossary + domain rules; unchanged"
+        },
+        {
+          "name": "conventions.json",
+          "shape": "flat",
+          "notes": "coding standards; should subsume conformance-reference.json"
+        }
+      ],
+      "oid": "e4a2f71c939bf9a3dee846c26d1e3040",
+      "content_hash": "62f904eaf29c625a55ebe01666fbf784cb1f48b1af4e3d9389bf684fcc2a9410"
+    },
+    {
+      "id": "PLAN-LAYER-002",
+      "name": "Specification",
+      "purpose": "What the system must do and how it is structured. Evolves with design decisions. Architectural contradictions and missing requirements are owned here.",
+      "canonical_vocabulary": "Specification + decisions + RFCs + Requirements + Architecture",
+      "lifetime": "per-design-cycle",
+      "ownership_principle": "Findings discovered during design review of a spec live attached to that spec, not in global issues. decisions record each design decision with a lifecycle gate for user-authored transitions to 'enacted'.",
+      "current_blocks": [
+        "requirements.json",
+        "architecture.json",
+        "decisions.json",
+        "rationale.json"
+      ],
+      "target_blocks": [
+        {
+          "name": "requirements.json",
+          "shape": "flat",
+          "notes": "unchanged in shape; may embed findings later"
+        },
+        {
+          "name": "architecture.json",
+          "shape": "flat",
+          "notes": "unchanged in shape; may embed findings later"
+        },
+        {
+          "name": "decisions.json",
+          "shape": "flat",
+          "notes": "live-decision block with open/enacted lifecycle; entries persist through enactment; each decision must cite its forcing issue/gap/feature"
+        },
+        {
+          "name": "spec-reviews.json",
+          "shape": "flat",
+          "notes": "per-target design reviews with embedded findings arrays — new for this plan"
+        },
+        {
+          "name": "framework-gaps.json",
+          "shape": "flat",
+          "notes": "L2 capability gaps in the framework itself — new for this plan"
+        },
+        {
+          "name": "layer-plans.json",
+          "shape": "flat",
+          "notes": "this file; L2 restructure plans — new for this plan"
+        }
+      ],
+      "oid": "a1afddbf3656520f7081117dad47ae72",
+      "content_hash": "452412c210b835824d36583a0c70878e54efe87b268b91706aaa1ada21a12bac"
+    },
+    {
+      "id": "PLAN-LAYER-003",
+      "name": "Work",
+      "purpose": "What is planned and in what order. Hierarchical decomposition — roadmap → milestone → epic → story → task. Each feature/epic owns its own scope, acceptance criteria, and scoped finding registry.",
+      "canonical_vocabulary": "Roadmap + Epics + Stories + Tasks (Agile/Jira/GitHub canon)",
+      "lifetime": "per-iteration",
+      "ownership_principle": "A task belongs to a story, a story to an epic, an epic to a milestone. Findings discovered while working on a story live in that story's feature node, not in the global tracker. Global task lists are materialized views, not the authoritative store.",
+      "current_blocks": [
+        "tasks.json"
+      ],
+      "target_blocks": [
+        {
+          "name": "features.json",
+          "shape": "flat",
+          "notes": "seed: one feature per epic, with embedded stories and tasks; hand-enactment of the nested structure until FGAP-001 lands"
+        },
+        {
+          "name": "features/",
+          "shape": "nested",
+          "notes": "target: once FGAP-001 lands, each feature becomes features/{id}.json and stories/tasks become subfiles"
+        }
+      ],
+      "oid": "f30a24f470e47bf7fc1d5010c87e2c80",
+      "content_hash": "8d4cb222983940a8474781a3e90e8adede8ee80e87274f6770a07ed760285afc"
+    },
+    {
+      "id": "PLAN-LAYER-004",
+      "name": "Execution",
+      "purpose": "What is currently true. Changes per session. Done, broken, in-progress, verified. Implementation defects and regressions are owned here.",
+      "canonical_vocabulary": "Iteration state + V&V records + session notes",
+      "lifetime": "per-session",
+      "ownership_principle": "Per-task verification records live attached to the task. Session handoff records live attached to the active feature. Defects discovered during execution are owned by the story or task that was in-flight.",
+      "current_blocks": [
+        "verification.json",
+        "handoff.json",
+        "issues.json"
+      ],
+      "target_blocks": [
+        {
+          "name": "verification.json",
+          "shape": "flat",
+          "notes": "V&V records; unchanged shape"
+        },
+        {
+          "name": "handoff.json",
+          "shape": "flat",
+          "notes": "session notes; schema exists, created on demand"
+        },
+        {
+          "name": "issues_view.json",
+          "shape": "materialized-view",
+          "notes": "target: derived index over scope-owned finding registries once FGAP-002/003 land; current issues.json migrates into scope-owned arrays"
+        }
+      ],
+      "oid": "7a1f0587e7f296e4a066a4d3307bed14",
+      "content_hash": "ef0be4b3b77906f2e2f76f47e818c61a2e0f7f3037cb45cf8599d7f8308888c7"
+    },
+    {
+      "id": "PLAN-LAYER-005",
+      "name": "Memory",
+      "purpose": "What has been learned through incidents. Accumulates, never shrinks. Rules derived from past failures.",
+      "canonical_vocabulary": "Runbook + Postmortem archive + Lessons learned + Knowledge base",
+      "lifetime": "ever-accumulating",
+      "ownership_principle": "Each entry is tied to an originating incident. No speculative rules. Entries cross-reference the features/tasks/findings they derived from.",
+      "current_blocks": [],
+      "target_blocks": [
+        {
+          "name": "feedback-memory.json",
+          "shape": "flat",
+          "notes": "target: canonicalize the ~/.claude/.../memory/feedback_*.md corpus as a queryable block with incident cross-references"
+        },
+        {
+          "name": "postmortems.json",
+          "shape": "flat",
+          "notes": "target: structured postmortem records with cross-references to the incidents they analyze"
+        }
+      ],
+      "oid": "bfbc3a6e1cc31454174972d6a7de20ae",
+      "content_hash": "4a9431424096e0c48ca5e30397cdb60221515f1d10dca8cf6f79a9df6fabe11a"
+    }
+  ]
+}

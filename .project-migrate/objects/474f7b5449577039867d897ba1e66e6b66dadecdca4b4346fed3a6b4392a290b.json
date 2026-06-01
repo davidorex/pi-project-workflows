@@ -1,0 +1,27 @@
+{
+  "title": "No tool to discover available agent templates or emit a canonical agent-spec scaffold — author-agent-spec requires constructing a complete AgentSpec from scratch",
+  "status": "identified",
+  "package": "@davidorex/pi-agent-dispatch",
+  "priority": "P2",
+  "layer": "L1",
+  "description": "author-agent-spec at packages/pi-agent-dispatch/src/author-agent-spec-tool.ts expects the author to pass a complete AgentSpec object. There is no companion tool to: (a) list pre-existing agent templates that the author can clone-and-customize; (b) emit a canonical agent-spec scaffold pre-populated with required fields and sensible defaults that the author can edit. The substrate-block authoring surface has analogous discoverability — append-block-item accepts arbitrary block items but the substrate's pi-context surface exposes availableBlocks(cwd), blockStructure(cwd), schemaInfo(cwd, name), and the canonical samples catalog at packages/pi-context/samples/. Agent-spec authoring has no equivalent discovery surface.",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-authoring.md",
+      "lines": "311",
+      "reference": "Discovered-gap (secondary) #6: 'No tool to discover available agent templates or emit canonical agent-spec templates: Author-agent-spec requires the author to construct a complete AgentSpec object. There is no tool to list available agent templates, clone a template, or emit a scaffold. Compared to the substrate-block authoring surface (which has append-block-item + implicit schema defaults), agent-spec authoring has no equivalent scaffold surface.'"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-agent-dispatch/src/author-agent-spec-tool.ts",
+      "lines": "1-100",
+      "reference": "author-agent-spec expects complete AgentSpec object as input; no scaffold or template-discovery companion tool exists in pi-agent-dispatch"
+    }
+  ],
+  "impact": "First-time authors of an agent spec have no canonical starting shape. They must read source for the AgentSpec type, infer required vs optional fields, and construct the JSON / YAML representation from scratch. Cross-package consumers building agent-spec ergonomics (UI scaffolds, workflow generators) have no programmatic discovery surface for available templates.",
+  "proposed_resolution": "Tool surface — two new Pi tools in packages/pi-agent-dispatch/src/: (a) `list-agent-templates` returning canonical agent templates bundled in pi-jit-agents (or registered in the project's .pi/templates/agents/ tree); (b) `scaffold-agent-spec` taking a minimal input (name, optional template-name) and emitting a canonical AgentSpec object pre-populated with required fields and sensible defaults — author can then call author-agent-spec with the scaffolded object. Dual-surface CLI scripts per DEC-0019/0020 canon. Prerequisite: FGAP-170 (AgentSpec JSON Schema) provides the field-default declarations.",
+  "canonical_vocabulary": "agent-spec scaffold + template discovery",
+  "related_decisions": [
+    "DEC-0019",
+    "DEC-0049"
+  ]
+}

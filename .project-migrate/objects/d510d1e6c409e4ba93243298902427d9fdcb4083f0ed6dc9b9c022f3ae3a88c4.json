@@ -1,0 +1,31 @@
+{
+  "title": "Tool descriptions need a discovery-readiness + grounding rubric — the per-tool eager-guidance layer",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "FGAP-044 (list-tools) makes the loaded tool surface introspectable (DEC-0014): pi.getAllTools() surfaces each tool's `description` as a PRIMARY discovery signal the in-pi agent reads to choose tools. Descriptions were authored ad-hoc with no shared rubric (purpose / params / substrate effect / dual-surface twin / when-to-use-vs-not). They are also a confabulation-prevention surface (FGAP-092): live agents (2026-05-22) asserted substrate specifics from assumption — invented an unregistered relation_type `phase_depends_on`; proposed reconstructing draft-07 schemas from read-samples-catalog SHAPE metadata (arrayKeys/itemProperties, not bodies); assumed builtin fs read (absent in --tools sessions); guessed params. Descriptions are ONE eager channel — the per-tool layer; cross-cutting orientation + topic->tool-call routing live in a before_agent_start pointer block (FGAP-090), not duplicated here.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "list-tools (FGAP-044) returns ToolInfo.description as the in-pi LLM's primary discovery signal — quality of every registered description is load-bearing"
+    },
+    {
+      "file": "packages/*/src/index.ts",
+      "reference": "pi.registerTool description strings authored ad-hoc; no shared discovery-readiness rubric, no grounding directives"
+    },
+    {
+      "file": ".project/config.json",
+      "reference": "FGAP-092 confabulation evidence: live agent used `phase_depends_on` — NOT a registered relation_type; descriptions must steer 'vocabulary is queryable, don't invent'"
+    },
+    {
+      "file": "packages/pi-context/src/samples-catalog.ts",
+      "reference": "read-samples-catalog returns shape (arrayKeys/itemProperties), not raw schema bodies — agent proposed reconstructing schemas; descriptions/grounding must point to install (FGAP-091) instead"
+    }
+  ],
+  "impact": "Now load-bearing (raised P3->P2). With skills unreachable (FGAP-090), descriptions are the agent's SOLE guidance: terse/incomplete ones cause mis-selection, AND without grounding directives the agent confabulates substrate specifics (unregistered-relation_type edges, mis-shaped items, wrongly-reconstructed schemas) which write SILENTLY because append-relation/amend-config defer validation (FGAP-075/076) — surfacing late at project-validate or never. Directly undermines the DEC-0014 aim of a tools-only agent operating the substrate CORRECTLY, not just plausibly.",
+  "proposed_resolution": "Define the description rubric (purpose/params/effect/dual-surface-twin/when-to-use) AND author GROUNDING DIRECTIVES into the relevant descriptions: read-config + read-samples-catalog as 'the authoritative vocabulary — reference these names, never invent'; append-relation/amend-config/write-schema as 'the relation_type/kind/name must be registered — check read-config first'. Enumerate via grep pi.registerTool; score each; emit remediated strings; apply through plan mode (source edits). COMPLEMENTARY: fail loud on unregistered names at write where layering permits (FGAP-092 facet). Cross-cutting orientation belongs in the before_agent_start pointer block (FGAP-090) + resources_discover skills (FEAT-007), not in every description.",
+  "related_decisions": [
+    "DEC-0014",
+    "DEC-0013"
+  ]
+}

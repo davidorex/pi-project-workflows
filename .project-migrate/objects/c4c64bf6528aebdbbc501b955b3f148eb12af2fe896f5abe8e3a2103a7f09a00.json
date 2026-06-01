@@ -1,0 +1,30 @@
+{
+  "title": "In-pi agent receives no skill/guidance content — our extension does not wire pi's eager-injection hooks (before_agent_start / resources_discover)",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L2",
+  "description": "Empirically (2026-05-22, live constrained AND unconstrained pi sessions) the in-pi agent reports NO skills in its context and operates the substrate from tool DESCRIPTIONS alone; bare on-disk SKILL.md (skill-narrative.md -> generate-skills -> SKILL.md) is not auto-surfaced, so the authored-guidance investment gives the agent no passive benefit. CAUSE: pi DOES expose eager guidance-injection to extensions; we simply wire none of it (our extension + scripts/launch-constrained-pi.sh). Shipped pi 0.75.4 channels: (1) before_agent_start handler returns { systemPrompt } (node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts:469/475/738/796), applied per-turn and CHAINED across extensions (dist/core/agent-session.js:791-792; dist/core/extensions/runner.js:710-739) — an always-present eager system-prompt channel; (2) resources_discover returns { skillPaths } (types.d.ts:371/377/784) -> formatSkillsForPrompt emits eager <available_skills> metadata (dist/core/skills.js:258-277), bodies lazy via read. No appendSystemPrompt/registerSkill API — the hook return is the sole channel. (pi-mono stale 0.62.0; cite shipped dist.)",
+  "evidence": [
+    {
+      "file": "node_modules/@earendil-works/pi-coding-agent/dist/core/system-prompt.js",
+      "reference": "skills are a separate axis (--no-skills); invoked explicitly via /skill (on-demand), not injected as passive agent context"
+    },
+    {
+      "file": "packages/pi-context/skill-narrative.md",
+      "reference": "hand-authored in-pi guidance → generate-skills → SKILL.md; the layer whose passive reach to the agent is in question"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-085 (description discovery-readiness) becomes load-bearing if descriptions are confirmed as the sole in-pi guidance channel"
+    }
+  ],
+  "impact": "If skills are the intended richer guidance layer, the harness-confined agent never sees them — all in-pi comprehension rides on tool description quality (FGAP-085), and the skill-narrative authoring effort yields no passive agent benefit. If by-design, the project should stop treating skills as the agent's guidance and formally make descriptions the canonical in-pi channel. Either way the current unstated split misallocates guidance effort.",
+  "canonical_vocabulary": "skill-in-context, passive guidance, tool-description-as-guidance",
+  "proposed_resolution": "Wire pi's eager hooks, mirroring pi-core's own self-docs mechanism (pointer-eager / content-lazy; core's pointer block at dist/core/system-prompt.js:94-100): (1) before_agent_start injects an eager topic->tool-call pointer/orientation block; (2) resources_discover surfaces our framework skills as <available_skills>; (3) content stays lazy — fetched via our element-read tools (read-samples-catalog/read-config/read-schema + FGAP-103), since the tools-only agent has no `read`, so the conception/substrate IS our docs corpus. Skill-block source per FEAT-007. Verify against a live constrained-pi session (the agent's reported context).",
+  "related_decisions": [
+    "DEC-0014"
+  ],
+  "related_features": [],
+  "related_issues": []
+}

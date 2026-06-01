@@ -1,0 +1,29 @@
+{
+  "name": "Execution",
+  "purpose": "What is currently true. Changes per session. Done, broken, in-progress, verified. Implementation defects and regressions are owned here.",
+  "canonical_vocabulary": "Iteration state + V&V records + session notes",
+  "lifetime": "per-session",
+  "ownership_principle": "Per-task verification records live attached to the task. Session handoff records live attached to the active feature. Defects discovered during execution are owned by the story or task that was in-flight.",
+  "current_blocks": [
+    "verification.json",
+    "handoff.json",
+    "issues.json"
+  ],
+  "target_blocks": [
+    {
+      "name": "verification.json",
+      "shape": "flat",
+      "notes": "V&V records; unchanged shape"
+    },
+    {
+      "name": "handoff.json",
+      "shape": "flat",
+      "notes": "session notes; schema exists, created on demand"
+    },
+    {
+      "name": "issues_view.json",
+      "shape": "materialized-view",
+      "notes": "target: derived index over scope-owned finding registries once FGAP-002/003 land; current issues.json migrates into scope-owned arrays"
+    }
+  ]
+}

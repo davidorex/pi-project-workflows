@@ -1,0 +1,24 @@
+{
+  "title": "SKILL.md surfaces don't anchor canonical vocabulary; in-pi agent enumerates block_kinds/relation_types from prior expectation rather than from substrate query",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "layer": "L4",
+  "description": "Observed 2026-05-28 in launched constrained-pi session: agent asked to describe pi-context to operator enumerated 8 block_kinds (canon ships 16) including the invented 'roadmap' kind that doesn't exist, and gave verb-only relation_type shortforms ('verifies', 'addresses', 'implements') that violate the canonical '<parent>_<verb>_<child>' form and will be refused by append-relation schema validation at write time. The agent had read-samples-catalog (pre-install) and read-config (post-install) in its tool surface but no instruction in the pi-context SKILL.md telling it: 'before describing or recommending block_kinds / relation_types to a user, call read-samples-catalog (pre-install) or read-config (post-install) — never enumerate from prior expectation.' The agent reasoned from general schema-substrate priors instead of querying the substrate.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/skill-narrative.md",
+      "reference": "skill narrative does not declare a 'query-before-enumerate' instruction for block_kinds or relation_types"
+    },
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "reference": "ships 16 canonical block_kinds and 28 canonical relation_types; agent's response enumerated 8 + 4 respectively, with 1 invented kind ('roadmap') and 1 invented relation_type ('task implements requirement')"
+    }
+  ],
+  "impact": "In-pi agent gives operators a list of block_kinds and relation_types that is partial, includes inventions, and uses verb-only shortforms not addressable as canonical relation_type names. Operators following the guidance hit substrate-validation refusals at append-relation time. Reduces trust in the agent + reduces operator efficacy.",
+  "canonical_vocabulary": "documentation-as-runtime-instruction; query-the-source-of-truth pattern; SKILL-as-behavioral-prompt",
+  "proposed_resolution": "Add an explicit instruction line to pi-context's skill-narrative.md (regenerated into SKILL.md via npm run skills): 'Before describing or recommending block_kinds / relation_types to a user, call read-samples-catalog (pre-install state, i.e. when bootstrap-state != ready) or read-config (post-install) — never enumerate from prior expectation.' Optionally extend to: 'Use the returned canonical_id values verbatim; do not abbreviate relation_type names to verb-only shortforms.'",
+  "related_features": [],
+  "related_decisions": [],
+  "related_issues": []
+}

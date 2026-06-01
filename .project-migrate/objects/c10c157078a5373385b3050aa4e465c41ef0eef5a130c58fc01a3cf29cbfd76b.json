@@ -1,0 +1,21 @@
+{
+  "description": "Implement DEC-0003 (parseModelSpec ownership at executeAgent boundary) — move parseModelSpec into pi-jit-agents as an internal (non-exported) helper at the executeAgent boundary per DEC-0003 enacted 7ca1a33 (consequence #1 narrowed to internal-helper form, NOT a fifth exported surface). Requires executeAgent signature change: currently accepts a pre-resolved Model<Api> in DispatchContext.model; post-implementation accepts a bare model-spec string + auth source and resolves internally. Surface change cascades to the two existing parseModelSpec sites (DEC-0003 widening 2026-05-26 cfbb211: monitors index.ts:1173+1390 + workflows step-monitor.ts:371+270) — both will redirect to the executeAgent-internal path. NOTE the entanglement with FGAP-115: if executeAgent owns model resolution internally, it needs access to the canonical session-source (auth.json / ExtensionContext / re-anchored alternative). The FGAP-115 resolution determines what source the internal helper consumes. Split from original TASK-080 (2026-05-26) per the TASK-081 narrow-scope discipline.",
+  "status": "blocked",
+  "files": [
+    "packages/pi-jit-agents/src/types.ts",
+    "packages/pi-jit-agents/src/jit-runtime.ts"
+  ],
+  "acceptance_criteria": [
+    "FGAP-115 resolved before this task proceeds — resolution determines the canonical model+provider+auth source the internal parseModelSpec helper consumes",
+    "parseModelSpec lives in pi-jit-agents as a NON-EXPORTED internal helper at the executeAgent boundary per DEC-0003 (a71c782 / 7ca1a33 narrowed) — four-boundary-surfaces declaration of jit-agents-spec §2 stands; no fifth exported surface",
+    "executeAgent signature changes to accept bare model-spec string + auth source (replacing/augmenting current pre-resolved Model<Api> in DispatchContext); internally resolves to Model<Api> via the internal parseModelSpec + auth lookup",
+    "DispatchContext shape updated to reflect new signature (TBD per design: replace .model field with .modelSpec string + .authSource, OR retain .model as optional alongside new .modelSpec, OR overload — design decision deferred to plan-mode of this task)",
+    "Verification by grep: zero parseModelSpec definitions outside pi-jit-agents source (the two caller-site definitions at monitors index.ts:1173 + workflows step-monitor.ts:371 are DELETED in TASK-082/083 as part of consumer cascade — not this task's scope to delete; only to provide the canonical replacement)",
+    "Engine unit tests cover: bare spec resolves correctly + fully-qualified spec pins provider + missing-binding throws + auth-source-resolution correct",
+    "VALIDATION = real checks: build/check/test exit codes, runtime demo (tsx-eval invocation of executeAgent with bare-spec dispatch + verification that internal parseModelSpec + auth resolution produce expected Model<Api>), adversarial probe (fresh-context agent verifies non-exported scope of parseModelSpec + no leakage of the helper as a fifth surface)"
+  ],
+  "depends_on": [
+    "TASK-081"
+  ],
+  "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. HARD-BLOCKED on FGAP-115 (canonical source question); status:blocked reflects that. Pairs with TASK-082/083 — those tasks delete the caller-side parseModelSpec duplicates after this task provides the canonical replacement at executeAgent boundary. Implementation pairs with DEC-0003 enacted a71c782 + widened cfbb211 (both monitors + workflows duplicate sites named). Pi-ai Model<Api> shape verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 458-485)."
+}

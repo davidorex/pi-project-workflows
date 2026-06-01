@@ -1,0 +1,54 @@
+{
+  "title": "Per-layer work-unit outputs are typed substrate blocks (cascade-target / plan-step / impl-applied / demo-result / probe-result); agents block-write items; markdown is display-only; layered composability via work_unit_id + readBlock+filter",
+  "status": "enacted",
+  "context": "Pieces of this pattern exist scattered across canon: DEC-0017 names work-unit context composition substrate; FGAP-029/030/031/032 cluster covers bidirectional traversal + per-unit-kind context contract + gather-execution-context primitive + item-level contextBlocks; FGAP-034 enumerates 6 elided block kinds (cascade-target / audit-result / arc-cross-ref / import-chain / investigation / brief-history); DEC-0019 frames scripts/orchestrator/* as test surface that surfaces gaps; REVIEW-001 names per-item macros pending. The COHERENT LAYERED PATTERN that ties these pieces — explore → cascade-target items, plan → plan-step items, implement → impl-applied items, demo → demo-result items, probe → probe-result items; each layer reads prior layer's items via readBlock+filter where work_unit_id matches; each layer's output IS substrate (not markdown intermediate) — is implicit but not yet articulated as canon. Markdown-as-load-bearing-intermediate produced the C.3 v2 explore agent prose-summary contradiction; FGAP-034 enumerated the 6 specific elided kinds; this DEC canonicalizes the broader architectural position.",
+  "decision": "Every work-unit (sub-section commit, sub-phase commit, etc.) produces per-layer outputs as TYPED SUBSTRATE BLOCKS (one block_kind per layer-output type). All layer-output items carry a work_unit_id field associating them with the work unit they describe. Layer composability flow: explore agent block-writes cascade-target / audit-result / arc-cross-ref items; plan agent reads explore items via readBlock+filter+work_unit_id, block-writes plan-step items; implement agent reads cascade-target + plan-step, block-writes impl-applied items + commit-sha; demo agent block-writes demo-result items per DEC-0018 probe; adversarial-probe agent block-writes probe-result items. Markdown rendering becomes display-only via macros (one per layer-output block_kind); substrate is canonical. Agents — both in-pi (Pi tool dispatch) and Claude Code (file-block-item.ts wrapper) — block-write items rather than markdown reports. Status cascades + cross-session continuity + replay + adversarial verification all become substrate operations (readBlock+filter), not markdown-grep operations.",
+  "consequences": [
+    "FGAP-034's 6 elided block kinds (cascade-target / audit-result / arc-cross-ref / import-chain / investigation / brief-history) become the initial implementation set; closing FGAP-034 closes the substrate side of DEC-0020.",
+    "Per-item macros (REVIEW-001 territory) become per-layer-output kind: render_cascade_target / render_audit_result / render_plan_step / render_impl_applied / render_demo_result / render_probe_result. Each closure feeds back into REVIEW-001.",
+    "FGAP-029/030/031/032 cluster becomes load-bearing for layered composability: gather_for_unit(work_unit_id) returns the cross-layer item set; per-unit-kind context contract declares which layer-blocks a unit composes from; bidirectional traversal walks the layer-output edges.",
+    "DEC-0017 (work-unit context composition substrate) gains concrete content: the units composed are layer-output items per work_unit_id; the contracts declare per-unit-kind block-kind dependencies; the composition primitive is gather_for_unit.",
+    "scripts/orchestrator/* composers (build-explore-brief / build-implementation-brief / future build-plan-brief / build-demo-brief / build-probe-brief) shift from markdown-section extraction to readBlock+filter; extract-markdown-section.ts becomes deprecated as DEC-0020 implementations land.",
+    "Agent dispatch discipline: every agent's task spec ends with 'block-write your output items via Pi tool / file-block-item.ts wrapper; NO markdown report file as deliverable'. Markdown rendering happens orchestrator-side via macros consuming the substrate.",
+    "TABLES-ONLY rule (Explore brief output_format) becomes redundant once substrate-block-write replaces markdown-output entirely; the rule's spirit (no LLM aggregation hallucination over tabular data) IS what DEC-0020 codifies architecturally.",
+    "Phase 5 of FGAP-026 closure (arc-tracking-blocks dogfood substrate per FGAP-028) becomes the first opportunity to dogfood DEC-0020: the arc-tracking blocks ARE per-layer-output items for the FGAP-026 closure work unit.",
+    "Cross-session continuity property: any future session can readBlock + filter on work_unit_id to reconstruct the entire arc of a work unit (explore findings → plan → impl → demos → probes), without depending on /tmp/ markdown files.",
+    "Standing tension with implementation velocity: each new orchestrator-side script needs its output kind designed + schema'd + macro'd before lands. Accepted as cost of correctness; per DEC-0019's iteration model, gaps surface during script writing and feed back to schema design."
+  ],
+  "related_gaps": [
+    "FGAP-026",
+    "FGAP-029",
+    "FGAP-030",
+    "FGAP-031",
+    "FGAP-032",
+    "FGAP-033",
+    "FGAP-034"
+  ],
+  "references": [
+    {
+      "label": "FGAP-034 enumerates 6 elided block kinds",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "DEC-0017 work-unit context composition substrate (precedent)",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "DEC-0019 scripts as test surface (iteration model)",
+      "path": ".project/decisions.json"
+    },
+    {
+      "label": "REVIEW-001 per-item macros pending",
+      "path": ".project/spec-reviews.json"
+    },
+    {
+      "label": "scripts/orchestrator/extract-markdown-section.ts (deprecated by DEC-0020 implementations)",
+      "path": "scripts/orchestrator/extract-markdown-section.ts"
+    },
+    {
+      "label": "C.3 v2 explore prose-summary contradiction (forcing observation)",
+      "path": "/tmp/explore-c3-fixtures-v2.md"
+    }
+  ],
+  "enacted_by": "human/davidryan@gmail.com"
+}

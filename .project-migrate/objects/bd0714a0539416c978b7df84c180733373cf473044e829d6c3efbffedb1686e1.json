@@ -1,0 +1,18 @@
+{
+  "name": "User-authored transitions on gating decisions",
+  "description": "User reviews DEC-0001/0002/0003 in light of the design-review findings and advances each to enacted or requests revision. All open-to-enacted transitions require user authority per the lifecycle metadata. Until each gating decision is enacted, FEAT-001 cannot advance from proposed to approved.",
+  "depends_on": [
+    "PHASE-3"
+  ],
+  "exit_criteria": [
+    "DEC-0001 in enacted state with enacted_by=user",
+    "DEC-0002 in enacted state with enacted_by=user",
+    "DEC-0003 in enacted state with enacted_by=user"
+  ],
+  "produces": [
+    "enacted DEC-0001",
+    "enacted DEC-0002",
+    "enacted DEC-0003"
+  ],
+  "status": "pending"
+}

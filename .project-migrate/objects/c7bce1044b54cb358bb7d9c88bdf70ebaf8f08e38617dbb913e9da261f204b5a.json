@@ -1,0 +1,15 @@
+{
+  "title": "Resolve model-pin policy and apply at pi-jit-agents",
+  "status": "proposed",
+  "description": "Apply the DEC-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary. Remove the anthropic-default pin from the current parseModelSpec implementation in pi-behavior-monitors.",
+  "acceptance_criteria": [
+    "A bare model id in an agent spec resolves against the current session's provider via ExtensionContext lookup, not a hardcoded default",
+    "If ExtensionContext cannot supply currentModel, dispatch errors with a clear message naming the missing binding",
+    "Fully-qualified provider/model specs continue to pin explicitly",
+    "Unit tests cover: bare-id + session-with-model, bare-id + session-without-model (error), fully-qualified-id (pinned)"
+  ],
+  "depends_on": [],
+  "gates": [
+    "DEC-0001"
+  ]
+}

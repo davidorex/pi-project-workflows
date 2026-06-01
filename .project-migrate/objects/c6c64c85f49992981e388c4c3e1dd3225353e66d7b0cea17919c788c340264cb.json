@@ -1,0 +1,11 @@
+{
+  "description": "FGAP-026 closure phase 9 (Step 8.7.9; Claude Code Task #29): Documentation refresh + skills regen + 4-canon binding statements (DEC-0014/0015/0016/0017)",
+  "acceptance_criteria": [
+    "CLAUDE.md / READMEs / skill-narratives reflect post-rebuild surface",
+    "DEC-0015 9th consequence binding (dual-nature note) in code comments + docs",
+    "DEC-0017 surface documented (gather-execution-context + context-contract + per-unit-kind bundle semantics)",
+    "DEC-0016 binding statement in CLAUDE.md",
+    "npm run skills regenerates SKILL.md outputs"
+  ],
+  "status": "planned"
+}

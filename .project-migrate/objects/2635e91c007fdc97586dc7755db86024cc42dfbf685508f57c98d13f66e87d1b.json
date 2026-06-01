@@ -1,0 +1,5 @@
+{
+  "title": "Document verification outcomes",
+  "status": "todo",
+  "description": "Write outcomes into this feature's findings array or into a new finding in REVIEW-001 if the outcome surfaces a spec-level disclarity"
+}

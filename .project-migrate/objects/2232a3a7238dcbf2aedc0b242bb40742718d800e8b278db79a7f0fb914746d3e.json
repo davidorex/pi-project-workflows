@@ -1,0 +1,10 @@
+{
+  "title": "Verify writeBlock dynamic schema discovery accepts config as a typed block",
+  "body": "Degree-zero principle requires writeBlock(cwd, 'config', data) to validate against config.schema.json. Block-api's existing dynamic schema discovery (availableSchemas reads schemas/*.schema.json without code change) should handle this for any new block name — but it is unverified for the config-as-block case specifically. Verification: drop config.schema.json into .project/schemas/, attempt writeBlock(cwd, 'config', validData) and writeBlock(cwd, 'config', invalidData), assert valid passes and invalid throws ValidationError. If discovery does not handle the case (e.g. blockFilePath naming assumption, schema-path resolution edge case), a code change is needed. Likely a verification confirming existing behavior, but unverified is unverified. Surfaced as gap #32 in the integration-map review.",
+  "location": "packages/pi-context/src/block-api.ts",
+  "status": "open",
+  "category": "cleanup",
+  "priority": "low",
+  "package": "pi-project",
+  "source": "agent"
+}

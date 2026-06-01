@@ -1,0 +1,11 @@
+{
+  "title": "Agent input schemas are parsed but never validated at dispatch time",
+  "body": "AgentSpec.inputSchema is populated by agent-spec.ts:126 but step-agent.ts never validates the step's resolved input against it. The synthesizer agent requires [structure, quality, patterns] but resumable-analysis.workflow.yaml passes only structure and quality — this silently succeeds. Input schemas are decorative, creating false confidence in typed composition. Either add validation in executeAgentStep() before dispatch, or remove inputSchema from the type to stop pretending.",
+  "location": "packages/pi-workflows/src/step-agent.ts:52",
+  "status": "resolved",
+  "category": "primitive",
+  "priority": "critical",
+  "package": "pi-workflows",
+  "source": "agent",
+  "resolved_by": "v0.11.0 commit 92e5427 — inputSchema validation in executeAgentStep(), task-001/ver-001. Criterion 6 (audit all callers) deferred to task-002."
+}

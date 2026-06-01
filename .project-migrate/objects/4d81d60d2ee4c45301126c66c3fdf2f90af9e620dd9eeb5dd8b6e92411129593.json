@@ -1,0 +1,5 @@
+{
+  "description": "Fail-fast on step failure (phase 1 behavior)",
+  "enforcement": "test",
+  "severity": "error"
+}

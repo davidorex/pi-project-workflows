@@ -1,0 +1,39 @@
+{
+  "title": "call-agent parent_grant and requested_grant are Type.Optional but functionally required when agent declares tools — silent default-empty triggers grant violation",
+  "status": "identified",
+  "package": "@davidorex/pi-agent-dispatch",
+  "priority": "P2",
+  "layer": "L1",
+  "description": "callAgentTool.parameters at packages/pi-agent-dispatch/src/call-agent-tool.ts lines 48-56 declares both parent_grant and requested_grant as Type.Optional(Type.Array(Type.String())). computeGrantViolation at packages/pi-jit-agents/src/jit-runtime.ts lines 90-95 treats absent grants as empty sets: `parentGrant ?? []`. When an agent's spec declares `tools: [read]` and call-agent is invoked without passing parent_grant, the intersection is empty and GrantViolationError fires with message 'Agent X grant violation: tools [read] not in parent grant (DEC-0047 clamp at executeAgent boundary)'. The type-optional declaration does not match the dispatch-required semantics; no orchestration-context fallback (e.g. caller's own tool set via ExtensionContext) is consulted.",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+      "lines": "162-182",
+      "reference": "FB-008 'call-agent requires explicit parent_grant and requested_grant'; actual_behavior: agent with tools: [read] dispatched without parent_grant → 'Agent X grant violation: tools [read] not in parent grant (DEC-0047 clamp at executeAgent boundary)'"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+      "lines": "6-53",
+      "reference": "Investigation report FB-008 section confirms both surfaces verbatim (call-agent-tool.ts:48-56 Type.Optional declaration; jit-runtime.ts:90-95 default-empty handling); verdict 'Tool surface or DEC' — describe parent_grant as required-when-tools-declared in the schema, or compute parent_grant from orchestration context (ExtensionContext) when absent"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-agent-dispatch/src/call-agent-tool.ts",
+      "lines": "48-56",
+      "reference": "parent_grant: Type.Optional(...) requested_grant: Type.Optional(...) — both declared optional in the tool parameter schema"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/packages/pi-jit-agents/src/jit-runtime.ts",
+      "lines": "90-95",
+      "reference": "computeGrantViolation: const parent = parentGrant ?? []; — silent default-empty when caller does not pass parent_grant"
+    }
+  ],
+  "impact": "First-time call-agent invocations for tool-enabled agent specs hard-fail at the grant clamp. The error message names the DEC-0047 clamp but not the workflow contract (always pass parent_grant). Authors cannot discover the required-when-tools semantic from the tool schema. The semantic is correct per the capability-clamp design (default-empty per DEC-0047) but the surface is mis-aligned: type-optional read as 'safe to omit' contradicts dispatch-required read as 'omission means zero grant'.",
+  "proposed_resolution": "Tool surface at packages/pi-agent-dispatch/src/call-agent-tool.ts lines 48-56: parent_grant description states 'Required when the agent spec declares tools. Defaults to empty array; sub-agent tools must be an explicit subset of this grant per DEC-0047 capability-clamp.' OR: extend call-agent execute to compute parent_grant from ExtensionContext when absent, deriving the caller's full tool set as the default parent grant. DEC-level decision required between schema-documentation and runtime-derivation paths.",
+  "canonical_vocabulary": "capability-grant default semantics",
+  "related_decisions": [
+    "DEC-0047"
+  ],
+  "related_features": [
+    "FEAT-005"
+  ]
+}

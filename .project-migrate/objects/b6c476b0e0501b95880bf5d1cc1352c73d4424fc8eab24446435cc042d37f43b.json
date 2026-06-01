@@ -1,0 +1,11 @@
+{
+  "title": "Roadmap/plan schema landing: roadmap.schema.json + plan.schema.json + LensSpec composition extension + relations ordinal field",
+  "body": "Step 1 of the roadmap/plan substrate proposal. Land four schema changes: (a) packages/pi-context/registry/schemas/roadmap.schema.json — full roadmap schema with phases, milestones, exit_criteria, depends_on (shape gated by DEC-0012); (b) packages/pi-context/registry/schemas/plan.schema.json — plan schema with item refs, depends_on, optional roadmap/phase association; (c) packages/pi-context/schemas/config.schema.json — extend lenses items with kind/targets/members fields per FGAP-012 resolution (oneOf discriminated by kind); (d) packages/pi-context/schemas/relations.schema.json — add optional ordinal: integer field for deterministic sibling ordering. Plus reserved relation_types: roadmap_phase, phase_member, plan_member, phase_depends_on, plan_item_depends_on. Per DEC-0011 nothing ships pre-installed. Per DEC-0009 sequencing is closure-table edges only (no subdirectory layout). Tests: schema-validator round-trips on fixtures.",
+  "location": "packages/pi-context/registry/schemas/, packages/pi-context/schemas/",
+  "category": "capability",
+  "priority": "high",
+  "status": "resolved",
+  "package": "pi-project",
+  "source": "agent",
+  "resolved_by": "Resolved in commit c5c4725 — feat(pi-project): step 1 of roadmap/plan substrate — schema landing. Two new registry schemas (roadmap.schema.json + plan.schema.json) land per DEC-0012 (edges-only authoring; phases + plan items omit depends_on). config.schema.json LensSpec extended with kind/targets/members fields per FGAP-012 composition extension. relations.schema.json gains optional ordinal field. 19 new tests covering positive + negative validation. Skills auto-regenerated."
+}

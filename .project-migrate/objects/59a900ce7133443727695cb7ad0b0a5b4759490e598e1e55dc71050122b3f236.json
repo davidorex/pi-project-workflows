@@ -1,0 +1,11 @@
+{
+  "description": "FGAP-026 closure phase 7 (Step 8.7.7; Claude Code Task #27): Cross-package cascade + FGAP-032 item-level contextBlocks selectivity in pi-jit-agents",
+  "acceptance_criteria": [
+    "pi-jit-agents agent-spec/template/compile cascade through resolver",
+    "AgentSpec.contextBlocks gather_for_unit shape; bundle injection as _<name>_bundle template variable",
+    "pi-workflows path-construction sites cascade",
+    "pi-behavior-monitors block resolution cascade",
+    "zero .project/ literals in any production source per grep"
+  ],
+  "status": "planned"
+}

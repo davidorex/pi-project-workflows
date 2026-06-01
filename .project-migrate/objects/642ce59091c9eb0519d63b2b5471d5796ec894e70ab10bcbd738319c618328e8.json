@@ -1,0 +1,5 @@
+{
+  "name": "FGAP-026 closure phase 1 — resolver foundation + discovery tools",
+  "intent": "Resolver foundation (resolveContextDir) + 2 discovery tools (read-config, read-schema) + atomic safety .pi-context.json write. Step 8.7.1.",
+  "status": "completed"
+}

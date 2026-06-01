@@ -4,97 +4,129 @@
       "id": "esm",
       "description": "ESM modules only (\"type\": \"module\" in package.json)",
       "enforcement": "lint",
-      "severity": "error"
+      "severity": "error",
+      "oid": "48fdefba523e202f7ba2f3e080b02757",
+      "content_hash": "c77a94bf4a5de8d8081a501eb44afde4da4b8969100eaf0d1e9d62906eb4fb0d"
     },
     {
       "id": "tsc-build",
       "description": "TypeScript compiled via tsc to dist/ — each package has tsconfig.build.json, main field points to ./dist/index.js, pi loads extensions from dist/",
       "enforcement": "manual",
-      "severity": "error"
+      "severity": "error",
+      "oid": "3a9cdc2dd8c9b10b0af166aaa53f49af",
+      "content_hash": "f8c98219d8cd2a967ac37677a3805fd87d00f52b595b23b2428d8bde08568f43"
     },
     {
       "id": "no-pi-dir",
       "description": "Never create, copy, modify, or delete files in .pi/ — it is the user's runtime testing directory",
       "enforcement": "review",
-      "severity": "error"
+      "severity": "error",
+      "oid": "fb4e3cdbc7827d534a22aaee20c4054c",
+      "content_hash": "91c2bfdbf60f85c19bc8e7a965b9190ced71a1ee93f8ad9224c000a9045a5fa6"
     },
     {
       "id": "bundled-specs-source-of-truth",
       "description": "Bundled workflow/agent/monitor specs live in their package directories: packages/pi-workflows/workflows/ for workflows, packages/pi-workflows/agents/ for agents, packages/pi-behavior-monitors/examples/ for monitor specs and templates",
       "enforcement": "review",
-      "severity": "error"
+      "severity": "error",
+      "oid": "ac1f2c8cb2fcdd8c037c914a86153be7",
+      "content_hash": "3966a50e914037e7a7a0ce69ebb477c1616046224845a2cbdf8b468113890f9b"
     },
     {
       "id": "types-in-types-ts",
       "description": "In pi-workflows, shared interfaces are defined in src/types.ts — other packages define types alongside their modules",
       "enforcement": "review",
-      "severity": "warning"
+      "severity": "warning",
+      "oid": "afc3e7e4fa8317538e3cb3744f72b501",
+      "content_hash": "3f5eeafd6117c322bbbc32b6ee69098cdceed7f0ea2a54e933702a9a57c1b5c2"
     },
     {
       "id": "expression-no-eval",
       "description": "Expression evaluator uses property access only — no eval(), no arithmetic/logic",
       "enforcement": "test",
-      "severity": "error"
+      "severity": "error",
+      "oid": "de809b29088273188ad8c102c0736c55",
+      "content_hash": "5c2e7deeaba75a92006da4caa65cbcdd1843ad42532689c83057637962d38f7b"
     },
     {
       "id": "fail-fast",
       "description": "Fail-fast on step failure (phase 1 behavior)",
       "enforcement": "test",
-      "severity": "error"
+      "severity": "error",
+      "oid": "a0bb5b67fe8f35e3f6dfc1e9def55479",
+      "content_hash": "4d81d60d2ee4c45301126c66c3fdf2f90af9e620dd9eeb5dd8b6e92411129593"
     },
     {
       "id": "domain-in-specs",
       "description": "Domain logic lives in YAML specs, templates, and schemas — never in the runtime",
       "enforcement": "review",
-      "severity": "error"
+      "severity": "error",
+      "oid": "782caf89f73add66efbba79d884240a1",
+      "content_hash": "155ffa51262392dfd0644bda5ea4d8fba963c7e170c87f9de10f4b16555b1e46"
     },
     {
       "id": "subprocess-independence",
       "description": "Extension owns its own subprocess dispatch — independent of pi-subagents, no shared state",
       "enforcement": "review",
-      "severity": "error"
+      "severity": "error",
+      "oid": "cbf1d746e0a9dcd1967a1e155a1b72fa",
+      "content_hash": "68d0ded2d3762772f7e5f86b98f30be6c519bf0bf586052fbc314bbfb97bf88c"
     },
     {
       "id": "json-data-bus",
       "description": "JSON is the intermediate representation between steps — file system is the data bus",
       "enforcement": "test",
-      "severity": "error"
+      "severity": "error",
+      "oid": "81a8b5a4ed81dc489353817ad3270583",
+      "content_hash": "e19518b8116e0215a5326059cebbc71e9141cbe43c09372a07f414befd365f6a"
     },
     {
       "id": "atomic-state",
       "description": "State persisted after each step via atomic write (tmp + rename)",
       "enforcement": "test",
-      "severity": "error"
+      "severity": "error",
+      "oid": "72cc638ae4b209be95c0e765d99cf8e2",
+      "content_hash": "e5c5b1e71935190581ae99d33006cf5015f422533347073567973a5c54dc7c57"
     },
     {
       "id": "three-template-syntaxes",
       "description": "{{ var }}/{% tag %} for Nunjucks prompt rendering, ${{ expr }} for workflow data flow — never mix contexts",
       "enforcement": "review",
-      "severity": "warning"
+      "severity": "warning",
+      "oid": "67cb3dc2ff1a8f9e745e50b12618f1d3",
+      "content_hash": "8f9f52ae8389ffe4695aed046d3595b4f05664218b7faab898670bb10134ebcf"
     },
     {
       "id": "nunjucks-composition",
       "description": "New agent templates MUST use Nunjucks extends/block when a base template exists for their structural pattern family. Flat templates in families with established bases are defects, not shortcuts.",
       "enforcement": "review",
-      "severity": "error"
+      "severity": "error",
+      "oid": "cfeb30279742831e2ab985164666f2b3",
+      "content_hash": "4495b30ba5ad58239f9328aecadec187147d06897fb9eda774bf43e5e0d8a55d"
     },
     {
       "id": "agent-input-schema",
       "description": "Agents accepting structured input MUST define inputSchema in .agent.yaml. Template variable references ({{ field }}) without a corresponding inputSchema property are silent failures.",
       "enforcement": "review",
-      "severity": "error"
+      "severity": "error",
+      "oid": "938d03ec4d8b7e308a2271a615220b4f",
+      "content_hash": "52eb110f77186ee99711a6afb19a3e844483b7e0ea73b719c1f8753cbaecd3a9"
     },
     {
       "id": "parametric-reuse",
       "description": "Agents appearing in 2+ workflows MUST accept variable input shapes — identical input wiring across workflows is copy-paste, not composition. Templates must include conditionals that adapt to input variation.",
       "enforcement": "review",
-      "severity": "warning"
+      "severity": "warning",
+      "oid": "5074ac3e6a0e46f38ea3c4aa1f8dc942",
+      "content_hash": "9ab240fa210ca096f289745ec3114c02cb8e229636924bd3efee12cebcc0546b"
     },
     {
       "id": "no-flat-duplication",
       "description": "Template families sharing structural patterns (read → findings → schema) MUST extract shared structure into a base template with extends/block. Duplicating prompt structure across agent templates is a defect.",
       "enforcement": "review",
-      "severity": "error"
+      "severity": "error",
+      "oid": "1ce41b5d9481a80bc785fe0080069cde",
+      "content_hash": "055efc8c40b9b82d474caea464206a6a151df4482c2124c0fe711914e5c1409f"
     }
   ],
   "test_conventions": {

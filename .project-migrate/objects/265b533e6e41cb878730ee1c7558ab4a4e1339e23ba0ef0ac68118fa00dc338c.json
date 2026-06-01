@@ -1,0 +1,25 @@
+{
+  "description": "FEAT-006 decomposition 3/4 — real-deterministic-check validation tail (FGAP-102) + attested commit through husky. Post-agent-execution gate: after the privileged JIT-agent makes source edits, run the real-checks (build/check/test exit codes + runtime-demo + adversarial-against-artifacts per DEC-0018) — NEVER LLM self-report (FGAP-102). On real-check-pass: commit through husky with DispatchContext writer.kind=agent + agent_id attestation (per DEC-0047 distinction between human-authored canon-widening writes vs agent-authored work-product writes). On real-check-fail: structured fail-report carrying the real compiler/test errors flows back for another implement pass (fix root cause, never bypass per DEC-0040 + feedback_process_is_success_metric). Implementation likely as pi-agent-dispatch extension tool surface (pi.registerTool('run-real-checks', …) + pi.registerTool('commit-attested', …)) OR as inline call from the call-agent tool's post-execution path; design TBD in plan-mode of this task.",
+  "status": "completed",
+  "files": [
+    "packages/pi-agent-dispatch/src/real-check-runner.ts",
+    "packages/pi-agent-dispatch/src/attested-commit.ts",
+    "packages/pi-agent-dispatch/src/real-check-runner.test.ts",
+    "packages/pi-agent-dispatch/src/attested-commit.test.ts"
+  ],
+  "acceptance_criteria": [
+    "real-check-runner runs the three deterministic checks per DEC-0018: (1) build+check+test exit codes (no pipe-masking; full output captured); (2) runtime-demo (tsx-eval invocation of the actual feature path — exact mechanism TBD per the work-order spec's declared real_check_criteria); (3) adversarial probe (fresh-context agent re-greps for false-pass scenarios on external artifacts: git diff / event stream / runtime output)",
+    "real-check-runner returns structured RealCheckResult { passed: boolean, details: per-check exit codes + stdout/stderr/grep evidence }; no LLM self-report at any point in the gate (per FGAP-102 / DEC-0047 clause 5)",
+    "On real-check-fail: RealCheckResult.passed=false carries the structured fail-report (real compiler/test errors); calling code feeds back to the implement pass (loop logic in TASK-091 assembly task)",
+    "attested-commit invokes husky (no --no-verify; never skip hooks per feedback_no_destructive_git_ops + standard discipline); commit message carries DispatchContext attestation footer: writer.kind=agent + agent_id; per DEC-0047, writer.kind=agent cannot be set by the agent itself — the orchestrator (writer.kind=human source) supplies the DispatchContext that the privileged agent inherits at dispatch",
+    "On real-check-pass + attested-commit success: return the commit SHA for the orchestrator's status cascade",
+    "Engine unit tests cover: real-check-runner exits correctly on each check's pass/fail; structured RealCheckResult shape valid; attested-commit invokes husky + carries the attestation footer; refusal-of-writer.kind=agent-set-by-agent",
+    "Per DEC-0048: no consumer cascade; existing workflows / bundled agents tests are NOT regression gates",
+    "VALIDATION = real checks (this gate validates itself with the same pattern): build/check/test exit codes; runtime demo (run real-check-runner against a known-failing fixture + verify it reports failure; against a known-passing fixture + verify it reports pass); adversarial probe (fresh-context: zero LLM self-report paths in the gate; husky bypass impossible)"
+  ],
+  "depends_on": [
+    "TASK-089"
+  ],
+  "notes": "Filed 2026-05-26 per user direction. Third of four FEAT-006 decomposition tasks. Builds on TASK-089 pi-agent-dispatch extension (the tool surface this gate plugs into). Closes FGAP-102 (real-check verdict, not LLM self-report). Pattern matches what TASK-081 itself used for self-verification this session (real-check verdict + adversarial probe + commit attestation). Unblocks TASK-091 final assembly.",
+  "verification": "VER-055"
+}

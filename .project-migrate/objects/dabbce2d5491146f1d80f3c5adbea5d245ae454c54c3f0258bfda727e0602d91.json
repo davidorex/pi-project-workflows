@@ -1,0 +1,41 @@
+{
+  "title": "Substrate path resolution unifies on the .pi-context.json pointer (resolveContextDir); config.root is not a path-resolution input",
+  "status": "enacted",
+  "context": "FGAP-079: the schema/block file-path surface diverges — schemas/blocks are WRITTEN via projectRoot(cwd) (honors config.root) but READ via resolveContextDir(cwd) (pointer only). config.json + relations.json are pinned to resolveContextDir by NECESSITY (projectRoot must read config.json to learn config.root, so config.json cannot itself move). Therefore honoring config.root for blocks/schemas while config/relations stay at the pointer would SPLIT the substrate across two dirs — incoherent. config.root coincides with the pointer in practice (adoptConception sets config.root = relative(cwd, resolveContextDir)); the divergence is latent. The 'relocatable per config / GitHub issue #3' feature (projectRoot honoring config.root) is half-wired (writes honor it, reads don't, config/relations can't) and, fully wired, would only split the substrate. DEC-0041 already made the .pi-context.json pointer the substrate-dir SoT and config.root optional; this clarifies/extends it.",
+  "decision": "Substrate path resolution unifies on the .pi-context.json pointer (resolveContextDir) for read + write, blocks + schemas + config + relations. config.root is NO LONGER a path-resolution input: projectRoot(cwd) drops its config.root branch and returns resolveContextDir(cwd), auto-unifying every write-side caller with the read side. config.root is retained as optional config DATA (DEC-0041) but does not affect resolution. Substrate relocation is via the pointer (a future /context migrate flips .pi-context.json's contextDir, moving the WHOLE substrate coherently — DEC-0036 step-5), not via config.root. Additionally, a single name validator (assertSubstrateName, /^[A-Za-z0-9_-]+$/) guards every name->path builder so a traversal name (../, /, ..) is rejected on both read and write (now reachable from the in-pi write-schema tool, FGAP-077).",
+  "consequences": [
+    "projectRoot returns resolveContextDir; schema + block read==write (the FGAP-079 divergence is gone for the whole surface, not just schemas).",
+    "config.root no longer relocates anything; the half-wired issue-#3 relocation feature is retired in favor of pointer-based relocation (coherent, whole-substrate).",
+    "Behavior-preserving in practice: adoptConception sets config.root == pointer, so projectRoot already returned the pointer dir; only the latent non-default-config.root case changes (now unified instead of split).",
+    "The project-context.test 'respects config.root override' test inverts: projectRoot now IGNORES config.root.",
+    "Path-traversal is rejected at every builder (read + write); valid block/schema names are [A-Za-z0-9_-]+ (block_kind canonical_ids).",
+    "config.schema.json root description should note root is optional metadata, not a path input (cosmetic follow-up). Extends DEC-0041; relates to DEC-0015 + DEC-0036 step-5 pointer-based relocation."
+  ],
+  "related_gaps": [
+    "FGAP-079"
+  ],
+  "references": [
+    {
+      "label": "projectRoot (config.root branch to drop)",
+      "path": "packages/pi-context/src/project-context.ts",
+      "lines": "250"
+    },
+    {
+      "label": "schemaPath read-side (resolveContextDir)",
+      "path": "packages/pi-context/src/project-dir.ts",
+      "lines": "207"
+    },
+    {
+      "label": "schemaWritePath write-side (projectRoot)",
+      "path": "packages/pi-context/src/schema-write.ts",
+      "lines": "47"
+    },
+    {
+      "label": "config/relations pinned to pointer",
+      "path": "packages/pi-context/src/project-context.ts",
+      "lines": "231,238"
+    }
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-05-23T02:08:10.530Z"
+}

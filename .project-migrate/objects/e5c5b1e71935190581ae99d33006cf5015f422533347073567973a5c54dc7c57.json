@@ -1,0 +1,5 @@
+{
+  "description": "State persisted after each step via atomic write (tmp + rename)",
+  "enforcement": "test",
+  "severity": "error"
+}

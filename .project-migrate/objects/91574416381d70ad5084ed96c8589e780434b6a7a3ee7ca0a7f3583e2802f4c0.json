@@ -1,0 +1,21 @@
+{
+  "description": "Pi-behavior-monitors consumer cascade of FEAT-001 — pi-behavior-monitors imports agent infra from pi-jit-agents (not pi-workflows); drops the synthetic CompiledAgent build (currently at index.ts:~1356,1381,1383 building CompiledAgent + mapping compiled.taskTemplate → taskPrompt to bridge the pi-workflows AgentSpec vs pi-jit-agents AgentSpec shape gap). After TASK-082 deletes pi-workflows' duplicate AgentSpec/loader/compile, the synthetic-build bridge becomes unnecessary; monitors call jit-agents canonical surfaces directly. Specifically: repoint index.ts:25-27 imports (createAgentLoader from @davidorex/pi-workflows/agent-spec, compileAgentSpec from @davidorex/pi-workflows/step-shared, AgentSpec type from @davidorex/pi-workflows/types) to @davidorex/pi-jit-agents canonical equivalents. parseModelSpec duplicate at packages/pi-behavior-monitors/index.ts:1173 (used at line 1390) deleted per DEC-0003 (a71c782 enacted): callers redirect to jit-agents API. Depends on TASK-081 (for the canonical surface to consume) + TASK-082 (which deletes the pi-workflows source being depended-on; without 082, the import-repointing alone leaves dead pi-workflows surfaces). Split from original TASK-080 (2026-05-26) per user direction; workflows cascade is TASK-082.",
+  "status": "planned",
+  "files": [
+    "packages/pi-behavior-monitors/index.ts"
+  ],
+  "acceptance_criteria": [
+    "pi-behavior-monitors index.ts:25-27 imports repoint from @davidorex/pi-workflows/* to @davidorex/pi-jit-agents canonical equivalents",
+    "Synthetic CompiledAgent build (the compiled.taskTemplate → taskPrompt bridge at index.ts:~1356,1381,1383) DROPPED; monitors use jit-agents' canonical CompiledAgent directly",
+    "parseModelSpec duplicate at index.ts:1173 (definition) + 1390 (call site) DELETED per DEC-0003 enactment; line 1390 redirects to jit-agents API",
+    "pi-behavior-monitors package.json dep on @davidorex/pi-workflows REMOVED (was originally added for the duplicate-bridge imports; post-cascade only pi-jit-agents + pi-context + pi-ai + nunjucks remain)",
+    "pi-behavior-monitors unit tests green at every commit (husky)",
+    "Per DEC-0048: bundled classifier .agent.yamls + their tests are NOT preserved/aligned/fixed; broken legacy-classifier tests are NOT regression gates; engine UNIT tests (monitor lifecycle, classify dispatch, parseVerdict, etc.) remain gates",
+    "VALIDATION = real checks: build/check/test exit codes (no pipe-masking), runtime demo (monitor classify dispatches successfully against jit-agents canonical), adversarial probe (fresh-context agent greps for residual @davidorex/pi-workflows imports in pi-behavior-monitors source); never LLM self-report"
+  ],
+  "depends_on": [
+    "TASK-081",
+    "TASK-082"
+  ],
+  "notes": "Split 2026-05-26 from TASK-080. Depends on TASK-081 (canonical surface) + TASK-082 (pi-workflows duplicate removal — without 082, repointing alone leaves dead pi-workflows surface intact). monitors becomes a sibling consumer of pi-jit-agents alongside pi-workflows (DEC-0049 uniform-agent axiom)."
+}

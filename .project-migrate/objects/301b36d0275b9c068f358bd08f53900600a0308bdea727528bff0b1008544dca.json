@@ -1,0 +1,35 @@
+{
+  "title": "Macro library bootstrap missing for user-added block kinds — framework provides canonical kinds' macros only; user-added kind has no scaffolding for vocabulary-neutral substrate",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-workflows",
+  "layer": "L4",
+  "description": "Per DEC-0025 (vocabulary-neutral substrate canon), user must be able to author any block kind via config + schema + macro and have pi-context's machinery operate on it. packages/pi-workflows/templates/shared/macros.md ships per-block-kind Nunjucks render macros for canonical kinds (decisions / framework-gaps / etc.); FGAP-037 tracks 6 missing macros for canonical kinds. Beyond that gap: user-added block kinds (e.g. 'initiatives' / 'OKRs' / 'experiments' for a different substrate conception) have no canonical scaffolding pattern — no documentation of macro shape, no template generator, no auto-fallback rendering for kinds without dedicated macros. Result: even if user installs custom block kinds via config + schemas, prompt-injection rendering (block injection per DEC-0017 contextBlocks pattern) cannot proceed without authoring per-kind macros. Framework's vocabulary-neutrality claim is partially undelivered at the prompt-substrate layer.",
+  "evidence": [
+    {
+      "file": "packages/pi-workflows/templates/shared/macros.md",
+      "reference": "Per-block-kind render macros — only for canonical kinds; FGAP-037 enumerates 6 missing among canonical set"
+    },
+    {
+      "file": ".project/framework-gaps.json",
+      "reference": "FGAP-037 macro library coverage gap for canonical kinds; FGAP-057 extends to user-added kinds"
+    },
+    {
+      "file": "packages/pi-jit-agents/src/compile.ts",
+      "reference": "contextBlocks injection assumes macro per block kind exists; no fallback for user-added kinds"
+    },
+    {
+      "file": ".project/decisions.json",
+      "reference": "DEC-0025 vocabulary-neutral substrate canon principle — implies macro library must support arbitrary user-defined kinds"
+    }
+  ],
+  "impact": "User adopting pi-context with non-default substrate conception cannot inject their custom block kinds into agent prompts via the canonical contextBlocks pattern without authoring macros per-kind. No documentation guides what macro shape to author. No fallback render exists when macro absent (silent fail or template error). Vocabulary-neutrality is partially blocked at the prompt-substrate layer; downstream effect: in-pi LLM operating on user-defined substrate cannot receive context-block-injected prompts for those user kinds.",
+  "canonical_vocabulary": "macro-library-bootstrap, user-added-block-macro, fallback-render, prompt-substrate-vocabulary-neutrality",
+  "proposed_resolution": "Three-part: (a) Document the canonical macro shape — what fields a render macro must accept (block items array; injection delimiters; budget hints); add a 'authoring custom block macros' section to skill-narratives + CLAUDE.md. (b) Auto-discovery — pi-jit-agents compile-time looks for macros in three-tier search (.pi/templates → user templates → package); user drops a macro file matching kind name and framework picks it up. Already partially implemented per CLAUDE.md three-tier mention; verify cascade works for user-added kinds. (c) Fallback render — when no macro exists for a kind, framework auto-generates a minimal render (item iteration + key-value output) with a warning surfaced via execution-context diagnostics; prevents silent fail. Cross-decision with FGAP-037 (canonical-kind macro coverage) — same workstream extends to user-added kind support.",
+  "related_features": [],
+  "related_decisions": [
+    "DEC-0017",
+    "DEC-0025"
+  ],
+  "related_issues": []
+}

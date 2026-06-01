@@ -1,0 +1,10 @@
+{
+  "title": "Framework gap FGAP-001 — pi-project does not support hierarchical/nested block storage",
+  "body": "block-api.ts assumes one flat JSON file per block. There is no way to express a nested decomposition like roadmap → milestone → epic → story → task as a directory tree; work decomposition must be smuggled into a single flat array with denormalized parent references, losing scope ownership and forcing the global tasks.json to conflate work across all levels. The L3 Work layer of the Muni five-layer model (see .project/layer-plans.json PLAN-001) cannot be natively represented until readBlock / writeBlock / appendToBlock gain subpath support and availableBlocks gains nested-directory discovery. Hand-enacted today via flat features.json with stories and tasks embedded as arrays — features/{id}.json per feature is the target once this gap closes. Canonical owner: .project/framework-gaps.json FGAP-001. Related artifact: FEAT-001 STORY-004/005 (consumer migration) which operates on the flat-block substrate until this lands. Canonical vocabulary: hierarchical work breakdown structure (WBS); nested aggregate storage.",
+  "location": "packages/pi-context/src/block-api.ts, packages/pi-context/src/project-dir.ts",
+  "status": "open",
+  "category": "capability",
+  "priority": "high",
+  "package": "pi-project",
+  "source": "agent"
+}

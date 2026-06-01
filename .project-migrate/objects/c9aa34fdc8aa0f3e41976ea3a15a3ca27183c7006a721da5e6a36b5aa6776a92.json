@@ -1,0 +1,32 @@
+{
+  "title": "output.format: text combined with tools[] is structurally allowed but produces prose-only output — no compile-time conflict check",
+  "status": "identified",
+  "package": "@davidorex/pi-jit-agents",
+  "priority": "P0",
+  "layer": "L1",
+  "description": "An agent spec declaring both `output.format: text` and `tools: [...]` passes schema validation but produces incoherent dispatch behavior. The `tools` array in an agent spec is purely declarative — executeAgent at packages/pi-jit-agents/src/jit-runtime.ts does NOT wire the declared tools into the model context unless `outputSchema` is set (which triggers the phantom-tool forced-toolChoice path at lines 566-570). With `output.format: text`, no outputSchema is set, no phantom tool is registered, no forced toolChoice is applied; the model is free to emit prose. The model sees the system/task prompts (which may mention tools by name) but no actual tools wired in. The model defaults to describing what it would do rather than invoking tool calls. The framework does not validate the conflict; no warning is issued.",
+  "evidence": [
+    {
+      "file": "/Users/david/Projects/clock-menu-app/.context/usage-feedback.json",
+      "lines": "343-355",
+      "reference": "FB-018 'output.format: text combined with tools biases model toward prose description instead of tool invocation'; actual_behavior: spec-requirements-miner with output.format: text, tools: [read, append-block-item] produced 'I will start by reading...' with zero tool calls; the model described its plan instead of executing it"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+      "lines": "186-225",
+      "reference": "Investigation report FB-018 section confirms compile.ts compileAgent + jit-runtime.ts:566-570 verbatim; verdict 'Compile-time validation (compile.ts compileAgent function)' — add check: if spec.outputSchema && spec.outputFormat === 'text' throw AgentCompileError; if spec.tools.length > 0 && spec.outputFormat === 'text' console.warn; alternatively schema-level mutual exclusion"
+    },
+    {
+      "file": "/Users/david/Projects/workflowsPiExtension/analysis/2026-05-30-clock-menu-app-fb-dispatch-runtime.md",
+      "lines": "229-303",
+      "reference": "Investigation report Single-Turn-Dispatch section CONFIRMS executeAgent contains NO LOOP — single try block with ONE completeFn call; tool invocation is the responsibility of the ORCHESTRATOR, not executeAgent; the declared tools array in the spec is purely declarative; this is the architectural context that makes FB-018 a configuration trap, not a runtime bug"
+    }
+  ],
+  "impact": "Agent authors declare a spec believing it will iteratively invoke its declared tools; the spec passes schema validation, dispatches without error, and produces prose that describes a plan instead of taking action. The framework provides no diagnostic. The author cannot tell from the spec, the schema, the dispatch result, or the documentation that text + tools is incoherent. This intersects with the architectural single-turn-dispatch property of executeAgent (also confirmed in the source report) — tools declared in the spec are not auto-wired to the model; the orchestrator owns the loop. Authors writing tool-using agents must understand both axioms.",
+  "proposed_resolution": "Code at packages/pi-jit-agents/src/compile.ts compileAgent function — add compile-time validation per investigation verdict: `if (spec.outputSchema && spec.outputFormat === 'text') throw new AgentCompileError(spec.name, 'conflicting output.format text and outputSchema; use output.format json or remove outputSchema')`; `if (spec.tools && spec.tools.length > 0 && spec.outputFormat === 'text') console.warn('[pi-jit-agents] agent <name>: output.format text with tools[] may bias model away from tool use; consider output.format json')`. Schema-level alternative: make `outputSchema` and `outputFormat: text` mutually exclusive in the AgentSpec schema, or require `outputFormat: json` when tools are declared. The schema-level fix is stronger but requires FGAP-156 (canonical-shape parity) to land first.",
+  "canonical_vocabulary": "output-format vs tools coherence check",
+  "related_decisions": [
+    "DEC-0002",
+    "DEC-0049"
+  ]
+}

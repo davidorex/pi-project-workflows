@@ -1,0 +1,40 @@
+{
+  "target": "TASK-047",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-21T00:00:00Z",
+  "evidence": "Unit 2.6 zero-loss state machinery — commits 0cbd676 (A: currentState + atomic-next + topo.ts extraction + context-current-state tool + current-state.ts), 5758d1f (B source: status-consistency invariant class + status-vocab.ts + currentState bucketing + planned->todo defaults fix), 97e095b (B config-data: 3 task-relationship relation_types + 4 status-consistency declarations into conception.json + .project/config.json). Verified DEC-0018: build/check/test green (pi-context 486 / pi-jit-agents 151 / behavior-monitors 157 / pi-workflows 829, 0 fail). status-consistency: 6 tests (require fires+clears, forbid fires, edge-gated silent, when_bucket filter, vocabulary-neutral via status_buckets override). Runtime demo: currentState('.') derives focus/inFlight/nextActions/blocked; validateProject('.') reports 0 status-consistency issues (edge-gated on the frozen edgeless .project). Adversarial: grep confirms no block/status/relation literal in the consumer; no project-sdk<->roadmap-plan cycle. Sub-unit C (harness-side projection) reclassified out of extension scope per the DEC-0040 amendment (commit ce9fe92). Sub-unit D (commit 4cbcf31): +12 status-bucket completeness mappings (samples-conception vocab) + status-vocab.test.ts conception-completeness guard. Additivity proof: validateProject('.') issue-set byte-identical HEAD-statusvocab vs D-statusvocab on the same substrate (the 58->59 delta was the TASK-047 cascade filing, not a bucket effect); currentState('.') unchanged. Adversarial: guard fails citing closed [framework-gaps] when the mapping is removed, green on restore. pi-context 490 tests (+4).",
+  "criteria_results": [
+    {
+      "criterion": "currentState(cwd) derives {focus, inFlight, nextActions, blocked}; atomic-next ranks by priority + topoSort over task_depends_on_task",
+      "status": "passed",
+      "evidence": "runtime demo currentState('.'); sub-unit A commit 0cbd676"
+    },
+    {
+      "criterion": "config-declared status-consistency invariant class detects cross-block drift, vocabulary-neutral + edge-gated",
+      "status": "passed",
+      "evidence": "6 status-consistency tests + adversarial grep; validateProject('.') 0 issues edge-gated"
+    },
+    {
+      "criterion": "status-vocab + topo extracted; no project-sdk<->roadmap-plan cycle",
+      "status": "passed",
+      "evidence": "grep-verified acyclic; topo.ts + status-vocab.ts"
+    },
+    {
+      "criterion": "STATUS_VOCABULARY_DEFAULTS planned->todo completeness fix",
+      "status": "passed",
+      "evidence": "currentState blocked/ready test green after fix"
+    },
+    {
+      "criterion": "sub-unit C reclassified harness-side per DEC-0040 amendment",
+      "status": "passed",
+      "evidence": "DEC-0040 amended + FGAP-072 recast, commit ce9fe92"
+    },
+    {
+      "criterion": "comprehensive status-bucket completeness (sub-unit D) + enforceable conception guard",
+      "status": "passed",
+      "evidence": "D1 +12 mappings (grounded in samples semantics) + D2 status-vocab.test.ts; additivity + adversarial verified; commit 4cbcf31"
+    }
+  ]
+}

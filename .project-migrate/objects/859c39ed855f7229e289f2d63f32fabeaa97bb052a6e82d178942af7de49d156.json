@@ -1,0 +1,24 @@
+{
+  "title": "upsertItemInBlock replacement-mode strips created_by/created_at on update path",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "upsertItemInBlock (Step 6 / commit 523fa96) implements 'find-or-append' with REPLACE semantics on the update branch — when an existing item with matching idField is found, the supplied item REPLACES it entirely. stampItem mode='update' (per Step 3.1 fix) deliberately does not refresh created_by/created_at. The interaction means: if a caller supplies an item without those fields and the schema declares them, the existing on-disk created_* values are stripped. Violates FGAP-004 attestation integrity (created_by should persist across updates so origin authorship is traceable).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "upsertItemInBlock body: on idField match, items[idx] = stampedItem (full replacement). stampedItem comes from maybeStampItem(..., 'update') which does not set created_*."
+    },
+    {
+      "file": "packages/pi-context/src/dispatch-context.ts",
+      "reference": "stampItem mode='update' branch: only modified_by/modified_at refresh; created_* explicitly skipped to preserve original-author intent — but only works when caller PRESERVES the field, not when caller REPLACES the whole item."
+    },
+    {
+      "file": "packages/pi-context/src/block-api.test.ts",
+      "reference": "Phase A test #4 documents the actual behavior: upsert-update without explicit created_* in supplied item leaves those fields ABSENT on disk."
+    }
+  ],
+  "impact": "Bundled monitor templates (fragility, work-quality) currently use merge: 'append' so no live regression. But any future consumer using merge: 'upsert' (with monitor or any other writer kind) silently destroys author attestation on every update. The FGAP-004 closure surface (Step 3) is undermined by Step 6's upsert primitive. Affects: monitor upsert-templates, any future agent/workflow using upsertItemInBlock for state mutation against a schema declaring created_*.",
+  "proposed_resolution": "Two coherent shapes — user decides:  (a) Make upsertItemInBlock perform field-level merge instead of replace: on update, read existing item, shallow-merge supplied item over it (preserving fields not in supplied), then stamp. Preserves attestation by construction; matches typical 'upsert' semantic in databases.  (b) Make upsertItemInBlock preserve created_by/created_at specifically on update: read existing item, copy created_* fields into supplied item before replacement, then stamp. Surgical fix; preserves only attestation.  Path (a) is cleaner contract; path (b) is minimal change. Either closes the attestation-loss fragility. Migration registry entry not required (existing on-disk data unaffected; only future upsert calls change behavior)."
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Dead 'thinking: on' config in five bundled classifier agent YAMLs — silently dropped by classify path",
+  "body": "All five bundled classifier agent YAMLs in packages/pi-behavior-monitors/agents/ (hedge-classifier, commit-hygiene-classifier, fragility-classifier, work-quality-classifier, unauthorized-action-classifier) declare 'thinking: on' in their spec. The classify path at packages/pi-behavior-monitors/index.ts:1235-1248 does NOT forward thinking to the complete() call — the parameter object passed to complete() omits the thinking field entirely. The comment at index.ts:1231 acknowledges that the Anthropic API rejects thinking + forced toolChoice, so thinking must stay off when the dispatch uses a phantom-tool verdict shape. Net effect: YAML config is dead — agents authors writing new classifier YAMLs will repeat the mistake. Gated on DEC-0002 (.project/decisions.json) which proposes that executeAgent in pi-jit-agents enforce thinking=off when toolChoice.type === 'tool' is present and emit a structured diagnostic warning. Bundled YAML updates are STORY-006 of FEAT-001 in .project/features.json. Canonical owner: FEAT-001 + DEC-0002.",
+  "location": "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml, packages/pi-behavior-monitors/agents/commit-hygiene-classifier.agent.yaml, packages/pi-behavior-monitors/agents/fragility-classifier.agent.yaml, packages/pi-behavior-monitors/agents/work-quality-classifier.agent.yaml, packages/pi-behavior-monitors/agents/unauthorized-action-classifier.agent.yaml, packages/pi-behavior-monitors/index.ts:1231-1248",
+  "status": "open",
+  "category": "cleanup",
+  "priority": "medium",
+  "package": "pi-behavior-monitors",
+  "source": "agent"
+}

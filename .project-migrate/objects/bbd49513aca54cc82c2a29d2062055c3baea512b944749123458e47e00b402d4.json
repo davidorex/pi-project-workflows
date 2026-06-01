@@ -1,0 +1,35 @@
+{
+  "target": "TASK-075",
+  "target_type": "task",
+  "status": "passed",
+  "method": "test",
+  "evidence": "FGAP-103 (DRY element-read primitive). Static: build/check/test all exit 0, 4 pkgs 0-fail; read-element.test.ts (serializeForRead paging/truncation, pageArray shared-math, addressInto id/key/path/miss) + index.test.ts (read-config registry/id addressing; list-tools compact-default + name-detail) pass. Orchestrator adversarial re-grep: read-element.ts PURE (only truncateHead import); 23 serializeForRead sites + ZERO truncateHead / [Truncated: left in index.ts (no parallel serialize path); one discoverArrayKey + one pageArray + one addressInto (no parallel paging/walker); readBlockItem->addressInto, readBlockPage->pageArray. Runtime demo (credentialed, --extension dist/index.js): FGAP-090-routed agent called read-config with {registry:relation_types} and got ONLY that registry (element-addressed, not whole-config). Record: analysis/2026-05-25-fgap-103-runtime-demo.md.",
+  "timestamp": "2026-05-25T00:00:00Z",
+  "criteria_results": [
+    {
+      "criterion": "one pure read-element primitive (serializeForRead envelope + addressInto id|key|path)",
+      "status": "passed",
+      "evidence": "read-element.ts pure; unit tests pass"
+    },
+    {
+      "criterion": "all whole-blob read handlers routed through serializeForRead — zero inline [Truncated:/truncateHead in index.ts",
+      "status": "passed",
+      "evidence": "grep: 23 serializeForRead, 0 truncateHead, 0 [Truncated: in index.ts"
+    },
+    {
+      "criterion": "element addressing on read-config (registry/id) + read-schema (path) + list-tools (name; default compact index — FGAP-101 closed)",
+      "status": "passed",
+      "evidence": "index.test + runtime demo (read-config registry addressed)"
+    },
+    {
+      "criterion": "readBlockItem/readBlockPage refactored onto the primitive (no parallel paging/addressing math)",
+      "status": "passed",
+      "evidence": "one pageArray + one addressInto; read-block-page tests unchanged-green"
+    },
+    {
+      "criterion": "build/check/test green, no regression",
+      "status": "passed",
+      "evidence": "all exit 0; 4 pkgs 0-fail"
+    }
+  ]
+}

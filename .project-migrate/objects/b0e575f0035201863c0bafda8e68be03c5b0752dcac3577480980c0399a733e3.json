@@ -1,0 +1,55 @@
+{
+  "title": "Status-bucket normalization mapping — bridge per-block status enums to canonical buckets",
+  "status": "open",
+  "context": "Per current substrate observation across blocks: decisions enum = open / enacted / superseded; framework-gaps = identified / closed; tasks = planned / completed (+ schema permits in-progress / blocked / cancelled); verifications = passed (+ schema permits failed / skipped); issues = open / resolved; roadmap = draft / active / paused / complete / archived; phase = planned / in-progress / completed; research = complete / superseded. Three lifecycle families surface: (a) workflow-state (planned → in-progress → completed → blocked / cancelled — used by tasks / phase / features); (b) gate-state (open → closed; identified → closed — used by issues / framework-gaps); (c) authority-state (open → enacted → superseded — used by decisions / research with supersedes lineage); plus authoring-state (draft → active → paused → complete → archived — used by roadmap). config.status_buckets (declared in config.schema.json as additionalProperties enum complete / in_progress / blocked / todo / unknown) is the bridge: maps any raw status string → bucket, enabling cross-block status rollup. Currently config.status_buckets empty in this repo. FGAP-021 records the reconciliation gap.",
+  "decision": "OPEN: status-bucket normalization mapping. Mandate-compliant options below.",
+  "consequences": [
+    "Cross-block 'is X complete?' queries become uniform regardless of source block's enum vocabulary.",
+    "Lens binning by status uses the bucket layer rather than per-block enum literal.",
+    "roadmap-plan + future status-aware projection primitives consume the bucket map.",
+    "FGAP-021 closes once mapping declared + consumed."
+  ],
+  "options_considered": [
+    {
+      "label": "Per-block-enum mapping declared exhaustively",
+      "description": "config.status_buckets carries every observed enum value mapped to bucket: { 'open': 'todo', 'enacted': 'complete', 'superseded': 'complete', 'identified': 'todo', 'closed': 'complete', 'planned': 'todo', 'in-progress': 'in_progress', 'completed': 'complete', 'blocked': 'blocked', 'cancelled': 'complete', 'passed': 'complete', 'failed': 'blocked', 'skipped': 'unknown', 'resolved': 'complete', 'draft': 'todo', 'active': 'in_progress', 'paused': 'blocked', 'complete': 'complete', 'archived': 'complete', 'aspirational': 'todo', 'satisfied': 'complete' }. Every enum value maps explicitly.",
+      "tradeoffs": "Comprehensive; explicit; requires re-curation when new enum values added; one config map shared across all blocks (collision risk on reused enum strings — e.g. 'open' means todo across decisions/issues but does it mean the same in another future block?)."
+    },
+    {
+      "label": "Per-block scoped mapping",
+      "description": "config.status_buckets becomes nested: { 'decisions': { 'open': 'todo', ... }, 'tasks': { ... }, 'issues': { ... } }. Each block has its own enum-to-bucket map.",
+      "tradeoffs": "Resolves collision risk; more verbose; matches authoring-locality of enums per schema."
+    },
+    {
+      "label": "Schema-declared bucket field per status enum value",
+      "description": "Each block schema's status enum field declares bucket inline: enum: ['planned', 'completed'], x-bucket: { 'planned': 'todo', 'completed': 'complete' }. Config.status_buckets retired; bucket lives with the schema.",
+      "tradeoffs": "Bucket co-located with enum declaration; schema migration required for every block; AJV doesn't validate the x-bucket extension by default."
+    },
+    {
+      "label": "Adopt all default observable enums uniformly with global flat map",
+      "description": "Global flat map per option (a); accept collision risk by ensuring 'open' / 'closed' / 'planned' / etc. always mean the same thing across blocks (enforce at schema-write time).",
+      "tradeoffs": "Simplest; requires discipline in schema authoring; if a future block uses 'open' to mean something else, it's a violation of the canon, not a config issue."
+    }
+  ],
+  "references": [
+    {
+      "label": "config.schema.json status_buckets shape",
+      "path": "packages/pi-context/registry/schemas/config.schema.json",
+      "lines": "57-64"
+    },
+    {
+      "label": "FGAP-021 status-vocabulary reconciliation",
+      "path": ".project/framework-gaps.json"
+    },
+    {
+      "label": "Per-block status enum observations",
+      "path": "analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md"
+    }
+  ],
+  "related_findings": [],
+  "related_features": [],
+  "related_gaps": [
+    "FGAP-021",
+    "FGAP-047"
+  ]
+}

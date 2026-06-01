@@ -1,0 +1,70 @@
+{
+  "target": "TASK-031",
+  "target_type": "task",
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-05-13T00:00:00Z",
+  "evidence": "FGAP-035 closure verified at HEAD e88d7ee. Implementer commit f17efa3 applied 11 cascade-target rows verbatim; follow-up commit e88d7ee dropped 12th forbidden-phrase site at project-dir.ts:44 (BootstrapNotFoundError JSDoc) surfaced by adversarial probe. Post-commit greps: `grep -rn '= PROJECT_DIR' packages/pi-context/src/` returns 0; `grep -rn '\".project\"' packages/pi-context/src/ --include=\"*.ts\" | grep -v .test.ts | grep -v project-dir.ts` returns 0; forbidden JSDoc-framing phrases grep across project-dir.ts + index.ts returns 0. TypeScript negative-demo confirms writeBootstrapPointer signature change (Expected 2 arguments, but got 1). Round-trip positive-demo confirms cascade-through-pointer works with caller-supplied non-default contextDir. Test counts post-commit (via husky pre-commit hook landing): pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0. Adversarial probe verdict: 9 PASS / 1 INCONCLUSIVE (Q10 husky-test-log not persisted; substantively PASS — exit-code IS verification). FGAP-035 closed; TASK-021 phase-1 acceptance criterion 4 met via prior 1.3.A read-config/read-schema tools.",
+  "criteria_results": [
+    {
+      "criterion": "writeBootstrapPointer signature has no parameter default",
+      "status": "passed",
+      "evidence": "project-dir.ts:160 reads `export function writeBootstrapPointer(cwd: string, contextDir: string): void`"
+    },
+    {
+      "criterion": "initProject signature requires contextDir param",
+      "status": "passed",
+      "evidence": "index.ts:227 reads `function initProject(cwd: string, contextDir: string): { created: string[]; skipped: string[] }`"
+    },
+    {
+      "criterion": "project-dir.ts JSDoc rewritten removing default-as-feature framing",
+      "status": "passed",
+      "evidence": "Lines 13-15 module header, 38-46 BootstrapNotFoundError, 97-99 resolveContextDir, 147-159 writeBootstrapPointer JSDoc all rewritten; forbidden phrases grep returns 0 across project-dir.ts + index.ts"
+    },
+    {
+      "criterion": "index.ts initProject body comment block rewritten",
+      "status": "passed",
+      "evidence": "index.ts:228-233 comment block rewritten removing 'Default substrate-dir name is .project (the legacy convention); future /context init ceremony will prompt'"
+    },
+    {
+      "criterion": "handleInit parses positional contextDir + emits ctx.ui.notify error on missing",
+      "status": "passed",
+      "evidence": "index.ts:384-410 handleInit body parses args.trim().split(/\\s+/)[0]; missing-arg emits exact error string from TASK-031 acceptance criterion 5"
+    },
+    {
+      "criterion": "PROJECT_SUBCOMMANDS init dispatch passes args (not _args)",
+      "status": "passed",
+      "evidence": "index.ts:1248 reads `handler: (args, ctx) => handleInit(args, ctx),`"
+    },
+    {
+      "criterion": "project-init pi tool parameters schema declares required contextDir Type.String",
+      "status": "passed",
+      "evidence": "index.ts:942-946 parameters block declares Type.Object({ contextDir: Type.String({...}) }) — no Type.Optional, no default"
+    },
+    {
+      "criterion": "project-init pi tool execute body passes params.contextDir to initProject",
+      "status": "passed",
+      "evidence": "index.ts:947-954 execute signature params: { contextDir: string }; calls initProject(ctx.cwd, params.contextDir)"
+    },
+    {
+      "criterion": "168 test sites pass without modification",
+      "status": "passed",
+      "evidence": "git diff-tree --no-commit-id --name-only -r f17efa3 returns only project-dir.ts + index.ts; no test files in commit diff"
+    },
+    {
+      "criterion": "Full test suite green across all 4 packages",
+      "status": "passed",
+      "evidence": "Husky pre-commit hook ran `npm run check && npm test` on both commits f17efa3 + e88d7ee; both landed without --no-verify. Post-commit counts pinned: pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0"
+    },
+    {
+      "criterion": "Production grep returns zero hardcoded substrate-dir literals",
+      "status": "passed",
+      "evidence": "All four grep verifications return 0 matches at HEAD e88d7ee"
+    },
+    {
+      "criterion": "grep '= PROJECT_DIR' returns 0",
+      "status": "passed",
+      "evidence": "Verified at HEAD e88d7ee"
+    }
+  ]
+}

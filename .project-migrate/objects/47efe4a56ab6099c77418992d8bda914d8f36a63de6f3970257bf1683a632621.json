@@ -1,0 +1,10 @@
+{
+  "title": ".pi/agents reads contradict README directory ownership declaration — framework code violates stated architecture",
+  "body": "README.md and CLAUDE.md declare '.pi/ is Pi platform territory. Neither extension writes to it.' But createAgentLoader() in packages/pi-workflows/src/agent-spec.ts:141 searches .pi/agents/ as the first tier in the agent discovery path. The search tests at packages/pi-workflows/src/workflow-sdk.test.ts reference .pi/agents/ extensively. SKILL.md documents the path. This is a structural incoherence: the declared architecture says .pi/ is Pi's namespace and nothing in our packages writes to it, but our framework code READS from .pi/agents/ as part of agent discovery. Either the declaration is wrong or the code is wrong. Extension: the declared architecture is authoritative per later README commits; createAgentLoader() must be updated to search a consumer-owned location instead of .pi/agents/. Current provisional replacement (D7 in jit-agents-spec.md): .project/agents/ → ~/.pi/agent/agents/ → package/agents/. The user-global ~/.pi/ path is a separate question — it may itself need to move.",
+  "location": "packages/pi-workflows/src/agent-spec.ts:141",
+  "status": "open",
+  "category": "issue",
+  "priority": "high",
+  "package": "pi-workflows",
+  "source": "human"
+}

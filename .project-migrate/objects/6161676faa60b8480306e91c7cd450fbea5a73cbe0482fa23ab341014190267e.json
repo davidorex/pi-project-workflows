@@ -1,0 +1,7 @@
+{
+  "title": "Update commit-hygiene-classifier.agent.yaml",
+  "status": "todo",
+  "files": [
+    "packages/pi-behavior-monitors/agents/commit-hygiene-classifier.agent.yaml"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "title": "Add pi-jit-agents dependency",
+  "status": "todo",
+  "files": [
+    "packages/pi-behavior-monitors/package.json"
+  ]
+}

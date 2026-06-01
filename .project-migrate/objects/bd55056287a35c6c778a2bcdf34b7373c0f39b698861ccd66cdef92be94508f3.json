@@ -1,0 +1,54 @@
+{
+  "title": "Agent-facing /context init guidance omits or inconsistently names the required <substrate-dir> argument",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "layer": "L1",
+  "description": "Several agent-facing strings instruct the agent/human to 'run /context init' WITHOUT the required substrate-dir argument, or with an inconsistent placeholder token. Per DEC-0015 /context init takes a user-chosen dir name (no default; suggested .context); a bare '/context init' under-specifies the onboarding step. The codebase already carries two correct idioms: the placeholder form '/context init <substrate-dir>' (orientation.ts:36, index.ts:1179/1411, and the FGAP-106 edits at lens-view.ts:48/229, roadmap-plan.ts:301) and the self-explaining form (index.ts:400: '/context init requires a substrate dir name (e.g. .context). Per DEC-0015, no default'). The defective sites diverge from both. Same onboarding-guidance-accuracy family as FGAP-107 (/context start) but a distinct class (command-argument completeness, not command name). Partly INTRODUCED by FGAP-106's rule-3 (append <substrate-dir> to /context init only inside the .project-bearing strings being edited), which left sibling bare strings inconsistent. Surfaced by the FGAP-106 fresh-context audit. Enumeration to be made exhaustive via explore (audit listed 6; prior FGAP-106 passes proved first-pass enumerations non-exhaustive).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "175,311",
+      "reference": "'No .pi-context.json bootstrap pointer found. Run /context init first to bootstrap the substrate.' — bare /context init (notify + result.error)"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "316",
+      "reference": "'No config.json found in substrate dir — run /context init first.' — bare"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "437",
+      "reference": "notify('Run /context init <dir> first') — uses <dir>, inconsistent with the <substrate-dir> token used elsewhere"
+    },
+    {
+      "file": "packages/pi-workflows/src/workflow-sdk.ts",
+      "lines": "487",
+      "reference": "'Block schema not found ... Run /context init to scaffold schemas.' — bare, in a validation issue message"
+    },
+    {
+      "file": "packages/pi-context/src/context-dir.ts",
+      "lines": "48",
+      "reference": "thrown: 'no .pi-context.json bootstrap pointer ...; run /context init to declare substrate dir per DEC-0015' — bare"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "400,1179,1411",
+      "reference": "the CORRECT established idioms (self-explaining at 400; <substrate-dir> placeholder at 1179/1411) to converge the defective sites onto"
+    }
+  ],
+  "impact": "A fresh agent steered by these messages tells the human to 'run /context init' without naming that it requires a chosen dir argument — incomplete onboarding guidance, same first-contact mis-onboarding family as FGAP-106/107. The <dir> vs <substrate-dir> token split also presents an inconsistent vocabulary for the same concept.",
+  "canonical_vocabulary": "onboarding command-affordance completeness / consistent placeholder vocabulary",
+  "proposed_resolution": "Exhaustively enumerate all agent-facing /context init|accept-all|install mentions (src + behavior-monitors/index.ts + skill-narrative.md + generated SKILL.md), then converge every /context init mention onto a single canonical idiom: the placeholder '/context init <substrate-dir>' for terse error/notify strings, or the self-explaining form (cite DEC-0015 'no default; you choose the name') where space allows; retire the '<dir>' token in favor of '<substrate-dir>'. Update lockstep tests; regenerate SKILL.md. Verify via the same DEC-0018 gate (build/check/test + live constrained run + fresh-context audit). Resolve under TASK-079 alongside FGAP-106/107.",
+  "related_decisions": [
+    "DEC-0015",
+    "DEC-0011",
+    "DEC-0042"
+  ],
+  "related_issues": [
+    "FGAP-106",
+    "FGAP-107",
+    "FGAP-095",
+    "FGAP-066"
+  ]
+}

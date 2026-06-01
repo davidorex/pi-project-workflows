@@ -210,9 +210,16 @@ function substrateHasItem(s: DiscoveredSubstrate, refname: string): boolean {
  */
 export function migrateToContentAddressed(
 	cwd: string,
-	opts?: { dryRun?: boolean; legacyAliases?: Record<string, string>; onlySubstrates?: string[]; ctx?: DispatchContext },
+	opts?: {
+		dryRun?: boolean;
+		legacyAliases?: Record<string, string>;
+		onlySubstrates?: string[];
+		register?: boolean;
+		ctx?: DispatchContext;
+	},
 ): MigrationReport {
 	const dryRun = opts?.dryRun ?? false;
+	const register = opts?.register ?? true;
 	const ctx = opts?.ctx;
 	const report: MigrationReport = {
 		substrates: [],
@@ -291,7 +298,7 @@ export function migrateToContentAddressed(
 			.filter(([, dirName]) => dirName === s.dirName)
 			.map(([alias]) => alias);
 		const aliases = Array.from(new Set([...prior, ...assigned]));
-		if (!dryRun) registerSubstrate(cwd, id, s.dirName, aliases, ctx);
+		if (!dryRun && register) registerSubstrate(cwd, id, s.dirName, aliases, ctx);
 	}
 
 	// ── Step 3: backfill oid / content_hash / objects (ALL substrates first) ──

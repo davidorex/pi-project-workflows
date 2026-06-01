@@ -103,7 +103,13 @@ The ONLY remaining Cycle-10 step. Goal: clear the active substrate's golden — 
 
 **`config.json` / `project.json` are metadata, NOT entity blocks** (block_kinds / relation_types / substrate_id; project facts). "Canonically structured" for them = schema-valid + registry-consistent + carrying the minted substrate_id — which the canonicalizer/wiring already produces. Content-addressing (per-item oid) does NOT apply (they're not arrays of entities). No separate step. (See `analysis/2026-06-01-pi-context-substrate-model-before-after.md`.)
 
-**After this pass:** the arc's founding objective is met (FGAP-185 / the 30 edges resolved); the substrate model before→after is documented in `analysis/2026-06-01-pi-context-substrate-model-before-after.md` (feeds README + the pi-context skill); the pre-publish step excises the `.project`-specific canonicalizer tooling.
+**FINAL step — the rename (operator-directed; the closing move).** `.project` stays PRISTINE throughout; only `.project-migrate` is ever mutated. As the LAST step, swap the names so the canonical archive takes the `.project` name and the untouched original is preserved:
+- `git mv .project .project-archived` — the pristine pre-migration original, preserved under a new name (inert: not active, unregistered, no substrate_id — a frozen pre-migration snapshot).
+- `git mv .project-migrate .project` — the canonicalized archive takes the `.project` name.
+- **Load-bearing requirement:** update the project-root registry (`.pi-context-registry.json`) so the canonical substrate's `substrate_id` (`sub-0c813fd8…`) maps `dir: ".project"` (was `.project-migrate`), via the canonical `registerSubstrate`/`writeRegistry` surface. The `project` alias stays → that substrate_id → now `.project`. The active substrate's converted edges carry `substrate_id` (not the dir name — rename-stable), so they keep resolving once the registry `dir` is updated. `git mv` preserves history; `objects/` + all files move with the dir.
+- Ordering note: the active-wiring (register `project`→the canonical substrate + convert the 30 edges) runs FIRST against `.project-migrate`; the rename is the final move + the registry-`dir` update. (The edge conversion resolves the alias to substrate_id at conversion time, so post-conversion edges are substrate_id-based and survive the rename; only the registry `dir` field needs the update.) Doable + clean.
+
+**After all of this:** the arc's founding objective is met (FGAP-185 / the 30 edges resolved); `.project` = the canonical content-addressed archive, `.project-archived` = the pristine original; the substrate model before→after is documented in `analysis/2026-06-01-pi-context-substrate-model-before-after.md` (feeds README + the pi-context skill); the pre-publish step excises the `.project`-specific canonicalizer tooling.
 
 ## Per-cycle loop (every cycle, no exceptions)
 

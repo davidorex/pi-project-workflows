@@ -5,28 +5,84 @@
   "title": "Tasks",
   "description": "Discrete units of work with status lifecycle (planned, in-progress, completed, blocked, cancelled). The operational layer between gaps/requirements and code changes.",
   "type": "object",
-  "required": ["tasks"],
+  "required": [
+    "tasks"
+  ],
   "properties": {
     "tasks": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "description", "status"],
+        "required": [
+          "id",
+          "description",
+          "status"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
-          "description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
-          "status": { "type": "string", "enum": ["planned", "in-progress", "completed", "blocked", "cancelled"] },
+          "id": {
+            "type": "string",
+            "pattern": "^TASK-\\d{3,}$"
+          },
+          "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "in-progress",
+              "completed",
+              "blocked",
+              "cancelled"
+            ]
+          },
           "files": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Files this task creates or modifies"
           },
           "acceptance_criteria": {
             "type": "array",
-            "items": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
+            "items": {
+              "type": "string",
+              "x-prompt-budget": {
+                "tokens": 1000,
+                "words": 800
+              }
+            }
           },
-          "assigned_agent": { "type": "string", "description": "Agent name if assigned" },
-          "notes": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
+          "assigned_agent": {
+            "type": "string",
+            "description": "Agent name if assigned"
+          },
+          "notes": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
         }
       }
     }

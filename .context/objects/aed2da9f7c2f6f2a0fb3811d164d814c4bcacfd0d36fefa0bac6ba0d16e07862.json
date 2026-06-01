@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-05-30T07:00:00-06:00",
+  "focus": "Investigated 18 FB items from clock-menu-app's usage-feedback via 4 parallel Explore agents (authoring / model-resolution / dispatch-runtime / substrate-surfaces); batch-filed 24 FGAPs (FGAP-153 through 176) covering jit-agents incoherence territory plus 2 from FB-014 split (FGAP-151/152 for run-work-order-loop documentation + alternative entry point).",
+  "discoveries": [
+    "tools[] in agent specs is declarative-only — executeAgent strips at grant-clamp boundary (jit-runtime.ts:488), never wires to LLM (line 568 delivers phantom-tool only when outputSchema set)",
+    "jit-agents-spec.md is outlier text vs canonical body (FEAT-005/006/DEC-0047/TASK-091/JI-029)",
+    "Capability-grant infrastructure (FEAT-004/005/DEC-0047/TASK-089/092) dormant at agent-dispatch tier; operates correctly at orchestrator-tier only",
+    "Fixing author-agent-spec kills 5 FBs (FB-001/002/003/005/006); kill-map identified across the 4 buckets"
+  ],
+  "decisions_made": [
+    "4-bucket partition for FB triage (authoring / model-resolution / dispatch-runtime / substrate-surfaces)",
+    "Mandate-007 applied: bundled-sample staleness folded in-scope as sub-step 1d during FEAT-001 template-relocation arc",
+    "Lazy-migration discipline established: .project frozen; .context content moves only on first canonical need"
+  ],
+  "current_status": "26 jit-agents FGAPs filed in .project (FGAP-151..178); per-FB kill-map mapped to surfaces; substrate-coherence territory mapped but not yet decided",
+  "next_steps": [
+    "Substrate-contradiction audit to verify the 22 contradictions catalogued",
+    "Articulate path to substrate consistency for jit-agents canon",
+    "Sharpen any FGAP-bodies that carry LLM-credulous framing"
+  ]
+}

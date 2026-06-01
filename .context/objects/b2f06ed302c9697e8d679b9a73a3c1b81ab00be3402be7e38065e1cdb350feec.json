@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-05-30T12:15:00-06:00",
+  "focus": "Filed FGAP-181 (per-script --help discoverability) + FGAP-182 (framework-use discoverability via self-documenting substrate) completing the 3-layer orchestrator-surface-discoverability territory map (Layer 1 FGAP-180 / Layer 2 FGAP-181 / Layer 3 FGAP-182). Committed pre-existing CLAUDE.md substrate-id strips (16 edits removing DEC/FGAP/F-NNN provenance citations per invariant-rules-only discipline). Authored 400-line interim how-to doc at analysis/2026-05-30-pi-context-claude-code-howto.md as Layer 3 bridge until self-documenting substrate lands.",
+  "discoveries": [
+    "3-layer discoverability territory needs all three layers closed for fresh-Claude productivity: Layer 1 (CLI installability) + Layer 2 (per-script --help) + Layer 3 (canonical framework-use surface) — each insufficient alone",
+    "Without Layer 3 closure, a fresh Claude landing in this project tomorrow would not find /context switch how-to anywhere natural; interim how-to in analysis/ bridges until FGAP-182 substrate-typed guides arrive",
+    "Pointer-flip pattern used 3x this session for sequence-continuing .project filings — validated by repetition as the canonical cross-substrate-write surface",
+    "Pre-existing CLAUDE.md hold was operator-invented (mine), not operator-declared; same anti-pattern as performative-dismissal — treating something as exception when no exception was declared"
+  ],
+  "decisions_made": [
+    "File Layer 2 + Layer 3 as separate FGAPs (181 + 182) rather than fold into FGAP-180 — distinct scopes; each layer independently filable + addressable",
+    "Interim how-to doc lives in analysis/ until FGAP-182 substrate-typed guides land; maintenance contract documented in-document",
+    "feedback_commit_proactively memory filed to stop the recurring babysit-on-commits slip pattern this session demonstrated"
+  ],
+  "current_status": ".context substrate canonical: 17 block kinds + 29 relation_types + 4 SESSION entries (about to be 5) + 35 edges (about to be 37 after this filing). .project frozen at FGAP-182 + TASK-095 as latest entries (181 FGAPs + 95 TASKs + 66 VERs + 138 edges). Tree clean. Branch main at 83458e6. Active open arcs unchanged from SESSION-004: (1) FGAP-169 jit-agents canon-alignment — multi-tool dispatch loop in executeAgent pending; jit-agents-spec.md v2 rewrite pending; (2) FGAP-180 + TASK-095 — CLI elevation Layer 1; now framed in 3-layer territory with FGAP-181 Layer 2 + FGAP-182 Layer 3 also pending. Release HELD per session constraint. Push HELD per session constraint.",
+  "next_steps": [
+    "File SESSION-005 entry (this snapshot)",
+    "Operator scope-decision between resuming FGAP-169 jit-agents canon-alignment vs beginning TASK-095 CLI elevation — both pending, neither blocked; CLI elevation when undertaken should bundle Layer 2 (FGAP-181 --help convention) since they share the same code surface",
+    "Self-documenting substrate per FGAP-182 (operator scope-decision on single-omnibus vs split block-kinds — 7 candidates: commands / tools / runbooks / patterns / concepts / errors / axioms)",
+    "Maintain the how-to doc per its in-document maintenance contract until FGAP-182 lands"
+  ]
+}

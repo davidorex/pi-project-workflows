@@ -21,7 +21,9 @@
         "Substrate-contradiction audit to verify the 22 contradictions catalogued",
         "Articulate path to substrate consistency for jit-agents canon",
         "Sharpen any FGAP-bodies that carry LLM-credulous framing"
-      ]
+      ],
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "content_hash": "aed2da9f7c2f6f2a0fb3811d164d814c4bcacfd0d36fefa0bac6ba0d16e07862"
     },
     {
       "id": "SESSION-002",
@@ -42,7 +44,9 @@
         "Cutover surface for DEC-0036 (canonical pointer-flip operation)",
         "Resume jit-agents impl arc with surface available",
         "Author jit-agents-spec-v2.md per the canonical body"
-      ]
+      ],
+      "oid": "0ca4406f6fad4a9f8cf9d3a15dbb481a",
+      "content_hash": "77c78344f983df91895f20bcaa672c8713a6c74f002a892e49c465415121631e"
     },
     {
       "id": "SESSION-003",
@@ -64,7 +68,9 @@
         "Perform DEC-0036 cutover via /context switch -c .context",
         "Resume jit-agents canon-alignment work in newly-canonical .context substrate",
         "Lazy-customization framing for what .context blocks need beyond packaged baseline"
-      ]
+      ],
+      "oid": "85435d980e2adf391f75094fcdbcddec",
+      "content_hash": "3a9944eca7e7ee7dbf3f31d9a0dc45c3fe9007aa8add140b419ed5960f1b899f"
     },
     {
       "id": "SESSION-004",
@@ -89,7 +95,9 @@
         "Cross-substrate consultation tool when first .context item cites .project archaeology (sentinel resolution via references_cross_substrate_item edges)",
         "CLAUDE.md mod held all session — operator-decision on commit vs discard",
         "jit-agents-spec.md v2 rewrite — committed-to per SESSION-002 but not yet authored; substrate-coherence Phase 1"
-      ]
+      ],
+      "oid": "46a9229f944964a297a9f37a554b7018",
+      "content_hash": "30776a2aee5f1ba21b830c57326073fc54f5583697b3bbe2057a50e4eb7c9219"
     },
     {
       "id": "SESSION-005",
@@ -112,7 +120,9 @@
         "Operator scope-decision between resuming FGAP-169 jit-agents canon-alignment vs beginning TASK-095 CLI elevation — both pending, neither blocked; CLI elevation when undertaken should bundle Layer 2 (FGAP-181 --help convention) since they share the same code surface",
         "Self-documenting substrate per FGAP-182 (operator scope-decision on single-omnibus vs split block-kinds — 7 candidates: commands / tools / runbooks / patterns / concepts / errors / axioms)",
         "Maintain the how-to doc per its in-document maintenance contract until FGAP-182 lands"
-      ]
+      ],
+      "oid": "9a049f74f87f7a096f0568469de1c0e0",
+      "content_hash": "b2f06ed302c9697e8d679b9a73a3c1b81ab00be3402be7e38065e1cdb350feec"
     },
     {
       "id": "SESSION-006",
@@ -136,7 +146,9 @@
         "Design lenses (full-spec-render + decisions-only + open-questions + coverage-vs-v1 + impl-progress)",
         "Design invariants + conventions + context-contracts encoding spec-v2 operational patterns",
         "File initial spec items decomposed from the markdown"
-      ]
+      ],
+      "oid": "a83aff9e1a0ca4d4980d733a8cea2765",
+      "content_hash": "2cf30a8063d7f1657bd7e7c8048ab4541c52fa34938398ea413b12de5838e163"
     },
     {
       "id": "SESSION-007",
@@ -156,7 +168,9 @@
         "Remaining phase 3 (when prioritized): concepts items (boundary contract + agent signature + scope ownership as ~5 CONCEPT-NNN items) + any v1 Q-OPEN still-open → FGAPs in spec substrate + composition lens (full-spec-render walking the kinds in spec-section order)",
         "Implementation arc per FGAP-169 multi-tool dispatch loop in executeAgent — load-bearing for realizing DEC-0004/0008/0009/0010 at runtime; interlocks with FGAP-115 ExtensionContext gap",
         "Spec-v2 entity-graph is substantively-wired-enough that work resuming on the implementation arc can substrate-cite spec decisions canonically rather than markdown-cite"
-      ]
+      ],
+      "oid": "c4c3c3e2224910a21fd8ca1126a7449c",
+      "content_hash": "5a5458c9f5abab6abeac6f0ee512a18ba200d87880f4988e6720e5946539e4c8"
     },
     {
       "id": "SESSION-008",
@@ -180,7 +194,9 @@
         "TASK-001 (in .context-jit-spec-v2/tasks.json) is the precondition: resolve FGAP-115 (ExtensionContext currentModel/currentProvider gap) — collapse a/b/c options to canonical choice. Then TASK-002 (agentic-mode dispatch loop in jit-runtime.ts:432-738 realizing MODE-002 per DEC-0004/0008/0010) becomes unblocked.",
         "TASK-003 (list-dispatch-models) and TASK-005 (introspection surface) are parallel-eligible — no dep on TASK-002.",
         "FGAP-183 closure (MigrationRegistry contextDir override) is independent of the spec-v2 arc; landing it unblocks programmatic cross-substrate consultation, which in turn enables a future cross-substrate-tool that replaces the manual /context switch round-trips this session uses for cross-substrate filing."
-      ]
+      ],
+      "oid": "0f46433ed38ed39eb23675204865f951",
+      "content_hash": "856f4c8c5fa7d88899211139da053cc108c8e168b073888c55b71b894816c414"
     }
   ]
 }

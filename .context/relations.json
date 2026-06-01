@@ -1,187 +1,520 @@
 [
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-151",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "3da7533e25152728e20ddc1417196b59",
+      "refname": "FGAP-151"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-152",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "b74f811820a6821cbd89474580632887",
+      "refname": "FGAP-152"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-153",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "de1d1bfed9caeb10468ddf3d9cfde8cb",
+      "refname": "FGAP-153"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-154",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "339ed526cd469a7cf991eb0a2e5f66dc",
+      "refname": "FGAP-154"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-155",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "835e5692e10e5a55937c85a82cf04913",
+      "refname": "FGAP-155"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-156",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "4943336d5da7ee57cd8f7119fef74d09",
+      "refname": "FGAP-156"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-157",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "f89396f1b919f8250b5bf4d4f3f60df6",
+      "refname": "FGAP-157"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-158",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "3d15d93bdd66365f9d1c5ff185862c6d",
+      "refname": "FGAP-158"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-159",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "172e518aa16059fadf9814381bb52f5c",
+      "refname": "FGAP-159"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-160",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "82d28cc7b45d76b0be5ccce874759653",
+      "refname": "FGAP-160"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-161",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "6945a40ef7eab3376420e68350730671",
+      "refname": "FGAP-161"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-162",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "d3b79821fede85958808cf6cee7d6c5d",
+      "refname": "FGAP-162"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-163",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "fd6e5e7bc36339a361d9a2e93cbb94ba",
+      "refname": "FGAP-163"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-164",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "f72a6d531dc4213b2199a30e3326b138",
+      "refname": "FGAP-164"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-165",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "6f0fd85fb26d91351921eed9cd2aaec5",
+      "refname": "FGAP-165"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-166",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "7a7e4c4a944b8ba172b68d5a1dcfd126",
+      "refname": "FGAP-166"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-167",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "84e0179d5d28f68a5d56ed47b0dd350a",
+      "refname": "FGAP-167"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-168",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "f31860669c740a54237cf986e72c06dd",
+      "refname": "FGAP-168"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-169",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "805af0a5e97d40bf91bd9b0dfa5bb217",
+      "refname": "FGAP-169"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-170",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "e6c238f769b865cfe39c1d0544cb8e68",
+      "refname": "FGAP-170"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-171",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "90e633bba89a1c39feb8c0ab96b49db9",
+      "refname": "FGAP-171"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-172",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "239fd10aa91e853c3fd177a3922fd7f4",
+      "refname": "FGAP-172"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-173",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "1504b144a5a67139eb9391f8f0555a2d",
+      "refname": "FGAP-173"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-174",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "a40b7dfa245cbddd164fdc444b745ab2",
+      "refname": "FGAP-174"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-175",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "0626f78327f9cb0c0a88741690416765",
+      "refname": "FGAP-175"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-001",
-    "child": "FGAP-176",
+    "parent": {
+      "kind": "item",
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "refname": "SESSION-001"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "49262cce24094a53b971918594b47938",
+      "refname": "FGAP-176"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-002",
-    "child": "FGAP-169",
+    "parent": {
+      "kind": "item",
+      "oid": "0ca4406f6fad4a9f8cf9d3a15dbb481a",
+      "refname": "SESSION-002"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "805af0a5e97d40bf91bd9b0dfa5bb217",
+      "refname": "FGAP-169"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-002",
-    "child": "FGAP-177",
+    "parent": {
+      "kind": "item",
+      "oid": "0ca4406f6fad4a9f8cf9d3a15dbb481a",
+      "refname": "SESSION-002"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "4416e9e11421b5eff60c4f2242c0d3ff",
+      "refname": "FGAP-177"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-002",
-    "child": "FGAP-178",
+    "parent": {
+      "kind": "item",
+      "oid": "0ca4406f6fad4a9f8cf9d3a15dbb481a",
+      "refname": "SESSION-002"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "7641069d345d6f70314819b0ecc37160",
+      "refname": "FGAP-178"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-003",
-    "child": "FGAP-179",
+    "parent": {
+      "kind": "item",
+      "oid": "85435d980e2adf391f75094fcdbcddec",
+      "refname": "SESSION-003"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "0ccc8671e927d944fba35f6f3fe93129",
+      "refname": "FGAP-179"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-003",
-    "child": "TASK-094",
+    "parent": {
+      "kind": "item",
+      "oid": "85435d980e2adf391f75094fcdbcddec",
+      "refname": "SESSION-003"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "eed4031d0c07cc7ec66cadd87a2538bc",
+      "refname": "TASK-094"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-003",
-    "child": "VER-066",
+    "parent": {
+      "kind": "item",
+      "oid": "85435d980e2adf391f75094fcdbcddec",
+      "refname": "SESSION-003"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "5ccaac6fc86e0cf18009d4e9b1c96ba2",
+      "refname": "VER-066"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-003",
-    "child": "DEC-0049",
+    "parent": {
+      "kind": "item",
+      "oid": "85435d980e2adf391f75094fcdbcddec",
+      "refname": "SESSION-003"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "76408f50b4130af81d6478ed4c0c1873",
+      "refname": "DEC-0049"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-004",
-    "child": "FGAP-180",
+    "parent": {
+      "kind": "item",
+      "oid": "46a9229f944964a297a9f37a554b7018",
+      "refname": "SESSION-004"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "93356478e285e7c92d7c9a9736841502",
+      "refname": "FGAP-180"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-004",
-    "child": "TASK-095",
+    "parent": {
+      "kind": "item",
+      "oid": "46a9229f944964a297a9f37a554b7018",
+      "refname": "SESSION-004"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "dc8e25aebed6a4c5555a2d9d824794d1",
+      "refname": "TASK-095"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-005",
-    "child": "FGAP-181",
+    "parent": {
+      "kind": "item",
+      "oid": "9a049f74f87f7a096f0568469de1c0e0",
+      "refname": "SESSION-005"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "f452137562c8b63f056cd442a6c3b1cb",
+      "refname": "FGAP-181"
+    },
     "relation_type": "session_touches_item"
   },
   {
-    "parent": "SESSION-005",
-    "child": "FGAP-182",
+    "parent": {
+      "kind": "item",
+      "oid": "9a049f74f87f7a096f0568469de1c0e0",
+      "refname": "SESSION-005"
+    },
+    "child": {
+      "kind": "item",
+      "substrate_id": "sub-0c813fd84348d4c2",
+      "oid": "8903337676d3cbb46231fa2dc5b6da3a",
+      "refname": "FGAP-182"
+    },
     "relation_type": "session_touches_item"
   }
 ]

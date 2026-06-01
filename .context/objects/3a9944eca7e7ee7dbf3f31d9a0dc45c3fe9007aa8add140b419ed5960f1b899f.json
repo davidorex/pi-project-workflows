@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-05-30T10:00:00-06:00",
+  "focus": "FGAP-179 filed for /context init silent-drop bug. Designed /context switch family parallel to git switch (5 commands: switch existing / switch -c new / switch - / list / archive). TASK-094 implemented end-to-end via canonical pipeline (plan-mode → explore → write plan → coding subagent → orchestrator → adversarial audit → status cascade → merge).",
+  "discoveries": [
+    "Pointer-shape v1.1.0 carries previous_contextDir + switched_at + switched_by stamps",
+    "Auth-gate routing per FGAP-134/138 fires per switch (context-switch + context-archive in AUTH_REQUIRED_TOOLS; context-list stays read-only)",
+    "Bidirectional flip enables transitional-A/B + experimental substrate trees + frozen-substrate consultation patterns",
+    "Single-slot previous_contextDir tracks chain not flat stack (switch - returns to immediate prior, not to original)"
+  ],
+  "decisions_made": [
+    "Switch family modeled on git switch verbatim",
+    "New relation_type references_cross_substrate_item for sentinel-form cross-substrate edges",
+    "Consultation tool for cross-substrate sentinel resolution deferred until first .context item cites .project archaeology"
+  ],
+  "current_status": "TASK-094 completed via 12 commits (merge 7b40e7f); VER-066 attests; 4/4 adversarial probe PASS; DEC-0036 cutover surface live + canonical at packages/pi-context/src/index.ts (3 handlers + 3 Pi tools)",
+  "next_steps": [
+    "Perform DEC-0036 cutover via /context switch -c .context",
+    "Resume jit-agents canon-alignment work in newly-canonical .context substrate",
+    "Lazy-customization framing for what .context blocks need beyond packaged baseline"
+  ]
+}

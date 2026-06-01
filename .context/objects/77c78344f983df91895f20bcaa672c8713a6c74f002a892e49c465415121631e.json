@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-05-30T08:30:00-06:00",
+  "focus": "Operator-authored 22-contradiction audit verified 17/22 CONFIRMED by fresh-context Explore probe. Sharpened FGAP-169 with line 488/568 verbatim evidence (compiled.tools structurally unreachable from LLM). Amended FGAP-169/177/178 to declarative implementation-gap framing.",
+  "discoveries": [
+    "Path to substrate consistency is implementation + spec-rewrite, not scope-decision — the canonical body (FEAT-005/006/DEC-0047/TASK-091/JI-029) already declares jit-agents as tool-using; the implementation has hedged",
+    "jit-agents-spec.md is the outlier substrate text; rewriting as v2 preserves canon-source integrity vs amend-in-place which produces Frankenstein document",
+    "Multi-tool dispatch loop in executeAgent is the implementation work that closes FGAP-169; ExtensionContext tool-execution surface interlocks with FGAP-115"
+  ],
+  "decisions_made": [
+    "jit-agents-spec.md gets rewritten as v2; old spec doc retained with supersession banner",
+    "Performative-dismissal-as-anti-pattern filed as feedback memory (feedback_no_performative_dismissal)",
+    "Substrate-coherence path: Phase 0 decided + Phase 1 spec rewrite + Phase 2-5 impl + cascade + verification"
+  ],
+  "current_status": "22 contradictions catalogued + verified at 81% accuracy; substrate-coherence path defined; FGAP-169/177/178 carry declarative framing; awaiting cutover surface to enable .context greenfield re-derivation per DEC-0036",
+  "next_steps": [
+    "Cutover surface for DEC-0036 (canonical pointer-flip operation)",
+    "Resume jit-agents impl arc with surface available",
+    "Author jit-agents-spec-v2.md per the canonical body"
+  ]
+}

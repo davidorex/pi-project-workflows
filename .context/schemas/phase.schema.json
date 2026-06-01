@@ -2,8 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/phase",
   "version": "2.0.0",
- "title": "Phases",
- "description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
+  "title": "Phases",
+  "description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
   "type": "object",
   "required": [
     "phases"
@@ -25,7 +25,7 @@
           "id": {
             "type": "string",
             "pattern": "^PHASE-[A-Z0-9-]+$",
- "description": "Canonical phase id (e.g.). Replaces the integer `number` discriminator of the file-per-phase form."
+            "description": "Canonical phase id (e.g.). Replaces the integer `number` discriminator of the file-per-phase form."
           },
           "name": {
             "type": "string"
@@ -35,7 +35,7 @@
           },
           "goal": {
             "type": "string",
- "description": "What is true after this phase that was not true before"
+            "description": "What is true after this phase that was not true before"
           },
           "status": {
             "type": "string",
@@ -110,6 +110,21 @@
             "items": {
               "type": "string"
             }
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
         }
       }

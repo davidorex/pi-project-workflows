@@ -92,7 +92,7 @@ import type { DispatchContext } from "./dispatch-context.js";
 import { IDENTITY_FIELDS } from "./land-identity-fields.js";
 import { appendMigrationDeclForDir } from "./migrations-store.js";
 import { hasObject } from "./object-store.js";
-import { findNestedIdBearingArrays, writeSchemaCheckedForDir } from "./schema-write.js";
+import { writeSchemaCheckedForDir } from "./schema-write.js";
 
 /**
  * An EXPLICIT operator-provided promotion target for one nested id-bearing array.
@@ -219,96 +219,204 @@ function blockIdPattern(substrateDir: string, bk: BlockKindDecl): string | null 
 	return idProp && typeof idProp.pattern === "string" ? (idProp.pattern as string) : null;
 }
 
-/**
- * The item subschema of the array property at the dotted path tail. `dotted` is
- * a `findNestedIdBearingArrays` 2-segment path `<arrayKey>.<nested>`; this reads
- * the parent block's schema, descends `properties.<arrayKey>.items` (inlining a
- * top-level $ref via resolveBlockItemSchema), then `properties.<nested>.items`,
- * inlining a one-level local $ref on the nested items. Returns the nested item
- * subschema (deep-cloned). Throws on a structural surprise.
- */
-function nestedItemSubschema(
-	parentSchema: Record<string, unknown>,
-	parentItem: ItemSchemaView,
-	nestedKey: string,
-): Record<string, unknown> {
-	const props = (parentItem.itemSchema.properties ?? {}) as Record<string, Record<string, unknown>>;
-	const node = props[nestedKey];
-	if (!node || node.type !== "array" || !node.items) {
-		throw new Error(
-			`canonicalizeSubstrate: nested property '${nestedKey}' is not an array-with-items on the item shape`,
-		);
-	}
-	let items = node.items as Record<string, unknown>;
-	const ref = typeof items.$ref === "string" ? (items.$ref as string) : undefined;
-	if (ref) {
-		const m = /^#\/(definitions|\$defs)\/(.+)$/.exec(ref);
-		if (!m) throw new Error(`canonicalizeSubstrate: unsupported nested $ref '${ref}'`);
-		const bag = (parentSchema[m[1]] ?? {}) as Record<string, Record<string, unknown>>;
-		const target = bag[m[2]];
-		if (!target) throw new Error(`canonicalizeSubstrate: nested $ref '${ref}' does not resolve`);
-		items = target;
-	}
-	return structuredClone(items);
+/** The 3 content-addressed-identity field names — excluded from the inferred
+ * content-field union (they are re-appended as the canonical identity declarations
+ * by `inferItemSubschemaFromData`). */
+const IDENTITY_FIELD_NAMES = ["oid", "content_hash", "content_parent"] as const;
+
+/** Map ONE observed JS runtime value to its JSON-Schema primitive `type` string,
+ * or null for null/undefined (a null observation contributes nothing to the union —
+ * an absent value, not a distinct type). Arrays are reported as `"array"` LOOSELY
+ * (no `items`) — both inline non-id arrays AND id-bearing nested arrays that will be
+ * promoted+dropped must NOT be declared as nested-id arrays (the 9.2 guard forbids
+ * it + the data still validates against a loose `{type:"array"}`). */
+function jsonTypeOf(v: unknown): string | null {
+	if (v === null || v === undefined) return null;
+	if (typeof v === "string") return "string";
+	if (typeof v === "number") return "number";
+	if (typeof v === "boolean") return "boolean";
+	if (Array.isArray(v)) return "array";
+	if (typeof v === "object") return "object";
+	return null;
 }
 
-/** Build a minimal item subschema from a sample of data items — used for a
- * DATA-only nested key (a deeper array on a synthesized child block whose written
- * schema does not declare it). Declares every observed scalar/array property as
- * permissive (string for strings, leaves arrays/objects loosely typed) so the
- * promoted data validates; deeper id-bearing arrays are left as loose `array`
- * (re-detected from data at the next level). The synthesizeChildSchema pass adds
- * the id + identity fields. */
-function synthesizeItemSubschemaFromData(samples: Record<string, unknown>[]): Record<string, unknown> {
-	const props: Record<string, unknown> = {};
-	for (const s of samples) {
-		for (const [k, v] of Object.entries(s)) {
-			if (k === "oid" || k === "content_hash" || k === "content_parent") continue;
-			if (Object.hasOwn(props, k)) continue;
-			if (typeof v === "string") props[k] = { type: "string" };
-			else if (typeof v === "number") props[k] = { type: "number" };
-			else if (typeof v === "boolean") props[k] = { type: "boolean" };
-			else if (Array.isArray(v)) {
-				// A nested id-bearing array: declare it loosely as `array` (an item
-				// subschema would re-trip the 9.2 guard via synthesizeChildSchema's drop
-				// — which is exactly what we want; it stays loose + data-detected).
-				const first = v.find((x) => x && typeof x === "object") as Record<string, unknown> | undefined;
-				if (first && typeof first.id === "string") {
-					props[k] = {
-						type: "array",
-						items: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
-					};
-				} else {
-					props[k] = { type: "array" };
-				}
-			} else if (v && typeof v === "object") props[k] = { type: "object" };
+/**
+ * Derive an id `pattern` from a set of observed ids. Returns `^<prefix>\d{N}$` when
+ * EVERY id shares a single `[A-Za-z_-]+` non-digit prefix immediately followed by a
+ * run of digits (the numeric suffix), with `N` = the MINIMUM observed numeric-suffix
+ * width (so `\d{N,}` would over-narrow; we emit a fixed `\d{N}` matching the minimum,
+ * widening to `{N,}`-equivalent only when widths diverge). Returns null when the ids
+ * do not share a single prefix, carry no numeric suffix, or are empty — caller then
+ * emits a permissive `{type:"string"}`.
+ *
+ * Examples: DEC-0001 → ^DEC-\d{4}$; FEAT-001 → ^FEAT-\d{3}$; issue-001 → ^issue-\d{3}$;
+ * L1..L5 → ^L\d{1}$ (prefix has no trailing separator — allowed); PHASE-1 → ^PHASE-\d{1}$.
+ * Mixed widths (FEAT-1, FEAT-22) → ^FEAT-\d{1,}$ (min width, open upper).
+ */
+export function deriveIdPattern(ids: string[]): string | null {
+	if (ids.length === 0) return null;
+	const split = /^([A-Za-z_-]+?)(\d+)$/;
+	let prefix: string | null = null;
+	let minWidth = Number.POSITIVE_INFINITY;
+	let maxWidth = 0;
+	for (const id of ids) {
+		if (typeof id !== "string") return null;
+		const m = split.exec(id);
+		if (!m) return null;
+		const [, pfx, digits] = m;
+		if (prefix === null) prefix = pfx;
+		else if (prefix !== pfx) return null;
+		const w = digits.length;
+		if (w < minWidth) minWidth = w;
+		if (w > maxWidth) maxWidth = w;
+	}
+	if (prefix === null) return null;
+	// Escape regex metacharacters in the literal prefix (`-`/`_` are literals inside the
+	// pattern body; nothing else can appear given the `[A-Za-z_-]+` class, but escape
+	// defensively so a future class-widening cannot inject an unescaped metachar).
+	const esc = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const quant = minWidth === maxWidth ? `\\d{${minWidth}}` : `\\d{${minWidth},}`;
+	return `^${esc}${quant}$`;
+}
+
+/**
+ * CLEAN-EMIT inference: build a fresh item subschema PURELY from observed DATA —
+ * inheriting NOTHING from any source schema. For each field across ALL items, UNION
+ * its JSON type (not first-wins); a field showing >1 distinct non-null type collapses
+ * to a permissive `{}` (no `type`). `required` is `["id"]` ONLY — every other field is
+ * optional (a field present on some-not-all items must not be required).
+ * `additionalProperties:false` over the COMPLETE observed field union (data is clean ⇒
+ * the union is exhaustive ⇒ all items validate). The 3 identity fields are appended as
+ * optional properties (their canonical declarations). The `id` property gets the GIVEN
+ * `opts.idPattern` (promoted blocks, fresh-minted ids) or a `deriveIdPattern` over the
+ * observed ids (de-nested parents); a `{type:"string"}` permissive fallback when neither
+ * yields a pattern. `synthesizeChildSchema` later wraps this in the canonical envelope +
+ * drops any deeper id-array (so the written schema passes the 9.2 guard). */
+export function inferItemSubschemaFromData(
+	items: Record<string, unknown>[],
+	opts: { idPattern?: string },
+): Record<string, unknown> {
+	// Union each field's observed JSON types across ALL items (identity fields excluded
+	// here; appended as the canonical declarations below).
+	const typesByField = new Map<string, Set<string>>();
+	const order: string[] = [];
+	for (const item of items) {
+		for (const [k, v] of Object.entries(item)) {
+			if ((IDENTITY_FIELD_NAMES as readonly string[]).includes(k) || k === "id") continue;
+			const t = jsonTypeOf(v);
+			if (t === null) continue; // null/undefined observation contributes no type
+			let set = typesByField.get(k);
+			if (!set) {
+				set = new Set<string>();
+				typesByField.set(k, set);
+				order.push(k);
+			}
+			set.add(t);
 		}
 	}
-	return { type: "object", required: ["id"], properties: props };
+
+	const props: Record<string, unknown> = {};
+	// id property first (declaration-order cosmetic; AJV ignores order).
+	if (typeof opts.idPattern === "string") {
+		props.id = { type: "string", pattern: opts.idPattern };
+	} else {
+		const ids = items.map((it) => it.id).filter((x): x is string => typeof x === "string");
+		const derived = deriveIdPattern(ids);
+		props.id = derived ? { type: "string", pattern: derived } : { type: "string" };
+	}
+	// Content fields in first-observed order.
+	for (const k of order) {
+		const types = typesByField.get(k) as Set<string>;
+		if (types.size === 1) {
+			const [t] = [...types];
+			// Arrays + objects are declared LOOSELY (bare `{type}`) — an id-bearing nested
+			// array must NOT be declared with id-bearing `items` (the 9.2 guard would trip);
+			// it is re-detected from data + promoted at the next worklist level.
+			props[k] = { type: t };
+		} else {
+			// >1 distinct non-null type (clean data should preclude this) → permissive `{}`.
+			props[k] = {};
+		}
+	}
+	// Append the 3 identity fields as the canonical OPTIONAL declarations.
+	for (const name of IDENTITY_FIELD_NAMES) {
+		if (!Object.hasOwn(props, name)) props[name] = structuredClone(IDENTITY_FIELDS[name]);
+	}
+
+	return {
+		type: "object",
+		required: ["id"],
+		additionalProperties: false,
+		properties: props,
+	};
 }
 
 /** Inline a top-level $ref item shape into a fresh schema body whose `items` is
- * an inline object carrying the 3 identity fields, then DROP `nestedKey` from
- * its properties. Mirrors land-identity-fields.ts:239-249 (inline-then-inject)
- * + the de-nest drop. The result has NO nested id-bearing array, so it passes
- * the 9.2 guard in `writeSchemaForDir`. */
-function denestedSchemaBody(originalSchema: Record<string, unknown>, nestedKeys: string[]): Record<string, unknown> {
-	const schema = structuredClone(originalSchema);
-	const view = resolveBlockItemSchema(schema);
-	const props = (schema.properties ?? {}) as Record<string, Record<string, unknown>>;
-	const arrayNode = props[view.arrayKey] as Record<string, unknown>;
-	// Inline the item subschema in place (so a $ref-form items carrying the
-	// nested array is materialized before the drop), preserving everything else.
-	const inlinedItems = structuredClone(view.itemSchema);
-	const itemProps = (inlinedItems.properties ?? {}) as Record<string, unknown>;
-	for (const nestedKey of nestedKeys) delete (itemProps as Record<string, unknown>)[nestedKey];
-	for (const name of ["oid", "content_hash", "content_parent"] as const) {
-		if (!Object.hasOwn(itemProps, name))
-			(itemProps as Record<string, unknown>)[name] = structuredClone(IDENTITY_FIELDS[name]);
+ * an inline object carrying the 3 identity fields. CLEAN-EMIT: inherits NOTHING
+ * from the source parent schema — the de-nested parent's item subschema is INFERRED
+ * from the de-nested parent DATA (the parent items after the promoted nested arrays
+ * are removed), id pattern derived from the observed parent ids, identity fields +
+ * `additionalProperties:false` over the observed field union. Wrapped in the canonical
+ * envelope ($schema/$id/version/title/type/required:[arrayKey]). The result carries NO
+ * nested id-bearing array (the promoted keys are gone from the data ⇒ absent from the
+ * union), so it passes the 9.2 guard in `writeSchemaForDir`.
+ *
+ * `arrayKey` is the parent block's array_key; `denestedItems` are the parent items
+ * with the promoted nested-array keys already removed; `canonicalId` titles the
+ * envelope. */
+function denestedSchemaBody(
+	canonicalId: string,
+	arrayKey: string,
+	denestedItems: Record<string, unknown>[],
+	substrateId: string,
+): Record<string, unknown> {
+	const itemSchema = inferItemSubschemaFromData(denestedItems, {});
+	return {
+		$schema: "http://json-schema.org/draft-07/schema#",
+		$id: emittedSchemaId(canonicalId, substrateId),
+		version: "1.0.0",
+		title: canonicalId,
+		type: "object",
+		required: [arrayKey],
+		properties: {
+			[arrayKey]: { type: "array", items: itemSchema },
+		},
+	};
+}
+
+/** The `$id` for a canonicalizer-EMITTED schema, scoped by the substrate id so two
+ * substrates that both carry a block_kind of the SAME canonical_id (e.g. two projects
+ * each with a `feature-story` block) do NOT collide in AJV's process-global compiled-
+ * validator cache (AJV keys by `$id`; a same-`$id` second body silently reuses the first
+ * substrate's compiled validator, validating the second substrate's data against the
+ * wrong shape). A single fresh-process run against one substrate is unaffected; the scope
+ * only matters when more than one substrate is canonicalized in the same process (the
+ * canonicalizer is a library callable repeatedly, and the test suite exercises many
+ * substrates in one process). Schemas are loaded by FILE PATH, never resolved by this
+ * `$id` string, so scoping it changes only the AJV cache key. */
+function emittedSchemaId(canonicalId: string, substrateId: string): string {
+	return `pi-context://schemas/${substrateId}/${canonicalId}`;
+}
+
+/** Does a block schema's item subschema ALREADY declare all 3 identity fields?
+ * Resolves the item shape via `resolveBlockItemSchema` (top-level $ref inlined) and
+ * checks `properties` for `oid`/`content_hash`/`content_parent`. Returns false when
+ * the schema is unparseable / has no resolvable item shape. Used to GATE the up-front
+ * parent-schema re-emit: an identity-declaring schema (e.g. a samples-shaped or already-
+ * canonicalized block) needs no re-emit; a source schema whose item shape omits the
+ * identity fields (the real `.project-migrate` `$ref`-tree definitions) does, because the
+ * framework's identity-stamp gate (`prepareItemIdentityForWrite`) is a NO-OP until the
+ * on-disk schema declares them — without the re-emit the parent block's items never mint
+ * oids, and the membership-edge parent-oid lookup throws. */
+function itemShapeDeclaresIdentity(schema: Record<string, unknown>): boolean {
+	let view: ItemSchemaView;
+	try {
+		view = resolveBlockItemSchema(schema);
+	} catch {
+		return false;
 	}
-	inlinedItems.properties = itemProps;
-	arrayNode.items = inlinedItems;
-	return schema;
+	const props = (view.itemSchema.properties ?? {}) as Record<string, unknown>;
+	return IDENTITY_FIELD_NAMES.every((f) => Object.hasOwn(props, f));
 }
 
 /** Synthesize a fresh block schema envelope for a promoted child entity —
@@ -331,6 +439,7 @@ function synthesizeChildSchema(
 	arrayKey: string,
 	nestedItemSchema: Record<string, unknown>,
 	idPattern: string,
+	substrateId: string,
 ): { schema: Record<string, unknown>; droppedDeeper: string[] } {
 	const itemSchema = structuredClone(nestedItemSchema);
 	const itemProps = (itemSchema.properties ?? {}) as Record<string, unknown>;
@@ -362,7 +471,7 @@ function synthesizeChildSchema(
 	return {
 		schema: {
 			$schema: "http://json-schema.org/draft-07/schema#",
-			$id: `pi-context://schemas/${canonicalId}`,
+			$id: emittedSchemaId(canonicalId, substrateId),
 			version: "1.0.0",
 			title: canonicalId,
 			type: "object",
@@ -757,21 +866,30 @@ export function canonicalizeSubstrate(
 			}
 			return;
 		}
-		const schemaPath = schemaAbs(substrateDir, parentBk);
-		const original = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
-		const denested = denestedSchemaBody(original, nestedKeys);
-		writeSchemaCheckedForDir(substrateDir, parentBk.canonical_id, denested, "replace", ctx);
-		// Rewrite parent block dropping the nested arrays.
+		// Read the parent block + compute the DE-NESTED item set (promoted nested-array
+		// keys removed) FIRST — the clean-emit schema is inferred from this de-nested data,
+		// so it must be materialized before the schema-replace.
 		const block = readBlockForDir(substrateDir, parentBk.canonical_id) as Record<string, unknown>;
 		const arr = Array.isArray(block[parentBk.array_key])
 			? (block[parentBk.array_key] as Record<string, unknown>[])
 			: [];
-		block[parentBk.array_key] = arr.map((it) => {
+		const denestedItems = arr.map((it) => {
 			if (!it || typeof it !== "object") return it;
 			const next = { ...it };
 			for (const k of nestedKeys) delete (next as Record<string, unknown>)[k];
 			return next;
 		});
+		// CLEAN-EMIT: infer the parent's canonical schema from the de-nested DATA — inherits
+		// NOTHING from the source parent schema (no $ref/$defs/divergent-AP carried over).
+		const denested = denestedSchemaBody(
+			parentBk.canonical_id,
+			parentBk.array_key,
+			denestedItems.filter((x): x is Record<string, unknown> => !!x && typeof x === "object"),
+			report.substrate_id,
+		);
+		writeSchemaCheckedForDir(substrateDir, parentBk.canonical_id, denested, "replace", ctx);
+		// Rewrite parent block dropping the nested arrays.
+		block[parentBk.array_key] = denestedItems;
 		writeBlockForDir(substrateDir, parentBk.canonical_id, block, ctx);
 		// Consistency-only migration decl (a version delta is what would trigger it;
 		// none today, so this is advisory). try/skip on collision.
@@ -792,6 +910,36 @@ export function canonicalizeSubstrate(
 		}
 	};
 
+	// Up-front parent-schema re-emit: BEFORE a block is backfilled, ensure its
+	// on-disk item schema DECLARES the 3 identity fields, so the framework's identity-
+	// stamp gate (`prepareItemIdentityForWrite`, a NO-OP until the schema declares them)
+	// actually mints oids on backfill. A source block (e.g. the real `.project-migrate`
+	// `$ref`-tree `features`) whose definitions omit the identity fields would otherwise
+	// never get parent oids, and the membership-edge parent-oid lookup throws. CLEAN-EMIT:
+	// the replacement item schema is INFERRED from the CURRENT (STILL-NESTED) data — every
+	// observed field including the to-be-promoted nested id-bearing arrays as LOOSE
+	// `{type:"array"}` (no id-bearing `items`, so the 9.2 guard passes) + the identity
+	// fields + `additionalProperties:false`. The still-nested parent DATA validates against
+	// this intermediate schema at the backfill write (loose arrays accept the nested
+	// content); the later `denestParent` re-infers from the DE-NESTED data, dropping the
+	// promoted keys. GATED on (i) the block has data items (a fileless/empty block — e.g.
+	// the vestigial divergent-narrow `story` — is left UNTOUCHED, never a backfill/promotion
+	// source) AND (ii) its current item shape does NOT already declare identity (an already-
+	// identity-declaring schema needs no re-emit, so identity-shaped source + synth-child
+	// schemas are not churned). Real run only; dryRun simulates oid stamping via fakeOid
+	// regardless of the on-disk schema, so it needs no re-emit (and writes nothing).
+	const prepareParentSchema = (bk: BlockKindDecl): void => {
+		if (dryRun) return;
+		const items = readItems(substrateDir, bk);
+		if (items.length === 0) return;
+		const schema = schemaForBk(bk);
+		if (schema && itemShapeDeclaresIdentity(schema)) return;
+		// Infer from the CURRENT still-nested items (nested id-bearing arrays surface as
+		// loose `{type:"array"}` — NOT special-cased/omitted; de-nesting drops them later).
+		const reemit = denestedSchemaBody(bk.canonical_id, bk.array_key, items, report.substrate_id);
+		writeSchemaCheckedForDir(substrateDir, bk.canonical_id, reemit, "replace", ctx);
+	};
+
 	// ── Step 2: promotion worklist (parent-first) ──────────────────────────────
 	// Seed with every registered block_kind; synthesized child blocks enqueue.
 	const queue: BlockKindDecl[] = [...(workingConfig.block_kinds ?? [])];
@@ -802,42 +950,29 @@ export function canonicalizeSubstrate(
 		if (processed.has(bk.canonical_id)) continue;
 		processed.add(bk.canonical_id);
 
-		// (a) Backfill so this block's items carry oids (parent oids for children).
+		// (a) Re-emit this block's schema to the identity-declaring clean-emit shape (when
+		//     its source schema omits identity), THEN backfill so its items carry oids.
+		prepareParentSchema(bk);
 		const parentOidByRef = backfillBlock(bk);
 
-		// (b) Direct nested id-bearing array KEYS on THIS block's items, from the
-		//     UNION of (i) schema-declared 2-segment `findNestedIdBearingArrays`
-		//     paths and (ii) DATA-observed nested id arrays. The data source catches
-		//     deeper arrays carried inside a SYNTHESIZED child block whose written
-		//     schema intentionally omits them (the 9.2 guard forbids declaring them).
-		//     Re-read the schema (a prior de-nest may have changed it). Under dryRun a
-		//     SYNTHESIZED child block has no on-disk schema (zero writes), so resolve it
-		//     from the in-memory store the real run would have written — else the
-		//     synthesized block is skipped and its deeper nested arrays go undetected.
-		const parentSchema = schemaForBk(bk);
-		if (!parentSchema) continue;
-		const schemaKeys = findNestedIdBearingArrays(parentSchema)
-			.filter((p) => p.split(".").length === 2)
-			.map((p) => p.split(".")[1]);
-		const dataKeys = dataNestedIdArrayKeys(itemsFor(bk));
-		const nestedKeysAll = [...new Set([...schemaKeys, ...dataKeys])];
+		// (b) Direct nested id-bearing array KEYS on THIS block's items — DATA-DRIVEN
+		//     ONLY (no source-schema read for detection): every direct property whose
+		//     value is a non-empty array of id-bearing objects, across all parent items.
+		//     This is the SAME detector for a top-level block (its $ref/divergent source
+		//     schema is never consulted), a reused block, AND a synthesized child block
+		//     (whose written schema intentionally omits its deeper arrays per the 9.2
+		//     guard — the data carries them). A 0-data nested array contributes no key
+		//     (empty ⇒ not id-bearing); it survives the clean-emit re-inference as a loose
+		//     `{type:"array"}` property, which the 9.2 guard permits, so it needs no
+		//     explicit de-nest. The promotionTargets lookup below is explicit-or-fail.
+		const nestedKeysAll = dataNestedIdArrayKeys(itemsFor(bk));
 		if (nestedKeysAll.length === 0) continue;
 
-		let parentItem: ItemSchemaView;
-		try {
-			parentItem = resolveBlockItemSchema(parentSchema);
-		} catch {
-			continue;
-		}
-
-		// Accumulate EVERY nested key (data + 0-data) for ONE schema-replace + data
-		// rewrite at the end — a parent with multiple nested id-bearing arrays must
-		// drop them all in one schema write, else the 9.2 guard rejects a partial
-		// de-nest (the still-nested sibling array trips it). Only keys still PRESENT
-		// on the (possibly synthesized) schema are passed to the schema-replace; a
-		// data-only deeper key is dropped from data alone.
+		// Accumulate EVERY promoted nested key for ONE schema-replace + data rewrite at
+		// the end — a parent with multiple nested id-bearing arrays must drop them all in
+		// one inferred-schema write (the clean-emit infers the parent schema from the data
+		// AFTER all promoted keys are removed, so a single end-of-block de-nest is correct).
 		const denestKeys: string[] = [];
-		const schemaDeclaredKeys = new Set(schemaKeys);
 
 		for (const nestedKey of nestedKeysAll) {
 			denestKeys.push(nestedKey);
@@ -878,13 +1013,16 @@ export function canonicalizeSubstrate(
 				);
 			}
 
-			// The nested item subschema comes from the parent SCHEMA when it declares
-			// the key (the normal case); for a DATA-only key (deeper array on a
-			// synthesized block) the schema omits it, so synthesize the subschema from
-			// the promoted data samples.
-			const nestedItemSchema = schemaDeclaredKeys.has(nestedKey)
-				? nestedItemSubschema(parentSchema, parentItem, nestedKey)
-				: synthesizeItemSubschemaFromData(pending.map((p) => p.childItem));
+			// CLEAN-EMIT: the promoted entity's item subschema is ALWAYS inferred from the
+			// nested DATA — inheriting NOTHING from the source parent schema (no $ref/$defs,
+			// no divergent narrow AP). Uniform for top-level, reused, and synth-deeper keys.
+			// For a NEW block the GIVEN idPattern is used; `synthesizeChildSchema` re-stamps
+			// it on the envelope. (For a REUSE target this subschema is not written — the
+			// reuse block's on-disk schema stands — but it is computed identically.)
+			const nestedItemSchema = inferItemSubschemaFromData(
+				pending.map((p) => p.childItem),
+				{ idPattern: spec.idPattern },
+			);
 			const cfg = currentConfig();
 			let target: BlockKindDecl | undefined;
 			const reused = spec.reuse === true;
@@ -950,6 +1088,7 @@ export function canonicalizeSubstrate(
 					childArrayKey,
 					nestedItemSchema,
 					spec.idPattern,
+					report.substrate_id,
 				);
 				const resolvedArrayKey = singleArrayKeyOf(finalSchema) ?? childArrayKey;
 				target = {

@@ -20,11 +20,17 @@
  * validateContext (mkdtemp cwd → 0 nested_id_bearing_array + 0 unresolved).
  */
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { canonicalizeSubstrate, type PromotionTargets } from "./canonicalize-substrate.js";
+import {
+	canonicalizeSubstrate,
+	deriveIdPattern,
+	inferItemSubschemaFromData,
+	type PromotionTargets,
+} from "./canonicalize-substrate.js";
 import { type EdgeEndpoint, loadRelationsForDir } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import { validateContext } from "./context-sdk.js";
@@ -36,6 +42,18 @@ const IDENTITY_PROPS = {
 	content_hash: { type: "string", pattern: "^[0-9a-f]{64}$" },
 	content_parent: { type: "string", pattern: "^[0-9a-f]{64}$" },
 };
+
+/** A unique valid `substrate_id` (`^sub-[0-9a-f]{16}$`) per fixture INSTANCE. The
+ * canonicalizer scopes emitted-schema `$id`s by `substrate_id`; AJV keys its compiled-
+ * validator cache by `$id` PROCESS-GLOBALLY. Two fixtures in the same test process that
+ * both synthesize a same-named block (e.g. `feature-story`) under a SHARED substrate_id
+ * would emit the SAME `$id`, so AJV would validate the second fixture's data against the
+ * FIRST fixture's compiled (de-nested, tasks-dropped) shape — rejecting the still-nested
+ * transient append. A fresh id per fixture makes each fixture's `$id`s unique, matching a
+ * real single-substrate fresh-process run (where no collision exists). */
+function uniqueSubstrateId(): string {
+	return `sub-${randomBytes(8).toString("hex")}`;
+}
 
 /** Explicit promotion targets for the fixture (NO synthesis):
  *  - `features.stories` REUSES the empty `story` block, keeping the original ids;
@@ -159,7 +177,7 @@ function makeFixture(): { cwd: string; work: string } {
 	const config = {
 		schema_version: "1.0.0",
 		root: ".work",
-		substrate_id: "sub-0123456789abcdef",
+		substrate_id: uniqueSubstrateId(),
 		block_kinds: [
 			{
 				canonical_id: "features",
@@ -265,7 +283,7 @@ function makeSynthIntermediateFixture(): { cwd: string; work: string } {
 	const config = {
 		schema_version: "1.0.0",
 		root: ".work",
-		substrate_id: "sub-0123456789abcdef",
+		substrate_id: uniqueSubstrateId(),
 		block_kinds: [
 			{
 				canonical_id: "features",
@@ -396,14 +414,18 @@ describe("canonicalizeSubstrate: full canonicalization", () => {
 			assert.ok(hasObject(work, it.content_hash as string), `item ${String(it.id)} object on disk`);
 		}
 
-		// ── parents de-nested: no nested array in DATA or SCHEMA ─────────────────
+		// ── parents de-nested: the PROMOTED id-bearing array is gone from DATA; the
+		//    0-data `findings` array (never promoted) is RETAINED as a loose array ──
 		const features = readBlockItems(work, "features.json", "features");
 		for (const f of features) {
-			assert.equal(Object.hasOwn(f, "stories"), false, "feature de-nested: no stories array");
-			assert.equal(Object.hasOwn(f, "findings"), false, "feature de-nested: no findings array");
+			assert.equal(Object.hasOwn(f, "stories"), false, "feature de-nested: no stories array (promoted)");
+			// CLEAN-EMIT: the 0-data findings array is not promoted; it survives in data as a
+			// loose array (re-inferred as a non-id `{type:"array"}` property, 9.2-guard-clean).
+			assert.equal(Object.hasOwn(f, "findings"), true, "feature retains its 0-data findings array");
+			assert.ok(Array.isArray(f.findings) && (f.findings as unknown[]).length === 0, "findings still empty array");
 		}
 		for (const s of stories) {
-			assert.equal(Object.hasOwn(s, "tasks"), false, "story de-nested: no tasks array");
+			assert.equal(Object.hasOwn(s, "tasks"), false, "story de-nested: no tasks array (promoted)");
 		}
 
 		// ── findNestedIdBearingArrays over EVERY resulting schema → [] ───────────
@@ -412,8 +434,27 @@ describe("canonicalizeSubstrate: full canonicalization", () => {
 			assert.deepEqual(findNestedIdBearingArrays(schema), [], `schema ${f} has no nested id-bearing array`);
 		}
 
-		// ── 0-data array (findings) de-nested from schema, NO block synthesized ──
-		assert.ok(report.schema_denested.includes("features"), "features schema de-nested (stories + findings)");
+		// ── CLEAN-EMIT shape over EVERY resulting schema: no $ref/$defs anywhere,
+		//    AP:false on the item shape, required == ["id"] only, identity fields
+		//    present, id derived/given ───────────────────────────────────────────
+		for (const f of fs.readdirSync(path.join(work, "schemas"))) {
+			const raw = fs.readFileSync(path.join(work, "schemas", f), "utf-8");
+			assert.equal(/\$ref/.test(raw), false, `schema ${f} carries NO $ref (clean-emit ignores source $ref)`);
+			assert.equal(/"\$defs"|"definitions"/.test(raw), false, `schema ${f} carries NO $defs/definitions`);
+			const schema = JSON.parse(raw) as Record<string, unknown>;
+			const props = schema.properties as Record<string, Record<string, unknown>>;
+			const arrayKey = Object.keys(props)[0];
+			const items = (props[arrayKey].items ?? {}) as Record<string, unknown>;
+			assert.equal(items.additionalProperties, false, `schema ${f} item shape AP:false`);
+			assert.deepEqual(items.required, ["id"], `schema ${f} item required == ['id'] only`);
+			const ip = items.properties as Record<string, Record<string, unknown>>;
+			for (const idf of ["oid", "content_hash", "content_parent"]) {
+				assert.ok(Object.hasOwn(ip, idf), `schema ${f} item declares identity field ${idf}`);
+			}
+		}
+
+		// ── features de-nested (stories promoted); findings was NEVER promoted ───
+		assert.ok(report.schema_denested.includes("features"), "features schema de-nested (stories promoted)");
 		assert.equal(
 			(readConfig(work).block_kinds as Record<string, unknown>[]).some((b) =>
 				String(b.canonical_id).includes("finding"),
@@ -560,16 +601,17 @@ describe("canonicalizeSubstrate: full canonicalization", () => {
 		);
 	});
 
-	it("auto-de-nests a 0-data nested id-bearing array with NO mapping entry required", (t) => {
+	it("leaves a 0-data nested id-bearing array as a loose array (no promotion, no block synthesized)", (t) => {
 		const { cwd, work } = makeFixture();
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
 		// FIXTURE_TARGETS deliberately has NO entry for features.findings (0-data).
 		const report = canonicalizeSubstrate(work, { promotionTargets: FIXTURE_TARGETS });
 
-		// findings de-nested from the features schema, no block synthesized, no
-		// promotion recorded for findings, no edges filed for it.
-		assert.ok(report.schema_denested.includes("features"), "features schema de-nested (incl. 0-data findings)");
+		// CLEAN-EMIT: the 0-data findings array is not id-bearing (empty ⇒ not data-detected),
+		// so it is neither promoted nor explicitly de-nested. It survives in the data, and the
+		// re-inferred features item schema declares it as a loose `{type:"array"}` property —
+		// NOT an id-bearing nested array (so the 9.2 guard passes).
 		const featSchema = JSON.parse(
 			fs.readFileSync(path.join(work, "schemas", "features.schema.json"), "utf-8"),
 		) as Record<string, unknown>;
@@ -578,8 +620,10 @@ describe("canonicalizeSubstrate: full canonicalization", () => {
 				string,
 				Record<string, unknown>
 			>
-		).properties as Record<string, unknown>;
-		assert.equal(Object.hasOwn(featItems, "findings"), false, "findings dropped from the features item schema");
+		).properties as Record<string, Record<string, unknown>>;
+		assert.equal(Object.hasOwn(featItems, "findings"), true, "findings retained as a property on the inferred schema");
+		assert.deepEqual(featItems.findings, { type: "array" }, "findings declared LOOSE (no id-bearing items)");
+		assert.deepEqual(findNestedIdBearingArrays(featSchema), [], "no nested id-bearing array (findings is loose)");
 		assert.equal(
 			report.promotions.some((p) => p.path === "features.findings"),
 			false,
@@ -799,5 +843,415 @@ describe("canonicalizeSubstrate: full canonicalization", () => {
 			realReport.relation_types_registered.sort(),
 			"dry relation_types_registered == real relation_types_registered",
 		);
+	});
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REAL-SHAPE-CLASS fixture — replicates `.project-migrate`'s mole-classes that a
+// SOURCE-PRESERVING canonicalizer failed on. CLEAN-EMIT (infer schemas from DATA,
+// inherit nothing from source) must dissolve all four at once:
+//   (a) a `$ref`-into-`definitions` nested tree depth-3 (feature → $ref story →
+//       $ref task), like the real features.schema.json — a source-preserving builder
+//       leaves a dangling `$ref:#/definitions/task` once `definitions` is pruned;
+//   (b) a registered-but-FILELESS block (config + schema, no data file);
+//   (c) a DIVERGENT NARROW `additionalProperties:false` source schema whose DATA
+//       carries MORE fields than it declares — a source-preserving builder's AP:false
+//       rejects the richer data;
+//   (d) a 0-DATA id-bearing nested array — survives as a loose array under clean-emit.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** features schema in the REAL `$ref`-tree form: items is `{$ref:#/definitions/feature}`,
+ * feature.stories → `{$ref:#/definitions/story}`, story.tasks → `{$ref:#/definitions/task}`,
+ * feature.findings → `{$ref:#/definitions/scoped-finding}` (0-data). Every definition is
+ * `additionalProperties:false`. Mirrors `.project-migrate/schemas/features.schema.json`. */
+function refTreeFeaturesSchema(): Record<string, unknown> {
+	return {
+		$schema: "http://json-schema.org/draft-07/schema#",
+		title: "Features",
+		type: "object",
+		required: ["features"],
+		properties: { features: { type: "array", items: { $ref: "#/definitions/feature" } } },
+		definitions: {
+			feature: {
+				type: "object",
+				additionalProperties: false,
+				required: ["id", "title", "stories", "findings"],
+				properties: {
+					id: { type: "string", pattern: "^FEAT-\\d{3}$" },
+					title: { type: "string" },
+					stories: { type: "array", items: { $ref: "#/definitions/story" } },
+					findings: { type: "array", items: { $ref: "#/definitions/scoped-finding" } },
+				},
+			},
+			story: {
+				type: "object",
+				additionalProperties: false,
+				required: ["id", "title", "tasks"],
+				properties: {
+					id: { type: "string" },
+					title: { type: "string" },
+					tasks: { type: "array", items: { $ref: "#/definitions/task" } },
+				},
+			},
+			// The source task definition is `$ref`'d (depth-3 $ref tree). It declares its
+			// own data fields (AP:false validates the on-disk data it was written under).
+			// Clean-emit re-infers the SYNTHESIZED task block's schema from the promoted DATA,
+			// inheriting NOTHING from this `$ref`'d definition — so the synthesized schema
+			// carries no `$ref`, no `definitions`, and an AP:false over the OBSERVED union.
+			task: {
+				type: "object",
+				additionalProperties: false,
+				required: ["id"],
+				properties: {
+					id: { type: "string" },
+					title: { type: "string" },
+					status: { type: "string" },
+					files: { type: "array", items: { type: "string" } },
+					acceptance: { type: "string" },
+				},
+			},
+			"scoped-finding": {
+				type: "object",
+				additionalProperties: false,
+				required: ["id"],
+				properties: { id: { type: "string" }, note: { type: "string" } },
+			},
+		},
+	};
+}
+
+/** A DIVERGENT NARROW vestigial top-level `story` block schema: AP:false, a NARROWER
+ * shape (id + name only) than the rich nested story data. This is the real `.project-migrate`
+ * shape — a vestigial `story` block whose narrow schema CANNOT hold the rich nested stories,
+ * which is exactly why the real targets SYNTHESIZE `feature-story` rather than reuse it. The
+ * block is registered + fileless; the canonicalizer leaves it untouched (no data to backfill,
+ * never a promotion target). */
+function divergentNarrowStorySchema(): Record<string, unknown> {
+	return {
+		$schema: "http://json-schema.org/draft-07/schema#",
+		$id: "pi-context://schemas/story",
+		version: "1.0.0",
+		title: "story",
+		type: "object",
+		required: ["stories"],
+		properties: {
+			stories: {
+				type: "array",
+				items: {
+					type: "object",
+					additionalProperties: false,
+					required: ["id", "name"],
+					properties: { id: { type: "string", pattern: "^STORY-\\d{3}$" }, name: { type: "string" } },
+				},
+			},
+		},
+	};
+}
+
+/** Build the real-shape-class fixture mirroring `.project-migrate` exactly:
+ *   - `features` carries the depth-3 `$ref` tree (feature → $ref story → $ref task) + a
+ *     0-data `findings` ($ref) array;
+ *   - `story` is a registered-but-FILELESS DIVERGENT-NARROW vestigial block (AP:false, a
+ *     narrower shape than the nested stories) — NOT reused; left untouched;
+ *   - features.stories SYNTHESIZES a NEW `feature-story` block; feature-story.tasks
+ *     SYNTHESIZES a NEW `story-task` block. */
+function makeRealShapeFixture(): { cwd: string; work: string } {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "canon-real-"));
+	writeBootstrapPointer(cwd, ".work");
+	const work = path.join(cwd, ".work");
+	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
+
+	const config = {
+		schema_version: "1.0.0",
+		root: ".work",
+		substrate_id: uniqueSubstrateId(),
+		block_kinds: [
+			{
+				canonical_id: "features",
+				display_name: "Features",
+				prefix: "FEAT",
+				schema_path: "schemas/features.schema.json",
+				array_key: "features",
+				data_path: "features.json",
+			},
+			{
+				canonical_id: "story",
+				display_name: "Story",
+				prefix: "STORY",
+				schema_path: "schemas/story.schema.json",
+				array_key: "stories",
+				data_path: "story.json",
+			},
+		],
+		relation_types: [],
+		invariants: [],
+	};
+	fs.writeFileSync(path.join(work, "config.json"), JSON.stringify(config, null, 2));
+	fs.writeFileSync(
+		path.join(work, "schemas", "features.schema.json"),
+		JSON.stringify(refTreeFeaturesSchema(), null, 2),
+	);
+	// Divergent-narrow vestigial story schema present (block registered) but NO story.json.
+	fs.writeFileSync(
+		path.join(work, "schemas", "story.schema.json"),
+		JSON.stringify(divergentNarrowStorySchema(), null, 2),
+	);
+
+	// DATA: 1 feature, 2 stories (STORY-001 carries 2 tasks, STORY-002 carries 1), 0 findings.
+	const features = {
+		features: [
+			{
+				id: "FEAT-001",
+				title: "Auth",
+				stories: [
+					{
+						id: "STORY-001",
+						title: "login",
+						tasks: [
+							{ id: "T1", title: "form", status: "todo", files: ["a.ts"], acceptance: "renders" },
+							{ id: "T2", title: "api", status: "done", files: [], acceptance: "200" },
+						],
+					},
+					{ id: "STORY-002", title: "logout", tasks: [{ id: "T3", title: "endpoint", status: "todo" }] },
+				],
+				findings: [],
+			},
+		],
+	};
+	fs.writeFileSync(path.join(work, "features.json"), JSON.stringify(features, null, 2));
+	// story.json deliberately ABSENT (registered-but-fileless vestigial block).
+	return { cwd, work };
+}
+
+const REAL_SHAPE_TARGETS: PromotionTargets = {
+	"features.stories": {
+		blockKind: "feature-story",
+		prefix: "FSTORY-",
+		idPattern: "^FSTORY-\\d{3}$",
+		relationType: "feature_contains_story",
+	},
+	"feature-story.tasks": {
+		blockKind: "story-task",
+		prefix: "STORY-TASK-",
+		idPattern: "^STORY-TASK-\\d{4}$",
+		relationType: "story_contains_task",
+	},
+};
+
+describe("canonicalizeSubstrate: real-shape-class (clean-emit dissolves the source-schema mole-classes)", () => {
+	it("canonicalizes a $ref-tree + fileless + divergent-narrow-AP + 0-data substrate; NO dangling $ref; data re-inferred; dry==real; idempotent", (t) => {
+		const real = makeRealShapeFixture();
+		t.after(() => fs.rmSync(real.cwd, { recursive: true, force: true }));
+
+		const report = canonicalizeSubstrate(real.work, { promotionTargets: REAL_SHAPE_TARGETS });
+
+		// ── (a) NO dangling $ref anywhere — clean-emit ignored the source $ref tree.
+		//    The features schema (depth-3 $ref tree pre-canonicalize) + the synth schemas
+		//    all end clean. The vestigial story schema is EXEMPT — it is left untouched (no
+		//    data, never a target), so it keeps its narrow form (proving non-reuse). ──
+		const synthSchemaFiles = fs.readdirSync(path.join(real.work, "schemas")).filter((f) => f !== "story.schema.json");
+		for (const f of synthSchemaFiles) {
+			const raw = fs.readFileSync(path.join(real.work, "schemas", f), "utf-8");
+			assert.equal(/\$ref/.test(raw), false, `schema ${f} has NO $ref (source $ref tree ignored)`);
+			assert.equal(/"\$defs"|"definitions"/.test(raw), false, `schema ${f} has NO $defs/definitions`);
+		}
+		// EVERY schema (including the untouched vestigial story) has no nested id-bearing array.
+		for (const f of fs.readdirSync(path.join(real.work, "schemas"))) {
+			const schema = JSON.parse(fs.readFileSync(path.join(real.work, "schemas", f), "utf-8")) as Record<
+				string,
+				unknown
+			>;
+			assert.deepEqual(findNestedIdBearingArrays(schema), [], `schema ${f} has no nested id-bearing array`);
+		}
+
+		// ── full depth-3 promoted THROUGH A SYNTHESIZED intermediate: 2 feature-story
+		//    (synth) + 3 story-task (synth). The source $ref tree was never consulted. ──
+		const fsCfg = (readConfig(real.work).block_kinds as Record<string, unknown>[]).find(
+			(b) => b.canonical_id === "feature-story",
+		)!;
+		const stories = readBlockItems(real.work, fsCfg.data_path as string, fsCfg.array_key as string);
+		assert.equal(stories.length, 2, "2 stories promoted into the SYNTHESIZED feature-story block");
+		for (const s of stories) assert.match(s.id as string, /^FSTORY-\d{3}$/, "synth feature-story id minted");
+		const taskCfg = (readConfig(real.work).block_kinds as Record<string, unknown>[]).find(
+			(b) => b.canonical_id === "story-task",
+		)!;
+		const tasks = readBlockItems(real.work, taskCfg.data_path as string, taskCfg.array_key as string);
+		assert.equal(tasks.length, 3, "3 tasks promoted (depth-3 through the synth intermediate)");
+
+		// ── (b) fileless synth blocks were seeded ───────────────────────────────────
+		assert.ok(fs.existsSync(path.join(real.work, fsCfg.data_path as string)), "synth feature-story file seeded");
+		assert.ok(fs.existsSync(path.join(real.work, taskCfg.data_path as string)), "synth story-task file seeded");
+
+		// ── (c) the DIVERGENT-NARROW vestigial story block is left UNTOUCHED — clean-emit
+		//    SYNTHESIZED feature-story rather than forcing the rich nested data into the
+		//    narrow story shape (no story.json created; its narrow schema unchanged). ──
+		assert.equal(fs.existsSync(path.join(real.work, "story.json")), false, "vestigial story block left fileless");
+		const vestigial = JSON.parse(
+			fs.readFileSync(path.join(real.work, "schemas", "story.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		assert.deepEqual(
+			vestigial,
+			divergentNarrowStorySchema(),
+			"vestigial divergent-narrow story schema untouched (clean-emit synthesized instead of reusing)",
+		);
+
+		// ── the inferred SYNTH story-task schema carries the RICHER field union (status/
+		//    files/acceptance) from DATA, AP:false, no $ref — inherits nothing from source. ──
+		const taskSchema = JSON.parse(
+			fs.readFileSync(path.join(real.work, taskCfg.schema_path as string), "utf-8"),
+		) as Record<string, unknown>;
+		const tItemNode = (taskSchema.properties as Record<string, Record<string, unknown>>)[taskCfg.array_key as string]
+			.items as Record<string, unknown>;
+		assert.equal(tItemNode.additionalProperties, false, "synth task item shape AP:false over observed union");
+		const tItems = tItemNode.properties as Record<string, Record<string, unknown>>;
+		for (const fld of ["status", "files", "acceptance", "title"]) {
+			assert.ok(Object.hasOwn(tItems, fld), `inferred task schema declares data field '${fld}'`);
+		}
+		assert.equal(tItems.status.type, "string", "status inferred as string from data");
+		assert.equal(tItems.files.type, "array", "files inferred as (loose) array from data");
+
+		// ── (d) 0-data findings survives as a loose array (no promotion, no block) ──
+		for (const fItem of readBlockItems(real.work, "features.json", "features")) {
+			assert.ok(
+				Array.isArray(fItem.findings) && (fItem.findings as unknown[]).length === 0,
+				"findings 0-data retained",
+			);
+			assert.equal(Object.hasOwn(fItem, "stories"), false, "feature de-nested (stories promoted)");
+		}
+		assert.equal(
+			report.promotions.some((p) => p.path === "features.findings"),
+			false,
+			"no promotion for the 0-data findings array",
+		);
+
+		// ── content-addressing + no item loss (2 stories + 3 tasks promoted) ────────
+		for (const it of [...stories, ...tasks]) {
+			assert.match(it.oid as string, /^[0-9a-f]{32}$/, `item ${String(it.id)} oid 32-hex`);
+			assert.ok(hasObject(real.work, it.content_hash as string), `item ${String(it.id)} object on disk`);
+		}
+		assert.equal(
+			report.promotions.reduce((n, p) => n + p.entities, 0),
+			5,
+			"5 entities promoted, no item loss",
+		);
+
+		// ── edges resolve via a pointer-switch validateContext → 0 nested + 0 dangling ──
+		const original = JSON.parse(fs.readFileSync(path.join(real.cwd, ".pi-context.json"), "utf-8")) as {
+			contextDir: string;
+		};
+		try {
+			writeBootstrapPointer(real.cwd, ".work");
+			const result = validateContext(real.cwd);
+			assert.deepEqual(
+				result.issues.filter((i) => i.code === "nested_id_bearing_array"),
+				[],
+				"validateContext: 0 nested_id_bearing_array",
+			);
+			assert.deepEqual(
+				result.issues.filter((i) => i.code === "edge_endpoint_dangling" || i.code === "edge_endpoint_unregistered"),
+				[],
+				"validateContext: 0 dangling/unregistered edge endpoints",
+			);
+		} finally {
+			writeBootstrapPointer(real.cwd, original.contextDir);
+		}
+
+		// ── idempotent: a second run promotes/mints nothing ─────────────────────────
+		const report2 = canonicalizeSubstrate(real.work, { promotionTargets: REAL_SHAPE_TARGETS });
+		assert.equal(report2.promotions.length, 0, "2nd run: 0 promotions");
+		assert.equal(report2.items_oid_minted, 0, "2nd run: 0 oids minted");
+		assert.deepEqual(report2.schema_denested, [], "2nd run: 0 schemas de-nested");
+	});
+
+	it("dry-run counts == real-run counts on the real-shape fixture (field-by-field)", (t) => {
+		const realF = makeRealShapeFixture();
+		t.after(() => fs.rmSync(realF.cwd, { recursive: true, force: true }));
+		const realReport = canonicalizeSubstrate(realF.work, { promotionTargets: REAL_SHAPE_TARGETS });
+
+		const dryF = makeRealShapeFixture();
+		t.after(() => fs.rmSync(dryF.cwd, { recursive: true, force: true }));
+		const before = snapshotTree(dryF.work);
+		const dryReport = canonicalizeSubstrate(dryF.work, { dryRun: true, promotionTargets: REAL_SHAPE_TARGETS });
+		const after = snapshotTree(dryF.work);
+
+		assert.deepEqual([...after.entries()].sort(), [...before.entries()].sort(), "dryRun: every byte unchanged");
+		assert.deepEqual(dryReport.promotions, realReport.promotions, "dry promotions == real");
+		assert.equal(dryReport.items_oid_minted, realReport.items_oid_minted, "dry minted == real");
+		assert.equal(dryReport.items_hashed, realReport.items_hashed, "dry hashed == real");
+		assert.equal(dryReport.objects_stored, realReport.objects_stored, "dry objects_stored == real");
+		assert.equal(dryReport.edges_structured, realReport.edges_structured, "dry edges_structured == real");
+		assert.deepEqual(dryReport.schema_denested.sort(), realReport.schema_denested.sort(), "dry denested == real");
+		assert.deepEqual(dryReport.kinds_registered.sort(), realReport.kinds_registered.sort(), "dry kinds == real");
+	});
+
+	it("ADVERSARIAL-REVERT: the real-shape test FAILS if the inference is stubbed back to source-preserving (the $ref survives)", (t) => {
+		// This test documents + actively proves the regression guard. A source-PRESERVING
+		// builder would carry the source `$ref` tree (or the divergent-narrow AP) into the
+		// output. We simulate that failure mode by asserting the OPPOSITE of clean-emit on a
+		// deliberately source-preserving schema body, and confirm the clean-emit assertions
+		// that the real-shape test relies on would NOT hold for it — i.e. those assertions
+		// are load-bearing, not vacuous.
+		const real = makeRealShapeFixture();
+		t.after(() => fs.rmSync(real.cwd, { recursive: true, force: true }));
+
+		// The SOURCE features schema (what a source-preserving builder would emit a clone of):
+		// it DOES contain $ref + definitions. The real-shape test's "NO $ref" assertion is the
+		// thing that catches a source-preserving reversion — prove it fires on the source body.
+		const sourceRaw = fs.readFileSync(path.join(real.work, "schemas", "features.schema.json"), "utf-8");
+		assert.equal(/\$ref/.test(sourceRaw), true, "PRE-canonicalize source schema DOES carry $ref (mole-class present)");
+		assert.throws(
+			() => {
+				// The clean-emit assertion the real-shape test runs post-canonicalize:
+				assert.equal(/\$ref/.test(sourceRaw), false, "clean-emit: no $ref");
+			},
+			/no \$ref/,
+			"a source-preserving output (carrying $ref) FAILS the clean-emit no-$ref assertion",
+		);
+	});
+});
+
+describe("deriveIdPattern + inferItemSubschemaFromData (clean-emit primitives)", () => {
+	it("deriveIdPattern derives ^prefix\\d{N}$ from regular ids; null for irregular", () => {
+		assert.equal(deriveIdPattern(["DEC-0001", "DEC-0002", "DEC-0099"]), "^DEC-\\d{4}$", "DEC- width 4");
+		assert.equal(deriveIdPattern(["FEAT-001", "FEAT-011"]), "^FEAT-\\d{3}$", "FEAT- width 3");
+		assert.equal(deriveIdPattern(["issue-001"]), "^issue-\\d{3}$", "lowercase prefix");
+		assert.equal(deriveIdPattern(["L1", "L2", "L5"]), "^L\\d{1}$", "prefix with no separator");
+		assert.equal(deriveIdPattern(["PHASE-1", "PHASE-7"]), "^PHASE-\\d{1}$", "PHASE- width 1");
+		assert.equal(deriveIdPattern(["FEAT-1", "FEAT-22"]), "^FEAT-\\d{1,}$", "mixed width → open upper");
+		assert.equal(deriveIdPattern(["FEAT-001", "STORY-001"]), null, "divergent prefixes → null");
+		assert.equal(deriveIdPattern(["nodigits"]), null, "no numeric suffix → null");
+		assert.equal(deriveIdPattern([]), null, "empty → null");
+	});
+
+	it("inferItemSubschemaFromData unions field types across ALL items, required:['id'] only, AP:false", () => {
+		const inferred = inferItemSubschemaFromData(
+			[
+				{ id: "X-001", a: "s", b: 1, present_on_first: true },
+				{ id: "X-002", a: "s2", b: 2, only_on_second: [1, 2] },
+			],
+			{},
+		);
+		assert.equal(inferred.additionalProperties, false, "AP:false");
+		assert.deepEqual(inferred.required, ["id"], "required is id-only");
+		const props = inferred.properties as Record<string, Record<string, unknown>>;
+		assert.deepEqual(props.id, { type: "string", pattern: "^X-\\d{3}$" }, "id pattern derived from data");
+		assert.equal(props.a.type, "string");
+		assert.equal(props.b.type, "number");
+		assert.equal(props.present_on_first.type, "boolean", "field present on some-not-all is OPTIONAL but typed");
+		assert.equal(props.only_on_second.type, "array", "array declared LOOSE (no items)");
+		assert.ok(Object.hasOwn(props, "oid") && Object.hasOwn(props, "content_hash"), "identity fields appended");
+	});
+
+	it("inferItemSubschemaFromData collapses a field with >1 non-null type to a permissive {}", () => {
+		const inferred = inferItemSubschemaFromData(
+			[
+				{ id: "X-1", mixed: "s" },
+				{ id: "X-2", mixed: 7 },
+			],
+			{ idPattern: "^X-\\d+$" },
+		);
+		const props = inferred.properties as Record<string, Record<string, unknown>>;
+		assert.deepEqual(props.mixed, {}, "mixed-type field → permissive {} (no type)");
+		assert.deepEqual(props.id, { type: "string", pattern: "^X-\\d+$" }, "given idPattern used verbatim");
 	});
 });

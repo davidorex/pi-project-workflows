@@ -38,60 +38,67 @@ function pass(msg: string): void {
 	console.log(`[runtime-demo] ✔ ${msg}`);
 }
 
-const IDENTITY_PROPS = {
-	oid: { type: "string", pattern: "^[0-9a-f]{32}$" },
-	content_hash: { type: "string", pattern: "^[0-9a-f]{64}$" },
-	content_parent: { type: "string", pattern: "^[0-9a-f]{64}$" },
-};
-
+/** features schema in the REAL `.project-migrate` `$ref`-tree form: `features.items`
+ * is `{$ref:#/definitions/feature}`; `feature.stories` → `{$ref:#/definitions/story}`;
+ * `story.tasks` → `{$ref:#/definitions/task}`; `feature.findings` →
+ * `{$ref:#/definitions/scoped-finding}` (0-data). EVERY definition is
+ * `additionalProperties:false` AND declares NO identity fields (`oid`/`content_hash`/
+ * `content_parent`). This is the mole-class the clean-emit canonicalizer must dissolve:
+ *   - the source `$ref`/`definitions` tree must be IGNORED (clean-emit infers each
+ *     emitted schema from DATA, so no `$ref`/`$defs` survives + nothing dangles);
+ *   - the parent (`features`) source schema omits identity fields, so the framework's
+ *     identity-stamp gate is a NO-OP until the canonicalizer re-emits the parent schema
+ *     declaring them (otherwise parent oids never mint + the membership-edge parent-oid
+ *     lookup throws);
+ *   - the depth-3 `task` definition's AP:false over a NARROWER field set than the on-disk
+ *     data must NOT be carried forward — the synthesized `story-task` schema is inferred
+ *     from the promoted DATA's richer field union. */
 function featuresSchema(): Record<string, unknown> {
 	return {
 		$schema: "http://json-schema.org/draft-07/schema#",
-		$id: "pi-context://schemas/features",
-		version: "1.0.0",
-		title: "features",
+		title: "Features",
 		type: "object",
 		required: ["features"],
-		properties: {
-			features: {
-				type: "array",
-				items: {
-					type: "object",
-					required: ["id"],
-					properties: {
-						id: { type: "string", pattern: "^FEAT-\\d{3}$" },
-						title: { type: "string" },
-						stories: {
-							type: "array",
-							items: {
-								type: "object",
-								required: ["id"],
-								properties: {
-									id: { type: "string", pattern: "^STORY-\\d{3}$" },
-									summary: { type: "string" },
-									tasks: {
-										type: "array",
-										items: {
-											type: "object",
-											required: ["id"],
-											properties: { id: { type: "string" }, desc: { type: "string" }, ...IDENTITY_PROPS },
-										},
-									},
-									...IDENTITY_PROPS,
-								},
-							},
-						},
-						findings: {
-							type: "array",
-							items: {
-								type: "object",
-								required: ["id"],
-								properties: { id: { type: "string" }, note: { type: "string" }, ...IDENTITY_PROPS },
-							},
-						},
-						...IDENTITY_PROPS,
-					},
+		properties: { features: { type: "array", items: { $ref: "#/definitions/feature" } } },
+		definitions: {
+			feature: {
+				type: "object",
+				additionalProperties: false,
+				required: ["id", "title", "stories", "findings"],
+				properties: {
+					id: { type: "string", pattern: "^FEAT-\\d{3}$" },
+					title: { type: "string" },
+					stories: { type: "array", items: { $ref: "#/definitions/story" } },
+					findings: { type: "array", items: { $ref: "#/definitions/scoped-finding" } },
 				},
+			},
+			story: {
+				type: "object",
+				additionalProperties: false,
+				required: ["id", "title", "tasks"],
+				properties: {
+					id: { type: "string" },
+					title: { type: "string" },
+					tasks: { type: "array", items: { $ref: "#/definitions/task" } },
+				},
+			},
+			task: {
+				type: "object",
+				additionalProperties: false,
+				required: ["id"],
+				properties: {
+					id: { type: "string" },
+					title: { type: "string" },
+					status: { type: "string" },
+					files: { type: "array", items: { type: "string" } },
+					acceptance: { type: "string" },
+				},
+			},
+			"scoped-finding": {
+				type: "object",
+				additionalProperties: false,
+				required: ["id"],
+				properties: { id: { type: "string" }, note: { type: "string" } },
 			},
 		},
 	};
@@ -155,13 +162,13 @@ function makeFixture(): { cwd: string; work: string } {
 						stories: [
 							{
 								id: "STORY-001",
-								summary: "login",
+								title: "login",
 								tasks: [
-									{ id: "T1", desc: "form" },
-									{ id: "T2", desc: "api" },
+									{ id: "T1", title: "form", status: "todo", files: ["a.ts"], acceptance: "renders" },
+									{ id: "T2", title: "api", status: "done", files: [], acceptance: "200" },
 								],
 							},
-							{ id: "STORY-002", summary: "logout", tasks: [{ id: "T3", desc: "endpoint" }] },
+							{ id: "STORY-002", title: "logout", tasks: [{ id: "T3", title: "endpoint", status: "todo" }] },
 						],
 						findings: [],
 					},
@@ -261,7 +268,14 @@ function main(): void {
 				if (!hasObject(work, it.content_hash as string)) fail(`item ${String(it.id)} object missing on disk`);
 			}
 			for (const f of blockItems(work, "features.json", "features")) {
-				if (Object.hasOwn(f, "stories") || Object.hasOwn(f, "findings")) fail("feature not de-nested");
+				// stories was data-bearing → promoted → de-nested (gone). findings is a 0-DATA
+				// id array → NEVER promoted; clean-emit RETAINS it in the data as a loose empty
+				// array (re-inferred as `{type:"array"}`, 9.2-guard-clean), so it must REMAIN.
+				if (Object.hasOwn(f, "stories")) fail("feature not de-nested (stories should be promoted away)");
+				if (!Object.hasOwn(f, "findings")) fail("feature should RETAIN its 0-data findings array (clean-emit)");
+				if (!Array.isArray(f.findings) || (f.findings as unknown[]).length !== 0) {
+					fail("feature findings should be an empty array (0-data, unpromoted)");
+				}
 			}
 			for (const s of stories) if (Object.hasOwn(s, "tasks")) fail("story not de-nested");
 

@@ -39,6 +39,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { readBlock } from "@davidorex/pi-context/block-api";
 import { availableBlocks, type SchemaInfo, type SchemaProperty, schemaInfo } from "@davidorex/pi-context/context-sdk";
+import { cleanGitEnv } from "@davidorex/pi-context/git-env";
 
 interface Args {
 	cwd: string;
@@ -116,8 +117,8 @@ interface SubstrateData {
 
 function getRepoHead(cwd: string): { full: string; short: string } {
 	try {
-		const full = execSync("git rev-parse HEAD", { cwd, encoding: "utf-8" }).trim();
-		const short = execSync("git rev-parse --short HEAD", { cwd, encoding: "utf-8" }).trim();
+		const full = execSync("git rev-parse HEAD", { cwd, encoding: "utf-8", env: cleanGitEnv() }).trim();
+		const short = execSync("git rev-parse --short HEAD", { cwd, encoding: "utf-8", env: cleanGitEnv() }).trim();
 		return { full, short };
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);

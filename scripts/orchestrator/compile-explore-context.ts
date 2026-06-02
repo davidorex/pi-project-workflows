@@ -35,6 +35,7 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { cleanGitEnv } from "@davidorex/pi-context/git-env";
 
 interface Args {
 	question: string;
@@ -93,9 +94,9 @@ function parseArgs(argv: string[]): Args {
 }
 
 function gitState(): { head: string; branch: string; statusShort: string } {
-	const head = execSync("git rev-parse HEAD", { encoding: "utf-8" }).trim();
-	const branch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
-	const statusShort = execSync("git status --short", { encoding: "utf-8" }).trim();
+	const head = execSync("git rev-parse HEAD", { encoding: "utf-8", env: cleanGitEnv() }).trim();
+	const branch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8", env: cleanGitEnv() }).trim();
+	const statusShort = execSync("git status --short", { encoding: "utf-8", env: cleanGitEnv() }).trim();
 	return { head, branch, statusShort };
 }
 

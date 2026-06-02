@@ -18,6 +18,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { cleanGitEnv } from "@davidorex/pi-context/git-env";
 
 const BUMP_TYPE = process.argv[2];
 
@@ -73,7 +74,7 @@ console.log("\n=== Release Script ===\n");
 
 // 1. Check for uncommitted changes
 console.log("Checking for uncommitted changes...");
-const status = run("git status --porcelain", { silent: true });
+const status = run("git status --porcelain", { silent: true, env: cleanGitEnv() });
 if (status?.trim()) {
 	console.error("Error: Uncommitted changes detected. Commit or stash first.");
 	console.error(status);
@@ -94,9 +95,9 @@ console.log();
 
 // 4. Commit and tag
 console.log("Committing and tagging...");
-run("git add .");
-run(`git commit -m "Release v${version}"`);
-run(`git tag v${version}`);
+run("git add .", { env: cleanGitEnv() });
+run(`git commit -m "Release v${version}"`, { env: cleanGitEnv() });
+run(`git tag v${version}`, { env: cleanGitEnv() });
 console.log();
 
 console.log(`=== Tagged v${version} ===`);

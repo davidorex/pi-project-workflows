@@ -19,11 +19,11 @@
  * library underneath, different consumer wrapper. Both thin; logic in the library.
  *
  * Usage:
- *   tsx scripts/orchestrator/land-identity-fields.ts --substrate <dir> [--cwd <dir>] [--dry-run] [--writer kind:id]
+ *   tsx scripts/migration/land-identity-fields.ts --substrate <dir> [--cwd <dir>] [--dry-run] [--writer kind:id]
  */
 import path from "node:path";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { landIdentityFieldsForDir } from "@davidorex/pi-context/land-identity-fields";
+import { landIdentityFieldsForDir } from "./lib/land-identity-fields.js";
 
 interface Args {
 	substrate: string;

@@ -47,7 +47,7 @@
  * `--format json` mode.
  *
  * Usage:
- *   tsx scripts/orchestrator/upgrade-substrate-content-addressed.ts \
+ *   tsx scripts/migration/upgrade-substrate-content-addressed.ts \
  *     [--cwd <dir>] [--substrate <name>] [--dry-run] \
  *     [--writer <kind:id>] [--format json|table]
  *   (defaults: --cwd ., --substrate .context, --writer human:davidryan@gmail.com,
@@ -55,14 +55,14 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { registerSubstrate } from "@davidorex/pi-context/context-registry";
+import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import {
 	type CanonicalizeReport,
 	canonicalizeSubstrate,
 	type PromotionTargets,
 	type RegisterBlock,
-} from "@davidorex/pi-context/canonicalize-substrate";
-import { registerSubstrate } from "@davidorex/pi-context/context-registry";
-import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
+} from "./lib/canonicalize-substrate.js";
 import { verifyDupe } from "./verify-substrate-dupe.js";
 
 export interface UpgradeOptions {

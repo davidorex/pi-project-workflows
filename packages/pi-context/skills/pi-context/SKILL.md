@@ -62,28 +62,6 @@ Promote a substrate item into another (registered) substrate as a NEW content-ad
 | `writer` | object | yes | DispatchContext.writer per pi-context/src/dispatch-context.ts. |
 </tool>
 
-<tool name="migrate-content-addressed">
-Run the §H content-addressing migration across every substrate under the project root: mint + register a substrate_id per substrate, record the default `project` legacy alias, backfill oid/content_hash/objects onto every existing item, and convert legacy `<alias>:<refname>` + bare-refname relation endpoints to structured form so cross-substrate edges resolve `foreign` CLEAN. Idempotent. Pass dryRun to compute the full report (counts + unresolved endpoints) without writing any channel. A non-dry run with unresolved endpoints is INCOMPLETE — the report's `unresolved[]` lists every dropped (not written as broken) endpoint.
-
-*Migrate all substrates to content-addressed identity + structured relation endpoints*
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `dryRun` | boolean | no | Compute the report without writing any channel |
-| `legacyAliases` | object | no | Map of legacy alias → substrate dir basename (merged over the default `project` → `.project`) |
-</tool>
-
-<tool name="canonicalize-substrate">
-Transform the ACTIVE substrate into canonical content-addressed shape: promote every nested id-bearing array (any depth) to a top-level entity block + ordinal-bearing membership edges, de-nest the parents, content-address every item (oid/content_hash/object), register synthesized block_kinds + membership relation_types, mint a substrate_id when absent, and convert bare-refname relation endpoints to structured form. Idempotent. Pass dryRun to compute the full CanonicalizeReport (promotions/entities/edges, schemas de-nested, kinds + relation_types registered, items minted/hashed, objects stored) without writing any channel. NOTE: this tool targets the active substrate in place; the triple-buffer (dupe/verify/swap) lives in the orchestrator CLI. Promotion targets (block_kind + relation_type names per nested-array dotted path) are NEVER synthesized — supply them explicitly via promotionTargets; an unmapped data-bearing nested array throws.
-
-*Canonicalize the active substrate (promote nested arrays to top-level entity blocks + membership edges)*
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `dryRun` | boolean | no | Compute the report without writing any channel |
-| `promotionTargets` | object | no | Explicit promotion targets keyed by the nested-array dotted path (e.g. 'features.stories'). Required for every data-bearing nested id array; no name synthesis. |
-</tool>
-
 <tool name="append-block-nested-item">
 Append an item to a nested array on a parent-array item in a project block. Schema validation is automatic.
 
@@ -712,7 +690,7 @@ Lenses are named projections over a target block. A lens declares `id`, `target`
 
 Edges live in `<substrate-dir>/relations.json` as a closure table — each row is `{ parent, child, relation_type, ordinal? }`. `relation_type` is a lens id, a hierarchy edge type, or a registered `relation_types[].canonical_id`; `ordinal` orders siblings within `(parent, relation_type)`. Endpoints (both `parent` and `child`) are dual-form: a legacy string (a canonical id, a lens bin name, or an `<alias>:<refname>` cross-substrate sentinel; disambiguation lives in `validateRelations`), OR a structured item endpoint `{ kind: "item", oid, refname?, substrate_id?, content_hash? }` where a present `substrate_id` marks a foreign endpoint and `content_hash` is carried for drift detection, OR a structured lens-bin endpoint `{ kind: "lens_bin", bin }` — a virtual parent that never resolves to an item.
 
-The single-form rule: ALL inter-item relationships are closure-table edges. Embedded nested id-bearing arrays and FK-as-field are forbidden — a nested id-bearing array in a schema is flagged `nested_id_bearing_array` by `validateContext` with the remediation "promote to a top-level entity + membership edge". Containment is a membership edge carrying `ordinal`; the nested id-bearing array → top-level entity block + ordinal-bearing membership edges promotion is performed by the canonicalizer (`canonicalize-substrate` tool). (Distinct from the `promote-item` tool, which is a cross-substrate derivation: it promotes a substrate item INTO another registered substrate as a new content-addressed item, recording an `item_derived_from_item` lineage edge in the destination.)
+The single-form rule: ALL inter-item relationships are closure-table edges. Embedded nested id-bearing arrays and FK-as-field are forbidden — a nested id-bearing array in a schema is flagged `nested_id_bearing_array` by `validateContext` with the remediation "promote to a top-level entity + membership edge". Containment is a membership edge carrying `ordinal`; the nested id-bearing array → top-level entity block + ordinal-bearing membership edges promotion is performed by the canonicalizer (the context-dir-migration `canonicalizeSubstrate` machinery, run as a repo-side migration script under `scripts/migration/` — not a packaged pi-context tool). (Distinct from the `promote-item` tool, which is a cross-substrate derivation: it promotes a substrate item INTO another registered substrate as a new content-addressed item, recording an `item_derived_from_item` lineage edge in the destination.)
 
 The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synthetic edges (when `derived_from_field` is set) or filtered authored edges (otherwise). `groupByLens(items, lens, lensEdges)` produces a `Map<binName, ItemRecord[]>`. `walkDescendants(parentId, relationType, edges)` traverses the closure table from any parent.
 

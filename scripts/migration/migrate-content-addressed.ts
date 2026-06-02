@@ -14,9 +14,9 @@
  * the report is advisory; the operator decides whether to proceed.
  *
  * Usage:
- *   tsx scripts/orchestrator/migrate-content-addressed.ts [--dry-run] [--legacy-alias project=.project ...] [--cwd <dir>]
+ *   tsx scripts/migration/migrate-content-addressed.ts [--dry-run] [--legacy-alias project=.project ...] [--cwd <dir>]
  */
-import { migrateToContentAddressed } from "@davidorex/pi-context/migrate-content-addressed";
+import { migrateToContentAddressed } from "./lib/migrate-content-addressed.js";
 
 interface Args {
 	dryRun: boolean;

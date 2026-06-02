@@ -3,8 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { validateBlockWithMigrationForDir } from "@davidorex/pi-context/schema-validator";
 import { landIdentityFieldsForDir } from "./land-identity-fields.js";
-import { validateBlockWithMigrationForDir } from "./schema-validator.js";
 
 // The canonical identity-field declarations, byte-identical to the module's
 // frozen IDENTITY_FIELDS source — duplicated here so the test asserts the

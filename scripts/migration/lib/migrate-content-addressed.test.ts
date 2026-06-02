@@ -21,12 +21,17 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { type EdgeEndpoint, loadRelationsForDir } from "./context.js";
-import { writeBootstrapPointer } from "./context-dir.js";
-import { loadRegistry, registerSubstrate, resolveAlias, resolveSubstrateDir } from "./context-registry.js";
-import { validateContext } from "./context-sdk.js";
+import { type EdgeEndpoint, loadRelationsForDir } from "@davidorex/pi-context/context";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
+import {
+	loadRegistry,
+	registerSubstrate,
+	resolveAlias,
+	resolveSubstrateDir,
+} from "@davidorex/pi-context/context-registry";
+import { validateContext } from "@davidorex/pi-context/context-sdk";
+import { hasObject } from "@davidorex/pi-context/object-store";
 import { migrateToContentAddressed } from "./migrate-content-addressed.js";
-import { hasObject } from "./object-store.js";
 
 const RELATION_TYPES = [{ canonical_id: "relates_to", display_name: "relates to", category: "membership" }];
 

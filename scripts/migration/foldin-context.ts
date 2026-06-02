@@ -45,7 +45,7 @@
  * the dupe-verify cycle IS the de-risk.
  *
  * Usage:
- *   tsx scripts/orchestrator/foldin-context.ts [--substrate <dir>] [--cwd <dir>] [--no-swap]
+ *   tsx scripts/migration/foldin-context.ts [--substrate <dir>] [--cwd <dir>] [--no-swap]
  *   (defaults: --substrate .context, --cwd process.cwd())
  */
 import { randomUUID } from "node:crypto";
@@ -53,9 +53,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadRelationsForDir, type RawEndpoint, writeRelationsForDir } from "@davidorex/pi-context/context";
 import { registerSubstrate } from "@davidorex/pi-context/context-registry";
-import { landIdentityFieldsForDir } from "@davidorex/pi-context/land-identity-fields";
-import { migrateToContentAddressed } from "@davidorex/pi-context/migrate-content-addressed";
 import { writeSchemaCheckedForDir } from "@davidorex/pi-context/schema-write";
+import { landIdentityFieldsForDir } from "./lib/land-identity-fields.js";
+import { migrateToContentAddressed } from "./lib/migrate-content-addressed.js";
 import { verifyDupe } from "./verify-substrate-dupe.js";
 
 interface Args {

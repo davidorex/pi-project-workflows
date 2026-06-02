@@ -27,16 +27,12 @@
  * writes) and exits 0 — no dupe, no swap.
  *
  * Usage:
- *   tsx scripts/orchestrator/canonicalize-substrate.ts --substrate <dir> [--cwd <dir>] [--dry-run] [--no-swap]
+ *   tsx scripts/migration/canonicalize-substrate.ts --substrate <dir> [--cwd <dir>] [--dry-run] [--no-swap]
  */
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import {
-	canonicalizeSubstrate,
-	type PromotionTargets,
-	type RegisterBlock,
-} from "@davidorex/pi-context/canonicalize-substrate";
+import { canonicalizeSubstrate, type PromotionTargets, type RegisterBlock } from "./lib/canonicalize-substrate.js";
 import { verifyDupe } from "./verify-substrate-dupe.js";
 
 /**

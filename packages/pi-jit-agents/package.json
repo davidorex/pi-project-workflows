@@ -54,7 +54,7 @@
 	],
 	"scripts": {
 		"clean": "rm -rf dist",
-		"build": "tsc -p tsconfig.build.json",
+		"build": "rm -rf dist && tsc -p tsconfig.build.json",
 		"prepublishOnly": "npm run clean && npm run build",
 		"test": "tsx --test src/*.test.ts"
 	},

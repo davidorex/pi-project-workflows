@@ -26,8 +26,8 @@ import { type EdgeEndpoint, loadRelationsForDir } from "@davidorex/pi-context/co
 import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { loadRegistry, resolveAlias, resolveSubstrateDir } from "@davidorex/pi-context/context-registry";
 import { validateContext } from "@davidorex/pi-context/context-sdk";
-import { migrateToContentAddressed } from "@davidorex/pi-context/migrate-content-addressed";
 import { hasObject } from "@davidorex/pi-context/object-store";
+import { migrateToContentAddressed } from "./lib/migrate-content-addressed.js";
 
 function fail(msg: string): never {
 	console.error(`[runtime-demo] FAIL: ${msg}`);

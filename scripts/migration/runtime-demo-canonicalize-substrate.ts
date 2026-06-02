@@ -5,7 +5,7 @@
  * Builds a scratch substrate (depth-3 nested tree promoted THROUGH A SYNTHESIZED
  * intermediate `feature-story` block — matching the CLI's PROJECT_MIGRATE_TARGETS —
  * plus a 0-data nested id array) end-to-end and drives it THROUGH THE CLI
- * (`scripts/orchestrator/canonicalize-substrate.ts`) so the actual
+ * (`scripts/migration/canonicalize-substrate.ts`) so the actual
  * dupe/verify/swap path is exercised — NOT a library-only call. Scratch fixtures
  * ONLY (mkdtemp); never a real substrate. Console PASS markers + process.exit(1)
  * on the first failed assertion. Proves:

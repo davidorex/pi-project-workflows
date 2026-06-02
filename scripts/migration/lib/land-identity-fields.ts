@@ -44,13 +44,39 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { DispatchContext } from "./dispatch-context.js";
-import { readSchemaForDir, writeSchemaCheckedForDir } from "./schema-write.js";
+import type { DispatchContext } from "@davidorex/pi-context/dispatch-context";
+import { readSchemaForDir, writeSchemaCheckedForDir } from "@davidorex/pi-context/schema-write";
 
-/** Bundled samples-schemas directory — resolved relative to this module so it
- * works from both `src/` (tsx) and `dist/` (built); `samples/` sits one level
- * above either (mirrors `samples-catalog.ts`'s SAMPLES_DIR resolution). */
-const SAMPLES_SCHEMAS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples", "schemas");
+/**
+ * Resolve the bundled samples-schemas directory in the in-repo pi-context
+ * package. This module formerly lived under `packages/pi-context/src/`, where
+ * `samples/` sat one level above; relocated to `scripts/migration/lib/`, the
+ * same bundled directory is reached by the in-repo relative-path convention the
+ * sibling migration lib already uses (`migration-decl-writer.ts`'s
+ * `bundledMigrationsSchemaPath()`): from `scripts/migration/lib/` up three
+ * segments to the repo root, then into `packages/pi-context/samples/schemas`.
+ *
+ * Deliberate repo-internal-tooling coupling, not a fragile guess: this migration
+ * lib is never shipped (it lives under `scripts/`, outside any package `files[]`)
+ * and only ever runs from this monorepo, so the monorepo-layout relative path is
+ * the load-bearing locator — consistent with `migration-decl-writer.ts`, which
+ * reaches `packages/pi-context/schemas/migrations.schema.json` the same way.
+ * Resolving via the installed `@davidorex/pi-context` package would diverge from
+ * that sibling precedent (the package exposes no subpath export for `samples/`),
+ * so the repo-relative path is the cleaner, consistent choice. The existence
+ * guard makes a wrong root fail loudly at resolution time rather than surfacing
+ * later as a per-block_kind "no samples-canonical schema" read error that would
+ * conflate a mis-resolved root with a genuinely-absent canonical schema.
+ */
+function bundledSamplesSchemasDir(): string {
+	const here = path.dirname(fileURLToPath(import.meta.url));
+	// scripts/migration/lib → scripts/migration → scripts → repo root.
+	const dir = path.resolve(here, "..", "..", "..", "packages", "pi-context", "samples", "schemas");
+	if (!fs.existsSync(dir)) {
+		throw new Error(`land-identity-fields: bundled samples-schemas directory not found: ${dir}`);
+	}
+	return dir;
+}
 
 /**
  * The three identity-field declarations, byte-identical to the form already
@@ -193,7 +219,7 @@ export function landIdentityFieldsForDir(
 					`landIdentityFieldsForDir: block_kind '${bk.canonical_id}' has data at ${dataAbs} but no schema at ${schemaAbs}; cannot safely create a schema for a populated block`,
 				);
 			}
-			const samplesSchemaPath = path.join(SAMPLES_SCHEMAS_DIR, `${bk.canonical_id}.schema.json`);
+			const samplesSchemaPath = path.join(bundledSamplesSchemasDir(), `${bk.canonical_id}.schema.json`);
 			let samplesSchema: object;
 			try {
 				samplesSchema = JSON.parse(fs.readFileSync(samplesSchemaPath, "utf-8")) as object;

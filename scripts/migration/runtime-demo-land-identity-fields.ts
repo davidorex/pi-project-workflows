@@ -24,8 +24,8 @@ import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { landIdentityFieldsForDir } from "@davidorex/pi-context/land-identity-fields";
 import { validateBlockWithMigrationForDir } from "@davidorex/pi-context/schema-validator";
+import { landIdentityFieldsForDir } from "./lib/land-identity-fields.js";
 
 const IDENTITY_NAMES = ["oid", "content_hash", "content_parent"] as const;
 

@@ -20,7 +20,8 @@
 	"scripts": {
 		"clean": "npm run clean --workspaces --if-present",
 		"build": "npm run build -w @davidorex/pi-context && npm run build -w @davidorex/pi-jit-agents && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors && npm run build -w @davidorex/pi-agent-dispatch",
-		"test": "npm test --workspaces --if-present",
+		"test": "npm test --workspaces --if-present && npm run test:migration",
+		"test:migration": "tsx --test scripts/migration/lib/*.test.ts",
 		"test:project": "npm test -w @davidorex/pi-context",
 		"test:workflows": "npm test -w @davidorex/pi-workflows",
 		"check": "npx @biomejs/biome check . && tsc --noEmit",

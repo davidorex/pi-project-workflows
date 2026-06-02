@@ -65,14 +65,6 @@
 			"types": "./dist/promote-item.d.ts",
 			"default": "./dist/promote-item.js"
 		},
-		"./migrate-content-addressed": {
-			"types": "./dist/migrate-content-addressed.d.ts",
-			"default": "./dist/migrate-content-addressed.js"
-		},
-		"./canonicalize-substrate": {
-			"types": "./dist/canonicalize-substrate.d.ts",
-			"default": "./dist/canonicalize-substrate.js"
-		},
 		"./dispatch-context": {
 			"types": "./dist/dispatch-context.d.ts",
 			"default": "./dist/dispatch-context.js"
@@ -101,10 +93,6 @@
 			"types": "./dist/read-element.d.ts",
 			"default": "./dist/read-element.js"
 		},
-		"./land-identity-fields": {
-			"types": "./dist/land-identity-fields.d.ts",
-			"default": "./dist/land-identity-fields.js"
-		},
 		"./schemas/config.schema.json": "./schemas/config.schema.json",
 		"./schemas/context-registry.schema.json": "./schemas/context-registry.schema.json",
 		"./schemas/relations.schema.json": "./schemas/relations.schema.json",
@@ -132,7 +120,7 @@
 	],
 	"scripts": {
 		"clean": "rm -rf dist",
-		"build": "tsc -p tsconfig.build.json",
+		"build": "rm -rf dist && tsc -p tsconfig.build.json",
 		"prepublishOnly": "npm run clean && npm run build",
 		"test": "tsx --test src/*.test.ts"
 	},

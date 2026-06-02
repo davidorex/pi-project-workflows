@@ -25,6 +25,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { type EdgeEndpoint, loadRelationsForDir } from "@davidorex/pi-context/context";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
+import { validateContext } from "@davidorex/pi-context/context-sdk";
+import { hasObject } from "@davidorex/pi-context/object-store";
+import { findNestedIdBearingArrays } from "@davidorex/pi-context/schema-write";
 import {
 	canonicalizeSubstrate,
 	deriveIdPattern,
@@ -33,11 +38,6 @@ import {
 	type RegisterBlock,
 	stripNestedIdArrayFromSchema,
 } from "./canonicalize-substrate.js";
-import { type EdgeEndpoint, loadRelationsForDir } from "./context.js";
-import { writeBootstrapPointer } from "./context-dir.js";
-import { validateContext } from "./context-sdk.js";
-import { hasObject } from "./object-store.js";
-import { findNestedIdBearingArrays } from "./schema-write.js";
 
 const IDENTITY_PROPS = {
 	oid: { type: "string", pattern: "^[0-9a-f]{32}$" },

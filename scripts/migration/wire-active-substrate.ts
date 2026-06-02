@@ -23,13 +23,13 @@
  *      substrate_id (the de-nested form carried as a const literal below).
  *
  * Usage:
- *   tsx scripts/orchestrator/wire-active-substrate.ts [--dry-run] [--cwd <dir>]
+ *   tsx scripts/migration/wire-active-substrate.ts [--dry-run] [--cwd <dir>]
  */
 import fs from "node:fs";
 import path from "node:path";
 import { registerSubstrate } from "@davidorex/pi-context/context-registry";
-import { migrateToContentAddressed } from "@davidorex/pi-context/migrate-content-addressed";
 import { writeSchemaCheckedForDir } from "@davidorex/pi-context/schema-write";
+import { migrateToContentAddressed } from "./lib/migrate-content-addressed.js";
 
 /**
  * The de-nested `layer-plans` schema body for the ACTIVE substrate.

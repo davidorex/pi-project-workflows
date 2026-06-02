@@ -84,8 +84,8 @@ import {
 	readBlockForDir,
 	resolveBlockItemSchema,
 	writeBlockForDir,
-} from "./block-api.js";
-import { computeContentHash } from "./content-hash.js";
+} from "@davidorex/pi-context/block-api";
+import { computeContentHash } from "@davidorex/pi-context/content-hash";
 import {
 	amendConfigEntryForDir,
 	appendRelationForDir,
@@ -99,13 +99,13 @@ import {
 	type RelationTypeDecl,
 	writeConfigForDir,
 	writeRelationsForDir,
-} from "./context.js";
-import { mintSubstrateId, SUBSTRATE_ID_PATTERN } from "./context-dir.js";
-import type { DispatchContext } from "./dispatch-context.js";
+} from "@davidorex/pi-context/context";
+import { mintSubstrateId, SUBSTRATE_ID_PATTERN } from "@davidorex/pi-context/context-dir";
+import type { DispatchContext } from "@davidorex/pi-context/dispatch-context";
+import { hasObject } from "@davidorex/pi-context/object-store";
+import { findNestedIdBearingArrays, writeSchemaCheckedForDir } from "@davidorex/pi-context/schema-write";
 import { IDENTITY_FIELDS } from "./land-identity-fields.js";
-import { appendMigrationDeclForDir } from "./migrations-store.js";
-import { hasObject } from "./object-store.js";
-import { findNestedIdBearingArrays, writeSchemaCheckedForDir } from "./schema-write.js";
+import { appendMigrationDeclForDir } from "./migration-decl-writer.js";
 
 /**
  * An EXPLICIT operator-provided promotion target for one nested id-bearing array.

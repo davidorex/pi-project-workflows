@@ -52,8 +52,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { contentProjection, readBlockForDir, writeBlockForDir } from "./block-api.js";
-import { computeContentHash } from "./content-hash.js";
+import { contentProjection, readBlockForDir, writeBlockForDir } from "@davidorex/pi-context/block-api";
+import { computeContentHash } from "@davidorex/pi-context/content-hash";
 import {
 	type BlockKindDecl,
 	type ConfigBlock,
@@ -62,12 +62,17 @@ import {
 	loadRelationsForDir,
 	type RawEndpoint,
 	writeRelationsForDir,
-} from "./context.js";
-import { mintSubstrateId, SUBSTRATE_ID_PATTERN } from "./context-dir.js";
-import { loadRegistry, registerSubstrate, resolveAlias, resolveSubstrateDir } from "./context-registry.js";
-import { type DispatchContext, writerToString } from "./dispatch-context.js";
-import { appendMigrationDeclForDir } from "./migrations-store.js";
-import { hasObject } from "./object-store.js";
+} from "@davidorex/pi-context/context";
+import { mintSubstrateId, SUBSTRATE_ID_PATTERN } from "@davidorex/pi-context/context-dir";
+import {
+	loadRegistry,
+	registerSubstrate,
+	resolveAlias,
+	resolveSubstrateDir,
+} from "@davidorex/pi-context/context-registry";
+import { type DispatchContext, writerToString } from "@davidorex/pi-context/dispatch-context";
+import { hasObject } from "@davidorex/pi-context/object-store";
+import { appendMigrationDeclForDir } from "./migration-decl-writer.js";
 
 export interface MigrationReport {
 	substrates: {

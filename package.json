@@ -19,7 +19,7 @@
 	],
 	"scripts": {
 		"clean": "npm run clean --workspaces --if-present",
-		"build": "npm run build -w @davidorex/pi-context && npm run build -w @davidorex/pi-jit-agents && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors && npm run build -w @davidorex/pi-agent-dispatch",
+		"build": "npm run build -w @davidorex/pi-context && npm run build -w @davidorex/pi-jit-agents && npm run build -w @davidorex/pi-workflows && npm run build -w @davidorex/pi-behavior-monitors && npm run build -w @davidorex/pi-agent-dispatch && npm run build -w @davidorex/pi-context-cli",
 		"test": "npm test --workspaces --if-present && npm run test:migration",
 		"test:migration": "tsx --test scripts/migration/lib/*.test.ts",
 		"test:project": "npm test -w @davidorex/pi-context",

@@ -604,7 +604,13 @@ export const ops: OpDefinition[] = [
 				Type.String({ description: "Address ONE tool by name → full descriptor (params schema + sourceInfo)" }),
 			),
 		}),
-		surface: "use",
+		// surface: "process" — list-tools closes over the pi-runtime `boundPi`
+		// introspection handle (getAllTools/getActiveTools) and throws when that
+		// handle is null (any out-of-pi caller). It is therefore the one op the
+		// auto-tracking CLI must NOT surface; the CLI partitions on this field
+		// (surface === "use") rather than naming list-tools, so the exclusion is
+		// data-driven and a future process-only op inherits it.
+		surface: "process",
 		run(_cwd: string, params: { name?: string }): string {
 			// Closes over the factory `pi` (the introspection surface lives on
 			// ExtensionAPI, not ExtensionContext) — supplied to run via the bound

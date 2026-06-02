@@ -1,0 +1,39 @@
+{
+	"name": "@davidorex/pi-context-cli",
+	"version": "0.27.0",
+	"description": "Auto-tracking command-line interface over the pi-context op-registry — every substrate op surfaces as a CLI command by reflection, no hardcoded command list",
+	"license": "MIT",
+	"author": "David Ryan",
+	"type": "module",
+	"keywords": [
+		"pi-context",
+		"cli"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/davidorex/pi-project-workflows.git",
+		"directory": "packages/pi-context-cli"
+	},
+	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-context-cli",
+	"main": "./dist/cli.js",
+	"bin": {
+		"pi-context": "./dist/cli.js"
+	},
+	"files": [
+		"dist/",
+		"*.md"
+	],
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "rm -rf dist && tsc -p tsconfig.build.json",
+		"prepublishOnly": "npm run clean && npm run build",
+		"test": "tsx --test src/*.test.ts"
+	},
+	"dependencies": {
+		"@davidorex/pi-context": "^0.27.0",
+		"typebox": "^1.1.24"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	}
+}

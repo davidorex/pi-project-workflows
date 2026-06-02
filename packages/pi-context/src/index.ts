@@ -64,6 +64,7 @@ import {
 	validateContext,
 } from "./context-sdk.js";
 import { gatherExecutionContext } from "./execution-context.js";
+import { cleanGitEnv } from "./git-env.js";
 import {
 	buildCurationSuggestions,
 	edgesForLensByName,
@@ -555,6 +556,7 @@ function resolveSlashCommandWriter(ctx: ExtensionCommandContext): string {
 			encoding: "utf8",
 			stdio: ["ignore", "pipe", "ignore"],
 			cwd: ctx.cwd,
+			env: cleanGitEnv(),
 		}).trim();
 		fromGit = out.length > 0 ? out : null;
 	} catch {

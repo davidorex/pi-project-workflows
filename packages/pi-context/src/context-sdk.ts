@@ -24,6 +24,7 @@ import {
 import { resolveContextDir, SCHEMAS_DIR, schemaPath, schemasDir, tryResolveContextDir } from "./context-dir.js";
 import { loadRegistry, resolveAlias, resolveSubstrateDir } from "./context-registry.js";
 import type { DispatchContext } from "./dispatch-context.js";
+import { cleanGitEnv } from "./git-env.js";
 import { getLensValidators } from "./lens-validator.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
 import { findNestedIdBearingArrays } from "./schema-write.js";
@@ -411,8 +412,8 @@ export function contextState(cwd: string): ContextState {
 	let lastCommit = "unknown";
 	let lastCommitMessage = "";
 	try {
-		lastCommit = execSync("git log -1 --format=%h", { cwd, encoding: "utf-8" }).trim();
-		lastCommitMessage = execSync("git log -1 --format=%s", { cwd, encoding: "utf-8" }).trim();
+		lastCommit = execSync("git log -1 --format=%h", { cwd, encoding: "utf-8", env: cleanGitEnv() }).trim();
+		lastCommitMessage = execSync("git log -1 --format=%s", { cwd, encoding: "utf-8", env: cleanGitEnv() }).trim();
 	} catch {
 		/* not a git repo or no commits */
 	}
@@ -420,7 +421,7 @@ export function contextState(cwd: string): ContextState {
 	// Recent commits
 	let recentCommits: string[] = [];
 	try {
-		const log = execSync("git log --oneline -5", { cwd, encoding: "utf-8" }).trim();
+		const log = execSync("git log --oneline -5", { cwd, encoding: "utf-8", env: cleanGitEnv() }).trim();
 		if (log) recentCommits = log.split("\n");
 	} catch {
 		/* not a git repo */

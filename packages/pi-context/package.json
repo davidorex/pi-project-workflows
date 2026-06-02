@@ -29,6 +29,10 @@
 			"types": "./dist/content-hash.d.ts",
 			"default": "./dist/content-hash.js"
 		},
+		"./git-env": {
+			"types": "./dist/git-env.d.ts",
+			"default": "./dist/git-env.js"
+		},
 		"./object-store": {
 			"types": "./dist/object-store.d.ts",
 			"default": "./dist/object-store.js"

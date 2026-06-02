@@ -43,6 +43,7 @@ import {
 	writeRelations,
 } from "./context.js";
 import { buildIdIndex } from "./context-sdk.js";
+import { cleanGitEnv } from "./git-env.js";
 
 export type RenameKind = "item" | "relation_type" | "lens" | "layer";
 
@@ -403,6 +404,7 @@ function collectGitMatches(cwd: string, oldId: string, report: RenameReport): vo
 			cwd,
 			stdio: ["ignore", "pipe", "ignore"],
 			encoding: "utf-8",
+			env: cleanGitEnv(),
 		});
 		for (const line of out.split("\n")) {
 			const trimmed = line.trim();

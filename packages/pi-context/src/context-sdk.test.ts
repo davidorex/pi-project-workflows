@@ -35,6 +35,7 @@ import {
 	schemaVocabulary,
 	validateContext,
 } from "./context-sdk.js";
+import { cleanGitEnv } from "./git-env.js";
 import { clearLensValidators, getLensValidators, type LensValidator, registerLensValidator } from "./lens-validator.js";
 import { ValidationError, validate } from "./schema-validator.js";
 
@@ -222,7 +223,7 @@ describe("contextState", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		// Set up a minimal git repo
-		execSync("git init && git commit --allow-empty -m 'init'", { cwd: tmpDir, stdio: "ignore" });
+		execSync("git init && git commit --allow-empty -m 'init'", { cwd: tmpDir, stdio: "ignore", env: cleanGitEnv() });
 
 		// Set up source files
 		const srcDir = path.join(tmpDir, "src");

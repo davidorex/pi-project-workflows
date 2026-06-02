@@ -32,14 +32,15 @@ import nunjucks from "nunjucks";
 import { bundledTemplateDir } from "./template.js";
 
 // Dedicated self-contained block fixtures ship with this package under
-// test-fixtures/samples/blocks/ (resolved relative to this test file, not
-// the monorepo root) so the delegator render tests do not couple to the
-// mutable live `.project/` substrate. The samples/blocks/ path-segment also
-// places the fixtures inside the citation-rot scanner's structural-seed-data
-// carve-out, so the items' canonical-pattern `id` values are treated as
-// structural ids rather than citations.
+// test-fixtures/blocks/ (resolved relative to this test file, not the
+// monorepo root) so the delegator render tests do not couple to the mutable
+// live `.project/` substrate. The citation-rot scanner exempts test-fixture
+// block-data as item-data (the `/test-fixtures/blocks/` clause in its
+// isItemsFile carve-out), so the items' canonical-pattern `id` values are
+// treated as structural ids rather than citations — this is the scanner's
+// own item-data category, not a path-name trick.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PROJECT_DIR = path.resolve(__dirname, "..", "test-fixtures", "samples", "blocks");
+const PROJECT_DIR = path.resolve(__dirname, "..", "test-fixtures", "blocks");
 
 function loadProjectBlock(filename: string): unknown {
 	const filePath = path.join(PROJECT_DIR, filename);

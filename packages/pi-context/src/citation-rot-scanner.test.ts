@@ -171,6 +171,47 @@ describe("citation-rot-scanner — JSON surface", () => {
 		assert.strictEqual(hits.length, 0, `item-level id must be carved out; got: ${JSON.stringify(hits)}`);
 	});
 
+	it("does NOT flag item-level id under test-fixtures/blocks/", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		const blocksDir = path.join(pkgDir, "test-fixtures", "blocks");
+		fs.mkdirSync(blocksDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(blocksDir, "decisions.json"),
+			JSON.stringify({
+				decisions: [
+					{ id: "DEC-0001", title: "A decision" },
+					{ id: "DEC-0002", title: "Another decision" },
+				],
+			}),
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(
+			hits.length,
+			0,
+			`item-level id under test-fixtures/blocks/ must be carved out; got: ${JSON.stringify(hits)}`,
+		);
+	});
+
+	it("DOES flag a canonical_id appearing as a citation in non-item-data JSON text (exemption not over-broad)", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		// Path does NOT contain /test-fixtures/blocks/ — a plain data file — and
+		// the canonical_id sits in a description-text value (a citation), not a
+		// top-level item `id`. The exemption must not leak to this surface.
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(pkgDir, "decisions.json"),
+			JSON.stringify({
+				decisions: [{ id: "item-1", description: "Closes FGAP-099" }],
+			}),
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 1, `citation in non-item-data text must still flag; got: ${JSON.stringify(hits)}`);
+		assert.strictEqual(hits[0].matched, "FGAP-099");
+		assert.strictEqual(hits[0].surface, "json-string-value");
+	});
+
 	it("DOES flag description text values containing canonical_ids", () => {
 		const dir = mkScratch();
 		const pkgDir = path.join(dir, "fake-pkg");

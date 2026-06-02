@@ -289,6 +289,9 @@ function isSchemaFile(file: string): boolean {
  *   - registry/blocks/ + defaults/blocks/ — legacy on-disk fixtures
  *     (structurally identical to samples/blocks/; the scanner gates them
  *     defensively per FGAP-131 plan step 3 scope)
+ *   - test-fixtures/blocks/ — per-package test-fixture block-data, the same
+ *     item-data category as samples/blocks/ (array-of-items files whose
+ *     top-level `id` values are canonical_ids, not citations)
  */
 function isItemsFile(file: string): boolean {
 	const norm = file.replace(/\\/g, "/");
@@ -296,7 +299,8 @@ function isItemsFile(file: string): boolean {
 		norm.includes("/samples/blocks/") ||
 		norm.includes("/.project/") ||
 		norm.includes("/registry/blocks/") ||
-		norm.includes("/defaults/blocks/")
+		norm.includes("/defaults/blocks/") ||
+		norm.includes("/test-fixtures/blocks/")
 	);
 }
 

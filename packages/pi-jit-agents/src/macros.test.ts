@@ -2,8 +2,8 @@
  * Render-tests for the 6 whole-block delegators landed in the template-
  * relocation arc (decisions / features / framework-gaps / layer-plans /
  * research / spec-reviews). Each test renders the delegator against the
- * real `.project/<file>.json` data for this repo and asserts the four
- * lens-4 conditions:
+ * package's dedicated `test-fixtures/blocks/<file>.json` fixture data and
+ * asserts the four lens-4 conditions:
  *
  *   1. output is non-empty
  *   2. output contains the conception display_name as a heading
@@ -83,8 +83,8 @@ function assertLens4(result: string, displayName: string, firstItemId: string, m
 	}
 }
 
-describe("6 new whole-block delegators — lens-4 render against real substrate", () => {
-	it("render_decisions: real .project/decisions.json", () => {
+describe("6 new whole-block delegators — lens-4 render against the test-fixtures block-data", () => {
+	it("render_decisions: test-fixtures/blocks/decisions.json", () => {
 		const env = makeEnv();
 		const data = loadProjectBlock("decisions.json") as { decisions: Array<{ id: string }> };
 		assert.ok(Array.isArray(data.decisions) && data.decisions.length > 0, "fixture: decisions.json non-empty");
@@ -92,7 +92,7 @@ describe("6 new whole-block delegators — lens-4 render against real substrate"
 		assertLens4(result, "Decisions", data.decisions[0].id, "render_decisions");
 	});
 
-	it("render_features: real .project/features.json", () => {
+	it("render_features: test-fixtures/blocks/features.json", () => {
 		const env = makeEnv();
 		const data = loadProjectBlock("features.json") as { features: Array<{ id: string }> };
 		assert.ok(Array.isArray(data.features) && data.features.length > 0, "fixture: features.json non-empty");
@@ -100,7 +100,7 @@ describe("6 new whole-block delegators — lens-4 render against real substrate"
 		assertLens4(result, "Features", data.features[0].id, "render_features");
 	});
 
-	it("render_framework_gaps: real .project/framework-gaps.json (array_key=gaps divergence)", () => {
+	it("render_framework_gaps: test-fixtures/blocks/framework-gaps.json (array_key=gaps divergence)", () => {
 		const env = makeEnv();
 		const data = loadProjectBlock("framework-gaps.json") as { gaps: Array<{ id: string }> };
 		assert.ok(Array.isArray(data.gaps) && data.gaps.length > 0, "fixture: framework-gaps.json non-empty");
@@ -108,7 +108,7 @@ describe("6 new whole-block delegators — lens-4 render against real substrate"
 		assertLens4(result, "Framework Gaps", data.gaps[0].id, "render_framework_gaps");
 	});
 
-	it("render_layer_plans: real .project/layer-plans.json (array_key=plans divergence)", () => {
+	it("render_layer_plans: test-fixtures/blocks/layer-plans.json (array_key=plans divergence)", () => {
 		const env = makeEnv();
 		const data = loadProjectBlock("layer-plans.json") as { plans: Array<{ id: string }> };
 		assert.ok(Array.isArray(data.plans) && data.plans.length > 0, "fixture: layer-plans.json non-empty");
@@ -116,7 +116,7 @@ describe("6 new whole-block delegators — lens-4 render against real substrate"
 		assertLens4(result, "Layer Restructure Plans", data.plans[0].id, "render_layer_plans");
 	});
 
-	it("render_research: real .project/research.json", () => {
+	it("render_research: test-fixtures/blocks/research.json", () => {
 		const env = makeEnv();
 		const data = loadProjectBlock("research.json") as { research: Array<{ id: string }> };
 		assert.ok(Array.isArray(data.research) && data.research.length > 0, "fixture: research.json non-empty");
@@ -124,7 +124,7 @@ describe("6 new whole-block delegators — lens-4 render against real substrate"
 		assertLens4(result, "Research", data.research[0].id, "render_research");
 	});
 
-	it("render_spec_reviews: real .project/spec-reviews.json (array_key=reviews divergence)", () => {
+	it("render_spec_reviews: test-fixtures/blocks/spec-reviews.json (array_key=reviews divergence)", () => {
 		const env = makeEnv();
 		const data = loadProjectBlock("spec-reviews.json") as { reviews: Array<{ id: string }> };
 		assert.ok(Array.isArray(data.reviews) && data.reviews.length > 0, "fixture: spec-reviews.json non-empty");

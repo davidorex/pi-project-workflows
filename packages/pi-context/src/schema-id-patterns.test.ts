@@ -1,8 +1,11 @@
 /**
- * Tests for top-level `id` pattern enforcement on the nine block schemas
+ * Tests for top-level `id` pattern enforcement on the block schemas
  * tightened by Plan 0 of the per-item-macros work. Each schema is loaded
- * from `.project/schemas/<kind>.schema.json` at the repo root and validated
- * via the canonical `validateFromFile` surface — no parallel AJV setup.
+ * from `packages/pi-context/samples/schemas/<kind>.schema.json` (the stable
+ * shipped fixtures, decoupled from the mutable live `.project` substrate) and
+ * validated via the canonical `validateFromFile` surface — no parallel AJV
+ * setup. Coupling to live `.project` proved fragile under substrate rename;
+ * mirroring install-subcommand.test.ts the schemas now resolve out of samples/.
  *
  * Per kind the test asserts:
  *   - a fixture object with a conforming top-level `id` validates clean
@@ -23,9 +26,10 @@ import { ValidationError, validateFromFile } from "./schema-validator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// repo root is three levels above packages/pi-context/src/
-const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
-const SCHEMAS_DIR = path.join(REPO_ROOT, ".project", "schemas");
+// Resolve schemas from the package's stable shipped samples/ fixtures
+// (mirrors install-subcommand.test.ts), not the mutable live .project
+// substrate. The test file is in packages/pi-context/src/, so samples/ is ../samples.
+const SCHEMAS_DIR = path.resolve(__dirname, "..", "samples", "schemas");
 
 interface Case {
 	kind: string;
@@ -97,7 +101,6 @@ const CASES: Case[] = [
 			id,
 			target: "docs/planning/stub.md",
 			status: "not-started",
-			findings: [],
 			created_by: "agent",
 			created_at: "2026-05-02T00:00:00Z",
 		}),
@@ -114,8 +117,6 @@ const CASES: Case[] = [
 			layer: "L3",
 			description: "stub description",
 			acceptance_criteria: [],
-			stories: [],
-			findings: [],
 			created_by: "agent",
 			created_at: "2026-05-02T00:00:00Z",
 		}),
@@ -201,13 +202,15 @@ describe("schema id-pattern enforcement (Plan 0)", () => {
 });
 
 /**
- * Regression: v0.24.0 backfilled `x-prompt-budget` annotations on the eight
- * legacy schemas (project, conventions, architecture, requirements,
- * conformance-reference, domain, tasks, issues). Vendor extension keys are
- * spec-permitted by JSON Schema draft-07 and AJV ignores unknown keywords by
- * default. This regression asserts that the annotations do not reject existing
- * minimal-required fixture data — if AJV grew strict-keyword behaviour or the
- * annotation shape diverged, the existing data shape would start failing here.
+ * Regression: v0.24.0 backfilled `x-prompt-budget` annotations on the legacy
+ * schemas. Vendor extension keys are spec-permitted by JSON Schema draft-07 and
+ * AJV ignores unknown keywords by default. This regression asserts that the
+ * annotations do not reject existing minimal-required fixture data — if AJV grew
+ * strict-keyword behaviour or the annotation shape diverged, the existing data
+ * shape would start failing here. Scoped to the kinds present in samples/schemas
+ * (tasks, requirements, issues, conventions); cases for kinds absent from the
+ * canonical samples catalog (project, domain, architecture) were dropped when
+ * the test was decoupled from the live .project substrate.
  */
 describe("legacy schema annotations: existing fixture data still validates clean", () => {
 	const ANNOTATED_LEGACY: Array<{ kind: string; arrayKey: string; item: Record<string, unknown> }> = [
@@ -252,20 +255,6 @@ describe("legacy schema annotations: existing fixture data still validates clean
 		});
 	}
 
-	it("project: annotated singleton schema still accepts minimal-required fields", () => {
-		const schemaPath = path.join(SCHEMAS_DIR, "project.schema.json");
-		const data = {
-			name: "test-project",
-			description: "narrative description",
-			core_value: "concise value statement",
-			vision: "vision narrative",
-			goals: [{ id: "G-001", description: "goal description", success_criteria: ["criterion one"] }],
-			constraints: [{ type: "platform", description: "constraint narrative" }],
-		};
-		const result = validateFromFile(schemaPath, data, "project annotated");
-		assert.deepStrictEqual(result, data);
-	});
-
 	it("conventions: annotated rules.description accepts existing rule shapes", () => {
 		const schemaPath = path.join(SCHEMAS_DIR, "conventions.schema.json");
 		const data = {
@@ -275,40 +264,8 @@ describe("legacy schema annotations: existing fixture data still validates clean
 		assert.deepStrictEqual(result, data);
 	});
 
-	it("domain: annotated entries.content accepts existing entry shapes", () => {
-		const schemaPath = path.join(SCHEMAS_DIR, "domain.schema.json");
-		const data = {
-			entries: [{ id: "D-001", title: "entry title", content: "knowledge body content", category: "research" }],
-		};
-		const result = validateFromFile(schemaPath, data, "domain annotated");
-		assert.deepStrictEqual(result, data);
-	});
-
-	it("architecture: annotated module.responsibility and pattern.description still validate", () => {
-		const schemaPath = path.join(SCHEMAS_DIR, "architecture.schema.json");
-		const data = {
-			modules: [{ name: "mod1", file: "src/m.ts", responsibility: "handles X with narrative detail" }],
-			patterns: [{ name: "P1", description: "pattern description narrative" }],
-		};
-		const result = validateFromFile(schemaPath, data, "architecture annotated");
-		assert.deepStrictEqual(result, data);
-	});
-
-	it("conformance-reference: annotated principle.description and rule.rule still validate", () => {
-		const schemaPath = path.join(SCHEMAS_DIR, "conformance-reference.schema.json");
-		const data = {
-			name: "ref",
-			scope: { type: "pi-extension" },
-			principles: [
-				{
-					id: "P1",
-					name: "Principle One",
-					description: "principle narrative",
-					rules: [{ id: "P1.1", rule: "rule statement narrative" }],
-				},
-			],
-		};
-		const result = validateFromFile(schemaPath, data, "conformance-reference annotated");
-		assert.deepStrictEqual(result, data);
-	});
+	// project / domain / architecture singleton cases removed: those kinds are
+	// not part of the canonical samples catalog (no samples/schemas/<kind>.schema.json).
+	// conformance-reference case removed: conformance-reference is not part of the
+	// canonical conception (dropped) and is absent from samples/schemas.
 });

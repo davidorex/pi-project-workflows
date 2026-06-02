@@ -4,21 +4,22 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
+import { cleanGitEnv } from "@davidorex/pi-context/git-env";
 import { runGitLog } from "./git-log.js";
 
 function makeRepo(): string {
 	const dir = mkdtempSync(join(tmpdir(), "git-log-"));
-	spawnSync("git", ["init", "-q"], { cwd: dir, encoding: "utf-8" });
-	spawnSync("git", ["config", "user.email", "t@example.com"], { cwd: dir, encoding: "utf-8" });
-	spawnSync("git", ["config", "user.name", "Tester"], { cwd: dir, encoding: "utf-8" });
-	spawnSync("git", ["config", "commit.gpgsign", "false"], { cwd: dir, encoding: "utf-8" });
+	spawnSync("git", ["init", "-q"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
+	spawnSync("git", ["config", "user.email", "t@example.com"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
+	spawnSync("git", ["config", "user.name", "Tester"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
+	spawnSync("git", ["config", "commit.gpgsign", "false"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
 	return dir;
 }
 
 function commit(dir: string, file: string, content: string, msg: string): void {
 	writeFileSync(join(dir, file), content);
-	spawnSync("git", ["add", file], { cwd: dir });
-	spawnSync("git", ["commit", "-m", msg, "--no-verify"], { cwd: dir, encoding: "utf-8" });
+	spawnSync("git", ["add", file], { cwd: dir, env: cleanGitEnv() });
+	spawnSync("git", ["commit", "-m", msg, "--no-verify"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
 }
 
 describe("runGitLog", () => {

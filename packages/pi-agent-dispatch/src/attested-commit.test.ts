@@ -4,15 +4,16 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
+import { cleanGitEnv } from "@davidorex/pi-context/git-env";
 import { attestedCommit, CommitAttestedRefusedError } from "./attested-commit.js";
 
 function makeRepo(): string {
 	const dir = mkdtempSync(join(tmpdir(), "attested-commit-"));
-	const init = spawnSync("git", ["init", "-q"], { cwd: dir, encoding: "utf-8" });
+	const init = spawnSync("git", ["init", "-q"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
 	assert.equal(init.status, 0, `git init failed: ${init.stderr}`);
-	spawnSync("git", ["config", "user.email", "test@example.com"], { cwd: dir, encoding: "utf-8" });
-	spawnSync("git", ["config", "user.name", "Test"], { cwd: dir, encoding: "utf-8" });
-	spawnSync("git", ["config", "commit.gpgsign", "false"], { cwd: dir, encoding: "utf-8" });
+	spawnSync("git", ["config", "user.email", "test@example.com"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
+	spawnSync("git", ["config", "user.name", "Test"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
+	spawnSync("git", ["config", "commit.gpgsign", "false"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
 	return dir;
 }
 
@@ -58,10 +59,10 @@ describe("attestedCommit", () => {
 
 		assert.equal(result.committed, true, `expected committed; stderr=${result.stderr} stdout=${result.stdout}`);
 		assert.ok(result.commit_sha, "expected commit_sha captured");
-		const sha = spawnSync("git", ["log", "-1", "--format=%h"], { cwd: dir, encoding: "utf-8" });
+		const sha = spawnSync("git", ["log", "-1", "--format=%h"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
 		assert.equal(result.commit_sha, sha.stdout.trim());
 
-		const body = spawnSync("git", ["log", "-1", "--format=%B"], { cwd: dir, encoding: "utf-8" });
+		const body = spawnSync("git", ["log", "-1", "--format=%B"], { cwd: dir, encoding: "utf-8", env: cleanGitEnv() });
 		assert.ok(body.stdout.includes("Attested-by: agent/spec-impl-001"), `body=${body.stdout}`);
 		assert.ok(body.stdout.includes("Work-order: WO-042"), `body=${body.stdout}`);
 	});

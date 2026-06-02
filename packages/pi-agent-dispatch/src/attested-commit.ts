@@ -14,6 +14,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { cleanGitEnv } from "@davidorex/pi-context/git-env";
 
 export interface AttestedCommitOptions {
 	files: string[];
@@ -58,7 +59,7 @@ export async function attestedCommit(cwd: string, options: AttestedCommitOptions
 
 	// per-file `git add` — never `git add -A` / `git add .` per canon
 	for (const file of options.files) {
-		const addResult = spawnSync("git", ["add", file], { cwd, encoding: "utf-8" });
+		const addResult = spawnSync("git", ["add", file], { cwd, encoding: "utf-8", env: cleanGitEnv() });
 		if (addResult.status !== 0) {
 			throw new CommitAttestedRefusedError(
 				`git add '${file}' failed (exit ${addResult.status}): ${addResult.stderr || addResult.stdout}`,
@@ -67,7 +68,7 @@ export async function attestedCommit(cwd: string, options: AttestedCommitOptions
 	}
 
 	const composed = composeMessage(options.message, options.agent_id, options.work_order_id);
-	const commitResult = spawnSync("git", ["commit", "-m", composed], { cwd, encoding: "utf-8" });
+	const commitResult = spawnSync("git", ["commit", "-m", composed], { cwd, encoding: "utf-8", env: cleanGitEnv() });
 	const exit_code = commitResult.status ?? 1;
 	const stdout = commitResult.stdout ?? "";
 	const stderr = commitResult.stderr ?? "";
@@ -75,7 +76,7 @@ export async function attestedCommit(cwd: string, options: AttestedCommitOptions
 
 	let commit_sha: string | undefined;
 	if (committed) {
-		const shaResult = spawnSync("git", ["log", "-1", "--format=%h"], { cwd, encoding: "utf-8" });
+		const shaResult = spawnSync("git", ["log", "-1", "--format=%h"], { cwd, encoding: "utf-8", env: cleanGitEnv() });
 		if (shaResult.status === 0) {
 			commit_sha = (shaResult.stdout ?? "").trim() || undefined;
 		}

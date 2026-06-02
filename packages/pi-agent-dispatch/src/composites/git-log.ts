@@ -9,6 +9,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { cleanGitEnv } from "@davidorex/pi-context/git-env";
 import { Type } from "@earendil-works/pi-ai";
 
 export interface GitLogInstance {
@@ -44,7 +45,7 @@ export function runGitLog(cwd: string, instance: GitLogInstance, args: GitLogArg
 		cmdArgs.push(...instance.paths);
 	}
 
-	const result = spawnSync("git", cmdArgs, { cwd, encoding: "utf-8" });
+	const result = spawnSync("git", cmdArgs, { cwd, encoding: "utf-8", env: cleanGitEnv() });
 	if (result.status !== 0) {
 		throw new Error(`git-log: git exited ${result.status}: ${result.stderr}`);
 	}

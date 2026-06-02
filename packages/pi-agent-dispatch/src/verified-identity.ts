@@ -35,6 +35,7 @@ import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import path from "node:path";
+import { cleanGitEnv } from "@davidorex/pi-context/git-env";
 import { writeAgentTrace } from "@davidorex/pi-jit-agents";
 
 export interface VerifiedIdentityDeps {
@@ -101,6 +102,7 @@ function defaultRunGitConfig(): string | null {
 		const out = execSync("git config user.email", {
 			encoding: "utf8",
 			stdio: ["ignore", "pipe", "ignore"],
+			env: cleanGitEnv(),
 		}).trim();
 		return out.length > 0 ? out : null;
 	} catch {

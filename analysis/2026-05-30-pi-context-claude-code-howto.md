@@ -5,7 +5,9 @@
 **Audience:** Claude Code orchestrator-LLM operating in this project (or future pi-context-consuming project).
 **Companion:** Pi tool surface (registered in `packages/pi-context/src/index.ts`) is the equivalent for in-pi-agent dispatch — different consumer, same canonical library underneath.
 
-This document covers the Claude-Code-side surfaces: the `/context` slash command family + 39 orchestrator scripts at `scripts/orchestrator/*.ts` + the underlying library primitives. Companion to substrate items (DEC / FGAP / TASK / FEAT queryable via readBlock) and analysis MDs (deep dives).
+This document covers the Claude-Code-side surfaces: the `/context` slash command family + the orchestrator scripts at `scripts/orchestrator/*.ts` + the underlying library primitives. Companion to substrate items (DEC / FGAP / TASK / FEAT queryable via readBlock) and analysis MDs (deep dives).
+
+**Active substrate.** Commands here operate on THE ACTIVE substrate — the dir named by `.pi-context.json`'s `contextDir` field (resolve it; do not assume a name). All substrate-write examples below use substrate-agnostic phrasing ("the active substrate"). The project-root registry `.pi-context-registry.json` enumerates ALL substrates by `substrate_id`; the pointer names the single active one. `.project` (substrate_id `sub-0c813fd84348d4c2`, alias `project`) is a registered FROZEN content-addressed archive — read-only, the supersession target of cross-substrate edges, not an everyday write target. `.project-archived` is the inert pre-migration original (not registered, not a write target).
 
 ---
 
@@ -20,11 +22,11 @@ This document covers the Claude-Code-side surfaces: the `/context` slash command
 | Archive a substrate dir | `/context archive <dir>` |
 | File a new substrate item (FGAP / TASK / DEC / etc.) | `npx tsx scripts/orchestrator/file-block-item.ts --block <kind> --writer human:email --auto-id --item @/tmp/<id>.json` |
 | Update an existing item's status / fields | `npx tsx -e 'import {updateItemInBlock} from "@davidorex/pi-context/block-api"; ...'` |
-| Add a relations edge | `npx tsx scripts/orchestrator/append-relation.ts` OR direct `fs` append for batch |
+| Add a relations edge | `npx tsx scripts/orchestrator/append-relation.ts --parent <id> --child <id> --relation-type <rt>` (one edge per invocation; loop at orchestrator level) |
 | Author a schema | `npx tsx scripts/orchestrator/write-schema.ts` |
 | Register a new block kind / relation_type | `npx tsx scripts/orchestrator/amend-config.ts --registry <reg> --operation add --key <key> --entry @path` |
 | Read an item by id | `npx tsx scripts/orchestrator/read-block-item.ts --block <kind> --id <id>` |
-| Find what edges reference an item | `npx tsx scripts/orchestrator/find-references.ts --itemId <id>` |
+| Find what edges reference an item | `npx tsx scripts/orchestrator/find-references.ts --item-id <id>` |
 | Compose context for a task / unit | `npx tsx scripts/orchestrator/compile-task-context.ts ...` (or compile-explore-context / compile-implementation-context / compile-preamble-context per purpose) |
 | Validate substrate (cross-block + relations) | `/context validate` slash command |
 | Build HTML view of substrate | `npx tsx scripts/orchestrator/build-html-views.ts` |
@@ -70,9 +72,9 @@ This document covers the Claude-Code-side surfaces: the `/context` slash command
 
 ---
 
-## The 39 orchestrator scripts grouped by purpose
+## The orchestrator scripts grouped by purpose
 
-### Reading substrate state (20 scripts)
+### Reading substrate state
 
 | Script | Purpose |
 |---|---|
@@ -97,7 +99,7 @@ This document covers the Claude-Code-side surfaces: the `/context` slash command
 | `extract-markdown-section.ts` | Extract named section from a markdown file (for context composition) |
 | `extract-test-import-chains.ts` | Analyze test file import chains for impact analysis |
 
-### Writing substrate (6 scripts)
+### Writing substrate
 
 | Script | Purpose |
 |---|---|
@@ -106,9 +108,21 @@ This document covers the Claude-Code-side surfaces: the `/context` slash command
 | `append-relation.ts` | Append an edge to relations.json with parent + child + relation_type |
 | `write-schema.ts` | Create or replace a block-kind JSON Schema. AJV meta-validated. Atomic write. |
 | `accept-all.ts` | Run `/context accept-all` operation (adopt packaged conception as config.json) |
-| `migrate-canonical-id.ts` | Rename a substrate item's canonical_id; updates all references via canonical-id machinery |
+| `migrate-canonical-id.ts` | Rename a canonical_id (the rare deliberate-rename path; canonical_ids are primary-key-permanent). Wraps the FGAP-060 / DEC-0035 `renameCanonicalId` engine. `--kind` ∈ {item, relation_type, lens, layer} (block_kind unsupported — engine throws). Operates on the EDGE model (DEC-0013): references live only as relations.json edges, so there is NO inline-FK sweep. Out-of-substrate occurrences (analysis MDs, git history) are REPORTED, never rewritten. `--dry-run` computes would-change counts. |
 
-### Composing context (5 scripts)
+### Content-addressed identity lifecycle
+
+| Script | Purpose |
+|---|---|
+| `promote-item.ts` | CROSS-SUBSTRATE item derivation. Copies a source item into a registered destination substrate as a NEW content-addressed item (dest mints fresh oid + content_hash + content object), files an `item_derived_from_item` lineage edge into the dest relations.json, and — when the source status enum supports it — marks the source superseded. `--source <selector> --to <dest-alias>`. NOT a nested→top promoter. |
+| `canonicalize-substrate.ts` | One-shot canonicalizer for the active substrate: promotes each nested id-bearing array → top-level entity block + ordinal-bearing membership edges, plus registers orphan blocks. Adds a triple-buffer (dupe / verify / swap) to de-risk the one-shot transform (the Pi-tool twin canonicalizes in place without it). |
+| `migrate-content-addressed.ts` | Backfills the content-addressing model (`migrateToContentAddressed`): mints identity + builds the object store + rewrites endpoints. Prints the MigrationReport JSON; exits non-zero when `unresolved[]` is non-empty on a non-dry-run. |
+| `land-identity-fields.ts` | Surgically injects the three identity field DECLARATIONS (oid / content_hash / content_parent) as OPTIONAL item properties onto every registered block_kind schema of the TARGET substrate that lacks them (never added to `required`) — the precondition the migration's readiness gate checks. `--substrate <dir>` targets an explicit dir, not the active pointer. |
+| `verify-substrate-dupe.ts` | Validates a work-dupe substrate against canonicalization/fold-in defect codes (`nested_id_bearing_array`, `edge_endpoint_dangling`, `edge_endpoint_unregistered`, `edge_parent_not_in_bins`, `edge_cycle_detected`); registry-level codes are expected for an unregistered dupe and intentionally excluded. |
+| `wire-active-substrate.ts` | Wires the active substrate so its cross-substrate `project:<refname>` edges resolve into the FROZEN `.project` archive (read-only) via the project-root registry + the registry-fallback path. |
+| `foldin-context.ts` | Folds a LEGACY already-flat substrate (predating the identity model) into the content-addressed canon via the same triple-buffer: de-nest its schema, land identity fields, then migrate. |
+
+### Composing context
 
 | Script | Purpose |
 |---|---|
@@ -118,7 +132,7 @@ This document covers the Claude-Code-side surfaces: the `/context` slash command
 | `compile-preamble-context.ts` | Compose binding-preamble for subagent briefs |
 | `inject-context-items.ts` | Inject specific substrate items into a context bundle by id list |
 
-### Composite-tool helpers (4 scripts)
+### Composite-tool helpers
 
 | Script | Purpose |
 |---|---|
@@ -127,18 +141,82 @@ This document covers the Claude-Code-side surfaces: the `/context` slash command
 | `composite-grep-paths.ts` | Compose grep-paths composite tool |
 | `composite-read-files.ts` | Compose read-files composite tool |
 
-### Build / projection (1 script)
+### Build / projection
 
 | Script | Purpose |
 |---|---|
-| `build-html-views.ts` | Project substrate to self-contained HTML view at `html-views/substrate-overview.html`; reads `.project/*.json` via canonical block-api |
+| `build-html-views.ts` | Project the active substrate to a self-contained HTML view at `html-views/substrate-overview.html`; reads the active substrate's `*.json` via canonical block-api |
 
-### Runtime demos (2 scripts)
+### Runtime demos
+
+Each `runtime-demo-*.ts` exercises one primitive end-to-end against a real substrate (the LOAD-BEARING runtime-demonstration step of the completion sequence):
 
 | Script | Purpose |
 |---|---|
-| `runtime-demo-context-switch.ts` | End-to-end flipBootstrapPointer demo with pointer-history preservation assertions (6 assertions; per TASK-094 Step 10) |
-| `runtime-demo-whole-block-delegators.ts` | End-to-end render of 6 whole-block delegators against real substrate (per FEAT-001 / TASK-093 Step 11) |
+| `runtime-demo-context-switch.ts` | flipBootstrapPointer with pointer-history preservation assertions |
+| `runtime-demo-whole-block-delegators.ts` | Render of whole-block delegators against real substrate |
+| `runtime-demo-content-addressing.ts` | Content-hash + object-store write path |
+| `runtime-demo-identity-stamping.ts` | oid / content_hash / content_parent stamping on a declaring schema |
+| `runtime-demo-context-registry.ts` | Project-root registry resolve (substrate_id / alias) |
+| `runtime-demo-resolve-ref.ts` | `resolveRef` four-way active / foreign / dangling / unregistered classification |
+| `runtime-demo-structured-endpoints.ts` | Structured `{kind:"item", oid, …}` / `{kind:"lens_bin", bin}` endpoints |
+| `runtime-demo-nested-id-guard.ts` | `nested_id_bearing_array` guard on schema write |
+| `runtime-demo-substrate-index.ts` | `buildIdIndex` prefix invariant |
+| `runtime-demo-promote-item.ts` | Cross-substrate promotion + lineage edge |
+| `runtime-demo-canonicalize-substrate.ts` | Nested-array → top-level + membership-edge canonicalization |
+| `runtime-demo-migrate-content-addressed.ts` | Content-addressing migration MigrationReport |
+| `runtime-demo-land-identity-fields.ts` | Identity-field schema injection |
+| `runtime-demo-dir-targeted-write.ts` | Explicit-dir-targeted write (non-active substrate) |
+| `runtime-demo-write-ordering.ts` | Object persistence deferred until after AJV clears |
+
+---
+
+## Content-addressed substrate identity model
+
+(Sourced from the doc-survey PART B §B.2–B.6; each claim grounded in a §ref. Cross-check: `analysis/2026-06-02-pi-context-doc-survey-and-source.md`.)
+
+### Three-layer item identity (§B.2)
+
+Every item in an identity-bearing block carries three identity fields plus a content-version chain:
+
+- **`id` (refname)** — the human label (`DEC-0001`, `TASK-021`). MUTABLE; a label, not an identity.
+- **`oid`** — 32-hex, content-INDEPENDENT, minted ONCE at birth and immutable thereafter. Salted by the substrate's `substrate_id` (two substrates minting with the same nonce get distinct oids). A different incoming oid on update throws.
+- **`content_hash`** — 64-hex SHA-256 of the item's CONTENT PROJECTION (a shallow copy with the metadata fields deleted). Identical content ⇒ identical hash ⇒ dedup.
+- **`content_parent`** — the prior version's `content_hash`; the per-item version chain. Advances only when content actually changed; a metadata-only write carries the prior parent forward (does not truncate the chain).
+
+**Metadata partition** (excluded from the content hash): the mandatory floor `{id, oid, content_hash, content_parent}` is never hashable and no override can pull it in; the discretionary set is the four author fields + `closed_by` / `closed_at`. A schema's item subschema may redefine the discretionary set via `x-identity.metadata_fields`; the floor is still unioned in.
+
+### Content store + the stamping gate (§B.2)
+
+- **`objects/`** — on a stamping write the content projection is persisted to `<substrate>/objects/<content_hash>.json` (idempotent, atomic tmp+rename, content-addressed so identical content ⇒ byte-identical file). `objects/` is git-tracked — it is the integrity/version store. Object persistence is DEFERRED until AFTER the whole block clears AJV, so a validation failure never orphans an object.
+- **Stamping gate:** identity stamping is a NO-OP unless the item's array subschema declares all three identity fields. This scopes identity to canonical schemas and leaves bespoke/test schemas untouched. (Use `land-identity-fields.ts` to inject the declarations onto a schema that lacks them.)
+
+### substrate_id + the project-root registry (§B.4)
+
+- **`config.substrate_id`** — per-substrate root identity, pattern `^sub-[0-9a-f]{16}$`, minted once, immutable on disk; reads throw loudly when absent (no degraded fallback).
+- **`.pi-context-registry.json`** — project-root, git-tracked, distinct from the pointer. The pointer (`.pi-context.json`) names the one ACTIVE substrate; the registry enumerates ALL of them as `substrates: { <substrate_id>: { dir, aliases[] } }`. `resolveSubstrateDir(cwd, substrate_id)` / `resolveAlias(cwd, alias)` return null on a clean miss.
+
+### Cross-substrate edges + resolveRef four-way classification (§B.3–B.4)
+
+Inter-item relationships are closure-table edges in `<substrate>/relations.json` — `{parent, child, relation_type, ordinal?}` rows. Endpoints are DUAL-FORM, structured coexisting with legacy strings:
+
+- a **legacy string** — a canonical id or a lens bin name; a `<alias>:<refname>` string is a cross-substrate sentinel;
+- a structured **item endpoint** `{kind:"item", oid (required), refname?, substrate_id?, content_hash?}` — `substrate_id` present ⇒ foreign; `content_hash` carried for drift detection;
+- a structured **lens_bin endpoint** `{kind:"lens_bin", bin}` — a virtual parent that NEVER resolves to an item.
+
+`resolveRef(cwd, ref, opts?)` classifies any endpoint into four statuses:
+- **active** — resolved in the active substrate index (a bare oid/refname, or a lens_bin, which is always active without item lookup);
+- **foreign** — a structured `substrate_id` locator, or a `<alias>:<refname>` whose alias is registered, resolved in the foreign index;
+- **dangling** — locator names a registered substrate but the oid/refname is absent there;
+- **unregistered** — a `substrate_id`/alias the registry does not carry.
+
+### Single-form relations rule — no nested id, no FK (§B.3)
+
+All inter-item relationships are closure-table edges ONLY. FORBIDDEN: embedded nested id-bearing arrays and FK-as-field. A nested id-bearing array in a schema is flagged `nested_id_bearing_array` by `validateContext` with the remediation "promote to a top-level entity + membership edge". Containment is a membership edge carrying `ordinal`. The nested-array → top-level-entity + ordinal-bearing-membership-edge promotion is performed by `canonicalize-substrate` — distinct from `promote-item`, which is cross-substrate item derivation.
+
+### Schema versioning + migrations (§B.5)
+
+`migrations.json` is the per-substrate migration registry. A schema version bump REQUIRES a companion migration declaration via the `write-schema-migration` Pi tool; without one, read/write of an item declaring an older `schema_version` throws version-mismatch. Migration kinds: `identity` (shape-compatible, no transform) or `declarative-transform` (a TransformSpec of rename/set/delete/coerce on dotted paths). The loaded registry resolves the edge at next read/write so items walk forward without a process restart.
 
 ---
 
@@ -174,8 +252,8 @@ npx tsx scripts/orchestrator/file-block-item.ts \
   --auto-id \
   --item @/tmp/new-fgap.json
 
-# Commit the substrate write
-git add .project/framework-gaps.json  # or .context/ per active pointer
+# Commit the substrate write (the file written is the active substrate's framework-gaps.json)
+git add <active-substrate>/framework-gaps.json   # resolve <active-substrate> from .pi-context.json contextDir
 git commit -m "substrate(...): file FGAP-NNN — ..."
 ```
 
@@ -202,15 +280,23 @@ npx tsx scripts/orchestrator/append-relation.ts \
   --relation-type gap_superseded_by_task
 ```
 
-### Append relations edges (batch — direct fs append for many)
+### Append relations edges (many — orchestrator-level loop, one invocation per edge)
+
+Direct `fs` writes to ANY substrate JSON (including `relations.json`) are FORBIDDEN (CLAUDE.md "Project Blocks" — writes must route through validated, DispatchContext-stamped, atomic block-api primitives). Loop the canonical `append-relation.ts` at the orchestrator level, one edge per invocation:
 
 ```bash
-npx tsx -e 'import fs from "node:fs";
-const rels = JSON.parse(fs.readFileSync(".project/relations.json","utf-8"));
-rels.push({parent: "TASK-NNN", child: "FGAP-NNN", relation_type: "gap_superseded_by_task"});
-rels.push({parent: "VER-NNN", child: "TASK-NNN", relation_type: "verification_verifies_item"});
-fs.writeFileSync(".project/relations.json", JSON.stringify(rels, null, 2) + "\n");'
+npx tsx scripts/orchestrator/append-relation.ts \
+  --parent TASK-NNN --child FGAP-NNN \
+  --relation-type gap_superseded_by_task \
+  --writer human:davidryan@gmail.com
+
+npx tsx scripts/orchestrator/append-relation.ts \
+  --parent VER-NNN --child TASK-NNN \
+  --relation-type verification_verifies_item \
+  --writer human:davidryan@gmail.com
 ```
+
+(Each invocation writes one edge to the active substrate's `relations.json`. `--dry-run` validates without writing; `--ordinal N` orders siblings within `(parent, relation_type)`.)
 
 ### Cutover from one substrate dir to another (DEC-0036 pattern)
 
@@ -222,40 +308,40 @@ fs.writeFileSync(".project/relations.json", JSON.stringify(rels, null, 2) + "\n"
 5. /context archive .context-old             # when ready to deprecate old
 ```
 
-### File substrate items in a different dir than current pointer (sequence-continuation pattern)
+### File substrate items into a non-active dir (RARE — filing into a frozen archive)
 
-Used 3x this session for continuing the .project FGAP/TASK sequence post-cutover to .context:
+The everyday path files into the ACTIVE substrate via `file-block-item.ts` (the pointer already names it). The pattern below — temporarily flipping the pointer to a non-active dir, filing, then flipping back — is the RARE case. Writing into `.project` specifically is writing into a FROZEN content-addressed archive and is normally not done; prefer a cross-substrate edge (or `promote-item.ts` for a derived item) over reopening an archive. When it is genuinely warranted:
 
 ```bash
 # 1. Flip pointer to target dir via library call (orchestrator-side; no auth-gate)
 npx tsx -e 'import {flipBootstrapPointer} from "@davidorex/pi-context/context-dir";
-flipBootstrapPointer(".", ".project", "human:davidryan@gmail.com");'
+flipBootstrapPointer(".", "<target-dir>", "human:davidryan@gmail.com");'
 
-# 2. File via file-block-item (writes to current pointer = .project)
+# 2. File via file-block-item (writes to the now-current pointer = <target-dir>)
 npx tsx scripts/orchestrator/file-block-item.ts --block framework-gaps --writer human:davidryan@gmail.com --auto-id --item @/tmp/new.json
 
-# 3. Flip pointer back to canonical
+# 3. Flip pointer back to the prior active substrate
 npx tsx -e 'import {flipBootstrapPointer} from "@davidorex/pi-context/context-dir";
-flipBootstrapPointer(".", ".context", "human:davidryan@gmail.com");'
+flipBootstrapPointer(".", "<prior-active-dir>", "human:davidryan@gmail.com");'
 
-# 4. Commit the substrate write (file modified in .project)
-git add .project/framework-gaps.json .pi-context.json
-git commit -m "substrate(.project): file FGAP-NNN via temporary pointer flip"
+# 4. Commit the substrate write (file modified in <target-dir>)
+git add <target-dir>/framework-gaps.json .pi-context.json
+git commit -m "substrate(<target-dir>): file FGAP-NNN via temporary pointer flip"
 ```
 
 ### Query "what items did SESSION-N touch"
 
-Via canonical edge surface:
+`find-references.ts` is the canonical edge-query surface:
 
 ```bash
-npx tsx scripts/orchestrator/find-references.ts --itemId SESSION-NNN --direction outbound
+npx tsx scripts/orchestrator/find-references.ts --item-id SESSION-NNN --direction outbound
 ```
 
-Or via direct readBlock on relations:
+A read-only `fs.readFileSync` of the active substrate's `relations.json` is acceptable for ad-hoc filtering (reads are not gated; only WRITES route through block-api), but prefer `find-references.ts`:
 
 ```bash
 npx tsx -e 'import fs from "node:fs";
-const rels = JSON.parse(fs.readFileSync(".context/relations.json","utf-8"));
+const rels = JSON.parse(fs.readFileSync("<active-substrate>/relations.json","utf-8"));  // read-only; resolve <active-substrate> from the pointer
 const touched = rels.filter(r => r.parent === "SESSION-NNN" && r.relation_type === "session_touches_item").map(r => r.child);
 console.log(touched);'
 ```
@@ -275,8 +361,9 @@ npx tsx scripts/orchestrator/amend-config.ts \
   --key my-custom-kind \
   --entry '{"canonical_id":"my-custom-kind","display_name":"My Custom Kind","prefix":"MYK-","array_key":"items","data_path":"my-custom-kind.json","schema_path":"schemas/my-custom-kind.schema.json"}'
 
-# 3. Create empty block file
-npx tsx -e 'import fs from "node:fs"; fs.writeFileSync(".context/my-custom-kind.json", JSON.stringify({schema_version:"1.0.0",items:[]},null,2));'
+# 3. Create the empty block CONTAINER in the active substrate
+#    (initial container only; all subsequent ITEM writes route through file-block-item.ts)
+npx tsx -e 'import fs from "node:fs"; fs.writeFileSync("<active-substrate>/my-custom-kind.json", JSON.stringify({schema_version:"1.0.0",items:[]},null,2));'  // resolve <active-substrate> from the pointer
 
 # 4. Validate
 # /context validate
@@ -298,24 +385,21 @@ npx tsx scripts/orchestrator/amend-config.ts \
 
 When a schema version bumps + existing items need a path forward:
 
-```bash
-# 1. Author migration declaration (identity = no-op for shape-compatible changes)
-npx tsx -e 'import {writeSchemaMigrationExecute} from "@davidorex/pi-context/dist/write-schema-migration-tool.js";
-await writeSchemaMigrationExecute(".", {
-  operation: "create",
-  schemaName: "framework-gaps",
-  fromVersion: "1.0.0",
-  toVersion: "1.1.0",
-  kind: "identity",
-  writer: {kind: "human", user: "davidryan@gmail.com"}
-});'
+The migration DECLARATION surface is the `write-schema-migration` Pi tool — there is no exported SDK subpath and no orchestrator-script twin for it (the migration-writer module is not in `package.json` `exports`, so a `dist/`-deep import is blocked by exports encapsulation). Author it via the Pi-tool bridge, then bump the schema via the `schema-write` SDK subpath:
 
-# 2. Bump schema via writeSchemaChecked
+```bash
+# 1. Declare the migration into migrations.json (identity = shape-compatible, no transform)
+#    Bucket-2 tool: fires the interactive auth-gate; run in an interactive Pi REPL.
+pi -p 'call write-schema-migration with operation=create schemaName=framework-gaps fromVersion=1.0.0 toVersion=1.1.0 kind=identity writer.kind=human writer.user=davidryan@gmail.com' --mode json
+
+# 2. Bump the schema via writeSchemaChecked (writes to the active substrate)
 npx tsx -e 'import {writeSchemaChecked} from "@davidorex/pi-context/schema-write";
 import fs from "node:fs";
 const schema = JSON.parse(fs.readFileSync("/tmp/new-schema.json","utf-8"));
 writeSchemaChecked(".", "framework-gaps", schema, "replace");'
 ```
+
+(`kind=declarative-transform` requires a `transform` TransformSpec body; `operation=remove` drops a declaration matched by `(schemaName, fromVersion)`. The loaded MigrationRegistry resolves the recorded edge at next read/write so items walk forward without a process restart.)
 
 ---
 
@@ -353,6 +437,11 @@ Non-interactive contexts (ctx.hasUI=false) get unconditional `block: true` from 
 | `MigrationRegistry: no migrations registered for schema X (need v1.0.0 → v1.1.0)` | Block schema version bumped without companion migration declaration | Author identity migration via write-schema-migration |
 | `Tool <name> requires interactive user-confirm; current context is non-interactive` | Bucket-2 tool invoked in headless context | Run in interactive Pi REPL OR use orchestrator-script equivalent |
 | `Substrate validation failed` (cross-block) | `validateContext` found referential integrity violation | Read `/context validate` issues[] for specifics |
+| `substrate_id_unregistered` (validateContext code) | The active `config.substrate_id` has no entry in `.pi-context-registry.json` | Register the substrate (its `substrate_id` → dir) in the project-root registry |
+| `substrate_id_registry_mismatch` (validateContext code) | A registry entry exists for the active `substrate_id` but its `dir` does not resolve to the active substrate | Correct the registry entry's `dir` to match the active substrate's path |
+| `edge_endpoint_dangling` (validateContext code) | An edge endpoint names a REGISTERED substrate but the oid/refname is absent there | Fix the endpoint's oid/refname, or remove the stale edge |
+| `edge_endpoint_unregistered` (validateContext code) | An edge endpoint references a `substrate_id`/alias the registry does not carry | Register the referenced substrate, or correct the endpoint |
+| `nested_id_bearing_array` (validateContext code) | A schema declares an embedded nested id-bearing array (forbidden single-form rule) | Promote to a top-level entity block + ordinal-bearing membership edge (run `canonicalize-substrate`) |
 
 ---
 
@@ -362,17 +451,18 @@ Non-interactive contexts (ctx.hasUI=false) get unconditional `block: true` from 
 |---|---|
 | `packages/pi-context/skills/pi-context/SKILL.md` | Pi-extension-facing canonical reference (auto-generated; do not edit by hand) |
 | `CLAUDE.md` | Project-discipline + canonical filing patterns + completion sequence + project conventions |
-| `.project/decisions.json` (queryable via readBlock) | DECs documenting architectural commitments + their rationale |
-| `.project/framework-gaps.json` (queryable) | FGAPs naming framework gaps + their proposed_resolution paths |
-| `.project/tasks.json` (queryable) | TASKs implementing FGAP fixes; status enum drives lifecycle |
-| `.project/features.json` (queryable) | FEATs as multi-task arc trackers |
-| `.context/session-notes.json` (queryable) | Per-session narrative-not-derivable content (focus / discoveries / decisions / next_steps / current_status); see SESSION-001 through SESSION-004 for this week's work |
-| `analysis/*.md` | Deep dives + design possibilities + verification reports (gitignored: NO; in-repo + tracked) |
-| `~/.claude/projects/<this>/memory/feedback_*.md` | Operator-private discipline-lessons accumulated across sessions; ~60 entries cover operator-experience-canon for working on this project |
+| `<active-substrate>/decisions.json` (queryable via readBlock) | DECs documenting architectural commitments + their rationale |
+| `<active-substrate>/framework-gaps.json` (queryable) | FGAPs naming framework gaps + their proposed_resolution paths |
+| `<active-substrate>/tasks.json` (queryable) | TASKs implementing FGAP fixes; status enum drives lifecycle |
+| `<active-substrate>/features.json` (queryable) | FEATs as multi-task arc trackers |
+| `<active-substrate>/session-notes.json` (queryable, when the active substrate ships the block kind) | Per-session narrative-not-derivable content (focus / discoveries / decisions / next_steps / current_status) |
+| `.pi-context-registry.json` (project root) | Registry enumerating ALL substrates by `substrate_id` → dir + aliases |
+| `analysis/*.md` | Deep dives + design possibilities + verification reports (in-repo + git-tracked) |
+| `~/.claude/projects/<this>/memory/feedback_*.md` | Operator-private discipline-lessons accumulated across sessions |
 | `~/.claude/projects/<this>/memory/MEMORY.md` | Index of feedback memories + project-state summary |
-| `docs/planning/jit-agents-spec.md` | Canonical spec for pi-jit-agents (outlier per FGAP-177; v2 rewrite pending per SESSION-002) |
+| `analysis/2026-05-30-jit-agents-spec-v2.md` + `.context-jit-spec-v2/` substrate | Current pi-jit-agents spec (v2). `docs/planning/jit-agents-spec.md` is the superseded v1 draft. |
 | `packages/<pkg>/src/index.ts` | Pi tool + slash command registrations (search `pi.registerTool` / `pi.registerCommand`) |
-| `scripts/orchestrator/*.ts` | This document's surface (39 scripts; per-script preamble in each .ts file) |
+| `scripts/orchestrator/*.ts` | This document's surface (per-script preamble in each .ts file) |
 | `packages/pi-context/samples/conception.json` | Packaged conception (block_kinds + relation_types + lenses + status_buckets the framework ships) |
 
 ---
@@ -382,7 +472,7 @@ Non-interactive contexts (ctx.hasUI=false) get unconditional `block: true` from 
 This document is the interim closure of Layer 3 (framework-use discoverability per FGAP-182). The full 3-layer story:
 
 - **Layer 1 (FGAP-180 / TASK-095):** CLI elevation — `scripts/orchestrator/` becomes published `@davidorex/pi-context-cli` package; installable globally so downstream consumers get the dual-surface convenience without copying scripts.
-- **Layer 2 (FGAP-181):** Per-script `--help` — robust description + params + examples per subcommand; 37 of 39 scripts currently lack the convention.
+- **Layer 2 (FGAP-181):** Per-script `--help` — robust description + params + examples per subcommand; most scripts currently lack the convention.
 - **Layer 3 (FGAP-182):** Self-documenting substrate — `commands` / `tools` / `runbooks` / `patterns` / `concepts` / `errors` block kinds shipped via packaged conception; `/context help [topic]` slash command queries the guide blocks. Per analysis/2026-05-30-self-documenting-substrate-design.md.
 
 This document is the bridge until Layer 3 lands. When the self-documenting substrate is implemented, this document's content migrates into the appropriate block kinds (commands → /context slash command family section; runbooks → canonical workflows section; concepts → auth-gate behavior section; errors → common errors table; etc.). At that point this document becomes archaeological reference.
@@ -397,4 +487,4 @@ This document goes stale as the framework evolves. Until FGAP-182 substrate land
 - Cite FGAP / TASK / DEC ids inline only when they directly explain the operator-facing behavior (per the CLAUDE.md substrate-id strip discipline — provenance citations age out)
 - When substantial surface change lands (new command family; new block kind shape; new dual-surface convention), prefer updating this document over scattering knowledge across analysis MDs
 
-Last verified against codebase: 2026-05-30 (TASK-094 / context switch family landed; 17 block kinds + 29 relation_types in packaged baseline; pointer schema v1.1.0).
+Last verified against codebase: 2026-06-02 (content-addressed substrate identity arc complete; the `.project-migrate` → `.project` rename done — `.project` now the registered frozen archive, `.project-archived` the inert pre-migration original; pointer schema v1.1.0).

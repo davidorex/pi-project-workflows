@@ -25,11 +25,11 @@ The context-dir-migration/process tooling was relocated OUT of the published pi-
 - Result is uniformly `{ details: undefined, content: [{ type: "text", text }] }` → print `content[0].text`.
 - Auth-gate today: an `AUTH_REQUIRED_TOOLS` constant + a `tool_call` handler in `packages/pi-agent-dispatch/src/auth-gate.ts` (the list ~`:69`, the handler ~`:143`), intercepting by tool-name. Folding auth replaces the name-list with per-op `authGated` derived from the registry.
 
-## Remaining work (next session: plan mode → coding subagent → completion sequence)
-1. **Registry refactor:** convert the ~45 inline `registerTool({…execute…})` in pi-context `index.ts` into op-DEFINITIONS in an op-registry module + a generic `registerAll(pi)` that maps them; add `authGated`/`surface` per op.
-2. **Auth-fold rewiring:** `authGateHandler` derives `authGated` from the registry (retire `AUTH_REQUIRED_TOOLS`); apply per-op `authGated` across all four packages' registries.
-3. **New `packages/pi-context-cli/`** (depends on `@davidorex/pi-context`): a runtime-reflecting dispatcher + node `bin` + the confirm/output/flag conventions above; tests; lockstep version.
-4. Completion sequence + fresh-context adversarial audit per project canon.
+## Remaining work (plan mode → coding subagent → completion sequence)
+1. **Registry refactor — DONE (commit `c68583a`).** The 45 inline `registerTool({…execute…})` in pi-context `index.ts` are extracted into `packages/pi-context/src/ops-registry.ts` as `OpDefinition[]` (`{ name, label, description, promptSnippet?, parameters, run(cwd, params)→text, authGated?, surface }`) + a generic `registerAll(pi)`; `index.ts` body is `registerAll(pi)` + the unchanged `/context` command. New `./ops` export added. Behavior-preserving: 162 surface strings identical old↔new, command block byte-identical, runtime demo registers 45/45 with no field leak, full build/check/test green, fresh adversarial audit PASS + orchestrator re-verify. `surface:"use"` on all 45; `authGated` left unset for Phase 2.
+2. **Auth-fold rewiring (Phase 2, NEXT):** **17** gated tools across 4 packages (NOT 18 — the auth-gate test asserts 17). pi-context: add `authGated:true` to its **9** ops in the registry + export a `gatedTools` set derived from the registry. The other three packages have no registry yet → each exports a `gatedTools` const (pi-agent-dispatch 3, pi-workflows 3, pi-behavior-monitors 2). `auth-gate.ts` `AUTH_REQUIRED_TOOLS` becomes the aggregation of the four exports (mechanism forced by: pi does NOT retain custom registration fields — `getAllTools` returns only name/description/parameters, so the gate cannot read `authGated` off a registered tool; it consumes the package-exported derived set). Handler logic (block/confirm/stamp) unchanged.
+3. **New `packages/pi-context-cli/`** (Phase 3; depends on `@davidorex/pi-context`): runtime-reflecting dispatcher over `@davidorex/pi-context/ops` + node `bin` + confirm/output/flag conventions above; tests; lockstep version.
+4. Completion sequence + fresh-context adversarial audit per project canon, per phase.
 
 ## Pointers
 - Relocation prerequisite: `analysis/2026-05-31-content-addressed-substrate-identity-EXECUTION-PLAN.md` ("Relocate migration machinery…", done `65f9897`); the relocated tooling lives at `scripts/migration/`.

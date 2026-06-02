@@ -65,7 +65,7 @@ Each substrate's `config.json` carries a `substrate_id` (pattern `sub-` + 16 hex
 
 ### Relations: closure-table edges, structured endpoints
 
-All inter-item relationships are closure-table edges in `<substrate-dir>/relations.json` — `{parent, child, relation_type, ordinal?}` rows. Endpoints are dual-form: a legacy string (a canonical id, a lens bin name, or an `<alias>:<refname>` cross-substrate sentinel), or a structured `{kind:"item", oid, refname?, substrate_id?, content_hash?}` (where `substrate_id` marks a foreign endpoint), or a structured `{kind:"lens_bin", bin}` virtual parent. Embedded nested id-bearing arrays and FK-as-field are forbidden (`validateContext` flags `nested_id_bearing_array`); containment is a membership edge carrying `ordinal`, and nested entities are promoted to top-level blocks via the `promote-item` tool.
+All inter-item relationships are closure-table edges in `<substrate-dir>/relations.json` — `{parent, child, relation_type, ordinal?}` rows. Endpoints are dual-form: a legacy string (a canonical id, a lens bin name, or an `<alias>:<refname>` cross-substrate sentinel), or a structured `{kind:"item", oid, refname?, substrate_id?, content_hash?}` (where `substrate_id` marks a foreign endpoint), or a structured `{kind:"lens_bin", bin}` virtual parent. Embedded nested id-bearing arrays and FK-as-field are forbidden (`validateContext` flags `nested_id_bearing_array`); containment is a membership edge carrying `ordinal`, and the nested id-bearing array → top-level entity block + ordinal-bearing membership edges promotion is performed by the canonicalizer (`canonicalize-substrate` tool) — not `promote-item`, which is the separate cross-substrate derivation tool.
 
 ### Schema versioning + migrations
 
@@ -76,7 +76,7 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 - **Block CRUD** — `read-block`, `write-block`, `read-block-dir`, `append-block-item`, `update-block-item`, `remove-block-item`, and the nested-array variants (`append/update/remove-block-nested-item`).
 - **Item-level read/query** — `read-block-item`, `read-block-page`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `join-blocks`, `find-references`, `walk-ancestors`, `context-walk-descendants`, `context-edges-for-lens`, `gather-execution-context`.
 - **Substrate writes** — `append-relation`, `amend-config`, `write-schema`, `write-schema-migration`, `rename-canonical-id`.
-- **Content-addressing lifecycle** — `promote-item` (nested → top-level entity + membership edge), `migrate-content-addressed` (backfill identity), `canonicalize-substrate` (one-time canonicalizer).
+- **Content-addressing lifecycle** — `promote-item` (cross-substrate derivation: promote an item into another registered substrate as a new content-addressed item + `item_derived_from_item` lineage edge), `migrate-content-addressed` (backfill identity), `canonicalize-substrate` (one-time canonicalizer; promotes each nested id-bearing array → top-level entity block + ordinal-bearing membership edges).
 - **Discovery/introspection** — `read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`, `context-bootstrap-state`.
 - **Lifecycle/state** — `context-status`, `context-validate`, `context-validate-relations`, `complete-task`.
 - **Substrate management** — `context-init`, `context-accept-all`, `context-switch`, `context-list`, `context-archive`.
@@ -101,7 +101,7 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 | `src/content-hash.ts` | RFC 8785 JCS canonicalization → SHA-256 content hashing for the content projection. Exported subpath `./content-hash`. |
 | `src/object-store.ts` | Content-addressed object store: writes/reads `<substrate-dir>/objects/<content_hash>.json` (idempotent, atomic tmp+rename). Exported subpath `./object-store`. |
 | `src/context-registry.ts` | Project-root `.pi-context-registry.json` reader/writer: `substrate_id → { dir, aliases[] }`, `resolveSubstrateDir`, `resolveAlias`. Exported subpath `./context-registry`. |
-| `src/promote-item.ts` | Promotes a nested item to a top-level entity + membership edge (`promote-item` tool). Exported subpath `./promote-item`. |
+| `src/promote-item.ts` | Cross-substrate derivation: promotes a substrate item into another registered substrate as a new content-addressed item, recording an `item_derived_from_item` lineage edge in the destination (`promote-item` tool). (Nested id-bearing array → top-level entity + membership edges is the canonicalizer's job — `canonicalize-substrate`.) Exported subpath `./promote-item`. |
 | `src/migrate-content-addressed.ts` | Backfills three-layer identity onto pre-content-addressed items (`migrate-content-addressed` tool). Exported subpath `./migrate-content-addressed`. |
 | `src/canonicalize-substrate.ts` | One-time substrate canonicalizer (`canonicalize-substrate` tool). Exported subpath `./canonicalize-substrate`. |
 | `src/schema-write.ts` | Schema create/replace authoring backing `write-schema`. Exported subpath `./schema-write`. |

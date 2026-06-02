@@ -4,7 +4,7 @@
  * active-substrate wiring (content-addressed substrate identity arc).
  *
  * Wires the active substrate so its cross-substrate `project:<refname>` edges
- * resolve into the FROZEN archive `.project-migrate` (read-only) via the
+ * resolve into the FROZEN archive `.project` (read-only) via the
  * project-root registry + the registry-fallback path in migrateToContentAddressed.
  *
  * Per the dual-surface discipline (CLAUDE.md): this is the Claude-Code-side
@@ -13,7 +13,7 @@
  * through Pi-registered tools. The script owns NO npm + NO git.
  *
  * Steps:
- *   A (always): register the `.project-migrate` archive in the project-root
+ *   A (always): register the `.project` archive in the project-root
  *      registry under alias `project` (project-root metadata, not substrate data
  *      — safe in dry-run too; it is the precondition the foreign resolution reads).
  *   B (always): run migrateToContentAddressed scoped to the active substrate
@@ -34,7 +34,7 @@ import { writeSchemaCheckedForDir } from "@davidorex/pi-context/schema-write";
 /**
  * The de-nested `layer-plans` schema body for the ACTIVE substrate.
  *
- * This is the EXACT body of `.project-migrate/schemas/layer-plans.schema.json`
+ * This is the EXACT body of `.project/schemas/layer-plans.schema.json`
  * (the frozen archive's de-nested layer-plans schema) with its `$id` re-anchored
  * to the active substrate_id `sub-2668a102413f6aea`. Carried as a const literal
  * so the apply step does not read the frozen archive at runtime.
@@ -154,24 +154,24 @@ function readActiveDir(cwd: string): string {
 	}
 }
 
-/** Read the `.project-migrate` substrate_id from its config.json. Exits 3 when absent/unreadable. */
+/** Read the `.project` archive substrate_id from its config.json. Exits 3 when absent/unreadable. */
 function readMigrateSid(cwd: string): string {
-	const p = path.join(cwd, ".project-migrate", "config.json");
+	const p = path.join(cwd, ".project", "config.json");
 	if (!fs.existsSync(p)) {
-		console.error(`wire-active-substrate: no .project-migrate/config.json under ${cwd}`);
+		console.error(`wire-active-substrate: no .project/config.json under ${cwd}`);
 		process.exit(3);
 	}
 	try {
 		const data = JSON.parse(fs.readFileSync(p, "utf-8")) as Record<string, unknown>;
 		const sid = data.substrate_id;
 		if (typeof sid !== "string" || sid.length === 0) {
-			console.error(`wire-active-substrate: .project-migrate/config.json has no substrate_id`);
+			console.error(`wire-active-substrate: .project/config.json has no substrate_id`);
 			process.exit(3);
 		}
 		return sid;
 	} catch (err) {
 		console.error(
-			`wire-active-substrate: cannot read .project-migrate/config.json: ${err instanceof Error ? err.message : String(err)}`,
+			`wire-active-substrate: cannot read .project/config.json: ${err instanceof Error ? err.message : String(err)}`,
 		);
 		process.exit(3);
 	}
@@ -185,8 +185,8 @@ function main(): void {
 	// ── Step A: register the frozen archive under alias `project` (both modes) ──
 	// Project-root registry metadata (not substrate data) — the precondition the
 	// registry-fallback foreign resolution reads. Safe to run under --dry-run.
-	registerSubstrate(args.cwd, migrateSid, ".project-migrate", ["project"]);
-	console.log(`registered .project-migrate (${migrateSid}) under alias 'project' in the project-root registry`);
+	registerSubstrate(args.cwd, migrateSid, ".project", ["project"]);
+	console.log(`registered .project (${migrateSid}) under alias 'project' in the project-root registry`);
 
 	// ── Step B: scoped migration (active substrate only), report printed ────────
 	const report = migrateToContentAddressed(args.cwd, { onlySubstrates: [activeDir], dryRun: args.dryRun });

@@ -15,7 +15,8 @@
  * caller-supplied argument shapes. Returning `{ block: true, reason }`
  * prevents execution entirely.
  *
- * Surface: 15 canonical Bucket-2 tools declared in `AUTH_REQUIRED_TOOLS`.
+ * Surface: the canonical Bucket-2 tools declared in `AUTH_REQUIRED_TOOLS`,
+ * which is the aggregation of four per-package gated-sets (see below).
  * The handler enforces:
  *   - non-interactive context (ctx.hasUI === false) → unconditional
  *     refusal with a structured reason naming the missing interactivity.
@@ -45,7 +46,10 @@
  * verdicts; this gate operates on toolName allowlist.
  */
 
+import { gatedTools as monitorsGatedTools } from "@davidorex/pi-behavior-monitors/auth-required";
 import { describeIdentityOverride } from "@davidorex/pi-context/block-api";
+import { gatedTools as contextGatedTools } from "@davidorex/pi-context/ops";
+import { gatedTools as workflowsGatedTools } from "@davidorex/pi-workflows/auth-required";
 import type {
 	ExtensionAPI,
 	ExtensionContext,
@@ -55,40 +59,41 @@ import type {
 import { getVerifiedOperatorIdentity } from "./verified-identity.js";
 
 /**
- * The 15 Bucket-2 canonical tool names whose execution requires an
- * affirmative user-confirm. The substrate-persisted schema-version
- * migration declaration surface (write-schema-migration) is included
- * because capability/migration authoring is on the human-authorized
- * authorization path.
- *
- * Frozen + typed `as const` so accidental mutation at runtime is
- * caught by the type system; consumers should never reach into this
- * list to add/remove entries — vocabulary changes require a source
- * edit + release per the canonical human-authorized governance model.
+ * The pi-agent-dispatch-owned set of tool names whose execution requires an
+ * affirmative user-confirm. Co-located with the package that registers these
+ * tools (author-agent-spec / author-tool-grant / commit-attested are all
+ * pi-agent-dispatch surfaces) so membership travels with the surface it gates.
  */
-export const AUTH_REQUIRED_TOOLS = [
-	// pi-agent-dispatch
-	"author-agent-spec",
-	"author-tool-grant",
-	"commit-attested",
-	// pi-context
-	"write-schema",
-	"write-schema-migration",
-	"amend-config",
-	"write-block",
-	"rename-canonical-id",
-	"context-init",
-	"context-accept-all",
-	"context-switch",
-	"context-archive",
-	// pi-workflows
-	"workflow-execute",
-	"workflow-resume",
-	"workflow-init",
-	// pi-behavior-monitors
-	"monitors-control",
-	"monitors-rules",
-] as const;
+const dispatchGatedTools = ["author-agent-spec", "author-tool-grant", "commit-attested"] as const;
+
+/**
+ * The canonical Bucket-2 tool names whose execution requires an affirmative
+ * user-confirm, assembled as the aggregation of four per-package gated-sets —
+ * each set OWNED BY (co-located with) the package whose tools it gates:
+ *   - pi-agent-dispatch  → dispatchGatedTools (defined above)
+ *   - pi-context         → @davidorex/pi-context/ops `gatedTools` (derived from
+ *     the op-registry's `authGated` flags)
+ *   - pi-workflows       → @davidorex/pi-workflows/auth-required `gatedTools`
+ *   - pi-behavior-monitors → @davidorex/pi-behavior-monitors/auth-required
+ *     `gatedTools`
+ *
+ * Sourcing membership from each package keeps the gate's allowlist in step with
+ * the surfaces it gates: a package that adds or removes a sensitive tool changes
+ * its own owned set, and this aggregation reflects it without an edit here. The
+ * substrate-persisted schema-version migration declaration surface
+ * (write-schema-migration) is among pi-context's gated set because
+ * capability/migration authoring is on the human-authorized authorization path.
+ *
+ * Vocabulary changes still require a source edit + release in the owning
+ * package per the canonical human-authorized governance model; the gate does
+ * not read mutable runtime state to decide what is gated.
+ */
+export const AUTH_REQUIRED_TOOLS: readonly string[] = [
+	...dispatchGatedTools,
+	...contextGatedTools,
+	...workflowsGatedTools,
+	...monitorsGatedTools,
+];
 
 /**
  * Summarize a tool-call argument object for operator-readable confirm

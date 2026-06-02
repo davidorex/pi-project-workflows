@@ -4,6 +4,6 @@
 		"outDir": "./dist",
 		"rootDir": "."
 	},
-	"include": ["index.ts"],
+	"include": ["index.ts", "auth-required.ts"],
 	"exclude": ["node_modules", "dist", "**/*.d.ts", "**/*.test.ts", "test/"]
 }

@@ -16,6 +16,17 @@
 	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-behavior-monitors",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./auth-required": {
+			"types": "./dist/auth-required.d.ts",
+			"default": "./dist/auth-required.js"
+		},
+		"./package.json": "./package.json"
+	},
 	"files": [
 		"dist/",
 		"examples",

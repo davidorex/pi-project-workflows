@@ -36,6 +36,10 @@
 		"./types": {
 			"types": "./dist/types.d.ts",
 			"default": "./dist/types.js"
+		},
+		"./auth-required": {
+			"types": "./dist/auth-required.d.ts",
+			"default": "./dist/auth-required.js"
 		}
 	},
 	"pi": {

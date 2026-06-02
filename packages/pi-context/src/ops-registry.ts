@@ -506,6 +506,7 @@ export const ops: OpDefinition[] = [
 			data: Type.Unknown({ description: "Complete block data — must conform to block schema" }),
 		}),
 		surface: "use",
+		authGated: true,
 		run(cwd: string, params: { block: string; data: unknown }): string {
 			const data = typeof params.data === "string" ? JSON.parse(params.data) : params.data;
 			writeBlock(cwd, params.block, data);
@@ -714,6 +715,7 @@ export const ops: OpDefinition[] = [
 			dryRun: Type.Optional(Type.Boolean({ description: "Compute would-change counts without writing" })),
 		}),
 		surface: "use",
+		authGated: true,
 		run(cwd: string, params: { kind: string; oldId: string; newId: string; dryRun?: boolean }): string {
 			const report = renameCanonicalId(cwd, params.kind, params.oldId, params.newId, { dryRun: params.dryRun });
 			return JSON.stringify(report, null, 2);
@@ -752,6 +754,7 @@ export const ops: OpDefinition[] = [
 			dryRun: Type.Optional(Type.Boolean({ description: "Preview the op without writing config.json" })),
 		}),
 		surface: "use",
+		authGated: true,
 		run(
 			cwd: string,
 			params: { registry: string; operation: string; key: string; entry?: unknown; dryRun?: boolean },
@@ -835,6 +838,7 @@ export const ops: OpDefinition[] = [
 			dryRun: Type.Optional(Type.Boolean({ description: "Meta-validate without writing" })),
 		}),
 		surface: "use",
+		authGated: true,
 		run(cwd: string, params: { operation: string; schemaName: string; schema?: unknown; dryRun?: boolean }): string {
 			// Type.Unknown() params may arrive as JSON strings. Parse if possible; on
 			// failure KEEP the raw value (meta-validation rejects a non-object body).
@@ -892,6 +896,7 @@ export const ops: OpDefinition[] = [
 			),
 		}),
 		surface: "use",
+		authGated: true,
 		async run(
 			cwd: string,
 			params: {
@@ -922,6 +927,7 @@ export const ops: OpDefinition[] = [
 			}),
 		}),
 		surface: "use",
+		authGated: true,
 		run(cwd: string, params: { contextDir: string }): string {
 			const result = initProject(cwd, params.contextDir);
 			return JSON.stringify(result, null, 2);
@@ -935,6 +941,7 @@ export const ops: OpDefinition[] = [
 		promptSnippet: "Adopt the canonical conception as config (accept-all)",
 		parameters: Type.Object({}),
 		surface: "use",
+		authGated: true,
 		run(cwd: string, _params: Record<string, never>): string {
 			let result: AdoptResult;
 			try {
@@ -990,6 +997,7 @@ export const ops: OpDefinition[] = [
 			),
 		}),
 		surface: "use",
+		authGated: true,
 		run(
 			cwd: string,
 			params: {
@@ -1063,6 +1071,7 @@ export const ops: OpDefinition[] = [
 			),
 		}),
 		surface: "use",
+		authGated: true,
 		run(cwd: string, params: { target_dir: string; writer?: { kind: string; user: string } }): string {
 			try {
 				const { from, to } = archiveSubstrate(cwd, params.target_dir);
@@ -1452,6 +1461,18 @@ export const ops: OpDefinition[] = [
 		},
 	},
 ];
+
+/**
+ * The pi-context-owned set of tool names that require human-authorization at
+ * the pi-agent-dispatch tool_call gate. Derived from the registry's authGated
+ * flags rather than hand-maintained, so a single source — the OpDefinition's
+ * authGated field — names both the CLI's credentialed-confirmation hint and the
+ * gate's aggregated allowlist. pi-agent-dispatch imports this via the `./ops`
+ * subpath and folds it into AUTH_REQUIRED_TOOLS alongside the other packages'
+ * owned sets. The gate at the pi-agent-dispatch layer remains the enforcement
+ * point; this list is the source of pi-context's contribution to it.
+ */
+export const gatedTools: string[] = ops.filter((o) => o.authGated).map((o) => o.name);
 
 /**
  * The factory PI handle captured at registerAll time. The list-tools op needs

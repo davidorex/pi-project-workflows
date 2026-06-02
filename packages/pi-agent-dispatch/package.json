@@ -42,8 +42,10 @@
 		"test": "tsx --test src/*.test.ts"
 	},
 	"dependencies": {
+		"@davidorex/pi-behavior-monitors": "^0.27.0",
 		"@davidorex/pi-context": "^0.27.0",
 		"@davidorex/pi-jit-agents": "^0.27.0",
+		"@davidorex/pi-workflows": "^0.27.0",
 		"@earendil-works/pi-ai": "^0.75.4",
 		"@earendil-works/pi-coding-agent": "^0.75.4",
 		"yaml": "^2.7.1"

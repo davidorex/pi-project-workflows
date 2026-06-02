@@ -75,11 +75,14 @@ After initialization, three directories coexist in a project:
 
 ```
 .pi/            — Pi platform (agents, skills, settings). Managed by Pi itself.
+.pi-context.json          — bootstrap pointer naming the single ACTIVE substrate dir (contextDir)
+.pi-context-registry.json — project-root registry enumerating ALL substrates by substrate_id (git-tracked)
 <substrate-dir>/ — pi-context. Created by /context init <substrate-dir> (skeleton-only).
-  config.json   — substrate bootstrap: root, naming, hierarchy, lenses, installed_*
+  config.json   — substrate bootstrap: root, substrate_id, naming, hierarchy, lenses, installed_*
   relations.json — closure-table edges (created on first authored edge)
+  migrations.json — per-substrate schema-version migration registry
   schemas/      — JSON Schema files (empty until /context install reifies declared names)
-  phases/       — phase specification files (empty until populated)
+  objects/      — content-addressed object store, one objects/<content_hash>.json per content version (git-tracked)
   <name>.json   — block data files (each a /context install target or user-authored)
 .workflows/     — pi-workflows (run state). Created by /workflow init.
   runs/         — workflow execution state, session logs, outputs
@@ -91,7 +94,9 @@ After initialization, three directories coexist in a project:
 
 ### pi-context
 
-**Tools:** `append-block-item`, `update-block-item`, `read-block`, `write-block`, `read-block-dir`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-item`, `remove-block-nested-item`, `resolve-item-by-id`, `context-status`, `context-validate`, `context-init`, `context-validate-relations`, `context-edges-for-lens`, `context-walk-descendants`, `complete-task` — block CRUD (top-level + nested array operations) with automatic schema validation, plus cross-block ID resolution and substrate (closure-table relations + lens) tooling
+**Tool families:** block CRUD (`read/write/append/update/remove-block-item`, top-level + nested), item-level read/query (`read-block-item`, `read-block-page`, `filter-block-items`, `resolve-item(s)-by-id`, `join-blocks`, `find-references`, `walk-ancestors`, `context-walk-descendants`, `context-edges-for-lens`, `gather-execution-context`), substrate writes (`append-relation`, `amend-config`, `write-schema`, `write-schema-migration`, `rename-canonical-id`), content-addressing lifecycle (`promote-item`, `migrate-content-addressed`, `canonicalize-substrate`), discovery/introspection (`read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`, `context-bootstrap-state`), lifecycle/state (`context-status`, `context-validate`, `context-validate-relations`, `complete-task`), substrate management (`context-init`, `context-accept-all`, `context-switch`, `context-list`, `context-archive`), and roadmap (`context-roadmap-load/render/validate/list`) — all writes carry automatic schema validation. Read `packages/pi-context/skills/pi-context/SKILL.md` or call `list-tools` for the current set.
+
+**Item identity + cross-substrate.** Identity-bearing items carry a three-layer identity — a mutable `id` refname, a content-independent `oid` minted once and immutable, a `content_hash` over the item's content projection (persisted to a git-tracked `objects/<content_hash>.json` store), and a `content_parent` version chain. Each substrate's `config.json` carries a `substrate_id`; a project-root `.pi-context-registry.json` enumerates all substrates by `substrate_id` so closure-table edges can point across substrates (a `{kind:"item", oid, substrate_id}` endpoint), resolved/classified by `resolveRef` as active/foreign/dangling/unregistered.
 
 **Commands:**
 - `/context init <substrate-dir>` — write the substrate skeleton (bootstrap pointer + dirs; no config, no schemas, no blocks); refuses with loud error when the existing pointer's `contextDir` differs from the caller's argument (points to `/context switch -c <new-dir>` as the correct command for that operation)

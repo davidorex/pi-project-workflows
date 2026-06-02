@@ -13,30 +13,31 @@
  *      config.json; refuse a pre-existing `<substrate>-migrate` sibling; no-op
  *      (exit 0) when the config ALREADY carries a substrate_id (idempotency).
  *   2. Dupe — `fs.cpSync(<substrate>, <substrate>-migrate, {recursive:true})` to a
- *      ROOT-SIBLING (a DIRECT CHILD of cwd). This is required: OP4's
- *      `migrateToContentAddressed` discovers substrates by `fs.readdirSync(cwd)`
- *      and `onlySubstrates`-filters by the child dir name. A `tmp/`-nested dupe
- *      would be a child of `tmp/`, never discovered, so the migration would no-op.
- *   3. Land identity fields — `landIdentityFieldsForDir(<dupe>)` injects the three
- *      optional identity-field DECLARATIONS (oid / content_hash / content_parent)
- *      onto every registered block_kind's item schema (incl. any custom kind),
- *      satisfying the migration's step-0 fail-fast readiness gate.
- *   4. Migrate — `migrateToContentAddressed(cwd, {onlySubstrates:[<dupe>],
- *      register:false, dryRun})` mints substrate_id + backfills oid/content_hash +
- *      stores objects + converts endpoints, WITHOUT writing the project-root
- *      registry (registration is deferred to the post-swap step so the registry
- *      only ever names the live substrate, never a transient dupe).
+ *      ROOT-SIBLING (a DIRECT CHILD of cwd), so the verify pointer-switch resolves it
+ *      by its child dir name like any registered substrate.
+ *   3. Canonicalize — `canonicalizeSubstrate(<dupeAbs>, {dryRun, ctx, promotionTargets,
+ *      registerBlocks})` runs the full one-shot canonicalization on the dupe's substrate
+ *      DIR in ONE pass: mint substrate_id; DATA-DRIVEN promotion of every data-bearing
+ *      nested id-bearing array into a top-level block + ordinal membership edges (per the
+ *      explicit `promotionTargets`); the schema-surgical EMPTY-SCHEMA DE-NEST that strips a
+ *      nested id-bearing array DECLARATION from a 0-data block's schema (the case the
+ *      data-driven path skips); content-address (oid/content_hash/object) every item; and
+ *      convert bare-refname edge endpoints to structured form. Registration is DEFERRED —
+ *      this call writes NO project-root registry; the post-swap step is the only registry
+ *      write, so the registry only ever names the live substrate, never a transient dupe.
+ *      `--promotion-targets <json>` / `--register-blocks <json>` pass the explicit promotion
+ *      targets + orphan-block directives through (defaults `{}` / `[]`; wasc needs neither).
  *      - `--dry-run`: print the report, remove the dupe, exit 0 (no swap).
- *   5. Verify — `verifyDupe(cwd, <dupe>)` pointer-switches the cwd to the dupe,
+ *   4. Verify — `verifyDupe(cwd, <dupe>)` pointer-switches the cwd to the dupe,
  *      runs validateContext, filters by the canonicalization BLOCKING_CODES, and
  *      ALWAYS restores the original pointer in a `finally`. On failure the dupe is
  *      removed and the harness exits non-zero.
- *   6. Swap (only on a clean verify) — rename `<substrate>` → `<substrate>-archived`
+ *   5. Swap (only on a clean verify) — rename `<substrate>` → `<substrate>-archived`
  *      (the original is PRESERVED, never deleted; a timestamped suffix is used when
  *      `<substrate>-archived` already exists), then rename `<substrate>-migrate` →
  *      `<substrate>`. On the second rename failing, the archived original is rolled
  *      back into place and the harness exits non-zero.
- *   7. Post-swap register — read the now-live `<substrate>/config.json`
+ *   6. Post-swap register — read the now-live `<substrate>/config.json`
  *      `substrate_id`; when present, `registerSubstrate(cwd, id, <substrate>, [])`.
  *
  * Error discipline: any throw BEFORE the swap removes the dupe and leaves the
@@ -54,10 +55,14 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import {
+	type CanonicalizeReport,
+	canonicalizeSubstrate,
+	type PromotionTargets,
+	type RegisterBlock,
+} from "@davidorex/pi-context/canonicalize-substrate";
 import { registerSubstrate } from "@davidorex/pi-context/context-registry";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { landIdentityFieldsForDir } from "@davidorex/pi-context/land-identity-fields";
-import { type MigrationReport, migrateToContentAddressed } from "@davidorex/pi-context/migrate-content-addressed";
 import { verifyDupe } from "./verify-substrate-dupe.js";
 
 export interface UpgradeOptions {
@@ -66,11 +71,20 @@ export interface UpgradeOptions {
 	dryRun: boolean;
 	writer: string;
 	format: "json" | "table";
+	/** Explicit promotion targets for any DATA-bearing nested id-bearing array the
+	 * canonicalizer finds (keyed by the dotted `<parentBlockKind>.<nestedKey>` path).
+	 * Defaults to `{}` — a data-bearing nested array with no entry is a config error
+	 * (canonicalize throws explicit-or-fail). wasc needs none (its nested data is empty,
+	 * handled by the schema-surgical sweep). */
+	promotionTargets: PromotionTargets;
+	/** Explicit orphan content-bearing blocks to register before backfill. Defaults to
+	 * `[]`. wasc needs none. */
+	registerBlocks: RegisterBlock[];
 }
 
 export type UpgradeOutcome =
 	| { kind: "noop_already_addressed"; substrateId: string }
-	| { kind: "dry_run"; report: MigrationReport }
+	| { kind: "dry_run"; report: CanonicalizeReport }
 	| { kind: "swapped"; substrateId: string | null; archivedDir: string; registered: boolean };
 
 /** Thrown for a guard / verify / swap failure; `code` is the process exit code the
@@ -95,6 +109,8 @@ function parseArgs(argv: string[]): Args {
 		dryRun: false,
 		writer: "human:davidryan@gmail.com",
 		format: "table",
+		promotionTargets: {},
+		registerBlocks: [],
 	};
 	for (let i = 0; i < argv.length; i++) {
 		const a = argv[i];
@@ -114,6 +130,22 @@ function parseArgs(argv: string[]): Args {
 				process.exit(2);
 			}
 			out.format = f;
+			i++;
+		} else if (a === "--promotion-targets" && argv[i + 1]) {
+			try {
+				out.promotionTargets = JSON.parse(argv[i + 1]) as PromotionTargets;
+			} catch (err) {
+				console.error(`--promotion-targets is not valid JSON: ${err instanceof Error ? err.message : String(err)}`);
+				process.exit(2);
+			}
+			i++;
+		} else if (a === "--register-blocks" && argv[i + 1]) {
+			try {
+				out.registerBlocks = JSON.parse(argv[i + 1]) as RegisterBlock[];
+			} catch (err) {
+				console.error(`--register-blocks is not valid JSON: ${err instanceof Error ? err.message : String(err)}`);
+				process.exit(2);
+			}
 			i++;
 		} else if (a === "--dry-run") {
 			out.dryRun = true;
@@ -199,22 +231,27 @@ export function upgradeSubstrate(opts: UpgradeOptions): UpgradeOutcome {
 
 	const ctx = writerToCtx(opts.writer);
 
-	// ── Dupe + ops on the dupe (a throw discards it; original untouched) ──────────
+	// ── Dupe + canonicalize on the dupe (a throw discards it; original untouched) ─
+	// `canonicalizeSubstrate` takes the dupe's SUBSTRATE DIR (not a cwd): it mints the
+	// substrate_id, promotes data-bearing nested id-bearing arrays into top-level blocks +
+	// membership edges (per `promotionTargets`), strips empty-data nested-id schema
+	// declarations (the schema-surgical sweep), content-addresses every item, and converts
+	// edge endpoints — all in ONE pass. Registration is DEFERRED (no `register` arg here);
+	// the post-swap `registerSubstrate` below is the only registry write, so the registry
+	// only ever names the live substrate, never a transient dupe.
 	fs.cpSync(substrateAbs, dupeAbs, { recursive: true });
-	let report: MigrationReport;
+	let report: CanonicalizeReport;
 	try {
-		landIdentityFieldsForDir(dupeAbs, { ctx }); // step 3
-		console.error("upgrade-substrate: landed identity-field declarations on the dupe.");
-		report = migrateToContentAddressed(opts.cwd, {
-			onlySubstrates: [dupeName],
-			register: false,
+		report = canonicalizeSubstrate(dupeAbs, {
 			dryRun: opts.dryRun,
 			ctx,
-		}); // step 4
+			promotionTargets: opts.promotionTargets,
+			registerBlocks: opts.registerBlocks,
+		});
 	} catch (err) {
 		fs.rmSync(dupeAbs, { recursive: true, force: true });
 		throw new UpgradeError(
-			`upgrade-substrate: migration step failed on the dupe (original untouched): ${err instanceof Error ? err.message : String(err)}`,
+			`upgrade-substrate: canonicalization step failed on the dupe (original untouched): ${err instanceof Error ? err.message : String(err)}`,
 			3,
 		);
 	}
@@ -297,25 +334,30 @@ export function upgradeSubstrate(opts: UpgradeOptions): UpgradeOutcome {
 	return { kind: "swapped", substrateId: liveId ?? null, archivedDir: archivedAbs, registered };
 }
 
-/** Print the migration / dry-run report to stdout in the requested format. */
-function printReport(report: MigrationReport, format: "json" | "table"): void {
+/** Print the canonicalize / dry-run report to stdout in the requested format. */
+function printReport(report: CanonicalizeReport, format: "json" | "table"): void {
 	if (format === "json") {
 		console.log(JSON.stringify(report, null, 2));
 		return;
 	}
-	const minted = report.substrates.reduce((n, s) => n + s.items_oid_minted, 0);
-	const hashed = report.substrates.reduce((n, s) => n + s.items_hashed, 0);
-	const objects = report.substrates.reduce((n, s) => n + s.objects_stored, 0);
+	const entities = report.promotions.reduce((n, p) => n + p.entities, 0);
+	const promoEdges = report.promotions.reduce((n, p) => n + p.edges, 0);
 	console.log("upgrade-substrate report:");
-	console.log(`  dry_run                : ${report.dry_run}`);
-	console.log(`  substrates             : ${report.substrates.length}`);
-	console.log(`  items_oid_minted       : ${minted}`);
-	console.log(`  items_hashed           : ${hashed}`);
-	console.log(`  objects_stored         : ${objects}`);
-	console.log(`  edges_rewritten        : ${report.edges_rewritten}`);
-	console.log(`  cross_substrate_edges  : ${report.cross_substrate_edges}`);
-	console.log(`  lens_bin_edges_preserved : ${report.lens_bin_edges_preserved}`);
-	console.log(`  unresolved             : ${report.unresolved.length}`);
+	console.log(`  dry_run                  : ${report.dry_run}`);
+	console.log(`  substrate_id             : ${report.substrate_id}`);
+	console.log(`  promotions               : ${report.promotions.length} (entities=${entities}, edges=${promoEdges})`);
+	console.log(`  schema_denested          : ${report.schema_denested.length} [${report.schema_denested.join(", ")}]`);
+	console.log(`  kinds_registered         : ${report.kinds_registered.length} [${report.kinds_registered.join(", ")}]`);
+	console.log(
+		`  registered_blocks        : ${report.registered_blocks.length} [${report.registered_blocks.join(", ")}]`,
+	);
+	console.log(
+		`  relation_types_registered: ${report.relation_types_registered.length} [${report.relation_types_registered.join(", ")}]`,
+	);
+	console.log(`  items_oid_minted         : ${report.items_oid_minted}`);
+	console.log(`  items_hashed             : ${report.items_hashed}`);
+	console.log(`  objects_stored           : ${report.objects_stored}`);
+	console.log(`  edges_structured         : ${report.edges_structured}`);
 }
 
 function main(): void {

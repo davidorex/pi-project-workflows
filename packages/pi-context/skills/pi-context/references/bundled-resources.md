@@ -1,9 +1,10 @@
 # Bundled Resources
 
-## schemas/ (10 files)
+## schemas/ (11 files)
 
 - `schemas/bootstrap.schema.json`
 - `schemas/config.schema.json`
+- `schemas/context-registry.schema.json`
 - `schemas/layer.schema.json`
 - `schemas/migrations.schema.json`
 - `schemas/priority.schema.json`
@@ -13,7 +14,7 @@
 - `schemas/status.schema.json`
 - `schemas/verification-method.schema.json`
 
-## samples/ (33 files)
+## samples/ (34 files)
 
 - `samples/blocks/context-contracts.json`
 - `samples/blocks/conventions.json`
@@ -32,6 +33,7 @@
 - `samples/blocks/verification.json`
 - `samples/blocks/work-orders.json`
 - `samples/conception.json`
+- `samples/migrations.json`
 - `samples/schemas/context-contracts.schema.json`
 - `samples/schemas/conventions.schema.json`
 - `samples/schemas/decisions.schema.json`

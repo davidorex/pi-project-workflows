@@ -48,6 +48,42 @@ Append a closure-table relation (edge: parent, child, relation_type, optional or
 | `ordinal` | integer | no | Optional sibling-ordering within (parent, relation_type) |
 </tool>
 
+<tool name="promote-item">
+Promote a substrate item into another (registered) substrate as a NEW content-addressed item, recording the 'item_derived_from_item' lineage edge in the destination relations.json (parent = the new derived item, child = the source, carrying the source content_hash). The destination write-path mints a fresh oid + content_hash + content object. When the source block's status enum supports it, the source is marked superseded. Preconditions (unresolvable/non-item source, unregistered destination alias, unregistered destination relation_type, refname collision) throw. Pass dryRun to compute the destination without writing.
+
+*Promote an item into another substrate as a derived copy with a lineage edge*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `source` | string | yes | Source item selector (bare refname / <alias>:<refname>) |
+| `destinationSubstrate` | string | yes | Registered destination substrate alias |
+| `newRefname` | string | no | Explicit destination refname (else allocated from the dest block id pattern) |
+| `dryRun` | boolean | no | Compute the destination without writing any channel |
+| `writer` | object | yes | DispatchContext.writer per pi-context/src/dispatch-context.ts. |
+</tool>
+
+<tool name="migrate-content-addressed">
+Run the §H content-addressing migration across every substrate under the project root: mint + register a substrate_id per substrate, record the default `project` legacy alias, backfill oid/content_hash/objects onto every existing item, and convert legacy `<alias>:<refname>` + bare-refname relation endpoints to structured form so cross-substrate edges resolve `foreign` CLEAN. Idempotent. Pass dryRun to compute the full report (counts + unresolved endpoints) without writing any channel. A non-dry run with unresolved endpoints is INCOMPLETE — the report's `unresolved[]` lists every dropped (not written as broken) endpoint.
+
+*Migrate all substrates to content-addressed identity + structured relation endpoints*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `dryRun` | boolean | no | Compute the report without writing any channel |
+| `legacyAliases` | object | no | Map of legacy alias → substrate dir basename (merged over the default `project` → `.project`) |
+</tool>
+
+<tool name="canonicalize-substrate">
+Transform the ACTIVE substrate into canonical content-addressed shape: promote every nested id-bearing array (any depth) to a top-level entity block + ordinal-bearing membership edges, de-nest the parents, content-address every item (oid/content_hash/object), register synthesized block_kinds + membership relation_types, mint a substrate_id when absent, and convert bare-refname relation endpoints to structured form. Idempotent. Pass dryRun to compute the full CanonicalizeReport (promotions/entities/edges, schemas de-nested, kinds + relation_types registered, items minted/hashed, objects stored) without writing any channel. NOTE: this tool targets the active substrate in place; the triple-buffer (dupe/verify/swap) lives in the orchestrator CLI. Promotion targets (block_kind + relation_type names per nested-array dotted path) are NEVER synthesized — supply them explicitly via promotionTargets; an unmapped data-bearing nested array throws.
+
+*Canonicalize the active substrate (promote nested arrays to top-level entity blocks + membership edges)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `dryRun` | boolean | no | Compute the report without writing any channel |
+| `promotionTargets` | object | no | Explicit promotion targets keyed by the nested-array dotted path (e.g. 'features.stories'). Required for every data-bearing nested id array; no name synthesis. |
+</tool>
+
 <tool name="append-block-nested-item">
 Append an item to a nested array on a parent-array item in a project block. Schema validation is automatic.
 
@@ -508,7 +544,7 @@ Subcommands: `init`, `switch`, `list`, `archive`, `install`, `accept-all`, `view
 </events>
 
 <bundled_resources>
-10 schemas, 33 samples bundled.
+11 schemas, 34 samples bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 
@@ -568,22 +604,22 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 
 | Block | Title | Array Key | Item Fields |
 |-------|-------|-----------|-------------|
-| `decisions` | Decisions | `decisions` | id, title, status (string (open|enacted|superseded)), context, decision, options_considered? (array), consequences (array), references? (array), created_by, created_at, enacted_by?, enacted_at? |
-| `framework-gaps` | Framework Gaps | `gaps` | id, title, status (string (identified|accepted|in-progress|closed|wontfix|superseded_by)), priority? (string (P0|P1|P2|P3)), package, layer? (string (L1|L2|L3|L4|L5)), description, evidence (array), impact, canonical_vocabulary?, proposed_resolution, related_features? (array), related_decisions? (array), related_issues? (array), created_by, created_at, closed_by?, closed_at? |
-| `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), files? (array), acceptance_criteria? (array), assigned_agent?, notes? |
-| `verification` | Verification | `verifications` | id, status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array) |
-| `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by? |
-| `features` | Features | `features` | id, title, status (string (proposed|approved|in-progress|in-review|complete|blocked|cancelled)), layer (string (L1|L2|L3|L4|L5)), description, motivation?, acceptance_criteria (array), created_by, created_at, modified_by?, modified_at?, approved_by?, approved_at? |
-| `research` | Research | `research` | id, title, status (string (planned|in-progress|complete|stale|superseded|revised)), layer (string (L1|L2|L3|L4|L5)), type (string (investigative|comparative|empirical|historical|audit|landscape|feasibility|curation)), question, method, scope? (array), findings_summary, findings_document?, grounding? (object), grounded_at?, stale_conditions? (array), citations? (array), conducted_by?, conducted_at?, created_by, created_at, modified_by?, modified_at? |
-| `rationale` | Design Rationale | `rationales` | id, title, narrative, phase? (integer) |
-| `spec-reviews` | Spec Reviews | `reviews` | id, target, target_revision?, reviewer?, status (string (not-started|in-progress|complete|abandoned)), scope? (array), method?, clean? (boolean), created_by, created_at, completed_at? |
-| `layer-plans` | Layer Restructure Plans | `plans` | id, title, status (string (draft|proposed|decided|in-progress|complete|abandoned)), model, description?, layers (array), migration_phases (array), created_by, created_at |
-| `requirements` | Requirements | `requirements` | id, description, type (string (functional|non-functional|constraint|integration)), status (string (proposed|accepted|deferred|implemented|verified)), priority (string (must|should|could|wont)), acceptance_criteria? (array), source? (string (human|agent|analysis)) |
-| `conventions` | Conventions | `rules` | id, description, enforcement (string (lint|test|review|manual)), severity (string (error|warning|info)) |
-| `context-contracts` | Context contracts | `contracts` | id, unit_kind, bundle_relation_types (array), description?, notes?, created_by, created_at, modified_by?, modified_at? |
-| `phase` | Phases | `phases` | id, name, intent, goal?, status (string (planned|in-progress|completed)), success_criteria? (array), specs? (array), artifacts_produced? (array) |
-| `story` | Stories | `stories` | id, title, status (string (proposed|ready|in-progress|in-review|complete|blocked)), description?, acceptance_criteria? (array), created_by?, created_at?, modified_by?, modified_at? |
-| `work-orders` | Work Orders | `work_orders` | id, title, status (string (proposed|in-progress|real-check-passed|real-check-failed|completed|cancelled)), target_agent, input_contract (object), context_blocks (array), output_contract (object), scope (object), real_check_criteria (object), description?, created_by?, created_at?, modified_by?, modified_at? |
+| `decisions` | Decisions | `decisions` | id, title, status (string (open|enacted|superseded)), context, decision, options_considered? (array), consequences (array), references? (array), created_by, created_at, enacted_by?, enacted_at?, oid?, content_hash?, content_parent? |
+| `framework-gaps` | Framework Gaps | `gaps` | id, title, status (string (identified|accepted|in-progress|closed|wontfix|superseded_by)), priority? (string (P0|P1|P2|P3)), package, layer? (string (L1|L2|L3|L4|L5)), description, evidence (array), impact, canonical_vocabulary?, proposed_resolution, related_features? (array), related_decisions? (array), related_issues? (array), created_by, created_at, closed_by?, closed_at?, oid?, content_hash?, content_parent? |
+| `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), files? (array), acceptance_criteria? (array), assigned_agent?, notes?, oid?, content_hash?, content_parent? |
+| `verification` | Verification | `verifications` | id, status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array), oid?, content_hash?, content_parent? |
+| `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by?, oid?, content_hash?, content_parent? |
+| `features` | Features | `features` | id, title, status (string (proposed|approved|in-progress|in-review|complete|blocked|cancelled)), layer (string (L1|L2|L3|L4|L5)), description, motivation?, acceptance_criteria (array), created_by, created_at, modified_by?, modified_at?, approved_by?, approved_at?, oid?, content_hash?, content_parent? |
+| `research` | Research | `research` | id, title, status (string (planned|in-progress|complete|stale|superseded|revised)), layer (string (L1|L2|L3|L4|L5)), type (string (investigative|comparative|empirical|historical|audit|landscape|feasibility|curation)), question, method, scope? (array), findings_summary, findings_document?, grounding? (object), grounded_at?, stale_conditions? (array), citations? (array), conducted_by?, conducted_at?, created_by, created_at, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
+| `rationale` | Design Rationale | `rationales` | id, title, narrative, phase? (integer), oid?, content_hash?, content_parent? |
+| `spec-reviews` | Spec Reviews | `reviews` | id, target, target_revision?, reviewer?, status (string (not-started|in-progress|complete|abandoned)), scope? (array), method?, clean? (boolean), created_by, created_at, completed_at?, oid?, content_hash?, content_parent? |
+| `layer-plans` | Layer Restructure Plans | `plans` | id, title, status (string (draft|proposed|decided|in-progress|complete|abandoned)), model, description?, layers (array), migration_phases (array), created_by, created_at, oid?, content_hash?, content_parent? |
+| `requirements` | Requirements | `requirements` | id, description, type (string (functional|non-functional|constraint|integration)), status (string (proposed|accepted|deferred|implemented|verified)), priority (string (must|should|could|wont)), acceptance_criteria? (array), source? (string (human|agent|analysis)), oid?, content_hash?, content_parent? |
+| `conventions` | Conventions | `rules` | id, description, enforcement (string (lint|test|review|manual)), severity (string (error|warning|info)), oid?, content_hash?, content_parent? |
+| `context-contracts` | Context contracts | `contracts` | id, unit_kind, bundle_relation_types (array), description?, notes?, created_by, created_at, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
+| `phase` | Phases | `phases` | id, name, intent, goal?, status (string (planned|in-progress|completed)), success_criteria? (array), specs? (array), artifacts_produced? (array), oid?, content_hash?, content_parent? |
+| `story` | Stories | `stories` | id, title, status (string (proposed|ready|in-progress|in-review|complete|blocked)), description?, acceptance_criteria? (array), created_by?, created_at?, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
+| `work-orders` | Work Orders | `work_orders` | id, title, status (string (proposed|in-progress|real-check-passed|real-check-failed|completed|cancelled)), target_agent, input_contract (object), context_blocks (array), output_contract (object), scope (object), real_check_criteria (object), description?, created_by?, created_at?, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
 
 **Status Enums:**
 

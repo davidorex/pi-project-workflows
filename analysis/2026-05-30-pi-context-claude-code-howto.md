@@ -41,13 +41,13 @@ This document covers the Claude-Code-side surfaces: the `/context` slash command
 
 **`/context list`** — enumerate discoverable substrate dirs in cwd (scan for dirs with config.json). Marks the active one (matches current pointer). Read-only. No auth-gate.
 
-**`/context validate`** + **`/context validate-relations`** — cross-block referential integrity + lens-validator dispatch + edge validation. Returns `{status, issues[]}`. Read-only. No auth-gate.
+**`/context validate`** — cross-block referential integrity + lens-validator dispatch. Returns `{status, issues[]}`. Read-only. No auth-gate. Closure-table edge validation is NOT a slash subcommand; reach it via the `context-validate-relations` Pi tool (`pi -p "call context-validate-relations"`).
 
 ### Bootstrap + install
 
 **`/context init <dir>`** — bootstrap `.pi-context.json` pointer + create substrate dir + create `schemas/` subdir. Does NOT populate config or blocks (run `/context accept-all` + `/context install` after). Behavior: refuses with structured guide-message if existing pointer's contextDir differs from caller's arg (per FGAP-179 fix); idempotent when args match existing pointer. Auth-gate fires per FGAP-134/138.
 
-**`/context accept-all`** — adopt `packages/pi-context/samples/conception.json` as the substrate's `config.json` (full vocabulary: 16 block_kinds + 28 relation_types + 2 lenses + 0 status_buckets + 0 layers + installed_schemas + installed_blocks). Root-overridden; idempotent never-clobber. Writes config.json only. Auth-gate fires.
+**`/context accept-all`** — adopt `packages/pi-context/samples/conception.json` as the substrate's `config.json` (full vocabulary — block_kinds + relation_types + lenses + installed_schemas + installed_blocks). Root-overridden; idempotent never-clobber. Writes config.json only. Auth-gate fires.
 
 **`/context install`** — copies declared `installed_schemas[]` + `installed_blocks[]` from the samples catalog (`samples/schemas/` + `samples/blocks/`) into the substrate's `schemas/` + root. Use `--update` to overwrite. Auth-gate fires.
 
@@ -351,7 +351,8 @@ console.log(touched);'
 ```bash
 # 1. Author the JSON Schema for the new kind
 npx tsx scripts/orchestrator/write-schema.ts \
-  --schema-name my-custom-kind \
+  --operation create \
+  --name my-custom-kind \
   --schema @/tmp/my-custom-kind.schema.json
 
 # 2. Register in config.block_kinds[]
@@ -405,7 +406,7 @@ writeSchemaChecked(".", "framework-gaps", schema, "replace");'
 
 ## Auth-gate behavior (FGAP-134 / FGAP-138)
 
-When invoking via **Pi tools** (`pi -p "call <tool>"`), 17 tools fire interactive `ctx.ui.confirm` prompt requiring operator authorization:
+When invoking via **Pi tools** (`pi -p "call <tool>"`), the following tools fire an interactive `ctx.ui.confirm` prompt requiring operator authorization:
 
 ```
 author-agent-spec, author-tool-grant, commit-attested

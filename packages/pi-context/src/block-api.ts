@@ -615,6 +615,11 @@ function maybeStampItem(
  *     pass none and get a fresh `randomUUID()` so each birth is unique even
  *     within one substrate.
  * 128 bits (32 hex) of digest is collision-free in the item-count regime.
+ *
+ * RETURN SHAPE: a bare 32-character lowercase-hex digest — no substrate prefix,
+ * no colon separator. `substrateId` salts the hash and does NOT appear in the
+ * returned value. (The `<substrate_id>:<oid>` colon-form seen elsewhere is the
+ * edge dedup key in `endpointIdentity`, not the oid itself.)
  */
 export function mintOid(substrateId: string, nonce?: string): string {
 	const seed = nonce ?? randomUUID();

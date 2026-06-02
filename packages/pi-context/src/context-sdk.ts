@@ -960,9 +960,11 @@ export interface JoinResult {
 /**
  * Cross-block join (FGAP-043, HYBRID). Mode = exactly one of relationType (edge) XOR
  * leftField+rightField (field). Returns one JoinResult per left item (after leftPredicate),
- * right always an array. Edge mode is DEC-0013-native (relations.json); field mode joins on a
- * shared field value (legacy inline-FK + arbitrary shared fields). Reuses filterBlockItems /
- * readBlock / discoverArrayKey / loadRelations / buildIdIndex.
+ * right always an array. Edge mode is DEC-0013-native (relations.json); field mode is a
+ * DEPRECATED backward-compat path that joins on a shared field value (formerly inline-FK,
+ * now arbitrary shared fields). NO validation uses field mode — cross-block validation is
+ * edge-only since DEC-0036; field mode here is a query convenience, not a reference surface.
+ * Reuses filterBlockItems / readBlock / discoverArrayKey / loadRelations / buildIdIndex.
  */
 export function joinBlocks(cwd: string, spec: JoinSpec): JoinResult[] {
 	const isEdge = spec.relationType !== undefined;

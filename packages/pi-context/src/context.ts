@@ -302,12 +302,21 @@ export function endpointBin(e: RawEndpoint): string | null {
 
 /**
  * The DEDUP identity of an endpoint (the deliberate asymmetry vs the consumer
- * node key): string → the string; structured item → `${substrate_id ?? ""}:${oid}`
- * (content-addressed, so two items with the same oid but different refnames dedup
- * together); lens_bin → `bin:${bin}`. This is what `identityKey` keys on for the
- * append-if-absent no-op. A bare-refname STRING and a structured same-item with
- * the SAME refname do NOT dedup-merge here (string key `"FGAP-1"` vs item key
- * `":<oid>"`) — the documented, probed asymmetry.
+ * node key): string → the string; structured item → `${substrate_id ?? ""}:${oid}`;
+ * lens_bin → `bin:${bin}`. This is what `identityKey` keys on for the
+ * append-if-absent no-op.
+ *
+ * The `${substrate_id ?? ""}:${oid}` colon-form is the EDGE DEDUP KEY ONLY — it is
+ * NOT the oid's own format. The oid is a bare 32-hex digest (see `mintOid`, which
+ * returns the digest with no substrate prefix and no colon). The `substrate_id`
+ * prefix is prepended here solely so two items that happen to share an oid across
+ * DIFFERENT substrates dedup as distinct edges; within one substrate the oid alone
+ * is content-addressed, so two items with the same oid but different refnames dedup
+ * together.
+ *
+ * A bare-refname STRING and a structured same-item with the SAME refname do NOT
+ * dedup-merge here (string key `"FGAP-1"` vs item key `":<oid>"`) — the documented,
+ * probed asymmetry.
  */
 export function endpointIdentity(e: RawEndpoint): string {
 	if (typeof e === "string") return e;

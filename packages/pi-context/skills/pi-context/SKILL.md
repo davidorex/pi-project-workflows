@@ -764,21 +764,20 @@ Item-level reads complement whole-block `read-block` (which is all-or-nothing an
 </duplicate_detection>
 
 <context_validate>
-Two separate validators address two concerns:
+Two surfaces address related concerns. Cross-block referential integrity is EDGE-based: there are no per-block inline-FK field checks (no `task.phase`, `task.depends_on`, `decision.phase`, `gap.resolved_by`, `requirement.traces_to`/`depends_on`, `verification.target`, `rationale.related_decisions` scans) — `relations.json` closure-table edges are the sole reference surface.
 
-`/context validate` (the `context-validate` tool) checks cross-block referential integrity:
-- task.phase references a valid phase
-- task.depends_on references valid task IDs
-- decision.phase references a valid phase
-- gap.resolved_by references a valid ID
-- requirement.traces_to references valid phase/task IDs
-- requirement.depends_on references valid requirement IDs
-- verification.target references a valid target ID
-- rationale.related_decisions references valid decision IDs
+`/context validate` (the `context-validate` tool → `validateContext`) is the project-wide check. It runs:
+- Source-of-truth drift: when the active `config.substrate_id` is set, the project-root `.pi-context-registry.json` must carry an entry whose dir resolves to the active substrate dir (`substrate_id_unregistered`, `substrate_id_registry_mismatch`).
+- Edge integrity: each edge's `parent`/`child` is classified via the unified id index across substrates — an endpoint naming an unregistered substrate alias/id errors (`edge_endpoint_unregistered`), one that resolves to no item errors (`edge_endpoint_dangling`); a `relation_type` absent from `config.relation_types[]` errors; when a relation_type declares `source_kinds`/`target_kinds`, an endpoint whose resolved block kind is outside the (non-`*`) declared set errors.
+- Cycle detection: delegated to `validateRelations`; only its `edge_cycle_detected` diagnostics are merged in.
+- Config-declared invariants: `requires-edge` and `status-consistency` classes are enforced generically from `config.invariants[]` DATA — no block/status/relation_type vocabulary is hardcoded in source; each invariant's emitted code is its own `inv.id`.
+- Status-vocabulary: an item `status` value with no key in the declared vocabulary is a warning (`status_unknown_value`).
+- Nested id-bearing array: a schema array at nesting depth ≥ 1 whose item shape carries an `id` is a warning to promote it to a top-level entity + membership edge (`nested_id_bearing_array`).
+- Lens validators: every validator registered via `registerLensValidator` is dispatched and its issues merged; a throwing validator surfaces as a warning (`lens_validator_failed:<name>`).
 
-Returns errors (broken dependency references) and warnings (unresolved cross-references).
+Returns issues with `severity` error/warning; status is `invalid` (any error), `warnings`, or `clean`.
 
-The `context-validate-relations` tool (see `<substrate_validation>`) validates closure-table edges in `relations.json` — a separate concern from cross-block ID resolution.
+The lower-level `context-validate-relations` tool (→ `validateRelations`, see `<substrate_validation>`) checks the closure-table edges in `relations.json` in isolation: unregistered relation_type (`edge_unknown_relation_type`), lens-bin parent not among a lens's bins (`edge_parent_not_in_bins`), unresolved/wrong-block parent or child (`edge_unresolved_parent`, `edge_unresolved_child`, `edge_parent_wrong_block`, `edge_child_wrong_block`), and cycles (`edge_cycle_detected`).
 </context_validate>
 
 <update_check>

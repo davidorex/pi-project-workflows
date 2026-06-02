@@ -48,9 +48,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-26",
-      "oid": "6b80f2962809bc59014e3d2201644480",
-      "content_hash": "ef79934e9c262095dd52d809612ca59b82573caee4334c02422fb92c934448f4"
+      "enacted_at": "2026-05-26"
     },
     {
       "id": "DEC-0002",
@@ -90,9 +88,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-26",
-      "oid": "0b519be85c8d0f5b613289edbab1182b",
-      "content_hash": "34d82a8473ca28c35cb4f824ae0c08cc58b43ea098f198b39bc7e8984fb155a9"
+      "enacted_at": "2026-05-26"
     },
     {
       "id": "DEC-0003",
@@ -138,9 +134,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-26",
-      "oid": "6dda3869833e0a7d7bb0c67828f00fb0",
-      "content_hash": "08894b8e581de91b7ed24e8242b4c7038f155bdc4d35e746ee8b65519a14bda5"
+      "enacted_at": "2026-05-26"
     },
     {
       "id": "DEC-0004",
@@ -184,9 +178,7 @@
         }
       ],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-04-26T00:00:00Z",
-      "oid": "38c0566c7249e3c084b88f9cf1384c45",
-      "content_hash": "d1d50601660bf3abc19ae23ac827759a2a134cd7bd197092d4b96d69655747de"
+      "created_at": "2026-04-26T00:00:00Z"
     },
     {
       "id": "DEC-0005",
@@ -236,9 +228,7 @@
         }
       ],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-04-26T00:00:00Z",
-      "oid": "8f2b1643c06b7757e6c484b01735b0f2",
-      "content_hash": "3e8fb6c283fdbfff9f0034597b6752858ddbd1f4b849a9fa5bff8adf7caf4034"
+      "created_at": "2026-04-26T00:00:00Z"
     },
     {
       "id": "DEC-0006",
@@ -296,9 +286,7 @@
         }
       ],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-03T00:00:00Z",
-      "oid": "0d09b4097c7a4fad886a9e4f15b67a21",
-      "content_hash": "8d2716cd515b21b285e9ac1e14be1e6bdf7cfc903bc055bcba9122d6f363ba6a"
+      "created_at": "2026-05-03T00:00:00Z"
     },
     {
       "id": "DEC-0007",
@@ -333,9 +321,7 @@
         }
       ],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-03T00:00:00Z",
-      "oid": "b7f9e3766754ea616acfc9223f3e252c",
-      "content_hash": "c0848583666e316f52438d2960633e34693e499f74002e4e015cd159183ae4f1"
+      "created_at": "2026-05-03T00:00:00Z"
     },
     {
       "id": "DEC-0008",
@@ -388,9 +374,7 @@
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-03T00:00:00Z",
       "enacted_by": "user",
-      "enacted_at": "2026-05-03T00:00:00Z",
-      "oid": "9ad213dfbd609b315e16b38b766833f1",
-      "content_hash": "78cc6f950e3b8f41bd026f51907eb7bb11da356e7582c64cc146dca3d6ca221f"
+      "enacted_at": "2026-05-03T00:00:00Z"
     },
     {
       "id": "DEC-0009",
@@ -447,9 +431,7 @@
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-03T00:00:00Z",
       "enacted_by": "user",
-      "enacted_at": "2026-05-03T00:00:00Z",
-      "oid": "7dc0f41b86a362db1a8bfdf9f1b61993",
-      "content_hash": "ee82ea77e47d88a3f54b27752d53df809be9636fafccb60441623a734b097be1"
+      "enacted_at": "2026-05-03T00:00:00Z"
     },
     {
       "id": "DEC-0010",
@@ -507,9 +489,7 @@
         }
       ],
       "created_by": "agent/claude-opus-4-7",
-      "created_at": "2026-05-03T00:00:00Z",
-      "oid": "b01d8d50ea1200554401cc3581b49d90",
-      "content_hash": "be7d9453545232f7a55a4c73bc09d0c3c3a25ae63b443557d4cc31afa0ee41a7"
+      "created_at": "2026-05-03T00:00:00Z"
     },
     {
       "id": "DEC-0011",
@@ -551,9 +531,7 @@
       "created_by": "user",
       "created_at": "2026-05-03T00:00:00Z",
       "enacted_by": "user",
-      "enacted_at": "2026-05-03T00:00:00Z",
-      "oid": "35c52b48dbdee21c5ed5a4b26631ef04",
-      "content_hash": "1d113575443c8e1bcc2cc892900f9a0366086c21a671db4c7f2f5cdbbe2e1367"
+      "enacted_at": "2026-05-03T00:00:00Z"
     },
     {
       "id": "DEC-0012",
@@ -590,9 +568,7 @@
       "created_at": "2026-05-04T00:00:00Z",
       "enacted_by": "user",
       "enacted_at": "2026-05-04T00:00:00Z",
-      "superseded_by": "DEC-0013",
-      "oid": "800035c44d8b4744ba974b578cc78691",
-      "content_hash": "4b62fee16aa22ae303ef1b8c3f68b8d35396b26d3dbf4c4171a833b137366ed9"
+      "superseded_by": "DEC-0013"
     },
     {
       "id": "DEC-0013",
@@ -631,9 +607,7 @@
       "created_by": "agent/claude-opus-4-7",
       "created_at": "2026-05-06T22:14:17.096Z",
       "enacted_by": "user",
-      "enacted_at": "2026-05-06T22:14:17.096Z",
-      "oid": "4af71772a0a1caad941488a6077535d7",
-      "content_hash": "70c735dbce5b05207825d50e0c49c610e783cc91783845b8a11c66f296e313cb"
+      "enacted_at": "2026-05-06T22:14:17.096Z"
     },
     {
       "id": "DEC-0014",
@@ -682,9 +656,7 @@
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T02:26:02.779Z",
       "enacted_by": "user",
-      "enacted_at": "2026-05-10T02:26:02.779Z",
-      "oid": "f635c2493e7636681b8c60674ef5980d",
-      "content_hash": "1f03f19ff05b49b621c61cc2690c4bae6169d069c83063457e99c072627adb05"
+      "enacted_at": "2026-05-10T02:26:02.779Z"
     },
     {
       "id": "DEC-0015",
@@ -737,9 +709,7 @@
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T02:49:48.058Z",
       "enacted_by": "user",
-      "enacted_at": "2026-05-10T02:49:48.058Z",
-      "oid": "3f995bc23872f2b5687140d2a9c61ef2",
-      "content_hash": "118fec87fab10434204ac0678ee0f316f056c26b1ce20b63594fd60feaa0e83e"
+      "enacted_at": "2026-05-10T02:49:48.058Z"
     },
     {
       "id": "DEC-0016",
@@ -793,9 +763,7 @@
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T04:04:46.645Z",
       "enacted_by": "user",
-      "enacted_at": "2026-05-10T04:04:46.645Z",
-      "oid": "946849dca4a156aba5d929c462e2073d",
-      "content_hash": "e44ba296f0e02f92a82045c3660c4cdf358dd6d294cd7f3128910b81a82b4dff"
+      "enacted_at": "2026-05-10T04:04:46.645Z"
     },
     {
       "id": "DEC-0017",
@@ -860,9 +828,7 @@
       "created_by": "agent/post-step-8.6-orchestrator",
       "created_at": "2026-05-10T04:14:52.901Z",
       "enacted_by": "user",
-      "enacted_at": "2026-05-10T04:14:52.901Z",
-      "oid": "d8d2b48b9ee3b16424d61da74e6723a8",
-      "content_hash": "00de57dc17b9c9a9bff96b7c40f6a4e8fd289f7b3a4409d3578b4c2482488189"
+      "enacted_at": "2026-05-10T04:14:52.901Z"
     },
     {
       "id": "DEC-0018",
@@ -907,9 +873,7 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-10T11:45:50.876Z",
       "enacted_by": "human/davidryan@gmail.com",
-      "enacted_at": "2026-05-10T11:45:50.876Z",
-      "oid": "1fbd6a21d9b2384ed0b4879b823a2193",
-      "content_hash": "0ee1928559db1770ae5ba0c875b2d26afba17b014d3dbc188c8ec9ef4db1028d"
+      "enacted_at": "2026-05-10T11:45:50.876Z"
     },
     {
       "title": "scripts/orchestrator/* function as canonical test surface + executable specification of extension surface requirements",
@@ -958,9 +922,7 @@
       "enacted_by": "human/davidryan@gmail.com",
       "id": "DEC-0019",
       "created_at": "2026-05-10T22:43:47.828Z",
-      "created_by": "human/davidryan@gmail.com",
-      "oid": "91685805fa770066a239e43b51a228e3",
-      "content_hash": "4591dc85680945572904d3cf139af023afbb851cdad2f820331b387f6c2b962c"
+      "created_by": "human/davidryan@gmail.com"
     },
     {
       "title": "Per-layer work-unit outputs are typed substrate blocks (cascade-target / plan-step / impl-applied / demo-result / probe-result); agents block-write items; markdown is display-only; layered composability via work_unit_id + readBlock+filter",
@@ -1017,9 +979,7 @@
       "created_by": "human/davidryan@gmail.com",
       "enacted_by": "human/davidryan@gmail.com",
       "id": "DEC-0020",
-      "created_at": "2026-05-10T23:38:01.244Z",
-      "oid": "00e8087fa0f3de49897b43975eb19935",
-      "content_hash": "eb325f1321b5e96195ee019795e4872b4e8381f955292681b7e4a1604b28d17c"
+      "created_at": "2026-05-10T23:38:01.244Z"
     },
     {
       "title": "Hard-throw substrate primitive cascades per-package atomically — source + absent-substrate-catch + test-fixture cascade land together per consumer package; phase-split-by-concern-type retired",
@@ -1074,9 +1034,7 @@
       "created_by": "human/davidryan@gmail.com",
       "enacted_by": "human/davidryan@gmail.com",
       "id": "DEC-0021",
-      "created_at": "2026-05-11T21:28:05.039Z",
-      "oid": "58a7b542b73e87257328ca2a2d1cb4bf",
-      "content_hash": "731b2127cf60a4e4408e6637c7bdb3d124c6c3b50f06d5935a3e162232e7f37f"
+      "created_at": "2026-05-11T21:28:05.039Z"
     },
     {
       "title": "Features schema description drops \"Epic-level\" qualifier; canonical kind name is \"feature\"",
@@ -1113,9 +1071,7 @@
       "created_at": "2026-05-14T12:00:00Z",
       "enacted_by": "human/davidryan@gmail.com",
       "enacted_at": "2026-05-14T12:00:00Z",
-      "id": "DEC-0022",
-      "oid": "0846a94a93476b8e4c87e365934e67cf",
-      "content_hash": "5ef2e363f8119273cc54837491ae146fbb5e61ac2fc194034de9deff4d7d8480"
+      "id": "DEC-0022"
     },
     {
       "title": "Schema title field is the authoritative source for block-kind display_name",
@@ -1159,9 +1115,7 @@
       "created_at": "2026-05-14T12:15:00Z",
       "enacted_by": "human/davidryan@gmail.com",
       "enacted_at": "2026-05-14T12:15:00Z",
-      "id": "DEC-0023",
-      "oid": "67eedb0654d3511e6df93e2915bbb551",
-      "content_hash": "c60ef85d6e9fc8a557742d09eadd26035540a5964fae40a5e979e1772335e385"
+      "id": "DEC-0023"
     },
     {
       "title": "Milestones are the primary declarative-organizing anchor; work cascades from + verifies upward to them; aspirational → satisfied → archived lifecycle",
@@ -1210,9 +1164,7 @@
       "created_at": "2026-05-14T13:30:00Z",
       "enacted_by": "human/davidryan@gmail.com",
       "enacted_at": "2026-05-14T13:30:00Z",
-      "id": "DEC-0024",
-      "oid": "2c19484b4b4b84bc1696451889ae5fbd",
-      "content_hash": "a32f82f257197d8970d2321c286637bdb3b277f6b2f2986f35225f5f6b009a84"
+      "id": "DEC-0024"
     },
     {
       "title": "pi-context substrate canon is vocabulary-neutral; user's block / layer / relation / lens / status conception bootstraps entirely from config + schemas + macros without code changes",
@@ -1262,9 +1214,7 @@
       "created_at": "2026-05-14T14:00:00Z",
       "enacted_by": "human/davidryan@gmail.com",
       "enacted_at": "2026-05-14T14:00:00Z",
-      "id": "DEC-0025",
-      "oid": "c2aeed5b685e66a2afb3dd18e48089e2",
-      "content_hash": "c18a3670bb675ccc3c0383c301fe459b7b9bf2e5067a6bc24fa03c099d2e1ab4"
+      "id": "DEC-0025"
     },
     {
       "title": "ID-prefix padding convention — 3-digit vs 4-digit zero-padding across block kinds",
@@ -1328,9 +1278,7 @@
       "created_at": "2026-05-16T10:00:00Z",
       "id": "DEC-0026",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-26",
-      "oid": "539a4a67a91b4707f75b25a4f7d81e81",
-      "content_hash": "3814c8965cc63a2cd57412a800d36664bbaf5da303af52f87be4d0294da9f15a"
+      "enacted_at": "2026-05-26"
     },
     {
       "title": "ID-prefix casing convention — uppercase vs lowercase across block kinds",
@@ -1387,9 +1335,7 @@
       "created_at": "2026-05-16T10:01:00Z",
       "id": "DEC-0027",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-26",
-      "oid": "d773dba338c446e7ab6c1e90b9d4858b",
-      "content_hash": "ca54a99967d8db13bf7f8d993f3f4488cf11f49305338eed5977c1e7829889ee"
+      "enacted_at": "2026-05-26"
     },
     {
       "title": "Phase block-kind shape — file-per-phase with integer discriminator vs array-block with PHASE-NNN string id",
@@ -1454,9 +1400,7 @@
       "created_at": "2026-05-16T10:02:00Z",
       "id": "DEC-0028",
       "enacted_by": "human/davidryan@gmail.com",
-      "enacted_at": "2026-05-17T13:00:00Z",
-      "oid": "71125b1fb2f9e87930a01f88520b2ef0",
-      "content_hash": "99935169de38c8676487dffa4cca8db554e9be5bd292887e1c8a9a145feebfcd"
+      "enacted_at": "2026-05-17T13:00:00Z"
     },
     {
       "title": "Substrate-dir replacement name — what user-chosen directory name replaces .project/",
@@ -1524,9 +1468,7 @@
       "created_at": "2026-05-16T10:03:00Z",
       "id": "DEC-0029",
       "enacted_by": "human/davidryan@gmail.com",
-      "enacted_at": "2026-05-17T15:00:00Z",
-      "oid": "f2a8026cf9f253e90dd7f3eb43b45ac6",
-      "content_hash": "68b36916219f48d33b048623a1a1c3c2e4ebbe176cb523f2c74589288d9b54c4"
+      "enacted_at": "2026-05-17T15:00:00Z"
     },
     {
       "title": "Relation_type canonical_id naming shape — verb-based vs source_verb_target tripartite",
@@ -1599,9 +1541,7 @@
       "created_at": "2026-05-16T10:04:00Z",
       "id": "DEC-0030",
       "enacted_by": "human/davidryan@gmail.com",
-      "enacted_at": "2026-05-17T12:00:00Z",
-      "oid": "7407f23a969e7cb7e8834b724f480a1a",
-      "content_hash": "a6be96fdbcab997d3d9e19ca63c74beee19de4917db9962ff134b48c6126fe19"
+      "enacted_at": "2026-05-17T12:00:00Z"
     },
     {
       "title": "Lens id naming convention — lens-prefix vs descriptive vs purpose-tagged",
@@ -1661,9 +1601,7 @@
       "created_at": "2026-05-16T10:05:00Z",
       "id": "DEC-0031",
       "enacted_by": "human/davidryan@gmail.com",
-      "enacted_at": "2026-05-27T00:00:00Z",
-      "oid": "40b1d000a9740f399049649bb906d603",
-      "content_hash": "32690e5194b12ebc3a4b968a34248494d2cfe6297aba786a8fbde7185acf7482"
+      "enacted_at": "2026-05-27T00:00:00Z"
     },
     {
       "title": "Layer registry adoption — declare config.layers[] with L1..L5 substrate/query/composition/dispatch/surface labels",
@@ -1741,9 +1679,7 @@
       "created_at": "2026-05-16T10:06:00Z",
       "id": "DEC-0032",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-26",
-      "oid": "43233372ab92c48683ede06b92bb539b",
-      "content_hash": "88057f042d5a810629faaafeebee5120e37e8c8a2ae61c692e51074d5810c6fd"
+      "enacted_at": "2026-05-26"
     },
     {
       "title": "Status-bucket normalization mapping — bridge per-block status enums to canonical buckets",
@@ -1801,9 +1737,7 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:07:00Z",
-      "id": "DEC-0033",
-      "oid": "fafaa549738ecb6e43175eb9d4dc864c",
-      "content_hash": "b0e575f0035201863c0bafda8e68be03c5b0752dcac3577480980c0399a733e3"
+      "id": "DEC-0033"
     },
     {
       "title": "Conventions block schema migration — add facets needed for relational/lens/lookup discoverability",
@@ -1869,9 +1803,7 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-16T10:08:00Z",
-      "id": "DEC-0034",
-      "oid": "859543227933a451c337afbb7eedc19c",
-      "content_hash": "1c4571c5c78b889766478909cc1a4cd8d0ca4f4ccdaad24d633dc844093003b7"
+      "id": "DEC-0034"
     },
     {
       "title": "canonical_id is permanent (primary-key semantics); display_name is the relabel surface",
@@ -1913,9 +1845,7 @@
       "created_at": "2026-05-17T12:05:00Z",
       "enacted_by": "human/davidryan@gmail.com",
       "enacted_at": "2026-05-17T12:05:00Z",
-      "id": "DEC-0035",
-      "oid": "e412b576c58f37864359227f35cbbf77",
-      "content_hash": "c4a3f75d527bce2b3731bc8d25ce2cdf6358f3a039f2f6ea9c45313d98fc6fb2"
+      "id": "DEC-0035"
     },
     {
       "title": "Re-derive .context substrate clean via the config-based framework rather than in-place migrating .project",
@@ -1965,9 +1895,7 @@
       "created_at": "2026-05-17T15:05:00Z",
       "enacted_by": "human/davidryan@gmail.com",
       "enacted_at": "2026-05-17T15:05:00Z",
-      "id": "DEC-0036",
-      "oid": "65385981eec7698a2b252ad7ba676366",
-      "content_hash": "ed4105eb5d2f7fa7598fc7715200cbd9556188f792f0e14ecdef3263f49ef5f8"
+      "id": "DEC-0036"
     },
     {
       "title": "Samples catalog identity — the package samples ARE this project's platonic packaged conception (dogfood)",
@@ -2001,9 +1929,7 @@
       "related_features": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
-      "id": "DEC-0037",
-      "oid": "856c479850b1443fa8bdf9feb5dc4341",
-      "content_hash": "992a019c0a920eb03f4fb34e6ec0f8ad8986e792c85f9464605f8e7b11fc2c33"
+      "id": "DEC-0037"
     },
     {
       "title": "Onboarding model — /context init = standing incremental registry-population surfaces; accept-all | step-through",
@@ -2036,9 +1962,7 @@
       "related_features": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
-      "id": "DEC-0038",
-      "oid": "b4b31cc00e0e2818604fd80a87b01c4f",
-      "content_hash": "e093e60651d1f231a6761b8ea4b299d6571ec7312b99c5d3b40b4f6dcb5d0573"
+      "id": "DEC-0038"
     },
     {
       "title": "No-optional registries — absence = degenerate default (layers empty = 1 implicit layer)",
@@ -2070,9 +1994,7 @@
       "related_features": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-20T00:00:00Z",
-      "id": "DEC-0039",
-      "oid": "8faff7490a42ff9323684f35211d5647",
-      "content_hash": "10affb6e053c9c186edd55a44f70a10845ea6d329fd54ac8ce5dc3a8d962bfb5"
+      "id": "DEC-0039"
     },
     {
       "title": "Substrate is the single source of truth for process + state; state is derived, never hand-stored; all other surfaces are projections or raw logs",
@@ -2109,9 +2031,7 @@
       "related_features": [],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
-      "id": "DEC-0040",
-      "oid": "cc402333b837ef44fc39ebb8f70b1e7f",
-      "content_hash": "2a73592e1bc41ef5d1bae2f0f1e904ac1f737e4de4e2cee11200664c489eaf92"
+      "id": "DEC-0040"
     },
     {
       "title": "config.root is an OPTIONAL override; the .pi-context.json pointer is the substrate-dir SoT; the packaged conception ships no root",
@@ -2156,9 +2076,7 @@
       "created_at": "2026-05-22T21:23:55.830Z",
       "created_by": "human/davidryan@gmail.com",
       "enacted_by": "davidryan@gmail.com",
-      "enacted_at": "2026-05-23",
-      "oid": "f36dc50469bc0b5f64cede1e1e8e7033",
-      "content_hash": "e0369357d48a847f96e96c92391b8dd08afca08b640a366c3ae0790dd018755d"
+      "enacted_at": "2026-05-23"
     },
     {
       "title": "/context start is the sole human bootstrap entry — bootstrap human-only; operational verbs twinned + READY-gated; init/accept-all/install dissolve into start (impossibilization-by-design)",
@@ -2208,9 +2126,7 @@
       "created_at": "2026-05-22T22:18:44.125Z",
       "created_by": "human/davidryan@gmail.com",
       "enacted_by": "davidryan@gmail.com",
-      "enacted_at": "2026-05-23",
-      "oid": "aef003e627022383b87141ae6c1c97e0",
-      "content_hash": "771daca180b18525ff59b2a772cb08ba0634a7ad1cabf393a365771ec6bcea91"
+      "enacted_at": "2026-05-23"
     },
     {
       "title": "Framework schemas (config/relations/roadmap/bootstrap) are bundled-validated, not installable catalog assets — installed_* enumerate block-kind assets only",
@@ -2251,9 +2167,7 @@
       ],
       "id": "DEC-0043",
       "created_at": "2026-05-22T22:52:25.416Z",
-      "created_by": "human/davidryan@gmail.com",
-      "oid": "7a0a939b744dbbb2601f2210bb5212c7",
-      "content_hash": "88633c2c9d5cf86a32ec45f9bb7d7470c3b7f152ba7e0f395e19c4b423b8e111"
+      "created_by": "human/davidryan@gmail.com"
     },
     {
       "title": "Agent-as-tool dispatch home — a NEW dedicated pi-agent-dispatch extension whose ONLY scope is the sub-agent→sibling-agent pi.registerTool surface; jit-agents stays library imported directly by orchestrator + workflows + monitors",
@@ -2327,9 +2241,7 @@
       ],
       "id": "DEC-0044",
       "created_at": "2026-05-22T23:54:38.362Z",
-      "created_by": "human/davidryan@gmail.com",
-      "oid": "f19e5716e6b8e3ec535508c2de0a1009",
-      "content_hash": "3727c499d91e3d5c25936ac7ff99dba48ec6b7b0eded3e4545479526dd834215"
+      "created_by": "human/davidryan@gmail.com"
     },
     {
       "title": "Substrate path resolution unifies on the .pi-context.json pointer (resolveContextDir); config.root is not a path-resolution input",
@@ -2373,9 +2285,7 @@
       "created_at": "2026-05-23T01:22:24.758Z",
       "created_by": "human/davidryan@gmail.com",
       "enacted_by": "human/davidryan@gmail.com",
-      "enacted_at": "2026-05-23T02:08:10.530Z",
-      "oid": "98c805dd7a072ae19ca2c3f6c0d737c3",
-      "content_hash": "dabbce2d5491146f1d80f3c5adbea5d245ae454c54c3f0258bfda727e0602d91"
+      "enacted_at": "2026-05-23T02:08:10.530Z"
     },
     {
       "title": "FGAP-074 /project->/context source-surface naming canon — unify identifiers on 'context'",
@@ -2437,9 +2347,7 @@
       ],
       "id": "DEC-0046",
       "created_at": "2026-05-23T03:31:08.278Z",
-      "created_by": "human/davidryan@gmail.com",
-      "oid": "2b8778a1b9d92363e39b348dcf3b30a0",
-      "content_hash": "119bf922ed9769bdd0fbd1dad4bc6022300e969087b9bc8c01dad75bfb8ae76d"
+      "created_by": "human/davidryan@gmail.com"
     },
     {
       "title": "Constitutional capability model for autonomous in-pi orchestration — config legislative, main-agent executive, validators judicial; capability mutation requires human ratification",
@@ -2494,9 +2402,7 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "id": "DEC-0047",
-      "created_at": "2026-05-24T09:43:07.859Z",
-      "oid": "23b1bce8d9dc98ac8b8ffeb49c3066ad",
-      "content_hash": "485bf52f18a3cc450c15425c0a24c17fe3c47a728e76da82cf67046ac2a842fe"
+      "created_at": "2026-05-24T09:43:07.859Z"
     },
     {
       "id": "DEC-0048",
@@ -2515,9 +2421,7 @@
         "FEAT-001"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26",
-      "oid": "d82aea0d05657d18dab98b4d475df5a1",
-      "content_hash": "19020c0f9f3f4ec4d5e4cd070ec8530c24519543da813ec6e47a3cdaadc38759"
+      "created_at": "2026-05-26"
     },
     {
       "id": "DEC-0049",
@@ -2541,9 +2445,7 @@
         "FGAP-112"
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26",
-      "oid": "76408f50b4130af81d6478ed4c0c1873",
-      "content_hash": "427fd83f250b8ecf0cab07bea0ac1aa48bef5f83ecf1ccc27d548c0936e81f5c"
+      "created_at": "2026-05-26"
     },
     {
       "id": "DEC-0050",
@@ -2586,9 +2488,7 @@
         }
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26",
-      "oid": "5fb0971001bd8403ec26134c568f9086",
-      "content_hash": "d9cf8f85a9e2b04412ef33d48d7ff7606e3ca83f9d9761ff94b5dcd4e52b1c72"
+      "created_at": "2026-05-26"
     },
     {
       "id": "DEC-0051",
@@ -2627,9 +2527,7 @@
         }
       ],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26",
-      "oid": "c20cd7f3d68eea708b494544d76b0b61",
-      "content_hash": "7d20fc63a6772491c7f2bf5c7cdb539a2e0c7efab2afdc83e851c4f4970e19d7"
+      "created_at": "2026-05-26"
     },
     {
       "id": "DEC-0052",
@@ -2684,9 +2582,7 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-28",
       "enacted_by": "human:davidryan@gmail.com",
-      "enacted_at": "2026-05-28",
-      "oid": "bfb5934797569a7ca1a75283f2f63b77",
-      "content_hash": "e87f5f17a67fa5b90ff756fd2850002c02ed98c9803a315ab64b982cc16b9ea9"
+      "enacted_at": "2026-05-28"
     }
   ]
 }

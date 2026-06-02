@@ -12,9 +12,7 @@
       ],
       "status": "completed",
       "notes": "CLOSED at HEAD e88d7ee. FGAP-026 closure phase 1 substantively complete: resolver foundation (Phase 1.1 909a086) + bootstrap.schema.json + per-package atomic resolver cascade (Phase 1.2 sections A-F + Section E husky re-roll 6fb434f) + read-config/read-schema tools (Phase 1.3.A bac1893 + orchestrator scripts 4a24866 / c11ee92) + foundational FGAP-035 fix (f17efa3 + Q4 follow-up e88d7ee). Substrate canon DEC-0014/0015/0017/0018/0019/0020/0021 enacted. Test counts post-cascade: pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0. Adversarial probe verdict GREEN. See VER-004 for criteria_results. Phase 2 (Task #22 high-impact query tools) unblocked.",
-      "verification": "VER-004",
-      "oid": "56bfd1736707b52f071b94a2519f3424",
-      "content_hash": "3249826123d952bcc8ae261a2ce6f251fb65fc1e48c6477592f24bc3970374b6"
+      "verification": "VER-004"
     },
     {
       "id": "TASK-022",
@@ -27,9 +25,7 @@
       ],
       "status": "completed",
       "verification": "VER-009",
-      "notes": "CLOSED at HEAD 680cb1c. Phase 2 (FGAP-026 closure phase 2) complete via 4 atomic sub-phases (2.1 filter-block-items / 2.2 resolve-items-by-id bulk / 2.3 walk-ancestors / 2.4 find-references). walk-by-relation dropped from scope (pre-existing at HEAD bcf2e60 as walkDescendants + project-walk-descendants tool). Test counts: pi-context 401 → 428 (+27 cumulative). All 4 sub-phases shipped DEC-0019 dual-surface (library + pi tool + orchestrator script). See VER-009 + child VER-005/006/007/008.",
-      "oid": "fdc56ea42b17f35f241b5c37390778f9",
-      "content_hash": "127f0d3112b79211f4a809a0a88f721593644a875140f461fbf232cb341c2249"
+      "notes": "CLOSED at HEAD 680cb1c. Phase 2 (FGAP-026 closure phase 2) complete via 4 atomic sub-phases (2.1 filter-block-items / 2.2 resolve-items-by-id bulk / 2.3 walk-ancestors / 2.4 find-references). walk-by-relation dropped from scope (pre-existing at HEAD bcf2e60 as walkDescendants + project-walk-descendants tool). Test counts: pi-context 401 → 428 (+27 cumulative). All 4 sub-phases shipped DEC-0019 dual-surface (library + pi tool + orchestrator script). See VER-009 + child VER-005/006/007/008."
     },
     {
       "id": "TASK-023",
@@ -43,9 +39,7 @@
       ],
       "status": "completed",
       "verification": "VER-013",
-      "notes": "CLOSED at HEAD 02acf92. Phase 3 (FGAP-026 closure phase 3: Work-unit context composition substrate per DEC-0017) complete via 3 atomic sub-phases (3.1 context-contracts block kind / 3.2 gatherExecutionContext primitive / 3.3 integration test). Test counts: pi-context 428 → 458 (+30 cumulative). DEC-0017 substrate surface satisfied. FGAP-029/030/031 closed in this cascade. Phase 4 unblocked. See VER-013 + child VER-010/011/012.",
-      "oid": "6ca9f7e8d122aa8dae0dda18eca43d8d",
-      "content_hash": "f4489dcde2b1a94a01001d9ede35bdce4b5cca12ac011e416f0a94fb10e4f9ea"
+      "notes": "CLOSED at HEAD 02acf92. Phase 3 (FGAP-026 closure phase 3: Work-unit context composition substrate per DEC-0017) complete via 3 atomic sub-phases (3.1 context-contracts block kind / 3.2 gatherExecutionContext primitive / 3.3 integration test). Test counts: pi-context 428 → 458 (+30 cumulative). DEC-0017 substrate surface satisfied. FGAP-029/030/031 closed in this cascade. Phase 4 unblocked. See VER-013 + child VER-010/011/012."
     },
     {
       "id": "TASK-024",
@@ -58,9 +52,7 @@
       ],
       "status": "completed",
       "verification": "VER-015",
-      "notes": "CLOSED at HEAD 569eec4. Phase 4 complete via single sub-phase 4.1 TASK-041. Original 4-sub-phase scope reduced after Explore surfaced pre-existing surface (workflow-list / workflow-status already shipped; workflow tool semantic match for canonical workflow-execute under non-canonical name). See VER-015 + child VER-014. Phase 5 (TASK-025 arc-tracking-blocks dogfood substrate) unblocked.",
-      "oid": "09d921a901739c3b0af2f6125b87821c",
-      "content_hash": "e863663a1febf2853fa85b4cbb38575b107bd467edf55375820e8e46efbb8328"
+      "notes": "CLOSED at HEAD 569eec4. Phase 4 complete via single sub-phase 4.1 TASK-041. Original 4-sub-phase scope reduced after Explore surfaced pre-existing surface (workflow-list / workflow-status already shipped; workflow tool semantic match for canonical workflow-execute under non-canonical name). See VER-015 + child VER-014. Phase 5 (TASK-025 arc-tracking-blocks dogfood substrate) unblocked."
     },
     {
       "id": "TASK-025",
@@ -74,9 +66,7 @@
         "context-contract entries per work-unit-kind",
         "gather-execution-context returns valid bundle for representative arc-tracking task"
       ],
-      "status": "planned",
-      "oid": "d5cdb8104eb8f1824d9927e8bca687dc",
-      "content_hash": "ac582b819e59baa1fc9b0793fa3aa6ca5ad8e1601f232a65f7b14393637c9d3b"
+      "status": "planned"
     },
     {
       "id": "TASK-026",
@@ -88,9 +78,7 @@
         "context-install wraps installProject",
         "context-migrate(newName) atomic dir-rename + pointer-update + config.root-update; body authored not stub"
       ],
-      "status": "planned",
-      "oid": "05362a390e429e21efbb76220fd0cc32",
-      "content_hash": "17ee3401436888b785099d85206a670d88cb7f56186a62fbda20cfcedb686b57"
+      "status": "planned"
     },
     {
       "id": "TASK-027",
@@ -102,9 +90,7 @@
         "pi-behavior-monitors block resolution cascade",
         "zero .project/ literals in any production source per grep"
       ],
-      "status": "planned",
-      "oid": "4e00a49dce947bfdf9899f999367a11d",
-      "content_hash": "59a900ce7133443727695cb7ad0b0a5b4759490e598e1e55dc71050122b3f236"
+      "status": "planned"
     },
     {
       "id": "TASK-028",
@@ -113,9 +99,7 @@
         "setupWorkflowDir / setupSchema / makeTmpDir helpers write .pi-context.json",
         "tests cascade through resolver; counts unchanged 390/151/826/157, 0-fail"
       ],
-      "status": "planned",
-      "oid": "cd12688474e40e7623a70e4888d97597",
-      "content_hash": "7878a04229ff8c31a6e9232aefdea66a10c292d38fd1d69af94402774b8b9db4"
+      "status": "planned"
     },
     {
       "id": "TASK-029",
@@ -127,9 +111,7 @@
         "DEC-0016 binding statement in CLAUDE.md",
         "npm run skills regenerates SKILL.md outputs"
       ],
-      "status": "planned",
-      "oid": "345752bd985b62d4fdd08c61b0751380",
-      "content_hash": "c6c64c85f49992981e388c4c3e1dd3225353e66d7b0cea17919c788c340264cb"
+      "status": "planned"
     },
     {
       "id": "TASK-030",
@@ -143,9 +125,7 @@
         "FGAP-026 transitions to closed with closed_by = closing commit composition",
         "Task #11 (Step 9 adversarial audit) unblocked; subsequently Task #12 (Step 10 release)"
       ],
-      "status": "planned",
-      "oid": "50b5f2b059b32d3003aa481986507c61",
-      "content_hash": "aa6e27cbd54666cbbfe3110b50c2a097b0ae8cc83784a18aca995dcc588325c8"
+      "status": "planned"
     },
     {
       "id": "TASK-031",
@@ -173,9 +153,7 @@
         "TASK-021"
       ],
       "notes": "CLOSED at HEAD e88d7ee. FGAP-035 implementation: 11 cascade rows applied at f17efa3 + Q4 follow-up site at e88d7ee. All 4 packages green (pi-context 401/0/0; pi-jit-agents 150/0/1; pi-workflows 824/0/2; pi-behavior-monitors 157/0/0). Adversarial probe verdict GREEN (8 PASS, 1 PASS-post-fix Q4, 1 PASS-substantively Q10). UX decision (positional arg required; ctx.ui.notify error on missing) preserved verbatim in handleInit. project-init pi tool gains required contextDir Type.Object param. See VER-001 for full criteria_results.",
-      "verification": "VER-001",
-      "oid": "677ee8715d06e052960ea0a75c6f1c14",
-      "content_hash": "a66af592f94541b6086cba88ea95cbcd5092286ef662dc86d48835c74d84dc4b"
+      "verification": "VER-001"
     },
     {
       "id": "TASK-032",
@@ -195,9 +173,7 @@
       ],
       "depends_on": [],
       "notes": "CLOSED at HEAD e88d7ee. compile-task-context.ts landed at 7883cea (creation) + 5293cca (console.log normalization) + e3a0247 (build-task-template.ts → compile-task-context.ts rename mirroring pi-jit-agents compileAgent vocabulary). Acceptance criterion 7 (FGAP-035 implementation context compiled via this script) validated end-to-end through the FGAP-035 dispatch chain. See VER-002.",
-      "verification": "VER-002",
-      "oid": "85f90a136860606caff0b59a34e6f498",
-      "content_hash": "222af8af71ed276e60d2fb2f00c51abe53ca2c5de04dd2ef7677709b75f1b237"
+      "verification": "VER-002"
     },
     {
       "id": "TASK-033",
@@ -220,9 +196,7 @@
         "TASK-032"
       ],
       "notes": "CLOSED at HEAD e88d7ee. inject-context-items.ts landed at 2c3794a; --context-items arg integrated into compile-{explore,implementation}-context.ts at ad02726. Acceptance criterion 7 (FGAP-035 Explore re-dispatch via canonical surface with item-level injection) validated: rendered context embeds <context_items> verbatim; Explore agent produced 11-row cascade table without OR-hedging because TASK-031 UX decision was injected. Friction points (array_key heuristic / id-field assumption / singleton-block shape / colon-escape) filed inline in JSDoc + commit body per dogfood discipline. See VER-003.",
-      "verification": "VER-003",
-      "oid": "a785612739e0f066bed26b7572de1d84",
-      "content_hash": "59a3a57a54991b58738533d17ebc9850f62ed84e5cbfbd925c8748f6a1131565"
+      "verification": "VER-003"
     },
     {
       "id": "TASK-034",
@@ -244,9 +218,7 @@
         "TASK-022"
       ],
       "notes": "CLOSED at HEAD 15cd881. filterBlockItems library + filter-block-items pi tool + scripts/orchestrator/filter-block-items.ts shipped. Tests: pi-context 401 → 407 (+6). Live-substrate runtime demos green. See VER-005.",
-      "verification": "VER-005",
-      "oid": "cfcddc99a268a10a62c535c73da8a864",
-      "content_hash": "76ffc7d5a225330e02f9c270070e1794431621ea70462504ecabe9f5e5cdb8dc"
+      "verification": "VER-005"
     },
     {
       "id": "TASK-035",
@@ -268,9 +240,7 @@
         "TASK-022"
       ],
       "notes": "CLOSED at HEAD 2ddf85f. resolveItemsByIds library + resolve-items-by-id pi tool (coexists with singular resolve-item-by-id) + scripts/orchestrator/resolve-items-by-id.ts shipped. Tests: pi-context 407 → 413 (+6). Live-substrate runtime demo green. See VER-006.",
-      "verification": "VER-006",
-      "oid": "15e4bc1ad74e6d4d6259a2e8f379b4d9",
-      "content_hash": "5377d893802c5872b7147d23bb6ea50c6b43d31749d20ef59908fcae70929eae"
+      "verification": "VER-006"
     },
     {
       "id": "TASK-036",
@@ -294,9 +264,7 @@
         "TASK-035"
       ],
       "notes": "CLOSED at HEAD 7cb17f0. walkAncestors + walkAncestorsByLens + walk-ancestors pi tool + scripts/orchestrator/walk-ancestors.ts shipped. tsconfig.json gained @davidorex/pi-context/lens-view path mapping. Tests: pi-context 413 → 420 (+7). Closure-table runtime demo deferred to Phase 5 (per-test fixtures own synthetic relations.json). See VER-007.",
-      "verification": "VER-007",
-      "oid": "35b4a700577f1bcfc84c19b79057ee24",
-      "content_hash": "d12723f385b5ca6976dc9f4a0cd810fcd5842f4d1785c367d656d493c1d23a0e"
+      "verification": "VER-007"
     },
     {
       "id": "TASK-037",
@@ -320,9 +288,7 @@
         "TASK-036"
       ],
       "notes": "CLOSED at HEAD 680cb1c. Final atomic unit under TASK-022. findReferences + findReferencesInRepo + find-references pi tool + scripts/orchestrator/find-references.ts shipped. Tests: pi-context 420 → 428 (+8). Edge[] return type intentionally distinct from walkDescendants/walkAncestors string[] semantic. See VER-008.",
-      "verification": "VER-008",
-      "oid": "b118f279d1886525c19c30ee537c6622",
-      "content_hash": "e35115f5ccfd67c6a051ea61d8543bcc15541f2df2f37c255c3614eaa6504e72"
+      "verification": "VER-008"
     },
     {
       "id": "TASK-038",
@@ -345,9 +311,7 @@
         "TASK-023"
       ],
       "notes": "CLOSED at HEAD 6ddb1ba. context-contracts schema + registry default + auto-discovery registration shipped. Tests: pi-context 428 → 447 (+19). See VER-010.",
-      "verification": "VER-010",
-      "oid": "1645c5b72133436d89762d277ff7f34e",
-      "content_hash": "de63a567421deaf300efd6af51f2d47b7a527d0299f1cb2b88d1db46ffa579e4"
+      "verification": "VER-010"
     },
     {
       "id": "TASK-039",
@@ -373,9 +337,7 @@
         "TASK-038"
       ],
       "notes": "CLOSED at HEAD 6bea7e1. gatherExecutionContext library + ContextBundle types + gather-execution-context pi tool + scripts/orchestrator/gather-execution-context.ts + tsconfig path mapping shipped. Tests: pi-context 447 → 454 (+7). FGAP-031 closure pending sub-phase 3.3 (will transition FGAP-031 status to closed in VER-013 cascade). See VER-011.",
-      "verification": "VER-011",
-      "oid": "68ef98e061e966abbec5d350e4c0122d",
-      "content_hash": "78b90f5bcbd04b025cf511659470261a6831fbd095657ddbd01e601a9ef23b52"
+      "verification": "VER-011"
     },
     {
       "id": "TASK-040",
@@ -399,9 +361,7 @@
         "TASK-039"
       ],
       "notes": "CLOSED at HEAD 02acf92. Integration test ships 4 scenarios through canonical surfaces (no mocks); pi-context 454 → 458 (+4). Final atomic unit under TASK-023; FGAP cluster transition in this same cascade. See VER-012.",
-      "verification": "VER-012",
-      "oid": "2b0e8196c22b998c9106012579cb0249",
-      "content_hash": "1a30eabababbc9363502813a65c12a1a9ab3e023594475964b3fb962c1683440"
+      "verification": "VER-012"
     },
     {
       "id": "TASK-041",
@@ -426,9 +386,7 @@
         "TASK-024"
       ],
       "notes": "CLOSED at HEAD 569eec4. workflow tool renamed to workflow-execute (index.ts:495); workflow-resume new tool registered (index.ts:575) with no-incomplete-run + runId-mismatch + cross-spec-incompat rejection paths. Tests: pi-workflows 824 to 829 (+5). See VER-014.",
-      "verification": "VER-014",
-      "oid": "8c6e8e63e3acabc0ff65cfd3979d65c5",
-      "content_hash": "62dd6a068317cba61fd4b322f105a1415e6b81ef431878e7a9fdbab9bd57312f"
+      "verification": "VER-014"
     },
     {
       "description": "Vocabulary settlement work-unit upstream of TASK-025 Phase 5 sub-phase decomposition — settles display layer, ID conventions, relation_type names, lens ids, layer registry, status-bucket mapping, phase block-kind binding via DEC entries enacted at user direction. Closes FGAP-047 + addresses FGAP-048 / 049 / 050 / 051. Pre-condition for TASK-025 sub-phase 5.1 (config.json) + 5.2 (relations.json) + 5.3 (roadmap.json) + 5.4 (phase.json) + 5.6 (tasks-phase-edges).",
@@ -452,9 +410,7 @@
         ".project/schemas/conventions.schema.json"
       ],
       "notes": "Filing context: this work-unit emerged from 2026-05-13 → 2026-05-14 dialogue reverse-engineering config from substrate. LLM-filed Phase 5 sub-phase decomposition (analysis/2026-05-10-fgap-026-closure-sub-phase-structure.md line 14) skipped this upstream vocabulary work; FGAP-047 records the skip. Source analysis files: analysis/2026-05-14-arc-tracking-substrate-open-decisions.md (7 open decisions enumerated); analysis/2026-05-14-step-1-config-draft-from-substrate.md (config draft + drift surface); analysis/2026-05-14-step-2-resolution-patterns-from-substrate.md (relation_types / lenses / layers / status patterns); analysis/2026-05-14-arc-tracking-substrate-decision-sharpening.md (cross-doc mapping); analysis/2026-05-14-pm-vocabulary-survey-full-analysis.md (external prior-art); analysis/2026-05-14-substrate-filing-precedents.md (canonical filing-method archaeology). Blocks TASK-025 sub-phases 5.1-5.6 from coherent execution until settled. Already-enacted DECs from this work-unit's substrate authoring: DEC-0022 (features schema simplification, drop Epic-level qualifier) + DEC-0023 (schema title as display_name authority).",
-      "id": "TASK-042",
-      "oid": "b679402b9ab2a2f47fbeeadfd9afc04a",
-      "content_hash": "d1ba176e260ad0b4e3a2c7bfd3f9d944db3785cd13e04be9f5ad600e5bfd534d"
+      "id": "TASK-042"
     },
     {
       "description": "Re-derivation machinery arc (DEC-0036, step 2): build .context clean via the config-based framework — edge-based validator (units 2.1/2.1b=TASK-045), packaged conception (2.2=TASK-046), rename engine (2.3=TASK-044); remaining units 2.4-2.7 + re-populate .context (step 3) + extension refactor (step 4) + cutover (step 5). SUPERSEDES the original in-place inline-FK migration (abandoned per DEC-0036): the DEC-0013 clean-edge goal is achieved by construction in .context, not by stripping .project.",
@@ -482,9 +438,7 @@
         ".project/schemas/verification.schema.json"
       ],
       "notes": "REFRAMED per DEC-0036 (2026-05-17): in-place inline-FK migration of .project superseded by re-derivation. FGAP-046 closure now = author .context references as relations.json edges (conform by construction), not strip .project in place. The in-place attempt hit cascading schema-invariant collisions (tasks completed→VER if-then; decisions ≥1-forcing-artifact anyOf); tmp/migrate-phase2.ts discardable. This work folds into .context re-population (DEC-0036 finishing step 3). Stays in-progress as the inline-FK-elimination concern, now realized via canonical authoring.",
-      "id": "TASK-043",
-      "oid": "06c537938072ea096e8c4c46e564a70b",
-      "content_hash": "29f17a9359ca0f2af9e0463c0e4c505b7cb2fc8ddc3c9303998dfc82b2312381"
+      "id": "TASK-043"
     },
     {
       "description": "FGAP-060 closure: build renameCanonicalId engine on canonical edge-only reference surface (after TASK-043 eliminates inline FK). Library packages/pi-context/src/rename-canonical-id.ts + writeRelations wrapper in project-context.ts + Pi tool rename-canonical-id (index.ts) + orchestrator script scripts/orchestrator/migrate-canonical-id.ts + tests. Rewrites home-block item id + relations.json edges (parent/child/relation_type) + reports out-of-substrate citations (analysis MDs, commits — report-only). NO inline-FK sweep (eliminated in TASK-043). DEC-0019/0020 dual-surface unit.",
@@ -510,9 +464,7 @@
       ],
       "notes": "Coordinated arc with TASK-043. Engine operates on single canonical surface because TASK-043 eliminated inline FK. canonical_id-permanent (DEC-0035) scopes this engine to deliberate rename only. [DEC-0036 reframe: FGAP-060 rename engine is framework machinery for .context (finishing step 2); built against .context schemas + fixtures, not retrofitted to .project.]",
       "id": "TASK-044",
-      "verification": "VER-016",
-      "oid": "8896fdf17b099fef43af89be50280942",
-      "content_hash": "c3f98c6224b75c0e79690d12d03b20bb0e6957337cdb43b65f2a7f1f7a3d5e41"
+      "verification": "VER-016"
     },
     {
       "id": "TASK-045",
@@ -531,9 +483,7 @@
         "validateProject generic loop with zero hardcoded block/status/relation literals",
         "2 canonical invariants declared as config data",
         "tests incl. ABSENCE case + foreign-vocabulary DEC-0025 universalization"
-      ],
-      "oid": "f0f452ef5b674dae9aafbf8bbdfa7956",
-      "content_hash": "e72dfc48e38610f8e9d070a56b73ce0b4a6b75c47ebd0b52838360e6692cee9d"
+      ]
     },
     {
       "id": "TASK-046",
@@ -549,9 +499,7 @@
         "15 clean edge-based schemas + conception.json validating vs config.schema.json",
         "work-rollup composition lens deferred -> FGAP-070",
         "samples/ unimported by src (build unaffected)"
-      ],
-      "oid": "58395400a0ce927024aa2252c3f2ea31",
-      "content_hash": "1f26785b47e376a37140d4b3afa34c7018b519d7ba3bc42ed1855f86997f74e4"
+      ]
     },
     {
       "status": "completed",
@@ -577,9 +525,7 @@
         "sub-unit C reclassified harness-side per DEC-0040 amendment — not extension code",
         "comprehensive status-bucket completeness (sub-unit D): 12 conception status values mapped (grounded in samples-schema semantics) + enforceable conception-completeness guard test (status-vocab.test.ts)"
       ],
-      "id": "TASK-047",
-      "oid": "7fe21b92a0e948af133dcc1038fd8946",
-      "content_hash": "4412c94e3443849b6a4e7f750fee3d8c514e3714f98079d6b6d7daef6ca8bb3d"
+      "id": "TASK-047"
     },
     {
       "status": "completed",
@@ -599,9 +545,7 @@
         "build/check/test green + runtime demo across library + CLI + pi -p dispatch + adversarial probe + skills regen"
       ],
       "id": "TASK-048",
-      "verification": "VER-020",
-      "oid": "30de3438c42ba89d249eac7cf0b8a2e1",
-      "content_hash": "618adc17ea24caf2736d5880f4ba4cdc75e1fdc5241f898f0f9fadeecd10a541"
+      "verification": "VER-020"
     },
     {
       "status": "completed",
@@ -620,9 +564,7 @@
         "mtime-cache invalidation verified; build/check/test green + runtime demo (library + CLI) + adversarial (writeConfig sole writer) + skills regen"
       ],
       "id": "TASK-049",
-      "verification": "VER-021",
-      "oid": "1d8f7628762eb174d232a9ef4b20df75",
-      "content_hash": "915a8645d31d8b361006fe2bf04741becb420c01cd28c7cb8f7e8a3e6130127d"
+      "verification": "VER-021"
     },
     {
       "status": "completed",
@@ -641,9 +583,7 @@
         "build/check/test green + runtime demo (library + CLI) + adversarial (writeSchema sole writer) + skills regen; follow-up FGAPs filed for the discovered pre-existing flags"
       ],
       "id": "TASK-050",
-      "verification": "VER-022",
-      "oid": "02ab8d1c6a9a6d0594f312a0b162d0f7",
-      "content_hash": "4e91e5d333afce5e12f5b849620c26a81690a43aeef4aa179a88be98d18fe05f"
+      "verification": "VER-022"
     },
     {
       "status": "completed",
@@ -666,9 +606,7 @@
         "release tail per completion sequence; FGAP-081 (delimiter alignment) left as the separate follow-on adoption unit"
       ],
       "id": "TASK-051",
-      "verification": "VER-023",
-      "oid": "41ffd19b76aea172378eb34347fe6044",
-      "content_hash": "01edfef20c8b8e1b735ddea75a8ae1ad65cf251f149f02524c3fafa56f49ec5c"
+      "verification": "VER-023"
     },
     {
       "status": "completed",
@@ -685,9 +623,7 @@
         "runtime demo via createTemplateEnv (real Nunjucks env, not {}) shows the XML wrapper + escaped body; FGAP-081 closed"
       ],
       "id": "TASK-052",
-      "verification": "VER-024",
-      "oid": "15a73d1e8128d58242689eeb7fd37516",
-      "content_hash": "42b2dfe12c50529b9ae499e03e7bc65d66ea97d8a604b04aec1cc35032783787"
+      "verification": "VER-024"
     },
     {
       "status": "completed",
@@ -704,9 +640,7 @@
         "companion FGAP filed: audit ~33 tool descriptions for discovery-readiness (kept OUT of B1)"
       ],
       "id": "TASK-053",
-      "verification": "VER-025",
-      "oid": "26a4fec6bbb72489b7c947ceb8ba16a3",
-      "content_hash": "746238cc5fd5332c9611413ee8c3a94b602b5a313a2b3eddb703516e68283fc1"
+      "verification": "VER-025"
     },
     {
       "description": "B2 / FGAP-068 — samples catalog discovery (SCOPE B). Two coupled parts: (1) add OPTIONAL relation_type endpoint-kind metadata source_kinds[]/target_kinds[] (wildcard '*') to the config relation_types model + author all 27 onto samples/conception.json + presence-gated edge endpoint-kind validation in validateProject (closes the live wrong-kind-edge hole; tracked as FGAP-086); (2) the dual-surface samples-catalog discovery surface — library samplesCatalog() (package-intrinsic, reads bundled samples/, conception ENRICHED per-kind with title/description/shape + applicable relation_types/invariants/lenses + top-level registries) reusing a schemaInfo→schemaInfoFromPath refactor; Pi tool read-samples-catalog; CLI scripts/orchestrator/read-samples-catalog.ts; package.json files +samples/ (publish-bug fix) + ./samples-catalog export (closes FGAP-068). 5-commit sequence per plan. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md ACTIVE section.",
@@ -734,9 +668,7 @@
       ],
       "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs all npm/tsx/git. Closes FGAP-068 + FGAP-086. B2 of the in-pi tool-surface program.",
       "id": "TASK-054",
-      "verification": "VER-026",
-      "oid": "6d4ed77c75761572de7717a7463428f2",
-      "content_hash": "02e2290e35037eff324c2857c0c2783b6ccf7914561d0427546bb106568ea1ff"
+      "verification": "VER-026"
     },
     {
       "description": "B2-continuation samples-catalog CONSUMPTION MVP. (1) installProject reads samples/ via conception.json block_kinds paths (not legacy registry/); still driven by config.installed_*; absent-from-block_kinds → notFound (config/relations stay notFound). (2) initProject stops copying defaults/ (closes FGAP-067 DEC-0011 violation) — bootstrap pointer + mkdir dirs only. (3) NEW adoptConception(cwd) accept-all = adopt conception.json as substrate config.json (validated writeConfig; CRITICAL root override to actual contextDir; idempotent never-clobber; writes config only, not install) + dual-surface (lib in project-context.ts + Pi tool project-accept-all + CLI scripts/orchestrator/accept-all.ts + /project accept-all subcommand). (4) drop defaults/+registry/ from package.json files[] (DEC-0011 ship-no-defaults; dirs stay on disk as test fixtures). 4-commit sequence. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md ACTIVE.",
@@ -759,9 +691,7 @@
       ],
       "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs npm/tsx/git. Closes FGAP-067; files follow-up FGAP for registry/defaults dir-deletion (test-fixture repoint; audit/conformance-reference need a samples home). Conversational step-through onboarding (FGAP-066) deferred per DEC-0038. Built on /project (rename later).",
       "id": "TASK-055",
-      "verification": "VER-027",
-      "oid": "6ae613dc5b00da7023c0f4a368833ea4",
-      "content_hash": "d6d860e19e8e46da2226c421244f551dfb8faaa612a9c90e4f86feddba55f98b"
+      "verification": "VER-027"
     },
     {
       "description": "B3 / FGAP-045 — item-level read at the tool surface. (1) readBlockItem(cwd, block, id) → ItemRecord|null (block-scoped item-by-id; reuses filterBlockItems id-eq + take-first; additive vs whole-substrate resolve-item-by-id). (2) readBlockPage(cwd, block, {offset=0, limit=50}) → {items, total, hasMore} (reuses readBlock + discoverArrayKey + slice; richer shape per FGAP-045 spec, not a bare array). Both in project-sdk.ts. Dual-surface (DEC-0019/0020): library + Pi tools read-block-item / read-block-page (truncateHead) + CLIs read-block-item.ts / read-block-page.ts + tests. Edge semantics mirror filterBlockItems/readBlock (missing-block throws, no-array → null/{empty}, multiple-arrays throws, not-found → null, offset≥total → empty+total+hasMore:false). Plan: ~/.claude/plans/idempotent-dancing-wilkes.md ACTIVE.",
@@ -782,9 +712,7 @@
       ],
       "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs npm/tsx/git. Closes FGAP-045. B3 of the in-pi tool-surface program; next B4 FGAP-043 (cross-block joins).",
       "id": "TASK-056",
-      "verification": "VER-028",
-      "oid": "414d3a1aae4cc7b0d4cc83366083f40f",
-      "content_hash": "481ff1324b20aa07fa399fed0c29f4b57776dbb2a6e29ff00e6f6f3a5b55af81"
+      "verification": "VER-028"
     },
     {
       "description": "B4 / FGAP-043 — cross-block join tool (HYBRID edge + field). Library joinBlocks(cwd, spec): JoinResult[] in project-sdk.ts where spec={leftBlock,rightBlock,relationType?|leftField?+rightField?,leftEndpoint?,leftPredicate?} and JoinResult={left:ItemRecord, right:ItemRecord[]} (right always array; one-to-many natural). Edge mode: filter left + loadRelations(relationType) + match by leftEndpoint(parent|child) + resolve other endpoint via buildIdIndex scoped to rightBlock (handles wildcard target). Field mode: index rightBlock by rightField, each left → matches by left[leftField]. Mode = exactly-one-of relationType XOR leftField+rightField (else throw). Dual-surface (DEC-0019/0020): library + Pi tool join-blocks (truncateHead; where{Field,Op,Value} left predicate) + CLI scripts/orchestrator/join-blocks.ts + tests. Closes Cluster B. Plan: ~/.claude/plans ACTIVE.",
@@ -805,9 +733,7 @@
       ],
       "notes": "Foreground Write agent for source per feedback_no_adhoc_dev; orchestrator runs npm/tsx/git. Closes FGAP-043 → Cluster B (read/query) COMPLETE. Hybrid per user (edge DEC-0013-native + field legacy/general).",
       "id": "TASK-057",
-      "verification": "VER-029",
-      "oid": "842177312214c8503fdcfc1d196a50bb",
-      "content_hash": "5a0edac07a675da1360bbbd6e848574e5a6137004a42134afb4ef8bf1677f06e"
+      "verification": "VER-029"
     },
     {
       "description": "Implement the FGAP-094 conception-root fix: ship no concrete substrate-dir default. Drop root from the packaged conception, make config.root an optional schema field (pointer is the substrate-dir SoT), stop the samples catalog surfacing a root, and correct the shipped default-'.project' doc claims. No runtime behavior change intended — adoptConception already overwrites root on every adopted config and projectRoot already falls back to resolveContextDir when root is absent.",
@@ -833,9 +759,7 @@
       "depends_on": [],
       "notes": "Resolves FGAP-094. DEC-0041 (open) records the config.root-optional contract change. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md",
       "id": "TASK-058",
-      "verification": "VER-030",
-      "oid": "58363dbf09d148919244ff97830509c4",
-      "content_hash": "7bc35388da0d1ba382c20093afdf06a7c6dfe80eab358fabe03b579762e400b1"
+      "verification": "VER-030"
     },
     {
       "description": "FGAP-095 Phase 1: deriveBootstrapState — the pure, surface-agnostic 4-state bootstrap deriver (no-pointer | no-config | not-installed | ready) feeding the /context start conductor, the dispatch READY-gate, and the startup-slot hint (DEC-0042). Dual-surface per DEC-0019/0020: library + Pi tool + CLI. Factors a shared materialization detector out of installProject's copy loops so deriver and installer cannot drift. State-derived, nothing stored (DEC-0040). The deriver must NOT throw pre-bootstrap (it is the LLM's unset-substrate detection read).",
@@ -861,9 +785,7 @@
       "depends_on": [],
       "notes": "P1 of FGAP-095 (governed by DEC-0042). Surface-agnostic (library+tool+CLI, no command surface) — defers the /project-vs-/context cutover-sequencing question to P2. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md",
       "id": "TASK-059",
-      "verification": "VER-031",
-      "oid": "d0788ff8215171b88204613ea2574422",
-      "content_hash": "b5b9dbda929165df43188393881118db3ed76c9201e79a864c044a0f1bff31ef"
+      "verification": "VER-031"
     },
     {
       "description": "Unit A — block-api write ergonomics (FGAP-083 + FGAP-084 + FGAP-082). One root cause: the items schema can be a $ref (#/definitions/<kind>) and file-block-item/append-relation never dereference it. Add canonical $ref-aware block-api helpers (resolveBlockItemSchema + nextId), repoint the CLI auto-id + auto-stamp + dry-run to resolved-schema + whole-file validation, add the in-pi append-block-item autoId twin (DEC-0019/0020). block-api write path already validates whole-file $ref-aware; only orchestrator-side pre-validation + auto-id were broken (hit filing FEAT-004).",
@@ -888,9 +810,7 @@
       "depends_on": [],
       "notes": "Unit A of the A/B/C operational-friction cluster. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-083/084/082.",
       "id": "TASK-060",
-      "verification": "VER-032",
-      "oid": "02b9c57855173812818df53dfaa5da05",
-      "content_hash": "33ca19bd8144dfe884bdf6640ab6b4065471c1f7ff82d38720e2f943b3433ee7"
+      "verification": "VER-032"
     },
     {
       "description": "Unit B — module hygiene sweep (FGAP-088 + FGAP-080). FGAP-088: 3 shipped src modules still use import.meta.dirname (undefined under tsx-CJS dist-load -> ERR_INVALID_ARG_TYPE) -> the path.dirname(fileURLToPath(import.meta.url)) idiom (update-check.ts:20 lazy, index.ts installProject samplesRoot lazy, pi-workflows/src/bundled-dirs.ts:14 EAGER top-level). FGAP-080: orchestrator CLIs catch pi-context error classes via instanceof (module-instance-fragile under tsx) -> uniform name-based err.name=== checks (read-config, read-schema, file-block-item, append-relation; write-schema/accept-all already done) + drop unused error-class imports.",
@@ -914,9 +834,7 @@
       "depends_on": [],
       "notes": "Unit B of A/B/C operational-friction cluster. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-088/080. Agent mislabeled bundled-dirs.ts:14 'safe' — it is EAGER top-level src, in scope.",
       "id": "TASK-061",
-      "verification": "VER-033",
-      "oid": "a11fc88c2bdcfe882f464444f1f32e8a",
-      "content_hash": "b6d2ee30da89bc6d0976bb2fb731f880a8482ab13c5b3ec8ef2ada2b380b4a6d"
+      "verification": "VER-033"
     },
     {
       "description": "Unit C — standalone small fixes. FGAP-062: expectedBlockForId empty-prefix catch-all -> skip empty-prefix block_kinds (defensive) + config.schema.json prefix minLength:1 (root-cause, version 1.4.0->1.5.0). FGAP-025: validateProject cross-block status-vocab check -> warn when an item's status value isn't a key in resolveStatusVocabulary (vocabulary-neutral, reuses vocab+idIndex). FGAP-096: compile.ts:242,263 + step-shared.ts:181 instanceof BootstrapNotFoundError -> name-based (err.name===) + drop unused imports.",
@@ -939,9 +857,7 @@
       "depends_on": [],
       "notes": "Unit C of A/B/C cluster (+FGAP-096 folded per user). Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Closes FGAP-062/025/096.",
       "id": "TASK-062",
-      "verification": "VER-034",
-      "oid": "210d8f80f0cfc5baabebd790ba697a92",
-      "content_hash": "18d3996f45442e9c88321cc6f1bf2d74f1946ae98b2557c1fffb46d36ad4967b"
+      "verification": "VER-034"
     },
     {
       "description": "Unit D — FGAP-079 schema/block path-surface fix. (1) Resolver unification: projectRoot drops the config.root branch -> returns resolveContextDir; auto-unifies all write-side callers (schema-write, installProject, readBlockItems, findUnmaterializedAssets) with the read side (schemaPath/blockSchemaPath/validateBlockWithMigration). Pointer-canonical (DEC-0045): config.root is not a path input — honoring it would split the substrate since config/relations are pointer-pinned. (2) Path-traversal sanitization: assertSubstrateName(name) in project-dir.ts (/^[A-Za-z0-9_-]+$/), guarding every name->path builder (schemaPath, blockFilePath, installedSchema/BlockDestPath, readBlockItems, schemaWritePath, file-block-item loadBlockSchema).",
@@ -966,9 +882,7 @@
       "depends_on": [],
       "notes": "Unit D (post A/B/C). Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. DEC-0045 records the pointer-canonical decision. Closes FGAP-079.",
       "id": "TASK-063",
-      "verification": "VER-035",
-      "oid": "431fb43e7d7fd20251128aba05e7717f",
-      "content_hash": "5e346479effa741421ff4d930e0128de0916473bd7dfd77974c7f4f152bb1303"
+      "verification": "VER-035"
     },
     {
       "description": "Unit E (user-directed) — add a decision_relates_to_decision relation_type to the packaged conception (samples/conception.json relation_types[]): the DEC-0013-clean DEC↔DEC associative link (vs a related_decisions FK field). Mirrors research_relates_to_research (category data_flow, source_kinds/target_kinds=[decisions]). Ships downstream via the conception (DEC-0037). .project/config.json untouched (frozen).",
@@ -987,9 +901,7 @@
       "depends_on": [],
       "notes": "Unit E. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md. Vocabulary add under user directive; no DEC/FGAP. Backfilling DEC-0045 links as .project edges is a separate (unrequested) step.",
       "id": "TASK-064",
-      "verification": "VER-036",
-      "oid": "ca4665e462ff75f7eb4299f38fab8526",
-      "content_hash": "cf1915ae5124b027a5614125160e950fffdbdde4007e46c50a71ae4e976e7d76"
+      "verification": "VER-036"
     },
     {
       "description": "Materialize DEC-0045's DEC<->DEC associative links as decision_relates_to_decision edges in the live substrate's relations.json. DEC-0045 currently references DEC-0041 (x3), DEC-0036 (x2), DEC-0015 (x1) only in prose; those are real associative relationships with no edge representation. The relation_type was added to the packaged conception in Unit E (commit 817cae3 / TASK-064) but is NOT in .project/config.json (frozen ad-hoc source per DEC-0036) and .project/relations.json has zero decision<->decision edges. Backfilling into frozen .project would require either breaking the DEC-0036 freeze or writing an edge whose relation_type its own config.json does not register (DEC-0013 violation). Coherent home is .context after the re-derivation cutover, where decision_relates_to_decision arrives natively via the conception (DEC-0037). At that point materialization is a clean appendRelations data-write.",
@@ -1008,9 +920,7 @@
         "TASK-030"
       ],
       "notes": "Filed at user direction 2026-05-23 to canonically persist the Unit E follow-up (was conversation-only). Gated on the .context cutover (TASK-030). Origin: DEC-0045 wanted DEC<->DEC links; Unit E (TASK-064) added the relation_type vocabulary to the conception; this task materializes the specific DEC-0045 link instances as edges.",
-      "id": "TASK-065",
-      "oid": "f7ba9e072d4f738f06089b3adc14e562",
-      "content_hash": "89d21690feb9af97f31edd1261f06b98d739264712715acf93b08a471b06cdd0"
+      "id": "TASK-065"
     },
     {
       "description": "FGAP-074 C0 — naming DEC (decision-only, no code). Settle target names for the /project->/context surface rename: the 3 src filenames (project-dir.ts / project-context.ts / project-sdk.ts -> new) + their 3 subpath exports; identifier scheme (projectRoot->contextRoot, projectDir->contextDir [collision-scoped per feedback_rename_scope_discipline], projectState->contextState, validateProject->validateContext|validateSubstrate, getProjectContext->getContext, installProject->installContext, projectTemplatesDir->contextTemplatesDir, PROJECT_BLOCK_TYPES->CONTEXT_BLOCK_TYPES, interfaces Project*->Context*/Substrate*, PROJECT_DIR @deprecated -> drop|rename); Pi tool prefix project-* -> context-*; command /project -> /context + PROJECT_SUBCOMMANDS rename. Resolve the project-context.ts target-name hazard (context-context is awkward: choose context-core|context-substrate|context.ts). Gates C1-C7.",
@@ -1028,9 +938,7 @@
       "depends_on": [],
       "notes": "Decomposition: analysis/2026-05-23-fgap-074-rename-decomposition.md (chunk C0). Maps to Claude Code task #59. FGAP-074. Transition-alias-bridged strategy; each subsequent chunk green-per-commit (husky check+test). Independent of DEC-0036 step-3/.context re-population — pure source codemod against the still-.project substrate via the pointer.",
       "id": "TASK-066",
-      "verification": "VER-037",
-      "oid": "34fbe831ad2e6c202ae857a991919dff",
-      "content_hash": "98218b0b153fd48d3de0d8c744c9c0655c0e5d34a16478ffdb8467228a99500c"
+      "verification": "VER-037"
     },
     {
       "description": "FGAP-074 C1 — pi-context internal rename + transition aliases (additive, green). Rename the 3 project-*.ts -> new filenames (+ their tests); update all pi-context-internal relative imports + identifier usages to the C0-settled new names; add DUAL package.json subpath exports (legacy ./project-* AND new ./context-* -> same dist) + DUAL tsconfig path mappings; add @deprecated identifier aliases (export const projectRoot = contextRoot; etc.). After C1 the pi-context package is fully on new names internally while the external world still resolves via the legacy aliases.",
@@ -1054,9 +962,7 @@
       ],
       "notes": "Decomposition chunk C1. Maps to Claude task #60. FGAP-074. Pure rename — no behavioral change.",
       "id": "TASK-067",
-      "verification": "VER-038",
-      "oid": "31d99b9d1cc2a0320dcee9fe09aa5381",
-      "content_hash": "ccac16a9188489a572cbd11140a4480fd01269568162359fde4739866e4ccdca"
+      "verification": "VER-038"
     },
     {
       "description": "FGAP-074 C2 — migrate pi-jit-agents consumers (6 files). Repoint old project-* subpath imports + renamed identifiers to the new context-* names across pi-jit-agents (compile.ts, template module + their tests). Green per commit.",
@@ -1074,9 +980,7 @@
       ],
       "notes": "Decomposition chunk C2. Maps to Claude task #61. FGAP-074. Resolves via aliases until C7 removes them.",
       "id": "TASK-068",
-      "verification": "VER-039",
-      "oid": "013fd807e149139a31053316f796a6fc",
-      "content_hash": "2eb4cd567963a49628432e4e5e13595e34f80892ef742e7470e5fb95099244ca"
+      "verification": "VER-039"
     },
     {
       "description": "FGAP-074 C3 — migrate pi-workflows consumers (29 files). Largest consumer set: workflow-sdk, workflow-executor, step-block, step-shared, index, template-validation, test-helpers + ~22 tests, mostly importing writeBootstrapPointer / schemaPath / PROJECT_DIR. Repoint old project-* subpaths + renamed identifiers to context-* names. Green per commit.",
@@ -1098,9 +1002,7 @@
       ],
       "notes": "Decomposition chunk C3. Maps to Claude task #62. FGAP-074. Parallelizable with C2/C4 but commit serially for green clarity (sequence note).",
       "id": "TASK-069",
-      "verification": "VER-040",
-      "oid": "5aa36b80405111048206dfec1251c8aa",
-      "content_hash": "8208b7f8c14541d6becd3fb766aad21d28f62010e44640ce63198ac1c0aed141"
+      "verification": "VER-040"
     },
     {
       "description": "FGAP-074 C4 — migrate pi-behavior-monitors (1 test) + orchestrator scripts (14). Repoint old project-* subpaths + renamed identifiers to context-* names. Scripts: accept-all, amend-config, append-relation, bootstrap-state, build-html-views, current-state, file-block-item, filter-block-items, join-blocks, read-block-item, read-block-page, read-config, read-schema, resolve-items-by-id. Green per commit.",
@@ -1120,9 +1022,7 @@
       ],
       "notes": "Decomposition chunk C4. Maps to Claude task #63. FGAP-074.",
       "id": "TASK-070",
-      "verification": "VER-041",
-      "oid": "2a5ba880e0463dc6b35e75322c71817c",
-      "content_hash": "9dc67826f553e3526e371c4bb801b001d39157c8324b0ba9dca43777959cc7ea"
+      "verification": "VER-041"
     },
     {
       "description": "FGAP-074 C5 — tool names + /project command rename (index.ts). Rename Pi tools project-* -> context-* (project-status/validate/validate-relations/edges-for-lens/walk-descendants/roadmap-{load,render,validate,list}); command /project -> /context + PROJECT_SUBCOMMANDS -> CONTEXT_SUBCOMMANDS; installProject -> installContext. Rename the DEC-0042 bootstrap trio (init/accept-all/install + project-init/project-accept-all tools) UNIFORMLY now (FGAP-095 P4 removes the then-context-named trio when /context start lands). NOT aliased (strings, no code consumers) — renamed atomically. npm run skills. Green.",
@@ -1144,9 +1044,7 @@
       ],
       "notes": "Decomposition chunk C5. Maps to Claude task #64. FGAP-074. Surface rename after all consumers migrated.",
       "id": "TASK-071",
-      "verification": "VER-042",
-      "oid": "a3c295347f2665c014b938495f193d15",
-      "content_hash": "b5bf565530a81fe419b67d2b95d31443d2f0d34ca09149bf4ca6106a207e6f6a"
+      "verification": "VER-042"
     },
     {
       "description": "FGAP-074 C6 — docs rename. README.md (~18) + CLAUDE.md (~5) + packages/pi-context/skill-narrative.md (~26): /project -> /context + tool-name updates; any .agent.yaml / .workflow.yaml / .monitor.json referencing /project or project-* tools. npm run skills regenerates SKILL.md. Green.",
@@ -1167,9 +1065,7 @@
       ],
       "notes": "Decomposition chunk C6. Maps to Claude task #65. FGAP-074.",
       "id": "TASK-072",
-      "verification": "VER-043",
-      "oid": "70e977bb9b2b4d3af9255b2ab4d2f9eb",
-      "content_hash": "ab1d7450e5eec7b146951260c3833c34f4441128faa765d6a1521f808d11e219"
+      "verification": "VER-043"
     },
     {
       "description": "FGAP-074 C7 — remove aliases + bare-string sweep (closes FGAP-074). Drop the dual package.json exports -> single ./context-*; drop tsconfig legacy path mappings; remove all @deprecated identifier aliases; scoped + bare-string sweep of residual in-scope project naming in comments/JSDoc/temp-dir prefixes/test-fixture strings. Green proves zero legacy-name consumers remain.",
@@ -1191,9 +1087,7 @@
       ],
       "notes": "Decomposition chunk C7 (final). Maps to Claude task #66. FGAP-074. After this: FGAP-095 P2-P6 build native on /context; .project->.context DIR cutover (DEC-0036 step-5) + .context re-population (step-3) remain SEPARATE arcs.",
       "id": "TASK-073",
-      "verification": "VER-044",
-      "oid": "1a33f8c00c3b59aa9d03eb9c003b6071",
-      "content_hash": "ccfdc0c1369986b94d21a083448bfd1f83963e3a0a76d30599372653098eddef"
+      "verification": "VER-044"
     },
     {
       "description": "Implement FGAP-090 — wire pi's eager guidance hooks into the pi-context extension so the in-pi LLM receives framework guidance. PRIMARY: a before_agent_start handler that APPENDS a static topic->tool-call pointer/orientation block to event.systemPrompt (append never replace — runtime chains across extensions per dist/core/extensions/runner.js:700-739; returning nothing resets to base per agent-session.js:791-796), mirroring shipped exemplar examples/extensions/claude-rules.ts:64-85 and pi-core's docs-pointer dist/core/system-prompt.js:94-100. Block = a topic->TOOL-CALL map (the constrained agent has no read tool, so route to tools not file paths): vocabulary/relation_types/block_kinds -> read-config / read-samples-catalog (authoritative, never invent canonical names); schema -> read-schema; live tools+signatures -> list-tools; add a block kind -> read-samples-catalog then write-schema + amend-config; bootstrap -> /context start; + grounding directives (queryable, don't confabulate, FGAP-092). ~12-18 lines, STATIC (no substrate I/O, works pre-bootstrap). SECONDARY: a resources_discover handler returning { skillPaths: [abs packages/pi-context/skills/pi-context] } so skills surface as <available_skills> metadata (dist/core/skills.js:258-277), mirroring examples/extensions/dynamic-resources.",
@@ -1215,9 +1109,7 @@
       "depends_on": [],
       "notes": "Resolved decisions: topic->tool-call adaptation (no read in constrained harness); static MVP block (no per-turn substrate I/O); resources_discover surfaces skill METADATA — bodies are read-gated so constrained agent gets metadata-only, full value unconstrained; delivering skill CONTENT to the constrained agent via an element-read tool is FEAT-007 (out of scope). Addresses FGAP-090 (corrected: skills CAN reach via these hooks; cause was unwired hooks). Keystone unblocking FGAP-066/FEAT-007. Exemplars: examples/extensions/claude-rules.ts, dynamic-resources, prompt-customizer.ts. created_by/created_at stamped by orchestrator filing.",
       "id": "TASK-074",
-      "verification": "VER-045",
-      "oid": "67537af165e3e84928af6b91e1d4c8bf",
-      "content_hash": "ccdfe3244a91712db096953acdd6ba349dbfbefa80b38f4eac75ac5b43174ddc"
+      "verification": "VER-045"
     },
     {
       "description": "Implement FGAP-103 — one DRY element-read primitive every JSON read surface routes through (subsumes FGAP-101, carries FGAP-089's structured-signal facet). NEW pure module read-element.ts: serializeForRead(value, {itemsKey?,offset?,limit?,label?}) -> ReadEnvelope { content, total?, hasMore?, truncated, totalBytes } (generalizes readBlockPage's {items,total,hasMore} + FGAP-089 truncated/totalBytes; structured machine-parseable+readable footer replacing the ~13x JSON.stringify+truncateHead+prose '[Truncated]' note); addressInto(value, {id?,key?,path?}) -> {found,value,resolved} (hand-rolled — no path/key dep exists). Route 8 whole-blob handlers in index.ts through serializeForRead (read-block/read-block-dir/read-config/read-samples-catalog/read-schema/list-tools/context-roadmap-load/context-edges-for-lens; last two currently lack truncateHead). Add addressing: read-config gains registry?+id?; read-schema gains path?; list-tools gains name? (default = compact paged index — closes FGAP-101); read-samples-catalog already has kind. Refactor readBlockItem/readBlockPage (context-sdk.ts) ONTO the primitive (blocks not special; no parallel path). Dual-surface: read-config.ts + read-schema.ts CLIs gain the optional flags; list-tools stays Pi-tool-only (FGAP-044).",
@@ -1246,9 +1138,7 @@
       ],
       "notes": "Resolved design (no hedging): one pure read-element module (serializeForRead envelope + addressInto id|key|path); per-surface tools keep discoverability, DRY lives in the shared library they call (NOT a god read-element tool). Closes FGAP-103 + FGAP-101 (subsumed via list-tools index/detail) + FGAP-089 structured-signal facet. Unblocks FEAT-007 (skill-content-via-element-read) + FGAP-066 (read conception untruncated). Builds on FGAP-090 (TASK-074) which routes the agent to these read tools. Exemplars: read-block-page.ts/read-block-item.ts/join-blocks.ts (dual-surface), readBlockPage {items,total,hasMore} (envelope template). NO RELEASE (held).",
       "id": "TASK-075",
-      "verification": "VER-046",
-      "oid": "2a95d50b4582acf5b72043bfa466bbcc",
-      "content_hash": "9d0f99fc5666856e3b1fc1ea62e04af534d7b10d9ee793bfe8d2de263e2a497b"
+      "verification": "VER-046"
     },
     {
       "description": "Vendor truncateHead locally to remove the SDK root-barrel VALUE import from context-sdk's tsx-eval-reachable graph (fixes FGAP-104; restores validateContext/contextState via tsx -e, broken by FGAP-103's read-element.ts:29). NEW packages/pi-context/src/truncate.ts = VERBATIM copy of truncateHead + DEFAULT_MAX_BYTES (50*1024) + DEFAULT_MAX_LINES (2000) + the result interface from node_modules/@earendil-works/pi-coding-agent/dist/core/tools/truncate.js (pure, only Buffer.byteLength; ~70 lines), with a provenance header (vendored from @0.75.4; SDK exposes no resolving subpath + root barrel unresolvable under tsx -e; re-sync if SDK adds a tools export). Repoint read-element.ts:29 import to ./truncate.js. index.ts type-only root-barrel import unchanged. NOT a simpler byte-cap (keep line-aware head-truncation parity with pi, which FGAP-089 mirrors).",
@@ -1270,9 +1160,7 @@
       ],
       "notes": "Addresses FGAP-104. Vendor (not subpath — SDK has no tools export; not re-export — still imports barrel in compiled code; not simpler-cap — parity). If the SDK truncateHead impl isn't self-contained, STOP+report. NO RELEASE (held).",
       "id": "TASK-076",
-      "verification": "VER-047",
-      "oid": "37dd749d30e2157913d19a7bc375f5ca",
-      "content_hash": "8b9bef9923f7d4785768aa808129114a0c8118f371752e85a61cddfa49bd5998"
+      "verification": "VER-047"
     },
     {
       "description": "Fix the pi-context skill-name collision (startup [Skill conflicts] warning via launch-constrained-pi.sh). Cause: scripts/generate-skills.js generateMetaSkill copies every sub-package skill into the meta-package (packages/pi-project-workflows/skills/<name>), and FGAP-090's resources_discover now self-surfaces packages/pi-context/skills/pi-context — so pi-context's skill reaches pi's name-keyed loader from two paths -> collision (byte-identical copies, cosmetic but a self-inflicted regression). Second root: generate-skills never cleans the meta skills dir (mkdir+writeFile only), so orphans persist. FIX (both roots): (1) rmSync the meta skills dir at the start of generateMetaSkill before regenerating (idempotent clean-rebuild; import rmSync); (2) skip pi-context in the copy loop (`if (result.shortName===\"pi-context\") continue;`) since it self-surfaces via resources_discover; keep copying pi-workflows + pi-behavior-monitors (no resources_discover hook). Then npm run skills removes packages/pi-project-workflows/skills/pi-context/.",
@@ -1293,9 +1181,7 @@
       ],
       "notes": "Follow-on of FGAP-090/TASK-074 (resources_discover introduced the second path). Fix both roots (redundant copy + no-clean) — skipping pi-context alone would leave the orphan (negligent). Principled end-state (workflows/monitors also self-surface, meta stops bundling) is FEAT-007-adjacent future. Verify via launch-constrained-pi.sh from a SCRATCH cwd (pi install -l touches scratch .pi/, never the repo's). NO RELEASE (held).",
       "id": "TASK-077",
-      "verification": "VER-048",
-      "oid": "35234fcec6ec0f031570497ae40bf96e",
-      "content_hash": "68d19c21ad2bbaf4d0a812aa2b609de12b3984ea73a4acc294d5b2bb40b76e6a"
+      "verification": "VER-048"
     },
     {
       "description": "FGAP-089 comprehensive fix: every over-cap READ across our extensions FAILS CLOSED — no satisficeable partial body. serializeForRead (read-element.ts) on cap.truncated: (a) if overCapDirective provided -> DIRECTIVE-ONLY, no body ('READ REFUSED — <label> is N bytes over the 50KB cap; nothing returned; narrow: call <tool> with <params>'); (b) edge case (no finer addressing) -> UNMISSABLE HEAD-LEADING PARTIAL marker BEFORE the head (the old footer failed because it was at the END, skimmed past). Add overCapDirective{tool,params,hint} to SerializeForReadOptions + complete:boolean to ReadEnvelope. Thread per-surface narrowing at the ~23 pi-context index.ts call sites (read-block->read-block-page/item; read-config->registry/id; read-samples-catalog->kind; read-schema->path; list-tools->name; filter/join->refine; edge cases: read-block-dir/resolve-items-by-id/edges-for-lens/walk-ancestors/find-references/gather-execution-context/roadmap-load + addressed-singles when the single over-caps). ALSO route pi-workflows read tools (workflow-list/agents/status/validate/init, index.ts ~674-808) through the SAME serializeForRead (import @davidorex/pi-context/read-element) instead of direct truncateHead (workflow-agents->name; others edge). OUT-OF-SCOPE (leave): output truncation — dispatch MAX_STDOUT_BYTES, workflow-executor:976 completion truncateTail, jit-runtime verdict/error, budget-enforcer, context-sdk:764 nextActions cap.",
@@ -1323,9 +1209,7 @@
       ],
       "notes": "Closes FGAP-089 (P1; the structured footer was empirically insufficient — agent skimmed it). Shared serializeForRead is the DRY chokepoint (pi-workflows imports @davidorex/pi-context/read-element). Key insight: the warning must lead (head-first), not trail. User scope: comprehensive/global all over-READS, not just pi-context; output-truncation explicitly out. Verify from scratch cwd; NO RELEASE (held). Audit step mandatory (user-directed).",
       "id": "TASK-078",
-      "verification": "VER-049",
-      "oid": "77982090054db34b8c455309d5cd7dbb",
-      "content_hash": "6f9c20be22fe8f283354e5333e3c7bec403c0aa7a763df7fdf84e4994779ec29"
+      "verification": "VER-049"
     },
     {
       "description": "Fix FGAP-106 (.project leaks into agent-facing guidance) + close FGAP-107 (orientation /context start). EXHAUSTIVE pass — supersedes the original 7-string enumeration after a full-tree orchestrator re-grep proved both my list and a follow-up explore non-exhaustive. Already landed (correct, kept): 4b84cb8 (FGAP-106 original subset) + 2301cec (FGAP-107 orientation -> real ceremony + test needles). REMAINDER this pass. Neutral-form rule: interpolate the REAL resolved path/dir where in local scope at the string site; else placeholder <substrate-dir>; any /context init mention -> /context init <substrate-dir>. Scope A (19 agent-reachable code strings): pi-context index.ts:150 (handoff render) +1155 (current-state desc); lens-view.ts:46/200/225; roadmap-plan.ts:299/303; context.ts:1260 (resolveComposition throw); block-api.ts:302/310/1313/1318 (read-block/subdir throws); pi-jit-agents compile.ts:436/457; pi-workflows workflow-sdk.ts:631/643 + template-validation.ts:583; pi-behavior-monitors index.ts:111/112 (monitor contextBlock descriptions). Scope B (~15 SKILL.md-source lines in skill-narrative.md, carried verbatim into SKILL.md by npm run skills): pi-context 6/12/38/40/48/120 (38+40 FACTUAL rewrite vs DEC-0015 — :40 wrongly asserts config.json/relations.json always live at .project/; truth = substrate-dir root, pointer-resolved, suggested .context, exempt from config.root redirection); behavior-monitors 95/361/379; pi-workflows 31/69/84. Tests updated in lockstep (grep each edited string across *.test.ts). LEAVE: code path-resolution literals/path-builders, JSDoc + conceptual comments, console.error stderr logs (behavior-monitors 803/819 — separate stderr-diagnostic smell), test fixtures, pi-project-workflows package name, context-sdk.ts:330/348 /context start JSDoc forward-refs, frozen .project dir (DEC-0036). FGAP-107 effectively resolved by 2301cec; closes once verification confirms zero agent-facing /context start.",
@@ -1363,9 +1247,7 @@
       ],
       "notes": "EXHAUSTIVE supersession of original enumeration (feedback_class_fix_completeness_reenumeration: re-grep until zero). Scope grew 7->19 code + ~15 narrative after full-tree re-verification. Exhaustive sweep recorded in analysis/2026-05-25-fgap-106-107-exhaustive-sweep.md. Interim guidance-accuracy fix; does NOT build /context start (FGAP-095+066). Neutral referent <substrate-dir>. SKILL.md generated -> edit source + regen. NO RELEASE (held). Audit mandatory.",
       "id": "TASK-079",
-      "verification": "VER-050",
-      "oid": "41c05a1e018efd2838627d965a48d7af",
-      "content_hash": "54e0b818d6b6da81562f3f7524c891725e657c208da23e3efdd3d117a6b3d1f4"
+      "verification": "VER-050"
     },
     {
       "id": "TASK-080",
@@ -1399,9 +1281,7 @@
         "engine build/check/test green at every commit (husky); runtime demo + fresh-context adversarial audit per DEC-0018",
         "Aligns with narrowed DEC-0044 (a71c782) + closed FGAP-112 (71a7ea2): orchestrator + workflows + monitors consume pi-jit-agents as shared library directly per the narrowed DEC-0044; the pi-agent-dispatch extension is downstream FEAT-004/005 scope, not this task."
       ],
-      "notes": "Re-scoped 2026-05-26 from the original loader+type-only cut. Authority: analysis/2026-05-26-jit-agents-user-intentions.jsonl (39 verbatim USER intentions — esp. JI-001 uniform-agent definition; JI-002 disposability; JI-010 jit-agents owns spec-to-typed-result; JI-021 orchestrator uses jit-agents directly; JI-023/024/028/029 capability/perms operation-granular from empty; JI-027 \"validate not fake validate\"). Grounding: analysis/2026-05-26-project-vs-jit-intentions-eval.jsonl (conflict EV-001: DEC-0044 new-extension never user-stated; orphan EV-020: an out-of-canon term flagged as never-user-said — purged in 4b8508e/3187ff6). External prior art: analysis/2026-05-26-pi-subagents-eval-vs-jit-intentions.md (the grant mechanism is `pi --tools` at the subprocess boundary — small thread; opt-in-from-empty default; depth-clamp pattern generalizes to tool-clamp). DEC-0044 narrowed + FGAP-112 closed 2026-05-26 (a71c782 / 71a7ea2): canon-vs-intent conflict resolved; orchestrator-direct-use is now canonical. NO RELEASE (held). SPLIT 2026-05-26 per user direction (focus is pi-jit-agents element first + POC; consumer cascade follows): TASK-080 is split into three sequenced tasks + the POC. Successors: TASK-081 (pi-jit-agents element — additive build in pi-jit-agents only; spec.tools wired into executeAgent grant + clamp per DEC-0047; no consumer touching), TASK-082 (pi-workflows consume canonical + delete duplicate; depends on TASK-081), TASK-083 (pi-behavior-monitors consume canonical + delete duplicate + drop synthetic-CompiledAgent bridge; depends on TASK-081 + TASK-082). The POC at TASK-084 (orchestrator → pi-jit-agents direct dispatch end-to-end) runs between TASK-081 and TASK-082 to validate the architectural shape before consumer cascade. TASK-080 itself is cancelled as an umbrella — work proceeds through the four successors. All four carry the canon-aligned framing (narrowed DEC-0044 a71c782 + closed FGAP-112 71a7ea2: orchestrator + workflows + monitors consume pi-jit-agents as shared library directly).",
-      "oid": "3ff40e5d79ba47689b6e67cbd3bb88e1",
-      "content_hash": "e0a5fafbbcf945397dc645e0d9836992e46027ae096e00f22e0efcbe39501041"
+      "notes": "Re-scoped 2026-05-26 from the original loader+type-only cut. Authority: analysis/2026-05-26-jit-agents-user-intentions.jsonl (39 verbatim USER intentions — esp. JI-001 uniform-agent definition; JI-002 disposability; JI-010 jit-agents owns spec-to-typed-result; JI-021 orchestrator uses jit-agents directly; JI-023/024/028/029 capability/perms operation-granular from empty; JI-027 \"validate not fake validate\"). Grounding: analysis/2026-05-26-project-vs-jit-intentions-eval.jsonl (conflict EV-001: DEC-0044 new-extension never user-stated; orphan EV-020: an out-of-canon term flagged as never-user-said — purged in 4b8508e/3187ff6). External prior art: analysis/2026-05-26-pi-subagents-eval-vs-jit-intentions.md (the grant mechanism is `pi --tools` at the subprocess boundary — small thread; opt-in-from-empty default; depth-clamp pattern generalizes to tool-clamp). DEC-0044 narrowed + FGAP-112 closed 2026-05-26 (a71c782 / 71a7ea2): canon-vs-intent conflict resolved; orchestrator-direct-use is now canonical. NO RELEASE (held). SPLIT 2026-05-26 per user direction (focus is pi-jit-agents element first + POC; consumer cascade follows): TASK-080 is split into three sequenced tasks + the POC. Successors: TASK-081 (pi-jit-agents element — additive build in pi-jit-agents only; spec.tools wired into executeAgent grant + clamp per DEC-0047; no consumer touching), TASK-082 (pi-workflows consume canonical + delete duplicate; depends on TASK-081), TASK-083 (pi-behavior-monitors consume canonical + delete duplicate + drop synthetic-CompiledAgent bridge; depends on TASK-081 + TASK-082). The POC at TASK-084 (orchestrator → pi-jit-agents direct dispatch end-to-end) runs between TASK-081 and TASK-082 to validate the architectural shape before consumer cascade. TASK-080 itself is cancelled as an umbrella — work proceeds through the four successors. All four carry the canon-aligned framing (narrowed DEC-0044 a71c782 + closed FGAP-112 71a7ea2: orchestrator + workflows + monitors consume pi-jit-agents as shared library directly)."
     },
     {
       "id": "TASK-081",
@@ -1425,9 +1305,7 @@
       ],
       "depends_on": [],
       "notes": "Split 2026-05-26 from TASK-080 per user direction (pi-jit-agents element first; then POC; then consumer cascade in 082/083). Authority: analysis/2026-05-26-jit-agents-user-intentions.jsonl (JI-010/021/023/024/027/028/029) + analysis/2026-05-26-decisions-substrate-revision-grounding.md (canon-mapping). External prior art: analysis/2026-05-26-pi-subagents-eval-vs-jit-intentions.md (grant mechanism = `pi --tools` at subprocess boundary; depth-clamp generalizes to tool-clamp; opt-in-from-empty default). No release. Narrowed 2026-05-26 per plan-mode exploration discovery. The four findings (AgentSpec.tools inert past load; ExtensionContext currentModel gap = FGAP-115; DEC-0003 surface-change scope; DEC-0002 TraceEntry schema extension needed) split the bundled scope: this task retains the additive minimum (spec.tools threading + clamp); the other three implementations become TASK-085 (DEC-0001, blocked on FGAP-115), TASK-086 (DEC-0002), TASK-087 (DEC-0003, blocked on FGAP-115). POC (TASK-084) needs ONLY this narrow scope to validate the context→jit architectural shape — full executeAgent canon implementation (DEC-0001/0002/0003) is downstream and not POC-gating.",
-      "verification": "VER-052",
-      "oid": "1ba5d6d6f01e0e020e84446738e16c9d",
-      "content_hash": "f6fc69fd81425ae942b27d04e84dae1dbda6f73c9208867490a06cb9f3a8339a"
+      "verification": "VER-052"
     },
     {
       "id": "TASK-082",
@@ -1461,9 +1339,7 @@
       "depends_on": [
         "TASK-081"
       ],
-      "notes": "Split 2026-05-26 from TASK-080. Depends on TASK-081 landing first. Monitors cascade is TASK-083. Aligns with narrowed DEC-0044 (a71c782) + closed FGAP-112 (71a7ea2): pi-workflows consumes pi-jit-agents as shared library directly per canonical.",
-      "oid": "7d8ac614e3f24b516fb8e0a268340c8c",
-      "content_hash": "c81411510215ad2befe3cb61e05b4dc92c0b0dc40ddddda580297983bbf009b3"
+      "notes": "Split 2026-05-26 from TASK-080. Depends on TASK-081 landing first. Monitors cascade is TASK-083. Aligns with narrowed DEC-0044 (a71c782) + closed FGAP-112 (71a7ea2): pi-workflows consumes pi-jit-agents as shared library directly per canonical."
     },
     {
       "id": "TASK-083",
@@ -1485,9 +1361,7 @@
         "TASK-081",
         "TASK-082"
       ],
-      "notes": "Split 2026-05-26 from TASK-080. Depends on TASK-081 (canonical surface) + TASK-082 (pi-workflows duplicate removal — without 082, repointing alone leaves dead pi-workflows surface intact). monitors becomes a sibling consumer of pi-jit-agents alongside pi-workflows (DEC-0049 uniform-agent axiom).",
-      "oid": "ed509e4a3323968d5179662dbd74e393",
-      "content_hash": "91574416381d70ad5084ed96c8589e780434b6a7a3ee7ca0a7f3583e2802f4c0"
+      "notes": "Split 2026-05-26 from TASK-080. Depends on TASK-081 (canonical surface) + TASK-082 (pi-workflows duplicate removal — without 082, repointing alone leaves dead pi-workflows surface intact). monitors becomes a sibling consumer of pi-jit-agents alongside pi-workflows (DEC-0049 uniform-agent axiom)."
     },
     {
       "id": "TASK-084",
@@ -1509,9 +1383,7 @@
       "depends_on": [
         "TASK-081"
       ],
-      "notes": "Filed 2026-05-26 per user direction. Sequence: TASK-081 first → THIS POC second → TASK-082/083 cascade third. POC bypasses pi-workflows + pi-behavior-monitors entirely (orchestrator dispatches direct against jit-agents library per JI-021). Validates the context→jit architectural shape before full FEAT-004/005 extension build. Successful POC unblocks the pi-agent-dispatch extension build with confidence.",
-      "oid": "869923e3e6f3ef15a3357697a7fb4e29",
-      "content_hash": "4fd66ed4f03d96d3ab130b4a49c92693da9072f0ea54885acaa5a012f222bbe8"
+      "notes": "Filed 2026-05-26 per user direction. Sequence: TASK-081 first → THIS POC second → TASK-082/083 cascade third. POC bypasses pi-workflows + pi-behavior-monitors entirely (orchestrator dispatches direct against jit-agents library per JI-021). Validates the context→jit architectural shape before full FEAT-004/005 extension build. Successful POC unblocks the pi-agent-dispatch extension build with confidence."
     },
     {
       "id": "TASK-085",
@@ -1532,9 +1404,7 @@
       "depends_on": [
         "TASK-081"
       ],
-      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 plan-mode discovery of FGAP-115 (ExtensionContext currentModel gap). HARD-BLOCKED until FGAP-115 resolves; status:blocked reflects that. Implementation surface determined post-FGAP-115. Authority: DEC-0001 enacted bb45880; FGAP-115 filed alongside this task. Pairs with TASK-086 (DEC-0002 impl) + TASK-087 (DEC-0003 impl) as the three executeAgent-boundary-canon implementations split out from TASK-081 narrow scope.",
-      "oid": "643fa883e2ce4c57e539de2fa696033e",
-      "content_hash": "4c0ac41bfc1dd278440410e35f8fd81fa48e3f1fea0082d913de20dbaae37791"
+      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 plan-mode discovery of FGAP-115 (ExtensionContext currentModel gap). HARD-BLOCKED until FGAP-115 resolves; status:blocked reflects that. Implementation surface determined post-FGAP-115. Authority: DEC-0001 enacted bb45880; FGAP-115 filed alongside this task. Pairs with TASK-086 (DEC-0002 impl) + TASK-087 (DEC-0003 impl) as the three executeAgent-boundary-canon implementations split out from TASK-081 narrow scope."
     },
     {
       "id": "TASK-086",
@@ -1558,9 +1428,7 @@
       "depends_on": [
         "TASK-081"
       ],
-      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. Depends on TASK-081 landing first (executeAgent surface). Implementation pairs with DEC-0002 enacted bb1bc27 (consequence #4 narrowed to TraceEntry pipeline per feedback_no_stderr_diagnostics). Pi-ai's reasoning option name + ThinkingLevel enum verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 131-135). Trace schema extension scope verified during plan-mode exploration (packages/pi-jit-agents/schemas/agent-trace.schema.json strict discriminated union with additionalProperties:false per kind).",
-      "oid": "1ff88de669cc56daf6b205b445423c99",
-      "content_hash": "a7f09e2a9b8088a0bb84256961b53f1b182f0864c83919d16cbbcbe0e97a9a46"
+      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. Depends on TASK-081 landing first (executeAgent surface). Implementation pairs with DEC-0002 enacted bb1bc27 (consequence #4 narrowed to TraceEntry pipeline per feedback_no_stderr_diagnostics). Pi-ai's reasoning option name + ThinkingLevel enum verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 131-135). Trace schema extension scope verified during plan-mode exploration (packages/pi-jit-agents/schemas/agent-trace.schema.json strict discriminated union with additionalProperties:false per kind)."
     },
     {
       "id": "TASK-087",
@@ -1582,9 +1450,7 @@
       "depends_on": [
         "TASK-081"
       ],
-      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. HARD-BLOCKED on FGAP-115 (canonical source question); status:blocked reflects that. Pairs with TASK-082/083 — those tasks delete the caller-side parseModelSpec duplicates after this task provides the canonical replacement at executeAgent boundary. Implementation pairs with DEC-0003 enacted a71c782 + widened cfbb211 (both monitors + workflows duplicate sites named). Pi-ai Model<Api> shape verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 458-485).",
-      "oid": "10c8f4ce2a1355a1ef07b940e0aa8ab6",
-      "content_hash": "c10c157078a5373385b3050aa4e465c41ef0eef5a130c58fc01a3cf29cbfd76b"
+      "notes": "Split 2026-05-26 from TASK-080 per TASK-081 narrow-scope discipline. HARD-BLOCKED on FGAP-115 (canonical source question); status:blocked reflects that. Pairs with TASK-082/083 — those tasks delete the caller-side parseModelSpec duplicates after this task provides the canonical replacement at executeAgent boundary. Implementation pairs with DEC-0003 enacted a71c782 + widened cfbb211 (both monitors + workflows duplicate sites named). Pi-ai Model<Api> shape verified during TASK-081 plan-mode exploration (node_modules/@earendil-works/pi-ai/dist/types.d.ts lines 458-485)."
     },
     {
       "id": "TASK-088",
@@ -1607,9 +1473,7 @@
       ],
       "depends_on": [],
       "notes": "Filed 2026-05-26 per user direction supersede-TASK-084 + decompose-FEAT-006. First of four FEAT-006 decomposition tasks: TASK-088 (work-order block), TASK-089 (pi-agent-dispatch extension), TASK-090 (real-check tail + attested commit), TASK-091 (assembly + orchestrator loop). No dependencies (substrate-only); unblocks TASK-089.",
-      "verification": "VER-053",
-      "oid": "a55de73a8fdb97eba302c32499e6645d",
-      "content_hash": "07e2e339f26eaa145785245d2a73edcb9755d92ff23e385c4c90276e62ff3893"
+      "verification": "VER-053"
     },
     {
       "id": "TASK-089",
@@ -1644,9 +1508,7 @@
         "TASK-088"
       ],
       "notes": "Filed 2026-05-26 per user direction. Second of four FEAT-006 decomposition tasks. Builds on TASK-081 clamp infrastructure + TASK-088 work-order block kind. Implements FEAT-004 (agents-as-tools) + FEAT-005 (capability composition) within the pi-agent-dispatch extension per narrowed DEC-0044. The single extension absorbs both FEAT-004 + FEAT-005 because they are one architectural concern (dispatch surface + the capability layer atop it). Unblocks TASK-090 + TASK-091.",
-      "verification": "VER-054",
-      "oid": "849b8e670ca098e3e0bdade420cadf70",
-      "content_hash": "07d0e89f3a883aa57c62557dafb8210af728c5a5e34c06b16995e0dc701bcb88"
+      "verification": "VER-054"
     },
     {
       "id": "TASK-090",
@@ -1672,9 +1534,7 @@
         "TASK-089"
       ],
       "notes": "Filed 2026-05-26 per user direction. Third of four FEAT-006 decomposition tasks. Builds on TASK-089 pi-agent-dispatch extension (the tool surface this gate plugs into). Closes FGAP-102 (real-check verdict, not LLM self-report). Pattern matches what TASK-081 itself used for self-verification this session (real-check verdict + adversarial probe + commit attestation). Unblocks TASK-091 final assembly.",
-      "verification": "VER-055",
-      "oid": "ee05c497f1fbe1a4ab7e6c8005c4a555",
-      "content_hash": "265b533e6e41cb878730ee1c7558ab4a4e1339e23ba0ef0ac68118fa00dc338c"
+      "verification": "VER-055"
     },
     {
       "id": "TASK-091",
@@ -1708,9 +1568,7 @@
         "TASK-090"
       ],
       "notes": "Filed 2026-05-26 + UNIFIED 2026-05-28 (absorbs FEAT-011 scope per user direction). Fifth (final) of four+ FEAT-006 decomposition tasks PLUS the launch-chain integration that the 2026-05-28 audit (commit 945dc93) surfaced as required for FEAT-006 to be ACTUALLY reachable from a launched session. Closes FEAT-006 north-star + FGAP-102 formally + FGAP-117/118/120/121/122/123 + FEAT-011 (which is the launch-chain integration scope merged into this task). FGAP-119 (dogfood composites) stays as separate follow-on TASK post-this-merge. FEAT-011 status flipped to in-progress as part of Phase 1 substrate prep (implicit enactment via user direction to build).",
-      "verification": "VER-057",
-      "oid": "8c28c22e451fbe13a596967ad97d21d5",
-      "content_hash": "d1e1c5f9042f8a4dcf0482c45c0bd7f2348cd9feaa88c3ee97cb0fe13c67c006"
+      "verification": "VER-057"
     },
     {
       "id": "TASK-092",
@@ -1759,9 +1617,7 @@
         "TASK-089"
       ],
       "notes": "Filed 2026-05-28 per user direction Path B: build FEAT-010 first (before TASK-091 assembly). User's authorization to build FEAT-010 implies enactment authorization for DEC-0052 (open with drafted answer; FEAT-010 depends on DEC-0052 enacted); same canonical-pipeline pass enacts DEC-0052 + files this task. Implementation source-of-record: analysis/2026-05-28-hybrid-3-refined-composite-tools-design.md. Reuses precedents: status-vocab.ts (L1+L4 TS const + JSDoc); status-vocab.test.ts (L2 invariant); author-agent-spec-tool.ts (writer.kind=human enforcement); file-block-item.ts/append-relation.ts (CLI script shape); attested-commit.ts (spawnSync git pattern); loadContext (extension-load config read). One verification-during-implementation point: pi.registerTool dynamic registration at factory-time has no existing precedent; verified empirically during composite-loader smoke test (Phase 2 STEP 4 / Phase 3 runtime demo 3).",
-      "verification": "VER-056",
-      "oid": "5d6536c58e674589398d3a5f70d03ee6",
-      "content_hash": "caa6a5d21f465586d9fd9983dccff591063bfe54a82a1dfb11e00918d1fbc1a8"
+      "verification": "VER-056"
     },
     {
       "description": "Relocate agent-template tree from packages/pi-workflows/templates/ to packages/pi-jit-agents/templates/; add 6 missing whole-block delegators (render_decisions, render_features, render_framework_gaps, render_layer_plans, render_research, render_spec_reviews) at the new canonical location; extend CANONICAL_MACRO_NAMES registry to carry array_key column per 3-divergent-kind handling (framework-gaps→gaps, layer-plans→plans, spec-reviews→reviews); rewire 5 consumer call-sites in pi-workflows from bundledDir(templates) to bundledTemplateDir from pi-jit-agents; drop templates/ from pi-workflows package.json files array; add templates/ to pi-jit-agents package.json files array. Closes FGAP-037 via supersession edge gap_superseded_by_task. Implements one phase of FEAT-001 consumer cascade per DEC-0049 uniform-agent axiom; sibling to TASK-082 (pi-workflows duplicate AgentSpec deletion) and TASK-083 (pi-behavior-monitors consumer cascade); does not depend on either since the template-tree relocation is independent of the duplicate-loader deletion.\n\n**Closing citation (Step 13c of plan ~/.claude/plans/idempotent-dancing-wilkes.md, 2026-05-29T14:14:32.161Z):** branch `feat-001-template-relocation`; HEAD prior to this mutation `1ac83bcd4099656307877c4075b2f57841babf27` (12+ commits ahead of main parent 6df6e84); runtime demo at `scripts/orchestrator/runtime-demo-whole-block-delegators.ts` (exit 0; 918553 chars rendered across 8155 lines per Step 11 commit 554c3df); adversarial probe at `/tmp/fgap-037-adversarial-probe.md` (4/4 PASS across Lens 1-4); attested by VER-065 (filed Step 13d). Supersession edge to FGAP-037 via gap_superseded_by_task appended Step 13e. completed_by=human:davidryan@gmail.com via auth-gate confirm; completed_at=2026-05-29T14:14:32.161Z.",
@@ -1781,9 +1637,7 @@
       "depends_on": [],
       "notes": "Created under FEAT-001 (consumer cascade) per canonical-resolution analysis at analysis/2026-05-29-fgap-037-canonical-resolution.md. Supersedes FGAP-037 (whose body claimed per-item macros missing — false; per-item macros at packages/pi-workflows/templates/items/ exist and work; the actual gap was the 6 whole-block delegators + the array-key registry column). Branch: feat-001-template-relocation. Plan: ~/.claude/plans/idempotent-dancing-wilkes.md.",
       "id": "TASK-093",
-      "verification": "VER-065",
-      "oid": "a197fccc4532bca1919bb9426bd1320e",
-      "content_hash": "e2326060286f2b57c26b86e117880a2d010399493fd52002758de4596b3a1d71"
+      "verification": "VER-065"
     },
     {
       "status": "completed",
@@ -1809,9 +1663,7 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T10:45:00Z",
       "id": "TASK-094",
-      "verification": "VER-066",
-      "oid": "eed4031d0c07cc7ec66cadd87a2538bc",
-      "content_hash": "8eee3398263e074fe5c3e1bfbefe71f9d7d72bb073a17afca2273913fb80b4a9"
+      "verification": "VER-066"
     },
     {
       "status": "planned",
@@ -1835,9 +1687,7 @@
       ],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-30T11:40:00Z",
-      "id": "TASK-095",
-      "oid": "dc8e25aebed6a4c5555a2d9d824794d1",
-      "content_hash": "e5cbb7c11397ee88dc401130da6add412ac38d78b9f0b404547e1f33a9cc904d"
+      "id": "TASK-095"
     }
   ]
 }

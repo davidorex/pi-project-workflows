@@ -45,456 +45,12 @@
         "DEC-0002",
         "DEC-0003"
       ],
-      "stories": [
-        {
-          "id": "STORY-001",
-          "title": "Resolve model-pin policy and apply at pi-jit-agents",
-          "status": "proposed",
-          "description": "Apply the DEC-0001 decision by implementing bare-model-id resolution through ExtensionContext at the pi-jit-agents execute boundary. Remove the anthropic-default pin from the current parseModelSpec implementation in pi-behavior-monitors.",
-          "acceptance_criteria": [
-            "A bare model id in an agent spec resolves against the current session's provider via ExtensionContext lookup, not a hardcoded default",
-            "If ExtensionContext cannot supply currentModel, dispatch errors with a clear message naming the missing binding",
-            "Fully-qualified provider/model specs continue to pin explicitly",
-            "Unit tests cover: bare-id + session-with-model, bare-id + session-without-model (error), fully-qualified-id (pinned)"
-          ],
-          "depends_on": [],
-          "gates": [
-            "DEC-0001"
-          ],
-          "tasks": [
-            {
-              "id": "TASK-001-01",
-              "title": "Verify ExtensionContext exposes currentModel",
-              "status": "done",
-              "description": "Inspect pi-agent-core's ExtensionContext type to confirm whether currentModel (or equivalent) is available to extensions at dispatch time. If not, the task widens into a prerequisite against pi-agent-core — escalate to user for scope decision.\n\n## TASK-001-01 completion finding (2026-05-03)\n\n**ExtensionContext.model** is confirmed at `node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/types.d.ts:219`:\n\n```typescript\nmodel: Model<any> | undefined;\n```\n\n`Model<TApi>` at `node_modules/@mariozechner/pi-ai/dist/types.d.ts:378` exposes:\n\n```typescript\nid: string;       // e.g. \"anthropic/claude-sonnet-4-6\"\nprovider: Provider;  // Provider = KnownProvider | string — \"openrouter\", \"anthropic\", etc.\napi: TApi;        // \"anthropic-messages\" | \"openai-completions\" | ...\n```\n\n**Resolution**: DEC-0001's chosen option is implementable today. Bare `model:` ids (no `/`) can resolve `provider` from `ctx.model.provider` and `modelId` from the spec string. Fully-qualified specs (`openrouter/anthropic/claude-sonnet-4-6`) are unaffected — `parseModelSpec` splits on `/` as before.\n\n**Caveat**: `ctx.model` is typed `Model<any> | undefined`. The `| undefined` means the dispatch path must handle the case where no session model is active. Whether `ctx.model` is populated at classify time (monitor `agent_end` / `tool_call` events) is not type-enforceable — it's an empirical question. The type contract says it *should* be populated during any agent turn, but the code path that sets it is internal to pi-core. The dispatch must produce a clear error (\"Cannot resolve bare model id 'X': no session model context available\"), not a silent fallback to `anthropic`.",
-              "files": [
-                "node_modules/@mariozechner/pi-coding-agent/dist/types.d.ts"
-              ],
-              "acceptance": "Written confirmation in the task record of what ExtensionContext currently exposes and whether DEC-0001's chosen option is implementable today or depends on upstream changes"
-            },
-            {
-              "id": "TASK-001-02",
-              "title": "Implement bare-id resolution in pi-jit-agents",
-              "status": "todo",
-              "description": "Add model-resolution logic at executeAgent. Bare ids trigger ExtensionContext lookup; fully-qualified specs pin.",
-              "files": [
-                "packages/pi-jit-agents/src/jit-runtime.ts",
-                "packages/pi-jit-agents/src/types.ts"
-              ],
-              "acceptance": "executeAgent resolves bare ids via ExtensionContext, surfaces clear error on missing binding, preserves fully-qualified semantics"
-            },
-            {
-              "id": "TASK-001-03",
-              "title": "Unit tests for model resolution",
-              "status": "todo",
-              "files": [
-                "packages/pi-jit-agents/test/model-resolution.test.ts"
-              ],
-              "acceptance": "Three-way coverage (bare + session, bare + no session, fully-qualified) all passing"
-            }
-          ]
-        },
-        {
-          "id": "STORY-002",
-          "title": "Apply thinking-seam enforcement in pi-jit-agents",
-          "status": "proposed",
-          "description": "Apply the DEC-0002 decision: executeAgent enforces thinking=off when forced toolChoice is present, emits a warning naming the agent and the incompatibility.",
-          "acceptance_criteria": [
-            "executeAgent inspects dispatch options for forced toolChoice",
-            "When forced toolChoice is present and compiled spec declares thinking: on, thinking is disabled and a warning is emitted via a structured diagnostic channel",
-            "Non-forced dispatches continue to honor the spec's thinking field",
-            "Unit test covers: forced-toolChoice + thinking:on (warning + thinking off), forced-toolChoice + thinking:off (no warning), free-form + thinking:on (thinking forwarded)"
-          ],
-          "depends_on": [
-            "STORY-001"
-          ],
-          "gates": [
-            "DEC-0002"
-          ],
-          "tasks": [
-            {
-              "id": "TASK-002-01",
-              "title": "Add pre-dispatch check in executeAgent",
-              "status": "todo",
-              "files": [
-                "packages/pi-jit-agents/src/jit-runtime.ts"
-              ],
-              "acceptance": "Pre-dispatch branch inspects toolChoice and compiled spec's thinking field; when incompatible, disables thinking and emits warning"
-            },
-            {
-              "id": "TASK-002-02",
-              "title": "Define structured diagnostic channel",
-              "status": "todo",
-              "description": "Decide whether warnings emit via logger, alongside JitAgentResult, or both. Must be consumable by both pi-workflows (workflow steps) and pi-behavior-monitors (classify calls).",
-              "files": [
-                "packages/pi-jit-agents/src/types.ts"
-              ],
-              "acceptance": "JitAgentResult gains a diagnostics field or equivalent; both consumers can read it"
-            },
-            {
-              "id": "TASK-002-03",
-              "title": "Unit tests for thinking-seam enforcement",
-              "status": "todo",
-              "files": [
-                "packages/pi-jit-agents/test/thinking-seam.test.ts"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "STORY-003",
-          "title": "Move parseModelSpec to pi-jit-agents",
-          "status": "proposed",
-          "description": "Execute the DEC-0003 decision: move parseModelSpec (or its renamed successor) from pi-behavior-monitors/index.ts into pi-jit-agents at the execute boundary. Remove the duplicate from the consumer. Update the classifyViaAgent call site to use the new location.",
-          "acceptance_criteria": [
-            "parseModelSpec exported from pi-jit-agents at a named subpath (e.g. @davidorex/pi-jit-agents/runtime)",
-            "packages/pi-behavior-monitors/index.ts:1091-1097 removed",
-            "classifyViaAgent imports and uses the pi-jit-agents version",
-            "No anthropic-default fallback anywhere in the codebase for bare model ids",
-            "Unit tests from STORY-001 continue to pass"
-          ],
-          "depends_on": [
-            "STORY-001"
-          ],
-          "gates": [
-            "DEC-0003"
-          ],
-          "tasks": [
-            {
-              "id": "TASK-003-01",
-              "title": "Export parseModelSpec from pi-jit-agents",
-              "status": "todo",
-              "files": [
-                "packages/pi-jit-agents/src/jit-runtime.ts",
-                "packages/pi-jit-agents/src/index.ts",
-                "packages/pi-jit-agents/package.json"
-              ],
-              "acceptance": "Function available at a named subpath; visible in pi-jit-agents' exports"
-            },
-            {
-              "id": "TASK-003-02",
-              "title": "Remove duplicate from pi-behavior-monitors",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/index.ts"
-              ],
-              "acceptance": "Lines 1091-1097 removed; classifyViaAgent imports from pi-jit-agents"
-            },
-            {
-              "id": "TASK-003-03",
-              "title": "Audit pi-workflows for equivalent parsing",
-              "status": "todo",
-              "description": "Search pi-workflows/src for any model-id parsing or provider-selection logic. If found, consolidate into pi-jit-agents too.",
-              "files": [
-                "packages/pi-workflows/src/"
-              ],
-              "acceptance": "Written audit note in this task record; any duplicates consolidated or explicitly flagged as out-of-scope with justification"
-            }
-          ]
-        },
-        {
-          "id": "STORY-004",
-          "title": "Migrate pi-workflows agent infrastructure to pi-jit-agents",
-          "status": "proposed",
-          "description": "Replace pi-workflows' local copies of agent-spec.ts, template.ts, and step-shared.ts agent helpers with imports from pi-jit-agents. Consumer call sites (step-agent.ts, dispatch.ts) delegate to executeAgent.",
-          "acceptance_criteria": [
-            "packages/pi-workflows/src/agent-spec.ts either removed or reduced to a re-export from pi-jit-agents",
-            "packages/pi-workflows/src/template.ts equivalently reduced",
-            "packages/pi-workflows/src/step-shared.ts' agent-helper portions migrated; any non-agent helpers remain",
-            "Workflow agent steps execute end-to-end through pi-jit-agents executeAgent",
-            "Existing tsx --test suite for pi-workflows passes",
-            "No circular dependency introduced between pi-workflows and pi-jit-agents"
-          ],
-          "depends_on": [
-            "STORY-003"
-          ],
-          "gates": [],
-          "tasks": [
-            {
-              "id": "TASK-004-01",
-              "title": "Map pi-workflows agent-infrastructure surface to pi-jit-agents equivalents",
-              "status": "todo",
-              "acceptance": "Written mapping in this task of every symbol in pi-workflows/src/agent-spec.ts, template.ts, step-shared.ts to its pi-jit-agents target; any unmappable symbols flagged for separate handling"
-            },
-            {
-              "id": "TASK-004-02",
-              "title": "Migrate call sites in pi-workflows step executors",
-              "status": "todo",
-              "files": [
-                "packages/pi-workflows/src/step-agent.ts",
-                "packages/pi-workflows/src/dispatch.ts"
-              ]
-            },
-            {
-              "id": "TASK-004-03",
-              "title": "Remove migrated helpers from pi-workflows",
-              "status": "todo",
-              "files": [
-                "packages/pi-workflows/src/agent-spec.ts",
-                "packages/pi-workflows/src/template.ts",
-                "packages/pi-workflows/src/step-shared.ts"
-              ]
-            },
-            {
-              "id": "TASK-004-04",
-              "title": "Update pi-workflows package.json dependencies",
-              "status": "todo",
-              "files": [
-                "packages/pi-workflows/package.json"
-              ],
-              "acceptance": "@davidorex/pi-jit-agents listed as a direct dependency with concrete caret range"
-            },
-            {
-              "id": "TASK-004-05",
-              "title": "Run pi-workflows test suite",
-              "status": "todo",
-              "acceptance": "npm test passes for pi-workflows at 0 failures"
-            }
-          ]
-        },
-        {
-          "id": "STORY-005",
-          "title": "Migrate pi-behavior-monitors classifyViaAgent to pi-jit-agents",
-          "status": "proposed",
-          "description": "Rewrite classifyViaAgent to delegate fully to pi-jit-agents executeAgent. Remove local imports of pi-workflows agent helpers (issue-043 duplication) and local agent-spec/template code that pi-jit-agents now owns.",
-          "acceptance_criteria": [
-            "classifyViaAgent contains no agent-spec parsing, no template rendering, no parseModelSpec — only collector wiring, template-context assembly, and a call to pi-jit-agents executeAgent",
-            "pi-behavior-monitors no longer imports anything from pi-workflows",
-            "pi-behavior-monitors package.json lists @davidorex/pi-jit-agents as a direct dependency, not pi-workflows",
-            "Existing vitest suite for pi-behavior-monitors passes"
-          ],
-          "depends_on": [
-            "STORY-003"
-          ],
-          "gates": [],
-          "tasks": [
-            {
-              "id": "TASK-005-01",
-              "title": "Rewrite classifyViaAgent against executeAgent",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/index.ts"
-              ]
-            },
-            {
-              "id": "TASK-005-02",
-              "title": "Remove pi-workflows dependency",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/package.json",
-                "packages/pi-behavior-monitors/index.ts"
-              ]
-            },
-            {
-              "id": "TASK-005-03",
-              "title": "Add pi-jit-agents dependency",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/package.json"
-              ]
-            },
-            {
-              "id": "TASK-005-04",
-              "title": "Run pi-behavior-monitors test suite",
-              "status": "todo",
-              "acceptance": "npx vitest run passes for pi-behavior-monitors at 0 failures"
-            }
-          ]
-        },
-        {
-          "id": "STORY-006",
-          "title": "Align bundled classifier YAMLs with decided policies",
-          "status": "proposed",
-          "description": "Update all five bundled classifier agent YAMLs (hedge, commit-hygiene, fragility, work-quality, unauthorized-action) to conform to the DEC-0001 model-field semantics and DEC-0002 thinking-seam policy.",
-          "acceptance_criteria": [
-            "Every bundled classifier YAML's model field is consistent with DEC-0001 — either a bare id that resolves via ExtensionContext, or a fully-qualified provider/model, depending on the final decision",
-            "Every bundled classifier YAML's thinking field is set to off (or removed if the default is off) per DEC-0002",
-            "No YAML contains dead config that the classify path silently ignores"
-          ],
-          "depends_on": [
-            "STORY-001",
-            "STORY-002"
-          ],
-          "gates": [
-            "DEC-0001",
-            "DEC-0002"
-          ],
-          "tasks": [
-            {
-              "id": "TASK-006-01",
-              "title": "Update hedge-classifier.agent.yaml",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml"
-              ]
-            },
-            {
-              "id": "TASK-006-02",
-              "title": "Update commit-hygiene-classifier.agent.yaml",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/agents/commit-hygiene-classifier.agent.yaml"
-              ]
-            },
-            {
-              "id": "TASK-006-03",
-              "title": "Update fragility-classifier.agent.yaml",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/agents/fragility-classifier.agent.yaml"
-              ]
-            },
-            {
-              "id": "TASK-006-04",
-              "title": "Update work-quality-classifier.agent.yaml",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/agents/work-quality-classifier.agent.yaml"
-              ]
-            },
-            {
-              "id": "TASK-006-05",
-              "title": "Update unauthorized-action-classifier.agent.yaml",
-              "status": "todo",
-              "files": [
-                "packages/pi-behavior-monitors/agents/unauthorized-action-classifier.agent.yaml"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "STORY-007",
-          "title": "Remove duplicate schema copies per issue-043",
-          "status": "proposed",
-          "description": "Consolidate duplicate copies of verdict.schema.json and any other schema fragments that pi-workflows, pi-behavior-monitors, and pi-jit-agents currently carry independently. Canonical owner is pi-jit-agents; consumers import.",
-          "acceptance_criteria": [
-            "verdict.schema.json exists only in pi-jit-agents",
-            "Any other schema fragments duplicated across consumers are consolidated to their correct owner package",
-            "Consumers import schemas via the owner package's subpath exports",
-            "Issue 043 closes"
-          ],
-          "depends_on": [
-            "STORY-004",
-            "STORY-005"
-          ],
-          "gates": [],
-          "tasks": [
-            {
-              "id": "TASK-007-01",
-              "title": "Identify duplicate schema copies",
-              "status": "todo",
-              "description": "Grep all packages/*/schemas and packages/*/src for *.schema.json files. Produce a duplicate inventory.",
-              "acceptance": "Written inventory listing every duplicate and its canonical owner"
-            },
-            {
-              "id": "TASK-007-02",
-              "title": "Remove duplicates",
-              "status": "todo"
-            },
-            {
-              "id": "TASK-007-03",
-              "title": "Update imports to use canonical owner",
-              "status": "todo"
-            }
-          ]
-        },
-        {
-          "id": "STORY-008",
-          "title": "Empirical verification against OpenRouter and Kimi",
-          "status": "proposed",
-          "description": "Run the hedge monitor against an OpenRouter-routed Claude model (openrouter/anthropic/claude-sonnet-4.6) and against at least one Kimi model to verify that forced toolChoice works end-to-end through the openai-completions path. This is the §7/§9 caveat from analysis/openrouter-pi-mono-setup.md — plausibly works but not documented. If it fails, surface as a blocking finding for user decision.",
-          "acceptance_criteria": [
-            "hedge monitor classify returns a VERDICT_TOOL tool call from openrouter/anthropic/claude-sonnet-4.6",
-            "hedge monitor classify returns a VERDICT_TOOL tool call from at least one Kimi model (openrouter/moonshotai/Kimi-K2-Thinking or kimi-coding/kimi-k2-thinking)",
-            "If either verification fails, a new finding is created in spec-reviews.json or as a defect in this feature's findings array, and the arc pauses for user decision"
-          ],
-          "depends_on": [
-            "STORY-005",
-            "STORY-006"
-          ],
-          "gates": [],
-          "tasks": [
-            {
-              "id": "TASK-008-01",
-              "title": "Run hedge against openrouter/anthropic/claude-sonnet-4.6",
-              "status": "todo",
-              "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not"
-            },
-            {
-              "id": "TASK-008-02",
-              "title": "Run hedge against a Kimi model",
-              "status": "todo",
-              "acceptance": "Classify call returns a valid verdict; failure recorded as a finding if not"
-            },
-            {
-              "id": "TASK-008-03",
-              "title": "Document verification outcomes",
-              "status": "todo",
-              "description": "Write outcomes into this feature's findings array or into a new finding in REVIEW-001 if the outcome surfaces a spec-level disclarity"
-            }
-          ]
-        },
-        {
-          "id": "STORY-009",
-          "title": "Close or migrate resolved issues",
-          "status": "proposed",
-          "description": "Update or migrate issues 043, 045, 048, 049, 050 in issues.json to reflect their closure by this arc. Each issue either marks resolved with a reference to the relevant STORY/TASK, or migrates to a scope-owned finding registry per the PHASE-6 retroactive migration.",
-          "acceptance_criteria": [
-            "issues 043, 045, 048, 049, 050 each have status resolved (or have been migrated to a scope-owned registry with the same terminal state)",
-            "Each resolved issue has resolved_by pointing to the commit or feature that closed it"
-          ],
-          "depends_on": [
-            "STORY-007",
-            "STORY-008"
-          ],
-          "gates": [],
-          "tasks": [
-            {
-              "id": "TASK-009-01",
-              "title": "Close issue-043 (duplicate agent infrastructure)",
-              "status": "todo",
-              "files": [
-                ".project/issues.json"
-              ]
-            },
-            {
-              "id": "TASK-009-02",
-              "title": "Close issue-045 (framework-level anti-injection)",
-              "status": "todo",
-              "files": [
-                ".project/issues.json"
-              ]
-            },
-            {
-              "id": "TASK-009-03",
-              "title": "Close issue-048 (agent discovery contradiction)",
-              "status": "todo",
-              "files": [
-                ".project/issues.json"
-              ]
-            },
-            {
-              "id": "TASK-009-04",
-              "title": "Close issue-049 (step-loop cwd bug)",
-              "status": "todo",
-              "files": [
-                ".project/issues.json"
-              ]
-            },
-            {
-              "id": "TASK-009-05",
-              "title": "Close issue-050 (monitor classify wiring)",
-              "status": "todo",
-              "files": [
-                ".project/issues.json"
-              ]
-            }
-          ]
-        }
-      ],
       "findings": [],
       "created_by": "agent/claude-opus-4-6",
-      "created_at": "2026-04-15T00:00:00Z"
+      "created_at": "2026-04-15T00:00:00Z",
+      "oid": "7fbad921875660a845a1d55d45096343",
+      "content_hash": "a3a401d6b60ba6e911b289ccd413955ac63e1e172dbc56cab47005a096ac2256",
+      "content_parent": "6ad03fe6eb695b08677181ba2c00a84d1950f2dcf24a40c152639afc894f4252"
     },
     {
       "id": "FEAT-002",
@@ -507,10 +63,12 @@
         "a slash command applies a jit-agent spec to the live session (systemPrompt + contextBlocks + tools + model + thinking) and a clean exit restores prior state",
         "documented + accepted limit: no typed-output guarantee for the main agent (instruction-only); contract-bound output stays the subprocess/in-process paths"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human/davidryan@gmail.com",
-      "created_at": "2026-05-21T00:00:00Z"
+      "created_at": "2026-05-21T00:00:00Z",
+      "oid": "fce58522c4f6911e5772cab3b143f59c",
+      "content_hash": "6175204a0973334306cdef862e8eae1ed2e3e06b3b2755d1834b81f3b2b28734",
+      "content_parent": "c3cec0cff30639e2391e795edec8f4921e6eeda6d24cd1d4915c6b0ffa22e4e3"
     },
     {
       "id": "FEAT-003",
@@ -527,10 +85,12 @@
         "a distribution channel (npm primary, git secondary) + a curated conception-catalog.json discovery list; NOT MCP",
         "a new DEC enacts multi-source onboarding + external acquisition + provenance + conflict-resolution (bundle redefining an existing kind)"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human/davidryan@gmail.com",
-      "created_at": "2026-05-22T00:00:00Z"
+      "created_at": "2026-05-22T00:00:00Z",
+      "oid": "e22eaf872d0b0159fb579263c831aa7d",
+      "content_hash": "4da9634d71d5218829a5fa475b6a7cf59768ed5a1c694fe669d72195d25c8e8d",
+      "content_parent": "5601b055c20ed4387228260f3b88c60a71b33882078d41fc5df753a74cd5ea88"
     },
     {
       "id": "FEAT-004",
@@ -547,10 +107,12 @@
         "agent-tools are discoverable via list-tools, carry discovery-ready descriptions (FGAP-085), and surface via the instructional projection (FGAP-095)",
         "registration home settled (DEC-0044) before build"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human/davidryan@gmail.com",
-      "created_at": "2026-05-23T00:00:00Z"
+      "created_at": "2026-05-23T00:00:00Z",
+      "oid": "802492c930d0278ba7a76c69f6bfc085",
+      "content_hash": "a36f1d84874261655f32641edd923cb7eb182f86b6644ec7a2941639c9f7ecf9",
+      "content_parent": "628eccacb80c2ac8324a5b8c1aeb3551a1a68d53623c90818deea16e75b4b788"
     },
     {
       "title": "JIT capability composition + sandbox for subagent dispatch — operation-granular tool+perm grants from an empty-state registry",
@@ -576,11 +138,13 @@
       "decisions": [
         "DEC-0047"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human/davidryan@gmail.com",
       "id": "FEAT-005",
-      "created_at": "2026-05-24T09:42:40.250Z"
+      "created_at": "2026-05-24T09:42:40.250Z",
+      "oid": "e4f3dbc6aa7011555a7da780c38c02a2",
+      "content_hash": "bcb8b792e46b3528cdd487f5106703e9585c535986d61620e58d548f5c28324b",
+      "content_parent": "f874bda9049fbca8862c4bfe53b330cfdd3dc1c34d6729995c281f9f744d0890"
     },
     {
       "title": "End-to-end constrained-orchestrator -> spec-block -> privileged-agent -> real-check-validated -> attested-commit code-change loop (north-star)",
@@ -612,11 +176,13 @@
         "DEC-0018",
         "DEC-0047"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FEAT-006"
+      "id": "FEAT-006",
+      "oid": "949000f8a64cfc6a7ecdb052537945c3",
+      "content_hash": "aa08105254ce39c54f2838b01e58aaac9397bbe47cc6a3288bb5411d7834b1fe",
+      "content_parent": "16fd84b1d363d78c1fb7df98a1263bf4b302d1f32ccbd54c8f1d2ed1d4b8b78d"
     },
     {
       "title": "JIT skills — schema-shaped, macro-rendered, composable-on-demand guidance via contextBlocks; skill-blocks as single source projecting to SKILL.md + in-pi fragments",
@@ -645,11 +211,13 @@
         "DEC-0020",
         "DEC-0025"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-25T00:00:00Z",
-      "id": "FEAT-007"
+      "id": "FEAT-007",
+      "oid": "49076232ff98f1390201200e9c535922",
+      "content_hash": "1844744db9dcd59d90f670c3b080fb898a8751b912610ce7af0ed4ad8c07063c",
+      "content_parent": "c6d97199384570d9d8827dd132aec21432e38f13092267ebdada0e434c5dbbc8"
     },
     {
       "id": "FEAT-008",
@@ -677,10 +245,12 @@
       "blocks_resolved": [
         "FGAP-113"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26"
+      "created_at": "2026-05-26",
+      "oid": "452b9971016bb125a624b26280757024",
+      "content_hash": "78b14f89a4973da2413509efbe52956c7d76477ad5181949f594d7ceb74e83e8",
+      "content_parent": "ce2af29f1f5e1e77fd9d25c06ed7429dd8b228fc7086880e04406fbea75c1ab9"
     },
     {
       "id": "FEAT-009",
@@ -706,10 +276,12 @@
       "blocks_resolved": [
         "FGAP-114"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-26"
+      "created_at": "2026-05-26",
+      "oid": "c48a0656a7c414d3bacdea5c73a4ad81",
+      "content_hash": "23ca1408347d94fe44f643f98c1f216c1b2238a3ae6b9a0a315c3fb7c77929b5",
+      "content_parent": "fc356ed30c02f9bc44b07f0c5d4e2a4e25c9590698ed95e6d187efa8261d8c9f"
     },
     {
       "id": "FEAT-010",
@@ -738,10 +310,12 @@
       "blocks_resolved": [
         "FGAP-116"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "6852c8f0024f1c9e2ae895dc9f9e9ecc",
+      "content_hash": "c2eba69868aac741ae98884e0df80b418403d1d87971418ccbb65e8bf1298fbd",
+      "content_parent": "5b48b25965a9321f90b763f3d7ed18a906ff26f85a47b2a97a45453974398026"
     },
     {
       "id": "FEAT-011",
@@ -771,10 +345,12 @@
         "FGAP-122",
         "FGAP-123"
       ],
-      "stories": [],
       "findings": [],
       "created_by": "human:davidryan@gmail.com",
-      "created_at": "2026-05-28"
+      "created_at": "2026-05-28",
+      "oid": "376285a1afb98b1143b0cf8c3dccc553",
+      "content_hash": "9fc1500ad9a6f3f5de7d600d1a11d46f3f5bb35b200d5e3b57368757a275ab80",
+      "content_parent": "a20b1b48b43f8e1ff18c575cae16035ed3bb1eed04ac292b58e21616392f61a8"
     }
   ]
 }

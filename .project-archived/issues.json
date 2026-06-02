@@ -10,9 +10,7 @@
       "priority": "critical",
       "package": "pi-workflows",
       "source": "agent",
-      "resolved_by": "v0.11.0 commit 92e5427 — inputSchema validation in executeAgentStep(), task-001/ver-001. Criterion 6 (audit all callers) deferred to task-002.",
-      "oid": "6b5b9aecb06901c4cbbdaaf68d2d19c8",
-      "content_hash": "71e54af60a19f81b76958e5d5df08e7d2ad10e68626ea08675c87e6846d5ff46"
+      "resolved_by": "v0.11.0 commit 92e5427 — inputSchema validation in executeAgentStep(), task-001/ver-001. Criterion 6 (audit all callers) deferred to task-002."
     },
     {
       "id": "issue-002",
@@ -23,9 +21,7 @@
       "category": "composition",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "4d9361fd29dc0c6ed9862875cc30a281",
-      "content_hash": "981547f3df2f2811004bdf70421031afaf47d4964d79c4981cbd700b5739fe88"
+      "source": "agent"
     },
     {
       "id": "issue-003",
@@ -36,9 +32,7 @@
       "category": "composition",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "e221eeb24ff45d6cd8a1822435da8c2f",
-      "content_hash": "2e8f607e453da5d8a6327b6a823e75deb024d5c3ff0d6b3d3d832fb91d68b898"
+      "source": "agent"
     },
     {
       "id": "issue-004",
@@ -49,9 +43,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "5971178aec3c51e6c686b29ff25334f9",
-      "content_hash": "1c5fac438217f96e51eecc62d7b288cb02e3728fc84ae28040d0d0f2feb76388"
+      "source": "agent"
     },
     {
       "id": "issue-005",
@@ -62,9 +54,7 @@
       "category": "issue",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "eeb2ca07e985ada2f572f5128093751d",
-      "content_hash": "6b2688b71a8d2cafc1ad962e729c5cb73e9403e295fdb53a55674ac8939215d3"
+      "source": "agent"
     },
     {
       "id": "issue-006",
@@ -75,9 +65,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "16fccfd743d69f2508cd3121b3a607ad",
-      "content_hash": "9977f1346a2880bc490dc8d942ec3f246eda9a77b04018f0414b93680e7ba682"
+      "source": "agent"
     },
     {
       "id": "issue-007",
@@ -88,9 +76,7 @@
       "category": "primitive",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "7a7319ab6bcaa80669b7543c6ee99452",
-      "content_hash": "ffdab5c9af9212a9e2f3b334d02bdcfce4176ded38b1dfca0272e9748426aaf0"
+      "source": "agent"
     },
     {
       "id": "issue-008",
@@ -101,9 +87,7 @@
       "category": "primitive",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "2b7dae64cbc4878d31d10d0693f9dac4",
-      "content_hash": "c12e086cf4ac69f8265e6d6965bc5f03780f639477a8b05e0bea3b59e28e213a"
+      "source": "agent"
     },
     {
       "id": "issue-009",
@@ -114,9 +98,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "45ade87e6b9bc0347cc62dcb599e8cb0",
-      "content_hash": "0ae81638fef6024c0ce24bfc31b80668a300e2e78ef1b6e6633fca3bc2b5a04e"
+      "source": "agent"
     },
     {
       "id": "issue-010",
@@ -127,9 +109,7 @@
       "category": "primitive",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "586ffbeffc549c87c0fa3d9a3401dc56",
-      "content_hash": "be8cb566cd243e4c9337da03dd46bed176f76407e7844e2a1e2cddb8d4c1f4b8"
+      "source": "agent"
     },
     {
       "id": "issue-011",
@@ -140,9 +120,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "8bf70b3957d0e2efc6081c6402667f3d",
-      "content_hash": "4334fbe701ad87aad242ab4631c1ca173e082375d3fd633d1e23d5b9df347dd2"
+      "source": "agent"
     },
     {
       "id": "issue-012",
@@ -154,9 +132,7 @@
       "priority": "critical",
       "package": "pi-workflows",
       "source": "agent",
-      "resolved_by": "v0.11.3 commit b614be4 — added state.status === \"completed\" guard to completion condition",
-      "oid": "8ed73de453084f2c6e0866a97be91849",
-      "content_hash": "6eba5dde16908cae87d3b99d9b64e904ec7d2278e61149e06f446c5449cede03"
+      "resolved_by": "v0.11.3 commit b614be4 — added state.status === \"completed\" guard to completion condition"
     },
     {
       "id": "issue-013",
@@ -168,9 +144,7 @@
       "priority": "critical",
       "package": "pi-workflows",
       "source": "agent",
-      "resolved_by": "v0.11.3 commit b614be4 — rewritten to \"raw JSON only, no markdown fences\" with file-write as secondary",
-      "oid": "7cd2e4c2f871933ec58acc48b3ed9c3a",
-      "content_hash": "0f0b12659ca7d60120ea3e35c1723d78eb769b54317fe32422587f149ba1909d"
+      "resolved_by": "v0.11.3 commit b614be4 — rewritten to \"raw JSON only, no markdown fences\" with file-write as secondary"
     },
     {
       "id": "issue-014",
@@ -182,9 +156,7 @@
       "priority": "critical",
       "package": "pi-workflows",
       "source": "agent",
-      "resolved_by": "v0.11.3 commit b614be4 — parse failure now marks step as failed, same contract as schema-bound path",
-      "oid": "1849d476588e348b109032ea8ddf3a8c",
-      "content_hash": "af727cdb9112915aa213cea0282911379729b9a466bac5fb12e4cbc2a4769770"
+      "resolved_by": "v0.11.3 commit b614be4 — parse failure now marks step as failed, same contract as schema-bound path"
     },
     {
       "id": "issue-015",
@@ -196,9 +168,7 @@
       "priority": "critical",
       "package": "pi-behavior-monitors",
       "source": "human",
-      "resolved_by": "conversation_history collector with adaptive window — regex-based referential detection, 1-3 turn summaries, 2000 char budget",
-      "oid": "1a253ed671c75389cede821ce537a964",
-      "content_hash": "a449708c5b3dc6b13d7dcc55b27d0e27f8d27c414b49196e2dcb05de9956f3ef"
+      "resolved_by": "conversation_history collector with adaptive window — regex-based referential detection, 1-3 turn summaries, 2000 char budget"
     },
     {
       "id": "issue-016",
@@ -209,9 +179,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "ff9f1ea71d261e087d02b984c32c5a2f",
-      "content_hash": "820541001c026c4cbcdf8d686a26026021905c52c299285e8d091186eb66daa0"
+      "source": "human"
     },
     {
       "id": "issue-017",
@@ -222,9 +190,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "3f37f3cb8e3f6375cbaacd79ab5fa008",
-      "content_hash": "662a997daf733856edbf0bf0f8ff3d6af09c0c17fa31d9abed83cab0c6b81032"
+      "source": "human"
     },
     {
       "id": "issue-018",
@@ -236,9 +202,7 @@
       "priority": "critical",
       "package": "pi-behavior-monitors",
       "source": "human",
-      "resolved_by": "commit 2745cf9 — tool_results added to hedge classify context, classify template updated to treat tool results as evidence of substantive work",
-      "oid": "1d5fe13ace69fc3bb73b2c80897f1d2d",
-      "content_hash": "3e1f33a93ec47136468f908b2f978235aaee2a748afdc8d86a2b0f1b856eece3"
+      "resolved_by": "commit 2745cf9 — tool_results added to hedge classify context, classify template updated to treat tool results as evidence of substantive work"
     },
     {
       "id": "issue-019",
@@ -250,9 +214,7 @@
       "priority": "high",
       "package": "pi-workflows",
       "source": "human",
-      "resolved_by": "commit 4dffeec — extractValidationVocabulary() added to generator, produces <validation_vocabulary> table from validationChecks() registry",
-      "oid": "090130f8c4a33cd95f01e08aa0732d29",
-      "content_hash": "c014d28f6ef768eb32cc5f20f2f2f3862035a40ffc6a2adf41f1fcf9827654e2"
+      "resolved_by": "commit 4dffeec — extractValidationVocabulary() added to generator, produces <validation_vocabulary> table from validationChecks() registry"
     },
     {
       "id": "issue-020",
@@ -263,9 +225,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "832aafa6122197be91f67d887f0c5869",
-      "content_hash": "dbbbc8bddf917c7ff59f4203fd2a28083aca3678affaa3fbbbb07dad8d453333"
+      "source": "human"
     },
     {
       "id": "issue-021",
@@ -276,9 +236,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "human",
-      "oid": "2e56e681f0b8e6603cf65102eb4e67a0",
-      "content_hash": "f91dcf4c44f4e224befe09eea102aa94c8e27eb236f395e8ff0d4676a9e2225f"
+      "source": "human"
     },
     {
       "id": "issue-022",
@@ -289,9 +247,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "human",
-      "oid": "340764d4e3302cea735d4fdadf109985",
-      "content_hash": "9517e3807c98b2ad9131ace46a5f5c2018a39418e4a6ffa1615f73b4e759f89b"
+      "source": "human"
     },
     {
       "id": "issue-023",
@@ -302,9 +258,7 @@
       "category": "capability",
       "priority": "critical",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "779fb48de46293fe8b3b8920ba70967c",
-      "content_hash": "10c73044d08a4aab9ad4750826c0a27139e908f8079061fe70ea00d1be66a9d6"
+      "source": "human"
     },
     {
       "id": "issue-024",
@@ -316,9 +270,7 @@
       "priority": "critical",
       "package": "pi-behavior-monitors",
       "source": "human",
-      "resolved_by": "extractResponseText() replaces extractText() in classifyPrompt() — falls back to thinking block content when no text parts present. Agent path uses extractResponseText() natively. Both paths now handle thinking-only responses.",
-      "oid": "10d1d6d6ba1918b1e64120be640b9eff",
-      "content_hash": "a896a97df39c469e20aab5a5004d919fc518390630e39bdc97a0ba7612d315d6"
+      "resolved_by": "extractResponseText() replaces extractText() in classifyPrompt() — falls back to thinking block content when no text parts present. Agent path uses extractResponseText() natively. Both paths now handle thinking-only responses."
     },
     {
       "id": "issue-025",
@@ -330,9 +282,7 @@
       "priority": "high",
       "package": "pi-behavior-monitors",
       "source": "human",
-      "resolved_by": "classifyViaAgent() uses createAgentLoader + compileAgentSpec + in-process complete(). Per-monitor .agent.yaml specs define model, thinking, output schema, task template. Classify templates gain {% if json_output %} conditional. mapVerdictToClassifyResult() replaces text parsing. Legacy path preserved for monitors without classify.agent.",
-      "oid": "74f89f724c33f6c8d5c108c5499aa044",
-      "content_hash": "69a5e0f94dead3bb0ffe97b45f86b667b40fb0efc994e33e7f0b2183beda10bd"
+      "resolved_by": "classifyViaAgent() uses createAgentLoader + compileAgentSpec + in-process complete(). Per-monitor .agent.yaml specs define model, thinking, output schema, task template. Classify templates gain {% if json_output %} conditional. mapVerdictToClassifyResult() replaces text parsing. Legacy path preserved for monitors without classify.agent."
     },
     {
       "id": "issue-026",
@@ -344,9 +294,7 @@
       "priority": "critical",
       "package": "pi-behavior-monitors",
       "source": "human",
-      "resolved_by": "VERDICT_TOOL + toolChoice enforcement in classifyViaAgent(), ToolCall extraction replaces extractResponseText() + JSON.parse() + parseVerdict() fallback",
-      "oid": "27622d91a588b7c45fdae756aa40470d",
-      "content_hash": "e6d22293f67d90944c1b0e99f37d32bd9a448523d55aa176d37eeeb16e283d9b"
+      "resolved_by": "VERDICT_TOOL + toolChoice enforcement in classifyViaAgent(), ToolCall extraction replaces extractResponseText() + JSON.parse() + parseVerdict() fallback"
     },
     {
       "id": "issue-027",
@@ -358,9 +306,7 @@
       "priority": "critical",
       "package": "pi-behavior-monitors",
       "source": "human",
-      "resolved_by": "fd02c15 — corrected property access from .text to .thinking, fixed test fixtures to use real ThinkingContent shape",
-      "oid": "22cffebc290226e8f7fa0c1e718a0541",
-      "content_hash": "70f88655c91b8f07661f15b9e0becc7bd9be2eb749d6741e68dd1369fc686aed"
+      "resolved_by": "fd02c15 — corrected property access from .text to .thinking, fixed test fixtures to use real ThinkingContent shape"
     },
     {
       "id": "issue-028",
@@ -371,9 +317,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "3040534bb28c757c49c936ba5f924f60",
-      "content_hash": "d689f9d89ae0a3cc43de0574daf24faa3cb080c4a24f745779a041a4a08551a3"
+      "source": "human"
     },
     {
       "id": "issue-029",
@@ -384,9 +328,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "6c381dcfdaa5e16f47df2e4ce5032819",
-      "content_hash": "77782d5d8100d36ce02c38e7e2e49a6196f448e501e8feaa9d444cc2787173a6"
+      "source": "human"
     },
     {
       "id": "issue-030",
@@ -397,9 +339,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "1aaa30afb72c0d3b7f3fe0542a49b1bd",
-      "content_hash": "f2da4f7eb39cb03937cbb0e936d69649b89fe2dc56ee71bb192795e71e979e24"
+      "source": "human"
     },
     {
       "id": "issue-031",
@@ -410,9 +350,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "126d81815e3ae6ba5b7408d44388934c",
-      "content_hash": "e5ff67881664a26b1e5b9e237c56c3ee707f13938d01c46e7d73aba775db8ffe"
+      "source": "human"
     },
     {
       "id": "issue-032",
@@ -423,9 +361,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "8421f7db523c640fa712f1e0045fb5f0",
-      "content_hash": "144bfb99253b770e7339a200488497ecdbc30e2542d88ef0c3ddd0a471e38535"
+      "source": "human"
     },
     {
       "id": "issue-033",
@@ -436,9 +372,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "8afb1978caa46d90e1a738b8d44bb51d",
-      "content_hash": "54301402dfff5ae28a33b4eeb5ab98fd541d8f3402fb01c091cb6a9cfcc991f8"
+      "source": "human"
     },
     {
       "id": "issue-034",
@@ -449,9 +383,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-project-workflows",
-      "source": "human",
-      "oid": "59b233a0e43a3db5c9afe6efea6d17ec",
-      "content_hash": "be463203aec2e7fa684abb81e6401c3ce524ec21f7d072e33d39162d55bdb979"
+      "source": "human"
     },
     {
       "id": "issue-035",
@@ -462,9 +394,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "36094d03cd28485445e7000a2c9c40b2",
-      "content_hash": "10ccae5a1105d49aa55259677a9d679df97c3b0a09c8c6a02ea3110ca876a565"
+      "source": "human"
     },
     {
       "id": "issue-036",
@@ -475,9 +405,7 @@
       "category": "capability",
       "priority": "critical",
       "package": "pi-project-workflows",
-      "source": "human",
-      "oid": "4e5a0f2f5d28bbe0333f2885319307a1",
-      "content_hash": "e9cf401c567bac497ce55c44f24d786bedf086a7c56b315f7c2a2d69c7b32dca"
+      "source": "human"
     },
     {
       "id": "issue-037",
@@ -488,9 +416,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "6a6ab72b5fc2c700f29a3991d7106b38",
-      "content_hash": "64a58af3e3da02433412ab7fcf507f8bb35926b4bb744c2bd7c0a4fabd088300"
+      "source": "human"
     },
     {
       "id": "issue-038",
@@ -501,9 +427,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "78e4e93ffd4180c97d2597f923499b11",
-      "content_hash": "2a4034d173c53217f0b32837b0e223798691624e7d5a775f418e4e0ae81ed248"
+      "source": "human"
     },
     {
       "id": "issue-039",
@@ -514,9 +438,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "6937bde91ee4c6810e1463d917a371c1",
-      "content_hash": "1df1e44563855dc23332fc6d60c6ae7c6bd4386c97e1ba52e1954900e707d111"
+      "source": "human"
     },
     {
       "id": "issue-040",
@@ -527,9 +449,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-project-workflows",
-      "source": "human",
-      "oid": "2e8c47a26f99d554e4284e88fa786e7b",
-      "content_hash": "cc50eed820089ed7507fc0601298931edf99d1ea538709a39a6608191ed522c1"
+      "source": "human"
     },
     {
       "id": "issue-041",
@@ -540,9 +460,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-jit-agents",
-      "source": "human",
-      "oid": "2e53dde3cff2286b610f98c85ed25099",
-      "content_hash": "f49ac0bda37a77cd8809548ecc605006f6e4fabb075cf9b4f849261150bb30d9"
+      "source": "human"
     },
     {
       "id": "issue-042",
@@ -553,9 +471,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "0e3d7f22eb39dbe6342133c4503faec1",
-      "content_hash": "19bb74a531055efbaff3041cd9fead8cefc9e8c385eded495e6bf4604cd4424c"
+      "source": "human"
     },
     {
       "id": "issue-043",
@@ -566,9 +482,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "09a386cd698ea7aa1e5cebad0d49d1e9",
-      "content_hash": "7eba96d54a1095ee547265cc6800cde00e7d2476a85a99be4d38b3297d37ae42"
+      "source": "human"
     },
     {
       "id": "issue-044",
@@ -579,9 +493,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "695b20eb2b70aa10c24bc65be41752fe",
-      "content_hash": "62b457bb434959f2f1158ad0f71980d2c8a5f2f07b08c1e2fa1d6c8707d34dfa"
+      "source": "human"
     },
     {
       "id": "issue-045",
@@ -592,9 +504,7 @@
       "category": "issue",
       "priority": "high",
       "package": "pi-jit-agents",
-      "source": "human",
-      "oid": "c72fc4523a65d1b7c2fa107581957e0e",
-      "content_hash": "71321c5029672007db65e37e1d9f2df57764b85216f59411aa2d75da8dfa2e4e"
+      "source": "human"
     },
     {
       "id": "issue-046",
@@ -605,9 +515,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "26e1c70be770453959ea12285f934e96",
-      "content_hash": "88aebcefbb0bb937ee47b5c36a1b641578fd01fb1caaf4ec78ca9fb8217c3580"
+      "source": "human"
     },
     {
       "id": "issue-047",
@@ -618,9 +526,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "d34d3be1a0bd0aa1880e1c9af4cf2ab0",
-      "content_hash": "bfcba7e4d2d0eabc65d7c2d4c3edd9b284f4fcc6d1dbb0697afddcf54d827d3c"
+      "source": "human"
     },
     {
       "id": "issue-048",
@@ -631,9 +537,7 @@
       "category": "issue",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "human",
-      "oid": "b66373c78bf03ab44d9b89a9eae207e5",
-      "content_hash": "47efe4a56ab6099c77418992d8bda914d8f36a63de6f3970257bf1683a632621"
+      "source": "human"
     },
     {
       "id": "issue-049",
@@ -644,9 +548,7 @@
       "category": "issue",
       "priority": "critical",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "e99bce954c39322f0d9c4195ff48fa7a",
-      "content_hash": "d6a8cc74351268d4dfb6de4fca612c2e6c2cbc78fca8d91ad5f77eaed53d4ca4"
+      "source": "agent"
     },
     {
       "id": "issue-050",
@@ -657,9 +559,7 @@
       "category": "issue",
       "priority": "critical",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "d2a577dc4dded0e0b42eead6fc58c2aa",
-      "content_hash": "16d6ed6bcdf22153685ef7e8b85f9daaccc62b3c3b6e099808ad727ffed39518"
+      "source": "agent"
     },
     {
       "id": "issue-051",
@@ -670,9 +570,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "426f8cf5c85d790d6ec7f0974ea5a19a",
-      "content_hash": "3d9691a180dc60aeb16e999647fdd74b7ad77424bdeecad9353e90c73737a7de"
+      "source": "human"
     },
     {
       "id": "issue-052",
@@ -683,9 +581,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-jit-agents",
-      "source": "human",
-      "oid": "0dce02382d92ba4e81864bbf6e3f8ef6",
-      "content_hash": "5f0082de1c323f4da302ee19746512a0329e4c36f95b98e027b4d5463c8e1ac1"
+      "source": "human"
     },
     {
       "id": "issue-053",
@@ -696,9 +592,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "66632c608f77d59fb30cf66ea292aadb",
-      "content_hash": "3bac3bc9fa1b49a775946c4344accf28bee7e3cc05544a3f77deb685944fdbe4"
+      "source": "human"
     },
     {
       "id": "issue-054",
@@ -709,9 +603,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-behavior-monitors",
-      "source": "human",
-      "oid": "88dd49b0a90f6dafe7b3427643e02464",
-      "content_hash": "51f71caf92361088bae01d3fd690b29fd62b30b5f01f2303a1d1cdc08061dfed"
+      "source": "human"
     },
     {
       "id": "issue-055",
@@ -722,9 +614,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "879e9b36036c87ea9b537208831fe6b4",
-      "content_hash": "f26e645900da3ac6f68b3beeb83d0bf9093fd452474cb42b65597d71dc857311"
+      "source": "agent"
     },
     {
       "id": "issue-056",
@@ -735,9 +625,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "291b008161a55db964a6e0c22b45771e",
-      "content_hash": "37038f77a99827fafbfbb17622cf4c78aca870049505ca0bea2f1c36ff0945dc"
+      "source": "agent"
     },
     {
       "id": "issue-057",
@@ -748,9 +636,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "7ae1a128bc22eb2c440bb2ec6d0bf16a",
-      "content_hash": "0a360cd7df118e99ea394c112f2e6ae6f74fb0079cf81d6b8753787b90ba2b5a"
+      "source": "agent"
     },
     {
       "id": "issue-058",
@@ -761,9 +647,7 @@
       "category": "primitive",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "c565b5d8c161cf3133f2b0a031129291",
-      "content_hash": "03a8069b8226279b38a17bcca80c7101861dfdbbf40eaf399722fec759ac06e8"
+      "source": "agent"
     },
     {
       "id": "issue-059",
@@ -774,9 +658,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "9a3f0a02373db15fd1d9439446e6b44c",
-      "content_hash": "648f7f08c288b10d22a1fb6cec7f8fc2b8deadc7267db0cef66bf47b8e6fd035"
+      "source": "agent"
     },
     {
       "id": "issue-060",
@@ -787,9 +669,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "c605f4fd6b90ab5281d126f777bb8e0a",
-      "content_hash": "acf4acd7cf765d4a6898ba978bb7636ff643fdfc685c38bb3c8374a2ad8782d9"
+      "source": "agent"
     },
     {
       "id": "issue-061",
@@ -801,9 +681,7 @@
       "priority": "medium",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Filed as FGAP-007 in framework-gaps.json (this commit). Issue mirror retired; canonical gap carries the staleness-engine work envelope.",
-      "oid": "8c5e378aef0c2846ddb4e27911afe0ad",
-      "content_hash": "9306798601ba1f464d2902110de55edd1747e58a2aaa906273faf0425e00c9ac"
+      "resolved_by": "Filed as FGAP-007 in framework-gaps.json (this commit). Issue mirror retired; canonical gap carries the staleness-engine work envelope."
     },
     {
       "id": "issue-062",
@@ -814,9 +692,7 @@
       "category": "issue",
       "priority": "high",
       "package": "pi-behavior-monitors",
-      "source": "agent",
-      "oid": "78a3e2ec205ad651d3fc2079e8d73eff",
-      "content_hash": "1031d1e2b0358b3bd43b17c9cd339579f85016b58c78d0ffb6fbf026ee43b235"
+      "source": "agent"
     },
     {
       "id": "issue-063",
@@ -827,9 +703,7 @@
       "category": "cleanup",
       "priority": "medium",
       "package": "pi-behavior-monitors",
-      "source": "agent",
-      "oid": "ca510ac25b5ae8d0f0b93b00feeb013e",
-      "content_hash": "af1f1d24d389f4e0360b7cd31533e7c18932425d776e160bdde3e3ce0baf511d"
+      "source": "agent"
     },
     {
       "id": "issue-064",
@@ -840,9 +714,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "e9aaf01dbbec1617d52e3c0676655350",
-      "content_hash": "6206f9622431806cb5dc82d7d2b8245851e78d6483ebcf146a58efca3616ba24"
+      "source": "agent"
     },
     {
       "id": "issue-065",
@@ -853,9 +725,7 @@
       "category": "issue",
       "priority": "high",
       "package": "pi-behavior-monitors",
-      "source": "agent",
-      "oid": "ddd80e06a242475043189292755d0137",
-      "content_hash": "588c9ca37f76984186f2d29f5a5a721563d503856f8ffc2f513ab65ccd5e40d4"
+      "source": "agent"
     },
     {
       "id": "issue-066",
@@ -866,9 +736,7 @@
       "category": "issue",
       "priority": "high",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "e4401c2cdba6460b277705bbf9b57242",
-      "content_hash": "791f1ecc6e875bab9e781690ef9a2ddd233d9c96090b65b195d287e80a2ace44"
+      "source": "agent"
     },
     {
       "id": "issue-067",
@@ -879,9 +747,7 @@
       "category": "issue",
       "priority": "medium",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "6d7b58d094a9d0f5e9d929041072fe42",
-      "content_hash": "8906920b1995a1cb88fac0b56cd929138d45365b6868f11d894973b88deb56f1"
+      "source": "agent"
     },
     {
       "id": "issue-068",
@@ -893,9 +759,7 @@
       "priority": "medium",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256.",
-      "oid": "5748878f6edb3c9a03d0b62205cb1baf",
-      "content_hash": "5a2899fb7160e320f6541d718586fba4302bc85d81e85d2b45793e952418c7c4"
+      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
     },
     {
       "id": "issue-069",
@@ -906,9 +770,7 @@
       "category": "cleanup",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "2f872937f6d94c973fe2d2ecb41586b3",
-      "content_hash": "307122fa35c8bb677cd0c84500d926f173a77b7fdd1a856a4661dd6af822b81f"
+      "source": "agent"
     },
     {
       "id": "issue-070",
@@ -919,9 +781,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "0f94738a7754cd1a56640cdd60de4a8b",
-      "content_hash": "dc1761ecb978601993ecd9b709a9aebf73fc864b74a0c78115791d9dd02d9304"
+      "source": "agent"
     },
     {
       "id": "issue-071",
@@ -932,9 +792,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "4d686d5feba8c0480b1941335a0b5104",
-      "content_hash": "5a90e3a7e760549ced6ec6f7ffff84c4cdc6068835e95a3c6e2d3278c45a36cf"
+      "source": "agent"
     },
     {
       "id": "issue-072",
@@ -945,9 +803,7 @@
       "category": "capability",
       "priority": "medium",
       "package": "pi-jit-agents",
-      "source": "agent",
-      "oid": "6bbeda17edefcab714f91f02d1040519",
-      "content_hash": "683c1f5d05542b1f898abbf416c57161f8baf4f6274cba437aa5ad4751af6fb0"
+      "source": "agent"
     },
     {
       "id": "issue-073",
@@ -959,9 +815,7 @@
       "priority": "high",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit 8059764 (substrate SDK port). validateRelations final-pass cycle detection landed with edge_cycle_detected diagnostic shape { code, message, cycle: string[], relation_type } per the issue spec. Six tests cover 2-node, 3-node, self-loop, multi-component, acyclic-control, partition-by-relation_type. Status was open in error; this update brings the lifecycle in sync with the implementation reality.",
-      "oid": "f51c33b388918a1ecc1212b42a22c7e2",
-      "content_hash": "8d29ef2a50f4a39f098a9a4a15e17619119acd722743091bf5103383eabc264f"
+      "resolved_by": "Resolved in commit 8059764 (substrate SDK port). validateRelations final-pass cycle detection landed with edge_cycle_detected diagnostic shape { code, message, cycle: string[], relation_type } per the issue spec. Six tests cover 2-node, 3-node, self-loop, multi-component, acyclic-control, partition-by-relation_type. Status was open in error; this update brings the lifecycle in sync with the implementation reality."
     },
     {
       "id": "issue-074",
@@ -972,9 +826,7 @@
       "category": "capability",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "6e7621d9095b3e311a06abbd4936eec6",
-      "content_hash": "85990bd2060421bd90fc7b9e398a41c0590735b2d0c048c29c60493ad42f5c07"
+      "source": "agent"
     },
     {
       "id": "issue-075",
@@ -985,9 +837,7 @@
       "category": "cleanup",
       "priority": "low",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "a248e09f904f294cd8099de1e95e376c",
-      "content_hash": "2232a3a7238dcbf2aedc0b242bb40742718d800e8b278db79a7f0fb914746d3e"
+      "source": "agent"
     },
     {
       "id": "issue-076",
@@ -998,9 +848,7 @@
       "category": "cleanup",
       "priority": "low",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "e62a167303968e3e400963b592f2a298",
-      "content_hash": "cee8947bf5157b85d53d8141b5a3cfc2e1908e9a73f257c6b1be4bb8eccb50a0"
+      "source": "agent"
     },
     {
       "id": "issue-077",
@@ -1012,9 +860,7 @@
       "priority": "high",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit 2b42760 — feat(pi-project): block-api PROJECT_DIR retrofit. project-context.ts module extracted, projectRoot resolver threaded through block-api / block-validation / project-sdk / index.ts, plus pi-jit-agents and pi-workflows imports repointed. 14 new tests verify config.root behavior + back-compat. All workspaces pass.",
-      "oid": "4ef4e30156b9989a025c259de512e3e1",
-      "content_hash": "5864a418ada71a9ac685b0f078e8775418dbeebc3de6c4618cf619346b6686d3"
+      "resolved_by": "Resolved in commit 2b42760 — feat(pi-project): block-api PROJECT_DIR retrofit. project-context.ts module extracted, projectRoot resolver threaded through block-api / block-validation / project-sdk / index.ts, plus pi-jit-agents and pi-workflows imports repointed. 14 new tests verify config.root behavior + back-compat. All workspaces pass."
     },
     {
       "id": "issue-078",
@@ -1026,9 +872,7 @@
       "priority": "medium",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256.",
-      "oid": "8775accbeba7f7a1837a01ec14f1071e",
-      "content_hash": "4934fe18cf398c7aa97d434681761f4fce7817491279ada50e0e8a7a6721df8d"
+      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
     },
     {
       "id": "issue-079",
@@ -1040,9 +884,7 @@
       "priority": "medium",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256.",
-      "oid": "dc3f35ed1a540eb617a18b489624cbee",
-      "content_hash": "7b8ff630cd6e8742e77eb7f0ba42bf703c6feda5b8931f59020edbdde232db6b"
+      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
     },
     {
       "id": "issue-080",
@@ -1054,9 +896,7 @@
       "priority": "medium",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256.",
-      "oid": "6b24a888ff9a327f746c43801b2d6b80",
-      "content_hash": "4d464ed5fe5d05214c33ba6a580ca57aee3fc3ba52349ba7dadd968d6ede74af"
+      "resolved_by": "Resolved in commit ad03a00 — feat(pi-project): substrate consumption surface. /project view + /project lens-curate subcommands plus project-validate-relations + project-edges-for-lens + project-walk-descendants pi tools registered, all built on a new lens-view.ts pure-function module (loadLensView, renderLensView, buildCurationSuggestions, validateProjectRelations, edgesForLensByName, walkLensDescendants). 17 new tests; pi-project workspace at 256/256."
     },
     {
       "id": "issue-081",
@@ -1068,9 +908,7 @@
       "status": "resolved",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit c5c4725 — feat(pi-project): step 1 of roadmap/plan substrate — schema landing. Two new registry schemas (roadmap.schema.json + plan.schema.json) land per DEC-0012 (edges-only authoring; phases + plan items omit depends_on). config.schema.json LensSpec extended with kind/targets/members fields per FGAP-012 composition extension. relations.schema.json gains optional ordinal field. 19 new tests covering positive + negative validation. Skills auto-regenerated.",
-      "oid": "da473bdc70439a4098a1874168504121",
-      "content_hash": "b6c476b0e0501b95880bf5d1cc1352c73d4424fc8eab24446435cc042d37f43b"
+      "resolved_by": "Resolved in commit c5c4725 — feat(pi-project): step 1 of roadmap/plan substrate — schema landing. Two new registry schemas (roadmap.schema.json + plan.schema.json) land per DEC-0012 (edges-only authoring; phases + plan items omit depends_on). config.schema.json LensSpec extended with kind/targets/members fields per FGAP-012 composition extension. relations.schema.json gains optional ordinal field. 19 new tests covering positive + negative validation. Skills auto-regenerated."
     },
     {
       "id": "issue-082",
@@ -1082,9 +920,7 @@
       "status": "resolved",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit b7bf11b — feat(pi-project): step 2 of roadmap/plan substrate. STATUS_VOCABULARY + topoSort + rollupPhaseStatus pure functions in new roadmap-plan.ts; project-status-rollup tool registered. 24 new tests cover all three primitives. STATUS_VOCABULARY is interim-hardcoded per FGAP-013.",
-      "oid": "38871a8c5202d63d92b4d79a28c1e337",
-      "content_hash": "ca38627a7fdd1a0f9641b31efac2fa5cbeb941100b93d0d3e65f1ff3897582b1"
+      "resolved_by": "Resolved in commit b7bf11b — feat(pi-project): step 2 of roadmap/plan substrate. STATUS_VOCABULARY + topoSort + rollupPhaseStatus pure functions in new roadmap-plan.ts; project-status-rollup tool registered. 24 new tests cover all three primitives. STATUS_VOCABULARY is interim-hardcoded per FGAP-013."
     },
     {
       "id": "issue-083",
@@ -1096,9 +932,7 @@
       "status": "resolved",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit 048a2ac — composition lens kind dispatch (resolveComposition + loadLensView routing + project-resolve-composition tool); FGAP-012 implementation complete, status transition deferred to user authority per framework-gaps lifecycle convention.",
-      "oid": "c5f3709e06702ef6dc34c591bfbd3c21",
-      "content_hash": "faeca56ed7d011a8b5b6a51ddcc85362fe4fd96cc8ecd42fa220c51891e9dceb"
+      "resolved_by": "Resolved in commit 048a2ac — composition lens kind dispatch (resolveComposition + loadLensView routing + project-resolve-composition tool); FGAP-012 implementation complete, status transition deferred to user authority per framework-gaps lifecycle convention."
     },
     {
       "id": "issue-084",
@@ -1110,9 +944,7 @@
       "status": "resolved",
       "package": "pi-project",
       "source": "agent",
-      "resolved_by": "Resolved in commit 5f852b1 — roadmap primitives + four tools + three subcommands + diamond-fixture regression coverage landed; renderRoadmap is pure-textual markdown with no-mermaid regression guard.",
-      "oid": "25fd7ed3c79e9d36dcfbf31231c94026",
-      "content_hash": "15a6d8d8d4ae2c0d4c65b4e78c25283c2572fade8ed75ec72586149f4462b59b"
+      "resolved_by": "Resolved in commit 5f852b1 — roadmap primitives + four tools + three subcommands + diamond-fixture regression coverage landed; renderRoadmap is pure-textual markdown with no-mermaid regression guard."
     },
     {
       "id": "issue-085",
@@ -1123,9 +955,7 @@
       "priority": "high",
       "status": "open",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "00143c7be35dc1868803d1bbba948ac7",
-      "content_hash": "9515828d7e908217edfe752cdb244274a39047cd11191a9887d789e17ae9422f"
+      "source": "agent"
     },
     {
       "id": "issue-086",
@@ -1136,9 +966,7 @@
       "priority": "medium",
       "status": "open",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "7677f36f86e0f40e63942df9307d38e4",
-      "content_hash": "814a723bd783cf37c23c8abcfd9b4ab68e3c93fb1bea013d52de562f052e492e"
+      "source": "agent"
     },
     {
       "id": "issue-087",
@@ -1149,9 +977,7 @@
       "priority": "medium",
       "status": "open",
       "package": "pi-workflows",
-      "source": "agent",
-      "oid": "55b651237034ce255ae66605e89fd5e3",
-      "content_hash": "2ee7eea366851ba4aaceb3787722bd996c2cdf780ae77a0629b78fa45c6b5c31"
+      "source": "agent"
     },
     {
       "id": "issue-088",
@@ -1162,9 +988,7 @@
       "category": "issue",
       "priority": "low",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "b2d1cfe7bd98614f8458dac8be91528c",
-      "content_hash": "f14ad5ba2eeeb571a339a1d7b8c40b62533d5ba064495afe26d123f7d49c1d20"
+      "source": "agent"
     },
     {
       "id": "issue-089",
@@ -1175,9 +999,7 @@
       "category": "issue",
       "priority": "high",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "c9b23a8fc5d4a7b82299ad9a615e0fbc",
-      "content_hash": "5a82a735cb17533b212bb598ab3b889229619a504711a3bc8a3ee838a58cd3f3"
+      "source": "agent"
     },
     {
       "id": "issue-090",
@@ -1188,9 +1010,7 @@
       "category": "issue",
       "priority": "low",
       "package": "pi-project",
-      "source": "agent",
-      "oid": "8f16cc3b87c0a31686734baff035b4c6",
-      "content_hash": "1f443c9aa5696b64119555ed2c9c365bf7406d7f72aa558de745e44e3095d691"
+      "source": "agent"
     },
     {
       "id": "issue-091",
@@ -1202,9 +1022,7 @@
       "priority": "medium",
       "package": "pi-context",
       "source": "agent",
-      "resolved_by": "Disposition: constraint satisfied by Phase 6.3 (context-init) design — onboarding prompts for substrate dir name + block-kind selection (canonical_id/prefix/display_name) so user never hand-authors config; basename/canonical_id binding is realized by workflow construction (context-install reads context-init-produced config and creates files matching declared canonical_ids) rather than by runtime check. No separate enforcement arc warranted; Phase 6.3 scope description updated in canonical sub-phase analysis + MEMORY.md current-focus to codify block-kind selection as part of the init prompts. Filed-then-closed in same arc per dispute over premise (basename mismatch presupposes user hand-edits substrate, but onboarding flow makes hand-editing unnecessary).",
-      "oid": "795bd6ac2c919f61d71fd8b7e8a2367e",
-      "content_hash": "cabdd9c8c6771c7e6526acc11aa1a690c8c33fa08c1a6f5e11e43140af130106"
+      "resolved_by": "Disposition: constraint satisfied by Phase 6.3 (context-init) design — onboarding prompts for substrate dir name + block-kind selection (canonical_id/prefix/display_name) so user never hand-authors config; basename/canonical_id binding is realized by workflow construction (context-install reads context-init-produced config and creates files matching declared canonical_ids) rather than by runtime check. No separate enforcement arc warranted; Phase 6.3 scope description updated in canonical sub-phase analysis + MEMORY.md current-focus to codify block-kind selection as part of the init prompts. Filed-then-closed in same arc per dispute over premise (basename mismatch presupposes user hand-edits substrate, but onboarding flow makes hand-editing unnecessary)."
     }
   ]
 }

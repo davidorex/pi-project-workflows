@@ -79,9 +79,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-10T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-10T00:00:00Z",
-      "oid": "5c280675c2c9432dcb4a8827f052b4d8",
-      "content_hash": "1cb903dfeb63440ccd6e35bb65008a8e024158be08568477b7e0a0f7ee92975b"
+      "conducted_at": "2026-04-10T00:00:00Z"
     },
     {
       "id": "R-0002",
@@ -145,9 +143,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-14T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-14T00:00:00Z",
-      "oid": "facb849d42b1e33fb27d49127047abf2",
-      "content_hash": "a4201f124feb135d2d1658373b452d3e031b7a8d399f8e7a5956ebc55543aabf"
+      "conducted_at": "2026-04-14T00:00:00Z"
     },
     {
       "id": "R-0003",
@@ -209,9 +205,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-15T00:00:00Z",
-      "oid": "bad255830ad0ce1fcb00ee93ba5e7683",
-      "content_hash": "f609b47c7c356f2823807a695da36fc0ec7cd78a97373edc54e05dca2942e2d8"
+      "conducted_at": "2026-04-15T00:00:00Z"
     },
     {
       "id": "R-0004",
@@ -283,9 +277,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-15T00:00:00Z",
-      "oid": "2a97ca08adcf567c60b27626026dbdba",
-      "content_hash": "c9103468d6bbd39260cf8a7cf58ba221fffebeb6ac4aaf53a71f6d9c50e09e44"
+      "conducted_at": "2026-04-15T00:00:00Z"
     },
     {
       "id": "R-0005",
@@ -357,9 +349,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-15T00:00:00Z",
-      "oid": "99cd405a3387e7060454535a5dbfbf7b",
-      "content_hash": "ccaf24c393d019c45d531fe5ece12f1d5c2ca16b55848ec81e0bab8c7fb59311"
+      "conducted_at": "2026-04-15T00:00:00Z"
     },
     {
       "id": "R-0006",
@@ -421,9 +411,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-15T00:00:00Z",
-      "oid": "664b0c543a2614b0a9bc5088240615f9",
-      "content_hash": "dbd4639cbc292e89d8a5427ca17600c0e306648b7d16b57b0cd474a454353a6a"
+      "conducted_at": "2026-04-15T00:00:00Z"
     },
     {
       "id": "R-0007",
@@ -494,9 +482,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-15T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-15T00:00:00Z",
-      "oid": "eb9bb829882676e07b2da48c4c4e1712",
-      "content_hash": "c6da8be8d3799bf81052afe91656b4eddcea0d01db2a569ce6c41ca975fb7388"
+      "conducted_at": "2026-04-15T00:00:00Z"
     },
     {
       "id": "R-0008",
@@ -557,9 +543,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-14T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-14T00:00:00Z",
-      "oid": "c475d021d0fec420d715361662818ff9",
-      "content_hash": "de063b9348205c13ac9a6f1c7367a3fddf3467012bbbf142e79cbf6f4bde00ea"
+      "conducted_at": "2026-04-14T00:00:00Z"
     },
     {
       "id": "R-0009",
@@ -628,9 +612,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-13T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-13T00:00:00Z",
-      "oid": "da2fd7004fc4015cb88cd1df7fc631ff",
-      "content_hash": "082d0a30e27d4462913ecd8ba93492f42529b386eb8eaf61a8adc54801553829"
+      "conducted_at": "2026-04-13T00:00:00Z"
     },
     {
       "id": "R-0010",
@@ -699,9 +681,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-10T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-10T00:00:00Z",
-      "oid": "9d57a2f7ad33493339346c26c1a53a0a",
-      "content_hash": "d5278d5d0da233b2e933890d137ac363fb069f87d8e5843b1500e2acb77ff9fe"
+      "conducted_at": "2026-04-10T00:00:00Z"
     },
     {
       "id": "R-0011",
@@ -782,9 +762,7 @@
       "created_by": "agent/claude-opus-4-6",
       "created_at": "2026-04-10T00:00:00Z",
       "conducted_by": "agent/claude-opus-4-6",
-      "conducted_at": "2026-04-10T00:00:00Z",
-      "oid": "43be12d92d65ddb47e3aedecee3d73b4",
-      "content_hash": "1609cf378d9a4ae5eb5c93efd145e9667f71aa41ed691c723d59a85dae2ccae5"
+      "conducted_at": "2026-04-10T00:00:00Z"
     },
     {
       "id": "R-0012",
@@ -816,9 +794,7 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-05-21T00:00:00Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-21T12:09:59.781Z",
-      "oid": "3b43d1da0dbf6861b2dcdf3a436cf45c",
-      "content_hash": "91bd1a45cf64ada83728b4605765354113bd8a670ca50e15e20c55bf6e977a6c"
+      "modified_at": "2026-05-21T12:09:59.781Z"
     },
     {
       "title": "Context-plugin feasibility — portable, installable third-party context models",
@@ -838,9 +814,7 @@
       "created_at": "2026-05-21T22:40:28.641Z",
       "created_by": "human/davidryan@gmail.com",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-21T22:40:28.643Z",
-      "oid": "13e374f9f5f1efa18b37c389235ba2ab",
-      "content_hash": "3580896106bb1e4d0c19d33ba4c83cac2614d840a2fbaa943e9ada6c0e317c4f"
+      "modified_at": "2026-05-21T22:40:28.643Z"
     },
     {
       "id": "R-0014",
@@ -907,9 +881,7 @@
       "created_by": "human:davidryan@gmail.com",
       "created_at": "2026-05-29",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-05-29T08:26:04.285Z",
-      "oid": "ae0c1eed0ec6c9ebf3fee6ac4c6ed106",
-      "content_hash": "e9deb70ca649da2b23a5298151e72dc13d0928750fb78b18a93f78af65164548"
+      "modified_at": "2026-05-29T08:26:04.285Z"
     }
   ]
 }

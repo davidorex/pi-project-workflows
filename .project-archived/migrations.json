@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "migrations": [
+    {
+      "schemaName": "framework-gaps",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "davidryan@gmail.com",
+      "created_at": "2026-05-29T13:22:13.175Z"
+    }
+  ]
+}

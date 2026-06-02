@@ -52,9 +52,7 @@
       "artifacts_produced": [
         "packages/pi-workflows/src/step-agent.ts",
         "packages/pi-workflows/templates/"
-      ],
-      "oid": "d0a6c371c97cca069840ce74335474fa",
-      "content_hash": "e173d31725433b9421da3fd1ca7e2ad3393863a772a7ee8712b115795bc9b023"
+      ]
     },
     {
       "id": "PHASE-002",
@@ -88,9 +86,7 @@
       "artifacts_produced": [
         "packages/pi-workflows/src/worktree.ts",
         "packages/pi-workflows/src/index.ts"
-      ],
-      "oid": "09ec41d44d5c3138547b00e6c1996690",
-      "content_hash": "ced2c014f6b01d85885e5cd86858448f8858f5c3819a474d5134196e84b35a03"
+      ]
     },
     {
       "id": "PHASE-003",
@@ -113,9 +109,7 @@
       ],
       "artifacts_produced": [
         "packages/pi-workflows/src/dispatch.ts"
-      ],
-      "oid": "7f3808b2100ff822d21f85fa599d4e8f",
-      "content_hash": "0217d02b673547c25806494748532799736918e2b9d3ab78f7f9d081bf3d95f9"
+      ]
     },
     {
       "id": "PHASE-004",
@@ -164,57 +158,43 @@
         "packages/pi-workflows/workflows/do-task.workflow.yaml",
         "packages/pi-workflows/agents/",
         "packages/pi-workflows/templates/"
-      ],
-      "oid": "e03c6040f3ad53b78ee8a6c91dab461f",
-      "content_hash": "8275bd30bfc57902e2a0302cc9722479af9276c17fdcf274f8350568bbe60a15"
+      ]
     },
     {
       "id": "PHASE-005",
       "name": "FGAP-026 closure phase 1 — resolver foundation + discovery tools",
       "intent": "Resolver foundation (resolveContextDir) + 2 discovery tools (read-config, read-schema) + atomic safety .pi-context.json write. Step 8.7.1.",
-      "status": "completed",
-      "oid": "1c141190372b9e9af074ccb072fe84b0",
-      "content_hash": "642ce59091c9eb0519d63b2b5471d5796ec894e70ab10bcbd738319c618328e8"
+      "status": "completed"
     },
     {
       "id": "PHASE-006",
       "name": "FGAP-026 closure phase 2 — high-impact query tools",
       "intent": "filter-block-items, resolve-items-by-id (bulk), walk-ancestors, walk-by-relation, find-references. Step 8.7.2.",
-      "status": "completed",
-      "oid": "c9ba86349a03224c21e1ff9e00fe1df8",
-      "content_hash": "ee2792bf11349d5620cbd5d855750b25fe096b37c799e907e5bd1a87c38c6c83"
+      "status": "completed"
     },
     {
       "id": "PHASE-007",
       "name": "FGAP-026 closure phase 3 — work-unit context composition",
       "intent": "Work-unit context composition substrate per DEC-0017 — context-contract substrate (FGAP-030) + gather-execution-context primitive (FGAP-031). Step 8.7.3.",
-      "status": "completed",
-      "oid": "43793fbe194286376f87a4a9597b0595",
-      "content_hash": "8fafbac9b1c69f02679ab3907e755778deb359b52c22bc162a54dac09c1c995b"
+      "status": "completed"
     },
     {
       "id": "PHASE-008",
       "name": "FGAP-026 closure phase 4 — workflow-execute + dispatch tools",
       "intent": "workflow-execute + workflow-resume dispatch tools — harness-confined main LLM path to bash/read/write under DEC-0014 via JIT-agent dispatch through workflow steps. Step 8.7.4.",
-      "status": "completed",
-      "oid": "fd06a6dbbaf6eda36b6b0c09c7935002",
-      "content_hash": "8b5a0bbcca87386e611801715e42366f4603ef5896082cb3f5e93d0741d5037d"
+      "status": "completed"
     },
     {
       "id": "PHASE-009",
       "name": "FGAP-026 closure phase 5 — arc-tracking dogfood substrate",
       "intent": "Arc-tracking blocks authored as dogfood substrate per FGAP-028 — config + relations + roadmap + phase + context-contracts for THIS repo. Step 8.7.5; partially realized through the FGAP-046/060 arc.",
-      "status": "in-progress",
-      "oid": "075e3d07a2ac00eac3bc3bdc498ce942",
-      "content_hash": "4aafe67eb0b43f67a57211b7cdb5d30c995af99ac1c0fe5501666a32d2f64226"
+      "status": "in-progress"
     },
     {
       "id": "PHASE-010",
       "name": "FGAP-046/060/DEC-0028 coordinated arc",
       "intent": "Eliminate inline FK (DEC-0013 enforcement) so the FGAP-060 canonical_id rename engine operates on one clean edge surface. Couples FGAP-040 + FGAP-046 + FGAP-049 + FGAP-060 + validateProject edge-migration + phase array-block (DEC-0028).",
-      "status": "in-progress",
-      "oid": "a9037d5027f5971c8a4b2960a2ba62f1",
-      "content_hash": "6e9178f24d8f24c172aafff274ea3d7cdbec1bff3209f047e8c9e86014f19ce4"
+      "status": "in-progress"
     }
   ]
 }

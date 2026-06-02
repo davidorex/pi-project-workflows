@@ -113,46 +113,6 @@
       "schema_path": "schemas/work-orders.schema.json",
       "array_key": "work_orders",
       "data_path": "work-orders.json"
-    },
-    {
-      "canonical_id": "conventions",
-      "display_name": "conventions",
-      "prefix": "",
-      "schema_path": "schemas/conventions.schema.json",
-      "array_key": "rules",
-      "data_path": "conventions.json"
-    },
-    {
-      "canonical_id": "feature-story",
-      "display_name": "feature-story",
-      "prefix": "FSTORY-",
-      "schema_path": "schemas/feature-story.schema.json",
-      "array_key": "feature-story",
-      "data_path": "feature-story.json"
-    },
-    {
-      "canonical_id": "plan-layer",
-      "display_name": "plan-layer",
-      "prefix": "PLAN-LAYER-",
-      "schema_path": "schemas/plan-layer.schema.json",
-      "array_key": "plan-layer",
-      "data_path": "plan-layer.json"
-    },
-    {
-      "canonical_id": "plan-phase",
-      "display_name": "plan-phase",
-      "prefix": "PLAN-PHASE-",
-      "schema_path": "schemas/plan-phase.schema.json",
-      "array_key": "plan-phase",
-      "data_path": "plan-phase.json"
-    },
-    {
-      "canonical_id": "story-task",
-      "display_name": "story-task",
-      "prefix": "STORY-TASK-",
-      "schema_path": "schemas/story-task.schema.json",
-      "array_key": "story-task",
-      "data_path": "story-task.json"
     }
   ],
   "relation_types": [
@@ -306,33 +266,6 @@
       "canonical_id": "references_cross_substrate_item",
       "display_name": "references (cross-substrate)",
       "category": "data_flow"
-    },
-    {
-      "canonical_id": "plan_contains_layer",
-      "display_name": "plan contains layer",
-      "category": "membership",
-      "source_kinds": [
-        "layer-plans"
-      ],
-      "target_kinds": [
-        "plan-layer"
-      ]
-    },
-    {
-      "canonical_id": "plan_contains_phase",
-      "display_name": "plan contains phase",
-      "category": "membership",
-      "source_kinds": [
-        "layer-plans"
-      ],
-      "target_kinds": [
-        "plan-phase"
-      ]
-    },
-    {
-      "canonical_id": "decision_relates_to_decision",
-      "display_name": "relates to",
-      "category": "data_flow"
     }
   ],
   "lenses": [],
@@ -456,6 +389,5 @@
     }
   ],
   "tool_operations": [],
-  "tool_operations_forbidden": [],
-  "substrate_id": "sub-0c813fd84348d4c2"
+  "tool_operations_forbidden": []
 }

@@ -34,15 +34,53 @@ After `/context accept-all` (writes `config.json` from the packaged conception) 
 
 ```
 <substrate-dir>/
-  config.json                 — substrate bootstrap (always at the substrate-dir root (your chosen dir), exempt from `config.root` redirection)
+  config.json                 — substrate bootstrap + substrate_id (always at the substrate-dir root (your chosen dir), exempt from `config.root` redirection)
   relations.json              — closure-table edges (always at the substrate-dir root (your chosen dir), exempt from `config.root` redirection)
+  migrations.json             — per-substrate schema-version migration registry
   schemas/<name>.schema.json  — installed from samples/schemas/, plus any user-authored schemas
+  objects/<content_hash>.json — content-addressed object store (one file per content version; git-tracked)
   <name>.json                 — installed from samples/blocks/, plus any user-authored blocks
+
+<project-root>/
+  .pi-context.json            — bootstrap pointer naming the single ACTIVE substrate dir (contextDir)
+  .pi-context-registry.json   — project-root registry enumerating ALL substrates by substrate_id (git-tracked)
 ```
 
 The schema is the contract. When pi-workflows agents produce output that writes to project blocks, the schema enforces the shape. When `/context add-work` extracts items from conversation, the schema constrains what gets written. When `contextState()` derives block summaries, it reads the typed data the schemas guarantee.
 
-**Tools registered:** the tool surface grows with the package — read the generated `skills/pi-context/SKILL.md` for the current set, or call the `list-tools` tool at runtime (in-pi) / `grep pi.registerTool packages/pi-context/src/index.ts` (source). Families: block CRUD (read/write/append/update/remove, top-level + nested), item-level read (`read-block-item`, `read-block-page`), query (`filter-block-items`, `resolve-item(s)-by-id`, `find-references`, `walk-ancestors`, `context-walk-descendants`), substrate write (`append-relation`, `amend-config`, `write-schema`, `rename-canonical-id`), discovery/introspection (`read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`), lifecycle (`context-init`, `context-accept-all`, `context-status`, `context-validate`, `context-validate-relations`, `complete-task`).
+### Item identity + content-addressing
+
+Every item in an identity-bearing block carries a three-layer identity (the block's schema must declare all three identity fields, or stamping is a no-op):
+
+- **`id` (refname)** — the human label, a kind-prefixed refname (e.g. a `DEC-`/`TASK-` id). Mutable; a label, not an identity.
+- **`oid`** — a content-independent 32-hex id minted once at the item's birth and immutable thereafter, salted by the substrate's `substrate_id` so two substrates never collide. A write that carries a different incoming `oid` is rejected.
+- **`content_hash`** — a SHA-256 over the item's *content projection* (the item minus its metadata fields). Identical content yields an identical hash, so duplicate content deduplicates.
+- **`content_parent`** — the prior version's `content_hash`, forming a per-item version chain. It advances only when content actually changed; a metadata-only write carries the prior parent forward.
+
+On a stamping write, the content projection is persisted to `<substrate-dir>/objects/<content_hash>.json` — a content-addressed, git-tracked object store (one file per content version). The metadata fields excluded from the hash are the mandatory floor `{id, oid, content_hash, content_parent}` plus a discretionary set (the author fields and `closed_by`/`closed_at`); a schema's item subschema may redefine the discretionary set via `x-identity.metadata_fields`, but the floor is always excluded.
+
+### Cross-substrate: substrate_id + registry
+
+Each substrate's `config.json` carries a `substrate_id` (pattern `sub-` + 16 hex), minted once and immutable on disk. A project-root, git-tracked `.pi-context-registry.json` enumerates *all* substrates by `substrate_id` (each mapped to its `dir` and any `aliases`), distinct from the `.pi-context.json` pointer which names only the one active substrate. `resolveRef(cwd, ref)` classifies any endpoint as `active` (resolved in the active substrate), `foreign` (a registered `substrate_id` or `<alias>:<refname>` resolved in another substrate), `dangling` (a registered substrate that lacks the named item), or `unregistered` (a substrate_id/alias the registry does not carry). `validateContext` requires the active `config.substrate_id` to have a matching registry entry, guarding against source-of-truth drift.
+
+### Relations: closure-table edges, structured endpoints
+
+All inter-item relationships are closure-table edges in `<substrate-dir>/relations.json` — `{parent, child, relation_type, ordinal?}` rows. Endpoints are dual-form: a legacy string (a canonical id, a lens bin name, or an `<alias>:<refname>` cross-substrate sentinel), or a structured `{kind:"item", oid, refname?, substrate_id?, content_hash?}` (where `substrate_id` marks a foreign endpoint), or a structured `{kind:"lens_bin", bin}` virtual parent. Embedded nested id-bearing arrays and FK-as-field are forbidden (`validateContext` flags `nested_id_bearing_array`); containment is a membership edge carrying `ordinal`, and nested entities are promoted to top-level blocks via the `promote-item` tool.
+
+### Schema versioning + migrations
+
+`<substrate-dir>/migrations.json` is the per-substrate migration registry. A schema `version` bump requires a companion migration declared via `write-schema-migration` — without one, reading or writing an item with an older `schema_version` throws a version mismatch. Migration kinds are `identity` (shape-compatible, no transform) or `declarative-transform` (a spec of rename/set/delete/coerce on dotted paths). The loaded registry walks items forward at the next read/write without a process restart.
+
+**Tools registered:** the tool surface grows with the package — read the generated `skills/pi-context/SKILL.md` for the current set, or call the `list-tools` tool at runtime (in-pi) / `grep pi.registerTool packages/pi-context/src/index.ts` (source). Families:
+
+- **Block CRUD** — `read-block`, `write-block`, `read-block-dir`, `append-block-item`, `update-block-item`, `remove-block-item`, and the nested-array variants (`append/update/remove-block-nested-item`).
+- **Item-level read/query** — `read-block-item`, `read-block-page`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `join-blocks`, `find-references`, `walk-ancestors`, `context-walk-descendants`, `context-edges-for-lens`, `gather-execution-context`.
+- **Substrate writes** — `append-relation`, `amend-config`, `write-schema`, `write-schema-migration`, `rename-canonical-id`.
+- **Content-addressing lifecycle** — `promote-item` (nested → top-level entity + membership edge), `migrate-content-addressed` (backfill identity), `canonicalize-substrate` (one-time canonicalizer).
+- **Discovery/introspection** — `read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`, `context-bootstrap-state`.
+- **Lifecycle/state** — `context-status`, `context-validate`, `context-validate-relations`, `complete-task`.
+- **Substrate management** — `context-init`, `context-accept-all`, `context-switch`, `context-list`, `context-archive`.
+- **Roadmap** — `context-roadmap-load`, `context-roadmap-render`, `context-roadmap-validate`, `context-roadmap-list`.
 
 **Commands registered:**
 - `/context init <substrate-dir>` — bootstrap pointer + substrate/schemas dirs only (no config, no defaults)
@@ -59,8 +97,21 @@ The schema is the contract. When pi-workflows agents produce output that writes 
 | File | Purpose |
 |------|---------|
 | `src/index.ts` | Extension entry point — tool and command registration |
-| `src/block-api.ts` | Block CRUD: `readBlock`, `writeBlock`, `appendToBlock`, `updateItemInBlock`, `appendToNestedArray`, `updateNestedArrayItem`, `removeFromBlock`, `removeFromNestedArray`, `readBlockDir` |
-| `src/schema-validator.ts` | AJV wrapper: `validate`, `validateFromFile`, `ValidationError` |
+| `src/block-api.ts` | Block CRUD + identity stamping: `readBlock`, `writeBlock`, `appendToBlock`, `updateItemInBlock`, `appendToNestedArray`, `updateNestedArrayItem`, `removeFromBlock`, `removeFromNestedArray`, `readBlockDir`; mints `oid`/`content_hash`/`content_parent` (`mintOid`, `prepareItemIdentityForWrite`, `contentProjection`), reads `substrate_id` (`substrateIdForDir`). Exported subpath `./block-api`. |
+| `src/content-hash.ts` | RFC 8785 JCS canonicalization → SHA-256 content hashing for the content projection. Exported subpath `./content-hash`. |
+| `src/object-store.ts` | Content-addressed object store: writes/reads `<substrate-dir>/objects/<content_hash>.json` (idempotent, atomic tmp+rename). Exported subpath `./object-store`. |
+| `src/context-registry.ts` | Project-root `.pi-context-registry.json` reader/writer: `substrate_id → { dir, aliases[] }`, `resolveSubstrateDir`, `resolveAlias`. Exported subpath `./context-registry`. |
+| `src/promote-item.ts` | Promotes a nested item to a top-level entity + membership edge (`promote-item` tool). Exported subpath `./promote-item`. |
+| `src/migrate-content-addressed.ts` | Backfills three-layer identity onto pre-content-addressed items (`migrate-content-addressed` tool). Exported subpath `./migrate-content-addressed`. |
+| `src/canonicalize-substrate.ts` | One-time substrate canonicalizer (`canonicalize-substrate` tool). Exported subpath `./canonicalize-substrate`. |
+| `src/schema-write.ts` | Schema create/replace authoring backing `write-schema`. Exported subpath `./schema-write`. |
+| `src/schema-migrations.ts` | Schema version-bump migration engine (`identity` / `declarative-transform`), backed by `migrations.json`. Exported subpath `./schema-migrations`. |
+| `src/land-identity-fields.ts` | Lands the three identity fields onto an existing schema's item subschema. Exported subpath `./land-identity-fields`. |
+| `src/read-element.ts` | Element-level substrate read helper. Exported subpath `./read-element`. |
+| `src/dispatch-context.ts` | `DispatchContext` / `WriterIdentity` attestation types stamped onto block-api writes. Exported subpath `./dispatch-context`. |
+| `src/rename-canonical-id.ts` | Renames a canonical id across blocks + relations (`rename-canonical-id` tool). Exported subpath `./rename-canonical-id`. |
+| `src/samples-catalog.ts` | Reads the packaged conception/samples catalog. Exported subpath `./samples-catalog`. |
+| `src/schema-validator.ts` | AJV wrapper: `validate`, `validateFromFile`, `ValidationError`. Exported subpath `./schema-validator`. |
 | `src/block-validation.ts` | Post-step validation: `snapshotBlockFiles`, `validateChangedBlocks`, `rollbackBlockFiles` |
 | `src/context-sdk.ts` | Derived state + cross-block resolver: `contextState`, `availableBlocks`, `availableSchemas`, `findAppendableBlocks`, `validateContext`, `buildIdIndex`, `resolveItemById`, `completeTask`. Re-exports the substrate API from `context.ts` (config/relations loaders, lens algorithms, validators, `resolveContextDir`) so existing consumers get one import surface. |
 | `src/context.ts` | Substrate bootstrap: `loadConfig`, `loadRelations`, `loadContext` (mtime-keyed cache), `resolveContextDir(cwd)` (the `config.root` resolver every path helper routes through), the lens algorithms (`edgesForLens`, `synthesizeFromField`, `walkDescendants`, `groupByLens`, `listUncategorized`, `displayName`), `validateRelations`. Type exports: `ConfigBlock`, `HierarchyDecl`, `LensSpec`, `Edge`, `ItemRecord`, `ContextData`, `SubstrateValidationIssue`, `SubstrateValidationResult`, `CurationSuggestion`. |
@@ -175,9 +226,11 @@ When working with this extension:
 - **Read `src/context-sdk.ts`** to understand what project state is available and how it's computed
 - **Read `src/block-api.ts`** to understand the CRUD operations and validation behavior
 - **Read `src/index.ts`** to see tool parameter schemas and command handler logic
-- Use the `append-block-item` tool to add items — it handles schema validation, duplicate checking, and atomic writes
-- Use the `update-block-item` tool with a `match` predicate (e.g., `{ id: "gap-123" }`) and `updates` object
-- Block schemas define the contract — consult `<substrate-dir>/schemas/*.schema.json` to understand what fields are required
+- Use the `append-block-item` tool to add items — it handles schema validation, duplicate checking, atomic writes, and (for identity-bearing schemas) minting `oid`/`content_hash`/`content_parent` + persisting the content projection to `objects/`
+- Use the `update-block-item` tool with a `match` predicate (e.g., `{ id: "gap-123" }`) and `updates` object — `oid` is immutable, so a mismatched incoming `oid` is rejected
+- Block schemas define the contract — consult `<substrate-dir>/schemas/*.schema.json` to understand what fields are required; a schema declaring all three identity fields opts the block into content-addressing
+- Items reference each other only through closure-table edges in `relations.json` (structured `{kind:"item", oid, refname?, substrate_id?}` or `{kind:"lens_bin", bin}` endpoints) — no FK-as-field, no nested id-bearing arrays
+- Cross-substrate endpoints resolve through `.pi-context-registry.json`; use `resolveRef(cwd, ref)` to classify a reference as active/foreign/dangling/unregistered
 - `contextState(cwd)` is the single source of truth for project metrics — prefer it over manual filesystem inspection
 
 ## Tests

@@ -1,0 +1,37 @@
+# pi-context-cli — Design Ledger (FGAP-180 CLI elevation)
+
+**Date:** 2026-06-03. **Status:** design RESOLVED, not yet implemented. **Next:** plan mode → op-registry refactor + the CLI package. Off-substrate arc tracking (same discipline as the content-addressed-identity EXECUTION-PLAN ledger).
+
+## Goal + binding constraint
+A portable, globally-installable `@davidorex/pi-context-cli`. **Binding operator constraint:** the CLI is NEVER hand-maintained — its commands derive by **reflection over pi-context's op-registry**, so adding/removing an op in code changes the CLI automatically (commands track code as-is, zero CLI edits).
+
+## Prerequisite — DONE
+The context-dir-migration/process tooling was relocated OUT of the published pi-context package → `scripts/migration/` (commit `65f9897`); pi-context's registered tools are now all "use" surface. Recorded in `analysis/2026-05-31-content-addressed-substrate-identity-EXECUTION-PLAN.md`.
+
+## Resolved design (every decision closed)
+- **1b — ctx-free op-registry.** Each op is ONE definition: `{ name, description, params (Typebox Type.Object), run(cwd, params) → result, authGated, surface }`. The Pi extension generates `registerTool` from it (its `execute` is a thin `ctx → run(ctx.cwd, params)` adapter); the CLI reflects the SAME registry → one subcommand per op invoking `run(resolvedCwd, parsedFlags)` **directly** (no pi runtime). Declare an op once → it appears in both surfaces with zero edits to either generator.
+- **CLI invokes `run()` directly** → `pi-context-cli` depends only on `@davidorex/pi-context`, no `pi` subprocess. Feasible because handlers are ctx-free (sizing below).
+- **Auth folded into the registry.** `authGated` is per-op metadata. The in-pi gate (`authGateHandler`) derives from it and the hardcoded `AUTH_REQUIRED_TOOLS` list is RETIRED; the CLI shows a terminal confirm for `authGated` ops. **Blast radius:** touches pi-agent-dispatch's gate **and all four packages' op-registries** (each op carries its own `authGated`), not just pi-context.
+- **`surface: "use" | "process"` tag** per op — the CLI surfaces only `use`. Currently all pi-context ops are `use` (migration relocated out); the tag is forward-insurance so a future process op is excluded without a hand-maintained allowlist.
+- **CLI per package** (not one monorepo binary). `pi-context-cli` first; each CLI depends only on its package and reflects its own registry — matches the per-package dual-surface ownership and avoids forcing the all-four dependency on single-package consumers. A unified meta-dispatcher at `pi-project-workflows` is a possible LATER add, not now.
+- **Runtime reflection** (not build-time codegen) — purest auto-track; no regen step to drift.
+- **Build/run:** `tsc → dist` + a `#!/usr/bin/env node` bin (consumers don't need tsx); per-package `bin`. Lockstep-versioned with the monorepo (per TASK-095).
+- **Conventions:** result `content` text → stdout by default; `--json` for raw machine output; **non-zero exit on error/validation-fail**. `authGated` ops → terminal confirm; `--yes`/`--force` bypass; **no-TTY without `--yes` refuses** (mirrors the in-pi gate); writer identity from the existing verified-operator cascade (git config email). JSON-valued params (`item`/`match`/`updates`/`schema`) accept inline `--x '{…}'` AND `--x @file.json`; arg-parsing matches the repo's existing hand-rolled `parseArgs` (no commander/yargs dependency).
+- **Name:** `@davidorex/pi-context-cli`.
+
+## Grounded sizing (as of 2026-06-03; RE-DERIVE before implementing — point-in-time, will drift)
+- pi-context registers ~45 tools (`packages/pi-context/src/index.ts`). Handler census for the ctx-free extraction: **39 mechanical** (use only `ctx.cwd` + params → library fn → uniform result), **0 use `ctx.ui`**, **0 other-ctx-coupled**. So 1b's `ctx → run` extraction is a near-mechanical sweep; `execute` collapses to a one-line adapter. This is the load-bearing feasibility fact.
+- `parameters` are uniformly `Type.Object` with described fields → flags derive mechanically; `item`/`match`/`updates`/`schema` are `Type.Unknown`/`Type.Record` → JSON-arg flags.
+- Result is uniformly `{ details: undefined, content: [{ type: "text", text }] }` → print `content[0].text`.
+- Auth-gate today: an `AUTH_REQUIRED_TOOLS` constant + a `tool_call` handler in `packages/pi-agent-dispatch/src/auth-gate.ts` (the list ~`:69`, the handler ~`:143`), intercepting by tool-name. Folding auth replaces the name-list with per-op `authGated` derived from the registry.
+
+## Remaining work (next session: plan mode → coding subagent → completion sequence)
+1. **Registry refactor:** convert the ~45 inline `registerTool({…execute…})` in pi-context `index.ts` into op-DEFINITIONS in an op-registry module + a generic `registerAll(pi)` that maps them; add `authGated`/`surface` per op.
+2. **Auth-fold rewiring:** `authGateHandler` derives `authGated` from the registry (retire `AUTH_REQUIRED_TOOLS`); apply per-op `authGated` across all four packages' registries.
+3. **New `packages/pi-context-cli/`** (depends on `@davidorex/pi-context`): a runtime-reflecting dispatcher + node `bin` + the confirm/output/flag conventions above; tests; lockstep version.
+4. Completion sequence + fresh-context adversarial audit per project canon.
+
+## Pointers
+- Relocation prerequisite: `analysis/2026-05-31-content-addressed-substrate-identity-EXECUTION-PLAN.md` ("Relocate migration machinery…", done `65f9897`); the relocated tooling lives at `scripts/migration/`.
+- Substrate intent: FGAP-180 (CLI elevation / portability), TASK-095 (elevate scripts/orchestrator → published CLI), FGAP-181 (per-command `--help`), FGAP-182 (self-documenting substrate).
+- The chosen approach is "1b"; the per-package + auth-fold + runtime-reflect decisions and the sizing census were established via exploration on 2026-06-03.

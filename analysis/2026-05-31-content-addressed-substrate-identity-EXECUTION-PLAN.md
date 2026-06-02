@@ -59,6 +59,8 @@ With the arc's substrate work complete (above), three follow-on threads landed t
 
 ## Relocate migration machinery out of the published package (done 2026-06-03, `65f9897`)
 
+**Next arc — CLI elevation (FGAP-180):** design RESOLVED (auto-tracking `@davidorex/pi-context-cli` reflecting the op-registry; 1b ctx-free runners + auth-folded-into-registry + per-package CLI, all decided). Pre-implementation; awaits plan mode. Full design ledger: `analysis/2026-06-03-pi-context-cli-design-ledger.md`.
+
 CLI-elevation prep (FGAP-180 direction). The context-dir-migration machinery currently SHIPS in pi-context's published tarball (`npm pack --dry-run` lists `dist/canonicalize-substrate.js` / `migrate-content-addressed.js` / `land-identity-fields.js`) — it is process tooling, not "use pi-context" surface, so it's debt in the published package. Decision (operator-directed): **relocate, don't delete**, OUT of `packages/pi-context/src` → `scripts/migration/` (runnable via tsx; `scripts/` is never in any package's `files[]`), with **zero new public API**.
 - Verified clean leaf (no use-library imports the three; importers are `index.ts` tool registrations + the migration orchestrator scripts + tests + each other).
 - The lone dependency `appendMigrationDeclForDir` (from the non-exported `migrations-store`) is satisfied WITHOUT a new export: the relocated tool carries a ~40–50-line decl-writer over already-exported subpaths (`schema-validator`/`block-api`/`context-dir` + the `MigrationDecl` type on `./schema-migrations`) against the shipped `migrations.schema.json`, omitting the standalone-irrelevant in-process cache invalidation. `migrations-store` stays in pi-context (schema-versioning), unexported.

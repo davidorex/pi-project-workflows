@@ -30,9 +30,9 @@
 		"version:patch": "node scripts/bump-versions.js patch",
 		"version:minor": "node scripts/bump-versions.js minor",
 		"version:major": "node scripts/bump-versions.js major",
-		"release:patch": "node scripts/release.mjs patch",
-		"release:minor": "node scripts/release.mjs minor",
-		"release:major": "node scripts/release.mjs major",
+		"release:patch": "npm run build && node scripts/release.mjs patch",
+		"release:minor": "npm run build && node scripts/release.mjs minor",
+		"release:major": "npm run build && node scripts/release.mjs major",
 		"prepare": "husky"
 	},
 	"devDependencies": {

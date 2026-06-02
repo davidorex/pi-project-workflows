@@ -52,12 +52,11 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { loadRelationsForDir, type RawEndpoint, writeRelationsForDir } from "@davidorex/pi-context/context";
-import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { registerSubstrate } from "@davidorex/pi-context/context-registry";
-import { validateContext } from "@davidorex/pi-context/context-sdk";
 import { landIdentityFieldsForDir } from "@davidorex/pi-context/land-identity-fields";
 import { migrateToContentAddressed } from "@davidorex/pi-context/migrate-content-addressed";
 import { writeSchemaCheckedForDir } from "@davidorex/pi-context/schema-write";
+import { verifyDupe } from "./verify-substrate-dupe.js";
 
 interface Args {
 	substrate: string;
@@ -83,37 +82,6 @@ function parseArgs(argv: string[]): Args {
 		}
 	}
 	return out;
-}
-
-/** Verify a folded work-dupe via a pointer-switch + validateContext. Captures the
- * prior `.pi-context.json` bytes verbatim and restores them in a finally
- * regardless of outcome (a lossless restore — preserves previous_contextDir /
- * switched_at / switched_by / version that a writeBootstrapPointer rewrite would
- * drop). Returns the blocking issue list (empty ⇒ clean). Mirrors
- * canonicalize-substrate.ts's verifyDupe + its BLOCKING_CODES set verbatim. */
-function verifyDupe(cwd: string, workDirRel: string): { ok: boolean; issues: string[] } {
-	const pointerPath = path.join(cwd, ".pi-context.json");
-	const originalBytes = fs.existsSync(pointerPath) ? fs.readFileSync(pointerPath, "utf-8") : null;
-	try {
-		writeBootstrapPointer(cwd, workDirRel);
-		const result = validateContext(cwd);
-		// Registry-level issues (substrate_id_unregistered / substrate_id_registry_mismatch)
-		// are EXPECTED for an unregistered work-dupe (register:false skipped the registry
-		// write; registration happens post-swap) and are intentionally NOT blocking.
-		const BLOCKING_CODES = new Set([
-			"nested_id_bearing_array",
-			"edge_endpoint_dangling",
-			"edge_endpoint_unregistered",
-			"edge_parent_not_in_bins",
-			"edge_cycle_detected",
-		]);
-		const blocking = result.issues.filter((i) => i.code !== undefined && BLOCKING_CODES.has(i.code));
-		const issues = blocking.map((i) => `${i.code}: ${i.message}`);
-		return { ok: issues.length === 0, issues };
-	} finally {
-		if (originalBytes !== null) fs.writeFileSync(pointerPath, originalBytes, "utf-8");
-		else if (fs.existsSync(pointerPath)) fs.unlinkSync(pointerPath);
-	}
 }
 
 /** Build the set of local item refnames (every block item's `id`) in a substrate

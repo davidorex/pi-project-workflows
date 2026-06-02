@@ -37,8 +37,7 @@ import {
 	type PromotionTargets,
 	type RegisterBlock,
 } from "@davidorex/pi-context/canonicalize-substrate";
-import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
-import { validateContext } from "@davidorex/pi-context/context-sdk";
+import { verifyDupe } from "./verify-substrate-dupe.js";
 
 /**
  * The EXPLICIT promotion-target mapping for the real `.project-migrate` substrate.
@@ -136,40 +135,6 @@ function parseArgs(argv: string[]): Args {
 		process.exit(2);
 	}
 	return out;
-}
-
-/** Verify a canonicalized work-dupe via a pointer-switch + validateContext.
- * Captures the prior `.pi-context.json` bytes verbatim and restores them in a
- * finally regardless of outcome (a lossless restore — preserves
- * previous_contextDir / switched_at / switched_by / version that a
- * writeBootstrapPointer rewrite would drop). Returns the blocking issue list
- * (empty ⇒ clean). */
-function verifyDupe(cwd: string, workDirRel: string): { ok: boolean; issues: string[] } {
-	const pointerPath = path.join(cwd, ".pi-context.json");
-	const originalBytes = fs.existsSync(pointerPath) ? fs.readFileSync(pointerPath, "utf-8") : null;
-	try {
-		writeBootstrapPointer(cwd, workDirRel);
-		const result = validateContext(cwd);
-		// Canonicalization correctness = NO nested id-bearing array remains AND no
-		// edge endpoint is dangling/unregistered. Registry-level issues
-		// (substrate_id_unregistered / substrate_id_registry_mismatch) are EXPECTED
-		// for an unregistered work-dupe — the canonicalizer operates on a single dir
-		// in isolation and does not touch the project-root registry; those are not
-		// canonicalization defects and are intentionally NOT blocking here.
-		const BLOCKING_CODES = new Set([
-			"nested_id_bearing_array",
-			"edge_endpoint_dangling",
-			"edge_endpoint_unregistered",
-			"edge_parent_not_in_bins",
-			"edge_cycle_detected",
-		]);
-		const blocking = result.issues.filter((i) => i.code !== undefined && BLOCKING_CODES.has(i.code));
-		const issues = blocking.map((i) => `${i.code}: ${i.message}`);
-		return { ok: issues.length === 0, issues };
-	} finally {
-		if (originalBytes !== null) fs.writeFileSync(pointerPath, originalBytes, "utf-8");
-		else if (fs.existsSync(pointerPath)) fs.unlinkSync(pointerPath);
-	}
 }
 
 function main(): void {

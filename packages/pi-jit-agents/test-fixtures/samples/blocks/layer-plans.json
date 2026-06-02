@@ -1,0 +1,32 @@
+{
+	"plans": [
+		{
+			"id": "PLAN-001",
+			"title": "Fixture layer plan",
+			"status": "draft",
+			"model": "fixture-model",
+			"layers": [
+				{
+					"id": "L1",
+					"name": "Fixture layer",
+					"purpose": "Exercise the layer-plans delegator layer-rendering branch.",
+					"current_blocks": ["decisions"],
+					"target_blocks": [
+						{ "name": "decisions", "shape": "list" }
+					]
+				}
+			],
+			"migration_phases": [
+				{
+					"id": "P1",
+					"name": "Fixture phase",
+					"description": "Exercise the layer-plans delegator migration-phase branch.",
+					"depends_on": [],
+					"exit_criteria": ["Delegator emits the plan id and heading."]
+				}
+			],
+			"created_by": "fixture",
+			"created_at": "2026-06-02T00:00:00Z"
+		}
+	]
+}

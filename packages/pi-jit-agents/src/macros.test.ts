@@ -18,10 +18,10 @@
  * the new delegators end-to-end without going through compileAgent's
  * input/output machinery.
  *
- * Real-substrate reads target this repo's own `.project/*.json` files so
- * the delegator behavior is verified against the live shape the user
- * actually maintains. Per the canonical-resolution analysis: render
- * verification belongs against real substrate, not synthetic fixtures.
+ * Framework template-rendering tests read a dedicated self-contained
+ * fixture, not the mutable live substrate (live-`.project` coupling proved
+ * fragile under the substrate rename; `samples/blocks` are empty
+ * install-starters and unusable here).
  */
 import assert from "node:assert";
 import fs from "node:fs";
@@ -31,11 +31,15 @@ import { fileURLToPath } from "node:url";
 import nunjucks from "nunjucks";
 import { bundledTemplateDir } from "./template.js";
 
-// Repo root — the templates directory under packages/pi-jit-agents/ ships
-// with this package; the .project/ directory lives at the monorepo root.
+// Dedicated self-contained block fixtures ship with this package under
+// test-fixtures/samples/blocks/ (resolved relative to this test file, not
+// the monorepo root) so the delegator render tests do not couple to the
+// mutable live `.project/` substrate. The samples/blocks/ path-segment also
+// places the fixtures inside the citation-rot scanner's structural-seed-data
+// carve-out, so the items' canonical-pattern `id` values are treated as
+// structural ids rather than citations.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
-const PROJECT_DIR = path.join(REPO_ROOT, ".project");
+const PROJECT_DIR = path.resolve(__dirname, "..", "test-fixtures", "samples", "blocks");
 
 function loadProjectBlock(filename: string): unknown {
 	const filePath = path.join(PROJECT_DIR, filename);

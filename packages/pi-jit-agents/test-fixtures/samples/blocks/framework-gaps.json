@@ -1,0 +1,21 @@
+{
+	"gaps": [
+		{
+			"id": "FGAP-001",
+			"title": "Fixture framework gap",
+			"status": "identified",
+			"package": "pi-jit-agents",
+			"description": "Fixture gap exercising the framework-gaps delegator render path.",
+			"evidence": [
+				{
+					"file": "packages/pi-jit-agents/src/macros.test.ts",
+					"reference": "Fixture evidence pointer for the framework-gaps delegator."
+				}
+			],
+			"impact": "Without a fixture the delegator render test couples to the live substrate.",
+			"proposed_resolution": "Drive the render assertions from a dedicated populated fixture.",
+			"created_by": "fixture",
+			"created_at": "2026-06-02T00:00:00Z"
+		}
+	]
+}

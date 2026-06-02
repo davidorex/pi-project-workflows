@@ -15,12 +15,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {
-	flipBootstrapPointer,
-	resolveContextDir,
-	tryResolveContextDir,
-	writeBootstrapPointer,
-} from "@davidorex/pi-context/context-dir";
+import { flipBootstrapPointer, resolveContextDir, writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "context-switch-demo-"));
 const pointerPath = path.join(tmpDir, ".pi-context.json");

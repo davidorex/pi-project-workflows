@@ -1,0 +1,14 @@
+{
+	"decisions": [
+		{
+			"id": "DEC-0001",
+			"title": "Fixture decision",
+			"status": "open",
+			"context": "Fixture context for the decisions delegator render test.",
+			"decision": "Render the decisions delegator against a self-contained fixture.",
+			"consequences": ["Delegator output is verified without live-substrate coupling."],
+			"created_by": "fixture",
+			"created_at": "2026-06-02T00:00:00Z"
+		}
+	]
+}

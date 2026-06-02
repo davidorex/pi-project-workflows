@@ -1,0 +1,16 @@
+{
+	"research": [
+		{
+			"id": "R-0001",
+			"title": "Fixture research entry",
+			"status": "planned",
+			"layer": "L1",
+			"type": "investigative",
+			"question": "Does the research delegator render against a self-contained fixture?",
+			"method": "Render the delegator over a minimal conforming research item.",
+			"findings_summary": "Delegator emits the research id and heading from the fixture.",
+			"created_by": "fixture",
+			"created_at": "2026-06-02T00:00:00Z"
+		}
+	]
+}

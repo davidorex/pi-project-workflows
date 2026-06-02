@@ -1,0 +1,11 @@
+{
+	"reviews": [
+		{
+			"id": "REVIEW-001",
+			"target": "Fixture spec target",
+			"status": "not-started",
+			"created_by": "fixture",
+			"created_at": "2026-06-02T00:00:00Z"
+		}
+	]
+}

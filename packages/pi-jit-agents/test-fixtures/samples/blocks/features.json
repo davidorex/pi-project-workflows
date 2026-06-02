@@ -1,0 +1,14 @@
+{
+	"features": [
+		{
+			"id": "FEAT-001",
+			"title": "Fixture feature",
+			"status": "proposed",
+			"layer": "L1",
+			"description": "Fixture feature exercising the features delegator render path.",
+			"acceptance_criteria": ["Delegator emits the feature id and heading."],
+			"created_by": "fixture",
+			"created_at": "2026-06-02T00:00:00Z"
+		}
+	]
+}

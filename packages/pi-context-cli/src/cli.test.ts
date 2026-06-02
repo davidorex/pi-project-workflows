@@ -54,6 +54,18 @@ test("fieldType maps typebox schema shapes to CLI types", () => {
 	assert.equal(fieldType({}), "json"); // Type.Unknown — no type key
 });
 
+test("fieldType maps a string-enum union (Type.Union of string literals) to string, not json", () => {
+	assert.equal(
+		fieldType({
+			anyOf: [
+				{ type: "string", const: "eq" },
+				{ type: "string", const: "neq" },
+			],
+		}),
+		"string",
+	);
+});
+
 // ── Flag parsing: scalar coercion ────────────────────────────────────────────
 test("parseOpArgs coerces number, boolean, string scalars", () => {
 	// read-block-page: block(string) offset(integer) limit(integer)
@@ -79,6 +91,23 @@ test("parseOpArgs rejects a non-numeric value for a number field", () => {
 	const op = resolveOp("read-block-page");
 	assert.ok(op);
 	assert.throws(() => parseOpArgs(op, ["--block", "tasks", "--offset", "notanum"]), UsageError);
+});
+
+test("parseOpArgs accepts a valid string-enum value verbatim (no JSON quoting)", () => {
+	// filter-block-items: op is Type.Union of "eq"|"neq"|"in"|"matches"
+	const op = resolveOp("filter-block-items");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, ["--block", "b", "--field", "f", "--op", "eq", "--value", '"x"']);
+	assert.equal(parsed.params.op, "eq");
+});
+
+test("parseOpArgs rejects an out-of-set string-enum value naming the allowed values", () => {
+	const op = resolveOp("filter-block-items");
+	assert.ok(op);
+	assert.throws(
+		() => parseOpArgs(op, ["--block", "b", "--field", "f", "--op", "bogus", "--value", '"x"']),
+		(err: unknown) => err instanceof UsageError && /expects one of/.test(err.message),
+	);
 });
 
 // ── Flag parsing: JSON inline + @file ────────────────────────────────────────
@@ -250,4 +279,11 @@ test("deriveHelp tags an unknown/object field as json", () => {
 	assert.ok(op);
 	const help = deriveHelp(op);
 	assert.ok(help.includes("--item <json>"));
+});
+
+test("deriveHelp renders a string-enum field's choices as the TYPE tag", () => {
+	const op = resolveOp("filter-block-items");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	assert.ok(help.includes("--op <eq|neq|in|matches>"));
 });

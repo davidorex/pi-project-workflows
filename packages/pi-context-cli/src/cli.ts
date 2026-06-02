@@ -44,6 +44,41 @@ export type FieldType = "string" | "number" | "boolean" | "json";
 interface FieldSchema {
 	type?: string;
 	description?: string;
+	anyOf?: Array<{ type?: string; const?: unknown; enum?: unknown[] }>;
+}
+
+/**
+ * Extract the literal string values of a string-enum field, or null for any
+ * non-enum shape. A typebox `Type.Union([Type.Literal("eq"), …])` serializes at
+ * runtime to `{ anyOf: [{ type: "string", const: "eq" }, …] }` with no
+ * top-level `type` — so the union members must be read off `anyOf`.
+ *
+ * Returns the string values only when `anyOf` is a non-empty array and EVERY
+ * element contributes string members (a `const` string, or — for forward
+ * safety against an element-level `enum` shape — string members of an `enum`
+ * array). Any element that fails to contribute makes the whole shape non-enum
+ * (returns null), so mixed unions and non-string literals are left untouched
+ * and continue to flow through the JSON path.
+ */
+export function stringEnumValues(field: FieldSchema): string[] | null {
+	const anyOf = field.anyOf;
+	if (!Array.isArray(anyOf) || anyOf.length === 0) return null;
+	const values: string[] = [];
+	for (const el of anyOf) {
+		if (el.type === "string" && typeof el.const === "string") {
+			values.push(el.const);
+			continue;
+		}
+		if (Array.isArray(el.enum)) {
+			const strings = el.enum.filter((e): e is string => typeof e === "string");
+			if (strings.length === el.enum.length && strings.length > 0) {
+				values.push(...strings);
+				continue;
+			}
+		}
+		return null;
+	}
+	return values.length > 0 ? values : null;
 }
 
 interface ObjectSchema {
@@ -62,6 +97,9 @@ function objectSchema(op: OpDefinition): ObjectSchema {
  * `type:"object"`; arrays `type:"array"` — all of which are JSON-arg fields.
  */
 export function fieldType(field: FieldSchema): FieldType {
+	// String-enum unions (Type.Union of string literals) coerce as verbatim
+	// strings — identical to a plain string field — not as JSON.
+	if (stringEnumValues(field) !== null) return "string";
 	switch (field.type) {
 		case "string":
 			return "string";
@@ -208,6 +246,10 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 			if (Number.isNaN(n)) throw new UsageError(`--${field} expects a number, got '${value}'`);
 			out.params[field] = n;
 		} else if (kind === "string") {
+			const vals = stringEnumValues(fschema);
+			if (vals !== null && !vals.includes(value)) {
+				throw new UsageError(`--${field} expects one of: ${vals.join(", ")}; got '${value}'`);
+			}
 			out.params[field] = value;
 		} else {
 			// json: inline JSON or @file
@@ -287,7 +329,8 @@ export function deriveHelp(op: OpDefinition): string {
 	} else {
 		lines.push("Flags:");
 		for (const [field, fschema] of entries) {
-			const t = fieldType(fschema);
+			const vals = stringEnumValues(fschema);
+			const t = vals ? vals.join("|") : fieldType(fschema);
 			const req = required.has(field) ? "required" : "optional";
 			const desc = fschema.description ? ` — ${fschema.description}` : "";
 			lines.push(`  --${field} <${t}>  (${req})${desc}`);

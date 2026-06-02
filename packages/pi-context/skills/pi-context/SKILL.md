@@ -660,8 +660,14 @@ pi-context manages structured project state in the substrate directory — a dir
 </objective>
 
 <block_files>
-Blocks are JSON files under the substrate root (e.g., `gaps.json`, `decisions.json`). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/context accept-all`; the framework ships no default substrate-dir name. block-api routes through `resolveContextDir(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
+Blocks are JSON files under the substrate root (one per block kind, each an array of items). Each block has a corresponding schema in `<root>/schemas/`. When you write to a block via the tools, the data is validated against its schema before persisting. Writes are atomic (tmp file + rename) and serialised per block via `withBlockLock`. The substrate root is the dir chosen at init (recorded in the `.pi-context.json` bootstrap pointer) and written to `config.json`'s `root` field by `/context accept-all`; the framework ships no default substrate-dir name. block-api routes through `resolveContextDir(cwd)` — which resolves `config.root` when set and otherwise falls back to the pointer — so a relocated root reaches every read/write site.
+
+Each item in an identity-bearing block carries a three-layer identity, not a refname alone: `id` (the mutable human label, e.g. a kind-prefixed refname), `oid` (a content-independent 32-hex identity minted once at the item's birth and immutable thereafter, salted by the substrate's `substrate_id`), `content_hash` (a SHA-256 over the item's content projection — the item minus its metadata fields — so identical content deduplicates), and `content_parent` (the prior version's `content_hash`, forming a per-item version chain that advances only when content actually changed). A write carrying a different incoming `oid` is rejected. Identity stamping is a no-op unless the block's array subschema declares all three identity fields, scoping content-addressing to canonical schemas and leaving bespoke/test schemas untouched.
 </block_files>
+
+<content_addressing>
+On a stamping write the item's content projection (a shallow copy with the metadata fields removed) is persisted to `<substrate-dir>/objects/<content_hash>.json` — a content-addressed object store (idempotent, atomic tmp+rename; identical content yields a byte-identical file). The store is git-tracked: it is the integrity/version store, and gitignoring it would lose pinning. Object persistence is deferred until after the whole block clears schema validation, so a validation failure never orphans an object. The metadata fields excluded from the content hash are the mandatory floor `{id, oid, content_hash, content_parent}` (never hashable, never pullable into the hash by an override) plus a discretionary set (the author fields and `closed_by`/`closed_at`); a schema's item subschema may redefine the discretionary set via `x-identity.metadata_fields`, but the floor is always unioned in.
+</content_addressing>
 
 <schema_validation>
 Every block write validates against `<root>/schemas/<blockname>.schema.json`. If the schema file doesn't exist, writes proceed without validation. Validation errors include the specific JSON Schema violations.
@@ -682,17 +688,31 @@ The installable catalog IS the packaged conception (`samples/conception.json`): 
 </context_install>
 
 <substrate_config>
-`<substrate-dir>/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — consumers resolve that dir via the `.pi-context.json` pointer plus `config.root`, never by assuming a fixed directory name. `naming` aliases canonical block ids to display names (used by `/context view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/context install`.
+`<substrate-dir>/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — consumers resolve that dir via the `.pi-context.json` pointer plus `config.root`, never by assuming a fixed directory name. Its `substrate_id` field is the per-substrate root identity (pattern `sub-` followed by 16 hex), minted once and immutable on disk; it salts oid minting and identifies the substrate in the project-root registry. `naming` aliases canonical block ids to display names (used by `/context view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/context install`.
 
 `config.json` and `relations.json` are exempt from `config.root` redirection — they always live at the substrate-dir root (the dir chosen at bootstrap, resolved via the `.pi-context.json` pointer, suggested `.context`) because they are the substrate that defines `root`. The substrate-dir root is whatever was chosen at bootstrap, not necessarily `.project`. All other state lives under `<config.root>/...` per `resolveContextDir(cwd)`. The package ships their schemas in `schemas/` (config.schema.json, relations.schema.json) and resolves them via three-tier search: project override > user override > package-shipped.
 
 The `loadContext(cwd)` SDK returns an mtime-keyed cached snapshot of `{ config, relations, configMtime, relationsMtime }` for one cwd. Consumers must not mutate.
 </substrate_config>
 
+<cross_substrate>
+A project can carry multiple substrates. The `.pi-context.json` bootstrap pointer names the single ACTIVE substrate dir; a separate project-root, git-tracked `.pi-context-registry.json` enumerates ALL substrates — a version plus `substrates: { <substrate_id>: { dir, aliases[] } }`. `resolveSubstrateDir(cwd, substrate_id)` and `resolveAlias(cwd, alias)` look up the registry and return null on a clean miss.
+
+`resolveRef(cwd, ref)` classifies any endpoint into one of four statuses: `active` — resolved in the active substrate's index (a bare oid/refname, or any lens_bin endpoint, which is always active without an item lookup); `foreign` — a structured endpoint carrying a `substrate_id`, or an `<alias>:<refname>` string whose alias is registered, resolved in the foreign substrate's index; `dangling` — a locator naming a registered substrate where the oid/refname is absent; `unregistered` — a `substrate_id` or alias the registry does not carry. Any string containing `:` is first attempted as an alias parse.
+
+Source-of-truth-drift invariant: `validateContext` requires the active `config.substrate_id` to have a registry entry whose `dir` resolves to the active substrate. A mismatch yields `substrate_id_registry_mismatch`; a missing entry yields `substrate_id_unregistered`.
+</cross_substrate>
+
+<schema_versioning>
+Schemas are draft-07 JSON-Schema, one per block kind, under `<substrate-dir>/schemas/`. Package-shipped substrate-singleton schemas carry a `pi-context://schemas/<name>` `$id` plus a `version`. `<substrate-dir>/migrations.json` is the per-substrate schema-version migration registry. A schema `version` bump REQUIRES a companion migration declared via the `write-schema-migration` tool; without one, reading or writing an item that declares an older `schema_version` throws a version mismatch. Migration kinds are `identity` (shape-compatible, no transform) or `declarative-transform` (a TransformSpec of rename/set/delete/coerce on dotted paths). The loaded registry resolves the migration edge at the next read/write, so items walk forward without a process restart. A `block:<name>` reference resolves to `<contextDir>/schemas/<name>.schema.json`.
+</schema_versioning>
+
 <lens_views>
 Lenses are named projections over a target block. A lens declares `id`, `target` (block name), `relation_type`, `derived_from_field` (optional — synthesizes edges from a per-item field instead of requiring authored edges), `bins` (named groupings), and `render_uncategorized`.
 
-Edges live in `<substrate-dir>/relations.json` as a closure table — each row is `{ parent, child, relation_type }`. `parent` is either a canonical id (hierarchy edges) or a lens.bins value (lens edges); disambiguation lives in `validateRelations`.
+Edges live in `<substrate-dir>/relations.json` as a closure table — each row is `{ parent, child, relation_type, ordinal? }`. `relation_type` is a lens id, a hierarchy edge type, or a registered `relation_types[].canonical_id`; `ordinal` orders siblings within `(parent, relation_type)`. Endpoints (both `parent` and `child`) are dual-form: a legacy string (a canonical id, a lens bin name, or an `<alias>:<refname>` cross-substrate sentinel; disambiguation lives in `validateRelations`), OR a structured item endpoint `{ kind: "item", oid, refname?, substrate_id?, content_hash? }` where a present `substrate_id` marks a foreign endpoint and `content_hash` is carried for drift detection, OR a structured lens-bin endpoint `{ kind: "lens_bin", bin }` — a virtual parent that never resolves to an item.
+
+The single-form rule: ALL inter-item relationships are closure-table edges. Embedded nested id-bearing arrays and FK-as-field are forbidden — a nested id-bearing array in a schema is flagged `nested_id_bearing_array` by `validateContext` with the remediation "promote to a top-level entity + membership edge". Containment is a membership edge carrying `ordinal`; nested entities are promoted to top-level blocks via the `promote-item` tool.
 
 The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synthetic edges (when `derived_from_field` is set) or filtered authored edges (otherwise). `groupByLens(items, lens, lensEdges)` produces a `Map<binName, ItemRecord[]>`. `walkDescendants(parentId, relationType, edges)` traverses the closure table from any parent.
 
@@ -708,7 +728,9 @@ The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synt
 </context_view>
 
 <substrate_validation>
-`validateRelations(cwd)` (exposed as the `context-validate-relations` tool) checks the closure-table edges in `relations.json` against the config + per-block item snapshots. Diagnostics codes: `edge_unknown_relation_type`, `edge_parent_not_in_bins`, `edge_unresolved_parent`, `edge_unresolved_child`, `edge_parent_wrong_block`, `edge_child_wrong_block`, `edge_cycle_detected`. Returns `{ status: "clean" | "warnings" | "invalid", issues[] }` where each issue carries the offending edge or cycle path.
+`validateRelations(cwd)` (exposed as the `context-validate-relations` tool) checks the closure-table edges in `relations.json` against the config + per-block item snapshots, with the `resolveRef` hook classifying foreign endpoints. Diagnostics codes: `edge_unknown_relation_type`, `edge_parent_not_in_bins`, `edge_unresolved_parent`, `edge_unresolved_child`, `edge_parent_wrong_block`, `edge_child_wrong_block`, `edge_cycle_detected`. Returns `{ status: "clean" | "warnings" | "invalid", issues[] }` where each issue carries the offending edge or cycle path.
+
+`validateContext(cwd)` (the `context-validate` tool) layers the registry/identity invariants over cross-block referential integrity: `substrate_id_unregistered` and `substrate_id_registry_mismatch` (the source-of-truth-drift guard on the active substrate), `edge_endpoint_dangling` and `edge_endpoint_unregistered` (a structured endpoint naming a registered-but-absent or unregistered substrate), and `nested_id_bearing_array` (a schema embedding an id-bearing array instead of using a membership edge). Config-declared `invariants[]` and registered lens-validators are checked in the same pass.
 
 Two derived substrate tools complement validation: `context-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `context-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
 </substrate_validation>
@@ -764,7 +786,7 @@ On `session_start`, checks npm registry for newer versions of `@davidorex/pi-pro
 </update_check>
 
 <success_criteria>
-- `<substrate-dir>/`, `<substrate-dir>/schemas/`, `<substrate-dir>/phases/`, and `<substrate-dir>/config.json` exist after `/context init <substrate-dir>`
+- `<substrate-dir>/`, `<substrate-dir>/schemas/`, and the `.pi-context.json` bootstrap pointer exist after `/context init <substrate-dir>` (init is skeleton-only: no `config.json`, no schemas, no blocks until accept-all + install). Phases are not a directory — they live as an in-block array under `phase.json` (plural `phases` key); there is no `phases/` dir.
 - `installed_schemas` / `installed_blocks` declared in `config.json` are reified by `/context install`; `--update` overwrites
 - Block writes validate against schemas — invalid data rejected with specific error
 - `/context status` returns current derived state without errors

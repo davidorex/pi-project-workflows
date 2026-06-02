@@ -88,7 +88,7 @@ All inter-item relationships are **closure-table edges** in `<substrate>/relatio
 
 Live `.context/relations.json` confirms both: same-substrate parents `{kind:"item", oid, refname:"SESSION-001"}` and foreign children `{kind:"item", substrate_id:"sub-0c813fd84348d4c2", oid, refname:"FGAP-151"}`.
 
-**Forbidden representations** (the single-form rule): **no embedded nested id-bearing arrays** and **no FK-as-field**. A nested id-bearing array in a schema is flagged `nested_id_bearing_array` by `validateContext` with the remediation "promote to a top-level entity + membership edge" (`src/context-sdk.ts:1970-1978`). Containment is a membership edge carrying `ordinal`; nested entities are promoted to top-level blocks (`promote-item` tool; `analysis/...before-after.md:17`).
+**Forbidden representations** (the single-form rule): **no embedded nested id-bearing arrays** and **no FK-as-field**. A nested id-bearing array in a schema is flagged `nested_id_bearing_array` by `validateContext` with the remediation "promote to a top-level entity + membership edge" (`src/context-sdk.ts:1970-1978`). Containment is a membership edge carrying `ordinal`; the nested id-bearing array → top-level entity block + ordinal-bearing membership edges promotion is performed by the canonicalizer (`canonicalize-substrate` tool; `src/canonicalize-substrate.ts:10-12`). The `promote-item` tool is a separate cross-substrate derivation (item → another registered substrate as a new content-addressed item + `item_derived_from_item` lineage edge; `src/index.ts:1035`, `src/promote-item.ts:129`), NOT a nested-array promoter.
 
 ### B.4 Cross-substrate — substrate_id + registry + aliases + resolveRef
 
@@ -99,7 +99,7 @@ Live `.context/relations.json` confirms both: same-substrate parents `{kind:"ite
   - `foreign` — a structured `substrate_id` locator, or a `<alias>:<refname>` whose alias is registered, resolved in the foreign index;
   - `dangling` — locator names a registered substrate but the oid/refname is absent there (or the foreign index build throws);
   - `unregistered` — a `substrate_id`/alias the registry does not carry.
-  The alias parse is attempted first on any string containing `:` (`:1521-1546`).
+  The `<alias>:<refname>` parse is attempted first on a string with a NON-leading `:` (the parse gates on `colon > 0`, so a leading-colon string is not alias-parsed) (`:1521-1546`).
 
 **SoT-drift invariant:** `validateContext` requires the active `config.substrate_id` to have a registry entry whose `dir` resolves to the active substrate; mismatch ⇒ `substrate_id_registry_mismatch`, missing ⇒ `substrate_id_unregistered` (`src/context-sdk.ts:1661-1696`).
 
@@ -127,7 +127,7 @@ Live `.context/relations.json` confirms both: same-substrate parents `{kind:"ite
 - Block CRUD: `append-block-item`, `update-block-item`, `remove-block-item`, `write-block`, `read-block`, `read-block-dir`, `append-block-nested-item`, `update-block-nested-item`, `remove-block-nested-item`.
 - Item-level read/query: `read-block-item`, `read-block-page`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `join-blocks`, `find-references`, `walk-ancestors`, `context-walk-descendants`, `context-edges-for-lens`, `gather-execution-context`.
 - Substrate writes: `append-relation`, `amend-config`, `write-schema`, `write-schema-migration`, `rename-canonical-id`.
-- Content-addressing lifecycle: **`promote-item`** (nested → top-level + membership edge), **`migrate-content-addressed`** (backfill identity), **`canonicalize-substrate`** (one-time canonicalizer; migration tooling).
+- Content-addressing lifecycle: **`promote-item`** (cross-substrate derivation: promote an item into another registered substrate as a new content-addressed item + `item_derived_from_item` lineage edge), **`migrate-content-addressed`** (backfill identity), **`canonicalize-substrate`** (one-time canonicalizer; promotes each nested id-bearing array → top-level entity block + ordinal-bearing membership edges).
 - Discovery/introspection: `read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`, `context-bootstrap-state`.
 - Lifecycle/state: `context-status`, `context-validate`, `context-validate-relations`, `complete-task`.
 - Substrate management: `context-init`, `context-accept-all`, `context-switch`, `context-list`, `context-archive`.

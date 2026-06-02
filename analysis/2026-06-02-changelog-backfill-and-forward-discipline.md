@@ -11,7 +11,29 @@ All counts that drift over time are given as "as of `v0.27.0`..`HEAD` @ 2026-06-
 ## Context / current state
 
 ### The dormancy
-The six packages version in lockstep at **0.27.0**. The last release tag is `v0.27.0` (2026-05-25). Since that tag there are **408 commits** (re-derive: `git rev-list v0.27.0..HEAD --count`). None of the four existing changelogs has recorded anything close to current state, and two packages have no changelog file at all.
+The six packages version in lockstep at **0.27.0** in `package.json`, and the last *tag* is `v0.27.0` (2026-05-25). But the changelog must reflect what consumers actually received, and the **public release history is per-package heterogeneous** (next subsection): the lockstep `package.json` number is not the same as "what was published." Since `v0.27.0` there are **408 commits** (re-derive: `git rev-list v0.27.0..HEAD --count`). None of the four existing changelogs has recorded anything close to current state, and two packages have no changelog file at all.
+
+### npm publish history (what consumers received)
+The changelog's audience is the OSS consumer, so the backfill granularity must follow what was *published to npm*, not the lockstep `package.json` number. The published-version sets differ sharply per package. Re-derive before acting:
+
+```bash
+for p in pi-workflows pi-behavior-monitors pi-project-workflows pi-jit-agents pi-context pi-agent-dispatch; do
+  echo "=== @davidorex/$p ==="; npm view "@davidorex/$p" versions --json; done
+git tag | sort -V
+```
+
+| Package | Published on npm (as of 2026-06-02) | Last published | OSS implication |
+|---|---|---|---|
+| `pi-workflows` | 27 versions, `0.1.0` → `0.26.0` | 0.26.0 | consumers received every minor → per-published-version entries |
+| `pi-behavior-monitors` | 28 versions, `0.1.2` → `0.26.0` | 0.26.0 | per-published-version entries (INCLUDING the 0.4.0–0.14.5 span the current file skips) |
+| `pi-project-workflows` (meta) | 26 versions, `0.2.0` → `0.26.0` | 0.26.0 | per-published-version (thin lockstep lines) |
+| `pi-jit-agents` | **2 versions**: `0.14.6`, `0.26.0` | 0.26.0 | exactly two public entries |
+| `pi-context` | **1 version**: `0.26.0` only | 0.26.0 | one public entry, consolidated to first publish |
+| `pi-agent-dispatch` | **never published** (npm 404) | — | no public history to backfill |
+
+**0.27.0 is tagged but UNPUBLISHED.** The last published version for *every* package is `0.26.0` (tagged 2026-05-25). The `v0.27.0` tag (2026-05-25) carries changes that never reached npm. Therefore the historical backfill covers the **public past only — through each package's last published version (≤ 0.26.0)** — and the unpublished `0.27.0`-and-later changes belong under `## [Unreleased]` until the next publish promotes them. This unifies the backfill with the Part-B forward discipline: `[Unreleased]` is the single home for not-yet-published changes.
+
+**Tag availability is heterogeneous too.** Tags exist `v0.3.0` … `v0.27.0` (`v0.25.0` is absent; re-derive `git tag | sort -V`). The earliest published versions predate tagging: there are NO `v0.1.0` / `v0.1.2` / `v0.2.0` tags. So tag-bounding (A.3) works cleanly from `v0.3.0` onward; for the pre-tag published versions the range boundary is the commit-date / first-tag anchor, not a tag (noted in A.3).
 
 ### Per-package gap table (as of v0.27.0..HEAD @ 2026-06-02)
 
@@ -64,16 +86,20 @@ The substrate is NOT a usable comprehensive backfill source — see Part A groun
 ## Part A — Backfill plan
 
 ### A.1 Scope decision (decisive)
-**Backfill the dormant gap to the point each changelog last recorded truth — NOT full history.** Rationale: the pre-dormancy entries (0.1.0–0.3.0, and bm through 0.14.6) are already accurate hand-written Keep-a-Changelog records; re-deriving them from git would risk overwriting good content with lossier reconstructions. Backfill begins immediately after each package's last recorded version:
+**Backfill is per-PUBLISHED-version, scoped to the public past (through each package's last published version, ≤ 0.26.0) — NOT one consolidated block, and NOT the lockstep `package.json` number.** The changelog serves OSS consumers, so its granularity follows what npm shipped (see "npm publish history"). Where the published history has many versions, each published version gets its own dated, tag-bounded, path-grounded section; where ≤ 2 public versions existed, consolidation is honest; where a package was never published, there is no historical backfill (fresh-start `[Unreleased]` only). Pre-dormancy hand-written entries that already record a published version accurately are NOT overwritten — re-deriving them from git would risk replacing good content with lossier reconstructions; the backfill fills the *unrecorded* published versions and leaves accurate existing ones in place.
 
-| Package | Backfill range (versions) | Backfill range (git) |
+Each published version's range is the commits between its tag and the prior published version's tag, intersected with the package's published surface (A.3). The exact published-version list is re-derived per package (`npm view … versions --json` + `git tag`), not enumerated here — that is per-package implementer work. The shapes:
+
+| Package | Public-release shape | Backfill method / range |
 |---|---|---|
-| `pi-context` | 0.4.0 → 0.27.0 (one consolidated block; see A.4) | `cbb8a84..HEAD` for paths `packages/pi-context/` (account for the pi-project→pi-context rename at 0.25.0: `git log --follow`) |
-| `pi-workflows` | 0.4.0 → 0.27.0 | `cbb8a84..HEAD` for `packages/pi-workflows/` |
-| `pi-behavior-monitors` | 0.4.0 → 0.14.5 (the skipped releases) AND 0.14.7 → 0.27.0 | `cbb8a84..3c75865` and `3c75865..HEAD` for `packages/pi-behavior-monitors/` |
-| `pi-jit-agents` | extraction → 0.27.0 (full, file is empty) | `239f718..HEAD` for `packages/pi-jit-agents/` |
-| `pi-agent-dispatch` | scaffold → 0.27.0 (full; create file first) | `a1d8072..HEAD` for `packages/pi-agent-dispatch/` |
-| `pi-project-workflows` (meta) | create file; summarize lockstep history (full) | re-export bumps; one line per release noting "lockstep to X.Y.Z" |
+| `pi-context` | one public version (`0.26.0` only) | ONE consolidated `## [0.26.0]` over its full history to that publish — `git log <first-commit>..v0.26.0 -- packages/pi-context/` (`git log --follow` across the pi-project→pi-context rename). Consolidated is correct HERE precisely because there is one public release; tags don't help because it was not published at the intervening tags. |
+| `pi-workflows` | 27 public versions, `0.1.0`→`0.26.0` | one `## [x.y.z] - <tag date>` per PUBLISHED version, each grounded by `git log v<prev>..v<cur> -- packages/pi-workflows/<surface>` (pre-tag versions 0.1.0/0.2.0: commit-date anchor, see A.3). Do NOT overwrite the accurate pre-dormancy `[0.1.0]`–`[0.3.0]` entries. |
+| `pi-behavior-monitors` | 28 public versions, `0.1.2`→`0.26.0` | per PUBLISHED version, INCLUDING the `0.4.0`–`0.14.5` releases the current file skips (consumers received them → per-version entries, not a folded note). Range per version `git log v<prev>..v<cur> -- packages/pi-behavior-monitors/<surface>`. |
+| `pi-project-workflows` (meta) | 26 public versions, `0.2.0`→`0.26.0` | per PUBLISHED version, thin lockstep lines (`## [x.y.z] - <date>` → "lockstep to x.y.z; see member changelogs"). Create the file (A.6). |
+| `pi-jit-agents` | 2 public versions, `0.14.6`, `0.26.0` | exactly two entries: `## [0.14.6]` (extraction → 0.14.6) and `## [0.26.0]` (0.14.7-range → 0.26.0), each git-grounded for `packages/pi-jit-agents/`. |
+| `pi-agent-dispatch` | never published (npm 404) | NO historical backfill. Create the file with `# Changelog` + `## [Unreleased]` only (A.6); its accumulated changes become its first published version's section at first publish. |
+
+All packages: the unpublished `0.27.0`-and-later changes accumulate under `## [Unreleased]`, NOT a backfilled `[0.27.0]` section. Backfill stops at last-published (`v0.26.0`).
 
 ### A.2 Per-package partition (one implementer per package — six partitions)
 Each partition is a single package's changelog. Partitions are independent (no shared file) and dispatch in parallel. Each implementer's brief is bounded to ONE `packages/<name>/CHANGELOG.md` and the git history of `packages/<name>/`.
@@ -87,25 +113,41 @@ Each partition is a single package's changelog. Partitions are independent (no s
 
 **Grounding rule (mandatory, per entry):** every changelog line MUST trace to at least one specific commit SHA touching that package's published surface. The implementer brief requires the working note (not committed) to map each drafted line → SHA(s). No line without a SHA. Where a commit references a substrate ID (TASK-/DEC-/FGAP-/FEAT-) in its subject, the ID MAY be cited in the entry as a label, but the semantic content is stated in plain English (per the always-plain-English mandate).
 
-Per-package commit enumeration command (the implementer's raw material):
+**Tag-bounded per-version range method (the per-published-version grounding):** each published version's entry is grounded by the commits between its tag and the prior published version's tag, intersected with the package's published surface. The published-version list comes from `npm view … versions --json`; the boundary tags from `git tag`:
 ```bash
-git log v0.27.0..HEAD --format='%h %s' -- \
+# per published version x.y.z (prev = the adjacent earlier PUBLISHED version):
+git log v<prev>..v<cur> --format='%h %s' -- \
   packages/<name>/src/ packages/<name>/schemas/ packages/<name>/examples/ \
   packages/<name>/templates/ packages/<name>/skills/
-# for the full dormant range, swap v0.27.0 for the package's last-recorded anchor (A.1).
+```
+Caveats the implementer must honor:
+- **Pre-tag published versions** (e.g. pi-workflows `0.1.0`/`0.2.0`, pi-behavior-monitors `0.1.2`–`0.1.4`) predate tagging — there are NO `v0.1.x` / `v0.2.0` tags. For these the lower boundary is the first commit / package-creation commit and the upper boundary is the first existing tag (`v0.3.0`); use `git log <first>..v0.3.0 --follow`. These collapse into the pre-dormancy hand-written entries where those already exist accurately (do not overwrite).
+- **Tag gaps** — `v0.25.0` is absent; a published version with no exact tag is bounded by the nearest surrounding tags (re-derive `git tag | sort -V`).
+- **Single-publish package** (pi-context): no per-version tag-bounding applies — one consolidated range to `v0.26.0` (A.1).
+
+Whole-`[Unreleased]` enumeration (unpublished 0.27.0-and-later changes, NOT backfilled into a version section):
+```bash
+git log v0.26.0..HEAD --format='%h %s' -- \
+  packages/<name>/src/ packages/<name>/schemas/ packages/<name>/examples/ \
+  packages/<name>/templates/ packages/<name>/skills/
 ```
 
 ### A.4 Granularity decision (decisive)
-**One consolidated `### Added/Changed/Fixed/Removed` block per package covering the whole backfilled range, headed `## [0.27.0] - 2026-05-25`** (the tag date), NOT one section per intervening version. Rationale: the 24-release lockstep span has no per-version release notes to reconstruct faithfully; manufacturing 24 dated sections would fabricate a granularity the record does not support. A single accurate consolidated entry at the current released version is honest and useful. (Future releases get their own dated sections via the forward discipline — Part B — which restores per-release granularity going forward.)
+**Per-PUBLISHED-version dated sections — `## [x.y.z] - <tag date>`, one per version the package published to npm — each with its own `### Added/Changed/Fixed/Removed` block grounded by the tag-bounded range (A.3).** Differentiated by public-release shape:
+- **Many public versions** (pi-workflows, pi-behavior-monitors, meta): one dated section per published version. Per-version is GROUNDED, not fabricated: a published version's section IS the commits between adjacent published-version tags, attributed by changed-file path (A.3). The tags make this faithful — the earlier "no per-version notes to reconstruct" rationale undervalued the tags and is withdrawn.
+- **≤ 2 public versions** (pi-jit-agents: 2; pi-context: 1): consolidate. pi-context = ONE `[0.26.0]` over its full history to its sole publish (consolidated is correct here — one public release, and it was not published at the intervening tags so tag-bounding gives nothing). pi-jit-agents = exactly two entries (`[0.14.6]`, `[0.26.0]`).
+- **Never published** (pi-agent-dispatch): no historical sections at all — fresh-start `[Unreleased]` (A.6).
 
-For pi-behavior-monitors, the genuinely-missing pre-0.14.6 releases (0.4.0–0.14.5) are folded into one note under the consolidated `[0.27.0]` block rather than reconstructed individually, for the same reason.
+The unpublished `0.27.0`-and-later changes are NOT a backfilled `[0.27.0]` section; they go under `## [Unreleased]` for every package (A.1), which the forward discipline (Part B) consumes at the next publish.
+
+For pi-behavior-monitors, the `0.4.0`–`0.14.5` releases the current changelog skips were PUBLISHED (consumers received them) and therefore get per-version entries — NOT folded into one note. The earlier instruction to fold them is withdrawn.
 
 ### A.5 Format
 Keep-a-Changelog (existing convention): `## [x.y.z] - YYYY-MM-DD`, `### Added` / `### Changed` / `### Fixed` / `### Removed`. Categorize each line by the nature of the change (feat→Added/Changed, fix→Fixed, removal→Removed). Match the prose register of the existing pre-dormancy entries (terse, surface-describing, names the exported symbol/command/behavior).
 
 ### A.6 Create-the-two-missing-changelogs step
-- `pi-agent-dispatch/CHANGELOG.md` — create with `# Changelog` header, then a consolidated `## [0.27.0] - 2026-05-25` block grounded in `a1d8072..HEAD` for `packages/pi-agent-dispatch/` (scaffold TASK-089 through current dispatch tool surface).
-- `pi-project-workflows/CHANGELOG.md` — create with `# Changelog` header; this is a meta re-export package, so its entry is a short note: "Meta-package re-exporting the Pi extensions; versioned in lockstep. See member-package changelogs for surface changes," plus the lockstep version line.
+- `pi-agent-dispatch/CHANGELOG.md` — create with `# Changelog` header + a `## [Unreleased]` section ONLY. This package was never published to npm (404), so there is NO historical version to backfill — its accumulated surface (scaffold TASK-089 onward, `a1d8072..HEAD` for `packages/pi-agent-dispatch/`) is recorded under `[Unreleased]` and becomes its first published version's section when it is first published.
+- `pi-project-workflows/CHANGELOG.md` — create with `# Changelog` header; this is a meta re-export package published 26 times (`0.2.0`→`0.26.0`). Its backfill is per-PUBLISHED-version thin lockstep lines: one `## [x.y.z] - <tag date>` per published version reading "lockstep to x.y.z; see member-package changelogs," with unpublished `0.27.0`-and-later under `## [Unreleased]`. (Re-derive the published-version list via `npm view @davidorex/pi-project-workflows versions --json`; pre-tag `0.2.0` uses the commit-date anchor per A.3.)
 - Both files must be added to each package's `files` array in `package.json` IF not already present (verify; do NOT assume) so they ship to npm. **Note: this `package.json` edit is the one place Part A touches package.json — flag it as an Open Decision (D4) because the MANDATES bar modifying package.json in THIS scoping artifact; the implementer dispatched from this plan performs it, not this document.**
 
 ### A.7 Sequencing
@@ -161,12 +203,14 @@ A convention in prose alone is what went dormant the first time. The husky guard
 
 ## Open decisions for the user (scope calls)
 
-- **D1 — Backfill granularity.** Part A.4 recommends ONE consolidated `[0.27.0]` block per package over the dormant span (honest; avoids fabricating 24 per-version sections). Alternative the user may prefer: reconstruct individual per-version sections for releases where commit grouping is clean enough. Recommendation stands at consolidated; user confirms.
+- **D1 — Backfill granularity. RESOLVED (per user direction, 2026-06-02): per-PUBLISHED-version, OSS-consumer scope.** The earlier consolidated-`[0.27.0]` recommendation rested on a falsified premise ("no per-version notes to reconstruct"); the evidence overturns it. (a) npm publish history is heterogeneous per package — pi-workflows 27 versions, pi-behavior-monitors 28, meta 26, pi-jit-agents 2, pi-context 1, pi-agent-dispatch 0 (re-derive `npm view "@davidorex/<pkg>" versions --json`); consumers received each published version, so each is owed an entry. (b) 51 tags `v0.3.0`…`v0.27.0` (re-derive `git tag | sort -V`) make a published version's range tag-bounded and path-grounded (A.3) — per-version is grounded, not fabricated. (c) `0.27.0` is tagged but unpublished (last npm = `0.26.0` everywhere), so backfill covers the public past only (≤ 0.26.0) and unpublished changes go to `[Unreleased]`. Granularity is now per-published-version where many releases existed, consolidated where ≤ 2, fresh-start where never published (A.4). No longer an open decision.
 - **D2 — CI reinforcement.** Whether to add the changelog guard to `.github/workflows/ci.yml` in addition to husky (B.3). Husky alone is bypassable with `--no-verify` (which the mandates forbid, but CI enforces it for actors outside this repo's mandates). Recommend: add it.
 - **D3 — Guard severity during transition.** The commit-time guard, switched on before backfill completes, would block commits to packages whose backfill is mid-flight. Recommend: land backfill (Part A) first, then the guard (Part B) — sequencing already in A.7/B is ordered this way; user confirms the ordering.
 - **D4 — `package.json` `files` edits for the two new changelogs.** A.6 requires the two new `CHANGELOG.md` files be in their package `files` arrays to ship to npm. This scoping artifact is barred from editing `package.json`; the Part-A implementer performs it. User confirms the implementer is authorized to touch those two `package.json` `files` arrays.
 - **D5 — Empty-`[Unreleased]`-with-changes release behavior.** B.3 R2b recommends FAILING a release when a package had published-surface commits but recorded nothing. Confirm "fail" (vs "warn-and-proceed"). Recommend: fail — warn-and-proceed is how the dormancy persisted.
 
 ## Stated plainly: what could not be determined here
-- Whether every one of the ~408 commits since v0.27.0 that touched a package's published surface represents a behavior change a consumer would care to read is a judgment the per-package implementer makes against the grounding rule (A.3); this artifact fixes the source and rule but does not pre-classify each commit.
-- The exact wording of backfilled entries is left to implementers under the SHA-grounding rule; this artifact does not draft changelog prose.
+Per-version granularity IS now determinable: the published-version list (`npm view … versions`) crossed with the tags (`git tag`) bounds each public version's commit range, and path attribution (A.3) grounds each entry. The residual unknowns are narrower:
+- Within each tag-bounded range, whether a given commit touching the published surface represents a behavior change a consumer would care to read is a per-commit judgment the implementer makes against the grounding rule (A.3); this artifact fixes the source, the range method, and the rule, but does not pre-classify each commit.
+- The exact prose of backfilled entries is left to implementers under the SHA-grounding rule; this artifact does not draft changelog text.
+- Pre-tag published versions (pi-workflows 0.1.0/0.2.0, bm 0.1.2–0.1.4) have no exact tag boundary; the implementer anchors them on commit dates / first-tag (A.3) and reconciles with the accurate pre-dormancy hand-written entries already present.

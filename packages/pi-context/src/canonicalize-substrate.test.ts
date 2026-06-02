@@ -31,6 +31,7 @@ import {
 	inferItemSubschemaFromData,
 	type PromotionTargets,
 	type RegisterBlock,
+	stripNestedIdArrayFromSchema,
 } from "./canonicalize-substrate.js";
 import { type EdgeEndpoint, loadRelationsForDir } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
@@ -1459,5 +1460,629 @@ describe("canonicalizeSubstrate: orphan-block registration (opts.registerBlocks)
 		assert.deepEqual([...after.entries()].sort(), [...before.entries()].sort(), "dryRun: every byte unchanged");
 		assert.ok(report.registered_blocks.includes("conventions"), "dryRun reports conventions would be registered");
 		assert.ok(report.items_oid_minted >= 3, "dryRun reports the 3 rules would be oid-minted");
+	});
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMPTY-DATA NESTED-ID SCHEMA (the wasc shape) — a block whose SCHEMA declares a
+// nested id-bearing array but whose DATA is empty (0 parent items). The data-driven
+// promotion/de-nest path skips it entirely (dataNestedIdArrayKeys skips empty arrays;
+// prepareParentSchema early-returns at 0 items; denestParent runs only when a key was
+// promoted), so before the schema-surgical sweep the nested-array DECLARATION survived
+// and validateContext flagged `nested_id_bearing_array`. The Step 3.5 sweep
+// (stripNestedIdArrayFromSchema) strips it data-independently.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A `layer-plans`-like schema: a `plans` array whose item shape declares TWO nested
+ * id-bearing arrays — `layers[].id` + `migration_phases[].id` — which
+ * findNestedIdBearingArrays reports as `plans.layers` + `plans.migration_phases`. */
+function layerPlansSchema(): Record<string, unknown> {
+	const idArr = (idPattern: string): Record<string, unknown> => ({
+		type: "array",
+		items: {
+			type: "object",
+			additionalProperties: false,
+			required: ["id"],
+			properties: { id: { type: "string", pattern: idPattern }, label: { type: "string" } },
+		},
+	});
+	return {
+		$schema: "http://json-schema.org/draft-07/schema#",
+		$id: "pi-context://schemas/layer-plans",
+		version: "1.0.0",
+		title: "Layer Plans",
+		type: "object",
+		required: ["plans"],
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					additionalProperties: false,
+					required: ["id", "layers"],
+					properties: {
+						id: { type: "string", pattern: "^PLAN-\\d{3}$" },
+						title: { type: "string" },
+						layers: idArr("^LAYER-\\d{3}$"),
+						migration_phases: idArr("^PHASE-\\d{3}$"),
+					},
+				},
+			},
+		},
+	};
+}
+
+/** A `plans` block whose item shape declares an OBJECT-valued `meta` property that itself
+ * holds an id-bearing `layers` array. findNestedIdBearingArrays recurses object-valued
+ * props at the SAME depth, so it reports `plans.meta.layers` — a path the OLD array-only
+ * stripper could not navigate (the `meta` intermediate has no `items`). */
+function objectWrapperPlansSchema(): Record<string, unknown> {
+	return {
+		$schema: "http://json-schema.org/draft-07/schema#",
+		$id: "pi-context://schemas/plans",
+		version: "1.0.0",
+		title: "Plans",
+		type: "object",
+		required: ["plans"],
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					additionalProperties: false,
+					required: ["id"],
+					properties: {
+						id: { type: "string", pattern: "^PLAN-\\d{3}$" },
+						title: { type: "string" },
+						meta: {
+							type: "object",
+							additionalProperties: false,
+							required: ["layers"],
+							properties: {
+								label: { type: "string" },
+								layers: {
+									type: "array",
+									items: {
+										type: "object",
+										additionalProperties: false,
+										required: ["id"],
+										properties: { id: { type: "string", pattern: "^LAYER-\\d{3}$" }, name: { type: "string" } },
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	};
+}
+
+/** A `plans` block whose item shape is a `oneOf` COMPOSITION wrapper; one branch carries an
+ * id-bearing `tasks` array. findNestedIdBearingArrays descends composition branches at the
+ * SAME keyPath (a branch adds no path segment), so it reports `plans.tasks` — a path the OLD
+ * stripper could not navigate (the item shape had no own `properties.tasks`). */
+function compositionWrapperPlansSchema(): Record<string, unknown> {
+	return {
+		$schema: "http://json-schema.org/draft-07/schema#",
+		$id: "pi-context://schemas/plans",
+		version: "1.0.0",
+		title: "Plans",
+		type: "object",
+		required: ["plans"],
+		properties: {
+			plans: {
+				type: "array",
+				items: {
+					type: "object",
+					oneOf: [
+						{
+							type: "object",
+							required: ["id"],
+							properties: { id: { type: "string", pattern: "^PLAN-\\d{3}$" }, kind: { const: "leaf" } },
+						},
+						{
+							type: "object",
+							required: ["id", "tasks"],
+							properties: {
+								id: { type: "string", pattern: "^PLAN-\\d{3}$" },
+								kind: { const: "branch" },
+								tasks: {
+									type: "array",
+									items: {
+										type: "object",
+										additionalProperties: false,
+										required: ["id"],
+										properties: { id: { type: "string", pattern: "^TASK-\\d{3}$" }, desc: { type: "string" } },
+									},
+								},
+							},
+						},
+					],
+				},
+			},
+		},
+	};
+}
+
+/** Build a substrate carrying an empty-data `layer-plans` block (nested-id schema +
+ * `{"plans":[]}`). When `withData` is true the `plans` array carries ONE item with a
+ * NON-empty `layers` array — exercising the DATA-driven promotion path (regression). */
+function makeLayerPlansFixture(opts?: { withData?: boolean }): { cwd: string; work: string } {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "canon-wasc-"));
+	writeBootstrapPointer(cwd, ".work");
+	const work = path.join(cwd, ".work");
+	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
+
+	const config = {
+		schema_version: "1.0.0",
+		root: ".work",
+		substrate_id: uniqueSubstrateId(),
+		block_kinds: [
+			{
+				canonical_id: "layer-plans",
+				display_name: "Layer Plans",
+				prefix: "PLAN-",
+				schema_path: "schemas/layer-plans.schema.json",
+				array_key: "plans",
+				data_path: "layer-plans.json",
+			},
+		],
+		relation_types: [],
+		invariants: [],
+	};
+	fs.writeFileSync(path.join(work, "config.json"), JSON.stringify(config, null, 2));
+	fs.writeFileSync(path.join(work, "schemas", "layer-plans.schema.json"), JSON.stringify(layerPlansSchema(), null, 2));
+	const data = opts?.withData
+		? {
+				plans: [
+					{
+						id: "PLAN-001",
+						title: "rollout",
+						layers: [
+							{ id: "LAYER-001", label: "ingest" },
+							{ id: "LAYER-002", label: "transform" },
+						],
+						migration_phases: [],
+					},
+				],
+			}
+		: { plans: [] };
+	fs.writeFileSync(path.join(work, "layer-plans.json"), JSON.stringify(data, null, 2));
+	return { cwd, work };
+}
+
+describe("canonicalizeSubstrate: empty-data nested-id schema (the wasc empty-schema de-nest)", () => {
+	it("strips the nested id-bearing array DECLARATIONS from a 0-item block's schema; validateContext clean", (t) => {
+		const { cwd, work } = makeLayerPlansFixture();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		// Precondition: the on-disk schema DOES declare the nested id-bearing arrays.
+		const schemaBefore = JSON.parse(
+			fs.readFileSync(path.join(work, "schemas", "layer-plans.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		assert.deepEqual(
+			findNestedIdBearingArrays(schemaBefore).sort(),
+			["plans.layers", "plans.migration_phases"],
+			"precondition: schema declares plans.layers + plans.migration_phases",
+		);
+
+		// No promotionTargets needed — the data is empty (nothing data-bearing to promote).
+		const report = canonicalizeSubstrate(work, { promotionTargets: {} });
+
+		// ── the schema no longer declares the nested arrays ──────────────────────
+		const schemaAfter = JSON.parse(
+			fs.readFileSync(path.join(work, "schemas", "layer-plans.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		assert.deepEqual(
+			findNestedIdBearingArrays(schemaAfter),
+			[],
+			"post-canonicalize: schema declares no nested id-bearing array",
+		);
+		const planItemProps = (
+			(schemaAfter.properties as Record<string, Record<string, unknown>>).plans.items as Record<string, unknown>
+		).properties as Record<string, Record<string, unknown>>;
+		assert.equal(Object.hasOwn(planItemProps, "layers"), false, "layers property declaration removed");
+		assert.equal(Object.hasOwn(planItemProps, "migration_phases"), false, "migration_phases property removed");
+		assert.ok(Object.hasOwn(planItemProps, "id") && Object.hasOwn(planItemProps, "title"), "non-nested props retained");
+		// `layers` was in `required` — it must be dropped from required too.
+		const planItems = (schemaAfter.properties as Record<string, Record<string, unknown>>).plans.items as Record<
+			string,
+			unknown
+		>;
+		assert.deepEqual(planItems.required, ["id"], "layers dropped from item required (id retained)");
+
+		// ── the strip is recorded in the report ─────────────────────────────────
+		assert.ok(report.schema_denested.includes("layer-plans"), "report records layer-plans schema de-nested");
+
+		// ── validateContext clean of nested_id_bearing_array via pointer-switch ──
+		const original = JSON.parse(fs.readFileSync(path.join(cwd, ".pi-context.json"), "utf-8")) as { contextDir: string };
+		try {
+			writeBootstrapPointer(cwd, ".work");
+			const result = validateContext(cwd);
+			assert.deepEqual(
+				result.issues.filter((i) => i.code === "nested_id_bearing_array"),
+				[],
+				"validateContext: 0 nested_id_bearing_array (the wasc bug fixed)",
+			);
+		} finally {
+			writeBootstrapPointer(cwd, original.contextDir);
+		}
+
+		// ── idempotent: a 2nd run de-nests nothing (already clean) ───────────────
+		const report2 = canonicalizeSubstrate(work, { promotionTargets: {} });
+		assert.deepEqual(report2.schema_denested, [], "2nd run: 0 schemas de-nested (already clean)");
+	});
+
+	it("dryRun on the wasc shape writes nothing yet reports the schema would be de-nested", (t) => {
+		const { cwd, work } = makeLayerPlansFixture();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		const before = snapshotTree(work);
+		const report = canonicalizeSubstrate(work, { dryRun: true, promotionTargets: {} });
+		const after = snapshotTree(work);
+
+		assert.deepEqual([...after.entries()].sort(), [...before.entries()].sort(), "dryRun: every byte unchanged");
+		assert.ok(report.schema_denested.includes("layer-plans"), "dryRun reports layer-plans would be de-nested");
+		// On-disk schema still carries the nested arrays (dryRun wrote nothing).
+		const schema = JSON.parse(
+			fs.readFileSync(path.join(work, "schemas", "layer-plans.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		assert.ok(findNestedIdBearingArrays(schema).length === 2, "dryRun: on-disk schema unchanged (still nested)");
+	});
+
+	it("REGRESSION: a data-BEARING nested array still PROMOTES to a top-level block + membership edges (unchanged)", (t) => {
+		const { cwd, work } = makeLayerPlansFixture({ withData: true });
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		// The non-empty `plans[0].layers` array is DATA-bearing → it must promote (not merely
+		// strip). Supply an explicit target (explicit-or-fail). migration_phases is empty per
+		// item → no data key → handled by the schema-surgical sweep (no target needed).
+		const targets: PromotionTargets = {
+			"layer-plans.layers": {
+				blockKind: "layer",
+				prefix: "LAYER-",
+				idPattern: "^LAYER-\\d{4}$",
+				relationType: "plan_contains_layer",
+			},
+		};
+		const report = canonicalizeSubstrate(work, { promotionTargets: targets });
+
+		// ── the layers were PROMOTED into a top-level `layer` block ──────────────
+		const layerPromo = report.promotions.find((p) => p.path === "layer-plans.layers");
+		assert.ok(layerPromo, "layer-plans.layers promoted (data-bearing)");
+		assert.equal(layerPromo?.entities, 2, "2 layers promoted");
+		assert.equal(layerPromo?.edges, 2, "2 membership edges filed");
+		assert.ok(report.kinds_registered.includes("layer"), "the layer block was registered");
+
+		const layerCfg = (readConfig(work).block_kinds as Record<string, unknown>[]).find(
+			(b) => b.canonical_id === "layer",
+		)!;
+		const layers = readBlockItems(work, layerCfg.data_path as string, layerCfg.array_key as string);
+		assert.equal(layers.length, 2, "2 layer items on disk");
+		for (const l of layers) {
+			assert.match(l.id as string, /^LAYER-\d{4}$/, `layer ${String(l.id)} minted via given prefix`);
+			assert.match(l.oid as string, /^[0-9a-f]{32}$/, `layer ${String(l.id)} content-addressed`);
+		}
+
+		// ── membership edges parent(plan)→child(layer) with ordinals ─────────────
+		const edges = loadRelationsForDir(work);
+		const layerEdges = edges.filter((e) => e.relation_type === "plan_contains_layer");
+		assert.equal(layerEdges.length, 2, "2 plan_contains_layer edges");
+		assert.deepEqual(layerEdges.map((e) => e.ordinal).sort(), [0, 1], "layer edge ordinals are the array indices 0,1");
+		for (const e of layerEdges) {
+			const child = e.child as EdgeEndpoint;
+			assert.equal(child.kind, "item", "child endpoint structured");
+			if (child.kind === "item")
+				assert.match(child.refname ?? "", /^LAYER-00[12]$/, "child refname = original layer id");
+		}
+
+		// ── the parent block de-nested (data + schema), migration_phases stripped ─
+		const plans = readBlockItems(work, "layer-plans.json", "plans");
+		for (const p of plans) {
+			assert.equal(Object.hasOwn(p, "layers"), false, "plan de-nested: no layers array (promoted)");
+		}
+		const schema = JSON.parse(
+			fs.readFileSync(path.join(work, "schemas", "layer-plans.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		assert.deepEqual(findNestedIdBearingArrays(schema), [], "no nested id-bearing array survives in the parent schema");
+	});
+
+	it("ALREADY-CANONICAL: a substrate with no nested-id schema is a no-op (no spurious schema rewrites)", (t) => {
+		// Canonicalize the wasc fixture once → it becomes clean. A 2nd run must perform ZERO
+		// schema writes (the sweep finds nothing) — proven by a byte-snapshot across the 2nd run.
+		const { cwd, work } = makeLayerPlansFixture();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		canonicalizeSubstrate(work, { promotionTargets: {} });
+		const before = snapshotTree(work);
+		const report2 = canonicalizeSubstrate(work, { promotionTargets: {} });
+		const after = snapshotTree(work);
+
+		assert.deepEqual(
+			[...after.entries()].sort(),
+			[...before.entries()].sort(),
+			"already-canonical: 2nd run writes no bytes",
+		);
+		assert.deepEqual(report2.schema_denested, [], "already-canonical: 0 schemas de-nested");
+		assert.deepEqual(report2.promotions, [], "already-canonical: 0 promotions");
+		assert.equal(report2.items_oid_minted, 0, "already-canonical: 0 oids minted");
+	});
+});
+
+/** Build a single-block substrate with the GIVEN schema body + empty data
+ * (`{ <arrayKey>: [] }`) — the wasc shape for exercising the Step 3.5 schema-surgical sweep
+ * end-to-end on object-wrapper / composition-wrapper intermediate shapes. */
+function makeEmptySchemaFixture(
+	schemaBody: Record<string, unknown>,
+	canonicalId: string,
+	arrayKey: string,
+): { cwd: string; work: string } {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "canon-shape-"));
+	writeBootstrapPointer(cwd, ".work");
+	const work = path.join(cwd, ".work");
+	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
+	const config = {
+		schema_version: "1.0.0",
+		root: ".work",
+		substrate_id: uniqueSubstrateId(),
+		block_kinds: [
+			{
+				canonical_id: canonicalId,
+				display_name: canonicalId,
+				prefix: "PLAN-",
+				schema_path: `schemas/${canonicalId}.schema.json`,
+				array_key: arrayKey,
+				data_path: `${canonicalId}.json`,
+			},
+		],
+		relation_types: [],
+		invariants: [],
+	};
+	fs.writeFileSync(path.join(work, "config.json"), JSON.stringify(config, null, 2));
+	fs.writeFileSync(path.join(work, "schemas", `${canonicalId}.schema.json`), JSON.stringify(schemaBody, null, 2));
+	fs.writeFileSync(path.join(work, `${canonicalId}.json`), JSON.stringify({ [arrayKey]: [] }, null, 2));
+	return { cwd, work };
+}
+
+describe("canonicalizeSubstrate: Step 3.5 sweep de-nests object-wrapper + composition-wrapper intermediates", () => {
+	it("de-nests an id-array reached through an OBJECT-valued intermediate (plans.meta.layers), validateContext clean", (t) => {
+		const { cwd, work } = makeEmptySchemaFixture(objectWrapperPlansSchema(), "plans", "plans");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		const before = JSON.parse(fs.readFileSync(path.join(work, "schemas", "plans.schema.json"), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		assert.deepEqual(findNestedIdBearingArrays(before), ["plans.meta.layers"], "precondition: detector flags the path");
+
+		const report = canonicalizeSubstrate(work, { promotionTargets: {} });
+
+		const after = JSON.parse(fs.readFileSync(path.join(work, "schemas", "plans.schema.json"), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		assert.deepEqual(findNestedIdBearingArrays(after), [], "post-canonicalize: object-wrapper id-array stripped");
+		assert.ok(report.schema_denested.includes("plans"), "report records plans de-nested");
+		const meta = ((after.properties as Record<string, Record<string, unknown>>).plans.items as Record<string, unknown>)
+			.properties as Record<string, Record<string, unknown>>;
+		assert.equal(
+			Object.hasOwn(meta.meta.properties as Record<string, unknown>, "layers"),
+			false,
+			"layers declaration removed from the meta wrapper",
+		);
+
+		const original = JSON.parse(fs.readFileSync(path.join(cwd, ".pi-context.json"), "utf-8")) as { contextDir: string };
+		try {
+			writeBootstrapPointer(cwd, ".work");
+			const result = validateContext(cwd);
+			assert.deepEqual(
+				result.issues.filter((i) => i.code === "nested_id_bearing_array"),
+				[],
+				"validateContext: 0 nested_id_bearing_array (object-wrapper case fixed)",
+			);
+		} finally {
+			writeBootstrapPointer(cwd, original.contextDir);
+		}
+	});
+
+	it("de-nests an id-array carried in a COMPOSITION branch (plans.tasks), validateContext clean", (t) => {
+		const { cwd, work } = makeEmptySchemaFixture(compositionWrapperPlansSchema(), "plans", "plans");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		const before = JSON.parse(fs.readFileSync(path.join(work, "schemas", "plans.schema.json"), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		assert.deepEqual(findNestedIdBearingArrays(before), ["plans.tasks"], "precondition: detector flags the path");
+
+		const report = canonicalizeSubstrate(work, { promotionTargets: {} });
+
+		const after = JSON.parse(fs.readFileSync(path.join(work, "schemas", "plans.schema.json"), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		assert.deepEqual(findNestedIdBearingArrays(after), [], "post-canonicalize: composition-branch id-array stripped");
+		assert.ok(report.schema_denested.includes("plans"), "report records plans de-nested");
+
+		const original = JSON.parse(fs.readFileSync(path.join(cwd, ".pi-context.json"), "utf-8")) as { contextDir: string };
+		try {
+			writeBootstrapPointer(cwd, ".work");
+			const result = validateContext(cwd);
+			assert.deepEqual(
+				result.issues.filter((i) => i.code === "nested_id_bearing_array"),
+				[],
+				"validateContext: 0 nested_id_bearing_array (composition-wrapper case fixed)",
+			);
+		} finally {
+			writeBootstrapPointer(cwd, original.contextDir);
+		}
+	});
+
+	it("dryRun on the object-wrapper shape writes nothing yet reports the schema would be de-nested", (t) => {
+		const { cwd, work } = makeEmptySchemaFixture(objectWrapperPlansSchema(), "plans", "plans");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		const snap = snapshotTree(work);
+		const report = canonicalizeSubstrate(work, { dryRun: true, promotionTargets: {} });
+		const after = snapshotTree(work);
+
+		assert.deepEqual([...after.entries()].sort(), [...snap.entries()].sort(), "dryRun: every byte unchanged");
+		assert.ok(report.schema_denested.includes("plans"), "dryRun reports plans would be de-nested");
+		// On-disk schema still nested (dryRun wrote nothing) — yet the report is honest because
+		// the completeness guard consulted the in-memory stripped shape, not disk.
+		const onDisk = JSON.parse(fs.readFileSync(path.join(work, "schemas", "plans.schema.json"), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		assert.deepEqual(findNestedIdBearingArrays(onDisk), ["plans.meta.layers"], "dryRun: on-disk schema unchanged");
+	});
+});
+
+describe("canonicalizeSubstrate: Step 3.5 completeness guard", () => {
+	it("does NOT fire on a shape the extended navigator covers (object-wrapper completes clean)", (t) => {
+		// The extended navigator covers every intermediate the detector reaches (array, object,
+		// composition), so a guard trip cannot be provoked through a real detector-reachable path —
+		// the throw is reserved for a shape the navigator genuinely cannot strip (proven by the
+		// tuple-items test below). Here: the object-wrapper path the OLD stripper missed is now
+		// covered, so canonicalize completes WITHOUT the guard throwing.
+		const { cwd, work } = makeEmptySchemaFixture(objectWrapperPlansSchema(), "plans", "plans");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		assert.doesNotThrow(
+			() => canonicalizeSubstrate(work, { promotionTargets: {} }),
+			"extended navigator covers the object-wrapper path; guard does not fire on a covered shape",
+		);
+		// Guard-wiring sanity: the guard's condition is `findNestedIdBearingArrays(postSweep) > 0`.
+		// A still-nested schema is flagged by that same detector — so the THROW branch is reachable
+		// for any shape the navigator might fail to strip (exercised concretely below).
+		assert.ok(
+			findNestedIdBearingArrays(objectWrapperPlansSchema()).length > 0,
+			"the guard's detector re-run flags a still-nested schema (THROW branch reachable)",
+		);
+	});
+
+	it("THROWS naming block + surviving path when the navigator cannot strip a detector-flagged shape (tuple-items)", (t) => {
+		// Construct a shape the EXTENDED navigator genuinely cannot strip: a TUPLE-form `items`
+		// (array of subschemas) carrying the nested id-array, which the navigator explicitly does
+		// NOT navigate (returns changed:false — the canonicalizer never emits tuple-items), yet
+		// which findNestedIdBearingArrays DOES descend (its descendShape iterates tuple members).
+		// For such a shape the sweep records no change → the on-disk schema keeps the nested
+		// id-array → the completeness guard MUST throw rather than let canonicalize return clean.
+		const tupleItemsSchema = (): Record<string, unknown> => ({
+			$schema: "http://json-schema.org/draft-07/schema#",
+			$id: "pi-context://schemas/plans",
+			version: "1.0.0",
+			title: "Plans",
+			type: "object",
+			required: ["plans"],
+			properties: {
+				plans: {
+					type: "array",
+					items: [
+						{
+							type: "object",
+							required: ["id"],
+							properties: {
+								id: { type: "string", pattern: "^PLAN-\\d{3}$" },
+								layers: {
+									type: "array",
+									items: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
+								},
+							},
+						},
+					],
+				},
+			},
+		});
+		// Pre-conditions: detector flags it; navigator declines every flagged path.
+		const flagged = findNestedIdBearingArrays(tupleItemsSchema());
+		assert.ok(flagged.length > 0, "detector flags the tuple-items nested id-array");
+		for (const dp of flagged) {
+			assert.equal(
+				stripNestedIdArrayFromSchema(tupleItemsSchema(), dp).changed,
+				false,
+				`navigator declines the tuple-items path '${dp}'`,
+			);
+		}
+
+		// Full run: a 0-data tuple-items block reaches Step 3.5 with the nested array intact; the
+		// sweep cannot strip it → the guard throws naming the block + the surviving path.
+		const { cwd, work } = makeEmptySchemaFixture(tupleItemsSchema(), "plans", "plans");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		assert.throws(
+			() => canonicalizeSubstrate(work, { promotionTargets: {} }),
+			/completeness guard — block 'plans' still declares nested id-bearing array\(s\).*plans\.layers/s,
+			"guard throws naming the block + surviving path on an un-strippable detector-flagged shape",
+		);
+	});
+});
+
+describe("stripNestedIdArrayFromSchema (schema-surgical navigator)", () => {
+	it("strips a depth-1 nested array declaration + its required entry; leaves siblings intact", () => {
+		const { schema, changed } = stripNestedIdArrayFromSchema(layerPlansSchema(), "plans.layers");
+		assert.equal(changed, true, "reports changed");
+		const props = (
+			(schema.properties as Record<string, Record<string, unknown>>).plans.items as Record<string, unknown>
+		).properties as Record<string, unknown>;
+		assert.equal(Object.hasOwn(props, "layers"), false, "layers stripped");
+		assert.equal(Object.hasOwn(props, "migration_phases"), true, "sibling nested array untouched");
+		const items = (schema.properties as Record<string, Record<string, unknown>>).plans.items as Record<string, unknown>;
+		assert.deepEqual(items.required, ["id"], "layers removed from required");
+	});
+
+	it("returns changed:false (and an untouched clone) for an unnavigable / absent path", () => {
+		const before = layerPlansSchema();
+		const r1 = stripNestedIdArrayFromSchema(before, "plans.nonexistent");
+		assert.equal(r1.changed, false, "absent final segment → no change");
+		const r2 = stripNestedIdArrayFromSchema(before, "missingArray.layers");
+		assert.equal(r2.changed, false, "absent first segment → no change");
+		const r3 = stripNestedIdArrayFromSchema(before, "plans");
+		assert.equal(r3.changed, false, "single-segment path → no change");
+	});
+
+	it("strips a nested id-array reached through an OBJECT-valued intermediate property (plans.meta.layers)", () => {
+		// `plans.items.properties.meta` is an OBJECT (no `items`) holding the id-bearing
+		// `layers` array — findNestedIdBearingArrays reports `plans.meta.layers` (it recurses
+		// object-valued props at the SAME depth). The detector path must round-trip the stripper.
+		const schema = objectWrapperPlansSchema();
+		assert.deepEqual(
+			findNestedIdBearingArrays(schema),
+			["plans.meta.layers"],
+			"precondition: detector reports the path through the object wrapper",
+		);
+		const { schema: out, changed } = stripNestedIdArrayFromSchema(schema, "plans.meta.layers");
+		assert.equal(changed, true, "reports changed for the object-wrapper path");
+		const planItem = (out.properties as Record<string, Record<string, unknown>>).plans.items as Record<string, unknown>;
+		const meta = (planItem.properties as Record<string, Record<string, unknown>>).meta;
+		const metaProps = meta.properties as Record<string, unknown>;
+		assert.equal(Object.hasOwn(metaProps, "layers"), false, "layers stripped from the object wrapper's properties");
+		assert.equal(Object.hasOwn(metaProps, "label"), true, "sibling non-nested prop on the wrapper retained");
+		assert.deepEqual(meta.required, [], "layers removed from the object wrapper's required");
+		assert.deepEqual(findNestedIdBearingArrays(out), [], "no nested id-bearing array survives");
+	});
+
+	it("strips a nested id-array carried in an allOf/oneOf COMPOSITION branch of the item shape (plans.tasks)", () => {
+		// The plan item shape is an `allOf`/`oneOf` wrapper; the id-bearing `tasks` array lives
+		// inside a branch. findNestedIdBearingArrays descends composition branches at the SAME
+		// keyPath (no segment added), so it reports `plans.tasks` — the stripper must delete from
+		// the SAME branch the detector flagged.
+		const schema = compositionWrapperPlansSchema();
+		assert.deepEqual(
+			findNestedIdBearingArrays(schema),
+			["plans.tasks"],
+			"precondition: detector reports the path through the composition branch",
+		);
+		const { schema: out, changed } = stripNestedIdArrayFromSchema(schema, "plans.tasks");
+		assert.equal(changed, true, "reports changed for the composition-branch path");
+		assert.deepEqual(findNestedIdBearingArrays(out), [], "no nested id-bearing array survives");
+		// The strip landed inside the oneOf branch that declared `tasks`.
+		const planItem = (out.properties as Record<string, Record<string, unknown>>).plans.items as Record<string, unknown>;
+		const branches = planItem.oneOf as Record<string, unknown>[];
+		const declaringBranch = branches.find(
+			(b) => b.properties && Object.hasOwn(b.properties as Record<string, unknown>, "tasks"),
+		);
+		assert.equal(declaringBranch, undefined, "tasks declaration removed from the oneOf branch");
+		const taskBranch = branches.find((b) => Array.isArray(b.required) && (b.required as string[]).includes("tasks"));
+		assert.equal(taskBranch, undefined, "tasks removed from the branch's required too");
 	});
 });

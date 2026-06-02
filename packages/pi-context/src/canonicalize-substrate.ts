@@ -45,6 +45,19 @@
  *      migration decl (`{op:"delete", path:"<arrayKey>.<nested>"}`,
  *      consistency-only).
  *
+ * ── Schema-surgical de-nest sweep (data-INDEPENDENT) ─────────────────────────
+ * The data-driven model above de-nests a parent only when its nested array carried
+ * DATA. A block whose SCHEMA declares a nested id-bearing array but whose DATA is empty
+ * (a 0-item parent — e.g. `layer-plans.json = {"plans":[]}` with a schema declaring
+ * `plans.items.properties.layers[].id`) is skipped by every data-driven gate, so the
+ * nested-array DECLARATION survives and `validateContext` (which scans SCHEMAS) would
+ * flag it. A FINAL sweep (Step 3.5) therefore reads each registered block_kind's on-disk
+ * schema and strips every nested id-bearing array property the detector reports —
+ * schema-surgical (`stripNestedIdArrayFromSchema`), never data-inferred, so it works at
+ * 0 items. It is a no-op on a block Step 2 already de-nested (its re-emitted schema
+ * carries no nested-id array) and on an already-canonical substrate, so the data-bearing
+ * PROMOTION path is untouched.
+ *
  * Parent-first ordering guarantees the parent oid exists before its child edges
  * are filed: a top-level block_kind is backfilled before its direct nested
  * arrays are promoted; a synthesized child block is itself backfilled (by the
@@ -92,7 +105,7 @@ import type { DispatchContext } from "./dispatch-context.js";
 import { IDENTITY_FIELDS } from "./land-identity-fields.js";
 import { appendMigrationDeclForDir } from "./migrations-store.js";
 import { hasObject } from "./object-store.js";
-import { writeSchemaCheckedForDir } from "./schema-write.js";
+import { findNestedIdBearingArrays, writeSchemaCheckedForDir } from "./schema-write.js";
 
 /**
  * An EXPLICIT operator-provided promotion target for one nested id-bearing array.
@@ -560,6 +573,164 @@ function nextIdFrom(items: Record<string, unknown>[], prefix: string, width: num
 /** True iff `id` matches the prefix+width pattern. */
 function idMatchesPattern(id: string, parsed: { prefix: string; width: number }): boolean {
 	return new RegExp(`^${parsed.prefix}\\d{${parsed.width},}$`).test(id);
+}
+
+/** Resolve a one-level local `$ref` (`#/definitions/* | #/$defs/*`) on a schema node
+ * against `root`, mirroring `findNestedIdBearingArrays`' `deref`. An absent / external /
+ * unresolvable `$ref` returns the node unchanged (opaque). Used by the schema-surgical
+ * de-nest navigator so a `$ref`-rooted block schema (the real `.project-migrate` shape:
+ * `items:{$ref:#/definitions/feature}`) is traversed identically to the detector that
+ * reported the dotted path. */
+function derefNode(node: Record<string, unknown>, root: Record<string, unknown>): Record<string, unknown> {
+	const ref = typeof node.$ref === "string" ? node.$ref : undefined;
+	if (!ref) return node;
+	const m = /^#\/(definitions|\$defs)\/(.+)$/.exec(ref);
+	if (!m) return node;
+	const bag = root[m[1]] as Record<string, Record<string, unknown>> | undefined;
+	const target = bag?.[m[2]];
+	return target && typeof target === "object" ? target : node;
+}
+
+/** Locate the subschema node that DIRECTLY declares `segment` under its own
+ * `properties`, mirroring `findNestedIdBearingArrays`' `descendShape` — which finds a
+ * property either on the (deref'd) node's OWN `properties` OR inside ANY composition
+ * branch (`allOf`/`oneOf`/`anyOf`), traversed at the SAME path level (`schema-write.ts`
+ * `:195-226` for own-`properties`, `:238-242` for composition-branch descent; the branch
+ * walk passes the SAME keyPath, so a branch contributes no path segment and its
+ * `properties` are reached transparently). Returns the `properties` bag holding the
+ * segment AND the node owning that bag (so `required` can be filtered on the SAME owner
+ * the detector keyed on), or null when the segment is not declared on this node or any of
+ * its composition branches. Single-level: it does NOT itself recurse INTO the segment —
+ * the caller drives descent through the located property's array `items` / object body.
+ *
+ * `$ref` is deref'd via `derefNode` BEFORE inspecting `properties`/composition, matching
+ * the detector's `walk` (`schema-write.ts:253` derefs before `descendShape`). A composition
+ * branch is likewise deref'd before inspection. Recursion across nested composition wrappers
+ * (e.g. `allOf:[{oneOf:[...]}]`) is bounded by a small depth backstop so a hostile
+ * pure-inline composition chain cannot overflow — the detector itself never emits a path
+ * segment from a composition branch, so the realistic depth is ~1-2.
+ */
+function findSegmentHolder(
+	nodeRaw: Record<string, unknown>,
+	root: Record<string, unknown>,
+	segment: string,
+	depth = 0,
+): { props: Record<string, unknown>; owner: Record<string, unknown> } | null {
+	if (!nodeRaw || typeof nodeRaw !== "object" || depth > 64) return null;
+	const node = derefNode(nodeRaw, root);
+	const props = node.properties as Record<string, unknown> | undefined;
+	if (props && typeof props === "object" && Object.hasOwn(props, segment)) {
+		return { props, owner: node };
+	}
+	// The segment may be declared inside a composition branch (the detector descends each
+	// branch at the SAME path level). Inspect each branch the same way.
+	for (const key of ["allOf", "oneOf", "anyOf"] as const) {
+		const arr = node[key];
+		if (!Array.isArray(arr)) continue;
+		for (const member of arr) {
+			if (member && typeof member === "object") {
+				const found = findSegmentHolder(member as Record<string, unknown>, root, segment, depth + 1);
+				if (found) return found;
+			}
+		}
+	}
+	return null;
+}
+
+/**
+ * SCHEMA-SURGICAL de-nest of ONE nested id-bearing array property DECLARATION from a
+ * block schema, navigating the dotted path `findNestedIdBearingArrays` reports
+ * (`<arrayKey>.<n1>[.<n2>...]`, paths relative to the SCHEMA ROOT). Each segment is a
+ * `properties.<seg>` key the detector visited; the detector reaches the next segment by
+ * one of THREE intermediate shapes, and this navigator mirrors EACH so it deletes from the
+ * SAME location the detector flagged:
+ *   - ARRAY intermediate → descend through the array's `items` (deref'd) into ITS shape
+ *     (`schema-write.ts:214-219`, the `depth+1` array-`items` descent);
+ *   - OBJECT intermediate (a non-array object-valued property) → descend into THAT node's
+ *     shape at the SAME level (`schema-write.ts:220-224`, the same-`depth` object recursion);
+ *   - COMPOSITION wrapper (`allOf`/`oneOf`/`anyOf`) on an intermediate OR the item shape →
+ *     the segment's `properties` live inside the branch the detector descended
+ *     (`schema-write.ts:238-242`); `findSegmentHolder` locates the branch carrying the
+ *     segment so the strip happens there, exactly where the detector keyed it.
+ * A one-level local `$ref` is deref'd at every hop (mirroring the detector's `walk` deref),
+ * so a `$ref`-rooted block schema (the real `.project-migrate` `items:{$ref:#/definitions/…}`
+ * shape) is traversed identically — and a strip on the deref'd target mutates the shared
+ * definition object under root.$defs/definitions, the SAME pointer the detector resolved to
+ * flag the path. This generalizes `foldin-context.ts denestLayerPlans` (`:126-151`), which
+ * hardcoded `delete itemProps.layers` / `migration_phases` at a fixed depth-1 path.
+ *
+ * Operates on a STRUCTURED CLONE; returns `{ schema, changed }`. `changed` is false ONLY
+ * for a genuinely-unnavigable shape — a tuple-form `items` array at a non-final segment (the
+ * canonicalizer never emits tuple-items; a hand-authored tuple-items nested array is outside
+ * the wasc/empty-schema case this surgery targets), an absent segment, or an already-removed
+ * final property — so the caller skips the schema write + the report entry. Also strips the
+ * final segment from the holding shape's `required`.
+ *
+ * Schema-surgical, NOT data-inferred: it works with a PARENT block carrying 0 items (the
+ * wasc case) because it edits the schema declaration directly and never reads data —
+ * unlike `denestParent` / `denestedSchemaBody`, which re-infer the item shape from data and
+ * collapse to an empty/degenerate schema when there are no items.
+ */
+export function stripNestedIdArrayFromSchema(
+	schema: Record<string, unknown>,
+	dottedPath: string,
+): { schema: Record<string, unknown>; changed: boolean } {
+	const segments = dottedPath.split(".");
+	if (segments.length < 2) return { schema, changed: false };
+	const root = structuredClone(schema) as Record<string, unknown>;
+
+	// `currentShape` is the schema node (deref'd lazily by `findSegmentHolder`) whose
+	// `properties` — directly OR via a composition branch — declare the NEXT segment. It
+	// starts at the schema root (its `properties.<arrayKey>` holds segment 0). For each
+	// non-final segment we locate the declaring property, then advance `currentShape` to the
+	// shape that hosts the FOLLOWING segment: an array property's `items` (deref'd) for an
+	// array intermediate, or the object property body itself for an object intermediate.
+	let currentShape: Record<string, unknown> = root;
+
+	for (let i = 0; i < segments.length - 1; i++) {
+		const holder = findSegmentHolder(currentShape, root, segments[i]);
+		if (!holder) return { schema: root, changed: false };
+		const seg = holder.props[segments[i]] as Record<string, unknown> | undefined;
+		if (!seg || typeof seg !== "object") return { schema: root, changed: false };
+		if (seg.type === "array" || seg.items !== undefined) {
+			// ARRAY intermediate: descend through `items` (deref'd) — the next segment lives
+			// inside the array's item shape (the detector's depth+1 array-items descent).
+			const itemsRaw = seg.items;
+			// A tuple-items (array) intermediate is not navigated (see header).
+			if (!itemsRaw || typeof itemsRaw !== "object" || Array.isArray(itemsRaw)) {
+				return { schema: root, changed: false };
+			}
+			currentShape = itemsRaw as Record<string, unknown>;
+		} else {
+			// OBJECT intermediate: descend into the object property body at the SAME level —
+			// the next segment lives in THIS node's `properties` (the detector's same-depth
+			// object recursion). `findSegmentHolder` will deref it on the next hop.
+			currentShape = seg;
+		}
+	}
+
+	// `currentShape` is now the shape (array `items`, object body, or composition wrapper)
+	// whose `properties` — directly or via a branch — DECLARE the final segment. Locate the
+	// declaring bag + its owner so the strip + the `required` filter land on the SAME node the
+	// detector keyed on.
+	const last = segments[segments.length - 1];
+	const finalHolder = findSegmentHolder(currentShape, root, last);
+	if (!finalHolder) return { schema: root, changed: false };
+	const holderProps = finalHolder.props;
+	const owner = finalHolder.owner;
+	let changed = false;
+	if (Object.hasOwn(holderProps, last)) {
+		delete holderProps[last];
+		changed = true;
+	}
+	if (Array.isArray(owner.required)) {
+		const filtered = (owner.required as unknown[]).filter((r) => r !== last);
+		if (filtered.length !== (owner.required as unknown[]).length) {
+			owner.required = filtered;
+			changed = true;
+		}
+	}
+	return { schema: root, changed };
 }
 
 /**
@@ -1085,9 +1256,16 @@ export function canonicalizeSubstrate(
 		//     schema is never consulted), a reused block, AND a synthesized child block
 		//     (whose written schema intentionally omits its deeper arrays per the 9.2
 		//     guard — the data carries them). A 0-data nested array contributes no key
-		//     (empty ⇒ not id-bearing); it survives the clean-emit re-inference as a loose
-		//     `{type:"array"}` property, which the 9.2 guard permits, so it needs no
-		//     explicit de-nest. The promotionTargets lookup below is explicit-or-fail.
+		//     (empty ⇒ not id-bearing) and so is not promoted HERE. Whether its SCHEMA
+		//     declaration is dropped depends on whether this block was re-inferred: a
+		//     parent with data items is clean-emit re-inferred (the empty array re-emerges
+		//     as a loose `{type:"array"}`, 9.2-guard-clean); a parent with ZERO items is
+		//     NOT re-inferred (`prepareParentSchema` early-returns at 0 items, and
+		//     `denestParent` runs only when a key WAS promoted), so a 0-data nested array
+		//     declared on a 0-item block's SCHEMA survives AS an id-bearing nested array —
+		//     the case the schema-surgical sweep below (Step 3.5) strips, since the
+		//     data-driven path here cannot reach it. The promotionTargets lookup below is
+		//     explicit-or-fail.
 		const nestedKeysAll = dataNestedIdArrayKeys(itemsFor(bk));
 		if (nestedKeysAll.length === 0) continue;
 
@@ -1328,6 +1506,88 @@ export function canonicalizeSubstrate(
 		if (!processed.has(bk.canonical_id)) {
 			backfillBlock(bk);
 			processed.add(bk.canonical_id);
+		}
+	}
+
+	// ── Step 3.5: schema-surgical de-nest sweep (SCHEMA-DRIVEN, data-independent) ─
+	// The data-driven promotion/de-nest above (Step 2) only de-nests a parent whose
+	// nested id-bearing array carried DATA (`dataNestedIdArrayKeys` skips empty arrays;
+	// `prepareParentSchema` early-returns at 0 items; `denestParent` runs only when a key
+	// was promoted). A block whose SCHEMA declares a nested id-bearing array but whose DATA
+	// is empty — the wasc shape, e.g. `layer-plans.json = {"plans":[]}` with a schema
+	// declaring `plans.items.properties.layers[].id` + `migration_phases[].id` — is left
+	// UN-touched by Step 2, so the nested-array DECLARATION survives and `validateContext`
+	// (which scans SCHEMAS via `findNestedIdBearingArrays`) would flag `nested_id_bearing
+	// _array`. A tool named "canonicalize" must not emit a substrate its own validator
+	// rejects. This sweep closes that gap: for EVERY registered block_kind, read the
+	// on-disk schema, and for each nested id-bearing array path the detector reports, strip
+	// that property declaration (schema-surgical, never data-inferred — works at 0 items).
+	//
+	// REGRESSION-SAFE: a block already de-nested by Step 2 is SKIPPED here (its canonical_id
+	// is already in `report.schema_denested`) — under a REAL run Step 2 re-emitted its schema
+	// clean (so the detector would find nothing anyway), and under DRYRUN Step 2 only counted
+	// the de-nest in-memory while the on-disk schema is unchanged, so without this skip the
+	// sweep would re-read the still-nested on-disk schema and DOUBLE-COUNT the block in
+	// `schema_denested` — diverging the dryRun report from the real run. Skipping by the
+	// already-recorded set keeps dry==real and confines this sweep to exactly the gap Step 2
+	// left: a block whose SCHEMA declares a nested id-bearing array that Step 2 never de-nested
+	// (the 0-data wasc shape). The data-driven PROMOTION of data-bearing arrays (entities +
+	// membership edges) is untouched; an already-canonical substrate has no nested-id schema,
+	// so the sweep performs zero writes.
+	const alreadyDenested = new Set(report.schema_denested);
+	for (const bk of currentConfig().block_kinds ?? []) {
+		if (alreadyDenested.has(bk.canonical_id)) continue;
+		const schema = schemaForBk(bk);
+		if (!schema) continue;
+		const nestedPaths = findNestedIdBearingArrays(schema);
+		if (nestedPaths.length === 0) continue;
+		let working = schema;
+		let anyChanged = false;
+		for (const dottedPath of nestedPaths) {
+			const { schema: stripped, changed } = stripNestedIdArrayFromSchema(working, dottedPath);
+			if (changed) {
+				working = stripped;
+				anyChanged = true;
+			}
+		}
+		if (!anyChanged) continue;
+		report.schema_denested.push(bk.canonical_id);
+		if (dryRun) {
+			// Reflect the strip in the in-memory schema store so the post-sweep completeness
+			// guard below reads the de-nested (stripped) shape under dryRun exactly as it reads
+			// the just-written on-disk shape under a real run — keeping the guard's verdict
+			// dry==real. Never writes disk (the dryRun no-write contract holds).
+			simSchemas.set(bk.canonical_id, structuredClone(working));
+			continue;
+		}
+		writeSchemaCheckedForDir(substrateDir, bk.canonical_id, working, "replace", ctx);
+	}
+
+	// ── Step 3.5 completeness guard: the sweep's de-nest must be EXHAUSTIVE ──────
+	// The sweep above strips every nested id-bearing array path `findNestedIdBearingArrays`
+	// reports — but a stripper that fails to mirror the detector's traversal for some
+	// intermediate shape (an object-valued wrapper, a composition branch) would record
+	// `changed:false`, leave the declaration on disk, and let canonicalizeSubstrate return a
+	// FALSELY-CLEAN report over a schema `validateContext` still flags. This guard re-runs the
+	// detector over every registered block's POST-sweep schema and THROWS naming the block +
+	// surviving path if ANY nested id-bearing array remains — so the tool can never claim
+	// success while leaving a `nested_id_bearing_array` the validator would reject. dryRun
+	// parity: a Step-2 de-nested block is clean on disk after a real run, but under dryRun its
+	// de-nest was only counted in-memory (denestParent never re-writes the dry schema store) —
+	// so its still-nested on-disk schema is EXCLUDED here by the `alreadyDenested` set (Step-2
+	// de-nested blocks). For a sweep-stripped block, `schemaForBk` resolves the in-memory
+	// stripped shape under dryRun (set just above) and the on-disk stripped shape under a real
+	// run, so the guard inspects the SAME post-de-nest schema in both modes.
+	for (const bk of currentConfig().block_kinds ?? []) {
+		if (alreadyDenested.has(bk.canonical_id)) continue; // de-nested by Step 2 (real: clean on disk; dry: counted in-memory)
+		const schema = schemaForBk(bk);
+		if (!schema) continue;
+		const remaining = findNestedIdBearingArrays(schema);
+		if (remaining.length > 0) {
+			throw new Error(
+				`canonicalizeSubstrate: completeness guard — block '${bk.canonical_id}' still declares nested id-bearing array(s) after the de-nest sweep: ${remaining.join(", ")}. ` +
+					`stripNestedIdArrayFromSchema did not mirror findNestedIdBearingArrays' traversal for this shape; canonicalize will not return a falsely-clean report.`,
+			);
 		}
 	}
 

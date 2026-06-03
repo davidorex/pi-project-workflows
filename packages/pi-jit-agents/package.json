@@ -1,6 +1,9 @@
 {
 	"name": "@davidorex/pi-jit-agents",
 	"version": "0.27.0",
+	"publishConfig": {
+		"access": "public"
+	},
 	"description": "Agent spec compilation and in-process dispatch runtime — the package that owns everything between 'I have a spec' and 'I have a typed result'",
 	"license": "MIT",
 	"author": "David Ryan",

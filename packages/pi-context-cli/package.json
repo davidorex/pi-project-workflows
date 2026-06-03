@@ -1,6 +1,9 @@
 {
 	"name": "@davidorex/pi-context-cli",
 	"version": "0.27.0",
+	"publishConfig": {
+		"access": "public"
+	},
 	"description": "Auto-tracking command-line interface over the pi-context op-registry — every substrate op surfaces as a CLI command by reflection, no hardcoded command list",
 	"license": "MIT",
 	"author": "David Ryan",

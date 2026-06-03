@@ -1,6 +1,9 @@
 {
 	"name": "@davidorex/pi-behavior-monitors",
 	"version": "0.27.0",
+	"publishConfig": {
+		"access": "public"
+	},
 	"description": "Behavior monitors for pi that watch agent activity and steer corrections",
 	"type": "module",
 	"keywords": [

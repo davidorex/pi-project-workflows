@@ -1,6 +1,9 @@
 {
 	"name": "@davidorex/pi-workflows",
 	"version": "0.27.0",
+	"publishConfig": {
+		"access": "public"
+	},
 	"description": "Workflow orchestration extension for Pi",
 	"license": "MIT",
 	"author": "David Ryan",

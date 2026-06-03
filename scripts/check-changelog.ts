@@ -80,9 +80,12 @@ export function extractUnreleased(changelogText: string): string {
 	return nextHeading === -1 ? changelogText.slice(afterHeading) : changelogText.slice(afterHeading, nextHeading);
 }
 
-/** Count of non-blank lines in a chunk of changelog body. */
-function nonBlankLineCount(body: string): number {
-	return body.split("\n").filter((l) => l.trim().length > 0).length;
+/** Count of changelog list-item lines (`- ` / `* ` entries) in a body. */
+function listItemCount(body: string): number {
+	return body.split("\n").filter((l) => {
+		const t = l.trim();
+		return t.startsWith("- ") || t.startsWith("* ") || t === "-" || t === "*";
+	}).length;
 }
 
 /**
@@ -122,20 +125,19 @@ export function changedPackages(
 }
 
 /**
- * Did [Unreleased] gain non-blank content? A package whose CHANGELOG has no
- * before-state (brand-new file, before === undefined) passes iff [Unreleased]
- * is present (body length, i.e. heading found, signalled by non-empty body OR
- * the heading existing). after must have MORE non-blank lines than before.
+ * Did [Unreleased] gain a list-item entry? Growth is measured by the count of
+ * markdown list items (`- ` / `* `) in the [Unreleased] body, not by raw line
+ * count — so reflowing one existing entry across two physical lines is not
+ * growth (D1). A brand-new CHANGELOG (beforeText === undefined) requires at
+ * least one real entry, not merely a present heading with an empty body (D2).
  */
 export function unreleasedGrew(beforeText: string | undefined, afterText: string): boolean {
-	const afterBody = extractUnreleased(afterText);
-	const afterCount = nonBlankLineCount(afterBody);
-	if (beforeText === undefined) {
-		// New CHANGELOG: pass if it has an [Unreleased] heading at all.
-		return afterText.includes("## [Unreleased]");
-	}
-	const beforeCount = nonBlankLineCount(extractUnreleased(beforeText));
-	return afterCount > beforeCount;
+	const afterItems = listItemCount(extractUnreleased(afterText));
+	// New CHANGELOG (no before-state): require a real entry, not just the heading. (D2)
+	if (beforeText === undefined) return afterItems >= 1;
+	// Existing: require more list-item entries than before — a reflow of one entry is not growth. (D1)
+	const beforeItems = listItemCount(extractUnreleased(beforeText));
+	return afterItems > beforeItems;
 }
 
 function defaultWatchFor(pkg: string): string[] {

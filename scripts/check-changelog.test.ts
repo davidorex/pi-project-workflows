@@ -135,6 +135,19 @@ describe("unreleasedGrew (decision logic)", () => {
 	it("flags a brand-new CHANGELOG with no [Unreleased] heading", () => {
 		assert.equal(unreleasedGrew(undefined, "# Changelog\n\n## [0.1.0] - 2026-01-01\n- x\n"), false);
 	});
+
+	it("does NOT count reflowing one existing entry across two lines as growth (D1)", () => {
+		const reflowBefore = "## [Unreleased]\n\n### Added\n- a long entry\n\n## [0.26.0]";
+		const reflowAfter = "## [Unreleased]\n\n### Added\n- a long entry that\n  continues here\n\n## [0.26.0]";
+		assert.equal(unreleasedGrew(reflowBefore, reflowAfter), false);
+	});
+
+	it("flags a brand-new CHANGELOG with a heading but empty [Unreleased] body (D2)", () => {
+		assert.equal(
+			unreleasedGrew(undefined, "# Changelog\n\n## [Unreleased]\n\n## [0.1.0] - 2026-01-01\n- initial"),
+			false,
+		);
+	});
 });
 
 describe("integration: docs-only / changelog-only / package.json-only change sets pass", () => {

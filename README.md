@@ -26,23 +26,28 @@ The use of the tool shows you the shape of how to make the version of the tool t
 
 | Package | npm | Description |
 |---------|-----|-------------|
-| [@davidorex/pi-context](packages/pi-context/) | `npm:@davidorex/pi-context` | Schema-driven project state — typed JSON blocks, write-time validation, generic CRUD tools, dynamically derived state. Add a schema, get a new block type with tooling. No code changes. |
-| [@davidorex/pi-jit-agents](packages/pi-jit-agents/) | `npm:@davidorex/pi-jit-agents` | Agent spec compilation and in-process dispatch runtime. Library package (not a Pi extension) that owns loading, compilation, and execution of `.agent.yaml` specs with phantom-tool structured output enforcement. Consumed by pi-workflows and pi-behavior-monitors. |
-| [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Schema-driven workflow orchestration — YAML specs, DAG execution, typed step types, typed data flow between agents, expression engine, checkpoint/resume. Output schemas are the enforcement boundary between steps. |
-| [@davidorex/pi-behavior-monitors](packages/pi-behavior-monitors/) | `npm:@davidorex/pi-behavior-monitors` | Behavior monitors — autonomous watchdogs that classify agent activity against JSON pattern libraries, steer corrections, and write structured findings. |
-| [@davidorex/pi-agent-dispatch](packages/pi-agent-dispatch/) | `npm:@davidorex/pi-agent-dispatch` | In-pi orchestrator surface — privileged agent-as-tool dispatch via `call-agent`, capability-grant authoring via `author-tool-grant`, real-check gate via `run-real-checks`, attested commit via `commit-attested`, bounded loop via `run-work-order-loop`, dynamic composite tools per `config.tool_operations[]`. Per-tool human-authorization gate at the pi-dispatch layer (auth-gate intercepts canonical write-class tools + prompts via `ctx.ui.confirm` + stamps verified operator identity). |
+| [@davidorex/pi-context](packages/pi-context/) | `npm:@davidorex/pi-context` | Pi extension. Schema-driven project state: typed JSON blocks with write-time validation, generic block CRUD tools, content-addressed item identity, closure-table relations, and state derived from the substrate. Block types are added by declaring JSON Schemas in the substrate; no code change. |
+| [@davidorex/pi-context-cli](packages/pi-context-cli/) | `npm i -g @davidorex/pi-context-cli` | Standalone CLI (not a Pi extension). Exposes pi-context's op-registry as a `pi-context <op> [flags]` binary; subcommands and flags are derived by reflection over the registry, so they track the op set without per-command code. Calls the same library functions the extension calls; no running Pi instance required. Depends on `@davidorex/pi-context`. |
+| [@davidorex/pi-jit-agents](packages/pi-jit-agents/) | `npm:@davidorex/pi-jit-agents` | Library (not a Pi extension). Loads, compiles, and executes `.agent.yaml` specs in-process, with phantom-tool structured-output enforcement. Consumed by pi-workflows and pi-behavior-monitors. |
+| [@davidorex/pi-workflows](packages/pi-workflows/) | `npm:@davidorex/pi-workflows` | Pi extension. Workflow orchestration from `.workflow.yaml` specs: DAG execution, typed step types, typed data flow between steps, an expression engine, and checkpoint/resume. Output schemas validate the boundary between steps. |
+| [@davidorex/pi-behavior-monitors](packages/pi-behavior-monitors/) | `npm:@davidorex/pi-behavior-monitors` | Pi extension. Monitors that classify agent activity against JSON pattern libraries via side-channel LLM calls, steer corrections, and write structured findings. |
+| [@davidorex/pi-agent-dispatch](packages/pi-agent-dispatch/) | `npm:@davidorex/pi-agent-dispatch` | Pi extension. In-pi orchestrator surface: agent-as-tool dispatch (`call-agent`), capability-grant authoring (`author-tool-grant`), real-check gate (`run-real-checks`), attested commit (`commit-attested`), bounded loop (`run-work-order-loop`), and dynamic composite tools per `config.tool_operations[]`. A per-tool authorization gate at the pi-dispatch layer intercepts write-class tools, prompts via `ctx.ui.confirm`, and stamps the verified operator identity on the write. |
+| [@davidorex/pi-project-workflows](packages/pi-project-workflows/) | `npm:@davidorex/pi-project-workflows` | Meta-package. Bundles the four extensions (pi-context, pi-workflows, pi-behavior-monitors, pi-agent-dispatch) as a single `pi install`; depends on all four and registers each. |
 
 ## Quick Start
 
 ```bash
-# Install all extensions in any Pi project (one command)
+# Install all four extensions in any Pi project (one command, via the meta-package)
 pi install npm:@davidorex/pi-project-workflows
 
-# Or install individually
+# Or install the extensions individually
 pi install npm:@davidorex/pi-context
 pi install npm:@davidorex/pi-workflows
 pi install npm:@davidorex/pi-behavior-monitors
 pi install npm:@davidorex/pi-agent-dispatch
+
+# Optional: the standalone pi-context CLI (not a Pi extension; no running Pi required)
+npm i -g @davidorex/pi-context-cli
 
 # Initialize project structure
 /context init <substrate-dir>  # bootstrap pointer + substrate/schemas dirs only (no config, no schemas, no blocks)
@@ -218,7 +223,7 @@ npx tsx -e "
 
 When working in this repository:
 
-- **Read package READMEs** for detailed API docs: [pi-context](packages/pi-context/README.md), [pi-jit-agents](packages/pi-jit-agents/README.md), [pi-workflows](packages/pi-workflows/README.md), [pi-behavior-monitors](packages/pi-behavior-monitors/README.md), [pi-agent-dispatch](packages/pi-agent-dispatch/README.md)
+- **Read package READMEs** for detailed API docs: [pi-context](packages/pi-context/README.md), [pi-context-cli](packages/pi-context-cli/README.md), [pi-jit-agents](packages/pi-jit-agents/README.md), [pi-workflows](packages/pi-workflows/README.md), [pi-behavior-monitors](packages/pi-behavior-monitors/README.md), [pi-agent-dispatch](packages/pi-agent-dispatch/README.md), [pi-project-workflows](packages/pi-project-workflows/README.md)
 - **`packages/pi-context/src/context-sdk.ts`** — derived state, block discovery, the `contextState()` function
 - **`packages/pi-context/src/block-api.ts`** — block CRUD with schema validation
 - **`packages/pi-workflows/src/workflow-sdk.ts`** — vocabulary, discovery, introspection for workflows

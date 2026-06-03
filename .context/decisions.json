@@ -92,6 +92,24 @@
       "oid": "e38284caf9da048ba825e9b500210d11",
       "content_hash": "2c1a6f3c999f3ccc7f6c56ea2f3613e650bce28ed66a4aa7f603bc3881984447",
       "content_parent": "eea80793691ccff6a663cc8a677c5ad840c8bb55e6b964fc8df1dbd930f96d64"
+    },
+    {
+      "title": "Make the op-registry a faithful, attested, complete projection of the library: ctx through the op contract + full write-surface coverage + a parity test",
+      "status": "enacted",
+      "context": "FGAP-008/009/010 (and FGAP-006 as an instance): the op run(cwd, params) contract carries no DispatchContext, so cli/in-pi writes are attestation-blind (alpha); the registry omits library write capabilities (beta); nothing enforces parity across the library/op/script surfaces (gamma). The class is documented in analysis/2026-06-04-cli-op-registry-lossy-projection.md.",
+      "decision": "(alpha) Add a writer/DispatchContext channel to the op-execution contract: OpDefinition.run gains a ctx/writer parameter, registerAll threads the pi ExtensionContext's verified identity, and the cli builds a DispatchContext from --writer for every write op — so attestation stamps uniformly rather than via per-op schema smuggling; context-archive's declared-but-ignored writer is fixed in passing. (beta) Complete the op surface against the library write set as dual-surface units (library + op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema+updateSchema / registerSubstrate+writeRegistry / writeBootstrapPointer+flipBootstrapPointer / bulk appendRelations as warranted. (gamma) Add a parity/coverage test that fails when a library write fn has no op or an op drops the ctx / optional params (dryRun, ordinal) its library fn or orchestrator-script sibling forwards; wire into husky + CI. The unified aim: the cli is a faithful, attested interface to everything one can do with pi-context out-of-pi.",
+      "consequences": [
+        "The OpDefinition contract change ripples to all op handlers + registerAll + the cli dispatch + pi-workflows step-block (which must also thread ctx).",
+        "A new library primitive removeRelation + a batch of new ops; the op count grows toward library-write-surface parity.",
+        "The parity test becomes a standing guard: a new library writer without an op, or a ctx-dropping handler, fails the build.",
+        "FGAP-006 closes as part of beta; the append-block-item attestation instance closes as part of alpha.",
+        "Until landed, filing continues via the orchestrator scripts (which attest), not the cli."
+      ],
+      "id": "DEC-0006",
+      "created_at": "2026-06-03T23:29:49.518Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "0f31a821a3e8ce60ba2a9ccca98a00db",
+      "content_hash": "dff566944cb5f10b9b23e883b8b1d4327e945eb38e020ecc011d653e089b9434"
     }
   ]
 }

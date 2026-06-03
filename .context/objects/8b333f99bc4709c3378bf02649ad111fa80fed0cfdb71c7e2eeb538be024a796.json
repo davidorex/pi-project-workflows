@@ -1,0 +1,4 @@
+{
+  "description": "Complete the op-registry coverage of the library write surface per DEC-0006 / FGAP-009 / FGAP-006 as dual-surface units (library + op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema+updateSchema / registerSubstrate+writeRegistry / writeBootstrapPointer+flipBootstrapPointer / bulk appendRelations as the surface warrants; run context-validate after edge mutations. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+  "status": "planned"
+}

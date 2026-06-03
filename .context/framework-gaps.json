@@ -211,6 +211,115 @@
       "created_by": "human/davidryan@gmail.com",
       "oid": "e811f975cac54a4e5f3da3be14ac1f9b",
       "content_hash": "eb3c78bd021e5e3f5c6bb65692eeed4b3d4fd97de68450d3e5ee9ebdb9089164"
+    },
+    {
+      "title": "Op-execution contract carries no DispatchContext channel — every cli / in-pi write op is attestation-blind",
+      "status": "accepted",
+      "package": "pi-context",
+      "description": "OpDefinition.run(cwd, params) has no DispatchContext channel (ops-registry.ts:104); registerAll invokes op.run(ctx.cwd, params), threading only ctx.cwd (:1519); the cli injects a writer only when an op's params schema declares a 'writer' property (cli.ts:292). So every write op whose schema omits 'writer' structurally cannot forward the library's ctx?: DispatchContext, and attestation stamping (stampItem, dispatch-context.ts:121-152) never runs. Ten write ops drop the ctx: append/update/remove-block-item, the nested trio, write-block, append-relation, plus amend-config and write-schema (which pass a literal undefined at the ctx slot). On attested-required schemas (framework-gaps / decisions / features require created_by + created_at) the cli filing fails AJV unless the caller hand-authors author fields. The same drop recurs in pi-workflows step-block.ts (six writers). The append-block-item ctx-drop is the seed instance.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "104",
+          "reference": "OpDefinition.run(cwd, params) — no DispatchContext channel in the contract (verified)"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1519",
+          "reference": "registerAll invokes op.run(ctx.cwd, params) — pi ExtensionContext identity not threaded (verified)"
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "292",
+          "reference": "injectWriter sets params.writer only if the op schema declares a 'writer' property (verified)"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "174",
+          "reference": "append-block-item calls appendToBlock(cwd, block, arrayKey, item) — ctx (4th arg) dropped (verified)"
+        },
+        {
+          "file": "packages/pi-workflows/src/step-block.ts",
+          "lines": "161,203,219,233,278,301",
+          "reference": "all six block-api writers called without ctx — same drop"
+        }
+      ],
+      "impact": "Every cli- or workflow-written item is unattested; the DispatchContext attestation model (created_by stamping; human/agent/monitor/workflow writer kinds) is silently bypassed; attested-required schemas reject cli filings. This is why filing has gone through the orchestrator scripts (which thread ctx), not the cli.",
+      "proposed_resolution": "Thread a writer/DispatchContext through the op-execution contract itself (a ctx/writer channel on OpDefinition.run + registerAll + the cli writer-injection) so every write op stamps uniformly — rather than per-op schema smuggling (the channel only promote-item / write-schema-migration / context-switch use today, and which context-archive declares-but-ignores). See DEC-0006.",
+      "id": "FGAP-008",
+      "created_at": "2026-06-03T23:28:56.582Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "2893d93b28870d600d726711866fd426",
+      "content_hash": "f6a0fa916faa4a08588730fbcec041a5019cd3812bfdb0f269a8120d367da6dd"
+    },
+    {
+      "title": "Op-registry does not cover the library write surface — whole capabilities unreachable from the cli / out-of-pi",
+      "status": "accepted",
+      "package": "pi-context",
+      "description": "Library write capabilities have no op-registry entry, so they are unreachable from pi-context-cli and in-pi tools: edge removal/replace (removeRelation does not exist in the library at all; writeRelations whole-replace has no op), upsertItemInBlock (atomic find-or-replace), writeConfig (whole-config), writeSkeletonConfig, writeSchema/updateSchema (unchecked write + mutator), registerSubstrate/writeRegistry (foreign-substrate registration), writeBootstrapPointer/flipBootstrapPointer (raw pointer), and bulk appendRelations. An operator restricted to the cli cannot correct a mis-filed edge, run an atomic upsert, or write a config/registry/pointer.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "lines": "562,613",
+          "reference": "writeRelations (whole-relations replace) + appendRelations (bulk) have no op; removeRelation does not exist — relations are append-only via ops"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "1968",
+          "reference": "upsertItemInBlock atomic find-or-replace — no op (used only by pi-behavior-monitors directly)"
+        },
+        {
+          "file": "packages/pi-context/src/schema-write.ts",
+          "lines": "393,509",
+          "reference": "writeSchema/updateSchema — no op (only write-schema -> writeSchemaChecked)"
+        },
+        {
+          "file": "packages/pi-context/src/context-registry.ts",
+          "lines": "157,194",
+          "reference": "writeRegistry/registerSubstrate — no op; foreign-substrate registration unreachable from cli"
+        },
+        {
+          "file": "packages/pi-context/src/context-dir.ts",
+          "lines": "213,283",
+          "reference": "writeBootstrapPointer/flipBootstrapPointer — no op"
+        }
+      ],
+      "impact": "The cli is not a faithful interface to the library write surface; whole categories of substrate operation are out-of-pi-unreachable. FGAP-006 (no edge-removal op) is a specific instance, with the sub-layer that the removeRelation library primitive is itself missing.",
+      "proposed_resolution": "A systematic op per library write capability as a dual-surface unit (library + Pi tool/op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema / registerSubstrate / bootstrap-pointer writers / bulk appendRelations as the surface warrants. See DEC-0006.",
+      "id": "FGAP-009",
+      "created_at": "2026-06-03T23:29:15.313Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "fffddbb27a8284308c6df49ecef6c46b",
+      "content_hash": "7cb27ad46508318cf6735f34bf4e016c525436b51a6272b4ec4a66a5d3ffac65"
+    },
+    {
+      "title": "No enforced parity across the library / op-registry / orchestrator-script surfaces — they drift silently",
+      "status": "accepted",
+      "package": "pi-context",
+      "description": "The dual-surface principle ('library + tool + script as a unit') is unenforced. The orchestrator scripts build a DispatchContext and forward ctx + optional params (dryRun / ordinal) that the ops drop; the op-registry omits library write fns entirely; nothing catches the divergence at build/test. So projection loss (FGAP-008) and coverage gaps (FGAP-009) accrue silently — e.g. appendToBlock is called WITH ctx by file-block-item.ts:273 and pi-behavior-monitors:1612 but WITHOUT ctx by op append-block-item (ops-registry.ts:174) and pi-workflows step-block.ts:203.",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "lines": "233,273",
+          "reference": "builds DispatchContext + passes ctx to appendToBlock — op append-block-item drops it"
+        },
+        {
+          "file": "scripts/orchestrator/append-relation.ts",
+          "lines": "196",
+          "reference": "forwards ordinal + ctx to appendRelationByRef — the op forwards ordinal but drops ctx"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "reference": "no test asserts op-registry coverage of the library write surface or ctx/param forwarding parity"
+        }
+      ],
+      "impact": "FGAP-008 and FGAP-009 recur on every new library writer or op without a guard; the three surfaces silently diverge; attestation correctness and cli completeness can regress undetected.",
+      "proposed_resolution": "A parity/coverage test (the dual-surface unit made checkable) that fails when (a) a library write fn has no op, or (b) an op drops the ctx / optional params (dryRun, ordinal, ...) its underlying library fn or its orchestrator-script sibling forwards; wired into husky pre-commit + CI. See DEC-0006.",
+      "id": "FGAP-010",
+      "created_at": "2026-06-03T23:29:28.118Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "b2eeed1692053af8f84133e21707c0a4",
+      "content_hash": "44e67cd86ecb2823b60739f97afb869c40ec18b144e1c169b1f4067e3d8bede2"
     }
   ]
 }

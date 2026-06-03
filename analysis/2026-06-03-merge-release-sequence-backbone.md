@@ -17,7 +17,7 @@ Fast-forward, **zero conflicts**, `f2668fc → 0de95bb`, **102 commits**, +80,81
 Passes (`release:minor` runs `npm run build` first per `54ec25b`).
 
 ### Stage 3 — version (`release:minor`)
-0.27.0 → **0.28.0** lockstep across all 7 packages (incl. the two new ones); inter-package deps rewritten to `^0.28.0`; commit `Release v0.28.0` + tag `v0.28.0`. **The changelog step is a silent no-op** under current state — see below.
+0.27.0 → **0.28.0** lockstep across all 7 packages (incl. the two new ones); inter-package deps rewritten to `^0.28.0`; commit `Release v0.28.0` + tag `v0.28.0`. The changelogs now carry content (Part A landed, below); correct stamping depends on the Part B `release.mjs` re-seed fix (pending, below).
 
 ### Stage 4 — publish (`npm publish --workspaces --access public`)
 **Mechanically succeeds** — none private; the `--access public` flag covers the fact that *no package declares `publishConfig.access`*; the two new packages are correctly configured (bin, `files`, `prepublishOnly`).
@@ -25,29 +25,21 @@ Passes (`release:minor` runs `npm run build` first per `54ec25b`).
 ### Stage 5 — back to branch
 After release, **main carries the version bumps + `Release v0.28.0` commit/tag; `context-jit-spec-v2` does not.** To keep working on the branch, merge `main` back into it (bringing 0.28.0), or the branch's package.jsons stay at 0.27.0 and diverge from main.
 
-## The blocker: changelogs
+## Changelog backfill (Part A) — landed; audit findings open
 
-`release.mjs` only renames `## [Unreleased]` → `## [version]`. Current reality:
+Part A of `analysis/2026-06-02-changelog-backfill-and-forward-discipline.md` is executed: seven per-package CHANGELOG commits `800958f`..`d1437a9` on `context-jit-spec-v2`. All seven packages now carry a CHANGELOG with an `[Unreleased]` section (the three previously-missing — pi-agent-dispatch, pi-context-cli, pi-project-workflows — were created). `release:minor`'s stamp step therefore has content to stamp.
 
-| Package              | CHANGELOG   | `[Unreleased]`? | Top entry                           |
-| -------------------- | ----------- | --------------- | ----------------------------------- |
-| pi-context           | exists      | **none**        | `[0.3.0]` 2026-03-18                |
-| pi-workflows         | exists      | **none**        | `[0.3.0]` 2026-03-18                |
-| pi-behavior-monitors | exists      | **none**        | `[0.14.6]` 2026-04-27               |
-| pi-jit-agents        | exists      | **none**        | empty (header only)                 |
-| pi-agent-dispatch    | **missing** | —               | — (heaviest-changed: the auth-fold) |
-| pi-context-cli       | **missing** | —               | — (new package)                     |
-| pi-project-workflows | **missing** | —               | — (meta, 26 prior releases)         |
+Landed shape per package: pi-context consolidated `[0.26.0]` + `[Unreleased]`; pi-jit-agents `[0.14.6]` + `[0.26.0]` + `[Unreleased]`; pi-workflows + pi-behavior-monitors per-published-version (`0.1.x..0.26.0`) + `[Unreleased]`; pi-project-workflows per-published-version lockstep lines + `[Unreleased]`; pi-agent-dispatch + pi-context-cli `[Unreleased]`-only.
 
-**Zero packages have an `[Unreleased]` section**, so `release:minor` stamps **nothing** (every file silently skipped), and 3 packages have no changelog to stamp at all. A publish in this state ships 0.28.0 with changelogs frozen months back, empty, or absent — the 102 commits of content-addressing, the op-registry refactor, the auth-fold, and the new CLI would be undocumented to consumers.
+A deterministic adversarial audit ran against the landed content. **Open findings stand**, recorded in `analysis/2026-06-03-changelog-backfill-audit-state.md` (not yet orchestrator-re-verified): pi-workflows `[Unreleased]` advertises FGAP-099 work that `117b351` reverted (revert also undocumented); pi-context `[Unreleased]` omits `45dcf66` + `e1b7773`; pi-project-workflows publish-status contradiction (npm 404 vs. 26-published) unresolved; pi-behavior-monitors pre-floor `[0.1.0]`/`[0.1.1]` headers. Audit-verified clean across all seven: `files[]` ships every CHANGELOG, no forbidden citation tokens, every "no-change" lockstep claim honest.
 
-Root cause is known and documented: `analysis/2026-06-02-changelog-backfill-and-forward-discipline.md` diagnoses it (R1 — `release.mjs` never re-seeds `[Unreleased]`, so a changelog self-disables after one release; R2 — missing/empty sections are silently skipped; R3 — nothing enforces an entry). **That artifact is a plan, not yet executed.**
+Root cause of the original dormancy (the Part B target, still pending): `release.mjs` never re-seeds `[Unreleased]` (R1), silently skips missing/empty sections (R2), and nothing enforces an entry (R3).
 
-## What a changelog-bearing release requires first (per that artifact)
-1. **Execute the backfill (Part A):** per-published-version entries for the packages with public history; **create the 3 missing changelogs** (pi-agent-dispatch, pi-context-cli, pi-project-workflows); put all 0.27.0+ work under `[Unreleased]` per package.
-2. **Fix `release.mjs` (Part B):** re-seed a fresh `[Unreleased]` after stamping (R1); error instead of silently skipping when a package with published-surface changes has no section, and enumerate all packages incl. missing files (R2). Without this, the dormancy recurs next release.
-3. **Confirm each `CHANGELOG.md` is in `files[]`** — the `*.md` glob covers the 3 new ones once created (D4).
-4. **Add `publishConfig.access:"public"` to all 7** — latent fragility: this publish is saved only by the `--access public` flag; a future flag-less publish defaults to restricted.
-5. **Clear the 2 untracked files** so the release precondition passes.
+## Prerequisites for a changelog-bearing 0.28.0 — status
+1. **Backfill (Part A)** — ✅ landed (`800958f`..`d1437a9`); audit findings open (above, in the audit-state file).
+2. **Fix `release.mjs` (Part B)** — ⏳ pending: re-seed a fresh `[Unreleased]` after stamping (R1); error instead of silently skipping when a package with published-surface changes has no section, and enumerate all packages incl. missing files (R2). Also the `check-changelog.mjs` commit guard + CI step (D2).
+3. **`CHANGELOG.md` in `files[]`** — ✅ audit-verified all seven ship (D4).
+4. **`publishConfig.access:"public"` on all 7** — ⏳ pending: this publish is saved only by the `--access public` flag; a future flag-less publish defaults to restricted.
+5. **Clear the 2 untracked files** — ✅ done (`01f8f45`).
 
-As stated, the bare sequence (merge → version → publish) would **not** produce changelogs; the backfill + `release.mjs` fix are the prerequisite for the "with changelogs" outcome, and they're the same coupled defect the governing artifact already scoped. The numbered prerequisites above are the work items that must land before a changelog-bearing 0.28.0.
+Remaining before a changelog-bearing 0.28.0: resolve the open audit findings, land Part B (release.mjs R1/R2 + guard), and add `publishConfig.access`. Then the Stage 1–5 sequence (merge → build → version → push → publish → back-to-branch).

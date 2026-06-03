@@ -4,6 +4,8 @@ All notable changes to `@davidorex/pi-behavior-monitors` are documented here, pe
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-06-03
+
 ### Changed
 - Agent-reachable code strings (`index.ts`) no longer reference the legacy `.project` substrate directory name; references neutralized so monitor code does not surface that name to agents (`5024158`).
 - Regenerated `skills/.../SKILL.md` to reflect the source neutralization above (`b4bbef9`).

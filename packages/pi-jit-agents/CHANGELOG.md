@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-06-03
+
 ### Added
 - Six whole-block delegator macros (`render_decisions`, `render_features`, `render_framework_gaps`, `render_layer_plans`, `render_research`, `render_spec_reviews`) in `shared/macros.md` as thin wrappers over per-item macros (`dce327d`)
 - `array_key` column on the `CANONICAL_MACRO_NAMES` registry, surfacing block_kind ≠ data-key divergences (framework-gaps→gaps, layer-plans→plans, spec-reviews→reviews); reader call-sites use the `.macro_name` property (`0fb6149`)

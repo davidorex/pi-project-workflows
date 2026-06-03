@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-06-03
+
 ### Added
 - Extension scaffold: operation-vocab + capability-composer; `author-agent-spec`, `call-agent`, and `run-real-checks` Pi tools with their dispatch/enforcement wiring (`a1d8072`, `5b84aff`, `8532c44`, `d568980`, `b0f4983`, `e1a64bd`, `c2d50e1`)
 - `commit-attested` Pi tool with `attested-commit` (writer.kind=agent attestation, husky-as-backup) (`d3df262`, `bbf7179`)

@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-06-03
+
 ### Added
 - Content-addressed substrate identity: content-hash primitives + content object store, OID minting with identity stamping, `substrate_id` core, and `migrateToContentAddressed` engine with `onlySubstrates` discovery scoping and an optional `register` flag to mint without a registry write (`62b8375`, `5d57465`, `dca378d`, `071b393`, `bf0bfc7`)
 - Substrate registry with aliases, source-of-truth drift invariant, and adopt wiring; registry-fallback foreign endpoint resolution for non-discovered registered substrates (`633d154`, `87c0834`)

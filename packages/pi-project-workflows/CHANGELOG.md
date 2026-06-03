@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.28.0] - 2026-06-03
 - Lockstep changes accumulating since v0.26.0; see member-package changelogs (pi-context, pi-workflows, pi-behavior-monitors, pi-agent-dispatch). The v0.27.0 tag is unpublished, so its bundled member changes remain unreleased here until the next publish.
 
 ## [0.26.0] - 2026-05-25

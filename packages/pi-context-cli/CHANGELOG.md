@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-06-03
+
 ### Added
 - Runtime-reflecting CLI over pi-context's op-registry: the command surface is derived from the registered operations rather than hand-maintained (`b0a831e`)
 

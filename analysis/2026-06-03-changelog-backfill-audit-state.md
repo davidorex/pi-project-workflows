@@ -14,8 +14,6 @@ Baseline used by the audit: npm `latest` = 0.26.0 for published packages; `v0.27
 
 - **pi-context — `e1b7773` omitted from `[Unreleased]`.** `e1b7773` ("correct LLM-misleading reference + docstrings to current model") touches `src/block-api.ts`, `src/context-sdk.ts`, `src/context.ts`, `skills/pi-context/SKILL.md` — shipped source/docstring corrections — and is uncited in `[Unreleased]`.
 
-- **pi-project-workflows — npm-status contradiction, unresolved.** The audit's `npm view @davidorex/pi-project-workflows versions --json` returned `E404 / never published`; on that basis it flags the 27 backfilled version headers (`[0.2.0]`..`[0.26.0]`) as naming versions npm never published, and holds that a 404 package should carry `[Unreleased]` only (as pi-agent-dispatch and pi-context-cli do). **This contradicts the earlier publish-history investigation** (which reported pi-project-workflows published 26 times, 0.2.0→0.26.0) and the governing artifact `analysis/2026-06-02-changelog-backfill-and-forward-discipline.md` (which prescribed exactly those per-version lockstep lines). Two agents disagree on the single checkable fact of whether this package is published. Its `[Unreleased]` body is a bare lockstep pointer, not derived from `git log v0.26.0..HEAD`. Unresolved until the `npm view` result is confirmed firsthand.
-
 - **pi-behavior-monitors — pre-floor version headers.** Headers `[0.1.0] - 2026-03-12` and `[0.1.1] - 2026-03-13` name versions below npm's published lower bound `0.1.2` (per `npm view @davidorex/pi-behavior-monitors versions`). Possibly genuine pre-registry origin releases; not confirmable against the npm result.
 
 ## Secondary observations (audit-noted, no false claim)

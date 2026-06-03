@@ -10,20 +10,20 @@
 
 > **Baseline correction (verified):** npm `latest` = **0.26.0** for all published packages; `v0.27.0` was tagged but never published. So each package's `[Unreleased]` covers `v0.26.0..HEAD` and the public backfill covers ≤ 0.26.0. The bump is still 0.27.0→0.28.0 locally; consumers jump 0.26.0→0.28.0.
 
-### Stage 1 — merge to main
-**Fast-forward, zero conflicts.** `main`'s tip (`f2668fc`) is the merge-base, so `context-jit-spec-v2` is strictly linear ahead — `git merge --ff-only context-jit-spec-v2` from `main` advances it with no merge commit and no conflict possibility. The commit span and diffstat are point-in-time (the branch keeps advancing) — derive at merge time, do not trust a frozen count: `git rev-list --count main..context-jit-spec-v2` and `git diff --stat main...context-jit-spec-v2` (the bulk is substrate data; a smaller slice is code/docs). History carries `8d19ef5 feat: hello` + its removal (a FF preserves both nodes).
+### Stage 1 — merge to main — ✅ DONE (`32a2d05`)
+Not a clean fast-forward in the event: `origin/main` had diverged from the `f2668fc` merge-base by one commit (`8afa483`, a README "musings" edit pushed directly). Reconciled by merging `origin/main` into the arc — merge commit `32a2d05`, README conflict resolved to the arc's superset (which already evolved the same intro). Merge (not rebase) preserved the arc commit SHAs the changelogs/ledgers cite, and integrated `8afa483` as a parent so the push was accepted. (History carries `8d19ef5 feat: hello` + its removal.)
 
-### Stage 2 — build
-Passes (`release:minor` runs `npm run build` first per `54ec25b`).
+### Stage 2 — build — ✅ DONE
+`npm run build` green across all 6 building packages.
 
-### Stage 3 — version (`release:minor`)
-0.27.0 → **0.28.0** lockstep across all 7 packages (incl. the two new ones); inter-package deps rewritten to `^0.28.0`; commit `Release v0.28.0` + tag `v0.28.0`. The changelogs now carry content (Part A landed, below); correct stamping depends on the Part B `release.mjs` re-seed fix (pending, below).
+### Stage 3 — version (`release:minor`) — ✅ DONE (`abfb4d0`)
+0.27.0 → **0.28.0** lockstep across all 7 packages; inter-package deps rewritten to `^0.28.0`; each `[Unreleased]` stamped to `## [0.28.0] - 2026-06-03` with a fresh empty `[Unreleased]` re-seeded above it (the Part B R1 fix); commit `Release v0.28.0` + tag `v0.28.0`. R2b pre-check passed.
 
-### Stage 4 — publish (`npm publish --workspaces --access public`)
-**Mechanically succeeds** — none private; the `--access public` flag covers the fact that *no package declares `publishConfig.access`*; the two new packages are correctly configured (bin, `files`, `prepublishOnly`).
+### Stage 4 — publish — ✅ DONE (operator, OTP)
+`npm publish --workspaces --access public`. Verified against the registry: all 7 at **0.28.0**, including the two first-time publishes (`pi-context-cli`, `pi-agent-dispatch`). `publishConfig.access: "public"` is now declared on all 7 (Part B), so the access is no longer flag-dependent.
 
-### Stage 5 — back to branch
-After release, **main carries the version bumps + `Release v0.28.0` commit/tag; `context-jit-spec-v2` does not.** To keep working on the branch, merge `main` back into it (bringing 0.28.0), or the branch's package.jsons stay at 0.27.0 and diverge from main.
+### Stage 5 — back to branch — ✅ DONE
+`main` (`abfb4d0`, Release v0.28.0 + tag) pushed to origin; `context-jit-spec-v2` fast-forwarded to `abfb4d0` — branch and main in sync.
 
 ## Changelog backfill (Part A) — landed; audit findings open
 
@@ -42,4 +42,4 @@ Root cause of the original dormancy (the Part B target, still pending): `release
 4. **`publishConfig.access:"public"` on all 7** — ✅ done (`2d513e3`).
 5. **Clear the 2 untracked files** — ✅ done (`01f8f45`).
 
-All prerequisites are met. Next: the Stage 1–5 release sequence (merge → build → version → push → publish → back-to-branch).
+All prerequisites met and the Stage 1–5 release sequence executed — **0.28.0 is released**: `origin/main` at `abfb4d0` (Release v0.28.0 + tag `v0.28.0`), all 7 packages live on npm at 0.28.0 (registry-verified), `context-jit-spec-v2` synced to `abfb4d0`. This arc is complete.

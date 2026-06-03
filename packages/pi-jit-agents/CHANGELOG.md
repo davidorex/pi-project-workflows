@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-06-03
+
 ## [0.28.0] - 2026-06-03
 
 ### Added

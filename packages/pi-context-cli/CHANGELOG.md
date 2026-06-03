@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-06-03
+
 ### Fixed
 - CLI bin now runs unconditionally from a dedicated `bin.js`; the prior `import.meta.url === argv[1]` entrypoint guard silently no-op'd under symlinked invocation (npm `.bin`, `npx`, global install, macOS `/tmp`). `cli.ts` is now an importable library; the bin is the canonical unconditional ESM entrypoint.
 

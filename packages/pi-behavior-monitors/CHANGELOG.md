@@ -4,6 +4,8 @@ All notable changes to `@davidorex/pi-behavior-monitors` are documented here, pe
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-06-03
+
 ## [0.28.0] - 2026-06-03
 
 ### Changed

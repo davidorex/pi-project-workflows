@@ -1,0 +1,14 @@
+{
+  "title": "Substrate clone is a fork: fresh substrate_id + substrate_derived_from_substrate lineage; registry becomes a provenance-bearing identity ledger",
+  "status": "enacted",
+  "context": "FGAP-002: no substrate-level import path and substrate identity without provenance. Surfaced by the switch-register gap — switching onto a foreign config cannot be distinguished from registry drift, and a blind register-on-switch cannot tell native-lost-registry from foreign-import.",
+  "decision": "Clone uses FORK semantics, not mirror. cloneSubstrate copies the source substrate's content (config vocabulary + all blocks + relations.json + objects/) into a destination dir and MINTS A FRESH substrate_id in the destination, recording a substrate_derived_from_substrate edge to the source id — the substrate-level parallel to promoteItem's fresh-oid + item_derived_from_item. No substrate_id is duplicated across dirs, preserving the one-id<->one-dir SoT invariant. The project-root registry entry gains origin/provenance (minted-here vs derived-from <source id>, plus imported_at), turning it from a flat dir-map into an identity ledger. The SoT-drift invariant (context-sdk.ts:1685+) is refined to distinguish native-lost-registry / foreign-import / genuine drift rather than emitting one substrate_id_unregistered code. pi-context clone <source-substrate> <dest-dir> is the dual-surface command (library + Pi tool + CLI + orchestrator script). Mirror semantics (the same substrate_id live in two dirs) are rejected: they break one-id<->one-dir and the content-addressed uniqueness model.",
+  "consequences": [
+    "Registry schema/type gains provenance fields (origin kind + source substrate_id + imported_at); registerSubstrate call sites updated to record origin.",
+    "New relation_type substrate_derived_from_substrate registered in config (substrate-level parallel to item_derived_from_item).",
+    "New cloneSubstrate library fn + Pi tool + CLI + orchestrator script, landed as one dual-surface unit.",
+    "The SoT-drift invariant is refined to provenance-aware states, eliminating the false substrate_id_unregistered on legitimate imports.",
+    "The local switch-register fix is constrained: switch auto-registers only a native (minted-here) substrate; a foreign unregistered id routes to clone/import instead of being silently absorbed.",
+    "The existing registry aliases field composes with provenance to name an imported substrate."
+  ]
+}

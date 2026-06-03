@@ -31,6 +31,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 - `canonicalizeSubstrate` de-nests empty-data and object/composition nested-id schemas (`6e3b3eb`)
 - Isolated child git env from inherited `GIT_DIR`/`GIT_*` (hook leak) (`b12cbf3`)
 - Repointed orientation + bootstrap-state off the unregistered `/context start` (`2301cec`)
+- Corrected LLM-misleading reference and docstrings (`block-api` / `context-sdk` / `context`) to the current content-addressed / edge-based model; regenerated the skill (`e1b7773`)
 
 ### Removed
 - Relocated context-dir-migration machinery out of the published package (`65f9897`)

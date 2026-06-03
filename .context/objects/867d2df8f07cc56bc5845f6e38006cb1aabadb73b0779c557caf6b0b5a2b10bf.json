@@ -1,0 +1,4 @@
+{
+  "description": "Implement the git merge driver + post-merge integrity pass per DEC-0004 / FGAP-004 / FEAT-002: .gitattributes registration (substrate files -> merge=pi-context) + a [merge \"pi-context\"] driver entry; the driver entrypoint consuming git's %O/%A/%B/%P and writing a data-model-valid 3-way merge (items matched by id/oid, field-kind dispatch incl. the convergent sequence field via TASK-005, edge-set merge on relations.json, config/schema merge); a post-merge hook / merge-finalize command doing cross-block referential integrity + full invariant + lens revalidation and emitting a typed conflict set. Driver + per-file merge logic live in block-api; the post-merge pass is a git hook / CLI command. Merge-base, branches, refs, cherry-pick are git's, not reimplemented. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+  "status": "planned"
+}

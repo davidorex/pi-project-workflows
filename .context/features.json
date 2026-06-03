@@ -23,17 +23,17 @@
       "content_hash": "36e90dbddf2a586a3414047022272777863f73e1246f4749774714aacb407a51"
     },
     {
-      "title": "pi-context substrate merge (+ cherry-pick) — structure-aware 3-way reconciliation of two divergent substrate versions",
+      "title": "pi-context git merge driver (+ post-merge integrity pass) — structure-aware 3-way merge of substrate files under git",
       "status": "proposed",
       "layer": "L1",
-      "description": "A defined merge operation over items, edges, config, and objects, keyed off the content-parent DAG: computes the merge base from lineage, 3-way-merges per item with field-kind dispatch (sequence fields via FEAT-003), set-merges edges, unions the object store, 3-way-merges config/schema, records multi-parent lineage, re-validates all invariants, and emits a typed conflict set. Cherry-pick is a scoped sub-case. Per DEC-0004.",
+      "description": "A custom git merge driver (registered via .gitattributes + a [merge \"pi-context\"] driver entry) that performs structure-aware per-file 3-way merge of substrate files (<block>.json, relations.json, config, schemas) from git's %O/%A/%B — items by stable id/oid, edges as a set, ordered ref-fields via the convergent sequence field-type, config/schema — writing a data-model-valid result; plus a post-merge hook / merge-finalize command for cross-block referential integrity + invariant/lens revalidation. Git keeps branches, merge-base, refs, cherry-pick. Per DEC-0004.",
       "acceptance_criteria": [
-        "For base B and descendants X, Y the driver produces one merged state taking all non-conflicting changes from both, with a typed conflict set for the rest, and identical output regardless of which side is named 'ours'",
-        "The merge base is computed from the content_parent DAG, not supplied externally",
-        "Edges merge by set semantics; the object store merges by union; sequence fields merge via the convergent sequence field-type (FEAT-003)",
-        "The merged state passes the full invariant + lens-validator pass, or every failure appears in the conflict set",
-        "Merged items record content_parent referencing both source versions (multi-parent)",
-        "A single-item delta from one branch applies onto another (cherry-pick) through the same machinery"
+        "Registered as a git merge driver via .gitattributes; on a same-repo branch merge git invokes it per substrate file with ancestor (%O) / ours (%A) / theirs (%B)",
+        "Items merge by stable id/oid not array index; a concurrent reorder or edit on both sides yields a data-model-valid result rather than line-mangled JSON",
+        "Edges merge by 3-way set semantics; objects/ union via git's directory merge (distinct hashes don't collide)",
+        "Ordered ref-fields merge via the convergent sequence field-type (FEAT-003) on the field's three versions",
+        "The post-merge pass enforces cross-block referential integrity and the full invariant + lens-validator pass; failures surface as a typed conflict set",
+        "Merge-base, branches, and cherry-pick remain git's; the driver only makes git's per-file result valid"
       ],
       "id": "FEAT-002",
       "created_at": "2026-06-03T22:42:14.885Z",
@@ -41,7 +41,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-03T22:42:14.887Z",
       "oid": "7b5e661a77cebf5f7a1c0fec20879fbb",
-      "content_hash": "b9da77b5e092f407806718ee6c0a61b4b589987f653dea3c4c60e34552d70956"
+      "content_hash": "771754b21649d6a96533a393eea68199e6ea8067612778c04eccc9dc75a632e0",
+      "content_parent": "b9da77b5e092f407806718ee6c0a61b4b589987f653dea3c4c60e34552d70956"
     },
     {
       "title": "Convergent ordered-sequence field-kind — CRDT-backed ordered item-refs that merge deterministically under concurrent insert/delete/move",

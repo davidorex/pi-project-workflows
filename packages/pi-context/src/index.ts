@@ -16,6 +16,7 @@ import {
 	installedSchemaDestPath,
 	loadConfig,
 	loadContext,
+	writeSkeletonConfig,
 } from "./context.js";
 import {
 	BootstrapNotFoundError,
@@ -294,6 +295,14 @@ export function initProject(cwd: string, contextDir: string): { created: string[
 			skipped.push(`${path.relative(cwd, dir)}/`);
 		}
 	}
+	// Write the minimal schema-valid SKELETON config (FGAP-001 / DEC-0001) so the
+	// substrate has a tool-driven config from bootstrap — onward paths are
+	// /context accept-all (adopt the packaged catalog) OR amend-config / edit
+	// (build a custom vocabulary). NEVER-CLOBBER: an idempotent re-init over an
+	// existing config (skeleton or populated) leaves it untouched.
+	const skeleton = writeSkeletonConfig(cwd);
+	const configRel = `${path.relative(cwd, path.join(projectDirPath, "config.json"))}`;
+	(skeleton.written ? created : skipped).push(configRel);
 	return { created, skipped };
 }
 
@@ -449,6 +458,10 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 	if (created.length === 0 && skipped.length > 0) {
 		lines.push("Project already initialized — nothing to do.");
 	}
+	lines.push("");
+	lines.push(
+		"The substrate now carries a skeleton config (schema-valid, empty of vocabulary). Two onward paths: run /context accept-all to adopt the packaged catalog, OR amend-config / edit config.json to build a custom vocabulary.",
+	);
 
 	ctx.ui.notify(lines.join("\n"), "info");
 }
@@ -456,9 +469,10 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 /**
  * /context accept-all — adopt the canonical packaged conception
  * (samples/conception.json) as this substrate's config.json. Writes config only
- * (no asset materialization — run /context install after). Idempotent: never
- * overwrites an existing config. Requires the substrate to be initialized first
- * (a bootstrap pointer must exist).
+ * (no asset materialization — run /context install after). Skeleton-aware
+ * (FGAP-001 / DEC-0001): overwrites a SKELETON config (the empty-of-vocabulary
+ * config init / switch -c writes) but never a POPULATED one. Requires the
+ * substrate to be initialized first (a bootstrap pointer must exist).
  */
 function handleAcceptAll(_args: string, ctx: ExtensionCommandContext): void {
 	let r: AdoptResult;
@@ -472,7 +486,7 @@ function handleAcceptAll(_args: string, ctx: ExtensionCommandContext): void {
 		throw err;
 	}
 	if (!r.adopted) {
-		ctx.ui.notify("config.json already present — not overwritten.", "info");
+		ctx.ui.notify("config.json already carries a populated vocabulary — not overwritten.", "info");
 		return;
 	}
 	ctx.ui.notify(
@@ -570,6 +584,14 @@ export function switchAndCreate(cwd: string, newContextDir: string, writerIdenti
 			fs.mkdirSync(dir, { recursive: true });
 			created.push(`${path.relative(cwd, dir)}/`);
 		}
+	}
+	// Write the minimal schema-valid SKELETON config (FGAP-001 / DEC-0001) so the
+	// freshly-created substrate has a tool-driven config from bootstrap — onward
+	// paths are /context accept-all OR amend-config / edit. NEVER-CLOBBER via
+	// writeSkeletonConfig (a re-creation over an existing config leaves it).
+	const skeleton = writeSkeletonConfig(cwd);
+	if (skeleton.written) {
+		created.push(`${path.relative(cwd, path.join(projectDirPath, "config.json"))}`);
 	}
 	return { created };
 }
@@ -754,9 +776,9 @@ function handleSwitch(args: string, ctx: ExtensionCommandContext): void {
 				return;
 			}
 			const { created } = switchAndCreate(ctx.cwd, target, writerIdentity);
-			const createdLine = created.length > 0 ? ` (created ${created.length} dirs: ${created.join(", ")})` : "";
+			const createdLine = created.length > 0 ? ` (created: ${created.join(", ")})` : "";
 			ctx.ui.notify(
-				`Switched bootstrap pointer to new substrate '${target}'${createdLine}. Run /context accept-all + /context install to populate.`,
+				`Switched bootstrap pointer to new substrate '${target}'${createdLine}. The substrate now carries a skeleton config (schema-valid, empty of vocabulary). Two onward paths: /context accept-all (adopt the packaged catalog, then /context install) OR amend-config / edit config.json (build a custom vocabulary).`,
 				"info",
 			);
 			return;

@@ -16,10 +16,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
-import { adoptConception, loadConfig } from "./context.js";
+import { adoptConception, isSkeletonConfig, loadConfig } from "./context.js";
 import { SUBSTRATE_ID_PATTERN, writeBootstrapPointer } from "./context-dir.js";
 import { loadRegistry } from "./context-registry.js";
-import extension from "./index.js";
+import extension, { initProject } from "./index.js";
 
 let tmpRoot: string;
 
@@ -78,11 +78,33 @@ describe("adoptConception (accept-all)", () => {
 		assert.equal(cfg.block_kinds.length, 16);
 	});
 
-	it("idempotent", () => {
+	it("skeleton-aware idempotence: first adopt overwrites the init skeleton (adopted), second is a no-op (populated)", () => {
 		tmpRoot = mkTmp(".context");
+		// init writes a SKELETON config (FGAP-001 / DEC-0001) — empty of vocabulary.
+		initProject(tmpRoot, ".context");
+		const skeleton = loadConfig(tmpRoot);
+		assert.ok(skeleton, "init must write a config");
+		assert.ok(isSkeletonConfig(skeleton!), "init's config must be a skeleton");
+		// First accept-all OVERWRITES the skeleton with the packaged catalog.
+		const first = adoptConception(tmpRoot);
+		assert.equal(first.adopted, true, "accept-all must overwrite a skeleton config");
+		const populated = loadConfig(tmpRoot);
+		assert.ok(populated && !isSkeletonConfig(populated), "config must now be populated");
+		assert.equal(populated!.root, ".context");
+		// Second accept-all is a no-op — the config is now populated (never-clobber).
+		const second = adoptConception(tmpRoot);
+		assert.equal(second.adopted, false, "accept-all must not re-adopt a populated config");
+		assert.equal(loadConfig(tmpRoot)!.root, ".context");
+	});
+
+	it("never-clobbers a POPULATED config", () => {
+		tmpRoot = mkTmp(".context");
+		// A real adopt produces a populated config; a second adopt must be a no-op.
 		adoptConception(tmpRoot);
+		const populated = loadConfig(tmpRoot);
+		assert.ok(populated && !isSkeletonConfig(populated), "first adopt must populate the config");
 		const result = adoptConception(tmpRoot);
-		assert.equal(result.adopted, false);
+		assert.equal(result.adopted, false, "accept-all must never clobber a populated config");
 		const config = loadConfig(tmpRoot);
 		assert.ok(config);
 		assert.equal(config!.root, ".context");
@@ -123,7 +145,7 @@ describe("adoptConception (accept-all)", () => {
 		}
 	});
 
-	it("init scaffolds dirs only, no defaults", async () => {
+	it("init scaffolds dirs + skeleton config, no block assets", async () => {
 		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-accept-init-"));
 		const { tools, api } = captureTools();
 		(extension as unknown as (pi: unknown) => void)(api);
@@ -138,7 +160,11 @@ describe("adoptConception (accept-all)", () => {
 		assert.ok(fs.existsSync(schemasDir), "schemas dir must be scaffolded");
 		const schemaFiles = fs.readdirSync(schemasDir).filter((f) => f.endsWith(".schema.json"));
 		assert.deepEqual(schemaFiles, [], "init must copy no schema assets");
-		const blockFiles = fs.readdirSync(substrateDir).filter((f) => f.endsWith(".json"));
-		assert.deepEqual(blockFiles, [], "init must copy no block assets");
+		// init now writes a SKELETON config.json (FGAP-001 / DEC-0001) — the ONLY
+		// top-level .json file in the substrate dir; NO block data files.
+		const jsonFiles = fs.readdirSync(substrateDir).filter((f) => f.endsWith(".json"));
+		assert.deepEqual(jsonFiles, ["config.json"], "init writes exactly the skeleton config, no block assets");
+		const config = loadConfig(tmpRoot);
+		assert.ok(config && isSkeletonConfig(config), "the written config must be a skeleton");
 	});
 });

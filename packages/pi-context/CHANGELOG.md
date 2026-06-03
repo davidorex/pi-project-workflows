@@ -4,6 +4,14 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- `init` / `switch -c` write a minimal schema-valid skeleton `config.json` (`schema_version` + empty `block_kinds` + `root` + a minted, registered `substrate_id`) via a never-clobber `writeSkeletonConfig`, so a custom-vocabulary substrate can be built through the op surface (`amend-config` / `write-schema` / `append-block-item`) without adopting the packaged catalog
+- `isSkeletonConfig` predicate (iterates `REGISTRY_DESCRIPTORS` — every addressable registry — so it tracks the full vocabulary set) and a `skeleton` bootstrap state in `deriveBootstrapState`, ordered no-pointer → no-config → skeleton → not-installed → ready
+
+### Changed
+- accept-all (`adoptConception`) is skeleton-aware: it overwrites a skeleton config but still never-clobbers a populated one, and preserves the skeleton's existing `substrate_id` (and its registry entry) instead of minting a new identity
+- `context-init` / `context-accept-all` / `context-switch` op descriptions reflect the skeleton state and the two onward paths (accept-all, or amend-config/edit)
+
 ## [0.28.1] - 2026-06-03
 
 ## [0.28.0] - 2026-06-03

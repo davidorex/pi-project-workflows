@@ -16,6 +16,7 @@ import {
 	endpointKey,
 	findUnmaterializedAssets,
 	type ItemRecord,
+	isSkeletonConfig,
 	loadConfig,
 	loadRelations,
 	type RawEndpoint,
@@ -341,11 +342,16 @@ export interface CurrentState {
 }
 
 /**
- * The four-state bootstrap progression, derived purely from the filesystem
+ * The five-state bootstrap progression, derived purely from the filesystem
  * (DEC-0040 — nothing stored). Consumed by the `/context start` conductor, the
  * dispatch READY-gate, and the startup-slot hint (DEC-0042 / FGAP-095).
+ *
+ * `skeleton` (FGAP-001 / DEC-0001) sits between `no-config` and `not-installed`:
+ * init / switch -c now write a minimal schema-valid config empty of vocabulary,
+ * so a freshly-bootstrapped substrate lands at `skeleton` rather than `no-config`
+ * — onward paths are accept-all (adopt the packaged catalog) OR amend/edit.
  */
-export type BootstrapState = "no-pointer" | "no-config" | "not-installed" | "ready";
+export type BootstrapState = "no-pointer" | "no-config" | "skeleton" | "not-installed" | "ready";
 
 export interface BootstrapStatus {
 	/** which stop in the bootstrap progression `cwd` is at */
@@ -362,11 +368,14 @@ export interface BootstrapStatus {
  *                   pre-bootstrap — it is the unset-substrate detection read the
  *                   harness-confined LLM uses to redirect the human to `/context start`)
  *   no-config     — pointer present, no `config.json`
- *   not-installed — config present, some declared installed_* asset is absent
+ *   skeleton      — config present but empty of vocabulary (the init / switch -c
+ *                   minimal config — FGAP-001 / DEC-0001); onward via accept-all
+ *                   OR amend/edit
+ *   not-installed — config present + populated, some declared installed_* asset is absent
  *   ready         — config present, all declared assets materialized (or none declared)
  *
  * Does NOT swallow corruption: a malformed `config.json` propagates
- * `loadConfig`'s ValidationError — the four states are the NORMAL progression;
+ * `loadConfig`'s ValidationError — the five states are the NORMAL progression;
  * corruption is a separate error condition, not a bootstrap stop.
  */
 export function deriveBootstrapState(cwd: string): BootstrapStatus {
@@ -378,6 +387,9 @@ export function deriveBootstrapState(cwd: string): BootstrapStatus {
 	const config = loadConfig(cwd);
 	if (config === null) {
 		return { state: "no-config", contextDir, missing: empty };
+	}
+	if (isSkeletonConfig(config)) {
+		return { state: "skeleton", contextDir, missing: empty };
 	}
 	const missing = findUnmaterializedAssets(cwd, config);
 	const installed = missing.schemas.length === 0 && missing.blocks.length === 0;

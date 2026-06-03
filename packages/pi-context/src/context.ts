@@ -687,6 +687,80 @@ export function writeConfigForDir(substrateDir: string, config: ConfigBlock, ctx
 }
 
 /**
+ * A config is a SKELETON when it carries NO vocabulary content — the minimal
+ * schema-valid shape that `initProject` / `switchAndCreate` write so a substrate
+ * has a tool-driven config from bootstrap (FGAP-001 / DEC-0001). Identity /
+ * scaffold fields (`schema_version`, `root`, `substrate_id`) are IGNORED here —
+ * a skeleton can carry a minted `substrate_id` and still be empty of vocabulary.
+ *
+ * Used by `adoptConception` (accept-all overwrites a skeleton but never a
+ * populated config) and `deriveBootstrapState` (a skeleton config is the
+ * `skeleton` bootstrap state — onward paths: accept-all OR amend/edit).
+ */
+export function isSkeletonConfig(config: ConfigBlock): boolean {
+	// A skeleton carries NO vocabulary content in ANY registry. The ONLY fields
+	// permitted to be present in a skeleton are the identity / scaffold scalars
+	// `schema_version`, `root`, `substrate_id` — EVERY other config field (every
+	// registry) must be empty/absent. Derive the registry set from
+	// `REGISTRY_DESCRIPTORS` (the single source enumerating all addressable
+	// registries) so a registry added there is automatically covered here; the
+	// descriptor `kind` dictates the emptiness test: `map` → no own keys; every
+	// array kind (`keyed-array` / `string-array` / `value-array`) → zero length.
+	for (const [registry, descriptor] of Object.entries(REGISTRY_DESCRIPTORS) as [AmendRegistry, RegistryDescriptor][]) {
+		const value = config[registry];
+		if (descriptor.kind === "map") {
+			if (Object.keys((value ?? {}) as Record<string, unknown>).length > 0) {
+				return false;
+			}
+		} else if (((value ?? []) as unknown[]).length > 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * Write the minimal schema-valid SKELETON config to the active substrate's
+ * `config.json` (FGAP-001 / DEC-0001) — pointer-resolving like `adoptConception`:
+ * resolves the substrate dir from the `.pi-context.json` pointer. NEVER-CLOBBER:
+ * returns `{ written: false }` without writing when a config already exists, so a
+ * populated (or already-skeleton) config is preserved. Otherwise builds
+ * `{ schema_version: "1.0.0", block_kinds: [], root, substrate_id: <minted> }`
+ * and writes it via `writeConfigForDir` (atomic tmp+rename + whole-config AJV).
+ *
+ * The skeleton mints its `substrate_id` via `mintSubstrateId` — the SAME function
+ * `adoptConception` uses — and registers it in the project-root registry via
+ * `registerSubstrate` (the SAME registration call `adoptConception` makes), so the
+ * substrate carries content-addressed identity from bootstrap and the id is
+ * resolvable project-wide. A later accept-all that overwrites the skeleton READS
+ * and PRESERVES this on-disk id (see `adoptConception`), so identity is stable
+ * across `init → accept-all`. `schema_version` is the "1.0.0" literal the packaged
+ * `samples/conception.json` declares.
+ *
+ * The TS `ConfigBlock` type requires fields beyond the runtime AJV authority
+ * (`schemas/config.schema.json` requires only `schema_version` + `block_kinds`),
+ * so the skeleton is cast `as unknown as ConfigBlock` — runtime validation in
+ * `writeConfigForDir` enforces only the schema.
+ */
+export function writeSkeletonConfig(cwd: string, ctx?: DispatchContext): { written: boolean } {
+	const substrateDir = resolveContextDir(cwd); // throws BootstrapNotFoundError if no pointer
+	const root = path.relative(cwd, substrateDir);
+	if (loadConfig(cwd) !== null) {
+		return { written: false };
+	}
+	const substrate_id = mintSubstrateId();
+	const skeleton = {
+		schema_version: "1.0.0",
+		block_kinds: [],
+		root,
+		substrate_id,
+	} as unknown as ConfigBlock;
+	writeConfigForDir(substrateDir, skeleton, ctx);
+	registerSubstrate(cwd, substrate_id, root, []);
+	return { written: true };
+}
+
+/**
  * Result shape from `adoptConception`. `adopted` is false (no-op) when a config
  * already exists; `schemaCount` / `blockCount` then report the EXISTING config's
  * declared counts. `configPath` / `root` are relative-to-cwd display paths.
@@ -714,7 +788,11 @@ export function adoptConception(cwd: string): AdoptResult {
 	const root = path.relative(cwd, contextDirAbs);
 	const cfgPath = configPath(cwd);
 	const existing = loadConfig(cwd);
-	if (existing) {
+	// Never-clobber a POPULATED config (DEC-0011/0038 offer-don't-impose). A
+	// SKELETON config (FGAP-001 / DEC-0001 — written by init / switch -c, empty of
+	// vocabulary) IS overwritten by the catalog: it carries no vocabulary to
+	// protect, and the existing on-disk substrate_id is read + preserved below.
+	if (existing && !isSkeletonConfig(existing)) {
 		return {
 			adopted: false,
 			configPath: path.relative(cwd, cfgPath),
@@ -728,19 +806,18 @@ export function adoptConception(cwd: string): AdoptResult {
 	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as ConfigBlock;
 	conception.root = root; // SET root from the resolved substrate dir — the conception template ships none (DEC-0041)
 
-	// Mint + register the per-substrate content-addressed substrate_id (Cycle 4).
-	// config.json is the sole SoT for substrate_id and first exists here at
-	// adopt-time (init only scaffolds the pointer + dirs), so minting wires into
-	// this path rather than bare init. Idempotent: skip the mint if the
-	// conception already carries a valid substrate_id (it ships none, so this
-	// mints on a fresh accept-all; a second accept-all returns early above on the
-	// existing-config branch, so this block never re-mints). registerSubstrate
-	// upserts the active substrate into the project-root registry under `root`
-	// (the project-root-relative substrate dir) with empty aliases — the
-	// SoT-drift invariant in validateContext then passes for this substrate.
-	if (typeof conception.substrate_id !== "string" || conception.substrate_id.length === 0) {
-		conception.substrate_id = mintSubstrateId();
-	}
+	// Resolve + register the per-substrate content-addressed substrate_id.
+	// config.json is the SoT for substrate_id. When a SKELETON config already
+	// exists (init / switch -c minted + registered an id), accept-all PRESERVES
+	// that on-disk id so identity is stable across `init → accept-all`. With no
+	// prior config (a fresh accept-all reaching here, `existing` null), mint a new
+	// id — the packaged conception ships none. registerSubstrate then upserts the
+	// active substrate into the project-root registry under `root` (the
+	// project-root-relative substrate dir) with empty aliases; for the preserved-id
+	// case it re-upserts the SAME id idempotently. The SoT-drift invariant in
+	// validateContext then passes for this substrate.
+	conception.substrate_id =
+		existing?.substrate_id && existing.substrate_id.length > 0 ? existing.substrate_id : mintSubstrateId();
 	writeConfig(cwd, conception);
 	registerSubstrate(cwd, conception.substrate_id, root, []);
 	return {

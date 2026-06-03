@@ -201,9 +201,9 @@ Derive 'where are we + what's next' purely from the substrate — focus, in-flig
 </tool>
 
 <tool name="context-bootstrap-state">
-Derive the substrate bootstrap state for the cwd, purely from the filesystem: 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the user to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap requires user authorization via interactive confirmation). No writes.
+Derive the substrate bootstrap state for the cwd, purely from the filesystem: 'no-pointer' | 'no-config' | 'skeleton' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Bootstrap (/context init or /context switch -c <new-dir>) now writes a minimal schema-valid config empty of vocabulary, so a freshly-bootstrapped substrate lands at 'skeleton' — onward via /context accept-all (adopt the packaged catalog, then /context install) OR amend-config / edit (build a custom vocabulary). Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the user to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap requires user authorization via interactive confirmation). No writes.
 
-*Derive substrate bootstrap state — no-pointer | no-config | not-installed | ready (never throws pre-bootstrap)*
+*Derive substrate bootstrap state — no-pointer | no-config | skeleton | not-installed | ready (never throws pre-bootstrap)*
 
 </tool>
 
@@ -275,9 +275,9 @@ Declare a schema version-bump migration into substrate (migrations.json). operat
 </tool>
 
 <tool name="context-init">
-Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate).
+Initialize the substrate dir: bootstrap pointer + dirs + a minimal schema-valid SKELETON config empty of vocabulary. Lands at the 'skeleton' bootstrap state — onward via accept-all (adopt the packaged catalog, then install) OR amend-config / edit (build a custom vocabulary).
 
-*Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)*
+*Initialize the substrate dir (bootstrap pointer + dirs + skeleton config; onward via accept-all OR amend-config/edit)*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -285,7 +285,7 @@ Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + in
 </tool>
 
 <tool name="context-accept-all">
-Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Idempotent: never overwrites an existing config.
+Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Skeleton-aware: overwrites a SKELETON config (the empty-of-vocabulary config init / switch -c writes) but never a POPULATED one.
 
 *Adopt the canonical conception as config (accept-all)*
 
@@ -299,7 +299,7 @@ Flip the bootstrap pointer to a different substrate dir (parallel to git switch)
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `target_dir` | string | yes | Substrate dir name to switch to (e.g. '.context'). Required for default + create_new modes; ignored for to_previous mode. |
-| `create_new` | boolean | no | When true, bootstrap target_dir as a fresh substrate AND flip the pointer in one operation (parallel to 'git switch -c <branch>'). Default false (flip to existing substrate; fails if target_dir lacks config.json). |
+| `create_new` | boolean | no | When true, bootstrap target_dir as a fresh substrate (dirs + a minimal schema-valid SKELETON config empty of vocabulary — onward via accept-all OR amend/edit) AND flip the pointer in one operation (parallel to 'git switch -c <branch>'). Default false (flip to existing substrate; fails if target_dir lacks config.json). |
 | `to_previous` | boolean | no | When true, flip the pointer back to its previous_contextDir (parallel to 'git switch -'). Requires the pointer to carry a previous_contextDir (a prior switch must have populated it). When true, target_dir is ignored. |
 | `writer` | object | no | DispatchContext.writer — stamped by auth-gate on operator confirm; in-body trusts the stamped value. |
 </tool>

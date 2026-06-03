@@ -81,13 +81,15 @@ describe("deriveBootstrapState", () => {
 		assert.strictEqual(s.contextDir, path.join(tmp, ctxDir));
 	});
 
-	it("ready when the config declares no installed assets (vacuously materialized)", (t) => {
-		const tmp = makeTmpDir("bootstrap-ready-empty");
+	it("skeleton when the config is present but empty of vocabulary (FGAP-001 / DEC-0001)", (t) => {
+		const tmp = makeTmpDir("bootstrap-skeleton");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		fs.mkdirSync(path.join(tmp, ctxDir, "schemas"), { recursive: true });
+		// A skeleton config: schema-valid, empty of vocabulary (the shape init / switch -c write).
 		writeCfg(tmp, { schema_version: "1.0.0", root: ctxDir, block_kinds: [] });
 		const s = deriveBootstrapState(tmp);
-		assert.strictEqual(s.state, "ready");
+		assert.strictEqual(s.state, "skeleton");
+		assert.strictEqual(s.contextDir, path.join(tmp, ctxDir));
 		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [] });
 	});
 

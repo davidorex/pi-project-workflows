@@ -698,9 +698,9 @@ export const ops: OpDefinition[] = [
 		name: "context-bootstrap-state",
 		label: "Context Bootstrap State",
 		description:
-			"Derive the substrate bootstrap state for the cwd, purely from the filesystem: 'no-pointer' | 'no-config' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the user to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap requires user authorization via interactive confirmation). No writes.",
+			"Derive the substrate bootstrap state for the cwd, purely from the filesystem: 'no-pointer' | 'no-config' | 'skeleton' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Bootstrap (/context init or /context switch -c <new-dir>) now writes a minimal schema-valid config empty of vocabulary, so a freshly-bootstrapped substrate lands at 'skeleton' — onward via /context accept-all (adopt the packaged catalog, then /context install) OR amend-config / edit (build a custom vocabulary). Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the user to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap requires user authorization via interactive confirmation). No writes.",
 		promptSnippet:
-			"Derive substrate bootstrap state — no-pointer | no-config | not-installed | ready (never throws pre-bootstrap)",
+			"Derive substrate bootstrap state — no-pointer | no-config | skeleton | not-installed | ready (never throws pre-bootstrap)",
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): string {
@@ -925,8 +925,10 @@ export const ops: OpDefinition[] = [
 	{
 		name: "context-init",
 		label: "Context Init",
-		description: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate).",
-		promptSnippet: "Initialize the substrate dir (bootstrap pointer + dirs only; run accept-all + install to populate)",
+		description:
+			"Initialize the substrate dir: bootstrap pointer + dirs + a minimal schema-valid SKELETON config empty of vocabulary. Lands at the 'skeleton' bootstrap state — onward via accept-all (adopt the packaged catalog, then install) OR amend-config / edit (build a custom vocabulary).",
+		promptSnippet:
+			"Initialize the substrate dir (bootstrap pointer + dirs + skeleton config; onward via accept-all OR amend-config/edit)",
 		parameters: Type.Object({
 			contextDir: Type.String({
 				description: "Substrate dir name (e.g. .context). Required — no default.",
@@ -943,7 +945,7 @@ export const ops: OpDefinition[] = [
 		name: "context-accept-all",
 		label: "Accept-All Conception",
 		description:
-			"Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Idempotent: never overwrites an existing config.",
+			"Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Skeleton-aware: overwrites a SKELETON config (the empty-of-vocabulary config init / switch -c writes) but never a POPULATED one.",
 		promptSnippet: "Adopt the canonical conception as config (accept-all)",
 		parameters: Type.Object({}),
 		surface: "use",
@@ -975,7 +977,7 @@ export const ops: OpDefinition[] = [
 			create_new: Type.Optional(
 				Type.Boolean({
 					description:
-						"When true, bootstrap target_dir as a fresh substrate AND flip the pointer in one operation (parallel to 'git switch -c <branch>'). Default false (flip to existing substrate; fails if target_dir lacks config.json).",
+						"When true, bootstrap target_dir as a fresh substrate (dirs + a minimal schema-valid SKELETON config empty of vocabulary — onward via accept-all OR amend/edit) AND flip the pointer in one operation (parallel to 'git switch -c <branch>'). Default false (flip to existing substrate; fails if target_dir lacks config.json).",
 				}),
 			),
 			to_previous: Type.Optional(

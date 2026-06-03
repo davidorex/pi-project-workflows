@@ -20,7 +20,7 @@
 	"homepage": "https://github.com/davidorex/pi-project-workflows/tree/main/packages/pi-context-cli",
 	"main": "./dist/cli.js",
 	"bin": {
-		"pi-context": "./dist/cli.js"
+		"pi-context": "./dist/bin.js"
 	},
 	"files": [
 		"dist/",

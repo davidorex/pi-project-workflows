@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * pi-context — auto-tracking command-line interface over the pi-context
  * op-registry.
@@ -28,7 +27,6 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
-import { fileURLToPath } from "node:url";
 import { type OpDefinition, ops } from "@davidorex/pi-context/ops";
 
 /**
@@ -441,33 +439,4 @@ export async function main(argv: string[]): Promise<number> {
 		}
 		return 1;
 	}
-}
-
-/**
- * True when this module is the process entrypoint (invoked as `pi-context …`),
- * false when it is merely imported (e.g. by the unit tests). Guards the
- * auto-run so importing the module to test its pure helpers does not execute
- * main() against the test runner's argv.
- */
-function isEntrypoint(): boolean {
-	const invoked = process.argv[1];
-	if (invoked === undefined) return false;
-	try {
-		return fileURLToPath(import.meta.url) === path.resolve(invoked);
-	} catch {
-		return false;
-	}
-}
-
-// Module entrypoint: run main() and map its resolved exit code. A thrown
-// (non-UsageError) error maps to exit 1.
-if (isEntrypoint()) {
-	main(process.argv.slice(2))
-		.then((code) => {
-			process.exitCode = code;
-		})
-		.catch((err) => {
-			process.stderr.write(`error: ${err instanceof Error ? err.message : String(err)}\n`);
-			process.exitCode = 1;
-		});
 }

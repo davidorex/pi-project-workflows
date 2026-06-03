@@ -5,7 +5,6 @@ All notable changes to `@davidorex/pi-workflows` are recorded here. Format follo
 ## [Unreleased]
 
 ### Added
-- Thread parent tool grants through agent dispatch: `composeToolGrant` always emits a `--tools` grant and fails closed when no grant resolves; parent tools (from `pi.getActiveTools`) flow through the dispatch chain
 - Read tools route through the shared `serializeForRead` helper
 
 ### Changed

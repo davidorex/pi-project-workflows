@@ -1,23 +1,73 @@
 # Changelog
 
-## [0.3.0] - 2026-03-18
+All notable changes to this package are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/); the public release history is per-package (see the monorepo lockstep `package.json` version vs. what was published to npm). This package has had exactly one public npm release (`0.26.0`); the consolidated `[0.26.0]` entry below covers its full history through that publish, and `[Unreleased]` holds changes since.
 
-## [0.2.0] - 2026-03-17
-
-### Added
-- `/project init` command to scaffold `.project/` directory with default schemas and empty block files
-- Update check on session start for `@davidorex/pi-project-workflows` meta-package
-- Monorepo integration as workspace package
-
-## [0.1.0] - 2026-03-14
+## [Unreleased]
 
 ### Added
-- Block CRUD: `readBlock`, `writeBlock`, `appendToBlock`, `updateItemInBlock` with atomic writes (tmp + rename)
-- Write-time schema validation via AJV against `.project/schemas/*.schema.json`
-- `ValidationError` class with structured error reporting
-- Post-step block validation: `snapshotBlockFiles`, `validateChangedBlocks`, `rollbackBlockFiles`
-- Derived project state: `projectState(cwd)` computes all metrics dynamically (source files, tests, phases, block summaries, agents, workflows, schemas, templates, recent commits)
-- Block discovery: `availableBlocks(cwd)`, `availableSchemas(cwd)`, `findAppendableBlocks(cwd)`
-- Generic block tools: `append-block-item` and `update-block-item` (work with any user-defined block type)
-- `/project` command with `status` and `add-work` subcommands
-- `PROJECT_DIR` and `SCHEMAS_DIR` constants as single source of truth for `.project/` path
+- Content-addressed substrate identity: content-hash primitives + content object store, OID minting with identity stamping, `substrate_id` core, and `migrateToContentAddressed` engine with `onlySubstrates` discovery scoping and an optional `register` flag to mint without a registry write (`62b8375`, `5d57465`, `dca378d`, `071b393`, `bf0bfc7`)
+- Substrate registry with aliases, source-of-truth drift invariant, and adopt wiring; registry-fallback foreign endpoint resolution for non-discovered registered substrates (`633d154`, `87c0834`)
+- `resolveRef` cross-substrate resolution with validator severity split (`06331df`)
+- `promoteItem` + `item_derived_from_item` lineage edges + block-append id-uniqueness guard (`7cb1644`)
+- Structured `EdgeEndpoint` model with dual-form consumers/validators (`fa91fda`)
+- `/context switch` family (`switch <dir>` | `switch -c <new-dir>` | `switch -`), `/context list`, `/context archive` commands plus matching in-pi Pi tools (`context-switch`, `context-list`, `context-archive`); `flipBootstrapPointer` helper and bootstrap pointer schema bump 1.0.0 → 1.1.0 adding `previous_contextDir` / `switched_at` / `switched_by` (`ba7021b`, `bd52b61`, `4a34ef1`, `cdacdb4`)
+- Schema migration registry: `migrations.schema.json` + migrations-store + loader with rename/set/delete/coerce declarative transforms; `write-schema-migration` Pi tool routed through the auth-gate; migration registry wired into `writeBlock`/`readBlock` validation paths (`22d7d24`, `18ce8d0`, `77b0f9f`, `dd85196`, `bbad988`)
+- Config schema extended with `tool_operations[]` (operation-granular grant vocabulary) and `tool_operations_forbidden[]` (`4394ab6`, `4e722f0`)
+- Work-orders block kind: schema, sample block, conception-catalog registration, and status-vocab mapping (`b107fad`, `26d4ceb`, `6ab7545`, `443eb65`)
+- Citation-rot scanner library with AST-based detection (`e83043b`, `56113cb`)
+- Orientation block + skills-dir support and `before_agent_start` / `resources_discover` guidance hooks (`bea080f`, `28dfbd0`)
+- Pure read-element primitive (`serializeForRead` + `addressInto`) with element addressing; all JSON read handlers routed through it; over-cap reads fail closed via vendored `truncateHead` (`68c2873`, `bcabcb2`, `103cb29`, `cdae473`)
+
+### Changed
+- Extracted 45 tool registrations into `ops-registry.ts` (behavior-preserving) (`c68583a`)
+- `SubstrateIndex` splits lookup maps from the iteration surface (behavior-preserving) (`6fd4813`)
+- Canonicalizer rebuilt to clean-emit (infers schemas from data rather than preserving source shapes); explicit orphan-block registration (`c17d2b6`, `a1ca610`)
+- Neutralized `.project` references in agent-facing guidance strings; converged `/context init` to `<substrate-dir>` (`5024158`, `4b84cb8`, `3bba373`)
+- Stripped development-history canonical-id citations from operator-facing tool/parameter description strings, shipped schemas, and the generated skill (`feedc2a`, `7dc597d`, `1f25e33`)
+
+### Fixed
+- Hardened the nested-id predicate to close required-only / composition / tuple bypasses and guarantee termination; id-uniqueness guard for nested arrays (`8352d92`, `cabb8c3`)
+- `canonicalizeSubstrate` de-nests empty-data and object/composition nested-id schemas (`6e3b3eb`)
+- Isolated child git env from inherited `GIT_DIR`/`GIT_*` (hook leak) (`b12cbf3`)
+- Repointed orientation + bootstrap-state off the unregistered `/context start` (`2301cec`)
+
+### Removed
+- Relocated context-dir-migration machinery out of the published package (`65f9897`)
+
+## [0.26.0] - 2026-05-25
+
+Consolidated history of the package across the `pi-project` → `pi-context` rename through its first public npm release. The package was extracted from `pi-workflows` (as `pi-project`) at `799dee0` (2026-03-16) and renamed to `pi-context` at `6eb5e8b` (lockstep 0.25.0).
+
+### Added
+- Block CRUD: `readBlock`, `writeBlock`, `appendToBlock`, `updateItemInBlock`, `upsertItemInBlock` with atomic writes (tmp + rename) and write-time AJV schema validation against `<contextDir>/schemas/*.schema.json`; `ValidationError` with structured reporting (carried from the pre-rename `pi-project` 0.1.0–0.3.0 baseline)
+- Item-level read tools `readBlockItem` + `readBlockPage`; cross-block join tool `joinBlocks` (HYBRID edge + field) (`154def0`, `337af49`)
+- Generic block tools `append-block-item` / `update-block-item`; block discovery (`availableBlocks`, `availableSchemas`, `findAppendableBlocks`); derived `projectState` / `currentState` with atomic-next derivation (`0cbd676`)
+- Substrate SDK port with config-driven vocabulary registries (`d4ec3ce`)
+- `DispatchContext` attestation surface + schema-write surface; per-field schema-declared identity stamping (`001d11a`, `2ed2102`)
+- Schema versioning ($id + version + $ref composition) + migration registry + shared enum schemas (`899bcc3`)
+- Bootstrap pointer model: `resolveContextDir(cwd)`, `BootstrapNotFoundError`, `writeBootstrapPointer`, `bootstrap.schema.json`, `.pi-context.json` atomic-safety pointer; internal path-builders cascade through the resolver (`909a086`, `bb2c7d5`, `9846b90`)
+- Query/traversal primitives: `filter-block-items`, `resolve-items-by-id` (bulk), `walk-ancestors`, `find-references` — each as library + Pi tool + orchestrator script (`15cd881`, `2ddf85f`, `7cb17f0`, `680cb1c`)
+- `context-contracts` block kind + `gatherExecutionContext` primitive (`6ddb1ba`, `6bea7e1`)
+- PM-lens module (roadmap-plan port + lens-validator dispatch + tools/subcommands); composition-lens dispatch; lens-view consumption surface (`5fe8969`, `3625758`)
+- `read-config` + `read-schema` Pi tools; `list-tools` in-pi tool-discovery; `read-samples-catalog` Pi tool + CLI (`bac1893`, `06c5619`, `641b9a0`)
+- Consumption MVP: `/context init` / `install` / `accept-all` consume packaged `samples/`; packaged `samples/conception.json` manifest + clean edge-based schemas (`458a575`, `b8a9d7e`, `c08f93b`, `ef7feca`, `1fe243d`, `a4c5257`)
+- Config-declared substrate invariants relocated from hardcoded `validateProject` into config data; status-consistency invariant class with cycle-safe status-vocab (`ff5f3f1`, `5758d1f`, `97e095b`)
+- `canonical_id` rename engine (item / relation_type / lens / layer) via `rename-canonical-id` Pi tool (`33b76a7`)
+- Config/schema/edge write ops as dual-surface units: `amend-config`, `write-schema`, `append-relation` (library + Pi tool + CLI) (`2eb9abf`, `7ad8fbd`, `c1e72af`)
+- `deriveBootstrapState` 4-state bootstrap deriver; relation-type endpoint-kind metadata (`752e7e2`, `d1dba88`, `2b4908d`)
+
+### Changed
+- Renamed package `pi-project` → `pi-context` (lockstep 0.25.0); internal vocabulary `/project` → `/context` across tool-name strings, the slash command, docs, and generated skill (`6eb5e8b`, `6eafa77`, `3ab72e0`, `6556073`)
+- `phase` block-kind moved from file-per-phase to array-block (`6815d87`)
+- Six typed-file find-or-merge primitives extracted; existing `.project/`-targeting primitives became thin wrappers; `upsertItemInBlock` preserves `created_by`/`created_at` across update via pre-merge (`1e68034`, `d24769a`)
+- Generalized the block-api validated write surface to `(filePath, schemaPath)` pairs; monitor write-action routed through block-api (`2160c63`, `523fa96`)
+- Migrated pi-mono peer-deps `@mariozechner/*` → `@earendil-works/*` at `^0.74.0` (`e5ab8ad`)
+
+### Fixed
+- Registry schemas gained `$id` + version; `$ref` shared enums where vocabularies align (`a4e8c9c`)
+- Unified substrate path resolution on the pointer + path-traversal guard; empty-prefix guard + cross-block status-vocab check + name-based error catches; `$ref`-aware block-api id-allocation + whole-file CLI validation (`61b7acd`, `4fb4d1e`, `5ecd7bd`)
+- `config.root` optional — conception ships no substrate-dir root (`ce87262`)
+
+### Removed
+- Removed `writeBootstrapPointer` signature default + `initProject` `.project` literal (`f17efa3`)
+- Removed `/project→/context` transition aliases after the migration completed (`6556073`)

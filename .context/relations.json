@@ -858,13 +858,13 @@
   {
     "parent": {
       "kind": "item",
-      "oid": "40143fed971ee16d63d90a64d28426a7",
-      "refname": "TASK-005"
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "refname": "TASK-004"
     },
     "child": {
       "kind": "item",
-      "oid": "24559534b34a51a8940a162ecd965a35",
-      "refname": "TASK-004"
+      "oid": "40143fed971ee16d63d90a64d28426a7",
+      "refname": "TASK-005"
     },
     "relation_type": "task_depends_on_task"
   }

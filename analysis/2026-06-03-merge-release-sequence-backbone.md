@@ -11,7 +11,7 @@
 > **Baseline correction (verified):** npm `latest` = **0.26.0** for all published packages; `v0.27.0` was tagged but never published. So each package's `[Unreleased]` covers `v0.26.0..HEAD` and the public backfill covers ≤ 0.26.0. The bump is still 0.27.0→0.28.0 locally; consumers jump 0.26.0→0.28.0.
 
 ### Stage 1 — merge to main
-Fast-forward, **zero conflicts**, `f2668fc → 0de95bb`, **102 commits**, +80,819/−6,810 (~850 files are substrate data; ~134 are code/docs). Carries the `8d19ef5 feat: hello` + its removal in history (a FF preserves both nodes).
+**Fast-forward, zero conflicts.** `main`'s tip (`f2668fc`) is the merge-base, so `context-jit-spec-v2` is strictly linear ahead — `git merge --ff-only context-jit-spec-v2` from `main` advances it with no merge commit and no conflict possibility. The commit span and diffstat are point-in-time (the branch keeps advancing) — derive at merge time, do not trust a frozen count: `git rev-list --count main..context-jit-spec-v2` and `git diff --stat main...context-jit-spec-v2` (the bulk is substrate data; a smaller slice is code/docs). History carries `8d19ef5 feat: hello` + its removal (a FF preserves both nodes).
 
 ### Stage 2 — build
 Passes (`release:minor` runs `npm run build` first per `54ec25b`).

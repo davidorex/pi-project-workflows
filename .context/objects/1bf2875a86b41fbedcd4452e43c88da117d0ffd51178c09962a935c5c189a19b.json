@@ -1,0 +1,22 @@
+{
+  "title": "pi-context has no structure-aware substrate merge/oid driver — no operation reconciles two divergent substrate versions using the content-addressing DAG as merge base",
+  "status": "accepted",
+  "package": "pi-context",
+  "description": "Items carry oid / content_hash / content_parent and the content-addressed objects/ store holds blobs by hash; content_parent records each version's predecessor, forming a per-item version DAG. These fields record lineage but nothing consumes them: there is no operation that computes a common ancestor or reconciles divergence, so two substrate states that evolved separately can be compared by eye but not merged. A whole-file git line-merge of <block>.json / relations.json operates below the data model — it diffs JSON text, mangling arrays and producing structurally invalid or semantically wrong states — so it does not constitute a merge of the substrate. The gap: given a base version B and descendants X and Y, the substrate must produce one merged state that takes every non-conflicting change from X and Y; resolves field-level divergence deterministically where a policy exists and surfaces a structured conflict where it does not; keeps edges, config, schemas, and the object store consistent; satisfies all declared invariants after merge; and records the result's lineage as descending from both X and Y.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "oid/content_hash/content_parent minted + carried; content_parent records each version's predecessor forming a per-item version DAG — lineage recorded but unconsumed (no LCA / no reconcile)"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "item writes are whole-item upsert (last-writer-wins); no operation computes a merge base or reconciles two divergent states"
+    },
+    {
+      "file": ".context/objects/",
+      "reference": "content-addressed objects/ store holds blobs by hash; equal hash == equal content, but no merge consumes it"
+    }
+  ],
+  "impact": "Branch-pinned substrates, multi-operator or multi-session editing, and offline replicas reconciled later cannot reconverge; divergence is either terminal or 'resolved' by a data-model-blind git text-merge that corrupts arrays/structure. This is the capability the convergent-sequence field and branch-pinned substrates both depend on.",
+  "proposed_resolution": "A structure-aware 3-way merge driver keyed off the content-parent DAG: merge base = lowest common ancestor per item (and for the substrate); per-item 3-way merge; field-kind-dispatched field merge (sequence fields delegate to the convergent ordered-sequence field-type, FGAP-005); edge-set 3-way merge against base; object-store union by blob hash; config/schema 3-way with divergent-redefinition surfaced as conflict; multi-parent content_parent on merged results (a node, not a single link); post-merge full invariant + lens-validator revalidation; typed structured conflict set ({item_id, field, base, ours, theirs} + edge/schema analogues); cherry-pick as a scoped sub-case of the same base-diff-and-replay machinery. See DEC-0004."
+}

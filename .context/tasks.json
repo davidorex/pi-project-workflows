@@ -22,6 +22,20 @@
       "id": "TASK-003",
       "oid": "62fa29ee28b79c5504c52a6021eda387",
       "content_hash": "e8d4626f6b8fdb55fdba8bf9389d21b7c9478352b2152538f8967ba63295572c"
+    },
+    {
+      "description": "Implement the structure-aware substrate merge/oid driver per DEC-0004 / FGAP-004 / FEAT-002: content-parent-DAG merge-base finder (per-item + substrate LCA); per-item 3-way merge with field-kind dispatch (sequence fields delegate to the convergent ordered-sequence field-type, TASK-005); edge-set 3-way merge with endpoint re-check after deletes; object-store union; config/schema 3-way merge with redefinition-conflict; multi-parent content_parent on merged results (extend content_parent to admit >=2 parents); post-merge full invariant + lens-validator revalidation; typed structured conflict set; cherry-pick as a scoped sub-case. Driver + merge-base finder land in block-api. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "planned",
+      "id": "TASK-004",
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "content_hash": "10756eb00786387f0c95014a3236c760890603989c12c6b8ef7251b42b60bad1"
+    },
+    {
+      "description": "Implement the convergent ordered-sequence field-kind per DEC-0005 / FGAP-005 / FEAT-003: non-interleaving Fugue-class sequence CRDT over item-refs (dense immutable per-element position identifiers, insert mints one id + mutates no neighbor); Kleppmann move-CRDT position register resolved by hybrid logical clock (stable element identity; concurrent same-element moves converge); HLC for replica-independent same-gap ordering + move resolution; sort-on-read projection to a plain ordered ref-array + translation of array-position hand-edits to CRDT ops, through block-api; declared sequence-field kind recognized by schema; CRDT state stored in the owning <block>.json. Plugs into the substrate merge driver's field-merge dispatch. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit. Depends on the substrate merge driver (TASK-004).",
+      "status": "planned",
+      "id": "TASK-005",
+      "oid": "40143fed971ee16d63d90a64d28426a7",
+      "content_hash": "6c9f9045f054dbadc75a55858ec4b48863eb6f20f634aae5d56f895239336857"
     }
   ]
 }

@@ -698,5 +698,174 @@
       "refname": "FGAP-003"
     },
     "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "805e3b668f8af9960db896897bceca3e",
+      "refname": "DEC-0004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5dd26cbe28f1c457b9eaf355db2d08a6",
+      "refname": "FGAP-004"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7b5e661a77cebf5f7a1c0fec20879fbb",
+      "refname": "FEAT-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "805e3b668f8af9960db896897bceca3e",
+      "refname": "DEC-0004"
+    },
+    "relation_type": "feature_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "5dd26cbe28f1c457b9eaf355db2d08a6",
+      "refname": "FGAP-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7b5e661a77cebf5f7a1c0fec20879fbb",
+      "refname": "FEAT-002"
+    },
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "refname": "TASK-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7b5e661a77cebf5f7a1c0fec20879fbb",
+      "refname": "FEAT-002"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "refname": "TASK-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "805e3b668f8af9960db896897bceca3e",
+      "refname": "DEC-0004"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e38284caf9da048ba825e9b500210d11",
+      "refname": "DEC-0005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6a415ca3c4c82e4dc5ce77924500952c",
+      "refname": "FGAP-005"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "eca74a81f90cd7540aadb2154adb965d",
+      "refname": "FEAT-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e38284caf9da048ba825e9b500210d11",
+      "refname": "DEC-0005"
+    },
+    "relation_type": "feature_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6a415ca3c4c82e4dc5ce77924500952c",
+      "refname": "FGAP-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "eca74a81f90cd7540aadb2154adb965d",
+      "refname": "FEAT-003"
+    },
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "40143fed971ee16d63d90a64d28426a7",
+      "refname": "TASK-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "eca74a81f90cd7540aadb2154adb965d",
+      "refname": "FEAT-003"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "40143fed971ee16d63d90a64d28426a7",
+      "refname": "TASK-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e38284caf9da048ba825e9b500210d11",
+      "refname": "DEC-0005"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e38284caf9da048ba825e9b500210d11",
+      "refname": "DEC-0005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "805e3b668f8af9960db896897bceca3e",
+      "refname": "DEC-0004"
+    },
+    "relation_type": "decision_relates_to_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "805e3b668f8af9960db896897bceca3e",
+      "refname": "DEC-0004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "904b15bc21bc5c7103ad8835b713f998",
+      "refname": "DEC-0002"
+    },
+    "relation_type": "decision_relates_to_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "40143fed971ee16d63d90a64d28426a7",
+      "refname": "TASK-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "refname": "TASK-004"
+    },
+    "relation_type": "task_depends_on_task"
   }
 ]

@@ -1,0 +1,4 @@
+{
+  "description": "Implement the convergent ordered-sequence field-kind per DEC-0005 / FGAP-005 / FEAT-003: non-interleaving Fugue-class sequence CRDT over item-refs (dense immutable per-element position identifiers, insert mints one id + mutates no neighbor); Kleppmann move-CRDT position register resolved by hybrid logical clock (stable element identity; concurrent same-element moves converge); HLC for replica-independent same-gap ordering + move resolution; sort-on-read projection to a plain ordered ref-array + translation of array-position hand-edits to CRDT ops, through block-api; declared sequence-field kind recognized by schema; CRDT state stored in the owning <block>.json. Plugs into the substrate merge driver's field-merge dispatch. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit. Depends on the substrate merge driver (TASK-004).",
+  "status": "planned"
+}

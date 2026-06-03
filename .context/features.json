@@ -21,6 +21,46 @@
       "modified_at": "2026-06-03T22:35:01.321Z",
       "oid": "05a2355c5f56b279baba80f12b2cc6d8",
       "content_hash": "36e90dbddf2a586a3414047022272777863f73e1246f4749774714aacb407a51"
+    },
+    {
+      "title": "pi-context substrate merge (+ cherry-pick) — structure-aware 3-way reconciliation of two divergent substrate versions",
+      "status": "proposed",
+      "layer": "L1",
+      "description": "A defined merge operation over items, edges, config, and objects, keyed off the content-parent DAG: computes the merge base from lineage, 3-way-merges per item with field-kind dispatch (sequence fields via FEAT-003), set-merges edges, unions the object store, 3-way-merges config/schema, records multi-parent lineage, re-validates all invariants, and emits a typed conflict set. Cherry-pick is a scoped sub-case. Per DEC-0004.",
+      "acceptance_criteria": [
+        "For base B and descendants X, Y the driver produces one merged state taking all non-conflicting changes from both, with a typed conflict set for the rest, and identical output regardless of which side is named 'ours'",
+        "The merge base is computed from the content_parent DAG, not supplied externally",
+        "Edges merge by set semantics; the object store merges by union; sequence fields merge via the convergent sequence field-type (FEAT-003)",
+        "The merged state passes the full invariant + lens-validator pass, or every failure appears in the conflict set",
+        "Merged items record content_parent referencing both source versions (multi-parent)",
+        "A single-item delta from one branch applies onto another (cherry-pick) through the same machinery"
+      ],
+      "id": "FEAT-002",
+      "created_at": "2026-06-03T22:42:14.885Z",
+      "created_by": "human/davidryan@gmail.com",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-03T22:42:14.887Z",
+      "oid": "7b5e661a77cebf5f7a1c0fec20879fbb",
+      "content_hash": "b9da77b5e092f407806718ee6c0a61b4b589987f653dea3c4c60e34552d70956"
+    },
+    {
+      "title": "Convergent ordered-sequence field-kind — CRDT-backed ordered item-refs that merge deterministically under concurrent insert/delete/move",
+      "status": "proposed",
+      "layer": "L1",
+      "description": "A declared sequence-field kind over item-refs: a non-interleaving Fugue-class sequence CRDT (dense, immutable per-element position identifiers) plus a Kleppmann move-CRDT position register resolved by hybrid logical clock, with a sort-on-read projection to a plain ordered ref-array and array-position hand-edits translated to CRDT ops. CRDT state lives in the owning <block>.json; projection + field-aware merge live in block-api. One field-kind plugin into the substrate merge driver (FEAT-002). Per DEC-0005.",
+      "acceptance_criteria": [
+        "Two divergent versions each insert, delete, and/or move elements in the same collection; the merge yields one replica-independent sequence containing all inserts, with no element duplicated or lost and no interleaving of concurrently-inserted runs",
+        "Insert mints one position identifier and mutates no neighbor",
+        "Move rewrites one element's position register; concurrent moves of the same element resolve deterministically by hybrid logical clock",
+        "The sort-on-read projection reproduces single-writer authoring order identically to a plain array, and accepts array-position hand-edits translated to CRDT operations"
+      ],
+      "id": "FEAT-003",
+      "created_at": "2026-06-03T22:43:24.250Z",
+      "created_by": "human/davidryan@gmail.com",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-03T22:43:24.251Z",
+      "oid": "eca74a81f90cd7540aadb2154adb965d",
+      "content_hash": "8ca848f0322cf8f558217d7e30250342f3dcb6a3acf9ecb26949f3357c3629f7"
     }
   ]
 }

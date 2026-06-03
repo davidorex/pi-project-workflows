@@ -104,6 +104,56 @@
       "created_by": "human/davidryan@gmail.com",
       "oid": "6fa0827c377ece5df7de98d7d0595989",
       "content_hash": "bfc774c16bf6287893e48e273f6bb88b313ebe542dd748e61b11c1fb63c9b81e"
+    },
+    {
+      "title": "pi-context has no structure-aware substrate merge/oid driver — no operation reconciles two divergent substrate versions using the content-addressing DAG as merge base",
+      "status": "accepted",
+      "package": "pi-context",
+      "description": "Items carry oid / content_hash / content_parent and the content-addressed objects/ store holds blobs by hash; content_parent records each version's predecessor, forming a per-item version DAG. These fields record lineage but nothing consumes them: there is no operation that computes a common ancestor or reconciles divergence, so two substrate states that evolved separately can be compared by eye but not merged. A whole-file git line-merge of <block>.json / relations.json operates below the data model — it diffs JSON text, mangling arrays and producing structurally invalid or semantically wrong states — so it does not constitute a merge of the substrate. The gap: given a base version B and descendants X and Y, the substrate must produce one merged state that takes every non-conflicting change from X and Y; resolves field-level divergence deterministically where a policy exists and surfaces a structured conflict where it does not; keeps edges, config, schemas, and the object store consistent; satisfies all declared invariants after merge; and records the result's lineage as descending from both X and Y.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "reference": "oid/content_hash/content_parent minted + carried; content_parent records each version's predecessor forming a per-item version DAG — lineage recorded but unconsumed (no LCA / no reconcile)"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "item writes are whole-item upsert (last-writer-wins); no operation computes a merge base or reconciles two divergent states"
+        },
+        {
+          "file": ".context/objects/",
+          "reference": "content-addressed objects/ store holds blobs by hash; equal hash == equal content, but no merge consumes it"
+        }
+      ],
+      "impact": "Branch-pinned substrates, multi-operator or multi-session editing, and offline replicas reconciled later cannot reconverge; divergence is either terminal or 'resolved' by a data-model-blind git text-merge that corrupts arrays/structure. This is the capability the convergent-sequence field and branch-pinned substrates both depend on.",
+      "proposed_resolution": "A structure-aware 3-way merge driver keyed off the content-parent DAG: merge base = lowest common ancestor per item (and for the substrate); per-item 3-way merge; field-kind-dispatched field merge (sequence fields delegate to the convergent ordered-sequence field-type, FGAP-005); edge-set 3-way merge against base; object-store union by blob hash; config/schema 3-way with divergent-redefinition surfaced as conflict; multi-parent content_parent on merged results (a node, not a single link); post-merge full invariant + lens-validator revalidation; typed structured conflict set ({item_id, field, base, ours, theirs} + edge/schema analogues); cherry-pick as a scoped sub-case of the same base-diff-and-replay machinery. See DEC-0004.",
+      "id": "FGAP-004",
+      "created_at": "2026-06-03T22:41:38.989Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "5dd26cbe28f1c457b9eaf355db2d08a6",
+      "content_hash": "1bf2875a86b41fbedcd4452e43c88da117d0ffd51178c09962a935c5c189a19b"
+    },
+    {
+      "title": "Ordered collections of item-refs need a convergent sequence field-kind — an array index cannot merge concurrent insert / delete / move",
+      "status": "accepted",
+      "package": "pi-context",
+      "description": "Order is a plain ordered array of refs on the owning item (e.g. a fragment_refs / phase-order / step-list field), authoritative by design. Single-writer insert/reorder works: splice the array, one atomic item write. But the array carries no merge semantics: two divergent versions that each reorder it 3-way-merge to a conflict (git) or whole-array last-writer-wins (item upsert), losing one side's ordering. The gap: when two divergent substrate versions each insert, delete, and/or move elements in the same ordered collection, the substrate must merge them into one deterministic, replica-independent sequence containing every insert, with each element retaining a single identity and a single position, and concurrently-inserted runs kept coherent rather than interleaved. An array index cannot carry this, because position is a value two branches generate independently and must reconcile. The capability is latent until branch-pinned substrates + a substrate merge driver (FGAP-004) exist.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "reference": "ordering today is a plain ordered array of refs on the owning item (authoritative by design); position is an array index two branches generate independently and cannot reconcile"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "item upsert is whole-array last-writer-wins and git line-merge mangles arrays; neither merges concurrent insert/delete/move on an ordered ref-array — one side's ordering is lost"
+        }
+      ],
+      "impact": "Ordered collections of item-refs (roadmaps, milestone sequences, fragment composition, step lists) in substrates branched and merged across operators / sessions / branches cannot converge: concurrent reordering on divergent versions conflicts or silently drops an ordering.",
+      "proposed_resolution": "A declared sequence-field kind whose elements carry unique, densely-orderable, immutable position identifiers minted relative to neighbors at insert time (non-interleaving Fugue-class sequence CRDT); move as a first-class op via a position register resolved by hybrid logical clock (Kleppmann move-CRDT) with stable element identity; HLC for replica-independent same-gap ordering + move resolution; a field-aware merge driver composing the per-field CRDT op-sets/states; a sort-on-read projection emitting a plain ordered ref-array (and translating array-position hand-edits back to CRDT ops); authoritative CRDT state in the owning <block>.json, projection + merge driver in block-api. Plugs into the substrate merge driver (FGAP-004) as a field-kind. See DEC-0005.",
+      "id": "FGAP-005",
+      "created_at": "2026-06-03T22:42:55.244Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "6a415ca3c4c82e4dc5ce77924500952c",
+      "content_hash": "e866db4d8c7ba5cf3eb5cb7a8b7954ed95604041ad1bcc519b061d4b91e97bdb"
     }
   ]
 }

@@ -54,6 +54,42 @@
       "created_by": "human/davidryan@gmail.com",
       "oid": "cdbcac620c6153ee85aa8990a2b4ef36",
       "content_hash": "2a4ecb1998f333fd05fd7621095f6f2a759b98db9ce46b69343e8a2bd5addac4"
+    },
+    {
+      "title": "Structure-aware substrate merge/oid driver: 3-way merge over items, edges, config, and objects keyed off the content-parent DAG, ending in invariant re-validation and multi-parent lineage",
+      "status": "enacted",
+      "context": "FGAP-004: pi-context records per-item lineage (content_parent DAG) + a content-addressed objects/ store but has no operation that merges two divergent substrate states. This is the substrate-level reconvergence framework on which the convergent-sequence field (FGAP-005) and branch-pinned substrates depend; it is the reconvergence counterpart to clone/fork divergence (DEC-0002).",
+      "decision": "1) Merge-base from the content-parent DAG: use content_parent lineage to find the lowest common ancestor version per item (and for the substrate), giving the base for every 3-way comparison. 2) Per-item 3-way merge over B/X/Y: added-on-one -> include; removed-on-one and untouched-on-other -> remove; modified-on-one -> take it; modified-on-both -> field-level merge; removed-on-one and modified-on-other -> conflict. 3) Field-kind-dispatched field merge: scalar/object fields take the side that changed vs base (both-identical -> take; both-different -> declared deterministic policy or conflict); SEQUENCE fields delegate to the convergent ordered-sequence field-type (FGAP-005/DEC-0005) — this driver is the framework that field-kind plugs into. 4) Edge-set merge: edges are (parent, child, relation_type) triples reconciled by 3-way set ops against base; after item deletes, re-check edges whose endpoints no longer exist and drop or conflict. 5) Object-store merge by blob union (equal hash == equal content -> conflict-free). 6) Config/schema 3-way merge; divergent redefinition of the same block_kind / relation_type / schema is a surfaced conflict, not an auto-merge. 7) Multi-parent lineage: merged items get a new content_hash with content_parent referencing BOTH source versions — requires content_parent to admit >=2 parents (a node, not a single link). 8) Post-merge invariant re-validation: run the full declared-invariant + lens-validator pass on the merged state (branch-valid states can merge to globally invalid, e.g. a requires-edge whose target was deleted on the other branch); failures surface as conflicts. 9) Structured conflict set: typed records {item_id, field, base, ours, theirs} (+ edge/schema analogues), not inline text markers, so the auto-merged majority lands cleanly alongside the unresolved remainder. 10) Cherry-pick as a sub-case: applying a single item-version delta reuses the same base-diff-and-replay machinery scoped to one item/change-set.",
+      "consequences": [
+        "content_parent must become multi-parent (a DAG node admitting >=2 parents), shared with the clone/fork lineage model (DEC-0002).",
+        "The merge driver + merge-base finder live in the block-api; output is deterministic regardless of which side is named 'ours'.",
+        "The convergent ordered-sequence field-type (FGAP-005) is one field-kind plugin into step 3's field-merge dispatch; this driver is the substrate-level framework.",
+        "Cherry-pick is delivered by the same machinery, no separate mechanism.",
+        "Foundational and currently absent — branch-pinned substrates and the convergent-sequence field both depend on it."
+      ],
+      "id": "DEC-0004",
+      "created_at": "2026-06-03T22:41:58.720Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "805e3b668f8af9960db896897bceca3e",
+      "content_hash": "020f14919ced56d66a04c432481c887951ac481e06338ea35015a2a308628c62"
+    },
+    {
+      "title": "Convergent ordered-sequence field-kind: non-interleaving Fugue-class CRDT over item-refs + move-CRDT position register, projected as a plain array",
+      "status": "enacted",
+      "context": "FGAP-005: ordered ref-collections need a sequence field that merges deterministically under concurrent insert/delete/move. This field-kind is one plugin into the substrate merge driver's field-merge dispatch (FGAP-004 / DEC-0004).",
+      "decision": "1) Authoritative representation: a non-interleaving sequence CRDT (Fugue-class) over item-refs; each element holds a unique, immutable position identifier minted relative to its neighbors at insert time; identifiers are densely orderable so an insert mints one identifier and mutates no neighbor; concurrent inserts into the same gap resolve to a deterministic order with no interleaving of distinct actors' runs. 2) Move as a first-class op via a position register (Kleppmann move-CRDT): an element's position is a register rewritten on move, resolved by hybrid logical clock; element identity is stable so a move never duplicates or drops the element, and two concurrent moves of the same element converge to one deterministic position. 3) Deterministic, causally-consistent resolution: the hybrid logical clock gives a replica-independent total order for same-gap insert ordering and move resolution; the same op-set in any arrival order yields the same sequence. 4) Field-aware merge driver: the substrate merge composes the CRDT op-sets / states for this field, at the field level. 5) Human-facing array projection: a sort-on-read helper emits the resolved sequence as a plain ordered ref-array for reading/editing; a hand-edit expressed as an array-position change is translated into CRDT ops through the block-api. Convergence lives in the stored representation; legibility lives in the projection. 6) Location: a declared sequence-field kind on the owning item; authoritative CRDT state carried in the owning <block>.json; the projection helper + field-aware merge driver live in the block-api.",
+      "consequences": [
+        "A new declared field-kind (sequence-of-refs) recognized by schema + block-api, distinct from a plain ref-array.",
+        "CRDT state (position identifiers + position registers + HLC stamps) is stored in the owning <block>.json; the plain array becomes a read/edit projection, not the source of truth.",
+        "Plugs into the substrate merge driver (DEC-0004) step-3 field-merge dispatch as the sequence field-kind; the driver is the framework, this is the plugin.",
+        "Single-writer authoring order is reproduced identically to a plain array via sort-on-read, so existing read/edit ergonomics are preserved.",
+        "Latent until branch-pinned substrates + the substrate merge driver exist; until then it degrades to the current single-writer array behavior."
+      ],
+      "id": "DEC-0005",
+      "created_at": "2026-06-03T22:43:12.755Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "e38284caf9da048ba825e9b500210d11",
+      "content_hash": "eea80793691ccff6a663cc8a677c5ad840c8bb55e6b964fc8df1dbd930f96d64"
     }
   ]
 }

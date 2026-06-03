@@ -1,0 +1,14 @@
+{
+  "title": "pi-context substrate merge (+ cherry-pick) — structure-aware 3-way reconciliation of two divergent substrate versions",
+  "status": "proposed",
+  "layer": "L1",
+  "description": "A defined merge operation over items, edges, config, and objects, keyed off the content-parent DAG: computes the merge base from lineage, 3-way-merges per item with field-kind dispatch (sequence fields via FEAT-003), set-merges edges, unions the object store, 3-way-merges config/schema, records multi-parent lineage, re-validates all invariants, and emits a typed conflict set. Cherry-pick is a scoped sub-case. Per DEC-0004.",
+  "acceptance_criteria": [
+    "For base B and descendants X, Y the driver produces one merged state taking all non-conflicting changes from both, with a typed conflict set for the rest, and identical output regardless of which side is named 'ours'",
+    "The merge base is computed from the content_parent DAG, not supplied externally",
+    "Edges merge by set semantics; the object store merges by union; sequence fields merge via the convergent sequence field-type (FEAT-003)",
+    "The merged state passes the full invariant + lens-validator pass, or every failure appears in the conflict set",
+    "Merged items record content_parent referencing both source versions (multi-parent)",
+    "A single-item delta from one branch applies onto another (cherry-pick) through the same machinery"
+  ]
+}

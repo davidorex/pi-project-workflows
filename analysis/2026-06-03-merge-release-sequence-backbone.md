@@ -4,9 +4,11 @@
 
 ## Sequence: merge → build → version → publish → back to branch
 
-### Stage 0 — preconditions (before `release:minor` can run)
-- **Untracked files block it.** `release.mjs:77` aborts on any non-empty `git status --porcelain`; that includes untracked (`??`) entries. As of this writing: `analysis/2026-06-03-using-pi-spec-2.md`, `analysis/feat-using-pi-context-substrate.md` (neither agent-authored). The release aborts with "Uncommitted changes detected" until they're committed/stashed/removed.
-- **No branch guard.** The script doesn't verify the current branch is `main` — operator responsibility.
+### Stage 0 — preconditions (before `release:minor` can run) — ✅ DONE (`01f8f45`)
+- **Untracked files cleared.** The two design docs (`analysis/2026-06-03-using-pi-spec-2.md`, `analysis/feat-using-pi-context-substrate.md`) were committed on the branch per operator direction; tree is clean. `release.mjs:77` aborts on any non-empty `git status --porcelain` (incl. `??` entries) — that condition is now satisfied.
+- **No branch guard.** The script doesn't verify the current branch is `main` — operator/agent responsibility (the merge in Stage C lands us on main before `release:minor`).
+
+> **Baseline correction (verified):** npm `latest` = **0.26.0** for all published packages; `v0.27.0` was tagged but never published. So each package's `[Unreleased]` covers `v0.26.0..HEAD` and the public backfill covers ≤ 0.26.0. The bump is still 0.27.0→0.28.0 locally; consumers jump 0.26.0→0.28.0.
 
 ### Stage 1 — merge to main
 Fast-forward, **zero conflicts**, `f2668fc → 0de95bb`, **102 commits**, +80,819/−6,810 (~850 files are substrate data; ~134 are code/docs). Carries the `8d19ef5 feat: hello` + its removal in history (a FF preserves both nodes).

@@ -1,1 +1,48 @@
 # Changelog
+
+All notable changes to this package are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/). This package has had two public npm releases (`0.14.6`, `0.26.0`); the entries below are scoped to its published surface (`src/`, `schemas/`, `templates/`), and `[Unreleased]` holds changes since `0.26.0`.
+
+## [Unreleased]
+
+### Added
+- Six whole-block delegator macros (`render_decisions`, `render_features`, `render_framework_gaps`, `render_layer_plans`, `render_research`, `render_spec_reviews`) in `shared/macros.md` as thin wrappers over per-item macros (`dce327d`)
+- `array_key` column on the `CANONICAL_MACRO_NAMES` registry, surfacing block_kind ≠ data-key divergences (framework-gaps→gaps, layer-plans→plans, spec-reviews→reviews); reader call-sites use the `.macro_name` property (`0fb6149`)
+- `TraceEntry` `extension_load_warning` entry kind (`8030c61`)
+- Grant-clamp infrastructure: `CompiledAgent.tools` + `DispatchContext.parentGrant`; `spec.tools` threaded through `compileAgent`; `GrantViolationError` clamping child-tools to a subset of the parent grant at the `executeAgent` dispatch boundary (`dee01a5`, `4e9a866`, `a273ab9`)
+
+### Changed
+- Relocated the agent-template tree `packages/pi-workflows/templates/` → `packages/pi-jit-agents/templates/` and added a `bundledTemplateDir()` export; consumer call-sites rewired (`d71b48e`)
+- Neutralized `.project` references in agent-reachable code strings (`5024158`)
+- Stripped development-history citations from `agent-trace.schema.json` (`2f3ef47`)
+
+## [0.26.0] - 2026-05-25
+
+Covers `v0.14.6..v0.26.0` for the package's published surface.
+
+### Added
+- `contextBlocks` widened to `(string | ContextBlockRef)[]` for per-item injection; object-form `contextBlocks` wired through `compileAgent`; multi-entry-same-name injection (`9f7eb42`, `4d1fd1d`, `a0c6467`)
+- Renderer registry mapping block kinds to per-item Nunjucks macro refs; composition-primitive surface symmetry (three tools, Nunjucks global, macro wiring) (`38fb27e`, `5341b2b`)
+- `x-prompt-budget` enforcement primitive + narrative-field annotations on six newer block schemas (`be7a168`)
+
+### Changed
+- Context-block delimiters adopt the pi 0.75.x XML-tag convention (`d153877`)
+- Migrated consumers to the pi-context `context` vocabulary; retired per-item-macro duplication via shared helpers + a canonical-name registry map (`187c094`, `161bf4e`, `188f351`, `80b6915`)
+- Migrated pi-mono peer-deps `@mariozechner/*` → `@earendil-works/*` at `^0.74.0` (`e5ab8ad`)
+
+### Fixed
+- `compile.ts` catches `BootstrapNotFoundError` at `projectDir` + `buildIdIndex` call sites (`ba58d78`)
+- Empty-prefix guard + cross-block status-vocab check + name-based error catches (`4fb4d1e`)
+
+## [0.14.6] - 2026-04-28
+
+Covers the package from its extraction (`239f718`, 2026-04-12) through its first public release.
+
+### Added
+- Initial extraction of `@davidorex/pi-jit-agents`: agent spec compilation (`agent-spec`), agent-trace SDK, and the verdict/agent-trace/trace-config schemas (`239f718`)
+- Monitor classify trace capture aligned to canonical pi (`1bc36ba`)
+
+### Changed
+- Bumped pi-mono `0.63.1` → `0.70.2`; migrated TypeBox v0.34 → v1.x via a hybrid import strategy (`11a4069`)
+
+### Fixed
+- Provider-aware `toolChoice` normalization at the execute boundary (`ce37772`)

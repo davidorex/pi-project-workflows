@@ -1,0 +1,13 @@
+{
+  "title": "Bootstrap writes a skeleton config; accept-all overwrites a skeleton but never-clobbers a populated config",
+  "status": "enacted",
+  "context": "FGAP-001: init / switch -c leave the substrate config-less, and the only config-originating op (accept-all) is whole-catalog all-or-nothing, so the custom-vocabulary path has no tool surface.",
+  "decision": "1) initProject and switchAndCreate write a minimal schema-valid skeleton config { schema_version: '1.0.0', block_kinds: [], substrate_id: <minted> } after dir scaffolding. substrate_id is minted at skeleton-write time so identity is stable from the first bootstrap action; accept-all's existing mint-if-absent then preserves it. 2) No config-schema change and no marker field (config.schema.json is additionalProperties:false); skeleton-vs-populated is decided by content via a new isSkeletonConfig predicate — block_kinds / relation_types / lenses / installed_schemas / installed_blocks all empty/absent (identity + scaffold fields ignored). 3) adoptConception's guard changes from if(existing) to if(existing && !isSkeletonConfig(existing)) — overwrite when absent or skeleton, never-clobber when populated. 4) deriveBootstrapState gains a 'skeleton' state ordered no-pointer -> no-config -> skeleton -> not-installed -> ready; no-config is retained for a deleted-config substrate; a non-empty-block_kinds config with nothing to install stays 'ready'. 5) A shared never-clobber writeSkeletonConfig(substrateDir, ctx?) helper writes the skeleton only when config.json is absent, via writeConfigForDir (AJV-validated atomic). 6) context-init / switch -c completion messages and the context-bootstrap-state op description name the two onward paths: accept-all (adopt the catalog) or amend-config/edit (build custom).",
+  "consequences": [
+    "accept-all.test.ts idempotent test reworked to skeleton semantics: first adopt on a skeleton => adopted:true (overwrite), second => adopted:false (now populated); add a populated-config never-clobber case.",
+    "accept-all.test.ts 'init scaffolds dirs only, no defaults' retargeted: init now writes config.json; assert exactly ['config.json'] present, no block data files.",
+    "context-sdk.test.ts keeps the genuine config-absent no-config test and adds a skeleton-state test.",
+    "The custom-vocabulary substrate path becomes fully tool-driven (skeleton -> amend-config add block_kinds -> write-schema -> append-block-item, no accept-all).",
+    "Substrate identity (substrate_id) is stable from the first bootstrap action rather than first appearing at accept-all."
+  ]
+}

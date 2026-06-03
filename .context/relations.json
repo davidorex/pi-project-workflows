@@ -516,5 +516,44 @@
       "refname": "FGAP-182"
     },
     "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "62f10bb0fb2ae8fb81a41fa3d104686f",
+      "refname": "DEC-0001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "068f9d8fd481ef5cfcdb70c02163024e",
+      "refname": "FGAP-001"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d61eb9f853844ba5eeeb65ed1f7fcd15",
+      "refname": "TASK-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "068f9d8fd481ef5cfcdb70c02163024e",
+      "refname": "FGAP-001"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d61eb9f853844ba5eeeb65ed1f7fcd15",
+      "refname": "TASK-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "62f10bb0fb2ae8fb81a41fa3d104686f",
+      "refname": "DEC-0001"
+    },
+    "relation_type": "task_governed_by_decision"
   }
 ]

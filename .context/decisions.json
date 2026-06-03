@@ -1,3 +1,23 @@
 {
-  "decisions": []
+  "decisions": [
+    {
+      "title": "Bootstrap writes a skeleton config; accept-all overwrites a skeleton but never-clobbers a populated config",
+      "status": "enacted",
+      "context": "FGAP-001: init / switch -c leave the substrate config-less, and the only config-originating op (accept-all) is whole-catalog all-or-nothing, so the custom-vocabulary path has no tool surface.",
+      "decision": "1) initProject and switchAndCreate write a minimal schema-valid skeleton config { schema_version: '1.0.0', block_kinds: [], root, substrate_id } after dir scaffolding, via a never-clobber writeSkeletonConfig (no-op when a config already exists). writeSkeletonConfig mints AND registers the substrate_id (registerSubstrate into the project-root registry), so identity exists and is registered from the first bootstrap action. 2) Skeleton-vs-populated is decided by content: isSkeletonConfig returns true only when EVERY addressable config registry is empty/absent. The registry set is derived by iterating REGISTRY_DESCRIPTORS (all 13 registries: block_kinds, relation_types, lenses, layers, invariants, hierarchy, installed_schemas, installed_blocks, tool_operations, tool_operations_forbidden, status_buckets, naming, display_strings), with a per-kind emptiness test (map -> no keys; array kinds -> zero length). Only schema_version / root / substrate_id are skeleton-permitted; content in ANY registry makes it non-skeleton. No config-schema change and no marker field. 3) adoptConception's guard is if(existing && !isSkeletonConfig(existing)) -- accept-all overwrites a skeleton but never-clobbers a populated config; over a skeleton it reads the existing on-disk substrate_id and preserves it (re-upserting the same registry entry), so init->accept-all keeps one stable, registered identity. 4) deriveBootstrapState gains a 'skeleton' state ordered no-pointer -> no-config -> skeleton -> not-installed -> ready; no-config is retained for a deleted-config substrate; a non-empty-block_kinds config with nothing to install is 'ready'. 5) A shared never-clobber writeSkeletonConfig(cwd, ctx?) writes the skeleton only when config.json is absent, via writeConfigForDir (AJV-validated atomic). 6) context-init / accept-all / switch-create op descriptions name the two onward paths: accept-all (adopt the catalog) or amend-config/edit (build custom).",
+      "consequences": [
+        "accept-all.test.ts idempotent test reworked to skeleton semantics: first adopt on a skeleton => adopted:true (overwrite), second => adopted:false (now populated); add a populated-config never-clobber case.",
+        "accept-all.test.ts 'init scaffolds dirs only, no defaults' retargeted: init now writes config.json; assert exactly ['config.json'] present, no block data files.",
+        "context-sdk.test.ts keeps the genuine config-absent no-config test and adds a skeleton-state test.",
+        "The custom-vocabulary substrate path becomes fully tool-driven (skeleton -> amend-config add block_kinds -> write-schema -> append-block-item, no accept-all).",
+        "Substrate identity (substrate_id) is stable from the first bootstrap action rather than first appearing at accept-all."
+      ],
+      "id": "DEC-0001",
+      "created_at": "2026-06-03T21:22:57.678Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "62f10bb0fb2ae8fb81a41fa3d104686f",
+      "content_hash": "be9d6c39016ca3b80a3573de511c04a0f45dcb50ea8ef1620993932b73f07e33",
+      "content_parent": "7aeca1724e4d7c8b3a0924b39591a88ba8b7da84c61ce68b8d14fdab87aef7e0"
+    }
+  ]
 }

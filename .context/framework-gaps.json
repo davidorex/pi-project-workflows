@@ -1,1 +1,47 @@
-{"schema_version":"1.0.0","gaps":[]}
+{
+  "schema_version": "1.0.0",
+  "gaps": [
+    {
+      "title": "init / switch -c bootstrap leaves the substrate config-less, with no op-driven path to a custom-vocabulary config",
+      "status": "closed",
+      "package": "pi-context",
+      "description": "initProject (the context-init op) and switchAndCreate (/context switch -c) scaffold the substrate dir + schemas/ subdir but write no config.json. The only op that originates a config is acceptCanonicalConfig/accept-all, which adopts the entire packaged conception (all-or-nothing, never-clobber). amendConfigEntry throws 'no config.json' when the config is absent, so it cannot bootstrap one. Net: a user who wants a substrate with a custom vocabulary rather than the full packaged catalog has no op-driven path and must hand-author config.json, falling off the tool surface.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "248-298",
+          "reference": "initProject scaffolds dirs + pointer only; writes no config.json"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "548-575",
+          "reference": "switchAndCreate flips pointer + scaffolds dirs only; writes no config.json"
+        },
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "lines": "894-897",
+          "reference": "amendConfigEntry throws 'no config.json' when config absent — cannot originate a config"
+        },
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "lines": "712-725",
+          "reference": "adoptConception never-clobber guard if(existing) + whole-catalog adoption — only config-originating op, all-or-nothing"
+        },
+        {
+          "file": ".pi-context.json",
+          "reference": "Live dogfooding state: pointer switched to using-pi-context/, which holds only an empty schemas/ subdir and no config.json — the broken state with no ops path forward"
+        }
+      ],
+      "impact": "Custom-vocabulary substrate creation is impossible through the tool surface; a dogfooded /context switch -c lands the user on a config-less substrate that no op can advance (accept-all would impose the whole catalog; amend-config refuses without a config).",
+      "proposed_resolution": "init + switch -c write a minimal schema-valid skeleton config (schema_version + empty block_kinds + minted substrate_id) via a shared never-clobber writeSkeletonConfig helper; accept-all becomes skeleton-aware (overwrite when absent OR isSkeletonConfig, never-clobber a populated config); deriveBootstrapState gains a 'skeleton' state ordered no-pointer -> no-config -> skeleton -> not-installed -> ready; onward-guidance messages name the two paths (accept-all OR amend/edit).",
+      "id": "FGAP-001",
+      "created_at": "2026-06-03T21:22:40.700Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "068f9d8fd481ef5cfcdb70c02163024e",
+      "content_hash": "651178770909f1ac9d6e5a9aad9f211646e3604b6934adbf8d8da0434e99511e",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-03T22:01:57.907Z",
+      "content_parent": "5bfd7659545f8bcc68a84b0faed8b9f3bb4879333e688ea4881eac4b56d9220e"
+    }
+  ]
+}

@@ -36,10 +36,10 @@ A deterministic adversarial audit ran against the landed content. **Open finding
 Root cause of the original dormancy (the Part B target, still pending): `release.mjs` never re-seeds `[Unreleased]` (R1), silently skips missing/empty sections (R2), and nothing enforces an entry (R3).
 
 ## Prerequisites for a changelog-bearing 0.28.0 — status
-1. **Backfill (Part A)** — ✅ landed (`800958f`..`d1437a9`); audit findings open (above, in the audit-state file).
-2. **Fix `release.mjs` (Part B)** — ⏳ pending: re-seed a fresh `[Unreleased]` after stamping (R1); error instead of silently skipping when a package with published-surface changes has no section, and enumerate all packages incl. missing files (R2). Also the `check-changelog.mjs` commit guard + CI step (D2).
+1. **Backfill (Part A)** — ✅ landed (`800958f`..`d1437a9`); audit findings all resolved (see `analysis/2026-06-03-changelog-backfill-audit-state.md`).
+2. **Fix `release.mjs` (Part B)** — ✅ done: R1 re-seed + R2a missing-file error + R2b empty-with-surface-commits error (`fd597d0`); `check-changelog.ts` commit guard (`d8c24b9`) wired into husky + CI (`df2a62b`); guard growth-detection hardened to list-item count, closing the D1 reflow + D2 empty-new-file gaps (`f1a7106`).
 3. **`CHANGELOG.md` in `files[]`** — ✅ audit-verified all seven ship (D4).
-4. **`publishConfig.access:"public"` on all 7** — ⏳ pending: this publish is saved only by the `--access public` flag; a future flag-less publish defaults to restricted.
+4. **`publishConfig.access:"public"` on all 7** — ✅ done (`2d513e3`).
 5. **Clear the 2 untracked files** — ✅ done (`01f8f45`).
 
-Remaining before a changelog-bearing 0.28.0: resolve the open audit findings, land Part B (release.mjs R1/R2 + guard), and add `publishConfig.access`. Then the Stage 1–5 sequence (merge → build → version → push → publish → back-to-branch).
+All prerequisites are met. Next: the Stage 1–5 release sequence (merge → build → version → push → publish → back-to-branch).

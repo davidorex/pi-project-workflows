@@ -8,6 +8,20 @@
       "content_hash": "7e16844d999d652761612a0f767a9d295084e524f4001ee3d36d1289cb249649",
       "notes": "Implemented at ab05a0e (pi-context skeleton-config bootstrap). Build/check/test green; runtime-demoed via the cli (custom path without accept-all; init->accept-all id-preservation + idempotence); a fresh adversarial re-audit found the isSkeletonConfig registry-class fix complete with no new regression.",
       "content_parent": "82b2103e8f566bcea7cb2d0cef016879e753cad5c43e93029225f3151aed56b5"
+    },
+    {
+      "description": "Implement switch identity reconciliation per DEC-0003 / FGAP-003: switchToExisting and switchAndCreate register config.substrate_id -> active dir via registerSubstrate when the id is absent from the project-root registry; a present-but-different-dir entry continues to raise substrate_id_registry_mismatch. Tests: switch to an unregistered-but-present-config substrate -> registered + context-validate clean; mismatch case preserved. Full completion sequence (build/check/test/runtime-demo/adversarial/skills). Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "planned",
+      "id": "TASK-002",
+      "oid": "81d745ab715f2ec99c2357af58019e98",
+      "content_hash": "0d427b92ca21fe95660ecd81c73de92cca1760da1813ce9c3579244638e4b204"
+    },
+    {
+      "description": "Implement the substrate clone/import arc per DEC-0002 / FGAP-002 / FEAT-001: cloneSubstrate library fn (copy config + all blocks + relations.json + objects/ into the destination dir; mint a fresh substrate_id; record a substrate_derived_from_substrate edge; write a provenance-bearing registry entry) + Pi tool + CLI + orchestrator script as one dual-surface unit; register the substrate_derived_from_substrate relation_type in config; extend the registry schema/type with origin/provenance fields; refine the SoT-drift invariant (context-sdk.ts:1685+) to distinguish native-lost-registry / foreign-import / genuine drift. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "planned",
+      "id": "TASK-003",
+      "oid": "62fa29ee28b79c5504c52a6021eda387",
+      "content_hash": "e8d4626f6b8fdb55fdba8bf9389d21b7c9478352b2152538f8967ba63295572c"
     }
   ]
 }

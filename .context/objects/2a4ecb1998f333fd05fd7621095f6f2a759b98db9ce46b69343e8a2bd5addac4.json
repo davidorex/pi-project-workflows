@@ -1,0 +1,12 @@
+{
+  "title": "Switch reconciles a native identity: register config.substrate_id -> dir when absent; mismatch still errors",
+  "status": "enacted",
+  "context": "FGAP-003: neither switch path records the active substrate's identity, so a valid switch to an unregistered substrate false-fails context-validate with substrate_id_unregistered.",
+  "decision": "switchToExisting and switchAndCreate register config.substrate_id -> active dir via registerSubstrate when the id is ABSENT from the project-root registry (idempotent). Register-if-absent is functionally safe: an absent id cannot collide, so registering it in this project's local namespace is harmless; a present-but-different-dir entry is the substrate_id_registry_mismatch case and remains an error, so genuine drift still surfaces. This decision records only the NATIVE re-registration; origin/provenance for imported (foreign) substrates is out of scope here and handled by the provenance ledger in DEC-0002 — a foreign substrate is brought in via clone, not silently absorbed by switch. DEC-0003 is the native-only case of DEC-0002's model.",
+  "consequences": [
+    "switchToExisting + switchAndCreate gain a register-if-absent step after the pointer flip.",
+    "Eliminates the false substrate_id_unregistered on a valid switch.",
+    "Does NOT record origin/provenance — that enrichment lands with DEC-0002; until then a switched-in id is registered without lineage.",
+    "Tests: switch to an unregistered-but-present-config substrate -> registered + context-validate clean; switch where the id maps to a different dir -> substrate_id_registry_mismatch preserved."
+  ]
+}

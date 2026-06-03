@@ -1,0 +1,5 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-001 (skeleton-config bootstrap, landed at ab05a0e): npm run build + npm run check + npm test all green (68 pi-context tests, 0 fail). Runtime-demoed via the pi-context-cli on throwaway substrates: custom-vocabulary path (context-init -> amend-config add block_kind, no accept-all) reached state 'ready'; init -> accept-all preserved the minted substrate_id (sub-776038675a8a52ee) with idempotent re-run (adopted:false) and a single registry entry; layers-only and status_buckets-only configs classified non-skeleton. A fresh adversarial re-audit confirmed the isSkeletonConfig registry-coverage fix complete (all 13 registries, derived from REGISTRY_DESCRIPTORS) with no new regression."
+}

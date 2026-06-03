@@ -171,7 +171,16 @@ function main(): number {
 	let afterFromGit: boolean; // range mode reads after-state from HEAD via git show
 
 	if (base) {
-		changedPaths = git(`git diff ${base}...HEAD --name-only`).split("\n").filter(Boolean);
+		let diffOut: string;
+		try {
+			diffOut = git(`git diff ${base}...HEAD --name-only`);
+		} catch {
+			console.error(
+				`check-changelog: base ref '${base}' not resolvable — ensure the CI checkout uses fetch-depth: 0 (or fetch the base branch) before running the guard.`,
+			);
+			return 1;
+		}
+		changedPaths = diffOut.split("\n").filter(Boolean);
 		beforeRev = base;
 		afterFromGit = true;
 	} else {

@@ -14,6 +14,8 @@ jobs:
         node-version: ["22.19", 23]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -21,4 +23,5 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npm test
-      - run: npx tsx scripts/check-changelog.ts --base origin/main
+      - if: github.event_name == 'pull_request'
+        run: npx tsx scripts/check-changelog.ts --base origin/main

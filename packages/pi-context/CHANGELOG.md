@@ -17,6 +17,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 - Citation-rot scanner library with AST-based detection (`e83043b`, `56113cb`)
 - Orientation block + skills-dir support and `before_agent_start` / `resources_discover` guidance hooks (`bea080f`, `28dfbd0`)
 - Pure read-element primitive (`serializeForRead` + `addressInto`) with element addressing; all JSON read handlers routed through it; over-cap reads fail closed via vendored `truncateHead` (`68c2873`, `bcabcb2`, `103cb29`, `cdae473`)
+- Per-op `authGated` metadata on the op-registry and a derived `gatedTools` export on the `./ops` subpath, sourcing the dispatch auth-gate's gated set from the registry (`45dcf66`)
 
 ### Changed
 - Extracted 45 tool registrations into `ops-registry.ts` (behavior-preserving) (`c68583a`)

@@ -51,10 +51,12 @@
     },
     {
       "description": "Complete the op-registry coverage of the library write surface per DEC-0006 / FGAP-009 / FGAP-006 as dual-surface units (library + op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema+updateSchema / registerSubstrate+writeRegistry / writeBootstrapPointer+flipBootstrapPointer / bulk appendRelations as the surface warrants; run context-validate after edge mutations. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
-      "status": "planned",
+      "status": "completed",
       "id": "TASK-007",
       "oid": "82be3beb7bf3da2ca59aa74936598d84",
-      "content_hash": "8b333f99bc4709c3378bf02649ad111fa80fed0cfdb71c7e2eeb538be024a796"
+      "content_hash": "9379ed03a4de4213d0e51dd76d72c099cef57a79b7efe1a70f6bf5177a809f46",
+      "content_parent": "3b472b41f016a8198b0b6a7d72a592e8b3f6ca14070ecca62332464465ab044c",
+      "notes": "Implemented at 56b153d. removeRelation primitive + removeRelationByRef/replaceRelationByRef/appendRelationsByRef porcelain + ops remove-relation/replace-relation/append-relations/upsert-block-item (all attested via alpha); OP_COVERAGE_RULE + INTENTIONALLY_UNEXPOSED_WRITERS coverage contract; foldin OP3 emits structured endpoints; OP4 unresolved-detection class-closed on substrateHasItem + drop-persist gate fix. build/check/test green; cli runtime demo (remove/replace/bulk/upsert + full step-by-step custom-substrate creation); probe->fix->re-audit loop caught a proxy false-positive + sibling-path instance + drop-persist gate bug, final re-audit clean. Closes FGAP-006 + FGAP-009. gamma (FGAP-010, TASK-008) remains."
     },
     {
       "description": "Add a library<->op-registry<->orchestrator-script parity/coverage test per DEC-0006 / FGAP-010: fail when a library write fn has no op, or an op drops the ctx / optional params (dryRun, ordinal, ...) its underlying library fn or orchestrator-script sibling forwards; wire into husky pre-commit + CI. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",

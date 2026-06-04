@@ -162,7 +162,7 @@
     },
     {
       "title": "relations.json has no scoped remove/replace edge op — edge hygiene is append-only through the tool surface",
-      "status": "accepted",
+      "status": "closed",
       "package": "pi-context",
       "description": "append-relation is a full dual-surface op (library appendRelation + Pi tool + orchestrator script + CLI). There is no counterpart to remove or replace a single edge. Whole-file writeRelations exists (library only, consumed by rename-canonical-id) but there is no scoped remove-relation primitive, no Pi tool, and no CLI op. So a mis-filed edge (wrong direction / type / endpoint — e.g. the TASK-004/TASK-005 dependency just corrected) cannot be fixed through the operator/agent tool surface; only ad-hoc loadRelations+filter+writeRelations library code can, which harness-confined in-pi agents (registered Pi tools only) cannot run.",
       "evidence": [
@@ -185,7 +185,10 @@
       "created_at": "2026-06-03T23:03:57.951Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "675c130c286a10a6b213ae99157e29f0",
-      "content_hash": "ded073bf03ee0ce1273ce106f6711c32d895222228193573e45b225911105d6f"
+      "content_hash": "b3d695df7d998555ea950f460f1a7b14ef4719033e6caf12b6d39aff6cf2fd8f",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-04T10:06:36.145Z",
+      "content_parent": "ded073bf03ee0ce1273ce106f6711c32d895222228193573e45b225911105d6f"
     },
     {
       "title": "Ordering relation_type names read opposite to the parent/child convention (task_depends_on_task footgun) — backwards edges file silently",
@@ -260,7 +263,7 @@
     },
     {
       "title": "Op-registry does not cover the library write surface — whole capabilities unreachable from the cli / out-of-pi",
-      "status": "accepted",
+      "status": "closed",
       "package": "pi-context",
       "description": "Library write capabilities have no op-registry entry, so they are unreachable from pi-context-cli and in-pi tools: edge removal/replace (removeRelation does not exist in the library at all; writeRelations whole-replace has no op), upsertItemInBlock (atomic find-or-replace), writeConfig (whole-config), writeSkeletonConfig, writeSchema/updateSchema (unchecked write + mutator), registerSubstrate/writeRegistry (foreign-substrate registration), writeBootstrapPointer/flipBootstrapPointer (raw pointer), and bulk appendRelations. An operator restricted to the cli cannot correct a mis-filed edge, run an atomic upsert, or write a config/registry/pointer.",
       "evidence": [
@@ -296,7 +299,10 @@
       "created_at": "2026-06-03T23:29:15.313Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "fffddbb27a8284308c6df49ecef6c46b",
-      "content_hash": "7cb27ad46508318cf6735f34bf4e016c525436b51a6272b4ec4a66a5d3ffac65"
+      "content_hash": "35d31ae515b026fa963d05347c7f6102feef74e9f81b9bcb176854de52d60de3",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-04T10:06:36.145Z",
+      "content_parent": "7cb27ad46508318cf6735f34bf4e016c525436b51a6272b4ec4a66a5d3ffac65"
     },
     {
       "title": "No enforced parity across the library / op-registry / orchestrator-script surfaces — they drift silently",

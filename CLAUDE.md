@@ -85,6 +85,10 @@ Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion rel
 - **`.pi/`**: user's runtime testing directory. Never create / modify / delete files there.
 - **`docs/`**: gitignored planning docs. Read-only reference.
 
+## Experience-Gap Handling (mandatory)
+
+An experience gap — any defect, inconsistency, or gap surfaced through *using* the tooling (CLI / op / script / workflow dogfooding), as distinct from one found by reading code — must be tasked to an agent to determine root cause and shape, provide intel, and establish reproducible conditions. The agent's root-cause + shape + reproducible conditions are the basis for filing the gap (FGAP). Do not file an experience gap, or act on it, from ad-hoc self-investigation.
+
 ## Workflow SDK
 
 `packages/pi-workflows/src/workflow-sdk.ts` is the single queryable surface (vocabulary / discovery / contracts / introspection / validation), all derived from code + filesystem. Read its `src/index.ts` exports for the function set; use `/workflow status` for derived state in conversation.

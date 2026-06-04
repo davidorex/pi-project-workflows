@@ -21,6 +21,7 @@
 
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { migrationsPath } from "./context-dir.js";
+import { type DispatchContext, writerToString } from "./dispatch-context.js";
 import {
 	appendMigrationDecl,
 	type MigrationDecl,
@@ -52,6 +53,7 @@ export interface WriteSchemaMigrationParams {
 export async function writeSchemaMigrationExecute(
 	cwd: string,
 	params: WriteSchemaMigrationParams,
+	ctx?: DispatchContext,
 ): Promise<AgentToolResult<undefined>> {
 	const op = params.operation;
 	if (op !== "create" && op !== "replace" && op !== "remove") {
@@ -63,14 +65,17 @@ export async function writeSchemaMigrationExecute(
 	// has prompted the operator and — on confirm=true with a verifiable
 	// identity — stamped event.input.writer with the verified terminal-
 	// operator identity. The body trusts the writer field as-is.
-	if (!params.writer?.user) {
-		throw new Error("write-schema-migration: writer.user is required.");
+	if (!ctx?.writer) {
+		throw new Error("write-schema-migration: a DispatchContext writer is required.");
 	}
+	// The recorded author marker derives from the contract DispatchContext: a
+	// human writer keeps its bare user (preserving the prior `params.writer.user`
+	// shape committed to migrations.json), other kinds fall back to the canonical
+	// `<kind>/<id>` string.
+	const migrationAuthor = ctx.writer.kind === "human" ? ctx.writer.user : writerToString(ctx.writer);
 
 	if (op === "remove") {
-		removeMigrationDecl(cwd, params.schemaName, params.fromVersion, {
-			writer: { kind: "human", user: params.writer.user },
-		});
+		removeMigrationDecl(cwd, params.schemaName, params.fromVersion, ctx);
 		return {
 			details: undefined,
 			content: [
@@ -126,15 +131,14 @@ export async function writeSchemaMigrationExecute(
 		toVersion: params.toVersion,
 		kind,
 		...(kind === "declarative-transform" ? { transform: transformBody as MigrationDecl["transform"] } : {}),
-		created_by: params.writer.user,
+		created_by: migrationAuthor,
 		created_at: new Date().toISOString(),
 	};
 
-	const dispatchCtx = { writer: { kind: "human" as const, user: params.writer.user } };
 	if (op === "create") {
-		appendMigrationDecl(cwd, decl, dispatchCtx);
+		appendMigrationDecl(cwd, decl, ctx);
 	} else {
-		replaceMigrationDecl(cwd, decl, dispatchCtx);
+		replaceMigrationDecl(cwd, decl, ctx);
 	}
 
 	const verb = op === "create" ? "created" : "replaced";

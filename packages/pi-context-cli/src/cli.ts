@@ -27,6 +27,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
+import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import { type OpDefinition, ops } from "@davidorex/pi-context/ops";
 
 /**
@@ -295,6 +296,62 @@ export function injectWriter(
 	return params;
 }
 
+/**
+ * Build the DispatchContext threaded into `op.run` as its 3rd arg so every CLI
+ * write op stamps attestation (created_by / created_at) on schemas that declare
+ * author fields. Identity precedence:
+ *   - an explicit `--writer` (parsed JSON) is used verbatim as the writer — it
+ *     may already be a full WriterIdentity ({kind, ...}) or the {kind, user}
+ *     shape the smuggle-ops declare; either way it is the operator's stated
+ *     identity, so it is passed through unchanged.
+ *   - otherwise a human writer from the resolved operator identity, falling
+ *     back to "operator" (mirrors injectWriter's fallback).
+ *
+ * This is independent of injectWriter, which fills the schema `writer` PARAM
+ * the smuggle-ops (promote-item / write-schema-migration) still DECLARE so the
+ * in-pi auth-gate has a field to stamp. The op bodies now read the contract ctx
+ * built here, not params.writer; the param + ctx coexist harmlessly.
+ */
+export function buildCliDispatchContext(explicitWriter: unknown, identity: string | null): DispatchContext {
+	if (explicitWriter !== undefined) {
+		if (explicitWriter === null || typeof explicitWriter !== "object") {
+			throw new UsageError('--writer must be a valid WriterIdentity, e.g. {"kind":"human","user":"me@example.com"}');
+		}
+		assertWriterIdentity(explicitWriter);
+		return { writer: explicitWriter };
+	}
+	return { writer: { kind: "human", user: identity ?? "operator" } };
+}
+
+/** The identifier field each WriterIdentity kind requires as a non-empty string. */
+const WRITER_KIND_IDENTIFIER_FIELD: Record<WriterIdentity["kind"], string> = {
+	human: "user",
+	agent: "agent_id",
+	monitor: "monitor_name",
+	workflow: "workflow_step_id",
+};
+
+/**
+ * Narrow an arbitrary object to a well-formed WriterIdentity, or throw
+ * UsageError. A valid writer has a `kind` of human/agent/monitor/workflow AND
+ * the kind's required identifier field present as a non-empty string. A
+ * malformed explicit writer is an operator error — never a silent fallback.
+ */
+function assertWriterIdentity(value: object): asserts value is WriterIdentity {
+	const rec = value as Record<string, unknown>;
+	const kind = rec.kind;
+	if (kind !== "human" && kind !== "agent" && kind !== "monitor" && kind !== "workflow") {
+		throw new UsageError('--writer must be a valid WriterIdentity, e.g. {"kind":"human","user":"me@example.com"}');
+	}
+	const idField = WRITER_KIND_IDENTIFIER_FIELD[kind];
+	const idValue = rec[idField];
+	if (typeof idValue !== "string" || idValue.length === 0) {
+		throw new UsageError(
+			`--writer kind '${kind}' requires a non-empty '${idField}'; e.g. {"kind":"${kind}","${idField}":"..."}`,
+		);
+	}
+}
+
 export type AuthDecision = { allow: true } | { allow: false; reason: string; needsPrompt: boolean };
 
 /**
@@ -403,7 +460,9 @@ export async function main(argv: string[]): Promise<number> {
 		return 0;
 	}
 
-	injectWriter(op, parsed.params, resolveIdentity());
+	const identity = resolveIdentity();
+	injectWriter(op, parsed.params, identity);
+	const dctx = buildCliDispatchContext(parsed.explicitWriter, identity);
 
 	const decision = authDecision(op, {
 		yes: parsed.yes,
@@ -423,7 +482,7 @@ export async function main(argv: string[]): Promise<number> {
 	}
 
 	try {
-		const text = await op.run(parsed.cwd, parsed.params);
+		const text = await op.run(parsed.cwd, parsed.params, dctx);
 		if (parsed.json) {
 			process.stdout.write(`${JSON.stringify({ ok: true, op: op.name, output: text })}\n`);
 		} else {

@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { writeBootstrapPointer } from "./context-dir.js";
+import type { DispatchContext } from "./dispatch-context.js";
 import { loadMigrationsFile } from "./migrations-store.js";
 import { type WriteSchemaMigrationParams, writeSchemaMigrationExecute } from "./write-schema-migration-tool.js";
 
@@ -19,6 +20,14 @@ function baseParams(over: Partial<WriteSchemaMigrationParams>): WriteSchemaMigra
 	};
 }
 
+/**
+ * The attestation DispatchContext threaded as the 3rd arg post-TASK-006. In
+ * production registerAll (in-pi) / the CLI build this from the auth-gate-stamped
+ * writer; here we derive a human ctx from the params writer so the recorded
+ * `created_by` continues to be the bare human user.
+ */
+const HUMAN_CTX: DispatchContext = { writer: { kind: "human", user: "davidryan@gmail.com" } };
+
 describe("writeSchemaMigrationExecute", () => {
 	let tmpDir: string;
 
@@ -33,7 +42,7 @@ describe("writeSchemaMigrationExecute", () => {
 	});
 
 	it("operation=create + kind=identity persists a MigrationDecl with the writer-stamped created_by", async () => {
-		const result = await writeSchemaMigrationExecute(tmpDir, baseParams({}));
+		const result = await writeSchemaMigrationExecute(tmpDir, baseParams({}), HUMAN_CTX);
 		const file = loadMigrationsFile(tmpDir);
 		assert.ok(file);
 		assert.equal(file!.migrations.length, 1);
@@ -55,6 +64,7 @@ describe("writeSchemaMigrationExecute", () => {
 				kind: "declarative-transform",
 				transform: { operations: [{ op: "rename", from: "$.name", to: "$.label" }] },
 			}),
+			HUMAN_CTX,
 		);
 		const file = loadMigrationsFile(tmpDir);
 		const decl = file!.migrations[0]!;
@@ -69,13 +79,14 @@ describe("writeSchemaMigrationExecute", () => {
 				kind: "declarative-transform",
 				transform: JSON.stringify({ operations: [{ op: "delete", path: "$.gone" }] }),
 			}),
+			HUMAN_CTX,
 		);
 		const decl = loadMigrationsFile(tmpDir)!.migrations[0]!;
 		assert.deepEqual(decl.transform, { operations: [{ op: "delete", path: "$.gone" }] });
 	});
 
 	it("operation=replace overwrites an existing declaration matched by (schemaName, fromVersion)", async () => {
-		await writeSchemaMigrationExecute(tmpDir, baseParams({}));
+		await writeSchemaMigrationExecute(tmpDir, baseParams({}), HUMAN_CTX);
 		await writeSchemaMigrationExecute(
 			tmpDir,
 			baseParams({
@@ -83,6 +94,7 @@ describe("writeSchemaMigrationExecute", () => {
 				kind: "declarative-transform",
 				transform: { operations: [{ op: "set", path: "$.x", value: 1 }] },
 			}),
+			HUMAN_CTX,
 		);
 		const file = loadMigrationsFile(tmpDir);
 		assert.equal(file!.migrations.length, 1);
@@ -90,8 +102,8 @@ describe("writeSchemaMigrationExecute", () => {
 	});
 
 	it("operation=remove deletes an existing declaration; subsequent load shows it gone", async () => {
-		await writeSchemaMigrationExecute(tmpDir, baseParams({}));
-		await writeSchemaMigrationExecute(tmpDir, baseParams({ operation: "remove" }));
+		await writeSchemaMigrationExecute(tmpDir, baseParams({}), HUMAN_CTX);
+		await writeSchemaMigrationExecute(tmpDir, baseParams({ operation: "remove" }), HUMAN_CTX);
 		const file = loadMigrationsFile(tmpDir);
 		assert.equal(file!.migrations.length, 0);
 	});
@@ -107,66 +119,70 @@ describe("writeSchemaMigrationExecute", () => {
 		const result = await writeSchemaMigrationExecute(
 			tmpDir,
 			baseParams({ writer: { kind: "agent", user: "agent-id-1" } }),
+			{ writer: { kind: "agent", agent_id: "agent-id-1" } },
 		);
 		assert.match(result.content[0]!.text, /created identity migration/);
 		const file = loadMigrationsFile(tmpDir);
 		assert.equal(file!.migrations.length, 1);
 	});
 
-	it("rejects when writer.user is missing (only structural precondition for DispatchContext construction)", async () => {
-		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ writer: { kind: "human", user: "" } })),
-			/writer\.user is required/,
-		);
+	it("rejects when no DispatchContext is threaded (the post-TASK-006 'writer required' guard)", async () => {
+		await assert.rejects(writeSchemaMigrationExecute(tmpDir, baseParams({})), /a DispatchContext writer is required/);
 	});
 
 	it("rejects unknown operation", async () => {
-		await assert.rejects(writeSchemaMigrationExecute(tmpDir, baseParams({ operation: "rename" })), /unknown operation/);
+		await assert.rejects(
+			writeSchemaMigrationExecute(tmpDir, baseParams({ operation: "rename" }), HUMAN_CTX),
+			/unknown operation/,
+		);
 	});
 
 	it("rejects kind=declarative-transform with no transform body", async () => {
 		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ kind: "declarative-transform" })),
+			writeSchemaMigrationExecute(tmpDir, baseParams({ kind: "declarative-transform" }), HUMAN_CTX),
 			/requires a transform body/,
 		);
 	});
 
 	it("rejects kind=identity with a transform body", async () => {
 		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ kind: "identity", transform: { operations: [] } })),
+			writeSchemaMigrationExecute(tmpDir, baseParams({ kind: "identity", transform: { operations: [] } }), HUMAN_CTX),
 			/must NOT carry a transform body/,
 		);
 	});
 
 	it("rejects fromVersion === toVersion on create", async () => {
 		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ fromVersion: "1.0.0", toVersion: "1.0.0" })),
+			writeSchemaMigrationExecute(tmpDir, baseParams({ fromVersion: "1.0.0", toVersion: "1.0.0" }), HUMAN_CTX),
 			/must differ from toVersion/,
 		);
 	});
 
 	it("rejects unknown kind on create", async () => {
 		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ kind: "magic" })),
+			writeSchemaMigrationExecute(tmpDir, baseParams({ kind: "magic" }), HUMAN_CTX),
 			/kind must be 'identity' or 'declarative-transform'/,
 		);
 	});
 
 	it("create-collision: second create with same (schemaName, fromVersion) rejects via migrations-store guard", async () => {
-		await writeSchemaMigrationExecute(tmpDir, baseParams({}));
-		await assert.rejects(writeSchemaMigrationExecute(tmpDir, baseParams({ toVersion: "2.5.0" })), /collision/);
+		await writeSchemaMigrationExecute(tmpDir, baseParams({}), HUMAN_CTX);
+		await assert.rejects(
+			writeSchemaMigrationExecute(tmpDir, baseParams({ toVersion: "2.5.0" }), HUMAN_CTX),
+			/collision/,
+		);
 	});
 
 	it("replace-missing: replace with no prior declaration rejects via migrations-store guard", async () => {
 		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ operation: "replace" })),
+			writeSchemaMigrationExecute(tmpDir, baseParams({ operation: "replace" }), HUMAN_CTX),
 			/migrations\.json absent|target missing/,
 		);
 	});
 
 	it("remove-missing: remove on absent file rejects via migrations-store guard", async () => {
 		await assert.rejects(
-			writeSchemaMigrationExecute(tmpDir, baseParams({ operation: "remove" })),
+			writeSchemaMigrationExecute(tmpDir, baseParams({ operation: "remove" }), HUMAN_CTX),
 			/migrations\.json absent/,
 		);
 	});

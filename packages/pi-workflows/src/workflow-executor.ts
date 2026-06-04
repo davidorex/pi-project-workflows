@@ -7,6 +7,7 @@ import path from "node:path";
 import { readBlock, writeBlock } from "@davidorex/pi-context/block-api";
 import { rollbackBlockFiles, snapshotBlockFiles, validateChangedBlocks } from "@davidorex/pi-context/block-validation";
 import { tryResolveContextDir } from "@davidorex/pi-context/context-dir";
+import type { DispatchContext } from "@davidorex/pi-context/dispatch-context";
 import { validate, validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { truncateTail } from "@earendil-works/pi-coding-agent";
 import type nunjucks from "nunjucks";
@@ -886,7 +887,15 @@ export async function executeWorkflow(
 				// Route project block JSON targets through block-api for block-schema validation
 				if (substratePrefix !== null && absolutePath.startsWith(substratePrefix) && absolutePath.endsWith(".json")) {
 					const blockName = path.basename(absolutePath, ".json");
-					writeBlock(ctx.cwd, blockName, data);
+					// Attestation for the artifact-write path. No single step owns this
+					// write (it runs after all steps, keyed by artifact name), so the
+					// workflow_step_id identifies the producing workflow run + artifact:
+					// created_by stamps as `workflow/<spec.name>:<runId>:artifact:<name>`
+					// on schemas that declare author fields.
+					const artifactCtx: DispatchContext = {
+						writer: { kind: "workflow", workflow_step_id: `${spec.name}:${runId}:artifact:${name}` },
+					};
+					writeBlock(ctx.cwd, blockName, data, artifactCtx);
 					writtenArtifacts[name] = absolutePath;
 				} else {
 					// Write non-block artifacts directly

@@ -98,14 +98,18 @@ describe("FGAP-136 end-to-end: identity migration unblocks version-bumped block 
 		assert.equal(after, before, "failed write must leave the prior file byte-identical");
 
 		// 5. Declare an identity migration v1 → v2 via the Pi tool surface.
-		await writeSchemaMigrationExecute(cwd, {
-			operation: "create",
-			schemaName: "thing",
-			fromVersion: "1.0.0",
-			toVersion: "2.0.0",
-			kind: "identity",
-			writer: HUMAN,
-		});
+		await writeSchemaMigrationExecute(
+			cwd,
+			{
+				operation: "create",
+				schemaName: "thing",
+				fromVersion: "1.0.0",
+				toVersion: "2.0.0",
+				kind: "identity",
+				writer: HUMAN,
+			},
+			{ writer: HUMAN },
+		);
 
 		// 6. Now the same write succeeds — registry resolves identity migration,
 		// data passes through unchanged, AJV-validates against v2 schema.
@@ -165,20 +169,24 @@ describe("FGAP-136 end-to-end: identity migration unblocks version-bumped block 
 		// 'name' (which v1 schema permitted since we wrote it before the
 		// schema bump → but for cleanliness we make the v2 schema accept
 		// envelope.label, and use a set+rename composed migration).
-		await writeSchemaMigrationExecute(cwd, {
-			operation: "create",
-			schemaName: "thing",
-			fromVersion: "1.0.0",
-			toVersion: "2.0.0",
-			kind: "declarative-transform",
-			transform: {
-				operations: [
-					{ op: "set", path: "$.schema_version", value: "2.0.0" },
-					{ op: "set", path: "$.label", value: "migrated-from-v1" },
-				],
+		await writeSchemaMigrationExecute(
+			cwd,
+			{
+				operation: "create",
+				schemaName: "thing",
+				fromVersion: "1.0.0",
+				toVersion: "2.0.0",
+				kind: "declarative-transform",
+				transform: {
+					operations: [
+						{ op: "set", path: "$.schema_version", value: "2.0.0" },
+						{ op: "set", path: "$.label", value: "migrated-from-v1" },
+					],
+				},
+				writer: HUMAN,
 			},
-			writer: HUMAN,
-		});
+			{ writer: HUMAN },
+		);
 
 		// readBlock should walk the v1 on-disk shape forward through the
 		// declared migration and return the v2 shape (with label set).

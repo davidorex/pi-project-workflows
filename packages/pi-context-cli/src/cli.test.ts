@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { ops } from "@davidorex/pi-context/ops";
 import {
 	authDecision,
+	buildCliDispatchContext,
 	deriveHelp,
 	fieldType,
 	injectWriter,
@@ -286,4 +288,112 @@ test("deriveHelp renders a string-enum field's choices as the TYPE tag", () => {
 	assert.ok(op);
 	const help = deriveHelp(op);
 	assert.ok(help.includes("--op <eq|neq|in|matches>"));
+});
+
+// ── DispatchContext threading (TASK-006) ─────────────────────────────────────
+// buildCliDispatchContext: explicit --writer passes through verbatim; otherwise
+// a human writer is built from the resolved identity (falling back to operator).
+test("buildCliDispatchContext falls back to human/operator when no identity + no --writer", () => {
+	const dctx = buildCliDispatchContext(undefined, null);
+	assert.deepEqual(dctx, { writer: { kind: "human", user: "operator" } });
+});
+
+test("buildCliDispatchContext builds a human writer from the resolved identity", () => {
+	const dctx = buildCliDispatchContext(undefined, "me@example.com");
+	assert.deepEqual(dctx, { writer: { kind: "human", user: "me@example.com" } });
+});
+
+test("buildCliDispatchContext passes an explicit --writer object through as the WriterIdentity", () => {
+	const dctx = buildCliDispatchContext({ kind: "human", user: "explicit@x" }, "ignored@x");
+	assert.deepEqual(dctx, { writer: { kind: "human", user: "explicit@x" } });
+});
+
+test("buildCliDispatchContext passes an explicit agent --writer through", () => {
+	const dctx = buildCliDispatchContext({ kind: "agent", agent_id: "a" }, "ignored@x");
+	assert.deepEqual(dctx, { writer: { kind: "agent", agent_id: "a" } });
+});
+
+test("buildCliDispatchContext throws UsageError on a human --writer missing user", () => {
+	assert.throws(
+		() => buildCliDispatchContext({ kind: "human" }, "ignored@x"),
+		(err: unknown) => err instanceof UsageError && /'user'/.test(err.message),
+	);
+});
+
+test("buildCliDispatchContext throws UsageError on an agent --writer missing agent_id", () => {
+	assert.throws(
+		() => buildCliDispatchContext({ kind: "agent" }, "ignored@x"),
+		(err: unknown) => err instanceof UsageError && /'agent_id'/.test(err.message),
+	);
+});
+
+test("buildCliDispatchContext throws UsageError on a --writer with an unknown kind", () => {
+	assert.throws(
+		() => buildCliDispatchContext({ kind: "robot", user: "x" }, "ignored@x"),
+		(err: unknown) => err instanceof UsageError && /valid WriterIdentity/.test(err.message),
+	);
+});
+
+test("buildCliDispatchContext throws UsageError on a non-object --writer", () => {
+	assert.throws(
+		() => buildCliDispatchContext("nope", "ignored@x"),
+		(err: unknown) => err instanceof UsageError && /valid WriterIdentity/.test(err.message),
+	);
+});
+
+// HEADLINE: an append-block-item CLI write against an attested-required schema,
+// with an item that omits created_by/created_at, must SUCCEED (AJV would reject
+// it unstamped) and the stored item must carry created_by = the resolved
+// identity, threaded through op.run's 3rd DispatchContext arg.
+test("append-block-item CLI write stamps created_by on an attested-required schema", async () => {
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-attest-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const schemasDir = path.join(cwd, ".project", "schemas");
+		mkdirSync(schemasDir, { recursive: true });
+		// Item shape REQUIRES created_by + created_at — an unstamped item fails AJV.
+		const schema = {
+			type: "object",
+			required: ["gaps"],
+			properties: {
+				gaps: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "description", "created_by", "created_at"],
+						additionalProperties: false,
+						properties: {
+							id: { type: "string" },
+							description: { type: "string" },
+							created_by: { type: "string" },
+							created_at: { type: "string" },
+						},
+					},
+				},
+			},
+		};
+		writeFileSync(path.join(schemasDir, "gaps.schema.json"), JSON.stringify(schema, null, 2));
+		writeFileSync(path.join(cwd, ".project", "gaps.json"), JSON.stringify({ gaps: [] }, null, 2));
+
+		const op = resolveOp("append-block-item");
+		assert.ok(op);
+		const parsed = parseOpArgs(
+			op,
+			["--block", "gaps", "--arrayKey", "gaps", "--item", '{"id":"FGAP-001","description":"x"}'],
+			cwd,
+		);
+		// No --writer → identity-derived human writer (pinned for determinism).
+		const dctx = buildCliDispatchContext(parsed.explicitWriter, "operator@cli");
+
+		const text = await op.run(parsed.cwd, parsed.params, dctx);
+		assert.ok(text.includes("Appended"));
+
+		const onDisk = JSON.parse(readFileSync(path.join(cwd, ".project", "gaps.json"), "utf8"));
+		assert.equal(onDisk.gaps.length, 1);
+		assert.equal(onDisk.gaps[0].id, "FGAP-001");
+		assert.equal(onDisk.gaps[0].created_by, "human/operator@cli");
+		assert.ok(typeof onDisk.gaps[0].created_at === "string" && onDisk.gaps[0].created_at.length > 0);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
 });

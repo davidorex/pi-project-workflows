@@ -53,6 +53,7 @@ import {
 	resolveItemsByIds,
 	validateContext,
 } from "./context-sdk.js";
+import type { DispatchContext } from "./dispatch-context.js";
 import { gatherExecutionContext } from "./execution-context.js";
 // initProject + the switch/list/archive helpers are defined in index.ts (shared
 // with the /context command handlers + the context-* tools). This is a cyclic
@@ -101,7 +102,7 @@ export interface OpDefinition<P = any> {
 	description: string;
 	promptSnippet?: string;
 	parameters: TSchema;
-	run(cwd: string, params: P): string | Promise<string>;
+	run(cwd: string, params: P, ctx?: DispatchContext): string | Promise<string>;
 	authGated?: boolean;
 	surface: "use" | "process";
 }
@@ -154,6 +155,7 @@ export const ops: OpDefinition[] = [
 		run(
 			cwd: string,
 			params: { block: string; arrayKey: string; item: Record<string, unknown>; autoId?: boolean },
+			ctx?: DispatchContext,
 		): string {
 			// Type.Unknown() params may arrive as JSON strings — parse if needed
 			if (typeof params.item === "string") {
@@ -171,7 +173,7 @@ export const ops: OpDefinition[] = [
 			// withBlockLock critical section (block-api assertAppendIdUnique) —
 			// the single enforcement point. The prior racy readBlock-then-append
 			// tool-layer check was removed in favour of that library guard.
-			appendToBlock(cwd, params.block, params.arrayKey, params.item);
+			appendToBlock(cwd, params.block, params.arrayKey, params.item, ctx);
 			const id = params.item?.id ? ` '${params.item.id}'` : "";
 			return `Appended item${id} to ${params.block}.${params.arrayKey}`;
 		},
@@ -193,6 +195,7 @@ export const ops: OpDefinition[] = [
 		run(
 			cwd: string,
 			params: { block: string; arrayKey: string; match: Record<string, unknown>; updates: Record<string, unknown> },
+			ctx?: DispatchContext,
 		): string {
 			if (Object.keys(params.updates).length === 0) {
 				throw new Error("No fields to update — updates parameter is empty");
@@ -205,6 +208,7 @@ export const ops: OpDefinition[] = [
 				params.arrayKey,
 				(item) => matchEntries.every(([k, v]) => item[k] === v),
 				params.updates,
+				ctx,
 			);
 
 			const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
@@ -229,17 +233,25 @@ export const ops: OpDefinition[] = [
 			ordinal: Type.Optional(Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type)" })),
 		}),
 		surface: "use",
-		run(cwd: string, params: { parent: string; child: string; relation_type: string; ordinal?: number }): string {
+		run(
+			cwd: string,
+			params: { parent: string; child: string; relation_type: string; ordinal?: number },
+			ctx?: DispatchContext,
+		): string {
 			// Cycle-5 porcelain: STRING selectors (bare refname / <alias>:<refname> /
 			// lens-bin) are resolved to structured EdgeEndpoints and written via the
 			// raw plumbing. The param surface stays string-typed; messaging uses the
 			// raw selectors (params.*), not the resolved structured endpoints.
-			const { appended } = appendRelationByRef(cwd, {
-				parent: params.parent,
-				child: params.child,
-				relation_type: params.relation_type,
-				...(params.ordinal !== undefined ? { ordinal: params.ordinal } : {}),
-			});
+			const { appended } = appendRelationByRef(
+				cwd,
+				{
+					parent: params.parent,
+					child: params.child,
+					relation_type: params.relation_type,
+					...(params.ordinal !== undefined ? { ordinal: params.ordinal } : {}),
+				},
+				ctx,
+			);
 			const ordinalNote = params.ordinal !== undefined ? ` (ordinal ${params.ordinal})` : "";
 			return appended
 				? `Appended relation ${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`
@@ -282,9 +294,15 @@ export const ops: OpDefinition[] = [
 				dryRun?: boolean;
 				writer: { kind: string; user: string };
 			},
+			ctx?: DispatchContext,
 		): string {
-			if (!params.writer?.user) {
-				throw new Error("promote-item: writer.user is required.");
+			// The DispatchContext now arrives via the op contract — registerAll
+			// (in-pi) builds it from the auth-gate-stamped `params.writer`, and the
+			// CLI builds it from its resolved identity. The schema `writer` field is
+			// retained (the in-pi auth-gate stamps it), but lineage attestation reads
+			// the contract ctx, not params.writer.
+			if (!ctx?.writer) {
+				throw new Error("promote-item: a DispatchContext writer is required.");
 			}
 			const result = promoteItem(
 				cwd,
@@ -294,7 +312,7 @@ export const ops: OpDefinition[] = [
 					...(params.newRefname !== undefined ? { newRefname: params.newRefname } : {}),
 					...(params.dryRun !== undefined ? { dryRun: params.dryRun } : {}),
 				},
-				{ writer: { kind: "human", user: params.writer.user } },
+				ctx,
 			);
 			return JSON.stringify(result, null, 2);
 		},
@@ -324,6 +342,7 @@ export const ops: OpDefinition[] = [
 				nestedKey: string;
 				item: Record<string, unknown>;
 			},
+			ctx?: DispatchContext,
 		): string {
 			if (typeof params.item === "string") {
 				try {
@@ -334,7 +353,7 @@ export const ops: OpDefinition[] = [
 			}
 			const matchEntries = Object.entries(params.match);
 			const predicate = (i: Record<string, unknown>) => matchEntries.every(([k, v]) => i[k] === v);
-			appendToNestedArray(cwd, params.block, params.arrayKey, predicate, params.nestedKey, params.item);
+			appendToNestedArray(cwd, params.block, params.arrayKey, predicate, params.nestedKey, params.item, ctx);
 			const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
 			const id = params.item?.id ? ` '${params.item.id}'` : "";
 			return `Appended item${id} to ${params.block}.${params.arrayKey}[${matchDesc}].${params.nestedKey}`;
@@ -371,6 +390,7 @@ export const ops: OpDefinition[] = [
 				nestedMatch: Record<string, unknown>;
 				updates: Record<string, unknown>;
 			},
+			ctx?: DispatchContext,
 		): string {
 			if (Object.keys(params.updates).length === 0) {
 				throw new Error("No fields to update — updates parameter is empty");
@@ -387,6 +407,7 @@ export const ops: OpDefinition[] = [
 				params.nestedKey,
 				nestedPred,
 				params.updates,
+				ctx,
 			);
 			const parentDesc = parentEntries.map(([k, v]) => `${k}=${v}`).join(", ");
 			const nestedDesc = nestedEntries.map(([k, v]) => `${k}=${v}`).join(", ");
@@ -405,10 +426,14 @@ export const ops: OpDefinition[] = [
 			match: Type.Record(Type.String(), Type.Unknown(), { description: "Fields to match (e.g., { id: 'ISSUE-NNN' })" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { block: string; arrayKey: string; match: Record<string, unknown> }): string {
+		run(
+			cwd: string,
+			params: { block: string; arrayKey: string; match: Record<string, unknown> },
+			ctx?: DispatchContext,
+		): string {
 			const matchEntries = Object.entries(params.match);
 			const predicate = (i: Record<string, unknown>) => matchEntries.every(([k, v]) => i[k] === v);
-			const result = removeFromBlock(cwd, params.block, params.arrayKey, predicate);
+			const result = removeFromBlock(cwd, params.block, params.arrayKey, predicate, ctx);
 			const matchDesc = matchEntries.map(([k, v]) => `${k}=${v}`).join(", ");
 			return `Removed ${result.removed} item(s) matching (${matchDesc}) from ${params.block}.${params.arrayKey}`;
 		},
@@ -440,6 +465,7 @@ export const ops: OpDefinition[] = [
 				nestedKey: string;
 				nestedMatch: Record<string, unknown>;
 			},
+			ctx?: DispatchContext,
 		): string {
 			const parentEntries = Object.entries(params.match);
 			const nestedEntries = Object.entries(params.nestedMatch);
@@ -452,6 +478,7 @@ export const ops: OpDefinition[] = [
 				parentPred,
 				params.nestedKey,
 				nestedPred,
+				ctx,
 			);
 			const parentDesc = parentEntries.map(([k, v]) => `${k}=${v}`).join(", ");
 			const nestedDesc = nestedEntries.map(([k, v]) => `${k}=${v}`).join(", ");
@@ -507,9 +534,9 @@ export const ops: OpDefinition[] = [
 		}),
 		surface: "use",
 		authGated: true,
-		run(cwd: string, params: { block: string; data: unknown }): string {
+		run(cwd: string, params: { block: string; data: unknown }, ctx?: DispatchContext): string {
 			const data = typeof params.data === "string" ? JSON.parse(params.data) : params.data;
-			writeBlock(cwd, params.block, data);
+			writeBlock(cwd, params.block, data, ctx);
 			return `Wrote block '${params.block}' successfully`;
 		},
 	},
@@ -764,6 +791,7 @@ export const ops: OpDefinition[] = [
 		run(
 			cwd: string,
 			params: { registry: string; operation: string; key: string; entry?: unknown; dryRun?: boolean },
+			ctx?: DispatchContext,
 		): string {
 			// Type.Unknown() params may arrive as JSON strings. Parse if possible; on
 			// failure KEEP the raw string (valid for map-value registries whose value
@@ -776,7 +804,7 @@ export const ops: OpDefinition[] = [
 					/* keep raw string — valid for map-value registries */
 				}
 			}
-			const result = amendConfigEntry(cwd, params.registry, params.operation, params.key, entry, undefined, {
+			const result = amendConfigEntry(cwd, params.registry, params.operation, params.key, entry, ctx, {
 				dryRun: params.dryRun,
 			});
 			const verb = result.modified ? (params.dryRun ? `would ${result.operation}` : `${result.operation}d`) : "no-op";
@@ -845,7 +873,11 @@ export const ops: OpDefinition[] = [
 		}),
 		surface: "use",
 		authGated: true,
-		run(cwd: string, params: { operation: string; schemaName: string; schema?: unknown; dryRun?: boolean }): string {
+		run(
+			cwd: string,
+			params: { operation: string; schemaName: string; schema?: unknown; dryRun?: boolean },
+			ctx?: DispatchContext,
+		): string {
 			// Type.Unknown() params may arrive as JSON strings. Parse if possible; on
 			// failure KEEP the raw value (meta-validation rejects a non-object body).
 			let schema = params.schema;
@@ -861,7 +893,7 @@ export const ops: OpDefinition[] = [
 				params.schemaName,
 				schema as object,
 				params.operation as "create" | "replace",
-				undefined,
+				ctx,
 				{ dryRun: params.dryRun },
 			);
 			const verb = result.written ? `${result.operation}d` : `would ${result.operation}`;
@@ -914,8 +946,9 @@ export const ops: OpDefinition[] = [
 				transform?: unknown;
 				writer: { kind: string; user: string };
 			},
+			ctx?: DispatchContext,
 		): Promise<string> {
-			const result = await writeSchemaMigrationExecute(cwd, params);
+			const result = await writeSchemaMigrationExecute(cwd, params, ctx);
 			// writeSchemaMigrationExecute returns the uniform AgentToolResult; the
 			// op contract is the text payload, which registerAll re-wraps identically.
 			const part = result.content[0];
@@ -1063,24 +1096,10 @@ export const ops: OpDefinition[] = [
 			target_dir: Type.String({
 				description: "Substrate dir name to archive (e.g. '.project'). Refused if it is the active substrate.",
 			}),
-			writer: Type.Optional(
-				Type.Object(
-					{
-						kind: Type.String({
-							description: "Writer kind discriminator — overwritten by auth-gate to 'human' on confirm.",
-						}),
-						user: Type.String({
-							description:
-								"Writer user — overwritten by auth-gate to the verified terminal-operator identity on confirm.",
-						}),
-					},
-					{ description: "DispatchContext.writer — stamped by auth-gate on operator confirm." },
-				),
-			),
 		}),
 		surface: "use",
 		authGated: true,
-		run(cwd: string, params: { target_dir: string; writer?: { kind: string; user: string } }): string {
+		run(cwd: string, params: { target_dir: string }): string {
 			try {
 				const { from, to } = archiveSubstrate(cwd, params.target_dir);
 				return JSON.stringify({ from, to }, null, 2);
@@ -1493,10 +1512,39 @@ export const gatedTools: string[] = ops.filter((o) => o.authGated).map((o) => o.
 let boundPi: ExtensionAPI | null = null;
 
 /**
+ * Build the DispatchContext threaded into an op's `run` from the in-pi tool
+ * execute boundary (registerAll). Two derivation branches:
+ *
+ *   - When `params.writer.user` is a non-empty string — the shape the
+ *     pi-agent-dispatch auth-gate stamps onto authGated op params on operator
+ *     confirm — the writer is a human identity. (The smuggle-ops promote-item /
+ *     write-schema-migration / context-switch carry a `writer` schema field
+ *     precisely so the gate has somewhere to stamp; this converts that field
+ *     into the contract ctx the op now consumes via its 3rd `run` arg.)
+ *   - Otherwise the writer is the running agent, identified by the active
+ *     model's id (`ExtensionContext.model.id`); falls back to "pi-agent" when
+ *     no model (or no id) is resolvable.
+ *
+ * Exported for unit testing — the two branches are asserted directly against
+ * synthetic params + a minimal ExtensionContext-shaped object.
+ */
+export function buildDispatchContextFromExecute(
+	params: unknown,
+	extCtx: { model?: { id?: string } | undefined },
+): DispatchContext {
+	const writerUser = (params as { writer?: { user?: unknown } } | null | undefined)?.writer?.user;
+	if (typeof writerUser === "string" && writerUser.length > 0) {
+		return { writer: { kind: "human", user: writerUser } };
+	}
+	const modelId = extCtx.model?.id;
+	return { writer: { kind: "agent", agent_id: modelId && modelId.length > 0 ? modelId : "pi-agent" } };
+}
+
+/**
  * Register every op in `ops` as a pi tool. Each tool's execute body is the
- * uniform wrapper around the op's run(): coerce params, await run, place the
- * returned string at content[0].text. Behavior-identical to the prior inline
- * registrations.
+ * uniform wrapper around the op's run(): coerce params, build the attestation
+ * DispatchContext from the auth-gate-stamped writer (human) or the running
+ * model (agent), await run, place the returned string at content[0].text.
  */
 export function registerAll(pi: ExtensionAPI): void {
 	boundPi = pi;
@@ -1514,9 +1562,10 @@ export function registerAll(pi: ExtensionAPI): void {
 				_onUpdate: AgentToolUpdateCallback,
 				ctx: ExtensionContext,
 			): Promise<AgentToolResult<undefined>> {
+				const dctx = buildDispatchContextFromExecute(params, ctx);
 				return {
 					details: undefined,
-					content: [{ type: "text", text: await op.run(ctx.cwd, params as never) }],
+					content: [{ type: "text", text: await op.run(ctx.cwd, params as never, dctx) }],
 				};
 			},
 		});

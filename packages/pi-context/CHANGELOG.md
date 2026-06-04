@@ -4,6 +4,12 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- `OpDefinition.run` gains an optional `ctx?: DispatchContext` channel; `registerAll` builds it per dispatch — the auth-gate-stamped `params.writer` (verified human) when present, else an agent identity from `ctx.model` — and every write op forwards it to its block-api/context call, so in-pi op writes are attested. New exported `buildDispatchContextFromExecute(params, extCtx)`.
+
+### Changed
+- `promote-item` / `write-schema-migration` converge onto the contract `ctx` (their guard now validates `ctx.writer`); `context-archive` drops its declared-but-unused `writer` field (it writes no block)
+
 ## [0.29.0] - 2026-06-04
 
 ### Added

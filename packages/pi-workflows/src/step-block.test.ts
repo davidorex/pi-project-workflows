@@ -708,3 +708,53 @@ describe("block step: removeNested", () => {
 		assert.equal(out.removed, 1);
 	});
 });
+
+// ── DispatchContext stamping (TASK-006) ──────────────────────────────────────
+// A block append performed by a workflow step must stamp created_by as
+// `workflow/<stepName>` on schemas that declare author fields. The step name
+// (the workflow_step_id) flows through executeBlock → wctx → block-api.
+describe("block step: DispatchContext attestation", () => {
+	it("append stamps created_by = workflow/<stepName> on an attested-required schema", () => {
+		const projectDir = path.join(tmpDir, ".project");
+		const schemasDir = path.join(projectDir, "schemas");
+		// Item shape REQUIRES created_by + created_at — an unstamped item fails AJV.
+		fs.writeFileSync(
+			path.join(schemasDir, "gaps.schema.json"),
+			JSON.stringify({
+				type: "object",
+				required: ["gaps"],
+				properties: {
+					gaps: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "description", "created_by", "created_at"],
+							additionalProperties: false,
+							properties: {
+								id: { type: "string" },
+								description: { type: "string" },
+								created_by: { type: "string" },
+								created_at: { type: "string" },
+							},
+						},
+					},
+				},
+			}),
+		);
+		fs.writeFileSync(path.join(projectDir, "gaps.json"), JSON.stringify({ gaps: [] }, null, 2));
+
+		const result = executeBlock(
+			{ append: { name: "gaps", key: "gaps", item: { id: "FGAP-001", description: "x" } } },
+			"derive-gaps",
+			emptyScope,
+			tmpDir,
+		);
+		assert.equal(result.status, "completed", result.error);
+
+		const onDisk = JSON.parse(fs.readFileSync(path.join(projectDir, "gaps.json"), "utf8"));
+		assert.equal(onDisk.gaps.length, 1);
+		assert.equal(onDisk.gaps[0].id, "FGAP-001");
+		assert.equal(onDisk.gaps[0].created_by, "workflow/derive-gaps");
+		assert.ok(typeof onDisk.gaps[0].created_at === "string" && onDisk.gaps[0].created_at.length > 0);
+	});
+});

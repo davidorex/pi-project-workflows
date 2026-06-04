@@ -28,6 +28,7 @@ import {
 	writeBlock,
 } from "@davidorex/pi-context/block-api";
 import { resolveContextDir, schemaPath } from "@davidorex/pi-context/context-dir";
+import type { DispatchContext } from "@davidorex/pi-context/dispatch-context";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { resolveExpressions } from "./expression.js";
 import { persistStepOutput } from "./output.js";
@@ -51,6 +52,11 @@ export function executeBlock(
 		// Resolve expressions in the block spec
 		const resolved = resolveExpressions(blockSpec, scope) as BlockSpec;
 
+		// Attestation context for every block write this step performs. The step
+		// name is the workflow-step identifier — block-api stamps created_by /
+		// created_at as `workflow/<step>` on schemas that declare author fields.
+		const wctx: DispatchContext = { writer: { kind: "workflow", workflow_step_id: stepName } };
+
 		let output: unknown;
 
 		if ("read" in resolved) {
@@ -58,19 +64,19 @@ export function executeBlock(
 		} else if ("readDir" in resolved) {
 			output = executeReadDir(resolved.readDir, cwd);
 		} else if ("write" in resolved) {
-			output = executeWrite(resolved.write, cwd);
+			output = executeWrite(resolved.write, cwd, wctx);
 		} else if ("append" in resolved) {
-			output = executeAppend(resolved.append, cwd);
+			output = executeAppend(resolved.append, cwd, wctx);
 		} else if ("update" in resolved) {
-			output = executeUpdate(resolved.update, cwd);
+			output = executeUpdate(resolved.update, cwd, wctx);
 		} else if ("nestedAppend" in resolved) {
-			output = executeNestedAppend(resolved.nestedAppend, cwd);
+			output = executeNestedAppend(resolved.nestedAppend, cwd, wctx);
 		} else if ("updateNested" in resolved) {
-			output = executeUpdateNested(resolved.updateNested, cwd);
+			output = executeUpdateNested(resolved.updateNested, cwd, wctx);
 		} else if ("remove" in resolved) {
-			output = executeRemove(resolved.remove, cwd);
+			output = executeRemove(resolved.remove, cwd, wctx);
 		} else if ("removeNested" in resolved) {
-			output = executeRemoveNested(resolved.removeNested, cwd);
+			output = executeRemoveNested(resolved.removeNested, cwd, wctx);
 		} else {
 			throw new Error(
 				"Block spec must have one of: read, readDir, write, append, update, nestedAppend, updateNested, remove, removeNested",
@@ -153,12 +159,16 @@ function executeReadDir(subdir: string, cwd: string): unknown[] {
  * Write a block via writeBlock (schema validation + atomic write).
  * Supports optional path override for subdirectory writes.
  */
-function executeWrite(spec: { name: string; data: unknown; path?: string }, cwd: string): Record<string, string> {
+function executeWrite(
+	spec: { name: string; data: unknown; path?: string },
+	cwd: string,
+	ctx?: DispatchContext,
+): Record<string, string> {
 	if (spec.path) {
 		return executeSubdirWrite(spec.name, spec.data, spec.path, cwd);
 	}
 
-	writeBlock(cwd, spec.name, spec.data);
+	writeBlock(cwd, spec.name, spec.data, ctx);
 	return { written: spec.name, path: path.relative(cwd, path.join(resolveContextDir(cwd), `${spec.name}.json`)) };
 }
 
@@ -199,8 +209,12 @@ function executeSubdirWrite(schemaName: string, data: unknown, subPath: string, 
 /**
  * Append an item to a block array via appendToBlock.
  */
-function executeAppend(spec: { name: string; key: string; item: unknown }, cwd: string): Record<string, string> {
-	appendToBlock(cwd, spec.name, spec.key, spec.item);
+function executeAppend(
+	spec: { name: string; key: string; item: unknown },
+	cwd: string,
+	ctx?: DispatchContext,
+): Record<string, string> {
+	appendToBlock(cwd, spec.name, spec.key, spec.item, ctx);
 	return { appended: spec.name, key: spec.key };
 }
 
@@ -211,12 +225,13 @@ function executeAppend(spec: { name: string; key: string; item: unknown }, cwd: 
 function executeUpdate(
 	spec: { name: string; key: string; match: Record<string, unknown>; set: Record<string, unknown> },
 	cwd: string,
+	ctx?: DispatchContext,
 ): Record<string, unknown> {
 	const predicate = (item: Record<string, unknown>) => {
 		return Object.entries(spec.match).every(([k, v]) => item[k] === v);
 	};
 
-	updateItemInBlock(cwd, spec.name, spec.key, predicate, spec.set);
+	updateItemInBlock(cwd, spec.name, spec.key, predicate, spec.set, ctx);
 	return { updated: spec.name, key: spec.key, matched: spec.match };
 }
 
@@ -228,9 +243,10 @@ function executeUpdate(
 function executeNestedAppend(
 	spec: { name: string; key: string; match: Record<string, unknown>; nestedKey: string; item: unknown },
 	cwd: string,
+	ctx?: DispatchContext,
 ): Record<string, unknown> {
 	const predicate = (item: Record<string, unknown>) => Object.entries(spec.match).every(([k, v]) => item[k] === v);
-	appendToNestedArray(cwd, spec.name, spec.key, predicate, spec.nestedKey, spec.item);
+	appendToNestedArray(cwd, spec.name, spec.key, predicate, spec.nestedKey, spec.item, ctx);
 	return { nestedAppended: spec.name, key: spec.key, matched: spec.match, nestedKey: spec.nestedKey };
 }
 
@@ -250,12 +266,13 @@ function executeUpdateNested(
 		set: Record<string, unknown>;
 	},
 	cwd: string,
+	ctx?: DispatchContext,
 ): Record<string, unknown> {
 	const parentPredicate = (item: Record<string, unknown>) =>
 		Object.entries(spec.match).every(([k, v]) => item[k] === v);
 	const nestedPredicate = (item: Record<string, unknown>) =>
 		Object.entries(spec.nestedMatch).every(([k, v]) => item[k] === v);
-	updateNestedArrayItem(cwd, spec.name, spec.key, parentPredicate, spec.nestedKey, nestedPredicate, spec.set);
+	updateNestedArrayItem(cwd, spec.name, spec.key, parentPredicate, spec.nestedKey, nestedPredicate, spec.set, ctx);
 	return {
 		updatedNested: spec.name,
 		key: spec.key,
@@ -273,9 +290,10 @@ function executeUpdateNested(
 function executeRemove(
 	spec: { name: string; key: string; match: Record<string, unknown> },
 	cwd: string,
+	ctx?: DispatchContext,
 ): Record<string, unknown> {
 	const predicate = (item: Record<string, unknown>) => Object.entries(spec.match).every(([k, v]) => item[k] === v);
-	const result = removeFromBlock(cwd, spec.name, spec.key, predicate);
+	const result = removeFromBlock(cwd, spec.name, spec.key, predicate, ctx);
 	return { removed: result.removed, name: spec.name, key: spec.key, matched: spec.match };
 }
 
@@ -293,12 +311,13 @@ function executeRemoveNested(
 		nestedMatch: Record<string, unknown>;
 	},
 	cwd: string,
+	ctx?: DispatchContext,
 ): Record<string, unknown> {
 	const parentPredicate = (item: Record<string, unknown>) =>
 		Object.entries(spec.match).every(([k, v]) => item[k] === v);
 	const nestedPredicate = (item: Record<string, unknown>) =>
 		Object.entries(spec.nestedMatch).every(([k, v]) => item[k] === v);
-	const result = removeFromNestedArray(cwd, spec.name, spec.key, parentPredicate, spec.nestedKey, nestedPredicate);
+	const result = removeFromNestedArray(cwd, spec.name, spec.key, parentPredicate, spec.nestedKey, nestedPredicate, ctx);
 	return {
 		removed: result.removed,
 		name: spec.name,

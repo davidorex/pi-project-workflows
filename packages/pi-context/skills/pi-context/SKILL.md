@@ -319,7 +319,6 @@ Move a non-active substrate dir to archive/<dir>/. Refuses to archive the active
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `target_dir` | string | yes | Substrate dir name to archive (e.g. '.project'). Refused if it is the active substrate. |
-| `writer` | object | no | DispatchContext.writer — stamped by auth-gate on operator confirm. |
 </tool>
 
 <tool name="filter-block-items">

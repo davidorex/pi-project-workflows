@@ -1,8 +1,14 @@
 # Changelog
 
-All notable changes to this package are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/). This package has not yet been published to npm; the accumulated surface below sits under `[Unreleased]` and becomes its first published version's section at first publish.
+All notable changes to this package are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/). First published to npm at `0.28.0` (lockstep with the monorepo); `[Unreleased]` holds changes since the last publish.
 
 ## [Unreleased]
+
+### Added
+- The cli builds a `DispatchContext` from the resolved operator identity (or an explicit, now-validated `--writer`) and threads it to every op, so cli writes stamp `created_by`/`created_at` — substrate filing through the cli no longer fails on schemas that require author fields. New exported `buildCliDispatchContext`.
+
+### Fixed
+- A malformed `--writer` (well-formed-`WriterIdentity` validation: `kind` + the kind's identifier field) now errors instead of silently stamping a garbage identity such as `human/undefined`
 
 ## [0.29.0] - 2026-06-04
 

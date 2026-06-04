@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-06-04
+
 ### Added
 - The `--json` envelope `output` is now bounded at the 50KB read cap via pi-context's `boundedJsonOutput`: an over-cap `{json}` (or prose) op result fails closed (`{ data: null, truncated: true, totalBytes, complete: false }`, mirroring a `{read}` over-cap) instead of leaking substrate content past the cap; the default text surface is likewise bounded (no-payload REFUSAL). `resolve-item-by-id` now emits a structured `{read}` value under `--json`. Closes the `{json}` channel's cap-bypass.
 - The cli builds a `DispatchContext` from the resolved operator identity (or an explicit, now-validated `--writer`) and threads it to every op, so cli writes stamp `created_by`/`created_at` — substrate filing through the cli no longer fails on schemas that require author fields. New exported `buildCliDispatchContext`.

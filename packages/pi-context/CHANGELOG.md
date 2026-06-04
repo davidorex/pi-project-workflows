@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-06-04
+
 ### Added
 - The 50KB read cap is now enforced at the OUTPUT BOUNDARY for every `OpResult` channel (CLI `--json`, CLI default text, in-pi Pi-tool text) via the new exported `boundedJsonOutput` + cap-applying `renderOpResultText` — previously the cap lived only in the `{read}` channel, so a `{json}` op embedding substrate content (e.g. `resolve-item-by-id`, `promote-item`) leaked it unbounded; over-cap `{json}`/prose now fail closed (`--json` → `{ data: null, truncated: true, totalBytes, complete: false }` mirroring `ReadStructured`; text → a no-payload REFUSAL). `resolve-item-by-id` + `promote-item` additionally route through `{read}` for graceful over-cap degradation. Closes the `{json}` channel's cap-bypass.
 - `OpDefinition.run` gains an optional `ctx?: DispatchContext` channel; `registerAll` builds it per dispatch — the auth-gate-stamped `params.writer` (verified human) when present, else an agent identity from `ctx.model` — and every write op forwards it to its block-api/context call, so in-pi op writes are attested. New exported `buildDispatchContextFromExecute(params, extCtx)`.

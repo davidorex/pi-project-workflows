@@ -4,6 +4,8 @@ All notable changes to `@davidorex/pi-workflows` are recorded here. Format follo
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-06-04
+
 ### Changed
 - Workflow block-write steps now stamp a `workflow`-kind attestation: `step-block` writers and the post-step artifact write thread a `DispatchContext` whose writer is `workflow/<step_id>`, so workflow-written substrate items carry `created_by`/`created_at`
 

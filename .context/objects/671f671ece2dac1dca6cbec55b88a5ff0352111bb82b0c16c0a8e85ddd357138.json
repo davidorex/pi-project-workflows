@@ -1,0 +1,5 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-002 (switch identity reconciliation, landed at 17d9a3b): npm run build + check + test green. Runtime-demoed via the pi-context-cli on throwaway substrates for all three switch paths: (1) switch onto a config-bearing-but-unregistered substrate -> substrate_id registered, context-validate clean; (2) wrong-dir registry entry -> context-validate still reports substrate_id_registry_mismatch (reconcile does not overwrite); (3) switch - (to_previous) onto a pruned/unregistered previous substrate -> reconcile re-registers it, validate clean. An adversarial probe first found switchToPrevious unwired (false-drift reachable via switch -); after wiring it, a fresh adversarial re-audit confirmed all six attack vectors hold, all three switch paths self-heal consistently, the no-previous error path still throws without reaching reconcile, and best-effort guard skips unloadable/invalid configs without breaking the switch."
+}

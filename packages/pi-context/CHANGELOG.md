@@ -12,6 +12,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 - accept-all (`adoptConception`) is skeleton-aware: it overwrites a skeleton config but still never-clobbers a populated one, and preserves the skeleton's existing `substrate_id` (and its registry entry) instead of minting a new identity
 - `context-init` / `context-accept-all` / `context-switch` op descriptions reflect the skeleton state and the two onward paths (accept-all, or amend-config/edit)
 
+### Fixed
+- `/context switch`, `switch -c`, and `switch -` now reconcile the now-active substrate's identity into the project-root registry (register the `substrate_id` when it is absent), eliminating a false `substrate_id_unregistered` from `context-validate` when switching onto a config-bearing-but-unregistered substrate; a present-but-different-dir entry is left untouched as genuine drift (`substrate_id_registry_mismatch`)
+
 ## [0.28.1] - 2026-06-03
 
 ## [0.28.0] - 2026-06-03

@@ -30,7 +30,7 @@ import {
 	SCHEMAS_DIR,
 	tryResolveContextDir,
 } from "./context-dir.js";
-import { registerSubstrate } from "./context-registry.js";
+import { loadRegistry, registerSubstrate } from "./context-registry.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
@@ -758,6 +758,43 @@ export function writeSkeletonConfig(cwd: string, ctx?: DispatchContext): { writt
 	writeConfigForDir(substrateDir, skeleton, ctx);
 	registerSubstrate(cwd, substrate_id, root, []);
 	return { written: true };
+}
+
+/**
+ * Reconcile the now-active substrate's identity into the project-root registry
+ * after a bootstrap-pointer flip (`switchToExisting` / `switchAndCreate` call
+ * this post-flip). A `/context switch` onto a config-bearing substrate whose
+ * `substrate_id` was never registered (e.g. an externally-authored or
+ * separately-bootstrapped substrate) would otherwise leave the id unregistered,
+ * and `validateContext`'s SoT-drift invariant would raise a false
+ * `substrate_id_unregistered`.
+ *
+ * Behaviour, operating on the active substrate resolved from the pointer:
+ *  - No `substrate_id` on the active config (a pre-identity substrate): skip,
+ *    mirroring the SoT-drift invariant's own absence-skip.
+ *  - The id is already registered (any entry present): leave it untouched. A
+ *    present-but-different-dir entry is deliberately NOT overwritten here — that
+ *    is genuine registry drift and is left for `validateContext` to surface as
+ *    `substrate_id_registry_mismatch`.
+ *  - The id is absent from the registry: register it under the active substrate
+ *    dir (project-root-relative) with empty aliases.
+ */
+export function reconcileActiveSubstrateRegistration(cwd: string): { registered: boolean } {
+	const dir = resolveContextDir(cwd);
+	// Reconciliation is best-effort — a config that cannot be loaded/validated is
+	// left for `context-validate` to surface; the switch itself must not break.
+	let config: ConfigBlock | null;
+	try {
+		config = loadConfig(cwd);
+	} catch {
+		return { registered: false };
+	}
+	const id = config?.substrate_id;
+	if (!id) return { registered: false };
+	const entry = loadRegistry(cwd)?.substrates?.[id];
+	if (entry) return { registered: false };
+	registerSubstrate(cwd, id, path.relative(cwd, dir), []);
+	return { registered: true };
 }
 
 /**

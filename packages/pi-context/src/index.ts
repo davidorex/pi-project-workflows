@@ -16,6 +16,7 @@ import {
 	installedSchemaDestPath,
 	loadConfig,
 	loadContext,
+	reconcileActiveSubstrateRegistration,
 	writeSkeletonConfig,
 } from "./context.js";
 import {
@@ -593,6 +594,12 @@ export function switchAndCreate(cwd: string, newContextDir: string, writerIdenti
 	if (skeleton.written) {
 		created.push(`${path.relative(cwd, path.join(projectDirPath, "config.json"))}`);
 	}
+	// Reconcile the now-active substrate's identity into the project-root
+	// registry. writeSkeletonConfig registers a freshly-minted id, but when the
+	// target dir already carried a config (never-clobber returned written:false)
+	// its id may be unregistered — register it here so the SoT-drift invariant
+	// does not raise a false substrate_id_unregistered.
+	reconcileActiveSubstrateRegistration(cwd);
 	return { created };
 }
 
@@ -615,6 +622,10 @@ export function switchToExisting(cwd: string, targetDir: string, writerIdentity:
 		);
 	}
 	flipBootstrapPointer(cwd, targetDir, writerIdentity);
+	// Register the now-active substrate's identity if the target carried a
+	// config-bearing-but-unregistered substrate_id, so the SoT-drift invariant
+	// does not raise a false substrate_id_unregistered after the flip.
+	reconcileActiveSubstrateRegistration(cwd);
 }
 
 /**
@@ -645,6 +656,12 @@ export function switchToPrevious(cwd: string, writerIdentity: string): { from: s
 		);
 	}
 	flipBootstrapPointer(cwd, previous, writerIdentity);
+	// Register the now-active substrate's identity if flipping back landed on a
+	// config-bearing-but-unregistered substrate_id, so the SoT-drift invariant
+	// does not raise a false substrate_id_unregistered after the flip. Mirrors
+	// switchToExisting / switchAndCreate; only reached on a successful flip
+	// (the absent-previous_contextDir path throws above).
+	reconcileActiveSubstrateRegistration(cwd);
 	return { from: current, to: previous };
 }
 

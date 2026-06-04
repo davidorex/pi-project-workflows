@@ -1714,6 +1714,11 @@ export const INTENTIONALLY_UNEXPOSED_WRITERS: UnexposedWriter[] = [
 		libraryFn: "registerSubstrate",
 		reason: "manual/foreign registration is the clone arc (DEC-0002); normal paths auto-register",
 	},
+	{
+		libraryFn: "rollbackBlockFiles",
+		reason:
+			"workflow-executor transactional rollback (graduated-failure undo); internal recovery path with no operator-facing op by design",
+	},
 ];
 
 /**

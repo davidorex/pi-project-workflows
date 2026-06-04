@@ -743,6 +743,211 @@
       "id": "FGAP-020",
       "oid": "8ecb24b45db69607db7b05d0fb95e678",
       "content_hash": "e0b45fe9d89be7971cecc607d65e8baa397e4222a415d885dbf9788a3fde0977"
+    },
+    {
+      "title": "CLI lacks a human-render mode (--format / terse / --raw) the script twins provide",
+      "status": "identified",
+      "package": "pi-context-cli",
+      "description": "The CLI emits only the --json envelope or the op's own renderOpResultText text; 15+ orchestrator op-twin scripts offer --format table|chain|summary|csv plus a renderTerse default and --raw for config/schema. Direct CLI users get structured JSON or the op's terse text, with no human-oriented render layer. Closable CLI-side without touching ops (a CLI-only render layer in-pi dispatch never sees).",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "504-508",
+          "reference": "CLI emits boundedJsonOutput (--json) or renderOpResultText only — no --format/render dispatch"
+        },
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "reference": "representative op-twin scripts provide --format table|chain|summary|csv + renderTerse default + --raw; the CLI has no equivalent"
+        },
+        {
+          "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+          "reference": "GAP-3 in the parity survey (§C/§D), categorized CLI-only-shared-helper"
+        }
+      ],
+      "impact": "Direct CLI/dogfooding users (human or agent) get no human-readable rendering for the 15+ ops whose script twins do — a capability asymmetry between the two surfaces over the same data.",
+      "proposed_resolution": "Add a --format global flag parsed in parseOpArgs (cli.ts:199) selecting text|json|table, plus a CLI render module dispatching per-op/per-shape (lifting the scripts' renderTable/renderTerse bodies into a CLI-shared render/ module) before the emit sites (cli.ts:504/508). Op behavior frozen. Re-confirm via the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-021",
+      "oid": "a23d5835258e1b607bfa3e3f59f87e88",
+      "content_hash": "c63656998b2aa91ba73ee30ed58827db0f0a9331e4a34efc4ead605d41980d23"
+    },
+    {
+      "title": "CLI lacks a --show-schema contract preview before block writes",
+      "status": "identified",
+      "package": "pi-context-cli",
+      "description": "file-block-item.ts prints the block contract (array_key + required fields + field types + id-pattern) before a write so the author sees what is expected; the CLI has no one-shot preview. This is the same contract-blindness that, with FGAP-020, drove the evidence-must-be-array failure while filing FGAP-019.",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "lines": "113-142",
+          "reference": "script prints the block contract (array_key/required/types/id-pattern) before write"
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "reference": "no --show-schema flag / contract-preview branch"
+        },
+        {
+          "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+          "reference": "GAP-4 in the parity survey, categorized CLI-only-shared-helper"
+        }
+      ],
+      "impact": "A CLI user filing into an unfamiliar block cannot preview the contract from the CLI, raising write-time validation failures (the failure mode that surfaced FGAP-020).",
+      "proposed_resolution": "Add a --show-schema global in parseOpArgs; on a block-mutation op, call the lifted loadBlockSchema/resolveBlockItemSchema path, print the preview, return 0, in an early branch in main mirroring the parsed.help branch (cli.ts:464-467). Op frozen. Re-confirm via the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-022",
+      "oid": "ba04c442d72fcaa8655338fba491263e",
+      "content_hash": "4e3a05ef6aff64ab3192dcc38b5531603e034129d387f360c8688b2737953e17"
+    },
+    {
+      "title": "CLI surfaces raw AJV error messages instead of field-named guidance",
+      "status": "identified",
+      "package": "pi-context-cli",
+      "description": "On a validation failure the CLI surfaces the raw thrown .message; the script's formatAjvError turns AJV instancePath/schemaPath into field-named guidance. CLI users get the raw AJV string (e.g. `/gaps/18/evidence: must be array`) rather than a field-named message.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "511-518",
+          "reference": "catch surfaces raw err.message; no AJV translation"
+        },
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "lines": "184-205",
+          "reference": "formatAjvError translates AJV instancePath/schemaPath into field-named guidance"
+        },
+        {
+          "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+          "reference": "GAP-5 in the parity survey, categorized CLI-post-call"
+        }
+      ],
+      "impact": "Validation errors are harder to act on from the CLI than from the script, slowing the dogfooding write loop.",
+      "proposed_resolution": "In the cli.ts catch (:511-518), when err is an AJV ValidationError (.errors[]), run a lifted formatAjvError over each entry using the op's parameters/block schema for field context. Op throws unchanged; the CLI shapes the message. Re-confirm via the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-023",
+      "oid": "bf32be6013fbaa95a52e337fd5f3413c",
+      "content_hash": "c6b4fad5c24e8e2052dd9b87412f7abc9edd4cd3c5ba8d15ff1dd222b89f037d"
+    },
+    {
+      "title": "append-block-item has no dry-run; only the script validates the prospective whole file",
+      "status": "identified",
+      "package": "pi-context-cli",
+      "description": "file-block-item.ts builds the prospective whole block (on-disk items + new item) and validates it (dry-run PASS == write PASS). The append-block-item op has no dryRun param (the upsert-block-item op does, ops-registry.ts:553), so the CLI cannot offer append dry-run. Closable CLI-side without an op change via client-side prospective-validation.",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "lines": "240-270",
+          "reference": "script builds + validates the prospective whole file for dry-run"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "553",
+          "reference": "upsert-block-item op declares dryRun; append-block-item op does not — the asymmetry"
+        },
+        {
+          "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+          "reference": "GAP-6 in the parity survey; recommended CLI-only-shared-helper (no op change)"
+        }
+      ],
+      "impact": "A CLI user cannot preview an append without writing, unlike the script and unlike upsert — an ergonomic and safety gap on the highest-traffic write path.",
+      "proposed_resolution": "Add a cli.ts pre-call branch for append-block-item --dry-run that runs the lifted file-block-item.ts:247-255 validation (read block + build prospective + validateFromFile) and returns WITHOUT invoking appendToBlock. No op change (avoids adding dryRun to the frozen op). Re-confirm via the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-024",
+      "oid": "ce9edaedb3e9cd6a0ed6f9210146c5fc",
+      "content_hash": "0c44d9da46e1689a5b5a3c62bfc3a2a7051fc6f921179788b84b1a63eb9dadcd"
+    },
+    {
+      "title": "CLI lacks the scripts' input shorthands (--writer kind:id, --where field:op:value, CSV --op in)",
+      "status": "identified",
+      "package": "pi-context-cli",
+      "description": "The scripts accept ergonomic shorthands (--writer kind:id parsed to {kind,user}; --where field:op:value split into fields; --op in CSV split to an array); the CLI requires full-JSON or separate-flag forms. Each is a pre-call transform of an already-supported op param.",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "lines": "144-161",
+          "reference": "parseWriter accepts the --writer kind:id shorthand"
+        },
+        {
+          "file": "scripts/orchestrator/filter-block-items.ts",
+          "lines": "74",
+          "reference": "--where field:op:value shorthand"
+        },
+        {
+          "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+          "reference": "GAP-7 in the parity survey, categorized CLI-pre-call"
+        }
+      ],
+      "impact": "CLI invocations are more verbose and error-prone than the equivalent script invocations for the same ops (e.g. the --writer JSON object vs kind:id) — friction on every authored call.",
+      "proposed_resolution": "In parseOpArgs per-flag handling (cli.ts:227-268), accept --writer kind:id (lifted parseWriter), --where field:op:value (split into whereField/whereOp/whereValue), and --op in CSV (split to array). Each normalizes shorthand into the op's declared param shape before invocation. Op frozen. Re-confirm via the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-025",
+      "oid": "7bc3e3acaefeb84ecf05d6a8c09c0c49",
+      "content_hash": "1760351f43cf28fa9cf8eb8c4e69eee5c86b45349614a0f8ce0c296b84af7b38"
+    },
+    {
+      "title": "CLI exit codes are coarse (0/1/2) vs the scripts' 1-5 diagnostic granularity",
+      "status": "identified",
+      "package": "pi-context-cli",
+      "description": "The orchestrator scripts return granular exit codes (1-5: usage / not-initialized / schema-absent / validation / etc.); the CLI returns only 0/1/2, so callers and CI cannot distinguish error classes.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "456-518",
+          "reference": "CLI maps to 0/1/2 only (UsageError + generic catch)"
+        },
+        {
+          "file": "scripts/orchestrator/file-block-item.ts",
+          "reference": "scripts use 1-5 exit-code granularity (e.g. dry-run FAIL exits 5)"
+        },
+        {
+          "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+          "reference": "GAP-8 in the parity survey, categorized CLI-only-shared-helper"
+        }
+      ],
+      "impact": "Scripted/CI consumers of the CLI cannot branch on error class (arg vs not-initialized vs schema-absent vs validation), below the scripts' diagnostic resolution.",
+      "proposed_resolution": "Map error classes to codes (arg/usage -> 2, not-initialized/BootstrapNotFoundError -> 1, schema-absent -> 3, validation -> 5) at the cli.ts catch + UsageError sites (:456-462, :511-518). The op never sees it. Re-confirm via the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-026",
+      "oid": "0fd57fe8d476068c817bc3e796aa9ebc",
+      "content_hash": "e04b8c2f25e3595416f0374a11b7feea3abee90c8b618a2e21fff712c93e96c8"
+    },
+    {
+      "title": "In-pi read-schema op returns the projected name-list, not the full subtree (needs whole:true at ops-registry.ts:1166)",
+      "status": "identified",
+      "package": "pi-context",
+      "description": "Distinct from FGAP-020's CLI-surface correction: the IN-PI read-schema op itself returns the paged `required` name-list for an addressed object node, because it wraps addr.value in structureForRead (ops-registry.ts:1166) which pages on the node's incidental array (read-element.ts:266-285). A CLI-only fix leaves in-pi agents still receiving the projection. Correcting BOTH surfaces requires passing whole:true at ops-registry.ts:1166 — a deliberate change to in-pi op behavior, which the parity survey's frozen-ops constraint explicitly carved out and the user has now authorized as a tracked gap.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1166",
+          "reference": "read-schema op wraps the addressed node in structureForRead WITHOUT whole:true — the in-pi op projection point; whole:true here forces full-subtree serialization while retaining the 50KB cap"
+        },
+        {
+          "file": "packages/pi-context/src/read-element.ts",
+          "lines": "147,268",
+          "reference": "whole:true forces whole-object serialization and skips collection discovery"
+        },
+        {
+          "file": "scripts/orchestrator/read-schema.ts",
+          "lines": "181",
+          "reference": "the orchestrator script already returns the full subtree (JSON.stringify(addr.value)) — the behavior the in-pi op should match"
+        },
+        {
+          "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+          "reference": "the GAP-2 residual / REQUIRES-OP-CHANGE branch in §D/§E of the parity survey"
+        }
+      ],
+      "impact": "In-pi agents (not only the CLI) reading an object schema node via read-schema --path receive the field-name list, not the schema subtree — the same defect class as FGAP-020 but on the in-pi surface, which the CLI-side fix does not reach.",
+      "proposed_resolution": "Pass whole:true into structureForRead at ops-registry.ts:1166 for the addressed-node case so the in-pi op returns the full subtree (matching scripts/orchestrator/read-schema.ts:181), while retaining the 50KB cap. This deliberately changes in-pi op behavior (user-authorized). Re-confirm via the canonical pipeline; class-check other read ops routing addressed object nodes through structureForRead.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-027",
+      "oid": "ffb4699841def6cd0b79d7d20ff0adf6",
+      "content_hash": "1309f0e4f1f0aed133996dec521130191b4b20d9b49bd34840eafc78f89544f9"
     }
   ]
 }

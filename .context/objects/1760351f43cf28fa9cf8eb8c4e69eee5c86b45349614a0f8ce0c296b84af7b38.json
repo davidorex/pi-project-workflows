@@ -1,0 +1,24 @@
+{
+  "title": "CLI lacks the scripts' input shorthands (--writer kind:id, --where field:op:value, CSV --op in)",
+  "status": "identified",
+  "package": "pi-context-cli",
+  "description": "The scripts accept ergonomic shorthands (--writer kind:id parsed to {kind,user}; --where field:op:value split into fields; --op in CSV split to an array); the CLI requires full-JSON or separate-flag forms. Each is a pre-call transform of an already-supported op param.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "144-161",
+      "reference": "parseWriter accepts the --writer kind:id shorthand"
+    },
+    {
+      "file": "scripts/orchestrator/filter-block-items.ts",
+      "lines": "74",
+      "reference": "--where field:op:value shorthand"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "GAP-7 in the parity survey, categorized CLI-pre-call"
+    }
+  ],
+  "impact": "CLI invocations are more verbose and error-prone than the equivalent script invocations for the same ops (e.g. the --writer JSON object vs kind:id) — friction on every authored call.",
+  "proposed_resolution": "In parseOpArgs per-flag handling (cli.ts:227-268), accept --writer kind:id (lifted parseWriter), --where field:op:value (split into whereField/whereOp/whereValue), and --op in CSV (split to array). Each normalizes shorthand into the op's declared param shape before invocation. Op frozen. Re-confirm via the canonical pipeline."
+}

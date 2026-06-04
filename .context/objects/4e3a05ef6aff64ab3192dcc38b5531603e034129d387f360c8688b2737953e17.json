@@ -1,0 +1,23 @@
+{
+  "title": "CLI lacks a --show-schema contract preview before block writes",
+  "status": "identified",
+  "package": "pi-context-cli",
+  "description": "file-block-item.ts prints the block contract (array_key + required fields + field types + id-pattern) before a write so the author sees what is expected; the CLI has no one-shot preview. This is the same contract-blindness that, with FGAP-020, drove the evidence-must-be-array failure while filing FGAP-019.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "113-142",
+      "reference": "script prints the block contract (array_key/required/types/id-pattern) before write"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "reference": "no --show-schema flag / contract-preview branch"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "GAP-4 in the parity survey, categorized CLI-only-shared-helper"
+    }
+  ],
+  "impact": "A CLI user filing into an unfamiliar block cannot preview the contract from the CLI, raising write-time validation failures (the failure mode that surfaced FGAP-020).",
+  "proposed_resolution": "Add a --show-schema global in parseOpArgs; on a block-mutation op, call the lifted loadBlockSchema/resolveBlockItemSchema path, print the preview, return 0, in an early branch in main mirroring the parsed.help branch (cli.ts:464-467). Op frozen. Re-confirm via the canonical pipeline."
+}

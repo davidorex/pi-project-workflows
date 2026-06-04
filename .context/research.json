@@ -73,6 +73,123 @@
       "modified_at": "2026-06-04T21:57:33.590Z",
       "oid": "a0c0c826114705c8bf5bfb50d4f5189e",
       "content_hash": "98c0b0c6cc1f700fb0f673a4e7e648cdb701f18edd2e4787f15b577f79a3a992"
+    },
+    {
+      "id": "R-0002",
+      "title": "Substrate portability — export/import bundles vs an external/global substrate dir",
+      "status": "complete",
+      "layer": "L2",
+      "type": "feasibility",
+      "question": "How can a pi-context substrate be made portable via a `pi-context-cli export / import` command (e.g. encode a project-management model once and import it into other projects so it 'just works'), and/or via a switchable-to substrate that lives at an external `path/to/.substrate-dir` global location — which is feasible, what already exists, and what must be built?",
+      "method": "Code-inspection via three parallel read-only Explore agents over packages/pi-context/src, packages/pi-context-cli/src, packages/pi-workflows/src, and scripts/ at branch context-jit-spec-v2 (post-v0.30.0, HEAD be16688). Agents mapped: (a) the existing model-install/catalog machinery (init/accept-all/install + samples catalog), (b) substrate-dir resolution + switching + external-path feasibility + content-identity, (c) the CLI op-registry reflection surface + the parity gate + the pi-workflows workflow-discovery prior art.",
+      "scope": [
+        "pi-project-workflows monorepo, branch context-jit-spec-v2, post-v0.30.0 (HEAD be16688)",
+        "packages/pi-context/src/{context.ts, context-dir.ts, index.ts, block-api.ts, ops-registry.ts, content-hash.ts, object-store.ts, samples-catalog.ts}",
+        "packages/pi-context/samples/{conception.json, schemas/, blocks/} + schemas/bootstrap.schema.json",
+        "packages/pi-context-cli/src/{bin.ts, cli.ts}",
+        "packages/pi-workflows/src/workflow-discovery.ts",
+        "scripts/parity-check.ts"
+      ],
+      "findings_summary": "The prompt holds TWO non-interchangeable mechanisms. Fork 1 — export/import (file bundle): transport a COPY; materialize an independent instance in the target project. Fork 2 — external/global path/to/.substrate-dir: share ONE live substrate across projects. The user's PM-import example is Fork 1, and specifically a MODEL export (vocabulary), not instance content.\n\nSecond load-bearing split: a substrate = MODEL (portable: config.json registries — block_kinds, relation_types, hierarchy, lenses, invariants, layers, status_buckets, display_strings, naming, installed_schemas/blocks, tool_operations; plus schemas/*.schema.json) vs INSTANCE (not portable: each block's items, relations.json, substrate_id, root). ConfigBlock at context.ts:39; REGISTRY_DESCRIPTORS at :942.\n\nFork 1 — import is ALREADY HALF-BUILT, just hardcoded to the packaged catalog. /context init (initProject, index.ts:250) + /context accept-all (adoptConception, context.ts:873, reads samples/conception.json, never-clobber guard :882) + /context install (installContext, index.ts:334, copies installed_schemas/blocks from samples/ with skip-if-exists unless --update :387) IS 'import from a bundle'. Directionality is strictly one-way today (grep finds no export producer). The seam is two changes: (a) parameterize the source — adoptConception(cwd,{conceptionPath?}) + installContext(cwd,{schemasRoot?,blocksRoot?}), default packaged (unchanged), override to a bundle dir; then /context import <bundle> is thin orchestration inheriting never-clobber + --update. (b) Add net-new exportSubstrate(cwd,outDir): strip root + substrate_id, copy declared schemas, emit starter (or full) blocks, write a samples/-shaped conception.json. CRITICAL constraint: the 50KB output cap (DEFAULT_MAX_BYTES, truncate.ts:12; enforced in renderOpResultText + boundedJsonOutput, ops-registry.ts:127-199) means a whole-substrate bundle (100KB-1MB) CANNOT flow through the {json} channel — export MUST be a file-write op returning {read}/prose metadata (parity-check checkJsonContentCap would hard-fail {json:<content-read>}). import fits cleanly as a request->response write op (template amend-config, ops-registry.ts:1083). CLI exposure is automatic: useOps filters surface:'use' (cli.ts:44), zero CLI edits per op.\n\nFork 2 — NOT RESOLVABLE TODAY. resolveContextDir is unconditionally path.join(cwd, contextDir) (context-dir.ts:142) with no isAbsolute check and no ~ expansion; an absolute contextDir gets silently NESTED under cwd (path.join('/base','/abs')='/base/abs'), and bootstrap.schema.json puts no pattern on contextDir so it fails silently. Every path builder chains through that resolver (config/relations/schemas/migrations/agents/templates/blocks/object-store/locks/tmp-writes), so all inherit the breakage. listSubstrates only scans cwd by bare dir-name (index.ts:692,:709) so external dirs are invisible to switching. Enabling Fork 2 (no debt): isAbsolute branch in the resolver; a bootstrap-schema absolute-path policy; external-target handling in switchToExisting/switchAndCreate; an external-substrate discovery/registry; AND a substrate-level lock — the real gap: per-block locks (withBlockLock, block-api.ts:45) serialize on the absolute block path (cross-project-safe), but config.json/relations.json/migrations.json are written WITHOUT lock, so concurrent multi-project mutation races.\n\nIdentity crux (governs moving instance content): oid = sha256([substrate_id, nonce]) (mintOid, block-api.ts:624) is substrate-SCOPED — re-import yields a different oid; content_hash = sha256(content) (content-hash.ts:65) is GLOBALLY stable — enables cross-substrate dedup + integrity. So Fork 1 MODEL export is identity-clean; content export and Fork 2 sharing both need an oid-reconciliation policy (re-mint under target substrate_id, key on content_hash).\n\npi-workflows reality-check: 'import workflows' is actually directory-scan DISCOVERY (discoverWorkflows, workflow-discovery.ts — project .workflows/ > user ~/.pi/agent/workflows/ > bundled, dedup-by-name), NOT an import command or bundle transport. It is prior art for Fork 2's discovery angle, not Fork 1.\n\nThe forks are separable and need not land together. Fork 1 model export/import is lowest-risk (mostly generalization of existing machinery); Fork 2 touches the resolver everything chains through and needs the locking + identity work before it is safe.",
+      "findings_document": "analysis/2026-06-05-substrate-portability-export-import.md",
+      "grounding": {
+        "revisions": [
+          "be16688 (v0.30.0); branch context-jit-spec-v2"
+        ],
+        "dependencies": [
+          "Node path.join POSIX semantics — path.join(cwd, absolutePath) nests rather than resets, which is why an absolute contextDir fails silently in resolveContextDir"
+        ]
+      },
+      "stale_conditions": [
+        "resolveContextDir (context-dir.ts) gains an isAbsolute / ~-expansion branch — Fork 2's primary blocker is removed and the 'not resolvable today' verdict no longer holds.",
+        "An export producer or /context import command lands — Fork 1's 'strictly one-directional / half-built' framing is superseded.",
+        "adoptConception / installContext change signature away from the hardcoded samples/ source assumed by the seam analysis.",
+        "The 50KB output cap (truncate.ts DEFAULT_MAX_BYTES) or the boundedJsonOutput / renderOpResultText boundary relocates or changes semantics — the 'export must be file-write' constraint may shift.",
+        "scripts/parity-check.ts changes its writer-classification / ctx-forwarding / {json}-content-cap gates — the parity obligations for new export/import ops change.",
+        "withBlockLock scope changes or a substrate-level lock is added — the Fork 2 cross-project concurrency gap is closed.",
+        "The oid/content_hash identity model (mintOid substrate-scoping; content_hash global stability) changes — the content-portability reconciliation requirement changes."
+      ],
+      "citations": [
+        {
+          "label": "ConfigBlock interface — model vs instance fields",
+          "path": "packages/pi-context/src/context.ts",
+          "lines": "39-64"
+        },
+        {
+          "label": "REGISTRY_DESCRIPTORS — the portable registries",
+          "path": "packages/pi-context/src/context.ts",
+          "lines": "942"
+        },
+        {
+          "label": "adoptConception — reads hardcoded samples/conception.json, never-clobber guard",
+          "path": "packages/pi-context/src/context.ts",
+          "lines": "873-909"
+        },
+        {
+          "label": "installContext — copies installed_schemas/blocks from samples/ with skip-if-exists",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "334-410"
+        },
+        {
+          "label": "initProject — bootstrap pointer + skeleton config + substrate_id",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "250"
+        },
+        {
+          "label": "resolveContextDir — unconditional path.join(cwd, contextDir), no isAbsolute (Fork 2 blocker)",
+          "path": "packages/pi-context/src/context-dir.ts",
+          "lines": "104-143"
+        },
+        {
+          "label": "listSubstrates — cwd-bound bare-name discovery",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "675-712"
+        },
+        {
+          "label": "withBlockLock — per-block lock; no substrate-global lock for config/relations/migrations",
+          "path": "packages/pi-context/src/block-api.ts",
+          "lines": "45-55"
+        },
+        {
+          "label": "mintOid — substrate-scoped oid",
+          "path": "packages/pi-context/src/block-api.ts",
+          "lines": "624-627"
+        },
+        {
+          "label": "computeContentHash — globally stable content hash",
+          "path": "packages/pi-context/src/content-hash.ts",
+          "lines": "65-67"
+        },
+        {
+          "label": "OpResult + 50KB cap at the output boundary",
+          "path": "packages/pi-context/src/ops-registry.ts",
+          "lines": "118-199"
+        },
+        {
+          "label": "CLI reflection — useOps filters surface:'use'",
+          "path": "packages/pi-context-cli/src/cli.ts",
+          "lines": "44"
+        },
+        {
+          "label": "parity-check gates — classification / ctx-forwarding / {json}-content-cap / dual-surface params",
+          "path": "scripts/parity-check.ts",
+          "lines": "423-827"
+        },
+        {
+          "label": "workflow-discovery — directory-scan, the real 'import workflows' prior art",
+          "path": "packages/pi-workflows/src/workflow-discovery.ts"
+        },
+        {
+          "label": "full design doc (deep read)",
+          "path": "analysis/2026-06-05-substrate-portability-export-import.md"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T22:19:52.083Z",
+      "oid": "8e68cdb846eaf93da1751ec989d11a9d",
+      "content_hash": "34a477b940a36cdf8cf6233aa278959d3b4b47526b0e63a7a1ac11d63126796d"
     }
   ]
 }

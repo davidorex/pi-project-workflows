@@ -10,6 +10,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 ### Changed
 - `promote-item` / `write-schema-migration` converge onto the contract `ctx` (their guard now validates `ctx.writer`); `context-archive` drops its declared-but-unused `writer` field (it writes no block)
 
+### Fixed
+- `amend-config`'s success message now reads `added` for the add operation (was the malformed `addd` from a `${operation}d` past-tense template; `replace`/`remove` were unaffected)
+
 ## [0.29.0] - 2026-06-04
 
 ### Added

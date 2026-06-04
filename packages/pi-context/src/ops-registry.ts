@@ -807,7 +807,8 @@ export const ops: OpDefinition[] = [
 			const result = amendConfigEntry(cwd, params.registry, params.operation, params.key, entry, ctx, {
 				dryRun: params.dryRun,
 			});
-			const verb = result.modified ? (params.dryRun ? `would ${result.operation}` : `${result.operation}d`) : "no-op";
+			const pastTense = result.operation === "add" ? "added" : `${result.operation}d`;
+			const verb = result.modified ? (params.dryRun ? `would ${result.operation}` : pastTense) : "no-op";
 			return `amend-config: ${verb} ${result.registry}[${result.key}]`;
 		},
 	},

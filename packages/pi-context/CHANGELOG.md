@@ -6,6 +6,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ### Added
 - `OpDefinition.run` gains an optional `ctx?: DispatchContext` channel; `registerAll` builds it per dispatch — the auth-gate-stamped `params.writer` (verified human) when present, else an agent identity from `ctx.model` — and every write op forwards it to its block-api/context call, so in-pi op writes are attested. New exported `buildDispatchContextFromExecute(params, extCtx)`.
+- `remove-relation` / `replace-relation` / `append-relations` (bulk) / `upsert-block-item` ops + the `removeRelation` library primitive and `removeRelationByRef` / `replaceRelationByRef` / `appendRelationsByRef` SDK porcelain — completing the op-registry's coverage of the library write surface so edge removal/replacement and atomic upsert are reachable out-of-pi (closes the no-edge-removal gap; `replace-relation` is a single-write atomic re-orient).
+- `OP_COVERAGE_RULE` (5-class disjunction: op-backed-direct | op-backed-transitive | for-dir-twin | intentionally-unexposed | internal-primitive) + `INTENTIONALLY_UNEXPOSED_WRITERS` — the documented coverage contract that every library write fn is either op-reachable or deliberately withheld with a reason; a forthcoming parity test will enforce it.
 
 ### Changed
 - `promote-item` / `write-schema-migration` converge onto the contract `ctx` (their guard now validates `ctx.writer`); `context-archive` drops its declared-but-unused `writer` field (it writes no block)

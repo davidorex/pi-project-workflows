@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Regenerated the aggregate `SKILL.md` to surface the new pi-context relation/upsert ops (`remove-relation`, `replace-relation`, `append-relations`, `upsert-block-item`) and the op-coverage contract; see the `pi-context` changelog for the member-package detail.
 
 ## [0.29.0] - 2026-06-04
 

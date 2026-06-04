@@ -53,6 +53,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadRelationsForDir, type RawEndpoint, writeRelationsForDir } from "@davidorex/pi-context/context";
 import { registerSubstrate } from "@davidorex/pi-context/context-registry";
+import { resolveRelationSelector } from "@davidorex/pi-context/context-sdk";
 import { writeSchemaCheckedForDir } from "@davidorex/pi-context/schema-write";
 import { landIdentityFieldsForDir } from "./lib/land-identity-fields.js";
 import { migrateToContentAddressed } from "./lib/migrate-content-addressed.js";
@@ -86,7 +87,7 @@ function parseArgs(argv: string[]): Args {
 
 /** Build the set of local item refnames (every block item's `id`) in a substrate
  * dir by reading the config's block_kinds + their data files directly. Read-only. */
-function localRefnames(substrateAbs: string): Set<string> {
+export function localRefnames(substrateAbs: string): Set<string> {
 	const out = new Set<string>();
 	const configPath = path.join(substrateAbs, "config.json");
 	let config: Record<string, unknown>;
@@ -150,11 +151,30 @@ function denestLayerPlans(workDir: string): void {
 	console.error("foldin-context: OP1 — de-nested layer-plans (dropped layers + migration_phases from plans items).");
 }
 
-/** OP 3 — promote bare cross-substrate refnames to the `project:` alias. A bare
- * string endpoint (no `:`) that is NOT a local item id is rewritten to
- * `"project:" + endpoint`. Structured endpoints, `alias:refname` strings, and
- * local-refname bare strings are left unchanged. Writes only if any edge changed. */
-function promoteCrossSubstrateRefs(workDir: string, locals: Set<string>): void {
+/** OP 3 — promote bare cross-substrate refnames to a STRUCTURED foreign
+ * `EdgeEndpoint`. A bare string endpoint (no `:`) that is NOT a local item id is
+ * resolved as `project:<refname>` into the canonical foreign-item endpoint
+ * `{ kind:"item", substrate_id, oid, refname }`. Structured endpoints,
+ * `alias:refname` strings, and local-refname bare strings are left unchanged.
+ * Writes only if any edge changed.
+ *
+ * Resolution targets `cwd` (the project root that carries the substrate
+ * registry), NOT `workDir`: the `project` alias is registered in the
+ * project-root registry, and OP4's `migrateToContentAddressed(cwd, …)` resolves
+ * a `project:<ref>` string through that SAME project-root registry (its
+ * `aliasMap.project` default only fires when a substrate whose dir basename is
+ * `.project` is among the DISCOVERED substrates — here `onlySubstrates` restricts
+ * discovery to the dupe, so OP4 takes its `resolveAlias(cwd, "project")` registry
+ * fallback). Resolving the SAME selector against the SAME `cwd` here therefore
+ * yields the SAME structured foreign endpoint OP4 would mint — and OP4 is a
+ * no-op on any already-structured endpoint (its `convert` returns non-string
+ * endpoints unchanged), so this promotion is idempotent under OP4. Emitting the
+ * structured form at the SOURCE (rather than a `project:<ref>` STRING) is what
+ * keeps relations.json all-structured: the string form was the sole
+ * string-endpoint writer, and it is removable here without touching
+ * `endpointIdentity` (whose string-vs-structured dedup asymmetry — and its
+ * append-dedup / remove / replace blast radius — stays unchanged). */
+export function promoteCrossSubstrateRefs(cwd: string, workDir: string, locals: Set<string>): void {
 	const edges = loadRelationsForDir(workDir);
 	if (edges.length === 0) {
 		console.error("foldin-context: OP3 — no relations; skipping edge rewrite.");
@@ -164,7 +184,9 @@ function promoteCrossSubstrateRefs(workDir: string, locals: Set<string>): void {
 		if (typeof ep !== "string") return ep; // structured → unchanged
 		if (ep.includes(":")) return ep; // already aliased → unchanged
 		if (locals.has(ep)) return ep; // local item refname → unchanged
-		return `project:${ep}`; // cross-substrate bare ref → promote
+		// cross-substrate bare ref → resolve `project:<ref>` to a STRUCTURED
+		// foreign endpoint against the project-root registry (matches OP4).
+		return resolveRelationSelector(cwd, `project:${ep}`);
 	};
 	let changed = 0;
 	const next = edges.map((e) => {
@@ -175,7 +197,9 @@ function promoteCrossSubstrateRefs(workDir: string, locals: Set<string>): void {
 	});
 	if (changed > 0) {
 		writeRelationsForDir(workDir, next);
-		console.error(`foldin-context: OP3 — promoted ${changed} bare cross-substrate ref(s) to project: alias.`);
+		console.error(
+			`foldin-context: OP3 — promoted ${changed} bare cross-substrate ref(s) to structured foreign endpoint(s) (project: alias resolved against the project-root registry).`,
+		);
 	} else {
 		console.error("foldin-context: OP3 — no bare cross-substrate refs to promote.");
 	}
@@ -213,7 +237,10 @@ function main(): void {
 		denestLayerPlans(workDir); // OP1
 		landIdentityFieldsForDir(workDir); // OP2
 		console.error("foldin-context: OP2 — landed identity-field declarations.");
-		promoteCrossSubstrateRefs(workDir, localRefnames(workDir)); // OP3 (locals computed on the dupe pre-rewrite)
+		// OP3 (locals computed on the dupe pre-rewrite; cross-substrate refs resolved
+		// against args.cwd — the project-root registry that carries the `project`
+		// alias — so the structured foreign endpoint matches what OP4 mints).
+		promoteCrossSubstrateRefs(args.cwd, workDir, localRefnames(workDir));
 		const report = migrateToContentAddressed(args.cwd, {
 			onlySubstrates: [workDirName],
 			register: false,
@@ -270,4 +297,9 @@ function main(): void {
 	console.error(`foldin-context: REGISTERED ${substrateId} → ${args.substrate}.`);
 }
 
-main();
+// Run main only when invoked as the CLI entry point, not when imported (a test
+// importing the OP helpers must not trigger the dupe/swap pipeline). Mirrors the
+// `import.meta.url === file://${argv[1]}` guard in upgrade-substrate-content-addressed.ts.
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main();
+}

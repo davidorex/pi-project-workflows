@@ -666,6 +666,56 @@ export function appendRelationForDir(substrateDir: string, edge: Edge, ctx?: Dis
 }
 
 /**
+ * Remove the single closure-table edge whose (parent, child, relation_type)
+ * triple matches `match` by the SAME `identityKey` dedup identity
+ * `appendRelation` uses to detect exact-duplicates — so `removeRelation` is
+ * symmetric with `appendRelation` (`remove(append(x))` restores the prior set).
+ * `ordinal` is NOT part of identity (a re-filing with a different sibling order
+ * is the same edge for both append-dedup and removal). Loads the current edge
+ * set, filters OUT the matching edge, and `writeRelations` the filtered set.
+ *
+ * Returns `{ removed: boolean }` — true iff an edge was actually removed; an
+ * absent edge is an idempotent no-op (`{ removed: false }`, and the file is NOT
+ * rewritten in that case). The match-endpoint forms (string / structured item /
+ * lens_bin) compare via `endpointIdentity`, identical to the append side.
+ *
+ * `ctx` is threaded through to `writeRelationsForDir` for attestation parity;
+ * the relations schema is a flat array with no envelope author fields, so
+ * stamping is a structural no-op today (same semantics as the rest of the
+ * relations write surface).
+ */
+export function removeRelation(
+	cwd: string,
+	match: { parent: RawEndpoint; child: RawEndpoint; relation_type: string },
+	ctx?: DispatchContext,
+): { removed: boolean } {
+	return removeRelationForDir(resolveContextDir(cwd), match, ctx);
+}
+
+/**
+ * Dir-targeted twin of `removeRelation` (Cycle-1 `*ForDir` pattern). Operates on
+ * `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir —
+ * no `.pi-context.json` pointer resolution. `removeRelation` is a thin wrapper
+ * resolving the active dir; behaviour is byte-identical when called via cwd.
+ * Uses the SAME `identityKey` dedup identity as `appendRelationsForDir`, so only
+ * the exact (parent, child, relation_type) edge is dropped — a same-parent
+ * different-relation_type edge and a same-relation_type different-child edge both
+ * survive.
+ */
+export function removeRelationForDir(
+	substrateDir: string,
+	match: { parent: RawEndpoint; child: RawEndpoint; relation_type: string },
+	ctx?: DispatchContext,
+): { removed: boolean } {
+	const existing = loadRelationsForDir(substrateDir);
+	const targetKey = identityKey(match);
+	const filtered = existing.filter((e) => identityKey(e) !== targetKey);
+	if (filtered.length === existing.length) return { removed: false };
+	writeRelationsForDir(substrateDir, filtered, ctx);
+	return { removed: true };
+}
+
+/**
  * Atomic, AJV-validated write of `<resolveContextDir(cwd)>/config.json`.
  * Delegates to block-api's `writeTypedFile` against the bundled config schema.
  * Same cycle-safety reasoning as `writeRelations`.

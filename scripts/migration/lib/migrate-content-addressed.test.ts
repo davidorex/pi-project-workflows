@@ -391,6 +391,75 @@ describe("migrate-content-addressed: onlySubstrates scoping + registry-fallback 
 		for (const [k, v] of targetBefore) assert.equal(targetAfter.get(k), v, `target file ${k} unchanged`);
 	});
 
+	it("registry-fallback KEEPS a string edge to an EXISTING-but-not-yet-backfilled foreign item (no oid)", (t) => {
+		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "migrate-ca-fallback-nooid-"));
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeBootstrapPointer(cwd, ".active");
+		// Active substrate carries a STRING `legacy:REF-9` edge whose target is a
+		// registered-but-NOT-discovered foreign substrate (scoped out below).
+		writeSubstrate(cwd, {
+			dirName: ".active",
+			tasks: [{ id: "A1", title: "one" }],
+			relations: [{ parent: "A1", child: "legacy:REF-9", relation_type: "relates_to" }],
+		});
+		// Foreign target: the item EXISTS but carries NO oid (not yet backfilled — its
+		// own migration run owns that). buildRefnameOidMap would skip it (oid.length>0
+		// gate), so the prior oid-gated DROP decision wrongly reported it unresolved.
+		writeSubstrate(cwd, {
+			dirName: ".target",
+			tasks: [{ id: "REF-9", title: "target" }],
+		});
+		const targetSid = "sub-00112233aabbccdd";
+		registerSubstrate(cwd, targetSid, ".target", ["legacy"]);
+
+		const report = migrateToContentAddressed(cwd, { onlySubstrates: [".active"] });
+
+		// KEPT: the edge converted to a structured foreign endpoint (not unresolved).
+		assert.equal(report.unresolved.length, 0, "existing-but-unaddressed foreign item must not be reported unresolved");
+		assert.equal(report.cross_substrate_edges, 1);
+		const edges = loadRelationsForDir(path.join(cwd, ".active"));
+		const foreign = edges.find((e) => typeof e.child === "object" && (e.child as EdgeEndpoint).kind === "item")
+			?.child as EdgeEndpoint;
+		assert.ok(foreign && foreign.kind === "item", "child converted to structured item");
+		assert.equal(foreign.substrate_id, targetSid);
+		assert.equal(foreign.refname, "REF-9");
+		// No backfilled oid in the foreign substrate → refname placeholder (parity with
+		// the discovered-substrate string path's `targetMap.get(refname) ?? refname`).
+		assert.equal(foreign.oid, "REF-9");
+	});
+
+	it("registry-fallback REPORTS+DROPS a string edge to a genuinely-missing foreign refname", (t) => {
+		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "migrate-ca-fallback-missing-"));
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeBootstrapPointer(cwd, ".active");
+		writeSubstrate(cwd, {
+			dirName: ".active",
+			tasks: [{ id: "A1", title: "one" }],
+			relations: [{ parent: "A1", child: "legacy:GHOST", relation_type: "relates_to" }],
+		});
+		// Foreign target exists and is registered, but does NOT hold an item `GHOST`.
+		writeSubstrate(cwd, {
+			dirName: ".target",
+			tasks: [{ id: "REF-9", title: "target" }],
+		});
+		const targetSid = "sub-00112233aabbccdd";
+		registerSubstrate(cwd, targetSid, ".target", ["legacy"]);
+
+		const report = migrateToContentAddressed(cwd, { onlySubstrates: [".active"] });
+
+		// REPORTED + DROPPED: genuinely-absent refname via the string path.
+		assert.equal(report.cross_substrate_edges, 0);
+		assert.equal(report.unresolved.length, 1);
+		assert.deepEqual(report.unresolved[0], { substrate: ".active", ref: "legacy:GHOST" });
+		const edges = loadRelationsForDir(path.join(cwd, ".active"));
+		const hasGhost = edges.some(
+			(e) =>
+				(typeof e.child === "object" && (e.child as { refname?: string }).refname === "GHOST") ||
+				e.child === "legacy:GHOST",
+		);
+		assert.ok(!hasGhost, "broken edge to GHOST must not be written");
+	});
+
 	it("register:false mints config.substrate_id but writes NO registry entry; default run DOES register", (t) => {
 		const cwd = makeFixture();
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));

@@ -34,12 +34,14 @@ import {
 	removeFromNestedArray,
 	updateItemInBlock,
 	updateNestedArrayItem,
+	upsertItemInBlock,
 	writeBlock,
 } from "./block-api.js";
 import { type AdoptResult, adoptConception, amendConfigEntry, loadConfig, loadContext } from "./context.js";
 import { BootstrapNotFoundError, schemaPath, tryResolveContextDir } from "./context-dir.js";
 import {
 	appendRelationByRef,
+	appendRelationsByRef,
 	completeTask,
 	contextState,
 	currentState,
@@ -49,6 +51,8 @@ import {
 	joinBlocks,
 	readBlockItem,
 	readBlockPage,
+	removeRelationByRef,
+	replaceRelationByRef,
 	resolveItemById,
 	resolveItemsByIds,
 	validateContext,
@@ -256,6 +260,171 @@ export const ops: OpDefinition[] = [
 			return appended
 				? `Appended relation ${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`
 				: `Relation ${params.parent} -[${params.relation_type}]-> ${params.child} already exists — no-op`;
+		},
+	},
+	{
+		name: "remove-relation",
+		label: "Remove Relation",
+		description:
+			"Remove the single closure-table relation (edge) matching parent+child+relation_type from relations.json. " +
+			"Matches on the SAME (parent, child, relation_type) dedup identity append-relation uses, so it is the symmetric " +
+			"inverse of append-relation (ordinal is NOT part of identity). An absent edge is an idempotent no-op. " +
+			"Reference integrity is NOT checked here — run context-validate after if the removal changes resolvability.",
+		promptSnippet: "Remove a relation/edge between two items (the inverse of append-relation)",
+		parameters: Type.Object({
+			parent: Type.String({ description: "Canonical id (or lens bin name) of the parent endpoint" }),
+			child: Type.String({ description: "Canonical id of the child endpoint" }),
+			relation_type: Type.String({
+				description: "Registered relation_type canonical_id / hierarchy edge type / lens id",
+			}),
+		}),
+		surface: "use",
+		run(cwd: string, params: { parent: string; child: string; relation_type: string }, ctx?: DispatchContext): string {
+			// Cycle-5 porcelain: STRING selectors are resolved to structured
+			// EdgeEndpoints, then matched on the identityKey dedup identity. Messaging
+			// uses the raw selectors (params.*), not the resolved structured endpoints.
+			const { removed } = removeRelationByRef(
+				cwd,
+				{ parent: params.parent, child: params.child, relation_type: params.relation_type },
+				ctx,
+			);
+			return removed
+				? `Removed relation ${params.parent} -[${params.relation_type}]-> ${params.child}`
+				: `Relation ${params.parent} -[${params.relation_type}]-> ${params.child} — no matching relation — no-op`;
+		},
+	},
+	{
+		name: "replace-relation",
+		label: "Replace Relation",
+		description:
+			"Atomically replace one closure-table relation with another in a SINGLE write (no half-state: the old edge and " +
+			"the new edge never coexist on disk). The old edge is matched on the (parent, child, relation_type) dedup identity; " +
+			"the new edge is written with its optional ordinal. If the old edge is absent the call is effectively an append of " +
+			"the new edge. Reference integrity is NOT checked here — run context-validate after.",
+		promptSnippet: "Atomically swap one relation/edge for another in a single write",
+		parameters: Type.Object({
+			old_parent: Type.String({ description: "Parent endpoint selector of the edge to remove" }),
+			old_child: Type.String({ description: "Child endpoint selector of the edge to remove" }),
+			old_relation_type: Type.String({ description: "relation_type of the edge to remove" }),
+			parent: Type.String({ description: "Parent endpoint selector of the replacement edge" }),
+			child: Type.String({ description: "Child endpoint selector of the replacement edge" }),
+			relation_type: Type.String({ description: "relation_type of the replacement edge" }),
+			ordinal: Type.Optional(
+				Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type) for the new edge" }),
+			),
+		}),
+		surface: "use",
+		run(
+			cwd: string,
+			params: {
+				old_parent: string;
+				old_child: string;
+				old_relation_type: string;
+				parent: string;
+				child: string;
+				relation_type: string;
+				ordinal?: number;
+			},
+			ctx?: DispatchContext,
+		): string {
+			const { replaced, removed } = replaceRelationByRef(
+				cwd,
+				{
+					old: { parent: params.old_parent, child: params.old_child, relation_type: params.old_relation_type },
+					new: {
+						parent: params.parent,
+						child: params.child,
+						relation_type: params.relation_type,
+						...(params.ordinal !== undefined ? { ordinal: params.ordinal } : {}),
+					},
+				},
+				ctx,
+			);
+			const ordinalNote = params.ordinal !== undefined ? ` (ordinal ${params.ordinal})` : "";
+			const oldDesc = `${params.old_parent} -[${params.old_relation_type}]-> ${params.old_child}`;
+			const newDesc = `${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`;
+			if (!removed && !replaced) {
+				return `Replace relation no-op — old edge ${oldDesc} absent and new edge ${newDesc} already present`;
+			}
+			if (!removed) {
+				return `Old relation ${oldDesc} absent — appended new relation ${newDesc}`;
+			}
+			if (!replaced) {
+				return `Removed relation ${oldDesc}; new relation ${newDesc} already present (no duplicate written)`;
+			}
+			return `Replaced relation ${oldDesc} with ${newDesc}`;
+		},
+	},
+	{
+		name: "append-relations",
+		label: "Append Relations (bulk)",
+		description:
+			"Append MANY closure-table relations to relations.json in a single write. Each edge is an object " +
+			"{ parent, child, relation_type, ordinal? }. Per-(parent, child, relation_type) duplicates are skipped (against " +
+			"on-disk edges AND earlier edges in the same batch). Returns appended/skipped counts. Reference integrity is NOT " +
+			"checked here — run context-validate after. Creates relations.json if absent.",
+		promptSnippet: "Create many relations/edges between items in one write",
+		parameters: Type.Object({
+			edges: Type.Unknown({
+				description:
+					"JSON array of { parent, child, relation_type, ordinal? } selector objects (parent/child are id/lens-bin selectors)",
+			}),
+		}),
+		surface: "use",
+		run(cwd: string, params: { edges: unknown }, ctx?: DispatchContext): string {
+			// Type.Unknown() params may arrive as JSON strings — parse if needed.
+			let edges = params.edges;
+			if (typeof edges === "string") {
+				try {
+					edges = JSON.parse(edges);
+				} catch {
+					throw new Error(`edges parameter must be a JSON array, got unparseable string`);
+				}
+			}
+			if (!Array.isArray(edges)) {
+				throw new Error(`edges parameter must be a JSON array of { parent, child, relation_type, ordinal? } objects`);
+			}
+			const { appended, skipped } = appendRelationsByRef(
+				cwd,
+				edges as { parent: string; child: string; relation_type: string; ordinal?: number }[],
+				ctx,
+			);
+			return `appended ${appended}, skipped ${skipped} (duplicates)`;
+		},
+	},
+	{
+		name: "upsert-block-item",
+		label: "Upsert Block Item",
+		description:
+			"Append-or-replace an item in a project block array by id: if an item with the same idField value exists it is " +
+			"REPLACED (full-shape replacement, not shallow-merge — use update-block-item for merge); otherwise the item is " +
+			"appended. Schema validation is automatic. idField defaults to 'id'.",
+		promptSnippet: "Append-or-replace a full block item by id (replacement, not merge)",
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
+			arrayKey: Type.String({ description: "Array key in the block (e.g., 'issues', 'decisions')" }),
+			item: Type.Unknown({ description: "Full item object to upsert — must conform to block schema" }),
+			idField: Type.Optional(Type.String({ description: "Field used as the upsert key (default 'id')" })),
+		}),
+		surface: "use",
+		run(
+			cwd: string,
+			params: { block: string; arrayKey: string; item: Record<string, unknown>; idField?: string },
+			ctx?: DispatchContext,
+		): string {
+			// Type.Unknown() params may arrive as JSON strings — parse if needed.
+			if (typeof params.item === "string") {
+				try {
+					params.item = JSON.parse(params.item) as Record<string, unknown>;
+				} catch {
+					throw new Error(`item parameter must be a JSON object, got unparseable string`);
+				}
+			}
+			const idField = params.idField ?? "id";
+			const { mode } = upsertItemInBlock(cwd, params.block, params.arrayKey, params.item, idField, ctx);
+			const idVal = params.item?.[idField];
+			const idDesc = idVal !== undefined ? ` '${idVal}'` : "";
+			return `Upserted item${idDesc} (${mode}) to ${params.block}.${params.arrayKey}`;
 		},
 	},
 	{
@@ -1501,6 +1670,157 @@ export const ops: OpDefinition[] = [
  * point; this list is the source of pi-context's contribution to it.
  */
 export const gatedTools: string[] = ops.filter((o) => o.authGated).map((o) => o.name);
+
+/**
+ * One entry on the {@link INTENTIONALLY_UNEXPOSED_WRITERS} allowlist. `libraryFn`
+ * names a library write function deliberately NOT given its own op; exactly one
+ * of `safeOp` / `reason` carries the justification (`safeOp` when a safe op
+ * supersedes the raw writer; `reason` for internal/foreign-only writers with no
+ * op surface at all).
+ */
+export interface UnexposedWriter {
+	libraryFn: string;
+	reason?: string;
+	safeOp?: string;
+}
+
+/**
+ * The FGAP-009 non-exposure allowlist: every library write function that is
+ * deliberately NOT op-backed, with the reason it is withheld. This is the
+ * closure contract γ (TASK-008) WILL consume: γ's parity test — not yet written
+ * (no executable parity test exists in β; β defines the contract, γ implements
+ * the test against it) — WILL assert that EVERY library writer is either op-backed
+ * (appears in {@link ops}, directly or transitively) OR named here, so a
+ * newly-added library writer with neither an op nor an allowlist entry will fail
+ * that test, keeping the op surface and the library write surface in lockstep.
+ *
+ * The `*ForDir` twins of op-backed writers (e.g. `appendRelationForDir`,
+ * `writeRelationsForDir`, `upsertItemInBlockForDir`, `appendToBlockForDir`, …)
+ * are NOT enumerated individually: each is the dir-targeted internal twin of a
+ * cwd-form writer that IS op-backed, and is covered by that cwd-form op (the op
+ * resolves the active substrate dir then delegates to the same shared
+ * typed-file primitive the `*ForDir` twin calls). The contract is that γ's
+ * parity test (TASK-008, not yet written) WILL treat a `*ForDir` writer as
+ * covered when its cwd-form sibling is covered.
+ */
+export const INTENTIONALLY_UNEXPOSED_WRITERS: UnexposedWriter[] = [
+	{ libraryFn: "writeConfig", safeOp: "amend-config", reason: "scoped guarded config mutation" },
+	{ libraryFn: "writeSchema", safeOp: "write-schema", reason: "raw bypasses the create/replace + migration check" },
+	{ libraryFn: "updateSchema", safeOp: "write-schema", reason: "no mutator-scripting surface" },
+	{ libraryFn: "writeBootstrapPointer", safeOp: "context-init", reason: "raw bypasses target validation" },
+	{ libraryFn: "flipBootstrapPointer", safeOp: "context-switch", reason: "raw splits the safe switch" },
+	{ libraryFn: "writeRegistry", reason: "internal; registry writes flow through registerSubstrate callers" },
+	{
+		libraryFn: "registerSubstrate",
+		reason: "manual/foreign registration is the clone arc (DEC-0002); normal paths auto-register",
+	},
+];
+
+/**
+ * The five mutually-exhaustive ways a library write function is COVERED by the
+ * FGAP-009 op-surface ↔ library-write-surface parity contract. A writer that
+ * matches NONE of these is a silent gap that γ's (TASK-008) parity test — once
+ * written — MUST fail on. Coverage is the DISJUNCTION over these classes — a
+ * writer needs ANY one, not all.
+ */
+export enum CoverageClass {
+	/** An op's `run` calls the writer directly (e.g. `append-block-item` → `appendToBlock`). */
+	OpBackedDirect = "op-backed-direct",
+	/**
+	 * An op's `run` reaches the writer TRANSITIVELY — through any helper / wrapper
+	 * chain, not just a direct call. Two sub-shapes both land here:
+	 *   - `*ByRef` / SDK relation porcelain: the `remove-relation` / `replace-relation`
+	 *     / `append-relations` ops call `removeRelationByRef` / `replaceRelationByRef`
+	 *     / `appendRelationsByRef`, which call `writeRelations`.
+	 *   - init / switch → internal-helper chains: `context-init` → `initProject` →
+	 *     `writeSkeletonConfig`; `context-switch` → `switchToExisting` /
+	 *     `switchAndCreate` → `reconcileActiveSubstrateRegistration`. The writer is
+	 *     not a `*ByRef` porcelain and is not allowlisted, but it IS reachable from an
+	 *     op's `run` via a helper the op calls.
+	 * Coverage condition: reachable from some op's `run` via any helper/wrapper chain.
+	 */
+	OpBackedTransitive = "op-backed-transitive",
+	/**
+	 * A `*ForDir` dir-targeted twin of a covered cwd-form writer (e.g.
+	 * `appendToBlockForDir` is the twin of the op-backed `appendToBlock`). Covered
+	 * by its cwd-form sibling — both delegate to the same shared typed-file
+	 * primitive; the cwd-form op resolves the active dir then calls it.
+	 */
+	ForDirTwin = "for-dir-twin",
+	/**
+	 * On {@link INTENTIONALLY_UNEXPOSED_WRITERS}: a raw write deliberately given NO
+	 * direct op (a scoped op supersedes it, or it is internal/foreign-only).
+	 */
+	IntentionallyUnexposed = "intentionally-unexposed",
+	/**
+	 * A block-api internal primitive below the op layer — the `*TypedFile` read/
+	 * write layer (`readTypedFile` / `writeTypedFile`), `prepareItemIdentityForWrite`,
+	 * and the identity / content-hash helpers. Never op-backed by design; the ops
+	 * compose over these.
+	 */
+	InternalPrimitive = "internal-primitive",
+}
+
+/**
+ * One clause of {@link OP_COVERAGE_RULE}: a coverage class plus the human-readable
+ * test γ applies to decide whether a writer falls in it.
+ */
+export interface CoverageClause {
+	coverageClass: CoverageClass;
+	test: string;
+}
+
+/**
+ * The FGAP-009 coverage RULE, made explicit so γ (TASK-008) will import the
+ * contract rather than re-derive it. A library write function is COVERED iff it
+ * matches ANY clause below (the disjunction); a writer matching none is a silent
+ * gap that γ's parity test — when written — MUST fail on. β fixes the contract
+ * here; no executable parity test exists yet (that is γ).
+ *
+ * Why `writeConfig` is allowlisted but `writeRelations` is NOT — the distinction
+ * a strict name-parity reading mis-saw as inconsistent:
+ *   - `writeConfig` has NO direct wholesale-config op. The scoped surface is
+ *     `amend-config` (one-entry-in-one-registry add/replace/remove, AJV-validated),
+ *     which deliberately does NOT expose a raw whole-config overwrite. So
+ *     `writeConfig` is `intentionally-unexposed` (the scoped op supersedes the raw
+ *     writer; a raw wholesale overwrite is withheld by design).
+ *   - `writeRelations` IS reached — transitively — by the relation ops:
+ *     `remove-relation` / `replace-relation` / `append-relations` call
+ *     `removeRelationByRef` / `replaceRelationByRef` / `appendRelationsByRef`, each
+ *     of which calls `writeRelations`. It is therefore `op-backed-transitive`
+ *     and needs NO allowlist entry. The asymmetry is real and correct: one writer
+ *     has an op path (via a helper/wrapper chain), the other does not.
+ *
+ * The `op-backed-transitive` clause covers BOTH the `*ByRef` relation porcelain
+ * AND the init/switch → internal-helper chains: `writeSkeletonConfig` (reached
+ * via `context-init` → `initProject`) and `reconcileActiveSubstrateRegistration`
+ * (reached via `context-switch` → `switchToExisting` / `switchAndCreate`) are
+ * neither `*ByRef` porcelain nor allowlisted, yet each is reachable from an op's
+ * `run` through a helper that op calls — so each classifies cleanly as
+ * `op-backed-transitive`, not as a gap.
+ */
+export const OP_COVERAGE_RULE: CoverageClause[] = [
+	{
+		coverageClass: CoverageClass.OpBackedDirect,
+		test: "an op's run() calls the writer directly",
+	},
+	{
+		coverageClass: CoverageClass.OpBackedTransitive,
+		test: "reachable from some op's run() via any helper/wrapper chain — the *ByRef / SDK relation porcelain (writeRelations via removeRelationByRef / replaceRelationByRef / appendRelationsByRef) OR an init/switch → internal-helper chain (writeSkeletonConfig via context-init → initProject; reconcileActiveSubstrateRegistration via context-switch → switchToExisting / switchAndCreate)",
+	},
+	{
+		coverageClass: CoverageClass.ForDirTwin,
+		test: "a *ForDir twin of a covered cwd-form writer (covered by its cwd-form sibling)",
+	},
+	{
+		coverageClass: CoverageClass.IntentionallyUnexposed,
+		test: "named on INTENTIONALLY_UNEXPOSED_WRITERS — a raw bypass with no direct op",
+	},
+	{
+		coverageClass: CoverageClass.InternalPrimitive,
+		test: "a block-api internal primitive below the op layer (the *TypedFile layer, prepareItemIdentityForWrite, identity / content-hash helpers)",
+	},
+];
 
 /**
  * The factory PI handle captured at registerAll time. The list-tools op needs

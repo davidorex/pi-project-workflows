@@ -10,9 +10,11 @@ import path from "node:path";
 import { readBlock, readBlockForDir, updateItemInBlock } from "./block-api.js";
 import {
 	appendRelation,
+	appendRelations,
 	type ConfigBlock,
 	type Edge,
 	type EdgeEndpoint,
+	endpointIdentity,
 	endpointKey,
 	findUnmaterializedAssets,
 	type ItemRecord,
@@ -20,7 +22,9 @@ import {
 	loadConfig,
 	loadRelations,
 	type RawEndpoint,
+	removeRelation,
 	validateRelations,
+	writeRelations,
 } from "./context.js";
 import { resolveContextDir, SCHEMAS_DIR, schemaPath, schemasDir, tryResolveContextDir } from "./context-dir.js";
 import { loadRegistry, resolveAlias, resolveSubstrateDir } from "./context-registry.js";
@@ -1394,6 +1398,112 @@ export function appendRelationByRef(
 	};
 	const { appended } = appendRelation(cwd, edge, ctx);
 	return { appended, edge };
+}
+
+/**
+ * Friendly-selector relation removal — the porcelain twin of
+ * {@link appendRelationByRef}. Resolves `parent` / `child` STRING selectors to
+ * structured `EdgeEndpoint`s via the SAME `resolveRelationSelector` the append
+ * porcelain uses, then delegates to the raw `removeRelation` plumbing, which
+ * matches on the `identityKey` dedup identity (so a `removeRelationByRef` of the
+ * selectors an `appendRelationByRef` wrote removes exactly that edge — the
+ * porcelain layers stay symmetric). Returns `{ removed, edge }` where `edge` is
+ * the RESOLVED structured edge that was matched against (so callers can report /
+ * dry-run-validate the structured form), and `removed` is false on the
+ * idempotent no-match no-op.
+ */
+export function removeRelationByRef(
+	cwd: string,
+	rel: { parent: string; child: string; relation_type: string },
+	ctx?: DispatchContext,
+): { removed: boolean; edge: Edge } {
+	const edge: Edge = {
+		parent: resolveRelationSelector(cwd, rel.parent),
+		child: resolveRelationSelector(cwd, rel.child),
+		relation_type: rel.relation_type,
+	};
+	const { removed } = removeRelation(cwd, edge, ctx);
+	return { removed, edge };
+}
+
+/**
+ * Friendly-selector ATOMIC relation replace — a single load → filter-out-old →
+ * push-new → write cycle (no half-state: the old edge and the new edge never
+ * coexist on disk, and the file is rewritten exactly ONCE). Resolves the `old`
+ * and `new` selector triples via the SAME `resolveRelationSelector` the append /
+ * remove porcelain use. The old edge is matched on the `identityKey` dedup
+ * identity (parent, child, relation_type — `ordinal`-insensitive, symmetric with
+ * append-dedup / remove); the new edge is pushed verbatim (carrying its optional
+ * `ordinal`). If the resolved new edge collides on identity with a surviving edge
+ * it is de-duplicated against the post-filter set so the write stays
+ * exact-duplicate-free, matching `appendRelations` semantics.
+ *
+ * Returns `{ replaced, removed, oldEdge, newEdge }`: `removed` reflects whether
+ * the old edge was actually present (false → the old edge was absent, so this is
+ * effectively an append of `newEdge`); `replaced` is true when the resolved new
+ * edge was written (false only when it collided with an already-present surviving
+ * edge → a no-op add). `ctx` threads to `writeRelations` for attestation parity.
+ */
+export function replaceRelationByRef(
+	cwd: string,
+	rels: {
+		old: { parent: string; child: string; relation_type: string };
+		new: { parent: string; child: string; relation_type: string; ordinal?: number };
+	},
+	ctx?: DispatchContext,
+): { replaced: boolean; removed: boolean; oldEdge: Edge; newEdge: Edge } {
+	const oldEdge: Edge = {
+		parent: resolveRelationSelector(cwd, rels.old.parent),
+		child: resolveRelationSelector(cwd, rels.old.child),
+		relation_type: rels.old.relation_type,
+	};
+	const newEdge: Edge = {
+		parent: resolveRelationSelector(cwd, rels.new.parent),
+		child: resolveRelationSelector(cwd, rels.new.child),
+		relation_type: rels.new.relation_type,
+		...(rels.new.ordinal !== undefined ? { ordinal: rels.new.ordinal } : {}),
+	};
+	const existing = loadRelations(cwd);
+	const oldKey = `${endpointIdentity(oldEdge.parent)} ${endpointIdentity(oldEdge.child)} ${oldEdge.relation_type}`;
+	const newKey = `${endpointIdentity(newEdge.parent)} ${endpointIdentity(newEdge.child)} ${newEdge.relation_type}`;
+	const filtered = existing.filter(
+		(e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` !== oldKey,
+	);
+	const removed = filtered.length !== existing.length;
+	const collides = filtered.some(
+		(e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` === newKey,
+	);
+	const next = collides ? filtered : [...filtered, newEdge];
+	writeRelations(cwd, next, ctx);
+	return { replaced: !collides, removed, oldEdge, newEdge };
+}
+
+/**
+ * Friendly-selector BULK relation append over the raw {@link appendRelations}
+ * (whole-file additive write with per-(parent, child, relation_type) dedup,
+ * skipping edges already on disk OR earlier in the same batch). Resolves each
+ * `edges[]` selector triple via the SAME `resolveRelationSelector` the
+ * single-edge porcelain uses, then hands the resolved `Edge[]` to
+ * `appendRelations`. Returns `{ appended, skipped, edges }` — `edges` being the
+ * resolved structured edges handed to the raw layer (so callers can report /
+ * dry-run-validate the structured form). Same deferred-integrity semantics as
+ * `appendRelations` (AJV-shape + duplicate-no-op only; relation_type
+ * registration / endpoint resolution / cycle checks deferred to
+ * `validateContext`).
+ */
+export function appendRelationsByRef(
+	cwd: string,
+	edges: { parent: string; child: string; relation_type: string; ordinal?: number }[],
+	ctx?: DispatchContext,
+): { appended: number; skipped: number; edges: Edge[] } {
+	const resolved: Edge[] = edges.map((rel) => ({
+		parent: resolveRelationSelector(cwd, rel.parent),
+		child: resolveRelationSelector(cwd, rel.child),
+		relation_type: rel.relation_type,
+		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
+	}));
+	const { appended, skipped } = appendRelations(cwd, resolved, ctx);
+	return { appended, skipped, edges: resolved };
 }
 
 // ── Endpoint resolution (Cycle 8 / Phase F2) ────────────────────────────────

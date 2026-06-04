@@ -374,6 +374,10 @@ export function migrateToContentAddressed(
 	// substrates, keyed by substrate_id. Persists across all substrates + edges so
 	// a foreign dir's map is built at most once. Read-only (buildRefnameOidMap).
 	const foreignMapCache = new Map<string, Map<string, string>>();
+	// Cache of foreign (registry-resolved) substrates keyed by substrate_id, used by
+	// the structured-foreign-endpoint resolvability check above. A cached `null`
+	// records a substrate_id whose dir could not be resolved/read.
+	const foreignSubCache = new Map<string, DiscoveredSubstrate | null>();
 	for (const s of substrates) {
 		const edges = loadRelationsForDir(s.abs);
 		if (edges.length === 0) continue;
@@ -381,8 +385,58 @@ export function migrateToContentAddressed(
 		let rewritten = 0;
 
 		const convert = (ep: RawEndpoint): RawEndpoint | null => {
-			// Already structured → leave as-is.
-			if (typeof ep !== "string") return ep;
+			// Already structured → leave as-is, EXCEPT the unresolved-foreign sentinel.
+			// OP3 (foldin-context promoteCrossSubstrateRefs) now emits the STRUCTURED
+			// foreign endpoint at the source rather than a `project:<ref>` STRING.
+			// A foreign structured endpoint is one carrying a `substrate_id`; whether it
+			// is RESOLVABLE is decided by the SAME authoritative check OP4 uses for the
+			// string `<alias>:<refname>` path below: does the target foreign substrate
+			// actually hold an item whose id is `refname`? We resolve the foreign dir
+			// from `ep.substrate_id` and look the refname up in that substrate's
+			// refname→oid index (`buildRefnameOidMap`, cached per substrate_id). The
+			// prior `oid === ep.refname` proxy was unreliable: a genuinely-resolvable
+			// foreign item whose oid had not yet been backfilled in the target leaves
+			// `oid === refname` too (resolveRelationSelector's fallback), so the proxy
+			// false-positived and dropped resolvable edges. The `substrateHasItem`
+			// existence check is the SAME authoritative surface both string-foreign paths
+			// (discovered + registry-fallback) use for their DROP decision, so
+			// resolvable foreign endpoints pass through unchanged and only genuinely
+			// absent refnames are reported + dropped. Non-foreign structured endpoints
+			// (no `substrate_id`) always pass through.
+			if (typeof ep !== "string") {
+				if (
+					ep.kind === "item" &&
+					typeof ep.substrate_id === "string" &&
+					ep.substrate_id.length > 0 &&
+					typeof ep.refname === "string"
+				) {
+					const sid = ep.substrate_id;
+					const refname = ep.refname;
+					// Authoritative resolvability: resolve the foreign substrate dir by its
+					// id and ask whether that substrate holds an ITEM whose id is `refname`
+					// — `substrateHasItem`, the SAME existence surface the string
+					// `<alias>:<refname>` path below uses. Item existence is independent of
+					// whether the foreign item's oid has been backfilled yet (a foreign
+					// substrate's backfill is its own run's responsibility), so this never
+					// false-positives on a resolvable-but-not-yet-addressed item the way the
+					// prior `oid === refname` proxy did. A foreign dir that cannot be
+					// resolved/read is treated as not-holding the item → unresolved, matching
+					// the string-path's resolveAlias/resolveSubstrateDir null branches. The
+					// resolved foreign endpoint (and every non-foreign structured endpoint)
+					// passes through unchanged.
+					let fsub = foreignSubCache.get(sid);
+					if (fsub === undefined) {
+						const dir = resolveSubstrateDir(cwd, sid);
+						fsub = dir !== null ? loadForeignSubstrate(path.resolve(cwd, dir)) : null;
+						foreignSubCache.set(sid, fsub);
+					}
+					if (fsub === null || !substrateHasItem(fsub, refname)) {
+						report.unresolved.push({ substrate: s.dirName, ref: `project:${refname}` });
+						return null;
+					}
+				}
+				return ep;
+			}
 
 			const colon = ep.indexOf(":");
 			if (colon > 0) {
@@ -424,18 +478,39 @@ export function migrateToContentAddressed(
 					return null;
 				}
 				const fabs = path.resolve(cwd, dir);
-				let fmap = foreignMapCache.get(sid);
-				if (!fmap) {
-					const fsub = loadForeignSubstrate(fabs);
-					fmap = fsub ? buildRefnameOidMap(fsub) : new Map();
-					foreignMapCache.set(sid, fmap);
+				// Authoritative existence: load the foreign substrate (cached, read-only)
+				// and ask whether it holds an ITEM whose id is `refname` — the SAME
+				// `substrateHasItem` surface the discovered-substrate string path (above)
+				// and the structured-foreign path use. The DROP decision keys on item
+				// existence, NOT on oid presence: a foreign item that EXISTS but has not
+				// yet been backfilled with an oid (the foreign substrate's own run owns
+				// that backfill) must be KEPT. The prior `fmap.get(refname) === undefined`
+				// condition false-positived on exactly that case — buildRefnameOidMap only
+				// indexes items whose oid.length > 0, so an existing-but-unaddressed item
+				// was absent from the map and wrongly reported-unresolved + dropped. We
+				// reuse `foreignSubCache` (keyed by substrate_id) so the foreign substrate
+				// is loaded at most once across the structured- and string-foreign paths.
+				let fsub = foreignSubCache.get(sid);
+				if (fsub === undefined) {
+					fsub = loadForeignSubstrate(fabs);
+					foreignSubCache.set(sid, fsub);
 				}
-				const oid = fmap.get(refname);
-				if (oid === undefined) {
-					// The refname genuinely is not an addressed item in the foreign substrate.
+				if (fsub === null || !substrateHasItem(fsub, refname)) {
+					// The foreign substrate cannot be resolved/read, or it genuinely does
+					// not hold an item named `refname` → unresolved (no broken edge written).
 					report.unresolved.push({ substrate: s.dirName, ref: ep });
 					return null;
 				}
+				// Item exists. Backfill the oid from the refname→oid index when the foreign
+				// item HAS been addressed (buildRefnameOidMap, cached per substrate_id);
+				// otherwise fall back to the refname as a placeholder oid — matching the
+				// discovered-substrate string path's `targetMap.get(refname) ?? refname`.
+				let fmap = foreignMapCache.get(sid);
+				if (!fmap) {
+					fmap = buildRefnameOidMap(fsub);
+					foreignMapCache.set(sid, fmap);
+				}
+				const oid = fmap.get(refname) ?? refname;
 				report.cross_substrate_edges++;
 				return { kind: "item", substrate_id: sid, oid, refname };
 			}
@@ -467,7 +542,14 @@ export function migrateToContentAddressed(
 				child,
 			});
 		}
-		if (rewritten > 0 && !dryRun) writeRelationsForDir(s.abs, next, ctx);
+		// A dropped edge (unresolvable endpoint → `continue` above) mutates the
+		// relations set without incrementing `rewritten` (which counts only endpoint
+		// CONVERSIONS). Gating the write on `rewritten > 0` alone leaves the stale
+		// broken edge on disk when the only mutation is a drop. `next.length <
+		// edges.length` detects that drop and forces the rewrite so the dropped edge
+		// is actually removed from the persisted relations.
+		const dropped = next.length < edges.length;
+		if ((rewritten > 0 || dropped) && !dryRun) writeRelationsForDir(s.abs, next, ctx);
 		report.edges_rewritten += rewritten;
 	}
 

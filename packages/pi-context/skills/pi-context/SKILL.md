@@ -48,6 +48,57 @@ Append a closure-table relation (edge: parent, child, relation_type, optional or
 | `ordinal` | integer | no | Optional sibling-ordering within (parent, relation_type) |
 </tool>
 
+<tool name="remove-relation">
+Remove the single closure-table relation (edge) matching parent+child+relation_type from relations.json. Matches on the SAME (parent, child, relation_type) dedup identity append-relation uses, so it is the symmetric inverse of append-relation (ordinal is NOT part of identity). An absent edge is an idempotent no-op. Reference integrity is NOT checked here — run context-validate after if the removal changes resolvability.
+
+*Remove a relation/edge between two items (the inverse of append-relation)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `parent` | string | yes | Canonical id (or lens bin name) of the parent endpoint |
+| `child` | string | yes | Canonical id of the child endpoint |
+| `relation_type` | string | yes | Registered relation_type canonical_id / hierarchy edge type / lens id |
+</tool>
+
+<tool name="replace-relation">
+Atomically replace one closure-table relation with another in a SINGLE write (no half-state: the old edge and the new edge never coexist on disk). The old edge is matched on the (parent, child, relation_type) dedup identity; the new edge is written with its optional ordinal. If the old edge is absent the call is effectively an append of the new edge. Reference integrity is NOT checked here — run context-validate after.
+
+*Atomically swap one relation/edge for another in a single write*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `old_parent` | string | yes | Parent endpoint selector of the edge to remove |
+| `old_child` | string | yes | Child endpoint selector of the edge to remove |
+| `old_relation_type` | string | yes | relation_type of the edge to remove |
+| `parent` | string | yes | Parent endpoint selector of the replacement edge |
+| `child` | string | yes | Child endpoint selector of the replacement edge |
+| `relation_type` | string | yes | relation_type of the replacement edge |
+| `ordinal` | integer | no | Optional sibling-ordering within (parent, relation_type) for the new edge |
+</tool>
+
+<tool name="append-relations">
+Append MANY closure-table relations to relations.json in a single write. Each edge is an object { parent, child, relation_type, ordinal? }. Per-(parent, child, relation_type) duplicates are skipped (against on-disk edges AND earlier edges in the same batch). Returns appended/skipped counts. Reference integrity is NOT checked here — run context-validate after. Creates relations.json if absent.
+
+*Create many relations/edges between items in one write*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `edges` | unknown | yes | JSON array of { parent, child, relation_type, ordinal? } selector objects (parent/child are id/lens-bin selectors) |
+</tool>
+
+<tool name="upsert-block-item">
+Append-or-replace an item in a project block array by id: if an item with the same idField value exists it is REPLACED (full-shape replacement, not shallow-merge — use update-block-item for merge); otherwise the item is appended. Schema validation is automatic. idField defaults to 'id'.
+
+*Append-or-replace a full block item by id (replacement, not merge)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `block` | string | yes | Block name (e.g., 'issues', 'decisions') |
+| `arrayKey` | string | yes | Array key in the block (e.g., 'issues', 'decisions') |
+| `item` | unknown | yes | Full item object to upsert — must conform to block schema |
+| `idField` | string | no | Field used as the upsert key (default 'id') |
+</tool>
+
 <tool name="promote-item">
 Promote a substrate item into another (registered) substrate as a NEW content-addressed item, recording the 'item_derived_from_item' lineage edge in the destination relations.json (parent = the new derived item, child = the source, carrying the source content_hash). The destination write-path mints a fresh oid + content_hash + content object. When the source block's status enum supports it, the source is marked superseded. Preconditions (unresolvable/non-item source, unregistered destination alias, unregistered destination relation_type, refname collision) throw. Pass dryRun to compute the destination without writing.
 

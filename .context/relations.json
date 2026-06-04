@@ -1062,5 +1062,96 @@
       "refname": "TASK-007"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6e3ab3f2cfe22331f1e8cf2168a397f0",
+      "refname": "VER-008"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "893b6605d4bbfa54310290b82975dd25",
+      "refname": "TASK-014"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d8f79dba61ad81c40077179d5306e88b",
+      "refname": "VER-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6e5a8303dc0a6271347a114835fc96ed",
+      "refname": "TASK-008"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f6afa4adf78babe9eb45b88ea2289b31",
+      "refname": "VER-006"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fd56d00ef22c45e13409a06abf172221",
+      "refname": "TASK-009"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cd2fbc2421355e633dc5aa6783703ba4",
+      "refname": "VER-007"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2d53607622e5d5e8e196e27680ca7909",
+      "refname": "TASK-012"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cd2fbc2421355e633dc5aa6783703ba4",
+      "refname": "VER-007"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ebe20277d0d790cf5d834909b2b51f1a",
+      "refname": "TASK-013"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f9054ab5211214db0e95f1b56ebfdfc0",
+      "refname": "DEC-0008"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "687d105852ff67bd9e56446eb678f78d",
+      "refname": "FGAP-012"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7f1ce44ff7e89b1ff0ef7186f2d8ba7c",
+      "refname": "DEC-0009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "bbc9dfeee30d0619adc92a7d1481c785",
+      "refname": "FGAP-015"
+    },
+    "relation_type": "decision_addresses_gap"
   }
 ]

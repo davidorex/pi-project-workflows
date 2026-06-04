@@ -434,7 +434,7 @@
     {
       "id": "FGAP-014",
       "title": "complete-task op is unusable against catalog substrates: reads verification fields the canonical schema does not declare (incomplete edge-migration refactor)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "description": "Surfaced when deciding how to complete TASK-008. completeTask (packages/pi-context/src/context-sdk.ts:2172) requires verification.target and verification.target_type === task, but neither the canonical samples verification schema nor the active .context schema declares those fields. Commit c08f93b intentionally removed target and target_type from the verification schema in favor of a verification_verifies_item closure-table edge, but completeTask was never updated to the edge-based link. The schemas are permissive (additionalProperties absent), so the op fails at runtime rather than validation, throwing targets undefined (undefined). The op is registered surface:use, so it is offered to every CLI and op caller yet cannot succeed against any catalog-installed substrate. This is evidence of garbled LLM implementation: a schema refactor that dropped fields without updating the consuming function, compounded by tests that hand-build verifications carrying the removed fields and thereby bypass schema validation, masking the break as a false pass. Every real task completion, including TASK-008 this session, used update-block-item, never the gated op. Agent-investigated for root cause, shape, and reproducible conditions before filing.",
@@ -462,11 +462,14 @@
         }
       ],
       "impact": "The gated task-completion path (verification-before-complete) is non-functional framework-wide; task completion silently degrades to ungated update-block-item with no verification gate. The masking tests give false confidence the gate works. Architectural debt: the edge-based verification design (verification_verifies_item) is declared but unconsumed by completeTask.",
-      "proposed_resolution": "Re-anchor completeTask on the edge-based design: resolve the task-to-verification link via the verification_verifies_item relation in relations.json (the c08f93b intent), not embedded target/target_type fields. Rewrite the tests to exercise the real schema plus the edge with no field-smuggling, so the gate is genuinely covered. Repro from the investigation: a minimal substrate with a schema-conformant verification plus complete-task throws targets undefined (undefined).",
+      "proposed_resolution": "CLOSED at d0ab83d (TASK-014). completeTask migrated from the removed verification.target/target_type fields to a pure verification_verifies_item edge-gate (parent=verification, child=task) + status===passed; task set completed with no verification field embed (the edge is the linkage); ctx threaded. Test suite rewritten to the edge flow (no field smuggling) + a no-edge-bypass case; the legacy defaults/ field-gate test migrated to a canonical schema. Runtime-demoed on real .context (dogfooded: TASK-014 itself completed via the fixed op) + fresh adversarial audit found no bypass. Backfilled the verification_verifies_item edges for the session completions (TASK-008/009/012/013) that update-block-item had left edgeless.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "baf3754f16b1076610852345a624b60e",
-      "content_hash": "9b37dbf150312852eba69ca3fac94ed0779421128ddd86e95edf5d259a6706a0"
+      "content_hash": "ed8ac6c3f4537f3cde4d5db63d8b8b2f27213f8ce18ec9302f796f783e3994fb",
+      "content_parent": "fea292fd56a94b9957b1dfe95caa8a5108af7aa9bf182fbf9d3b11db0b206db8",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-05T00:00:00.000Z"
     },
     {
       "id": "FGAP-015",

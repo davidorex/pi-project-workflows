@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-05T00:00:00.000Z",
+  "evidence": "TASK-014 (FGAP-014, landed d0ab83d): complete-task migrated to the verification_verifies_item edge-gate. build/check/test green (full suite, 0 fail); runtime demo on a throwaway .context copy (complete-task completes with edge+passed, throws edge-absent without); fresh adversarial audit found no bypass (no-edge/reversed-edge/wrong-relation-type/non-passed/missing/already-done all throw), zero residual target/target_type reads, ctx attested, validateContext invariant complements the gate, 135 tests pass."
+}

@@ -58,6 +58,15 @@
       "evidence": "TASK-012 (FGAP-013) + TASK-013 (FGAP-015), the complete --json contract, landed 75f2611. Verified: build/check/test green (full suite, 0 fail) incl. new contract tests for the --json value shape, the in-pi Pi-tool over-cap surface, and the parity-check gate. Runtime demo on a 120KB over-cap seed: resolve-item-by-id --json -> 126 bytes (data:null, truncated:true, payload absent, was the 120KB leak); under-cap -> full value; read on both CLI --json and the in-pi Pi-tool path bounded; default REFUSAL/PARTIAL text byte-identical. The gate catches an injected { json: resolveItemById(...) } op (exit 1) and reports 0 {json}-content-cap bypasses on the real tree. Two fresh adversarial re-audits: the first found the {json}/Pi-tool cap-bypass (root cause behind the recurrence), which drove the boundary-cap fix; the second confirmed the recurrence ended — no read/query op ships unbounded data on either surface, the gate+runtime-backstop layered defense holds, {read} unregressed, deterministic, 130 targeted tests pass. Pre-existing truncateHead pretty-vs-compact / line-cap over-refusal nuance tracked as FGAP-016 (non-leak).",
       "oid": "cd2fbc2421355e633dc5aa6783703ba4",
       "content_hash": "1543d110a93eba2529d03e81051c194b664421b165aec177897ba8a32053f91d"
+    },
+    {
+      "id": "VER-008",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "evidence": "TASK-014 (FGAP-014, landed d0ab83d): complete-task migrated to the verification_verifies_item edge-gate. build/check/test green (full suite, 0 fail); runtime demo on a throwaway .context copy (complete-task completes with edge+passed, throws edge-absent without); fresh adversarial audit found no bypass (no-edge/reversed-edge/wrong-relation-type/non-passed/missing/already-done all throw), zero residual target/target_type reads, ctx attested, validateContext invariant complements the gate, 135 tests pass.",
+      "oid": "6e3ab3f2cfe22331f1e8cf2168a397f0",
+      "content_hash": "e0a29642ae60e845c7eaa4ea5686aa68baafa860fe192a936f284bfcb22a5343"
     }
   ]
 }

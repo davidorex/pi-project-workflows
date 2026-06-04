@@ -40,6 +40,15 @@
       "evidence": "TASK-008 / FGAP-010 (gamma op-coverage parity check, landed dc7f514): scripts/parity-check.ts AST-enumerates pi-context library writers and classifies each against OP_COVERAGE_RULE; a silent ctx drop is fatal, a dual-surface optional-param mismatch is reported non-fatally. Verified: npm run build + check + test all green (0 fail across the 4 packages); the standalone run exits 0 on the real tree (70 writers classified: 42 op-backed-transitive, 24 op-backed-direct, 3 intentionally-unexposed, 1 internal-primitive; 0 ctx-drops; 5 non-fatal dryRun divergences surfaced on the relation/upsert ops, tracked as FGAP-012). Catch behavior runtime-demoed: an injected uncovered writer and an injected ctx-drop each fail with exit 1 in throwaway copies. Two fresh adversarial probes: the first caught a structurally-dead divergence detector (op-side run.params.includes was always empty, yielding false-positives including amend-config/write-schema), rewritten to op-schema-property + kebab-flag-literal signals; the re-audit of that fix found no active false-positive or false-negative and confirmed the fatal guards behaviorally unchanged. Wired into husky pre-commit + CI.",
       "oid": "d8f79dba61ad81c40077179d5306e88b",
       "content_hash": "02033bd8be9f9fe873bf61f470449e476dbf3f3a6fda9a66fe1b05d3a20e7bee"
+    },
+    {
+      "id": "VER-006",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-04T00:00:00.000Z",
+      "evidence": "TASK-009 (parity-check detector hardening, landed 2298186): opDeclaresParam now resolves object/allOf/$ref via flattenSchemaProperties; scriptParsesFlag rewritten regex->AST (matches the flag only as an ===/== comparison operand or case-clause label, ignoring comments and display strings). Verified: npm run check clean; full suite green (829 + 114, 0 fail); the prior-audit residual repro scriptParsesFlag with a commented === flag now returns false while the real a === flag returns true; parity-check exits 0 unchanged (70 writers, 0 ctx-drops, the same 5 non-fatal dryRun divergences). Two fresh adversarial passes: the first caught the regex residual false-positive (comment/display-string match), which drove the AST rewrite; the re-audit of the AST matcher found no false-negative against the real parse lines (including the value-bearing && form), no residual false-positive (comments, display strings, console.log args, !== all excluded), the fatal guards still firing, and deterministic output. Detection-robustness only; no real-tree change.",
+      "oid": "f6afa4adf78babe9eb45b88ea2289b31",
+      "content_hash": "a0e27226681d4bc5e73135cc10f81d9dcca73bf6855ee5efa46dac22fc47a951"
     }
   ]
 }

@@ -1010,5 +1010,18 @@
       "refname": "DEC-0006"
     },
     "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "2f0529e03768b1ba07d34e3ef138af00",
+      "refname": "DEC-0007"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "74c9d6c0eac5008c54cf3f1cdb6cfa47",
+      "refname": "FGAP-011"
+    },
+    "relation_type": "decision_addresses_gap"
   }
 ]

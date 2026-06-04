@@ -89,6 +89,10 @@ Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion rel
 
 An experience gap — any defect, inconsistency, or gap surfaced through *using* the tooling (CLI / op / script / workflow dogfooding), as distinct from one found by reading code — must be tasked to an agent to determine root cause and shape, provide intel, and establish reproducible conditions. The agent's root-cause + shape + reproducible conditions are the basis for filing the gap (FGAP). Do not file an experience gap, or act on it, from ad-hoc self-investigation.
 
+## Analysis-MD → Research block (heuristic)
+
+After writing an analysis markdown (`analysis/*.md`), propose to the user surfacing it into the `research` block — a research item whose `findings_document` points at the md, adding the queryable layer a bare md lacks: `findings_summary` (prompt-injectable), `grounding`, `stale_conditions`, `citations`. The user decides whether it surfaces. Not every analysis MD is research: grounded investigations / feasibility / comparisons / audits / landscapes are candidates; plans, execution-ledgers, specs, cycle/verification reports, issue inventories, roadmaps, decision-frames, and scratch are not (they belong to tasks / decisions / nowhere). Propose; do not auto-file.
+
 ## Workflow SDK
 
 `packages/pi-workflows/src/workflow-sdk.ts` is the single queryable surface (vocabulary / discovery / contracts / introspection / validation), all derived from code + filesystem. Read its `src/index.ts` exports for the function set; use `/workflow status` for derived state in conversation.

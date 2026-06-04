@@ -1,0 +1,67 @@
+{
+  "title": "Shared CLI core across monorepo packages — commonalities, layering, and scope",
+  "status": "complete",
+  "layer": "L2",
+  "type": "feasibility",
+  "question": "What are the underlying commonalities any monorepo package CLI needs (pi-context-cli today; future pi-workflows / jit-agent-dispatch CLIs) so we do not duplicate code — a single source for what is best single-source-editable, with each package adding its particulars — from a minimalist best-practices perspective?",
+  "method": "Code-inspection via parallel Explore agents: mapped pi-context-cli (bin.ts/cli.ts) generic-vs-package-specific machinery, and the op/tool registration shapes + execution models of pi-workflows, pi-agent-dispatch, pi-behavior-monitors, pi-jit-agents.",
+  "scope": [
+    "pi-project-workflows monorepo at v0.30.0 (HEAD be16688)",
+    "packages/pi-context-cli/src/bin.ts + cli.ts",
+    "packages/pi-context/src/ops-registry.ts + dispatch-context.ts + read-element.ts",
+    "src/ tool registration of pi-workflows / pi-agent-dispatch / pi-behavior-monitors / pi-jit-agents"
+  ],
+  "findings_summary": "The duplication risk for monorepo package CLIs is real but narrower than \"share OpDefinition.\"\n\nCorrective finding: OpDefinition is pi-context's INTERNAL wrapper (ops-registry.ts), not a shared contract — registerAll wraps each OpDefinition into pi.registerTool. The contract already single-sourced in-pi is pi-mono's pi.registerTool / AgentToolResult, which all four extensions use identically; there is no in-pi duplication to remove. The risk is entirely in the CLI layer.\n\nWhat is genuinely common (all generic in pi-context-cli today): argv->params coercion driven purely by the op's typebox parameters schema (--field, @file, scalar/enum/JSON, required-checking); global flags --cwd/--json/--yes/--help; the auth-DECISION logic (authGated + --yes + TTY); help generation; exit codes; and the output layer — OpResult (string|{json}|{read}), renderOpResultText, boundedJsonOutput, and the 50KB cap enforced at the output boundary. That cap was bug-prone this arc (FGAP-013/015: the {json}-channel bypass + the read-.data leak); single-sourcing it stops that class recurring per package. Package-specific is small: the ops registry, a buildContext callback (pi-context's DispatchContext + resolveIdentity + WriterIdentity), the writer-kind vocabulary, and which ops are authGated.\n\nMinimalist shape: one small cli-core package generic over a context type Ctx and a minimal CliOp shape ({name, description, parameters: TSchema, surface, authGated?, run(cwd, params, ctx)}); each package bin ~= runCli({programName, ops, buildContext}). Layering nuance (load-bearing): OpResult/render/cap are used by BOTH the CLI and pi-context's in-pi registerAll (tool text), so they belong in a base both depend on — a tiny op-io package — NOT inside the CLI package (that would invert the extension->CLI dependency). op-io is also where the cap-at-boundary invariant becomes structurally un-bypassable for any surface.\n\nHonest scope limit: a reflection CLI serves only request->response ops. pi-context fits today. pi-workflows fits PARTIALLY (simple ops reflect; workflow-execute/resume are long-running subprocess + checkpoint state + TUI — bespoke, not reflection). pi-agent-dispatch does NOT fit as-is (gating is a pi-runtime pi.on('tool_call') handler). pi-behavior-monitors does NOT fit (tools read runtime state mutated by agent_end handlers). pi-jit-agents is a pure library (no tools, no CLI). So cli-core is the single source for the request->response CLI projection — pi-context now, the request->response subset of pi-workflows later — NOT a uniform four-package CLI. Consistent with the per-package-CLI decision (design-ledger 1c).\n\nOnboarding seam: a package provides an adapter tools->CliOp[]; pi-context's OpDefinition already conforms; pi-workflows wraps its request->response tools' execute->run. The cli-core/op-io split is a PROPOSAL — six open questions (op-io boundary, Ctx-genericity vs a shared identity model, the workflows long-running split, an auth-policy hook, generalizing scripts/parity-check.ts to any cli-core adopter, package count) are recorded in the findings_document; pre-implementation it goes through the canonical pipeline.",
+  "findings_document": "analysis/2026-06-05-shared-cli-core-design.md",
+  "grounding": {
+    "dependencies": [
+      "@earendil-works/pi-coding-agent — pi.registerTool / AgentToolResult is the actual shared in-pi tool contract used identically by all four extensions"
+    ],
+    "revisions": [
+      "be16688 (v0.30.0)"
+    ]
+  },
+  "stale_conditions": [
+    "pi-workflows / pi-agent-dispatch / pi-behavior-monitors change their tool registration shape away from the pi-mono pi.registerTool interface.",
+    "OpResult / renderOpResultText / boundedJsonOutput / the 50KB boundary cap relocate or change semantics (currently in packages/pi-context/src/ops-registry.ts + read-element.ts).",
+    "pi-context-cli's reflection machinery (parseOpArgs / authDecision / the envelope emission) is refactored such that the generic-vs-specific seam shifts.",
+    "The per-package-CLI decision (design-ledger 1c) is revisited toward a single meta-CLI.",
+    "pi-mono's registerTool / AgentToolResult interface changes."
+  ],
+  "citations": [
+    {
+      "label": "pi-context-cli generic reflection engine (parse/coerce/flags/auth/envelope)",
+      "path": "packages/pi-context-cli/src/cli.ts"
+    },
+    {
+      "label": "OpDefinition contract — pi-context-internal, not shared",
+      "path": "packages/pi-context/src/ops-registry.ts",
+      "lines": "201-210"
+    },
+    {
+      "label": "output cap machinery: OpResult / renderOpResultText / boundedJsonOutput / 50KB boundary cap",
+      "path": "packages/pi-context/src/ops-registry.ts",
+      "lines": "104-210"
+    },
+    {
+      "label": "DispatchContext / WriterIdentity — package-specific run-context",
+      "path": "packages/pi-context/src/dispatch-context.ts"
+    },
+    {
+      "label": "pi-workflows direct pi.registerTool registration + long-running executors (divergent model)",
+      "path": "packages/pi-workflows/src/index.ts"
+    },
+    {
+      "label": "pi-jit-agents is a library, not an extension (no CLI surface)",
+      "path": "packages/pi-jit-agents/README.md"
+    },
+    {
+      "label": "per-package-CLI decision (1c)",
+      "path": "analysis/2026-06-03-pi-context-cli-design-ledger.md"
+    },
+    {
+      "label": "full design doc (deep read)",
+      "path": "analysis/2026-06-05-shared-cli-core-design.md"
+    }
+  ]
+}

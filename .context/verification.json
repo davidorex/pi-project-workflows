@@ -49,6 +49,15 @@
       "evidence": "TASK-009 (parity-check detector hardening, landed 2298186): opDeclaresParam now resolves object/allOf/$ref via flattenSchemaProperties; scriptParsesFlag rewritten regex->AST (matches the flag only as an ===/== comparison operand or case-clause label, ignoring comments and display strings). Verified: npm run check clean; full suite green (829 + 114, 0 fail); the prior-audit residual repro scriptParsesFlag with a commented === flag now returns false while the real a === flag returns true; parity-check exits 0 unchanged (70 writers, 0 ctx-drops, the same 5 non-fatal dryRun divergences). Two fresh adversarial passes: the first caught the regex residual false-positive (comment/display-string match), which drove the AST rewrite; the re-audit of the AST matcher found no false-negative against the real parse lines (including the value-bearing && form), no residual false-positive (comments, display strings, console.log args, !== all excluded), the fatal guards still firing, and deterministic output. Detection-robustness only; no real-tree change.",
       "oid": "f6afa4adf78babe9eb45b88ea2289b31",
       "content_hash": "a0e27226681d4bc5e73135cc10f81d9dcca73bf6855ee5efa46dac22fc47a951"
+    },
+    {
+      "id": "VER-007",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-04T00:00:00.000Z",
+      "evidence": "TASK-012 (FGAP-013) + TASK-013 (FGAP-015), the complete --json contract, landed 75f2611. Verified: build/check/test green (full suite, 0 fail) incl. new contract tests for the --json value shape, the in-pi Pi-tool over-cap surface, and the parity-check gate. Runtime demo on a 120KB over-cap seed: resolve-item-by-id --json -> 126 bytes (data:null, truncated:true, payload absent, was the 120KB leak); under-cap -> full value; read on both CLI --json and the in-pi Pi-tool path bounded; default REFUSAL/PARTIAL text byte-identical. The gate catches an injected { json: resolveItemById(...) } op (exit 1) and reports 0 {json}-content-cap bypasses on the real tree. Two fresh adversarial re-audits: the first found the {json}/Pi-tool cap-bypass (root cause behind the recurrence), which drove the boundary-cap fix; the second confirmed the recurrence ended — no read/query op ships unbounded data on either surface, the gate+runtime-backstop layered defense holds, {read} unregressed, deterministic, 130 targeted tests pass. Pre-existing truncateHead pretty-vs-compact / line-cap over-refusal nuance tracked as FGAP-016 (non-leak).",
+      "oid": "cd2fbc2421355e633dc5aa6783703ba4",
+      "content_hash": "1543d110a93eba2529d03e81051c194b664421b165aec177897ba8a32053f91d"
     }
   ]
 }

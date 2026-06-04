@@ -406,7 +406,7 @@
     {
       "id": "FGAP-013",
       "title": "CLI --json double-encodes structured op output (output is a stringified JSON string, not a JSON value)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context-cli",
       "description": "Surfaced by dogfooding the CLI. Under --json the envelope at packages/pi-context-cli/src/cli.ts:487 emits {ok, op, output: text} where text is the op run() return. OpDefinition.run returns a string, and roughly 27 data-returning ops produce JSON as a string (via JSON.stringify or serializeForRead().content). So the output field under --json is a stringified JSON string, forcing consumers to double-parse: JSON.parse(JSON.parse(stdout).output). The roughly 21 prose-returning ops are unaffected. No test asserts the --json output shape, so the double-encode was never caught. Agent-investigated for root cause, shape, and reproducible conditions before filing.",
@@ -422,11 +422,14 @@
         }
       ],
       "impact": "A machine consumer of --json must double-parse every structured op, which defeats the point of --json as machine-parseable output. The CLI surface the cli arc built is harder to consume programmatically and the inconsistency is silent (no test locks the shape).",
-      "proposed_resolution": "Under --json, emit the op structured payload as a JSON value rather than an embedded JSON string: either the OpDefinition.run contract distinguishes a structured return from prose, or the envelope detects JSON-returning ops and parses-then-embeds. Add a test asserting --json output is a JSON value for a structured op. Repro: pi-context resolve-item-by-id --id TASK-009 --json shows output as a string requiring a second parse.",
+      "proposed_resolution": "CLOSED at 75f2611 (TASK-012). Data ops return a structured OpResult (string | {json} | {read}); the CLI --json envelope emits output as a JSON value, not a stringified-JSON string. Default + in-pi Pi-tool text route through renderOpResultText, byte-identical to each op prior run() text. Verified by contract tests + runtime demo (resolve-item-by-id --json output is an object, single-parse). The deeper cap-bypass the fix exposed is closed by FGAP-015 (same commit).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "4d639295dcb8ac399df8f0e4d21ab860",
-      "content_hash": "2b1d518d08317953d2ce09ba1e39485100ed4c0865edec05f86113c8cfb93dc1"
+      "content_hash": "1594b2524f6d774c0834343c9761e9d2eb85d59810f6f5992888d9574c2cd7db",
+      "content_parent": "da9b0443706ab9576125a5e74e8e19dd2171c04f6fe47a74cf96c228dbf8edba",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-04T00:00:00.000Z"
     },
     {
       "id": "FGAP-014",
@@ -464,6 +467,77 @@
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "baf3754f16b1076610852345a624b60e",
       "content_hash": "9b37dbf150312852eba69ca3fac94ed0779421128ddd86e95edf5d259a6706a0"
+    },
+    {
+      "id": "FGAP-015",
+      "title": "Read cap enforced per-renderer (structureForRead/{read}) not at the output boundary — the {json} channel bypasses it on both CLI --json and in-pi Pi-tool surfaces",
+      "status": "closed",
+      "priority": "P1",
+      "package": "pi-context",
+      "description": "Root cause surfaced by the TASK-012 adversarial re-audit. The 50KB read cap + FGAP-089 fail-closed REFUSAL lives inside structureForRead (used only by OpResult {read}); the {json} channel returns a raw value with no cap. So a {json} op embedding substrate content emits it unbounded on BOTH surfaces: the CLI --json envelope (cli.ts:492, output=r.json) and the in-pi Pi-tool tool-result text (ops-registry.ts:1927, renderOpResultText -> JSON.stringify(r.json) into the agent context — the exact context blowup the cap exists to prevent). Two confirmed unbounded {json} emitters: resolve-item-by-id (full ItemLocation incl. item body) and promote-item (PromotionResult embeds an item via ResolvedRef.loc). The one-at-a-time audit discovery (read-block, then resolve-item-by-id, then promote-item) is the signature of the missing invariant. Same gap-class the parity-check gate already closes for op-coverage/ctx-forwarding.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "492",
+          "reference": "--json emits output=r.json uncapped for {json} ops"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1927",
+          "reference": "registerAll Pi-tool text = renderOpResultText -> JSON.stringify(r.json) uncapped into agent context"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1363",
+          "reference": "resolve-item-by-id returns { json: full ItemLocation } — unbounded content emitter"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "519",
+          "reference": "promote-item returns { json: PromotionResult } embedding an item via ResolvedRef.loc"
+        },
+        {
+          "file": "packages/pi-context/src/read-element.ts",
+          "reference": "structureForRead applies truncateHead; only {read} ops route through it — the cap is a renderer property, not a boundary invariant"
+        }
+      ],
+      "impact": "Any op emitting substrate content via {json} leaks it unbounded on both the CLI --json surface and the in-pi agent context, defeating the FGAP-089 fail-closed read cap. Per-op patching is whack-a-mole; the next {json} content-emitter (existing or future) re-opens it.",
+      "proposed_resolution": "CLOSED at 75f2611 (TASK-013), per DEC-0009. The read cap is now enforced at the output boundary for every channel: a runtime boundary cap (boundedJsonOutput + cap-applying renderOpResultText) fail-closes any over-cap {json}/prose on all three emit sites (CLI --json, CLI text, in-pi Pi-tool); resolve-item-by-id + promote-item route through {read} for graceful degradation; a parity-check gate (checkJsonContentCap) FAILS an op directly returning {json} of a content-reading call, with the runtime cap as the backstop for helper-chain misses. Adversarial re-audit confirmed the recurrence ended — no read/query op ships unbounded data on either surface. Pre-existing truncateHead pretty-vs-compact/line-cap over-refusal tracked as FGAP-016 (non-leak).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T00:00:00.000Z",
+      "oid": "bbc9dfeee30d0619adc92a7d1481c785",
+      "content_hash": "bba3cc1a512c9b11696e7226ddbc026973e3837ef721150b4c8b8685bbcc96e2",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-04T00:00:00.000Z",
+      "content_parent": "5e4271fde78f4586bae777eb0fc10dce3856465a58a730a3160cce6f4685abfa"
+    },
+    {
+      "id": "FGAP-016",
+      "title": "Read cap measures the pretty/line-counted form while --json emits compact — conservative over-refusal + byte-vs-line message imprecision (pre-existing, cross-channel)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "Surfaced by the FGAP-015 re-audit (NOT introduced by it). truncateHead measures the pretty JSON.stringify(x, null, 2) byte size AND a 2000-line dimension; the CLI --json envelope emits the COMPACT JSON.stringify(x). So a value whose compact emitted form is well under 50KB but whose pretty form exceeds 50KB, or which exceeds 2000 lines, fails closed under --json even though the emitted compact payload would fit. This is conservative — it over-refuses, never under-protects (cannot leak) — and is inherited truncateHead behavior the {read} channel already exhibits; FGAP-015 applied the same primitive to the {json} boundary cap consistently. Secondary: the REFUSAL message reads 'N bytes, over the 50KB cap' even when the actual trigger is the 2000-line dimension, so the stated reason can be cosmetically inaccurate.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/truncate.ts",
+          "reference": "truncateHead measures pretty-serialized bytes + DEFAULT_MAX_LINES=2000; the cap dimension that fires is not surfaced in the refusal text"
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "reference": "--json envelope emits compact JSON.stringify({ok,op,output}); boundedJsonOutput measures the pretty form -> measurement form != emission form"
+        },
+        {
+          "file": "packages/pi-context/src/read-element.ts",
+          "reference": "structureForRead/renderReadText measure the pretty content the same way — the {read} channel has the same pre-existing over-refusal"
+        }
+      ],
+      "impact": "A legitimate read whose compact --json payload would fit under the cap can be refused (functional over-restriction for machine --json consumers); the refusal message can misstate bytes-vs-lines as the trigger. Safe (never leaks), low severity, but a real ergonomic imprecision spanning the cap primitive and both output channels.",
+      "proposed_resolution": "Decide the cap's measurement basis per surface: for --json, measure the EMITTED compact form (so the cap reflects what actually ships); for text/Pi-tool, the pretty form is what the agent reads, so measuring pretty is right there. Surface the firing dimension (bytes vs lines) in the REFUSAL message. Its own canonical-pipeline arc; distinct from FGAP-015's channel-bypass.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T00:00:00.000Z",
+      "oid": "4d35361e9bdb0c0892a860ebff318bc1",
+      "content_hash": "0893d5de34ba679c550f18f52da99e3d7743a7325da42a1956dd4e723722bd29"
     }
   ]
 }

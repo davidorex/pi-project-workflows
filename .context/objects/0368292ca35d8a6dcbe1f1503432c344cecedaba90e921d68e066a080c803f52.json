@@ -1,0 +1,45 @@
+{
+  "title": "The read cap is an invariant of the output boundary, not of one return-path renderer",
+  "status": "enacted",
+  "context": "The 50KB read cap plus the FGAP-089 fail-closed REFUSAL (the agent-context-safety guard) was implemented inside structureForRead, which only the OpResult {read} channel uses. The {json} channel returns a raw value with no cap, so it bypasses the guard on BOTH emission surfaces — the CLI --json envelope and the in-pi Pi-tool tool-result text. Which channel an op uses was an incidental author choice uncorrelated with whether the payload can be unbounded, so unbounded leaks were found one op at a time by audit (read-block, then resolve-item-by-id, then promote-item) — the signature of a missing invariant.",
+  "decision": "Enforce the cap where output is EMITTED, as an invariant over every payload regardless of channel. Three coordinated parts: (1) a runtime boundary cap applied at all three emit sites (CLI --json, CLI default text, registerAll Pi-tool text) that fail-closes any over-cap {json}/prose output — the unbypassable guarantee; (2) route the content-emitting {json} ops (resolve-item-by-id, promote-item) through structureForRead/{read} so they degrade gracefully with metadata plus a narrowing directive rather than a blunt boundary refusal; (3) a parity-check gate rejecting an op that directly returns {json} of a content-reading lib call, so the drift cannot recur silently. {read} is the graceful path, the boundary cap is the guarantee, the gate is the drift-guard.",
+  "options_considered": [
+    {
+      "label": "Patch each leaking op individually",
+      "description": "Route resolve-item-by-id (and the next one found) through structureForRead, one at a time.",
+      "rejected_reason": "Whack-a-mole — never resolves, because the next unbounded {json} op re-opens it. Treats the symptom, not the missing invariant."
+    },
+    {
+      "label": "Boundary cap only",
+      "description": "A runtime size-check at the emit sites; no per-op routing, no gate.",
+      "rejected_reason": "Guarantees safety but degrades the two known content ops bluntly (refusal instead of paginable metadata) and lets new {json} content-emitters drift in silently (caught only at runtime, never at build)."
+    },
+    {
+      "label": "Boundary cap + graceful routing + gate (chosen)",
+      "description": "Runtime guarantee at the boundary, graceful {read} for known content ops, and a build-time gate preventing the channel drift."
+    }
+  ],
+  "consequences": [
+    "No emission on any surface (CLI --json, CLI text, in-pi Pi-tool) can exceed the cap, regardless of return channel.",
+    "The two known content-{json} ops degrade gracefully like their {read} siblings.",
+    "A future op that returns content via {json} fails the parity-check gate at build, with the runtime cap as the guaranteed backstop for any heuristic miss.",
+    "Builds on the held TASK-012 work (OpResult + {read} .data cap-bound + double-encode fix); the two land together as the complete --json contract.",
+    "FGAP-013 (double-encode) and FGAP-015 (cap-coverage) both close when this lands."
+  ],
+  "references": [
+    {
+      "label": "FGAP-015 (the root gap this resolves)"
+    },
+    {
+      "label": "FGAP-089 fail-closed read cap (the bypassed guard)"
+    },
+    {
+      "label": "boundary emit sites",
+      "path": "packages/pi-context-cli/src/cli.ts"
+    },
+    {
+      "label": "Pi-tool emit site",
+      "path": "packages/pi-context/src/ops-registry.ts"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-04T00:00:00.000Z",
+  "evidence": "TASK-012 (FGAP-013) + TASK-013 (FGAP-015), the complete --json contract, landed 75f2611. Verified: build/check/test green (full suite, 0 fail) incl. new contract tests for the --json value shape, the in-pi Pi-tool over-cap surface, and the parity-check gate. Runtime demo on a 120KB over-cap seed: resolve-item-by-id --json -> 126 bytes (data:null, truncated:true, payload absent, was the 120KB leak); under-cap -> full value; read on both CLI --json and the in-pi Pi-tool path bounded; default REFUSAL/PARTIAL text byte-identical. The gate catches an injected { json: resolveItemById(...) } op (exit 1) and reports 0 {json}-content-cap bypasses on the real tree. Two fresh adversarial re-audits: the first found the {json}/Pi-tool cap-bypass (root cause behind the recurrence), which drove the boundary-cap fix; the second confirmed the recurrence ended — no read/query op ships unbounded data on either surface, the gate+runtime-backstop layered defense holds, {read} unregressed, deterministic, 130 targeted tests pass. Pre-existing truncateHead pretty-vs-compact / line-cap over-refusal nuance tracked as FGAP-016 (non-leak)."
+}

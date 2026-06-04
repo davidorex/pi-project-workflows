@@ -21,10 +21,9 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { readBlock, resolveBlockItemSchema, upsertItemInBlock } from "@davidorex/pi-context/block-api";
+import { resolveBlockItemSchema, upsertItemInBlock } from "@davidorex/pi-context/block-api";
 import { assertSubstrateName, schemasDir } from "@davidorex/pi-context/context-dir";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {
 	block: string;
@@ -217,24 +216,14 @@ function main(): void {
 	}
 
 	if (args.dryRun) {
-		console.error("[dry-run] validating prospective whole file against schema; no write");
+		// Delegate to the shared library preview path (TASK-011): upsertItemInBlock
+		// under { dryRun: true } computes mode, builds + validates the STAMPED
+		// prospective whole block with the same validation the write path applies,
+		// and writes nothing. The ctx is threaded so the prospective is stamped
+		// identically to a real write.
 		try {
-			// Whole-file validation: build the prospective file with the item either
-			// replacing an existing same-id item or appended, matching what
-			// upsertItemInBlock validates on write.
-			let existing: Record<string, any> = {};
-			try {
-				existing = readBlock(args.cwd, args.block) as Record<string, any>;
-			} catch {
-				/* fresh block — no file yet */
-			}
-			const existingItems = Array.isArray(existing[info.arrayKey]) ? existing[info.arrayKey] : [];
-			const idx = existingItems.findIndex((it: any) => it?.[args.idField] === idVal);
-			const nextItems =
-				idx >= 0 ? existingItems.map((it: any, i: number) => (i === idx ? item : it)) : [...existingItems, item];
-			const prospective = { ...existing, [info.arrayKey]: nextItems };
-			validateFromFile(info.schemaPath, prospective, `${args.block}.${info.arrayKey}[item]`);
-			console.error(`[dry-run] PASS (${idx >= 0 ? "would update" : "would append"})`);
+			const result = upsertItemInBlock(args.cwd, args.block, info.arrayKey, item, args.idField, ctx, { dryRun: true });
+			console.error(`[dry-run] PASS (${result.mode === "updated" ? "would update" : "would append"})`);
 			console.log(JSON.stringify(item, null, 2));
 			process.exit(0);
 		} catch (err: any) {

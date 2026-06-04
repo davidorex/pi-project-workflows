@@ -2099,6 +2099,84 @@ describe("upsertItemInBlock", () => {
 		assert.strictEqual(onDisk.gaps[1].description, "second");
 	});
 
+	it("dryRun append (new id): returns { mode: appended, dryRun: true } and writes nothing", (t) => {
+		const tmpDir = makeTmpDir("upsert-dryrun-append");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsSchema);
+
+		const filePath = path.join(tmpDir, ".project", "gaps.json");
+		fs.writeFileSync(filePath, JSON.stringify({ gaps: [{ id: "g1", description: "existing", status: "open" }] }));
+		const before = fs.readFileSync(filePath, "utf-8");
+
+		const result = upsertItemInBlock(
+			tmpDir,
+			"gaps",
+			"gaps",
+			{ id: "g2", description: "prospective new", status: "open" },
+			"id",
+			undefined,
+			{ dryRun: true },
+		);
+
+		assert.deepStrictEqual(result, { mode: "appended", dryRun: true });
+		// Byte-identical: dryRun must not write.
+		assert.strictEqual(fs.readFileSync(filePath, "utf-8"), before);
+	});
+
+	it("dryRun update (existing id): returns { mode: updated, dryRun: true } and writes nothing", (t) => {
+		const tmpDir = makeTmpDir("upsert-dryrun-update");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsSchema);
+
+		const filePath = path.join(tmpDir, ".project", "gaps.json");
+		fs.writeFileSync(filePath, JSON.stringify({ gaps: [{ id: "g1", description: "original", status: "open" }] }));
+		const before = fs.readFileSync(filePath, "utf-8");
+
+		const result = upsertItemInBlock(
+			tmpDir,
+			"gaps",
+			"gaps",
+			{ id: "g1", description: "would replace", status: "resolved" },
+			"id",
+			undefined,
+			{ dryRun: true },
+		);
+
+		assert.deepStrictEqual(result, { mode: "updated", dryRun: true });
+		assert.strictEqual(fs.readFileSync(filePath, "utf-8"), before);
+	});
+
+	it("dryRun with schema-invalid item: throws ValidationError and writes nothing", (t) => {
+		const tmpDir = makeTmpDir("upsert-dryrun-invalid");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupWorkflowDir(tmpDir);
+		setupSchema(tmpDir, "gaps", gapsSchema);
+
+		const filePath = path.join(tmpDir, ".project", "gaps.json");
+		fs.writeFileSync(filePath, JSON.stringify({ gaps: [{ id: "g1", description: "existing", status: "open" }] }));
+		const before = fs.readFileSync(filePath, "utf-8");
+
+		assert.throws(
+			() =>
+				upsertItemInBlock(
+					tmpDir,
+					"gaps",
+					"gaps",
+					// Missing required `description` — same validation the write path applies.
+					{ id: "g2", status: "open" },
+					"id",
+					undefined,
+					{ dryRun: true },
+				),
+			(err: unknown) => err instanceof ValidationError,
+		);
+
+		// File untouched: dryRun validation rejects identically to the write but writes nothing.
+		assert.strictEqual(fs.readFileSync(filePath, "utf-8"), before);
+	});
+
 	it("throws when item[idField] is missing", (t) => {
 		const tmpDir = makeTmpDir("upsert-missing-idfield");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));

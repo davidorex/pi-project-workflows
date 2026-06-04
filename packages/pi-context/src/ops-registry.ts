@@ -550,11 +550,12 @@ export const ops: OpDefinition[] = [
 			arrayKey: Type.String({ description: "Array key in the block (e.g., 'issues', 'decisions')" }),
 			item: Type.Unknown({ description: "Full item object to upsert — must conform to block schema" }),
 			idField: Type.Optional(Type.String({ description: "Field used as the upsert key (default 'id')" })),
+			dryRun: Type.Optional(Type.Boolean({ description: "Preview the upsert without writing" })),
 		}),
 		surface: "use",
 		run(
 			cwd: string,
-			params: { block: string; arrayKey: string; item: Record<string, unknown>; idField?: string },
+			params: { block: string; arrayKey: string; item: Record<string, unknown>; idField?: string; dryRun?: boolean },
 			ctx?: DispatchContext,
 		): OpResult {
 			// Type.Unknown() params may arrive as JSON strings — parse if needed.
@@ -566,10 +567,16 @@ export const ops: OpDefinition[] = [
 				}
 			}
 			const idField = params.idField ?? "id";
-			const { mode } = upsertItemInBlock(cwd, params.block, params.arrayKey, params.item, idField, ctx);
+			// Under dryRun upsertItemInBlock computes mode + builds + validates the prospective
+			// whole block, writing nothing (TASK-011 shared preview path).
+			const { mode } = upsertItemInBlock(cwd, params.block, params.arrayKey, params.item, idField, ctx, {
+				dryRun: params.dryRun,
+			});
 			const idVal = params.item?.[idField];
 			const idDesc = idVal !== undefined ? ` '${idVal}'` : "";
-			return `Upserted item${idDesc} (${mode}) to ${params.block}.${params.arrayKey}`;
+			return params.dryRun
+				? `would upsert item${idDesc} (${mode}) in ${params.block}.${params.arrayKey}`
+				: `Upserted item${idDesc} (${mode}) to ${params.block}.${params.arrayKey}`;
 		},
 	},
 	{

@@ -1380,7 +1380,8 @@ export function upsertItemInTypedFile(
 	idField: string,
 	ctx?: DispatchContext,
 	errorLabel?: string,
-): { mode: "appended" | "updated" } {
+	opts?: { dryRun?: boolean },
+): { mode: "appended" | "updated"; dryRun?: boolean } {
 	const label = errorLabel ?? filePath;
 	const idValue = item[idField];
 	if (idValue === undefined || idValue === null || idValue === "") {
@@ -1437,6 +1438,17 @@ export function upsertItemInTypedFile(
 			patched.push(stamped);
 		} else {
 			patched[idx] = stamped;
+		}
+		if (opts?.dryRun) {
+			// Same validation writeTypedFile applies before writing (validateFromFile
+			// on the prospective whole file, gated on a non-null schemaPath), run on
+			// the STAMPED prospective so dryRun rejects/accepts identically to the
+			// write — but write nothing. The lock above guarantees the prospective
+			// matched a consistent on-disk snapshot.
+			if (schemaPath) {
+				validateFromFile(schemaPath, rewriteParent(patched), label);
+			}
+			return { mode, dryRun: true };
 		}
 		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label);
 		return { mode };
@@ -1959,10 +1971,20 @@ export function upsertItemInBlockForDir(
 	item: Record<string, unknown>,
 	idField: string,
 	ctx?: DispatchContext,
-): { mode: "appended" | "updated" } {
+	opts?: { dryRun?: boolean },
+): { mode: "appended" | "updated"; dryRun?: boolean } {
 	const filePath = blockFilePathForDir(substrateDir, blockName);
 	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
-	return upsertItemInTypedFile(filePath, schemaPath, arrayKey, item, idField, ctx, `block file '${blockName}.json'`);
+	return upsertItemInTypedFile(
+		filePath,
+		schemaPath,
+		arrayKey,
+		item,
+		idField,
+		ctx,
+		`block file '${blockName}.json'`,
+		opts,
+	);
 }
 
 export function upsertItemInBlock(
@@ -1972,10 +1994,11 @@ export function upsertItemInBlock(
 	item: Record<string, unknown>,
 	idField: string,
 	ctx?: DispatchContext,
-): { mode: "appended" | "updated" } {
+	opts?: { dryRun?: boolean },
+): { mode: "appended" | "updated"; dryRun?: boolean } {
 	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
 	assertSubstrateName(blockName);
-	return upsertItemInBlockForDir(resolveContextDir(cwd), blockName, arrayKey, item, idField, ctx);
+	return upsertItemInBlockForDir(resolveContextDir(cwd), blockName, arrayKey, item, idField, ctx, opts);
 }
 
 /**

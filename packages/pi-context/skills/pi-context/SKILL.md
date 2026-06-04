@@ -101,6 +101,7 @@ Append-or-replace an item in a project block array by id: if an item with the sa
 | `arrayKey` | string | yes | Array key in the block (e.g., 'issues', 'decisions') |
 | `item` | unknown | yes | Full item object to upsert — must conform to block schema |
 | `idField` | string | no | Field used as the upsert key (default 'id') |
+| `dryRun` | boolean | no | Preview the upsert without writing |
 </tool>
 
 <tool name="promote-item">

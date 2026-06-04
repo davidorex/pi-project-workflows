@@ -28,7 +28,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { type OpDefinition, ops } from "@davidorex/pi-context/ops";
+import {
+	boundedJsonOutput,
+	type OpDefinition,
+	type OpResult,
+	ops,
+	renderOpResultText,
+} from "@davidorex/pi-context/ops";
 
 /**
  * The surfaced command set: every op the CLI exposes. Derived by reflection —
@@ -482,11 +488,24 @@ export async function main(argv: string[]): Promise<number> {
 	}
 
 	try {
-		const text = await op.run(parsed.cwd, parsed.params, dctx);
+		const r: OpResult = await op.run(parsed.cwd, parsed.params, dctx);
 		if (parsed.json) {
-			process.stdout.write(`${JSON.stringify({ ok: true, op: op.name, output: text })}\n`);
+			// FGAP-013: emit `output` as a JSON VALUE, not a stringified JSON string.
+			// Prose → the string itself; a read op → its structured ReadStructured
+			// (data + paging/cap metadata); a data op → its raw JSON value. No
+			// double-encode: the value is placed directly into the envelope and
+			// JSON.stringify'd ONCE here.
+			// TASK-013 / FGAP-015: boundedJsonOutput enforces the 50KB read cap at this
+			// boundary — under-cap values pass through unchanged; an over-cap `{json}`
+			// (or prose) result fails closed (`{ data: null, truncated: true, … }` /
+			// REFUSAL string) so a `{json}` op can no longer leak substrate content
+			// past the cap on the `--json` surface.
+			const output = boundedJsonOutput(r);
+			process.stdout.write(`${JSON.stringify({ ok: true, op: op.name, output })}\n`);
 		} else {
-			process.stdout.write(`${text}\n`);
+			// Default text surface stays byte-identical to before: the shared renderer
+			// reproduces each op's prior `run()` text (prose / JSON.stringify / read footer).
+			process.stdout.write(`${renderOpResultText(r)}\n`);
 		}
 		return 0;
 	} catch (err) {

@@ -80,6 +80,61 @@ export interface ReadEnvelope {
 /** Stable, greppable footer prefix — keep in sync with consumers/tests. */
 export const READ_ELEMENT_FOOTER_PREFIX = "[read-element:";
 
+/**
+ * The STRUCTURED read result (TASK-012 / FGAP-013). `data` is the un-stringified,
+ * un-footered value — the actual page slice or whole object — so the CLI `--json`
+ * envelope can emit a real JSON value instead of a stringified JSON string
+ * (no double-encode). The metadata fields mirror {@link ReadEnvelope} exactly:
+ * `total`/`hasMore` (paging), `truncated`/`totalBytes` (cap signal), `complete`
+ * (machine-checkable full-content flag).
+ *
+ * The text-rendering inputs serializeForRead needs to reproduce its EXACT prior
+ * `content` string (label / offset / overCapDirective / paged / the capped head)
+ * are stashed under a private symbol so they are NOT enumerable: JSON.stringify
+ * (the CLI `--json` envelope) skips symbol-keyed properties, so `--json` output
+ * for a read op carries ONLY the six documented fields, never the render context.
+ */
+export interface ReadStructured {
+	/** The un-stringified value: the page slice (collections) or the whole object. */
+	data: unknown;
+	/** Full element count when the value was treated as a paged collection; absent for whole-object reads. */
+	total?: number;
+	/** Whether more elements exist past this page; absent for whole-object reads. */
+	hasMore?: boolean;
+	/** Whether the serialized JSON exceeded the 50KB / line cap (over-cap fail-closed). */
+	truncated: boolean;
+	/** Total bytes of the un-capped serialized JSON. */
+	totalBytes: number;
+	/** Whether the full content was returned (false only on the over-cap fail-closed paths). */
+	complete: boolean;
+}
+
+/**
+ * Text-render context carried (non-enumerably) on a {@link ReadStructured} so
+ * {@link renderReadText} can reproduce serializeForRead's exact prior `content`.
+ * Not part of the structured `--json` surface.
+ */
+interface ReadRenderContext {
+	/** Defaulted label (`opts.label ?? "result"`) — used in the over-cap REFUSAL/PARTIAL messages. */
+	label: string;
+	/** Raw `opts.label` (may be undefined/empty) — drives the paging-footer suffix truthiness, byte-for-byte as before. */
+	rawLabel?: string;
+	offset: number;
+	paged: boolean;
+	overCapDirective?: SerializeForReadOptions["overCapDirective"];
+	/** The capped JSON head (truncateHead output) — used for both the under-cap body and the edge head-leading partial. */
+	cappedContent: string;
+}
+
+/** Module-private key for the render context — symbol-keyed, so JSON.stringify ignores it. */
+const RENDER_CONTEXT = Symbol("read-element:render-context");
+
+/** Attach render context to a ReadStructured under the private symbol (non-enumerable to JSON). */
+function withRenderContext(s: ReadStructured, ctx: ReadRenderContext): ReadStructured {
+	(s as ReadStructured & { [RENDER_CONTEXT]?: ReadRenderContext })[RENDER_CONTEXT] = ctx;
+	return s;
+}
+
 export interface SerializeForReadOptions {
 	/** Force a specific array property to page over (else auto-discovered). */
 	itemsKey?: string;
@@ -187,6 +242,28 @@ function resolveCollection(
  * (prefix `[read-element:`) since the next page is reachable via offset/limit.
  */
 export function serializeForRead(value: unknown, opts: SerializeForReadOptions = {}): ReadEnvelope {
+	const structured = structureForRead(value, opts);
+	return {
+		content: renderReadText(structured),
+		total: structured.total,
+		hasMore: structured.hasMore,
+		truncated: structured.truncated,
+		totalBytes: structured.totalBytes,
+		complete: structured.complete,
+	};
+}
+
+/**
+ * The cap / pagination / metadata computation that previously lived inside
+ * serializeForRead, returning the value UN-stringified (TASK-012 / FGAP-013).
+ * `data` is the page slice (collections) or the whole object — never stringified,
+ * never footered. The metadata fields mirror {@link ReadEnvelope}; the text-render
+ * inputs (label / offset / overCapDirective / paged / capped head) ride along
+ * under a private symbol so {@link renderReadText} can reproduce the exact prior
+ * `content` while JSON.stringify (the CLI `--json` envelope) emits only the six
+ * documented structured fields.
+ */
+export function structureForRead(value: unknown, opts: SerializeForReadOptions = {}): ReadStructured {
 	const offset = opts.offset ?? 0;
 	const resolved = opts.whole ? ({ collection: false } as const) : resolveCollection(value, opts.itemsKey);
 
@@ -211,63 +288,102 @@ export function serializeForRead(value: unknown, opts: SerializeForReadOptions =
 	const cap = truncateHead(jsonStr);
 	const label = opts.label ?? "result";
 
+	const renderCtx: ReadRenderContext = {
+		label,
+		rawLabel: opts.label,
+		offset,
+		paged,
+		overCapDirective: opts.overCapDirective,
+		cappedContent: cap.content,
+	};
+
+	// Over-cap fail-closed (FGAP-089) → complete:false; under-cap → complete:true.
+	// The over-cap REFUSAL/PARTIAL *text* rendering is a renderReadText concern,
+	// but the structured `data` must ALSO fail closed: on over-cap (cap.truncated)
+	// `data` is bounded to null so the `--json` surface (which emits `data` directly
+	// via JSON.stringify, never routing through cappedContent) cannot leak the full
+	// un-truncated value past the cap, and a constrained agent never receives a
+	// truncated value dressed as complete. Under-cap (incl. paged-but-not-over-cap)
+	// keeps the full/page value unchanged. Metadata (truncated/totalBytes/total/
+	// hasMore/complete) is unaffected.
+	const complete = !cap.truncated;
+
+	return withRenderContext(
+		{
+			data: cap.truncated ? null : serialized,
+			total,
+			hasMore,
+			truncated: cap.truncated,
+			totalBytes: cap.totalBytes,
+			complete,
+		},
+		renderCtx,
+	);
+}
+
+/**
+ * Render a {@link ReadStructured} to the EXACT text serializeForRead's `content`
+ * produced before the TASK-012 split: the stringified body + the structured
+ * `[read-element:` paging footer, OR — on the over-cap fail-closed paths
+ * (FGAP-089) — the directive-only REFUSAL (no body) when a narrowing tool was
+ * named, else the head-leading marked PARTIAL. Reads its render inputs from the
+ * private symbol attached by {@link structureForRead}.
+ */
+export function renderReadText(s: ReadStructured): string {
+	const ctx = (s as ReadStructured & { [RENDER_CONTEXT]?: ReadRenderContext })[RENDER_CONTEXT];
+	// Defensive: a ReadStructured constructed without structureForRead has no
+	// render context — fall back to a plain stringify of the data.
+	if (ctx === undefined) return JSON.stringify(s.data, null, 2);
+
+	const { label, offset, paged, overCapDirective, cappedContent } = ctx;
+
 	// ── FGAP-089 over-CAP fail-closed path ──────────────────────────────────
 	// When the serialized value exceeds the read cap, a partial body must NOT be
 	// returned as if it were the whole value — a constrained agent skimmed past
 	// the old trailing `[read-element: truncated …]` footer and treated a
-	// truncated catalog as complete (degraded info). So an over-cap read now
-	// fails closed: either a directive-only REFUSAL (when a narrowing tool
-	// exists) or an UNMISSABLE HEAD-LEADING marked partial (edge surfaces with
-	// no finer addressing). Either way `complete:false`.
-	if (cap.truncated) {
-		if (opts.overCapDirective !== undefined) {
+	// truncated catalog as complete (degraded info). So an over-cap read fails
+	// closed: either a directive-only REFUSAL (when a narrowing tool exists) or
+	// an UNMISSABLE HEAD-LEADING marked partial (edge surfaces with no finer
+	// addressing). Either way the structured `complete` is false.
+	if (s.truncated) {
+		if (overCapDirective !== undefined) {
 			// Narrowing available → DIRECTIVE ONLY, no serialized body at all.
-			const { tool, params, hint } = opts.overCapDirective;
+			const { tool, params, hint } = overCapDirective;
 			const paramsString =
 				params && Object.keys(params).length > 0
 					? Object.entries(params)
 							.map(([k, v]) => `${k}=${v}`)
 							.join(" ")
 					: undefined;
-			const content =
-				`⚠️ READ REFUSED — this ${label} is ${cap.totalBytes} bytes, over the 50KB read cap. ` +
+			return (
+				`⚠️ READ REFUSED — this ${label} is ${s.totalBytes} bytes, over the 50KB read cap. ` +
 				`Nothing was returned (a partial read would mislead). ` +
-				`Narrow your read: call \`${tool}\`${paramsString ? ` with ${paramsString}` : ""}.${hint ? ` ${hint}` : ""}`;
-			return { content, total, hasMore, truncated: true, totalBytes: cap.totalBytes, complete: false };
+				`Narrow your read: call \`${tool}\`${paramsString ? ` with ${paramsString}` : ""}.${hint ? ` ${hint}` : ""}`
+			);
 		}
-		// No finer addressing (edge case) → UNMISSABLE HEAD-LEADING marked
-		// partial. The warning goes FIRST (the old footer failed because it sat
-		// at the END, skimmed past); the head follows so the caller can still
-		// see structure, but is explicitly told it is INCOMPLETE.
-		const content =
-			`⚠️ PARTIAL READ — this ${label} is ${cap.totalBytes} bytes, capped at 50KB, and has no finer addressing. ` +
-			`The HEAD below is INCOMPLETE — do NOT treat it as the full value:\n\n${cap.content}`;
-		return { content, total, hasMore, truncated: true, totalBytes: cap.totalBytes, complete: false };
+		// No finer addressing (edge case) → UNMISSABLE HEAD-LEADING marked partial.
+		return (
+			`⚠️ PARTIAL READ — this ${label} is ${s.totalBytes} bytes, capped at 50KB, and has no finer addressing. ` +
+			`The HEAD below is INCOMPLETE — do NOT treat it as the full value:\n\n${cappedContent}`
+		);
 	}
 
 	// ── Not over-cap: full content (a paged-but-not-truncated page is complete;
 	// `hasMore` signals further pages). Paging footer stays — paging is reachable
 	// via offset/limit, so it does not fail closed.
 	const footers: string[] = [];
-	if (paged && total !== undefined) {
+	if (paged && s.total !== undefined) {
 		// shown range is 1-based inclusive over the served slice
-		const shownCount = Array.isArray(serialized) ? serialized.length : 0;
-		const from = total === 0 ? 0 : offset + 1;
+		const shownCount = Array.isArray(s.data) ? s.data.length : 0;
+		const from = s.total === 0 ? 0 : offset + 1;
 		const to = offset + shownCount;
-		const labelSuffix = opts.label ? ` · ${opts.label}` : "";
+		const labelSuffix = ctx.rawLabel ? ` · ${ctx.rawLabel}` : "";
 		footers.push(
-			`\n\n${READ_ELEMENT_FOOTER_PREFIX} showing ${from}-${to} of ${total} · hasMore=${hasMore}${labelSuffix} · narrow with an address]`,
+			`\n\n${READ_ELEMENT_FOOTER_PREFIX} showing ${from}-${to} of ${s.total} · hasMore=${s.hasMore}${labelSuffix} · narrow with an address]`,
 		);
 	}
 
-	return {
-		content: cap.content + footers.join(""),
-		total,
-		hasMore,
-		truncated: false,
-		totalBytes: cap.totalBytes,
-		complete: true,
-	};
+	return cappedContent + footers.join("");
 }
 
 export interface AddressSpec {

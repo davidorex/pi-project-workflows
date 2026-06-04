@@ -16,7 +16,7 @@
  * guards attestation: a write op whose run() calls a ctx-accepting writer
  * WITHOUT forwarding its own ctx is a silent attestation drop and FAILs.
  *
- * Two enforcement categories, both exit-1 on any violation:
+ * Three enforcement categories, all exit-1 on any violation:
  *   1. classification — every enumerated writer lands in exactly one class;
  *      UNCLASSIFIED writers are violations.
  *   2. ctx-forwarding — every op→writer call (direct or transitive) that COULD
@@ -24,11 +24,15 @@
  *      forward it. A dropped ctx is a hard FAIL. dual-surface optional-param
  *      divergences vs the orchestrator-script sibling (dryRun/ordinal/idField)
  *      are reported as soft divergences (printed, not fatal) per the spec.
+ *   3. {json}-content-cap (FGAP-015) — an op that returns { json } of a content-
+ *      reading library call (CONTENT_READING_FNS), inline or via a single same-
+ *      body const/let binding, bypasses the 50KB read cap (enforced only on the
+ *      {read} channel). Hard FAIL: emit { read: structureForRead(...) } instead.
  *
  * Pure helpers (enumerateWriters / classifyWriter / classifyAll /
- * checkCtxForwarding / parseSourceTree / opDeclaresParam / scriptParsesFlag /
- * flattenSchemaProperties) are exported for scripts/parity-check.test.ts.
- * main() aggregates violations + exits.
+ * checkCtxForwarding / checkJsonContentCap / parseSourceTree / opDeclaresParam /
+ * scriptParsesFlag / flattenSchemaProperties) are exported for
+ * scripts/parity-check.test.ts. main() aggregates violations + exits.
  *
  * AST idiom mirrors packages/pi-context/src/citation-rot-scanner.ts
  * (ts.createSourceFile + ts.forEachChild + node-type guards). Enforcement /
@@ -78,6 +82,30 @@ const DUAL_SURFACE_OPTIONAL_PARAMS: Record<string, string> = {
 	idField: "--id-field",
 };
 
+/**
+ * Library functions whose return value EMBEDS substrate item / block content
+ * (not a count, a status, or a derived projection). An op that directly returns
+ * one of these results through the `{json}` channel BYPASSES the 50KB read cap
+ * (enforced only on the `{read}` channel via structureForRead) — the FGAP-015
+ * root cause. The gate below FAILS such a return so the op is forced onto
+ * `{read}`. The set is deliberately the concrete content-readers (NOT
+ * derivations like contextState / validateContext / listSubstrates, whose
+ * `{json}` returns are projections that legitimately stay on the json channel).
+ */
+const CONTENT_READING_FNS = new Set([
+	"readBlock",
+	"readBlockForDir",
+	"readBlockItem",
+	"readBlockDir",
+	"resolveItemById",
+	"resolveItemsByIds",
+	"filterBlockItems",
+	"joinBlocks",
+	"buildIdIndex",
+	"resolveRef",
+	"readBlockPage",
+]);
+
 // ─── Parsed-source model ──────────────────────────────────────────────────────
 
 /** A function definition (exported or local) recovered from the source tree. */
@@ -112,6 +140,25 @@ export interface OpRun {
 	 * a callee invoked multiple times is true if ANY call site forwards ctx.
 	 */
 	forwardsCtxTo: Record<string, boolean>;
+	/**
+	 * For each `const`/`let <name> = <callee>(...)` binding in the run body whose
+	 * initializer is a bare-identifier-callee `CallExpression`, the callee name.
+	 * Keyed by the bound identifier name (last-wins on rebinding). Used by the
+	 * `{json}`-content-cap gate to resolve a `return { json: <ident> }` back to
+	 * the call that produced `<ident>`. Only single-identifier-callee inits are
+	 * recorded (a property-access callee like `x.read()` is not a content-read
+	 * library fn the gate tracks).
+	 */
+	bindings: Record<string, string>;
+	/**
+	 * Each `return { json: <value> }` in the run body, classified by what `<value>`
+	 * is: an inline call to a bare-identifier callee (`callee` set, `identifier`
+	 * null), a bare identifier reference (`identifier` set, `callee` null), or
+	 * neither (both null — a constructed/transformed object literal, a member
+	 * expression, etc.). The gate flags only the call / identifier-bound-to-a-
+	 * content-read forms.
+	 */
+	jsonReturns: { callee: string | null; identifier: string | null }[];
 }
 
 /** The parsed source tree: every fn def by name, plus op runs. */
@@ -238,10 +285,42 @@ function parseOpRuns(opsRegistryFile: string): OpRun[] {
 		const params = paramNames(runNode);
 		const callees: string[] = [];
 		const forwardsCtxTo: Record<string, boolean> = {};
+		const bindings: Record<string, string> = {};
+		const jsonReturns: { callee: string | null; identifier: string | null }[] = [];
 		const body: ts.Node | undefined = runNode.body;
+		// The bare-identifier callee name of a CallExpression, or undefined for a
+		// property-access / non-identifier callee (not a tracked content-read fn).
+		const bareCalleeName = (call: ts.CallExpression): string | undefined =>
+			ts.isIdentifier(call.expression) ? call.expression.text : undefined;
 		if (body) {
 			const visit = (n: ts.Node): void => {
 				if (ts.isFunctionDeclaration(n)) return;
+				// `const`/`let <name> = <callee>(...)` — record the bound identifier →
+				// bare-identifier callee, so a later `return { json: <name> }` resolves.
+				if (
+					ts.isVariableDeclaration(n) &&
+					ts.isIdentifier(n.name) &&
+					n.initializer &&
+					ts.isCallExpression(n.initializer)
+				) {
+					const calleeName = bareCalleeName(n.initializer);
+					if (calleeName) bindings[n.name.text] = calleeName;
+				}
+				// `return { json: <value> }` — classify <value> as inline-call / ident / other.
+				if (ts.isReturnStatement(n) && n.expression && ts.isObjectLiteralExpression(n.expression)) {
+					for (const prop of n.expression.properties) {
+						if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === "json") {
+							const value = prop.initializer;
+							if (ts.isCallExpression(value)) {
+								jsonReturns.push({ callee: bareCalleeName(value) ?? null, identifier: null });
+							} else if (ts.isIdentifier(value)) {
+								jsonReturns.push({ callee: null, identifier: value.text });
+							} else {
+								jsonReturns.push({ callee: null, identifier: null });
+							}
+						}
+					}
+				}
 				if (ts.isCallExpression(n)) {
 					const callee = n.expression;
 					let name: string | undefined;
@@ -258,7 +337,7 @@ function parseOpRuns(opsRegistryFile: string): OpRun[] {
 			};
 			ts.forEachChild(body, visit);
 		}
-		out.push({ opName, params, declaresCtx: params.includes("ctx"), callees, forwardsCtxTo });
+		out.push({ opName, params, declaresCtx: params.includes("ctx"), callees, forwardsCtxTo, bindings, jsonReturns });
 	};
 
 	const visit = (node: ts.Node): void => {
@@ -686,6 +765,67 @@ export function checkDualSurfaceParity(
 	return out;
 }
 
+// ─── Step D — {json}-content-cap gate (FGAP-015) ──────────────────────────────
+
+/** A `{json}`-returns-content-read violation. */
+export interface JsonContentCapViolation {
+	opName: string;
+	/** The content-reading library fn whose result is returned through {json}. */
+	fn: string;
+	/** "inline" (return { json: fn(...) }) | "binding" (const x = fn(...); return { json: x }). */
+	via: "inline" | "binding";
+	detail: string;
+}
+
+/**
+ * FGAP-015 drift-guard: FLAG any op whose run() returns `{ json: <value> }` where
+ * `<value>` is — DIRECTLY — the result of a content-reading library call
+ * (CONTENT_READING_FNS). Such a return bypasses the 50KB read cap, which is
+ * enforced only on the `{read}` channel (structureForRead). The fix is to emit
+ * `{ read: structureForRead(...) }` instead.
+ *
+ * Two recognized patterns (and ONLY these two — low false-positive by design;
+ * the runtime boundary cap is the backstop for anything subtler):
+ *   1. inline   — `return { json: resolveItemById(cwd, id) };`
+ *   2. binding  — `const result = resolveItemById(cwd, id); return { json: result };`
+ *                 (single same-run-body const/let binding to a content-read call)
+ *
+ * NOT flagged: `{ read: ... }` returns; `{ json: <object literal> }` constructed
+ * from a read (e.g. `return { json: { count: blk.items.length } }`); prose string
+ * returns; `{ json: <ident> }` where <ident> is bound to a NON-content-read call
+ * (e.g. validateContext) or not bound to a call at all.
+ */
+export function checkJsonContentCap(tree: ParsedTree): JsonContentCapViolation[] {
+	const out: JsonContentCapViolation[] = [];
+	for (const run of tree.opRuns) {
+		for (const ret of run.jsonReturns) {
+			// inline: return { json: <contentReadFn>(...) }
+			if (ret.callee && CONTENT_READING_FNS.has(ret.callee)) {
+				out.push({
+					opName: run.opName,
+					fn: ret.callee,
+					via: "inline",
+					detail: `op '${run.opName}' returns { json } of a content-reading call (${ret.callee}) — emit { read: structureForRead(...) } so the read cap applies`,
+				});
+				continue;
+			}
+			// binding: return { json: <ident> } where <ident> = <contentReadFn>(...)
+			if (ret.identifier) {
+				const boundCallee = run.bindings[ret.identifier];
+				if (boundCallee && CONTENT_READING_FNS.has(boundCallee)) {
+					out.push({
+						opName: run.opName,
+						fn: boundCallee,
+						via: "binding",
+						detail: `op '${run.opName}' returns { json } of a content-reading call (${boundCallee}) — emit { read: structureForRead(...) } so the read cap applies`,
+					});
+				}
+			}
+		}
+	}
+	return out;
+}
+
 // ─── main ─────────────────────────────────────────────────────────────────────
 
 function main(): number {
@@ -709,6 +849,7 @@ function main(): number {
 	const classifications = classifyAll(tree);
 	const forwarding = checkCtxForwarding(tree);
 	const dualSurface = checkDualSurfaceParity(tree, scriptsDir);
+	const jsonContentCap = checkJsonContentCap(tree);
 
 	const violations: string[] = [];
 
@@ -722,6 +863,11 @@ function main(): number {
 	// ctx-drop violations (hard FAIL).
 	for (const f of forwarding) {
 		if (f.fatal) violations.push(`op '${f.opName}' — ${f.writer} — ${f.detail}`);
+	}
+
+	// {json}-content-cap violations (hard FAIL — FGAP-015 read-cap bypass).
+	for (const j of jsonContentCap) {
+		violations.push(`op '${j.opName}' — {json} of ${j.fn} (${j.via}) — ${j.detail}`);
 	}
 
 	// Soft dual-surface divergences — reported, not fatal.
@@ -746,7 +892,7 @@ function main(): number {
 		.map(([k, n]) => `${k}=${n}`)
 		.join(" ");
 	console.log(
-		`parity-check: ${classifications.length} writer(s) enumerated, all classified (${tallyStr}); 0 ctx-drops`,
+		`parity-check: ${classifications.length} writer(s) enumerated, all classified (${tallyStr}); 0 ctx-drops; 0 {json}-content-cap bypasses`,
 	);
 	return 0;
 }

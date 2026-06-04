@@ -16,8 +16,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { Type } from "typebox";
 import { writeBootstrapPointer } from "./context-dir.js";
 import extension from "./index.js";
+import { type OpDefinition, ops, registerAll } from "./ops-registry.js";
 
 interface CapturedTool {
 	name: string;
@@ -387,5 +389,46 @@ describe("FGAP-090: guidance hooks", () => {
 		const p = result.skillPaths[0]!;
 		assert.ok(path.isAbsolute(p), "skill path must be absolute");
 		assert.ok(fs.existsSync(path.join(p, "SKILL.md")), `resolved skill dir must contain SKILL.md (got ${p})`);
+	});
+});
+
+// ── TASK-013 / FGAP-015: in-pi Pi-tool over-cap {json} bound ──────────────────
+// The Pi-tool surface emits via registerAll → renderOpResultText. Pre-fix, a
+// {json} op embedding >50KB of substrate content leaked it unbounded at
+// content[0].text (the cap lived only in the {read} channel). This registers a
+// synthetic >50KB {json} op through the REAL registerAll wrapper, invokes it, and
+// asserts the emitted text is the REFUSAL prose with NO payload body.
+describe("pi-context Pi-tool surface: over-cap {json} fails closed", () => {
+	it("renders the REFUSAL prose, not the 50KB payload, at content[0].text", async () => {
+		const synthetic: OpDefinition = {
+			name: "synthetic-overcap-json",
+			label: "Synthetic Over-Cap JSON",
+			description: "test-only op returning a >50KB {json} value",
+			parameters: Type.Object({}),
+			surface: "use",
+			run: () => ({ json: { blob: "x".repeat(120000) } }),
+		};
+		ops.push(synthetic);
+		try {
+			const registered = new Map<string, CapturedTool>();
+			const api = {
+				registerTool: (def: { name: string; execute: CapturedTool["execute"] }) => {
+					registered.set(def.name, { name: def.name, execute: def.execute });
+				},
+			};
+			registerAll(api as never);
+			const tool = registered.get("synthetic-overcap-json");
+			assert.ok(tool, "synthetic op must be registered");
+
+			const result = (await tool.execute("call-oc", {}, new AbortController().signal, () => {}, {
+				cwd: process.cwd(),
+			})) as { content: { text: string }[] };
+			const text = result.content[0]!.text;
+			assert.match(text, /OUTPUT REFUSED/, "over-cap {json} emits the REFUSAL prose");
+			assert.match(text, /over the 50KB read cap/);
+			assert.strictEqual(text.includes("x".repeat(1000)), false, "no serialized payload leaked into the Pi-tool text");
+		} finally {
+			ops.pop();
+		}
 	});
 });

@@ -22,7 +22,8 @@ import { endpointKey, loadRelations } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import { appendRelationByRef } from "./context-sdk.js";
 import type { DispatchContext } from "./dispatch-context.js";
-import { INTENTIONALLY_UNEXPOSED_WRITERS, type OpDefinition, ops } from "./ops-registry.js";
+import { INTENTIONALLY_UNEXPOSED_WRITERS, type OpDefinition, ops, renderOpResultText } from "./ops-registry.js";
+import { renderReadText } from "./read-element.js";
 
 function op(name: string): OpDefinition {
 	const found = ops.find((o) => o.name === name);
@@ -211,6 +212,48 @@ describe("op: upsert-block-item", () => {
 		const o = op("upsert-block-item");
 		assert.equal(o.surface, "use");
 		assert.notEqual(o.authGated, true);
+	});
+});
+
+describe("TASK-012 / FGAP-013 structured OpResult", () => {
+	it("a data (JSON.stringify) op returns { json } and renderOpResultText reproduces the old text", (t) => {
+		const cwd = makeBlockDir("opresult-json");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		// context-validate is a `return { json: validateContext(cwd) }` data op.
+		// (resolve-item-by-id / promote-item moved to { read } under TASK-013/FGAP-015,
+		// so context-validate is now the representative still-{json} op here.)
+		const r = op("context-validate").run(cwd, {});
+		assert.ok(typeof r === "object" && r !== null && "json" in r, "data op returns { json }");
+		// THE point: the structured value is the un-stringified object (single value),
+		// not a JSON string — so the CLI --json envelope does not double-encode.
+		const json = (r as { json: unknown }).json as { status?: string };
+		assert.ok(typeof json === "object" && json !== null, "json is a real object, not a string");
+		// Text surface is byte-identical to the prior JSON.stringify(result, null, 2).
+		assert.equal(renderOpResultText(r), JSON.stringify(json, null, 2));
+	});
+
+	it("a read op returns { read } whose renderReadText equals renderOpResultText (old serializeForRead().content)", (t) => {
+		const cwd = makeBlockDir("opresult-read");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		op("upsert-block-item").run(cwd, { block: "tasks", arrayKey: "tasks", item: { id: "T1", title: "x" } });
+		// read-block-item was a `return serializeForRead(x, {whole}).content` op.
+		const r = op("read-block-item").run(cwd, { block: "tasks", id: "T1" });
+		assert.ok(typeof r === "object" && r !== null && "read" in r, "read op returns { read }");
+		const read = (r as { read: { data: unknown; truncated: boolean } }).read;
+		// The structured value carries the un-stringified item as `data`.
+		assert.deepEqual((read.data as { id: string }).id, "T1");
+		assert.equal(read.truncated, false);
+		// Text surface is byte-identical to the prior serializeForRead().content.
+		assert.equal(renderOpResultText(r), renderReadText(read));
+	});
+
+	it("a prose op still returns a plain string", (t) => {
+		const cwd = makeRelDir("opresult-prose");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" });
+		const r = op("remove-relation").run(cwd, { parent: "p1", child: "c1", relation_type: "rel" });
+		assert.equal(typeof r, "string");
+		assert.equal(renderOpResultText(r), r as string);
 	});
 });
 

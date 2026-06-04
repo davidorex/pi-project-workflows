@@ -11,7 +11,13 @@
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { addressInto, pageArray, READ_ELEMENT_FOOTER_PREFIX, serializeForRead } from "./read-element.js";
+import {
+	addressInto,
+	pageArray,
+	READ_ELEMENT_FOOTER_PREFIX,
+	serializeForRead,
+	structureForRead,
+} from "./read-element.js";
 
 describe("read-element: serializeForRead paging", () => {
 	it("pages a >limit array: hasMore true, correct total, structured footer", () => {
@@ -144,6 +150,41 @@ describe("read-element: serializeForRead over-cap fail-closed (FGAP-089)", () =>
 		assert.equal(env.hasMore, true, "more pages exist");
 		assert.ok(env.content.includes(READ_ELEMENT_FOOTER_PREFIX), "paging footer present");
 		assert.ok(/showing 1-50 of 130 · hasMore=true/.test(env.content), "footer reports range + hasMore");
+	});
+
+	// ── structured `data` MUST fail closed on over-cap (the `--json` leak guard) ──
+	// structureForRead's `data` feeds the CLI `--json` envelope directly (it never
+	// routes through cappedContent). Pre-fix it carried the FULL un-truncated value
+	// past the 50KB cap, defeating the FGAP-089 fail-closed under `--json`. On
+	// over-cap `data` must be null (no unbounded value, no misleading partial);
+	// the metadata stays as computed.
+	it("structureForRead over-cap WITH overCapDirective → data null, truncated true, complete false", () => {
+		const big = buildBig();
+		const s = structureForRead(big, {
+			label: "samples catalog",
+			overCapDirective: { tool: "read-samples-catalog", hint: "kind=<canonical_id>" },
+		});
+		assert.equal(s.data, null, "over-cap REFUSAL bounds data to null (no unbounded value under --json)");
+		assert.equal(s.truncated, true);
+		assert.equal(s.complete, false);
+		assert.ok(s.totalBytes > 50 * 1024, "totalBytes reflects the un-capped size");
+	});
+
+	it("structureForRead over-cap WITHOUT directive (edge PARTIAL) → data null, truncated true, complete false", () => {
+		const big = buildBig();
+		const s = structureForRead(big, { label: "resolved ids" });
+		assert.equal(s.data, null, "over-cap PARTIAL also bounds data to null on the --json surface");
+		assert.equal(s.truncated, true);
+		assert.equal(s.complete, false);
+		assert.ok(s.totalBytes > 50 * 1024);
+	});
+
+	it("structureForRead under-cap → data deep-equals the full value, truncated false", () => {
+		const value = { a: 1, b: "two", nested: { c: [1, 2, 3] } };
+		const s = structureForRead(value);
+		assert.deepEqual(s.data, value, "under-cap keeps the full value intact");
+		assert.equal(s.truncated, false);
+		assert.equal(s.complete, true);
 	});
 });
 

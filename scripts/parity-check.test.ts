@@ -23,6 +23,7 @@ import { INTENTIONALLY_UNEXPOSED_WRITERS, type OpDefinition } from "@davidorex/p
 import {
 	checkCtxForwarding,
 	checkDualSurfaceParity,
+	checkJsonContentCap,
 	classifyAll,
 	enumerateWriters,
 	type FnDef,
@@ -54,6 +55,8 @@ const op = (opName: string, over: Partial<OpRun> = {}): OpRun => ({
 	declaresCtx: false,
 	callees: [],
 	forwardsCtxTo: {},
+	bindings: {},
+	jsonReturns: [],
 	...over,
 });
 
@@ -413,6 +416,104 @@ describe("scriptParsesFlag", () => {
 	});
 });
 
+// ─── checkJsonContentCap — FGAP-015 {json}-returns-content-read gate ──────────────
+
+describe("checkJsonContentCap", () => {
+	it("FLAGS the binding form: const result = resolveItemById(...); return { json: result }", () => {
+		// Mirrors how parseOpRuns records a `const result = resolveItemById(cwd, id)`
+		// binding (bindings: { result: "resolveItemById" }) + a `return { json: result }`
+		// (jsonReturns: [{ callee: null, identifier: "result" }]).
+		const t = tree(
+			[],
+			[
+				op("resolve-item-by-id", {
+					callees: ["resolveItemById"],
+					bindings: { result: "resolveItemById" },
+					jsonReturns: [{ callee: null, identifier: "result" }],
+				}),
+			],
+		);
+		const violations = checkJsonContentCap(t);
+		assert.equal(violations.length, 1);
+		assert.equal(violations[0].opName, "resolve-item-by-id");
+		assert.equal(violations[0].fn, "resolveItemById");
+		assert.equal(violations[0].via, "binding");
+	});
+
+	it("FLAGS the inline form: return { json: resolveItemById(cwd, id) }", () => {
+		const t = tree(
+			[],
+			[
+				op("resolve-item-by-id", {
+					callees: ["resolveItemById"],
+					jsonReturns: [{ callee: "resolveItemById", identifier: null }],
+				}),
+			],
+		);
+		const violations = checkJsonContentCap(t);
+		assert.equal(violations.length, 1);
+		assert.equal(violations[0].fn, "resolveItemById");
+		assert.equal(violations[0].via, "inline");
+	});
+
+	it("does NOT flag a { read: structureForRead(result, {...}) } return (no {json} return at all)", () => {
+		// A {read} return contributes no entry to jsonReturns — the gate sees nothing.
+		const t = tree(
+			[],
+			[
+				op("resolve-item-by-id", {
+					callees: ["resolveItemById", "structureForRead"],
+					bindings: { result: "resolveItemById" },
+					jsonReturns: [],
+				}),
+			],
+		);
+		assert.deepEqual(checkJsonContentCap(t), []);
+	});
+
+	it("does NOT flag a summary op: const blk = readBlock(...); return { json: { count: blk.items.length } }", () => {
+		// The {json} value is a constructed ObjectLiteralExpression, NOT the bound
+		// identifier — parseOpRuns records jsonReturns: [{ callee: null, identifier: null }].
+		const t = tree(
+			[],
+			[
+				op("context-status", {
+					callees: ["readBlock"],
+					bindings: { blk: "readBlock" },
+					jsonReturns: [{ callee: null, identifier: null }],
+				}),
+			],
+		);
+		assert.deepEqual(checkJsonContentCap(t), []);
+	});
+
+	it('does NOT flag a prose string return: return "ok"', () => {
+		// A non-object return contributes no jsonReturns entry.
+		const t = tree([], [op("complete-task", { callees: ["completeTask"], jsonReturns: [] })]);
+		assert.deepEqual(checkJsonContentCap(t), []);
+	});
+
+	it("does NOT flag { json: <ident> } where the ident is bound to a NON-content-read call", () => {
+		// validateContext is a derivation, not a content-read — its {json} return is legitimate.
+		const t = tree(
+			[],
+			[
+				op("context-validate", {
+					callees: ["validateContext"],
+					bindings: { result: "validateContext" },
+					jsonReturns: [{ callee: null, identifier: "result" }],
+				}),
+			],
+		);
+		assert.deepEqual(checkJsonContentCap(t), []);
+	});
+
+	it("does NOT flag { json: <ident> } where the ident is not bound to any call", () => {
+		const t = tree([], [op("x", { jsonReturns: [{ callee: null, identifier: "unbound" }] })]);
+		assert.deepEqual(checkJsonContentCap(t), []);
+	});
+});
+
 // ─── Integration — the REAL pi-context tree, post STEP 1 ─────────────────────────
 
 describe("integration: real pi-context tree has ZERO violations", () => {
@@ -450,6 +551,16 @@ describe("integration: real pi-context tree has ZERO violations", () => {
 			fatal.map((v) => `${v.opName} → ${v.writer}`),
 			[],
 			"no op may drop ctx into a ctx-accepting writer",
+		);
+	});
+
+	it("has ZERO {json}-content-cap bypasses (FGAP-015 — resolve-item-by-id/promote-item are {read})", () => {
+		const real = parseSourceTree(srcDir);
+		const violations = checkJsonContentCap(real);
+		assert.deepEqual(
+			violations.map((v) => `${v.opName} → {json}(${v.fn})`),
+			[],
+			"no op may return { json } of a content-reading library call — emit { read: structureForRead(...) }",
 		);
 	});
 });

@@ -81,11 +81,12 @@ import {
 	walkLensDescendants,
 } from "./lens-view.js";
 import { promoteItem } from "./promote-item.js";
-import { addressInto, serializeForRead } from "./read-element.js";
+import { addressInto, type ReadStructured, renderReadText, structureForRead } from "./read-element.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { samplesCatalog } from "./samples-catalog.js";
 import { readSchema, writeSchemaChecked } from "./schema-write.js";
+import { truncateHead } from "./truncate.js";
 import { writeSchemaMigrationExecute } from "./write-schema-migration-tool.js";
 
 /**
@@ -100,13 +101,110 @@ import { writeSchemaMigrationExecute } from "./write-schema-migration-tool.js";
  * for that consumer and is not the enforcement point (the pi-agent-dispatch
  * auth-gate remains canonical).
  */
+/**
+ * The discriminated result of an op's `run` (TASK-012 / FGAP-013). An op returns
+ * one of three shapes, each carrying its OWN text-rendering rule so the CLI
+ * `--json` envelope can emit a real JSON value (no double-encode) while the
+ * default text surface + the in-pi Pi-tool surface stay byte-identical:
+ *   - `string`        — a prose op's human message; rendered as itself.
+ *   - `{ json: … }`   — a data op that previously returned `JSON.stringify(x, null, 2)`;
+ *                       rendered via JSON.stringify, structured value is `json`.
+ *   - `{ read: … }`   — a read op that previously returned `serializeForRead(x).content`;
+ *                       rendered via renderReadText, structured value is the
+ *                       {@link ReadStructured} (data + paging/cap metadata).
+ * {@link renderOpResultText} collapses all three back to the text both boundaries
+ * emit; the CLI `--json` branch unwraps the structured value instead.
+ */
+export type OpResult = string | { json: unknown } | { read: ReadStructured };
+
+/**
+ * Collapse an {@link OpResult} to the text the default CLI surface + the in-pi
+ * Pi-tool surface emit. This reproduces, byte-for-byte, what each op's `run`
+ * returned before the TASK-012 split: prose → itself; `{json}` →
+ * `JSON.stringify(x, null, 2)`; `{read}` → `renderReadText` (== the old
+ * `serializeForRead().content`).
+ */
+/**
+ * The unbypassable output-boundary cap (TASK-013 / FGAP-015). The 50KB read cap
+ * (`DEFAULT_MAX_BYTES` + `truncateHead`) previously lived ONLY in the `{read}`
+ * channel (structureForRead / renderReadText); the prose `string` and `{json}`
+ * channels emitted unbounded. A `{json}` op embedding substrate content (e.g.
+ * resolve-item-by-id, promote-item) therefore leaked that content uncapped on
+ * BOTH surfaces — the CLI `--json` `output` and the shared text renderer used by
+ * the default CLI surface AND the in-pi Pi-tool surface. These two helpers move
+ * the cap to the emission boundary so it fires for EVERY channel regardless of
+ * which op shape produced the value.
+ *
+ * `{read}` is already fail-closed at structureForRead (over-cap → data null +
+ * tiny metadata / refusal text), so both helpers pass it through untouched — it
+ * is never double-handled here.
+ */
+
+/** True when `s` exceeds the 50KB read cap (shared byte-count/threshold logic). */
+function overReadCap(s: string): { over: boolean; totalBytes: number } {
+	const totalBytes = Buffer.byteLength(s, "utf-8");
+	return { over: truncateHead(s).truncated, totalBytes };
+}
+
+/**
+ * REFUSAL prose for an over-cap `{json}` or prose `string` result — no narrowing
+ * tool/addressing is available at this boundary (unlike `{read}`'s
+ * overCapDirective), so this mirrors renderReadText's REFUSAL wording without a
+ * tool name and returns NO payload body.
+ */
+function overCapRefusalText(totalBytes: number): string {
+	return (
+		`⚠️ OUTPUT REFUSED — this result is ${totalBytes} bytes, over the 50KB read cap. ` +
+		`Nothing was returned (a partial read would mislead). Narrow your read.`
+	);
+}
+
+/**
+ * Collapse an {@link OpResult} to the text the default CLI surface + the in-pi
+ * Pi-tool surface emit, NOW BOUNDED at the 50KB read cap (TASK-013 / FGAP-015).
+ * `{read}` → renderReadText (already capped); prose `string` → itself when under
+ * cap, else the REFUSAL prose; `{json}` → `JSON.stringify(x, null, 2)` when under
+ * cap, else the REFUSAL prose (no partial body).
+ */
+export function renderOpResultText(r: OpResult): string {
+	if (typeof r === "string") {
+		const { over, totalBytes } = overReadCap(r);
+		return over ? overCapRefusalText(totalBytes) : r;
+	}
+	if ("read" in r) return renderReadText(r.read);
+	const s = JSON.stringify(r.json, null, 2);
+	const { over, totalBytes } = overReadCap(s);
+	return over ? overCapRefusalText(totalBytes) : s;
+}
+
+/**
+ * The JSON VALUE for the CLI `--json` envelope `output` field, NOW BOUNDED at the
+ * 50KB read cap (TASK-013 / FGAP-015). Prose `string` → itself when under cap,
+ * else the REFUSAL string; `{read}` → its ReadStructured (already fail-closed —
+ * serializes tiny on over-cap); `{json}` → the raw value when under cap, else a
+ * fail-closed envelope that MIRRORS {@link ReadStructured}'s over-cap shape
+ * (`{ data: null, truncated: true, totalBytes, complete: false }`) so `--json`
+ * consumers see one uniform fail-closed envelope across `{read}` and bounded
+ * `{json}`. No partial payload is ever emitted past the cap.
+ */
+export function boundedJsonOutput(r: OpResult): unknown {
+	if (typeof r === "string") {
+		const { over, totalBytes } = overReadCap(r);
+		return over ? overCapRefusalText(totalBytes) : r;
+	}
+	if ("read" in r) return r.read;
+	const s = JSON.stringify(r.json, null, 2);
+	const { over, totalBytes } = overReadCap(s);
+	return over ? { data: null, truncated: true, totalBytes, complete: false } : r.json;
+}
+
 export interface OpDefinition<P = any> {
 	name: string;
 	label: string;
 	description: string;
 	promptSnippet?: string;
 	parameters: TSchema;
-	run(cwd: string, params: P, ctx?: DispatchContext): string | Promise<string>;
+	run(cwd: string, params: P, ctx?: DispatchContext): OpResult | Promise<OpResult>;
 	authGated?: boolean;
 	surface: "use" | "process";
 }
@@ -160,7 +258,7 @@ export const ops: OpDefinition[] = [
 			cwd: string,
 			params: { block: string; arrayKey: string; item: Record<string, unknown>; autoId?: boolean },
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			// Type.Unknown() params may arrive as JSON strings — parse if needed
 			if (typeof params.item === "string") {
 				try {
@@ -200,7 +298,7 @@ export const ops: OpDefinition[] = [
 			cwd: string,
 			params: { block: string; arrayKey: string; match: Record<string, unknown>; updates: Record<string, unknown> },
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			if (Object.keys(params.updates).length === 0) {
 				throw new Error("No fields to update — updates parameter is empty");
 			}
@@ -241,7 +339,7 @@ export const ops: OpDefinition[] = [
 			cwd: string,
 			params: { parent: string; child: string; relation_type: string; ordinal?: number },
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			// Cycle-5 porcelain: STRING selectors (bare refname / <alias>:<refname> /
 			// lens-bin) are resolved to structured EdgeEndpoints and written via the
 			// raw plumbing. The param surface stays string-typed; messaging uses the
@@ -279,7 +377,11 @@ export const ops: OpDefinition[] = [
 			}),
 		}),
 		surface: "use",
-		run(cwd: string, params: { parent: string; child: string; relation_type: string }, ctx?: DispatchContext): string {
+		run(
+			cwd: string,
+			params: { parent: string; child: string; relation_type: string },
+			ctx?: DispatchContext,
+		): OpResult {
 			// Cycle-5 porcelain: STRING selectors are resolved to structured
 			// EdgeEndpoints, then matched on the identityKey dedup identity. Messaging
 			// uses the raw selectors (params.*), not the resolved structured endpoints.
@@ -326,7 +428,7 @@ export const ops: OpDefinition[] = [
 				ordinal?: number;
 			},
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			const { replaced, removed } = replaceRelationByRef(
 				cwd,
 				{
@@ -371,7 +473,7 @@ export const ops: OpDefinition[] = [
 			}),
 		}),
 		surface: "use",
-		run(cwd: string, params: { edges: unknown }, ctx?: DispatchContext): string {
+		run(cwd: string, params: { edges: unknown }, ctx?: DispatchContext): OpResult {
 			// Type.Unknown() params may arrive as JSON strings — parse if needed.
 			let edges = params.edges;
 			if (typeof edges === "string") {
@@ -411,7 +513,7 @@ export const ops: OpDefinition[] = [
 			cwd: string,
 			params: { block: string; arrayKey: string; item: Record<string, unknown>; idField?: string },
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			// Type.Unknown() params may arrive as JSON strings — parse if needed.
 			if (typeof params.item === "string") {
 				try {
@@ -464,7 +566,7 @@ export const ops: OpDefinition[] = [
 				writer: { kind: string; user: string };
 			},
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			// The DispatchContext now arrives via the op contract — registerAll
 			// (in-pi) builds it from the auth-gate-stamped `params.writer`, and the
 			// CLI builds it from its resolved identity. The schema `writer` field is
@@ -483,7 +585,11 @@ export const ops: OpDefinition[] = [
 				},
 				ctx,
 			);
-			return JSON.stringify(result, null, 2);
+			// TASK-013 / FGAP-015: route through {read} so the embedded
+			// ResolvedRef.loc.item is bounded at the 50KB cap; over-cap fails closed
+			// with metadata. Under-cap text stays the same JSON (renderReadText
+			// under-cap returns JSON.stringify(serialized, null, 2) with no footer).
+			return { read: structureForRead(result, { whole: true, label: "promote-item result" }) };
 		},
 	},
 	{
@@ -512,7 +618,7 @@ export const ops: OpDefinition[] = [
 				item: Record<string, unknown>;
 			},
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			if (typeof params.item === "string") {
 				try {
 					params.item = JSON.parse(params.item) as Record<string, unknown>;
@@ -560,7 +666,7 @@ export const ops: OpDefinition[] = [
 				updates: Record<string, unknown>;
 			},
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			if (Object.keys(params.updates).length === 0) {
 				throw new Error("No fields to update — updates parameter is empty");
 			}
@@ -599,7 +705,7 @@ export const ops: OpDefinition[] = [
 			cwd: string,
 			params: { block: string; arrayKey: string; match: Record<string, unknown> },
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			const matchEntries = Object.entries(params.match);
 			const predicate = (i: Record<string, unknown>) => matchEntries.every(([k, v]) => i[k] === v);
 			const result = removeFromBlock(cwd, params.block, params.arrayKey, predicate, ctx);
@@ -635,7 +741,7 @@ export const ops: OpDefinition[] = [
 				nestedMatch: Record<string, unknown>;
 			},
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			const parentEntries = Object.entries(params.match);
 			const nestedEntries = Object.entries(params.nestedMatch);
 			const parentPred = (i: Record<string, unknown>) => parentEntries.every(([k, v]) => i[k] === v);
@@ -664,10 +770,10 @@ export const ops: OpDefinition[] = [
 			subdir: Type.String({ description: "Subdirectory under the substrate dir (e.g., 'phases', 'schemas')" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { subdir: string }): string {
+		run(cwd: string, params: { subdir: string }): OpResult {
 			const result = readBlockDir(cwd, params.subdir);
-			const envelope = serializeForRead(result, { label: `<substrate-dir>/${params.subdir}/` });
-			return envelope.content;
+			const read = structureForRead(result, { label: `<substrate-dir>/${params.subdir}/` });
+			return { read };
 		},
 	},
 	{
@@ -679,9 +785,9 @@ export const ops: OpDefinition[] = [
 			block: Type.String({ description: "Block name (e.g., 'issues', 'tasks', 'requirements')" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { block: string }): string {
+		run(cwd: string, params: { block: string }): OpResult {
 			const result = readBlock(cwd, params.block);
-			const envelope = serializeForRead(result, {
+			const read = structureForRead(result, {
 				label: `<substrate-dir>/${params.block}.json`,
 				overCapDirective: {
 					tool: "read-block-page",
@@ -689,7 +795,7 @@ export const ops: OpDefinition[] = [
 					hint: "or read-block-item with id=<id>",
 				},
 			});
-			return envelope.content;
+			return { read };
 		},
 	},
 	{
@@ -703,7 +809,7 @@ export const ops: OpDefinition[] = [
 		}),
 		surface: "use",
 		authGated: true,
-		run(cwd: string, params: { block: string; data: unknown }, ctx?: DispatchContext): string {
+		run(cwd: string, params: { block: string; data: unknown }, ctx?: DispatchContext): OpResult {
 			const data = typeof params.data === "string" ? JSON.parse(params.data) : params.data;
 			writeBlock(cwd, params.block, data, ctx);
 			return `Wrote block '${params.block}' successfully`;
@@ -716,9 +822,9 @@ export const ops: OpDefinition[] = [
 		promptSnippet: "Get context state — source metrics, block summaries, planning lifecycle status",
 		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, _params: Record<string, never>): string {
+		run(cwd: string, _params: Record<string, never>): OpResult {
 			const result = contextState(cwd);
-			return JSON.stringify(result, null, 2);
+			return { json: result };
 		},
 	},
 	{
@@ -728,9 +834,9 @@ export const ops: OpDefinition[] = [
 		promptSnippet: "Validate cross-block referential integrity",
 		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, _params: Record<string, never>): string {
+		run(cwd: string, _params: Record<string, never>): OpResult {
 			const result = validateContext(cwd);
-			return JSON.stringify(result, null, 2);
+			return { json: result };
 		},
 	},
 	{
@@ -749,7 +855,7 @@ export const ops: OpDefinition[] = [
 			id: Type.Optional(Type.String({ description: "With `registry`: address ONE entry within it by canonical_id" })),
 		}),
 		surface: "use",
-		run(cwd: string, params: { registry?: string; id?: string }): string {
+		run(cwd: string, params: { registry?: string; id?: string }): OpResult {
 			const config = loadConfig(cwd);
 			const root = tryResolveContextDir(cwd);
 			const configPath = root === null ? null : path.join(root, "config.json");
@@ -764,10 +870,10 @@ export const ops: OpDefinition[] = [
 					if (!entry.found) {
 						return `read-config: entry not found in ${params.registry} — ${entry.resolved}`;
 					}
-					const envEntry = serializeForRead(entry.value, { label: `config.${params.registry}.${params.id}` });
-					return envEntry.content;
+					const read = structureForRead(entry.value, { label: `config.${params.registry}.${params.id}` });
+					return { read };
 				}
-				const envReg = serializeForRead(reg.value, {
+				const read = structureForRead(reg.value, {
 					label: `config.${params.registry}`,
 					overCapDirective: {
 						tool: "read-config",
@@ -775,18 +881,18 @@ export const ops: OpDefinition[] = [
 						hint: "add id=<entry canonical_id>",
 					},
 				});
-				return envReg.content;
+				return { read };
 			}
 
 			const result = { config, configPath };
-			const envelope = serializeForRead(result, {
+			const read = structureForRead(result, {
 				label: configPath ?? "config.json",
 				overCapDirective: {
 					tool: "read-config",
 					hint: "registry=<name> (block_kinds|relation_types|lenses|invariants|…)",
 				},
 			});
-			return envelope.content;
+			return { read };
 		},
 	},
 	{
@@ -807,7 +913,7 @@ export const ops: OpDefinition[] = [
 		// (surface === "use") rather than naming list-tools, so the exclusion is
 		// data-driven and a future process-only op inherits it.
 		surface: "process",
-		run(_cwd: string, params: { name?: string }): string {
+		run(_cwd: string, params: { name?: string }): OpResult {
 			// Closes over the factory `pi` (the introspection surface lives on
 			// ExtensionAPI, not ExtensionContext) — supplied to run via the bound
 			// PI handle captured in registerAll. cwd is unused here.
@@ -826,8 +932,8 @@ export const ops: OpDefinition[] = [
 				if (tool === undefined) {
 					return `list-tools: tool not found — name=${params.name}`;
 				}
-				const envOne = serializeForRead(tool, { label: `tool ${params.name}` });
-				return envOne.content;
+				const read = structureForRead(tool, { label: `tool ${params.name}` });
+				return { read };
 			}
 
 			// Default: compact index (FGAP-101) — name + param count + one-line description.
@@ -847,11 +953,11 @@ export const ops: OpDefinition[] = [
 			// The compact index is one line per tool — small enough to serialize whole
 			// (no paging); keep the wrapper fields (active/total) on the result object.
 			const result = { tools: index, active, total: all.length, activeCount: active.length };
-			const envelope = serializeForRead(result, {
+			const read = structureForRead(result, {
 				label: "tool index — pass name= for detail",
 				overCapDirective: { tool: "list-tools", hint: "name=<tool>" },
 			});
-			return envelope.content;
+			return { read };
 		},
 	},
 	{
@@ -864,17 +970,17 @@ export const ops: OpDefinition[] = [
 			kind: Type.Optional(Type.String({ description: "Filter to one block_kind canonical_id (e.g. 'tasks')" })),
 		}),
 		surface: "use",
-		run(_cwd: string, params: { kind?: string }): string {
+		run(_cwd: string, params: { kind?: string }): OpResult {
 			// Package-intrinsic: the catalog reads the extension's bundled samples
 			// directory, not the project substrate — cwd is unused.
 			const catalog = samplesCatalog(params.kind ? { kind: params.kind } : undefined);
-			const envelope = serializeForRead(catalog, {
+			const read = structureForRead(catalog, {
 				label: params.kind ? `samples kind=${params.kind}` : "samples catalog",
 				// Whole catalog → narrow by kind; a single kind has no finer
 				// addressing (edge → head-leading marker, no directive).
 				...(params.kind ? {} : { overCapDirective: { tool: "read-samples-catalog", hint: "kind=<canonical_id>" } }),
 			});
-			return envelope.content;
+			return { read };
 		},
 	},
 	{
@@ -885,9 +991,9 @@ export const ops: OpDefinition[] = [
 		promptSnippet: "Derive current project state — focus, in-flight, next actions, blocked",
 		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, _params: Record<string, never>): string {
+		run(cwd: string, _params: Record<string, never>): OpResult {
 			const state = currentState(cwd);
-			return JSON.stringify(state, null, 2);
+			return { json: state };
 		},
 	},
 	{
@@ -899,9 +1005,9 @@ export const ops: OpDefinition[] = [
 			"Derive substrate bootstrap state — no-pointer | no-config | skeleton | not-installed | ready (never throws pre-bootstrap)",
 		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, _params: Record<string, never>): string {
+		run(cwd: string, _params: Record<string, never>): OpResult {
 			const status = deriveBootstrapState(cwd);
-			return JSON.stringify(status, null, 2);
+			return { json: status };
 		},
 	},
 	{
@@ -918,9 +1024,9 @@ export const ops: OpDefinition[] = [
 		}),
 		surface: "use",
 		authGated: true,
-		run(cwd: string, params: { kind: string; oldId: string; newId: string; dryRun?: boolean }): string {
+		run(cwd: string, params: { kind: string; oldId: string; newId: string; dryRun?: boolean }): OpResult {
 			const report = renameCanonicalId(cwd, params.kind, params.oldId, params.newId, { dryRun: params.dryRun });
-			return JSON.stringify(report, null, 2);
+			return { json: report };
 		},
 	},
 	{
@@ -961,7 +1067,7 @@ export const ops: OpDefinition[] = [
 			cwd: string,
 			params: { registry: string; operation: string; key: string; entry?: unknown; dryRun?: boolean },
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			// Type.Unknown() params may arrive as JSON strings. Parse if possible; on
 			// failure KEEP the raw string (valid for map-value registries whose value
 			// is a bare string, e.g. naming/display_strings/status_buckets).
@@ -998,7 +1104,7 @@ export const ops: OpDefinition[] = [
 			),
 		}),
 		surface: "use",
-		run(cwd: string, params: { schemaName: string; path?: string }): string {
+		run(cwd: string, params: { schemaName: string; path?: string }): OpResult {
 			const schema = readSchema(cwd, params.schemaName);
 			const schemaPathStr = schemaPath(cwd, params.schemaName);
 
@@ -1007,12 +1113,12 @@ export const ops: OpDefinition[] = [
 				if (!addr.found) {
 					return `read-schema: property not found — ${addr.resolved}`;
 				}
-				const envProp = serializeForRead(addr.value, { label: `${params.schemaName} ${addr.resolved}` });
-				return envProp.content;
+				const read = structureForRead(addr.value, { label: `${params.schemaName} ${addr.resolved}` });
+				return { read };
 			}
 
 			const result = { schema, schemaPath: schemaPathStr };
-			const envelope = serializeForRead(result, {
+			const read = structureForRead(result, {
 				label: schemaPathStr,
 				overCapDirective: {
 					tool: "read-schema",
@@ -1020,7 +1126,7 @@ export const ops: OpDefinition[] = [
 					hint: "path=<dotted json-path>",
 				},
 			});
-			return envelope.content;
+			return { read };
 		},
 	},
 	{
@@ -1047,7 +1153,7 @@ export const ops: OpDefinition[] = [
 			cwd: string,
 			params: { operation: string; schemaName: string; schema?: unknown; dryRun?: boolean },
 			ctx?: DispatchContext,
-		): string {
+		): OpResult {
 			// Type.Unknown() params may arrive as JSON strings. Parse if possible; on
 			// failure KEEP the raw value (meta-validation rejects a non-object body).
 			let schema = params.schema;
@@ -1139,9 +1245,9 @@ export const ops: OpDefinition[] = [
 		}),
 		surface: "use",
 		authGated: true,
-		run(cwd: string, params: { contextDir: string }): string {
+		run(cwd: string, params: { contextDir: string }): OpResult {
 			const result = initProject(cwd, params.contextDir);
-			return JSON.stringify(result, null, 2);
+			return { json: result };
 		},
 	},
 	{
@@ -1153,7 +1259,7 @@ export const ops: OpDefinition[] = [
 		parameters: Type.Object({}),
 		surface: "use",
 		authGated: true,
-		run(cwd: string, _params: Record<string, never>): string {
+		run(cwd: string, _params: Record<string, never>): OpResult {
 			let result: AdoptResult;
 			try {
 				result = adoptConception(cwd);
@@ -1163,7 +1269,7 @@ export const ops: OpDefinition[] = [
 				}
 				throw err;
 			}
-			return JSON.stringify(result);
+			return { json: result };
 		},
 	},
 	{
@@ -1217,7 +1323,7 @@ export const ops: OpDefinition[] = [
 				to_previous?: boolean;
 				writer?: { kind: string; user: string };
 			},
-		): string {
+		): OpResult {
 			// The auth-gate stamps event.input.writer to verified identity on
 			// confirm; the body trusts the stamped writer (auth-gate is the
 			// canonical identity check per FGAP-134 / FGAP-138 model). When the
@@ -1229,14 +1335,14 @@ export const ops: OpDefinition[] = [
 			try {
 				if (params.to_previous === true) {
 					const { from, to } = switchToPrevious(cwd, writerIdentity);
-					return JSON.stringify({ mode: "to_previous", from, to }, null, 2);
+					return { json: { mode: "to_previous", from, to } };
 				}
 				if (params.create_new === true) {
 					const { created } = switchAndCreate(cwd, params.target_dir, writerIdentity);
-					return JSON.stringify({ mode: "create_new", target_dir: params.target_dir, created }, null, 2);
+					return { json: { mode: "create_new", target_dir: params.target_dir, created } };
 				}
 				switchToExisting(cwd, params.target_dir, writerIdentity);
-				return JSON.stringify({ mode: "existing", target_dir: params.target_dir }, null, 2);
+				return { json: { mode: "existing", target_dir: params.target_dir } };
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
 				return `context-switch failed: ${msg}`;
@@ -1251,9 +1357,9 @@ export const ops: OpDefinition[] = [
 		promptSnippet: "List switchable substrate dirs under cwd",
 		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, _params: Record<string, never>): string {
+		run(cwd: string, _params: Record<string, never>): OpResult {
 			const subs = listSubstrates(cwd);
-			return JSON.stringify(subs, null, 2);
+			return { json: subs };
 		},
 	},
 	{
@@ -1269,10 +1375,10 @@ export const ops: OpDefinition[] = [
 		}),
 		surface: "use",
 		authGated: true,
-		run(cwd: string, params: { target_dir: string }): string {
+		run(cwd: string, params: { target_dir: string }): OpResult {
 			try {
 				const { from, to } = archiveSubstrate(cwd, params.target_dir);
-				return JSON.stringify({ from, to }, null, 2);
+				return { json: { from, to } };
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
 				return `context-archive failed: ${msg}`;
@@ -1302,17 +1408,17 @@ export const ops: OpDefinition[] = [
 		run(
 			cwd: string,
 			params: { block: string; field: string; op: "eq" | "neq" | "in" | "matches"; value: unknown },
-		): string {
+		): OpResult {
 			const result = filterBlockItems(cwd, params.block, {
 				field: params.field,
 				op: params.op,
 				value: params.value,
 			});
-			const envelope = serializeForRead(result, {
+			const read = structureForRead(result, {
 				label: `${params.block} filtered`,
 				overCapDirective: { tool: "read-block-page", hint: "or refine the predicate" },
 			});
-			return envelope.content;
+			return { read };
 		},
 	},
 	{
@@ -1325,9 +1431,19 @@ export const ops: OpDefinition[] = [
 			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-NNNN / FEAT-NNN / FGAP-NNN / ISSUE-NNN" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { id: string }): string {
+		run(cwd: string, params: { id: string }): OpResult {
 			const result = resolveItemById(cwd, params.id);
-			return JSON.stringify(result, null, 2);
+			// TASK-013 / FGAP-015: route through {read} so the embedded full
+			// ItemLocation is bounded at the 50KB cap and over-cap fails closed with
+			// a narrowing directive (mirrors read-block-item). `result` is
+			// ItemLocation | null — structureForRead handles both.
+			return {
+				read: structureForRead(result, {
+					whole: true,
+					label: `resolve ${params.id}`,
+					overCapDirective: { tool: "read-block-item", hint: "narrow to one block" },
+				}),
+			};
 		},
 	},
 	{
@@ -1341,12 +1457,12 @@ export const ops: OpDefinition[] = [
 			id: Type.String({ description: "Item id within the block (e.g., 'TASK-NNN')" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { block: string; id: string }): string {
+		run(cwd: string, params: { block: string; id: string }): OpResult {
 			const result = readBlockItem(cwd, params.block, params.id);
 			// whole: the item is already the addressed element — don't re-page its
 			// intrinsic arrays; preserve the single-item|null output contract.
-			const envelope = serializeForRead(result, { whole: true, label: `${params.block} ${params.id}` });
-			return envelope.content;
+			const read = structureForRead(result, { whole: true, label: `${params.block} ${params.id}` });
+			return { read };
 		},
 	},
 	{
@@ -1361,12 +1477,12 @@ export const ops: OpDefinition[] = [
 			limit: Type.Optional(Type.Integer({ minimum: 1, description: "Max items to return (default 50)" })),
 		}),
 		surface: "use",
-		run(cwd: string, params: { block: string; offset?: number; limit?: number }): string {
+		run(cwd: string, params: { block: string; offset?: number; limit?: number }): OpResult {
 			const result = readBlockPage(cwd, params.block, { offset: params.offset, limit: params.limit });
 			// whole: readBlockPage ALREADY paged — preserve the {items,total,hasMore}
 			// output contract; do not let serializeForRead re-page the items array.
-			const envelope = serializeForRead(result, { whole: true, label: `${params.block} page` });
-			return envelope.content;
+			const read = structureForRead(result, { whole: true, label: `${params.block} page` });
+			return { read };
 		},
 	},
 	{
@@ -1406,7 +1522,7 @@ export const ops: OpDefinition[] = [
 				whereOp?: "eq" | "neq" | "in" | "matches";
 				whereValue?: unknown;
 			},
-		): string {
+		): OpResult {
 			const leftPredicate =
 				params.whereField !== undefined
 					? { field: params.whereField, op: params.whereOp ?? "eq", value: params.whereValue }
@@ -1420,14 +1536,14 @@ export const ops: OpDefinition[] = [
 				leftEndpoint: params.leftEndpoint,
 				leftPredicate,
 			});
-			const envelope = serializeForRead(result, {
+			const read = structureForRead(result, {
 				label: `${params.leftBlock} ⋈ ${params.rightBlock}`,
 				overCapDirective: {
 					tool: "join-blocks",
 					hint: "refine the relation/field or pre-filter the left block",
 				},
 			});
-			return envelope.content;
+			return { read };
 		},
 	},
 	{
@@ -1442,14 +1558,14 @@ export const ops: OpDefinition[] = [
 			}),
 		}),
 		surface: "use",
-		run(cwd: string, params: { ids: string[] }): string {
+		run(cwd: string, params: { ids: string[] }): OpResult {
 			const resultMap = resolveItemsByIds(cwd, params.ids);
 			const obj: Record<string, ItemLocation | null> = {};
 			for (const [id, loc] of resultMap) obj[id] = loc;
 			// whole: an id→location map keyed by arbitrary ids — not a pageable
 			// collection; serialize the map verbatim.
-			const envelope = serializeForRead(obj, { whole: true, label: "resolved ids" });
-			return envelope.content;
+			const read = structureForRead(obj, { whole: true, label: "resolved ids" });
+			return { read };
 		},
 	},
 	{
@@ -1464,7 +1580,7 @@ export const ops: OpDefinition[] = [
 			}),
 		}),
 		surface: "use",
-		run(cwd: string, params: { taskId: string; verificationId: string }): string {
+		run(cwd: string, params: { taskId: string; verificationId: string }): OpResult {
 			const result = completeTask(cwd, params.taskId, params.verificationId);
 			return `Task '${result.taskId}' completed (was '${result.previousStatus}'). Verification: ${result.verificationId} (${result.verificationStatus})`;
 		},
@@ -1477,9 +1593,9 @@ export const ops: OpDefinition[] = [
 		promptSnippet: "Validate substrate relations against config + items",
 		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, _params: Record<string, never>): string {
+		run(cwd: string, _params: Record<string, never>): OpResult {
 			const result = validateContextRelations(cwd);
-			return JSON.stringify(result, null, 2);
+			return { json: result };
 		},
 	},
 	{
@@ -1492,10 +1608,10 @@ export const ops: OpDefinition[] = [
 			lensId: Type.String({ description: "Lens id from config.lenses[].id" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { lensId: string }): string {
+		run(cwd: string, params: { lensId: string }): OpResult {
 			const result = edgesForLensByName(cwd, params.lensId);
-			const envelope = serializeForRead(result, { label: `edges for lens ${params.lensId}` });
-			return envelope.content;
+			const read = structureForRead(result, { label: `edges for lens ${params.lensId}` });
+			return { read };
 		},
 	},
 	{
@@ -1509,9 +1625,9 @@ export const ops: OpDefinition[] = [
 			relationType: Type.String({ description: "Relation type from config.relation_types[].canonical_id" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { parentId: string; relationType: string }): string {
+		run(cwd: string, params: { parentId: string; relationType: string }): OpResult {
 			const result = walkLensDescendants(cwd, params.parentId, params.relationType);
-			return JSON.stringify(result, null, 2);
+			return { json: result };
 		},
 	},
 	{
@@ -1525,10 +1641,10 @@ export const ops: OpDefinition[] = [
 			relationType: Type.String({ description: "Relation type from config.relation_types[].canonical_id" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { itemId: string; relationType: string }): string {
+		run(cwd: string, params: { itemId: string; relationType: string }): OpResult {
 			const result = walkAncestorsByLens(cwd, params.itemId, params.relationType);
-			const envelope = serializeForRead(result, { label: `ancestors of ${params.itemId}` });
-			return envelope.content;
+			const read = structureForRead(result, { label: `ancestors of ${params.itemId}` });
+			return { read };
 		},
 	},
 	{
@@ -1547,10 +1663,10 @@ export const ops: OpDefinition[] = [
 			),
 		}),
 		surface: "use",
-		run(cwd: string, params: { itemId: string; direction?: "inbound" | "outbound" | "both" }): string {
+		run(cwd: string, params: { itemId: string; direction?: "inbound" | "outbound" | "both" }): OpResult {
 			const result = findReferencesInRepo(cwd, params.itemId, params.direction);
-			const envelope = serializeForRead(result, { label: `edges on ${params.itemId}` });
-			return envelope.content;
+			const read = structureForRead(result, { label: `edges on ${params.itemId}` });
+			return { read };
 		},
 	},
 	{
@@ -1573,12 +1689,12 @@ export const ops: OpDefinition[] = [
 			),
 		}),
 		surface: "use",
-		run(cwd: string, params: { unitId: string; kind: string; maxDepth?: number }): string {
+		run(cwd: string, params: { unitId: string; kind: string; maxDepth?: number }): OpResult {
 			const result = gatherExecutionContext(cwd, params);
 			// whole: a structured ContextBundle (unit + perRelationType buckets) —
 			// preserve the bundle shape rather than paging any single inner array.
-			const envelope = serializeForRead(result, { whole: true, label: `bundle ${params.unitId}` });
-			return envelope.content;
+			const read = structureForRead(result, { whole: true, label: `bundle ${params.unitId}` });
+			return { read };
 		},
 	},
 	{
@@ -1591,19 +1707,19 @@ export const ops: OpDefinition[] = [
 			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { roadmapId: string }): string {
+		run(cwd: string, params: { roadmapId: string }): OpResult {
 			const view = loadRoadmap(cwd, params.roadmapId);
 			if ("error" in view) {
-				const envErr = serializeForRead(view, { whole: true, label: `roadmap ${params.roadmapId} (error)` });
-				return envErr.content;
+				const read = structureForRead(view, { whole: true, label: `roadmap ${params.roadmapId} (error)` });
+				return { read };
 			}
 			// whole: a structured RoadmapView (phases + lens-views + rollups) — keep
 			// the view shape intact rather than paging an inner array.
-			const envelope = serializeForRead(serializeRoadmapView(view), {
+			const read = structureForRead(serializeRoadmapView(view), {
 				whole: true,
 				label: `roadmap ${params.roadmapId}`,
 			});
-			return envelope.content;
+			return { read };
 		},
 	},
 	{
@@ -1616,10 +1732,10 @@ export const ops: OpDefinition[] = [
 			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),
 		}),
 		surface: "use",
-		run(cwd: string, params: { roadmapId: string }): string {
+		run(cwd: string, params: { roadmapId: string }): OpResult {
 			const view = loadRoadmap(cwd, params.roadmapId);
 			if ("error" in view) {
-				return JSON.stringify(view, null, 2);
+				return { json: view };
 			}
 			const naming = loadContext(cwd).config?.naming;
 			return renderRoadmap(view, naming);
@@ -1637,12 +1753,12 @@ export const ops: OpDefinition[] = [
 			),
 		}),
 		surface: "use",
-		run(cwd: string, params: { roadmapId?: string }): string {
+		run(cwd: string, params: { roadmapId?: string }): OpResult {
 			const result = validateRoadmaps(cwd);
 			const filtered = params.roadmapId
 				? result.issues.filter((i) => !i.roadmap_id || i.roadmap_id === params.roadmapId)
 				: result.issues;
-			return JSON.stringify({ status: result.status, issues: filtered }, null, 2);
+			return { json: { status: result.status, issues: filtered } };
 		},
 	},
 	{
@@ -1653,8 +1769,8 @@ export const ops: OpDefinition[] = [
 		promptSnippet: "List roadmaps",
 		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, _params: Record<string, never>): string {
-			return JSON.stringify(listRoadmaps(cwd), null, 2);
+		run(cwd: string, _params: Record<string, never>): OpResult {
+			return { json: listRoadmaps(cwd) };
 		},
 	},
 ];
@@ -1891,7 +2007,7 @@ export function registerAll(pi: ExtensionAPI): void {
 				const dctx = buildDispatchContextFromExecute(params, ctx);
 				return {
 					details: undefined,
-					content: [{ type: "text", text: await op.run(ctx.cwd, params as never, dctx) }],
+					content: [{ type: "text", text: renderOpResultText(await op.run(ctx.cwd, params as never, dctx)) }],
 				};
 			},
 		});

@@ -15,6 +15,7 @@ import type { ConfigBlock, RelationTypeDecl } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import { registerSubstrate } from "./context-registry.js";
 import {
+	appendRelationByRef,
 	availableBlocks,
 	availableSchemas,
 	blockStructure,
@@ -1125,25 +1126,58 @@ describe("validateContext lens-validator dispatch", () => {
 // ── completeTask ───────────────────────────────────────────────────────────
 
 describe("completeTask", () => {
+	// FGAP-014: completeTask gates on the verification_verifies_item closure-table
+	// edge (verification=parent, task=child), NOT the removed verification.target/
+	// target_type fields. Seeds therefore (a) write schema-valid verifications with
+	// no removed fields, (b) write a config.json registering verification_verifies_item
+	// so appendRelationByRef + findReferencesInRepo operate against a real relation_type,
+	// and (c) file the linking edge via appendRelationByRef — the real porcelain path.
+
 	/** Helper: write a minimal tasks block */
 	function writeTasks(dir: string, tasks: Record<string, unknown>[]) {
 		fs.writeFileSync(path.join(dir, ".project", "tasks.json"), JSON.stringify({ tasks }));
 	}
 
-	/** Helper: write a minimal verification block */
+	/** Helper: write a minimal, schema-valid verification block (no removed target/target_type fields) */
 	function writeVerifications(dir: string, verifications: Record<string, unknown>[]) {
 		fs.writeFileSync(path.join(dir, ".project", "verification.json"), JSON.stringify({ verifications }));
 	}
 
-	it("completes a task with passing verification (happy path)", (t) => {
+	/**
+	 * Write a config.json that registers verification_verifies_item in relation_types[]
+	 * (empty block_kinds so buildIdIndex's prefix-vs-block invariant does not constrain
+	 * the fixtures' ad-hoc t1/v1 ids — appendRelationByRef resolves bare refnames through it).
+	 */
+	function writeEdgeConfig(projectDir: string) {
+		fs.writeFileSync(
+			path.join(projectDir, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [],
+				relation_types: [
+					{ canonical_id: "verification_verifies_item", display_name: "verifies", category: "data_flow" },
+				],
+			}),
+		);
+	}
+
+	/** File the canonical verification → task link via the real porcelain (appendRelationByRef). */
+	function fileVerifiesEdge(dir: string, verId: string, taskId: string) {
+		appendRelationByRef(dir, { parent: verId, child: taskId, relation_type: "verification_verifies_item" });
+	}
+
+	it("completes a task with a passing verification and filed verifies edge (happy path)", (t) => {
 		const tmpDir = makeTmpDir("ct-happy");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
+		fileVerifiesEdge(tmpDir, "v1", "t1");
 
 		const result = completeTask(tmpDir, "t1", "v1");
 		assert.strictEqual(result.taskId, "t1");
@@ -1151,11 +1185,11 @@ describe("completeTask", () => {
 		assert.strictEqual(result.verificationStatus, "passed");
 		assert.strictEqual(result.previousStatus, "planned");
 
-		// Read back and verify the task was updated
+		// Read back: task completed, and NO verification field embedded (the edge is the linkage).
 		const data = JSON.parse(fs.readFileSync(path.join(projectDir, "tasks.json"), "utf-8"));
 		const task = data.tasks.find((t: Record<string, unknown>) => t.id === "t1");
 		assert.strictEqual(task.status, "completed");
-		assert.strictEqual(task.verification, "v1");
+		assert.ok(!("verification" in task), "no verification field should be embedded — the edge is the linkage");
 	});
 
 	it("throws when verification entry does not exist", (t) => {
@@ -1164,6 +1198,7 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
 		writeVerifications(tmpDir, []);
@@ -1177,41 +1212,48 @@ describe("completeTask", () => {
 		);
 	});
 
-	it("throws when verification targets wrong task", (t) => {
-		const tmpDir = makeTmpDir("ct-wrong-target");
+	it("throws when no verifies edge links this verification to this task", (t) => {
+		const tmpDir = makeTmpDir("ct-edge-elsewhere");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
-		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		writeVerifications(tmpDir, [
-			{ id: "v1", target: "other-task", target_type: "task", status: "passed", method: "test" },
+		writeTasks(tmpDir, [
+			{ id: "t1", description: "build it", status: "planned" },
+			{ id: "t-other", description: "other", status: "planned" },
 		]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
+		// v1 verifies a DIFFERENT task — no edge links v1→t1.
+		fileVerifiesEdge(tmpDir, "v1", "t-other");
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
 			(err: Error) => {
-				assert.ok(err.message.includes("targets"));
+				assert.ok(err.message.includes("does not verify task"));
+				assert.ok(err.message.includes("verification_verifies_item"));
 				return true;
 			},
 		);
 	});
 
-	it("throws when verification targets wrong type", (t) => {
-		const tmpDir = makeTmpDir("ct-wrong-type");
+	it("throws when a passing verification has NO verifies edge at all (FGAP-014 real-substrate scenario)", (t) => {
+		const tmpDir = makeTmpDir("ct-no-edge");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "phase", status: "passed", method: "test" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
+		// No edge filed at all — the old field-smuggling tests masked exactly this.
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
 			(err: Error) => {
-				assert.ok(err.message.includes("targets"));
+				assert.ok(err.message.includes("does not verify task"));
 				return true;
 			},
 		);
@@ -1223,9 +1265,11 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "failed", method: "test" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "failed", method: "test" }]);
+		fileVerifiesEdge(tmpDir, "v1", "t1");
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
@@ -1242,9 +1286,11 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "partial", method: "test" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "partial", method: "test" }]);
+		fileVerifiesEdge(tmpDir, "v1", "t1");
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
@@ -1261,9 +1307,11 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "skipped", method: "test" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "skipped", method: "test" }]);
+		fileVerifiesEdge(tmpDir, "v1", "t1");
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
@@ -1280,9 +1328,11 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
-		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "completed", verification: "v-old" }]);
-		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "completed" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
+		fileVerifiesEdge(tmpDir, "v1", "t1");
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
@@ -1299,9 +1349,11 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "cancelled" }]);
-		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
+		fileVerifiesEdge(tmpDir, "v1", "t1");
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
@@ -1318,11 +1370,11 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		writeVerifications(tmpDir, [
-			{ id: "v1", target: "t-missing", target_type: "task", status: "passed", method: "test" },
-		]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
+		fileVerifiesEdge(tmpDir, "v1", "t-missing");
 
 		assert.throws(
 			() => completeTask(tmpDir, "t-missing", "v1"),
@@ -1339,6 +1391,7 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
 		// No verification.json
@@ -1358,9 +1411,11 @@ describe("completeTask", () => {
 
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
 
 		// No tasks.json
-		writeVerifications(tmpDir, [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
+		fileVerifiesEdge(tmpDir, "v1", "t1");
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),
@@ -1804,26 +1859,71 @@ describe("verification gate — AJV if/then enforcement", () => {
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
 
-		installTasksSchema(tmpDir);
+		// FGAP-014: completeTask now targets the canonical edge model — task is
+		// completed by setting { status: "completed" } with NO embedded verification
+		// field; the verification_verifies_item edge is the linkage. So validate
+		// against the CANONICAL tasks schema shape (samples/.context), which has no
+		// `verification` field and no if/then gate — NOT the legacy defaults/ copy
+		// (installTasksSchema), whose if/then requires a `verification` field that
+		// the edge model deliberately no longer writes. additionalProperties is
+		// permissive and id is unconstrained so this test's ad-hoc `t1` id validates,
+		// mirroring the migrated completeTask suite's permissive fixture setup.
+		const schemasDir = path.join(projectDir, "schemas");
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(schemasDir, "tasks.schema.json"),
+			JSON.stringify({
+				type: "object",
+				required: ["tasks"],
+				properties: {
+					tasks: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id"],
+							properties: {
+								id: { type: "string" },
+								description: { type: "string" },
+								status: {
+									type: "string",
+									enum: ["planned", "in-progress", "completed", "blocked", "cancelled"],
+								},
+							},
+						},
+					},
+				},
+			}),
+		);
+		// completeTask gates on the verification_verifies_item edge, not the removed
+		// verification.target/target_type fields. Register the relation_type
+		// (writeConfig defaults to REL_TYPES, which declares verification_verifies_item)
+		// so appendRelationByRef operates against a real relation_type.
+		writeConfig(projectDir);
 		writeTasksRaw(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
 
-		// Write verification block (completeTask reads this)
+		// Write verification block (completeTask reads this) — schema-valid, no removed fields.
 		fs.writeFileSync(
 			path.join(projectDir, "verification.json"),
 			JSON.stringify({
-				verifications: [{ id: "v1", target: "t1", target_type: "task", status: "passed", method: "test" }],
+				verifications: [{ id: "v1", status: "passed", method: "test" }],
 			}),
 		);
 
-		// completeTask sets both status and verification atomically — the if/then gate is satisfied
+		// File the canonical verification → task link via the real porcelain (appendRelationByRef).
+		appendRelationByRef(tmpDir, { parent: "v1", child: "t1", relation_type: "verification_verifies_item" });
+
+		// completeTask sets { status: "completed" } and validates against the
+		// canonical schema; the verifies edge (not a field) is the linkage.
 		const result = completeTask(tmpDir, "t1", "v1");
 		assert.strictEqual(result.taskId, "t1");
+		assert.strictEqual(result.verificationId, "v1");
+		assert.strictEqual(result.verificationStatus, "passed");
 		assert.strictEqual(result.previousStatus, "planned");
 
-		// Read back and verify
+		// Read back: task completed, and NO verification field embedded (edge model).
 		const data = JSON.parse(fs.readFileSync(path.join(projectDir, "tasks.json"), "utf-8"));
 		assert.strictEqual(data.tasks[0].status, "completed");
-		assert.strictEqual(data.tasks[0].verification, "v1");
+		assert.ok(!("verification" in data.tasks[0]), "no verification field should be embedded — the edge is the linkage");
 	});
 });
 

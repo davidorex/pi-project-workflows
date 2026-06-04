@@ -31,6 +31,7 @@ import { loadRegistry, resolveAlias, resolveSubstrateDir } from "./context-regis
 import type { DispatchContext } from "./dispatch-context.js";
 import { cleanGitEnv } from "./git-env.js";
 import { getLensValidators } from "./lens-validator.js";
+import { findReferencesInRepo } from "./lens-view.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
 import { findNestedIdBearingArrays } from "./schema-write.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
@@ -2151,10 +2152,19 @@ export interface CompleteTaskResult {
 
 /**
  * Gate task completion on verification. Reads the verification block to confirm
- * a passing verification entry exists targeting this task, then atomically
- * updates the task status to "completed" with the verification cross-reference.
+ * a passing verification entry exists, asserts a `verification_verifies_item`
+ * closure-table edge links that verification (parent) to this task (child), then
+ * atomically updates the task status to "completed". The edge IS the linkage —
+ * no `verification` field is embedded on the task (the verification → task
+ * `verification.target`/`target_type` fields were removed from the verification
+ * schema in favor of the edge; this gate reads the edge, not the removed fields).
  */
-export function completeTask(cwd: string, taskId: string, verificationId: string): CompleteTaskResult {
+export function completeTask(
+	cwd: string,
+	taskId: string,
+	verificationId: string,
+	ctx?: DispatchContext,
+): CompleteTaskResult {
 	// 1. Read and validate verification entry
 	let verData: { verifications?: Record<string, unknown>[] };
 	try {
@@ -2167,12 +2177,6 @@ export function completeTask(cwd: string, taskId: string, verificationId: string
 	const verification = verifications.find((v) => v.id === verificationId);
 	if (!verification) {
 		throw new Error(`Verification '${verificationId}' not found in verification block`);
-	}
-
-	if (verification.target !== taskId || verification.target_type !== "task") {
-		throw new Error(
-			`Verification '${verificationId}' targets '${verification.target}' (${verification.target_type}), not task '${taskId}'`,
-		);
 	}
 
 	if (verification.status !== "passed") {
@@ -2203,11 +2207,22 @@ export function completeTask(cwd: string, taskId: string, verificationId: string
 		throw new Error(`Task '${taskId}' is already cancelled`);
 	}
 
-	// 3. Update task status with verification cross-reference
-	updateItemInBlock(cwd, "tasks", "tasks", (t) => t.id === taskId, {
-		status: "completed",
-		verification: verificationId,
-	});
+	// 3. Assert the verification_verifies_item edge: verification (parent) →
+	// task (child). The closure-table edge — not a verification field — is the
+	// canonical linkage. Inbound edges point AT the task; compare the parent
+	// endpoint via endpointKey (the codebase's endpoint-comparison idiom).
+	const verifiesEdge = findReferencesInRepo(cwd, taskId, "inbound").find(
+		(e) => e.relation_type === "verification_verifies_item" && endpointKey(e.parent) === verificationId,
+	);
+	if (!verifiesEdge) {
+		throw new Error(
+			`verification '${verificationId}' does not verify task '${taskId}' — no verification_verifies_item edge; file the link (append-relation parent=${verificationId} child=${taskId} relation_type=verification_verifies_item) before completing`,
+		);
+	}
+
+	// 4. Update task status. The edge is the linkage — no `verification` field is
+	// embedded (a populated additionalProperties:false tasks schema would reject it).
+	updateItemInBlock(cwd, "tasks", "tasks", (t) => t.id === taskId, { status: "completed" }, ctx);
 
 	return {
 		taskId,

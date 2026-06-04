@@ -1580,8 +1580,8 @@ export const ops: OpDefinition[] = [
 			}),
 		}),
 		surface: "use",
-		run(cwd: string, params: { taskId: string; verificationId: string }): OpResult {
-			const result = completeTask(cwd, params.taskId, params.verificationId);
+		run(cwd: string, params: { taskId: string; verificationId: string }, ctx?: DispatchContext): OpResult {
+			const result = completeTask(cwd, params.taskId, params.verificationId, ctx);
 			return `Task '${result.taskId}' completed (was '${result.previousStatus}'). Verification: ${result.verificationId} (${result.verificationStatus})`;
 		},
 	},

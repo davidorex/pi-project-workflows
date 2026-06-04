@@ -66,7 +66,7 @@ Each substrate's `config.json` carries a `substrate_id` (pattern `sub-` + 16 hex
 
 ### Relations: closure-table edges, structured endpoints
 
-All inter-item relationships are closure-table edges in `<substrate-dir>/relations.json` — `{parent, child, relation_type, ordinal?}` rows. Endpoints are dual-form: a legacy string (a canonical id, a lens bin name, or an `<alias>:<refname>` cross-substrate sentinel), or a structured `{kind:"item", oid, refname?, substrate_id?, content_hash?}` (where `substrate_id` marks a foreign endpoint), or a structured `{kind:"lens_bin", bin}` virtual parent. Embedded nested id-bearing arrays and FK-as-field are forbidden (`validateContext` flags `nested_id_bearing_array`); containment is a membership edge carrying `ordinal`, and the nested id-bearing array → top-level entity block + ordinal-bearing membership edges promotion is performed by the canonicalizer (`canonicalize-substrate` tool) — not `promote-item`, which is the separate cross-substrate derivation tool.
+All inter-item relationships are closure-table edges in `<substrate-dir>/relations.json` — `{parent, child, relation_type, ordinal?}` rows. Endpoints are dual-form: a legacy string (a canonical id, a lens bin name, or an `<alias>:<refname>` cross-substrate sentinel), or a structured `{kind:"item", oid, refname?, substrate_id?, content_hash?}` (where `substrate_id` marks a foreign endpoint), or a structured `{kind:"lens_bin", bin}` virtual parent. Embedded nested id-bearing arrays and FK-as-field are forbidden (`validateContext` flags `nested_id_bearing_array`); containment is a membership edge carrying `ordinal`. `promote-item` is the cross-substrate derivation tool (an item promoted into another registered substrate as a new content-addressed item).
 
 ### Schema versioning + migrations
 
@@ -77,13 +77,19 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 - **Block CRUD** — `read-block`, `write-block`, `read-block-dir`, `append-block-item`, `update-block-item`, `upsert-block-item` (validated find-or-append), `remove-block-item`, and the nested-array variants (`append/update/remove-block-nested-item`).
 - **Item-level read/query** — `read-block-item`, `read-block-page`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `join-blocks`, `find-references`, `walk-ancestors`, `context-walk-descendants`, `context-edges-for-lens`, `gather-execution-context`.
 - **Substrate writes** — `append-relation`, `append-relations` (bulk edge append), `remove-relation`, `replace-relation` (single-write atomic re-orient), `amend-config`, `write-schema`, `write-schema-migration`, `rename-canonical-id`.
-- **Content-addressing lifecycle** — `promote-item` (cross-substrate derivation: promote an item into another registered substrate as a new content-addressed item + `item_derived_from_item` lineage edge), `migrate-content-addressed` (backfill identity), `canonicalize-substrate` (one-time canonicalizer; promotes each nested id-bearing array → top-level entity block + ordinal-bearing membership edges).
+- **Content-addressing lifecycle** — `promote-item` (cross-substrate derivation: promote an item into another registered substrate as a new content-addressed item + `item_derived_from_item` lineage edge; `dryRun` previews the destination write without persisting).
 - **Discovery/introspection** — `read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`, `context-bootstrap-state`.
-- **Lifecycle/state** — `context-status`, `context-validate`, `context-validate-relations`, `complete-task`.
+- **Lifecycle/state** — `context-status`, `context-validate`, `context-validate-relations`, `complete-task` (gates on a passing `verification_verifies_item` edge — verification=parent, task=child).
 - **Substrate management** — `context-init`, `context-accept-all`, `context-switch`, `context-list`, `context-archive`.
 - **Roadmap** — `context-roadmap-load`, `context-roadmap-render`, `context-roadmap-validate`, `context-roadmap-list`.
 
-**Op-coverage contract.** Every library write function is accounted for by `OP_COVERAGE_RULE` (a 5-class disjunction: op-backed-direct | op-backed-transitive | for-dir-twin | intentionally-unexposed | internal-primitive) — it is either reachable through an op or deliberately withheld via the `INTENTIONALLY_UNEXPOSED_WRITERS` allowlist (each entry carrying a justification). Both are exported from the `./ops` subpath.
+The relation byRef ops (`append-relation` / `remove-relation` / `replace-relation` / `append-relations`) and `upsert-block-item` accept a `dryRun` flag: it resolves the operation and validates the prospective whole file under the SAME write-path validation, returning the would-decision (`{ ..., dryRun: true }`) while writing nothing. The same shared library path backs both the op (`--dryRun`) and the orchestrator scripts — one implementation, not a script-only preview.
+
+**Op output.** Every op's `run` returns a structured `OpResult` (`string | { json } | { read }`) — data ops carry their un-stringified value, read ops a `ReadStructured`. The runtime-reflecting CLI's `--json` envelope emits `output` as a real JSON value (no double-encode); the default CLI text surface and the in-pi Pi-tool text surface route through `renderOpResultText`. The 50KB read cap is enforced at the OUTPUT BOUNDARY across all three channels (CLI `--json`, CLI text, in-pi text) via `boundedJsonOutput` / `renderOpResultText` — an over-cap payload fails closed (`--json` → `{ data: null, truncated: true, totalBytes, complete: false }`; text → a no-payload REFUSAL) rather than leaking unbounded substrate content.
+
+**Op attestation.** Write ops are auto-attested: `OpDefinition.run` takes an optional `ctx?: DispatchContext` that `registerAll` builds per dispatch — the auth-gate-stamped `params.writer` (a verified human) when present, else an agent identity from `ctx.model` — and forwards to the block-api/context call, so in-pi op writes stamp `created_by` / `created_at` (and `modified_*` on update) when the target schema declares author fields.
+
+**Op-coverage contract.** Every library write function is accounted for by `OP_COVERAGE_RULE` (a 5-class disjunction: op-backed-direct | op-backed-transitive | for-dir-twin | intentionally-unexposed | internal-primitive) — it is either reachable through an op or deliberately withheld via the `INTENTIONALLY_UNEXPOSED_WRITERS` allowlist (each entry carrying a justification). Both are exported from the `./ops` subpath. The contract is enforced by the source-intrinsic `scripts/parity-check.ts` build gate (husky pre-commit + CI): it enumerates library writers from the AST and fails on an unclassified writer or a silent `ctx` drop.
 
 **Commands registered:**
 - `/context init <substrate-dir>` — bootstrap pointer + substrate/schemas dirs + a never-clobber skeleton `config.json` (schema-valid, empty of vocabulary, minted `substrate_id`); onward via accept-all OR amend-config / edit
@@ -94,6 +100,12 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 - `/context status` — derived project state (source metrics, test counts, block summaries, git state)
 - `/context add-work` — extract structured items from conversation into typed blocks
 - `/context validate` — cross-block referential integrity checks
+- `/context roadmap-list` — list every roadmap in `<config.root>/roadmap.json` (id, title, status, phase count)
+- `/context roadmap-view <ROADMAP-id>` — render a roadmap as pure-textual markdown (phase order, per-phase adjacency from authored `phase_depends_on` edges, status rollup, milestone resolution; no mermaid)
+- `/context roadmap-validate [ROADMAP-id]` — validate every roadmap (or one) and surface structured issues
+- `/context switch <existing-dir> | -c <new-dir> | -` — flip the bootstrap pointer (to an existing substrate, bootstrap-new-and-flip, or back to `previous_contextDir`)
+- `/context list` — enumerate top-level dirs containing `config.json` (switchable substrates); marks the active one
+- `/context archive <dir>` — move a non-active substrate dir to `archive/<dir>/`
 
 ## Source Files
 
@@ -104,13 +116,10 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 | `src/content-hash.ts` | RFC 8785 JCS canonicalization → SHA-256 content hashing for the content projection. Exported subpath `./content-hash`. |
 | `src/object-store.ts` | Content-addressed object store: writes/reads `<substrate-dir>/objects/<content_hash>.json` (idempotent, atomic tmp+rename). Exported subpath `./object-store`. |
 | `src/context-registry.ts` | Project-root `.pi-context-registry.json` reader/writer: `substrate_id → { dir, aliases[] }`, `resolveSubstrateDir`, `resolveAlias`. Exported subpath `./context-registry`. |
-| `src/promote-item.ts` | Cross-substrate derivation: promotes a substrate item into another registered substrate as a new content-addressed item, recording an `item_derived_from_item` lineage edge in the destination (`promote-item` tool). (Nested id-bearing array → top-level entity + membership edges is the canonicalizer's job — `canonicalize-substrate`.) Exported subpath `./promote-item`. |
-| `src/migrate-content-addressed.ts` | Backfills three-layer identity onto pre-content-addressed items (`migrate-content-addressed` tool). Exported subpath `./migrate-content-addressed`. |
-| `src/canonicalize-substrate.ts` | One-time substrate canonicalizer (`canonicalize-substrate` tool). Exported subpath `./canonicalize-substrate`. |
+| `src/promote-item.ts` | Cross-substrate derivation: promotes a substrate item into another registered substrate as a new content-addressed item, recording an `item_derived_from_item` lineage edge in the destination (`promote-item` tool; `dryRun` previews without writing). Exported subpath `./promote-item`. |
 | `src/schema-write.ts` | Schema create/replace authoring backing `write-schema`. Exported subpath `./schema-write`. |
 | `src/schema-migrations.ts` | Schema version-bump migration engine (`identity` / `declarative-transform`), backed by `migrations.json`. Exported subpath `./schema-migrations`. |
-| `src/land-identity-fields.ts` | Lands the three identity fields onto an existing schema's item subschema. Exported subpath `./land-identity-fields`. |
-| `src/read-element.ts` | Element-level substrate read helper. Exported subpath `./read-element`. |
+| `src/read-element.ts` | Element-level substrate read helper: `structureForRead` / `renderReadText` (the structure/render split), `serializeForRead` (preserved for external callers), `addressInto` (element addressing), and the `ReadStructured` envelope (`data` + `truncated`/`hasMore`/`total`/`complete`). Over-cap reads fail closed. Exported subpath `./read-element`. |
 | `src/dispatch-context.ts` | `DispatchContext` / `WriterIdentity` attestation types stamped onto block-api writes (`created_by` / `created_at`). In-pi op writes are auto-attested: `OpDefinition.run` takes an optional `ctx?: DispatchContext` that `registerAll` builds per dispatch (auth-gate-verified `params.writer` when present, else an agent identity from `ctx.model`) and forwards to the block-api/context call; exported helper `buildDispatchContextFromExecute(params, extCtx)`. Exported subpath `./dispatch-context`. |
 | `src/rename-canonical-id.ts` | Renames a canonical id across blocks + relations (`rename-canonical-id` tool). Exported subpath `./rename-canonical-id`. |
 | `src/samples-catalog.ts` | Reads the packaged conception/samples catalog. Exported subpath `./samples-catalog`. |
@@ -242,7 +251,7 @@ When working with this extension:
 npm test
 ```
 
-Runs `tsx --test src/*.test.ts`. Test files: `block-api.test.ts`, `block-tools.test.ts`, `schema-validator.test.ts`, `context-sdk.test.ts`.
+Runs `tsx --test src/*.test.ts` — every `*.test.ts` under `src/` (block I/O + identity, schema validation + versioning/migrations, content-hashing + object store, the op-registry, substrate switch/registry/resolve-ref, lens-view, roadmap, and more).
 
 ## Development
 

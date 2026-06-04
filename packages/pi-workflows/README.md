@@ -27,7 +27,7 @@ Creates `.workflows/` for run state. Workflow YAML specs are discovered automati
 
 pi-workflows replaces ad-hoc agent chaining with composable, typed workflow orchestration. Workflows are YAML specs. Steps run as subprocesses (`pi --mode json`) with their own context windows. The main conversation is the control plane; workflows are subordinate.
 
-Workflows consume project blocks as typed input via `readBlock()` — structured data, not raw files. When workflow agents write back to project blocks, pi-context's schema validation enforces the shape at write time. The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
+Workflows consume project blocks as typed input via `readBlock()` — structured data, not raw files. When workflow agents write back to project blocks, pi-context's schema validation enforces the shape at write time. Block-write steps stamp a `workflow`-kind `DispatchContext` (`created_by: "workflow/<step_id>"`) so workflow-written items carry attestation; the post-step artifact write threads the same context (`workflow/<name>:<runId>:artifact:<artifact>`). The two extensions form a typed loop: project state → workflow input → agent output → validated project state.
 
 **Tools registered:**
 - `workflow-execute` — execute a named workflow with typed input (auto-resumes compatible incomplete runs unless `fresh: "true"`)
@@ -135,7 +135,8 @@ Available filters: `length`, `keys`, `filter`, `json`, `upper`, `lower`, `trim`,
 | `agents/` | agent specs (`.agent.yaml`): investigator, decomposer, verifier, synthesizer, … — `ls agents/` or `availableAgents(cwd)` for the current set |
 | `schemas/` | output schemas (`.schema.json`): investigation-findings, execution-results, … — `ls schemas/` for the current set |
 | `workflows/` | workflow specs (`.workflow.yaml`): do-gap, create-phase, parallel-analysis, … — `ls workflows/` or `availableWorkflows(cwd)` for the current set |
-| `templates/` | Nunjucks prompt templates organized by agent role |
+
+The Nunjucks prompt templates no longer ship from this package. They were relocated into `@davidorex/pi-jit-agents`; consumers resolve the bundled template root via its `bundledTemplateDir()` export, and project (`.pi/templates/`) / user overrides still take precedence in the three-tier search.
 
 ## SDK (`src/workflow-sdk.ts`)
 

@@ -1,18 +1,10 @@
 # In short
 
-This monorepo is my experimentation lab for crafting a controllable environment for working with llm's to build things in code. 
-
-Everything runs in Pi but can also be run via scripts from Claude Code etc. while Pi is running with the extensions installed. That'll become a cli in the future.
+This monorepo is my attempt to direct and produce a controllable environment for working with llm's to build things in code. 
 
 I'm considering renaming it "pi-prometheus-bound." Or maybe just "pi-bound." I currently run it with a script that wholly constrains the main Pi agent to tools given by the extensions, plus read and grep and ls. 
 
-My favorite thing currently is being able to craft and shape context substrates -- /context switch [.dir] -- and model them on the shape of the project's particular current focus. 
-
-Alongside that is attempting to turn "agents" into jit-tool calls context exactingly composed from the context substrate. 
-
-Perhaps I'll be proven wrong, but my working suspicion is that "agents" and even "skills" can be jit-composed from for-purpose atomic context blocks and need not be md files that go stale. DRY, via schemas and macros. The method that works for me is to be quite conversational with the model and then to have a framework that allows me to de-ephemeralize the llm's output at the point of conversation -- "file this...." -- into structured and reusable atomic context elements at the moment. At that point planning becomes structuring context and implementation resolves to composing the context into prompts on the fly.
-
-You should (I hope) be able to create exactly the kind of context substrates you need -- and switch between them, or inter-related them (think git branches, but for substrate shapes in your projects) -- and out of those substrates construct the on-the-fly prompts you need, for the particular purposes you might have.
+You should (is the intention) be able to create exactly the kind of context substrates you need -- and switch between them, or inter-related them (think git branches, but for substrate shapes in your projects) -- and out of those substrates, construct the on-the-fly agents you need, for the particular purposes you might have.
 
 ## Philosophy
 

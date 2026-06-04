@@ -17,17 +17,18 @@ pi install npm:@davidorex/pi-context
 /context install    # reconcile <substrate-dir>/ against installed_* lists in config.json
 ```
 
-`init` is intentionally minimal: it writes the bootstrap pointer + substrate/schemas dirs only — no config, no schemas, no starter blocks (ship-no-defaults). Adopt the packaged conception with `/context accept-all` (writes `config.json` from `samples/conception.json`), or hand-declare `config.json`'s `installed_schemas` / `installed_blocks`, then run `/context install` (opt-in install ceremony, idempotent, `--update` overwrites). The package-shipped samples catalog (`samples/blocks/` and `samples/schemas/`) is the source.
+`init` (and `switch -c`) is intentionally minimal: it writes the bootstrap pointer, the substrate/schemas dirs, and a minimal schema-valid **skeleton config** (`schema_version` + empty `block_kinds` + `root` + a minted, registered `substrate_id`) — no schemas, no starter blocks (ship-no-defaults). The skeleton is never-clobbered: an idempotent re-init leaves an existing config untouched. From the skeleton there are two onward paths: adopt the packaged conception with `/context accept-all` (overwrites a skeleton config, never a populated one; writes `config.json` from `samples/conception.json` and preserves the skeleton's `substrate_id`), then `/context install`; or build a custom vocabulary directly via `amend-config` / `write-schema` / `append-block-item` (no catalog adoption). The opt-in install ceremony copies the `installed_schemas` / `installed_blocks` declared in `config.json` from the package samples catalog (`samples/blocks/` and `samples/schemas/`); it is idempotent, `--update` overwrites.
 
 ## How It Works
 
 Project data lives under the substrate root (the dir chosen at init and recorded in `config.json`'s `root` field by accept-all; no default is shipped) as typed JSON block files. Each block has a corresponding JSON Schema that defines its shape. All writes — whether from tools, workflows, or agents — are validated against the schema before data hits disk. Invalid data is never persisted.
 
-After `/context init <substrate-dir>` the substrate skeleton is just the dirs (no config, no schemas, no blocks):
+After `/context init <substrate-dir>` the substrate skeleton is the dirs plus a minimal skeleton `config.json` (schema-valid, empty of vocabulary, carrying a minted/registered `substrate_id`) — no schemas, no blocks:
 
 ```
 <substrate-dir>/
-  schemas/                    — empty until accept-all + install
+  config.json                 — skeleton: schema_version + empty block_kinds + root + substrate_id
+  schemas/                    — empty until accept-all + install (or custom authoring)
 ```
 
 After `/context accept-all` (writes `config.json` from the packaged conception) + `/context install` (with declared entries) and any user authoring, the directory typically grows:
@@ -73,17 +74,19 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 
 **Tools registered:** the tool surface grows with the package — read the generated `skills/pi-context/SKILL.md` for the current set, or call the `list-tools` tool at runtime (in-pi) / `grep pi.registerTool packages/pi-context/src/index.ts` (source). Families:
 
-- **Block CRUD** — `read-block`, `write-block`, `read-block-dir`, `append-block-item`, `update-block-item`, `remove-block-item`, and the nested-array variants (`append/update/remove-block-nested-item`).
+- **Block CRUD** — `read-block`, `write-block`, `read-block-dir`, `append-block-item`, `update-block-item`, `upsert-block-item` (validated find-or-append), `remove-block-item`, and the nested-array variants (`append/update/remove-block-nested-item`).
 - **Item-level read/query** — `read-block-item`, `read-block-page`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `join-blocks`, `find-references`, `walk-ancestors`, `context-walk-descendants`, `context-edges-for-lens`, `gather-execution-context`.
-- **Substrate writes** — `append-relation`, `amend-config`, `write-schema`, `write-schema-migration`, `rename-canonical-id`.
+- **Substrate writes** — `append-relation`, `append-relations` (bulk edge append), `remove-relation`, `replace-relation` (single-write atomic re-orient), `amend-config`, `write-schema`, `write-schema-migration`, `rename-canonical-id`.
 - **Content-addressing lifecycle** — `promote-item` (cross-substrate derivation: promote an item into another registered substrate as a new content-addressed item + `item_derived_from_item` lineage edge), `migrate-content-addressed` (backfill identity), `canonicalize-substrate` (one-time canonicalizer; promotes each nested id-bearing array → top-level entity block + ordinal-bearing membership edges).
 - **Discovery/introspection** — `read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`, `context-bootstrap-state`.
 - **Lifecycle/state** — `context-status`, `context-validate`, `context-validate-relations`, `complete-task`.
 - **Substrate management** — `context-init`, `context-accept-all`, `context-switch`, `context-list`, `context-archive`.
 - **Roadmap** — `context-roadmap-load`, `context-roadmap-render`, `context-roadmap-validate`, `context-roadmap-list`.
 
+**Op-coverage contract.** Every library write function is accounted for by `OP_COVERAGE_RULE` (a 5-class disjunction: op-backed-direct | op-backed-transitive | for-dir-twin | intentionally-unexposed | internal-primitive) — it is either reachable through an op or deliberately withheld via the `INTENTIONALLY_UNEXPOSED_WRITERS` allowlist (each entry carrying a justification). Both are exported from the `./ops` subpath.
+
 **Commands registered:**
-- `/context init <substrate-dir>` — bootstrap pointer + substrate/schemas dirs only (no config, no defaults)
+- `/context init <substrate-dir>` — bootstrap pointer + substrate/schemas dirs + a never-clobber skeleton `config.json` (schema-valid, empty of vocabulary, minted `substrate_id`); onward via accept-all OR amend-config / edit
 - `/context accept-all` — adopt `samples/conception.json` as `config.json` (idempotent; never overwrites an existing config)
 - `/context install [--update]` — reconcile the substrate against `installed_schemas` / `installed_blocks` in `config.json` by copying assets from the samples catalog (skip-if-exists by default; `--update` overwrites)
 - `/context view <lensId>` — render a configured lens (groupByLens projection) into the conversation as markdown
@@ -108,7 +111,7 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 | `src/schema-migrations.ts` | Schema version-bump migration engine (`identity` / `declarative-transform`), backed by `migrations.json`. Exported subpath `./schema-migrations`. |
 | `src/land-identity-fields.ts` | Lands the three identity fields onto an existing schema's item subschema. Exported subpath `./land-identity-fields`. |
 | `src/read-element.ts` | Element-level substrate read helper. Exported subpath `./read-element`. |
-| `src/dispatch-context.ts` | `DispatchContext` / `WriterIdentity` attestation types stamped onto block-api writes. Exported subpath `./dispatch-context`. |
+| `src/dispatch-context.ts` | `DispatchContext` / `WriterIdentity` attestation types stamped onto block-api writes (`created_by` / `created_at`). In-pi op writes are auto-attested: `OpDefinition.run` takes an optional `ctx?: DispatchContext` that `registerAll` builds per dispatch (auth-gate-verified `params.writer` when present, else an agent identity from `ctx.model`) and forwards to the block-api/context call; exported helper `buildDispatchContextFromExecute(params, extCtx)`. Exported subpath `./dispatch-context`. |
 | `src/rename-canonical-id.ts` | Renames a canonical id across blocks + relations (`rename-canonical-id` tool). Exported subpath `./rename-canonical-id`. |
 | `src/samples-catalog.ts` | Reads the packaged conception/samples catalog. Exported subpath `./samples-catalog`. |
 | `src/schema-validator.ts` | AJV wrapper: `validate`, `validateFromFile`, `ValidationError`. Exported subpath `./schema-validator`. |

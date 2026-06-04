@@ -45,6 +45,10 @@ pi-context read-block-page --block framework-gaps --offset 0 --limit 50
 
 Ops that declare a `writer` parameter (e.g. `promote-item`, `write-schema-migration`) get it injected automatically when not passed via `--writer`. The identity is resolved by cascade: `git config user.email`, then `$USER`, then the literal `"operator"`. Pass `--writer '{"kind":"human","user":"you@example.com"}'` to override.
 
+An explicit `--writer` is validated as a well-formed `WriterIdentity`: it must carry a `kind` of `human` / `agent` / `monitor` / `workflow` **and** that kind's identifier field as a non-empty string (`user` for `human`, `agent_id` for `agent`, `monitor_name` for `monitor`, `workflow_step_id` for `workflow`). A malformed `--writer` is an error — the CLI no longer silently stamps a garbage identity such as `human/undefined`.
+
+The CLI builds a `DispatchContext` from the resolved (or explicit, validated) identity and threads it to every op, so writes stamp `created_by` / `created_at`. Filing through the CLI no longer fails on schemas that require author fields. The context builder is exported as `buildCliDispatchContext`.
+
 ## Auth-gated ops
 
 Ops marked `authGated` (writes that mutate config / schemas / migrations) require authorization, mirroring the in-pi dispatch gate:

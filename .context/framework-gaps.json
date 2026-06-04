@@ -78,7 +78,7 @@
     },
     {
       "title": "switch / switch -c do not reconcile the active substrate's identity into the registry, yielding a false substrate_id_unregistered",
-      "status": "accepted",
+      "status": "closed",
       "package": "pi-context",
       "description": "Switching the active pointer to a substrate whose config.json carries a substrate_id absent from this project's .pi-context-registry.json produces a false substrate_id_unregistered error from the SoT-drift invariant, though nothing is functionally broken. Registration happens only in writeSkeletonConfig (fresh write) and adoptConception (accept-all); switchToExisting only checks config presence then flips the pointer, and switchAndCreate's writeSkeletonConfig never-clobber skips the write (and its register) when a config already exists. So neither switch path records the now-active substrate's identity.",
       "evidence": [
@@ -103,7 +103,10 @@
       "created_at": "2026-06-03T22:34:15.863Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "6fa0827c377ece5df7de98d7d0595989",
-      "content_hash": "bfc774c16bf6287893e48e273f6bb88b313ebe542dd748e61b11c1fb63c9b81e"
+      "content_hash": "93306bfbb59dc5e6b082a26c2f80971fda8524d368e50d0a9dc6d2a74467535d",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-04T02:31:44.268Z",
+      "content_parent": "bfc774c16bf6287893e48e273f6bb88b313ebe542dd748e61b11c1fb63c9b81e"
     },
     {
       "title": "pi-context has no structure-aware git merge driver — substrate files fall through to git's line-based merge, which mangles them",

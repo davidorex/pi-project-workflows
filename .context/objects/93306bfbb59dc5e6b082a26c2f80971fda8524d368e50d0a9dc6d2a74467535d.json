@@ -1,0 +1,24 @@
+{
+  "title": "switch / switch -c do not reconcile the active substrate's identity into the registry, yielding a false substrate_id_unregistered",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "Switching the active pointer to a substrate whose config.json carries a substrate_id absent from this project's .pi-context-registry.json produces a false substrate_id_unregistered error from the SoT-drift invariant, though nothing is functionally broken. Registration happens only in writeSkeletonConfig (fresh write) and adoptConception (accept-all); switchToExisting only checks config presence then flips the pointer, and switchAndCreate's writeSkeletonConfig never-clobber skips the write (and its register) when a config already exists. So neither switch path records the now-active substrate's identity.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "switchToExisting checks config.json exists + flipBootstrapPointer; never calls registerSubstrate"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "759,822",
+      "reference": "the only registerSubstrate call sites — writeSkeletonConfig fresh write + adoptConception"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1685-1714",
+      "reference": "SoT-drift invariant emits substrate_id_unregistered when config.substrate_id has no registry entry"
+    }
+  ],
+  "impact": "A valid switch to an unregistered substrate (copied-in, hand-authored, or surviving a registry reset) fails context-validate with a false error; the remedy today is a manual registerSubstrate or a clobber-guarded accept-all.",
+  "proposed_resolution": "switch paths register config.substrate_id -> active dir when the id is absent from the registry (functionally safe: absent => no collision; a present-but-different-dir entry remains the substrate_id_registry_mismatch error). Origin/provenance recording for imported substrates defers to DEC-0002. See DEC-0003."
+}

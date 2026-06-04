@@ -4,6 +4,8 @@ All notable changes to `@davidorex/pi-workflows` are recorded here. Format follo
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-06-04
+
 ## [0.28.1] - 2026-06-03
 
 ## [0.28.0] - 2026-06-03

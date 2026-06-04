@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-06-04
+
 ### Added
 - `init` / `switch -c` write a minimal schema-valid skeleton `config.json` (`schema_version` + empty `block_kinds` + `root` + a minted, registered `substrate_id`) via a never-clobber `writeSkeletonConfig`, so a custom-vocabulary substrate can be built through the op surface (`amend-config` / `write-schema` / `append-block-item`) without adopting the packaged catalog
 - `isSkeletonConfig` predicate (iterates `REGISTRY_DESCRIPTORS` — every addressable registry — so it tracks the full vocabulary set) and a `skeleton` bootstrap state in `deriveBootstrapState`, ordered no-pointer → no-config → skeleton → not-installed → ready

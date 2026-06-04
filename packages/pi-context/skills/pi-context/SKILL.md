@@ -46,6 +46,7 @@ Append a closure-table relation (edge: parent, child, relation_type, optional or
 | `child` | string | yes | Canonical id of the child endpoint |
 | `relation_type` | string | yes | Registered relation_type canonical_id / hierarchy edge type / lens id |
 | `ordinal` | integer | no | Optional sibling-ordering within (parent, relation_type) |
+| `dryRun` | boolean | no | Preview without writing relations.json |
 </tool>
 
 <tool name="remove-relation">
@@ -58,6 +59,7 @@ Remove the single closure-table relation (edge) matching parent+child+relation_t
 | `parent` | string | yes | Canonical id (or lens bin name) of the parent endpoint |
 | `child` | string | yes | Canonical id of the child endpoint |
 | `relation_type` | string | yes | Registered relation_type canonical_id / hierarchy edge type / lens id |
+| `dryRun` | boolean | no | Preview without writing relations.json |
 </tool>
 
 <tool name="replace-relation">
@@ -74,6 +76,7 @@ Atomically replace one closure-table relation with another in a SINGLE write (no
 | `child` | string | yes | Child endpoint selector of the replacement edge |
 | `relation_type` | string | yes | relation_type of the replacement edge |
 | `ordinal` | integer | no | Optional sibling-ordering within (parent, relation_type) for the new edge |
+| `dryRun` | boolean | no | Preview without writing relations.json |
 </tool>
 
 <tool name="append-relations">
@@ -84,6 +87,7 @@ Append MANY closure-table relations to relations.json in a single write. Each ed
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `edges` | unknown | yes | JSON array of { parent, child, relation_type, ordinal? } selector objects (parent/child are id/lens-bin selectors) |
+| `dryRun` | boolean | no | Preview without writing relations.json |
 </tool>
 
 <tool name="upsert-block-item">

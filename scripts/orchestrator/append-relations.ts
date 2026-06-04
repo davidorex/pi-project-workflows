@@ -20,8 +20,8 @@
  * --edges accepts an inline JSON array or @path to a file containing the array.
  */
 import fs from "node:fs";
-import { type Edge, endpointIdentity, loadRelations } from "@davidorex/pi-context/context";
-import { appendRelationsByRef, resolveRelationSelector } from "@davidorex/pi-context/context-sdk";
+import type { Edge } from "@davidorex/pi-context/context";
+import { appendRelationsByRef } from "@davidorex/pi-context/context-sdk";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 
 interface EdgeSelector {
@@ -125,42 +125,32 @@ function main(): void {
 	const writer = parseWriter(args.writer);
 	const ctx: DispatchContext = { writer };
 
+	// The dry-run path delegates to the SHARED library preview (appendRelationsByRef
+	// with { dryRun: true }, TASK-010): it replays the on-disk AND in-batch dedup,
+	// validates the prospective relations (write-path parity), and reports the
+	// would-append / would-skip counts, writing nothing.
 	if (args.dryRun) {
-		console.error("[dry-run] computing prospective bulk append; no write");
-		let existing: Edge[] = [];
+		let result: { appended: number; skipped: number; edges: Edge[] };
 		try {
-			existing = loadRelations(args.cwd);
-		} catch (err) {
-			console.error(`[dry-run] could not read existing relations: ${err instanceof Error ? err.message : String(err)}`);
-			process.exit(3);
-		}
-		const seen = new Set(
-			existing.map((e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}`),
-		);
-		let appended = 0;
-		let skipped = 0;
-		const resolved: Edge[] = [];
-		for (const rel of args.edges) {
-			const edge: Edge = {
-				parent: resolveRelationSelector(args.cwd, rel.parent),
-				child: resolveRelationSelector(args.cwd, rel.child),
-				relation_type: rel.relation_type,
-				...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
-			};
-			resolved.push(edge);
-			const key = `${endpointIdentity(edge.parent)} ${endpointIdentity(edge.child)} ${edge.relation_type}`;
-			if (seen.has(key)) {
-				skipped++;
+			result = appendRelationsByRef(args.cwd, args.edges, ctx, { dryRun: true });
+		} catch (err: any) {
+			console.error("[dry-run] FAIL");
+			if (err?.name === "ValidationError" && Array.isArray(err.errors)) {
+				for (const e of err.errors) {
+					console.error(`  - ${e.instancePath || "(root)"}: ${e.message}`);
+				}
 			} else {
-				seen.add(key);
-				appended++;
+				console.error(`  - ${err instanceof Error ? err.message : String(err)}`);
 			}
+			process.exit(5);
 		}
 		console.error("[dry-run] PASS");
 		if (args.format === "json") {
-			console.log(JSON.stringify({ wouldAppend: appended, wouldSkip: skipped, edges: resolved }, null, 2));
+			console.log(
+				JSON.stringify({ wouldAppend: result.appended, wouldSkip: result.skipped, edges: result.edges }, null, 2),
+			);
 		} else {
-			console.log(`would append ${appended}, skip ${skipped} (duplicates)`);
+			console.log(`would append ${result.appended}, skip ${result.skipped} (duplicates)`);
 		}
 		process.exit(0);
 	}

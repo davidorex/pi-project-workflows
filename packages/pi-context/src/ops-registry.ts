@@ -333,17 +333,20 @@ export const ops: OpDefinition[] = [
 				description: "Registered relation_type canonical_id / hierarchy edge type / lens id",
 			}),
 			ordinal: Type.Optional(Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type)" })),
+			dryRun: Type.Optional(Type.Boolean({ description: "Preview without writing relations.json" })),
 		}),
 		surface: "use",
 		run(
 			cwd: string,
-			params: { parent: string; child: string; relation_type: string; ordinal?: number },
+			params: { parent: string; child: string; relation_type: string; ordinal?: number; dryRun?: boolean },
 			ctx?: DispatchContext,
 		): OpResult {
 			// Cycle-5 porcelain: STRING selectors (bare refname / <alias>:<refname> /
 			// lens-bin) are resolved to structured EdgeEndpoints and written via the
 			// raw plumbing. The param surface stays string-typed; messaging uses the
-			// raw selectors (params.*), not the resolved structured endpoints.
+			// raw selectors (params.*), not the resolved structured endpoints. Under
+			// dryRun the byRef fn validates the prospective relations + dedup-checks
+			// without writing (TASK-010 shared preview path).
 			const { appended } = appendRelationByRef(
 				cwd,
 				{
@@ -353,8 +356,14 @@ export const ops: OpDefinition[] = [
 					...(params.ordinal !== undefined ? { ordinal: params.ordinal } : {}),
 				},
 				ctx,
+				{ dryRun: params.dryRun },
 			);
 			const ordinalNote = params.ordinal !== undefined ? ` (ordinal ${params.ordinal})` : "";
+			if (params.dryRun) {
+				return appended
+					? `would append relation ${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`
+					: `would no-op (duplicate): relation ${params.parent} -[${params.relation_type}]-> ${params.child}`;
+			}
 			return appended
 				? `Appended relation ${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`
 				: `Relation ${params.parent} -[${params.relation_type}]-> ${params.child} already exists — no-op`;
@@ -375,21 +384,30 @@ export const ops: OpDefinition[] = [
 			relation_type: Type.String({
 				description: "Registered relation_type canonical_id / hierarchy edge type / lens id",
 			}),
+			dryRun: Type.Optional(Type.Boolean({ description: "Preview without writing relations.json" })),
 		}),
 		surface: "use",
 		run(
 			cwd: string,
-			params: { parent: string; child: string; relation_type: string },
+			params: { parent: string; child: string; relation_type: string; dryRun?: boolean },
 			ctx?: DispatchContext,
 		): OpResult {
 			// Cycle-5 porcelain: STRING selectors are resolved to structured
 			// EdgeEndpoints, then matched on the identityKey dedup identity. Messaging
 			// uses the raw selectors (params.*), not the resolved structured endpoints.
+			// Under dryRun the byRef fn validates the prospective post-removal
+			// relations + match-checks without writing (TASK-010 shared preview path).
 			const { removed } = removeRelationByRef(
 				cwd,
 				{ parent: params.parent, child: params.child, relation_type: params.relation_type },
 				ctx,
+				{ dryRun: params.dryRun },
 			);
+			if (params.dryRun) {
+				return removed
+					? `would remove relation ${params.parent} -[${params.relation_type}]-> ${params.child}`
+					: `would no-op (no matching relation): ${params.parent} -[${params.relation_type}]-> ${params.child}`;
+			}
 			return removed
 				? `Removed relation ${params.parent} -[${params.relation_type}]-> ${params.child}`
 				: `Relation ${params.parent} -[${params.relation_type}]-> ${params.child} — no matching relation — no-op`;
@@ -414,6 +432,7 @@ export const ops: OpDefinition[] = [
 			ordinal: Type.Optional(
 				Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type) for the new edge" }),
 			),
+			dryRun: Type.Optional(Type.Boolean({ description: "Preview without writing relations.json" })),
 		}),
 		surface: "use",
 		run(
@@ -426,9 +445,13 @@ export const ops: OpDefinition[] = [
 				child: string;
 				relation_type: string;
 				ordinal?: number;
+				dryRun?: boolean;
 			},
 			ctx?: DispatchContext,
 		): OpResult {
+			// Under dryRun the byRef fn validates the prospective post-replace
+			// relations and computes the same removed/replaced would-decisions
+			// without writing (TASK-010 shared preview path).
 			const { replaced, removed } = replaceRelationByRef(
 				cwd,
 				{
@@ -441,10 +464,23 @@ export const ops: OpDefinition[] = [
 					},
 				},
 				ctx,
+				{ dryRun: params.dryRun },
 			);
 			const ordinalNote = params.ordinal !== undefined ? ` (ordinal ${params.ordinal})` : "";
 			const oldDesc = `${params.old_parent} -[${params.old_relation_type}]-> ${params.old_child}`;
 			const newDesc = `${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`;
+			if (params.dryRun) {
+				if (!removed && !replaced) {
+					return `would no-op — old edge ${oldDesc} absent and new edge ${newDesc} already present`;
+				}
+				if (!removed) {
+					return `would append new relation ${newDesc} (old ${oldDesc} absent)`;
+				}
+				if (!replaced) {
+					return `would remove relation ${oldDesc}; new relation ${newDesc} already present (no duplicate written)`;
+				}
+				return `would replace relation ${oldDesc} with ${newDesc}`;
+			}
 			if (!removed && !replaced) {
 				return `Replace relation no-op — old edge ${oldDesc} absent and new edge ${newDesc} already present`;
 			}
@@ -471,9 +507,10 @@ export const ops: OpDefinition[] = [
 				description:
 					"JSON array of { parent, child, relation_type, ordinal? } selector objects (parent/child are id/lens-bin selectors)",
 			}),
+			dryRun: Type.Optional(Type.Boolean({ description: "Preview without writing relations.json" })),
 		}),
 		surface: "use",
-		run(cwd: string, params: { edges: unknown }, ctx?: DispatchContext): OpResult {
+		run(cwd: string, params: { edges: unknown; dryRun?: boolean }, ctx?: DispatchContext): OpResult {
 			// Type.Unknown() params may arrive as JSON strings — parse if needed.
 			let edges = params.edges;
 			if (typeof edges === "string") {
@@ -486,12 +523,18 @@ export const ops: OpDefinition[] = [
 			if (!Array.isArray(edges)) {
 				throw new Error(`edges parameter must be a JSON array of { parent, child, relation_type, ordinal? } objects`);
 			}
+			// Under dryRun the byRef fn replays the on-disk + in-batch dedup and
+			// validates the prospective relations without writing (TASK-010 shared
+			// preview path).
 			const { appended, skipped } = appendRelationsByRef(
 				cwd,
 				edges as { parent: string; child: string; relation_type: string; ordinal?: number }[],
 				ctx,
+				{ dryRun: params.dryRun },
 			);
-			return `appended ${appended}, skipped ${skipped} (duplicates)`;
+			return params.dryRun
+				? `would append ${appended}, skip ${skipped} (duplicates)`
+				: `appended ${appended}, skipped ${skipped} (duplicates)`;
 		},
 	},
 	{

@@ -18,8 +18,8 @@
  * Usage:
  *   tsx scripts/orchestrator/remove-relation.ts --parent <id> --child <id> --relation-type <rt> [--writer kind:id] [--dry-run] [--cwd <dir>] [--format json|table]
  */
-import { type Edge, endpointIdentity, loadRelations } from "@davidorex/pi-context/context";
-import { removeRelationByRef, resolveRelationSelector } from "@davidorex/pi-context/context-sdk";
+import type { Edge } from "@davidorex/pi-context/context";
+import { removeRelationByRef } from "@davidorex/pi-context/context-sdk";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 
 interface Args {
@@ -109,31 +109,35 @@ function main(): void {
 
 	// Cycle-5 porcelain: STRING --parent / --child selectors are RESOLVED to
 	// structured EdgeEndpoints and matched on the identityKey dedup identity. The
-	// dry-run path reports whether a matching edge would be removed; messaging
-	// uses the original string selectors.
+	// dry-run path delegates to the SHARED library preview (removeRelationByRef
+	// with { dryRun: true }, TASK-010): it validates the prospective post-removal
+	// relations (write-path parity) and reports whether a matching edge would be
+	// removed, writing nothing. Messaging uses the original string selectors.
 	if (args.dryRun) {
-		console.error("[dry-run] computing prospective removal; no write");
-		let existing: Edge[] = [];
+		let result: { removed: boolean; edge: Edge };
 		try {
-			existing = loadRelations(args.cwd);
-		} catch (err) {
-			console.error(`[dry-run] could not read existing relations: ${err instanceof Error ? err.message : String(err)}`);
-			process.exit(3);
+			result = removeRelationByRef(
+				args.cwd,
+				{ parent: args.parent, child: args.child, relation_type: args.relationType },
+				ctx,
+				{ dryRun: true },
+			);
+		} catch (err: any) {
+			console.error("[dry-run] FAIL");
+			if (err?.name === "ValidationError" && Array.isArray(err.errors)) {
+				for (const e of err.errors) {
+					console.error(`  - ${e.instancePath || "(root)"}: ${e.message}`);
+				}
+			} else {
+				console.error(`  - ${err instanceof Error ? err.message : String(err)}`);
+			}
+			process.exit(5);
 		}
-		const resolvedEdge: Edge = {
-			parent: resolveRelationSelector(args.cwd, args.parent),
-			child: resolveRelationSelector(args.cwd, args.child),
-			relation_type: args.relationType,
-		};
-		const targetId = `${endpointIdentity(resolvedEdge.parent)} ${endpointIdentity(resolvedEdge.child)} ${args.relationType}`;
-		const matches = existing.some(
-			(e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` === targetId,
-		);
 		console.error("[dry-run] PASS");
 		if (args.format === "json") {
-			console.log(JSON.stringify({ wouldRemove: matches, edge: resolvedEdge }, null, 2));
+			console.log(JSON.stringify({ wouldRemove: result.removed, edge: result.edge }, null, 2));
 		} else {
-			const verb = matches ? "remove" : "NO-OP (no matching relation)";
+			const verb = result.removed ? "remove" : "NO-OP (no matching relation)";
 			console.log(`would ${verb}: ${args.parent} -[${args.relationType}]-> ${args.child}`);
 		}
 		process.exit(0);

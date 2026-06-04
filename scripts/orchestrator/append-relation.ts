@@ -18,12 +18,9 @@
  * Usage:
  *   tsx scripts/orchestrator/append-relation.ts --parent <id> --child <id> --relation-type <rt> [--ordinal N] [--writer kind:id] [--dry-run] [--cwd <dir>] [--format json|table]
  */
-import fs from "node:fs";
-import path from "node:path";
-import { type Edge, endpointIdentity, loadRelations } from "@davidorex/pi-context/context";
-import { appendRelationByRef, resolveRelationSelector } from "@davidorex/pi-context/context-sdk";
+import type { Edge } from "@davidorex/pi-context/context";
+import { appendRelationByRef } from "@davidorex/pi-context/context-sdk";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
-import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 
 interface Args {
 	parent: string;
@@ -114,18 +111,6 @@ function parseWriter(spec: string): WriterIdentity {
 	}
 }
 
-/** Resolve the bundled relations schema file path (top-level `Edge[]` array schema). */
-function relationsSchemaPath(): string {
-	const here = path.dirname(new URL(import.meta.url).pathname);
-	// scripts/orchestrator → repo root → the package's bundled schema file.
-	const schemaPath = path.resolve(here, "..", "..", "packages", "pi-context", "schemas", "relations.schema.json");
-	if (!fs.existsSync(schemaPath)) {
-		console.error(`Relations schema not found: ${schemaPath}`);
-		process.exit(3);
-	}
-	return schemaPath;
-}
-
 function main(): void {
 	const args = parseArgs(process.argv.slice(2));
 	const writer = parseWriter(args.writer);
@@ -133,29 +118,26 @@ function main(): void {
 
 	// Cycle-5 porcelain: STRING --parent / --child selectors (bare refname /
 	// <alias>:<refname> / lens-bin) are RESOLVED to structured EdgeEndpoints. The
-	// CLI param surface is unchanged. The dry-run path validates the RESOLVED
-	// structured edge; messaging uses the original string selectors.
+	// CLI param surface is unchanged. The dry-run path delegates to the SHARED
+	// library preview (appendRelationByRef with { dryRun: true }, TASK-010): it
+	// validates the prospective relations against the schema (write-path parity)
+	// and dedup-checks the resolved edge, writing nothing. The byRef fn throws
+	// (ValidationError) on a schema-invalid prospective; this script preserves the
+	// prior FAIL/PASS + stdout shape.
 	if (args.dryRun) {
-		console.error("[dry-run] validating prospective relations file against schema; no write");
-		// Whole-file validation (FGAP-082): validate the prospective Edge[] array
-		// against the WHOLE relations schema — resolves any $ref + matches what the
-		// write validates — rather than the bare `.items` fragment in isolation.
-		let existing: Edge[] = [];
+		let result: { appended: boolean; edge: Edge };
 		try {
-			existing = loadRelations(args.cwd);
-		} catch (err) {
-			console.error(`[dry-run] could not read existing relations: ${err instanceof Error ? err.message : String(err)}`);
-			process.exit(3);
-		}
-		// Resolve the selectors to the structured form that would be written.
-		const resolvedEdge: Edge = {
-			parent: resolveRelationSelector(args.cwd, args.parent),
-			child: resolveRelationSelector(args.cwd, args.child),
-			relation_type: args.relationType,
-			...(args.ordinal !== undefined ? { ordinal: args.ordinal } : {}),
-		};
-		try {
-			validateFromFile(relationsSchemaPath(), [...existing, resolvedEdge], "relations[edge]");
+			result = appendRelationByRef(
+				args.cwd,
+				{
+					parent: args.parent,
+					child: args.child,
+					relation_type: args.relationType,
+					...(args.ordinal !== undefined ? { ordinal: args.ordinal } : {}),
+				},
+				ctx,
+				{ dryRun: true },
+			);
 		} catch (err: any) {
 			console.error("[dry-run] FAIL");
 			if (err?.name === "ValidationError" && Array.isArray(err.errors)) {
@@ -167,15 +149,10 @@ function main(): void {
 			}
 			process.exit(5);
 		}
-		// Duplicate detection on the dedup identity (string→string, item→oid,
-		// lens_bin→bin) — same identityKey the raw append uses.
-		const newId = `${endpointIdentity(resolvedEdge.parent)} ${endpointIdentity(resolvedEdge.child)} ${args.relationType}`;
-		const duplicate = existing.some(
-			(e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` === newId,
-		);
+		const duplicate = !result.appended;
 		console.error("[dry-run] PASS");
 		if (args.format === "json") {
-			console.log(JSON.stringify({ wouldWrite: !duplicate, duplicate, edge: resolvedEdge }, null, 2));
+			console.log(JSON.stringify({ wouldWrite: result.appended, duplicate, edge: result.edge }, null, 2));
 		} else {
 			const verb = duplicate ? "NO-OP (duplicate)" : "append";
 			console.log(`would ${verb}: ${args.parent} -[${args.relationType}]-> ${args.child}`);

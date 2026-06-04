@@ -15,8 +15,8 @@
  * Usage:
  *   tsx scripts/orchestrator/replace-relation.ts --old-parent <id> --old-child <id> --old-relation-type <rt> --parent <id> --child <id> --relation-type <rt> [--ordinal N] [--writer kind:id] [--dry-run] [--cwd <dir>] [--format json|table]
  */
-import { type Edge, endpointIdentity, loadRelations } from "@davidorex/pi-context/context";
-import { replaceRelationByRef, resolveRelationSelector } from "@davidorex/pi-context/context-sdk";
+import type { Edge } from "@davidorex/pi-context/context";
+import { replaceRelationByRef } from "@davidorex/pi-context/context-sdk";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 
 interface Args {
@@ -126,40 +126,56 @@ function main(): void {
 	const writer = parseWriter(args.writer);
 	const ctx: DispatchContext = { writer };
 
+	// The dry-run path delegates to the SHARED library preview (replaceRelationByRef
+	// with { dryRun: true }, TASK-010): it validates the prospective post-replace
+	// relations (write-path parity) and computes the same removed/replaced
+	// would-decisions, writing nothing. `wouldRemove` ← removed; `wouldWriteNew` ←
+	// replaced (= !collides). Messaging uses the original string selectors.
 	if (args.dryRun) {
-		console.error("[dry-run] computing prospective replace; no write");
-		let existing: Edge[] = [];
+		let result: { replaced: boolean; removed: boolean; oldEdge: Edge; newEdge: Edge };
 		try {
-			existing = loadRelations(args.cwd);
-		} catch (err) {
-			console.error(`[dry-run] could not read existing relations: ${err instanceof Error ? err.message : String(err)}`);
-			process.exit(3);
+			result = replaceRelationByRef(
+				args.cwd,
+				{
+					old: { parent: args.oldParent, child: args.oldChild, relation_type: args.oldRelationType },
+					new: {
+						parent: args.parent,
+						child: args.child,
+						relation_type: args.relationType,
+						...(args.ordinal !== undefined ? { ordinal: args.ordinal } : {}),
+					},
+				},
+				ctx,
+				{ dryRun: true },
+			);
+		} catch (err: any) {
+			console.error("[dry-run] FAIL");
+			if (err?.name === "ValidationError" && Array.isArray(err.errors)) {
+				for (const e of err.errors) {
+					console.error(`  - ${e.instancePath || "(root)"}: ${e.message}`);
+				}
+			} else {
+				console.error(`  - ${err instanceof Error ? err.message : String(err)}`);
+			}
+			process.exit(5);
 		}
-		const oldEdge: Edge = {
-			parent: resolveRelationSelector(args.cwd, args.oldParent),
-			child: resolveRelationSelector(args.cwd, args.oldChild),
-			relation_type: args.oldRelationType,
-		};
-		const newEdge: Edge = {
-			parent: resolveRelationSelector(args.cwd, args.parent),
-			child: resolveRelationSelector(args.cwd, args.child),
-			relation_type: args.relationType,
-			...(args.ordinal !== undefined ? { ordinal: args.ordinal } : {}),
-		};
-		const oldId = `${endpointIdentity(oldEdge.parent)} ${endpointIdentity(oldEdge.child)} ${oldEdge.relation_type}`;
-		const newId = `${endpointIdentity(newEdge.parent)} ${endpointIdentity(newEdge.child)} ${newEdge.relation_type}`;
-		const wouldRemove = existing.some(
-			(e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` === oldId,
-		);
-		const collides = existing
-			.filter((e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` !== oldId)
-			.some((e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` === newId);
 		console.error("[dry-run] PASS");
 		if (args.format === "json") {
-			console.log(JSON.stringify({ wouldRemove, wouldWriteNew: !collides, oldEdge, newEdge }, null, 2));
+			console.log(
+				JSON.stringify(
+					{
+						wouldRemove: result.removed,
+						wouldWriteNew: result.replaced,
+						oldEdge: result.oldEdge,
+						newEdge: result.newEdge,
+					},
+					null,
+					2,
+				),
+			);
 		} else {
 			console.log(
-				`would replace: ${args.oldParent} -[${args.oldRelationType}]-> ${args.oldChild} => ${args.parent} -[${args.relationType}]-> ${args.child}${wouldRemove ? "" : " (old absent → append)"}${collides ? " (new already present → no duplicate)" : ""}`,
+				`would replace: ${args.oldParent} -[${args.oldRelationType}]-> ${args.oldChild} => ${args.parent} -[${args.relationType}]-> ${args.child}${result.removed ? "" : " (old absent → append)"}${result.replaced ? "" : " (new already present → no duplicate)"}`,
 			);
 		}
 		process.exit(0);

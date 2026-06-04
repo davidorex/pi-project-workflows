@@ -7,6 +7,7 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { readBlock, readBlockForDir, updateItemInBlock } from "./block-api.js";
 import {
 	appendRelation,
@@ -33,6 +34,7 @@ import { cleanGitEnv } from "./git-env.js";
 import { getLensValidators } from "./lens-validator.js";
 import { findReferencesInRepo } from "./lens-view.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
+import { validateFromFile } from "./schema-validator.js";
 import { findNestedIdBearingArrays } from "./schema-write.js";
 import { resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
@@ -1375,6 +1377,27 @@ export function resolveRelationSelector(cwd: string, selector: string): EdgeEndp
 }
 
 /**
+ * Resolve the bundled relations schema file (top-level `Edge[]` array schema)
+ * — the SAME schema `loadRelations` / `writeRelations` validate against (see
+ * `context.ts` `bundledSchemaPath("relations")`). Resolved relative to this
+ * module so it works from both `src/` (tsx --test) and `dist/` (after tsc) —
+ * the `schemas/` dir lives one directory up in either case. Used by the
+ * `dryRun` preview branch of the relation porcelain to apply the write path's
+ * validation WITHOUT writing (TASK-010: the shared library preview the
+ * orchestrator scripts and the `--dryRun` ops both call).
+ */
+function relationsSchemaPath(): string {
+	const here = path.dirname(fileURLToPath(import.meta.url));
+	return path.resolve(here, "..", "schemas", "relations.schema.json");
+}
+
+/** Dedup identity key for an edge — the SAME (parent, child, relation_type)
+ * identity the raw append/remove plumbing matches on (ordinal-insensitive). */
+function edgeIdentityKey(edge: Edge): string {
+	return `${endpointIdentity(edge.parent)} ${endpointIdentity(edge.child)} ${edge.relation_type}`;
+}
+
+/**
  * Friendly-selector relation append (Cycle 5 porcelain). Resolves `parent` /
  * `child` STRING selectors to structured `EdgeEndpoint`s via
  * `resolveRelationSelector`, then delegates to the raw `appendRelation` plumbing
@@ -1390,13 +1413,26 @@ export function appendRelationByRef(
 	cwd: string,
 	rel: { parent: string; child: string; relation_type: string; ordinal?: number },
 	ctx?: DispatchContext,
-): { appended: boolean; edge: Edge } {
+	opts?: { dryRun?: boolean },
+): { appended: boolean; edge: Edge; dryRun?: boolean } {
 	const edge: Edge = {
 		parent: resolveRelationSelector(cwd, rel.parent),
 		child: resolveRelationSelector(cwd, rel.child),
 		relation_type: rel.relation_type,
 		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
 	};
+	if (opts?.dryRun) {
+		// Preview parity: run the SAME validation the write path applies (the
+		// prospective Edge[] against the whole relations schema — what
+		// loadRelations/writeRelations validate) but write nothing. The
+		// would-decision uses the SAME dedup identity the raw append matches on.
+		const existing = loadRelations(cwd);
+		const prospective = [...existing, edge];
+		validateFromFile(relationsSchemaPath(), prospective, "relations[edge]");
+		const newId = edgeIdentityKey(edge);
+		const duplicate = existing.some((e) => edgeIdentityKey(e) === newId);
+		return { appended: !duplicate, edge, dryRun: true };
+	}
 	const { appended } = appendRelation(cwd, edge, ctx);
 	return { appended, edge };
 }
@@ -1417,12 +1453,25 @@ export function removeRelationByRef(
 	cwd: string,
 	rel: { parent: string; child: string; relation_type: string },
 	ctx?: DispatchContext,
-): { removed: boolean; edge: Edge } {
+	opts?: { dryRun?: boolean },
+): { removed: boolean; edge: Edge; dryRun?: boolean } {
 	const edge: Edge = {
 		parent: resolveRelationSelector(cwd, rel.parent),
 		child: resolveRelationSelector(cwd, rel.child),
 		relation_type: rel.relation_type,
 	};
+	if (opts?.dryRun) {
+		// Preview parity: compute the prospective post-removal Edge[] and validate
+		// it against the whole relations schema (write-path validation), write
+		// nothing. `removed` reflects whether a matching edge is present on the
+		// SAME dedup identity the raw remove matches on.
+		const existing = loadRelations(cwd);
+		const targetId = edgeIdentityKey(edge);
+		const matches = existing.some((e) => edgeIdentityKey(e) === targetId);
+		const prospective = existing.filter((e) => edgeIdentityKey(e) !== targetId);
+		validateFromFile(relationsSchemaPath(), prospective, "relations[edge]");
+		return { removed: matches, edge, dryRun: true };
+	}
 	const { removed } = removeRelation(cwd, edge, ctx);
 	return { removed, edge };
 }
@@ -1452,7 +1501,8 @@ export function replaceRelationByRef(
 		new: { parent: string; child: string; relation_type: string; ordinal?: number };
 	},
 	ctx?: DispatchContext,
-): { replaced: boolean; removed: boolean; oldEdge: Edge; newEdge: Edge } {
+	opts?: { dryRun?: boolean },
+): { replaced: boolean; removed: boolean; oldEdge: Edge; newEdge: Edge; dryRun?: boolean } {
 	const oldEdge: Edge = {
 		parent: resolveRelationSelector(cwd, rels.old.parent),
 		child: resolveRelationSelector(cwd, rels.old.child),
@@ -1465,16 +1515,20 @@ export function replaceRelationByRef(
 		...(rels.new.ordinal !== undefined ? { ordinal: rels.new.ordinal } : {}),
 	};
 	const existing = loadRelations(cwd);
-	const oldKey = `${endpointIdentity(oldEdge.parent)} ${endpointIdentity(oldEdge.child)} ${oldEdge.relation_type}`;
-	const newKey = `${endpointIdentity(newEdge.parent)} ${endpointIdentity(newEdge.child)} ${newEdge.relation_type}`;
-	const filtered = existing.filter(
-		(e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` !== oldKey,
-	);
+	const oldKey = edgeIdentityKey(oldEdge);
+	const newKey = edgeIdentityKey(newEdge);
+	const filtered = existing.filter((e) => edgeIdentityKey(e) !== oldKey);
 	const removed = filtered.length !== existing.length;
-	const collides = filtered.some(
-		(e) => `${endpointIdentity(e.parent)} ${endpointIdentity(e.child)} ${e.relation_type}` === newKey,
-	);
+	const collides = filtered.some((e) => edgeIdentityKey(e) === newKey);
 	const next = collides ? filtered : [...filtered, newEdge];
+	if (opts?.dryRun) {
+		// Preview parity: validate the prospective post-replace Edge[] against the
+		// whole relations schema (write-path validation), write nothing. The
+		// would-decisions (`removed`/`replaced`) are the SAME values the write
+		// path computes.
+		validateFromFile(relationsSchemaPath(), next, "relations[edge]");
+		return { replaced: !collides, removed, oldEdge, newEdge, dryRun: true };
+	}
 	writeRelations(cwd, next, ctx);
 	return { replaced: !collides, removed, oldEdge, newEdge };
 }
@@ -1496,13 +1550,38 @@ export function appendRelationsByRef(
 	cwd: string,
 	edges: { parent: string; child: string; relation_type: string; ordinal?: number }[],
 	ctx?: DispatchContext,
-): { appended: number; skipped: number; edges: Edge[] } {
+	opts?: { dryRun?: boolean },
+): { appended: number; skipped: number; edges: Edge[]; dryRun?: boolean } {
 	const resolved: Edge[] = edges.map((rel) => ({
 		parent: resolveRelationSelector(cwd, rel.parent),
 		child: resolveRelationSelector(cwd, rel.child),
 		relation_type: rel.relation_type,
 		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
 	}));
+	if (opts?.dryRun) {
+		// Preview parity: replay the bulk dedup the raw appendRelations applies —
+		// skip an edge whose identity is already on disk OR earlier in THIS batch
+		// (a `seen` Set seeded from the existing on-disk identities) — accumulate
+		// the non-dup prospective Edge[], validate it against the whole relations
+		// schema (write-path validation), write nothing.
+		const existing = loadRelations(cwd);
+		const seen = new Set(existing.map((e) => edgeIdentityKey(e)));
+		let appended = 0;
+		let skipped = 0;
+		const prospective = [...existing];
+		for (const edge of resolved) {
+			const key = edgeIdentityKey(edge);
+			if (seen.has(key)) {
+				skipped++;
+			} else {
+				seen.add(key);
+				prospective.push(edge);
+				appended++;
+			}
+		}
+		validateFromFile(relationsSchemaPath(), prospective, "relations[edge]");
+		return { appended, skipped, edges: resolved, dryRun: true };
+	}
 	const { appended, skipped } = appendRelations(cwd, resolved, ctx);
 	return { appended, skipped, edges: resolved };
 }

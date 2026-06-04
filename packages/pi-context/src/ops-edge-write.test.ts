@@ -20,7 +20,7 @@ import { describe, it } from "node:test";
 import { readBlock } from "./block-api.js";
 import { endpointKey, loadRelations } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import { appendRelationByRef } from "./context-sdk.js";
+import { appendRelationByRef, appendRelationsByRef, removeRelationByRef, replaceRelationByRef } from "./context-sdk.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { INTENTIONALLY_UNEXPOSED_WRITERS, type OpDefinition, ops, renderOpResultText } from "./ops-registry.js";
 import { renderReadText } from "./read-element.js";
@@ -290,5 +290,116 @@ describe("FGAP-009 non-exposure allowlist", () => {
 		for (const entry of INTENTIONALLY_UNEXPOSED_WRITERS) {
 			if (entry.safeOp) assert.ok(opNames.has(entry.safeOp), `safeOp ${entry.safeOp} is a registered op`);
 		}
+	});
+});
+
+describe("TASK-010 relation byRef dryRun preview (shared library path)", () => {
+	it("appendRelationByRef dryRun returns appended + dryRun:true and writes nothing; non-dryRun writes", (t) => {
+		const cwd = makeRelDir("dry-append");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		// Empty substrate → the prospective append is NOT a duplicate.
+		const before = loadRelations(cwd);
+		const preview = appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" }, undefined, {
+			dryRun: true,
+		});
+		assert.equal(preview.appended, true, "would append (not a duplicate)");
+		assert.equal(preview.dryRun, true);
+		assert.deepEqual(loadRelations(cwd), before, "dryRun wrote nothing (relations unchanged)");
+
+		// Seed, then a dryRun of the same edge previews a duplicate-no-op.
+		appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" });
+		const afterWrite = loadRelations(cwd);
+		assert.equal(afterWrite.length, 1, "non-dryRun DID write");
+		const dupPreview = appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" }, undefined, {
+			dryRun: true,
+		});
+		assert.equal(dupPreview.appended, false, "would no-op (duplicate)");
+		assert.equal(dupPreview.dryRun, true);
+		assert.deepEqual(loadRelations(cwd), afterWrite, "dryRun wrote nothing");
+	});
+
+	it("removeRelationByRef dryRun returns removed + dryRun:true and writes nothing; non-dryRun writes", (t) => {
+		const cwd = makeRelDir("dry-remove");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" });
+		const before = loadRelations(cwd);
+		assert.equal(before.length, 1);
+
+		const preview = removeRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" }, undefined, {
+			dryRun: true,
+		});
+		assert.equal(preview.removed, true, "matching edge would be removed");
+		assert.equal(preview.dryRun, true);
+		assert.deepEqual(loadRelations(cwd), before, "dryRun wrote nothing");
+
+		// Absent edge → would no-op.
+		const absent = removeRelationByRef(cwd, { parent: "pX", child: "cX", relation_type: "rel" }, undefined, {
+			dryRun: true,
+		});
+		assert.equal(absent.removed, false, "no matching edge → would no-op");
+		assert.deepEqual(loadRelations(cwd), before, "dryRun wrote nothing");
+
+		// Non-dryRun DOES write.
+		removeRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" });
+		assert.equal(loadRelations(cwd).length, 0, "non-dryRun removed the edge");
+	});
+
+	it("replaceRelationByRef dryRun returns replaced/removed + dryRun:true and writes nothing; non-dryRun writes", (t) => {
+		const cwd = makeRelDir("dry-replace");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" });
+		const before = loadRelations(cwd);
+
+		const preview = replaceRelationByRef(
+			cwd,
+			{
+				old: { parent: "p1", child: "c1", relation_type: "rel" },
+				new: { parent: "p2", child: "c2", relation_type: "rel" },
+			},
+			undefined,
+			{ dryRun: true },
+		);
+		assert.equal(preview.removed, true, "old edge present → would remove");
+		assert.equal(preview.replaced, true, "new edge does not collide → would write");
+		assert.equal(preview.dryRun, true);
+		assert.deepEqual(loadRelations(cwd), before, "dryRun wrote nothing");
+
+		// Non-dryRun DOES write the swap.
+		replaceRelationByRef(cwd, {
+			old: { parent: "p1", child: "c1", relation_type: "rel" },
+			new: { parent: "p2", child: "c2", relation_type: "rel" },
+		});
+		const after = loadRelations(cwd);
+		assert.equal(after.length, 1);
+		assert.ok(!after.some((e) => endpointKey(e.parent) === "p1"));
+		assert.ok(after.some((e) => endpointKey(e.parent) === "p2"));
+	});
+
+	it("appendRelationsByRef dryRun counts on-disk AND in-batch dedup, dryRun:true, writes nothing; non-dryRun writes", (t) => {
+		const cwd = makeRelDir("dry-bulk");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" }); // pre-existing dup
+		const before = loadRelations(cwd);
+
+		const edges = [
+			{ parent: "p1", child: "c1", relation_type: "rel" }, // on-disk dup → skip
+			{ parent: "p2", child: "c2", relation_type: "rel" }, // new → append
+			{ parent: "p2", child: "c2", relation_type: "rel" }, // in-batch dup → skip
+		];
+		const preview = appendRelationsByRef(cwd, edges, undefined, { dryRun: true });
+		assert.equal(preview.appended, 1, "one genuinely-new edge");
+		assert.equal(preview.skipped, 2, "one on-disk + one in-batch duplicate skipped");
+		assert.equal(preview.dryRun, true);
+		assert.deepEqual(loadRelations(cwd), before, "dryRun wrote nothing");
+
+		// Non-dryRun DOES write (matching counts).
+		const real = appendRelationsByRef(cwd, edges);
+		assert.equal(real.appended, 1);
+		assert.equal(real.skipped, 2);
+		assert.equal(loadRelations(cwd).length, 2, "non-dryRun appended the one new edge");
 	});
 });

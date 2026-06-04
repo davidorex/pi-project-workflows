@@ -147,6 +147,16 @@ Load-bearing architectural rules (not change-history):
 - `invokeMonitor(name, context?)` export from pi-behavior-monitors enables programmatic classification without `activate()` side effects.
 - DispatchContext attestation: every block-api write accepts optional `ctx?: DispatchContext` with `WriterIdentity` (kinds: human / agent / monitor / workflow). When provided AND the target schema declares author fields, items are stamped per the schema's declared subset (per-field declaration honored; upsert pre-merge preserves attestation across replacement updates).
 
+## pi-context-cli — direct-drive discipline (dogfooding)
+
+`pi-context-cli` (`node packages/pi-context-cli/dist/bin.js <op> --flag value …`) is the dogfooding surface for substrate reads and writes — drive it **directly**, one clean invocation per operation, inline flags. `--item @/tmp/<id>.json` only when the payload's quotes/apostrophes fight the shell. Verify every write through the CLI's own read op (`read-block-item` / `read-block`) — output landing ≠ success.
+
+Forbidden:
+- **Bypassing the CLI to inspect or mutate substrate/schema state by other means** — `node -e "require('./.context/*.json')"`, `cat`, `Read`/`Edit` on the active substrate's `*.json` or `schemas/*.json`. If a CLI op reads it, read it through the op.
+- **Wrapping the CLI in shell glue to substitute for or post-process it** — `for`-loops over fields, `| head`/`| tail`, `2>/dev/null`, tsx-eval re-parsing of its output. One op call answers one question; read the whole node, not field-by-field.
+
+Friction hit while driving the CLI is an experience gap — file it (Experience-Gap Handling), never route around it.
+
 ## CLI Access from Other Agents
 
 Pi tools accessible from any LLM with shell access via `pi -p "prompt" --mode json`. Subprocess loads all extensions, executes tool calls, returns newline-delimited JSON events. Same mechanism the workflow executor uses for step dispatch.

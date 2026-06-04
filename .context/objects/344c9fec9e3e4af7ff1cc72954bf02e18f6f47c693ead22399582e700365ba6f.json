@@ -1,0 +1,42 @@
+{
+  "title": "Dry-run preview lives once in the library; ops and scripts both consume it (complete-up, one subsystem per TASK)",
+  "status": "enacted",
+  "context": "FGAP-012 (surfaced by the gamma parity gate, dc7f514) shows 5 ops — append-relation, remove-relation, replace-relation, append-relations, upsert-block-item — whose orchestrator scripts offer --dry-run via bespoke per-script preview logic, while the ops/CLI cannot preview and the underlying library write fns have no dry-run path. The gate prints these as standing non-fatal divergences on every commit.",
+  "decision": "Complete the dual-surface unit UP: add a dry-run path to the relation/upsert LIBRARY write fns (mirroring the canonical amendConfigEntry(cwd,...,ctx,{dryRun}) / writeSchemaCheckedForDir / promoteItem pattern — branch before the write primitive, run the same validation the write path uses, write nothing), thread it through the ops, and refactor the scripts to call that one shared library path (deleting their bespoke preview). Do NOT strip --dry-run from the scripts (that would reduce capability). Decompose the work into three tightly-scoped single-subsystem TASKs — TASK-009 (parity-check detector hardening), TASK-010 (relations.json write path: the 4 relation ops), TASK-011 (block-api upsert path) — and never bundle two subsystems in one implementation brief.",
+  "options_considered": [
+    {
+      "label": "Strip --dry-run from the 5 scripts",
+      "description": "Delete the scripts' --dry-run so the gate goes clean with no library work.",
+      "rejected_reason": "Removes a real preview capability — completing down, the wrong direction."
+    },
+    {
+      "label": "One pass over all 5 ops, both subsystems",
+      "description": "Single implementation brief covering relations + upsert write paths together.",
+      "rejected_reason": "Over-scoped brief is the chaos risk the operator flagged."
+    },
+    {
+      "label": "Library-shared preview, decomposed per subsystem (chosen)",
+      "description": "Add the dry-run path to the library per subsystem, ops + scripts consume it; detector hardened first; one subsystem per TASK."
+    }
+  ],
+  "consequences": [
+    "One preview implementation per subsystem, shared by op and script.",
+    "The parity gate reaches zero divergences once all three TASKs land.",
+    "The over-broad-brief chaos risk is avoided by one-subsystem-per-TASK dispatch.",
+    "TASK-009 first hardens the detector itself (allOf/$ref schema resolution, arg-parse-position flag match) so the gate stays trustworthy before any surface churn.",
+    "FGAP-012 closes only when all three TASKs land."
+  ],
+  "references": [
+    {
+      "label": "FGAP-012 (the gap this resolves)"
+    },
+    {
+      "label": "gamma parity gate",
+      "commit": "dc7f514"
+    },
+    {
+      "label": "canonical dryRun pattern",
+      "path": "packages/pi-context/src/ops-registry.ts"
+    }
+  ]
+}

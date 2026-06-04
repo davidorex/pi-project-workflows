@@ -65,6 +65,67 @@
       "oid": "6e5a8303dc0a6271347a114835fc96ed",
       "content_hash": "7a8d202e36e938dd3ddf45bb3d7ee4fd738b3200a36265c7fafa2d408e62b017",
       "content_parent": "3406547b277b79b233f82f037bf3fee208aea4039d81dfda7b58d7c4793d575a"
+    },
+    {
+      "id": "TASK-009",
+      "description": "parity-check detector hardening (scripts/parity-check.ts only): add flattenSchemaProperties resolving object/.properties + allOf (Type.Intersect) + $ref ($defs/definitions, cycle-guarded, fail-open per branch) for opDeclaresParam; tighten scriptParsesFlag to arg-parse position (=== \"--flag\", kebab regex-escaped) so a print-only literal no longer false-matches; export opDeclaresParam + scriptParsesFlag + flattenSchemaProperties for edge tests. Gate still exits 0 (70 writers, 0 ctx-drops) and still prints the 5 dryRun divergences (robustness change, not result change). Per DEC-0008 / FGAP-012. Full completion sequence; coding subagent; orchestrator runs all npm + is sole git writer.",
+      "status": "planned",
+      "files": [
+        "scripts/parity-check.ts",
+        "scripts/parity-check.test.ts"
+      ],
+      "acceptance_criteria": [
+        "allOf/$ref op-schema params detected (no false divergence)",
+        "unresolvable/cyclic $ref yields no keys and no throw",
+        "print-only flag literal not matched; a === \"--flag\" matched (both quotes, value-bearing form)",
+        "all existing parity-check tests stay green",
+        "fresh adversarial probe confirms no false-negative in the tightened flag match against the 8 real parse lines"
+      ],
+      "oid": "fd56d00ef22c45e13409a06abf172221",
+      "content_hash": "5430461b535ecec3700b1cd54816a32dd4306f909de2202e77dcf5f979c7fa18"
+    },
+    {
+      "id": "TASK-010",
+      "description": "relations.json dry-run parity (the 4 relation ops). Library: add opts?:{dryRun?} to appendRelationByRef/removeRelationByRef/replaceRelationByRef/appendRelationsByRef (context-sdk.ts) threaded to their *ForDir cores; when dryRun, load + resolve selectors + build prospective Edge[] + run the same relations-schema validation and endpointIdentity dedup the write path uses (bulk: on-disk AND in-batch; replace: new-edge collision) and return without writeRelations (result gains dryRun:true). Ops (ops-registry.ts append/remove/replace/append-relations): declare dryRun + thread + would-message. Scripts: delete bespoke preview, call byRef with {dryRun:true}, print in [dry-run] PASS convention. CHANGELOG [Unreleased] bullet. Mirror the canonical amendConfigEntry(...,{dryRun}) pattern. Per DEC-0008 / FGAP-012.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "scripts/orchestrator/append-relation.ts",
+        "scripts/orchestrator/remove-relation.ts",
+        "scripts/orchestrator/replace-relation.ts",
+        "scripts/orchestrator/append-relations.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "each of the 4 ops accepts --dryRun; CLI --dryRun --json returns the preview and leaves relations.json byte-unchanged (hash before/after)",
+        "a would-fail (cycle/missing-endpoint/invalid) surfaces identically without writing",
+        "scripts call the shared library dry-run path; no bespoke preview remains",
+        "parity-check: the 4 relation dryRun divergences gone",
+        "fresh adversarial probe: no disk write in any dry-run path, validation parity with write path, real --writer write still persists + stamps"
+      ],
+      "oid": "63d1d6c7c1a87a58ea878d2f062706d2",
+      "content_hash": "a4c59e07ee9a0b69875b68d334c13b536f625cf83b72e3b6e4ba6caedcf4d8ea"
+    },
+    {
+      "id": "TASK-011",
+      "description": "block-api upsert dry-run parity (upsert-block-item). Library: add opts?:{dryRun?} to upsertItemInBlock (block-api.ts) -> *ForDir -> upsertItemInTypedFile; when dryRun, under the block lock read the array, compute the prospective whole block (append, or replace at matched idField index), AJV-validate it, and return {mode, dryRun:true} without writing. Op (ops-registry.ts upsert-block-item): declare dryRun + thread + would-message. Script: delete bespoke preview, call upsertItemInBlock with {dryRun:true}, print mode. CHANGELOG [Unreleased] bullet. Last of the five — parity-check reaches 0 divergences; FGAP-012 closes on this landing. Per DEC-0008 / FGAP-012.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "scripts/orchestrator/upsert-block-item.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "CLI upsert-block-item --dryRun --json returns {mode, dryRun:true} and leaves the block file byte-unchanged",
+        "a schema-violating prospective item fails the dry-run without writing",
+        "parity-check exits 0 with 0 divergences (all five gone)",
+        "fresh adversarial probe: no write, lock semantics correct, validation parity, real write still persists + stamps",
+        "FGAP-012 closed with the 4 closure fields"
+      ],
+      "oid": "2da2de9e36b6484b6278fea1a3d1f79b",
+      "content_hash": "e55ed88ce046fb9861656110b36768e9759af6966b3a52cb75d9e6964b787f02"
     }
   ]
 }

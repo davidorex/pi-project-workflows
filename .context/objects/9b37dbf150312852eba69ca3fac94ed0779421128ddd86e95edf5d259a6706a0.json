@@ -1,0 +1,32 @@
+{
+  "title": "complete-task op is unusable against catalog substrates: reads verification fields the canonical schema does not declare (incomplete edge-migration refactor)",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "description": "Surfaced when deciding how to complete TASK-008. completeTask (packages/pi-context/src/context-sdk.ts:2172) requires verification.target and verification.target_type === task, but neither the canonical samples verification schema nor the active .context schema declares those fields. Commit c08f93b intentionally removed target and target_type from the verification schema in favor of a verification_verifies_item closure-table edge, but completeTask was never updated to the edge-based link. The schemas are permissive (additionalProperties absent), so the op fails at runtime rather than validation, throwing targets undefined (undefined). The op is registered surface:use, so it is offered to every CLI and op caller yet cannot succeed against any catalog-installed substrate. This is evidence of garbled LLM implementation: a schema refactor that dropped fields without updating the consuming function, compounded by tests that hand-build verifications carrying the removed fields and thereby bypass schema validation, masking the break as a false pass. Every real task completion, including TASK-008 this session, used update-block-item, never the gated op. Agent-investigated for root cause, shape, and reproducible conditions before filing.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2172",
+      "reference": "completeTask reads verification.target + verification.target_type === task"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/verification.schema.json",
+      "reference": "canonical packaged schema declares neither target nor target_type (0 matches)"
+    },
+    {
+      "file": ".context/schemas/verification.schema.json",
+      "reference": "active substrate schema declares neither field"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.test.ts",
+      "reference": "completeTask tests hand-build verifications with target/target_type, bypassing schema validation: false-pass masking the runtime break"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/verification.schema.json",
+      "reference": "commit c08f93b removed target+target_type in favor of the verification_verifies_item edge; completeTask not migrated"
+    }
+  ],
+  "impact": "The gated task-completion path (verification-before-complete) is non-functional framework-wide; task completion silently degrades to ungated update-block-item with no verification gate. The masking tests give false confidence the gate works. Architectural debt: the edge-based verification design (verification_verifies_item) is declared but unconsumed by completeTask.",
+  "proposed_resolution": "Re-anchor completeTask on the edge-based design: resolve the task-to-verification link via the verification_verifies_item relation in relations.json (the c08f93b intent), not embedded target/target_type fields. Rewrite the tests to exercise the real schema plus the edge with no field-smuggling, so the gate is genuinely covered. Repro from the investigation: a minimal substrate with a schema-conformant verification plus complete-task throws targets undefined (undefined)."
+}

@@ -1166,5 +1166,18 @@
       "refname": "TASK-010"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01d5b8ce7f5a540881111acf785416fb",
+      "refname": "VER-010"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2da2de9e36b6484b6278fea1a3d1f79b",
+      "refname": "TASK-011"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

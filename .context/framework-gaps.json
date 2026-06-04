@@ -370,7 +370,7 @@
     {
       "id": "FGAP-012",
       "title": "5 relation/upsert ops omit the --dry-run their orchestrator-script siblings offer (dual-surface optional-param asymmetry)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "The op-coverage parity gate (FGAP-010, landed dc7f514) reports, non-fatally, that 5 ops — append-relation, remove-relation, replace-relation, append-relations, upsert-block-item — do not declare a 'dryRun' parameter in their typebox parameters schema, while their orchestrator-script siblings under scripts/orchestrator/ DO parse a '--dry-run' flag. So a no-write preview is reachable out-of-pi via the script but not in-pi via the op or the CLI. This is distinct from amend-config / write-schema / promote-item, whose op schemas DO declare dryRun (those were the prior detector's false-positives, now corrected). Secondary, separate concern tracked here: the parity-check divergence detector itself carries two dormant edges the re-audit flagged — (a) opDeclaresParam reads only top-level schema .properties, so an op expressed via allOf/$ref/nested would yield a false divergence; (b) scriptParsesFlag matches a quote-hugged flag literal anywhere in the script text, so a print-only literal (a flag named in help text but not parsed) would false-match. Neither triggers on the current tree (all ops use flat Type.Object; no script prints a bare flag literal).",
@@ -397,11 +397,14 @@
         }
       ],
       "impact": "Dry-run preview asymmetry between the in-pi op / CLI surface and the out-of-pi orchestrator scripts for edge mutation and atomic upsert: an in-pi caller cannot preview these five mutations the way the scripts can. Minor and advisory rather than a correctness defect, but it is exactly the dual-surface drift the parity gate exists to surface, so leaving it unaddressed lets the surfaces diverge further.",
-      "proposed_resolution": "Add a 'dryRun' boolean param to the five op parameters schemas and thread it to the underlying library fn's existing dry-run path, so the op/CLI surface matches the script surface; then re-run scripts/parity-check.ts to confirm zero remaining divergences. For the two dormant detector edges: tighten opDeclaresParam to resolve $ref/allOf/nested schemas before reading properties, and tighten scriptParsesFlag to match the flag literal only in an arg-parse position (=== / case / includes) rather than anywhere in file text. User decides whether to also harden the detector now or only when a ref-schema op or print-only flag literal is actually introduced.",
+      "proposed_resolution": "CLOSED across TASK-010 (8fcf02d, the 4 relation ops) + TASK-011 (4b72b86, upsert-block-item). The 5 relation/upsert ops now share ONE dryRun preview with their orchestrator scripts (the byRef/upsert library fns gained opts?:{dryRun} that validate the prospective + return without writing; ops declare/thread dryRun; scripts delegate). The parity-check gate's dual-surface divergence report is now at ZERO. Also tracked from this arc: FGAP-016 (pre-existing truncateHead measurement nuance, P3, non-leak).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "687d105852ff67bd9e56446eb678f78d",
-      "content_hash": "c637524fdff63734a87ee9346bd305ef441d2712ba8d2a1b30f1305f16084757"
+      "content_hash": "e82317fee2bdeeed2ab85c42394d96b4f4c83e19c0b65d9d7c3d2499e8962180",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-05T00:00:00.000Z",
+      "content_parent": "c637524fdff63734a87ee9346bd305ef441d2712ba8d2a1b30f1305f16084757"
     },
     {
       "id": "FGAP-013",

@@ -76,6 +76,15 @@
       "evidence": "TASK-010 (relations dry-run parity, landed 8fcf02d): the 4 relation byRef fns + ops gain a shared dryRun preview; the 4 scripts delegate to it. build/check/test green; runtime demo (append/remove --dryRun preview, relations.json byte-unchanged; real calls still write); parity-check shows the 4 relation dryRun divergences gone (only upsert-block-item remains). Fresh adversarial audit: no dryRun path writes across 4 ops x both surfaces, preview matches real outcome exactly, validation + stdout parity, deterministic.",
       "oid": "2c79cbce4a1ccfbaab1e8da7605abb0d",
       "content_hash": "32279cae24cf2b7b94b379f6c7abc44a75896eff9947b01a8190b4c5bfe08678"
+    },
+    {
+      "id": "VER-010",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "evidence": "TASK-011 (upsert dry-run parity, landed 4b72b86): the last dry-run divergence. upsertItemInBlock + op gain a shared dryRun preview; the script delegates. build/check/test green; runtime demo (upsert --dryRun previews, block file byte-unchanged; real writes); parity-check now at 0 divergences (all 5 cleared). Fresh adversarial audit: no dryRun write, validation parity exact, lock correct, stdout preserved, deterministic.",
+      "oid": "01d5b8ce7f5a540881111acf785416fb",
+      "content_hash": "06bf2d37f8b0fa1f0f6f4327d4c0101eafd4128232ee4bdc477eeb7b05cac1da"
     }
   ]
 }

@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-05T00:00:00.000Z",
+  "evidence": "TASK-011 (upsert dry-run parity, landed 4b72b86): the last dry-run divergence. upsertItemInBlock + op gain a shared dryRun preview; the script delegates. build/check/test green; runtime demo (upsert --dryRun previews, block file byte-unchanged; real writes); parity-check now at 0 divergences (all 5 cleared). Fresh adversarial audit: no dryRun write, validation parity exact, lock correct, stdout preserved, deterministic."
+}

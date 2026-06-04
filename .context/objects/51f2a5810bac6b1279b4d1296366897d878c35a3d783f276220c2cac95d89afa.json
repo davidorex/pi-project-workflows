@@ -1,0 +1,16 @@
+{
+  "description": "Read-cap measurement basis per surface. Closes FGAP-016 (P3): for --json measure the EMITTED compact form (so the cap reflects what actually ships), for text/Pi-tool keep measuring the pretty form (what the agent reads); surface the firing dimension (bytes vs lines) in the REFUSAL message. Cross-channel: the truncate.ts cap primitive + cli.ts boundedJsonOutput + read-element.ts structureForRead/renderReadText.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/truncate.ts",
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context/src/read-element.ts"
+  ],
+  "acceptance_criteria": [
+    "FGAP-016 closed: a value whose compact --json form fits under the cap but whose pretty form exceeds it is no longer over-refused under --json",
+    "The refusal message states whether the bytes or the 2000-line dimension fired",
+    "No leak: the cap still fails closed",
+    "Canonical pipeline green"
+  ],
+  "notes": "Release-group: read-cap-measurement (R+2) | order 8 | addresses FGAP-016 | standalone P3, cross-channel"
+}

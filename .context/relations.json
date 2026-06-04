@@ -1205,5 +1205,265 @@
       "refname": "FEAT-004"
     },
     "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6ec5bfbcda7978934f0a949b21041a55",
+      "refname": "TASK-015"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "433ae156e4ce1a04ca4c220c85339ad7",
+      "refname": "FGAP-019"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6ec5bfbcda7978934f0a949b21041a55",
+      "refname": "TASK-015"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7bc3e3acaefeb84ecf05d6a8c09c0c49",
+      "refname": "FGAP-025"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f174211a3ca004db33530119e66d1ee1",
+      "refname": "TASK-016"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8ecb24b45db69607db7b05d0fb95e678",
+      "refname": "FGAP-020"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f174211a3ca004db33530119e66d1ee1",
+      "refname": "TASK-016"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a23d5835258e1b607bfa3e3f59f87e88",
+      "refname": "FGAP-021"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f174211a3ca004db33530119e66d1ee1",
+      "refname": "TASK-016"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "bf32be6013fbaa95a52e337fd5f3413c",
+      "refname": "FGAP-023"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "514efa463982fe36de6c9bc8139afcc0",
+      "refname": "TASK-017"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ba04c442d72fcaa8655338fba491263e",
+      "refname": "FGAP-022"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "514efa463982fe36de6c9bc8139afcc0",
+      "refname": "TASK-017"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ce9edaedb3e9cd6a0ed6f9210146c5fc",
+      "refname": "FGAP-024"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "514efa463982fe36de6c9bc8139afcc0",
+      "refname": "TASK-017"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0fd57fe8d476068c817bc3e796aa9ebc",
+      "refname": "FGAP-026"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e6c5d4e74cdfc3569b73d0185b9f5a06",
+      "refname": "TASK-018"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ffb4699841def6cd0b79d7d20ff0adf6",
+      "refname": "FGAP-027"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8efe7ef2b695613ea1eece89d83f3829",
+      "refname": "TASK-020"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8585502a1289ac63e708d521f94b7ab6",
+      "refname": "FGAP-017"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b0aff3721f693af9431c0595d5f657d5",
+      "refname": "TASK-021"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9a2bcfaf30cf57acf84e7183261ca7c8",
+      "refname": "FGAP-018"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "faefd3eb61329ef90eb1ca067733bfe7",
+      "refname": "TASK-022"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4d35361e9bdb0c0892a860ebff318bc1",
+      "refname": "FGAP-016"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f174211a3ca004db33530119e66d1ee1",
+      "refname": "TASK-016"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e6c5d4e74cdfc3569b73d0185b9f5a06",
+      "refname": "TASK-018"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6ec5bfbcda7978934f0a949b21041a55",
+      "refname": "TASK-015"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a68e51861de5dd7113768b3052d18661",
+      "refname": "TASK-019"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f174211a3ca004db33530119e66d1ee1",
+      "refname": "TASK-016"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a68e51861de5dd7113768b3052d18661",
+      "refname": "TASK-019"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "514efa463982fe36de6c9bc8139afcc0",
+      "refname": "TASK-017"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a68e51861de5dd7113768b3052d18661",
+      "refname": "TASK-019"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e6c5d4e74cdfc3569b73d0185b9f5a06",
+      "refname": "TASK-018"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a68e51861de5dd7113768b3052d18661",
+      "refname": "TASK-019"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8efe7ef2b695613ea1eece89d83f3829",
+      "refname": "TASK-020"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b0aff3721f693af9431c0595d5f657d5",
+      "refname": "TASK-021"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8efe7ef2b695613ea1eece89d83f3829",
+      "refname": "TASK-020"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b5428784e8fbdb7524f7f5780c65dd69",
+      "refname": "FEAT-004"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b0aff3721f693af9431c0595d5f657d5",
+      "refname": "TASK-021"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b5428784e8fbdb7524f7f5780c65dd69",
+      "refname": "FEAT-004"
+    },
+    "relation_type": "task_addresses_feature"
   }
 ]

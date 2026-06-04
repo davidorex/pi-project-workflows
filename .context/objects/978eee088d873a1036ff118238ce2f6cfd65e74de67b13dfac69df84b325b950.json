@@ -1,0 +1,15 @@
+{
+  "description": "CLI ergonomic affordances. Closes FGAP-022 (--show-schema contract preview — an early branch printing array_key/required/types/id-pattern via the lifted loadBlockSchema/resolveBlockItemSchema path, return 0, mirroring the parsed.help branch at cli.ts:464-467), FGAP-024 (append-block-item --dry-run via client-side prospective-whole-file validation lifted from file-block-item.ts:247-255, never calling appendToBlock — no op change, avoids adding dryRun to the frozen op), and FGAP-026 (granular exit codes mapping arg/usage->2, not-initialized/BootstrapNotFoundError->1, schema-absent->3, validation->5 at the cli.ts catch + UsageError sites).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context-cli/src/cli.ts"
+  ],
+  "acceptance_criteria": [
+    "FGAP-022 closed: --show-schema previews the block contract and exits 0 before any write",
+    "FGAP-024 closed: append-block-item --dry-run validates the prospective whole file and writes nothing, with no op change",
+    "FGAP-026 closed: exit codes distinguish error classes 1-5",
+    "In-pi ops byte-unchanged",
+    "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)"
+  ],
+  "notes": "Release-group: cli-parity (NEXT) | order 3/5 | addresses FGAP-022, FGAP-024, FGAP-026 | category: CLI-only-shared-helper (R-0003)"
+}

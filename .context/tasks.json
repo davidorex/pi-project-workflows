@@ -207,6 +207,168 @@
       "oid": "893b6605d4bbfa54310290b82975dd25",
       "content_hash": "6b26c7b89d23134c9e54dfe88cae6fe8936c62ba8d0db0e9b28bee99ade738a9",
       "content_parent": "19bc8bf0b3b8ae7cae35e0dd77deab226b8a3b75c917151ee8546477f9651aaf"
+    },
+    {
+      "description": "CLI pre-call input layer: derive arrayKey from config and accept the scripts' input shorthands so the CLI reaches script-parity on INPUT without changing in-pi ops. Closes FGAP-019 (arrayKey required-but-derivable across 7 block-mutation ops — derive from config.block_kinds[].array_key, demote --arrayKey to optional override by extending cli.ts's required-filter exemption from {writer} to {writer,arrayKey} + an injectArrayKey helper mirroring injectWriter at cli.ts:293-303) and FGAP-025 (--writer kind:id, --where field:op:value, CSV --op in shorthands, each a pre-call transform in parseOpArgs). The ops still receive + require arrayKey; the CLI supplies it.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-019 closed: append/update/upsert/remove-block-item (+ nested parents) accept --block without --arrayKey; the op is byte-unchanged (still receives + requires arrayKey, the CLI supplies it)",
+        "FGAP-025 closed: --writer kind:id, --where field:op:value, and CSV --op in parse to the op's declared param shape before invocation",
+        "In-pi op behavior byte-unchanged (frozen-ops constraint honored)",
+        "Canonical pipeline: build/check/test + runtime demo (drive the CLI directly) + fresh adversarial audit before green"
+      ],
+      "notes": "Release-group: cli-parity (NEXT) | order 1/5 | addresses FGAP-019, FGAP-025 | category: CLI-pre-call (R-0003)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-015",
+      "oid": "6ec5bfbcda7978934f0a949b21041a55",
+      "content_hash": "e9df1de3889565c4085d9d3127587ed10e6a5c51729a0b1421ba9495d53148a8"
+    },
+    {
+      "description": "CLI output + error-shaping layer. Closes FGAP-020 (addressed read returns the full subtree CLI-side via an addressedReadOverride helper that re-runs the read with structureForRead({whole:true}), bypassing collection-paging, still 50KB-capped — does NOT touch the op), FGAP-021 (--format text|json|table render dispatch, lifting the scripts' renderTable/renderTerse bodies into a CLI render module), and FGAP-023 (AJV ValidationError translation in the cli.ts catch via a lifted formatAjvError). All at the cli.ts emit/catch region (~:504-518) + a new CLI render/helper module in-pi dispatch never touches.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context-cli/src/render.ts (new CLI render/helper module)"
+      ],
+      "acceptance_criteria": [
+        "FGAP-020 closed: read-schema / read-config --path at an object node returns the full subtree from the CLI (matching the orchestrator script), op unchanged",
+        "FGAP-021 closed: --format selects a human render for ops whose script twins offer one",
+        "FGAP-023 closed: AJV validation errors surface field-named guidance, not the raw .message",
+        "In-pi ops byte-unchanged",
+        "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (NEXT) | order 2/5 | addresses FGAP-020, FGAP-021, FGAP-023 | categories: CLI-only-shared-helper + CLI-post-call (R-0003)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-016",
+      "oid": "f174211a3ca004db33530119e66d1ee1",
+      "content_hash": "daeaefc8425be2dca2fdf336fddce4d4e3c838a434210a8b78164bcab7be8cc5"
+    },
+    {
+      "description": "CLI ergonomic affordances. Closes FGAP-022 (--show-schema contract preview — an early branch printing array_key/required/types/id-pattern via the lifted loadBlockSchema/resolveBlockItemSchema path, return 0, mirroring the parsed.help branch at cli.ts:464-467), FGAP-024 (append-block-item --dry-run via client-side prospective-whole-file validation lifted from file-block-item.ts:247-255, never calling appendToBlock — no op change, avoids adding dryRun to the frozen op), and FGAP-026 (granular exit codes mapping arg/usage->2, not-initialized/BootstrapNotFoundError->1, schema-absent->3, validation->5 at the cli.ts catch + UsageError sites).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-022 closed: --show-schema previews the block contract and exits 0 before any write",
+        "FGAP-024 closed: append-block-item --dry-run validates the prospective whole file and writes nothing, with no op change",
+        "FGAP-026 closed: exit codes distinguish error classes 1-5",
+        "In-pi ops byte-unchanged",
+        "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (NEXT) | order 3/5 | addresses FGAP-022, FGAP-024, FGAP-026 | category: CLI-only-shared-helper (R-0003)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-017",
+      "oid": "514efa463982fe36de6c9bc8139afcc0",
+      "content_hash": "978eee088d873a1036ff118238ce2f6cfd65e74de67b13dfac69df84b325b950"
+    },
+    {
+      "description": "In-pi read-schema correction — the one authorized in-pi op change in this release. Closes FGAP-027: pass whole:true into structureForRead at ops-registry.ts:1166 for the addressed-node case so the IN-PI read-schema op returns the full subtree (matching scripts/orchestrator/read-schema.ts:181), retaining the 50KB cap. Completes read-schema across BOTH surfaces (pairs with the order-2 task's FGAP-020 CLI-side fix). Class-check other read ops routing addressed object nodes through structureForRead.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/read-element.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-027 closed: in-pi read-schema --path at an object node returns the full subtree",
+        "{read} cap behavior unchanged (50KB retained, no leak)",
+        "Class-check: no other read op silently projects an addressed object node",
+        "Canonical pipeline green (incl. runtime demo via pi -p tool dispatch + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (NEXT) | order 4/5 | addresses FGAP-027 | the SOLE in-pi op change in this release | depends on order-2 (read-schema coherence across both surfaces)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-018",
+      "oid": "e6c5d4e74cdfc3569b73d0185b9f5a06",
+      "content_hash": "30c808a685d03d69d52621d62a99eb6e27ae658380135f9b699e195ec9fa1e61"
+    },
+    {
+      "description": "Behavioral parity gate — the regression guard implementing R-0003 section F. Extends scripts/parity-check.ts with, AFTER the existing static checks: a script<->op name map (5 twins have mismatched names; 29 of 48 use-ops are currently invisible to the exact-name keying at parity-check.ts:748), fixtures + an execution harness, a required-but-derivable assertion (FAIL if an op's required param is one its script twin derives — catches the FGAP-019 class), and an output-shape diff (op --json vs script --format json on the same addressed read — the read-schema --path fixture catches the FGAP-020 class). Converts the parity class from found-one-at-a-time-by-dogfooding into caught-at-commit. Closes no gap directly; it is the durability mechanism that locks in TASK orders 1-4.",
+      "status": "planned",
+      "files": [
+        "scripts/parity-check.ts",
+        "test fixtures (new fixture substrate)"
+      ],
+      "acceptance_criteria": [
+        "The gate FAILs on a reintroduced required-but-derivable param (FGAP-019 class)",
+        "The gate FAILs on an op/script output-shape divergence (read-schema --path fixture, FGAP-020 class)",
+        "The script<->op name map covers the 5 mismatched twins; the 29 previously-invisible ops are compared where a twin exists",
+        "Runs as a husky/CI phase after the static checks (same exit-1 aggregation)",
+        "Green on the post-orders-1..4 tree; canonical pipeline green"
+      ],
+      "notes": "Release-group: cli-parity (NEXT) | order 5/5 | regression guard (closes no gap directly) | depends on orders 1-4 (asserts their post-fix state)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-019",
+      "oid": "a68e51861de5dd7113768b3052d18661",
+      "content_hash": "a4d5a06899037ef1dc7e42d9a5274b9b47f1ccc9d3d47ec3b8c1948f1a812a08"
+    },
+    {
+      "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type, and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~682-825) to read it instead of the hardcoded tasks/framework-gaps/phase + P0-P3 + task_depends_on_task literals; the shipped conception declares framework-gaps+tasks so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/schemas/config.schema.json"
+      ],
+      "acceptance_criteria": [
+        "FGAP-017 closed: currentState derives from the config registry; against .context-jit-spec-v2 (custom vocabulary) it returns a real derivation or a truthful not-configured signal, not empty",
+        "Stock .context behavior byte-preserved",
+        "Canonical pipeline green (incl. cross-substrate runtime demo against .context AND .context-jit-spec-v2 + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 6 | addresses FGAP-017, FEAT-004",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-020",
+      "oid": "8efe7ef2b695613ea1eece89d83f3829",
+      "content_hash": "28f2968002a40568c1c0fc7a9cba8c1b2c9a6c6f4e4f569fc483ebd20e78c9f6"
+    },
+    {
+      "description": "Config-declared lifecycle metrics in context-status. Closes FGAP-018 (P3): make the lifecycle/metrics projection — currently special-casing phase/requirements/tasks/domain/verification with hardcoded fields + status literals in contextState() ~577-654 — config-declared (which kinds + which status values yield the lifecycle metrics), keeping the generic per-kind status summary as the default fallback. Pairs with the order-6 state-derivation registry. Advances FEAT-004.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/samples/conception.json"
+      ],
+      "acceptance_criteria": [
+        "FGAP-018 closed: a custom-vocabulary substrate's declared lifecycle kinds get structured metrics; the generic per-kind summary remains the default",
+        "Stock .context behavior byte-preserved",
+        "Canonical pipeline green"
+      ],
+      "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 7 | addresses FGAP-018, FEAT-004 | depends on order 6",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-021",
+      "oid": "b0aff3721f693af9431c0595d5f657d5",
+      "content_hash": "b858cfa27d396cfd59dc56df37215000a7de0dc33d129b8de3b16aca51af9fca"
+    },
+    {
+      "description": "Read-cap measurement basis per surface. Closes FGAP-016 (P3): for --json measure the EMITTED compact form (so the cap reflects what actually ships), for text/Pi-tool keep measuring the pretty form (what the agent reads); surface the firing dimension (bytes vs lines) in the REFUSAL message. Cross-channel: the truncate.ts cap primitive + cli.ts boundedJsonOutput + read-element.ts structureForRead/renderReadText.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/truncate.ts",
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/read-element.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-016 closed: a value whose compact --json form fits under the cap but whose pretty form exceeds it is no longer over-refused under --json",
+        "The refusal message states whether the bytes or the 2000-line dimension fired",
+        "No leak: the cap still fails closed",
+        "Canonical pipeline green"
+      ],
+      "notes": "Release-group: read-cap-measurement (R+2) | order 8 | addresses FGAP-016 | standalone P3, cross-channel",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-022",
+      "oid": "faefd3eb61329ef90eb1ca067733bfe7",
+      "content_hash": "51f2a5810bac6b1279b4d1296366897d878c35a3d783f276220c2cac95d89afa"
     }
   ]
 }

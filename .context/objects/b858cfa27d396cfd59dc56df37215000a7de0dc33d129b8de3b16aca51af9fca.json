@@ -1,0 +1,14 @@
+{
+  "description": "Config-declared lifecycle metrics in context-status. Closes FGAP-018 (P3): make the lifecycle/metrics projection — currently special-casing phase/requirements/tasks/domain/verification with hardcoded fields + status literals in contextState() ~577-654 — config-declared (which kinds + which status values yield the lifecycle metrics), keeping the generic per-kind status summary as the default fallback. Pairs with the order-6 state-derivation registry. Advances FEAT-004.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/samples/conception.json"
+  ],
+  "acceptance_criteria": [
+    "FGAP-018 closed: a custom-vocabulary substrate's declared lifecycle kinds get structured metrics; the generic per-kind summary remains the default",
+    "Stock .context behavior byte-preserved",
+    "Canonical pipeline green"
+  ],
+  "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 7 | addresses FGAP-018, FEAT-004 | depends on order 6"
+}

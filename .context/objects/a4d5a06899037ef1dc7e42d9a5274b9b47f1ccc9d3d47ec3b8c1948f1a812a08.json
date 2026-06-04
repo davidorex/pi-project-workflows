@@ -1,0 +1,16 @@
+{
+  "description": "Behavioral parity gate — the regression guard implementing R-0003 section F. Extends scripts/parity-check.ts with, AFTER the existing static checks: a script<->op name map (5 twins have mismatched names; 29 of 48 use-ops are currently invisible to the exact-name keying at parity-check.ts:748), fixtures + an execution harness, a required-but-derivable assertion (FAIL if an op's required param is one its script twin derives — catches the FGAP-019 class), and an output-shape diff (op --json vs script --format json on the same addressed read — the read-schema --path fixture catches the FGAP-020 class). Converts the parity class from found-one-at-a-time-by-dogfooding into caught-at-commit. Closes no gap directly; it is the durability mechanism that locks in TASK orders 1-4.",
+  "status": "planned",
+  "files": [
+    "scripts/parity-check.ts",
+    "test fixtures (new fixture substrate)"
+  ],
+  "acceptance_criteria": [
+    "The gate FAILs on a reintroduced required-but-derivable param (FGAP-019 class)",
+    "The gate FAILs on an op/script output-shape divergence (read-schema --path fixture, FGAP-020 class)",
+    "The script<->op name map covers the 5 mismatched twins; the 29 previously-invisible ops are compared where a twin exists",
+    "Runs as a husky/CI phase after the static checks (same exit-1 aggregation)",
+    "Green on the post-orders-1..4 tree; canonical pipeline green"
+  ],
+  "notes": "Release-group: cli-parity (NEXT) | order 5/5 | regression guard (closes no gap directly) | depends on orders 1-4 (asserts their post-fix state)"
+}

@@ -12,7 +12,7 @@ All claims are `file:line`-grounded against the built tree (`packages/*/dist/` p
 
 ### A.1 Orchestrator scripts (exhaustive)
 
-`ls scripts/orchestrator/*.ts` → 52 files. They fall into four roles; only the **op-twin** role is parity-relevant (a script wrapping a single op/library-fn 1:1). The other three roles (composer / demo / launch-support) have NO op twin by design and are NOT parity targets — enumerated below for completeness, then excluded.
+`ls scripts/orchestrator/*.ts` → 53 files (24 op-twin parity targets + 16 composer + 12 runtime-demo + 1 launch-support). They fall into four roles; only the **op-twin** role is parity-relevant (a script wrapping a single op/library-fn 1:1). The other three roles (composer / demo / launch-support) have NO op twin by design and are NOT parity targets — enumerated below for completeness, then excluded.
 
 **Non-twin scripts (excluded from parity, enumerated — no silent cap):**
 

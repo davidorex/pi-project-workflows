@@ -26,9 +26,12 @@ import {
 	classifyAll,
 	enumerateWriters,
 	type FnDef,
+	flattenSchemaProperties,
 	type OpRun,
+	opDeclaresParam,
 	type ParsedTree,
 	parseSourceTree,
+	scriptParsesFlag,
 } from "./parity-check.ts";
 
 // ─── Fixture builders ──────────────────────────────────────────────────────────
@@ -292,6 +295,121 @@ describe("checkDualSurfaceParity", () => {
 		const idField = violations.filter((v) => v.detail.includes("idField"));
 		assert.equal(idField.length, 1);
 		assert.equal(idField[0].fatal, false);
+	});
+});
+
+// ─── flattenSchemaProperties — object / allOf / $ref / cyclic / unresolvable ─────
+
+describe("flattenSchemaProperties", () => {
+	it("collects keys across an allOf (Type.Intersect) member", () => {
+		const keys = flattenSchemaProperties({
+			allOf: [{ properties: { dryRun: {} } }, { properties: { source: {} } }],
+		});
+		assert.ok(keys.has("dryRun"));
+		assert.ok(keys.has("source"));
+	});
+
+	it("resolves a $ref into the root $defs bag (Type.Ref)", () => {
+		const keys = flattenSchemaProperties({
+			$ref: "#/$defs/Base",
+			$defs: { Base: { properties: { ordinal: {} } } },
+		});
+		assert.ok(keys.has("ordinal"));
+	});
+
+	it("resolves a legacy #/definitions/<n> $ref", () => {
+		const keys = flattenSchemaProperties({
+			$ref: "#/definitions/X",
+			definitions: { X: { properties: { idField: {} } } },
+		});
+		assert.ok(keys.has("idField"));
+	});
+
+	it("threads the bag down so a nested $ref resolves against the root bag", () => {
+		const keys = flattenSchemaProperties({
+			$defs: { Base: { properties: { ordinal: {} } } },
+			allOf: [{ $ref: "#/$defs/Base" }, { properties: { parent: {} } }],
+		});
+		assert.ok(keys.has("ordinal"));
+		assert.ok(keys.has("parent"));
+	});
+
+	it("returns an empty set for an unresolvable $ref (no throw)", () => {
+		const keys = flattenSchemaProperties({ $ref: "#/$defs/Missing", $defs: {} });
+		assert.deepEqual([...keys], []);
+	});
+
+	it("returns an empty set for a cyclic $ref (no stack overflow)", () => {
+		const keys = flattenSchemaProperties({
+			$ref: "#/$defs/A",
+			$defs: { A: { $ref: "#/$defs/A" } },
+		});
+		assert.deepEqual([...keys], []);
+	});
+});
+
+// ─── opDeclaresParam — reads through the flattened property union ─────────────────
+
+describe("opDeclaresParam", () => {
+	const opWith = (parameters: unknown): OpDefinition =>
+		({
+			name: "x",
+			label: "x",
+			description: "",
+			parameters,
+			run: () => "",
+			surface: "use",
+		}) as unknown as OpDefinition;
+
+	it("sees a flat Type.Object property", () => {
+		assert.equal(opDeclaresParam(opWith({ properties: { dryRun: {} } }), "dryRun"), true);
+		assert.equal(opDeclaresParam(opWith({ properties: { dryRun: {} } }), "ordinal"), false);
+	});
+
+	it("sees a param declared behind allOf / $ref", () => {
+		assert.equal(
+			opDeclaresParam(
+				opWith({ allOf: [{ $ref: "#/$defs/B" }], $defs: { B: { properties: { idField: {} } } } }),
+				"idField",
+			),
+			true,
+		);
+	});
+});
+
+// ─── scriptParsesFlag — arg-parse position only, escaped, both quote styles ───────
+
+describe("scriptParsesFlag", () => {
+	it("does NOT match a flag literal in a console.log", () => {
+		assert.equal(scriptParsesFlag(`console.log("usage: cmd --dry-run");`, "--dry-run"), false);
+	});
+
+	it("does NOT match a flag literal in a comment", () => {
+		assert.equal(scriptParsesFlag(`// --dry-run is handled elsewhere`, "--dry-run"), false);
+	});
+
+	it('matches an `else if (a === "--dry-run")` arg-parse line', () => {
+		assert.equal(scriptParsesFlag(`} else if (a === "--dry-run") {`, "--dry-run"), true);
+	});
+
+	it("matches a single-quoted arg-parse line", () => {
+		assert.equal(scriptParsesFlag(`if (a === '--id-field') {`, "--id-field"), true);
+	});
+
+	it("matches with no whitespace around ===", () => {
+		assert.equal(scriptParsesFlag(`if (a==="--ordinal"&&argv[i+1]){`, "--ordinal"), true);
+	});
+
+	it("does NOT match the comparison text inside a block comment (audit repro)", () => {
+		assert.equal(scriptParsesFlag(`/* a === "--dry-run" */`, "--dry-run"), false);
+	});
+
+	it("does NOT match a flag inside a display string literal", () => {
+		assert.equal(scriptParsesFlag(`const help = "pass a === \\"--dry-run\\" here";`, "--dry-run"), false);
+	});
+
+	it('matches a `case "--flag":` switch arg-parse position', () => {
+		assert.equal(scriptParsesFlag(`switch (a) { case "--dry-run": break; }`, "--dry-run"), true);
 	});
 });
 

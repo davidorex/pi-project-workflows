@@ -26,8 +26,9 @@
  *      are reported as soft divergences (printed, not fatal) per the spec.
  *
  * Pure helpers (enumerateWriters / classifyWriter / classifyAll /
- * checkCtxForwarding / parseSourceTree) are exported for
- * scripts/parity-check.test.ts. main() aggregates violations + exits.
+ * checkCtxForwarding / parseSourceTree / opDeclaresParam / scriptParsesFlag /
+ * flattenSchemaProperties) are exported for scripts/parity-check.test.ts.
+ * main() aggregates violations + exits.
  *
  * AST idiom mirrors packages/pi-context/src/citation-rot-scanner.ts
  * (ts.createSourceFile + ts.forEachChild + node-type guards). Enforcement /
@@ -533,40 +534,111 @@ export function checkCtxForwarding(tree: ParsedTree): ForwardingViolation[] {
 	return out;
 }
 
-/** The runtime shape of a typebox Type.Object carried on op.parameters. */
+/**
+ * The runtime shape of a typebox `parameters` schema carried on an op.
+ * Real ops are flat `Type.Object` (`{ properties, required }`), but the
+ * detector also handles `Type.Intersect` (→ `allOf`) and `Type.Ref`
+ * (→ `$ref` into the `$defs` / legacy `definitions` ref bag) so a declared
+ * param nested behind those forms is not missed.
+ */
 interface OpParamSchema {
 	properties?: Record<string, unknown>;
 	required?: string[];
+	allOf?: OpParamSchema[]; // Type.Intersect
+	$ref?: string; // Type.Ref → "#/$defs/<n>" | "#/definitions/<n>"
+	$defs?: Record<string, OpParamSchema>;
+	definitions?: Record<string, OpParamSchema>;
+}
+
+/**
+ * Union of declared property keys across the schema's object / allOf / $ref
+ * forms. The `$defs` / `definitions` ref bag is captured at the root and
+ * threaded down so a `$ref` resolves against the bag declared above it. An
+ * unresolvable or cyclic `$ref` contributes nothing (fail-open per branch,
+ * cycle-guarded via `seenRefs`) rather than throwing.
+ */
+export function flattenSchemaProperties(
+	schema: OpParamSchema | undefined,
+	rootBag: Record<string, OpParamSchema> = {},
+	seenRefs: Set<string> = new Set(),
+): Set<string> {
+	const keys = new Set<string>();
+	if (!schema || typeof schema !== "object") return keys;
+	const bag =
+		schema.$defs || schema.definitions
+			? { ...rootBag, ...(schema.$defs ?? {}), ...(schema.definitions ?? {}) }
+			: rootBag;
+	for (const k of Object.keys(schema.properties ?? {})) keys.add(k);
+	if (Array.isArray(schema.allOf)) {
+		for (const member of schema.allOf) for (const k of flattenSchemaProperties(member, bag, seenRefs)) keys.add(k);
+	}
+	if (typeof schema.$ref === "string") {
+		const m = /^#\/(?:\$defs|definitions)\/(.+)$/.exec(schema.$ref);
+		if (m && !seenRefs.has(schema.$ref)) {
+			seenRefs.add(schema.$ref);
+			const target = bag[m[1]];
+			if (target) for (const k of flattenSchemaProperties(target, bag, seenRefs)) keys.add(k);
+		}
+	}
+	return keys;
 }
 
 /**
  * The authoritative op-side signal: does the op's typebox `parameters` schema
- * DECLARE `param` as a property? At runtime `op.parameters` is a Type.Object
- * whose shape is `{ properties: { <name>: ... }, required: [...] }` (the same
- * field pi-context-cli reads via `objectSchema(op).properties`). The property
- * KEY is the camelCase param name (`dryRun` / `ordinal` / `idField`).
+ * DECLARE `param` as a property? At runtime `op.parameters` is normally a
+ * Type.Object whose shape is `{ properties: { <name>: ... }, required: [...] }`
+ * (the same field pi-context-cli reads via `objectSchema(op).properties`), but
+ * `flattenSchemaProperties` also unwraps `Type.Intersect` (allOf) / `Type.Ref`
+ * ($ref) forms. The property KEY is the camelCase param name (`dryRun` /
+ * `ordinal` / `idField`).
  *
  * This is exact: it is NOT `run.params` (run is always `(cwd, params, ctx)` —
  * dryRun/ordinal/idField are PROPERTIES of the destructured `params` object,
  * never top-level run parameters, so `run.params` never carries them).
  */
-function opDeclaresParam(op: OpDefinition, camelParam: string): boolean {
+export function opDeclaresParam(op: OpDefinition, camelParam: string): boolean {
 	const schema = (op.parameters as unknown as OpParamSchema) ?? {};
-	const props = schema.properties ?? {};
-	return Object.hasOwn(props, camelParam);
+	return flattenSchemaProperties(schema).has(camelParam);
 }
 
 /**
  * The authoritative script-side signal: does the orchestrator script actually
- * PARSE the `--<kebab>` flag as an argument? We detect the kebab flag string
- * literal (single- or double-quoted) appearing in the script — the shape its
- * arg-parse switch matches against (e.g. `a === "--dry-run"`). This is NOT a
- * bare-word token match over the whole file (which falsely matched the camel
- * token in comments / output tables — e.g. find-references printing "ordinal"
- * with no such flag).
+ * PARSE the `--<kebab>` flag as an argument? We detect the flag ONLY in a
+ * genuine arg-parse position via the AST — the flag literal as an operand of an
+ * equality `BinaryExpression` (`a === "--flag"` / `"--flag" === a`, also `==`)
+ * or the expression of a `case` clause (`case "--flag":`). Parsing the source
+ * (ts.createSourceFile, error-tolerant) inherently ignores comments and display
+ * string literals: a bare literal in a `console.log` / a `// --dry-run` note /
+ * a `/* a === "--flag" *​/` comment is trivia or a non-operand StringLiteral and
+ * yields no matching node. This replaces the prior regex (`=== "--flag"`), which
+ * false-matched the comparison text inside comments and display strings.
  */
-function scriptParsesFlag(scriptText: string, kebabFlag: string): boolean {
-	return scriptText.includes(`"${kebabFlag}"`) || scriptText.includes(`'${kebabFlag}'`);
+export function scriptParsesFlag(scriptText: string, kebabFlag: string): boolean {
+	const sf = ts.createSourceFile("script.ts", scriptText, ts.ScriptTarget.Latest, /* setParentNodes */ true);
+	const isFlagLiteral = (n: ts.Node | undefined): boolean =>
+		!!n && (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) && n.text === kebabFlag;
+	let found = false;
+	const visit = (n: ts.Node): void => {
+		if (found) return;
+		// arg-parse equality: a === "--flag" / "--flag" === a  (=== or ==)
+		if (
+			ts.isBinaryExpression(n) &&
+			(n.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ||
+				n.operatorToken.kind === ts.SyntaxKind.EqualsEqualsToken) &&
+			(isFlagLiteral(n.left) || isFlagLiteral(n.right))
+		) {
+			found = true;
+			return;
+		}
+		// switch arg-parse: case "--flag":
+		if (ts.isCaseClause(n) && isFlagLiteral(n.expression)) {
+			found = true;
+			return;
+		}
+		ts.forEachChild(n, visit);
+	};
+	visit(sf);
+	return found;
 }
 
 /**

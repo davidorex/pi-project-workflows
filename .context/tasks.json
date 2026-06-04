@@ -42,11 +42,12 @@
     },
     {
       "description": "Implement DispatchContext threading through the op-execution contract per DEC-0006 / FGAP-008: add a ctx/writer channel to OpDefinition.run + registerAll (thread the pi ExtensionContext verified identity) + the pi-context-cli dispatch (build DispatchContext from --writer); forward ctx in all 10 ctx-dropping op handlers (append/update/remove-block-item, the nested trio, write-block, append-relation, amend-config, write-schema) and the pi-workflows step-block.ts writers; fix context-archive's declared-but-ignored writer. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-006",
       "oid": "f39a7685ec8fea8c1a404254df15046d",
-      "content_hash": "b8771813e405c3565a0307c300a7b4cbf1ac71e0ded10c6d1d9c6e8cf33b90be",
-      "content_parent": "c07c2da564f0efb0ad8411b8b10987fd34bed88eae689b4bf07e32df8ee16423"
+      "content_hash": "5e323f75d458f5176389e85dc8c09fafaf49ddc81013c75d9e480178c0ea4303",
+      "content_parent": "b8771813e405c3565a0307c300a7b4cbf1ac71e0ded10c6d1d9c6e8cf33b90be",
+      "notes": "Implemented at f5b6bd5. Optional ctx?:DispatchContext on OpDefinition.run; cli builds it from --writer/resolveIdentity, in-pi registerAll from auth-gate params.writer else ctx.model agent; 10 write handlers forward it; pi-workflows step-block + artifact write stamp workflow-kind; promote-item/write-schema-migration converged; context-archive writer field removed; malformed --writer validated. build/check/test green; cli runtime demo (unstamped item onto attested-required schema now succeeds + stamps); adversarial probe confirmed all 10 ops stamp at correct arg position, dryRun preserved, no regression; two non-functional findings fixed + re-verified. cli arc alpha; beta (FGAP-009) + gamma (FGAP-010) remain."
     },
     {
       "description": "Complete the op-registry coverage of the library write surface per DEC-0006 / FGAP-009 / FGAP-006 as dual-surface units (library + op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema+updateSchema / registerSubstrate+writeRegistry / writeBootstrapPointer+flipBootstrapPointer / bulk appendRelations as the surface warrants; run context-validate after edge mutations. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",

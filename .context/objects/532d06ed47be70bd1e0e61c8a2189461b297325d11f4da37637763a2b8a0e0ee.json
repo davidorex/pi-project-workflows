@@ -1,0 +1,5 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-006 (op-contract DispatchContext / cli-arc alpha, landed f5b6bd5): npm build/check/test green across packages (incl. new ops-registry.test.ts ctx-builder branches, cli attestation, step-block workflow stamping). Runtime-demoed via the built cli: append-block-item with NO created_by/created_at onto an attested-required schema now SUCCEEDS and stamps created_by=human/<explicit-or-resolved> (the pre-alpha AJV failure); buildDispatchContextFromExecute resolves human (auth-gate params.writer) / agent (ctx.model.id) / pi-agent fallback; malformed --writer errors instead of stamping human/undefined. A fresh adversarial probe verified all 10 write ops stamp with ctx in the correct arg slot, --dryRun preserved on amend-config + write-schema, read ops + promote-item/write-schema-migration + context-switch + context-archive unregressed, and created_by preserved on update; two non-functional findings (stale comment, malformed-writer rough edge) were fixed and re-verified."
+}

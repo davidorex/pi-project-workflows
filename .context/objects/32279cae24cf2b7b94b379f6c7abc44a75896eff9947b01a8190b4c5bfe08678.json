@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-05T00:00:00.000Z",
+  "evidence": "TASK-010 (relations dry-run parity, landed 8fcf02d): the 4 relation byRef fns + ops gain a shared dryRun preview; the 4 scripts delegate to it. build/check/test green; runtime demo (append/remove --dryRun preview, relations.json byte-unchanged; real calls still write); parity-check shows the 4 relation dryRun divergences gone (only upsert-block-item remains). Fresh adversarial audit: no dryRun path writes across 4 ops x both surfaces, preview matches real outcome exactly, validation + stdout parity, deterministic."
+}

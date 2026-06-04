@@ -67,6 +67,15 @@
       "evidence": "TASK-014 (FGAP-014, landed d0ab83d): complete-task migrated to the verification_verifies_item edge-gate. build/check/test green (full suite, 0 fail); runtime demo on a throwaway .context copy (complete-task completes with edge+passed, throws edge-absent without); fresh adversarial audit found no bypass (no-edge/reversed-edge/wrong-relation-type/non-passed/missing/already-done all throw), zero residual target/target_type reads, ctx attested, validateContext invariant complements the gate, 135 tests pass.",
       "oid": "6e3ab3f2cfe22331f1e8cf2168a397f0",
       "content_hash": "e0a29642ae60e845c7eaa4ea5686aa68baafa860fe192a936f284bfcb22a5343"
+    },
+    {
+      "id": "VER-009",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "evidence": "TASK-010 (relations dry-run parity, landed 8fcf02d): the 4 relation byRef fns + ops gain a shared dryRun preview; the 4 scripts delegate to it. build/check/test green; runtime demo (append/remove --dryRun preview, relations.json byte-unchanged; real calls still write); parity-check shows the 4 relation dryRun divergences gone (only upsert-block-item remains). Fresh adversarial audit: no dryRun path writes across 4 ops x both surfaces, preview matches real outcome exactly, validation + stdout parity, deterministic.",
+      "oid": "2c79cbce4a1ccfbaab1e8da7605abb0d",
+      "content_hash": "32279cae24cf2b7b94b379f6c7abc44a75896eff9947b01a8190b4c5bfe08678"
     }
   ]
 }

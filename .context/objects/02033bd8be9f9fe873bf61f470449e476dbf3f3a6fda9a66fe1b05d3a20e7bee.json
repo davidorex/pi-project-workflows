@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-04T00:00:00.000Z",
+  "evidence": "TASK-008 / FGAP-010 (gamma op-coverage parity check, landed dc7f514): scripts/parity-check.ts AST-enumerates pi-context library writers and classifies each against OP_COVERAGE_RULE; a silent ctx drop is fatal, a dual-surface optional-param mismatch is reported non-fatally. Verified: npm run build + check + test all green (0 fail across the 4 packages); the standalone run exits 0 on the real tree (70 writers classified: 42 op-backed-transitive, 24 op-backed-direct, 3 intentionally-unexposed, 1 internal-primitive; 0 ctx-drops; 5 non-fatal dryRun divergences surfaced on the relation/upsert ops, tracked as FGAP-012). Catch behavior runtime-demoed: an injected uncovered writer and an injected ctx-drop each fail with exit 1 in throwaway copies. Two fresh adversarial probes: the first caught a structurally-dead divergence detector (op-side run.params.includes was always empty, yielding false-positives including amend-config/write-schema), rewritten to op-schema-property + kebab-flag-literal signals; the re-audit of that fix found no active false-positive or false-negative and confirmed the fatal guards behaviorally unchanged. Wired into husky pre-commit + CI."
+}

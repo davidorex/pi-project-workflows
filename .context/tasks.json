@@ -60,10 +60,11 @@
     },
     {
       "description": "Add a library<->op-registry<->orchestrator-script parity/coverage test per DEC-0006 / FGAP-010: fail when a library write fn has no op, or an op drops the ctx / optional params (dryRun, ordinal, ...) its underlying library fn or orchestrator-script sibling forwards; wire into husky pre-commit + CI. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
-      "status": "planned",
+      "status": "completed",
       "id": "TASK-008",
       "oid": "6e5a8303dc0a6271347a114835fc96ed",
-      "content_hash": "4887e4fc7c99d3a8a665e8e2d571575bfa2846660d8dd6fdaf0104a1ab7c2f2e"
+      "content_hash": "7a8d202e36e938dd3ddf45bb3d7ee4fd738b3200a36265c7fafa2d408e62b017",
+      "content_parent": "3406547b277b79b233f82f037bf3fee208aea4039d81dfda7b58d7c4793d575a"
     }
   ]
 }

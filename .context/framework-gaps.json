@@ -306,7 +306,7 @@
     },
     {
       "title": "No enforced parity across the library / op-registry / orchestrator-script surfaces — they drift silently",
-      "status": "accepted",
+      "status": "closed",
       "package": "pi-context",
       "description": "The dual-surface principle ('library + tool + script as a unit') is unenforced. The orchestrator scripts build a DispatchContext and forward ctx + optional params (dryRun / ordinal) that the ops drop; the op-registry omits library write fns entirely; nothing catches the divergence at build/test. So projection loss (FGAP-008) and coverage gaps (FGAP-009) accrue silently — e.g. appendToBlock is called WITH ctx by file-block-item.ts:273 and pi-behavior-monitors:1612 but WITHOUT ctx by op append-block-item (ops-registry.ts:174) and pi-workflows step-block.ts:203.",
       "evidence": [
@@ -326,12 +326,15 @@
         }
       ],
       "impact": "FGAP-008 and FGAP-009 recur on every new library writer or op without a guard; the three surfaces silently diverge; attestation correctness and cli completeness can regress undetected.",
-      "proposed_resolution": "A parity/coverage test (the dual-surface unit made checkable) that fails when (a) a library write fn has no op, or (b) an op drops the ctx / optional params (dryRun, ordinal, ...) its underlying library fn or its orchestrator-script sibling forwards; wired into husky pre-commit + CI. See DEC-0006.",
+      "proposed_resolution": "CLOSED at dc7f514 by scripts/parity-check.ts — the source-intrinsic build gate (husky pre-commit + CI) that AST-enumerates library writers, classifies each against OP_COVERAGE_RULE, fails fatally on an unclassified writer or a silent ctx drop, and reports dual-surface optional-param mismatches non-fatally. The dual-surface unit is now self-policing: a new library writer or op that drops ctx fails the build. The 5 non-fatal dryRun script/op asymmetries the gate now surfaces are tracked as FGAP-012.",
       "id": "FGAP-010",
       "created_at": "2026-06-03T23:29:28.118Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "b2eeed1692053af8f84133e21707c0a4",
-      "content_hash": "44e67cd86ecb2823b60739f97afb869c40ec18b144e1c169b1f4067e3d8bede2"
+      "content_hash": "6a2db45e3ba2cdc9cf26524583d6e7bd845af1260d69c6328c57c0bdc7bb28e2",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-04T00:00:00.000Z",
+      "content_parent": "44e67cd86ecb2823b60739f97afb869c40ec18b144e1c169b1f4067e3d8bede2"
     },
     {
       "title": "No release/version vocabulary — releases and changelog grouping cannot be planned or tracked as first-class substrate items",
@@ -363,6 +366,42 @@
       "created_by": "human/davidryan@gmail.com",
       "oid": "74c9d6c0eac5008c54cf3f1cdb6cfa47",
       "content_hash": "5a690e82dbdb8f3f2226a8f0dca34fab63824b72449a0beedba4a53b65f943a0"
+    },
+    {
+      "id": "FGAP-012",
+      "title": "5 relation/upsert ops omit the --dry-run their orchestrator-script siblings offer (dual-surface optional-param asymmetry)",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "The op-coverage parity gate (FGAP-010, landed dc7f514) reports, non-fatally, that 5 ops — append-relation, remove-relation, replace-relation, append-relations, upsert-block-item — do not declare a 'dryRun' parameter in their typebox parameters schema, while their orchestrator-script siblings under scripts/orchestrator/ DO parse a '--dry-run' flag. So a no-write preview is reachable out-of-pi via the script but not in-pi via the op or the CLI. This is distinct from amend-config / write-schema / promote-item, whose op schemas DO declare dryRun (those were the prior detector's false-positives, now corrected). Secondary, separate concern tracked here: the parity-check divergence detector itself carries two dormant edges the re-audit flagged — (a) opDeclaresParam reads only top-level schema .properties, so an op expressed via allOf/$ref/nested would yield a false divergence; (b) scriptParsesFlag matches a quote-hugged flag literal anywhere in the script text, so a print-only literal (a flag named in help text but not parsed) would false-match. Neither triggers on the current tree (all ops use flat Type.Object; no script prints a bare flag literal).",
+      "evidence": [
+        {
+          "file": "scripts/orchestrator/append-relation.ts",
+          "reference": "parses --dry-run; the append-relation op schema declares ordinal but not dryRun"
+        },
+        {
+          "file": "scripts/orchestrator/remove-relation.ts",
+          "reference": "parses --dry-run; the remove-relation op schema declares no optional flags"
+        },
+        {
+          "file": "scripts/orchestrator/replace-relation.ts",
+          "reference": "parses --dry-run; the replace-relation op schema declares ordinal but not dryRun"
+        },
+        {
+          "file": "scripts/orchestrator/append-relations.ts",
+          "reference": "parses --dry-run; the append-relations op schema declares no top-level dryRun"
+        },
+        {
+          "file": "scripts/orchestrator/upsert-block-item.ts",
+          "reference": "parses --dry-run; the upsert-block-item op schema declares idField but not dryRun"
+        }
+      ],
+      "impact": "Dry-run preview asymmetry between the in-pi op / CLI surface and the out-of-pi orchestrator scripts for edge mutation and atomic upsert: an in-pi caller cannot preview these five mutations the way the scripts can. Minor and advisory rather than a correctness defect, but it is exactly the dual-surface drift the parity gate exists to surface, so leaving it unaddressed lets the surfaces diverge further.",
+      "proposed_resolution": "Add a 'dryRun' boolean param to the five op parameters schemas and thread it to the underlying library fn's existing dry-run path, so the op/CLI surface matches the script surface; then re-run scripts/parity-check.ts to confirm zero remaining divergences. For the two dormant detector edges: tighten opDeclaresParam to resolve $ref/allOf/nested schemas before reading properties, and tighten scriptParsesFlag to match the flag literal only in an arg-parse position (=== / case / includes) rather than anywhere in file text. User decides whether to also harden the detector now or only when a ref-schema op or print-only flag literal is actually introduced.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T00:00:00.000Z",
+      "oid": "687d105852ff67bd9e56446eb678f78d",
+      "content_hash": "c637524fdff63734a87ee9346bd305ef441d2712ba8d2a1b30f1305f16084757"
     }
   ]
 }

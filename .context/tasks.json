@@ -398,7 +398,7 @@
     },
     {
       "description": "Slice S2 (FGAP-029): record an install BASELINE at install/accept-all — installed_from (catalog ref) + catalog_version + per-asset content_hash in config.json — the merge-base (git %O analog) primitive shared by catalog re-sync (S3/S4) and the git-merge engine (FGAP-004). No behavior change to existing reads. Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",
-      "status": "planned",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/context.ts",
@@ -419,7 +419,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-024",
       "oid": "474c91b2e732d81829fedd0c6af9ef5d",
-      "content_hash": "59a129988d1c008d6c7fe7ed1f88e413234cd810bbb1f39cf1ad176eef7d12fa"
+      "content_hash": "de8c6ff8aab796cb4ce236d70cef16640fe4885fc44b63a169e5c12018b91a65",
+      "content_parent": "49c307e5de6fcb39c0daa921e7c228ade3b326baddb63e625f336a5400c3a9f5"
     },
     {
       "description": "Slice S3 (FGAP-029): a read-only --plan / drift detector. From the S2 baseline, report installed-vs-catalog skew per asset (version + content_hash) and what a re-sync WOULD change; mutate nothing (survey Option C as Option B's preview; cruft-check / terraform-plan flavor). Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",

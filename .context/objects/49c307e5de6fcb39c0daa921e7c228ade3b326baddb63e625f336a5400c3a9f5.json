@@ -1,0 +1,20 @@
+{
+  "description": "Slice S2 (FGAP-029): record an install BASELINE at install/accept-all — installed_from (catalog ref) + catalog_version + per-asset content_hash in config.json — the merge-base (git %O analog) primitive shared by catalog re-sync (S3/S4) and the git-merge engine (FGAP-004). No behavior change to existing reads. Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/schemas/config.schema.json",
+    "packages/pi-context/CHANGELOG.md",
+    "packages/pi-context/README.md",
+    "README.md",
+    "packages/pi-context/skills/pi-context/skill-narrative.md"
+  ],
+  "acceptance_criteria": [
+    "install + accept-all record installed_from + catalog_version + per-asset content_hash; config.json validates against the (extended) config schema",
+    "substrates without a baseline still load (back-compat; baseline optional)",
+    "CHANGELOG [Unreleased] + usage-only docs",
+    "canonical pipeline green (build/check/test + runtime demo on a dup + fresh adversarial audit)"
+  ],
+  "notes": "Slice S2/4 of DEC-0010 | independent of S1 | the shared merge-base primitive"
+}

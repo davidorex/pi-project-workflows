@@ -103,6 +103,8 @@ After writing an analysis markdown (`analysis/*.md`), propose to the user surfac
 
 ## Project Blocks (the active substrate)
 
+**Intended audience + use of all `.context` filings (binding):** the entire `.context` substrate, and every individual filing in it, exists to be a DRY context that is composed VERBATIM into subagent contexts. Filings are not notes-to-self or human-only prose — they are the source text that gets handed, unaltered, to subagents as their operating context. Whoever files (item bodies, decision/issue/gap/task field text, acceptance criteria, scope statements, ID ranges, relation content, etc.) MUST file with that audience and use in mind: each field must be self-sufficient, precise, and correct as the literal instruction a downstream subagent will act on. Garbage in = garbage out to subagents. Do not paraphrase or restate a filing when briefing — pass the filed text verbatim; correspondingly, file text that is fit to be passed verbatim.
+
 Typed JSON files with schemas. Substrate writes via block-api primitives (validated + DispatchContext-stamped). Direct `Edit` / `Write` on the active substrate's `*.json` is forbidden. `pi -p "call append-block-item"` is retired; do not use.
 
 **Canonical filing patterns** — via the reflecting CLI (`node packages/pi-context-cli/dist/bin.js <op>`; target form `pi-context <op>` per FGAP-031), one write per Bash call, `--writer '{"kind":"human","user":"davidryan@gmail.com"}' --json`:

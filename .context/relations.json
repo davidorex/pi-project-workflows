@@ -1686,5 +1686,18 @@
       "refname": "FGAP-030"
     },
     "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "53ac7027782b8996d06334fe0ae12e1a",
+      "refname": "FGAP-029"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8585cfde13ec83732bbaecd9878b9ff6",
+      "refname": "issue-001"
+    },
+    "relation_type": "gap_relates_to_issue"
   }
 ]

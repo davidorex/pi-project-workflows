@@ -448,7 +448,7 @@
     },
     {
       "description": "Slice S4 (FGAP-029): schema re-sync via the existing migration registry (forward-migrate, NOT blind copy) + cleaning propagation. Refresh installed schemas through migrations.json / validateBlockWithMigration; identity-migration for shape-compatible / description-only bumps. Running it on this repo propagates the genericized catalog descriptions into .context/schemas/ (FGAP-028 residual) with ZERO data loss and resolves the layer-plans 1.0.0->1.0.1 skew. Closes FGAP-029 (data-loss closed at S1; safe schema re-sync closed here). Per DEC-0010: CHANGELOG + usage-only docs.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/context.ts",
@@ -469,7 +469,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-026",
       "oid": "87339228a893c5e3cbc85249ea82e0fe",
-      "content_hash": "5455fd5dc9857d72a2b410df66148f5ac23884fbf474174b1a097b09c1ddc567"
+      "content_hash": "89eeb5e6c53322c22e2888420762a0cea927dc09ea172c6a2d3215f1078505ae",
+      "content_parent": "5455fd5dc9857d72a2b410df66148f5ac23884fbf474174b1a097b09c1ddc567"
     }
   ]
 }

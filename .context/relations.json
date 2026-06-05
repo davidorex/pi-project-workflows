@@ -1465,5 +1465,174 @@
       "refname": "FEAT-004"
     },
     "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "853bc69292962c1f61556111073909f4",
+      "refname": "TASK-023"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "53ac7027782b8996d06334fe0ae12e1a",
+      "refname": "FGAP-029"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "474c91b2e732d81829fedd0c6af9ef5d",
+      "refname": "TASK-024"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "53ac7027782b8996d06334fe0ae12e1a",
+      "refname": "FGAP-029"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a3587c4629e8b928c2dcc788119b4e53",
+      "refname": "TASK-025"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "53ac7027782b8996d06334fe0ae12e1a",
+      "refname": "FGAP-029"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "87339228a893c5e3cbc85249ea82e0fe",
+      "refname": "TASK-026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "53ac7027782b8996d06334fe0ae12e1a",
+      "refname": "FGAP-029"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "87339228a893c5e3cbc85249ea82e0fe",
+      "refname": "TASK-026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "93ee78687c71e6d609695e4919f9a4ac",
+      "refname": "FGAP-028"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "853bc69292962c1f61556111073909f4",
+      "refname": "TASK-023"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ec10dda127c8463c2e841090275b6d0d",
+      "refname": "DEC-0010"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "474c91b2e732d81829fedd0c6af9ef5d",
+      "refname": "TASK-024"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ec10dda127c8463c2e841090275b6d0d",
+      "refname": "DEC-0010"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a3587c4629e8b928c2dcc788119b4e53",
+      "refname": "TASK-025"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ec10dda127c8463c2e841090275b6d0d",
+      "refname": "DEC-0010"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "87339228a893c5e3cbc85249ea82e0fe",
+      "refname": "TASK-026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ec10dda127c8463c2e841090275b6d0d",
+      "refname": "DEC-0010"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "474c91b2e732d81829fedd0c6af9ef5d",
+      "refname": "TASK-024"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a3587c4629e8b928c2dcc788119b4e53",
+      "refname": "TASK-025"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "474c91b2e732d81829fedd0c6af9ef5d",
+      "refname": "TASK-024"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "87339228a893c5e3cbc85249ea82e0fe",
+      "refname": "TASK-026"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ec10dda127c8463c2e841090275b6d0d",
+      "refname": "DEC-0010"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "53ac7027782b8996d06334fe0ae12e1a",
+      "refname": "FGAP-029"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ec10dda127c8463c2e841090275b6d0d",
+      "refname": "DEC-0010"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5dd26cbe28f1c457b9eaf355db2d08a6",
+      "refname": "FGAP-004"
+    },
+    "relation_type": "decision_addresses_gap"
   }
 ]

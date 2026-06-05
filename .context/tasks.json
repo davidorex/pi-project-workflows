@@ -369,6 +369,104 @@
       "id": "TASK-022",
       "oid": "faefd3eb61329ef90eb1ca067733bfe7",
       "content_hash": "51f2a5810bac6b1279b4d1296366897d878c35a3d783f276220c2cac95d89afa"
+    },
+    {
+      "description": "Slice S1 (FGAP-029 P0 safety): /context install --update must NEVER overwrite a populated block. In installContext's blocks loop (packages/pi-context/src/index.ts:396-416), when destExists && overwrite, read the existing block via readBlockForDir and test for items via forEachBlockArray; if any array is non-empty, push to a new InstallResult.preserved[] and skip the copyFileSync. Empty/absent blocks behave as today; the schemas loop is UNCHANGED (schemas still honor --update). Render preserved in the install handler (index.ts:910-942). Add a regression test (none exists today). Per DEC-0010: also add a CHANGELOG [Unreleased] entry + usage-only docs (pkg README, monorepo README, SKILL via skill-narrative.md). Reuse readBlockForDir + forEachBlockArray (block-api.ts); installContext is the sole block-writer.",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/index.test.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skills/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "--update against a populated block: block file byte-identical + reported preserved (regression test + runtime demo on a .context backup/dup per the safety protocol, never live .context)",
+        "empty existing block still overwritten; a schema under --update still updated (no regression)",
+        "no other path overwrites a populated block (fresh adversarial audit; populated-detection correct for object-shape AND flat-array blocks)",
+        "CHANGELOG [Unreleased] entry added; usage-only docs updated (README pkg + monorepo + SKILL) with NO fix-reference",
+        "canonical pipeline green: build/check/test + runtime demo + fresh adversarial audit"
+      ],
+      "notes": "Slice S1/4 of DEC-0010 (FGAP-029 safe re-sync) | the P0 data-loss closure | NO release at slice boundary — single release after S1-S4",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-023",
+      "oid": "853bc69292962c1f61556111073909f4",
+      "content_hash": "154fc9886f0ab37dbddc91306546a736e8fa88c68270e8d77411fb22e5b36e44"
+    },
+    {
+      "description": "Slice S2 (FGAP-029): record an install BASELINE at install/accept-all — installed_from (catalog ref) + catalog_version + per-asset content_hash in config.json — the merge-base (git %O analog) primitive shared by catalog re-sync (S3/S4) and the git-merge engine (FGAP-004). No behavior change to existing reads. Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/schemas/config.schema.json",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skills/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "install + accept-all record installed_from + catalog_version + per-asset content_hash; config.json validates against the (extended) config schema",
+        "substrates without a baseline still load (back-compat; baseline optional)",
+        "CHANGELOG [Unreleased] + usage-only docs",
+        "canonical pipeline green (build/check/test + runtime demo on a dup + fresh adversarial audit)"
+      ],
+      "notes": "Slice S2/4 of DEC-0010 | independent of S1 | the shared merge-base primitive",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-024",
+      "oid": "474c91b2e732d81829fedd0c6af9ef5d",
+      "content_hash": "59a129988d1c008d6c7fe7ed1f88e413234cd810bbb1f39cf1ad176eef7d12fa"
+    },
+    {
+      "description": "Slice S3 (FGAP-029): a read-only --plan / drift detector. From the S2 baseline, report installed-vs-catalog skew per asset (version + content_hash) and what a re-sync WOULD change; mutate nothing (survey Option C as Option B's preview; cruft-check / terraform-plan flavor). Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skills/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "--plan reports per-asset drift (version + content_hash) and the would-change set; writes nothing (verified on a dup, byte-unchanged)",
+        "output usable by a human and parseable by a script",
+        "CHANGELOG [Unreleased] + usage-only docs",
+        "canonical pipeline green"
+      ],
+      "notes": "Slice S3/4 of DEC-0010 | depends on S2 (needs the baseline)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-025",
+      "oid": "a3587c4629e8b928c2dcc788119b4e53",
+      "content_hash": "37f0cf7556822a69632400de587380c4f5d462196c293267b6969382a3ab2f84"
+    },
+    {
+      "description": "Slice S4 (FGAP-029): schema re-sync via the existing migration registry (forward-migrate, NOT blind copy) + cleaning propagation. Refresh installed schemas through migrations.json / validateBlockWithMigration; identity-migration for shape-compatible / description-only bumps. Running it on this repo propagates the genericized catalog descriptions into .context/schemas/ (FGAP-028 residual) with ZERO data loss and resolves the layer-plans 1.0.0->1.0.1 skew. Closes FGAP-029 (data-loss closed at S1; safe schema re-sync closed here). Per DEC-0010: CHANGELOG + usage-only docs.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skills/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "installed schemas re-sync through the migration registry — never a blind copyFileSync over a versioned schema that has live items",
+        "runtime demo on a .context backup/dup: the genericized descriptions land in .context/schemas/ + the layer-plans skew resolves with zero data loss; promotion to .context is a separate user-approved step",
+        "FGAP-029 closed (status + closed_by + closed_at + closing-commit citation); FGAP-028 installed-dir residual addressed",
+        "CHANGELOG [Unreleased] + usage-only docs",
+        "canonical pipeline green"
+      ],
+      "notes": "Slice S4/4 of DEC-0010 | depends on S2 | closes FGAP-029 + addresses FGAP-028 residual",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-026",
+      "oid": "87339228a893c5e3cbc85249ea82e0fe",
+      "content_hash": "5455fd5dc9857d72a2b410df66148f5ac23884fbf474174b1a097b09c1ddc567"
     }
   ]
 }

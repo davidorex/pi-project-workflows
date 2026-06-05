@@ -1045,6 +1045,35 @@
       "id": "FGAP-029",
       "oid": "53ac7027782b8996d06334fe0ae12e1a",
       "content_hash": "d724d13ade5f1be169243e0f614ef1e2073b6b6502959c69ba4e4e499db4dc38"
+    },
+    {
+      "title": "check-status drift report is command-only — no context-check-status op, unreachable from the reflecting CLI",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "The pure-read schema-drift report (checkStatus in packages/pi-context/src/index.ts, rendered by renderCheckStatus) is surfaced ONLY as the /context check-status command handler (CONTEXT_SUBCOMMANDS in index.ts). There is no OpDefinition for it in the op-registry, and the reflecting pi-context-cli only surfaces surface:\"use\" ops — so check-status is unreachable from the CLI (a human or agent driving node packages/pi-context-cli/dist/bin.js cannot get the drift report). This is at odds with the CLI-parity direction (R-0003) and inconsistent with how /context status pairs with the context-status op. checkStatus is pure-read (returns CheckStatusReport, writes nothing), so it is a clean op candidate with no writer-classification or cap concerns.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "checkStatus(cwd): CheckStatusReport (pure-read) + the 'check-status' entry in CONTEXT_SUBCOMMANDS — command handler only"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "reference": "no context-check-status OpDefinition; the op-registry does not expose the drift report"
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "44",
+          "reference": "useOps = ops.filter(o => o.surface === 'use') — the CLI reflects ops only, so a command-only surface is invisible to it"
+        }
+      ],
+      "impact": "The drift report is in-pi-only; the reflecting pi-context-cli (and orchestrator-script consumers) cannot invoke check-status, undercutting the CLI-parity direction. Same family as the FGAP-021..026 CLI-parity gaps.",
+      "proposed_resolution": "Add a context-check-status OpDefinition (surface:\"use\", empty parameters, run(cwd) -> { json: checkStatus(cwd) } — pure-read, boundedJsonOutput-capped) so the reflecting CLI gets it automatically, plus the dual-surface orchestrator script scripts/orchestrator/check-status.ts (per the op + script convention). Pure-read, so no writer-classification/allowlist needed. Run through the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-030",
+      "oid": "78ac46a06f4b91e021f3b0a7ba0e1533",
+      "content_hash": "93bc0ee89efb54cb753fff286763c3f5d0056d4f3f14fb4663162f06eab49f6a"
     }
   ]
 }

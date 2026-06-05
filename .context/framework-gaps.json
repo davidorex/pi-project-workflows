@@ -1068,12 +1068,43 @@
         }
       ],
       "impact": "The drift report is in-pi-only; the reflecting pi-context-cli (and orchestrator-script consumers) cannot invoke check-status, undercutting the CLI-parity direction. Same family as the FGAP-021..026 CLI-parity gaps.",
-      "proposed_resolution": "Add a context-check-status OpDefinition (surface:\"use\", empty parameters, run(cwd) -> { json: checkStatus(cwd) } — pure-read, boundedJsonOutput-capped) so the reflecting CLI gets it automatically, plus the dual-surface orchestrator script scripts/orchestrator/check-status.ts (per the op + script convention). Pure-read, so no writer-classification/allowlist needed. Run through the canonical pipeline.",
+      "proposed_resolution": "Add a context-check-status OpDefinition (surface:\"use\", empty parameters, run(cwd) -> { json: checkStatus(cwd) } — pure-read, boundedJsonOutput-capped) so the reflecting pi-context-cli surfaces it automatically. OP-ONLY — NO orchestrator-script twin (per DEC-0011: new ops are op-only; the reflecting CLI is the shell surface; hand-writing a script twin would be a born-obsolete artifact). Pure-read, so no writer-classification/allowlist needed. Run through the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-030",
       "oid": "78ac46a06f4b91e021f3b0a7ba0e1533",
-      "content_hash": "93bc0ee89efb54cb753fff286763c3f5d0056d4f3f14fb4663162f06eab49f6a"
+      "content_hash": "46b60576f92717a1205365485664b06e794ff1f3e430c3197f836cc94b3664ed",
+      "content_parent": "93bc0ee89efb54cb753fff286763c3f5d0056d4f3f14fb4663162f06eab49f6a"
+    },
+    {
+      "title": "Target state: invoke pi-context-cli as the first-class `pi-context` command, not `node .../dist/bin.js`",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context-cli",
+      "description": "packages/pi-context-cli/package.json already declares `bin: { \"pi-context\": \"./dist/bin.js\" }` and dist/bin.js carries a `#!/usr/bin/env node` shebang — so installing or linking the package puts a first-class `pi-context` command on PATH. But the dev workflow, the docs (CLAUDE.md, READMEs), the dogfooding invocations, and orchestration all call `node packages/pi-context-cli/dist/bin.js <op>` — the developer-mode path-to-bin wart, not a real CLI. TARGET STATE: pi-context is a first-rate command invoked as `pi-context <op> --...` everywhere; no `node /path/to/bin` ceremony.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/package.json",
+          "lines": "22-24",
+          "reference": "bin: { pi-context: ./dist/bin.js } — the first-class command is already declared"
+        },
+        {
+          "file": "packages/pi-context-cli/dist/bin.js",
+          "lines": "1",
+          "reference": "#!/usr/bin/env node shebang present — directly executable once on PATH"
+        },
+        {
+          "file": "CLAUDE.md",
+          "reference": "the canonical filing patterns + dogfooding all show `node packages/pi-context-cli/dist/bin.js <op>` rather than `pi-context <op>`"
+        }
+      ],
+      "impact": "Every CLI invocation (docs, dogfooding, scripts, other-agent shell access) carries the path-to-bin wart; the CLI does not present as a first-rate installed command, which is friction, non-portable, and a poorer dogfooding/UX signal than a real `pi-context <op>` command.",
+      "proposed_resolution": "Make `pi-context` reachable in the dev monorepo (npm link, or the npm-workspaces node_modules/.bin symlink via `npx pi-context` / .bin on PATH) and switch the docs (CLAUDE.md + READMEs + skill-narrative) and dogfooding/orchestration invocations to `pi-context <op>`; the published package already gives end users the global command. Confirm the linked/installed entrypoint resolves and runs identically to the in-repo bin. Run through the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "id": "FGAP-031",
+      "oid": "82fa1ecb70845e5f7e862dd369bd9676",
+      "content_hash": "3785d0a2497367320e5a329efa614f7f4943e1a9a70405ca03d9ef32b4e32ecd"
     }
   ]
 }

@@ -1,0 +1,24 @@
+{
+  "title": "check-status drift report is command-only — no context-check-status op, unreachable from the reflecting CLI",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "The pure-read schema-drift report (checkStatus in packages/pi-context/src/index.ts, rendered by renderCheckStatus) is surfaced ONLY as the /context check-status command handler (CONTEXT_SUBCOMMANDS in index.ts). There is no OpDefinition for it in the op-registry, and the reflecting pi-context-cli only surfaces surface:\"use\" ops — so check-status is unreachable from the CLI (a human or agent driving node packages/pi-context-cli/dist/bin.js cannot get the drift report). This is at odds with the CLI-parity direction (R-0003) and inconsistent with how /context status pairs with the context-status op. checkStatus is pure-read (returns CheckStatusReport, writes nothing), so it is a clean op candidate with no writer-classification or cap concerns.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "checkStatus(cwd): CheckStatusReport (pure-read) + the 'check-status' entry in CONTEXT_SUBCOMMANDS — command handler only"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "no context-check-status OpDefinition; the op-registry does not expose the drift report"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "44",
+      "reference": "useOps = ops.filter(o => o.surface === 'use') — the CLI reflects ops only, so a command-only surface is invisible to it"
+    }
+  ],
+  "impact": "The drift report is in-pi-only; the reflecting pi-context-cli (and orchestrator-script consumers) cannot invoke check-status, undercutting the CLI-parity direction. Same family as the FGAP-021..026 CLI-parity gaps.",
+  "proposed_resolution": "Add a context-check-status OpDefinition (surface:\"use\", empty parameters, run(cwd) -> { json: checkStatus(cwd) } — pure-read, boundedJsonOutput-capped) so the reflecting pi-context-cli surfaces it automatically. OP-ONLY — NO orchestrator-script twin (per DEC-0011: new ops are op-only; the reflecting CLI is the shell surface; hand-writing a script twin would be a born-obsolete artifact). Pure-read, so no writer-classification/allowlist needed. Run through the canonical pipeline."
+}

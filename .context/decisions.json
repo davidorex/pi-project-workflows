@@ -293,6 +293,61 @@
       "id": "DEC-0010",
       "oid": "ec10dda127c8463c2e841090275b6d0d",
       "content_hash": "fe6fcd80a53495b707b23fcb056ec6911c951cca3aab14c7b7dc5de36f275c7c"
+    },
+    {
+      "title": "Retire op-twin orchestrator scripts in favor of the reflecting CLI; new ops are op-only",
+      "status": "enacted",
+      "context": "The op+script 'dual-surface' (a Pi op AND a hand-written scripts/orchestrator/<op>.ts twin over one library fn) predates pi-context-cli. The reflecting CLI now derives EVERY op as a shell command automatically, so a hand-authored script twin per op is redundant duplication — two shell surfaces to keep in sync instead of one reflected from the ops (the duplication R-0001/cli-core flagged). The op-twin scripts still retain ergonomics the CLI lacks (array_key derivation, --format render, --show-schema, AJV translation, shorthands, exit codes — FGAP-019..026) and historically doubled as a test surface + executable specs (DEC-0019). Surfaced while scoping FGAP-030 (adding a CLI surface for /context check-status): adding a born-obsolete orchestrator-script twin to a brand-new op is pure waste.",
+      "decision": "(1) NEW ops are op-ONLY — no orchestrator-script twin; the reflecting pi-context-cli IS the shell surface. (2) EXISTING op-twin orchestrator scripts retire once the CLI reaches script-parity (the cli-parity release closing FGAP-019..026); until then they stay because they carry ergonomics the CLI lacks. (3) NON-op scripts — composers (compile-*-context, inject-context-items, file-block-item's multi-step ergonomics), runtime-demos, launch-support (read-config-operations) — are NOT op-twins and REMAIN (or later fold into CLI flows). (4) The scripts-as-test-surface role (DEC-0019) transfers to CLI dogfooding, already the mandated test surface. (5) parity-check's dual-surface op<->script check INVERTS: an op no longer requires a same-named script twin; the CLI is the twin (updated as part of the retire work). (6) FGAP-030 (check-status) is therefore op-only.",
+      "options_considered": [
+        {
+          "label": "Keep the op+script dual-surface for every op",
+          "description": "Continue shipping a hand-written orchestrator script alongside each op.",
+          "tradeoffs": "Two shell surfaces over one library, kept in sync by parity-check; every new op carries a born-obsolete script.",
+          "rejected_reason": "Rejected — duplication the reflecting CLI eliminates; wastes effort on born-obsolete artifacts."
+        },
+        {
+          "label": "Op-only + CLI-as-shell-surface; retire op-twin scripts post-CLI-parity",
+          "description": "New ops op-only; existing op-twin scripts retire after the CLI gains their ergonomics; non-op scripts stay.",
+          "tradeoffs": "Requires the cli-parity release (FGAP-019..026) to land before retiring existing scripts, so capability is not lost.",
+          "rejected_reason": "Not rejected — adopted."
+        }
+      ],
+      "consequences": [
+        "No new orchestrator-script twins are authored from now; new ops are op-only (the CLI reflects them).",
+        "FGAP-030 (check-status CLI surface) is op-only — drop the orchestrator-script from its resolution.",
+        "Amends CLAUDE.md's 'Orchestrator scripts dual-surface' convention ('New substrate op = library + Pi tool + CLI script as a unit') and the feedback_orchestrator_scripts_dual_surface mandate.",
+        "Partially supersedes feedback_scripts_as_test_surface / DEC-0019: the test-surface role moves to CLI dogfooding (feedback_use_cli_directly_dogfooding).",
+        "Prerequisite for retiring EXISTING op-twin scripts: the cli-parity release (TASK-015..019 closing FGAP-019..026) must land first so the CLI carries the scripts' ergonomics.",
+        "TASK-019's behavioral parity gate reframes from op-vs-script-twin to op-vs-CLI (or is folded into the retire work); the actual script deletion + parity-check inversion is a post-cli-parity task, not done now.",
+        "Non-op scripts (composers / runtime-demos / launch-support) are explicitly retained."
+      ],
+      "references": [
+        {
+          "label": "the op-only follow-on this decision reshapes",
+          "path": ".context/framework-gaps.json (FGAP-030)"
+        },
+        {
+          "label": "cli-core / duplication finding",
+          "path": "analysis/2026-06-05-shared-cli-core-design.md"
+        },
+        {
+          "label": "CLI<->ops<->scripts parity survey",
+          "path": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md"
+        },
+        {
+          "label": "CLAUDE.md convention amended",
+          "path": "CLAUDE.md",
+          "lines": "Conventions: Orchestrator scripts dual-surface"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-06-06T00:00:00.000Z",
+      "id": "DEC-0011",
+      "oid": "365db911e6b4a6769223eca788f9eed0",
+      "content_hash": "328bf7238cb28687e6e1f8b4c1b85e8676801f0583bf07ce569af31f0c40e3e4"
     }
   ]
 }

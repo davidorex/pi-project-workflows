@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { forEachBlockArray, readBlock, readBlockForDir } from "./block-api.js";
+import { forEachBlockArray, readBlock, readBlockForDir, writeBlockForDir } from "./block-api.js";
 import { computeFileContentHash } from "./content-hash.js";
 import {
 	type AdoptResult,
@@ -24,18 +24,23 @@ import {
 import {
 	BootstrapNotFoundError,
 	flipBootstrapPointer,
+	migrationsPathForDir,
 	resolveContextDir,
 	SCHEMAS_DIR,
 	schemasDir,
+	tryReadSubstrateIdForDir,
 	tryResolveContextDir,
 	writeBootstrapPointer,
 } from "./context-dir.js";
 import { contextState, findAppendableBlocks, validateContext } from "./context-sdk.js";
 import { cleanGitEnv } from "./git-env.js";
 import { buildCurationSuggestions, loadLensView, renderLensView } from "./lens-view.js";
+import { getProjectMigrationRegistryForDir, invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
+import { appendMigrationDeclForDir, loadMigrationsFileForDir, type MigrationDecl } from "./migrations-store.js";
 import { registerAll } from "./ops-registry.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
 import { listRoadmaps, loadRoadmap, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
+import { validateBlockWithMigrationForDir } from "./schema-validator.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -321,6 +326,24 @@ export interface InstallResult {
 	skipped: string[];
 	notFound: string[];
 	preserved: string[];
+	/**
+	 * FGAP-029 safe re-sync (slice S4) — SCHEMA --update outcomes.
+	 *   - `resynced`: an installed schema re-synced from the catalog where no
+	 *     block-item migration was required (same `version` as installed — a
+	 *     description-only / non-versioned drift — OR a version bump whose block
+	 *     file is absent / holds zero items, so no items needed migrating).
+	 *   - `migrated`: a version-bumped schema re-synced AND the populated block's
+	 *     items forward-migrated through the shipped migration chain + re-validated
+	 *     against the new schema (block re-written via the migration path).
+	 *   - `blocked`: a version-bumped schema REFUSED — no shipped migration chain
+	 *     reaches the catalog version, OR the migrated items would not validate
+	 *     against the new schema. BOTH the schema file AND the block file are left
+	 *     byte-unchanged (forward-migrate-or-refuse; never strand items under a
+	 *     schema they fail).
+	 */
+	resynced: string[];
+	migrated: string[];
+	blocked: string[];
 }
 
 /**
@@ -348,6 +371,230 @@ function resolveCatalog(): { samplesRoot: string; byId: Map<string, { schema_pat
 }
 
 /**
+ * Read a JSON file's own declared `version` field (the schema/block envelope
+ * `version`). Returns undefined when the file is absent, unreadable, not valid
+ * JSON, or carries no string `version`. Used by resyncSchema to compare the
+ * catalog vs installed schema versions without crashing on a corrupt file.
+ */
+function readDeclaredVersion(file: string): string | undefined {
+	try {
+		const parsed = JSON.parse(fs.readFileSync(file, "utf-8")) as { version?: unknown };
+		return typeof parsed.version === "string" ? parsed.version : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Walk the shipped catalog migration chain for `schemaName` from `fromVersion`
+ * to `toVersion`, returning the ordered MigrationDecl list (one per hop) when a
+ * complete chain exists, or `null` when no chain reaches `toVersion`.
+ *
+ * Chain semantics mirror the registry's one-outgoing-edge-per-(schemaName,
+ * fromVersion) discipline: at each step we look for the single decl whose
+ * (schemaName, fromVersion) matches the current cursor and advance the cursor to
+ * its `toVersion`. A cycle guard bounds the walk to the number of available
+ * decls so a malformed catalog cannot loop forever. The catalog migrations file
+ * is read from `samplesRoot/migrations.json` (the SAME catalog the schema source
+ * is copied from), so the migration declarations and the schema versions cannot
+ * drift apart.
+ */
+function findCatalogMigrationChain(
+	samplesRoot: string,
+	schemaName: string,
+	fromVersion: string,
+	toVersion: string,
+): MigrationDecl[] | null {
+	const catalogMigrationsPath = path.join(samplesRoot, "migrations.json");
+	let catalogDecls: MigrationDecl[];
+	try {
+		const parsed = JSON.parse(fs.readFileSync(catalogMigrationsPath, "utf-8")) as { migrations?: MigrationDecl[] };
+		catalogDecls = Array.isArray(parsed.migrations) ? parsed.migrations : [];
+	} catch {
+		return null;
+	}
+	const chain: MigrationDecl[] = [];
+	let cursor = fromVersion;
+	const maxHops = catalogDecls.length;
+	for (let i = 0; i <= maxHops; i++) {
+		if (cursor === toVersion) return chain;
+		const next = catalogDecls.find((d) => d.schemaName === schemaName && d.fromVersion === cursor);
+		if (!next) return null;
+		chain.push(next);
+		cursor = next.toVersion;
+	}
+	// Exhausted maxHops without reaching toVersion → cyclic / non-terminating.
+	return null;
+}
+
+/**
+ * Migration-aware re-sync of ONE installed schema under `/context install
+ * --update` (FGAP-029 safe re-sync, slice S4). Replaces the blind
+ * `fs.copyFileSync` the schema loop used to perform with a forward-migrate-or-
+ * refuse decision so a catalog schema version bump never strands the block's
+ * already-filed items under a schema they no longer satisfy.
+ *
+ * Precondition: the dest schema file EXISTS (the caller routes fresh installs
+ * straight to copyFileSync). Returns one of:
+ *   - `"resynced"`: same installed/catalog `version` (description-only drift, or
+ *     non-versioned schemas) → safe verbatim overwrite; OR a version bump whose
+ *     block file is absent / holds zero items → no items to migrate, overwrite +
+ *     register the chain.
+ *   - `"migrated"`: a version bump with a populated block whose items
+ *     forward-migrated through the shipped chain AND re-validated against the new
+ *     schema → block re-written via the migration path.
+ *   - `"blocked"`: a version bump with NO shipped chain reaching the catalog
+ *     version, OR migrated items that would FAIL the new schema. The schema file,
+ *     the block file, AND migrations.json are all left BYTE-UNCHANGED.
+ *
+ * Byte-unchanged guarantee for `"blocked"`: this helper captures the original
+ * schema bytes BEFORE any overwrite, and the original migrations.json bytes
+ * BEFORE the first decl append. For the version-bump path it must validate the
+ * migrated items against the NEW schema (which validateBlockWithMigrationFor-
+ * Dir reads from disk), so it registers the shipped chain into migrations.json
+ * and overwrites the schema first, then on ANY failure (no chain, append
+ * failure, validation throw) RESTORES the captured original schema bytes
+ * verbatim, RESTORES migrations.json to its captured pre-call bytes (or removes
+ * it when it did not exist pre-call, since the append loop may have created it),
+ * and invalidates the registry cache it may have warmed. The block file is only
+ * ever touched via writeBlockForDir on the SUCCESS path, so a `"blocked"`
+ * outcome never writes the block. The net effect for `"blocked"` is the schema
+ * file, the block file, and migrations.json all identical to their pre-call
+ * bytes (migrations.json absent if it was absent pre-call).
+ */
+function resyncSchema(
+	destRoot: string,
+	samplesRoot: string,
+	sourceFile: string,
+	destFile: string,
+	name: string,
+): "resynced" | "migrated" | "blocked" {
+	const catalogVersion = readDeclaredVersion(sourceFile);
+	const installedVersion = readDeclaredVersion(destFile);
+
+	// (A) Same version (or either version unreadable / non-versioned): there is no
+	// version transition to migrate across, so the drift is description-only —
+	// safe to overwrite the schema verbatim. Items are unaffected by a same-
+	// version schema body change (the version is the migration contract).
+	if (installedVersion === catalogVersion || catalogVersion === undefined || installedVersion === undefined) {
+		fs.copyFileSync(sourceFile, destFile);
+		return "resynced";
+	}
+
+	// (B) Version bump — migrate-or-refuse. installedVersion ≠ catalogVersion,
+	// both defined. The chain is sought in the catalog's OWN migrations.json so
+	// the declarations and the schema versions stay coherent.
+	const chain = findCatalogMigrationChain(samplesRoot, name, installedVersion, catalogVersion);
+	if (chain === null) {
+		// No shipped chain reaches the catalog version → refuse, leave unchanged.
+		return "blocked";
+	}
+
+	// Capture migrations.json raw bytes BEFORE any decl append so the refuse path
+	// can restore it byte-for-byte — appendMigrationDeclForDir below mutates it, and
+	// a later validation throw must leave migrations.json byte-unchanged too (not
+	// just the schema file). Mirrors the originalSchemaBytes capture below.
+	const migrationsPath = migrationsPathForDir(destRoot);
+	const originalMigrationsBytes = fs.existsSync(migrationsPath) ? fs.readFileSync(migrationsPath) : null;
+
+	// Register each shipped decl into the substrate's migrations.json (idempotent:
+	// skip a decl whose (schemaName, fromVersion) is already present — append
+	// throws on collision). Registration is required BEFORE the validate+migrate
+	// call so the loaded registry carries the forward edge.
+	const existing = loadMigrationsFileForDir(destRoot);
+	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName} ${m.fromVersion}`));
+	for (const decl of chain) {
+		const key = `${decl.schemaName} ${decl.fromVersion}`;
+		if (present.has(key)) continue;
+		appendMigrationDeclForDir(destRoot, decl);
+		present.add(key);
+	}
+
+	// Determine whether the block file carries items to migrate. Absent / zero-
+	// item blocks need no migration: register-the-chain + overwrite the schema and
+	// report `migrated` (the version model advanced even though no items moved).
+	const blockFile = installedBlockDestPath(destRoot, name);
+	let blockData: unknown;
+	let hasItems = false;
+	if (fs.existsSync(blockFile)) {
+		try {
+			blockData = JSON.parse(fs.readFileSync(blockFile, "utf-8"));
+			forEachBlockArray(blockData, (_arrayKey, arr) => {
+				if (arr.length > 0) hasItems = true;
+			});
+		} catch {
+			// Unreadable block — treat as POPULATED (safety default) and route it
+			// through the validate path, which will throw and trigger rollback.
+			hasItems = true;
+		}
+	}
+
+	// Capture the original schema bytes for an airtight rollback, then overwrite
+	// the schema so validateBlockWithMigrationForDir (which reads the schema from
+	// disk) validates the migrated items against the NEW schema.
+	const originalSchemaBytes = fs.readFileSync(destFile);
+	fs.copyFileSync(sourceFile, destFile);
+
+	if (!hasItems) {
+		// No items to migrate — schema overwritten, chain registered. Done.
+		return "migrated";
+	}
+
+	try {
+		const registry = getProjectMigrationRegistryForDir(destRoot);
+		const migrated = validateBlockWithMigrationForDir(destRoot, name, blockData, registry);
+		// Persist the forward-migrated block (identity ⇒ byte-equal items). When the
+		// block carries a `schema_version` envelope field, advance it to the catalog
+		// version so the on-disk block declares the version it now conforms to —
+		// runMigrations applies the item transforms but does NOT stamp the envelope
+		// version, so we advance it here before the write. writeBlockForDir re-routes
+		// through the migration path; with the envelope now at catalogVersion it
+		// validates straight (no re-migration) against the just-installed schema.
+		if (
+			migrated &&
+			typeof migrated === "object" &&
+			!Array.isArray(migrated) &&
+			typeof (migrated as Record<string, unknown>).schema_version === "string"
+		) {
+			(migrated as Record<string, unknown>).schema_version = catalogVersion;
+		}
+		// Persist the migrated block. When the substrate has ESTABLISHED identity
+		// (a valid `substrate_id`), route through the full whole-block write so the
+		// migrated items are identity-stamped (mint-or-preserve oid, recompute
+		// content_hash). When the substrate is PRE-IDENTITY (no substrate_id —
+		// e.g. a freshly-bootstrapped substrate whose identity has not yet been
+		// established), stamping cannot mint OIDs (substrateIdForDir throws by
+		// design). The migrate must still succeed for a pre-identity substrate, so
+		// skip stamping in that case: the items are persisted (still schema-
+		// validated inside writeBlockForDir) without identity and stay unstamped
+		// until identity is established by the normal path. Probing via
+		// tryReadSubstrateIdForDir (non-throwing) distinguishes a deliberately
+		// pre-identity substrate from a mis-provisioned one, matching the
+		// pre-identity "skip" branch in reconcileActiveSubstrateRegistration.
+		const skipIdentityStamp = tryReadSubstrateIdForDir(destRoot) === undefined;
+		writeBlockForDir(destRoot, name, migrated, undefined, { skipIdentityStamp });
+		return "migrated";
+	} catch {
+		// Migrated items would NOT validate against the new schema (or migration
+		// threw). Refuse: restore the original schema bytes verbatim so the schema
+		// file is byte-unchanged, and invalidate the registry cache warmed above so
+		// a subsequent read rebuilds against the on-disk (restored) state. The block
+		// file was never written on this path, so it is already byte-unchanged.
+		fs.writeFileSync(destFile, originalSchemaBytes);
+		// Restore migrations.json to its pre-call bytes: if it existed, write the
+		// captured bytes back; if it did NOT exist pre-call, the append loop created
+		// it — remove it so the refuse path leaves no trace.
+		if (originalMigrationsBytes === null) {
+			if (fs.existsSync(migrationsPath)) fs.unlinkSync(migrationsPath);
+		} else {
+			fs.writeFileSync(migrationsPath, originalMigrationsBytes);
+		}
+		invalidateMigrationRegistryForDir(destRoot);
+		return "blocked";
+	}
+}
+
+/**
  * /context install opt-in mechanism (DEC-0011). Reads config.installed_schemas
  * and config.installed_blocks, copies declared assets from the package
  * samples catalog (samples/, keyed by conception.json's block_kinds) into the
@@ -359,7 +606,16 @@ function resolveCatalog(): { samplesRoot: string; byId: Map<string, { schema_pat
  *   - Empty install lists are not an error — the result is a clean no-op.
  */
 export function installContext(cwd: string, options: { overwrite?: boolean } = {}): InstallResult {
-	const result: InstallResult = { installed: [], updated: [], skipped: [], notFound: [], preserved: [] };
+	const result: InstallResult = {
+		installed: [],
+		updated: [],
+		skipped: [],
+		notFound: [],
+		preserved: [],
+		resynced: [],
+		migrated: [],
+		blocked: [],
+	};
 	const overwrite = options.overwrite === true;
 
 	const destRoot = tryResolveContextDir(cwd);
@@ -408,8 +664,29 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 			result.skipped.push(relDest);
 			continue;
 		}
-		fs.copyFileSync(sourceFile, destFile);
-		(destExists ? result.updated : result.installed).push(relDest);
+		if (!destExists) {
+			// Fresh install — no installed copy yet, so there are no items to
+			// migrate. Copy the catalog schema verbatim (unchanged behaviour).
+			fs.copyFileSync(sourceFile, destFile);
+			result.installed.push(relDest);
+			continue;
+		}
+		// destExists && overwrite — migration-aware schema re-sync (FGAP-029 S4).
+		// resyncSchema decides between same-version overwrite, version-bump
+		// forward-migration, and refuse-and-leave-unchanged; it never strands the
+		// block's items under a schema they fail.
+		const outcome = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
+		switch (outcome) {
+			case "resynced":
+				result.resynced.push(relDest);
+				break;
+			case "migrated":
+				result.migrated.push(relDest);
+				break;
+			case "blocked":
+				result.blocked.push(relDest);
+				break;
+		}
 	}
 
 	for (const name of (config as ConfigBlock).installed_blocks ?? []) {
@@ -1219,6 +1496,19 @@ const extension = (pi: ExtensionAPI) => {
 				if (result.updated.length > 0) {
 					lines.push(`Updated (${result.updated.length}): ${result.updated.join(", ")}`);
 				}
+				if (result.resynced.length > 0) {
+					lines.push(`Re-synced (${result.resynced.length}): ${result.resynced.join(", ")}`);
+				}
+				if (result.migrated.length > 0) {
+					lines.push(
+						`Migrated (${result.migrated.length}, schema bumped — block items forward-migrated): ${result.migrated.join(", ")}`,
+					);
+				}
+				if (result.blocked.length > 0) {
+					lines.push(
+						`Blocked (${result.blocked.length}, no safe migration — left unchanged): ${result.blocked.join(", ")}`,
+					);
+				}
 				if (result.preserved.length > 0) {
 					lines.push(
 						`Preserved (${result.preserved.length}, populated — block data is never overwritten): ${result.preserved.join(", ")}`,
@@ -1237,7 +1527,7 @@ const extension = (pi: ExtensionAPI) => {
 						"Nothing declared in installed_schemas / installed_blocks — edit the substrate dir's config.json to add entries.",
 					);
 				}
-				const level = result.notFound.length > 0 ? "warning" : "info";
+				const level = result.notFound.length > 0 || result.blocked.length > 0 ? "warning" : "info";
 				ctx.ui.notify(lines.join("\n"), level);
 			},
 		},

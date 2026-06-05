@@ -501,6 +501,31 @@ export function substrateIdForDir(substrateDir: string): string {
 }
 
 /**
+ * Non-throwing companion of {@link substrateIdForDir}: return the substrate's
+ * established `substrate_id` (matching `SUBSTRATE_ID_PATTERN`) or `undefined`
+ * when the substrate is PRE-IDENTITY — config absent / unreadable / not JSON /
+ * carrying no valid `substrate_id`. This is the deliberate-pre-identity probe
+ * (mirroring `reconcileActiveSubstrateRegistration`'s "no substrate_id → skip"
+ * branch in context.ts): callers that must DISTINGUISH a deliberately
+ * pre-identity substrate from a mis-provisioned one branch on this instead of
+ * catching the `substrateIdForDir` throw. It does NOT mint and does NOT mutate
+ * config — a pre-identity substrate stays pre-identity until identity is
+ * established by the normal path.
+ */
+export function tryReadSubstrateIdForDir(substrateDir: string): string | undefined {
+	const configPath = path.join(substrateDir, "config.json");
+	if (!fs.existsSync(configPath)) return undefined;
+	let data: unknown;
+	try {
+		data = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+	} catch {
+		return undefined;
+	}
+	const substrateId = data && typeof data === "object" ? (data as Record<string, unknown>).substrate_id : undefined;
+	return typeof substrateId === "string" && SUBSTRATE_ID_PATTERN.test(substrateId) ? substrateId : undefined;
+}
+
+/**
  * `substrateIdForDir(resolveContextDir(cwd))` — the cwd-resolved form for
  * callers holding a working directory rather than an explicit substrate dir.
  */

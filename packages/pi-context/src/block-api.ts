@@ -1714,7 +1714,13 @@ export function removeFromNestedTypedFile(
  * stamping; callers wanting per-item attribution should prefer the
  * array-grained writers.
  */
-export function writeBlockForDir(substrateDir: string, blockName: string, data: unknown, ctx?: DispatchContext): void {
+export function writeBlockForDir(
+	substrateDir: string,
+	blockName: string,
+	data: unknown,
+	ctx?: DispatchContext,
+	opts?: { skipIdentityStamp?: boolean },
+): void {
 	const filePath = blockFilePathForDir(substrateDir, blockName);
 	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
 
@@ -1735,8 +1741,25 @@ export function writeBlockForDir(substrateDir: string, blockName: string, data: 
 		forEachBlockArray(data, (arrayKey, arr) => assertNoDuplicateIdsInArray(arr, `${blockName}.${arrayKey}`));
 	}
 
+	// `opts.skipIdentityStamp` is the deliberate PRE-IDENTITY escape hatch: a
+	// substrate that has not yet established a `substrate_id` cannot mint OIDs
+	// (substrateIdForDir throws by design — the loud guard against a
+	// mis-provisioned substrate). For a write that legitimately occurs on a
+	// pre-identity substrate (the schema-resync forward-migration path, which
+	// rewrites already-filed pre-identity items), the caller probes identity via
+	// `tryReadSubstrateIdForDir` and sets this flag so the items are persisted
+	// (still schema-validated below) without minting identity. Items stay
+	// unstamped until identity is established by the normal path, at which point
+	// a subsequent whole-block write stamps them. Default (flag unset) preserves
+	// the mandatory-stamping behaviour for every ordinary write.
 	let identityStamped: unknown = data;
-	if (schemaPath !== null && data && typeof data === "object" && !Array.isArray(data)) {
+	if (
+		opts?.skipIdentityStamp !== true &&
+		schemaPath !== null &&
+		data &&
+		typeof data === "object" &&
+		!Array.isArray(data)
+	) {
 		identityStamped = stampWholeBlockIdentity(
 			substrateDir,
 			blockName,
